@@ -1,0 +1,17 @@
+# Sample csv file
+# Defines sunny_day namespace holding data for example
+# string entry contains 10 characters and terminating zero
+key,type,encoding,value
+sunny_day,namespace,,
+u8,data,u8,255
+i8,data,i8,-128
+u16,data,u16,65535
+i16,data,i16,-20000
+u32,data,u32,4294967295
+i32,data,i32,-2147483648
+string_10_chars,data,string,"Text_67890"
+# adding the below entry to read non-multiple lengths of XTS-AES block size
+string_66_chars,data,string,"Text_67890_Text_67890_Text_67890_0_Text_67890_Text_67890_Text_6789"
+# defines cloudy_day namespace to show it can be read at once with sunny_day one
+cloudy_day,namespace,,
+i8,data,i8,-13

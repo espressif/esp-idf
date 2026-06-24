@@ -1,15 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdarg.h>
+#include <sys/lock.h>
 #include <sys/param.h>  //For max/min
 #include "esp_attr.h"
 #include "esp_private/system_internal.h"
-#include "esp_flash.h"
-#include "esp_flash_partitions.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "hal/spi_types.h"
@@ -17,10 +16,18 @@
 #include "esp_log.h"
 #include "esp_compiler.h"
 #include "esp_rom_sys.h"
+
+#include "esp_flash.h"
+#include "esp_flash_chips/esp_flash_types.h"
+#include "esp_flash_partitions.h"
+
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/cache_utils.h"
-
 #include "esp_private/spi_share_hw_ctrl.h"
+
+// For C5 encrypted write workaround
+// Functions are only available when CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ is true
+#include "esp_private/spi_flash_freq_limit_cbs.h"
 
 #define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA) || CONFIG_APP_BUILD_TYPE_RAM)
 static const char TAG[] = "spi_flash";
@@ -52,6 +59,7 @@ typedef struct {
     bool no_protect;    //to decide whether to check protected region (for the main chip) or not.
     uint32_t acquired_since_us;    // Time since last explicit yield()
     uint32_t released_since_us;    // Time since last end() (implicit yield)
+    uint32_t start_flags;          // Flags passed to start() function, used to determine if freq_limit was called
 } app_func_arg_t;
 
 static inline void on_spi_released(app_func_arg_t* ctx);
@@ -89,21 +97,27 @@ static IRAM_ATTR esp_err_t release_spi_bus_lock(void *arg)
     return spi_bus_lock_acquire_end(((app_func_arg_t *)arg)->dev_lock);
 }
 
-static IRAM_ATTR esp_err_t spi23_start(void *arg){
+static esp_err_t spi23_start(void *arg, uint32_t flags)
+{
+    (void)flags;
     esp_err_t ret = acquire_spi_bus_lock(arg);
     on_spi_acquired((app_func_arg_t*)arg);
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi23_end(void *arg){
+static esp_err_t spi23_end(void *arg)
+{
     esp_err_t ret = release_spi_bus_lock(arg);
     on_spi_released((app_func_arg_t*)arg);
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi1_start(void *arg)
+static IRAM_ATTR esp_err_t spi1_start(void *arg, uint32_t flags)
 {
     esp_err_t ret = ESP_OK;
+    app_func_arg_t* ctx = (app_func_arg_t*)arg;
+    ctx->start_flags = flags;
+
     /**
      * There are three ways for ESP Flash API lock:
      * 1. spi bus lock, this is used when SPI1 is shared with GPSPI Master Driver
@@ -121,13 +135,42 @@ static IRAM_ATTR esp_err_t spi1_start(void *arg)
     //directly disable the cache and interrupts when lock is not used
     cache_disable(NULL);
 #endif
-    on_spi_acquired((app_func_arg_t*)arg);
+
+#if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    // Disable scheduler
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionDisable(NULL);
+#else
+        // Disable scheduler on the current CPU
+        vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
+    }
+#endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+
+#if CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+    if (flags & ESP_FLASH_START_FLAG_LIMIT_CPU_FREQ) {
+        esp_flash_freq_limit_cb();
+    }
+#endif
+
+    on_spi_acquired(ctx);
     return ret;
 }
 
 static IRAM_ATTR esp_err_t spi1_end(void *arg)
 {
     esp_err_t ret = ESP_OK;
+    app_func_arg_t* ctx = (app_func_arg_t*)arg;
+
+    // Call freq_limit_unlock if needed, before releasing the lock
+#if CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
+    uint32_t flags = ctx->start_flags;
+    if (flags & ESP_FLASH_START_FLAG_LIMIT_CPU_FREQ) {
+        esp_flash_freq_unlimit_cb();
+    }
+#endif
 
     /**
      * There are three ways for ESP Flash API lock, see `spi1_start`
@@ -139,11 +182,23 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 #else
     cache_enable(NULL);
 #endif
-    on_spi_released((app_func_arg_t*)arg);
+
+#if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+#else
+        xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
+    }
+#endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+
+    on_spi_released(ctx);
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_status, uint32_t* out_request)
+static esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_status, uint32_t* out_request)
 {
     assert (chip_status == 0);  //TODO: support suspend
     esp_err_t ret = ESP_ERR_TIMEOUT;    //Nothing happened
@@ -159,7 +214,7 @@ static IRAM_ATTR esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_sta
     return ret;
 }
 
-static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
+static esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
 {
     if (likely(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)) {
 #ifdef CONFIG_SPI_FLASH_ERASE_YIELD_TICKS
@@ -172,13 +227,13 @@ static IRAM_ATTR esp_err_t spi_flash_os_yield(void *arg, uint32_t* out_status)
     return ESP_OK;
 }
 
-static IRAM_ATTR esp_err_t delay_us(void *arg, uint32_t us)
+static esp_err_t delay_us(void *arg, uint32_t us)
 {
     esp_rom_delay_us(us);
     return ESP_OK;
 }
 
-static IRAM_ATTR void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* out_size)
+static void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* out_size)
 {
     /* Allocate temporary internal buffer to use for the actual read. If the preferred size
         doesn't fit in free internal memory, allocate the largest available free block.
@@ -190,7 +245,8 @@ static IRAM_ATTR void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* 
     unsigned retries = 5;
     size_t read_chunk_size = reqest_size;
     while(ret == NULL && retries--) {
-        read_chunk_size = MIN(read_chunk_size, heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+        size_t largest_free = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        read_chunk_size = MIN(read_chunk_size, largest_free);
         read_chunk_size = (read_chunk_size + 3) & ~3;
         ret = heap_caps_malloc(read_chunk_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     }
@@ -199,12 +255,12 @@ static IRAM_ATTR void* get_buffer_malloc(void* arg, size_t reqest_size, size_t* 
     return ret;
 }
 
-static IRAM_ATTR void release_buffer_malloc(void* arg, void *temp_buf)
+static void release_buffer_malloc(void* arg, void *temp_buf)
 {
     free(temp_buf);
 }
 
-static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
+static esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
 {
     if (!esp_partition_is_flash_region_writable(start_addr, size)) {
         return ESP_ERR_NOT_ALLOWED;
@@ -220,7 +276,7 @@ static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_a
     return ESP_OK;
 }
 
-static IRAM_ATTR void main_flash_op_status(uint32_t op_status)
+static void main_flash_op_status(uint32_t op_status)
 {
     bool is_erasing = op_status & SPI_FLASH_OS_IS_ERASING_STATUS_FLAG;
     spi_flash_set_erasing_flag(is_erasing);
@@ -347,6 +403,22 @@ esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)
     };
     chip->os_func = &esp_flash_spi1_default_os_functions;
     chip->os_func_data = &main_flash_arg;
+    return ESP_OK;
+}
+
+esp_err_t esp_flash_set_dangerous_write_protection(esp_flash_t *chip, const bool protect)
+{
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+    if (chip == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (chip->os_func_data != NULL) {
+        ((app_func_arg_t*)chip->os_func_data)->no_protect = !protect;
+    }
+#else
+    (void)chip;
+    (void)protect;
+#endif
     return ESP_OK;
 }
 

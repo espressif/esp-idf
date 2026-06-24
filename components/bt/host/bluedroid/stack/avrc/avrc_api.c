@@ -79,6 +79,10 @@ static void avrc_ctrl_cback(UINT8 handle, UINT8 event, UINT16 result,
 {
     UINT8   avrc_event;
 
+    if (handle >= AVCT_NUM_CONN) {
+        return;
+    }
+
     if (event <= AVRC_MAX_RCV_CTRL_EVT && avrc_cb.ccb[handle].p_ctrl_cback) {
         avrc_event = avrc_ctrl_event_map[event];
         if (event == AVCT_CONNECT_CFM_EVT) {
@@ -151,6 +155,10 @@ static void avrc_prep_end_frag(UINT8 handle)
     UINT8   *p_data, *p_orig_data;
     UINT8   rsp_type;
 
+    if (handle >= AVCT_NUM_CONN) {
+        return;
+    }
+
     AVRC_TRACE_DEBUG ("avrc_prep_end_frag" );
     p_fcb = &avrc_cb.fcb[handle];
 
@@ -192,15 +200,23 @@ static void avrc_send_continue_frag(UINT8 handle, UINT8 label)
     UINT8   cr = AVCT_RSP;
     tAVRC_RSP   rej_rsp;
 
+    if (handle >= AVCT_NUM_CONN) {
+        return;
+    }
+
     p_fcb = &avrc_cb.fcb[handle];
     p_pkt = p_fcb->p_fmsg;
+
+    if (p_pkt == NULL) {
+        return;
+    }
 
     AVRC_TRACE_DEBUG("%s handle = %u label = %u len = %d",
                      __func__, handle, label, p_pkt->len);
     if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
         int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
         p_pkt_old = p_fcb->p_fmsg;
-        p_pkt = (BT_HDR *)osi_malloc((UINT16)(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE));
+        p_pkt = (BT_HDR *)osi_calloc((UINT16)(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE));
         if (p_pkt) {
             p_pkt->len          = AVRC_MAX_CTRL_DATA_LEN;
             p_pkt->offset       = AVCT_MSG_OFFSET;
@@ -261,6 +277,10 @@ static BT_HDR *avrc_proc_vendor_command(UINT8 handle, UINT8 label,
     BOOLEAN     abort_frag = FALSE;
     tAVRC_STS   status = AVRC_STS_NO_ERROR;
     tAVRC_FRAG_CB   *p_fcb;
+
+    if (handle >= AVCT_NUM_CONN) {
+        return NULL;
+    }
 
     p_begin  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data   = p_begin + AVRC_VENDOR_HDR_SIZE;
@@ -365,6 +385,10 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
     tAVRC_RASM_CB   *p_rcb;
     tAVRC_NEXT_CMD   avrc_cmd;
 
+    if (handle >= AVCT_NUM_CONN) {
+        return 0;
+    }
+
     p_data  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
 
     /* Skip over vendor header (ctype, subunit*, opcode, CO_ID) */
@@ -390,14 +414,22 @@ static UINT8 avrc_proc_far_msg(UINT8 handle, UINT8 label, UINT8 cr, BT_HDR **pp_
                 /* Allocate buffer for re-assembly */
                 p_rcb->rasm_pdu = *p_data;
                 if ((p_rcb->p_rmsg = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE)) != NULL) {
+                    UINT16 buf_payload_max = (UINT16)(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR));
+                    UINT16 copy_len = p_pkt->len;
+                    if (copy_len > buf_payload_max) {
+                        AVRC_TRACE_WARNING("copy_len(%u) > buf_payload_max(%u)",
+                                           (unsigned)copy_len, (unsigned)buf_payload_max);
+                        copy_len = buf_payload_max;
+                    }
                     /* Copy START packet to buffer for re-assembling fragments*/
                     memcpy(p_rcb->p_rmsg, p_pkt, sizeof(BT_HDR));   /* Copy bt hdr */
 
                     /* Copy metadata message */
                     memcpy((UINT8 *)(p_rcb->p_rmsg + 1),
-                           (UINT8 *)(p_pkt + 1) + p_pkt->offset, p_pkt->len);
+                           (UINT8 *)(p_pkt + 1) + p_pkt->offset, copy_len);
 
                     /* offset of start of metadata response in reassembly buffer */
+                    p_rcb->p_rmsg->len = copy_len;
                     p_rcb->p_rmsg->offset = p_rcb->rasm_offset = 0;
 
                     /* Free original START packet, replace with pointer to reassembly buffer  */
@@ -525,8 +557,13 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 #endif
     tAVRC_MSG_VENDOR *p_msg = &msg.vendor;
 
+    if (handle >= AVCT_NUM_CONN) {
+        osi_free(p_pkt);
+        return;
+    }
+
     if (cr == AVCT_CMD &&
-            (p_pkt->layer_specific & AVCT_DATA_CTRL && AVRC_PACKET_LEN < sizeof(p_pkt->len))) {
+            (p_pkt->layer_specific & AVCT_DATA_CTRL && AVRC_PACKET_LEN < p_pkt->len)) {
         /* Ignore the invalid AV/C command frame */
 #if (BT_USE_TRACES == TRUE)
         p_drop_msg = "dropped - too long AV/C cmd frame size";
@@ -545,7 +582,22 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
 
     p_data  = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     memset(&msg, 0, sizeof(tAVRC_MSG) );
-    {
+
+    if (p_pkt->layer_specific == AVCT_DATA_BROWSE) {
+        // opcode = AVRC_OP_BROWSE;
+        // msg.browse.hdr.ctype = cr;
+        // msg.browse.p_browse_data = p_data;
+        // msg.browse.browse_len = p_pkt->len;
+        // msg.browse.p_browse_pkt = p_pkt;
+        AVRC_TRACE_ERROR("BROWSE CHANNEL NOT SUPPORTED NOW!");
+        osi_free(p_pkt);
+        return;
+    } else {
+        if (p_pkt->len < AVRC_AVC_HDR_SIZE) {
+            AVRC_TRACE_WARNING("Bad message length:%d (< %d)", p_pkt->len, AVRC_AVC_HDR_SIZE);
+            osi_free(p_pkt);
+            return;
+        }
         msg.hdr.ctype           = p_data[0] & AVRC_CTYPE_MASK;
         AVRC_TRACE_DEBUG("avrc_msg_cback handle:%d, ctype:%d, offset:%d, len: %d",
                          handle, msg.hdr.ctype, p_pkt->offset, p_pkt->len);
@@ -562,6 +614,10 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
             if (cr == AVCT_CMD) {
                 /* send the response to the peer */
                 p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_UNIT_INFO_RSP_LEN);
+                if (p_rsp == NULL) {
+                    drop = TRUE;
+                    break;
+                }
                 p_rsp_data = avrc_get_data_ptr(p_rsp);
                 *p_rsp_data = AVRC_RSP_IMPL_STBL;
                 /* check & set the offset. set response code, set subunit_type & subunit_id,
@@ -578,6 +634,14 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
                 p_drop_msg = "auto respond";
 #endif
             } else {
+                if (p_pkt->len < AVRC_OP_UNIT_INFO_RSP_LEN) {
+                    AVRC_TRACE_WARNING("Bad message length:%d (< %d)", p_pkt->len, AVRC_OP_UNIT_INFO_RSP_LEN);
+                    drop = TRUE;
+#if (BT_USE_TRACES == TRUE)
+                    p_drop_msg = "UNIT_INFO_RSP too short";
+#endif
+                    break;
+                }
                 /* parse response */
                 p_data += 4; /* 3 bytes: ctype, subunit*, opcode + octet 3 (is 7)*/
                 msg.unit.unit_type  = (*p_data & AVRC_SUBTYPE_MASK) >> AVRC_SUBTYPE_SHIFT;
@@ -591,10 +655,14 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
             if (cr == AVCT_CMD) {
                 /* send the response to the peer */
                 p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_SUB_UNIT_INFO_RSP_LEN);
+                if (p_rsp == NULL) {
+                    drop = TRUE;
+                    break;
+                }
                 p_rsp_data = avrc_get_data_ptr(p_rsp);
                 *p_rsp_data = AVRC_RSP_IMPL_STBL;
                 /* check & set the offset. set response code, set (subunit_type & subunit_id),
-                   set AVRC_OP_SUB_INFO, set (page & extention code) */
+                   set AVRC_OP_SUB_INFO, set (page & extension code) */
                 p_rsp_data      += 4;
                 /* Panel subunit & id=0 */
                 *p_rsp_data++   = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT);
@@ -606,6 +674,14 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
                 p_drop_msg = "auto responded";
 #endif
             } else {
+                if (p_pkt->len < AVRC_OP_SUB_UNIT_INFO_RSP_LEN) {
+                    AVRC_TRACE_WARNING("Bad message length:%d (< %d)", p_pkt->len, AVRC_OP_SUB_UNIT_INFO_RSP_LEN);
+                    drop = TRUE;
+#if (BT_USE_TRACES == TRUE)
+                    p_drop_msg = "UNIT_INFO_RSP too short";
+#endif
+                    break;
+                }
                 /* parse response */
                 p_data += AVRC_AVC_HDR_SIZE; /* 3 bytes: ctype, subunit*, opcode */
                 msg.sub.page    = (*p_data++ >> AVRC_SUB_PAGE_SHIFT) & AVRC_SUB_PAGE_MASK;
@@ -725,13 +801,17 @@ static void avrc_msg_cback(UINT8 handle, UINT8 label, UINT8 cr,
     if (reject) {
         /* reject unsupported opcode */
         p_rsp = avrc_copy_packet(p_pkt, AVRC_OP_REJ_MSG_LEN);
-        p_rsp_data = avrc_get_data_ptr(p_rsp);
-        *p_rsp_data = AVRC_RSP_REJ;
+        if (p_rsp == NULL) {
+            drop = TRUE;
+        } else {
+            p_rsp_data = avrc_get_data_ptr(p_rsp);
+            *p_rsp_data = AVRC_RSP_REJ;
 #if (BT_USE_TRACES == TRUE)
-        p_drop_msg = "rejected";
+            p_drop_msg = "rejected";
 #endif
-        cr      = AVCT_RSP;
-        drop    = TRUE;
+            cr      = AVCT_RSP;
+            drop    = TRUE;
+        }
     }
 
     if (p_rsp) {
@@ -937,6 +1017,10 @@ UINT16 AVRC_MsgReq (UINT8 handle, UINT8 label, UINT8 ctype, BT_HDR *p_pkt)
 
     if (!p_pkt) {
         return AVRC_BAD_PARAM;
+    }
+
+    if (handle >= AVCT_NUM_CONN) {
+        return AVRC_BAD_HANDLE;
     }
 
     AVRC_TRACE_DEBUG("%s handle = %u label = %u ctype = %u len = %d",

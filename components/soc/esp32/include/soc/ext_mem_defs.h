@@ -1,13 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #ifndef _CACHE_MEMORY_H_
 #define _CACHE_MEMORY_H_
 
 #include "esp_bit_defs.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,9 +33,6 @@ extern "C" {
 #define SOC_DRAM_FLASH_ADDRESS_LOW      SOC_DROM0_CACHE_ADDRESS_LOW
 #define SOC_DRAM_FLASH_ADDRESS_HIGH     SOC_DROM0_CACHE_ADDRESS_HIGH
 
-#define SOC_DRAM_PSRAM_ADDRESS_LOW      SOC_DRAM1_CACHE_ADDRESS_LOW
-#define SOC_DRAM_PSRAM_ADDRESS_HIGH     SOC_DRAM1_CACHE_ADDRESS_HIGH
-
 #define SOC_BUS_SIZE(bus_name)                     (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define SOC_ADDRESS_IN_BUS(bus_name, vaddr)        ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 #define SOC_ADDRESS_IN_IRAM0_CACHE(vaddr)          SOC_ADDRESS_IN_BUS(SOC_IRAM0_CACHE, vaddr)
@@ -60,7 +56,6 @@ extern "C" {
 #define SOC_MMU_VADDR_MASK                    0x3FFFFF
 //MMU entry num, 384 entries that are used in IDF for Flash
 #define SOC_MMU_ENTRY_NUM                     384
-
 
 #define SOC_MMU_DBUS_VADDR_BASE               0x3E000000
 #define SOC_MMU_IBUS_VADDR_BASE               0x40000000
@@ -90,9 +85,6 @@ extern "C" {
 
 #define SOC_MMU_DRAM1_LINEAR_ADDRESS_LOW      (SOC_DRAM1_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
 #define SOC_MMU_DRAM1_LINEAR_ADDRESS_HIGH     (SOC_DRAM1_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
-
-
-
 
 #ifdef __cplusplus
 }

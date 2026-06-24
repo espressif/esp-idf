@@ -1,0 +1,10 @@
+## IDF Component Manager Manifest File
+dependencies:
+  idf:
+    version: ">=5.1"
+  protocol_examples_common:
+    path: ${IDF_PATH}/examples/common_components/protocol_examples_common
+  dns_over_https:
+    path: ${IDF_PATH}/examples/protocols/dns_over_https/components/dns_over_https
+  time_sync:
+    path: ${IDF_PATH}/examples/protocols/dns_over_https/components/time_sync

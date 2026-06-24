@@ -1,0 +1,271 @@
+config BT_CTRL_BR_EDR_MAX_ACL_CONN
+    int "BR/EDR Max ACL Connections"
+    default 2
+    range 1 7
+    help
+        BR/EDR ACL maximum connections of bluetooth controller.
+
+config BT_CTRL_BR_EDR_ACL_LINK_ENABLE
+    bool
+    default y
+
+if BT_CTRL_BR_EDR_ACL_LINK_ENABLE
+    menu "ACL Tx/Rx buffer number configurations"
+        config BT_CTRL_BR_EDR_ACLU_TX_BUF_NB
+            int "Total BR/EDR ACL-U TX buffer number"
+            depends on BT_CTRL_BREDR_ENABLE && (BT_CTRL_BR_EDR_MAX_ACL_CONN != 0)
+            default 4
+            range 3 10
+            help
+                Total BR/EDR ACL-U TX buffer number of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_DYNAMIC_ACLU_TX_BUF_NB
+            int "Dynamic BR/EDR ACL-U TX buffer number"
+            depends on BT_CTRL_BREDR_ENABLE && (BT_CTRL_BR_EDR_MAX_ACL_CONN != 0)
+            default 0
+            range 0 BT_CTRL_BR_EDR_ACLU_TX_BUF_NB
+            help
+                BR/EDR dynamic ACL-U TX buffer number of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_ACLU_RX_BUF_NB
+            int "BR/EDR ACL-U RX buffer number"
+            depends on BT_CTRL_BREDR_ENABLE && (BT_CTRL_BR_EDR_MAX_ACL_CONN != 0)
+            default 6
+            range 4 8
+            help
+                BR/EDR ACL-U RX buffer number of bluetooth controller.
+    endmenu
+endif
+
+config BT_CTRL_BR_EDR_MAX_SYNC_CONN
+    int "BR/EDR Max Synchronous(SCO/eSCO) Connections"
+    default 0
+    range 0 3
+    help
+        BR/EDR Synchronize maximum connections of bluetooth controller.
+
+if BT_CTRL_BR_EDR_MAX_SYNC_CONN != 0
+
+    menu "Supported eSCO packet types"
+        config BT_CTRL_BR_EDR_ESCO_EV4_SUPP
+            bool "BR/EDR eSCO support EV4 packet type"
+            default n
+            help
+                This will affect the LM features of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_ESCO_EV5_SUPP
+            bool "BR/EDR eSCO support EV5 packet type"
+            default n
+            help
+                This will affect the LM features of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_ESCO_EV3_2_SUPP
+            bool "BR/EDR eSCO support 2-EV3 packet type"
+            default y
+            help
+                This will affect the LM features of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_ESCO_EV3_3_SUPP
+            bool "BR/EDR eSCO support 3-EV3 packet type"
+            default n
+            help
+                This will affect the LM features of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_ESCO_3_SLOTS_SUPP
+            bool "BR/EDR eSCO support 3-slot packet types"
+            default n
+            help
+                This will affect the LM features of bluetooth controller.
+    endmenu
+
+    menu "Synchronous Tx/Rx buffer numbers"
+        config BT_CTRL_BR_EDR_SYNC_TX_BUF_NB
+            int "BR/EDR Sync(SCO/eSCO) TX buffer number"
+            default 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
+            default 6 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
+            default 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
+            range 2 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
+            range 4 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
+            range 6 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
+            help
+                BR/EDR Synchronize TX buffer number of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_SYNC_RX_BUF_NB
+            int "BR/EDR Sync(SCO/eSCO) RX buffer number"
+            default 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
+            default 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
+            default 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
+            range 3 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
+            range 6 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
+            range 9 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
+            help
+                BR/EDR Synchronize RX buffer number of bluetooth controller.
+    endmenu
+
+    choice BT_CTRL_BR_EDR_SCO_DATA_PATH
+        prompt "BR/EDR Sync(SCO/eSCO) default data path"
+        default BT_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+        help
+            SCO/eSCO data path, i.e. HCI or PCM.
+            SCO data can be sent/received through HCI synchronous packets, or the data
+            can be routed to on-chip I2S module. The latter option is not yet supported.
+
+        config BT_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+            bool "HCI"
+        # config BT_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+            # bool "PCM"
+    endchoice
+
+endif
+
+config BT_CTRL_BR_EDR_TEST_MODE_EN
+    bool "Enable BR/EDR test mode"
+    default n
+    help
+        Enable BR/EDR test mode
+
+config BT_CTRL_BR_EDR_APB_EN
+    bool "Enable BR/EDR Active Peripheral Broadcast"
+    default n
+    help
+        Enable BR/EDR Active Peripheral Broadcast
+
+config BT_CTRL_BR_EDR_APB_EXT_EN
+    bool "Enable BR/EDR Broadcast Encryption or Piconet Clock Adjustment"
+    select BT_CTRL_BR_EDR_APB_EN
+    default n
+    help
+        Enable BR/EDR Broadcast Encryption or Piconet Clock Adjustment
+
+choice BT_CTRL_BR_EDR_APB_EXT
+    prompt "Choice BR/EDR Broadcast Encryption or Piconet Clock Adjustment"
+    depends on BT_CTRL_BR_EDR_APB_EXT_EN
+    default BT_CTRL_BR_EDR_APB_EXT_PCA_EN
+    help
+        Enable BR/EDR Broadcast Encryption or Piconet Clock Adjustment
+
+    config BT_CTRL_BR_EDR_APB_EXT_BCST_ENC_EN
+        bool "Broadcast Encryption"
+        help
+            Enable BR/EDR Broadcast Encryption
+
+    config BT_CTRL_BR_EDR_APB_EXT_PCA_EN
+        bool "Piconet Clock Adjustment"
+        help
+            Enable BR/EDR Piconet Clock Adjustment
+endchoice
+
+config BT_CTRL_BR_EDR_CPB_TX_EN
+    bool "Enable BR/EDR Connectionless Peripheral Broadcast Transimit"
+    default n
+    help
+        Enable BR/EDR Connectionless Peripheral Broadcast Transimit
+
+config BT_CTRL_BR_EDR_CPB_RX_EN
+    bool "Enable BR/EDR Connectionless Peripheral Broadcast Receive"
+    default n
+    help
+        Enable BR/EDR Connectionless Peripheral Broadcast Receive
+
+config BT_CTRL_BR_EDR_HOLD_EN
+    bool "Enable BR/EDR Hold Mode"
+    default n
+    help
+        Enable BR/EDR Hold Mode
+
+config BT_CTRL_BR_EDR_LK_STORE_EN
+    bool "Enable BR/EDR controller link key storage"
+    default n
+    help
+        Enable BR/EDR controller link key storage, only support store link key in RAM for now.
+
+config BT_CTRL_BR_EDR_DTM_EN
+    bool "Enable BR/EDR controller direct test mode"
+    default n
+    help
+        Enable BR/EDR controller direct test mode
+
+config BT_CTRL_BR_EDR_TX_CCA_ENABLED
+    bool "Enable BR/EDR TX CCA feature"
+    default n
+    help
+        Enable CCA feature to cancel sending the packet if the signal power is stronger than CCA threshold.
+
+config BT_CTRL_BR_EDR_CCA_RSSI_THRESH
+    int "CCA RSSI threshold value"
+    depends on BT_CTRL_BR_EDR_TX_CCA_ENABLED
+    range 20 100
+    default 20
+    help
+        Power threshold of CCA in unit of -1 dBm.
+
+menu "TX Power Level settings"
+    config BT_CTRL_BR_EDR_TX_PWR_ACL_MIN
+        int "Default minimum TX power level for ACL"
+        default -13
+        range -24 12
+        help
+            Minimum BR/EDR transmission power level for ACL.
+
+    config BT_CTRL_BR_EDR_TX_PWR_ACL_MAX
+        int "Default maximum TX power level for ACL"
+        default 4
+        range -24 12
+        help
+            Maximum BR/EDR transmission power level for ACL.
+
+    config BT_CTRL_BR_EDR_TX_PWR_APB
+        int "Default TX power level for APB"
+        depends on BT_CTRL_BR_EDR_APB_EN
+        default 4
+        range -24 12
+        help
+            BR/EDR transmission power level for APB.
+
+    config BT_CTRL_BR_EDR_TX_PWR_PAGE
+        int "Default TX power level for Page"
+        default 4
+        range -24 12
+        help
+            BR/EDR transmission power level for Page.
+
+    config BT_CTRL_BR_EDR_TX_PWR_PSCAN
+        int "Default TX power level for Page Scan"
+        default 4
+        range -24 12
+        help
+            BR/EDR transmission power level for Page Scan.
+
+    config BT_CTRL_BR_EDR_TX_PWR_ISCAN
+        int "Default TX power level for Inquiry Scan"
+        default 4
+        range -24 12
+        help
+            BR/EDR transmission power level for Inquiry Scan.
+
+    config BT_CTRL_BR_EDR_TX_PWR_CPB
+        int "Default TX power level for CPB"
+        depends on BT_CTRL_BR_EDR_CPB_TX_EN
+        default 4
+        range -24 12
+        help
+            BR/EDR transmission power level for CPB.
+
+    config BT_CTRL_BR_EDR_TX_PWR_STRAIN
+        int "Default TX power level for Synchronization Train"
+        depends on BT_CTRL_BR_EDR_CPB_TX_EN
+        default 4
+        range -24 12
+        help
+            BR/EDR transmission power level for Synchronization Train.
+endmenu
+
+menu "BR/EDR Vendor Specific HCI Commands and Events"
+    config BT_CTRL_BR_EDR_LEGACY_AUTH_VENDOR_EVT
+        bool "Legacy Authentication Vendor Specific Event Enable"
+        default y
+        help
+            To protect from BIAS attack during Legacy authentication,
+            Legacy authentication Vendor specific event should be enabled
+
+endmenu

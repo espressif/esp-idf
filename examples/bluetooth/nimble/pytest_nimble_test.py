@@ -1,29 +1,35 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
-import os.path
-from typing import Tuple
+from pathlib import Path
 
 import pexpect
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
+
+CUR_DIR = Path(__file__).parent.resolve()
 
 
 # Case 1: BLE power save test
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.esp32
-@pytest.mark.wifi_two_dut
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-11112')
+@pytest.mark.two_duts
 @pytest.mark.parametrize(
-    'count, app_path', [
-        (2,
-         f'{os.path.join(os.path.dirname(__file__), "power_save")}|{os.path.join(os.path.dirname(__file__), "blecent")}'),
+    'count, app_path',
+    [
+        (
+            2,
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
+        ),
     ],
     indirect=True,
 )
-def test_power_save_conn(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
+@idf_parametrize(
+    'target',
+    ['esp32c6', 'esp32h2', 'esp32c3', 'esp32s3', 'esp32c5', 'esp32c61', 'esp32', 'esp32h4'],
+    indirect=['target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='lack of runners')
+def test_power_save_conn(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
     peripheral = dut[0]
     central = dut[1]
 
@@ -38,18 +44,82 @@ def test_power_save_conn(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C2
-@pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
+@pytest.mark.two_duts
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'config, count, app_path, baud', [
-        ('esp32c2_xtal26m', 2,
-         f'{os.path.join(os.path.dirname(__file__), "power_save")}|{os.path.join(os.path.dirname(__file__), "blecent")}',
-         '74880'),
+    'config, count, app_path, baud',
+    [
+        (
+            'esp32c2_xtal26m',
+            2,
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
+            '74880',
+        ),
     ],
     indirect=True,
 )
-def test_power_save_conn_esp32c2_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_power_save_conn_esp32c2_26mhz(dut: tuple[IdfDut, IdfDut]) -> None:
+    peripheral = dut[0]
+    central = dut[1]
+
+    peripheral.expect('NimBLE_BLE_PRPH: BLE Host Task Started', timeout=5)
+    central.expect('NimBLE_BLE_CENT: BLE Host Task Started', timeout=5)
+    peripheral.expect('Returned from app_main()', timeout=5)
+    central.expect('Returned from app_main()', timeout=5)
+    central.expect('Connection established', timeout=30)
+    peripheral.expect('connection established; status=0', timeout=30)
+    output = peripheral.expect(pexpect.TIMEOUT, timeout=30)
+    assert 'rst:' not in str(output) and 'boot:' not in str(output)
+
+
+# Case 2: BLE power save test for ESP32C2ECO4
+@pytest.mark.two_duts
+@pytest.mark.xtal_26mhz
+@pytest.mark.esp32c2_rev2
+@pytest.mark.parametrize(
+    'config, count, app_path, baud',
+    [
+        (
+            'esp32c2_rev2_xtal26m',
+            2,
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
+            '74880',
+        ),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_power_save_conn_esp32c2_rev2(dut: tuple[IdfDut, IdfDut]) -> None:
+    peripheral = dut[0]
+    central = dut[1]
+
+    peripheral.expect('NimBLE_BLE_PRPH: BLE Host Task Started', timeout=5)
+    central.expect('NimBLE_BLE_CENT: BLE Host Task Started', timeout=5)
+    peripheral.expect('Returned from app_main()', timeout=5)
+    central.expect('Returned from app_main()', timeout=5)
+    central.expect('Connection established', timeout=30)
+    peripheral.expect('connection established; status=0', timeout=30)
+    output = peripheral.expect(pexpect.TIMEOUT, timeout=30)
+    assert 'rst:' not in str(output) and 'boot:' not in str(output)
+
+
+# Case 2: BLE power save test for ESP32C3ECO7
+@pytest.mark.two_duts
+@pytest.mark.esp32c3_rev1
+@pytest.mark.parametrize(
+    'config, count, app_path',
+    [
+        (
+            'esp32c3_rev1',
+            2,
+            f'{str(CUR_DIR / "power_save")}|{str(CUR_DIR / "blecent")}',
+        ),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_power_save_conn_esp32c3_rev1(dut: tuple[IdfDut, IdfDut]) -> None:
     peripheral = dut[0]
     central = dut[1]
 

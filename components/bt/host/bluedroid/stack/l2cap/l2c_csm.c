@@ -33,7 +33,6 @@
 #include "l2c_int.h"
 #include "btm_int.h"
 #include "stack/btu.h"
-#include "stack/hcimsgs.h"
 #include "osi/allocator.h"
 
 #if (L2CAP_COC_INCLUDED == TRUE)
@@ -121,7 +120,6 @@ void l2c_csm_execute (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 *******************************************************************************/
 static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 {
-    tL2C_CONN_INFO          *p_ci = (tL2C_CONN_INFO *)p_data;
     UINT16                  local_cid = p_ccb->local_cid;
     tL2CA_DISCONNECT_IND_CB *disconnect_ind;
     tL2CA_CONNECT_CFM_CB    *connect_cfm;
@@ -167,15 +165,28 @@ static void l2c_csm_closed (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
                                   p_ccb->p_lcb->handle, TRUE, &l2c_link_sec_comp, p_ccb);
         break;
 
-    case L2CEVT_LP_CONNECT_CFM_NEG:                     /* Link failed          */
-        /* Disconnect unless ACL collision and upper layer wants to handle it */
-        if (p_ci->status != HCI_ERR_CONNECTION_EXISTS
-                || !btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+    case L2CEVT_LP_CONNECT_CFM_NEG: {                   /* Link failed          */
+        tL2C_CONN_INFO *p_ci = (tL2C_CONN_INFO *)p_data;
+        BOOLEAN keep_for_collision = FALSE;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+        if (p_ci->status == HCI_ERR_CONNECTION_EXISTS
+            && p_ccb->p_lcb->br_edr_create_con_retries <= L2CAP_MAX_RECONNECT_ON_COLLISION
+            && btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+            keep_for_collision = TRUE;
+        }
+#else
+        if (p_ci->status == HCI_ERR_CONNECTION_EXISTS
+            && btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+            keep_for_collision = TRUE;
+        }
+#endif
+        if (!keep_for_collision) {
             L2CAP_TRACE_API ("L2CAP - Calling ConnectCfm_Cb(), CID: 0x%04x  Status: %d", p_ccb->local_cid, p_ci->status);
             l2cu_release_ccb (p_ccb);
             (*connect_cfm)(local_cid, p_ci->status);
         }
         break;
+    }
 
     case L2CEVT_L2CA_CONNECT_REQ:                       /* API connect request  */
         /* Cancel sniff mode if needed */
@@ -695,7 +706,7 @@ static void l2c_csm_config (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         l2cu_process_peer_cfg_rsp (p_ccb, p_cfg);
 
         if (p_cfg->result != L2CAP_CFG_PENDING) {
-            /* TBD: When config options grow beyong minimum MTU (48 bytes)
+            /* TBD: When config options grow beyond minimum MTU (48 bytes)
              *      logic needs to be added to handle responses with
              *      continuation bit set in flags field.
              *       1. Send additional config request out until C-bit is cleared in response
@@ -885,7 +896,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     tL2CAP_CFG_INFO         *p_cfg;
     tL2C_CHNL_STATE         tempstate;
     UINT8                   tempcfgdone;
-    UINT8                   cfg_result;
+    UINT8                   cfg_result = L2CAP_PEER_CFG_DISCONNECT;
 
 #if (BT_TRACE_VERBOSE == TRUE)
     L2CAP_TRACE_EVENT ("L2CAP - LCID: 0x%04x  st: OPEN  evt: %s",
@@ -916,7 +927,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 
     case L2CEVT_LP_QOS_VIOLATION_IND:               /* QOS violation         */
         /* Tell upper layer. If service guaranteed, then clear the channel   */
-        if (p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb) {
+        if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb) {
             (*p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)(p_ccb->p_lcb->remote_bd_addr);
         }
         break;
@@ -931,7 +942,11 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
 
         btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, L2CAP_CHNL_CFG_TIMEOUT);
 
-        if ((cfg_result = l2cu_process_peer_cfg_req (p_ccb, p_cfg)) == L2CAP_PEER_CFG_OK) {
+        if (p_cfg) {
+            cfg_result = l2cu_process_peer_cfg_req (p_ccb, p_cfg);
+        }
+
+        if (cfg_result == L2CAP_PEER_CFG_OK) {
             (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
         }
 
@@ -968,7 +983,7 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     break;
 
     case L2CEVT_L2CAP_DATA:                         /* Peer data packet rcvd    */
-        if ((p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_DataInd_Cb)) {
+        if (p_data && (p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_DataInd_Cb)) {
             (*p_ccb->p_rcb->api.pL2CA_DataInd_Cb)(p_ccb->local_cid, (BT_HDR *)p_data);
         }
         break;
@@ -988,16 +1003,20 @@ static void l2c_csm_open (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
     break;
 
     case L2CEVT_L2CA_DATA_WRITE:                    /* Upper layer data to send */
-        l2c_enqueue_peer_data (p_ccb, (BT_HDR *)p_data);
-        l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
+        if (p_data) {
+            l2c_enqueue_peer_data (p_ccb, (BT_HDR *)p_data);
+            l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
+        }
         break;
 
     case L2CEVT_L2CA_CONFIG_REQ:                   /* Upper layer config req   */
-        p_ccb->chnl_state = CST_CONFIG;
-        p_ccb->config_done &= ~CFG_DONE_MASK;
-        l2cu_process_our_cfg_req (p_ccb, (tL2CAP_CFG_INFO *)p_data);
-        l2cu_send_peer_config_req (p_ccb, (tL2CAP_CFG_INFO *)p_data);
-        btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, L2CAP_CHNL_CFG_TIMEOUT);
+        if (p_data) {
+            p_ccb->chnl_state = CST_CONFIG;
+            p_ccb->config_done &= ~CFG_DONE_MASK;
+            l2cu_process_our_cfg_req (p_ccb, (tL2CAP_CFG_INFO *)p_data);
+            l2cu_send_peer_config_req (p_ccb, (tL2CAP_CFG_INFO *)p_data);
+            btu_start_timer (&p_ccb->timer_entry, BTU_TTYPE_L2CAP_CHNL, L2CAP_CHNL_CFG_TIMEOUT);
+        }
         break;
 
     case L2CEVT_TIMEOUT:

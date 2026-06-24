@@ -13,7 +13,7 @@ OpenThread can run under the following modes on Espressif chips:
 Standalone Node
 +++++++++++++++
 
-The full OpenThread stack and the application layer run on the same chip. This mode is available on chips with 15.4 radio such as ESP32-H2 and ESP32-C6.
+The full OpenThread stack and the application layer run on the same chip. This mode is available on chips with 15.4 radio such as ESP32-H2, ESP32-C6 and ESP32-C5.
 
 Radio Co-Processor (RCP)
 ++++++++++++++++++++++++
@@ -101,6 +101,21 @@ The following steps are required to deinitialize the OpenThread stack:
 
 - Call :cpp:func:`esp_netif_destroy` and :cpp:func:`esp_openthread_netif_glue_deinit` to deinitialize the OpenThread network interface if you have created one.
 - Call :cpp:func:`esp_openthread_deinit` to deinitialize the OpenThread stack.
+
+
+OpenThread Macro Definitions
+----------------------------
+
+In the OpenThread protocol stack, defining macros to enable features and configure parameters is a common practice. Users can define macro values to enable or disable specific features and adjust parameters. ESP provides the following methods for defining OpenThread macros:
+
+- Using configuration menu (``menuconfig``): Some macros are mapped to Kconfig files and can be configured through ``idf.py menuconfig → Component config → OpenThread``. This allows enabling or disabling features and setting related parameters.
+- Using user-defined header files: Users can create a custom header file and enable it via ``idf.py menuconfig → Component config → OpenThread → Thread Extended Features → Use a header file defined by customer``. The priority of the custom header file is second only to the ``menuconfig``.
+- Using ``openthread-core-esp32x-xxx-config.h`` for configuration: Some macros have default values set in the OpenThread private header files. These cannot currently be modified through the ``menuconfig``, but can be modified via user-defined header files.
+- Using OpenThread stack default configurations: Other macros are assigned default values when defined in the OpenThread stack.
+
+.. note::
+
+    The priority of the above configuration methods, from highest to lowest, is as follows: Configuration Menu → User-defined Header File → openthread-core-esp32x-xxx-config.h → OpenThread Stack Default Configuration
 
 The OpenThread Border Router
 ----------------------------

@@ -42,6 +42,7 @@ enum {
     BTA_SDP_API_SEARCH_EVT,
     BTA_SDP_API_CREATE_RECORD_USER_EVT,
     BTA_SDP_API_REMOVE_RECORD_USER_EVT,
+    BTA_SDP_API_DISABLE_EVT,
     BTA_SDP_MAX_INT_EVT
 };
 
@@ -105,6 +106,7 @@ extern void bta_sdp_enable (tBTA_SDP_MSG *p_data);
 extern void bta_sdp_search (tBTA_SDP_MSG *p_data);
 extern void bta_sdp_create_record(tBTA_SDP_MSG *p_data);
 extern void bta_sdp_remove_record(tBTA_SDP_MSG *p_data);
+extern void bta_sdp_disable(tBTA_SDP_MSG *p_data);
 
 #endif  ///SDP_INCLUDED == TRUE
 

@@ -3,6 +3,8 @@
 VisualGDB
 #########
 
+:link_to_translation:`zh_CN:[中文]`
+
 What Is VisualGDB?
 ~~~~~~~~~~~~~~~~~~
 

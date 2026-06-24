@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -69,22 +69,26 @@ gatt_svr_chr_access_le_phy(uint16_t conn_handle, uint16_t attr_handle,
 
         case BLE_GATT_ACCESS_OP_WRITE_CHR:
             len = OS_MBUF_PKTLEN(ctxt->om);
-            if (len > 0) {
-                le_phy_val = (uint8_t *)malloc(len * sizeof(uint8_t));
-                if (le_phy_val) {
-                    rc = ble_hs_mbuf_to_flat(ctxt->om, le_phy_val, len, &copied_len);
-                    if (rc == 0) {
-                        MODLOG_DFLT(INFO, "Write received of len = %d", copied_len);
-                        return 0;
-                    } else {
-                        MODLOG_DFLT(ERROR, "Failed to receive write characteristic");
-                    }
-                }
+            if (len == 0) {
+                return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
             }
-            break;
+            le_phy_val = (uint8_t *)malloc(len);
+            if (le_phy_val == NULL) {
+                return BLE_ATT_ERR_INSUFFICIENT_RES;
+            }
+
+            rc = ble_hs_mbuf_to_flat(ctxt->om, le_phy_val, len, &copied_len);
+            free(le_phy_val);
+            if (rc == 0) {
+                MODLOG_DFLT(INFO, "Write received of len = %d", (int)copied_len);
+                return 0;
+            }
+
+            MODLOG_DFLT(ERROR, "Failed to receive write characteristic");
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
 
         default:
-            break;
+            return BLE_ATT_ERR_UNLIKELY;
         }
     }
 
@@ -132,8 +136,12 @@ gatt_svr_init_le_phy(void)
 {
     int rc;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
 
     rc = ble_gatts_count_cfg(gatt_svr_svcs_le_phy);
     if (rc != 0) {

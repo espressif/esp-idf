@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,17 +28,26 @@ typedef enum {
     ESP_BT_L2CAP_NO_SERVER,              /*!< No server */
 } esp_bt_l2cap_status_t;
 
-/**
- * @brief Security Setting Mask. Use these three mask mode:
- *        1. ESP_BT_L2CAP_SEC_NONE
- *        2. ESP_BT_L2CAP_SEC_AUTHENTICATE
- *        3. (ESP_BT_L2CAP_SEC_ENCRYPT|ESP_BT_L2CAP_SEC_AUTHENTICATE)
+/*
+ * Security setting mask for L2CAP.
+ * - Use one of the following mask modes:
+ *     1. `ESP_BT_L2CAP_SEC_NONE`
+ *     2. `ESP_BT_L2CAP_SEC_AUTHENTICATE`
+ *     3. (`ESP_BT_L2CAP_SEC_ENCRYPT` | `ESP_BT_L2CAP_SEC_AUTHENTICATE`)
  */
 #define ESP_BT_L2CAP_SEC_NONE            0x0000    /*!< No security */
 #define ESP_BT_L2CAP_SEC_AUTHORIZE       0x0001    /*!< Authorization required */
 #define ESP_BT_L2CAP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required */
 #define ESP_BT_L2CAP_SEC_ENCRYPT         0x0024    /*!< Encryption required */
-typedef uint32_t esp_bt_l2cap_cntl_flags_t;
+typedef uint32_t esp_bt_l2cap_cntl_flags_t;        /*!< L2CAP control flags type */
+
+/**
+ * @brief L2CAP status parameters
+ */
+typedef struct {
+    bool l2cap_inited;                   /*!< l2cap initialization */
+    uint8_t conn_num;                    /*!< Number of connections */
+} esp_bt_l2cap_protocol_status_t;
 
 /**
  * @brief L2CAP callback function events
@@ -51,6 +60,8 @@ typedef enum {
     ESP_BT_L2CAP_START_EVT                = 18,     /*!< When L2CAP server started, the event comes */
     ESP_BT_L2CAP_CL_INIT_EVT              = 19,     /*!< When L2CAP client initiated a connection, the event comes */
     ESP_BT_L2CAP_SRV_STOP_EVT             = 36,     /*!< When L2CAP server stopped, the event comes */
+    ESP_BT_L2CAP_VFS_REGISTER_EVT         = 38,     /*!< When L2CAP VFS register, the event comes */
+    ESP_BT_L2CAP_VFS_UNREGISTER_EVT       = 39,     /*!< When L2CAP VFS unregister, the event comes */
 } esp_bt_l2cap_cb_event_t;
 
 /**
@@ -114,16 +125,30 @@ typedef union {
      */
     struct l2cap_srv_stop_evt_param {
         esp_bt_l2cap_status_t  status;         /*!< status */
-        uint8_t                psm;            /*!< local psm */
+        uint16_t               psm;            /*!< local psm */
     } srv_stop;                                /*!< L2CAP callback param of ESP_BT_L2CAP_SRV_STOP_EVT */
+
+    /**
+     * @brief ESP_BT_L2CAP_VFS_REGISTER_EVT
+     */
+    struct l2cap_vfs_register_evt_param {
+        esp_bt_l2cap_status_t    status;       /*!< status */
+    } vfs_register;                            /*!< L2CAP callback param of ESP_BT_L2CAP_VFS_REGISTER_EVT */
+
+    /**
+     * @brief ESP_BT_L2CAP_VFS_UNREGISTER_EVT
+     */
+    struct l2cap_vfs_unregister_evt_param {
+        esp_bt_l2cap_status_t    status;        /*!< status */
+    } vfs_unregister;                           /*!< L2CAP callback param of ESP_BT_L2CAP_VFS_UNREGISTER_EVT */
 
 } esp_bt_l2cap_cb_param_t;
 
 /**
  * @brief       L2CAP callback function type.
  *
- * @param       event:      Event type
- * @param       param:      Point to callback parameter, currently is union type
+ * @param[in]   event:      Event type
+ * @param[in]   param:      Point to callback parameter, currently is union type
  */
 typedef void (* esp_bt_l2cap_cb_t)(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_cb_param_t *param);
 
@@ -179,11 +204,12 @@ esp_err_t esp_bt_l2cap_deinit(void);
 esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t remote_psm, esp_bd_addr_t peer_bd_addr);
 
 /**
- * @brief       This function create a L2CAP server and starts listening for an
- *              L2CAP connection request from a remote Bluetooth device.
- *              When the server is started successfully, the callback is called with ESP_BT_L2CAP_START_EVT.
- *              When the connection is established, the callback is called with ESP_BT_L2CAP_OPEN_EVT.
- *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+* @brief Create an L2CAP server and start listening for connection requests.
+ *
+ * @note
+ *      - When the server is started successfully, the callback is called with `ESP_BT_L2CAP_START_EVT`.
+ *      - When the connection is established, the callback is called with `ESP_BT_L2CAP_OPEN_EVT`.
+ *      - This function must be called after `esp_bt_l2cap_init()` and before `esp_bt_l2cap_deinit()`.
  *
  * @param[in]   cntl_flag:    Lower 16-bit security settings mask.
  * @param[in]   local_psm:    Dynamic PSM.
@@ -226,6 +252,7 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm);
 /**
  * @brief       This function is used to register VFS.
  *              Only supports write, read and close.
+ *              When the operation is completed, the callback function will be called with ESP_BT_L2CAP_VFS_REGISTER_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
@@ -236,6 +263,7 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
 
 /**
  * @brief       This function is used to unregister VFS.
+ *              When the operation is completed, the callback function will be called with ESP_BT_L2CAP_VFS_UNREGISTER_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
@@ -243,6 +271,17 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
  *              - other: failed
  */
 esp_err_t esp_bt_l2cap_vfs_unregister(void);
+
+/**
+ * @brief       This function is used to get the status of L2CAP
+ *
+ * @param[out]  status - l2cap status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_bt_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *status);
 
 #ifdef __cplusplus
 }

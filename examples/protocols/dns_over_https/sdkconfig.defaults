@@ -1,0 +1,8 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) 5.5.0 Project Minimal Configuration
+#
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+CONFIG_LWIP_DNS_MAX_HOST_IP=4
+CONFIG_LWIP_USE_ESP_GETADDRINFO=y
+CONFIG_LWIP_HOOK_NETCONN_EXT_RESOLVE_CUSTOM=y
+CONFIG_MBEDTLS_HAVE_TIME_DATE=y

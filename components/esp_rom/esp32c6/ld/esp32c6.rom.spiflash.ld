@@ -18,8 +18,8 @@
  ***************************************/
 
 /* Functions */
-spi_flash_disable_cache = 0x400001f0;
-spi_flash_restore_cache = 0x400001f4;
+rom_spi_flash_disable_cache = 0x400001f0;
+rom_spi_flash_restore_cache = 0x400001f4;
 spi_flash_cache_enabled = 0x400001f8;
 esp_enable_cache_flash_wrap = 0x40000200;
 
@@ -50,15 +50,15 @@ esp_flash_chip_driver_initialized = 0x4000022c;
 esp_flash_read_id = 0x40000230;
 esp_flash_get_size = 0x40000234;
 esp_flash_erase_chip = 0x40000238;
-esp_flash_erase_region = 0x4000023c;
+rom_esp_flash_erase_region = 0x4000023c;
 esp_flash_get_chip_write_protect = 0x40000240;
 esp_flash_set_chip_write_protect = 0x40000244;
 esp_flash_get_protectable_regions = 0x40000248;
 esp_flash_get_protected_region = 0x4000024c;
 esp_flash_set_protected_region = 0x40000250;
 esp_flash_read = 0x40000254;
-esp_flash_write = 0x40000258;
-esp_flash_write_encrypted = 0x4000025c;
+rom_esp_flash_write = 0x40000258;
+rom_esp_flash_write_encrypted = 0x4000025c;
 esp_flash_read_encrypted = 0x40000260;
 esp_flash_get_io_mode = 0x40000264;
 esp_flash_set_io_mode = 0x40000268;

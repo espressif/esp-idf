@@ -1,13 +1,30 @@
+idf_build_get_property(target IDF_TARGET)
+
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_UART_SUPPORTED)
     list(APPEND srcs "src/uart.c")
+
+    if(CONFIG_SOC_DEEP_SLEEP_SUPPORTED OR CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
+        list(APPEND srcs "src/uart_wakeup.c")
+    endif()
+
+    if(CONFIG_SOC_UHCI_SUPPORTED)
+        list(APPEND srcs "src/uhci.c")
+    endif()
+endif()
+
+if(${target} STREQUAL "linux")
+    set(priv_requires esp_ringbuf)
+else()
+    set(priv_requires esp_pm esp_driver_gpio esp_driver_dma esp_ringbuf esp_mm esp_psram)
 endif()
 
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ${public_include}
-    PRIV_REQUIRES esp_pm esp_driver_gpio esp_ringbuf
+    REQUIRES esp_hal_uart
+    PRIV_REQUIRES "${priv_requires}"
     LDFRAGMENTS "linker.lf"
 )
 

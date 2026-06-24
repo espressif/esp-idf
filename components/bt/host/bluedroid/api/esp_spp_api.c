@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 static const uint8_t UUID_SPP[16] = {0x00, 0x00, 0x11, 0x01, 0x00, 0x00, 0x10, 0x00,
                                     0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
                                     };
-static tSDP_UUID sdp_uuid;
 
 esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
 {
@@ -32,26 +31,14 @@ esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
     return ESP_OK;
 }
 
-
-esp_err_t esp_spp_init(esp_spp_mode_t mode)
-{
-    esp_spp_cfg_t bt_spp_cfg = {
-        .mode = mode,
-        .enable_l2cap_ertm = true,
-        .tx_buffer_size = ESP_SPP_MAX_TX_BUFFER_SIZE,
-    };
-
-    return esp_spp_enhanced_init(&bt_spp_cfg);
-}
-
 esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 {
     btc_msg_t msg;
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (cfg->mode == ESP_SPP_MODE_VFS && (cfg->tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE ||
-            cfg->tx_buffer_size > ESP_SPP_MAX_TX_BUFFER_SIZE)) {
+    if (!cfg || (cfg->mode == ESP_SPP_MODE_VFS && (cfg->tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE ||
+            cfg->tx_buffer_size > ESP_SPP_MAX_TX_BUFFER_SIZE))) {
         LOG_WARN("Invalid tx buffer size");
         return ESP_ERR_INVALID_ARG;
     }
@@ -70,25 +57,25 @@ esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 esp_err_t esp_spp_deinit(void)
 {
     btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_UNINIT;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 
 esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr)
 {
-    sdp_uuid.len = 16;
-    memcpy(sdp_uuid.uu.uuid128, UUID_SPP, sizeof(sdp_uuid.uu.uuid128));
-
     btc_msg_t msg;
     btc_spp_args_t arg;
+    tSDP_UUID sdp_uuid;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    sdp_uuid.len = 16;
+    memcpy(sdp_uuid.uu.uuid128, UUID_SPP, sizeof(sdp_uuid.uu.uuid128));
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
@@ -113,7 +100,7 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
         sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
         sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)) {
         LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHENTICATE"
-                 "or (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only\n");
+                 "or (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only");
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -146,36 +133,49 @@ esp_err_t esp_spp_disconnect(uint32_t handle)
 esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
                             esp_spp_role_t role, uint8_t local_scn, const char *name)
 {
+    esp_spp_start_srv_cfg_t cfg = {0};
+
+    cfg.local_scn = local_scn;
+    cfg.sec_mask = sec_mask;
+    cfg.role = role;
+    cfg.create_spp_record = true;
+    cfg.name = name;
+    return esp_spp_start_srv_with_cfg(&cfg);
+}
+
+esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg)
+{
     btc_msg_t msg;
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (name == NULL || strlen(name) > ESP_SPP_SERVER_NAME_MAX) {
-        LOG_ERROR("Invalid server name!\n");
+    if (cfg == NULL || cfg->name == NULL || strlen(cfg->name) > ESP_SPP_SERVER_NAME_MAX) {
+        LOG_ERROR("Invalid server name!");
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (sec_mask != ESP_SPP_SEC_NONE &&
-        sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
-        sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) &&
-        sec_mask != ESP_SPP_SEC_IN_16_DIGITS &&
-        sec_mask != (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE) &&
-        sec_mask != (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)) {
+    if (cfg->sec_mask != ESP_SPP_SEC_NONE &&
+        cfg->sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
+        cfg->sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) &&
+        cfg->sec_mask != ESP_SPP_SEC_IN_16_DIGITS &&
+        cfg->sec_mask != (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE) &&
+        cfg->sec_mask != (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)) {
         LOG_WARN("Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHENTICATE,"
                  "(ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT),"
                  "ESP_SPP_SEC_IN_16_DIGITS, (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE), or"
-                 "(ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only\n");
+                 "(ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) only");
     }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_START_SRV;
 
-    arg.start_srv.sec_mask = sec_mask;
-    arg.start_srv.role = role;
-    arg.start_srv.local_scn = local_scn;
+    arg.start_srv.sec_mask = cfg->sec_mask;
+    arg.start_srv.role = cfg->role;
+    arg.start_srv.local_scn = cfg->local_scn;
+    arg.start_srv.create_spp_record = cfg->create_spp_record;
     arg.start_srv.max_session = ESP_SPP_MAX_SESSION;
-    strcpy(arg.start_srv.name, name);
+    strcpy(arg.start_srv.name, cfg->name);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -201,7 +201,7 @@ esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if ((scn == 0) || (scn >= PORT_MAX_RFC_PORTS)) {
-        LOG_ERROR("Invalid SCN!\n");
+        LOG_ERROR("Invalid SCN!");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -219,7 +219,7 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (len <= 0 || p_data == NULL) {
-        LOG_ERROR("Invalid data or len!\n");
+        LOG_ERROR("Invalid data or len!");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -229,27 +229,38 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
 esp_err_t esp_spp_vfs_register(void)
 {
     btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_VFS_REGISTER;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_spp_vfs_unregister(void)
 {
     btc_msg_t msg;
-    btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_VFS_UNREGISTER;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_spp_get_profile_status(esp_spp_profile_status_t *profile_status)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (profile_status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(profile_status, 0, sizeof(esp_spp_profile_status_t));
+    btc_spp_get_profile_status(profile_status);
+
+    return ESP_OK;
 }
 
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE

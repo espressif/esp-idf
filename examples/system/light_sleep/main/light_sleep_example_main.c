@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,6 +16,21 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "light_sleep_example.h"
+
+static uint32_t uart_wakeup_causes(void)
+{
+    uint32_t uart_wakeup_causes = BIT(ESP_SLEEP_WAKEUP_UART0) | BIT(ESP_SLEEP_WAKEUP_UART1);
+#if (SOC_UART_HP_NUM > 2) && !SOC_PM_RTC_NOT_SUPPORT_UART2_WAKEUP
+    uart_wakeup_causes |= BIT(ESP_SLEEP_WAKEUP_UART2);
+#endif
+#if (SOC_UART_HP_NUM > 3)
+    uart_wakeup_causes |= BIT(ESP_SLEEP_WAKEUP_UART3);
+#endif
+#if (SOC_UART_HP_NUM > 4)
+    uart_wakeup_causes |= BIT(ESP_SLEEP_WAKEUP_UART4);
+#endif
+    return uart_wakeup_causes;
+}
 
 static void light_sleep_task(void *args)
 {
@@ -37,29 +52,20 @@ static void light_sleep_task(void *args)
 
         /* Determine wake up reason */
         const char* wakeup_reason;
-        switch (esp_sleep_get_wakeup_cause()) {
-            case ESP_SLEEP_WAKEUP_TIMER:
-                wakeup_reason = "timer";
-                break;
-            case ESP_SLEEP_WAKEUP_GPIO:
-                wakeup_reason = "pin";
-                break;
-            case ESP_SLEEP_WAKEUP_UART:
-                wakeup_reason = "uart";
-                /* Hang-up for a while to switch and execuse the uart task
-                 * Otherwise the chip may fall sleep again before running uart task */
-                vTaskDelay(1);
-                break;
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-            case ESP_SLEEP_WAKEUP_TOUCHPAD:
-                wakeup_reason = "touch";
-                break;
-#endif
-            default:
-                wakeup_reason = "other";
-                break;
+        uint32_t wakup_causes = esp_sleep_get_wakeup_causes();
+        if (wakup_causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+            wakeup_reason = "timer";
+        } else if (wakup_causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
+            wakeup_reason = "pin";
+        } else if (wakup_causes & uart_wakeup_causes()) {
+            wakeup_reason = "uart";
+            /* Hang-up for a while to switch and execute the uart task
+             * Otherwise the chip may fall sleep again before running uart task */
+            vTaskDelay(1);
+        } else {
+            wakeup_reason = "other";
         }
-#if CONFIG_NEWLIB_NANO_FORMAT
+#if CONFIG_LIBC_NEWLIB_NANO_FORMAT
         /* printf in newlib-nano does not support %ll format, causing example test fail */
         printf("Returned from light sleep, reason: %s, t=%d ms, slept for %d ms\n",
                 wakeup_reason, (int) (t_after_us / 1000), (int) ((t_after_us - t_before_us) / 1000));
@@ -67,8 +73,8 @@ static void light_sleep_task(void *args)
         printf("Returned from light sleep, reason: %s, t=%lld ms, slept for %lld ms\n",
                 wakeup_reason, t_after_us / 1000, (t_after_us - t_before_us) / 1000);
 #endif
-        if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO) {
-            /* Waiting for the gpio inactive, or the chip will continously trigger wakeup*/
+        if (wakup_causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
+            /* Waiting for the gpio inactive, or the chip will continuously trigger wakeup*/
             example_wait_gpio_inactive();
         }
     }
@@ -83,10 +89,6 @@ void app_main(void)
     example_register_timer_wakeup();
     /* Enable wakeup from light sleep by uart */
     example_register_uart_wakeup();
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    /* Enable wakeup from light sleep by touch element */
-    example_register_touch_wakeup();
-#endif
 
     xTaskCreate(light_sleep_task, "light_sleep_task", 4096, NULL, 6, NULL);
 }

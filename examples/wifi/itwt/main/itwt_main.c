@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,6 +48,12 @@ static const char *TAG = "itwt";
 #define DEFAULT_SSID CONFIG_EXAMPLE_WIFI_SSID
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 #define ITWT_SETUP_SUCCESS 1
+
+#if CONFIG_EXAMPLE_TWT_ENABLE_KEEP_ALIVE_QOS_NULL
+bool keep_alive_enabled = true;
+#else
+bool keep_alive_enabled = false;
+#endif
 
 #if CONFIG_EXAMPLE_ITWT_TRIGGER_ENABLE
 uint8_t trigger_enabled = 1;
@@ -119,7 +125,7 @@ static void got_ip_handler(void *arg, esp_event_base_t event_base,
     esp_wifi_sta_get_negotiated_phymode(&phymode);
     if (phymode == WIFI_PHY_MODE_HE20) {
         esp_err_t err = ESP_OK;
-        wifi_twt_setup_config_t setup_config = {
+        wifi_itwt_setup_config_t setup_config = {
             .setup_cmd = TWT_REQUEST,
             .flow_id = 0,
             .twt_id = CONFIG_EXAMPLE_ITWT_ID,
@@ -183,7 +189,11 @@ static void itwt_teardown_handler(void *arg, esp_event_base_t event_base,
                                   int32_t event_id, void *event_data)
 {
     wifi_event_sta_itwt_teardown_t *teardown = (wifi_event_sta_itwt_teardown_t *) event_data;
-    ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_TEARDOWN>flow_id %d%s", teardown->flow_id, (teardown->flow_id == 8) ? "(all twt)" : "");
+    if (teardown->status == ITWT_TEARDOWN_FAIL) {
+        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_TEARDOWN>flow_id %d%s, twt teardown frame tx failed", teardown->flow_id, (teardown->flow_id == 8) ? "(all twt)" : "");
+    } else {
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_TEARDOWN>flow_id %d%s", teardown->flow_id, (teardown->flow_id == 8) ? "(all twt)" : "");
+    }
 }
 
 static void itwt_suspend_handler(void *arg, esp_event_base_t event_base,
@@ -260,8 +270,27 @@ static void wifi_itwt(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
-    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
+    wifi_twt_config_t wifi_twt_config = {
+        .post_wakeup_event = false,
+        .twt_enable_keep_alive = keep_alive_enabled,
+    };
+    ESP_ERROR_CHECK(esp_wifi_sta_twt_config(&wifi_twt_config));
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+    wifi_bandwidths_t bw = {
+        .ghz_2g = WIFI_BW20,
+        .ghz_5g = WIFI_BW20,
+    };
+    esp_wifi_set_bandwidths(WIFI_IF_STA, &bw);
+
+    wifi_protocols_t protocol = {
+        .ghz_2g = WIFI_PROTOCOL_11AX,
+        .ghz_5g = WIFI_PROTOCOL_11AX,
+    };
+    esp_wifi_set_protocols(WIFI_IF_STA, &protocol);
+#else
+    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW20);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX);
+#endif
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
 #if CONFIG_EXAMPLE_ENABLE_STATIC_IP

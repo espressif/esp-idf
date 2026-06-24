@@ -164,8 +164,6 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
 {
     ESP_LOGI(TAG, "net_idx 0x%03x, addr 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags 0x%02x, iv_index 0x%08" PRIx32, flags, iv_index);
-    board_led_operation(LED_G, LED_OFF);
-
     /* Initialize the indoor and outdoor temperatures for each sensor.  */
     net_buf_simple_add_u8(&sensor_data_0, indoor_temp);
     net_buf_simple_add_u8(&sensor_data_1, outdoor_temp);
@@ -616,8 +614,6 @@ static esp_err_t ble_mesh_init(void)
         ESP_LOGE(TAG, "Failed to enable mesh node");
         return err;
     }
-
-    board_led_operation(LED_G, LED_ON);
 
     ESP_LOGI(TAG, "BLE Mesh sensor server initialized");
 

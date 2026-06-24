@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,7 @@
 /********************************************************************************
 *
 * This file is for gatt server. It can send adv data, and get connected by client.
+* Only one BLE ACL connection is supported (see sdkconfig.defaults: CONFIG_BT_ACL_CONNECTIONS=1).
 *
 *********************************************************************************/
 
@@ -65,27 +66,29 @@ typedef struct {
     int                     prepare_len;
 } prepare_type_env_t;
 
+/* This demo targets one connected client; a single prepare-write buffer is enough. */
 static prepare_type_env_t prepare_write_env;
 
 //#define CONFIG_SET_RAW_ADV_DATA
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power*/
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF, 0x00,
-        /* device name */
-        0x0E, 0x09, 'B', 'L', 'E', '_', 'C', 'O','M', 'P', '_', 'T','E', 'S', 'T'
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+    /* Service UUID */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00,
+    /* Device Name */
+    0x0E, ESP_BLE_AD_TYPE_NAME_CMPL, 'B', 'L', 'E', '_', 'C', 'O', 'M', 'P', '_', 'T', 'E', 'S', 'T'
 };
+
 static uint8_t raw_scan_rsp_data[] = {
-        /* flags */
-        0x02, 0x01, 0x06,
-        /* tx power */
-        0x02, 0x0a, 0xeb,
-        /* service uuid */
-        0x03, 0x03, 0xFF,0x00
+    /* Flags */
+    0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+    /* TX Power */
+    0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+    /* Service UUID */
+    0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xFF, 0x00
 };
 
 #else
@@ -100,8 +103,8 @@ static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp        = false,
     .include_name        = true,
     .include_txpower     = true,
-    .min_interval        = 0x20,
-    .max_interval        = 0x40,
+    .min_interval        = ESP_BLE_GAP_CONN_ITVL_MS(40),
+    .max_interval        = ESP_BLE_GAP_CONN_ITVL_MS(80),
     .appearance          = 0x00,
     .manufacturer_len    = 0,    //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data = NULL, //test_manufacturer,
@@ -117,8 +120,8 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .set_scan_rsp        = true,
     .include_name        = true,
     .include_txpower     = true,
-    .min_interval        = 0x20,
-    .max_interval        = 0x40,
+    .min_interval        = ESP_BLE_GAP_CONN_ITVL_MS(40),
+    .max_interval        = ESP_BLE_GAP_CONN_ITVL_MS(80),
     .appearance          = 0x00,
     .manufacturer_len    = 0, //TEST_MANUFACTURER_DATA_LEN,
     .p_manufacturer_data = NULL, //&test_manufacturer[0],
@@ -131,8 +134,8 @@ static esp_ble_adv_data_t scan_rsp_data = {
 #endif /* CONFIG_SET_RAW_ADV_DATA */
 
 static esp_ble_adv_params_t adv_params = {
-    .adv_int_min         = 0x40,
-    .adv_int_max         = 0x40,
+    .adv_int_min         = ESP_BLE_GAP_ADV_ITVL_MS(40),
+    .adv_int_max         = ESP_BLE_GAP_ADV_ITVL_MS(40),
     .adv_type            = ADV_TYPE_IND,
     .own_addr_type       = BLE_ADDR_TYPE_PUBLIC,
     .channel_map         = ADV_CHNL_ALL,
@@ -263,7 +266,7 @@ static void show_bonded_devices(void)
     EXAMPLE_DEBUG(EXAMPLE_TAG, "Bonded devices list : %d\n", dev_num);
     for (int i = 0; i < dev_num; i++) {
         #if DEBUG_ON
-        esp_log_buffer_hex(EXAMPLE_TAG, (void *)dev_list[i].bd_addr, sizeof(esp_bd_addr_t));
+        ESP_LOG_BUFFER_HEX(EXAMPLE_TAG, (void *)dev_list[i].bd_addr, sizeof(esp_bd_addr_t));
         #endif
     }
 
@@ -338,10 +341,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             }
             break;
         case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
-            EXAMPLE_DEBUG(EXAMPLE_TAG, "update connection params status = %d, min_int = %d, max_int = %d,conn_int = %d,latency = %d, timeout = %d",
+            EXAMPLE_DEBUG(EXAMPLE_TAG, "update connection params status = %d, conn_int = %d, latency = %d, timeout = %d",
                   param->update_conn_params.status,
-                  param->update_conn_params.min_int,
-                  param->update_conn_params.max_int,
                   param->update_conn_params.conn_int,
                   param->update_conn_params.latency,
                   param->update_conn_params.timeout);
@@ -388,7 +389,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         case ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT: {
             EXAMPLE_DEBUG(EXAMPLE_TAG, "ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT status = %d", param->remove_bond_dev_cmpl.status);
             #if DEBUG_ON
-            esp_log_buffer_hex(EXAMPLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
+            ESP_LOG_BUFFER_HEX(EXAMPLE_TAG, (void *)param->remove_bond_dev_cmpl.bd_addr, sizeof(esp_bd_addr_t));
             #endif
             EXAMPLE_DEBUG(EXAMPLE_TAG, "------------------------------------");
             break;
@@ -442,7 +443,11 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
     memcpy(prepare_write_env->prepare_buf + param->write.offset,
            param->write.value,
            param->write.len);
-    prepare_write_env->prepare_len += param->write.len;
+    /* Extent of prepared value: max(offset+len), not sum(len) — overlaps/retries must not inflate length. */
+    uint32_t span_end = (uint32_t)param->write.offset + (uint32_t)param->write.len;
+    if (span_end > (uint32_t)prepare_write_env->prepare_len) {
+        prepare_write_env->prepare_len = (int)span_end;
+    }
 
 }
 uint8_t long_write[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -474,7 +479,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 {
     switch (event) {
         case ESP_GATTS_REG_EVT:{
-            esp_err_t set_dev_name_ret = esp_bt_dev_set_device_name(SAMPLE_DEVICE_NAME);
+            esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
             if (set_dev_name_ret){
                 ESP_LOGE(EXAMPLE_TAG, "set device name failed, error code = %x", set_dev_name_ret);
             }
@@ -541,7 +546,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         ESP_LOGI(EXAMPLE_TAG, "notify/indicate disable ");
                     }else{
                         ESP_LOGE(EXAMPLE_TAG, "unknown descr value");
-                        esp_log_buffer_hex(EXAMPLE_TAG, param->write.value, param->write.len);
+                        ESP_LOG_BUFFER_HEX(EXAMPLE_TAG, param->write.value, param->write.len);
                     }
 
                 }
@@ -563,7 +568,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
       	    break;
         case ESP_GATTS_EXEC_WRITE_EVT:
             // the length of gattc prepare write data must be less than GATTS_EXAMPLE_CHAR_VAL_LEN_MAX.
-            ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT, Length=%d",  prepare_write_env.prepare_len);
+            ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_EXEC_WRITE_EVT, Length=%d", prepare_write_env.prepare_len);
             example_exec_write_event_env(&prepare_write_env, param);
             break;
         case ESP_GATTS_MTU_EVT:
@@ -582,6 +587,11 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             break;
         case ESP_GATTS_DISCONNECT_EVT:
             ESP_LOGI(EXAMPLE_TAG, "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
+            if (prepare_write_env.prepare_buf) {
+                free(prepare_write_env.prepare_buf);
+                prepare_write_env.prepare_buf = NULL;
+            }
+            prepare_write_env.prepare_len = 0;
             esp_ble_gap_start_advertising(&adv_params);
             break;
         case ESP_GATTS_CREAT_ATTR_TAB_EVT:{
@@ -659,8 +669,8 @@ void app_main(void)
         return;
     }
 
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(EXAMPLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -697,7 +707,7 @@ void app_main(void)
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
     esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;     //bonding with peer device after authentication
-    esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;           //set the IO capability to No output No input
+    esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;           //set the IO capability to DisplayOnly
     uint8_t key_size = 16;      //the key size should be 7~16 bytes
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;

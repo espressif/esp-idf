@@ -1,6 +1,6 @@
 /*
- * FreeRTOS Kernel V11.0.1
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
@@ -1388,7 +1388,7 @@ BaseType_t xTimerGenericCommandFromISR( TimerHandle_t xTimer,
 /**
  * task.h
  * @code{c}
- * void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer, StackType_t ** ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+ * void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer, StackType_t ** ppxTimerTaskStackBuffer, configSTACK_DEPTH_TYPE * puxTimerTaskStackSize )
  * @endcode
  *
  * This function is used to provide a statically allocated block of memory to FreeRTOS to hold the Timer Task TCB.  This function is required when
@@ -1396,11 +1396,11 @@ BaseType_t xTimerGenericCommandFromISR( TimerHandle_t xTimer,
  *
  * @param ppxTimerTaskTCBBuffer   A handle to a statically allocated TCB buffer
  * @param ppxTimerTaskStackBuffer A handle to a statically allocated Stack buffer for the idle task
- * @param pulTimerTaskStackSize   A pointer to the number of elements that will fit in the allocated stack buffer
+ * @param puxTimerTaskStackSize   A pointer to the number of elements that will fit in the allocated stack buffer
  */
     void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
                                          StackType_t ** ppxTimerTaskStackBuffer,
-                                         uint32_t * pulTimerTaskStackSize );
+                                         configSTACK_DEPTH_TYPE * puxTimerTaskStackSize );
 
 #endif
 
@@ -1420,6 +1420,12 @@ BaseType_t xTimerGenericCommandFromISR( TimerHandle_t xTimer,
     void vApplicationDaemonTaskStartupHook( void );
 
 #endif
+
+/*
+ * This function resets the internal state of the timer module. It must be called
+ * by the application before restarting the scheduler.
+ */
+void vTimerResetState( void ) PRIVILEGED_FUNCTION;
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

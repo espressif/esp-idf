@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,12 @@
 #include "services/gap/ble_svc_gap.h"
 #include "ble_multi_conn_cent.h"
 
+#if !MYNEWT_VAL(BLE_EXT_ADV) || !MYNEWT_VAL(OPTIMIZE_MULTI_CONN)
+#error "This example requires NimBLE Extended Advertising and multi-connection optimization. " \
+       "Enable BT_NIMBLE_50_FEATURE_SUPPORT, BT_NIMBLE_EXT_ADV, and BT_NIMBLE_OPTIMIZE_MULTI_CONN; " \
+       "use a supported target from README.md (e.g. esp32h2, esp32c6) and run idf.py set-target."
+#endif
+
 #define BLE_PEER_NAME           "esp-multi-conn"
 #define BLE_PEER_MAX_NUM        (MYNEWT_VAL(BLE_MAX_CONNECTIONS) - 1)
 #define BLE_PREF_EVT_LEN_MS     (5)
@@ -26,8 +32,8 @@ static const ble_uuid_t *remote_svc_uuid =
                      	0x99, 0x99, 0x43, 0x95, 0x12, 0x2f, 0x46, 0x59);
 
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x14, 0X09, 'e', 's', 'p', '-', 'b', 'l', 'e', '-', 'r', 'o', 'l', 'e', '-', 'c', 'o', 'e', 'x', '-', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x14, BLE_HS_ADV_TYPE_COMP_NAME, 'e', 's', 'p', '-', 'b', 'l', 'e', '-', 'r', 'o', 'l', 'e', '-', 'c', 'o', 'e', 'x', '-', 'e',
 };
 
 void ble_store_config_init(void);
@@ -35,6 +41,7 @@ static void ble_cent_advertise(void);
 static void ble_cent_scan(void);
 static void ble_cent_connect(void *disc);
 
+static uint8_t own_addr_type;
 static uint8_t s_ble_multi_conn_num = 0;
 
 /**
@@ -85,7 +92,7 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_EXT_DISC:
         rc = ble_hs_adv_parse_fields(&fields, event->ext_disc.data, event->ext_disc.length_data);
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         if ((rc == 0) && fields.name && (fields.name_len >= strlen(BLE_PEER_NAME)) &&
             !strncmp((const char *)fields.name, BLE_PEER_NAME, strlen(BLE_PEER_NAME))) {
             ble_cent_connect(&event->ext_disc);
@@ -234,7 +241,7 @@ ble_cent_advertise(void)
     /* Enable connectable advertising */
     params.connectable = 1;
 
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.tx_power = 127;
@@ -257,8 +264,6 @@ ble_cent_advertise(void)
 
     /* Start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
-    assert(rc == 0);
-
     if (rc) {
         ESP_LOGE(TAG, "Failed to enable advertisement; rc=%d\n", rc);
         return;
@@ -294,7 +299,7 @@ ble_cent_scan(void)
     /* Tell the controller to filter duplicates; we don't want to process
      * repeated advertisements from the same device.
      */
-    rc = ble_gap_ext_disc(BLE_OWN_ADDR_PUBLIC, 0, 0, 1, 0, 0, &uncoded_disc_params,
+    rc = ble_gap_ext_disc(own_addr_type, 0, 0, 1, 0, 0, &uncoded_disc_params,
                           &coded_disc_params, ble_cent_client_gap_event, NULL);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error initiating GAP discovery procedure; rc=%d\n", rc);
@@ -319,12 +324,14 @@ ble_cent_connect(void *disc)
         return;
     }
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         ESP_LOGE(TAG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* We won't connect to the same device. Change our static random address to simulate
      * multi-connection with only one central and one peripheral.
@@ -409,6 +416,13 @@ blecent_on_sync(void)
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
 
+    /* Figure out address to use for advertising and scanning */
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "error determining address type; rc=%d\n", rc);
+        return;
+    }
+
     /* We will function as both the central and peripheral device, connecting to all peripherals
      * with the name of BLE_PEER_NAME. Meanwhile, a connectable advertising will be enabled.
      * In this example, we register two gap callback functions.
@@ -452,15 +466,25 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM);
+    assert(rc == 0);
+#else
     rc = peer_init(BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM, BLE_PEER_MAX_NUM);
     assert(rc == 0);
+#endif
 
+
+#if MYNEWT_VAL(BLE_GATTS)
+    rc = gatt_svr_init();
+    assert(rc == 0);
+#endif
+
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. We will act as both central and peripheral. */
     rc = ble_svc_gap_device_name_set("esp-ble-role-coex");
     assert(rc == 0);
-
-    rc = gatt_svr_init();
-    assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

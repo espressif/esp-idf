@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-P4 | ESP32-S31 |
+| ----------------- | -------- | -------- | -------- | --------- |
 
 # LP I2C Example
 
@@ -7,24 +7,27 @@
 
 ## Overview
 
-This example demonstrates basic usage of the LP I2C driver from the LP core by reading to and writing from a sensor connected over I2C.
+This example demonstrates the basic usage of the LP I2C driver from the LP core by reading to and writing from a sensor connected over I2C.
 
 ## How to use example
 
 ### Hardware Required
 
-To run this example, you should have a ESP32-C6 based development board as well as a BH1750 sensor. BH1750 is an ambient light sensor. More information about it can be found in the [BH1750 datasheet](https://www.mouser.com/datasheet/2/348/bh1750fvi-e-186247.pdf).
+To run this example, you should have an ESP based development board that supports the LP I2C peripheral on the LP Core as well as a BH1750 sensor. BH1750 is an ambient light sensor. More information about it can be found in the [BH1750 datasheet](https://www.mouser.com/datasheet/2/348/bh1750fvi-e-186247.pdf).
 
 #### Pin Assignment:
 
 **Note:** The following pin assignments are used by default.
 
-|                         | SDA   | SCL   |
-| ----------------------- | ------| ------|
-| ESP32-C6 LP I2C Master  | GPIO6 | GPIO7 |
-| BH1750 Sensor           | SDA   | SCL   |
+|                          | SDA   | SCL   |
+| ------------------------ | ----- | ----- |
+| ESP32-C6 LP I2C Master   | GPIO6 | GPIO7 |
+| ESP32-C5 LP I2C Master   | GPIO2 | GPIO3 |
+| ESP32-P4 LP I2C Master   | GPIO5 | GPIO4 |
+| ESP32-S31 LP I2C Master  | GPIO6 | GPIO7 |
+| BH1750 Sensor            | SDA   | SCL   |
 
-**Note:** There's no need to add an external pull-up resistors for SDA/SCL pin, because the driver enables the internal pull-up resistors.
+**Note:** There's no need to add external pull-up resistors for SDA/SCL pin, because the driver enables the internal pull-up resistors.
 
 ### Build and Flash
 
@@ -51,7 +54,7 @@ LP core woke up the main CPU
 Lux = 3
 Entering deep sleep...
 
-(When the BH1750 sensor is exposed to a direct light source, the Lux value should be larger and the LP core should wakup the main CPU)
+(When the BH1750 sensor is exposed to a direct light source, the Lux value should be larger and the LP core should wakeup the main CPU)
 
 LP core woke up the main CPU
 Lux = 1222

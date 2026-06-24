@@ -1,6 +1,7 @@
 Ethernet
 ========
 
+{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 bytes", esp32p4=" 32 bytes (64 bytes in fact due to the need for proper memory alignment)"}
 {IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 and GPIO50"}
 {IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 and GPIO17", esp32p4="GPIO23 and GPIO39"}
 {IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 and GPIO49"}
@@ -129,35 +130,25 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     One of the obvious differences between MII and RMII is signal consumption. MII usually costs up to 18 signals, while the RMII interface can reduce the consumption to 9.
 
-    .. only:: esp32
-
-        .. note::
-            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII` or always select ``CONFIG_ETH_PHY_INTERFACE_RMII`` in the Kconfig option :ref:`CONFIG_ETH_PHY_INTERFACE`.
-
-    .. only:: not esp32
-
-        .. note::
-            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
+    .. note::
+        ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
 
     In RMII mode, both the receiver and transmitter signals are referenced to the ``REF_CLK``. ``REF_CLK`` **must be stable during any access to PHY and MAC**. Generally, there are three ways to generate the ``REF_CLK`` depending on the PHY device in your design:
 
     * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option **a** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
-    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
+    * Some PHY chip uses an externally connected 50 MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
     * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option **c** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
 
     .. only:: esp32
 
-        .. note::
-            The ``REF_CLK`` can be also configured via Project Configuration when :cpp:member:`eth_esp32_emac_config_t::clock_config::mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_DEFAULT`. Choose appropriately ``CONFIG_ETH_RMII_CLK_INPUT`` or ``CONFIG_ETH_RMII_CLK_OUTPUT`` option under :ref:`CONFIG_ETH_RMII_CLK_MODE` configuration based on your design as discussed above.
-
         .. warning::
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` (or ``CONFIG_ETH_RMII_CLK_OUTPUT`` is selected), then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_APPL_CLK_OUT_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, internal Audio PLL clock is used as a source of 50 MHz clock. Hence be sure it is not in collision with I2S bus configuration.
 
-            What is more, if you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_GPIO` and :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_180_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO` for more information.
+            When internal clock is selected, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. However, the clock is outputted directly to the GPIO in this particular case and so it does not have direct relationship with EMAC peripheral. Sometimes this configuration may not work well with your PHY chip. If you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. The source of clock is the same (APLL) but these signals are routed from EMAC peripheral.
 
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` (or ``CONFIG_ETH_RMII_CLK_INPUT`` is selected), then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
 
             The ways to disable the ``REF_CLK`` signal can be:
 
@@ -165,12 +156,23 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
             * Force the PHY device to reset status (as the case **a** in the picture). **This could fail for some PHY device** (i.e., it still outputs signals to GPIO0 even in reset state).
 
+        .. warning::
+
+            If you want the **Ethernet to work with Wi-Fi or Bluetooth**, don’t select ESP32 as source of ``REF_CLK`` as it would result in ``REF_CLK`` instability. Either disable Wi-Fi or use a PHY or an external oscillator as the ``REF_CLK`` source.
+
     .. only:: not esp32
 
         .. note::
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} can be selected as output pin of the ``REF_CLK`` signal via IO_MUX.
 
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, {IDF_TARGET_SOC_REF_CLK_IN_GPIO} can be selected as input pin for the ``REF_CLK`` signal via IO_MUX.
+
+    .. only:: esp32p4
+
+        .. warning::
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, the EMAC derives the 50 MHz RMII reference clock from the MPLL via an integer divider. When PSRAM is also enabled, both peripherals share the MPLL, and PSRAM locks it to a frequency determined by its speed configuration. If PSRAM speed is configured to 80 MHz (:ref:`CONFIG_SPIRAM_SPEED`), the MPLL runs at 320 MHz, and no integer divisor of 320 MHz can produce 50 MHz within the required ±50 ppm tolerance (the closest candidate is 320 / 6 ≈ 53.33 MHz). EMAC initialization will fail in this configuration.
+
+            If you must use 80 MHz PSRAM speed, provide the ``REF_CLK`` from an external source (PHY or oscillator) and configure :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` instead.
 
     .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 
@@ -188,12 +190,12 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep it away from RF devices and inductor elements.
 
-    .. only:: not SOC_EMAC_USE_IO_MUX
+    .. only:: not SOC_EMAC_USE_MULTI_IO_MUX
 
         .. note::
-            Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
+            Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to `ESP32-Ethernet-Kit <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp32-ethernet-kit/index.html>`_ for hardware design example.
 
-    .. only:: SOC_EMAC_USE_IO_MUX
+    .. only:: SOC_EMAC_USE_MULTI_IO_MUX
 
         .. note::
             Signals used in the data plane can be configured to predefined set of GPIOs via IO_MUX for the RMII, see below table. The data plane GPIO configuration is performed by the driver based on content of :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`. Signals used in the control plane can be routed to any free GPIOs via GPIO Matrix.
@@ -250,9 +252,22 @@ Basic common configuration for MAC layer is described in :cpp:class:`eth_mac_con
 
         * :cpp:member:`eth_esp32_emac_config_t::intr_priority`: sets the priority of the MAC interrupt. If it is set to ``0`` or a negative value, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority. Note that *Low* and *Medium* interrupt priorities (1 to 3) can be set since these can be handled in C.
 
-        :SOC_EMAC_USE_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
+        :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
 
         :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`: configuration of EMAC input interface clock when ``REF_CLK`` signal is generated internally and is looped back to the EMAC externally. The mode must be always configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`. This option is valid only when configuration of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
+
+    Memory Considerations when Using Internal MAC
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The internal MAC subsystem transfers data to and from the CPU domain via DMA using a linked list of descriptors. There are two types of descriptors: Transmit and Receive. Based on its type, a descriptor holds status information about the received or transmitted frame or provides controls for transmission. Each descriptor also contains pointers to the current data buffer and the next descriptor. As such, a single EMAC DMA descriptor has size of {IDF_TARGET_SOC_DMA_DESC_SIZE} in DMA-capable memory.
+
+    The default configuration should cover most use cases. However, certain scenarios may require configuring the Ethernet DMA memory utilization to suit specific needs. Typical problems may arise in the following situations:
+
+    .. list::
+
+        * **Short and frequent frames dominate network traffic**: If your network traffic primarily consists of very short and frequently transmitted/received frames, you may observe issues such as lower-than-expected throughput (despite the rated 100 Mbps) and missed frames during reception. On transmission, the socket send API may return ``errno`` equal to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled). This is because the default memory configuration is optimized for larger frames; :ref:`CONFIG_ETH_DMA_BUFFER_SIZE` is set to 512 bytes by default to ensure a better *data buffer* to *descriptor* size overhead ratio. The solution is to increase :ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM` or :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`. Additionally, consider decreasing :ref:`CONFIG_ETH_DMA_BUFFER_SIZE` to match the typical frame size in your network to maintain a reasonable memory footprint of the Ethernet driver.
+
+        * **High throughput leads to buffer exhaustion**: If the socket send API intermittently returns ``errno`` equal to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled), and the throughput is close to the rated 100 Mbps, this likely indicates nearing hardware limitations. In such case, the hardware cannot keep up with the transmission requests. The solution is to increase :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM` to buffer more frames and mitigate temporary peaks in transmission requests. However, this will not help if the requested traffic consistently exceeds the rated throughput. In such situations, the only solution is to limit the bandwidth by software means at the application level.
 
 Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
@@ -265,6 +280,10 @@ Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
     * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. The Ethernet driver starts negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
 
     * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to ``-1``.
+
+    * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`: Time the PHY reset pin is asserted in usec. Set this field to ``0`` to use chip specific default timing.
+
+    * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`: Time to wait after the PHY hardware reset is done in msec. Set this field to ``0`` to use chip specific default timing. Set this field to ``-1`` to not wait after the PHY hardware reset.
 
 ESP-IDF provides a default configuration for MAC and PHY in macro :c:macro:`ETH_MAC_DEFAULT_CONFIG` and :c:macro:`ETH_PHY_DEFAULT_CONFIG`.
 
@@ -285,18 +304,20 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
 
         eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // apply default common MAC configuration
         eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
-        esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
-        esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
+        esp32_emac_config.smi_gpio.mdc_num = CONFIG_ETHERNET_MDC_GPIO;               // alter the GPIO used for MDC signal
+        esp32_emac_config.smi_gpio.mdio_num = CONFIG_ETHERNET_MDIO_GPIO;             // alter the GPIO used for MDIO signal
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
-        phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
-        phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
-        esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);     // create PHY instance
-        // ESP-IDF officially supports several different Ethernet PHY chip driver
-        // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
-        // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+        phy_config.phy_addr = CONFIG_ETHERNET_PHY_ADDR;              // alter the PHY address according to your board design
+        phy_config.reset_gpio_num = CONFIG_ETHERNET_PHY_RST_GPIO;    // alter the GPIO used for PHY reset
+        esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);   // create generic PHY instance
+
+    .. note::
+        Any Ethernet PHY chip compliant with IEEE 802.3 can be used when creating new PHY instance with :cpp:func:`esp_eth_phy_new_generic`. However, while basic functionality should always work, some specific features might be limited, even if the PHY meets IEEE 802.3 standard. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is the concern and you need PHY driver specifically tailored to your chip needs, use drivers for PHY chips the ESP-IDF already officially supports or consult with :ref:`Custom PHY Driver <custom-phy-driver>` section to create a new custom driver.
+
+    .. tip::
+        Espressif provides drivers for several specific Ethernet PHY chips in the `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ repository. Drivers are distributed as components and are available in the `ESP Component Registry <https://components.espressif.com/>`_.
 
     Optional Runtime MAC Clock Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -313,7 +334,7 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
 
         esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // alter EMAC Data Interface
         esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // select EMAC REF_CLK mode
-        esp32_emac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO;          // select GPIO number used to input/output EMAC REF_CLK
+        esp32_emac_config.clock_config.rmii.clock_gpio = 17;                         // select GPIO number used to input/output EMAC REF_CLK
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
 
@@ -326,30 +347,30 @@ SPI-Ethernet Module
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default common MAC configuration
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
-    phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
-    phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
+    phy_config.phy_addr = CONFIG_ETHERNET_PHY_ADDR;              // alter the PHY address according to your board design
+    phy_config.reset_gpio_num = CONFIG_ETHERNET_PHY_RST_GPIO;    // alter the GPIO used for PHY reset
     // Install GPIO interrupt service (as the SPI-Ethernet module is interrupt-driven)
     gpio_install_isr_service(0);
     // SPI bus configuration
     spi_device_handle_t spi_handle = NULL;
     spi_bus_config_t buscfg = {
-        .miso_io_num = CONFIG_EXAMPLE_ETH_SPI_MISO_GPIO,
-        .mosi_io_num = CONFIG_EXAMPLE_ETH_SPI_MOSI_GPIO,
-        .sclk_io_num = CONFIG_EXAMPLE_ETH_SPI_SCLK_GPIO,
+        .miso_io_num = CONFIG_ETHERNET_SPI_MISO_GPIO,
+        .mosi_io_num = CONFIG_ETHERNET_SPI_MOSI_GPIO,
+        .sclk_io_num = CONFIG_ETHERNET_SPI_SCLK_GPIO,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_ETHERNET_SPI_HOST, &buscfg, 1));
     // Configure SPI device
     spi_device_interface_config_t spi_devcfg = {
         .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
+        .clock_speed_hz = CONFIG_ETHERNET_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_ETHERNET_SPI_CS_GPIO,
         .queue_size = 20
     };
     /* dm9051 ethernet driver is based on spi driver */
-    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
-    dm9051_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_ETHERNET_SPI_HOST, &spi_devcfg);
+    dm9051_config.int_gpio_num = CONFIG_ETHERNET_SPI_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
 
@@ -359,6 +380,8 @@ SPI-Ethernet Module
 
     * The SPI device configuration (i.e., `spi_device_interface_config_t`) may slightly differ for other Ethernet modules or to meet SPI timing on specific PCB. Please check out your module's specs and the examples in ESP-IDF.
 
+.. tip::
+    Espressif provides drivers for various SPI-Ethernet modules in the `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ repository. Drivers are distributed as components and are available in the `ESP Component Registry <https://components.espressif.com/>`_.
 
 Install Driver
 --------------
@@ -367,11 +390,11 @@ To install the Ethernet driver, we need to combine the instance of MAC and PHY a
 
 * :cpp:member:`esp_eth_config_t::mac`: instance that created from MAC generator (e.g., :cpp:func:`esp_eth_mac_new_esp32`).
 
-* :cpp:member:`esp_eth_config_t::phy`: instance that created from PHY generator (e.g., :cpp:func:`esp_eth_phy_new_ip101`).
+* :cpp:member:`esp_eth_config_t::phy`: instance that created from PHY generator (e.g., :cpp:func:`esp_eth_phy_new_generic`).
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
 
-* :cpp:member:`esp_eth_config_t::stack_input`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
+* :cpp:member:`esp_eth_config_t::stack_input` or :cpp:member:`esp_eth_config_t::stack_input_info`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
 
 * :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` and :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low-level hardware has been initialized or de-initialized.
 
@@ -506,6 +529,79 @@ The following functions should only be invoked after the Ethernet driver has bee
     esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr);
     ESP_LOGI(TAG, "Ethernet PHY Address: %d", phy_addr);
 
+.. _time-stamping:
+
+.. only:: SOC_EMAC_IEEE1588V2_SUPPORTED
+
+    EMAC Hardware Time Stamping
+    ---------------------------
+
+    Time stamping in EMAC allows precise tracking of when Ethernet frames are transmitted or received. Hardware time stamping is crucial for applications like Precision Time Protocol (PTP) because it minimizes jitter and inaccuracies that can occur when relying on software time stamps. Embedded time stamps in hardware avoid delays introduced by software layers or processing overhead. Therefore, it ensures nanosecond-level precision.
+
+    .. warning::
+
+        Time stamp associated API is currently in **"Experimental Feature"** state so be aware it may change with future releases.
+
+    The basic way how to enable time stamping, get and set time in the EMAC is demonstrated below.
+
+    .. highlight:: c
+
+    ::
+
+        esp_eth_mac_t *mac;
+        esp_eth_get_mac_instance(eth_hndl, &mac);
+
+        // Enable hardware time stamping
+        eth_mac_ptp_config_t ptp_cfg = ETH_MAC_ESP_PTP_DEFAULT_CONFIG();
+        esp_eth_mac_ptp_enable(mac, &ptp_cfg);
+
+        // Get current EMAC time
+        eth_mac_time_t ptp_time;
+        esp_eth_mac_get_ptp_time(mac, &ptp_time);
+
+        // Set EMAC time
+        ptp_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_mac_set_ptp_time(mac, &ptp_time);
+
+    The PTP module be can configured as follows:
+
+    .. list::
+        * :cpp:member:`eth_mac_ptp_config_t::clk_src`: Clock source for PTP. Select one of the clock sources offered by the :cpp:type:`soc_periph_emac_ptp_clk_src_t` enumeration.
+
+        * :cpp:member:`eth_mac_ptp_config_t::clk_src_period_ns`: Period of the clock source for PTP in nanoseconds. For example, if the clock source is 40MHz, the period is 25ns.
+
+        * :cpp:member:`eth_mac_ptp_config_t::required_accuracy_ns`: Required accuracy for PTP in nanoseconds. The required accuracy must be worse than clock source for PTP. For example, if the clock source is 40MHz (25ns period), the required accuracy is 40ns.
+
+        * :cpp:member:`eth_mac_ptp_config_t::roll_type`: Rollover mode (digital or binary) for subseconds register. The binary rollover mode is recommended as it provides a more precise time synchronization.
+
+    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_vargs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
+
+    You have an option to schedule event at precise point in time by registering callback function and configuring a target time when the event is supposed to be fired. Note that the callback function is then called from ISR context so it should be as brief as possible.
+
+    .. highlight:: c
+
+    ::
+
+        // Register the callback function
+        esp_eth_mac_set_target_time_cb(mac, ts_callback);
+
+        // Set time when event is triggered
+        eth_mac_time_t mac_target_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_mac_set_target_time(mac, &mac_target_time);
+
+    Alternatively, the PTP-synchronized time can be exposed via a PPS (Pulse-Per-Second) signal on a GPIO. This provides a precise hardware time reference that can be used to synchronize external devices, align independent clock domains, or drive time-critical processes outside the ESP32 chip series. As the name suggests, the PPS signal is a pulse that occurs once per second by default. However, the frequency can be adjusted by setting the PPS0 output frequency using the :cpp:func:`esp_eth_mac_set_pps_out_freq` function. The command accepts an integer value in the range of 0-16384, where 0 = 1PPS (narrow pulse), other values generate square clock signal. The clock frequency must be power of two and less than or equal to 16384 Hz. Note that due to non-linear toggling of bits in the digital rollover mode, the actual frequency is an average number (duty cycle differs from 50% in overall one second period). This behavior does not apply to the binary rollover mode and so this mode is recommended. The PPS signal can be configured to be output at a GPIO using the :cpp:func:`esp_eth_mac_set_pps_out_gpio` function.
+
+    .. only:: esp32p4
+
+        .. note::
+            The PPS signal output on GPIO pin is available starting from ESP32-P4 silicon revision 3.
+
 .. _flow-control:
 
 Flow Control
@@ -531,11 +627,23 @@ One thing that should be kept in mind is that the pause frame ability is adverti
 Application Examples
 --------------------
 
-  * Ethernet basic example: :example:`ethernet/basic`
-  * Ethernet iperf example: :example:`ethernet/iperf`
-  * Ethernet to Wi-Fi AP "router": :example:`network/eth2ap`
-  * Wi-Fi station to Ethernet "bridge": :example:`network/sta2eth`
-  * Most protocol examples should also work for Ethernet: :example:`protocols`
+  * :example:`ethernet/basic` demonstrates how to use the Ethernet driver, covering driver installation, attaching it to `esp_netif`, sending DHCP requests, and obtaining a pingable IP address.
+
+  * :example:`ethernet/iperf` demonstrates how to use the Ethernet capabilities to measure the throughput/bandwidth using iPerf.
+
+  * :example:`ethernet/ptp` demonstrates the use of Precision Time Protocol (PTP) for time synchronization over Ethernet.
+
+  * :example:`network/vlan_support` demonstrates how to create virtual network interfaces over Ethernet, including VLAN and non-VLAN interfaces.
+
+  * :example:`network/sta2eth` demonstrates how to create a 1-to-1 bridge using a Wi-Fi station and a wired interface such as Ethernet or USB.
+
+  * :example:`network/simple_sniffer` demonstrates how to use Wi-Fi and Ethernet in sniffer mode to capture packets and save them in PCAP format.
+
+  * :example:`network/eth2ap` demonstrates how to implement a bridge that forwards packets between an Ethernet port and a Wi-Fi AP interface. It uses {IDF_TARGET_NAME} to create a 1-to-many connection between Ethernet and Wi-Fi without initializing the TCP/IP stack.
+
+  * :example:`network/bridge` demonstrates how to use the LwIP IEEE 802.1D bridge to forward Ethernet frames between multiple network segments based on MAC addresses.
+
+  * Most protocol examples should also work for Ethernet: :example:`protocols`.
 
 .. ------------------------------ Advanced Topics -------------------------------
 
@@ -544,17 +652,19 @@ Application Examples
 Advanced Topics
 ---------------
 
+.. _custom-phy-driver:
+
 Custom PHY Driver
 ^^^^^^^^^^^^^^^^^
 
-There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
+There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF supports ``Generic PHY`` and also several specific PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
 
-Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called "MII Management Interface" to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
+Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called "MII Management Interface" to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
 
 .. note::
     Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, but it just requires more effort. You will have to define all PHY management functions.
 
-The majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/esp_eth_phy_802_3.c`. However, the following may require developing chip-specific management functions:
+The majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c`. However, the following may require developing chip-specific management functions:
 
     * Link status which is almost always chip-specific
     * Chip initialization, even though not strictly required, should be customized to at least ensure that the expected chip is used
@@ -562,16 +672,16 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 
 **Steps to create a custom PHY driver:**
 
-1. Define vendor-specific registry layout based on the PHY datasheet. See :component_file:`esp_eth/src/esp_eth_phy_ip101.c` as an example.
+1. Define vendor-specific registry layout based on the PHY datasheet.
 2. Prepare derived PHY management object info structure which:
 
     * must contain at least parent IEEE 802.3 :cpp:class:`phy_802_3_t` object
-    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality. See :component_file:`esp_eth/src/esp_eth_phy_ksz80xx.c` as an example.
+    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality.
 
 3. Define chip-specific management call-back functions.
 4. Initialize parent IEEE 802.3 object and re-assign chip-specific management call-back functions.
 
-Once you finish the new custom PHY driver implementation, consider sharing it among other users via `IDF Component Registry <https://components.espressif.com/>`_.
+Once you finish the new custom PHY driver implementation, consider sharing it among other users via `ESP Component Registry <https://components.espressif.com/>`_.
 
 .. ---------------------------- API Reference ----------------------------------
 
@@ -583,6 +693,8 @@ API Reference
 .. include-build-file:: inc/esp_eth_driver.inc
 .. include-build-file:: inc/esp_eth_com.inc
 .. include-build-file:: inc/esp_eth_mac.inc
+.. include-build-file:: inc/esp_eth_mac_esp.inc
+.. include-build-file:: inc/esp_eth_mac_spi.inc
 .. include-build-file:: inc/esp_eth_phy.inc
 .. include-build-file:: inc/esp_eth_phy_802_3.inc
 .. include-build-file:: inc/esp_eth_netif_glue.inc

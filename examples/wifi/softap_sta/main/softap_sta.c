@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -73,6 +73,9 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
+/*DHCP server option*/
+#define DHCPS_OFFER_DNS             0x02
+
 static const char *TAG_AP = "WiFi SoftAP";
 static const char *TAG_STA = "WiFi Sta";
 
@@ -90,8 +93,8 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                  MAC2STR(event->mac), event->aid);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
         wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *) event_data;
-        ESP_LOGI(TAG_AP, "Station "MACSTR" left, AID=%d",
-                 MAC2STR(event->mac), event->aid);
+        ESP_LOGI(TAG_AP, "Station "MACSTR" left, AID=%d, reason:%d",
+                 MAC2STR(event->mac), event->aid, event->reason);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
         ESP_LOGI(TAG_STA, "Station started");
@@ -100,6 +103,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG_STA, "Got IP:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_ASSIGNED_IP_TO_CLIENT) {
+        const ip_event_assigned_ip_to_client_t *e = (const ip_event_assigned_ip_to_client_t *)event_data;
+        ESP_LOGI(TAG_AP, "Assigned IP to client: " IPSTR ", MAC=" MACSTR ", hostname='%s'",
+                 IP2STR(&e->ip), MAC2STR(e->mac), e->hostname);
     }
 }
 
@@ -145,10 +152,11 @@ esp_netif_t *wifi_init_sta(void)
             .password = EXAMPLE_ESP_WIFI_STA_PASSWD,
             .scan_method = WIFI_ALL_CHANNEL_SCAN,
             .failure_retry_cnt = EXAMPLE_ESP_MAXIMUM_RETRY,
-            /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (pasword len => 8).
+            /* Authmode threshold resets to WPA2 as default if auth mode threshold equals WIFI_AUTH_OPEN
+             * and password matches WPA2 standards (password len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
-            * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
+             * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
              */
             .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
@@ -160,6 +168,17 @@ esp_netif_t *wifi_init_sta(void)
     ESP_LOGI(TAG_STA, "wifi_init_sta finished.");
 
     return esp_netif_sta;
+}
+
+void softap_set_dns_addr(esp_netif_t *esp_netif_ap,esp_netif_t *esp_netif_sta)
+{
+    esp_netif_dns_info_t dns;
+    esp_netif_get_dns_info(esp_netif_sta,ESP_NETIF_DNS_MAIN,&dns);
+    uint8_t dhcps_offer_option = DHCPS_OFFER_DNS;
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_stop(esp_netif_ap));
+    ESP_ERROR_CHECK(esp_netif_dhcps_option(esp_netif_ap, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_offer_option, sizeof(dhcps_offer_option)));
+    ESP_ERROR_CHECK(esp_netif_set_dns_info(esp_netif_ap, ESP_NETIF_DNS_MAIN, &dns));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_start(esp_netif_ap));
 }
 
 void app_main(void)
@@ -186,6 +205,11 @@ void app_main(void)
                     NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                     IP_EVENT_STA_GOT_IP,
+                    &wifi_event_handler,
+                    NULL,
+                    NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                    IP_EVENT_ASSIGNED_IP_TO_CLIENT,
                     &wifi_event_handler,
                     NULL,
                     NULL));
@@ -223,6 +247,7 @@ void app_main(void)
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG_STA, "connected to ap SSID:%s password:%s",
                  EXAMPLE_ESP_WIFI_STA_SSID, EXAMPLE_ESP_WIFI_STA_PASSWD);
+        softap_set_dns_addr(esp_netif_ap,esp_netif_sta);
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG_STA, "Failed to connect to SSID:%s, password:%s",
                  EXAMPLE_ESP_WIFI_STA_SSID, EXAMPLE_ESP_WIFI_STA_PASSWD);

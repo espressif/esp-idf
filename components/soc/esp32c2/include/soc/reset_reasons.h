@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -42,7 +42,6 @@ typedef enum {
     RESET_REASON_CORE_EFUSE_CRC  = 0x14, // eFuse CRC error resets the digital core
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
 } soc_reset_reason_t;
-
 
 #ifdef __cplusplus
 }

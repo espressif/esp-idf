@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_compiler.h"
 
 static const char *TAG = "lcd_panel.ssd1306";
 
@@ -40,6 +41,7 @@ static const char *TAG = "lcd_panel.ssd1306";
 #define SSD1306_CMD_MIRROR_Y_OFF          0xC0
 #define SSD1306_CMD_MIRROR_Y_ON           0xC8
 #define SSD1306_CMD_SET_COMPINS           0xDA
+#define SSD1306_CMD_SET_CONTRAST          0x81
 
 static esp_err_t panel_ssd1306_del(esp_lcd_panel_t *panel);
 static esp_err_t panel_ssd1306_reset(esp_lcd_panel_t *panel);
@@ -55,7 +57,8 @@ typedef struct {
     esp_lcd_panel_t base;
     esp_lcd_panel_io_handle_t io;
     uint8_t height;
-    int reset_gpio_num;
+    uint8_t contrast;
+    gpio_num_t reset_gpio_num;
     int x_gap;
     int y_gap;
     unsigned int bits_per_pixel;
@@ -73,6 +76,8 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(panel_dev_config->bits_per_pixel == 1, ESP_ERR_INVALID_ARG, err, TAG, "bpp must be 1");
     esp_lcd_panel_ssd1306_config_t *ssd1306_spec_config = (esp_lcd_panel_ssd1306_config_t *)panel_dev_config->vendor_config;
+    // leak detection of ssd1306 because saving ssd1306->base address
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     ssd1306 = calloc(1, sizeof(ssd1306_panel_t));
     ESP_GOTO_ON_FALSE(ssd1306, ESP_ERR_NO_MEM, err, TAG, "no mem for ssd1306 panel");
 
@@ -88,7 +93,8 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306->bits_per_pixel = panel_dev_config->bits_per_pixel;
     ssd1306->reset_gpio_num = panel_dev_config->reset_gpio_num;
     ssd1306->reset_level = panel_dev_config->flags.reset_active_high;
-    ssd1306->height = ssd1306_spec_config ? ssd1306_spec_config->height : 64;
+    ssd1306->height = (ssd1306_spec_config != NULL && ssd1306_spec_config->height != 0) ? ssd1306_spec_config->height : 64;
+    ssd1306->contrast = (ssd1306_spec_config != NULL && ssd1306_spec_config->contrast != 0) ? ssd1306_spec_config->contrast : 128;
     ssd1306->base.del = panel_ssd1306_del;
     ssd1306->base.reset = panel_ssd1306_reset;
     ssd1306->base.init = panel_ssd1306_init;
@@ -111,6 +117,7 @@ err:
         free(ssd1306);
     }
     return ret;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 static esp_err_t panel_ssd1306_del(esp_lcd_panel_t *panel)
@@ -162,13 +169,16 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
                         "io tx param SSD1306_CMD_MIRROR_X_OFF failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_MIRROR_Y_OFF, NULL, 0), TAG,
                         "io tx param SSD1306_CMD_MIRROR_Y_OFF failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CONTRAST, (uint8_t[]) {
+        ssd1306->contrast  // set display contrast
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_CONTRAST failed");
+
     return ESP_OK;
 }
 
 static esp_err_t panel_ssd1306_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
-    assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     esp_lcd_panel_io_handle_t io = ssd1306->io;
 
     // adding extra gap

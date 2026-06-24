@@ -63,7 +63,7 @@ The description of the RMT functionality is divided into the following sections:
 - :ref:`rmt-multiple-channels-simultaneous-transmission` - describes how to collect multiple channels into a sync group so that their transmissions can be started simultaneously.
 - :ref:`rmt-rmt-encoder` - focuses on how to write a customized encoder by combining multiple primitive encoders that are provided by the driver.
 - :ref:`rmt-power-management` - describes how different clock sources affects power consumption.
-- :ref:`rmt-iram-safe` - describes how disabling the cache affects the RMT driver, and tips to mitigate it.
+- :ref:`rmt-cache-safe` - describes how disabling the cache affects the RMT driver, and tips to mitigate it.
 - :ref:`rmt-thread-safety` - lists which APIs are guaranteed to be thread-safe by the driver.
 - :ref:`rmt-kconfig-options` - describes the various Kconfig options supported by the RMT driver.
 
@@ -90,9 +90,8 @@ To install an RMT TX channel, there is a configuration structure that needs to b
 - :cpp:member:`rmt_tx_channel_config_t::trans_queue_depth` sets the depth of the internal transaction queue, the deeper the queue, the more transactions can be prepared in the backlog.
 - :cpp:member:`rmt_tx_channel_config_t::invert_out` is used to decide whether to invert the RMT signal before sending it to the GPIO pad.
 - :cpp:member:`rmt_tx_channel_config_t::with_dma` enables the DMA backend for the channel. Using the DMA allows a significant amount of the channel's workload to be offloaded from the CPU. However, the DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter a :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
-- :cpp:member:`rmt_tx_channel_config_t::io_loop_back` enables both input and output capabilities on the channel's assigned GPIO. Thus, by binding a TX and RX channel to the same GPIO, loopback can be achieved.
-- :cpp:member:`rmt_tx_channel_config_t::io_od_mode` configures the channel's assigned GPIO as open-drain. When combined with :cpp:member:`rmt_tx_channel_config_t::io_loop_back`, a bi-directional bus (e.g., 1-wire) can be achieved.
 - :cpp:member:`rmt_tx_channel_config_t::intr_priority` Set the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1,2 or 3), otherwise use the priority indicated by :cpp:member:`rmt_tx_channel_config_t::intr_priority`. Please use the number form (1,2,3) , not the bitmask form ((1<<1),(1<<2),(1<<3)). Please pay attention that once the interrupt priority is set, it cannot be changed until :cpp:func:`rmt_del_channel` is called.
+- :cpp:member:`rmt_tx_channel_config_t::allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the RMT register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 Once the :cpp:type:`rmt_tx_channel_config_t` structure is populated with mandatory parameters, users can call :cpp:func:`rmt_new_tx_channel` to allocate and initialize a TX channel. This function returns an RMT channel handle if it runs correctly. Specifically, when there are no more free channels in the RMT resource pool, this function returns :c:macro:`ESP_ERR_NOT_FOUND` error. If some feature (e.g., DMA backend) is not supported by the hardware, it returns :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
@@ -125,8 +124,8 @@ To install an RMT RX channel, there is a configuration structure that needs to b
 
 - :cpp:member:`rmt_rx_channel_config_t::invert_in` is used to invert the input signals before it is passed to the RMT receiver. The inversion is done by the GPIO matrix instead of by the RMT peripheral.
 - :cpp:member:`rmt_rx_channel_config_t::with_dma` enables the DMA backend for the channel. Using the DMA allows a significant amount of the channel's workload to be offloaded from the CPU. However, the DMA backend is not available on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you enable this option. Or you might encounter a :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
-- :cpp:member:`rmt_rx_channel_config_t::io_loop_back` enables both input and output capabilities on the channel's assigned GPIO. Thus, by binding a TX and RX channel to the same GPIO, loopback can be achieved.
 - :cpp:member:`rmt_rx_channel_config_t::intr_priority` Set the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1,2 or 3), otherwise use the priority indicated by :cpp:member:`rmt_rx_channel_config_t::intr_priority`. Please use the number form (1,2,3) , not the bitmask form ((1<<1),(1<<2),(1<<3)). Please pay attention that once the interrupt priority is set, it cannot be changed until :cpp:func:`rmt_del_channel` is called.
+- :cpp:member:`rmt_rx_channel_config_t::allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the RMT register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandatory parameters, users can call :cpp:func:`rmt_new_rx_channel` to allocate and initialize an RX channel. This function returns an RMT channel handle if it runs correctly. Specifically, when there are no more free channels in the RMT resource pool, this function returns :c:macro:`ESP_ERR_NOT_FOUND` error. If some feature (e.g., DMA backend) is not supported by the hardware, it returns :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
 
@@ -145,7 +144,7 @@ Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandato
 
 .. note::
 
-    Due to a software limitation in the GPIO driver, when both TX and RX channels are bound to the same GPIO, ensure the RX Channel is initialized before the TX Channel. If the TX Channel was set up first, then during the RX Channel setup, the previous RMT TX Channel signal will be overridden by the GPIO control signal.
+    When multiple RMT channels are allocated at the same time, the group’s prescale is determined based on the resolution of the first channel. The driver then selects the appropriate prescale from low to high. To avoid prescale conflicts when allocating multiple channels, allocate channels in order of their target resolution, either from highest to lowest or lowest to highest.
 
 Uninstall RMT Channel
 ~~~~~~~~~~~~~~~~~~~~~
@@ -163,8 +162,8 @@ Carrier-related configurations lie in :cpp:type:`rmt_carrier_config_t`:
 
 - :cpp:member:`rmt_carrier_config_t::frequency_hz` sets the carrier frequency, in Hz.
 - :cpp:member:`rmt_carrier_config_t::duty_cycle` sets the carrier duty cycle.
-- :cpp:member:`rmt_carrier_config_t::polarity_active_low` sets the carrier polarity, i.e., on which level the carrier is applied.
-- :cpp:member:`rmt_carrier_config_t::always_on` sets whether to output the carrier even when the data transmission has finished. This configuration is only valid for the TX channel.
+- :cpp:member:`rmt_carrier_config_t::extra_rmt_carrier_config_flags::polarity_active_low` sets the carrier polarity, i.e., on which level the carrier is applied.
+- :cpp:member:`rmt_carrier_config_t::extra_rmt_carrier_config_flags::always_on` sets whether to output the carrier even when the data transmission has finished. This configuration is only valid for the TX channel.
 
 .. note::
 
@@ -219,7 +218,7 @@ The RX-complete event data is defined in :cpp:type:`rmt_rx_done_event_data_t`:
 
 - :cpp:member:`rmt_rx_done_event_data_t::received_symbols` points to the received RMT symbols. These symbols are saved in the ``buffer`` parameter of the :cpp:func:`rmt_receive` function. Users should not free this receive buffer before the callback returns. If you also enabled the partial receive feature, then the user buffer will be used as a "second level buffer", where its content can be overwritten by data comes in afterwards. In this case, you should copy the received data to another place if you want to keep it or process it later.
 - :cpp:member:`rmt_rx_done_event_data_t::num_symbols` indicates the number of received RMT symbols. This value is not larger than the ``buffer_size`` parameter of :cpp:func:`rmt_receive` function. If the ``buffer_size`` is not sufficient to accommodate all the received RMT symbols, the driver only keeps the maximum number of symbols that the buffer can hold, and excess symbols are discarded or ignored.
-- :cpp:member:`rmt_rx_done_event_data_t::is_last` indicates whether the current received buffer is the last one in the transaction. This is useful when you enable the partial reception feature by :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx`.
+- :cpp:member:`rmt_rx_done_event_data_t::extra_rmt_rx_done_event_flags::is_last` indicates whether the current received buffer is the last one in the transaction. This is useful when you enable the partial reception feature by :cpp:member:`rmt_receive_config_t::extra_rmt_receive_flags::en_partial_rx`.
 
 .. _rmt-enable-and-disable-channel:
 
@@ -247,18 +246,17 @@ Once you created an encoder, you can initiate a TX transaction by calling :cpp:f
 - :cpp:member:`rmt_transmit_config_t::loop_count` sets the number of transmission loops. After the transmitter has finished one round of transmission, it can restart the same transmission again if this value is not set to zero. As the loop is controlled by hardware, the RMT channel can be used to generate many periodic sequences with minimal CPU intervention.
 
     - Setting :cpp:member:`rmt_transmit_config_t::loop_count` to `-1` means an infinite loop transmission. In this case, the channel does not stop until :cpp:func:`rmt_disable` is called. The "trans-done" event is not generated as well.
-    - Setting :cpp:member:`rmt_transmit_config_t::loop_count` to a positive number means finite number of iterations. In this case, the "trans-done" event is when the specified number of iterations have completed.
 
-    .. note::
+    .. only:: not esp32
 
-        The **loop transmit** feature is not supported on all ESP chips, please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] before you configure this option, or you might encounter :c:macro:`ESP_ERR_NOT_SUPPORTED` error.
+        - Setting :cpp:member:`rmt_transmit_config_t::loop_count` to a positive number means finite number of iterations. In this case, the "trans-done" event is when the specified number of iterations have completed.
 
 - :cpp:member:`rmt_transmit_config_t::eot_level` sets the output level when the transmitter finishes working or stops working by calling :cpp:func:`rmt_disable`.
 - :cpp:member:`rmt_transmit_config_t::queue_nonblocking` sets whether to wait for a free slot in the transaction queue when it is full. If this value is set to ``true``, then the function will return with an error code :c:macro:`ESP_ERR_INVALID_STATE` when the queue is full. Otherwise, the function will block until a free slot is available in the queue.
 
 .. note::
 
-    There is a limitation in the transmission size if the :cpp:member:`rmt_transmit_config_t::loop_count` is set to non-zero, i.e., to enable the loop feature. The encoded RMT symbols should not exceed the capacity of the RMT hardware memory block size, or you might see an error message like ``encoding artifacts can't exceed hw memory block for loop transmission``. If you have to start a large transaction by loop, you can try either of the following methods.
+    There is a limitation in the transmission size if the :cpp:member:`rmt_transmit_config_t::loop_count` is set to non-zero, i.e., to enable the loop feature. The total amount of symbols returned by the encoder should not exceed the capacity of :c:macro:`SOC_RMT_MEM_WORDS_PER_CHANNEL`, or you might see an error message like ``encoding artifacts can't exceed hw memory block for loop transmission``. If you have to start a large transaction by loop, you can try either of the following methods.
 
     - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`. This approach does not work if the DMA backend is also enabled.
     - Customize an encoder and construct an infinite loop in the encoding function. See also :ref:`rmt-rmt-encoder`.
@@ -310,6 +308,10 @@ Calling :cpp:func:`rmt_del_sync_manager` can recycle the sync manager and enable
         };
         ESP_ERROR_CHECK(rmt_new_tx_channel(&tx_chan_config, &tx_channels[i]));
     }
+    // enable the channels
+    for (int i = 0; i < 2; i++) {
+        ESP_ERROR_CHECK(rmt_enable(tx_channels[i]));
+    }
     // install sync manager
     rmt_sync_manager_handle_t synchro = NULL;
     rmt_sync_manager_config_t synchro_config = {
@@ -331,9 +333,13 @@ As also discussed in the :ref:`rmt-enable-and-disable-channel`, calling :cpp:fun
 
 - :cpp:member:`rmt_receive_config_t::signal_range_min_ns` specifies the minimal valid pulse duration in either high or low logic levels. A pulse width that is smaller than this value is treated as a glitch, and ignored by the hardware.
 - :cpp:member:`rmt_receive_config_t::signal_range_max_ns` specifies the maximum valid pulse duration in either high or low logic levels. A pulse width that is bigger than this value is treated as **Stop Signal**, and the receiver generates receive-complete event immediately.
-- If the incoming packet is long, that they cannot be stored in the user buffer at once, you can enable the partial reception feature by setting :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx` to ``true``. In this case, the driver invokes :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` callback multiple times during one transaction, when the user buffer is **almost full**. You can check the value of :cpp:member::`rmt_rx_done_event_data_t::is_last` to know if the transaction is about to finish.
+- If the incoming packet is long, that they cannot be stored in the user buffer at once, you can enable the partial reception feature by setting :cpp:member:`rmt_receive_config_t::extra_rmt_receive_flags::en_partial_rx` to ``true``. In this case, the driver invokes :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` callback multiple times during one transaction, when the user buffer is **almost full**. You can check the value of :cpp:member:`rmt_rx_done_event_data_t::extra_rmt_rx_done_event_flags::is_last` to know if the transaction is about to finish. Please note this features is not supported on all ESP series chips because it relies on hardware abilities like "ping-pong receive" or "DMA receive".
 
 The RMT receiver starts the RX machine after the user calls :cpp:func:`rmt_receive` with the provided configuration above. Note that, this configuration is transaction specific, which means, to start a new round of reception, the user needs to set the :cpp:type:`rmt_receive_config_t` again. The receiver saves the incoming signals into its internal memory block or DMA buffer, in the format of :cpp:type:`rmt_symbol_word_t`.
+
+.. note::
+
+    After calling :cpp:func:`rmt_receive` function, the actual reception starts at the first level change of the received signal. If you need to get the start time of the reception, you can register a GPIO interrupt on the GPIO of the RMT RX channel, please refer to :doc:`GPIO doc </api-reference/peripherals/gpio>` for details.
 
 .. only:: SOC_RMT_SUPPORT_RX_PINGPONG
 
@@ -427,6 +433,34 @@ Besides the primitive encoders provided by the driver, the user can implement hi
 .. blockdiag:: /../_static/diagrams/rmt/rmt_encoder_chain.diag
     :caption: RMT Encoder Chain
     :align: center
+
+Simple Callback Encoder
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A simple callback encoder is created by calling :cpp:func:`rmt_new_simple_encoder`. The simple callback encoder allows you to provide a callback that reads data from userspace and writes symbols to the output stream without having to chain other encoders. The callback itself gets a pointer to the data passed to :cpp:func:`rmt_transmit`, a counter indicating the amount of symbols already written by the callback in this transmission, and a pointer where to write the encoded RMT symbols as well as the free space there. If the space is not enough for the callback to encode something, it can return 0 and the RMT will wait for previous symbols to be transmitted and call the callback again, now with more space available. If the callback successfully writes RMT symbols, it should return the number of symbols written.
+
+A configuration structure :cpp:type:`rmt_simple_encoder_config_t` should be provided in advance before calling :cpp:func:`rmt_new_simple_encoder`:
+
+- :cpp:member:`rmt_simple_encoder_config_t::callback` and :cpp:member:`rmt_simple_encoder_config_t::arg` provide the callback function and an opaque argument that will be passed to that function.
+- :cpp:member:`rmt_simple_encoder_config_t::min_chunk_size` specifies the minimum amount of free space, in symbols, the encoder will be always be able to write some data to. In other words, when this amount of free space is passed to the encoder, it should never return 0 (except when the encoder is done encoding symbols).
+
+While the functionality of an encoding process using the simple callback encoder can usually also realized by chaining other encoders, the simple callback can be more easy to understand and maintain than an encoder chain.
+
+.. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
+
+    .. _rmt-bitscrambler-encoder:
+
+    BitScrambler Encoder
+    ~~~~~~~~~~~~~~~~~~~~
+
+    When the RMT transmit channel has DMA enabled, we can control the data on the DMA path by writing :doc:`BitScrambler </api-reference/peripherals/bitscrambler>` assembly code, which implements simple encoding operations. Compared to CPU-based encoding, the BitScrambler offers higher performance without consuming CPU resources. However, due to the limited instruction memory space of the BitScrambler, it cannot implement complex encoding operations. Additionally, the output data format from the BitScrambler program must conform to the :cpp:type:`rmt_symbol_word_t` structure.
+
+    A BitScrambler encoder can be created by calling :cpp:func:`rmt_new_bitscrambler_encoder`. This function takes a configuration parameter of type :cpp:type:`rmt_bs_encoder_config_t`, which includes the following configuration items:
+        - :cpp:member:`rmt_bs_encoder_config_t::program_bin` points to the binary file of the BitScrambler program. This binary file must comply with the BitScrambler assembly language specification and will be loaded into the BitScrambler's instruction memory at runtime. For information on how to write and compile BitScrambler programs, please refer to the :doc:`BitScrambler Programming Guide </api-reference/peripherals/bitscrambler>`.
+
+    .. note::
+
+        The BitScrambler encoder **must** be used with an RMT channel that has DMA enabled.
 
 Customize RMT Encoder for NEC Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -537,26 +571,30 @@ A full sample code can be found in :example:`peripherals/rmt/ir_nec_transceiver`
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system adjusts the APB frequency before going into Light-sleep, thus potentially changing the resolution of the RMT internal counter.
+When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source before going to sleep. As a result, the time base inside the RMT can't work as expected.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the user creates an RMT channel that has selected :cpp:enumerator:`RMT_CLK_SRC_APB` as the clock source, the driver guarantees that the power management lock is acquired after the channel enabled by :cpp:func:`rmt_enable`. Likewise, the driver releases the lock after :cpp:func:`rmt_disable` is called for the same channel. This also reveals that the :cpp:func:`rmt_enable` and :cpp:func:`rmt_disable` should appear in pairs.
+The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`rmt_enable`, and release it in :cpp:func:`rmt_disable`. That means, any RMT transactions in between these two functions are guaranteed to work correctly and stable.
 
-If the channel clock source is selected to others like :cpp:enumerator:`RMT_CLK_SRC_XTAL`, then the driver does not install a power management lock for it, which is more suitable for a low-power application as long as the source clock can still provide sufficient resolution.
+.. only:: SOC_RMT_SUPPORT_SLEEP_RETENTION
 
-.. _rmt-iram-safe:
+    Besides the potential changes to the clock source, when the power management is enabled, the system can also power down the RMT hardware before sleep. Set :cpp:member:`rmt_tx_channel_config_t::allow_pd` and :cpp:member:`rmt_rx_channel_config_t::allow_pd` to ``true`` to enable the power down feature. RMT registers will be backed up before sleep and restored after wake up. Please note, enabling this option will increase the memory consumption.
 
-IRAM Safe
-^^^^^^^^^
+.. _rmt-cache-safe:
+
+Cache Safe
+^^^^^^^^^^
 
 By default, the RMT interrupt is deferred when the Cache is disabled for reasons like writing or erasing the main Flash. Thus the transaction-done interrupt does not get handled in time, which is not acceptable in a real-time application. What is worse, when the RMT transaction relies on **ping-pong** interrupt to successively encode or copy RMT symbols, a delayed interrupt can lead to an unpredictable result.
 
-There is a Kconfig option :ref:`CONFIG_RMT_ISR_IRAM_SAFE` that has the following features:
+There is a Kconfig option :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` that has the following features:
 
 1. Enable the interrupt being serviced even when the cache is disabled
 2. Place all functions used by the ISR into IRAM [2]_
 3. Place the driver object into DRAM in case it is mapped to PSRAM by accident
 
 This Kconfig option allows the interrupt handler to run while the cache is disabled but comes at the cost of increased IRAM consumption.
+
+Please note, when :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` is enabled, you must also place the encoder functions (mainly the :cpp:member:`rmt_encoder_t::encode` and :cpp:member:`rmt_encoder_t::reset`) into IRAM. You can use :c:macro:`RMT_ENCODER_FUNC_ATTR` to decorate your encoder functions.
 
 Another Kconfig option :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` can place :cpp:func:`rmt_receive` into the IRAM as well. So that the receive function can be used even when the flash cache is disabled.
 
@@ -577,19 +615,23 @@ The following functions are allowed to use under ISR context as well.
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_RMT_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-iram-safe` for more information.
+- :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` control whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-cache-safe` for more information.
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
-- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` controls where to place the RMT receive function (IRAM or Flash), see :ref:`rmt-iram-safe` for more information.
+- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` controls where to place the RMT receive function (IRAM or Flash), see :ref:`rmt-cache-safe` for more information.
 
 Application Examples
 --------------------
 
-* RMT-based RGB LED strip customized encoder: :example:`peripherals/rmt/led_strip`
-* RMT IR NEC protocol encoding and decoding: :example:`peripherals/rmt/ir_nec_transceiver`
-* RMT transactions in queue: :example:`peripherals/rmt/musical_buzzer`
-* RMT-based stepper motor with S-curve algorithm: : :example:`peripherals/rmt/stepper_motor`
-* RMT infinite loop for driving DShot ESC: :example:`peripherals/rmt/dshot_esc`
-* RMT simulate 1-wire protocol (take DS18B20 as example): :example:`peripherals/rmt/onewire`
+.. list::
+
+    - :example:`peripherals/rmt/led_strip` demonstrates how to use the RMT peripheral to drive a WS2812 LED strip, which is able to change the number of LEDs and the chasing effect.
+    - :example:`peripherals/rmt/led_strip_simple_encoder` demonstrates how to use the RMT peripheral to drive a WS2812 LED strip by implementing a callback that converts RGB pixels into a format recognized by the hardware.
+    - :example:`peripherals/rmt/ir_nec_transceiver` demonstrates how to use the RMT peripheral to implement the encoding and decoding of remote IR NEC protocol.
+    - :example:`peripherals/rmt/dshot_esc` demonstrates how to use the RMT TX channel to achieve infinite loop transmission. It constructs an RMT encoder for the DShot digital protocol. This protocol is primarily used for communication between flight controllers and electronic speed controllers, offering greater resistance to electrical noise compared to traditional analog protocols.
+    - :example:`peripherals/rmt/onewire` demonstrates how to simulate the 1-wire hardware protocol by using the `onewire_bus` library, and read data from multiple DS18B20 temperature sensors on the bus. This library is built upon a pair of transmit and receive channels of the RMT peripheral.
+    :SOC_RMT_SUPPORT_TX_LOOP_COUNT: - :example:`peripherals/rmt/musical_buzzer` demonstrates how to use the RMT TX channel to drive a passive buzzer to play simple music. Each musical note is represented by a constant frequency of PWM signal with a fixed duration.
+    :SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP: - :example:`peripherals/rmt/stepper_motor` demonstrates how to use the RMT peripheral to drive a STEP/DIR interfaced stepper motor controller (such as DRV8825). After programming the RMT encoder, S-curve profile can be implemented for desired acceleration, constant speed, and deceleration phases, thereby smoothly driving the stepper motor.
+
 
 FAQ
 ---
@@ -611,11 +653,11 @@ API Reference
 .. include-build-file:: inc/rmt_common.inc
 .. include-build-file:: inc/rmt_encoder.inc
 .. include-build-file:: inc/components/esp_driver_rmt/include/driver/rmt_types.inc
-.. include-build-file:: inc/components/hal/include/hal/rmt_types.inc
+.. include-build-file:: inc/components/esp_hal_rmt/include/hal/rmt_types.inc
 
 
 .. [1]
-   Different ESP chip series might have different numbers of RMT channels. Please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] for details. The driver does not forbid you from applying for more RMT channels, but it returns an error when there are no hardware resources available. Please always check the return value when doing `Resource Allocation <#resource-allocation>`__.
+   Different ESP chip series might have different numbers of RMT channels. Please refer to [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__] for details. The driver does not forbid you from applying for more RMT channels, but it returns an error when there are no hardware resources available. Please always check the return value when doing :ref:`rmt-resource-allocation`.
 
 .. [2]
    The callback function, e.g., :cpp:member:`rmt_tx_event_callbacks_t::on_trans_done`, and the functions invoked by itself should also reside in IRAM, users need to take care of this by themselves.

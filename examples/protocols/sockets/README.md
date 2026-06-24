@@ -2,8 +2,8 @@
 # BSD Socket API Examples
 
 This directory contains simple examples demonstrating BSD Socket API. 
-Each example, contains README.md file with mode detailed informations about that particular example.
-For more general informations about all examples, see the README.md file in the upper level 'examples' directory.
+Each example, contains README.md file with mode detailed information about that particular example.
+For more general information about all examples, see the README.md file in the upper level 'examples' directory.
 Examples:
 
 * UDP Client - The application creates UDP socket and sends message to the predefined port and IP address. After the server's reply, the application prints received reply as ASCII text, waits for 2 seconds and sends another message.
@@ -56,10 +56,10 @@ They can also be run locally. Ref: [ESP-IDF Tests with Pytest Guide](https://doc
 Example:
 ```bash
 $ cd $IDF_PATH
-$ bash install.sh --enable-pytest
+$ bash install.sh --enable-ci
 $ . ./export.sh
 $ cd examples/protocols/sockets/tcp_client
-$ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
+$ idf-ci build run --target esp32 --only-test-related
 $ pytest --target esp32
 ```
 
@@ -112,7 +112,7 @@ Please make sure that when using the Local Link address, an interface id is incl
 * On the host
 
    - Interface name suffix is present when passing the address as a string, for example `fe80::260a:XXX:XXX:XXX%en0`
-   - The interface id is present when passing the endpoint as tupple, for example `socket.connect(('fd00::260a:XXXX:XXXX:XXXX', 3333, 0, 3))`
+   - The interface id is present when passing the endpoint as tuple, for example `socket.connect(('fd00::260a:XXXX:XXXX:XXXX', 3333, 0, 3))`
 
 ## Hardware Required
 

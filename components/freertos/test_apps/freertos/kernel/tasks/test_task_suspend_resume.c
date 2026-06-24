@@ -118,6 +118,8 @@ TEST_CASE("Suspend the current running task", "[freertos]")
     TEST_ASSERT_TRUE(resumed);
 }
 
+#if SOC_GPTIMER_SUPPORTED
+
 static volatile bool timer_isr_fired;
 static gptimer_handle_t gptimer = NULL;
 
@@ -203,3 +205,5 @@ TEST_CASE("Resume task from ISR (other core)", "[freertos]")
     test_resume_task_from_isr(!UNITY_FREERTOS_CPU);
 }
 #endif // CONFIG_FREERTOS_UNICORE
+
+#endif //SOC_GPTIMER_SUPPORTED

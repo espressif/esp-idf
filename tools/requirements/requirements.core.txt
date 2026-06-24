@@ -1,24 +1,38 @@
 # Python package requirements for ESP-IDF. These are the so called core features which are installed in all systems.
+#
+# This file lists Python packages without version specifiers. Version details
+# are stored in a separate constraints file. For more information, visit:
+# https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html
 
 setuptools
 packaging
-# importlib_metadata: is part of python3.8 and newer as importlib.metadata
-importlib_metadata; python_version < "3.8"
 click
+rich-click
 pyserial
 cryptography
 pyparsing
 pyelftools
-idf-component-manager
+idf-component-manager>=2.2
 esp-coredump
 esptool
 esp-idf-kconfig
 esp-idf-monitor
 esp-idf-nvs-partition-gen
 esp-idf-size
+esp-idf-diag
 esp-idf-panic-decoder
+esp-idf-sbom
+esp-pylib[cli,ide]
 pyclang
 construct
+rich
+esp-pylib[cli]
+psutil
+
+# ble's compressed log testing tool
+tree_sitter
+tree_sitter_c
 
 # gdb extensions dependencies
 freertos_gdb
+idf_drivers_gdb

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,8 @@
  */
 
 #include <inttypes.h>
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
+#include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "esp_compiler.h"
 
@@ -66,9 +67,12 @@ esp_err_t sdmmc_io_reset(sdmmc_card_t* card)
 {
     uint8_t sdio_reset = CCCR_CTL_RES;
     esp_err_t err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CTL, SD_ARG_CMD52_WRITE, &sdio_reset);
-    if (err == ESP_ERR_TIMEOUT || (host_is_spi(card) && err == ESP_ERR_NOT_SUPPORTED)) {
+    if (err == ESP_ERR_TIMEOUT || (host_is_spi(card) && err == ESP_ERR_NOT_SUPPORTED) || err == ESP_ERR_INVALID_CRC) {
         /* Non-IO cards are allowed to time out (in SD mode) or
          * return "invalid command" error (in SPI mode).
+         * CRC errors are also allowed as the card may be in a state where
+         * CRC is enabled from a previous session, especially after ESP32 restart
+         * without power cycling the SD card.
          */
     } else if (err == ESP_ERR_NOT_FOUND) {
         ESP_LOGD(TAG, "%s: card not present", __func__);
@@ -116,6 +120,48 @@ esp_err_t sdmmc_init_io(sdmmc_card_t* card)
         if (err != ESP_OK) {
             ESP_LOGD(TAG, "%s: sdmmc_enable_int failed (0x%x)", __func__, err);
         }
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_io_init_read_card_cap(sdmmc_card_t* card, uint8_t *card_cap)
+{
+    esp_err_t err = ESP_OK;
+
+    err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CARD_CAP,
+            SD_ARG_CMD52_READ, card_cap);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read SD_IO_CCCR_CARD_CAP) returned 0x%0x", __func__, err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_io_init_check_card_cap(sdmmc_card_t* card, uint8_t *card_cap)
+{
+    esp_err_t err = ESP_OK;
+    /*
+     * Integrity check required if card is switched to HS mode
+     * For frequency less than SDMMC_FREQ_HIGHSPEED, see sdmmc_io_enable_hs_mode()
+     */
+    if (card->max_freq_khz < SDMMC_FREQ_HIGHSPEED) {
+        return ESP_OK;
+    }
+
+    /* If frequency switch has been performed, read card capabilities from CCCR to confirm
+     * that data can be read correctly at the new frequency.
+     */
+    uint8_t temp_card_cap = 0;
+    err = sdmmc_io_rw_direct(card, 0, SD_IO_CCCR_CARD_CAP,
+            SD_ARG_CMD52_READ, &temp_card_cap);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read SD_IO_CCCR_CARD_CAP) returned 0x%0x", __func__, err);
+        return err;
+    }
+    if (*card_cap != temp_card_cap) {
+        ESP_LOGE(TAG, "%s: got corrupted data after increasing clock frequency", __func__);
+        return ESP_ERR_INVALID_RESPONSE;
     }
     return ESP_OK;
 }
@@ -277,15 +323,16 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
         .blklen = SDMMC_IO_BLOCK_SIZE /* TODO: read max block size from CIS */
     };
 
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (unlikely(datalen > 0 && !esp_dma_is_buffer_alignment_satisfied(datap, buflen, dma_mem_info))) {
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, datap, buflen);
+    if (unlikely(datalen > 0 && !is_aligned)) {
         if (datalen > SDMMC_IO_BLOCK_SIZE || card->host.dma_aligned_buffer == NULL) {
             // User gives unaligned buffer while `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` not set.
             return ESP_ERR_INVALID_ARG;
         }
         memset(card->host.dma_aligned_buffer, 0xcc, SDMMC_IO_BLOCK_SIZE);
-        memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        if (arg & SD_ARG_CMD53_WRITE) {
+            memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        }
         cmd.data = card->host.dma_aligned_buffer;
         cmd.buflen = SDMMC_IO_BLOCK_SIZE;
     }
@@ -320,7 +367,10 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 
     err = sdmmc_send_cmd(card, &cmd);
 
-    if (datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
+    // Cannot do a normal bitmask check (arg & SD_ARG_CMD53_READ)
+    // since SD_ARG_CMD53_READ (0<<31) is 0
+    if (!(arg & SD_ARG_CMD53_WRITE) &&
+            datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
         assert(datalen <= SDMMC_IO_BLOCK_SIZE);
         memcpy(datap, card->host.dma_aligned_buffer, datalen);
     }
@@ -336,6 +386,17 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
+    uint32_t arg = SD_ARG_CMD53_READ;
+    bool incr_addr = true;
+    //Extract and unset the bit used to indicate the OP Code
+    if (addr & SDMMC_IO_FIXED_ADDR) {
+        addr &= ~SDMMC_IO_FIXED_ADDR;
+        incr_addr = false;
+    }
+    if (incr_addr) {
+        arg |= SD_ARG_CMD53_INCREMENT;
+    }
+
     /* host quirk: SDIO transfer with length not divisible by 4 bytes
      * has to be split into two transfers: one with aligned length,
      * the other one for the remaining 1-3 bytes.
@@ -347,15 +408,15 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
 
         // Note: sdmmc_io_rw_extended has an internal timeout,
         //  typically SDMMC_DEFAULT_CMD_TIMEOUT_MS
-        esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
-                SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT,
-                pc_dst, will_transfer);
+        esp_err_t err = sdmmc_io_rw_extended(card, function, addr, arg, pc_dst, will_transfer);
         if (unlikely(err != ESP_OK)) {
             return err;
         }
         pc_dst += will_transfer;
         size -= will_transfer;
-        addr += will_transfer;
+        if (incr_addr) {
+            addr += will_transfer;
+        }
     }
     return ESP_OK;
 }
@@ -363,24 +424,34 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
+    uint32_t arg = SD_ARG_CMD53_WRITE;
+    bool incr_addr = true;
+    //Extract and unset the bit used to indicate the OP Code
+    if (addr & SDMMC_IO_FIXED_ADDR) {
+        addr &= ~SDMMC_IO_FIXED_ADDR;
+        incr_addr = false;
+    }
+    if (incr_addr) {
+        arg |= SD_ARG_CMD53_INCREMENT;
+    }
+
     /* same host quirk as in sdmmc_io_read_bytes */
     const uint8_t *pc_src = (const uint8_t*) src;
-
     while (size > 0) {
         size_t size_aligned = size & (~3);
         size_t will_transfer = size_aligned > 0 ? size_aligned : size;
 
         // Note: sdmmc_io_rw_extended has an internal timeout,
         //  typically SDMMC_DEFAULT_CMD_TIMEOUT_MS
-        esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
-                SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT,
-                (void*) pc_src, will_transfer);
+        esp_err_t err = sdmmc_io_rw_extended(card, function, addr, arg, (void*) pc_src, will_transfer);
         if (unlikely(err != ESP_OK)) {
             return err;
         }
         pc_src += will_transfer;
         size -= will_transfer;
-        addr += will_transfer;
+        if (incr_addr) {
+            addr += will_transfer;
+        }
     }
     return ESP_OK;
 }
@@ -388,27 +459,35 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(dst, size, dma_mem_info))) {
+    uint32_t arg = SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE;
+    //Extract and unset the bit used to indicate the OP Code (inverted logic)
+    if (addr & SDMMC_IO_FIXED_ADDR) {
+        arg &= ~SD_ARG_CMD53_INCREMENT;
+        addr &= ~SDMMC_IO_FIXED_ADDR;
+    }
+
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, dst, size);
+    if (unlikely(!is_aligned)) {
         return ESP_ERR_INVALID_ARG;
     }
-    return sdmmc_io_rw_extended(card, function, addr,
-            SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE,
-            dst, size);
+    return sdmmc_io_rw_extended(card, function, addr, arg, dst, size);
 }
 
 esp_err_t sdmmc_io_write_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(src, size, dma_mem_info))) {
+    uint32_t arg = SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE;
+    //Extract and unset the bit used to indicate the OP Code (inverted logic)
+    if (addr & SDMMC_IO_FIXED_ADDR) {
+        arg &= ~SD_ARG_CMD53_INCREMENT;
+        addr &= ~SDMMC_IO_FIXED_ADDR;
+    }
+
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, src, size);
+    if (unlikely(!is_aligned)) {
         return ESP_ERR_INVALID_ARG;
     }
-    return sdmmc_io_rw_extended(card, function, addr,
-            SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT | SD_ARG_CMD53_BLOCK_MODE,
-            (void*) src, size);
+    return sdmmc_io_rw_extended(card, function, addr, arg, (void*) src, size);
 }
 
 esp_err_t sdmmc_io_enable_int(sdmmc_card_t* card)
@@ -419,7 +498,7 @@ esp_err_t sdmmc_io_enable_int(sdmmc_card_t* card)
     return (*card->host.io_int_enable)(card->host.slot);
 }
 
-esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, TickType_t timeout_ticks)
+esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, uint32_t timeout_ticks)
 {
     if (card->host.io_int_wait == NULL) {
         return ESP_ERR_NOT_SUPPORTED;
@@ -596,7 +675,7 @@ static bool check_tuples_in_buffer(uint8_t* buf, int buffer_size, int* inout_cis
 esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t buffer_size, size_t* inout_cis_size)
 {
     esp_err_t ret = ESP_OK;
-    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE];
+    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE] = {0};
 
     /* Pointer to size is a mandatory parameter */
     assert(inout_cis_size);

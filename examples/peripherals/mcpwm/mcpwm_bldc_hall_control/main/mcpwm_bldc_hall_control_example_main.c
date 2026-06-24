@@ -227,9 +227,10 @@ void app_main(void)
         .gpio_num = BLDC_DRV_FAULT_GPIO,
         .group_id = 0,
         .flags.active_level = 0, // low level means fault, refer to DRV8302 datasheet
-        .flags.pull_up = true,   // internally pull up
     };
     ESP_ERROR_CHECK(mcpwm_new_gpio_fault(&gpio_fault_config, &over_cur_fault));
+    // pull up the GPIO internally
+    ESP_ERROR_CHECK(gpio_set_pull_mode(BLDC_DRV_FAULT_GPIO, GPIO_PULLUP_ONLY));
 
     ESP_LOGI(TAG, "Set brake mode on the fault event");
     mcpwm_brake_config_t brake_config = {
@@ -311,7 +312,6 @@ void app_main(void)
     mcpwm_cap_channel_handle_t cap_channels[3];
     mcpwm_capture_channel_config_t cap_channel_config = {
         .prescale = 1,
-        .flags.pull_up = true,
         .flags.neg_edge = true,
         .flags.pos_edge = true,
     };
@@ -319,6 +319,8 @@ void app_main(void)
     for (int i = 0; i < 3; i++) {
         cap_channel_config.gpio_num = cap_chan_gpios[i];
         ESP_ERROR_CHECK(mcpwm_new_capture_channel(cap_timer, &cap_channel_config, &cap_channels[i]));
+        // pull up the GPIO internally
+        ESP_ERROR_CHECK(gpio_set_pull_mode(cap_chan_gpios[i], GPIO_PULLUP_ONLY));
     }
 
     ESP_LOGI(TAG, "Register event callback for capture channels");

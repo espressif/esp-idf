@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +14,17 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
+#if SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
+#endif
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #if SOC_KEY_MANAGER_SUPPORTED
-#include "hal/key_mgr_hal.h"
+#include "esp_key_mgr.h"
+#include "hal/key_mgr_ll.h"
+#include "rom/key_mgr.h"
+#include "esp_rom_crc.h"
 #endif
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
@@ -42,11 +49,11 @@
  * and if required encrypt the partitions in flash memory
  */
 
-static const char *TAG = "flash_encrypt";
+ESP_LOG_ATTR_TAG(TAG, "flash_encrypt");
 
 /* Static functions for stages of flash encryption */
 static esp_err_t encrypt_bootloader(void);
-static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partition_table, int *num_partitions);
+static esp_err_t encrypt_and_load_partition_table(uint32_t offset, esp_partition_info_t *partition_table, int *num_partitions);
 static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partition);
 static size_t get_flash_encrypt_cnt_value(void);
 
@@ -127,8 +134,158 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
     return ESP_OK;
 }
 
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+static esp_err_t key_manager_read_key_recovery_info(esp_key_mgr_key_recovery_info_t *key_recovery_info)
+{
+    esp_err_t err = ESP_FAIL;
+    uint32_t crc = 0;
+
+    for (int i = 0; i < 2; i++) {
+        err = bootloader_flash_read(KEY_HUK_SECTOR_OFFSET(i), (uint32_t *)key_recovery_info, sizeof(esp_key_mgr_key_recovery_info_t), false);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "Failed to read key recovery info from Key Manager sector %d: %x", i, err);
+            continue;
+        }
+
+        // check Key Recovery Info magic
+        if (key_recovery_info->magic != KEY_HUK_SECTOR_MAGIC) {
+            ESP_LOGD(TAG, "Key Manager sector %d Magic %08x failed", i, key_recovery_info->magic);
+            continue;
+        }
+
+        if (key_recovery_info->key_type != ESP_KEY_MGR_FLASH_XTS_AES_KEY) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key type %d", i, key_recovery_info->key_type);
+            continue;
+        }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
+        if (key_recovery_info->key_len != ESP_KEY_MGR_XTS_AES_LEN_256) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key length %d", i, key_recovery_info->key_len);
+            continue;
+        }
+#else
+        if (key_recovery_info->key_len != ESP_KEY_MGR_XTS_AES_LEN_128) {
+            ESP_LOGD(TAG, "Key Manager sector %d has incorrect key length %d", i, key_recovery_info->key_len);
+            continue;
+        }
+#endif
+
+        // check HUK Info CRC
+        crc = esp_rom_crc32_le(0, key_recovery_info->huk_info.info, HUK_INFO_LEN);
+        if (crc != key_recovery_info->huk_info.crc) {
+            ESP_LOGD(TAG, "Key Manager sector %d HUK Info CRC error", i);
+            continue;
+        }
+
+        // check Key Info 0 CRC
+        crc = esp_rom_crc32_le(0, key_recovery_info->key_info[0].info, KEY_INFO_LEN);
+        if (crc != key_recovery_info->key_info[0].crc) {
+            ESP_LOGD(TAG, "Key Manager sector %d Key Info 0 CRC error", i);
+            continue;
+        }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
+        // check Key Info 1 CRC
+        crc = esp_rom_crc32_le(0, key_recovery_info->key_info[1].info, KEY_INFO_LEN);
+        if (crc != key_recovery_info->key_info[1].crc) {
+            ESP_LOGD(TAG, "Key Manager sector %d Key Info 1 CRC error", i);
+            continue;
+        }
+#endif
+
+        ESP_LOGI(TAG, "Valid Key Manager key recovery info found in sector %d", i);
+        return ESP_OK;
+    }
+
+    ESP_LOGD(TAG, "No valid key recovery info found");
+    return ESP_ERR_NOT_FOUND;
+}
+
+static esp_err_t key_manager_generate_key(esp_key_mgr_key_recovery_info_t *key_recovery_info)
+{
+    ESP_LOGI(TAG, "Deploying new flash encryption key using Key Manager");
+
+    esp_key_mgr_random_key_config_t key_config;
+    memset(&key_config, 0, sizeof(esp_key_mgr_random_key_config_t));
+
+    key_config.key_type = ESP_KEY_MGR_FLASH_XTS_AES_KEY;
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
+    key_config.key_len = ESP_KEY_MGR_XTS_AES_LEN_256;
+#else
+    key_config.key_len = ESP_KEY_MGR_XTS_AES_LEN_128;
+#endif
+
+    // Generate a new key and load it into Key Manager
+    esp_err_t err = esp_key_mgr_deploy_key_in_random_mode(&key_config, key_recovery_info);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to generate key for Key Manager: %x", err);
+        return err;
+    }
+
+    ESP_LOGV(TAG, "Successfully deployed new flash encryption key using Key Manager");
+
+    // Write the key recovery info of the newly generated key into the flash
+    for (int i = 0; i < 2; i++) {
+        err = bootloader_flash_erase_sector(i);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to erase sector %d: %x", i, err);
+            return err;
+        }
+    }
+
+    // Write the key recovery info of the newly generated key into the flash
+    err = bootloader_flash_write(KEY_HUK_SECTOR_OFFSET(0), (uint32_t *)key_recovery_info, sizeof(esp_key_mgr_key_recovery_info_t), false);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write key recovery info to flash: %x", err);
+        return err;
+    }
+
+    ESP_LOGV(TAG, "Successfully wrote the newly generated Flash Encryption key recovery info into the flash");
+
+    return ESP_OK;
+}
+
+static esp_err_t key_manager_check_and_generate_key(void)
+{
+    /*
+     1. Check if we have a valid key info in the first two sectors of the flash
+     2. If we have a valid key info, check if it is valid
+        1. If the key is valid, use it
+        2. If the key is not valid, generate a new key and load it into key manager
+     3. If not, generate a new key and load it into key manager
+    */
+   esp_key_mgr_key_recovery_info_t key_recovery_info;
+
+   memset(&key_recovery_info, 0, sizeof(esp_key_mgr_key_recovery_info_t));
+
+   esp_err_t err = key_manager_read_key_recovery_info(&key_recovery_info);
+   if (err == ESP_ERR_NOT_FOUND) {
+        // No valid key recovery info found, generate a new key
+        err = key_manager_generate_key(&key_recovery_info);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to generate key for Key Manager: %x", err);
+            return err;
+        }
+   } else {
+       // Valid key recovery info found, use it
+       ESP_LOGI(TAG, "Using pre-deployed Key Manager key for flash encryption");
+   }
+
+   // Recover key using the key recovery info
+   err = esp_key_mgr_activate_key(&key_recovery_info);
+   if (err != ESP_OK) {
+       ESP_LOGE(TAG, "Failed to activate Key Manager key: %x", err);
+       return err;
+   }
+
+   return ESP_OK;
+}
+#endif
+
 static esp_err_t check_and_generate_encryption_keys(void)
 {
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_EFUSES
     size_t key_size = 32;
 #ifdef CONFIG_IDF_TARGET_ESP32
     enum { BLOCKS_NEEDED = 1 };
@@ -178,10 +335,12 @@ static esp_err_t check_and_generate_encryption_keys(void)
         if (tmp_has_key) { // For ESP32: esp_efuse_find_purpose() always returns True, need to check whether the key block is used or not.
             tmp_has_key &= !esp_efuse_key_block_unused(blocks[i]);
         }
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES256
         if (i == 1 && tmp_has_key != has_key) {
             ESP_LOGE(TAG, "Invalid efuse key blocks: Both AES-256 key blocks must be set.");
             return ESP_ERR_INVALID_STATE;
         }
+#endif
         has_key &= tmp_has_key;
     }
 
@@ -215,9 +374,33 @@ static esp_err_t check_and_generate_encryption_keys(void)
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
 
-#if SOC_KEY_MANAGER_SUPPORTED
-    // Force Key Manager to use eFuse key for XTS-AES operation
-    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+#if SOC_KEY_MANAGER_FE_KEY_DEPLOY
+    // In the case of Key Manager supported targets, the default XTS-AES key source is set to Key Manager.
+    esp_flash_encryption_use_efuse_key();
+#endif
+#elif CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+    esp_err_t err = key_manager_check_and_generate_key();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to check and generate key using Key Manager: %x", err);
+        return err;
+    }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_AES128
+    err = esp_efuse_write_field_bit(ESP_EFUSE_KM_XTS_KEY_LENGTH_256);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set the efuse bit KM_XTS_KEY_LENGTH_256: %x", err);
+        return err;
+    }
+#endif
+
+    const uint32_t force_key_mgr_key_for_fe = 1 << ESP_KEY_MGR_FORCE_USE_KM_XTS_AES_KEY;
+    err = esp_efuse_write_field_blob(ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY, &force_key_mgr_key_for_fe, ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY[0]->bit_count);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set the efuse bit %d (XTS-AES key) of FORCE_USE_KEY_MANAGER_KEY: %x", ESP_KEY_MGR_FORCE_USE_KM_XTS_AES_KEY, err);
+        return err;
+    }
+
+    ESP_LOGV(TAG, "Successfully activated the flash encryption key using Key Manager");
 #endif
 
     return ESP_OK;
@@ -225,7 +408,26 @@ static esp_err_t check_and_generate_encryption_keys(void)
 
 esp_err_t esp_flash_encrypt_init(void)
 {
-    if (esp_flash_encryption_enabled() || esp_flash_encrypt_initialized_once()) {
+    if (esp_efuse_is_flash_encryption_enabled()) {
+        return ESP_OK;
+    }
+
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+    if (!(key_mgr_ll_is_supported() && key_mgr_ll_flash_encryption_supported())) {
+        ESP_LOGE(TAG, "Flash Encryption using Key Manager is not supported, please use efuses instead");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    if (esp_flash_encrypt_initialized_once()) {
+#if CONFIG_SECURE_FLASH_ENCRYPTION_KEY_SOURCE_KEY_MGR
+        // Allow generating a new key if the key recovery info is not present in the flash
+        esp_err_t err = key_manager_check_and_generate_key();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to recover key using Key Manager: %x", err);
+            return err;
+        }
+#endif
         return ESP_OK;
     }
 
@@ -266,12 +468,12 @@ esp_err_t esp_flash_encrypt_contents(void)
     REG_WRITE(SENSITIVE_XTS_AES_KEY_UPDATE_REG, 1);
 #endif
 
-    err = encrypt_bootloader();
+    err = encrypt_bootloader(); // PART_SUBTYPE_BOOTLOADER_PRIMARY
     if (err != ESP_OK) {
         return err;
     }
 
-    err = encrypt_and_load_partition_table(partition_table, &num_partitions);
+    err = encrypt_and_load_partition_table(ESP_PRIMARY_PARTITION_TABLE_OFFSET, partition_table, &num_partitions);  // PART_SUBTYPE_PARTITION_TABLE_PRIMARY
     if (err != ESP_OK) {
         return err;
     }
@@ -281,6 +483,14 @@ esp_err_t esp_flash_encrypt_contents(void)
 
     /* Go through each partition and encrypt if necessary */
     for (int i = 0; i < num_partitions; i++) {
+        if ((partition_table[i].type == PART_TYPE_BOOTLOADER && partition_table[i].subtype == PART_SUBTYPE_BOOTLOADER_PRIMARY)
+             || (partition_table[i].type == PART_TYPE_PARTITION_TABLE && partition_table[i].subtype == PART_SUBTYPE_PARTITION_TABLE_PRIMARY)) {
+            /* Skip encryption of PRIMARY partitions for bootloader and partition table.
+             * PRIMARY partitions have already been encrypted above.
+             * We allow to encrypt partitions that are not PRIMARY.
+             */
+            continue;
+        }
         err = encrypt_partition(i, &partition_table[i]);
         if (err != ESP_OK) {
             return err;
@@ -295,7 +505,7 @@ esp_err_t esp_flash_encrypt_contents(void)
 esp_err_t esp_flash_encrypt_enable(void)
 {
     esp_err_t err = ESP_OK;
-    if (!esp_flash_encryption_enabled()) {
+    if (!esp_efuse_is_flash_encryption_enabled()) {
 
         if (esp_flash_encrypt_is_write_protected(true)) {
             return ESP_FAIL;
@@ -341,13 +551,13 @@ static esp_err_t encrypt_bootloader(void)
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
         /* The image length obtained from esp_image_verify_bootloader includes the sector boundary padding and the signature block lengths */
-        if (ESP_BOOTLOADER_OFFSET + image_length > ESP_PARTITION_TABLE_OFFSET) {
-            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PARTITION_TABLE_OFFSET);
+        if (image_length > ESP_BOOTLOADER_SIZE) {
+            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PRIMARY_PARTITION_TABLE_OFFSET);
             return ESP_ERR_INVALID_SIZE;
         }
 #endif // CONFIG_SECURE_BOOT_V2_ENABLED
 
-        err = esp_flash_encrypt_region(ESP_BOOTLOADER_OFFSET, image_length);
+        err = esp_flash_encrypt_region(ESP_PRIMARY_BOOTLOADER_OFFSET, image_length);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to encrypt bootloader in place: 0x%x", err);
             return err;
@@ -372,33 +582,37 @@ static esp_err_t encrypt_bootloader(void)
     return ESP_OK;
 }
 
-static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partition_table, int *num_partitions)
+static esp_err_t read_and_verify_partition_table(uint32_t offset, esp_partition_info_t *partition_table, int *num_partitions)
 {
     esp_err_t err;
     /* Check for plaintext partition table */
-    err = bootloader_flash_read(ESP_PARTITION_TABLE_OFFSET, partition_table, ESP_PARTITION_TABLE_MAX_LEN, false);
+    err = bootloader_flash_read(offset, partition_table, ESP_PARTITION_TABLE_MAX_LEN, false);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read partition table data");
+        ESP_LOGE(TAG, "Failed to read partition table data at 0x%" PRIx32, offset);
         return err;
     }
-    if (esp_partition_table_verify(partition_table, false, num_partitions) == ESP_OK) {
-        ESP_LOGD(TAG, "partition table is plaintext. Encrypting...");
-        esp_err_t err = esp_flash_encrypt_region(ESP_PARTITION_TABLE_OFFSET,
-                                                 FLASH_SECTOR_SIZE);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to encrypt partition table in place. %x", err);
-            return err;
-        }
-    } else {
-        ESP_LOGE(TAG, "Failed to read partition table data - not plaintext?");
-        return ESP_ERR_INVALID_STATE;
+    err = esp_partition_table_verify(partition_table, false, num_partitions);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read partition table data - not plaintext or empty?");
     }
-
-    /* Valid partition table loaded */
-    ESP_LOGI(TAG, "partition table encrypted and loaded successfully");
-    return ESP_OK;
+    return err;
 }
 
+static esp_err_t encrypt_and_load_partition_table(uint32_t offset, esp_partition_info_t *partition_table, int *num_partitions)
+{
+    esp_err_t err = read_and_verify_partition_table(offset, partition_table, num_partitions);
+    if (err != ESP_OK) {
+        return err;
+    }
+    ESP_LOGD(TAG, "partition table is plaintext. Encrypting...");
+    err = esp_flash_encrypt_region(offset, FLASH_SECTOR_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to encrypt partition table in place. %x", err);
+        return err;
+    }
+    ESP_LOGI(TAG, "partition table encrypted and loaded successfully");
+    return err;
+}
 
 static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partition)
 {
@@ -406,20 +620,32 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
     bool should_encrypt = (partition->flags & PART_FLAG_ENCRYPTED);
     uint32_t size = partition->pos.size;
 
-    if (partition->type == PART_TYPE_APP) {
-        /* check if the partition holds a valid unencrypted app */
+    if (partition->type == PART_TYPE_APP || partition->type == PART_TYPE_BOOTLOADER) {
+        /* check if the partition holds a valid unencrypted app/bootloader */
         esp_image_metadata_t image_data = {};
-        err = esp_image_verify(ESP_IMAGE_VERIFY,
-                               &partition->pos,
-                               &image_data);
+        if (partition->type == PART_TYPE_BOOTLOADER) {
+            esp_image_bootloader_offset_set(partition->pos.offset);
+        }
+        err = esp_image_verify(ESP_IMAGE_VERIFY, &partition->pos, &image_data);
         should_encrypt = (err == ESP_OK);
-#ifdef SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
-        if (should_encrypt) {
+#ifdef CONFIG_SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
+        if (partition->type == PART_TYPE_APP && should_encrypt) {
             // Encrypt only the app image instead of encrypting the whole partition
             size = image_data.image_len;
+#if CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+            // If secure update without secure boot, also encrypt the signature block
+            size += esp_secure_boot_sig_block_size();
+#endif
         }
 #endif
+    } else if (partition->type == PART_TYPE_PARTITION_TABLE) {
+        /* check if the partition holds a valid unencrypted partition table */
+        esp_partition_info_t partition_table[ESP_PARTITION_TABLE_MAX_ENTRIES];
+        int num_partitions;
+        err = read_and_verify_partition_table(partition->pos.offset, partition_table, &num_partitions);
+        should_encrypt = (err == ESP_OK && num_partitions != 0);
     } else if ((partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA)
+                || (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_TEE_OTA)
                 || (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
         /* check if we have ota data partition and the partition should be encrypted unconditionally */
         should_encrypt = true;
@@ -451,12 +677,16 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
         return ESP_FAIL;
     }
 
+#if SOC_RTC_WDT_SUPPORTED
     wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+#endif
 
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
+#if SOC_RTC_WDT_SUPPORTED
         wdt_hal_write_protect_disable(&rtc_wdt_ctx);
         wdt_hal_feed(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+#endif
         uint32_t sec_start = i + src_addr;
         err = bootloader_flash_read(sec_start, buf, FLASH_SECTOR_SIZE, false);
         if (err != ESP_OK) {

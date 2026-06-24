@@ -215,11 +215,9 @@
 应用示例
 -------------------
 
-使用 ``esp_event`` 库的示例存放在 :example:`system/esp_event` 中，涵盖事件声明、循环创建、处理程序注册和注销以及事件发布。
+- :example:`system/esp_event/default_event_loop` 演示了如何使用 {IDF_TARGET_NAME} 的默认事件循环系统来发布和处理事件，包括声明和定义事件、创建默认事件循环、将事件发布到循环中，以及注册/注销事件处理程序。
 
-其他使用 ``esp_event`` 库的示例:
-
-    * :example:`NMEA Parser <peripherals/uart/nmea0183_parser>`，该示例将解码从 GPS 接收到的语句。
+- :example:`system/esp_event/user_event_loops` 演示了如何在 {IDF_TARGET_NAME} 上创建和使用用户事件循环，包括创建和运行事件循环、注册和注销处理程序、以及发布事件，能够处理超出默认事件循环的不同示例。
 
 API 参考
 -------------

@@ -1,255 +1,85 @@
 .build_template:
   stage: build
   extends:
-    - .after_script:build:ccache:upload-when-fail
+    - .after_script:build
   image: $ESP_ENV_IMAGE
-  tags:
-    - build
-    # build only on shiny servers since shiny storage server is at the same location
-    - shiny
+  tags: [build, shiny]
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
-  dependencies: []
+  dependencies: # set dependencies to null to avoid missing artifacts issue
 
-.build_cmake_template:
+
+########################################
+# Clang Build Apps Without Tests Cases #
+########################################
+.build_cmake_clang_template:
   extends:
     - .build_template
-    - .before_script:build
-    - .after_script:build:ccache
-  dependencies: # set dependencies to null to avoid missing artifacts issue
+    - .rules:build
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       artifacts: false
     - pipeline_variables
   artifacts:
     paths:
-      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # The other artifacts patterns are defined under .idf_ci.toml
       # Now we're uploading/downloading the binary files from our internal storage server
       #
       # keep the log file to help debug
       - "**/build*/build_log.txt"
-      # keep the size info to help track the binary size
-      - size_info.txt
-      - "**/build*/size.json"
+      - "**/build*/size*.json"
     expire_in: 1 week
     when: always
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      --copy-sdkconfig
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --extra-preserve-dirs
-        examples/bluetooth/esp_ble_mesh/ble_mesh_console
-        examples/bluetooth/hci/controller_hci_uart_esp32
-        examples/wifi/iperf
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-    # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
-    - python tools/ci/artifacts_handler.py upload
-
-.build_cmake_clang_template:
-  extends:
-    - .build_cmake_template
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/cxx_pthread_bluetooth
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
+    - run_cmd idf-build-apps build
+      -p tools/test_apps/system/clang_build_test
+      components/esp_security/test_apps/fault_assert_opt_check
       -t $IDF_TARGET
-      --copy-sdkconfig
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
-    - python tools/ci/artifacts_handler.py upload
 
-######################
-# build_template_app #
-######################
-.build_template_app_template:
-  extends:
-    - .build_template
-    - .before_script:build
+build_clang_test_apps_xtensa:
+  extends: .build_cmake_clang_template
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32, esp32s2, esp32s3]
+
+build_clang_test_apps_riscv:
+  extends: .build_cmake_clang_template
   variables:
-    LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
-    BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
-    BUILD_DIR: "${BUILD_PATH}/@t/@w"
-    BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
-    BUILD_COMMAND_ARGS: ""
-  artifacts:
-    paths:
-      - log_template_app/*
-      - size_info.txt
-      - build_template_app/**/size.json
-    expire_in: 1 week
-    when: always
-  script:
-    # Set the variable for 'esp-idf-template' testing
-    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - retry_failed git clone ${ESP_IDF_TEMPLATE_GIT}
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
-    - export PATH="$IDF_PATH/tools:$PATH"
-    # Only do the default cmake build for each target, remaining part are done in the build_template_app job
-    - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-
-# build-related-pre-check-jobs ------------------------------------------------
-# Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
-fast_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build:target_test
-  stage: pre_check
-  tags: [fast_run, shiny]
-  variables:
-    BUILD_COMMAND_ARGS: "-p"
-#------------------------------------------------------------------------------
-
-########################################
-# Clang Build Apps Without Tests Cases #
-########################################
-build_clang_test_apps_esp32:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32
-
-build_clang_test_apps_esp32s2:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32s2
-
-build_clang_test_apps_esp32s3:
-  extends:
-    - .build_cmake_clang_template
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32s3
-
-.build_clang_test_apps_riscv:
-  extends:
-    - .build_cmake_clang_template
-  variables:
-    # For RISCV clang generates '.linker-options' sections of type 'llvm_linker_options' in asm files.
-    # See (https://llvm.org/docs/Extensions.html#linker-options-section-linker-options).
-    # Binutils gas ignores them with warning.
-    # TODO: LLVM-112, Use integrated assembler.
-    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'Warning: unrecognized section type'"
-
-build_clang_test_apps_esp32c3:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c3
-
-build_clang_test_apps_esp32c2:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  variables:
-    IDF_TARGET: esp32c2
-
-build_clang_test_apps_esp32c6:
-  extends:
-    - .build_clang_test_apps_riscv
-    - .rules:build
-  # TODO: c6 builds fail in master due to missing headers
-  allow_failure: true
-  variables:
-    IDF_TARGET: esp32c6
-
-######################
-# Build System Tests #
-######################
-.test_build_system_template:
-  stage: host_test
-  extends:
-    - .build_template
-    - .rules:build:check
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - job: fast_template_app
-      artifacts: false
-      optional: true
-  artifacts:
-    reports:
-      junit: XUNIT_RESULT.xml
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 1 week
-    when: always
-  script:
-    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
-    - cd ${IDF_PATH}/tools/test_build_system
-    - python ${IDF_PATH}/tools/ci/get_known_failure_cases_file.py
-    - pytest --parallel-count ${CI_NODE_TOTAL:-1} --parallel-index ${CI_NODE_INDEX:-1}
-      --work-dir ${CI_PROJECT_DIR}/test_build_system --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
-      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
-
-pytest_build_system:
-  extends: .test_build_system_template
-  parallel: 3
-
-pytest_build_system_macos:
-  extends:
-    - .test_build_system_template
-    - .before_script:build:macos
-    - .rules:build:macos
-  tags:
-    - macos_shell
-  parallel: 3
-  allow_failure: true  # IDFCI-2107
-
-build_docker:
-  extends:
-    - .before_script:minimal
-    - .rules:build:docker
-  stage: host_test
-  needs: []
-  image: espressif/docker-builder:1
-  tags:
-    - build_docker_amd64_brno
-  variables:
-    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
-  script:
-    - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
-    - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
-    - if [ -n "$LOCAL_GIT_MIRROR" ]; then export LOCAL_CI_REPOSITORY_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"; fi
-    - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$PIPELINE_COMMIT_SHA}"
-    # Build
-    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
-    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
-    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
-    # Therefore, build a copy of the example located inside the container.
-    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
-
-# This job builds template app with permutations of targets and optimization levels
-build_template_app:
-  extends:
-    - .build_template_app_template
-    - .rules:build
-  stage: host_test
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - job: fast_template_app
-      artifacts: false
+    # https://reviews.llvm.org/D90108.
+    # GNU 'as' lets .weak override .globl since binutils-gdb
+    # https://github.com/bminor/binutils-gdb/commit/5ca547dc2399a0a5d9f20626d4bf5547c3ccfddd (1996)
+    # while MC lets the last directive win (PR38921).
+    # For RISCV chips we use integrated assembler by default, so suppress this warning to pass CI pipeline.
+    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'changed binding to STB_WEAK'"
+  parallel:
+    matrix:
+      - IDF_TARGET: [esp32c3, esp32c2, esp32c6, esp32c5, esp32h2, esp32p4]
 
 ####################
 # Dynamic Pipeline #
 ####################
+pre_check_complete:
+  stage: build
+  image: $ESP_ENV_IMAGE
+  tags: [fast_run, shiny]
+  variables:
+    GIT_STRATEGY: none
+  cache: []
+  before_script: []
+  dependencies: []
+  script:
+    - echo "pre_check stage completed"
+
 generate_build_child_pipeline:
   extends:
     - .build_template
@@ -257,7 +87,8 @@ generate_build_child_pipeline:
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
-    - check_test_cases_env_markers_and_required_runners
+    - job: baseline_manifest_sha
+      optional: true
   artifacts:
     paths:
       - build_child_pipeline.yml
@@ -266,22 +97,28 @@ generate_build_child_pipeline:
     expire_in: 1 week
     when: always
   script:
-    - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
+    - run_cmd idf-ci --debug gitlab build-child-pipeline
+      -p components
+      -p examples
+      -p tools/test_apps
+      --modified-files $MR_MODIFIED_FILES
+    - shuf test_related_apps.txt -o test_related_apps.txt
+    - shuf non_test_related_apps.txt -o non_test_related_apps.txt
 
 build_child_pipeline:
   stage: build
   needs:
-    - job: fast_template_app
+    - job: fast_build_check
       optional: true
       artifacts: false
     - pipeline_variables
     - generate_build_child_pipeline
+    - job: pre_check_complete
+      artifacts: false
   variables:
-    IS_MR_PIPELINE: $IS_MR_PIPELINE
     MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
     MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-    BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
     variables: false
@@ -290,3 +127,18 @@ build_child_pipeline:
       - artifact: build_child_pipeline.yml
         job: generate_build_child_pipeline
     strategy: depend
+
+generate_prebuild_report:
+  extends:
+    - .build_template
+  tags: [fast_run, shiny]
+  needs:
+    - pipeline_variables
+  artifacts:
+    paths:
+      - prebuild_report.html
+    expire_in: 1 week
+    when: always
+  script:
+    - run_cmd idf-ci build collect --format html -o prebuild_report.html
+    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/prebuild_report.html"

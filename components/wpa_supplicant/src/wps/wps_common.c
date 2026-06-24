@@ -271,7 +271,7 @@ int wps_pin_str_valid(const char *pin)
 		return 0;
 
 	len = p - pin;
-	return len == 4 || len == 8;
+	return len == 8;
 }
 
 
@@ -503,7 +503,7 @@ char * wps_dev_type_bin2str(const u8 dev_type[WPS_DEV_TYPE_LEN], char *buf,
 {
 	int ret;
 
-	ret = os_snprintf(buf, buf_len, "%u-%08X-%u",
+	ret = os_snprintf(buf, buf_len, "%u-%08" PRIX32 "-%u",
 			  WPA_GET_BE16(dev_type), WPA_GET_BE32(&dev_type[2]),
 			  WPA_GET_BE16(&dev_type[6]));
 	if (os_snprintf_error(buf_len, ret))

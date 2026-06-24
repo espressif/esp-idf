@@ -24,14 +24,14 @@ ESP-IDF FreeRTOS is a FreeRTOS implementation based on Vanilla FreeRTOS v10.5.1,
 
     ESP-IDF FreeRTOS is currently the default FreeRTOS implementation for ESP-IDF.
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
     .. _amazon_smp_freertos:
 
     Amazon SMP FreeRTOS
     ^^^^^^^^^^^^^^^^^^^
 
-    Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the :ref:`CONFIG_FREERTOS_SMP` option. For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
+    Amazon SMP FreeRTOS is an SMP implementation of FreeRTOS that is officially supported by Amazon. Amazon SMP FreeRTOS is able to support N-cores (i.e., more than two cores). Amazon SMP FreeRTOS can be enabled via the ``CONFIG_FREERTOS_SMP`` option (only available on ESP32). For more details regarding Amazon SMP FreeRTOS, please refer to the `official Amazon SMP FreeRTOS documentation <https://freertos.org/symmetric-multiprocessing-introduction.html>`_.
 
     .. warning::
 
@@ -47,7 +47,7 @@ Vanilla FreeRTOS requires that ports and applications configure the kernel by ad
 
 **However, for all FreeRTOS ports in ESP-IDF, the FreeRTOSConfig.h header file is considered private and must not be modified by users**. A large number of kernel configuration options in ``FreeRTOSConfig.h`` are hard-coded as they are either required/not supported by ESP-IDF. All kernel configuration options that are configurable by the user are exposed via menuconfig under ``Component Config/FreeRTOS/Kernel``.
 
-For the full list of user configurable kernel options, see :doc:`/api-reference/kconfig`. The list below highlights some commonly used kernel configuration options:
+For the full list of user configurable kernel options, see :ref:`Kconfig Options Reference <configuration-options-reference>`. The list below highlights some commonly used kernel configuration options:
 
 - :ref:`CONFIG_FREERTOS_UNICORE` runs FreeRTOS only on Core 0. Note that this is **not equivalent to running Vanilla FreeRTOS**. Furthermore, this option may affect behavior of components other than :component:`freertos`. For more details regarding the effects of running FreeRTOS on a single core, refer to :ref:`freertos-idf-single-core` (if using ESP-IDF FreeRTOS) or the official Amazon SMP FreeRTOS documentation. Alternatively, users can also search for occurrences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
@@ -140,3 +140,10 @@ Vanilla FreeRTOS provides its own `selection of heap implementations <https://ww
 
     - Allocate the task or object using one of the ``...CreateWithCaps()`` API, such as :cpp:func:`xTaskCreateWithCaps` and :cpp:func:`xQueueCreateWithCaps` (see :ref:`freertos-idf-additional-api` for more details).
     - Manually allocate external memory for those objects using :cpp:func:`heap_caps_malloc`, then create the objects from the allocated memory using on of the ``...CreateStatic()`` FreeRTOS functions.
+
+Application Examples
+--------------------
+
+- :example:`system/freertos/basic_freertos_smp_usage` demonstrates how to use basic FreeRTOS APIs for task creation, communication, synchronization, and batch processing within an SMP architecture on {IDF_TARGET_NAME}.
+
+- :example:`system/freertos/real_time_stats` demonstrates how to use FreeRTOS's function `vTaskGetRunTimeStats()` to obtain CPU usage statistics of tasks with respect to a specified duration, rather than over the entire runtime of FreeRTOS.

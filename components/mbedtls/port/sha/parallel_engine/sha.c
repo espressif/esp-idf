@@ -50,7 +50,7 @@ static portMUX_TYPE memory_block_lock = portMUX_INITIALIZER_UNLOCKED;
 
 /* Binary semaphore managing the state of each concurrent SHA engine.
 
-   Available = noone is using this SHA engine
+   Available = no one is using this SHA engine
    Taken = a SHA session is running on this SHA engine
 
    Indexes:
@@ -207,6 +207,11 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
     sha_hal_read_digest(sha_type, digest_state);
 
     esp_sha_unlock_memory_block();
+}
+
+void esp_sha_set_mode(esp_sha_type sha_type)
+{
+    sha_hal_set_mode(sha_type);
 }
 
 void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool first_block)

@@ -1,6 +1,6 @@
-{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2 MB external flash", esp32s2="WiFi, silicon revision 0, 2 MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2 MB embedded flash", esp32c3="WiFi/BLE, silicon revision 0, 2 MB external flash", esp32c6="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.0, 2 MB external flash", esp32h2="BLE, 802.15.4 (Zigbee/Thread), silicon revision v0.1, 2 MB external flash", esp32p4="silicon revision v0.0, 2 MB external flash", esp32c5="WiFi/BLE, 802.15.4 (Zigbee/Thread), silicon revision v1.0, 2 MB external flash", esp32c61="WiFi/BLE, silicon revision v1.0, 2 MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256"}
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332", esp32c6="473816", esp32h2="268256", esp32p4="618848", esp32c5="348724", esp32c61="272868"}
 
 Build the Project
 =================
@@ -27,11 +27,14 @@ This command compiles the application and all ESP-IDF components, then it genera
     ... (more lines of build system output)
 
     [527/527] Generating hello_world.bin
-    esptool.py v2.3.1
+    esptool v5.0.2
 
-    Project build complete. To flash, run this command:
-    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
-    or run 'idf.py -p PORT flash'
+    Project build complete. To flash, run:
+      idf.py flash
+    or
+      idf.py -p PORT flash
+    or
+      esptool -p (PORT) -b 921600 write-flash --flash-mode dio --flash-size detect --flash-freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
 
 If there are no errors, the build finishes by generating the firmware binary .bin files.
 
@@ -72,7 +75,9 @@ Monitor the Output
 
 To check if "hello_world" is indeed running, type ``idf.py -p PORT monitor`` (Do not forget to replace PORT with your serial port name).
 
-This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` application::
+This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` application.
+
+.. code-block:: bash
 
     $ idf.py -p <PORT> monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
@@ -113,14 +118,13 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
 
     1. Exit the monitor.
     2. Go back to ``menuconfig``.
-    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ_SEL` to 26 MHz.
+    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ` to 26 MHz.
     4. After that, ``build and flash`` the application again.
 
     In the current version of ESP-IDF, main XTAL frequencies supported by {IDF_TARGET_NAME} are as follows:
 
     .. list::
 
-        :SOC_XTAL_SUPPORT_24M: - 24 MHz
         :SOC_XTAL_SUPPORT_26M: - 26 MHz
         :SOC_XTAL_SUPPORT_32M: - 32 MHz
         :SOC_XTAL_SUPPORT_40M: - 40 MHz
@@ -147,7 +151,6 @@ Now you are ready to try some other :idf:`examples`, or go straight to developin
     If building an example, please check the README file for the ``Supported Targets`` table. If this is present including {IDF_TARGET_NAME} target, or the table does not exist at all, the example will work on {IDF_TARGET_NAME}.
 
 
-
 Additional Tips
 ===============
 
@@ -159,7 +162,7 @@ With some Linux distributions, you may get the error message similar to ``Could 
 Python Compatibility
 ~~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF supports Python 3.8 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
+ESP-IDF supports Python 3.10 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
 
 .. only:: esp32 or esp32s2 or esp32s3
 
@@ -174,7 +177,7 @@ ESP-IDF supports Python 3.8 or newer. It is recommended to upgrade your operatin
 
     A BSP typically supports all of the hardware components provided on development board. Apart from the pinout definition and initialization functions, a BSP ships with drivers for the external components such as sensors, displays, audio codecs etc.
 
-    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
+    The BSPs are distributed via :doc:`IDF Component Manager </api-guides/tools/idf-component-manager>`, so they can be found in `ESP Component Registry <https://components.espressif.com>`_.
 
     .. only:: esp32
 
@@ -218,3 +221,17 @@ For erasing the OTA data, if present, you can run this command:
     idf.py -p PORT erase-otadata
 
 The flash erase command can take a while to be done. Do not disconnect your device while the flash erasing is in progress.
+
+
+Related Documents
+=================
+
+* :doc:`establish-serial-connection`
+* :doc:`../api-guides/tools/idf-monitor`
+
+.. toctree::
+    :hidden:
+    :maxdepth: 1
+
+    establish-serial-connection
+    flashing-troubleshooting

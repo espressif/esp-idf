@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,13 @@
 
 #include "esp_check.h"
 #include "esp_private/rtc_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+
+#if SOC_RTC_CNTL_NEEDS_ATOMIC_ACCESS
+#define RTC_CNTL_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define RTC_CNTL_ATOMIC()
+#endif
 
 typedef struct {
     uint32_t magic;
@@ -46,7 +53,10 @@ static const char* TAG = "ulp";
 esp_err_t ulp_isr_register(intr_handler_t fn, void *arg)
 {
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, "ULP ISR is NULL");
-    REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA_M);
+    /* Enable the interrupt bit atomically to avoid race condition with other code accessing RTC_CNTL_INT_ENA_REG */
+    RTC_CNTL_ATOMIC() {
+        REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA_M);
+    }
 #if CONFIG_IDF_TARGET_ESP32
     return rtc_isr_register(fn, arg, RTC_CNTL_SAR_INT_ST_M, 0);
 #else
@@ -57,7 +67,10 @@ esp_err_t ulp_isr_register(intr_handler_t fn, void *arg)
 esp_err_t ulp_isr_deregister(intr_handler_t fn, void *arg)
 {
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, "ULP ISR is NULL");
-    REG_CLR_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA_M);
+    /* Disable the interrupt bit atomically to avoid race condition with other code accessing RTC_CNTL_INT_ENA_REG */
+    RTC_CNTL_ATOMIC() {
+        REG_CLR_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_ULP_CP_INT_ENA_M);
+    }
     return rtc_isr_deregister(fn, arg);
 }
 
@@ -74,10 +87,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP_M);
     // set time until wakeup is allowed to the smallest possible
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_MIN_SLP_VAL, RTC_CNTL_MIN_SLP_VAL_MIN);
-    // make sure voltage is raised when RTC 8MCLK is enabled
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FOLW_8M);
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_CORE_FOLW_8M);
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
+
     // enable ULP timer
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
 #else

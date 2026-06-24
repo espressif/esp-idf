@@ -27,6 +27,7 @@
 
 #include "bta/bta_sys.h"
 #include "bta_hd_int.h"
+#include "bta/utl.h"
 #include "osi/allocator.h"
 #include "osi/osi.h"
 #include "stack/btm_api.h"
@@ -42,7 +43,7 @@ static bool check_descriptor(uint8_t *data, uint16_t length, bool *has_report_id
         uint8_t item = *ptr++;
         switch (item) {
         case 0xfe: // long item indicator
-            if (ptr < data + length) {
+            if ((ptr < data + length) && ((*ptr) + 2 <= (data + length - ptr))) {
                 ptr += ((*ptr) + 2);
             } else {
                 return false;
@@ -50,6 +51,7 @@ static bool check_descriptor(uint8_t *data, uint16_t length, bool *has_report_id
             break;
         case 0x85: // Report ID
             *has_report_id = TRUE;
+        /* fall through */
         default:
             ptr += (item & 0x03);
             break;
@@ -522,6 +524,11 @@ extern void bta_hd_close_act(tBTA_HD_DATA *p_data)
 extern void bta_hd_intr_data_act(tBTA_HD_DATA *p_data)
 {
     tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
+    if (!p_cback || !p_cback->p_data) {
+        APPL_TRACE_ERROR("no DATA request on intr");
+        return;
+    }
+
     BT_HDR *p_msg = p_cback->p_data;
     uint16_t len = p_msg->len;
     uint8_t *p_buf = (uint8_t *)(p_msg + 1) + p_msg->offset;
@@ -530,6 +537,9 @@ extern void bta_hd_intr_data_act(tBTA_HD_DATA *p_data)
     APPL_TRACE_API("%s", __func__);
 
     if (bta_hd_cb.use_report_id || bta_hd_cb.boot_mode) {
+        if (len < 1) {
+            goto _exit;
+        }
         ret.report_id = *p_buf;
         len--;
         p_buf++;
@@ -540,6 +550,8 @@ extern void bta_hd_intr_data_act(tBTA_HD_DATA *p_data)
     ret.len = len;
     ret.p_data = p_buf;
     (*bta_hd_cb.p_cback)(BTA_HD_INTR_DATA_EVT, (tBTA_HD *)&ret);
+
+_exit:
     if (p_msg) {
         osi_free(p_msg);
     }
@@ -557,6 +569,11 @@ extern void bta_hd_intr_data_act(tBTA_HD_DATA *p_data)
 extern void bta_hd_get_report_act(tBTA_HD_DATA *p_data)
 {
     tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
+    if (!p_cback || !p_cback->p_data) {
+        APPL_TRACE_ERROR("no DATA request on GET_REPORT");
+        return;
+    }
+
     bool rep_size_follows = p_cback->data;
     BT_HDR *p_msg = p_cback->p_data;
     uint8_t *p_buf = (uint8_t *)(p_msg + 1) + p_msg->offset;
@@ -566,7 +583,7 @@ extern void bta_hd_get_report_act(tBTA_HD_DATA *p_data)
     APPL_TRACE_API("%s", __func__);
     if (remaining_len < 1) {
         APPL_TRACE_ERROR("%s invalid data, remaining_len:%d", __func__, remaining_len);
-        return;
+        goto _exit;
     }
 
     ret.report_type = *p_buf & HID_PAR_REP_TYPE_MASK;
@@ -576,7 +593,7 @@ extern void bta_hd_get_report_act(tBTA_HD_DATA *p_data)
     if (bta_hd_cb.use_report_id) {
         if (remaining_len < 1) {
             APPL_TRACE_ERROR("%s invalid data, remaining_len:%d", __func__, remaining_len);
-            return;
+            goto _exit;
         }
         ret.report_id = *p_buf;
         p_buf++;
@@ -586,12 +603,14 @@ extern void bta_hd_get_report_act(tBTA_HD_DATA *p_data)
     if (rep_size_follows) {
         if (remaining_len < 2) {
             APPL_TRACE_ERROR("%s invalid data, remaining_len:%d", __func__, remaining_len);
-            return;
+            goto _exit;
         }
         ret.buffer_size = *p_buf | (*(p_buf + 1) << 8);
     }
 
     (*bta_hd_cb.p_cback)(BTA_HD_GET_REPORT_EVT, (tBTA_HD *)&ret);
+
+_exit:
     if (p_msg) {
         osi_free(p_msg);
     }
@@ -609,6 +628,11 @@ extern void bta_hd_get_report_act(tBTA_HD_DATA *p_data)
 extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
 {
     tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
+    if (!p_cback || !p_cback->p_data) {
+        APPL_TRACE_ERROR("no DATA request on SET_REPORT");
+        return;
+    }
+
     BT_HDR *p_msg = p_cback->p_data;
     uint16_t len = p_msg->len;
     uint8_t *p_buf = (uint8_t *)(p_msg + 1) + p_msg->offset;
@@ -616,11 +640,18 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
 
     APPL_TRACE_API("%s", __func__);
 
+    if (len < 1) {
+        goto _exit;
+    }
+
     ret.report_type = *p_buf & HID_PAR_REP_TYPE_MASK;
     p_buf++;
     len--;
 
     if (bta_hd_cb.use_report_id || bta_hd_cb.boot_mode) {
+        if (len < 1) {
+            goto _exit;
+        }
         ret.report_id = *p_buf;
         len--;
         p_buf++;
@@ -631,6 +662,8 @@ extern void bta_hd_set_report_act(tBTA_HD_DATA *p_data)
     ret.len = len;
     ret.p_data = p_buf;
     (*bta_hd_cb.p_cback)(BTA_HD_SET_REPORT_EVT, (tBTA_HD *)&ret);
+
+_exit:
     if (p_msg) {
         osi_free(p_msg);
     }
@@ -724,6 +757,26 @@ extern void bta_hd_exit_suspend_act(tBTA_HD_DATA *p_data)
 
 /*******************************************************************************
  *
+ * Function         bta_hd_open_failure
+ *
+ * Description
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void bta_hd_open_failure(tBTA_HD_DATA *p_data)
+{
+    tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
+    tBTA_HD cback_data = {0};
+
+    bdcpy(cback_data.conn.bda, p_cback->addr);
+    cback_data.conn.status = BTA_HD_ERROR;
+    cback_data.conn.conn_status = BTA_HD_CONN_STATE_DISCONNECTED;
+    bta_hd_cb.p_cback(BTA_HD_OPEN_EVT, &cback_data);
+}
+
+/*******************************************************************************
+ *
  * Function         bta_hd_cback
  *
  * Description      BTA HD callback function
@@ -777,13 +830,15 @@ static void bta_hd_cback(BD_ADDR bd_addr, uint8_t event, uint32_t data, BT_HDR *
     }
 
     if (sm_event != BTA_HD_INVALID_EVT &&
-        (p_buf = (tBTA_HD_CBACK_DATA *)osi_malloc(sizeof(tBTA_HD_CBACK_DATA) + sizeof(BT_HDR))) != NULL) {
+        (p_buf = (tBTA_HD_CBACK_DATA *)osi_malloc(sizeof(tBTA_HD_CBACK_DATA))) != NULL) {
         p_buf->hdr.event = sm_event;
         bdcpy(p_buf->addr, bd_addr);
         p_buf->data = data;
         p_buf->p_data = pdata;
 
         bta_sys_sendmsg(p_buf);
+    } else {
+        utl_freebuf((void **)&pdata);
     }
 }
 #endif /* BTA_HD_INCLUDED */

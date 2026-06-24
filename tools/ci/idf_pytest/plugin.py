@@ -1,102 +1,110 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 import typing as t
-from collections import defaultdict
-from functools import cached_property
+from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import pytest
-from _pytest.config import ExitCode
-from _pytest.main import Session
+import yaml
+from _pytest.config import Config
 from _pytest.python import Function
+from _pytest.python import Metafunc
 from _pytest.runner import CallInfo
-from idf_build_apps import App
-from idf_build_apps.constants import BuildStatus
-from idf_ci_utils import idf_relpath
+from dynamic_pipelines.constants import KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH
+from idf_ci import IdfPytestPlugin
+from idf_ci import PytestCase
+from idf_ci.idf_pytest.plugin import IDF_CI_PYTEST_DEBUG_INFO_KEY
+from idf_ci_utils import to_list
 from pytest_embedded import Dut
-from pytest_embedded.plugin import parse_multi_dut_args
 from pytest_embedded.utils import find_by_suffix
-from pytest_embedded.utils import to_list
 from pytest_ignore_test_results.ignore_results import ChildCase
 from pytest_ignore_test_results.ignore_results import ChildCasesStashKey
 
-from .constants import CollectMode
-from .constants import DEFAULT_SDKCONFIG
-from .constants import PREVIEW_TARGETS
-from .constants import PytestApp
-from .constants import PytestCase
-from .constants import SUPPORTED_TARGETS
-from .utils import comma_sep_str_to_list
+from .constants import REV_MARKERS
 from .utils import format_case_id
 from .utils import merge_junit_files
+from .utils import normalize_testcase_file_path
 
-IDF_PYTEST_EMBEDDED_KEY = pytest.StashKey['IdfPytestEmbedded']()
-ITEM_FAILED_CASES_KEY = pytest.StashKey[list]()
-ITEM_FAILED_KEY = pytest.StashKey[bool]()
-ITEM_PYTEST_CASE_KEY = pytest.StashKey[PytestCase]()
+IDF_LOCAL_PLUGIN_KEY = pytest.StashKey['IdfLocalPlugin']()
 
 
-class IdfPytestEmbedded:
+def requires_elf_or_map(case: PytestCase) -> bool:
+    """
+    Determines whether the test case requires elf or map file. By default, one app in the test case
+    only requires .bin files.
+
+    :return: True if the test case requires elf or map file, False otherwise
+    """
+    if 'jtag' in case.env_markers or 'usb_serial_jtag' in case.env_markers:
+        return True
+
+    folders_need_elf = ['panic', 'gdbstub_runtime']
+    if 'require_elf' in case.all_markers:
+        return True
+
+    for folder in folders_need_elf:
+        if any(folder in Path(app.path).parts for app in case.apps):
+            return True
+
+    return False
+
+
+def skipped_targets(item: Function) -> set[str]:
+    def _get_temp_markers_disabled_targets(marker_name: str) -> set[str]:
+        targets = []
+        for _m in item.own_markers:
+            if _m.name == marker_name:
+                if not _m.kwargs.get('targets') or not _m.kwargs.get('reason'):
+                    raise ValueError(
+                        f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa: W604
+                        f'For example: '
+                        f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
+                    )
+                targets.extend(to_list(_m.kwargs['targets']))
+
+        if targets:
+            return set(targets)
+        return set()
+
+    _count = IdfLocalPlugin.get_param(item, 'count', 1)
+
+    def normalize_targets(target: str) -> str:
+        targets = target.split(',')
+        if len(targets) == 1:
+            return ','.join(targets * _count)
+        if len(targets) != _count:
+            raise ValueError(
+                f"Invalid target format: '{target}'. "
+                f'Expected a single target or exactly {_count} values separated by commas.'
+                f'len({targets}) != {_count}'
+            )
+        return target
+
+    temp_skip_ci_targets = set(normalize_targets(_t) for _t in _get_temp_markers_disabled_targets('temp_skip_ci'))
+    temp_skip_targets = set(normalize_targets(_t) for _t in _get_temp_markers_disabled_targets('temp_skip'))
+
+    # in CI we skip the union of `temp_skip` and `temp_skip_ci`
+    if os.getenv('CI_JOB_ID'):
+        _skip_targets = temp_skip_ci_targets.union(temp_skip_targets)
+    else:  # we use `temp_skip` locally
+        _skip_targets = temp_skip_targets
+
+    return _skip_targets
+
+
+class IdfLocalPlugin:
     UNITY_RESULT_MAPPINGS = {
         'PASS': 'passed',
         'FAIL': 'failed',
         'IGNORE': 'skipped',
     }
 
-    def __init__(
-        self,
-        target: t.Union[t.List[str], str],
-        *,
-        config_name: t.Optional[str] = None,
-        single_target_duplicate_mode: bool = False,
-        apps: t.Optional[t.List[App]] = None,
-    ):
-        if isinstance(target, str):
-            # sequence also matters
-            self.target = comma_sep_str_to_list(target)
-        else:
-            self.target = target
+    def __init__(self) -> None:
+        with open(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH) as fr:
+            known_warnings_dict = yaml.safe_load(fr) or dict()
 
-        if not self.target:
-            raise ValueError('`target` should not be empty')
-
-        self.config_name = config_name
-
-        # these are useful while gathering all the multi-dut test cases
-        # when this mode is activated,
-        #
-        # pytest.mark.esp32
-        # pytest.mark.parametrize('count', [2], indirect=True)
-        # def test_foo(dut):
-        #     pass
-        #
-        # should be collected when running `pytest --target esp32`
-        #
-        # otherwise, it should be collected when running `pytest --target esp32,esp32`
-        self._single_target_duplicate_mode = single_target_duplicate_mode
-
-        self.apps_list = (
-            [os.path.join(idf_relpath(app.app_dir), app.build_dir) for app in apps if app.build_status == BuildStatus.SUCCESS]
-            if apps
-            else None
-        )
-
-        self.cases: t.List[PytestCase] = []
-
-        # record the additional info
-        # test case id: {key: value}
-        self.additional_info: t.Dict[str, t.Dict[str, t.Any]] = defaultdict(dict)
-
-    @cached_property
-    def collect_mode(self) -> CollectMode:
-        if len(self.target) == 1:
-            if self.target[0] == CollectMode.MULTI_ALL_WITH_PARAM:
-                return CollectMode.MULTI_ALL_WITH_PARAM
-            else:
-                return CollectMode.SINGLE_SPECIFIC
-        else:
-            return CollectMode.MULTI_SPECIFIC
+        self.exclude_no_env_markers_test_cases: set[str] = set(known_warnings_dict['no_env_marker_test_cases'])
 
     @staticmethod
     def get_param(item: Function, key: str, default: t.Any = None) -> t.Any:
@@ -107,166 +115,130 @@ class IdfPytestEmbedded:
 
         return item.callspec.params.get(key, default) or default
 
-    def item_to_pytest_case(self, item: Function) -> t.Optional[PytestCase]:
-        """
-        Turn pytest item to PytestCase
-        """
-        count = self.get_param(item, 'count', 1)
-
-        # default app_path is where the test script locates
-        app_paths = to_list(parse_multi_dut_args(count, self.get_param(item, 'app_path', os.path.dirname(item.path))))
-        configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', DEFAULT_SDKCONFIG)))
-        targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target')))
-
-        multi_dut_without_param = False
-        if count > 1 and targets == [None] * count:
-            multi_dut_without_param = True
-            try:
-                targets = to_list(parse_multi_dut_args(count, '|'.join(self.target)))  # check later while collecting
-            except ValueError:  # count doesn't match
-                return None
-
-        elif targets is None:
-            targets = self.target
-
-        return PytestCase(
-            apps=[PytestApp(app_paths[i], targets[i], configs[i]) for i in range(count)],
-            item=item,
-            multi_dut_without_param=multi_dut_without_param
-        )
-
-    @pytest.hookimpl(tryfirst=True)
-    def pytest_collection_modifyitems(self, items: t.List[Function]) -> None:
-        """
-        Background info:
-
-        We're using `pytest.mark.[TARGET]` as a syntactic sugar to indicate that they are actually supported by all
-        the listed targets. For example,
-
-        >>> @pytest.mark.esp32
-        >>> @pytest.mark.esp32s2
-
-        should be treated as
-
-        >>> @pytest.mark.parametrize('target', [
-        >>>     'esp32',
-        >>>     'esp32s2',
-        >>> ], indirect=True)
-
-        All single-dut test cases, and some of the multi-dut test cases with the same targets, are using this
-        way to indicate the supported targets.
-
-        To avoid ambiguity,
-
-        - when we're collecting single-dut test cases with esp32, we call
-
-            `pytest --collect-only --target esp32`
-
-        - when we're collecting multi-dut test cases, we list all the targets, even when they're the same
-
-            `pytest --collect-only --target esp32,esp32` for two esp32 connected
-            `pytest --collect-only --target esp32,esp32s2` for esp32 and esp32s2 connected
-
-        therefore, we have two different logic for searching test cases, explained in 2.1 and 2.2
-        """
-        # 1. Filter according to nighty_run related markers
-        if os.getenv('INCLUDE_NIGHTLY_RUN') == '1':
-            # nightly_run and non-nightly_run cases are both included
-            pass
-        elif os.getenv('NIGHTLY_RUN') == '1':
-            # only nightly_run cases are included
-            items[:] = [_item for _item in items if _item.get_closest_marker('nightly_run') is not None]
-        else:
-            # only non-nightly_run cases are included
-            items[:] = [_item for _item in items if _item.get_closest_marker('nightly_run') is None]
-
-        # 2. Add markers according to special markers
-        item_to_case_dict: t.Dict[Function, PytestCase] = {}
-        for item in items:
-            case = self.item_to_pytest_case(item)
-            if case is None:
+    @staticmethod
+    def _has_parametrized_arg(metafunc: Metafunc, arg_name: str) -> bool:
+        for marker in metafunc.definition.iter_markers(name='parametrize'):
+            if not marker.args:
                 continue
 
-            item.stash[ITEM_PYTEST_CASE_KEY] = item_to_case_dict[item] = case
-            if 'supported_targets' in item.keywords:
-                for _target in SUPPORTED_TARGETS:
-                    item.add_marker(_target)
-            if 'preview_targets' in item.keywords:
-                for _target in PREVIEW_TARGETS:
-                    item.add_marker(_target)
-            if 'all_targets' in item.keywords:
-                for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
-                    item.add_marker(_target)
-        items[:] = [_item for _item in items if _item in item_to_case_dict]
-
-        # 3.1. CollectMode.SINGLE_SPECIFIC, like `pytest --target esp32`
-        if self.collect_mode == CollectMode.SINGLE_SPECIFIC:
-            filtered_items = []
-            for item in items:
-                case = item_to_case_dict[item]
-
-                # single-dut one
-                if case.is_single_dut_test_case and self.target[0] in case.target_markers:
-                    filtered_items.append(item)
-
-                # multi-dut ones and in single_target_duplicate_mode
-                elif self._single_target_duplicate_mode and not case.is_single_dut_test_case:
-                    # ignore those test cases with `target` defined in parametrize, since these will be covered in 3.3
-                    if self.get_param(item, 'target', None) is None and self.target[0] in case.target_markers:
-                        filtered_items.append(item)
-
-            items[:] = filtered_items
-        # 3.2. CollectMode.MULTI_SPECIFIC, like `pytest --target esp32,esp32`
-        elif self.collect_mode == CollectMode.MULTI_SPECIFIC:
-            items[:] = [_item for _item in items if item_to_case_dict[_item].targets == self.target]
-
-        # 3.3. CollectMode.MULTI_ALL_WITH_PARAM, intended to be used by `get_pytest_cases`
-        else:
-            items[:] = [
-                _item
-                for _item in items
-                if not item_to_case_dict[_item].is_single_dut_test_case
-                and self.get_param(_item, 'target', None) is not None
-            ]
-
-        # 4. filter according to the sdkconfig, if there's param 'config' defined
-        if self.config_name:
-            _items = []
-            for item in items:
-                case = item_to_case_dict[item]
-                if self.config_name not in set(app.config or DEFAULT_SDKCONFIG for app in case.apps):
-                    self.additional_info[case.name]['skip_reason'] = f'Only run with sdkconfig {self.config_name}'
-                else:
-                    _items.append(item)
-            items[:] = _items
-
-        # 5. filter by `self.apps_list`, skip the test case if not listed
-        #   should only be used in CI
-        _items = []
-        for item in items:
-            case = item_to_case_dict[item]
-            if msg := case.all_built_in_app_lists(self.apps_list):
-                self.additional_info[case.name]['skip_reason'] = msg
+            argnames = marker.args[0]
+            if isinstance(argnames, str):
+                names = [name.strip() for name in argnames.split(',')]
             else:
-                _items.append(item)
+                names = list(argnames)
+
+            if arg_name in names:
+                return True
+
+        for callspec in getattr(metafunc, '_calls', []):
+            if arg_name in callspec.params:
+                return True
+
+        return False
+
+    @staticmethod
+    def _is_linux_target_run(config: Config) -> bool:
+        target = config.getoption('target')
+        if not target:
+            return False
+
+        if isinstance(target, str):
+            targets = [_t.strip() for _t in target.split(',')]
+        else:
+            targets = [str(_t).strip() for _t in target]
+
+        return 'linux' in targets
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_generate_tests(self, metafunc: Metafunc) -> None:
+        if 'embedded_services' not in metafunc.fixturenames:
+            return
+
+        if self._has_parametrized_arg(metafunc, 'embedded_services'):
+            return
+
+        if metafunc.definition.get_closest_marker('qemu') is not None:
+            metafunc.parametrize('embedded_services', ['idf,qemu'], indirect=True)
+            return
+
+        if self._is_linux_target_run(metafunc.config):
+            metafunc.parametrize('embedded_services', ['idf'], indirect=True)
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_collection_modifyitems(self, config: Config, items: list[Function]) -> t.Generator[None, None, None]:
+        yield  # throw it back to idf-ci
+
+        deselected_items = []
+
+        # Filter
+        filtered_items = []
+        for item in items:
+            case = IdfPytestPlugin.get_case_by_item(item)
+            if not case:
+                deselected_items.append(item)
+                continue
+
+            skipped = False
+            current_targets = case.target_selector.split(',')
+            for st in skipped_targets(item):
+                # Handle wildcard patterns like "esp32p4,*" or "*,esp32p4"
+                if '*' in st:
+                    skip_pattern = st.split(',')
+                    if len(skip_pattern) != len(current_targets):
+                        continue
+                    if all(_p == '*' or _p == _t for _p, _t in zip(skip_pattern, current_targets)):
+                        skipped = True
+                        break
+                # Exact match (no wildcard)
+                elif case.target_selector == st:
+                    skipped = True
+                    break
+
+            if skipped:
+                deselected_items.append(item)
+                item.stash[IDF_CI_PYTEST_DEBUG_INFO_KEY] = 'skipped by temp_skip markers'
+                continue
+
+            if not case.env_markers and 'host_test' not in case.all_markers:
+                if case.name in self.exclude_no_env_markers_test_cases:
+                    deselected_items.append(item)
+                    continue
+
+                raise ValueError(
+                    f'Test case {case.name} does not have any env markers. '
+                    f'Please add env markers to the test case or add it to the '
+                    f'`no_env_markers_test_cases` list in {KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH}'
+                )
+
+            filtered_items.append(item)
+
+        items[:] = filtered_items
+
+        # Deselect
+        config.hook.pytest_deselected(items=deselected_items)
 
         # OKAY!!! All left ones will be executed, sort it and add more markers
-        items[:] = sorted(
-            _items, key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', DEFAULT_SDKCONFIG))
-        )
+        items[:] = sorted(items, key=lambda x: (os.path.dirname(x.path), self.get_param(x, 'config', 'default')))
+
         for item in items:
-            case = item_to_case_dict[item]
+            case = IdfPytestPlugin.get_case_by_item(item)
+
             # set default timeout 10 minutes for each case
             if 'timeout' not in item.keywords:
                 item.add_marker(pytest.mark.timeout(10 * 60))
 
             # add 'xtal_40mhz' tag as a default tag for esp32c2 target
-            # only add this marker for esp32c2 cases
-            if 'esp32c2' in self.target and 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
+            if 'esp32c2' in case.targets and 'xtal_26mhz' not in case.all_markers:
                 item.add_marker('xtal_40mhz')
 
-    def pytest_report_collectionfinish(self, items: t.List[Function]) -> None:
-        self.cases = [item.stash[ITEM_PYTEST_CASE_KEY] for item in items]
+            for rev_marker in REV_MARKERS:
+                if rev_marker in case.all_markers:
+                    break
+            else:
+                item.add_marker('rev_default')
+
+            if 'host_test' in case.all_markers:
+                item.add_marker('skip_app_downloader')  # host_test jobs will build the apps itself
 
     def pytest_custom_test_case_name(self, item: Function) -> str:
         return item.funcargs.get('test_case_name', item.nodeid)  # type: ignore
@@ -277,14 +249,14 @@ class IdfPytestEmbedded:
             config = item.funcargs['config']
             is_qemu = item.get_closest_marker('qemu') is not None
 
-            dut: t.Union[Dut, t.Tuple[Dut]] = item.funcargs['dut']  # type: ignore
-            if isinstance(dut, (list, tuple)):
+            dut: Dut | tuple[Dut] = item.funcargs['dut']  # type: ignore
+            if isinstance(dut, (list | tuple)):
                 res = []
                 for i, _dut in enumerate(dut):
                     res.extend(
                         [
                             ChildCase(
-                                format_case_id(target, config, case.name + f' {i}', is_qemu=is_qemu),
+                                format_case_id(target, config, case.name, is_qemu=is_qemu),
                                 self.UNITY_RESULT_MAPPINGS[case.result],
                             )
                             for case in _dut.testsuite.testcases
@@ -307,7 +279,7 @@ class IdfPytestEmbedded:
         """
         Modify the junit reports. Format the unity c test case names.
         """
-        tempdir: t.Optional[str] = item.funcargs.get('test_case_tempdir')  # type: ignore
+        tempdir: str | None = item.funcargs.get('test_case_tempdir')  # type: ignore
         if not tempdir:
             return
 
@@ -323,22 +295,20 @@ class IdfPytestEmbedded:
         is_qemu = item.get_closest_marker('qemu') is not None
         target = item.funcargs['target']
         config = item.funcargs['config']
+        app_path = item.funcargs.get('app_path')
         for junit in junits:
             xml = ET.parse(junit)
             testcases = xml.findall('.//testcase')
             for case in testcases:
                 # modify the junit files
+                # Use from case attrib if available, otherwise fallback to the previously defined
+                app_path = case.attrib.get('app_path') or app_path
                 new_case_name = format_case_id(target, config, case.attrib['name'], is_qemu=is_qemu)
                 case.attrib['name'] = new_case_name
                 if 'file' in case.attrib:
-                    case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
-
+                    # our unity test framework
+                    case.attrib['file'] = normalize_testcase_file_path(case.attrib['file'], app_path)
                 if ci_job_url := os.getenv('CI_JOB_URL'):
                     case.attrib['ci_job_url'] = ci_job_url
 
             xml.write(junit)
-
-    def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
-        if exitstatus != 0:
-            if exitstatus == ExitCode.NO_TESTS_COLLECTED:
-                session.exitstatus = 0

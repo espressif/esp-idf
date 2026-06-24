@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,10 @@
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
-#include "hal/gpio_hal.h"
 #include "sd_pwr_ctrl.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
-void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr)
+void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr, int is_emmc)
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -26,19 +25,20 @@ void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz,
     if (!sdmmc_test_board_has_slot(slot)) {
         TEST_IGNORE_MESSAGE("Board doesn't have the required slot");
     }
+
+    if (is_emmc) {
+        if (!sdmmc_test_board_slot_is_emmc(slot)) {
+            TEST_IGNORE_MESSAGE("Board doesn't have the emmc card inserted");
+        }
+    }
+
     sdmmc_test_board_get_config_sdmmc(slot, &config, &slot_config);
 
     int board_max_freq_khz = sdmmc_test_board_get_slot_info(slot)->max_freq_khz;
     if (board_max_freq_khz > 0 && board_max_freq_khz < freq_khz) {
-#if SOC_SDMMC_IO_POWER_EXTERNAL
-        TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
-#endif
         TEST_IGNORE_MESSAGE("Board doesn't support required max_freq_khz");
     }
     if (slot_config.width < width) {
-#if SOC_SDMMC_IO_POWER_EXTERNAL
-        TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
-#endif
         TEST_IGNORE_MESSAGE("Board doesn't support required bus width");
     }
 }
@@ -64,6 +64,7 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
     }
 
     config.max_freq_khz = freq_khz;
+    bool slot_is_uhs1 = slot_config.flags & SDMMC_SLOT_FLAG_UHS1;
 
     if (width == 1) {
         config.flags = SDMMC_HOST_FLAG_1BIT;
@@ -83,6 +84,21 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
     if (ddr) {
         config.flags |= SDMMC_HOST_FLAG_DDR;
     }
+
+    if (slot_is_uhs1) {
+        slot_config.flags |= SDMMC_SLOT_FLAG_UHS1;
+    }
+
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+#define SDMMC_PWR_LDO_CHANNEL   4
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = SDMMC_PWR_LDO_CHANNEL,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    TEST_ESP_OK(sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle));
+    config.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
 
     sdmmc_test_board_card_power_set(true);
     TEST_ESP_OK(sdmmc_host_init());
@@ -123,7 +139,7 @@ void sdmmc_test_sd_end(sdmmc_card_t *card)
     }
     esp_log_level_set("gpio", old_level);
 
-    //Need to reset GPIO first, otherrwise cannot discharge VDD of card completely.
+    //Need to reset GPIO first, otherwise cannot discharge VDD of card completely.
     sdmmc_test_board_card_power_set(false);
 #if SOC_SDMMC_IO_POWER_EXTERNAL
     TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(card->host.pwr_ctrl_handle));

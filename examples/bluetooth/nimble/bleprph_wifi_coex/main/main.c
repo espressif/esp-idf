@@ -119,7 +119,7 @@ void wifi_init_sta(void)
             .ssid = EXAMPLE_ESP_WIFI_SSID,
             .password = EXAMPLE_ESP_WIFI_PASS,
             /* Setting a password implies station will connect to all security modes including WEP/WPA.
-             * However these modes are deprecated and not advisable to be used. Incase your Access point
+             * However these modes are deprecated and not advisable to be used. In case your Access point
              * doesn't support WPA2, these mode can be enabled by commenting below line */
              .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
@@ -167,8 +167,10 @@ static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
     esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
     esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
+    const char *ip_str = IP_IS_V4(&target_addr) ? inet_ntoa(*ip_2_ip4(&target_addr)) :
+                                                inet6_ntoa(*ip_2_ip6(&target_addr));
     printf("%" PRIu32 "bytes from %s icmp_seq=%d ttl=%d time=%" PRIu32 "ms\n",
-           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
+           recv_len, ip_str, seqno, ttl, elapsed_time);
 }
 
 static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
@@ -177,7 +179,9 @@ static void cmd_ping_on_ping_timeout(esp_ping_handle_t hdl, void *args)
     ip_addr_t target_addr;
     esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
     esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
-    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
+    const char *ip_str = IP_IS_V4(&target_addr) ? inet_ntoa(*ip_2_ip4(&target_addr)) :
+                                                inet6_ntoa(*ip_2_ip6(&target_addr));
+    printf("From %s icmp_seq=%d timeout\n", ip_str, seqno);
 }
 
 
@@ -311,7 +315,6 @@ bleprph_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
-    const char *name;
     int rc;
 
     /**
@@ -338,6 +341,7 @@ bleprph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+    const char *name;
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
@@ -525,8 +529,6 @@ void bleprph_host_task(void *param)
 void
 app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -550,12 +552,15 @@ app_main(void)
     ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
+#if MYNEWT_VAL(BLE_GATTS)
+    int rc;
     rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-bleprph");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

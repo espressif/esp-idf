@@ -1,0 +1,14 @@
+menu "Example Configuration"
+
+    config EXAMPLE_ENABLE_KEY_MATERIAL
+        bool "Enable Key Material characteristic in GAP Service"
+        default y
+        select BT_GATTS_KEY_MATERIAL_CHAR
+        help
+            Enable the Key Material characteristic in the built-in GAP service
+            (UUID 0x1800) using the Bluedroid stack's support for this feature.
+
+            This is the standard-compliant approach as defined in Bluetooth
+            Core Specification Version 5.4.
+
+endmenu

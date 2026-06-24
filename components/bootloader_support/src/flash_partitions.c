@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "esp_rom_md5.h"
 #include "esp_rom_spiflash.h"
 
-static const char *TAG = "flash_parts";
+ESP_LOG_ATTR_TAG(TAG, "flash_parts");
 
 esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions)
 {
@@ -23,7 +23,7 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
 
         if (part->magic == ESP_PARTITION_MAGIC) {
             const esp_partition_pos_t *pos = &part->pos;
-            if (pos->offset > chip_size || pos->offset + pos->size > chip_size) {
+            if (pos->offset > chip_size || pos->size > chip_size - pos->offset) {
                 if (log_errors) {
                     ESP_LOGE(TAG, "partition %d invalid - offset 0x%"PRIx32" size 0x%"PRIx32" exceeds flash chip size 0x%"PRIx32,
                              num_parts, pos->offset, pos->size, chip_size);
@@ -52,10 +52,11 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
                 }
                 return ESP_ERR_INVALID_STATE;
             }
-            //MD5 checksum matches and we continue with the next interation in
+            //MD5 checksum matches and we continue with the next iteration in
             //order to detect the end of the partition table
             md5_found = 1;
-        } else if (part->magic == 0xFFFF
+        } else if (num_parts != 0 // the first record cannot be empty, otherwise the whole table is empty
+                   && part->magic == 0xFFFF
                    && part->type == PART_TYPE_END
                    && part->subtype == PART_SUBTYPE_END) {
             ESP_LOGD(TAG, "partition table verified, %d entries", num_parts);

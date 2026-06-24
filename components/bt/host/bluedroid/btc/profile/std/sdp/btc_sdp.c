@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "btc_sdp.h"
 #include "btc/btc_manage.h"
 #include "btc/btc_task.h"
+#include "btc/btc_util.h"
 #include "bta/bta_sdp_api.h"
 #include "bta/bta_sys.h"
 #include "bta/utl.h"
@@ -17,7 +18,7 @@
 #include "osi/allocator.h"
 #include "esp_sdp_api.h"
 
-#if (defined BTC_SDP_INCLUDED && BTC_SDP_INCLUDED == TRUE)
+#if (defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE)
 
 typedef enum {
     SDP_RECORD_FREE = 0,
@@ -25,12 +26,21 @@ typedef enum {
 } sdp_state_t;
 
 typedef struct {
-    sdp_state_t state;
+    uint8_t di         : 1;
+    uint8_t primary_di : 1;
+    uint8_t reserved   : 6;
+} sdp_flag_t;
+
+typedef struct {
+    uint8_t state;
+    sdp_flag_t flag;
     int sdp_handle;
-    bluetooth_sdp_record* record_data;
+    esp_bt_uuid_t uuid;
+    void* record_data;
 } sdp_slot_t;
 
 typedef struct {
+    bool search_allowed;
     sdp_slot_t *sdp_slots[SDP_MAX_RECORDS];
     osi_mutex_t sdp_slot_mutex;
 } sdp_local_param_t;
@@ -45,9 +55,36 @@ static sdp_local_param_t *sdp_local_param_ptr;
 #if SDP_DYNAMIC_MEMORY == FALSE
 #define is_sdp_init() (sdp_local_param.sdp_slot_mutex != NULL)
 #else
-#define is_sdp_init() (&sdp_local_param != NULL && sdp_local_param.sdp_slot_mutex != NULL)
+#define is_sdp_init() (sdp_local_param_ptr != NULL && sdp_local_param.sdp_slot_mutex != NULL)
 #endif
 
+static void btc_sdp_cleanup(void)
+{
+#if SDP_DYNAMIC_MEMORY == TRUE
+    if (sdp_local_param_ptr) {
+#endif
+        if (sdp_local_param.sdp_slot_mutex) {
+            osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+            for (int i = 0; i < SDP_MAX_RECORDS; i++) {
+                sdp_slot_t *slot = sdp_local_param.sdp_slots[i];
+                if (slot) {
+                    if (slot->record_data) {
+                        osi_free(slot->record_data);
+                    }
+                    osi_free(slot);
+                    sdp_local_param.sdp_slots[i] = NULL;
+                }
+            }
+            osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
+            osi_mutex_free(&sdp_local_param.sdp_slot_mutex);
+            sdp_local_param.sdp_slot_mutex = NULL;
+        }
+#if SDP_DYNAMIC_MEMORY == TRUE
+        osi_free(sdp_local_param_ptr);
+        sdp_local_param_ptr = NULL;
+    }
+#endif
+}
 
 static inline void btc_sdp_cb_to_app(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
 {
@@ -57,46 +94,33 @@ static inline void btc_sdp_cb_to_app(esp_sdp_cb_event_t event, esp_sdp_cb_param_
     }
 }
 
-static void sdp_disable_handler(void)
+static int get_sdp_record_size(bluetooth_sdp_record* in_record)
 {
-    btc_msg_t msg;
-    bt_status_t status;
-
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_SDP;
-    msg.act = BTA_SDP_DISENABLE_EVT;
-
-    status = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
-
-    if (status != BT_STATUS_SUCCESS) {
-        BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
-    }
-}
-
-static int get_sdp_records_size(bluetooth_sdp_record* in_record, int count)
-{
-    bluetooth_sdp_record* record = in_record;
+    bluetooth_sdp_record *record = in_record;
     int records_size = 0;
 
-    for(int i = 0; i < count; i++) {
-        record = &in_record[i];
+    switch (record->hdr.type) {
+    case SDP_TYPE_DIP_SERVER:
+        records_size = sizeof(bluetooth_sdp_record);
+        break;
+
+    default:
         records_size += sizeof(bluetooth_sdp_record);
         records_size += record->hdr.service_name_length;
-        if(record->hdr.service_name_length > 0){
+        if (record->hdr.service_name_length > 0) {
             records_size++; /* + '\0' termination of string */
         }
-        records_size += record->hdr.user1_ptr_len;
-        records_size += record->hdr.user2_ptr_len;
+        break;
     }
 
     return records_size;
 }
 
-static void set_sdp_handle(int id, int handle)
+static void set_sdp_slot_info(int id, int sdp_handle, esp_bt_uuid_t *uuid)
 {
     sdp_slot_t *slot = NULL;
 
-    BTC_TRACE_DEBUG("%s() id=%d to handle=0x%08x", __func__, id, handle);
+    BTC_TRACE_DEBUG("%s() id=%d to sdp_handle=0x%08x", __func__, id, sdp_handle);
 
     if(id >= SDP_MAX_RECORDS) {
         BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
@@ -104,34 +128,68 @@ static void set_sdp_handle(int id, int handle)
     }
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-    slot = sdp_local_param.sdp_slots[id];
-    if (slot == NULL) {
-        osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-        BTC_TRACE_ERROR("%s() id=%d to handle=0x%08x, set failed", __func__, id, handle);
-        return;
-    }
-    slot->sdp_handle = handle;
+
+    do {
+        slot = sdp_local_param.sdp_slots[id];
+        if (slot == NULL) {
+            BTC_TRACE_ERROR("%s() id = %d ", __func__, id);
+            break;
+        }
+
+        if (slot->state != SDP_RECORD_ALLOCED) {
+            BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__, id,
+                            sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
+            break;
+        }
+        slot->sdp_handle = sdp_handle;
+        slot->record_data = NULL;
+        if (uuid) {
+            memcpy(&slot->uuid, uuid, sizeof(esp_bt_uuid_t));
+        } else {
+            memset(&slot->uuid, 0, sizeof(esp_bt_uuid_t));
+        }
+    } while (0);
+
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
 }
 
-
-static bool get_sdp_record_by_handle(int handle, bluetooth_sdp_record* record)
+static void get_sdp_slot_info(int id, int *sdp_handle, esp_bt_uuid_t *uuid, sdp_flag_t *flag)
 {
     sdp_slot_t *slot = NULL;
 
-    osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-
-    for (int i = 0; i < SDP_MAX_RECORDS; i++) {
-        slot = sdp_local_param.sdp_slots[i];
-        if ((slot != NULL) && (slot->sdp_handle == handle)) {
-            memcpy(record, slot->record_data, sizeof(bluetooth_sdp_record));
-            osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-            return true;
-        }
+    if(id >= SDP_MAX_RECORDS) {
+        BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
+        return;
     }
 
+    osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+
+    do {
+        slot = sdp_local_param.sdp_slots[id];
+        if (slot == NULL) {
+            break;
+        }
+
+        if (slot->state != SDP_RECORD_ALLOCED) {
+            BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__, id,
+                            sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
+            break;
+        }
+
+        if (sdp_handle) {
+            *sdp_handle = slot->sdp_handle;
+        }
+
+        if (uuid) {
+            memcpy(uuid, &slot->uuid, sizeof(esp_bt_uuid_t));
+        }
+
+        if (flag) {
+            *flag = slot->flag;
+        }
+    } while (0);
+
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-    return false;
 }
 
 static int get_sdp_slot_id_by_handle(int handle)
@@ -152,9 +210,10 @@ static int get_sdp_slot_id_by_handle(int handle)
     return -1;
 }
 
-static sdp_slot_t *start_create_sdp(int id)
+static bluetooth_sdp_record *start_create_sdp(int id)
 {
-    sdp_slot_t *sdp_slot = NULL;
+    sdp_slot_t *slot = NULL;
+    bluetooth_sdp_record* record_data = NULL;
 
     if(id >= SDP_MAX_RECORDS) {
         BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
@@ -162,64 +221,88 @@ static sdp_slot_t *start_create_sdp(int id)
     }
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-    sdp_slot = sdp_local_param.sdp_slots[id];
-    if (sdp_slot == NULL) {
-        BTC_TRACE_ERROR("%s() id = %d ", __func__, id);
-    } else if(sdp_slot->state != SDP_RECORD_ALLOCED) {
-        BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__,
-                id, sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
-        /* The record have been removed before this event occurred - e.g. deinit */
-        sdp_slot = NULL;
-    }
+
+    do {
+        slot = sdp_local_param.sdp_slots[id];
+        if (slot == NULL) {
+            BTC_TRACE_ERROR("%s() id = %d ", __func__, id);
+            break;
+        }
+
+        if (slot->state != SDP_RECORD_ALLOCED) {
+            BTC_TRACE_ERROR("%s() failed - state for id %d is state = %d expected %d", __func__, id,
+                            sdp_local_param.sdp_slots[id]->state, SDP_RECORD_ALLOCED);
+            break;
+        }
+        record_data = slot->record_data;
+    } while (0);
+
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
 
-    return sdp_slot;
+    return record_data;
 }
 
 /* Deep copy all content of in_records into out_records.
  * out_records must point to a chunk of memory large enough to contain all
  * the data. Use getSdpRecordsSize() to calculate the needed size. */
-static void copy_sdp_records(bluetooth_sdp_record* in_records, bluetooth_sdp_record* out_records, int count)
+static void copy_sdp_record_common(bluetooth_sdp_record* in_record, bluetooth_sdp_record* out_record)
 {
-    bluetooth_sdp_record *in_record;
-    bluetooth_sdp_record *out_record;
-    char *free_ptr = (char*)(&out_records[count]); /* set pointer to after the last entry */
+    uint8_t *free_ptr = (uint8_t *)(out_record + 1); /* set pointer to after the last entry */
 
-    for(int i = 0; i < count; i++) {
-        in_record = &in_records[i];
-        out_record = &out_records[i];
-        *out_record = *in_record;
+    memcpy(out_record, in_record, sizeof(bluetooth_sdp_record));
 
-        if(in_record->hdr.service_name == NULL || in_record->hdr.service_name_length == 0) {
-            out_record->hdr.service_name = NULL;
-            out_record->hdr.service_name_length = 0;
-        } else {
-            out_record->hdr.service_name = free_ptr; // Update service_name pointer
-            // Copy string
-            memcpy(free_ptr, in_record->hdr.service_name, in_record->hdr.service_name_length);
-            free_ptr += in_record->hdr.service_name_length;
-            *(free_ptr) = '\0'; // Set '\0' termination of string
-            free_ptr++;
-        }
-        if(in_record->hdr.user1_ptr != NULL) {
-            out_record->hdr.user1_ptr = (UINT8*)free_ptr; // Update pointer
-            memcpy(free_ptr, in_record->hdr.user1_ptr, in_record->hdr.user1_ptr_len); // Copy content
-            free_ptr += in_record->hdr.user1_ptr_len;
-        }
-        if(in_record->hdr.user2_ptr != NULL) {
-            out_record->hdr.user2_ptr = (UINT8*)free_ptr; // Update pointer
-            memcpy(free_ptr, in_record->hdr.user2_ptr, in_record->hdr.user2_ptr_len); // Copy content
-            free_ptr += in_record->hdr.user2_ptr_len;
-        }
+    if (in_record->hdr.service_name == NULL || in_record->hdr.service_name_length == 0) {
+        out_record->hdr.service_name = NULL;
+        out_record->hdr.service_name_length = 0;
+    } else {
+        out_record->hdr.service_name = (char *)free_ptr; // Update service_name pointer
+        // Copy string
+        memcpy(free_ptr, in_record->hdr.service_name, in_record->hdr.service_name_length);
+        free_ptr += in_record->hdr.service_name_length;
+        *(free_ptr) = '\0'; // Set '\0' termination of string
+        free_ptr++;
     }
+}
+
+static void copy_sdp_record(bluetooth_sdp_record* in_record, bluetooth_sdp_record* out_record)
+{
+    switch (in_record->hdr.type) {
+    case SDP_TYPE_DIP_SERVER:
+        memcpy(out_record, in_record, sizeof(bluetooth_sdp_record));
+        break;
+
+    default:
+        copy_sdp_record_common(in_record, out_record);
+        break;
+    }
+}
+
+static bool check_if_primary_di_record(bluetooth_sdp_record* record)
+{
+    bool ret = false;
+
+    if (record->hdr.type == SDP_TYPE_DIP_SERVER) {
+        bluetooth_sdp_dip_record *di_record = (bluetooth_sdp_dip_record *)record;
+        ret = di_record->primary_record;
+    }
+
+    return ret;
+}
+
+static bool check_if_di_record(bluetooth_sdp_record* record)
+{
+    return record->hdr.type == SDP_TYPE_DIP_SERVER ? true : false;
 }
 
 static int alloc_sdp_slot(bluetooth_sdp_record* in_record)
 {
     int i;
-    int record_size = get_sdp_records_size(in_record, 1);
+    int record_size = get_sdp_record_size(in_record);
     bluetooth_sdp_record *record = NULL;
     sdp_slot_t **slot = NULL;
+    bool is_di_record = check_if_di_record(in_record);
+    bool is_primary_di_record = check_if_primary_di_record(in_record);
+    bool primary_di_record_found = false;
 
     record = osi_malloc(record_size);
     if (record == NULL) {
@@ -227,22 +310,42 @@ static int alloc_sdp_slot(bluetooth_sdp_record* in_record)
         return -1;
     }
 
-    copy_sdp_records(in_record, record, 1);
+    copy_sdp_record(in_record, record);
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-    for(i = 0; i < SDP_MAX_RECORDS; i++)
-    {
-        slot = &sdp_local_param.sdp_slots[i];
-        if ((*slot) == NULL) {
-            if (((*slot) = (sdp_slot_t *)osi_malloc(sizeof(sdp_slot_t))) == NULL) {
-                osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
-                BTC_TRACE_ERROR("%s() osi_malloc slot failed!", __func__);
-                osi_free(record);
-                return -1;
+    // find the primary di record slot
+    if (is_di_record && is_primary_di_record) {
+        for (i = 0; i < SDP_MAX_RECORDS; i++) {
+            slot = &sdp_local_param.sdp_slots[i];
+            if ((*slot) && (*slot)->flag.di && (*slot)->flag.primary_di) {
+                BTC_TRACE_WARNING("%s() overwrite primary di record!", __func__);
+                if ((*slot)->record_data) {
+                    osi_free((*slot)->record_data);
+                }
+
+                (*slot)->record_data = record;
+                primary_di_record_found = true;
+                break;
             }
-            (*slot)->state = SDP_RECORD_ALLOCED;
-            (*slot)->record_data = record;
-            break;
+        }
+    }
+
+    if (!primary_di_record_found) {
+        for (i = 0; i < SDP_MAX_RECORDS; i++) {
+            slot = &sdp_local_param.sdp_slots[i];
+            if ((*slot) == NULL) {
+                if (((*slot) = (sdp_slot_t *)osi_malloc(sizeof(sdp_slot_t))) == NULL) {
+                    osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
+                    BTC_TRACE_ERROR("%s() osi_malloc slot failed!", __func__);
+                    osi_free(record);
+                    return -1;
+                }
+                (*slot)->flag.di         = is_di_record;
+                (*slot)->flag.primary_di = is_primary_di_record;
+                (*slot)->state           = SDP_RECORD_ALLOCED;
+                (*slot)->record_data     = record;
+                break;
+            }
         }
     }
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
@@ -262,21 +365,25 @@ static int free_sdp_slot(int id)
     sdp_slot_t *slot = NULL;
 
     if(id >= SDP_MAX_RECORDS) {
-        APPL_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
-        return handle;
-    }
-    slot = sdp_local_param.sdp_slots[id];
-    if (slot == NULL) {
-        // already freed
+        BTC_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
         return handle;
     }
 
     osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    slot = sdp_local_param.sdp_slots[id];
+    if (slot == NULL) {
+        osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
+        return handle;
+    }
+
     handle = slot->sdp_handle;
     if (slot->state != SDP_RECORD_FREE) {
         /* safe a copy of the pointer, and free after unlock() */
         record = slot->record_data;
     }
+
+    osi_free(sdp_local_param.sdp_slots[id]);
+    sdp_local_param.sdp_slots[id] = NULL;
     osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
 
     if(record != NULL) {
@@ -285,14 +392,12 @@ static int free_sdp_slot(int id)
         // Record have already been freed
         handle = -1;
     }
-    osi_free(sdp_local_param.sdp_slots[id]);
-    sdp_local_param.sdp_slots[id] = NULL;
 
     return handle;
 }
 
 /* Create a raw SDP record based on information stored in a bluetooth_sdp_raw_record */
-static int add_raw_sdp(const bluetooth_sdp_record* rec)
+static int add_raw_sdp(const bluetooth_sdp_raw_record *rec)
 {
     tSDP_PROTOCOL_ELEM  protoList [2];
     UINT16              browse = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
@@ -301,6 +406,7 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
     UINT8               temp[LEN_UUID_128];
     UINT8*              p_temp = temp;
     UINT32              sdp_handle = 0;
+    const esp_bt_uuid_t *p_uuid = &rec->hdr.uuid;
 
     BTC_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s", __func__,
             rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm, rec->hdr.service_name);
@@ -310,15 +416,15 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
         return sdp_handle;
     }
 
-    if (rec->hdr.bt_uuid.len == ESP_UUID_LEN_16) {
+    if (p_uuid->len == ESP_UUID_LEN_16) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
-        UINT16_TO_BE_STREAM (p_temp, rec->hdr.bt_uuid.uuid.uuid16);
-    } else if (rec->hdr.bt_uuid.len == ESP_UUID_LEN_32) {
+        UINT16_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid16);
+    } else if (p_uuid->len == ESP_UUID_LEN_32) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
-        UINT32_TO_BE_STREAM (p_temp, rec->hdr.bt_uuid.uuid.uuid32);
-    } else if (rec->hdr.bt_uuid.len == ESP_UUID_LEN_128) {
+        UINT32_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid32);
+    } else if (p_uuid->len == ESP_UUID_LEN_128) {
         UINT8_TO_BE_STREAM (p_temp, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
-        ARRAY_TO_BE_STREAM (p_temp, rec->hdr.bt_uuid.uuid.uuid128, LEN_UUID_128);
+        ARRAY_TO_BE_STREAM (p_temp, p_uuid->uuid.uuid128, LEN_UUID_128);
     } else {
         SDP_DeleteRecord(sdp_handle);
         sdp_handle = 0;
@@ -357,7 +463,7 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -365,12 +471,12 @@ static int add_raw_sdp(const bluetooth_sdp_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        if (rec->hdr.bt_uuid.len == ESP_UUID_LEN_16) {
-            bta_sys_add_uuid(rec->hdr.bt_uuid.uuid.uuid16);
-        } else if (rec->hdr.bt_uuid.len == ESP_UUID_LEN_32) {
-            bta_sys_add_uuid_32(rec->hdr.bt_uuid.uuid.uuid32);
-        } else if (rec->hdr.bt_uuid.len == ESP_UUID_LEN_128) {
-            bta_sys_add_uuid_128((UINT8 *)&rec->hdr.bt_uuid.uuid.uuid128);
+        if (p_uuid->len == ESP_UUID_LEN_16) {
+            bta_sys_add_uuid(p_uuid->uuid.uuid16);
+        } else if (p_uuid->len == ESP_UUID_LEN_32) {
+            bta_sys_add_uuid_32(p_uuid->uuid.uuid32);
+        } else if (p_uuid->len == ESP_UUID_LEN_128) {
+            bta_sys_add_uuid_128((UINT8 *)&p_uuid->uuid.uuid128);
         }
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
@@ -448,7 +554,7 @@ static int add_maps_sdp(const bluetooth_sdp_mas_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -523,7 +629,7 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -531,7 +637,7 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED", __func__);
     } else {
-        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_NOTIFICATION */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
 
@@ -603,7 +709,7 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -611,7 +717,7 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_PBAP_PSE */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
 
@@ -649,7 +755,7 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec)
                                      UUID_SERVCLASS_PHONE_ACCESS,
                                      rec->hdr.profile_version);
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -657,7 +763,7 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec)
         sdp_handle = 0;
         BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
-        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_PBAP_PCE */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
     }
 
@@ -736,7 +842,7 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec)
                 UINT_DESC_TYPE, (UINT32)2, temp);
     }
 
-    /* Make the service browseable */
+    /* Make the service browsable */
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -799,7 +905,7 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec)
             UUID_SERVCLASS_SAP,
             rec->hdr.profile_version);
 
-    // Make the service browseable
+    // Make the service browsable
     status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
     if (!status) {
@@ -814,64 +920,216 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec)
     return sdp_handle;
 }
 
-static int btc_handle_create_record_event(int id)
+static int add_dips_sdp(bluetooth_sdp_dip_record *rec)
 {
-    int handle = -1;
-    const sdp_slot_t *sdp_slot = NULL;
+    UINT32 sdp_handle = 0;
+    tBTA_DI_RECORD device_info = {0};
 
-    BTC_TRACE_DEBUG("Sdp Server %s", __func__);
+    device_info.vendor           = rec->vendor;
+    device_info.vendor_id_source = rec->vendor_id_source;
+    device_info.product          = rec->product;
+    device_info.version          = rec->version;
+    device_info.primary_record   = rec->primary_record;
 
-    sdp_slot = start_create_sdp(id);
-    if(sdp_slot != NULL) {
-        bluetooth_sdp_record* record = sdp_slot->record_data;
-        switch(record->hdr.type) {
-        case SDP_TYPE_RAW:
-            handle = add_raw_sdp(record);
-            break;
-        case SDP_TYPE_MAP_MAS:
-            handle = add_maps_sdp(&record->mas);
-            break;
-        case SDP_TYPE_MAP_MNS:
-            handle = add_mapc_sdp(&record->mns);
-            break;
-        case SDP_TYPE_PBAP_PSE:
-            handle = add_pbaps_sdp(&record->pse);
-            break;
-        case SDP_TYPE_PBAP_PCE:
-            handle = add_pbapc_sdp(&record->pce);
-            break;
-        case SDP_TYPE_OPP_SERVER:
-            handle = add_opps_sdp(&record->ops);
-            break;
-        case SDP_TYPE_SAP_SERVER:
-            handle = add_saps_sdp(&record->sap);
-            break;
-        default:
-            BTC_TRACE_DEBUG("Record type %d is not supported",record->hdr.type);
-            break;
-        }
-        if(handle != -1) {
-            set_sdp_handle(id, handle);
-        }
-    }
+    BTA_DmSetLocalDiRecord(&device_info, &sdp_handle);
 
-    return handle;
+    return sdp_handle;
 }
 
-static bool btc_sdp_remove_record_event(int handle)
+static int btc_handle_create_record_event(int id)
 {
-    bool result = false;
+    int sdp_handle = 0;
+    bluetooth_sdp_record *record = start_create_sdp(id);
+    esp_bt_uuid_t service_uuid = {0};
 
     BTC_TRACE_DEBUG("Sdp Server %s", __func__);
 
-    if(handle != -1 && handle != 0) {
-        result = SDP_DeleteRecord(handle);
-        if(result == false) {
-            BTC_TRACE_ERROR("  Unable to remove handle 0x%08x", handle);
+    if (record != NULL) {
+        switch (record->hdr.type) {
+        case SDP_TYPE_RAW:
+            sdp_handle = add_raw_sdp(&record->raw);
+            memcpy(&service_uuid, &record->hdr.uuid, sizeof(esp_bt_uuid_t));
+            break;
+        case SDP_TYPE_MAP_MAS:
+            sdp_handle = add_maps_sdp(&record->mas);
+            service_uuid.len = ESP_UUID_LEN_16;
+            service_uuid.uuid.uuid16 = UUID_SERVCLASS_MESSAGE_ACCESS;
+            break;
+        case SDP_TYPE_MAP_MNS:
+            sdp_handle = add_mapc_sdp(&record->mns);
+            service_uuid.len = ESP_UUID_LEN_16;
+            service_uuid.uuid.uuid16 = UUID_SERVCLASS_MESSAGE_NOTIFICATION;
+            break;
+        case SDP_TYPE_PBAP_PSE:
+            sdp_handle = add_pbaps_sdp(&record->pse);
+            service_uuid.len = ESP_UUID_LEN_16;
+            service_uuid.uuid.uuid16 = UUID_SERVCLASS_PBAP_PSE;
+            break;
+        case SDP_TYPE_PBAP_PCE:
+            sdp_handle = add_pbapc_sdp(&record->pce);
+            service_uuid.len = ESP_UUID_LEN_16;
+            service_uuid.uuid.uuid16 = UUID_SERVCLASS_PBAP_PCE;
+            break;
+        case SDP_TYPE_OPP_SERVER:
+            sdp_handle = add_opps_sdp(&record->ops);
+            service_uuid.len = ESP_UUID_LEN_16;
+            service_uuid.uuid.uuid16 = UUID_SERVCLASS_OBEX_OBJECT_PUSH;
+            break;
+        case SDP_TYPE_SAP_SERVER:
+            sdp_handle = add_saps_sdp(&record->sap);
+            service_uuid.len = ESP_UUID_LEN_16;
+            service_uuid.uuid.uuid16 = UUID_SERVCLASS_SAP;
+            break;
+        case SDP_TYPE_DIP_SERVER:
+            sdp_handle = add_dips_sdp(&record->dip);
+            break;
+        default:
+            BTC_TRACE_DEBUG("Record type %d is not supported", record->hdr.type);
+            break;
+        }
+
+        if(sdp_handle != 0) {
+            set_sdp_slot_info(id, sdp_handle, &service_uuid);
+            // free the record, since not use it anymore
+            osi_free(record);
+        } else {
+            sdp_handle = -1;
+        }
+    } else {
+        sdp_handle = -1;
+    }
+
+    if (sdp_handle == -1) {
+        free_sdp_slot(id);
+    }
+
+    return sdp_handle;
+}
+
+static bool btc_sdp_remove_record_event(int id, int *p_sdp_handle)
+{
+    BTC_TRACE_DEBUG("Sdp Server %s", __func__);
+
+    bool result = false;
+    int sdp_handle = -1;
+    sdp_flag_t flag = {0};
+    esp_bt_uuid_t service_uuid = {0};
+
+    get_sdp_slot_info(id, &sdp_handle, &service_uuid, &flag);
+
+    if (sdp_handle > 0) {
+        if (flag.di && BTA_DmRemoveLocalDiRecord(sdp_handle) == BTA_SUCCESS) {
+            result = true;
+        } else {
+            do {
+                result = SDP_DeleteRecord(sdp_handle);
+                if (!result) {
+                    BTC_TRACE_ERROR("Unable to remove handle 0x%08x", sdp_handle);
+                    break;
+                }
+
+                if (service_uuid.len == ESP_UUID_LEN_16) {
+                    bta_sys_remove_uuid(service_uuid.uuid.uuid16);
+                } else if (service_uuid.len == ESP_UUID_LEN_32) {
+                    bta_sys_remove_uuid_32(service_uuid.uuid.uuid32);
+                } else if (service_uuid.len == ESP_UUID_LEN_128) {
+                    bta_sys_remove_uuid_128((UINT8 *)&service_uuid.uuid.uuid128);
+                }
+            } while (0);
+        }
+
+        if (p_sdp_handle) {
+            *p_sdp_handle = sdp_handle;
         }
     }
 
     return result;
+}
+
+static void btc_sdp_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    switch (msg->act) {
+    case BTA_SDP_SEARCH_COMP_EVT: {
+        tBTA_SDP_SEARCH_COMP *src_search_comp = (tBTA_SDP_SEARCH_COMP *)p_src;
+        tBTA_SDP_SEARCH_COMP *dest_search_comp = (tBTA_SDP_SEARCH_COMP *)p_dest;
+        int record_count = src_search_comp->record_count;
+
+        if (record_count > BTA_SDP_MAX_RECORDS) {
+            record_count = BTA_SDP_MAX_RECORDS;
+        }
+
+        for (int i = 0; i < record_count; i++) {
+            bluetooth_sdp_record *src_record = &src_search_comp->records[i];
+            bluetooth_sdp_record *dest_record = &dest_search_comp->records[i];
+            // deep copy service name
+            uint32_t src_service_name_length = src_record->hdr.service_name_length;
+            char *src_service_name = src_record->hdr.service_name;
+            dest_record->hdr.service_name_length = 0;
+            dest_record->hdr.service_name        = NULL;
+            if (src_service_name && src_service_name_length) {
+                char *service_name = (char *)osi_malloc(src_service_name_length + 1);
+                if (service_name) {
+                    memcpy(service_name, src_service_name, src_service_name_length);
+                    service_name[src_service_name_length] = '\0';
+
+                    dest_record->hdr.service_name_length = src_service_name_length;
+                    dest_record->hdr.service_name        = service_name;
+                } else {
+                    BTC_TRACE_ERROR("%s malloc service name failed, orig service name:%s", __func__, src_service_name);
+                }
+            }
+
+            // deep copy user1_ptr fow RAW type
+            int src_user1_ptr_len = src_record->hdr.user1_ptr_len;
+            uint8_t *src_user1_ptr = src_record->hdr.user1_ptr;
+            dest_record->hdr.user1_ptr_len = 0;
+            dest_record->hdr.user1_ptr     = NULL;
+            if (src_record->hdr.type == SDP_TYPE_RAW && src_user1_ptr && src_user1_ptr_len) {
+                uint8_t *user1_ptr = (uint8_t *)osi_malloc(src_user1_ptr_len);
+                if (user1_ptr) {
+                    memcpy(user1_ptr, src_user1_ptr, src_user1_ptr_len);
+
+                    dest_record->hdr.user1_ptr_len = src_user1_ptr_len;
+                    dest_record->hdr.user1_ptr     = user1_ptr;
+                } else {
+                    BTC_TRACE_ERROR("%s malloc user1_ptr failed", __func__);
+                }
+            }
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void btc_sdp_cb_arg_deep_free(btc_msg_t *msg)
+{
+    switch (msg->act) {
+    case BTA_SDP_SEARCH_COMP_EVT: {
+        tBTA_SDP_SEARCH_COMP *search_comp = (tBTA_SDP_SEARCH_COMP *)msg->arg;
+        int record_count = search_comp->record_count;
+        if (record_count > BTA_SDP_MAX_RECORDS) {
+            record_count = BTA_SDP_MAX_RECORDS;
+        }
+
+        for (size_t i = 0; i < record_count; i++) {
+            bluetooth_sdp_record *record = &search_comp->records[i];
+            if (record->hdr.service_name) {
+                osi_free(record->hdr.service_name);
+            }
+
+            if (record->hdr.user1_ptr) {
+                osi_free(record->hdr.user1_ptr);
+            }
+        }
+
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 static void btc_sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_data)
@@ -881,18 +1139,18 @@ static void btc_sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_da
 
     switch (event) {
     case BTA_SDP_CREATE_RECORD_USER_EVT: {
-        if (p_data->status == BTA_SDP_SUCCESS) {
+        if (p_data->sdp_create_record.status == BTA_SDP_SUCCESS) {
             p_data->sdp_create_record.handle = btc_handle_create_record_event((int)user_data);
             if (p_data->sdp_create_record.handle < 0) {
-                p_data->status = BTA_SDP_FAILURE;
+                p_data->sdp_create_record.status = BTA_SDP_FAILURE;
             }
         }
     }
     break;
     case BTA_SDP_REMOVE_RECORD_USER_EVT: {
-        if (p_data->status == BTA_SDP_SUCCESS) {
-            if (btc_sdp_remove_record_event((int)user_data) == false) {
-                p_data->status = BTA_SDP_FAILURE;
+        if (p_data->sdp_remove_record.status == BTA_SDP_SUCCESS) {
+            if (btc_sdp_remove_record_event((int)user_data, &p_data->sdp_remove_record.handle) == false) {
+                p_data->sdp_remove_record.status = BTA_SDP_FAILURE;
             }
         }
     }
@@ -905,7 +1163,7 @@ static void btc_sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_da
     msg.pid = BTC_PID_SDP;
     msg.act = event;
 
-    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_SDP), NULL, NULL);
+    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_SDP), btc_sdp_cb_arg_deep_copy, btc_sdp_cb_arg_deep_free);
 
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
@@ -930,23 +1188,27 @@ static void btc_sdp_init(void)
             ret = ESP_SDP_NO_RESOURCE;
             break;
         }
-        memset((void *)sdp_local_param_ptr, 0, sizeof(sdp_local_param_t));
 #endif
+        memset(&sdp_local_param, 0, sizeof(sdp_local_param_t));
 
         if (osi_mutex_new(&sdp_local_param.sdp_slot_mutex) != 0) {
-#if SDP_DYNAMIC_MEMORY == TRUE
-            osi_free(sdp_local_param_ptr);
-            sdp_local_param_ptr = NULL;
-#endif
             BTC_TRACE_ERROR("%s osi_mutex_new failed\n", __func__);
             ret = ESP_SDP_NO_RESOURCE;
             break;
         }
 
         ret = BTA_SdpEnable(btc_sdp_dm_cback);
+        if (ret != ESP_SDP_SUCCESS) {
+            BTC_TRACE_ERROR("%s BTA_SdpEnable failed, ret = %d\n", __func__, ret);
+            ret = ESP_SDP_FAILURE;
+            break;
+        }
+
+        sdp_local_param.search_allowed = true;
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
+        btc_sdp_cleanup();
         param.init.status = ret;
         btc_sdp_cb_to_app(ESP_SDP_INIT_EVT, &param);
     }
@@ -956,7 +1218,6 @@ static void btc_sdp_deinit(void)
 {
     esp_sdp_cb_param_t param;
     esp_sdp_status_t ret = ESP_SDP_SUCCESS;
-    int handle;
 
     do {
         if (!is_sdp_init()) {
@@ -966,12 +1227,13 @@ static void btc_sdp_deinit(void)
         }
 
         for(int i = 0; i < SDP_MAX_RECORDS; i++) {
-            handle = free_sdp_slot(i);
-            if (handle > 0) {
-                BTA_SdpRemoveRecordByUser((void*)handle);
+            int sdp_handle = -1;
+            get_sdp_slot_info(i, &sdp_handle, NULL, NULL);
+            if (sdp_handle > 0) {
+                BTA_SdpRemoveRecordByUser((void*)i);
             }
         }
-        sdp_disable_handler();
+        ret = BTA_SdpDisable();
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
@@ -982,7 +1244,7 @@ static void btc_sdp_deinit(void)
 
 static void btc_sdp_create_record(btc_sdp_args_t *arg)
 {
-    int handle;
+    int slot_id;
     esp_sdp_cb_param_t param;
     esp_sdp_status_t ret = ESP_SDP_SUCCESS;
 
@@ -993,13 +1255,13 @@ static void btc_sdp_create_record(btc_sdp_args_t *arg)
             break;
         }
 
-        handle = alloc_sdp_slot(arg->creat_record.record);
-        if (handle < 0) {
+        slot_id = alloc_sdp_slot(arg->create_record.record);
+        if (slot_id < 0) {
             ret = ESP_SDP_FAILURE;
             break;
         }
 
-        BTA_SdpCreateRecordByUser((void *) handle);
+        BTA_SdpCreateRecordByUser((void *) slot_id);
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
@@ -1011,7 +1273,6 @@ static void btc_sdp_create_record(btc_sdp_args_t *arg)
 
 static void btc_sdp_remove_record(btc_sdp_args_t *arg)
 {
-    int handle;
     esp_sdp_cb_param_t param;
     esp_sdp_status_t ret = ESP_SDP_SUCCESS;
 
@@ -1022,46 +1283,21 @@ static void btc_sdp_remove_record(btc_sdp_args_t *arg)
             break;
         }
 
-        bluetooth_sdp_record rec;
-        if (get_sdp_record_by_handle(arg->remove_record.record_handle, &rec)) {
-            if (rec.hdr.bt_uuid.len == ESP_UUID_LEN_16) {
-                bta_sys_remove_uuid(rec.hdr.bt_uuid.uuid.uuid16);
-            } else if (rec.hdr.bt_uuid.len == ESP_UUID_LEN_32) {
-                bta_sys_remove_uuid_32(rec.hdr.bt_uuid.uuid.uuid32);
-            } else if (rec.hdr.bt_uuid.len == ESP_UUID_LEN_128) {
-                bta_sys_remove_uuid_128((UINT8 *)&rec.hdr.bt_uuid.uuid.uuid128);
-            }
-        } else {
-            BTC_TRACE_ERROR("%s SDP record with handle %d not found",
-                                __func__, arg->remove_record.record_handle);
-            ret = ESP_SDP_NO_CREATE_RECORD;
-            break;
-        }
-
         /* Get the Record handle, and free the slot */
         /* The application layer record_handle is equivalent to the id of the btc layer */
-        int slot = get_sdp_slot_id_by_handle(arg->remove_record.record_handle);
-        if (slot < 0) {
+        int slot_id = get_sdp_slot_id_by_handle(arg->remove_record.record_handle);
+        if (slot_id < 0) {
+            BTC_TRACE_ERROR("%s SDP record with handle %d not found", __func__, arg->remove_record.record_handle);
             ret = ESP_SDP_NO_CREATE_RECORD;
             break;
         }
 
-        handle = free_sdp_slot(slot);
-
-        BTC_TRACE_DEBUG("Sdp Server %s id=%d to handle=0x%08x",
-                    __func__, arg->remove_record.record_handle, handle);
-
-        /* Pass the actual record handle */
-        if(handle > 0) {
-            BTA_SdpRemoveRecordByUser((void*) handle);
-        } else {
-            ret = ESP_SDP_NO_CREATE_RECORD;
-            break;
-        }
+        BTA_SdpRemoveRecordByUser((void *)slot_id);
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
-        param.create_record.status = ret;
+        param.remove_record.status = ret;
+        param.remove_record.record_handle = arg->remove_record.record_handle;
         btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
     }
 }
@@ -1078,7 +1314,18 @@ static void btc_sdp_search(btc_sdp_args_t *arg)
             break;
         }
 
+        if (!sdp_local_param.search_allowed) {
+            BTC_TRACE_ERROR("%s SDP search is not allowed!", __func__);
+            ret = ESP_SDP_NO_RESOURCE;
+            break;
+        }
+
         BTA_SdpSearch(arg->search.bd_addr, &arg->search.sdp_uuid);
+        /**
+         * ESP_SDP_SEARCH_COMP_EVT will refer service name in BTA sdp database, so it is not allowed to be search until
+         * the previous search is completed
+         */
+        sdp_local_param.search_allowed = false;
     } while(0);
 
     if (ret != ESP_SDP_SUCCESS) {
@@ -1089,26 +1336,21 @@ static void btc_sdp_search(btc_sdp_args_t *arg)
 
 void btc_sdp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
-    btc_sdp_args_t *dst = (btc_sdp_args_t *)p_dest;
-    btc_sdp_args_t *src = (btc_sdp_args_t *)p_src;
-
     switch (msg->act) {
-    case BTC_SDP_ACT_CREATE_RECORD:
-        dst->creat_record.record = (bluetooth_sdp_record *)osi_calloc(sizeof(bluetooth_sdp_record));
-        if (dst->creat_record.record) {
-            memcpy(dst->creat_record.record, src->creat_record.record, sizeof(bluetooth_sdp_record));
+    case BTC_SDP_ACT_CREATE_RECORD: {
+        bluetooth_sdp_record **dst_record = &((btc_sdp_args_t *)p_dest)->create_record.record;
+        bluetooth_sdp_record *src_record = ((btc_sdp_args_t *)p_src)->create_record.record;
+        bluetooth_sdp_record *record = (bluetooth_sdp_record *)osi_calloc(get_sdp_record_size(src_record));
+        if (record) {
+            copy_sdp_record(src_record, record);
         } else {
             BTC_TRACE_ERROR("%s %d osi_malloc failed\n", __func__, msg->act);
             break;
         }
 
-        dst->creat_record.record->hdr.service_name = (char *)osi_calloc(src->creat_record.record->hdr.service_name_length);
-        if (dst->creat_record.record->hdr.service_name) {
-            strcpy(dst->creat_record.record->hdr.service_name, src->creat_record.record->hdr.service_name);
-        } else {
-            BTC_TRACE_ERROR("%s %d osi_malloc failed\n", __func__, msg->act);
-        }
+        *dst_record = record;
         break;
+    }
     default:
         break;
     }
@@ -1116,17 +1358,15 @@ void btc_sdp_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
 void btc_sdp_arg_deep_free(btc_msg_t *msg)
 {
-    btc_sdp_args_t *arg = (btc_sdp_args_t *)msg->arg;
-
     switch (msg->act) {
-    case BTC_SDP_ACT_CREATE_RECORD:
-        if (arg->creat_record.record) {
-            osi_free(arg->creat_record.record);
-        }
-        if (arg->creat_record.record->hdr.service_name) {
-            osi_free(arg->creat_record.record->hdr.service_name);
+    case BTC_SDP_ACT_CREATE_RECORD: {
+        btc_sdp_args_t *arg = (btc_sdp_args_t *)msg->arg;
+        bluetooth_sdp_record *record = arg->create_record.record;
+        if (record) {
+            osi_free(record);
         }
         break;
+    }
     default:
         break;
     }
@@ -1172,49 +1412,70 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
         param.init.status = p_data->status;
         btc_sdp_cb_to_app(ESP_SDP_INIT_EVT, &param);
         break;
-    case BTA_SDP_DISENABLE_EVT:
-        BTA_SdpDisable();
-        osi_mutex_free(&sdp_local_param.sdp_slot_mutex);
- #if SDP_DYNAMIC_MEMORY == TRUE
-        osi_free(sdp_local_param_ptr);
-        sdp_local_param_ptr = NULL;
- #endif
+    case BTA_SDP_DISABLE_EVT:
+        BTA_SdpCleanup();
+        btc_sdp_cleanup();
         param.deinit.status = ESP_SDP_SUCCESS;
         btc_sdp_cb_to_app(ESP_SDP_DEINIT_EVT, &param);
         break;
     case BTA_SDP_SEARCH_COMP_EVT:
-        param.search.status = p_data->sdp_search_comp.status;
-        if (param.search.status == ESP_SDP_SUCCESS) {
+        if (is_sdp_init()) {
+            // SDP search completed, now can be searched again
+            sdp_local_param.search_allowed = true;
+
+            param.search.status = p_data->sdp_search_comp.status;
             memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
-            memcpy(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid, sizeof(tSDP_UUID));
+            bta_to_btc_uuid(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid);
             param.search.record_count = p_data->sdp_search_comp.record_count;
-            param.search.records = osi_malloc(sizeof(esp_bluetooth_sdp_record_t)*p_data->sdp_search_comp.record_count);
-            if (param.search.records != NULL) {
-                memcpy(param.search.records, p_data->sdp_search_comp.records,
-                        sizeof(esp_bluetooth_sdp_record_t)*p_data->sdp_search_comp.record_count);
-            } else {
-                BTC_TRACE_ERROR("%s %d osi_malloc failed\n", __func__, event);
-                param.search.status = ESP_SDP_NO_RESOURCE;
-            }
-        }
-        btc_sdp_cb_to_app(ESP_SDP_SEARCH_COMP_EVT, &param);
-        if (param.search.records != NULL) {
-            osi_free(param.search.records);
+            param.search.records = (esp_bluetooth_sdp_record_t *)p_data->sdp_search_comp.records;
+            btc_sdp_cb_to_app(ESP_SDP_SEARCH_COMP_EVT, &param);
         }
         break;
     case BTA_SDP_CREATE_RECORD_USER_EVT:
-        param.create_record.status = p_data->sdp_create_record.status;
-        param.create_record.record_handle = p_data->sdp_create_record.handle;
-        btc_sdp_cb_to_app(ESP_SDP_CREATE_RECORD_COMP_EVT, &param);
+        if (is_sdp_init()) {
+            param.create_record.status = p_data->sdp_create_record.status;
+            param.create_record.record_handle = p_data->sdp_create_record.handle;
+            btc_sdp_cb_to_app(ESP_SDP_CREATE_RECORD_COMP_EVT, &param);
+        }
         break;
     case BTA_SDP_REMOVE_RECORD_USER_EVT:
-        param.remove_record.status = p_data->status;
-        btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
+        if (is_sdp_init()) {
+            if (p_data->sdp_remove_record.status == BTA_SDP_SUCCESS) {
+                int slot_id = get_sdp_slot_id_by_handle(p_data->sdp_remove_record.handle);
+                if (slot_id < 0) {
+                    p_data->sdp_remove_record.status = ESP_SDP_NO_CREATE_RECORD;
+                } else {
+                    free_sdp_slot(slot_id);
+                }
+            }
+
+            param.remove_record.status = p_data->sdp_remove_record.status;
+            param.remove_record.record_handle = p_data->sdp_remove_record.handle;
+            btc_sdp_cb_to_app(ESP_SDP_REMOVE_RECORD_COMP_EVT, &param);
+        }
         break;
     default:
         BTC_TRACE_DEBUG("%s: Unhandled event (%d)!", __func__, msg->act);
         break;
     }
+
+    btc_sdp_cb_arg_deep_free(msg);
 }
 
-#endif ///defined BTC_SDP_INCLUDED && BTC_SDP_INCLUDED == TRUE
+void btc_sdp_get_protocol_status(esp_sdp_protocol_status_t *param)
+{
+    if (is_sdp_init()) {
+        param->sdp_inited = true;
+        osi_mutex_lock(&sdp_local_param.sdp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+        for (size_t i = 0; i < SDP_MAX_RECORDS; i++) {
+            if (sdp_local_param.sdp_slots[i] != NULL && sdp_local_param.sdp_slots[i]->state == SDP_RECORD_ALLOCED) {
+                param->records_num++;
+            }
+        }
+        osi_mutex_unlock(&sdp_local_param.sdp_slot_mutex);
+    } else {
+        param->sdp_inited = false;
+    }
+}
+
+#endif ///defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE

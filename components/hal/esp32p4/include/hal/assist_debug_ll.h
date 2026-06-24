@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,9 @@
 #pragma once
 
 #include "soc/assist_debug_reg.h"
-#define ASSIST_DEBUG_SP_SPILL_BITS  (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
+#define ASSIST_DEBUG_SP_SPILL_BITS      (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
+#define ASSIST_DEBUG_CORE_0_MONITOR_REG  ASSIST_DEBUG_CORE_0_INTR_ENA_REG
+#define ASSIST_DEBUG_CORE_1_MONITOR_REG  ASSIST_DEBUG_CORE_1_INTR_ENA_REG
 
 #ifndef __ASSEMBLER__
 
@@ -18,7 +20,7 @@
 #include "esp_attr.h"
 #include "hal/assert.h"
 #include "soc/hp_sys_clkrst_struct.h"
-#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,8 +58,8 @@ extern "C" {
  * interrupt, instead of "ENA".
  */
 
- /* These functions are optimized and designed for internal usage.
-  * So, the API may differ from general ll layer pattern */
+/* These functions are optimized and designed for internal usage.
+ * So, the API may differ from general ll layer pattern */
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(uint32_t core_id)
 {
@@ -114,27 +116,43 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(uint32_t core_id)
     return REG_READ(core_id ? ASSIST_DEBUG_CORE_1_SP_PC_REG : ASSIST_DEBUG_CORE_0_SP_PC_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
+FORCE_INLINE_ATTR void assist_debug_ll_enable_pc_recording(uint32_t core_id, bool enable)
+{
+    uint32_t reg = core_id ? ASSIST_DEBUG_CORE_1_RCD_EN_REG : ASSIST_DEBUG_CORE_0_RCD_EN_REG;
+    uint32_t bits = ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_0_RCD_RECORDEN;
+
+    if (enable) {
+        REG_SET_BIT(reg, bits);
+    } else {
+        REG_CLR_BIT(reg, bits);
+    }
+}
+
+FORCE_INLINE_ATTR void _assist_debug_ll_enable_bus_clock(__attribute__((unused)) uint32_t core_id, bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_busmon_cpu_clk_en = enable;
+    REG_SET_FIELD(ASSIST_DEBUG_CLOCK_GATE_REG, ASSIST_DEBUG_CLK_EN, enable);
 }
 #define assist_debug_ll_enable_bus_clock(...) \
-    (void)__DECLARE_RCC_ATOMIC_ENV; assist_debug_ll_enable_bus_clock(__VA_ARGS__)
+    (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_enable_bus_clock(__VA_ARGS__)
 
-FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
+FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
 {
     /* esp32p4 has no assist_debug reset register: disable & clear interrupts manually.  */
-    for (int i = 0; i < CONFIG_SOC_CPU_CORES_NUM; i++) {
+    for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
         assist_debug_ll_sp_spill_monitor_disable(i);
         assist_debug_ll_sp_spill_interrupt_clear(i);
         assist_debug_ll_sp_spill_set_min(i, 0);
         assist_debug_ll_sp_spill_set_max(i, 0xffffffff);
-        /* Enable PC register storing when trigger stack monitor.  */
-        REG_WRITE(i ? ASSIST_DEBUG_CORE_1_RCD_EN_REG : ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_1_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_1_RCD_RECORDEN);
     }
 }
 #define assist_debug_ll_reset_register(...) \
-    (void)__DECLARE_RCC_ATOMIC_ENV; assist_debug_ll_reset_register(__VA_ARGS__)
+    (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_reset_register(__VA_ARGS__)
+
+FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+{
+    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
+}
 
 #ifdef __cplusplus
 }

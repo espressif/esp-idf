@@ -1,19 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
-#include "error.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_ieee802154.h"
 #include "esp_ieee802154_types.h"
 #include "esp_mac.h"
+#include "esp_openthread_common.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_types.h"
@@ -25,35 +24,34 @@
 #include "rom/ets_sys.h"
 
 #include "openthread-core-config.h"
+#include "openthread/error.h"
 #include "openthread/link.h"
 #include "openthread/platform/diag.h"
 #include "openthread/platform/radio.h"
 #include "openthread/platform/time.h"
 #include "utils/link_metrics.h"
 #include "utils/mac_frame.h"
+#include "psa/crypto.h"
+
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
 
 #define ESP_RECEIVE_SENSITIVITY -120
 #define ESP_OPENTHREAD_XTAL_ACCURACY CONFIG_OPENTHREAD_XTAL_ACCURACY
-#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 #define ESP_OPENTHREAD_CSL_ACCURACY CONFIG_OPENTHREAD_CSL_ACCURACY
 #define ESP_OPENTHREAD_CSL_UNCERTAIN CONFIG_OPENTHREAD_CSL_UNCERTAIN
-#endif
 
 #define EVENT_TX_DONE (1 << 0)
 #define EVENT_TX_FAILED (1 << 1)
 #define EVENT_RX_DONE (1 << 2)
 #define EVENT_ENERGY_DETECT_DONE (1 << 3)
+#define EVENT_SLEEP (1 << 4)
 
 typedef struct {
     uint8_t length;
     uint8_t psdu[OT_RADIO_FRAME_MAX_SIZE];
 } esp_openthread_radio_tx_psdu;
-
-typedef struct {
-    uint8_t head;
-    uint8_t tail;
-    atomic_uint_fast8_t used;
-} esp_openthread_circular_queue_info_t;
 
 static otRadioFrame s_transmit_frame;
 
@@ -64,9 +62,12 @@ static otRadioFrame s_ack_frame;
 static int s_ed_power;
 static esp_ieee802154_tx_error_t s_tx_error;
 static int s_radio_event_fd = -1;
-static bool s_diag_mode = false;
 static const char *s_radio_workflow = "radio";
 static uint8_t s_txrx_events;
+
+#if CONFIG_OPENTHREAD_DIAG
+static bool s_diag_mode = false;
+#endif
 
 #if OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT
 static otRadioIeInfo s_transmit_ie_info;
@@ -80,14 +81,38 @@ static uint32_t s_csl_sample_time;
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 static uint32_t s_mac_frame_counter;
 static uint8_t s_key_id;
-static struct otMacKeyMaterial s_pervious_key;
+static struct otMacKeyMaterial s_previous_key;
 static struct otMacKeyMaterial s_current_key;
 static struct otMacKeyMaterial s_next_key;
+#if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+static uint8_t s_pervious_key_bytes[16];
+static uint8_t s_current_key_bytes[16];
+static uint8_t s_next_key_bytes[16];
+#endif
 static bool s_with_security_enh_ack = false;
 static uint32_t s_ack_frame_counter;
 static uint8_t s_ack_key_id;
 static uint8_t s_security_key[16];
 static uint8_t s_security_addr[8];
+
+static void ot_set_security_key_from_key_material(struct otMacKeyMaterial a_key_material)
+{
+#if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+    /* Key bytes are pre-exported in task context (otPlatRadioSetMacKey).
+     * Identify which cached buffer to use by comparing the key reference.
+     * Jira TZ-2472 */
+    if (a_key_material.mKeyMaterial.mKeyRef == s_previous_key.mKeyMaterial.mKeyRef) {
+        memcpy(s_security_key, s_pervious_key_bytes, 16);
+    } else if (a_key_material.mKeyMaterial.mKeyRef == s_next_key.mKeyMaterial.mKeyRef) {
+        memcpy(s_security_key, s_next_key_bytes, 16);
+    } else {
+        memcpy(s_security_key, s_current_key_bytes, 16);
+    }
+#else
+    memcpy(s_security_key, a_key_material.mKeyMaterial.mKey.m8, sizeof(a_key_material.mKeyMaterial.mKey.m8));
+#endif
+}
+
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 
 static esp_openthread_circular_queue_info_t s_recv_queue = {.head = 0, .tail = 0, .used = 0};
@@ -113,7 +138,7 @@ static inline bool get_event(uint8_t event)
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
 {
     ESP_RETURN_ON_FALSE(s_radio_event_fd == -1, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
-                        "Radio was initalized already!");
+                        "Radio was initialized already!");
 
     s_radio_event_fd = eventfd(0, EFD_SUPPORT_ISR);
 
@@ -140,7 +165,7 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
 
 void esp_openthread_radio_deinit(void)
 {
-    if (s_radio_event_fd > 0) {
+    if (s_radio_event_fd != -1) {
         close(s_radio_event_fd);
         s_radio_event_fd = -1;
     }
@@ -165,51 +190,39 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
 
     if (get_event(EVENT_TX_DONE)) {
         clr_event(EVENT_TX_DONE);
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
-        if (otPlatDiagModeGet()) {
-            otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_NONE);
-        } else
-#endif
-        {
-            if (s_ack_frame.mPsdu == NULL) {
-                otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
-            } else {
-                otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
-                esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
-                s_ack_frame.mPsdu = NULL;
-            }
+
+        if (s_ack_frame.mPsdu == NULL) {
+            otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
+        } else {
+            otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
+            esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
+            s_ack_frame.mPsdu = NULL;
         }
     }
 
     if (get_event(EVENT_TX_FAILED)) {
         clr_event(EVENT_TX_FAILED);
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
-        if (otPlatDiagModeGet()) {
-            otPlatDiagRadioTransmitDone(aInstance, &s_transmit_frame, OT_ERROR_CHANNEL_ACCESS_FAILURE);
-        } else
-#endif
-        {
-            otError err = OT_ERROR_NONE;
 
-            switch (s_tx_error) {
-            case ESP_IEEE802154_TX_ERR_CCA_BUSY:
-            case ESP_IEEE802154_TX_ERR_ABORT:
-            case ESP_IEEE802154_TX_ERR_COEXIST:
-                err = OT_ERROR_CHANNEL_ACCESS_FAILURE;
-                break;
+        otError err = OT_ERROR_NONE;
 
-            case ESP_IEEE802154_TX_ERR_NO_ACK:
-            case ESP_IEEE802154_TX_ERR_INVALID_ACK:
-                err = OT_ERROR_NO_ACK;
-                break;
+        switch (s_tx_error) {
+        case ESP_IEEE802154_TX_ERR_CCA_BUSY:
+        case ESP_IEEE802154_TX_ERR_ABORT:
+        case ESP_IEEE802154_TX_ERR_COEXIST:
+            err = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+            break;
 
-            default:
-                ETS_ASSERT(false);
-                break;
-            }
+        case ESP_IEEE802154_TX_ERR_NO_ACK:
+        case ESP_IEEE802154_TX_ERR_INVALID_ACK:
+            err = OT_ERROR_NO_ACK;
+            break;
 
-            otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, err);
+        default:
+            ETS_ASSERT(false);
+            break;
         }
+
+        otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, err);
     }
 
     if (get_event(EVENT_ENERGY_DETECT_DONE)) {
@@ -219,19 +232,17 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
 
     while (atomic_load(&s_recv_queue.used)) {
         if (s_receive_frame[s_recv_queue.head].mPsdu != NULL) {
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
-            if (otPlatDiagModeGet()) {
-                otPlatDiagRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
-            } else
-#endif
-            {
-                otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
-            }
+            otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
             atomic_fetch_sub(&s_recv_queue.used, 1);
         }
+    }
+
+    if (get_event(EVENT_SLEEP)) {
+        clr_event(EVENT_SLEEP);
+        esp_ieee802154_sleep();
     }
 
     return ESP_OK;
@@ -302,10 +313,14 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
 {
     esp_ieee802154_set_channel(aFrame->mChannel);
 
-    aFrame->mPsdu[-1] = aFrame->mLength; // lenth locates one byte before the psdu (esp_openthread_radio_tx_psdu);
+    aFrame->mPsdu[-1] = aFrame->mLength; // length locates one byte before the psdu (esp_openthread_radio_tx_psdu);
 
     if (otMacFrameIsSecurityEnabled(aFrame) && !aFrame->mInfo.mTxInfo.mIsSecurityProcessed) {
+#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+        if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx || s_csl_period > 0) {
+#else
         if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx) {
+#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
             otMacFrameSetFrameCounter(aFrame, s_mac_frame_counter++);
         }
         if (otMacFrameIsKeyIdMode1(aFrame)) {
@@ -315,7 +330,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
             }
             esp_ieee802154_get_extended_address(s_security_addr);
         }
-        memcpy(s_security_key, s_current_key.mKeyMaterial.mKey.m8, sizeof(s_current_key.mKeyMaterial.mKey.m8));
+        ot_set_security_key_from_key_material(s_current_key);
         esp_ieee802154_set_transmit_security(&aFrame->mPsdu[-1], s_security_key, s_security_addr);
     }
 
@@ -355,7 +370,8 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 
 otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel, uint32_t aStart, uint32_t aDuration)
 {
-    esp_ieee802154_receive_at((aStart + aDuration));
+    esp_ieee802154_set_channel(aChannel);
+    esp_ieee802154_receive_at(aStart, aDuration);
     return OT_ERROR_NONE;
 }
 
@@ -409,7 +425,8 @@ void otPlatRadioClearSrcMatchExtEntries(otInstance *aInstance)
 
 otError otPlatRadioEnergyScan(otInstance *aInstance, uint8_t aScanChannel, uint16_t aScanDuration)
 {
-    esp_ieee802154_energy_detect(aScanDuration);
+    esp_ieee802154_set_channel(aScanChannel);
+    esp_ieee802154_energy_detect(aScanDuration * US_PER_MS / US_PER_SYMBOL);
 
     return OT_ERROR_NONE;
 }
@@ -447,6 +464,15 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
     return ESP_RECEIVE_SENSITIVITY;
 }
 
+#if CONFIG_OPENTHREAD_DIAG
+
+void otPlatDiagSetOutputCallback(otInstance *aInstance, otPlatDiagOutputCallback aCallback, void *aContext)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    OT_UNUSED_VARIABLE(aCallback);
+    OT_UNUSED_VARIABLE(aContext);
+}
+
 void otPlatDiagModeSet(bool mode)
 {
     s_diag_mode = mode;
@@ -479,19 +505,33 @@ void otPlatDiagAlarmCallback(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
 }
 
+#endif // CONFIG_OPENTHREAD_DIAG
+
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKeyId, const otMacKeyMaterial *aPrevKey,
                           const otMacKeyMaterial *aCurrKey, const otMacKeyMaterial *aNextKey, otRadioKeyType aKeyType)
 {
     OT_UNUSED_VARIABLE(aInstance);
     OT_UNUSED_VARIABLE(aKeyIdMode);
+#if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+    assert(aKeyType == OT_KEY_TYPE_KEY_REF);
+#else
     assert(aKeyType == OT_KEY_TYPE_LITERAL_KEY);
+#endif // OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
     assert(aPrevKey != NULL && aCurrKey != NULL && aNextKey != NULL);
 
     s_key_id = aKeyId;
-    s_pervious_key = *aPrevKey;
-    s_current_key = *aCurrKey;
-    s_next_key = *aNextKey;
+    s_previous_key = *aPrevKey;
+    s_current_key  = *aCurrKey;
+    s_next_key     = *aNextKey;
+#if OPENTHREAD_CONFIG_PLATFORM_KEY_REFERENCES_ENABLE
+    /* Pre-export raw key bytes in task context to avoid calling psa_export_key()
+     * from ISR context (enh_ack_generator), which would attempt to take a mutex. */
+    size_t keyLength = 0;
+    psa_export_key(aPrevKey->mKeyMaterial.mKeyRef, s_pervious_key_bytes, 16, &keyLength);
+    psa_export_key(aCurrKey->mKeyMaterial.mKeyRef, s_current_key_bytes,  16, &keyLength);
+    psa_export_key(aNextKey->mKeyMaterial.mKeyRef, s_next_key_bytes,     16, &keyLength);
+#endif
 }
 
 void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCounter)
@@ -499,6 +539,15 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCoun
     OT_UNUSED_VARIABLE(aInstance);
 
     s_mac_frame_counter = aMacFrameCounter;
+}
+
+void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacFrameCounter)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    if (aMacFrameCounter > s_mac_frame_counter) {
+        s_mac_frame_counter = aMacFrameCounter;
+    }
 }
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 
@@ -515,7 +564,7 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
     s_csl_sample_time = aCslSampleTime;
 }
 
-static IRAM_ATTR uint16_t get_csl_phase()
+static IRAM_ATTR uint16_t get_csl_phase(void)
 {
     uint32_t cur_time = otPlatTimeGet();
     uint32_t csl_period_us = s_csl_period * OT_US_PER_TEN_SYMBOLS;
@@ -551,6 +600,8 @@ otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShort
     return OT_ERROR_NONE;
 }
 
+#endif
+
 uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {
     return ESP_OPENTHREAD_CSL_ACCURACY;
@@ -560,8 +611,6 @@ uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
 {
     return ESP_OPENTHREAD_CSL_UNCERTAIN;
 }
-
-#endif
 
 // events
 void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack,
@@ -590,11 +639,7 @@ static void IRAM_ATTR convert_to_ot_frame(uint8_t *data, esp_ieee802154_frame_in
     radio_frame->mInfo.mRxInfo.mRssi = frame_info->rssi;
     radio_frame->mInfo.mRxInfo.mLqi = frame_info->lqi;
     radio_frame->mInfo.mRxInfo.mAckedWithFramePending = frame_info->pending;
-    radio_frame->mInfo.mRxInfo.mTimestamp = otPlatTimeGet();
-
-#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
     radio_frame->mInfo.mRxInfo.mTimestamp = frame_info->timestamp;
-#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 }
 
 static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
@@ -611,7 +656,7 @@ static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_f
     if (key_id == s_key_id) {
         key = &s_current_key;
     } else if (key_id == s_key_id - 1) {
-        key = &s_pervious_key;
+        key = &s_previous_key;
     } else if (key_id == s_key_id + 1) {
         key = &s_next_key;
     } else {
@@ -622,7 +667,7 @@ static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_f
     s_with_security_enh_ack = true;
     if (otMacFrameIsKeyIdMode1(ack_frame)) {
         esp_ieee802154_get_extended_address(s_security_addr);
-        memcpy(s_security_key, (*key).mKeyMaterial.mKey.m8, OT_MAC_KEY_SIZE);
+        ot_set_security_key_from_key_material(*key);
     }
 
     esp_ieee802154_set_transmit_security(&ack_frame->mPsdu[-1], s_security_key, s_security_addr);
@@ -634,7 +679,7 @@ esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802
 {
     otRadioFrame ack_frame;
     otRadioFrame ot_frame;
-    uint8_t ack_ie_data[OT_ACK_IE_MAX_SIZE];
+    uint8_t ack_ie_data[OT_ACK_IE_MAX_SIZE] = {0};
     uint8_t offset = 0;
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
     uint8_t link_metrics_data_len = 0;
@@ -653,8 +698,8 @@ esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802
 
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
     otMacFrameGetSrcAddr(&ot_frame, &mac_addr);
-    link_metrics_data_len = otLinkMetricsEnhAckGenData(&mac_addr, esp_ieee802154_get_recent_lqi(),
-                                        esp_ieee802154_get_recent_rssi(), link_metrics_data);
+    link_metrics_data_len = otLinkMetricsEnhAckGenData(&mac_addr, frame_info->lqi,
+                                        frame_info->rssi, link_metrics_data);
     if (link_metrics_data_len > 0) {
         offset += otMacFrameGenerateEnhAckProbingIe(ack_ie_data, link_metrics_data, link_metrics_data_len);
     }
@@ -684,6 +729,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
 
     if (atomic_load(&s_recv_queue.used) == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         ESP_EARLY_LOGE(OT_PLAT_LOG_TAG, "radio receive buffer full!");
+        esp_ieee802154_receive_handle_done(data);
         return;
     }
 
@@ -783,3 +829,32 @@ void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
     esp_ieee802154_set_rx_when_idle(aEnable);
 }
 #endif
+
+uint32_t otPlatRadioGetPreferredChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return CONFIG_OPENTHREAD_PREFERRED_CHANNEL_MASK;
+}
+
+uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return CONFIG_OPENTHREAD_SUPPORTED_CHANNEL_MASK;
+}
+
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config)
+{
+    esp_ieee802154_set_coex_config(config);
+}
+
+esp_ieee802154_coex_config_t esp_openthread_get_coex_config(void)
+{
+    return esp_ieee802154_get_coex_config();
+}
+#endif
+
+void esp_ieee802154_receive_at_done(void)
+{
+    set_event(EVENT_SLEEP);
+}

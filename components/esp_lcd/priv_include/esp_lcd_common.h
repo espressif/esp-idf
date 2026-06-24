@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "hal/dma_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
-#if SOC_LCDCAM_SUPPORTED
+#if SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 #include "hal/lcd_hal.h"
 #endif
 
@@ -19,18 +19,17 @@
 extern "C" {
 #endif
 
+// size of the internal buffer to transform the data into a proper format (e.g. data endian)
+#define LCD_I80_IO_FORMAT_BUF_SIZE  32
+
 #define LCD_I80_INTR_ALLOC_FLAGS     ESP_INTR_FLAG_INTRDISABLED
 #define LCD_I80_MEM_ALLOC_CAPS       MALLOC_CAP_DEFAULT
 
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define LCD_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LCD_CLOCK_SRC_ATOMIC()
-#endif
+#define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
-#if SOC_LCDCAM_SUPPORTED
+#if SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 
 typedef enum {
     LCD_COM_DEVICE_TYPE_I80,
@@ -53,16 +52,7 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
  * @param member_id member ID
  */
 void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id);
-#endif // SOC_LCDCAM_SUPPORTED
-
-/**
- * @brief Mount data to DMA descriptors
- *
- * @param desc_head Point to the head of DMA descriptor chain
- * @param buffer Data buffer
- * @param len Size of the data buffer, in bytes
- */
-void lcd_com_mount_dma_data(dma_descriptor_t *desc_head, const void *buffer, size_t len);
+#endif // SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)
 
 /**
  * @brief Reverse the bytes in the buffer

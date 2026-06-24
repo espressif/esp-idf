@@ -1830,6 +1830,7 @@ static void gen_admin_prop_set(struct bt_mesh_model *model,
     struct bt_mesh_gen_admin_prop_srv *srv = model->user_data;
     struct bt_mesh_generic_property *property = NULL;
     uint16_t property_id = 0U;
+    uint8_t expect_len = 0U;
     uint8_t access = 0U;
 
     if (srv == NULL || srv->property_count == 0U || srv->properties == NULL) {
@@ -1862,6 +1863,13 @@ static void gen_admin_prop_set(struct bt_mesh_model *model,
             send_gen_admin_prop_status(model, ctx, property_id, false);
         }
         send_gen_admin_prop_status(model, ctx, property_id, true);
+        return;
+    }
+
+    expect_len = bt_mesh_get_dev_prop_len(property_id);
+    if (buf->len != expect_len) {
+        BT_ERR("Invalid Admin Property 0x%04x length, expect %d, actual %d",
+                property_id, expect_len, buf->len);
         return;
     }
 
@@ -2062,19 +2070,16 @@ static void gen_manu_prop_set(struct bt_mesh_model *model,
 }
 
 /* Generic Client Property Server message handlers */
-static int search_prop_id_index(const uint16_t *array, uint8_t array_idx, uint16_t id)
+static int search_prop_id_index(const uint16_t *array_start,
+                                const uint16_t *array,
+                                uint8_t array_idx, uint16_t id)
 {
-    static const uint16_t *start = NULL;
     uint8_t index = 0U;
     uint16_t temp = 0U;
 
-    if (start == NULL) {
-        start = array;
-    }
-
     if (array_idx == 0U) {
         if (*array >= id) {
-            return array - start;
+            return array - array_start;
         }
 
         return -1;
@@ -2084,14 +2089,14 @@ static int search_prop_id_index(const uint16_t *array, uint8_t array_idx, uint16
     temp = array[index];
 
     if (temp == id) {
-        return array + index - start;
+        return array + index - array_start;
     }
 
     if (temp > id) {
-        return search_prop_id_index(array, index, id);
+        return search_prop_id_index(array_start, array, index, id);
     }
 
-    return search_prop_id_index(array + index + 1, array_idx - 1 - index, id);
+    return search_prop_id_index(array_start, array + index + 1, array_idx - 1 - index, id);
 }
 
 static void gen_client_prop_get(struct bt_mesh_model *model,
@@ -2126,7 +2131,7 @@ static void gen_client_prop_get(struct bt_mesh_model *model,
      */
 
     property_id = net_buf_simple_pull_le16(buf);
-    index = search_prop_id_index(srv->property_ids, srv->id_count - 1, property_id);
+    index = search_prop_id_index(srv->property_ids, srv->property_ids, srv->id_count - 1, property_id);
     if (index < 0) {
         NET_BUF_SIMPLE_DEFINE(msg, 1 + BLE_MESH_SERVER_TRANS_MIC_SIZE);
         bt_mesh_model_msg_init(&msg, BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_STATUS);

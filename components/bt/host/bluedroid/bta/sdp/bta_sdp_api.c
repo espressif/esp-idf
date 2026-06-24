@@ -62,27 +62,35 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
 
     APPL_TRACE_API("%s\n", __FUNCTION__);
 
+    /* do not allocate sdp_db / raw buffers unless we can run the enable path */
+    if (p_cback == NULL || bta_sys_is_register(BTA_ID_SDP)) {
+        return BTA_SDP_FAILURE;
+    }
+
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Malloc buffer for SDP configuration structure */
     p_bta_sdp_cfg->p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(p_bta_sdp_cfg->sdp_db_size);
-    if (p_bta_sdp_cfg->p_sdp_db == NULL) {
+    p_bta_sdp_cfg->p_sdp_raw_data = (UINT8 *)osi_malloc(p_bta_sdp_cfg->sdp_raw_size);
+    if (p_bta_sdp_cfg->p_sdp_db == NULL || p_bta_sdp_cfg->p_sdp_raw_data == NULL) {
+        BTA_SdpCleanup();
         return BTA_SDP_FAILURE;
     }
 #endif
 
-    if (p_cback && FALSE == bta_sys_is_register(BTA_ID_SDP)) {
-        memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
+    memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
 
-        /* register with BTA system manager */
+    if ((p_buf = (tBTA_SDP_API_ENABLE *) osi_malloc(sizeof(tBTA_SDP_API_ENABLE))) != NULL) {
+        /* register with BTA system manager only after buffer alloc succeeds */
         bta_sys_register(BTA_ID_SDP, &bta_sdp_reg);
-
-        if (p_cback &&
-                (p_buf = (tBTA_SDP_API_ENABLE *) osi_malloc(sizeof(tBTA_SDP_API_ENABLE))) != NULL) {
-            p_buf->hdr.event = BTA_SDP_API_ENABLE_EVT;
-            p_buf->p_cback = p_cback;
-            bta_sys_sendmsg(p_buf);
-            status = BTA_SDP_SUCCESS;
-        }
+        p_buf->hdr.event = BTA_SDP_API_ENABLE_EVT;
+        p_buf->p_cback = p_cback;
+        bta_sys_sendmsg(p_buf);
+        status = BTA_SDP_SUCCESS;
+    } else {
+#if BTA_DYNAMIC_MEMORY == TRUE
+        /* undo sdp_db / sdp_raw_data from above; not registered yet */
+        BTA_SdpCleanup();
+#endif
     }
     return (status);
 }
@@ -101,15 +109,34 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
 *******************************************************************************/
 tBTA_SDP_STATUS BTA_SdpDisable(void)
 {
-    tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
+    BT_HDR  *p_buf = NULL;
+    tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
 
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
+        p_buf->event = BTA_SDP_API_DISABLE_EVT;
+        bta_sys_sendmsg(p_buf);
+        status = BTA_SDP_SUCCESS;
+    }
+
+    return status;
+}
+
+tBTA_SDP_STATUS BTA_SdpCleanup(void)
+{
     bta_sys_deregister(BTA_ID_SDP);
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Free buffer for SDP configuration structure */
-    osi_free(p_bta_sdp_cfg->p_sdp_db);
-    p_bta_sdp_cfg->p_sdp_db = NULL;
+    if (p_bta_sdp_cfg->p_sdp_db) {
+        osi_free(p_bta_sdp_cfg->p_sdp_db);
+        p_bta_sdp_cfg->p_sdp_db = NULL;
+    }
+
+    if (p_bta_sdp_cfg->p_sdp_raw_data) {
+        osi_free(p_bta_sdp_cfg->p_sdp_raw_data);
+        p_bta_sdp_cfg->p_sdp_raw_data = NULL;
+    }
 #endif
-    return (status);
+    return BTA_SDP_SUCCESS;
 }
 
 /*******************************************************************************
@@ -129,6 +156,10 @@ tBTA_SDP_STATUS BTA_SdpSearch(BD_ADDR bd_addr, tSDP_UUID *uuid)
 {
     tBTA_SDP_STATUS ret = BTA_SDP_FAILURE;
     tBTA_SDP_API_SEARCH *p_msg;
+
+    if (!uuid) {
+        return BTA_SDP_FAILURE;
+    }
 
     APPL_TRACE_API("%s\n", __FUNCTION__);
     if ((p_msg = (tBTA_SDP_API_SEARCH *)osi_malloc(sizeof(tBTA_SDP_API_SEARCH))) != NULL) {

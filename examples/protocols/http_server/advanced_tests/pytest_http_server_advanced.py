@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import logging
 import os
 import sys
 
 import pytest
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
     from idf_http_server_test import test as client
@@ -32,16 +30,13 @@ from pytest_embedded import Dut
 # features to this component.
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.wifi_router
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
 def test_examples_protocol_http_server_advanced(dut: Dut) -> None:
-
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'tests.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('http_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'http_server_bin_size : {bin_size // 1024}KB')
 
     logging.info('Starting http_server advanced test app')
 
@@ -53,21 +48,24 @@ def test_examples_protocol_http_server_advanced(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
 
     got_port = dut.expect(r"(?:[\s\S]*)Started HTTP server on port: '(\d+)'", timeout=30)[1].decode()
 
-    result = dut.expect(r"(?:[\s\S]*)Max URI handlers: '(\d+)'(?:[\s\S]*)Max Open Sessions: "  # noqa: W605
-                        r"'(\d+)'(?:[\s\S]*)Max Header Length: '(\d+)'(?:[\s\S]*)Max URI Length: "
-                        r"'(\d+)'(?:[\s\S]*)Max Stack Size: '(\d+)'", timeout=15)
+    result = dut.expect(
+        r"(?:[\s\S]*)Max URI handlers: '(\d+)'(?:[\s\S]*)Max Open Sessions: "  # noqa: W605
+        r"'(\d+)'(?:[\s\S]*)Max Header Length: '(\d+)'(?:[\s\S]*)Max URI Length: "
+        r"'(\d+)'(?:[\s\S]*)Max Stack Size: '(\d+)'",
+        timeout=15,
+    )
     # max_uri_handlers = int(result[1])
     max_sessions = int(result[2])
     max_hdr_len = int(result[3])
     max_uri_len = int(result[4])
     max_stack_size = int(result[5])
 
-    logging.info('Got Port : {}'.format(got_port))
-    logging.info('Got IP   : {}'.format(got_ip))
+    logging.info(f'Got Port : {got_port}')
+    logging.info(f'Got IP   : {got_ip}')
 
     # Run test script
     # If failed raise appropriate exception

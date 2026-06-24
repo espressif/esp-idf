@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,11 +21,11 @@ static const char *TAG = "adc_filter";
 static portMUX_TYPE s_filter_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 #if SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
-static atomic_bool s_adc_filter_claimed[SOC_ADC_DIGI_IIR_FILTER_NUM] = {ATOMIC_VAR_INIT(false),
-#if (SOC_ADC_DIGI_IIR_FILTER_NUM >= 2)
-                                                                        ATOMIC_VAR_INIT(false)
+static atomic_bool s_adc_filter_claimed[ADC_LL_DIGI_IIR_FILTER_NUM] = {ATOMIC_VAR_INIT(false),
+#if (ADC_LL_DIGI_IIR_FILTER_NUM >= 2)
+                                                                       ATOMIC_VAR_INIT(false)
 #endif
-                                                                       };
+                                                                      };
 
 static esp_err_t s_adc_filter_claim(adc_continuous_handle_t handle, adc_iir_filter_t *filter_ctx, adc_unit_t unit)
 {
@@ -61,7 +61,7 @@ static esp_err_t s_adc_filter_claim(adc_continuous_handle_t handle, adc_iir_filt
     assert(handle && filter_ctx);
 
     portENTER_CRITICAL(&s_filter_spinlock);
-    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+    for (int i = 0; i < ADC_LL_DIGI_IIR_FILTER_NUM; i++) {
         bool found = !handle->iir_filter[i];
         if (found) {
             handle->iir_filter[i] = filter_ctx;

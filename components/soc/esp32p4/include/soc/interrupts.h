@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -38,7 +38,7 @@ typedef enum {
     ETS_LP_SYSREG_INTR_SOURCE,
     ETS_LP_HUK_INTR_SOURCE,
     ETS_SYS_ICM_INTR_SOURCE,
-    ETS_USB_DEVICE_INTR_SOURCE,
+    ETS_USB_SERIAL_JTAG_INTR_SOURCE,
     ETS_SDIO_HOST_INTR_SOURCE,
     ETS_DW_GDMA_INTR_SOURCE,
     ETS_SPI2_INTR_SOURCE,
@@ -152,8 +152,15 @@ typedef enum {
     ETS_H264_REG_INTR_SOURCE,
     ETS_ASSIST_DEBUG_INTR_SOURCE,
 
-    ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
-} periph_interrput_t;
+    // The following sources' int_map_reg addr are not continuous with previous ones (check interrupt_core0/1_struct.h),
+    // but esp_rom_route_intr_matrix and interrupt_clic_ll_route assume all int_map_reg addr are continuous.
+    // Therefore, the workaround is to give the three new interrupt sources ID numbers that match with the corresponding correct addresses.
+    ETS_DMA2D_IN_CH2_INTR_SOURCE = 133,          /**< This interrupt source only exists on chip ver. >= 3.0 */
+    ETS_DMA2D_OUT_CH3_INTR_SOURCE,               /**< This interrupt source only exists on chip ver. >= 3.0 */
+    ETS_AXI_PERF_MON_INTR_SOURCE,                /**< This interrupt source only exists on chip ver. >= 3.0 */
+
+    ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources (this value is larger than the real number of sources on ver. less than 3.0, but it should be fine)*/
+} periph_interrupt_t;
 
 extern const char *const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

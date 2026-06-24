@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -26,38 +26,88 @@ extern "C" {
 
 #define ENTRY(n)    (BIT(n))
 
+// Only used for driver retention function testing when lightsleep is not supported
+#define REGDMA_SW_TRIGGER_ENTRY             (ENTRY(3))
+
 #define REGDMA_PHY_LINK(_pri)               ((0x00 << 8) | _pri)
 #define REGDMA_PCR_LINK(_pri)               ((0x01 << 8) | _pri)
 #define REGDMA_MODEMSYSCON_LINK(_pri)       ((0x02 << 8) | _pri)
 #define REGDMA_MODEMLPCON_LINK(_pri)        ((0x03 << 8) | _pri)
 #define REGDMA_PAU_LINK(_pri)               ((0x04 << 8) | _pri)
+#define REGDMA_PVT_LINK(_pri)               ((0x05 << 8) | _pri)
 
+#define REGDMA_CACHE_LINK(_pri)             ((0x0c << 8) | _pri)
 #define REGDMA_INTMTX_LINK(_pri)            ((0x0d << 8) | _pri)
 #define REGDMA_HPSYS_LINK(_pri)             ((0x0e << 8) | _pri)
 #define REGDMA_TEEAPM_LINK(_pri)            ((0x0f << 8) | _pri)
 
 #define REGDMA_UART_LINK(_pri)              ((0x10 << 8) | _pri)
-#define REGDMA_TIMG_LINK(_pri)              ((0x11 << 8) | _pri)
-#define REGDMA_IOMUX_LINK(_pri)             ((0x12 << 8) | _pri)
-#define REGDMA_SPIMEM_LINK(_pri)            ((0x13 << 8) | _pri)
-#define REGDMA_SYSTIMER_LINK(_pri)          ((0x14 << 8) | _pri)
-#define REGDMA_BLE_MAC_LINK(_pri)           ((0x15 << 8) | _pri)
-#define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x16 << 8) | _pri)
-#define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
-#define REGDMA_GDMA_LINK(_pri)              ((0x18 << 8) | _pri)
-#define REGDMA_I2C_LINK(_pri)               ((0x19 << 8) | _pri)
+#define REGDMA_IOMUX_LINK(_pri)             ((0x11 << 8) | _pri)
+#define REGDMA_SPIMEM_LINK(_pri)            ((0x12 << 8) | _pri)
+#define REGDMA_SYSTIMER_LINK(_pri)          ((0x13 << 8) | _pri)
+#define REGDMA_BLE_MAC_LINK(_pri)           ((0x14 << 8) | _pri)
+#define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x15 << 8) | _pri)
+#define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x16 << 8) | _pri)
+#define REGDMA_GDMA_LINK(_pri)              ((0x17 << 8) | _pri)
+#define REGDMA_I2C_LINK(_pri)               ((0x18 << 8) | _pri)
+#define REGDMA_RMT_LINK(_pri)               ((0x19 << 8) | _pri)
+#define REGDMA_TG0_WDT_LINK(_pri)           ((0x1A << 8) | _pri)
+#define REGDMA_TG1_WDT_LINK(_pri)           ((0x1B << 8) | _pri)
+#define REGDMA_TG0_TIMER_LINK(_pri)         ((0x1C << 8) | _pri)
+#define REGDMA_TG1_TIMER_LINK(_pri)         ((0x1D << 8) | _pri)
+#define REGDMA_I2S_LINK(_pri)               ((0x1E << 8) | _pri)
+#define REGDMA_ETM_LINK(_pri)               ((0x1F << 8) | _pri)
+#define REGDMA_TSENS_LINK(_pri)             ((0x20 << 8) | _pri)
+#define REGDMA_TWAI_LINK(_pri)              ((0x21 << 8) | _pri)
+#define REGDMA_PARLIO_LINK(_pri)            ((0x22 << 8) | _pri)
+#define REGDMA_GPSPI_LINK(_pri)             ((0x23 << 8) | _pri)
+#define REGDMA_LEDC_LINK(_pri)              ((0x24 << 8) | _pri)
+#define REGDMA_MCPWM_LINK(_pri)             ((0x25 << 8) | _pri)
+#define REGDMA_SDM_LINK(_pri)               ((0x26 << 8) | _pri)
+#define REGDMA_EMAC_LINK(_pri)              ((0x27 << 8) | _pri)
+#define REGDMA_JPEG_LINK(_pri)              ((0x28 << 8) | _pri)
+#define REGDMA_LCDCAM_LINK(_pri)            ((0x29 << 8) | _pri)
+#define REGDMA_H264_LINK(_pri)              ((0x2A << 8) | _pri)
+#define REGDMA_PPA_LINK(_pri)               ((0x2B << 8) | _pri)
+#define REGDMA_DMA2D_LINK(_pri)             ((0x2C << 8) | _pri)
+
+#define REGDMA_POWER_LINK(_pri)             ((0xFD << 8) | _pri)
+#define REGDMA_CLOCK_ICG_LINK(_pri)         ((0xFE << 8) | _pri)
+
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
 #define REGDMA_LINK_PRI_MODEM_CLK               REGDMA_LINK_PRI_1
+#define REGDMA_LINK_PRI_CLOCK_ICG               REGDMA_LINK_PRI_1
 #define REGDMA_LINK_PRI_CRITICAL_TEE_APM        REGDMA_LINK_PRI_2
 #define REGDMA_LINK_PRI_WIFI_MAC_BB             REGDMA_LINK_PRI_3
 #define REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM    REGDMA_LINK_PRI_4
 #define REGDMA_LINK_PRI_BT_MAC_BB               REGDMA_LINK_PRI_5
+#define REGDMA_LINK_PRI_POWER                   REGDMA_LINK_PRI_5
 #define REGDMA_LINK_PRI_SYS_PERIPH_HIGH         REGDMA_LINK_PRI_5 // INT_MTX & HP_SYSTEM & Console UART
 #define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
-#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_7
-#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_7
+#define REGDMA_LINK_PRI_GENERAL_PERIPH          REGDMA_LINK_PRI_7 // Low retenion priority for general peripherals
+#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_ETM                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_I2S                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_PARLIO                  REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_TEMPERATURE_SENSOR      REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_TWAI                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_MCPWM                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_SDM                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_EMAC                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_JPEG                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_LCDCAM                  REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_H264                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_PPA                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_DMA2D                   REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,
@@ -70,7 +120,6 @@ typedef enum {
     REGDMA_LINK_PRI_7,
 } regdma_link_priority_t;
 
-
 typedef void * regdma_entry_buf_t[REGDMA_LINK_ENTRY_NUM];
 
 typedef enum regdma_link_mode {
@@ -79,7 +128,6 @@ typedef enum regdma_link_mode {
     REGDMA_LINK_MODE_WRITE,          /*!< Link used to direct write to registers*/
     REGDMA_LINK_MODE_WAIT            /*!< Link used to wait for register value to meet condition*/
 } regdma_link_mode_t;
-
 
 typedef struct regdma_link_head {
     volatile uint32_t length: 10, /* total count of registers that need to be backup or restore, unit: 1 word = 4 bytes */
@@ -142,12 +190,14 @@ typedef struct regdma_link_branch_write_wait_body {
     volatile uint32_t   mask;
 } regdma_link_branch_write_wait_body_t;
 
-ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM < 16, "regdma link entry number should less 16");
+ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM <= 16, "regdma link entry number should equal to and less than 16");
 typedef struct regdma_link_stats {
     volatile uint32_t   ref: REGDMA_LINK_ENTRY_NUM, /* a bitmap, identifies which entry has referenced the current link */
-             reserve: 16-REGDMA_LINK_ENTRY_NUM,
+#if REGDMA_LINK_ENTRY_NUM < 16
+             reserve: 16 - REGDMA_LINK_ENTRY_NUM,
+#endif
              id: 16; /* REGDMA linked list node unique identifier */
-    volatile uint32_t   module; /* a bitmap used to identify the module to which the current node belongs */
+    volatile int    module; /* a number used to identify the module to which the current node belongs */
 } regdma_link_stats_t;
 
 typedef struct regdma_link_continuous {

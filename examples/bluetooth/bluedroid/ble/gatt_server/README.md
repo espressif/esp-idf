@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF Gatt Server Example
 
@@ -12,6 +12,62 @@ This demo creates GATT a service and then starts advertising, waiting to be conn
 To test this demo, we can run the [gatt_client_demo](../gatt_client), which can scan for and connect to this demo automatically. They will start exchanging data once the GATT client has enabled the notification function of the GATT server.
 
 Please, check this [tutorial](tutorial/Gatt_Server_Example_Walkthrough.md) for more information about this example.
+
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  GATT Server │                                    │  GATT Client │
+    │(this example)│                                    │(gatt_client) │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Initialization ───────────           │
+           │                                                   │
+           │  1. Register GATT Server App                      │
+           │  2. Create Service (UUID: 0x00FF)                 │
+           │  3. Add Characteristic (UUID: 0xFF01)             │
+           │  4. Add Descriptor (CCCD)                         │
+           │  5. Start Service                                 │
+           │  6. Start Advertising "ESP_GATTS_DEMO"            │
+           │                                                   │
+           │  ─────────── Connection Phase ───────────         │
+           │                                                   │
+           │                        Scan & Connect             │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Connection Established                           │
+           │ ─────────────────────────────────────────────────>│
+           │                                                   │
+           │  MTU Exchange                                     │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  ─────────── Service Discovery ───────────        │
+           │                                                   │
+           │                        Service Discovery          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Return Service Info                              │
+           │ ─────────────────────────────────────────────────>│
+           │                                                   │
+           │  ─────────── Enable Notification ───────────      │
+           │                                                   │
+           │                        Write CCCD (0x0001)        │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Notification Enabled                             │
+           │                                                   │
+           │  ─────────── Data Exchange ───────────            │
+           │                                                   │
+           │                        Write Request              │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Send Notification                                │
+           │ ─────────────────────────────────────────────────>│
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  GATT Server │                                    │  GATT Client │
+    └──────────────┘                                    └──────────────┘
+```
 
 ## How to Use Example
 

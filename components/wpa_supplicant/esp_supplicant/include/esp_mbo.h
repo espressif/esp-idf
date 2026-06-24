@@ -8,6 +8,8 @@
 #define _ESP_MBO_H
 
 #include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

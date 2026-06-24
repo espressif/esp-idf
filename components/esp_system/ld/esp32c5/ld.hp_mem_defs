@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ESP32-C5 target-specific HP memory definitions shared between HP app and LP Core linker scripts */
+
+#define SRAM_SEG_END    0x4084E5A0  /* 2nd stage bootloader iram_loader_seg start address */
+
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#define ULP_HP_MEM_SIZE     CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES
+#define ULP_HP_MEM_START    (SRAM_SEG_END - ULP_HP_MEM_SIZE)
+#define ULP_HP_MEM_END      SRAM_SEG_END
+#endif

@@ -1,0 +1,13 @@
+#Test counter and H/L flags
+
+cfg trailing_bytes 0			#End program as soon as the input EOFs.
+cfg prefetch true				#We expect M0/M1 to be filled
+cfg lut_width_bits 8			#Not really applicable here
+
+main:
+	ADDA 10
+	ADDAH 10
+	ADDAL 10
+	ADDB 10
+	ADDBH 10
+	ADDBL 10

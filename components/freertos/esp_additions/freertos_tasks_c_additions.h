@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,9 @@
 #include "sdkconfig.h"
 #include "esp_assert.h"
 #include "esp_heap_caps.h"
+#include "esp_compiler.h"
 #include "freertos/idf_additions.h"
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-    #include "esp_private/freertos_debug.h"
-#endif /* CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT */
+#include "freertos/freertos_debug.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 
 /**
@@ -408,7 +407,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         #if CONFIG_FREERTOS_SMP
             UBaseType_t uxCoreAffinityMask;
 
-            /* Get the core affinity mask and covert it to an ID */
+            /* Get the core affinity mask and convert it to an ID */
             uxCoreAffinityMask = vTaskCoreAffinityGet( xTask );
 
             /* If the task is not pinned to a particular core, treat it as tskNO_AFFINITY */
@@ -425,7 +424,6 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         #else /* CONFIG_FREERTOS_SMP */
             TCB_t * pxTCB;
 
-            /* Todo: Remove xCoreID for single core builds (IDF-7894) */
             pxTCB = prvGetTCBFromHandle( xTask );
 
             xReturn = pxTCB->xCoreID;
@@ -487,7 +485,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 
     configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimeCounterForCore( BaseType_t xCoreID )
     {
-        uint32_t ulRunTimeCounter;
+        configRUN_TIME_COUNTER_TYPE ulRunTimeCounter;
 
         configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
@@ -514,7 +512,11 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 
         configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
-        ulTotalTime = portGET_RUN_TIME_COUNTER_VALUE();
+        #ifdef portALT_GET_RUN_TIME_COUNTER_VALUE
+            portALT_GET_RUN_TIME_COUNTER_VALUE( ulTotalTime );
+        #else
+            ulTotalTime = portGET_RUN_TIME_COUNTER_VALUE();
+        #endif
 
         /* For percentage calculations. */
         ulTotalTime /= ( configRUN_TIME_COUNTER_TYPE ) 100;
@@ -542,15 +544,18 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 #endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*-----------------------------------------------------------*/
 
-uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
+StackType_t * xTaskGetStackStart( TaskHandle_t xTask )
 {
     TCB_t * pxTCB;
-    uint8_t * uxReturn;
 
     pxTCB = prvGetTCBFromHandle( xTask );
-    uxReturn = ( uint8_t * ) pxTCB->pxStack;
+    return pxTCB->pxStack;
+}
+/*----------------------------------------------------------*/
 
-    return uxReturn;
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
+{
+    return (uint8_t *)xTaskGetStackStart( xTask );
 }
 /*----------------------------------------------------------*/
 
@@ -836,11 +841,11 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
 /**
  * @brief Get reentrancy structure of the current task
  *
- * - This funciton is required by newlib (when __DYNAMIC_REENT__ is enabled)
+ * - This function is required by newlib (when __DYNAMIC_REENT__ is enabled)
  * - It will return a pointer to the current task's reent struct
  * - If FreeRTOS is not running, it will return the global reent struct
  *
- * @return Pointer to a the (current taks's)/(globa) reent struct
+ * @return Pointer to a the (current taks's)/(global) reent struct
  */
     struct _reent * __getreent( void )
     {
@@ -1000,7 +1005,7 @@ int xTaskGetNext( TaskIterator_t * xIterator )
         if( !portVALID_LIST_MEM( pxNextListItem ) )
         {
             /* Nothing to do with the corrupted list item. We will skip to the next task state list.
-             * pxNextListItem should be NULL at the beggining of each task list.
+             * pxNextListItem should be NULL at the beginning of each task list.
              */
             pxNextListItem = NULL;
             continue;
@@ -1037,6 +1042,8 @@ int xTaskGetNext( TaskIterator_t * xIterator )
 BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask,
                              TaskSnapshot_t * pxTaskSnapshot )
 {
+    ESP_STATIC_ANALYZER_CHECK(!pxTask, pdFALSE);
+
     if( ( portVALID_TCB_MEM( pxTask ) == false ) || ( pxTaskSnapshot == NULL ) )
     {
         return pdFALSE;
@@ -1109,6 +1116,14 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         ESP_FREERTOS_DEBUG_UX_TOP_USED_PIORITY,
         ESP_FREERTOS_DEBUG_PX_TOP_OF_STACK,
         ESP_FREERTOS_DEBUG_PC_TASK_NAME,
+        ESP_FREERTOS_DEBUG_LIST_SIZE,
+        ESP_FREERTOS_DEBUG_LIST_NUM_ITEMS,
+        ESP_FREERTOS_DEBUG_LIST_END,
+        ESP_FREERTOS_DEBUG_LIST_END_PREV,
+        ESP_FREERTOS_DEBUG_LIST_ITEM_PREV,
+        ESP_FREERTOS_DEBUG_LIST_ITEM_OWNER,
+        ESP_FREERTOS_DEBUG_TASK_COUNT_WIDTH,
+        ESP_FREERTOS_DEBUG_PTR_WIDTH,
         /* New entries must be inserted here */
         ESP_FREERTOS_DEBUG_TABLE_END,
     };
@@ -1120,9 +1135,17 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         tskKERNEL_VERSION_MAJOR,
         tskKERNEL_VERSION_MINOR,
         tskKERNEL_VERSION_BUILD,
-        configMAX_PRIORITIES - 1,        /* uxTopUsedPriority */
-        offsetof( TCB_t, pxTopOfStack ), /* thread_stack_offset; */
-        offsetof( TCB_t, pcTaskName ),   /* thread_name_offset; */
+        configMAX_PRIORITIES - 1,                   /* uxTopUsedPriority */
+        offsetof( TCB_t, pxTopOfStack ),            /* thread_stack_offset; */
+        offsetof( TCB_t, pcTaskName ),              /* thread_name_offset; */
+        sizeof( List_t ),                           /* list_width */
+        offsetof( List_t, uxNumberOfItems ),        /* list_item_num */
+        offsetof( List_t, xListEnd ),               /* list_end_offset */
+        offsetof( List_t, xListEnd.pxPrevious ),    /* list_next_offset */
+        offsetof( ListItem_t, pxPrevious ),         /* list_elem_next_offset */
+        offsetof( ListItem_t, pvOwner ),            /* list_elem_content_offset */
+        sizeof( UBaseType_t ),                      /* task_count_width */
+        sizeof( void * )                            /* ptr_width */
     };
 
 #endif /* CONFIG_FREERTOS_DEBUG_OCDAWARE */

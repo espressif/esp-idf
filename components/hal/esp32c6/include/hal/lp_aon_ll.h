@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include "soc/lp_aon_struct.h"
 #include "hal/misc.h"
 #include "esp32c6/rom/rtc.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +33,7 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_status(void)
  */
 static inline void lp_aon_ll_ext1_clear_wakeup_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_status_clr, 1);
+    LP_AON.ext_wakeup_cntl.ext_wakeup_status_clr = 1;
 }
 
 /**
@@ -69,7 +68,6 @@ static inline  uint32_t lp_aon_ll_ext1_get_wakeup_pins(void)
     return HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, ext_wakeup_sel);
 }
 
-
 /**
  *  @brief ROM obtains the wake-up type through LP_AON_STORE9_REG[0].
  *         Set the flag to inform
@@ -86,21 +84,21 @@ static inline  void lp_aon_ll_inform_wakeup_type(bool dslp)
 }
 
 /**
- * @brief Get the flag that marks whether LP CPU is awakened by ETM
- *
- * @return Return true if lpcore is woken up by soc_etm
+ * @brief Set the wakeup cause stored by LP core
+ * @param wakeup_cause  The wakeup cause in PMU register
  */
-static inline bool lp_aon_ll_get_lpcore_etm_wakeup_flag(void)
+static inline void lp_aon_ll_store_wakeup_cause(uint32_t wakeup_cause)
 {
-    return REG_GET_BIT(LP_AON_LPCORE_REG, LP_AON_LPCORE_ETM_WAKEUP_FLAG);
+    REG_WRITE(RTC_LP_CORE_STORE_WAKEUP_REG, (REG_READ(RTC_LP_CORE_STORE_WAKEUP_REG) & 0x1) | ((wakeup_cause << 1) & 0xFFFFFFFE));
 }
 
 /**
- * @brief Clear the flag that marks whether LP CPU is awakened by soc_etm
+ * @brief Get the wakeup cause stored by LP core
+ * @return  The wakeup cause cleared before LP core sleep
  */
-static inline void lp_aon_ll_clear_lpcore_etm_wakeup_flag(void)
+static inline uint32_t lp_aon_ll_load_wakeup_cause(void)
 {
-    REG_SET_BIT(LP_AON_LPCORE_REG, LP_AON_LPCORE_ETM_WAKEUP_FLAG_CLR);
+    return (REG_READ(RTC_LP_CORE_STORE_WAKEUP_REG) & 0xFFFFFFFE) >> 1;
 }
 
 #ifdef __cplusplus

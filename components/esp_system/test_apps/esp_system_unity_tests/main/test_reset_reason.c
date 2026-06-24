@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "sdkconfig.h"
 #include <inttypes.h>
 #include "unity.h"
+#include "soc/soc_caps.h"
 #include "esp_system.h"
 #include "esp_task_wdt.h"
 #include "esp_attr.h"
@@ -23,81 +24,15 @@
 
 #define CHECK_VALUE 0x89abcdef
 
-// TODO: IDF-9564
 #if (CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED) && !CONFIG_IDF_TARGET_ESP32P4
 #define CHECK_RTC_MEM 1
 #endif //CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32
-#define DEEPSLEEP           "DEEPSLEEP_RESET"
-#define LOAD_STORE_ERROR    "LoadStoreError"
-#define RESET               "SW_CPU_RESET"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1WDT_SYS_RESET"
-#define RTC_WDT             "RTCWDT_RTC_RESET"
-#if CONFIG_ESP32_REV_MIN_FULL >= 300
-#define BROWNOUT            "RTCWDT_BROWN_OUT_RESET"
-#else
-#define BROWNOUT            "SW_CPU_RESET"
-#endif // CONFIG_ESP32_REV_MIN_FULL >= 300
-#define STORE_ERROR         "StoreProhibited"
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "LoadStoreError"
-#define RESET               "RTC_SW_CPU_RST"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1WDT_SYS_RST"
-#define RTC_WDT             "RTCWDT_RTC_RST"
-#define BROWNOUT            "BROWN_OUT_RST"
-#define STORE_ERROR         "StoreProhibited"
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "RTC_SW_CPU_RST"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1WDT_SYS_RST"
-#define RTC_WDT             "RTCWDT_RTC_RST"
-#define BROWNOUT            "BROWNOUT_RST"
-#define STORE_ERROR         LOAD_STORE_ERROR
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "RTC_SW_CPU_RST"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG0WDT_SYS_RST"
-#define RTC_WDT             "RTCWDT_RTC_RST"
-#define BROWNOUT            "BROWNOUT_RST"
-#define STORE_ERROR         LOAD_STORE_ERROR
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "SW_CPU"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "TG1_WDT_HPSYS"
-#define RTC_WDT             "LP_WDT_SYS"
-#define BROWNOUT            "LP_BOD_SYS"
-#define STORE_ERROR         LOAD_STORE_ERROR
-#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
-
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define DEEPSLEEP           "DSLEEP"
-#define LOAD_STORE_ERROR    "Store access fault"
-#define RESET               "SW_CPU_RESET"
-#define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
-#define INT_WDT             "HP_SYS_HP_WDT_RESET"
-#define RTC_WDT             "LP_WDT_SYS"
-#define BROWNOUT            "LP_BOD_SYS"
-#define STORE_ERROR         LOAD_STORE_ERROR
+#if CONFIG_IDF_TARGET_ESP32P4
 #define INT_WDT_HW_ESP_RST  ESP_RST_WDT // On P4 there is only one reset reason for MWDT0/1
-
-#endif // CONFIG_IDF_TARGET_ESP32
+#else
+#define INT_WDT_HW_ESP_RST  ESP_RST_INT_WDT
+#endif // CONFIG_IDF_TARGET_ESP32P4
 
 /* This test needs special test runners: rev1 silicon, and SPI flash with
  * fast start-up time. Otherwise reset reason will be RTCWDT_RESET.
@@ -165,7 +100,7 @@ static void check_reset_reason_deep_sleep(void)
 
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][reset="DEEPSLEEP"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason]",
                           do_deep_sleep,
                           check_reset_reason_deep_sleep);
 
@@ -174,7 +109,11 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][rese
 static void do_exception(void)
 {
     setup_values();
-    *(int*)(0x0) = 0;
+#ifdef __XTENSA__
+    asm("ill");     // should be an invalid operation on xtensa targets
+#elif __riscv
+    asm("unimp");   // should be an invalid operation on RISC-V targets
+#endif
 }
 
 static void do_abort(void)
@@ -198,11 +137,11 @@ static void check_reset_reason_panic(void)
 #endif //CHECK_RTC_MEM
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after exception", "[reset_reason][reset="LOAD_STORE_ERROR","RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after exception", "[reset_reason]",
                           do_exception,
                           check_reset_reason_panic);
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after abort", "[reset_reason][reset=abort,"RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after abort", "[reset_reason]",
                           do_abort,
                           check_reset_reason_panic);
 
@@ -236,12 +175,12 @@ static void check_reset_reason_sw(void)
 #endif //CHECK_RTC_MEM
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reason][reset="RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reason]",
                           do_restart,
                           check_reset_reason_sw);
 
 #if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", "[reset_reason][reset="RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", "[reset_reason]",
                           do_restart_from_app_cpu,
                           check_reset_reason_sw);
 #endif
@@ -286,12 +225,12 @@ static void check_reset_reason_int_wdt_hw(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (panic)",
-                          "[reset_reason][reset="INT_WDT_PANIC","RESET"]",
+                          "[reset_reason]",
                           do_int_wdt,
                           check_reset_reason_int_wdt_sw);
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (hw)",
-                          "[reset_reason][reset="INT_WDT"]",
+                          "[reset_reason]",
                           do_int_wdt_hw,
                           check_reset_reason_int_wdt_hw);
 
@@ -324,7 +263,7 @@ static void check_reset_reason_task_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_TASK_WDT after task watchdog",
-                          "[reset_reason][reset="RESET"]",
+                          "[reset_reason]",
                           do_task_wdt,
                           check_reset_reason_task_wdt);
 #endif // CONFIG_ESP_TASK_WDT_EN
@@ -352,7 +291,7 @@ static void check_reset_reason_any_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after RTC watchdog",
-                          "[reset_reason][reset="RTC_WDT"]",
+                          "[reset_reason]",
                           do_rtc_wdt,
                           check_reset_reason_any_wdt);
 
@@ -379,25 +318,41 @@ static void check_reset_reason_brownout(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
-                          "[reset_reason][ignore][reset="BROWNOUT"]",
+                          "[reset_reason][ignore]",
                           do_brownout,
                           check_reset_reason_brownout);
 
-#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifdef CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+#if (defined(CONFIG_IDF_TARGET_ARCH_XTENSA) && !defined(CONFIG_FREERTOS_UNICORE)) || defined(CONFIG_IDF_TARGET_ARCH_RISCV)
+#include "esp_memory_utils.h"
+#include "freertos/task.h"
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xt_instr_macros.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
+#endif
 
+/* IDF's xTaskCreateStatic[PinnedToCore]() takes the stack size in BYTES
+ * (not in words like upstream FreeRTOS). */
 static int size_stack = 1024 * 4;
 static StackType_t *start_addr_stack;
 
-static int fibonacci(int n, void* func(void))
+static void func_do_exception(void)
+{
+    *((volatile int *) 0x01) = 0;
+}
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+/* On Xtensa (windowed ABI), recursing forces the register window to wrap,
+ * which triggers overflow/underflow exceptions that spill/fill registers
+ * to/from the (SPIRAM-backed) task stack. This makes sure SP is genuinely
+ * pointing into SPIRAM and that spilled frames live there too when func()
+ * is finally called from deep inside the recursion. */
+static int fibonacci(int n, void *func(void))
 {
     int tmp1 = n, tmp2 = n;
     uint32_t base, start;
-    RSR(WINDOWBASE, base);
-    RSR(WINDOWSTART, start);
+    RSR(XT_REG_WINDOWBASE, base);
+    RSR(XT_REG_WINDOWSTART, start);
     printf("WINDOWBASE = %-2"PRIi32"   WINDOWSTART = 0x%"PRIx32"\n", base, start);
     if (n <= 1) {
         StackType_t *last_addr_stack = esp_cpu_get_sp();
@@ -410,6 +365,7 @@ static int fibonacci(int n, void* func(void))
     printf("fib = %d\n", (tmp1 - tmp2) + fib);
     return fib;
 }
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
 
 static void test_task(void *func)
 {
@@ -419,30 +375,13 @@ static void test_task(void *func)
     } else {
         printf("restart_task: uses internal stack, addr_stack = %p\n", start_addr_stack);
     }
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
     fibonacci(35, func);
-}
-
-static void func_do_exception(void)
-{
-    *((int *) 0) = 0;
-}
-
-static void init_restart_task(void)
-{
-    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
-    static StaticTask_t task_buf;
-    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, esp_restart, 5, stack_for_task, &task_buf, 1);
-    while (1) { };
-}
-
-static void init_task_do_exception(void)
-{
-    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
-    static StaticTask_t task_buf;
-    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, func_do_exception, 5, stack_for_task, &task_buf, 1);
-    while (1) { };
+#else
+    /* RISC-V has no register windows, so no need to recurse. Just invoke
+     * the test function directly from this task (whose stack is in SPIRAM). */
+    ((void (*)(void))func)();
+#endif
 }
 
 static void test1_finish(void)
@@ -457,16 +396,48 @@ static void test2_finish(void)
     printf("test - OK\n");
 }
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack][reset="RESET"]",
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+#ifndef CONFIG_FREERTOS_UNICORE
+#define CREATE_TEST_TASK(stack, buf, entry) \
+    xTaskCreateStaticPinnedToCore(test_task, "test_task", size_stack, (entry), 5, (stack), (buf), 1)
+#endif // !CONFIG_FREERTOS_UNICORE
+#else // RISCV
+#define CREATE_TEST_TASK(stack, buf, entry) \
+    xTaskCreateStatic(test_task, "test_task", size_stack, (entry), 5, (stack), (buf))
+#endif
+
+#if defined(CREATE_TEST_TASK)
+
+static void init_restart_task(void)
+{
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(stack_for_task);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    CREATE_TEST_TASK(stack_for_task, &task_buf, esp_restart);
+    while (1) { }
+}
+
+static void init_task_do_exception(void)
+{
+    StackType_t *stack_for_task = (StackType_t *) heap_caps_calloc(1, size_stack, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(stack_for_task);
+    printf("init_task: current addr_stack = %p, stack_for_task = %p\n", esp_cpu_get_sp(), stack_for_task);
+    static StaticTask_t task_buf;
+    CREATE_TEST_TASK(stack_for_task, &task_buf, func_do_exception);
+    while (1) { }
+}
+
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack]",
                           init_restart_task,
                           test1_finish);
 
-TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a task with spiram stack", "[spiram_stack][reset="STORE_ERROR","RESET"]",
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a task with spiram stack", "[spiram_stack]",
                           init_task_do_exception,
                           test2_finish);
 
-#endif //CONFIG_IDF_TARGET_ARCH_XTENSA
-#endif // CONFIG_FREERTOS_UNICORE
-#endif // CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#endif // CREATE_TEST_TASK
+#endif // (XTENSA && !UNICORE) || RISCV
+#endif // CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 /* Not tested here: ESP_RST_SDIO */

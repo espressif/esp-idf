@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,17 @@
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
 #include <sys/time.h>
+#if !CONFIG_IDF_TARGET_LINUX
+#include "driver/uart.h"
+#endif
 
 // Some resources are lazy allocated (newlib locks) in the console code, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (150)
+#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT (150)
+static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
+void set_leak_threshold(int threshold)
+{
+    leak_threshold = threshold;
+}
 
 void setUp(void)
 {
@@ -19,7 +27,8 @@ void setUp(void)
 
 void tearDown(void)
 {
-    unity_utils_evaluate_leaks_direct(TEST_MEMORY_LEAK_THRESHOLD);
+    unity_utils_evaluate_leaks_direct(leak_threshold);
+    leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 }
 
 void app_main(void)
@@ -29,6 +38,15 @@ void app_main(void)
 
     struct timeval tv = { 0 };
     gettimeofday(&tv, NULL);
+
+#if !CONFIG_IDF_TARGET_LINUX
+    /* Preallocate UART1 memory */
+    fileno(stdin);
+    uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0);
+    FILE *f = fopen("/dev/uart/1", "rw");
+    fclose(f);
+    uart_driver_delete(UART_NUM_1);
+#endif
 
     printf("Running console component tests\n");
     unity_run_menu();

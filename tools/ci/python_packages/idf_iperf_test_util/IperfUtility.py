@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -7,11 +7,12 @@ import subprocess
 import time
 
 import pexpect
-from idf_iperf_test_util import LineChart
 from pytest_embedded import Dut
 
+from idf_iperf_test_util import LineChart
+
 try:
-    from typing import Any, Tuple
+    from typing import Any
 except ImportError:
     # Only used for type annotations
     pass
@@ -29,8 +30,8 @@ INVALID_HEAP_SIZE = 0xFFFFFFFF
 PC_IPERF_TEMP_LOG_FILE = '.tmp_iperf.log'
 
 
-class TestResult(object):
-    """ record, analysis test result and convert data to output format """
+class TestResult:
+    """record, analysis test result and convert data to output format"""
 
     PC_BANDWIDTH_LOG_PATTERN = re.compile(r'(\d+\.\d+)\s*-\s*(\d+.\d+)\s+sec\s+[\d.]+\s+MBytes\s+([\d.]+)\s+Mbits\/sec')
     DUT_BANDWIDTH_LOG_PATTERN = re.compile(r'([\d.]+)\s*-\s*([\d.]+)\s+sec\s+([\d.]+)\s+Mbits/sec')
@@ -47,7 +48,7 @@ class TestResult(object):
     RSSI_RANGE = [-x for x in range(10, 100)]
     ATT_RANGE = [x for x in range(0, 64)]
 
-    def __init__(self, proto:str, direction:str, config_name:str) -> None:
+    def __init__(self, proto: str, direction: str, config_name: str) -> None:
         self.proto = proto
         self.direction = direction
         self.config_name = config_name
@@ -57,7 +58,7 @@ class TestResult(object):
         self.heap_size = INVALID_HEAP_SIZE
         self.error_list = []  # type: list[str]
 
-    def _save_result(self, throughput:float, ap_ssid:str, att:int, rssi:int, heap_size:str) -> None:
+    def _save_result(self, throughput: float, ap_ssid: str, att: int, rssi: int, heap_size: str) -> None:
         """
         save the test results:
 
@@ -72,7 +73,7 @@ class TestResult(object):
 
         self.att_rssi_map[ap_ssid][att] = rssi
 
-        def record_throughput(database:dict, key_value:int) -> None:
+        def record_throughput(database: dict, key_value: int) -> None:
             try:
                 # we save the larger value for same att
                 if throughput > database[ap_ssid][key_value]:
@@ -86,7 +87,7 @@ class TestResult(object):
         if int(heap_size) < self.heap_size:
             self.heap_size = int(heap_size)
 
-    def add_result(self, raw_data:str, ap_ssid:str, att:int, rssi:int, heap_size:str) -> float:
+    def add_result(self, raw_data: str, ap_ssid: str, att: int, rssi: int, heap_size: str) -> float:
         """
         add result for one test
 
@@ -114,21 +115,24 @@ class TestResult(object):
                 continue
             throughput_list.append(throughput)
             max_throughput = max(max_throughput, throughput)
-            if throughput == 0 and rssi > self.ZERO_POINT_THRESHOLD \
-                    and fall_to_0_recorded < 1:
+            if throughput == 0 and rssi > self.ZERO_POINT_THRESHOLD and fall_to_0_recorded < 1:
                 # throughput fall to 0 error. we only record 1 records for one test
-                self.error_list.append('[Error][fall to 0][{}][att: {}][rssi: {}]: 0 throughput interval: {}-{}'
-                                       .format(ap_ssid, att, rssi, result[0], result[1]))
+                self.error_list.append(
+                    f'[Error][fall to 0][{ap_ssid}][att: {att}][rssi: {rssi}]: 0 '
+                    f'throughput interval: {result[0]}-{result[1]}'
+                )
                 fall_to_0_recorded += 1
 
         if len(throughput_list) < self.THROUGHPUT_QUALIFY_COUNT:
-            self.error_list.append('[Error][Fatal][{}][att: {}][rssi: {}]: Only {} throughput values found, expected at least {}'
-                                   .format(ap_ssid, att, rssi, len(throughput_list), self.THROUGHPUT_QUALIFY_COUNT))
+            self.error_list.append(
+                f'[Error][Fatal][{ap_ssid}][att: {att}][rssi: {rssi}]: '
+                f'Only {len(throughput_list)} throughput values found, '
+                f'expected at least {self.THROUGHPUT_QUALIFY_COUNT}'
+            )
             max_throughput = 0.0
 
         if max_throughput == 0 and rssi > self.ZERO_THROUGHPUT_THRESHOLD:
-            self.error_list.append('[Error][Fatal][{}][att: {}][rssi: {}]: No throughput data found'
-                                   .format(ap_ssid, att, rssi))
+            self.error_list.append(f'[Error][Fatal][{ap_ssid}][att: {att}][rssi: {rssi}]: No throughput data found')
 
         self._save_result(max_throughput, ap_ssid, att, rssi, heap_size)
 
@@ -141,7 +145,8 @@ class TestResult(object):
         1. throughput value 30% worse than the next point with lower RSSI
         2. throughput value 30% worse than the next point with larger attenuate
         """
-        def analysis_bad_point(data:dict, index_type:str) -> None:
+
+        def analysis_bad_point(data: dict, index_type: str) -> None:
             for ap_ssid in data:
                 result_dict = data[ap_ssid]
                 index_list = list(result_dict.keys())
@@ -150,19 +155,22 @@ class TestResult(object):
                     index_list.reverse()
 
                 for i, index_value in enumerate(index_list[1:]):
-                    if index_value < self.BAD_POINT_RSSI_THRESHOLD or \
-                            result_dict[index_list[i]] < self.BAD_POINT_MIN_THRESHOLD:
+                    if (
+                        index_value < self.BAD_POINT_RSSI_THRESHOLD
+                        or result_dict[index_list[i]] < self.BAD_POINT_MIN_THRESHOLD
+                    ):
                         continue
                     _percentage = result_dict[index_value] / result_dict[index_list[i]]
                     if _percentage < 1 - self.BAD_POINT_PERCENTAGE_THRESHOLD:
-                        self.error_list.append('[Error][Bad point][{}][{}: {}]: drop {:.02f}%'
-                                               .format(ap_ssid, index_type, index_value,
-                                                       (1 - _percentage) * 100))
+                        self.error_list.append(
+                            f'[Error][Bad point][{ap_ssid}][{index_type}: {index_value}]: '
+                            f'drop {(1 - _percentage) * 100:.02f}%'
+                        )
 
         analysis_bad_point(self.throughput_by_rssi, 'rssi')
         analysis_bad_point(self.throughput_by_att, 'att')
 
-    def draw_throughput_figure(self, path:str, ap_ssid:str, draw_type:str) -> str:
+    def draw_throughput_figure(self, path: str, ap_ssid: str, draw_type: str) -> str:
         """
         :param path: folder to save figure. make sure the folder is already created.
         :param ap_ssid: ap ssid string or a list of ap ssid string
@@ -180,18 +188,21 @@ class TestResult(object):
         else:
             raise AssertionError('draw type not supported')
         if isinstance(ap_ssid, list):
-            file_name = 'ThroughputVs{}_{}_{}.html'.format(type_name, self.proto, self.direction)
+            file_name = f'ThroughputVs{type_name}_{self.proto}_{self.direction}.html'
         else:
-            file_name = 'ThroughputVs{}_{}_{}.html'.format(type_name, self.proto, self.direction)
+            file_name = f'ThroughputVs{type_name}_{self.proto}_{self.direction}.html'
 
-        LineChart.draw_line_chart(os.path.join(path, file_name),
-                                  'Throughput Vs {} ({} {})'.format(type_name, self.proto, self.direction),
-                                  '{} (dbm)'.format(type_name),
-                                  'Throughput (Mbps)',
-                                  data, range_list)
+        LineChart.draw_line_chart(
+            os.path.join(path, file_name),
+            f'Throughput Vs {type_name} ({self.proto} {self.direction})',
+            f'{type_name} (dbm)',
+            'Throughput (Mbps)',
+            data,
+            range_list,
+        )
         return file_name
 
-    def draw_rssi_vs_att_figure(self, path:str, ap_ssid:str) -> str:
+    def draw_rssi_vs_att_figure(self, path: str, ap_ssid: str) -> str:
         """
         :param path: folder to save figure. make sure the folder is already created.
         :param ap_ssid: ap to use
@@ -201,18 +212,14 @@ class TestResult(object):
             file_name = 'AttVsRSSI.html'
         else:
             file_name = 'AttVsRSSI.html'
-        LineChart.draw_line_chart(os.path.join(path, file_name),
-                                  'Att Vs RSSI',
-                                  'Att (dbm)',
-                                  'RSSI (dbm)',
-                                  self.att_rssi_map,
-                                  self.ATT_RANGE)
+        LineChart.draw_line_chart(
+            os.path.join(path, file_name), 'Att Vs RSSI', 'Att (dbm)', 'RSSI (dbm)', self.att_rssi_map, self.ATT_RANGE
+        )
         return file_name
 
     def get_best_throughput(self) -> Any:
-        """  get the best throughput during test """
-        best_for_aps = [max(self.throughput_by_att[ap_ssid].values())
-                        for ap_ssid in self.throughput_by_att]
+        """get the best throughput during test"""
+        best_for_aps = [max(self.throughput_by_att[ap_ssid].values()) for ap_ssid in self.throughput_by_att]
         return max(best_for_aps)
 
     def __str__(self) -> str:
@@ -224,23 +231,32 @@ class TestResult(object):
         3. min free heap size during test
         """
         if self.throughput_by_att:
-            ret = '[{}_{}][{}]: {}\r\n\r\n'.format(self.proto, self.direction, self.config_name,
-                                                   'Fail' if self.error_list else 'Success')
+            ret = '[{}_{}][{}]: {}\r\n\r\n'.format(
+                self.proto, self.direction, self.config_name, 'Fail' if self.error_list else 'Success'
+            )
             ret += 'Performance for each AP:\r\n'
             for ap_ssid in self.throughput_by_att:
-                ret += '[{}]: {:.02f} Mbps\r\n'.format(ap_ssid, max(self.throughput_by_att[ap_ssid].values()))
+                ret += f'[{ap_ssid}]: {max(self.throughput_by_att[ap_ssid].values()):.02f} Mbps\r\n'
             if self.heap_size != INVALID_HEAP_SIZE:
-                ret += 'Minimum heap size: {}'.format(self.heap_size)
+                ret += f'Minimum heap size: {self.heap_size}'
         else:
             ret = ''
         return ret
 
 
-class IperfTestUtility(object):
-    """ iperf test implementation """
+class IperfTestUtility:
+    """iperf test implementation"""
 
-    def __init__(self, dut:Dut, config_name:str, ap_ssid:str, ap_password:str,
-                 pc_nic_ip:str, pc_iperf_log_file:str, test_result:Any=None) -> None:
+    def __init__(
+        self,
+        dut: Dut,
+        config_name: str,
+        ap_ssid: str,
+        ap_password: str,
+        pc_nic_ip: str,
+        pc_iperf_log_file: str,
+        test_result: Any = None,
+    ) -> None:
         self.config_name = config_name
         self.dut = dut
 
@@ -261,7 +277,7 @@ class IperfTestUtility(object):
                 'udp_rx': TestResult('udp', 'rx', config_name),
             }
 
-    def setup(self) -> Tuple[str,int]:
+    def setup(self) -> tuple[str, int]:
         """
         setup iperf test:
 
@@ -278,25 +294,24 @@ class IperfTestUtility(object):
         self.dut.write('restart')
         self.dut.expect_exact("Type 'help' to get the list of commands.")
         self.dut.expect('iperf>')
-        self.dut.write('sta_scan {}'.format(self.ap_ssid))
+        self.dut.write(f'sta_scan {self.ap_ssid}')
         for _ in range(SCAN_RETRY_COUNT):
             try:
-                rssi = int(self.dut.expect(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid),
-                                           timeout=SCAN_TIMEOUT).group(1))
+                rssi = int(self.dut.expect(rf'\[{self.ap_ssid}]\[rssi=(-\d+)]', timeout=SCAN_TIMEOUT).group(1))
                 break
             except pexpect.TIMEOUT:
                 continue
         else:
             raise AssertionError('Failed to scan AP')
-        self.dut.write('sta_connect {} {}'.format(self.ap_ssid, self.ap_password))
+        self.dut.write(f'sta_connect {self.ap_ssid} {self.ap_password}')
         dut_ip = self.dut.expect(r'sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)').group(1)
         return dut_ip, rssi
 
-    def _save_test_result(self, test_case:str, raw_data:str, att:int, rssi:int, heap_size:int) -> Any:
+    def _save_test_result(self, test_case: str, raw_data: str, att: int, rssi: int, heap_size: int) -> Any:
         return self.test_result[test_case].add_result(raw_data, self.ap_ssid, att, rssi, heap_size)
 
-    def _test_once(self, proto:str, direction:str, bw_limit:int) -> Tuple[str, int, int]:
-        """ do measure once for one type """
+    def _test_once(self, proto: str, direction: str, bw_limit: int) -> tuple[str, int, int]:
+        """do measure once for one type"""
         # connect and scan to get RSSI
         dut_ip, rssi = self.setup()
 
@@ -307,21 +322,25 @@ class IperfTestUtility(object):
         if direction == 'tx':
             with open(PC_IPERF_TEMP_LOG_FILE, 'w') as f:
                 if proto == 'tcp':
-                    process = subprocess.Popen(['iperf', '-s', '-B', self.pc_nic_ip,
-                                                '-t', str(TEST_TIME), '-i', '1', '-f', 'm'],
-                                               stdout=f, stderr=f)
+                    process = subprocess.Popen(
+                        ['iperf', '-s', '-B', self.pc_nic_ip, '-t', str(TEST_TIME), '-i', '1', '-f', 'm'],
+                        stdout=f,
+                        stderr=f,
+                    )
                     if bw_limit > 0:
-                        self.dut.write('iperf -c {} -i 1 -t {} -b {}'.format(self.pc_nic_ip, TEST_TIME, bw_limit))
+                        self.dut.write(f'iperf -c {self.pc_nic_ip} -i 1 -t {TEST_TIME} -b {bw_limit}m')
                     else:
-                        self.dut.write('iperf -c {} -i 1 -t {}'.format(self.pc_nic_ip, TEST_TIME))
+                        self.dut.write(f'iperf -c {self.pc_nic_ip} -i 1 -t {TEST_TIME}')
                 else:
-                    process = subprocess.Popen(['iperf', '-s', '-u', '-B', self.pc_nic_ip,
-                                                '-t', str(TEST_TIME), '-i', '1', '-f', 'm'],
-                                               stdout=f, stderr=f)
+                    process = subprocess.Popen(
+                        ['iperf', '-s', '-u', '-B', self.pc_nic_ip, '-t', str(TEST_TIME), '-i', '1', '-f', 'm'],
+                        stdout=f,
+                        stderr=f,
+                    )
                     if bw_limit > 0:
-                        self.dut.write('iperf -c {} -u -i 1 -t {} -b {}'.format(self.pc_nic_ip, TEST_TIME, bw_limit))
+                        self.dut.write(f'iperf -c {self.pc_nic_ip} -u -i 1 -t {TEST_TIME} -b {bw_limit}m')
                     else:
-                        self.dut.write('iperf -c {} -u -i 1 -t {}'.format(self.pc_nic_ip, TEST_TIME))
+                        self.dut.write(f'iperf -c {self.pc_nic_ip} -u -i 1 -t {TEST_TIME}')
 
                 for _ in range(TEST_TIMEOUT):
                     if process.poll() is not None:
@@ -330,12 +349,12 @@ class IperfTestUtility(object):
                 else:
                     process.terminate()
 
-            with open(PC_IPERF_TEMP_LOG_FILE, 'r') as f:
+            with open(PC_IPERF_TEMP_LOG_FILE) as f:
                 pc_raw_data = server_raw_data = f.read()
         else:
             with open(PC_IPERF_TEMP_LOG_FILE, 'w') as f:
                 if proto == 'tcp':
-                    self.dut.write('iperf -s -i 1 -t {}'.format(TEST_TIME))
+                    self.dut.write(f'iperf -s -i 1 -t {TEST_TIME}')
                     # wait until DUT TCP server created
                     try:
                         self.dut.expect('Socket created', timeout=5)
@@ -343,11 +362,15 @@ class IperfTestUtility(object):
                         # compatible with old iperf example binary
                         logging.info('create iperf tcp server fail')
                     if bw_limit > 0:
-                        process = subprocess.Popen(['iperf', '-c', dut_ip, '-b', str(bw_limit) + 'm',
-                                                    '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f)
+                        process = subprocess.Popen(
+                            ['iperf', '-c', dut_ip, '-b', str(bw_limit) + 'm', '-t', str(TEST_TIME), '-f', 'm'],
+                            stdout=f,
+                            stderr=f,
+                        )
                     else:
-                        process = subprocess.Popen(['iperf', '-c', dut_ip,
-                                                    '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f)
+                        process = subprocess.Popen(
+                            ['iperf', '-c', dut_ip, '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f
+                        )
                     for _ in range(TEST_TIMEOUT):
                         if process.poll() is not None:
                             break
@@ -355,16 +378,19 @@ class IperfTestUtility(object):
                     else:
                         process.terminate()
                 else:
-                    self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
-                    # wait until DUT TCP server created
-                    try:
-                        self.dut.expect('Socket bound', timeout=5)
-                    except pexpect.TIMEOUT:
-                        # compatible with old iperf example binary
-                        logging.info('create iperf udp server fail')
                     if bw_limit > 0:
-                        process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', str(bw_limit) + 'm',
-                                                    '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f)
+                        self.dut.write(f'iperf -s -u -i 1 -t {TEST_TIME}')
+                        # wait until DUT TCP server created
+                        try:
+                            self.dut.expect('Socket created', timeout=5)
+                        except pexpect.TIMEOUT:
+                            # compatible with old iperf example binary
+                            logging.info('No "Socket created" confirmation received after starting UDP server')
+                        process = subprocess.Popen(
+                            ['iperf', '-c', dut_ip, '-u', '-b', str(bw_limit) + 'm', '-t', str(TEST_TIME), '-f', 'm'],
+                            stdout=f,
+                            stderr=f,
+                        )
                         for _ in range(TEST_TIMEOUT):
                             if process.poll() is not None:
                                 break
@@ -372,9 +398,36 @@ class IperfTestUtility(object):
                         else:
                             process.terminate()
                     else:
-                        for bandwidth in range(50, 101, 5):
-                            process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', str(bandwidth) + 'm',
-                                                        '-t', str(TEST_TIME / 11), '-f', 'm'], stdout=f, stderr=f)
+                        start_bw = 50
+                        stop_bw = 100
+                        n = 10
+                        step = int((stop_bw - start_bw) / n)
+                        self.dut.write(
+                            f'iperf -s -u -i 1 -t {TEST_TIME + 4 * (n + 1)}'
+                        )  # 4 sec for each bw step instance start/stop
+                        # wait until DUT TCP server created
+                        try:
+                            self.dut.expect('Socket created', timeout=5)
+                        except pexpect.TIMEOUT:
+                            # compatible with old iperf example binary
+                            logging.info('No "Socket created" confirmation received after starting UDP server')
+                        for bandwidth in range(start_bw, stop_bw, step):
+                            process = subprocess.Popen(
+                                [
+                                    'iperf',
+                                    '-c',
+                                    dut_ip,
+                                    '-u',
+                                    '-b',
+                                    str(bandwidth) + 'm',
+                                    '-t',
+                                    str(TEST_TIME / (n + 1)),
+                                    '-f',
+                                    'm',
+                                ],
+                                stdout=f,
+                                stderr=f,
+                            )
                             for _ in range(TEST_TIMEOUT):
                                 if process.poll() is not None:
                                     break
@@ -382,8 +435,8 @@ class IperfTestUtility(object):
                             else:
                                 process.terminate()
 
-            server_raw_data = self.dut.expect(pexpect.TIMEOUT, timeout=0).decode('utf-8')
-            with open(PC_IPERF_TEMP_LOG_FILE, 'r') as f:
+            server_raw_data = self.dut.expect(pexpect.TIMEOUT, timeout=5).decode('utf-8')
+            with open(PC_IPERF_TEMP_LOG_FILE) as f:
                 pc_raw_data = f.read()
 
         if os.path.exists(PC_IPERF_TEMP_LOG_FILE):
@@ -391,18 +444,21 @@ class IperfTestUtility(object):
 
         # save PC iperf logs to console
         with open(self.pc_iperf_log_file, 'a+') as f:
-            f.write('## [{}] `{}`\r\n##### {}'
-                    .format(self.config_name,
-                            '{}_{}'.format(proto, direction),
-                            time.strftime('%m-%d %H:%M:%S', time.localtime(time.time()))))
+            f.write(
+                '## [{}] `{}`\r\n##### {}'.format(
+                    self.config_name,
+                    f'{proto}_{direction}',
+                    time.strftime('%m-%d %H:%M:%S', time.localtime(time.time())),
+                )
+            )
             f.write('\r\n```\r\n\r\n' + pc_raw_data + '\r\n```\r\n')
         self.dut.write('heap')
-        heap_size = self.dut.expect(r'min heap size: (\d+)\D').group(1)
+        heap_size = self.dut.expect(r'min heap size: (\d+)\D', timeout=120).group(1)
 
         # return server raw data (for parsing test results) and RSSI
         return server_raw_data, rssi, heap_size
 
-    def run_test(self, proto:str, direction:str, atten_val:int, bw_limit:int) -> None:
+    def run_test(self, proto: str, direction: str, atten_val: int, bw_limit: int) -> None:
         """
         run test for one type, with specified atten_value and save the test result
 
@@ -415,20 +471,17 @@ class IperfTestUtility(object):
         heap_size = INVALID_HEAP_SIZE
         try:
             server_raw_data, rssi, heap_size = self._test_once(proto, direction, bw_limit)
-            throughput = self._save_test_result('{}_{}'.format(proto, direction),
-                                                server_raw_data, atten_val,
-                                                rssi, heap_size)
-            logging.info('[{}][{}_{}][{}][{}]: {:.02f}'
-                         .format(self.config_name, proto, direction, rssi, self.ap_ssid, throughput))
+            throughput = self._save_test_result(f'{proto}_{direction}', server_raw_data, atten_val, rssi, heap_size)
+            logging.info(f'[{self.config_name}][{proto}_{direction}][{rssi}][{self.ap_ssid}]: {throughput:.02f}')
             self.lowest_rssi_scanned = min(self.lowest_rssi_scanned, rssi)
         except (ValueError, IndexError):
-            self._save_test_result('{}_{}'.format(proto, direction), '', atten_val, rssi, heap_size)
+            self._save_test_result(f'{proto}_{direction}', '', atten_val, rssi, heap_size)
             logging.info('Fail to get throughput results.')
         except AssertionError:
             self.fail_to_scan += 1
             logging.info('Fail to scan AP.')
 
-    def run_all_cases(self, atten_val:int, bw_limit:int) -> None:
+    def run_all_cases(self, atten_val: int, bw_limit: int) -> None:
         """
         run test for all types (udp_tx, udp_rx, tcp_tx, tcp_rx).
 
@@ -440,8 +493,7 @@ class IperfTestUtility(object):
         self.run_test('udp', 'tx', atten_val, bw_limit)
         self.run_test('udp', 'rx', atten_val, bw_limit)
         if self.fail_to_scan > 10:
-            logging.info(
-                'Fail to scan AP for more than 10 times. Lowest RSSI scanned is {}'.format(self.lowest_rssi_scanned))
+            logging.info(f'Fail to scan AP for more than 10 times. Lowest RSSI scanned is {self.lowest_rssi_scanned}')
             raise AssertionError
 
     def wait_ap_power_on(self) -> bool:
@@ -455,9 +507,8 @@ class IperfTestUtility(object):
         self.dut.expect('iperf>')
         for _ in range(WAIT_AP_POWER_ON_TIMEOUT // SCAN_TIMEOUT):
             try:
-                self.dut.write('scan {}'.format(self.ap_ssid))
-                self.dut.expect(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid),
-                                timeout=SCAN_TIMEOUT)
+                self.dut.write(f'scan {self.ap_ssid}')
+                self.dut.expect(rf'\[{self.ap_ssid}]\[rssi=(-\d+)]', timeout=SCAN_TIMEOUT)
                 ret = True
                 break
             except pexpect.TIMEOUT:

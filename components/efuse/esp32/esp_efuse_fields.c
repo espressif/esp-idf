@@ -18,7 +18,7 @@
 #include "sys/param.h"
 #include "soc/syscon_reg.h"
 
-const static char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 // Contains functions that provide access to efuse fields which are often used in IDF.
 

@@ -36,6 +36,15 @@
 #define DEFAULT_PS_MODE WIFI_PS_NONE
 #endif /*CONFIG_POWER_SAVE_MODEM*/
 
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+#if CONFIG_EXAMPLE_WIFI_BAND_MODE_2G
+#define DEFAULT_WIFI_BAND_MODE  WIFI_BAND_MODE_2G_ONLY
+#elif CONFIG_EXAMPLE_WIFI_BAND_MODE_5G
+#define DEFAULT_WIFI_BAND_MODE  WIFI_BAND_MODE_5G_ONLY
+#else
+#define DEFAULT_WIFI_BAND_MODE  WIFI_BAND_MODE_AUTO
+#endif
+#endif
 
 static const char *TAG = "power_save";
 
@@ -49,6 +58,12 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE) {
+        wifi_event_sta_beacon_offset_unstable_t* event = (wifi_event_sta_beacon_offset_unstable_t*)event_data;
+        ESP_LOGI(TAG, "unstable sample, beacon success rate: %.4f", event->beacon_success_rate);
+#if CONFIG_EXAMPLE_POWER_SAVE_RESAMPLE
+        esp_wifi_beacon_offset_sample_beacon();
+#endif
     }
 }
 
@@ -80,6 +95,9 @@ static void wifi_power_save(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+#if CONFIG_SOC_WIFI_SUPPORT_5G
+    ESP_ERROR_CHECK(esp_wifi_set_band_mode(DEFAULT_WIFI_BAND_MODE));
+#endif
     ESP_ERROR_CHECK(esp_wifi_set_inactive_time(WIFI_IF_STA, DEFAULT_BEACON_TIMEOUT));
 
     ESP_LOGI(TAG, "esp_wifi_set_ps().");

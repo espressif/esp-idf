@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF SPP GATT CLIENT demo
 
@@ -8,6 +8,71 @@
   This reference design consists of two Demos, the ble spp server and ble spp client that run on their respective endpoints. These devices connect and exchange data wirelessly with each other. This capability creates a virtual serial link over the air. Each byte input can be sent and received by both the server and client. The spp server is implemented as the [ble_spp_server](../ble_spp_server) demo while the spp client is implemented as the [ble_spp_client](../ble_spp_client) demo. Espressif designed the BLE SPP applications to use the UART transport layer but you could adapt this design to work with other serial protocols, such as SPI.
 
   This vendor-specific custom profile is implemented in [spp_client_demo.c](../ble_spp_client/main/spp_client_demo.c) and [spp_server_demo.c](../ble_spp_server/main/ble_spp_server_demo.c).
+
+## Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        BLE SPP Data Flow                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   SPP Client                                              SPP Server
+ ┌───────────┐                                           ┌───────────┐
+ │   UART    │                                           │   UART    │
+ │ Terminal  │                                           │ Terminal  │
+ └─────┬─────┘                                           └─────┬─────┘
+       │                                                       │
+       ▼                                                       ▼
+ ┌───────────┐                                           ┌───────────┐
+ │ uart_task │                                           │ uart_task │
+ └─────┬─────┘                                           └─────┬─────┘
+       │                                                       │
+       │  ─────────── Connection Phase ───────────             │
+       │                                                       │
+       │  1. Scan for SPP Server                               │  Advertising
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  2. Connect                                           │
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  3. MTU Exchange (200 bytes)                          │
+       │ <────────────────────────────────────────────────────>│
+       │                                                       │
+       │  4. Service Discovery                                 │
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  5. Enable Notification (CCCD)                        │
+       │ ───────────────────────────────────────────────────>  │
+       │                                                       │
+       │  ─────────── Data Exchange ───────────                │
+       │                                                       │
+       │  UART Input ──> WriteNoRsp (SPP_DATA_RECV_CHAR)       │
+       │ ───────────────────────────────────────────────────>  │──> UART Output
+       │                                                       │
+       │  UART Output <── Notification (SPP_DATA_NOTIFY_CHAR)  │
+       │ <───────────────────────────────────────────────────  │<── UART Input
+       │                                                       │
+ ┌─────┴─────┐                                           ┌─────┴─────┐
+ │ SPP Client│                                           │SPP Server │
+ └───────────┘                                           └───────────┘
+
+
+                    ┌─────────────────────────────────┐
+                    │       SPP Characteristics       │
+                    ├─────────────────────────────────┤
+                    │  SPP_DATA_RECV (0xABF1)         │
+                    │    - Client writes data here   │
+                    │                                 │
+                    │  SPP_DATA_NOTIFY (0xABF2)       │
+                    │    - Server sends data here    │
+                    │                                 │
+                    │  SPP_COMMAND (0xABF3)           │
+                    │    - Command channel           │
+                    │                                 │
+                    │  SPP_STATUS (0xABF4)            │
+                    │    - Status notification       │
+                    └─────────────────────────────────┘
+```
 
 ## How to Use Example
 
@@ -49,7 +114,7 @@ idf.py set-target <chip_name>
 
   * `uart_task`            - process Uart
   * `spp_cmd_task`         - process command messages, the commands and processing were defined by customer
-  * `spp_heartbeat_task`   - if heartbeat is supported, the task will send a heatbeat packet to the remote device
+  * `spp_heartbeat_task`   - if heartbeat is supported, the task will send a heartbeat packet to the remote device
 
 ### Packet Structure
 
@@ -77,7 +142,7 @@ idf.py set-target <chip_name>
 
 ### GATT Server Attribute Table
 
-  charactertistic|UUID|Permissions
+  characteristic|UUID|Permissions
   :-:|:-:|:-:
   SPP_DATA_RECV_CHAR|0xABF1|READ&WRITE_NR
   SPP_DATA_NOTIFY_CHAR|0xABF2|READ&NOTIFY
@@ -95,7 +160,7 @@ See the [Getting Started Guide](https://idf.espressif.com/) for full steps to co
 
 ## Example Output
 
-The spp cilent will auto connect to the spp server, do service search, exchange MTU size and register notification.
+The spp client will auto connect to the spp server, do service search, exchange MTU size and register notification.
 
 ### Client
 

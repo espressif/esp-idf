@@ -1,13 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "common/new.hpp"
 #include "ncp_hdlc.hpp"
-
-#if OPENTHREAD_ENABLE_NCP_VENDOR_HOOK
 
 namespace ot {
 namespace Ncp {
@@ -29,5 +27,3 @@ extern "C" void otNcpHdlcInit(otInstance *aInstance, otNcpHdlcSendCallback aSend
 
 } // namespace Ncp
 } // namespace ot
-
-#endif // #if OPENTHREAD_ENABLE_NCP_VENDOR_HOOK

@@ -1,15 +1,18 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 EXPECT_TIMEOUT = 20
 
 
-@pytest.mark.esp32
 @pytest.mark.ccs811
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_i2ctools_example(dut: IdfDut) -> None:
     dut.expect_exact('i2c-tools>', timeout=EXPECT_TIMEOUT)
+    # Configure the I2C bus
+    dut.write('i2cconfig --scl 19 --sda 18')
     # Get i2c address
     dut.write('i2cdetect')
     dut.expect_exact('5b', timeout=EXPECT_TIMEOUT)

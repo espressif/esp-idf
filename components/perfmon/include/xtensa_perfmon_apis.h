@@ -21,7 +21,7 @@ extern "C"
  * Structure to configure performance counter to measure dedicated function
  */
 typedef struct xtensa_perfmon_config {
-    int repeat_count;       /*!< how much times function will be called before the calback will be repeated */
+    int repeat_count;       /*!< how much times function will be called before the callback will be repeated */
     float max_deviation;    /*!<  Difference between min and max counter number 0..1, 0 - no difference, 1 - not used */
     void *call_params;      /*!<  This pointer will be passed to the call_function as a parameter */
     void (*call_function)(void *params); /*!< pointer to the function that have to be called */
@@ -56,7 +56,7 @@ esp_err_t xtensa_perfmon_exec(const xtensa_perfmon_config_t *config);
  * perfmon_config_t::callback_params. If callback_params is set to NULL, will print to stdout
  *
  * @param[in] params:   used parameters passed from configuration (callback_params).
- *                      This parameter expected as FILE* hanle, where data will be stored.
+ *                      This parameter is expected to be a FILE* handle, where data will be stored.
  *                      If this parameter NULL, then data will be stored to the stdout.
  * @param[in] select:   select value for current counter
  * @param[in] mask:     mask value for current counter

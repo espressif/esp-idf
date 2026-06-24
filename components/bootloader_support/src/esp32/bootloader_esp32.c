@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,12 +21,13 @@
 #include "esp_cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
-#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
+#include "soc/soc_caps.h"
+
 #include "hal/gpio_hal.h"
+#include "hal/mmu_hal.h"
 #include "xtensa/config/core.h"
 #include "xt_instr_macros.h"
 
@@ -37,7 +38,7 @@
 #include "esp_rom_spiflash.h"
 #include "esp_efuse.h"
 
-static const char *TAG = "boot.esp32";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32");
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
 static void bootloader_reset_mmu(void)
@@ -60,6 +61,15 @@ static void bootloader_reset_mmu(void)
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
 #endif
 
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+    };
+    mmu_hal_ctx_init(&mmu_config);
+
     /* normal ROM boot exits with DROM0 cache unmasked,
         but serial bootloader exits with it masked. */
     DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
@@ -69,29 +79,30 @@ static void bootloader_reset_mmu(void)
 }
 #endif //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
-static esp_err_t bootloader_check_rated_cpu_clock(void)
+static inline esp_err_t bootloader_check_rated_cpu_clock(void)
 {
     int rated_freq = bootloader_clock_get_rated_freq_mhz();
     if (rated_freq < CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ) {
-        ESP_LOGE(TAG, "Chip CPU frequency rated for %dMHz, configured for %dMHz. Modify CPU frequency in menuconfig",
+        ESP_LOGE(TAG, "Chip CPU freq rated for %dMHz, configured for %dMHz. Modify CPU freq in menuconfig",
                  rated_freq, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
         return ESP_FAIL;
     }
     return ESP_OK;
 }
 
-static void wdt_reset_cpu0_info_enable(void)
+#if SOC_RTC_WDT_SUPPORTED
+void bootloader_enable_cpu_reset_info(void)
 {
     //We do not reset core1 info here because it didn't work before cpu1 was up. So we put it into call_start_cpu1.
     DPORT_REG_SET_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_PDEBUG_ENABLE | DPORT_PRO_CPU_RECORD_ENABLE);
     DPORT_REG_CLR_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_RECORD_ENABLE);
 }
 
-static void wdt_reset_info_dump(int cpu)
+void bootloader_dump_wdt_reset_info(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
-    const char *cpu_name = cpu ? "APP" : "PRO";
+    const char *cpu_name = cpu ? ESP_LOG_ATTR_STR("APP") : ESP_LOG_ATTR_STR("PRO");
 
     if (cpu == 0) {
         stat = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);
@@ -119,47 +130,39 @@ static void wdt_reset_info_dump(int cpu)
 
     if (DPORT_RECORD_PDEBUGINST_SZ(inst) == 0 &&
             DPORT_RECORD_PDEBUGSTATUS_BBCAUSE(dstat) == DPORT_RECORD_PDEBUGSTATUS_BBCAUSE_WAITI) {
-        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%"PRIx32" (waiti mode)", cpu_name, pc);
+        ESP_LOGW(TAG, "WDT rst info: %s CPU PC=0x%"PRIx32" (waiti mode)", cpu_name, pc);
     } else {
-        ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%"PRIx32, cpu_name, pc);
+        ESP_LOGW(TAG, "WDT rst info: %s CPU PC=0x%"PRIx32, cpu_name, pc);
     }
-    ESP_LOGD(TAG, "WDT reset info: %s CPU STATUS        0x%08"PRIx32, cpu_name, stat);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PID           0x%08"PRIx32, cpu_name, pid);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGINST    0x%08"PRIx32, cpu_name, inst);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGSTATUS  0x%08"PRIx32, cpu_name, dstat);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGDATA    0x%08"PRIx32, cpu_name, data);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGPC      0x%08"PRIx32, cpu_name, pc);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0STAT 0x%08"PRIx32, cpu_name, lsstat);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0ADDR 0x%08"PRIx32, cpu_name, lsaddr);
-    ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0DATA 0x%08"PRIx32, cpu_name, lsdata);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU STATUS        0x%08"PRIx32, cpu_name, stat);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PID           0x%08"PRIx32, cpu_name, pid);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGINST    0x%08"PRIx32, cpu_name, inst);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGSTATUS  0x%08"PRIx32, cpu_name, dstat);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGDATA    0x%08"PRIx32, cpu_name, data);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGPC      0x%08"PRIx32, cpu_name, pc);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGLS0STAT 0x%08"PRIx32, cpu_name, lsstat);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGLS0ADDR 0x%08"PRIx32, cpu_name, lsaddr);
+    ESP_LOGD(TAG, "WDT rst info: %s CPU PDEBUGLS0DATA 0x%08"PRIx32, cpu_name, lsdata);
 }
 
-static void bootloader_check_wdt_reset(void)
+bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t rst_reason)
 {
-    int wdt_rst = 0;
-    soc_reset_reason_t rst_reas[2];
-
-    rst_reas[0] = esp_rom_get_reset_reason(0);
-    rst_reas[1] = esp_rom_get_reset_reason(1);
-    if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0 || rst_reas[0] == RESET_REASON_CORE_MWDT1 ||
-        rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT) {
-        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
-        wdt_rst = 1;
+    if (cpu == 0 && (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 ||
+                     rst_reason == RESET_REASON_CORE_MWDT1 || rst_reason == RESET_REASON_CPU0_MWDT0 ||
+                     rst_reason == RESET_REASON_CPU0_RTC_WDT)) {
+        ESP_LOGW(TAG, "PRO CPU has been reset by WDT");
+        return true;
     }
-    if (rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0 || rst_reas[1] == RESET_REASON_CORE_MWDT1 ||
-        rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT) {
-        ESP_LOGW(TAG, "APP CPU has been reset by WDT.");
-        wdt_rst = 1;
+    if (cpu == 1 && (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 ||
+                     rst_reason == RESET_REASON_CORE_MWDT1 || rst_reason == RESET_REASON_CPU1_MWDT1 ||
+                     rst_reason == RESET_REASON_CPU1_RTC_WDT)) {
+        ESP_LOGW(TAG, "APP CPU has been reset by WDT");
+        return true;
     }
-    if (wdt_rst) {
-        // if reset by WDT dump info from trace port
-        wdt_reset_info_dump(0);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        wdt_reset_info_dump(1);
-#endif
-    }
-    wdt_reset_cpu0_info_enable();
+    return false;
 }
+
+#endif // SOC_RTC_WDT_SUPPORTED
 
 esp_err_t bootloader_init(void)
 {
@@ -167,7 +170,7 @@ esp_err_t bootloader_init(void)
 
 #if XCHAL_ERRATUM_572
     uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
-    WSR(MEMCTL, memctl);
+    WSR(XT_REG_MEMCTL, memctl);
 #endif // XCHAL_ERRATUM_572
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`
@@ -190,7 +193,7 @@ esp_err_t bootloader_init(void)
 
     // init eFuse virtual mode (read eFuses to RAM)
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+    ESP_EARLY_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
 #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
     esp_efuse_init_virtual_mode_in_ram();
 #endif
@@ -215,7 +218,7 @@ esp_err_t bootloader_init(void)
     bootloader_flash_update_id();
     // Check and run XMC startup flow
     if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
-        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        ESP_LOGE(TAG, "XMC startup flow failed, reboot!");
         return ret;
     }
     // read bootloader header
@@ -232,10 +235,12 @@ esp_err_t bootloader_init(void)
     }
 #endif // #if !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
-    bootloader_check_wdt_reset();
+    // check reset reason and dump diagnostic info
+    bootloader_check_reset();
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
     return ret;

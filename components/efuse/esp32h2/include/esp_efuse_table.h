@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,12 @@ extern "C" {
 #endif
 
 #include "esp_efuse.h"
+#include "sdkconfig.h"
+#if CONFIG_ESP32H2_REV_MIN_FULL < 102
+#include "esp_efuse_table_v0.0_v1.1.h"
+#endif
 
-// md5_digest_table 1b79da735c5daed71ed7a91a0c55c5b6
+// md5_digest_table 4b1296d3b432e2675dd1c7bbceef856c
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -29,6 +33,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_TWAI[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_JTAG_SEL_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_PAD_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_POWERGLITCH_EN1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WDT_DELAY_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE0[];
@@ -46,11 +51,13 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KEY_PURPOSE_4[];
 #define ESP_EFUSE_WR_DIS_KEY4_PURPOSE ESP_EFUSE_WR_DIS_KEY_PURPOSE_4
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KEY_PURPOSE_5[];
 #define ESP_EFUSE_WR_DIS_KEY5_PURPOSE ESP_EFUSE_WR_DIS_KEY_PURPOSE_5
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_XTS_DPA_PSEUDO_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SEC_DPA_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CRYPT_DPA_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_AGGRESSIVE_REVOKE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_FORCE_USE_HARDWARE_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECDSA_CURVE_MODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ECC_FORCE_CONST_TIME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DIRECT_BOOT[];
@@ -75,6 +82,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DBIAS_VOL_GAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[];
@@ -151,6 +159,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ECDSA_CURVE_MODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[];
+extern const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WDT_DELAY_SEL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_BOOT_CRYPT_CNT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_KEY_REVOKE0[];
@@ -169,10 +180,10 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_4[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_5[];
 #define ESP_EFUSE_KEY5_PURPOSE ESP_EFUSE_KEY_PURPOSE_5
 extern const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CRYPT_DPA_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_POWERGLITCH_EN1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DIRECT_BOOT[];
@@ -196,6 +207,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DBIAS_VOL_GAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];

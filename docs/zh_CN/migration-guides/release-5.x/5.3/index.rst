@@ -6,7 +6,7 @@
 .. toctree::
     :maxdepth: 1
 
-    bluetooth-low-energy
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
     gcc
     peripherals
     protocols

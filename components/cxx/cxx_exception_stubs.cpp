@@ -178,4 +178,16 @@ extern "C" _Unwind_Reason_Code __wrap___gxx_personality_v0(int version,
     return abort_return<_Unwind_Reason_Code>();
 }
 
+// Reduces binary size since the linker will drop some code due to --gc-sections.
+extern "C" void __wrap___cxa_allocate_exception(void)
+{
+    abort();
+}
+
+// Reduces binary size since the linker will drop some code due to --gc-sections.
+extern "C" void __wrap___cxa_throw(void)
+{
+    abort();
+}
+
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS

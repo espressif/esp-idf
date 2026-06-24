@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,10 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
 /**
  * @brief         De-initialize BLE Mesh module.
  *
- * @note          This function shall be invoked after esp_ble_mesh_client_model_deinit().
+ * @note
+ *                1. This function shall be invoked after esp_ble_mesh_client_model_deinit().
+ *                2. This function is strictly forbidden to run in any BTC Task Context
+ *                (e.g. registered Mesh Event Callback).
  *
  * @param[in]     param: Pointer to the structure of BLE Mesh deinit parameters.
  *

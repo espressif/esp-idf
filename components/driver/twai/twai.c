@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,22 +15,28 @@
 #include "esp_intr_alloc.h"
 #include "esp_pm.h"
 #include "esp_attr.h"
+#include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
-#include "clk_ctrl_os.h"
-#include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
-#include "driver/twai.h"
+#include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
+#include "driver/twai_types_legacy.h"
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
-#include "soc/twai_periph.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/io_mux_reg.h"
+#include "hal/twai_periph.h"
 #include "hal/twai_hal.h"
+#include "hal/twai_ll.h"
 #include "esp_rom_gpio.h"
+#if SOC_TWAI_SUPPORT_SLEEP_RETENTION
+#include "esp_private/sleep_retention.h"
+#endif
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
+#define TWAI_TAG "TWAI"
 #define TWAI_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
                 return (ret_val);                                           \
@@ -40,36 +46,29 @@
 #define TWAI_SET_FLAG(var, mask)    ((var) |= (mask))
 #define TWAI_RESET_FLAG(var, mask)  ((var) &= ~(mask))
 
-#ifdef CONFIG_TWAI_ISR_IN_IRAM
+#if defined(CONFIG_TWAI_ISR_IN_IRAM) || defined(CONFIG_TWAI_ISR_IN_IRAM_LEGACY)
 #define TWAI_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define TWAI_TAG "TWAI"
 #define TWAI_MALLOC_CAPS    MALLOC_CAP_DEFAULT
-#endif  //CONFIG_TWAI_ISR_IN_IRAM
+#endif  // CONFIG_TWAI_ISR_IN_IRAM || CONFIG_TWAI_ISR_IN_IRAM_LEGACY
 
 #define DRIVER_DEFAULT_INTERRUPTS   0xE7        //Exclude data overrun (bit[3]) and brp_div (bit[4])
 
 #define ALERT_LOG_LEVEL_WARNING     TWAI_ALERT_ARB_LOST  //Alerts above and including this level use ESP_LOGW
 #define ALERT_LOG_LEVEL_ERROR       TWAI_ALERT_TX_FAILED //Alerts above and including this level use ESP_LOGE
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define TWAI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_RCC_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define TWAI_PERI_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define TWAI_PERI_ATOMIC()
-#endif
+#define TWAI_USE_RETENTION_LINK  (SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 /* ------------------ Typedefs, structures, and variables ------------------- */
 
 //Control structure for TWAI driver
 typedef struct twai_obj_t {
     int controller_id;
-    twai_hal_context_t hal;  // hal context
+    gpio_num_t tx_io;
+    gpio_num_t rx_io;
+    gpio_num_t clkout_io;
+    gpio_num_t bus_off_io;
+    twai_hal_context_t *hal;  // hal context
     //Control and status members
     twai_state_t state;
     twai_mode_t mode;
@@ -88,13 +87,20 @@ typedef struct twai_obj_t {
     SemaphoreHandle_t alert_semphr;
     uint32_t alerts_enabled;
     uint32_t alerts_triggered;
+#ifdef CONFIG_PM_ENABLE
     //Power Management Lock
     esp_pm_lock_handle_t pm_lock;
+#endif
     portMUX_TYPE spinlock;
 } twai_obj_t;
 
 static twai_handle_t g_twai_objs[SOC_TWAI_CONTROLLER_NUM];
 static portMUX_TYPE g_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+/* -------------------- Sleep Retention ------------------------ */
+#if TWAI_USE_RETENTION_LINK
+static esp_err_t s_twai_create_sleep_retention_link_cb(void *obj);
+#endif
 
 /* -------------------- Interrupt and Alert Handlers ------------------------ */
 
@@ -104,7 +110,7 @@ static void twai_alert_handler(twai_obj_t *p_twai_obj, uint32_t alert_code, int 
         //Signify alert has occurred
         TWAI_SET_FLAG(p_twai_obj->alerts_triggered, alert_code);
         *alert_req = 1;
-#ifndef CONFIG_TWAI_ISR_IN_IRAM     //Only log if ISR is not in IRAM
+#if !defined(CONFIG_TWAI_ISR_IN_IRAM) && !defined(CONFIG_TWAI_ISR_IN_IRAM_LEGACY)     //Only log if ISR is not in IRAM
         if (p_twai_obj->alerts_enabled & TWAI_ALERT_AND_LOG) {
             if (alert_code >= ALERT_LOG_LEVEL_ERROR) {
                 ESP_EARLY_LOGE(TWAI_TAG, "Alert %" PRIu32, alert_code);
@@ -114,18 +120,18 @@ static void twai_alert_handler(twai_obj_t *p_twai_obj, uint32_t alert_code, int 
                 ESP_EARLY_LOGI(TWAI_TAG, "Alert %" PRIu32, alert_code);
             }
         }
-#endif  //CONFIG_TWAI_ISR_IN_IRAM
+#endif  // !CONFIG_TWAI_ISR_IN_IRAM && !CONFIG_TWAI_ISR_IN_IRAM_LEGACY
     }
 }
 
 static inline void twai_handle_rx_buffer_frames(twai_obj_t *p_twai_obj, BaseType_t *task_woken, int *alert_req)
 {
-#ifdef SOC_TWAI_SUPPORTS_RX_STATUS
-    uint32_t msg_count = twai_hal_get_rx_msg_count(&p_twai_obj->hal);
+#if TWAI_LL_SUPPORT(RX_STATUS)
+    uint32_t msg_count = twai_hal_get_rx_msg_count(p_twai_obj->hal);
 
     for (uint32_t i = 0; i < msg_count; i++) {
         twai_hal_frame_t frame;
-        if (twai_hal_read_rx_buffer_and_clear(&p_twai_obj->hal, &frame)) {
+        if (twai_hal_read_rx_fifo(p_twai_obj->hal, &frame)) {
             //Valid frame copied from RX buffer
             if (xQueueSendFromISR(p_twai_obj->rx_queue, &frame, task_woken) == pdTRUE) {
                 p_twai_obj->rx_msg_count++;
@@ -139,13 +145,13 @@ static inline void twai_handle_rx_buffer_frames(twai_obj_t *p_twai_obj, BaseType
             twai_alert_handler(p_twai_obj, TWAI_ALERT_RX_FIFO_OVERRUN, alert_req);
         }
     }
-#else   //SOC_TWAI_SUPPORTS_RX_STATUS
-    uint32_t msg_count = twai_hal_get_rx_msg_count(&p_twai_obj->hal);
+#else
+    uint32_t msg_count = twai_hal_get_rx_msg_count(p_twai_obj->hal);
     bool overrun = false;
     //Clear all valid RX frames
     for (int i = 0; i < msg_count; i++) {
         twai_hal_frame_t frame;
-        if (twai_hal_read_rx_buffer_and_clear(&p_twai_obj->hal, &frame)) {
+        if (twai_hal_read_rx_fifo(p_twai_obj->hal, &frame)) {
             //Valid frame copied from RX buffer
             if (xQueueSendFromISR(p_twai_obj->rx_queue, &frame, task_woken) == pdTRUE) {
                 p_twai_obj->rx_msg_count++;
@@ -161,16 +167,16 @@ static inline void twai_handle_rx_buffer_frames(twai_obj_t *p_twai_obj, BaseType
     }
     //All remaining frames are treated as overrun. Clear them all
     if (overrun) {
-        p_twai_obj->rx_overrun_count += twai_hal_clear_rx_fifo_overrun(&p_twai_obj->hal);
+        p_twai_obj->rx_overrun_count += twai_hal_clear_rx_fifo_overrun(p_twai_obj->hal);
         twai_alert_handler(p_twai_obj, TWAI_ALERT_RX_FIFO_OVERRUN, alert_req);
     }
-#endif  //SOC_TWAI_SUPPORTS_RX_STATUS
+#endif // TWAI_LL_SUPPORT(RX_STATUS)
 }
 
-static inline void twai_handle_tx_buffer_frame(twai_obj_t *p_twai_obj, BaseType_t *task_woken, int *alert_req)
+static inline void twai_handle_tx_buffer_frame(twai_obj_t *p_twai_obj, bool tx_success, BaseType_t *task_woken, int *alert_req)
 {
     //Handle previously transmitted frame
-    if (twai_hal_check_last_tx_successful(&p_twai_obj->hal)) {
+    if (tx_success) {
         twai_alert_handler(p_twai_obj, TWAI_ALERT_TX_SUCCESS, alert_req);
     } else {
         p_twai_obj->tx_failed_count++;
@@ -181,12 +187,14 @@ static inline void twai_handle_tx_buffer_frame(twai_obj_t *p_twai_obj, BaseType_
     p_twai_obj->tx_msg_count--;
     assert(p_twai_obj->tx_msg_count >= 0);      //Sanity check
 
-    //Check if there are more frames to transmit
-    if (p_twai_obj->tx_msg_count > 0 && p_twai_obj->tx_queue != NULL) {
+    //If not bus-off, check if there are more frames to transmit
+    if (!twai_hal_check_state_flags(p_twai_obj->hal, TWAI_HAL_STATE_FLAG_BUS_OFF)
+            && p_twai_obj->tx_msg_count > 0
+            && p_twai_obj->tx_queue != NULL) {
         twai_hal_frame_t frame;
         int res = xQueueReceiveFromISR(p_twai_obj->tx_queue, &frame, task_woken);
         if (res == pdTRUE) {
-            twai_hal_set_tx_buffer_and_transmit(&p_twai_obj->hal, &frame);
+            twai_hal_set_tx_buffer_and_transmit(p_twai_obj->hal, &frame, 0);
         } else {
             assert(false && "failed to get a frame from TX queue");
         }
@@ -203,16 +211,19 @@ static void twai_intr_handler_main(void *arg)
     int alert_req = 0;
     uint32_t events;
     portENTER_CRITICAL_ISR(&p_twai_obj->spinlock);
-    events = twai_hal_get_events(&p_twai_obj->hal);    //Get the events that triggered the interrupt
+    events = twai_hal_get_events(p_twai_obj->hal);    //Get the events that triggered the interrupt
 
-#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+#if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
+    // Errata workaround: Reset the peripheral on detection of this errata condition.
+    // Note that if a frame is being sent on the bus during the reset, the message will be lost.
     if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
-        twai_hal_prepare_for_reset(&p_twai_obj->hal);
-        TWAI_RCC_ATOMIC() {
+        ESP_EARLY_LOGD(TWAI_TAG, "Triggered peripheral reset");
+        twai_hal_prepare_for_reset(p_twai_obj->hal);
+        PERIPH_RCC_ATOMIC() {
             twai_ll_reset_register(p_twai_obj->controller_id);
         }
-        twai_hal_recover_from_reset(&p_twai_obj->hal);
-        p_twai_obj->rx_missed_count += twai_hal_get_reset_lost_rx_cnt(&p_twai_obj->hal);
+        twai_hal_recover_from_reset(p_twai_obj->hal);
+        p_twai_obj->rx_missed_count += twai_hal_get_reset_lost_rx_cnt(p_twai_obj->hal);
         twai_alert_handler(p_twai_obj, TWAI_ALERT_PERIPH_RESET, &alert_req);
     }
 #endif
@@ -220,16 +231,19 @@ static void twai_intr_handler_main(void *arg)
         //Note: This event will never occur if there is a periph reset event
         twai_handle_rx_buffer_frames(p_twai_obj, &task_woken, &alert_req);
     }
-    if (events & TWAI_HAL_EVENT_TX_BUFF_FREE) {
-        twai_handle_tx_buffer_frame(p_twai_obj, &task_woken, &alert_req);
+    if (events & TWAI_HAL_EVENT_TX0_DONE) {
+        twai_handle_tx_buffer_frame(p_twai_obj, (events & TWAI_HAL_EVENT_TX0_SUCCESS), &task_woken, &alert_req);
     }
 
     //Handle events that only require alerting (i.e. no handler)
     if (events & TWAI_HAL_EVENT_BUS_OFF) {
+        twai_ll_set_mode(p_twai_obj->hal->dev, true, false, false);  //Freeze TEC/REC by entering LOM
         p_twai_obj->state = TWAI_STATE_BUS_OFF;
         twai_alert_handler(p_twai_obj, TWAI_ALERT_BUS_OFF, &alert_req);
     }
     if (events & TWAI_HAL_EVENT_BUS_RECOV_CPLT) {
+        //Back to STOPPED state after recovered, for cautious engineering strategy
+        twai_ll_enter_reset_mode(p_twai_obj->hal->dev);
         p_twai_obj->state = TWAI_STATE_STOPPED;
         twai_alert_handler(p_twai_obj, TWAI_ALERT_BUS_RECOVERED, &alert_req);
     }
@@ -253,7 +267,7 @@ static void twai_intr_handler_main(void *arg)
         //Returned to error active
         twai_alert_handler(p_twai_obj, TWAI_ALERT_ERR_ACTIVE, &alert_req);
     }
-    if (events & TWAI_HAL_EVENT_ABOVE_EWL) {
+    if (events & TWAI_HAL_EVENT_ERROR_WARNING) {
         //TEC or REC surpassed error warning limit
         twai_alert_handler(p_twai_obj, TWAI_ALERT_ABOVE_ERR_WARN, &alert_req);
     }
@@ -275,42 +289,61 @@ static void twai_intr_handler_main(void *arg)
 
 /* -------------------------- Helper functions  ----------------------------- */
 
-static void twai_configure_gpio(int controller_id, gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, gpio_num_t bus_status)
+static void twai_configure_gpio(twai_obj_t *p_obj)
 {
-    // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
-    assert(tx >= 0 && rx >= 0);
-    // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
-    bool io_loop_back = (tx == rx);
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = false,
-    };
+    uint8_t controller_id = p_obj->controller_id;
+    assert(GPIO_IS_VALID_OUTPUT_GPIO(p_obj->tx_io));    //coverity check
+    uint64_t gpio_mask = BIT64(p_obj->tx_io);
+
     //Set RX pin
-    gpio_conf.mode = GPIO_MODE_INPUT | (io_loop_back ? GPIO_MODE_OUTPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << rx;
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_in_signal(rx, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
+    gpio_func_sel(p_obj->rx_io, PIN_FUNC_GPIO);
+    gpio_input_enable(p_obj->rx_io);
+    esp_rom_gpio_connect_in_signal(p_obj->rx_io, twai_periph_signals[controller_id].rx_sig, false);
 
     //Set TX pin
-    gpio_conf.mode = GPIO_MODE_OUTPUT | (io_loop_back ? GPIO_MODE_INPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << tx;
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_out_signal(tx, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
+    gpio_func_sel(p_obj->tx_io, PIN_FUNC_GPIO);
+    esp_rom_gpio_connect_out_signal(p_obj->tx_io, twai_periph_signals[controller_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
-    if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(clkout, GPIO_FLOATING);
-        esp_rom_gpio_connect_out_signal(clkout, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(clkout);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->clkout_io)) {
+        gpio_mask |= BIT64(p_obj->clkout_io);
+        gpio_func_sel(p_obj->clkout_io, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(p_obj->clkout_io, twai_periph_signals[controller_id].clk_out_sig, false, false);
     }
 
     //Configure bus status pin (Optional)
-    if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(bus_status, GPIO_FLOATING);
-        esp_rom_gpio_connect_out_signal(bus_status, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(bus_status);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->bus_off_io)) {
+        gpio_mask |= BIT64(p_obj->bus_off_io);
+        gpio_func_sel(p_obj->bus_off_io, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(p_obj->bus_off_io, twai_periph_signals[controller_id].bus_off_sig, false, false);
     }
+
+    uint64_t busy_mask = esp_gpio_reserve(gpio_mask);
+    uint64_t conflict_mask = busy_mask & gpio_mask;
+    for (; conflict_mask > 0;) {
+        uint8_t pos = __builtin_ctzll(conflict_mask);
+        conflict_mask &= ~(1ULL << pos);
+        ESP_LOGW(TWAI_TAG, "GPIO %d is not usable, maybe used by others", pos);
+    }
+}
+
+static void twai_release_gpio(twai_obj_t *p_obj)
+{
+    assert(p_obj);
+    assert(GPIO_IS_VALID_OUTPUT_GPIO(p_obj->tx_io));    //coverity check
+    uint64_t gpio_mask = BIT64(p_obj->tx_io);
+
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_periph_signals[p_obj->controller_id].rx_sig, false);
+    gpio_output_disable(p_obj->tx_io);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->clkout_io)) {
+        gpio_mask |= BIT64(p_obj->clkout_io);
+        gpio_output_disable(p_obj->clkout_io);
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->bus_off_io)) {
+        gpio_mask |= BIT64(p_obj->bus_off_io);
+        gpio_output_disable(p_obj->bus_off_io);
+    }
+    esp_gpio_revoke(gpio_mask);
 }
 
 static void twai_free_driver_obj(twai_obj_t *p_obj)
@@ -334,6 +367,20 @@ static void twai_free_driver_obj(twai_obj_t *p_obj)
     if (p_obj->alert_semphr != NULL) {
         vSemaphoreDeleteWithCaps(p_obj->alert_semphr);
     }
+
+#if TWAI_USE_RETENTION_LINK
+    const periph_retention_module_t retention_id = twai_reg_retention_info[p_obj->controller_id].module_id;
+    sleep_retention_module_detach(retention_id);
+    if (sleep_retention_is_module_created(retention_id)) {
+        assert(sleep_retention_is_module_inited(retention_id));
+        sleep_retention_module_free(retention_id);
+    }
+    if (sleep_retention_is_module_inited(retention_id)) {
+        sleep_retention_module_deinit(retention_id);
+    }
+
+#endif
+
     heap_caps_free(p_obj);
 }
 
@@ -343,7 +390,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     esp_err_t ret;
 
     //Create a TWAI driver object
-    twai_obj_t *p_obj = heap_caps_calloc(1, sizeof(twai_obj_t), TWAI_MALLOC_CAPS);
+    twai_obj_t *p_obj = heap_caps_calloc(1, sizeof(twai_obj_t) + twai_hal_get_mem_requirment(), TWAI_MALLOC_CAPS);
     if (p_obj == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -357,7 +404,7 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
         goto err;
     }
     //Allocate interrupt
-    ret = esp_intr_alloc(twai_controller_periph_signals.controllers[controller_id].irq_id,
+    ret = esp_intr_alloc(twai_periph_signals[controller_id].irq_id,
                          g_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,
                          twai_intr_handler_main,
                          p_obj,
@@ -365,8 +412,12 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (ret != ESP_OK) {
         goto err;
     }
+
+    p_obj->controller_id = controller_id;
+    p_obj->hal = (twai_hal_context_t *)(p_obj + 1);   //hal context is place at end of driver context
+
 #if CONFIG_PM_ENABLE
-#if SOC_TWAI_CLK_SUPPORT_APB
+#if TWAI_LL_SUPPORT(APB_CLK)
     // DFS can change APB frequency. So add lock to prevent sleep and APB freq from changing
     if (clk_src == TWAI_CLK_SRC_APB) {
         // TODO: pm_lock name should also reflect the controller ID
@@ -381,8 +432,35 @@ static esp_err_t twai_alloc_driver_obj(const twai_general_config_t *g_config, tw
     if (ret != ESP_OK) {
         goto err;
     }
-#endif //SOC_TWAI_CLK_SUPPORT_APB
+#endif // TWAI_LL_SUPPORT(APB_CLK)
 #endif //CONFIG_PM_ENABLE
+
+#if TWAI_USE_RETENTION_LINK
+    sleep_retention_module_t module = twai_reg_retention_info[controller_id].module_id;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = s_twai_create_sleep_retention_link_cb,
+                .arg = p_obj,
+            },
+        },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+        ESP_LOGW(TWAI_TAG, "init sleep retention failed for TWAI%d, power domain may be turned off during sleep", controller_id);
+    }
+
+    if (g_config->general_flags.sleep_allow_pd) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            ESP_LOGW(TWAI_TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(module) != ESP_OK) {
+                ESP_LOGW(TWAI_TAG, "attach retention module failed, power domain can't turn off");
+            }
+        }
+    }
+#endif
 
     *p_twai_obj_ret = p_obj;
     return ESP_OK;
@@ -401,13 +479,17 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     TWAI_CHECK(f_config != NULL, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->controller_id < SOC_TWAI_CONTROLLER_NUM, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
+    // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
     TWAI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(g_config->tx_io), ESP_ERR_INVALID_ARG);
     TWAI_CHECK(GPIO_IS_VALID_GPIO(g_config->rx_io), ESP_ERR_INVALID_ARG);
-#ifndef CONFIG_TWAI_ISR_IN_IRAM
+#if !defined(CONFIG_TWAI_ISR_IN_IRAM) && !defined(CONFIG_TWAI_ISR_IN_IRAM_LEGACY)
     TWAI_CHECK(!(g_config->intr_flags & ESP_INTR_FLAG_IRAM), ESP_ERR_INVALID_ARG);
 #endif
     int controller_id = g_config->controller_id;
     TWAI_CHECK(g_twai_objs[controller_id] == NULL, ESP_ERR_INVALID_STATE);
+#if !SOC_TWAI_SUPPORT_SLEEP_RETENTION
+    TWAI_CHECK(!g_config->general_flags.sleep_allow_pd, ESP_ERR_INVALID_ARG);
+#endif
 
     //Get clock source resolution
     uint32_t clock_source_hz = 0;
@@ -437,10 +519,13 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
 
     //Initialize flags and variables. All other members are already set to zero by twai_alloc_driver_obj()
     portMUX_INITIALIZE(&p_twai_obj->spinlock);
-    p_twai_obj->controller_id = controller_id;
     p_twai_obj->state = TWAI_STATE_STOPPED;
     p_twai_obj->mode = g_config->mode;
     p_twai_obj->alerts_enabled = g_config->alerts_enabled;
+    p_twai_obj->tx_io = g_config->tx_io;
+    p_twai_obj->rx_io = g_config->rx_io;
+    p_twai_obj->clkout_io = g_config->clkout_io;
+    p_twai_obj->bus_off_io = g_config->bus_off_io;
 
     //Assign the TWAI object
     portENTER_CRITICAL(&g_spinlock);
@@ -455,11 +540,11 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     portEXIT_CRITICAL(&g_spinlock);
 
     //Enable TWAI peripheral register clock
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, true);
         twai_ll_reset_register(controller_id);
     }
-    TWAI_PERI_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         //Enable functional clock
         twai_ll_set_clock_source(p_twai_obj->controller_id, clk_src);
         twai_ll_enable_clock(p_twai_obj->controller_id, true);
@@ -469,13 +554,15 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     twai_hal_config_t hal_config = {
         .clock_source_hz = clock_source_hz,
         .controller_id = controller_id,
+        .intr_mask = DRIVER_DEFAULT_INTERRUPTS,
+        .enable_self_test = (p_twai_obj->mode == TWAI_MODE_NO_ACK),
+        .enable_listen_only = (p_twai_obj->mode == TWAI_MODE_LISTEN_ONLY),
     };
-    bool res = twai_hal_init(&p_twai_obj->hal, &hal_config);
-    assert(res);
-    twai_hal_configure(&p_twai_obj->hal, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
+    ESP_GOTO_ON_FALSE(twai_hal_init(p_twai_obj->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TWAI_TAG, "hardware not in reset state");
+    twai_hal_configure(p_twai_obj->hal, t_config, f_config, g_config->clkout_divider);
 
     //Assign GPIO and Interrupts
-    twai_configure_gpio(controller_id, g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
+    twai_configure_gpio(p_twai_obj);
 
 #if CONFIG_PM_ENABLE
     //Acquire PM lock
@@ -523,12 +610,15 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
     g_twai_objs[controller_id] = NULL;
     portEXIT_CRITICAL(&g_spinlock);
 
+    //Disable interrupt
+    ESP_ERROR_CHECK(esp_intr_disable(p_twai_obj->isr_handle));
+
     //Clear registers by reading
-    twai_hal_deinit(&p_twai_obj->hal);
-    TWAI_PERI_ATOMIC() {
+    twai_hal_deinit(p_twai_obj->hal);
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_clock(controller_id, false);
     }
-    TWAI_RCC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         twai_ll_enable_bus_clock(controller_id, false);
     }
 
@@ -539,8 +629,7 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
     }
 #endif //CONFIG_PM_ENABLE
 
-    //Disable interrupt
-    ESP_ERROR_CHECK(esp_intr_disable(p_twai_obj->isr_handle));
+    twai_release_gpio(p_twai_obj);
     //Free twai driver object
     twai_free_driver_obj(p_twai_obj);
     return ESP_OK;
@@ -570,7 +659,7 @@ esp_err_t twai_start_v2(twai_handle_t handle)
     }
     p_twai_obj->rx_msg_count = 0;
     p_twai_obj->tx_msg_count = 0;
-    twai_hal_start(&p_twai_obj->hal, p_twai_obj->mode);
+    twai_hal_start(p_twai_obj->hal);
 
     p_twai_obj->state = TWAI_STATE_RUNNING;
     portEXIT_CRITICAL(&handle->spinlock);
@@ -595,7 +684,7 @@ esp_err_t twai_stop_v2(twai_handle_t handle)
         return ESP_ERR_INVALID_STATE;
     }
 
-    twai_hal_stop(&p_twai_obj->hal);
+    twai_hal_stop(p_twai_obj->hal);
 
     //Reset TX Queue and message count
     if (p_twai_obj->tx_queue != NULL) {
@@ -635,12 +724,27 @@ esp_err_t twai_transmit_v2(twai_handle_t handle, const twai_message_t *message, 
     //Format frame
     esp_err_t ret = ESP_FAIL;
     twai_hal_frame_t tx_frame;
-    twai_hal_format_frame(message, &tx_frame);
+    twai_frame_header_t header = {
+        .id = message->identifier,
+        .dlc = message->data_length_code,
+        .ide = message->extd,
+        .rtr = message->rtr,
+    };
+    twai_hal_trans_desc_t hal_trans = {
+        .frame = {
+            .header = &header,
+            .buffer = (uint8_t *)message->data,
+            .buffer_len = message->data_length_code,
+        },
+        .config.retry_cnt = message->ss ? 0 : -1,
+        .config.loopback = message->self,
+    };
+    twai_hal_format_frame(&hal_trans, &tx_frame);
 
     //Check if frame can be sent immediately
     if (p_twai_obj->tx_msg_count == 0) {
         //No other frames waiting to transmit. Bypass queue and transmit immediately
-        twai_hal_set_tx_buffer_and_transmit(&p_twai_obj->hal, &tx_frame);
+        twai_hal_set_tx_buffer_and_transmit(p_twai_obj->hal, &tx_frame, 0);
         p_twai_obj->tx_msg_count++;
         ret = ESP_OK;
     }
@@ -653,9 +757,9 @@ esp_err_t twai_transmit_v2(twai_handle_t handle, const twai_message_t *message, 
         } else if (xQueueSend(p_twai_obj->tx_queue, &tx_frame, ticks_to_wait) == pdTRUE) {
             //Copied to TX Queue
             portENTER_CRITICAL(&handle->spinlock);
-            if ((!twai_hal_check_state_flags(&p_twai_obj->hal, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED)) && uxQueueMessagesWaiting(p_twai_obj->tx_queue) > 0) {
+            if ((!twai_hal_check_state_flags(p_twai_obj->hal, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED)) && uxQueueMessagesWaiting(p_twai_obj->tx_queue) > 0) {
                 //If the TX buffer is free but the TX queue is not empty. Check if we need to manually start a transmission
-                if (twai_hal_check_state_flags(&p_twai_obj->hal, TWAI_HAL_STATE_FLAG_BUS_OFF) || !twai_hal_check_state_flags(&p_twai_obj->hal, TWAI_HAL_STATE_FLAG_RUNNING)) {
+                if (twai_hal_check_state_flags(p_twai_obj->hal, TWAI_HAL_STATE_FLAG_BUS_OFF) || !twai_hal_check_state_flags(p_twai_obj->hal, TWAI_HAL_STATE_FLAG_RUNNING)) {
                     //TX buffer became free due to bus-off or is no longer running. No need to start a transmission
                     ret = ESP_ERR_INVALID_STATE;
                 } else {
@@ -663,7 +767,7 @@ esp_err_t twai_transmit_v2(twai_handle_t handle, const twai_message_t *message, 
                     int res = xQueueReceive(p_twai_obj->tx_queue, &tx_frame, 0);
                     assert(res == pdTRUE);
                     (void)res;
-                    twai_hal_set_tx_buffer_and_transmit(&p_twai_obj->hal, &tx_frame);
+                    twai_hal_set_tx_buffer_and_transmit(p_twai_obj->hal, &tx_frame, 0);
                     p_twai_obj->tx_msg_count++;
                     ret = ESP_OK;
                 }
@@ -705,7 +809,14 @@ esp_err_t twai_receive_v2(twai_handle_t handle, twai_message_t *message, TickTyp
     portEXIT_CRITICAL(&handle->spinlock);
 
     //Decode frame
-    twai_hal_parse_frame(&rx_frame, message);
+    twai_frame_header_t header = {0};
+    twai_hal_parse_frame(p_twai_obj->hal, &rx_frame, &header, message->data, TWAI_FRAME_MAX_LEN);
+    message->identifier = header.id;
+    message->data_length_code = header.dlc;
+    message->extd = header.ide;
+    message->rtr = header.rtr;
+    //Set remaining bytes of data to 0
+    memset(message->data + message->data_length_code, 0, TWAI_FRAME_MAX_LEN - message->data_length_code);
     return ESP_OK;
 }
 
@@ -785,7 +896,7 @@ esp_err_t twai_initiate_recovery_v2(twai_handle_t handle)
     p_twai_obj->tx_msg_count = 0;
 
     //Trigger start of recovery process
-    twai_hal_start_bus_recovery(&p_twai_obj->hal);
+    twai_hal_start_bus_recovery(p_twai_obj->hal);
     p_twai_obj->state = TWAI_STATE_RECOVERING;
     portEXIT_CRITICAL(&handle->spinlock);
 
@@ -811,8 +922,8 @@ esp_err_t twai_get_status_info_v2(twai_handle_t handle, twai_status_info_t *stat
         status_info->tx_error_counter = 0;
         status_info->rx_error_counter = 0;
     } else {
-        status_info->tx_error_counter = twai_hal_get_tec(&p_twai_obj->hal);
-        status_info->rx_error_counter = twai_hal_get_rec(&p_twai_obj->hal);
+        status_info->tx_error_counter = twai_hal_get_tec(p_twai_obj->hal);
+        status_info->rx_error_counter = twai_hal_get_rec(p_twai_obj->hal);
     }
     status_info->msgs_to_tx = p_twai_obj->tx_msg_count;
     status_info->msgs_to_rx = p_twai_obj->rx_msg_count;
@@ -842,7 +953,7 @@ esp_err_t twai_clear_transmit_queue_v2(twai_handle_t handle)
 
     portENTER_CRITICAL(&handle->spinlock);
     //If a message is currently undergoing transmission, the tx interrupt handler will decrement tx_msg_count
-    p_twai_obj->tx_msg_count = twai_hal_check_state_flags(&p_twai_obj->hal, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) ? 1 : 0;
+    p_twai_obj->tx_msg_count = twai_hal_check_state_flags(p_twai_obj->hal, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) ? 1 : 0;
     xQueueReset(p_twai_obj->tx_queue);
     portEXIT_CRITICAL(&handle->spinlock);
 
@@ -874,3 +985,32 @@ esp_err_t twai_clear_receive_queue(void)
     // the handle-less driver API only support one TWAI controller, i.e. the g_twai_objs[0]
     return twai_clear_receive_queue_v2(g_twai_objs[0]);
 }
+
+#if TWAI_USE_RETENTION_LINK
+static esp_err_t s_twai_create_sleep_retention_link_cb(void *obj)
+{
+    twai_obj_t *host = (twai_obj_t *)obj;
+    return sleep_retention_entries_create(twai_reg_retention_info[host->controller_id].entry_array,
+                                          twai_reg_retention_info[host->controller_id].array_size,
+                                          REGDMA_LINK_PRI_TWAI,
+                                          twai_reg_retention_info[host->controller_id].module_id);
+}
+#endif
+
+#if CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK
+/**
+ * @brief This function will be called during start up, to check that this legacy TWAI driver is not running along with the new TWAI driver
+ */
+__attribute__((constructor))
+static void check_twai_driver_conflict(void)
+{
+    // This function was declared as weak here. The new TWAI driver has the implementation.
+    // So if the new TWAI driver is not linked in, then `twai_new_node_onchip()` should be NULL at runtime.
+    extern __attribute__((weak)) esp_err_t twai_new_node_onchip(const void *node_config, void *node_ret);
+    if ((void *)twai_new_node_onchip != NULL) {
+        ESP_EARLY_LOGE(TWAI_TAG, "CONFLICT! driver_ng is not allowed to be used with this old driver");
+        abort();
+    }
+    ESP_EARLY_LOGW(TWAI_TAG, "This driver is an old driver, please migrate your application code to adapt `esp_twai_onchip.h`");
+}
+#endif

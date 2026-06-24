@@ -6,7 +6,7 @@ Partitions API
 Overview
 --------
 
-The ``esp_partition`` component has higher-level API functions which work with partitions defined in the :doc:`/api-guides/partition-tables`. These APIs are based on lower level API provided by :doc:`/api-reference/peripherals/spi_flash/index`.
+The ``esp_partition`` component has higher-level API functions which work with partitions defined in the :doc:`/api-guides/partition-tables`. These APIs are based on lower-level API provided by :doc:`/api-reference/peripherals/spi_flash/index`.
 
 .. _flash-partition-apis:
 
@@ -24,6 +24,49 @@ This component provides API functions to enumerate partitions found in the parti
 - :cpp:func:`esp_partition_find_first` is a convenience function which returns the structure describing the first partition found by :cpp:func:`esp_partition_find`.
 - :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range` are equivalent to :cpp:func:`esp_flash_read`, :cpp:func:`esp_flash_write`, :cpp:func:`esp_flash_erase_region`, but operate within partition boundaries.
 
+Application Examples
+--------------------
+
+- :example:`storage/partition_api/partition_ops` demonstrates how to perform read, write, and erase operations on a partition table.
+
+- :example:`storage/parttool` demonstrates how to use the partitions tool to perform operations such as reading, writing, erasing partitions, retrieving partition information, and dumping the entire partition table.
+
+- :example:`storage/partition_api/partition_find` demonstrates how to search the partition table and return matching partitions based on set constraints such as partition type, subtype, and label/name.
+
+- :example:`storage/partition_api/partition_mmap` demonstrates how to configure the MMU, map a partition into memory address space for read operations, and verify the data written and read.
+
+Flashing Binaries to Partitions
+-------------------------------
+
+The ``esp_partition_register_target`` function allows registering binary files to be flashed to specific partitions. It creates a per-partition flash target (e.g., ``idf.py mypart-flash``, where ``mypart`` is the name of the partition in ``partitions.csv``) and optionally includes the binary in ``idf.py flash``.
+
+This function is defined in :component_file:`esp_partition/project_include.cmake`.
+
+**Basic usage in a project's CMakeLists.txt:**
+
+.. code-block:: cmake
+
+   esp_partition_register_target(my_partition "${CMAKE_BINARY_DIR}/my_data.bin" FLASH_IN_PROJECT)
+
+This creates a ``my_partition-flash`` target and includes the binary when running ``idf.py flash``.
+
+**Arguments:**
+
+- ``partition_name`` — Name of the partition as defined in the partition table.
+- ``binary_path`` — Path to the binary file to flash.
+- ``FLASH_IN_PROJECT`` (optional) — Also flash this binary when running ``idf.py flash``.
+- ``ALWAYS_PLAINTEXT`` (optional) — Flash without encryption even when flash encryption is enabled. Use for filesystems that don't support encryption (e.g., SPIFFS). Must not be used with partitions marked as ``encrypted`` in the partition table.
+- ``DEPENDS <targets>`` (optional) — CMake targets that must be built before flashing (e.g., a custom target that generates the binary).
+- ``FLASH_IN_PROJECT_DEPENDENCY_TARGETS <targets>`` (optional) — Additional flash targets (e.g., ``encrypted-flash``) that should also depend on the targets specified in ``DEPENDS``. Requires ``FLASH_IN_PROJECT``.
+
+**Component integration examples:**
+
+Several IDF components use ``esp_partition_register_target`` internally:
+
+- :example:`storage/partition_api/partition_ops` uses it to flash a custom partition with predefined content.
+- :component_file:`fatfs/project_include.cmake` — ``fatfs_create_spiflash_image`` creates a FATFS image and registers a ``<partition>-flash`` target.
+- :component_file:`nvs_flash/project_include.cmake` — ``nvs_create_partition_image`` creates an NVS image and registers a ``<partition>-flash`` target.
+- :component_file:`spiffs/project_include.cmake` — ``spiffs_create_partition_image`` creates a SPIFFS image and registers a ``<partition>-flash`` target.
 
 See Also
 --------

@@ -23,6 +23,9 @@
 #include "stack/a2d_sbc.h"
 
 #if (BTC_AV_INCLUDED == TRUE)
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*****************************************************************************
  **  Constants and data types
  *****************************************************************************/
@@ -30,6 +33,7 @@
 /* Codec type */
 #define BTC_AV_CODEC_NONE       0xFF
 #define BTC_AV_CODEC_SBC        A2D_MEDIA_CT_SBC        /* SBC media codec type */
+#define BTC_AV_CODEC_M24        A2D_MEDIA_CT_M24        /* M24 media codec type */
 
 #define BTC_AV_CODEC_PCM        0x5                     /* Raw PCM */
 

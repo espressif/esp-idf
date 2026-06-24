@@ -38,6 +38,12 @@ menu "Example Configuration"
         help
             Set static gateway address.
 
+    config EXAMPLE_TWT_ENABLE_KEEP_ALIVE_QOS_NULL
+        bool "enable keep alive qos null"
+        default n
+        help
+            Enable send QOS NULL to keep alive during TWT.
+
     menu "iTWT Configuration"
         config EXAMPLE_ITWT_TRIGGER_ENABLE
             bool "trigger-enabled"
@@ -105,15 +111,19 @@ menu "Example Configuration"
 
         config EXAMPLE_MAX_CPU_FREQ_80
             bool "80 MHz"
+            depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32S31
         config EXAMPLE_MAX_CPU_FREQ_120
             bool "120 MHz"
-            depends on IDF_TARGET_ESP32C2
+            depends on IDF_TARGET_ESP32C6
         config EXAMPLE_MAX_CPU_FREQ_160
             bool "160 MHz"
-            depends on !IDF_TARGET_ESP32C2
+            depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32S31
         config EXAMPLE_MAX_CPU_FREQ_240
             bool "240 MHz"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            depends on IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32S31
+        config EXAMPLE_MAX_CPU_FREQ_320
+            bool "320 MHz"
+            depends on IDF_TARGET_ESP32S31
     endchoice
 
     config EXAMPLE_MAX_CPU_FREQ_MHZ
@@ -122,10 +132,12 @@ menu "Example Configuration"
         default 120 if EXAMPLE_MAX_CPU_FREQ_120
         default 160 if EXAMPLE_MAX_CPU_FREQ_160
         default 240 if EXAMPLE_MAX_CPU_FREQ_240
+        default 320 if EXAMPLE_MAX_CPU_FREQ_320
 
     choice EXAMPLE_MIN_CPU_FREQ
         prompt "Minimum CPU frequency"
-        default EXAMPLE_MIN_CPU_FREQ_10M
+        default EXAMPLE_MIN_CPU_FREQ_10M if !IDF_TARGET_ESP32C5
+        default EXAMPLE_MIN_CPU_FREQ_12M if IDF_TARGET_ESP32C5
         depends on PM_ENABLE
         help
             Minimum CPU frequency to use for dynamic frequency scaling.
@@ -137,6 +149,9 @@ menu "Example Configuration"
         config EXAMPLE_MIN_CPU_FREQ_20M
             bool "20 MHz (use with 40MHz XTAL)"
             depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
+        config EXAMPLE_MIN_CPU_FREQ_12M
+            bool "12 MHz (use with 48MHz XTAL)"
+            depends on XTAL_FREQ_48 || XTAL_FREQ_AUTO
         config EXAMPLE_MIN_CPU_FREQ_10M
             bool "10 MHz (use with 40MHz XTAL)"
             depends on XTAL_FREQ_40 || XTAL_FREQ_AUTO
@@ -155,5 +170,6 @@ menu "Example Configuration"
         default 10 if EXAMPLE_MIN_CPU_FREQ_10M
         default 26 if EXAMPLE_MIN_CPU_FREQ_26M
         default 13 if EXAMPLE_MIN_CPU_FREQ_13M
+        default 12 if EXAMPLE_MIN_CPU_FREQ_12M
 
 endmenu

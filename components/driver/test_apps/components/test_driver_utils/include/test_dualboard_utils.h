@@ -45,9 +45,10 @@ void test_prepare_buffer_pool(size_t pool_size, uint32_t flags);
  *
  * @param offset           A random offset
  * @param size             Buffer size
+ * @param alignment        Alignment
  * @param[out] out_buffer  Out buffer
  */
-void test_get_buffer_from_pool(uint32_t offset, size_t size, void **out_buffer);
+void test_get_buffer_from_pool(uint32_t offset, size_t size, size_t alignment, void **out_buffer);
 
 /**
  * Destroy the pool

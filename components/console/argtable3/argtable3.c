@@ -390,7 +390,7 @@ static void arg_parse_untagged(int argc, char** argv, struct arg_hdr** table, st
         }
     }
 
-    /* if a tenative error still remains at this point then register it as a proper error */
+    /* if a tentative error still remains at this point then register it as a proper error */
     if (errorlast) {
         arg_register_error(endtable, parentlast, errorlast, optarglast);
         optind++;
@@ -528,7 +528,7 @@ static void arg_cat_option(char* dest, size_t ndest, const char* shortopts, cons
     if (shortopts) {
         char option[3];
 
-        /* note: option array[] is initialiazed dynamically here to satisfy   */
+        /* note: option array[] is initialized dynamically here to satisfy   */
         /* a deficiency in the watcom compiler wrt static array initializers. */
         option[0] = '-';
         option[1] = shortopts[0];
@@ -586,7 +586,7 @@ static void arg_cat_optionv(char* dest, size_t ndest, const char* shortopts, con
             /* "-a|-b|-c" */
             char shortopt[3];
 
-            /* note: shortopt array[] is initialiazed dynamically here to satisfy */
+            /* note: shortopt array[] is initialized dynamically here to satisfy */
             /* a deficiency in the watcom compiler wrt static array initializers. */
             shortopt[0] = '-';
             shortopt[1] = *c;
@@ -865,7 +865,7 @@ void arg_print_glossary(FILE* fp, void** argtable, const char* format) {
 
 /**
  * Print a piece of text formatted, which means in a column with a
- * left and a right margin. The lines are wrapped at whitspaces next
+ * left and a right margin. The lines are wrapped at whitespaces next
  * to right margin. The function does not indent the first line, but
  * only the following ones.
  *
@@ -878,11 +878,6 @@ static void arg_print_formatted_ds(arg_dstr_t ds, const unsigned lmargin, const 
     const unsigned int colwidth = (rmargin - lmargin) + 1;
 
     assert(strlen(text) < UINT_MAX);
-
-    /* Someone doesn't like us... */
-    if (line_end < line_start) {
-        arg_dstr_catf(ds, "%s\n", text);
-    }
 
     while (line_end > line_start) {
         /* Eat leading white spaces. This is essential because while
@@ -945,7 +940,7 @@ static void arg_print_formatted_ds(arg_dstr_t ds, const unsigned lmargin, const 
 
 /**
  * Print a piece of text formatted, which means in a column with a
- * left and a right margin. The lines are wrapped at whitspaces next
+ * left and a right margin. The lines are wrapped at whitespaces next
  * to right margin. The function does not indent the first line, but
  * only the following ones.
  *
@@ -1073,7 +1068,7 @@ void arg_free(void** argtable) {
     do {
         /*
            if we encounter a NULL entry then somewhat incorrectly we presume
-           we have come to the end of the array. It isnt strictly true because
+           we have come to the end of the array. It isn't strictly true because
            an intermediate entry could be NULL with other non-NULL entries to follow.
            The subsequent argtable entries would then not be freed as they should.
          */

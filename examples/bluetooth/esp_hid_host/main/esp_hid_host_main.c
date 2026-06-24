@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -51,6 +51,24 @@
 
 static const char *TAG = "ESP_HIDH_DEMO";
 
+#if CONFIG_BT_HID_HOST_ENABLED
+static const char * remote_device_name = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
+#endif // CONFIG_BT_HID_HOST_ENABLED
+
+#if !CONFIG_BT_NIMBLE_ENABLED
+static char *bda2str(uint8_t *bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
+#endif
+
 void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
     esp_hidh_event_t event = (esp_hidh_event_t)id;
@@ -60,8 +78,10 @@ void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *
     case ESP_HIDH_OPEN_EVENT: {
         if (param->open.status == ESP_OK) {
             const uint8_t *bda = esp_hidh_dev_bda_get(param->open.dev);
-            ESP_LOGI(TAG, ESP_BD_ADDR_STR " OPEN: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->open.dev));
-            esp_hidh_dev_dump(param->open.dev, stdout);
+            if (bda) {
+                ESP_LOGI(TAG, ESP_BD_ADDR_STR " OPEN: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->open.dev));
+                esp_hidh_dev_dump(param->open.dev, stdout);
+            }
         } else {
             ESP_LOGE(TAG, " OPEN failed!");
         }
@@ -69,26 +89,34 @@ void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *
     }
     case ESP_HIDH_BATTERY_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->battery.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " BATTERY: %d%%", ESP_BD_ADDR_HEX(bda), param->battery.level);
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " BATTERY: %d%%", ESP_BD_ADDR_HEX(bda), param->battery.level);
+        }
         break;
     }
     case ESP_HIDH_INPUT_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->input.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
-        ESP_LOG_BUFFER_HEX(TAG, param->input.data, param->input.length);
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
+            ESP_LOG_BUFFER_HEX(TAG, param->input.data, param->input.length);
+        }
         break;
     }
     case ESP_HIDH_FEATURE_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->feature.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " FEATURE: %8s, MAP: %2u, ID: %3u, Len: %d", ESP_BD_ADDR_HEX(bda),
-                 esp_hid_usage_str(param->feature.usage), param->feature.map_index, param->feature.report_id,
-                 param->feature.length);
-        ESP_LOG_BUFFER_HEX(TAG, param->feature.data, param->feature.length);
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " FEATURE: %8s, MAP: %2u, ID: %3u, Len: %d", ESP_BD_ADDR_HEX(bda),
+                    esp_hid_usage_str(param->feature.usage), param->feature.map_index, param->feature.report_id,
+                    param->feature.length);
+            ESP_LOG_BUFFER_HEX(TAG, param->feature.data, param->feature.length);
+        }
         break;
     }
     case ESP_HIDH_CLOSE_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->close.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " CLOSE: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->close.dev));
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " CLOSE: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->close.dev));
+        }
         break;
     }
     default:
@@ -136,16 +164,26 @@ void hid_demo_task(void *pvParameters)
                 printf("] srv 0x%03x, ", r->bt.cod.service);
                 print_uuid(&r->bt.uuid);
                 printf(", ");
+                if (r->name && strncmp(r->name, remote_device_name, strlen(remote_device_name)) == 0) {
+                    break;
+                }
             }
 #endif /* CONFIG_BT_HID_HOST_ENABLED */
             printf("NAME: %s ", r->name ? r->name : "");
             printf("\n");
             r = r->next;
         }
+
+#if CONFIG_BT_HID_HOST_ENABLED
+        if (cr && cr->name && strncmp(cr->name, remote_device_name, strlen(remote_device_name)) == 0) {
+            esp_hidh_dev_open(cr->bda, cr->transport, cr->ble.addr_type);
+        }
+#else
         if (cr) {
             //open the last result
             esp_hidh_dev_open(cr->bda, cr->transport, cr->ble.addr_type);
         }
+#endif // CONFIG_BT_HID_HOST_ENABLED
         //free the results
         esp_hid_scan_results_free(results);
     }
@@ -188,16 +226,41 @@ void app_main(void)
     };
     ESP_ERROR_CHECK( esp_hidh_init(&config) );
 
+#if !CONFIG_BT_NIMBLE_ENABLED
+    char bda_str[18] = {0};
+    ESP_LOGI(TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
+#endif
+
+
 #if CONFIG_BT_NIMBLE_ENABLED
     /* XXX Need to have template for store */
     ble_store_config_init();
 
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 	/* Starting nimble task after gatts is initialized*/
-    ret = esp_nimble_enable(ble_hid_host_task);
-    if (ret) {
-        ESP_LOGE(TAG, "esp_nimble_enable failed: %d", ret);
+    nimble_port_freertos_init(ble_hid_host_task);
+
+    vTaskDelay(200);
+
+    uint8_t own_addr_type = 0;
+    int rc;
+    uint8_t addr_val[6] = {0};
+
+    rc = ble_hs_id_copy_addr(BLE_ADDR_PUBLIC, NULL, NULL);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+
+    if (rc != 0) {
+        ESP_LOGI(TAG, "error determining address type; rc=%d\n", rc);
+        return;
     }
+
+    rc = ble_hs_id_copy_addr(own_addr_type, addr_val, NULL);
+
+    ESP_LOGI(TAG, "Device Address: ");
+    ESP_LOGI(TAG, "%02x:%02x:%02x:%02x:%02x:%02x \n", addr_val[5], addr_val[4], addr_val[3],
+		                                      addr_val[2], addr_val[1], addr_val[0]);
+
 #endif
     xTaskCreate(&hid_demo_task, "hid_task", 6 * 1024, NULL, 2, NULL);
 }

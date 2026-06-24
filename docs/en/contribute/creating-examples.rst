@@ -24,13 +24,12 @@ Checklist
 
 Checklist before submitting a new example:
 
-* Example project name (in ``README.md``) uses the word "example". Use "example" instead of "demo", "test" or similar words.
 * Example does one distinct thing. If the example does more than one thing at a time, split it into two or more examples.
 * Example has a ``README.md`` file which is similar to the :idf_file:`template example README <docs/TEMPLATE_EXAMPLE_README.md>`.
 * Functions and variables in the example are named according to :ref:`naming section of the style guide <style-guide-naming>`. For non-static names which are only specific to the example's source files, you can use ``example`` or something similar as a prefix.
 * All code in the example is well structured and commented.
 * Any unnecessary code (old debugging logs, commented-out code, etc.) is removed from the example.
 * Options in the example (like network names, addresses, etc) are not hard-coded. Use configuration items if possible, or otherwise declare macros or constants.
-* Configuration items are provided in a ``KConfig.projbuild`` file with a menu named "Example Configuration". See existing example projects to see how this is done.
+* Configuration items are provided in a ``Kconfig.projbuild`` file with a menu named "Example Configuration". See existing example projects to see how this is done.
 * All original example code has a license header saying it is "in the public domain / CC0", and a warranty disclaimer clause. Alternatively, the example is licensed under Apache License 2.0. See existing examples for headers to adapt from.
 * Any adapted or third party example code has the original license header on it. This code must be licensed compatible with Apache License 2.0.

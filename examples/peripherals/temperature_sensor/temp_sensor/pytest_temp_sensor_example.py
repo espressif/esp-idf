@@ -1,18 +1,17 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded.dut import Dut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_TEMP_SENSOR_SUPPORTED == 1'),
+    indirect=['target'],
+)
 def test_temp_sensor_example(dut: Dut) -> None:
     dut.expect_exact('Install temperature sensor')
     dut.expect_exact('Enable temperature sensor')

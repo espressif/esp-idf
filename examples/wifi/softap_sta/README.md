@@ -1,12 +1,12 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 | ESP32-P4 | ESP32-H2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Wi-Fi SoftAP & Station Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use the ESP Wi-Fi driver to act as both an Access Point and a Station simultaneously using the SoftAP and Station features.
-With NAPT enabled on the softAP interface and the station interface set as the defaut interface this example can be used as Wifi nat router.
+With NAPT enabled on the softAP interface and the station interface set as the default interface this example can be used as Wifi nat router.
 
 ## How to use example
 ### Configure the project
@@ -64,6 +64,10 @@ I (3920) WiFi Sta: Got IP:192.168.5.2
 I (3920) esp_netif_handlers: sta ip: 192.168.5.2, mask: 255.255.255.0, gw: 192.168.5.1
 I (3920) WiFi Sta: connected to ap SSID:myssid_c3 password:mypassword_c3
 ```
+
+## Running the example on ESP Chips without Wi-Fi
+
+This example can run on ESP Chips without Wi-Fi using ESP-Hosted. See the [Two-Chip Solution](../README.md#wi-fi-examples-with-two-chip-solution) section in the upper level `README.md` for information.
 
 ## Troubleshooting
 

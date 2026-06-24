@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     // Create a semaphore
     if ((semaphore = xSemaphoreCreateCounting(1, 0)) == NULL) {
         BT_ERR("Failed to create semaphore");
+        bt_mesh_host_deinit();
         return ESP_ERR_NO_MEM;
     }
 
@@ -50,6 +51,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL) != BT_STATUS_SUCCESS) {
         vSemaphoreDelete(semaphore);
         BT_ERR("Failed to start mesh init");
+        bt_mesh_host_deinit();
         return ESP_FAIL;
     }
 
@@ -96,7 +98,7 @@ esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
     }
 
     /* Take the Semaphore, wait BLE Mesh de-initialization to finish. */
-    xSemaphoreTake(semaphore, portMAX_DELAY);
+    __ASSERT(xSemaphoreTake(semaphore, 3000 / portTICK_PERIOD_MS) == pdTRUE, "BLE Mesh deinit take semaphore failed");
     /* Don't forget to delete the semaphore at the end. */
     vSemaphoreDelete(semaphore);
 

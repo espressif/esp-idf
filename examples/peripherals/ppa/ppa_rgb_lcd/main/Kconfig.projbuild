@@ -1,0 +1,15 @@
+menu "Example Configuration"
+    choice EXAMPLE_SOURCE_IMAGE_FORMAT
+        prompt "Select source image format"
+        default EXAMPLE_SOURCE_IMAGE_FORMAT_JPEG
+        help
+            Select the source image format
+
+        config EXAMPLE_SOURCE_IMAGE_FORMAT_JPEG
+            bool "JPEG"
+
+        config EXAMPLE_SOURCE_IMAGE_FORMAT_RGB565
+            bool "RGB565"
+    endchoice
+
+endmenu

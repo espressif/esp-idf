@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
@@ -7,7 +8,9 @@ endif()
 idf_component_register(PRIV_REQUIRES partition_table esptool_py)
 
 # Do not generate flash file when building bootloader or is in early expansion of the build
-if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
+# This also applies to the ESP-TEE build, as the esp_tee component only requires the
+# Kconfig options from the bootloader
+if(BOOTLOADER_BUILD OR esp_tee_build OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 
@@ -29,4 +32,12 @@ if(NOT CONFIG_SECURE_BOOT OR CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT)
     esptool_py_flash_target_image(flash bootloader
         ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH}
         "${BOOTLOADER_BUILD_DIR}/bootloader.bin")
+
+    # Add bootloader as a dependency to the flash target
+    add_dependencies(flash bootloader)
+
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        # Also add bootloader as a dependency to the encrypted-flash target
+        add_dependencies(encrypted-flash bootloader)
+    endif()
 endif()

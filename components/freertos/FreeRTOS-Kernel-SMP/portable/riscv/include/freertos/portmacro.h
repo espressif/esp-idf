@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,10 +27,27 @@ uxPriority (4)
 #define PORT_OFFSET_PX_STACK 0x30
 #endif /* #if CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES */
 
+#if ( configNUMBER_OF_CORES > 1 )
+#define PORT_TCB_CORE_FIELDS_SIZE 8
+#else
+#define PORT_TCB_CORE_FIELDS_SIZE 0
+#endif
+
+#if ( configUSE_TASK_PREEMPTION_DISABLE == 1 )
+#define PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE 4
+#else
+#define PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE 0
+#endif
+
+/* Align the value up to the nearest multiple of 4 */
+#define PORT_ALIGN_UP_TO_4(value) (((value) + 3) & ~3)
+
 #define PORT_OFFSET_PX_END_OF_STACK ( \
     PORT_OFFSET_PX_STACK \
     + 4                                 /* StackType_t * pxStack */ \
-    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_TCB_CORE_FIELDS_SIZE                     /* BaseType_t xDummy23 + UBaseType_t uxDummy24 */ \
+    + PORT_ALIGN_UP_TO_4(configMAX_TASK_NAME_LEN)   /* pcTaskName[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_TCB_PREEMPT_DISABLE_FIELD_SIZE           /* BaseType_t xDummy25 */ \
 )
 
 #ifndef __ASSEMBLER__
@@ -78,9 +95,6 @@ typedef uint32_t TickType_t;
 #define portTASK_FUNCTION_PROTO( vFunction, pvParameters )  void vFunction( void *pvParameters )
 #define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( void *pvParameters )
 
-// interrupt module will mask interrupt with priority less than threshold
-#define RVHAL_EXCM_LEVEL            4
-
 /* ----------------------------------------------- Port Configurations -------------------------------------------------
  * - Configurations values supplied by each port
  * - Required by FreeRTOS
@@ -112,6 +126,13 @@ typedef spinlock_t                          portMUX_TYPE;               /**< Spi
 // --------------------- Interrupts ------------------------
 
 BaseType_t xPortCheckIfInISR(void);
+
+/**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortCheckIfInISR() internally
+ */
+void vPortAssertIfInISR(void);
 
 // ------------------ Critical Sections --------------------
 
@@ -169,9 +190,6 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 
@@ -184,8 +202,30 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 // --------------------- Interrupts ------------------------
 
 #define portDISABLE_INTERRUPTS()                    ulPortSetInterruptMask()
-#define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(1)
+#if !SOC_INT_CLIC_SUPPORTED
+#define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(RVHAL_INTR_ENABLE_THRESH)
+#else
+#define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(RVHAL_INTR_ENABLE_THRESH_CLIC)
+#endif /* !SOC_INT_CLIC_SUPPORTED */
 #define portRESTORE_INTERRUPTS(x)                   vPortClearInterruptMask(x)
+
+#define portSET_INTERRUPT_MASK_FROM_ISR() ({           \
+    unsigned int cur_level; \
+    cur_level = ulPortSetInterruptMask(); \
+    cur_level; \
+})
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)        portRESTORE_INTERRUPTS(x)
+#define portSET_INTERRUPT_MASK()                    portSET_INTERRUPT_MASK_FROM_ISR()
+#define portCLEAR_INTERRUPT_MASK(x)                 portCLEAR_INTERRUPT_MASK_FROM_ISR(x)
+
+/**
+ * @brief Assert if in ISR context
+ *
+ * TODO: Enable once ISR safe version of vTaskEnter/ExitCritical() is implemented
+ * for single-core SMP FreeRTOS Kernel. (IDF-10540)
+ */
+// #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
+
 
 // ------------------ Critical Sections --------------------
 
@@ -210,16 +250,8 @@ extern void vTaskExitCritical( void );
 #define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-#define portSET_INTERRUPT_MASK_FROM_ISR() ({ \
-    unsigned int cur_level; \
-    cur_level = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG); \
-    vTaskEnterCritical(); \
-    cur_level; \
-})
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x) ({ \
-    vTaskExitCritical(); \
-    portRESTORE_INTERRUPTS(x); \
-})
+#define portENTER_CRITICAL_FROM_ISR() vTaskEnterCriticalFromISR()
+#define portEXIT_CRITICAL_FROM_ISR(x) vTaskExitCriticalFromISR(x)
 
 // ---------------------- Yielding -------------------------
 
@@ -239,10 +271,9 @@ extern void vTaskExitCritical( void );
 // ------------------- Run Time Stats ----------------------
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#define portGET_RUN_TIME_COUNTER_VALUE()            0
-#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-/* Coarse resolution time (us) */
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x)       do {x = (uint32_t)esp_timer_get_time();} while(0)
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()        xPortGetRunTimeCounterValue()
 #endif
 
 // --------------------- TCB Cleanup -----------------------
@@ -296,6 +327,24 @@ and vPortExitCritical() from precompiled libraries (.a) thereby failing linking.
 void vPortEnterCritical(void);
 void vPortExitCritical(void);
 
+/**
+ * @brief Claim thread-safe region start
+ *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeClaim(void);
+
+/**
+ * @brief Claim thread-safe region end
+ *        Restores normal port critical behavior
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeDisclaim(void);
+
+extern volatile bool port_xThreadSafeClaimed;
+
 //IDF task critical sections
 #define portTRY_ENTER_CRITICAL(lock, timeout)       ({(void) lock; (void) timeout; vPortEnterCritical(); pdPASS;})
 #define portENTER_CRITICAL_IDF(lock)                ({(void) lock; vPortEnterCritical();})
@@ -310,23 +359,28 @@ void vPortExitCritical(void);
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+static inline bool xPortCanYield(void)
 {
-    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
 #if SOC_INT_CLIC_SUPPORTED
-    threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
-
-    /* When CLIC is supported, the lowest interrupt threshold level is 0.
-     * Therefore, an interrupt threshold level above 0 would mean that we
-     * are either in a critical section or in an ISR.
+    /* When CLIC is supported:
+     *  - The lowest interrupt threshold level is 0. Therefore, an interrupt threshold level above 0 would mean that we
+     *    are in a critical section.
+     *  - Since CLIC enables HW interrupt nesting, we do not have the updated interrupt level in the
+     *    INTERRUPT_CURRENT_CORE_INT_THRESH_REG register when nested interrupts occur. To know the current interrupt
+     *    level, we read the machine-mode interrupt level (mil) field from the mintstatus CSR. A non-zero value indicates
+     *    that we are in an interrupt context.
      */
-    return (threshold == 0);
-#endif /* SOC_INT_CLIC_SUPPORTED */
+    uint32_t threshold = rv_utils_get_interrupt_threshold();
+    uint32_t intr_level = rv_utils_get_interrupt_level();
+    return ((intr_level == 0) && (threshold == 0));
+#else/* !SOC_INT_CLIC_SUPPORTED */
+    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1
      * means not in critical code
      */
     return (threshold <= 1);
+#endif
 }
 
 // Defined even for configNUMBER_OF_CORES > 1 for IDF compatibility
@@ -382,7 +436,7 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile BaseType_t xPortSwitchFlag;
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
 #else
@@ -400,19 +454,13 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <limits.h>
 #include "esp_attr.h"
 #include "esp_newlib.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 
-/* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
-#include <limits.h>
-
-/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
-#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#include "esp_timer.h"
-#endif
 
 #ifdef __cplusplus
 }

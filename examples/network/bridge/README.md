@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 # Bridge Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -14,7 +14,7 @@ Performance of this type of "software" bridge is limited by the performance of E
 
 ## How to use example
 
-The bellow sections demonstrate just two basic bridge configurations. However, note that additional combinations are possible.
+The below sections demonstrate just two basic bridge configurations. However, note that additional combinations are possible.
 
 ### Example 1 - Ethernet Interfaces, DHCP Client
 
@@ -45,6 +45,8 @@ The work flow of the example is then as follows:
 ## Hardware Required
 
 To run this example, it's recommended that you have either an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html), or 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chips and connected with supported SPI Ethernet modules (for example `DM9051`, `W5500` or `KSZ8851SNL`). Or ESP32(S/C series) board without internal Ethernet interface but connected to multiple SPI Ethernet modules. Note that it is recommended to use multiple SPI Ethernet modules of the same type rather than combination of internal EMAC and SPI module since you don't need to take care of load balancing (internal EMAC has much higher bandwidth than SPI Ethernet modules).
+
+The example will also work on the [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html). It has an internal Ethernet interface, with WiFi provided by the onboard ESP32-C6 using the [ESP-Hosted](https://components.espressif.com/components/espressif/esp_hosted/) component.
 
 ### Pin Assignment
 

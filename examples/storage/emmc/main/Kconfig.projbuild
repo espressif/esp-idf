@@ -28,28 +28,34 @@ menu "eMMC Example Configuration"
         config EXAMPLE_PIN_CMD
             int "CMD GPIO number"
             default 33 if IDF_TARGET_ESP32S3
+            default 44 if IDF_TARGET_ESP32P4
 
         config EXAMPLE_PIN_CLK
             int "CLK GPIO number"
             default 34 if IDF_TARGET_ESP32S3
+            default 43 if IDF_TARGET_ESP32P4
 
         config EXAMPLE_PIN_D0
             int "D0 GPIO number"
             default 37 if IDF_TARGET_ESP32S3
+            default 39 if IDF_TARGET_ESP32P4
 
         if EXAMPLE_EMMC_BUS_WIDTH_4 || EXAMPLE_EMMC_BUS_WIDTH_8
 
             config EXAMPLE_PIN_D1
                 int "D1 GPIO number"
                 default 38 if IDF_TARGET_ESP32S3
+                default 40 if IDF_TARGET_ESP32P4
 
             config EXAMPLE_PIN_D2
                 int "D2 GPIO number"
                 default 39 if IDF_TARGET_ESP32S3
+                default 41 if IDF_TARGET_ESP32P4
 
             config EXAMPLE_PIN_D3
                 int "D3 GPIO number"
                 default 36 if IDF_TARGET_ESP32S3
+                default 42 if IDF_TARGET_ESP32P4
 
         endif  # EXAMPLE_EMMC_BUS_WIDTH_4 || EXAMPLE_EMMC_BUS_WIDTH_8
 
@@ -58,18 +64,26 @@ menu "eMMC Example Configuration"
             config EXAMPLE_PIN_D4
                 int "D4 GPIO number"
                 default 35 if IDF_TARGET_ESP32S3
+                default 45 if IDF_TARGET_ESP32P4
+                default -1
 
             config EXAMPLE_PIN_D5
                 int "D5 GPIO number"
                 default 40 if IDF_TARGET_ESP32S3
+                default 46 if IDF_TARGET_ESP32P4
+                default -1
 
             config EXAMPLE_PIN_D6
                 int "D6 GPIO number"
                 default 42 if IDF_TARGET_ESP32S3
+                default 47 if IDF_TARGET_ESP32P4
+                default -1
 
             config EXAMPLE_PIN_D7
                 int "D7 GPIO number"
                 default 41 if IDF_TARGET_ESP32S3
+                default 48 if IDF_TARGET_ESP32P4
+                default -1
 
         endif  # EXAMPLE_EMMC_BUS_WIDTH_8
 

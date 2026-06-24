@@ -1,0 +1,3 @@
+components/esp_gdbstub/test_gdbstub_host/rv_decode:
+  enable:
+    - if: IDF_TARGET == "linux"

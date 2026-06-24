@@ -1,18 +1,5 @@
 menu "Example Configuration"
 
-    choice EXAMPLE_LCD_CONTROLLER
-        prompt "LCD controller model"
-        default EXAMPLE_LCD_CONTROLLER_ILI9341
-        help
-            Select LCD controller model
-
-        config EXAMPLE_LCD_CONTROLLER_ILI9341
-            bool "ILI9341"
-
-        config EXAMPLE_LCD_CONTROLLER_GC9A01
-            bool "GC9A01"
-    endchoice
-
     config EXAMPLE_LCD_TOUCH_ENABLED
         bool "Enable LCD touch"
         default n
@@ -30,6 +17,18 @@ menu "Example Configuration"
             bool "STMPE610"
             help
                 Touch controller STMPE610 connected via SPI.
+
+        config EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+            bool "XPT2046"
+            help
+                Touch controller XPT2046 connected via SPI.
     endchoice
+
+    config EXAMPLE_LCD_MIRROR_Y
+        int
+        default 1 if EXAMPLE_LCD_TOUCH_ENABLED && EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+        default 0
+        help
+            This value is 1 if XPT2046 touch controller is selected, 0 otherwise.
 
 endmenu

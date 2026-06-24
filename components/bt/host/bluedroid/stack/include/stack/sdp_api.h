@@ -180,15 +180,16 @@ extern "C"
 ** Function         SDP_InitDiscoveryDb
 **
 ** Description      This function is called to initialize a discovery database.
+**                  It will no longer use p_attr_list and p_uuid_list after calling it.
 **
 ** Returns          TRUE if successful, FALSE if one or more parameters are bad
 **
 *******************************************************************************/
 extern BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len,
                                     UINT16 num_uuid,
-                                    tSDP_UUID *p_uuid_list,
+                                    const tSDP_UUID *p_uuid_list,
                                     UINT16 num_attr,
-                                    UINT16 *p_attr_list);
+                                    const UINT16 *p_attr_list);
 
 /*******************************************************************************
 **
@@ -365,6 +366,20 @@ extern BOOLEAN SDP_FindProtocolListElemInRec (tSDP_DISC_REC *p_rec,
         UINT16 layer_uuid,
         tSDP_PROTOCOL_ELEM *p_elem);
 
+/*******************************************************************************
+**
+** Function         SDP_FindProtocolListElem
+**
+** Description      This function looks at the protocol list for a specific protocol
+**                  list element.
+**
+** Returns          TRUE if found, FALSE if not
+**                  If found, the passed protocol list element is filled in.
+**
+*******************************************************************************/
+extern BOOLEAN SDP_FindProtocolListElem (tSDP_DISC_ATTR *p_protocol_list,
+        UINT16 layer_uuid,
+        tSDP_PROTOCOL_ELEM *p_elem);
 
 /*******************************************************************************
 **
@@ -409,7 +424,7 @@ extern BOOLEAN SDP_FindProfileVersionInRec (tSDP_DISC_REC *p_rec,
 **
 ** Description      This function is called to create a record in the database.
 **                  This would be through the SDP database maintenance API. The
-**                  record is created empty, teh application should then call
+**                  record is created empty, the application should then call
 **                  "add_attribute" to add the record's attributes.
 **
 ** Returns          Record handle if OK, else 0.

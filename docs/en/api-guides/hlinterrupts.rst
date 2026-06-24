@@ -77,8 +77,8 @@ Using these symbols is done by creating an assembly file with suffix ``.S`` and 
 .. code-block:: none
 
         .section .iram1,"ax"
-        .global     xt_highint5
-        .type       xt_highint5,@function
+        .global     xt_highint4
+        .type       xt_highint4,@function
         .align      4
     xt_highint5:
         ... your code here
@@ -114,8 +114,10 @@ Then, in the component ``CMakeLists.txt``, add this name as an unresolved symbol
 
 This will ensure the linker to always includes the file defining ``ld_include_my_isr_file``, so that the ISR is always linked.
 
-- High-priority interrupts can be routed and handled using :cpp:func:`esp_intr_alloc` and associated functions. The handler and handler arguments to :cpp:func:`esp_intr_alloc` must be NULL, however.
+- High-priority interrupts can be routed and handled using :cpp:func:`esp_intr_alloc` and associated functions. However, the handler and handler arguments to :cpp:func:`esp_intr_alloc` must be NULL.
 
 - In theory, medium priority interrupts could also be handled in this way. ESP-IDF does not support this yet.
 
 - To check Xtensa instruction set architecture (ISA), please refer to `Xtensa ISA Summary <https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf>`_.
+
+See :example:`system/nmi_isr` for an example of how to implement a custom NMI handler on Xtensa-based targets.

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 """
 Test case for iperf example.
@@ -15,34 +15,42 @@ The test env wifi_iperf do need the following config::
     pc_nic: "eth1"
 
 """
+
 import os
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from common_test_methods import get_env_config_variable
 from common_test_methods import get_host_ip_by_interface
 from idf_iperf_test_util import IperfUtility
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 # configurations
 RETRY_COUNT_FOR_BEST_PERFORMANCE = 2
-NO_BANDWIDTH_LIMIT = -1  # iperf send bandwith is not limited
+NO_BANDWIDTH_LIMIT = -1  # iperf send bandwidth is not limited
 
 # Use default value `99` for config with best performance.
 BEST_PERFORMANCE_CONFIG = '99'
 
 
-@pytest.mark.esp32
+# Performance thresholds (Mbps)
+WIFI_IPERF_THRESHOLDS = {
+    'tcp_tx_throughput': 40,
+    'tcp_rx_throughput': 45,
+    'udp_tx_throughput': 50,
+    'udp_rx_throughput': 64,
+}
+
+
 @pytest.mark.temp_skip_ci(targets=['esp32s2', 'esp32c3', 'esp32s3'], reason='lack of runners (run only for ESP32)')
 @pytest.mark.timeout(1200)
 @pytest.mark.wifi_iperf
-@pytest.mark.parametrize('config', [
-    BEST_PERFORMANCE_CONFIG
-], indirect=True)
+@pytest.mark.parametrize('config', [BEST_PERFORMANCE_CONFIG], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_wifi_throughput_basic(
     dut: Dut,
     log_performance: Callable[[str, str], None],
-    check_performance: Callable[[str, float, str], None],
 ) -> None:
     """
     steps: |
@@ -69,8 +77,9 @@ def test_wifi_throughput_basic(
         'udp_rx': IperfUtility.TestResult('udp', 'rx', BEST_PERFORMANCE_CONFIG),
     }
 
-    test_utility = IperfUtility.IperfTestUtility(dut, BEST_PERFORMANCE_CONFIG, ap_info['ssid'], ap_info['password'],
-                                                 pc_nic_ip, pc_iperf_log_file, test_result)
+    test_utility = IperfUtility.IperfTestUtility(
+        dut, BEST_PERFORMANCE_CONFIG, ap_info['ssid'], ap_info['password'], pc_nic_ip, pc_iperf_log_file, test_result
+    )
 
     # 3. run test for TCP Tx, Rx and UDP Tx, Rx
     for _ in range(RETRY_COUNT_FOR_BEST_PERFORMANCE):
@@ -78,10 +87,19 @@ def test_wifi_throughput_basic(
 
     # 4. log performance and compare with pass standard
     for throughput_type in test_result:
-        log_performance('{}_throughput'.format(throughput_type),
-                        '{:.02f} Mbps'.format(test_result[throughput_type].get_best_throughput()))
+        throughput_value = test_result[throughput_type].get_best_throughput()
+        log_performance(
+            f'{throughput_type}_throughput',
+            f'{throughput_value:.02f} Mbps',
+        )
 
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
-        check_performance('{}_throughput'.format(throughput_type),
-                          test_result[throughput_type].get_best_throughput(), dut.target)
+        threshold_key = f'{throughput_type}_throughput'
+        threshold_value = WIFI_IPERF_THRESHOLDS.get(threshold_key)
+        if threshold_value is None:
+            raise ValueError(f'No threshold defined for {threshold_key}')
+        throughput_value = test_result[throughput_type].get_best_throughput()
+        assert throughput_value >= threshold_value, (
+            f"[Performance] {threshold_key} value is {throughput_value}, doesn't meet pass standard {threshold_value}"
+        )

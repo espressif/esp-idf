@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -12,7 +12,7 @@
 #endif
 
 #include "esp_bit_defs.h"
-#include "reg_base.h"
+#include "soc/reg_base.h"
 
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
@@ -26,12 +26,10 @@
 #define DR_REG_DTAG_TABLE                       0x600C8000
 #define DR_REG_EXT_MEM_ENC                      0x600CC000
 
-
 #define REG_UHCI_BASE(i)        (DR_REG_UHCI0_BASE - (i) * 0x8000)
 #define REG_UART_BASE( i )      (DR_REG_UART_BASE + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
 #define REG_UART_AHB_BASE(i)    (0x60000000 + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
 #define UART_FIFO_AHB_REG(i)    (REG_UART_AHB_BASE(i) + 0x0)
-#define REG_I2S_BASE( i )       (DR_REG_I2S_BASE + (i) * 0x1E000)
 #define REG_TIMG_BASE(i)        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
 #define REG_SPI_MEM_BASE(i)     (DR_REG_SPI0_BASE - (i) * 0x1000)
 #define REG_SPI_BASE(i)         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
@@ -150,19 +148,8 @@
 #endif /* !ULP_RISCV_REGISTER_OPS */
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            (40*1000000)
-#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                (80*1000000)
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             (80*1000000)
-#define  REF_CLK_FREQ                                (1000000)
-#define  XTAL_CLK_FREQ                               (40*1000000)
-#define  UART_CLK_FREQ                               APB_CLK_FREQ
-#define  WDT_CLK_FREQ                                APB_CLK_FREQ
-#define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
-#define  SPI_CLK_DIV                                 4
-#define  TICKS_PER_US_ROM                            40              // CPU is 80MHz
-#define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
 /* Overall memory map */
@@ -191,7 +178,6 @@
 #define SOC_EXTRAM_DATA_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW)
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
-
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x40378000
 #define SOC_DIRAM_IRAM_HIGH   0x403E0000
@@ -209,7 +195,6 @@
 // Region of memory accessible via DMA in external memory. See esp_ptr_dma_ext_capable().
 #define SOC_DMA_EXT_LOW     SOC_EXTRAM_DATA_LOW
 #define SOC_DMA_EXT_HIGH    SOC_EXTRAM_DATA_HIGH
-
 
 // Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
 #define SOC_BYTE_ACCESSIBLE_LOW     0x3FC88000

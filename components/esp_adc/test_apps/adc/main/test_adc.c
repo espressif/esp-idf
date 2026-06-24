@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/adc_periph.h"
+#include "hal/adc_periph.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_adc/adc_monitor.h"
 #include "driver/gpio.h"
@@ -27,12 +27,10 @@ const __attribute__((unused)) static char *TAG = "TEST_ADC";
 #define ADC1_TEST_CHAN0          ADC_CHANNEL_4
 #define ADC1_TEST_CHAN1          ADC_CHANNEL_5
 #define ADC2_TEST_CHAN0          ADC_CHANNEL_0
-static const char *TAG_CH[2][10] = {{"ADC1_CH4", "ADC1_CH5"}, {"ADC2_CH0"}};
 #else
 #define ADC1_TEST_CHAN0          ADC_CHANNEL_2
 #define ADC1_TEST_CHAN1          ADC_CHANNEL_3
 #define ADC2_TEST_CHAN0          ADC_CHANNEL_0
-static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 #endif
 
 /*---------------------------------------------------------------
@@ -41,12 +39,16 @@ static const char *TAG_CH[2][10] = {{"ADC1_CH2", "ADC1_CH3"}, {"ADC2_CH0"}};
 //ESP32C3 ADC2 oneshot mode is not supported anymore
 #define ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2    ((SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3)
 
-TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
-{
-    static int adc_raw[2][10];
+static int adc_raw[2][10];
+static adc_oneshot_unit_handle_t adc1_handle;
+#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+static adc_oneshot_unit_handle_t adc2_handle;
+#endif
 
+static void adc_oneshot_init_test(void)
+{
     //-------------ADC1 Init---------------//
-    adc_oneshot_unit_handle_t adc1_handle;
+
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
@@ -55,7 +57,6 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     //-------------ADC2 Init---------------//
-    adc_oneshot_unit_handle_t adc2_handle;
     adc_oneshot_unit_init_cfg_t init_config2 = {
         .unit_id = ADC_UNIT_2,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
@@ -66,7 +67,7 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
+        .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(adc1_handle, ADC1_TEST_CHAN0, &config));
 
@@ -77,45 +78,59 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     //-------------ADC2 TEST Channel 0 Config---------------//
     TEST_ESP_OK(adc_oneshot_config_channel(adc2_handle, ADC2_TEST_CHAN0, &config));
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
 
+static void adc_oneshot_read_test(void)
+{
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][0]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, false, adc_raw[0][0], false, false);
 
-    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN1, false, adc_raw[0][1], false, false);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[1][0]);
+    test_assert_adc_raw(ADC_UNIT_2, ADC2_TEST_CHAN0, false, adc_raw[1][0], false, false);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][0]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, true, adc_raw[0][0], false, false);
 
-    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN1, true, adc_raw[0][1], false, false);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[1][0]);
+    test_assert_adc_raw(ADC_UNIT_2, ADC2_TEST_CHAN0, true, adc_raw[1][0], false, false);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
 
+static void adc_oneshot_deinit_test(void)
+{
     TEST_ESP_OK(adc_oneshot_del_unit(adc1_handle));
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     TEST_ESP_OK(adc_oneshot_del_unit(adc2_handle));
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
+}
+
+TEST_CASE("ADC oneshot basic test", "[adc_oneshot]")
+{
+    adc_oneshot_init_test();
+    adc_oneshot_read_test();
+    printf("ADC onshot re-read: \n");
+    adc_oneshot_read_test();
+    adc_oneshot_deinit_test();
+
+    printf("ADC onshot re-start: \n");
+    adc_oneshot_init_test();
+    adc_oneshot_read_test();
+    adc_oneshot_deinit_test();
 }
 
 TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_oneshot]")
@@ -124,7 +139,7 @@ TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_on
 
     int test_num = 100;
     adc_channel_t channel = ADC1_TEST_CHAN1;
-    adc_atten_t atten = ADC_ATTEN_DB_12;
+    adc_atten_t atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
     adc_unit_t unit_id = ADC_UNIT_1;
 
     adc_oneshot_unit_handle_t adc1_handle;
@@ -134,7 +149,7 @@ TEST_CASE("ADC oneshot stress test that get zero even if convent done", "[adc_on
     };
 
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+        .bitwidth = ADC_LL_RTC_MAX_BITWIDTH,
         .atten = atten,
     };
 
@@ -179,14 +194,14 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 
     //-------------ADC Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = SOC_ADC_RTC_MAX_BITWIDTH,
+        .bitwidth = ADC_LL_RTC_MAX_BITWIDTH,
     };
 
     //-------------ADC Calibration Init---------------//
     bool do_calibration = false;
     adc_cali_handle_t cali_handle[TEST_ATTEN_NUMS] = {};
     for (int i = 0; i < TEST_ATTEN_NUMS; i++) {
-        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], SOC_ADC_RTC_MAX_BITWIDTH, &cali_handle[i]);
+        do_calibration = test_adc_calibration_init(unit_id, channel, g_test_atten[i], ADC_LL_RTC_MAX_BITWIDTH, &cali_handle[i]);
     }
     if (!do_calibration) {
         ESP_LOGW(TAG, "No efuse bits burnt, only test the regi2c analog register values");
@@ -322,7 +337,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
 
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     for (int i = 0; i < 1; i++) {
-        adc_pattern[i].atten = ADC_ATTEN_DB_12;
+        adc_pattern[i].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
         adc_pattern[i].channel = i;
         adc_pattern[i].unit = ADC_UNIT_1;
         adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -330,7 +345,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     adc_continuous_config_t dig_cfg = {
         .pattern_num = 1,
         .adc_pattern = adc_pattern,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
+        .sample_freq_hz = ADC_LL_SAMPLE_FREQ_THRES_LOW,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
         .format = TEST_ADC_FORMAT_TYPE,
     };
@@ -382,9 +397,6 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle_2));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, adc_del_continuous_monitor(monitor_handle_3));
 
-    //try register cbs again
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, adc_continuous_monitor_register_event_callbacks(monitor_handle, &monitor_cb, &monitor_cb));
-
     //try delete it when adc is running but monitor not running
     TEST_ESP_OK(adc_continuous_start(handle));
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, adc_del_continuous_monitor(monitor_handle));
@@ -400,23 +412,8 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
 
-/**
- * NOTE: To run this special feature test case, you need wire ADC channel pin you want to monit
- *       to a wave output pin defined below.
- *
- *       +---------+
- *       |         |
- *       |    (adc)|------------+
- *       |         |            |
- *       |   (wave)|------------+
- *       |         |
- *       |  ESP32  |
- *       +---------+
- *
- *       or you can connect your signals from signal generator to ESP32 pin which you monitoring
- **/
-#define TEST_ADC_CHANNEL    ADC_CHANNEL_0   //GPIO_1
-#define TEST_WAVE_OUT_PIN   GPIO_NUM_2      //GPIO_2
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+#define TEST_ADC_CHANNEL    ADC_CHANNEL_0
 static uint32_t m1h_cnt, m1l_cnt;
 
 bool IRAM_ATTR m1h_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt_data_t *event_data, void *user_data)
@@ -429,7 +426,7 @@ bool IRAM_ATTR m1l_cb(adc_monitor_handle_t monitor_handle, const adc_monitor_evt
     m1l_cnt ++;
     return false;
 }
-TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
+TEST_CASE("ADC continuous monitor functionary", "[adc]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
@@ -440,7 +437,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
 
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
     for (int i = 0; i < 2; i++) {
-        adc_pattern[i].atten = ADC_ATTEN_DB_12;
+        adc_pattern[i].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
         adc_pattern[i].channel = TEST_ADC_CHANNEL;
         adc_pattern[i].unit = ADC_UNIT_1;
         adc_pattern[i].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -448,7 +445,7 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
     adc_continuous_config_t dig_cfg = {
         .pattern_num = 2,
         .adc_pattern = adc_pattern,
-        .sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_LOW,
+        .sample_freq_hz = ADC_LL_SAMPLE_FREQ_THRES_LOW,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
         .format = TEST_ADC_FORMAT_TYPE,
     };
@@ -462,9 +459,9 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
 #if CONFIG_IDF_TARGET_ESP32S2
         .h_threshold = -1,      //S2 support only one threshold for one monitor
 #else
-        .h_threshold = 3000,
+        .h_threshold = ADC_TEST_HIGH_VAL_DMA - (ADC_TEST_HIGH_VAL_DMA - ADC_TEST_LOW_VAL) / 4,
 #endif
-        .l_threshold = 1000,
+        .l_threshold = ADC_TEST_LOW_VAL + (ADC_TEST_HIGH_VAL_DMA - ADC_TEST_LOW_VAL) / 4,
     };
     adc_monitor_evt_cbs_t monitor_cb = {
 #if !CONFIG_IDF_TARGET_ESP32S2
@@ -474,35 +471,40 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
     };
     TEST_ESP_OK(adc_new_continuous_monitor(handle, &adc_monitor_cfg, &monitor_handle));
     TEST_ESP_OK(adc_continuous_monitor_register_event_callbacks(monitor_handle, &monitor_cb, NULL));
-
-    //config a pin to generate wave
-    gpio_config_t gpio_cfg = {
-        .pin_bit_mask = (1ULL << TEST_WAVE_OUT_PIN),
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .pull_up_en = GPIO_PULLDOWN_ENABLE,
-    };
-    TEST_ESP_OK(gpio_config(&gpio_cfg));
-
     TEST_ESP_OK(adc_continuous_monitor_enable(monitor_handle));
     TEST_ESP_OK(adc_continuous_start(handle));
 
-    for (uint8_t i = 0; i < 8; i++) {
-        vTaskDelay(1000);
+    int adc_io;
+    adc_continuous_channel_to_io(ADC_UNIT_1, TEST_ADC_CHANNEL, &adc_io);
+    printf("Using ADC_CHANNEL_%d on GPIO%d\n", TEST_ADC_CHANNEL, adc_io);
 
-        // check monitor cb
-        printf("%d\t high_cnt %4ld\tlow_cnt %4ld\n", i, m1h_cnt, m1l_cnt);
-        if (gpio_get_level(TEST_WAVE_OUT_PIN)) {
+    // Test with internal gpio pull up/down, detail and order refer to `gpio_pull_mode_t`
+    // pull_up + pull_down to get half ADC convert
+    for (uint8_t i = 0; i < 8; i++) {
+        int pull_mode = i % GPIO_FLOATING;
+        gpio_set_pull_mode(adc_io, pull_mode);
+        vTaskDelay(10); // wait some time for GPIO level be stable
+        m1h_cnt = 0;
+        m1l_cnt = 0;
+        vTaskDelay(1000);   //time to count monitor interrupt
+        printf("%d\t %s\t high_cnt %4ld\tlow_cnt %4ld\n", i, (pull_mode == 0) ? "up  " : (pull_mode == 1) ? "down" : "mid ", m1h_cnt, m1l_cnt);
+
+        switch (pull_mode) {
+        case GPIO_PULLUP_ONLY:
 #if !CONFIG_IDF_TARGET_ESP32S2
-            // TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW*0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1h_cnt);
-            // TEST_ASSERT_LESS_THAN_UINT32(5, m1l_cnt);   //Actually, it will still encountered 1~2 times because hardware run very quickly
+            TEST_ASSERT_UINT32_WITHIN(ADC_LL_SAMPLE_FREQ_THRES_LOW * 0.1, ADC_LL_SAMPLE_FREQ_THRES_LOW, m1h_cnt);
+            TEST_ASSERT_EQUAL(0, m1l_cnt);  //low limit should NOT triggrted when pull_up
 #endif
-            m1h_cnt = 0;
-            gpio_set_level(TEST_WAVE_OUT_PIN, 0);
-        } else {
-            TEST_ASSERT_UINT32_WITHIN(SOC_ADC_SAMPLE_FREQ_THRES_LOW * 0.1, SOC_ADC_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
-            TEST_ASSERT_LESS_THAN_UINT32(5, m1h_cnt);   //Actually, it will still encountered 1~2 times because hardware run very quickly
-            m1l_cnt = 0;
-            gpio_set_level(TEST_WAVE_OUT_PIN, 1);
+            break;
+        case GPIO_PULLDOWN_ONLY:
+            TEST_ASSERT_UINT32_WITHIN(ADC_LL_SAMPLE_FREQ_THRES_LOW * 0.1, ADC_LL_SAMPLE_FREQ_THRES_LOW, m1l_cnt);
+            TEST_ASSERT_EQUAL(0, m1h_cnt);
+            break;
+        case GPIO_PULLUP_PULLDOWN:
+            TEST_ASSERT_EQUAL(0, m1h_cnt);  //half votage, both limit should NOT triggered
+            TEST_ASSERT_EQUAL(0, m1l_cnt);
+            break;
+        default: printf("unknown gpio pull mode !!!\n");
         }
     }
     TEST_ESP_OK(adc_continuous_stop(handle));
@@ -510,5 +512,5 @@ TEST_CASE("ADC continuous monitor functionary", "[adc][manual][ignore]")
     TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle));
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
-
+#endif  //SOC_ADC_CALIBRATION_V1_SUPPORTED
 #endif  //SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED

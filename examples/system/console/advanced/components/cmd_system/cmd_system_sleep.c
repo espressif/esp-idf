@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,15 +22,17 @@
 #include "esp_chip_info.h"
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
+#include "driver/gpio.h"
 #include "driver/uart.h"
+#include "driver/uart_wakeup.h"
 #include "argtable3/argtable3.h"
 #include "cmd_system.h"
 #include "sdkconfig.h"
 
 static const char *TAG = "cmd_system_sleep";
 
+#if SOC_DEEP_SLEEP_SUPPORTED
 /** 'deep_sleep' command puts the chip into deep sleep mode */
-
 static struct {
     struct arg_int *wakeup_time;
 #if SOC_PM_SUPPORT_EXT0_WAKEUP || SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -80,7 +82,6 @@ static int deep_sleep(int argc, char **argv)
 #if CONFIG_IDF_TARGET_ESP32
     rtc_gpio_isolate(GPIO_NUM_12);
 #endif //CONFIG_IDF_TARGET_ESP32
-
     esp_deep_sleep_start();
     return 1;
 }
@@ -115,9 +116,10 @@ void register_system_deep_sleep(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // SOC_DEEP_SLEEP_SUPPORTED
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 /** 'light_sleep' command puts the chip into light sleep mode */
-
 static struct {
     struct arg_int *wakeup_time;
     struct arg_int *wakeup_gpio_num;
@@ -160,29 +162,29 @@ static int light_sleep(int argc, char **argv)
     }
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0 && CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
-        ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
+        uart_wakeup_cfg_t uart_wakeup_cfg = {.wakeup_mode = UART_WK_MODE_ACTIVE_THRESH, .rx_edge_threshold = 3};
+        ESP_ERROR_CHECK( uart_wakeup_setup(CONFIG_ESP_CONSOLE_UART_NUM, &uart_wakeup_cfg) );
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);
     fsync(fileno(stdout));
     esp_light_sleep_start();
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    const char *cause_str;
-    switch (cause) {
-    case ESP_SLEEP_WAKEUP_GPIO:
-        cause_str = "GPIO";
-        break;
-    case ESP_SLEEP_WAKEUP_UART:
-        cause_str = "UART";
-        break;
-    case ESP_SLEEP_WAKEUP_TIMER:
-        cause_str = "timer";
-        break;
-    default:
-        cause_str = "unknown";
-        printf("%d\n", cause);
+
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+        ESP_LOGI(TAG, "Woke up from: unknown");
+        printf("%lx\n", causes);
+        return 0;
     }
-    ESP_LOGI(TAG, "Woke up from: %s", cause_str);
+    if (causes & BIT(ESP_SLEEP_WAKEUP_GPIO)) {
+        ESP_LOGI(TAG, "Woke up from: GPIO");
+    }
+    if (causes & BIT(ESP_SLEEP_WAKEUP_UART)) {
+        ESP_LOGI(TAG, "Woke up from: UART");
+    }
+    if (causes & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
+        ESP_LOGI(TAG, "Woke up from: timer");
+    }
     return 0;
 }
 
@@ -210,3 +212,4 @@ void register_system_light_sleep(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // SOC_LIGHT_SLEEP_SUPPORTED

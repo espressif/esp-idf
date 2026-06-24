@@ -27,7 +27,7 @@ These `includes` are required for the FreeRTOS and underlying system components 
 * `nimble_port.h`: Includes the declaration of functions required for the initialization of the nimble stack.
 * `nimble_port_freertos.h`: Initializes and enables nimble host task.
 * `ble_hs.h`: Defines the functionalities to handle the host event
-* `ble_svc_gap.h`:Defines the macros for device name ,device apperance and declare the function to set them.
+* `ble_svc_gap.h`:Defines the macros for device name ,device appearance and declare the function to set them.
 * `phy_cent.h`: Defines the macro name `LE_PHY_UUID16` and `LE_PHY_CHR_UUID16`.
 
 
@@ -48,19 +48,30 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    nimble_port_init();
+    ret = nimble_port_init();
+    if (ret != ESP_OK) {
+        MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
+        return;
+    }
+
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;
     ble_hs_cfg.sync_cb = blecent_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+    assert(rc == 0);
+#else
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
-
+#endif
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("blecent-phy");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
@@ -191,10 +202,10 @@ nimble_port_freertos_init(blecent_host_task);
 
 ## Intializaion of LE PHY to Default 1M PHY .
 
- 1M PHY is the default PHY for BLE devices which enables it to provide a data rate of 1 Mbps. It is used while establishing the connection between devices and maintains backward compatibility with all those devices that don't have BLE5.0 support.`set_default_le_phy_before_conn()` function set default LE PHY before establishing a connection.
+ 1M PHY is the default PHY for BLE devices which enables it to provide a data rate of 1 Mbps. It is used while establishing the connection between devices and maintains backward compatibility with all those devices that don't have BLE5.0 support.`set_default_le_phy()` function set default LE PHY before establishing a connection.
 
 ```c
-void set_default_le_phy_before_conn(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
+void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
  {
     int rc = ble_gap_set_prefered_default_le_phy(tx_phys_mask, rx_phys_mask);
      if (rc == 0) 
@@ -207,32 +218,11 @@ void set_default_le_phy_before_conn(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
  }
 ```
 
-## Setting LE PHY to preferred LE PHY.
+## Connecting on Different PHYs
 
-2M PHY is introduced in BLE5.0 to increase the symbol rate at the physical layer. It provides a symbol rate of 2 Mega symbols per second where each symbol corresponds to a single bit. This allows the user to double the number of bits sent over the air during a given period, or conversely reduce energy consumption for a given amount of data by having the necessary transmit time. 
+2M PHY is introduced in BLE5.0 to increase the symbol rate at the physical layer. It provides a symbol rate of 2 Mega symbols per second where each symbol corresponds to a single bit. This allows the user to double the number of bits sent over the air during a given period, or conversely reduce energy consumption for a given amount of data by having the necessary transmit time.
 
-The following lines change the default LE PHY to 2M PHY.
-
-` tx_phys_mask = BLE_HCI_LE_PHY_2M_PREF_MASK`
-` rx_phys_mask = BLE_HCI_LE_PHY_2M_PREF_MASK`
-
-```c
-void set_prefered_le_phy_after_conn(uint16_t conn_handle)
-  {
-      uint8_t tx_phys_mask = 0, rx_phys_mask = 0;
-
-     tx_phys_mask = BLE_HCI_LE_PHY_2M_PREF_MASK;
-
-     rx_phys_mask = BLE_HCI_LE_PHY_2M_PREF_MASK;
-
-     int rc = ble_gap_set_prefered_le_phy(conn_handle, tx_phys_mask, rx_phys_mask,0);
-     if (rc == 0) {
-         MODLOG_DFLT(INFO, "Prefered LE PHY set to LE_PHY_2M successfully");
-     } else {
-         MODLOG_DFLT(ERROR, "Failed to set prefered LE_PHY_2M");
-     }
- }
-```
+Instead of changing the PHY after connection establishment, this example uses `ble_gap_ext_connect()` to initiate connections directly on the preferred PHY. After the first connection (on 1M PHY) is disconnected, the central connects directly on 2M PHY, and then on Coded PHY.
  
 ## Read Operation
 
@@ -255,7 +245,7 @@ blecent_read(const struct peer *peer)
       }
 
       rc = ble_gattc_read(peer->conn_handle, chr->chr.val_handle,
-                          NULL, NULL);
+                          blecent_on_read, NULL);
       if (rc != 0) {
           MODLOG_DFLT(ERROR, "Error: Failed to read characteristic; rc=%d\n",
                       rc);
@@ -271,17 +261,31 @@ blecent_read(const struct peer *peer)
 
 ## BLE GAP Connect Event
 
-Once the connection is established `BLE_GAP_EVENT_CONNECT` event occurs. This event is handled by checking the current LE PHY equals 1M PHY and updating it to 2M PHY followed by performing the service discovery. If the connection attempt is failed then central start scanning again using the `blecent_scan` function.
+Once the connection is established `BLE_GAP_EVENT_CONNECT` event occurs. This event is handled by logging which PHY the connection was established on, performing the service discovery (if GATT client is enabled), and adding the peer. If the connection attempt failed, the central resumes scanning using the `blecent_scan` function.
 
 ```c
 case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
         if (event->connect.status == 0) {
             /* Connection successfully established. */
-            MODLOG_DFLT(INFO, "Connection established ");
+
+            switch (s_current_phy) {
+            case BLE_HCI_LE_PHY_1M_PREF_MASK:
+                MODLOG_DFLT(INFO,"Connection established on 1M Phy");
+                break;
+
+            case BLE_HCI_LE_PHY_2M_PREF_MASK:
+            case BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK:
+                MODLOG_DFLT(INFO,"Connection established on 2M Phy");
+                break;
+
+            case BLE_HCI_LE_PHY_CODED_PREF_MASK:
+                MODLOG_DFLT(INFO,"Connection established on Coded Phy");
+                break;
+            }
 
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-            assert(rc == 0); 
+            assert(rc == 0);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
@@ -292,10 +296,7 @@ case BLE_GAP_EVENT_CONNECT:
                 return 0;
             }
 
-            if (s_current_phy == BLE_HCI_LE_PHY_1M_PREF_MASK) {
-                /* Update LE PHY from 1M to 2M */
-                set_prefered_le_phy_after_conn(event->connect.conn_handle);
-            }
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery. */
             rc = peer_disc_all(event->connect.conn_handle,
                                blecent_on_disc_complete, NULL);
@@ -303,6 +304,7 @@ case BLE_GAP_EVENT_CONNECT:
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
@@ -315,8 +317,8 @@ case BLE_GAP_EVENT_CONNECT:
 
 ## BLE GAP Disconnect Event
 
-The connection between Central and Peripheral is terminated when the service discovery is failed or the GATT procedure is completed. `ble_gap_terminate` function is used to terminate the connection which results in the event called `BLE_GAP_EVENT_DISCONNECT`. As the connection is terminated so the event is handled by setting up the default LE PHY to 1M followed by calling the `blecent_scan` function. 
- 
+The connection between Central and Peripheral is terminated when the service discovery is failed or the GATT procedure is completed. `ble_gap_terminate` function is used to terminate the connection which results in the event called `BLE_GAP_EVENT_DISCONNECT`. As the connection is terminated, the current PHY is advanced to the next one, and a direct connection is initiated using `ble_gap_ext_connect()` on the preferred PHY.
+
 ```c
   case BLE_GAP_EVENT_DISCONNECT:
         /* Connection terminated. */
@@ -341,8 +343,20 @@ The connection between Central and Peripheral is terminated when the service dis
         case BLE_HCI_LE_PHY_CODED_PREF_MASK:
             return 0;
         }
-        set_default_le_phy_before_conn(s_current_phy, s_current_phy);
-        blecent_scan();
+
+        vTaskDelay(200);
+
+        /* Attempt direct connection on 2M or Coded phy now */
+        if (s_current_phy == BLE_HCI_LE_PHY_CODED_PREF_MASK) {
+            MODLOG_DFLT(INFO, " Attempting to initiate connection on Coded PHY \n");
+            ble_gap_ext_connect(0, &conn_addr, 30000, BLE_HCI_LE_PHY_CODED_PREF_MASK,
+                                NULL, NULL, NULL, blecent_gap_event, NULL);
+        }
+        else if (s_current_phy == BLE_HCI_LE_PHY_2M_PREF_MASK) {
+            MODLOG_DFLT(INFO, " Attempting to initiate connection on 2M PHY \n");
+            ble_gap_ext_connect(0, &conn_addr, 30000, (BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK),
+                                NULL, NULL, NULL, blecent_gap_event, NULL);
+        }
         return 0;
 
     case BLE_GAP_EVENT_DISC_COMPLETE:
@@ -354,7 +368,7 @@ The connection between Central and Peripheral is terminated when the service dis
 ## Conclusion
 
 This Walkthrough covers the code explanation of the BLE_PHY_CENTRAL example. The following points are concluded through this walkthrough.
- 1. As the nimble stack is initialized default LE PHY is set to 1M in the `blecent_on_sync` function.
- 2. Once the connection is established default LE PHY is updated to 2M PHY and service discovery is performed.
- 3. Once the Service discovery completes or fails, a connection is terminated.
- 4. Once the connection is terminated, depending on the value current LE PHY it is updated to the preferred LE PHY.
+ 1. As the nimble stack is initialized, default LE PHY is set to all PHYs (1M, 2M, Coded) in the `blecent_on_sync` function, and scanning begins on 1M PHY.
+ 2. Once the connection is established, the current PHY is logged and service discovery is performed.
+ 3. Once the service discovery completes or fails, a connection is terminated.
+ 4. Once the connection is terminated, a direct connection is initiated on the next PHY (2M, then Coded) using `ble_gap_ext_connect()`.

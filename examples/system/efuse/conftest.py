@@ -1,9 +1,12 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
+import json
 import logging
 import os
+import tempfile
+from typing import Any
 
+import espefuse
 import pytest
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
@@ -52,6 +55,12 @@ class EfuseFlashEncSerial(IdfSerial):
         # Restore self.app.flash files to original value
         self.app.flash_files = prev_flash_files
 
+    def erase_field_on_emul_efuse_by_name(self, efuse_names: list) -> None:
+        pos_of_bits = []
+        for name in efuse_names:
+            pos_of_bits.append(self.get_efuse_offset(name))
+        self.erase_field_on_emul_efuse(pos_of_bits)
+
     def erase_field_on_emul_efuse(self, pos_of_bits: list) -> None:
         emul_efuse_bin_path = os.path.join(self.app.binary_path, 'emul_efuse.bin')
         self.dump_flash(output=emul_efuse_bin_path, partition='emul_efuse')
@@ -85,6 +94,20 @@ class EfuseFlashEncSerial(IdfSerial):
         self.app.flash_settings['encrypt'] = False
         self.flash()
         self.app.flash_files = prev_flash_files
+
+    def get_efuse_offset(self, efuse_name: str) -> Any:
+        with tempfile.NamedTemporaryFile(suffix='.json') as temp_file:
+            temp_file_path = temp_file.name
+            espefuse.main(f'--virt -c {self.target} summary --format json --file {temp_file_path}'.split())
+            with open(temp_file_path, 'r', encoding='utf-8') as file:
+                efuse_summary = json.load(file)
+                if efuse_name in efuse_summary:
+                    data = efuse_summary[efuse_name]
+                    offset = int(data['word'] * 32) + data['pos']
+                    print(f'{efuse_name} offset = {offset}')
+                    return offset
+                else:
+                    raise ValueError(f"eFuse '{efuse_name}' not found in the summary.")
 
 
 @pytest.fixture(scope='module')

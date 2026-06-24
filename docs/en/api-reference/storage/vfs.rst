@@ -3,70 +3,99 @@ Virtual Filesystem Component
 
 :link_to_translation:`zh_CN:[中文]`
 
+
 Overview
 --------
 
 Virtual filesystem (VFS) component provides a unified interface for drivers which can perform operations on file-like objects. These can be real filesystems (FAT, SPIFFS, etc.) or device drivers which provide a file-like interface.
 
-This component allows C library functions, such as fopen and fprintf, to work with FS drivers. At a high level, each FS driver is associated with some path prefix. When one of C library functions needs to open a file, the VFS component searches for the FS driver associated with the file path and forwards the call to that driver. VFS also forwards read, write, and other calls for the given file to the same FS driver.
+This component allows C library functions, such as fopen and fprintf, to work with FS drivers. At a high level, each FS driver is mounted at some path prefix. When one of C library functions needs to open a file, the VFS component searches for the FS driver associated with the file path and forwards the call to that driver. VFS also forwards read, write, and other calls for the given file to the same FS driver.
 
-For example, one can register a FAT filesystem driver with the ``/fat`` prefix and call ``fopen("/fat/file.txt", "w")``. Then the VFS component calls the function ``open`` of the FAT driver and pass the argument ``/file.txt`` to it together with appropriate mode flags. All subsequent calls to C library functions for the returned ``FILE*`` stream will also be forwarded to the FAT driver.
+For example, one can mount a FAT filesystem driver at the ``/fat`` prefix and call ``fopen("/fat/file.txt", "w")``. Then the VFS component calls the function ``open`` of the FAT driver and pass the argument ``/file.txt`` to it together with appropriate mode flags. All subsequent calls to C library functions for the returned ``FILE*`` stream will also be forwarded to the FAT driver.
 
 
 FS Registration
 ---------------
 
-To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_t` structure and populate it with function pointers to FS APIs:
+To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_fs_ops_t` structure and populate it with function pointers to FS APIs:
+
+.. warning::
+
+    The API version without a context pointer is deprecated, and will be removed in the future. See :ref:`context_api` for details.
 
 .. highlight:: c
 
 ::
 
-    esp_vfs_t myfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &myfs_write,
-        .open = &myfs_open,
-        .fstat = &myfs_fstat,
-        .close = &myfs_close,
-        .read = &myfs_read,
+    // Both esp_vfs_fs_ops_t and its subcomponents have to have static storage
+    static const esp_vfs_dir_ops_t myfs_dir = {
+        .stat = &myfs_stat,
     };
 
-    ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
-
-Depending on the way how the FS driver declares its API functions, either ``read``, ``write``, etc., or ``read_p``, ``write_p``, etc., should be used.
-
-Case 1: API functions are declared without an extra context pointer (the FS driver is a singleton)::
-
-    ssize_t myfs_write(int fd, const void * data, size_t size);
-
-    // In definition of esp_vfs_t:
-        .flags = ESP_VFS_FLAG_DEFAULT,
+    static const esp_vfs_fs_ops_t myfs = {
         .write = &myfs_write,
-    // ... other members initialized
+        .open = &myfs_open,
+        .close = &myfs_close,
+        .read = &myfs_read,
+        .dir = &myfs_dir,
+    };
 
-    // When registering FS, context pointer (third argument) is NULL:
-    ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_STATIC, NULL));
 
-Case 2: API functions are declared with an extra context pointer (the FS driver supports multiple instances)::
+
+Non-static :cpp:type:`esp_vfs_fs_ops_t`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The recommended approach for registering filesystem is to use statically allocated :cpp:type:`esp_vfs_fs_ops_t` alongside ``ESP_VFS_FLAG_STATIC``, as it is more memory efficient. In cases where using static allocation is not possible, ``ESP_VFS_FLAG_STATIC`` can be replaced with ``ESP_VFS_FLAG_DEFAULT``. This tells VFS to make a deep copy of the passed structure in RAM, this copy will be managed by VFS component.
+
+.. highlight:: c
+
+::
+
+    // Possibly local scope
+    {
+        esp_vfs_dir_ops_t myfs_dir = {
+            .stat = &myfs_stat,
+        };
+
+        bool some_condition = false;
+
+        esp_vfs_fs_ops_t myfs = {
+            .write = some_condition ? &myfs_special_write : &myfs_write,
+            // ... other members
+            .dir = &myfs_dir,
+        };
+
+        ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_DEFAULT, NULL));
+    }
+
+.. _context_api:
+
+Context Aware Filesystem
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some cases, it might be beneficial or even necessary to pass some context to the filesystem functions, such as a mountpoint-specific file descriptor table, when multiple instances of FS are mounted. For this reason, :cpp:type:`esp_vfs_fs_ops_t` contains a second version of each member with ``_p`` suffix; for example, ``read`` function has a corresponding ``read_p`` function. These functions take an additional first argument. When registering the FS, ``ESP_VFS_FLAG_CONTEXT_PTR`` needs to be specified and the context pointer should be passed as the last argument.
+
+::
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
-    // In definition of esp_vfs_t:
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
+    // In definition of esp_vfs_fs_ops_t:
         .write_p = &myfs_write,
     // ... other members initialized
 
-    // When registering FS, pass the FS context pointer into the third argument
+    // When registering FS, pass the ESP_VFS_FLAG_CONTEXT_PTR flag, alongside FS context pointer as the third and fourth arguments, respectively
     // (hypothetical myfs_mount function is used for illustrative purposes)
     myfs_t* myfs_inst1 = myfs_mount(partition1->offset, partition1->size);
-    ESP_ERROR_CHECK(esp_vfs_register("/data1", &myfs, myfs_inst1));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/data1", &myfs, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, myfs_inst1));
 
     // Can register another instance:
     myfs_t* myfs_inst2 = myfs_mount(partition2->offset, partition2->size);
-    ESP_ERROR_CHECK(esp_vfs_register("/data2", &myfs, myfs_inst2));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/data2", &myfs, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, myfs_inst2));
+
 
 Synchronous Input/Output Multiplexing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 
 Synchronous input/output multiplexing by :cpp:func:`select` is supported in the VFS component. The implementation works in the following way.
 
@@ -82,8 +111,9 @@ Synchronous input/output multiplexing by :cpp:func:`select` is supported in the 
 
 6. The :cpp:func:`select` call ends and returns the appropriate results.
 
+
 Non-Socket VFS Drivers
-""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to use :cpp:func:`select` with a file descriptor belonging to a non-socket VFS driver, then you need to register the driver with functions :cpp:func:`start_select` and :cpp:func:`end_select` similarly to the following example:
 
@@ -91,7 +121,7 @@ If you want to use :cpp:func:`select` with a file descriptor belonging to a non-
 
 ::
 
-    // In definition of esp_vfs_t:
+    // In definition of esp_vfs_select_ops_t:
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,
     // ... other members initialized
@@ -113,7 +143,7 @@ Please check the following examples that demonstrate the use of :cpp:func:`selec
 
 
 Socket VFS Drivers
-""""""""""""""""""
+^^^^^^^^^^^^^^^^^^
 
 A socket VFS driver is using its own internal implementation of :cpp:func:`select` and non-socket VFS drivers notify it upon read/write/error conditions.
 
@@ -123,7 +153,7 @@ A socket VFS driver needs to be registered with the following functions defined:
 
 ::
 
-    // In definition of esp_vfs_t:
+    // In definition of esp_vfs_select_ops_t:
         .socket_select = &lwip_select,
         .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .stop_socket_select = &lwip_stop_socket_select,
@@ -138,11 +168,14 @@ A socket VFS driver needs to be registered with the following functions defined:
 
 :cpp:func:`stop_socket_select_isr` has the same functionality as :cpp:func:`stop_socket_select` but it can be used from ISR.
 
-Please see :component_file:`lwip/port/esp32xx/vfs_lwip.c` for a reference socket driver implementation using LWIP.
+Please see :component_file:`lwip/port/vfs_lwip.c` for a reference socket driver implementation using LWIP.
 
 .. note::
+
     If you use :cpp:func:`select` for socket file descriptors only then you can disable the :ref:`CONFIG_VFS_SUPPORT_SELECT` option to reduce the code size and improve performance.
+
     You should not change the socket driver during an active :cpp:func:`select` call or you might experience some undefined behavior.
+
 
 Paths
 -----
@@ -179,42 +212,7 @@ File Descriptors
 
 File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in ``sys/select.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
-
-Standard IO Streams (``stdin``, ``stdout``, ``stderr``)
--------------------------------------------------------
-
-If the menuconfig option ``UART for console output`` is not set to ``None``, then ``stdin``, ``stdout``, and ``stderr`` are configured to read from, and write to, a UART. It is possible to use UART0 or UART1 for standard IO. By default, UART0 is used with 115200 baud rate; TX pin is GPIO1; RX pin is GPIO3. These parameters can be changed in menuconfig.
-
-Writing to ``stdout`` or ``stderr`` sends characters to the UART transmit FIFO. Reading from ``stdin`` retrieves characters from the UART receive FIFO.
-
-By default, VFS uses simple functions for reading from and writing to UART. Writes busy-wait until all data is put into UART FIFO, and reads are non-blocking, returning only the data present in the FIFO. Due to this non-blocking read behavior, higher level C library calls, such as ``fscanf("%d\n", &var);``, might not have desired results.
-
-Applications which use the UART driver can instruct VFS to use the driver's interrupt driven, blocking read and write functions instead. This can be done using a call to the :cpp:func:`uart_vfs_dev_use_driver` function. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`uart_vfs_dev_use_nonblocking`.
-
-VFS also provides an optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by the LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to the functions :cpp:func:`uart_vfs_dev_port_set_rx_line_endings` and :cpp:func:`uart_vfs_dev_port_set_tx_line_endings`.
-
-
-Standard Streams and FreeRTOS Tasks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``FILE`` objects for ``stdin``, ``stdout``, and ``stderr`` are shared between all FreeRTOS tasks, but the pointers to these objects are stored in per-task ``struct _reent``.
-
-The following code is transferred to ``fprintf(__getreent()->_stderr, "42\n");`` by the preprocessor:
-
-.. highlight:: c
-
-::
-
-    fprintf(stderr, "42\n");
-
-
-The ``__getreent()`` function returns a per-task pointer to ``struct _reent`` in newlib libc. This structure is allocated on the TCB of each task. When a task is initialized, ``_stdin``, ``_stdout``, and ``_stderr`` members of ``struct _reent`` are set to the values of ``_stdin``, ``_stdout``, and ``_stderr`` of ``_GLOBAL_REENT`` (i.e., the structure which is used before FreeRTOS is started).
-
-Such a design has the following consequences:
-
-- It is possible to set ``stdin``, ``stdout``, and ``stderr`` for any given task without affecting other tasks, e.g., by doing ``stdin = fopen("/dev/uart/1", "r")``.
-- Closing default ``stdin``, ``stdout``, or ``stderr`` using ``fclose`` closes the ``FILE`` stream object, which will affect all other tasks.
-- To change the default ``stdin``, ``stdout``, ``stderr`` streams for new tasks, modify ``_GLOBAL_REENT->_stdin`` (``_stdout``, ``_stderr``) before creating the task.
+Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file descriptors ``0``, ``1``, and ``2`` respectively. For more information on standard I/O, see :doc:`../../api-guides/stdio`.
 
 ``eventfd()``
 -------------
@@ -228,13 +226,37 @@ Such a design has the following consequences:
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
 
+Well Known VFS Devices
+----------------------
+
+IDF defines several VFS devices that can be used by applications. These devices are, among others:
+
+* ``/dev/uart/<UART NUMBER>`` - file mapping to an UART opened with the VFS driver. The UART number is the number of the UART peripheral.
+* ``/dev/null`` - file that discards all data written to it and returns EOF when read. It is automatically created if :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` is enabled.
+* ``/dev/console`` - file that is connected to the primary and secondary outputs specified in the menuconfig by :ref:`CONFIG_ESP_CONSOLE_UART` and :ref:`CONFIG_ESP_CONSOLE_SECONDARY` respectively. More information can be found here :doc:`../../api-guides/stdio`.
+
+
+Application Examples
+--------------------
+
+- :example:`system/eventfd` demonstrates how to use ``eventfd()`` to collect events from tasks and ISRs in a ``select()`` based main loop, using two tasks and a timer ISR (interrupt service routine) callback.
+
+- :example:`system/select` demonstrates how to use synchronous I/O multiplexing with the ``select()`` function, using UART and socket file descriptors, and configuring both to act as loopbacks to receive messages sent from other tasks.
+
+- :example:`storage/semihost_vfs` demonstrates how to use the semihosting VFS driver, including registering a host directory, redirecting stdout from UART to a file on the host, and reading and printing the content of a text file.
+
+
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_vfs.inc
+
+.. include-build-file:: inc/esp_vfs_ops.inc
 
 .. include-build-file:: inc/esp_vfs_dev.inc
 
 .. include-build-file:: inc/uart_vfs.inc
 
 .. include-build-file:: inc/esp_vfs_eventfd.inc
+
+.. include-build-file:: inc/esp_vfs_null.inc

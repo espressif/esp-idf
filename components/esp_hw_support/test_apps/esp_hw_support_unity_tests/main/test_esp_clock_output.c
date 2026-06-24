@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,10 +8,11 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_err.h"
 #include "esp_clock_output.h"
 #include "hal/gpio_hal.h"
-
+#include "soc/uart_pins.h"
 #include "soc/rtc.h"
 
 #define TEST_LOOPS 100
@@ -20,6 +21,8 @@
 static const int test_clk_out_io[] = {0, 1, 3};
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static const int test_clk_out_io[] = {18, 19, 20};
+#elif CONFIG_IDF_TARGET_ESP32P4
+static const int test_clk_out_io[] = {7, 8};
 #else
 static const int test_clk_out_io[] = {3, 4, 5, 6};
 #endif
@@ -33,6 +36,9 @@ void output_clock_1(void *pvParameter)
     esp_clock_output_mapping_handle_t clkout_mapping_hdl;
     for (int i = 0; i < TEST_LOOPS; ++i) {
         TEST_ESP_OK(esp_clock_output_start(test_clk_out_sig[0], test_clk_out_io[0], &clkout_mapping_hdl));
+#if SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
+        TEST_ESP_OK(esp_clock_output_set_divider(clkout_mapping_hdl, 8));
+#endif
         vTaskDelay(3);
         TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl));
         vTaskDelay(7);
@@ -54,6 +60,7 @@ void output_clock_2(void *pvParameter)
     vTaskDelete(NULL);
 }
 
+#if SOC_GPIO_CLOCKOUT_CHANNEL_NUM >= 3
 void output_clock_3(void *pvParameter)
 {
     rtc_dig_clk8m_enable();
@@ -67,7 +74,7 @@ void output_clock_3(void *pvParameter)
     xSemaphoreGive(test_done_semphr);
     vTaskDelete(NULL);
 }
-
+#endif
 
 // This case is now tested only manually
 TEST_CASE("GPIO output internal clock", "[gpio_output_clock][ignore]")
@@ -75,10 +82,12 @@ TEST_CASE("GPIO output internal clock", "[gpio_output_clock][ignore]")
     test_done_semphr = xSemaphoreCreateCounting(3, 0);
     xTaskCreate(&output_clock_1, "output_clock_1", 4096, NULL, 4, NULL);
     xTaskCreate(&output_clock_2, "output_clock_2", 4096, NULL, 4, NULL);
+#if SOC_GPIO_CLOCKOUT_CHANNEL_NUM >= 3
     xTaskCreate(&output_clock_3, "output_clock_3", 4096, NULL, 4, NULL);
+#endif
 
     int cnt = 0;
-    while (cnt < 3) {
+    while (cnt < SOC_GPIO_CLOCKOUT_CHANNEL_NUM) {
         if (xSemaphoreTake(test_done_semphr, portMAX_DELAY) == pdTRUE) {
             cnt++;
         }
@@ -86,8 +95,13 @@ TEST_CASE("GPIO output internal clock", "[gpio_output_clock][ignore]")
     vTaskDelay(1);
 
     vSemaphoreDelete(test_done_semphr);
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
+
+#if CONFIG_IDF_TARGET_ESP32
+    /* ESP32 clock out channel pin reuses UART TX/RX pin, restore its default
+       configuration at the end of the test */
+    gpio_iomux_output(U0RXD_GPIO_NUM, FUNC_U0RXD_U0RXD);
+    gpio_iomux_output(U0TXD_GPIO_NUM, FUNC_U0TXD_U0TXD);
+#endif
 }
 
 #if SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
@@ -124,7 +138,7 @@ TEST_CASE("GPIO output internal clock one-to-many", "[gpio_output_clock][ignore]
 #if CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3
     test_clk_out_sig[3] = CLKOUT_SIG_PLL_F80M;
 #else
-    test_clk_out_sig[3] = CLKOUT_SIG_RC_32K;
+    test_clk_out_sig[3] = CLKOUT_SIG_CPU;
 #endif
 
     // Test the excess clock channel request assertion
@@ -140,9 +154,9 @@ TEST_CASE("GPIO output internal clock one-to-many", "[gpio_output_clock][ignore]
     TEST_ESP_OK(esp_clock_output_start(test_clk_out_sig[3], test_clk_out_io[0], &clkout_mapping_hdl_7));    // [0]:1  [1]:0 [2]:2
 
     // Stop all
-    esp_clock_output_stop(clkout_mapping_hdl_2);
-    esp_clock_output_stop(clkout_mapping_hdl_5);
-    esp_clock_output_stop(clkout_mapping_hdl_6);
-    esp_clock_output_stop(clkout_mapping_hdl_7);
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_2));
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_5));
+    // clkout_mapping_hdl_6 never been alloc succeed, not need to do stop.
+    TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl_7));
 }
 #endif

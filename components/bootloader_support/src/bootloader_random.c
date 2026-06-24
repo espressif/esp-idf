@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,11 +7,9 @@
 #include "esp_log.h"
 #include "bootloader_random.h"
 #include "esp_cpu.h"
-#include "soc/wdev_reg.h"
+#include "hal/rng_ll.h"
 
-#if SOC_LP_TIMER_SUPPORTED
-#include "hal/lp_timer_hal.h"
-#endif
+#include "hal/rtc_timer_hal.h"
 
 #ifndef BOOTLOADER_BUILD
 #include "esp_random.h"
@@ -26,16 +24,16 @@
 
 #if !defined CONFIG_IDF_TARGET_ESP32S3
   #if (defined CONFIG_IDF_TARGET_ESP32C6 || defined CONFIG_IDF_TARGET_ESP32H2)
-    #define RNG_CPU_WAIT_CYCLE_NUM (80 * 16) // Keep the byte sampling frequency in the ~62KHz range which has been
+    #define RNG_CPU_WAIT_CYCLE_NUM (CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ * 16) // Keep the byte sampling frequency in the ~62KHz range which has been
                                              // tested.
   #elif CONFIG_IDF_TARGET_ESP32P4
     // bootloader tested with around 63 KHz bytes reading frequency
-    #define RNG_CPU_WAIT_CYCLE_NUM (CPU_CLK_FREQ_MHZ_BTLD * 16)
+    #define RNG_CPU_WAIT_CYCLE_NUM (CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ * 16)
   #else
-    #define RNG_CPU_WAIT_CYCLE_NUM (80 * 32 * 2) /* extra factor of 2 is precautionary */
+    #define RNG_CPU_WAIT_CYCLE_NUM (CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ * 32 * 2) /* extra factor of 2 is precautionary */
   #endif
 #else
-  #define RNG_CPU_WAIT_CYCLE_NUM (80 * 23) /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
+  #define RNG_CPU_WAIT_CYCLE_NUM (CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ * 23) /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
 #endif
 
  __attribute__((weak)) void bootloader_fill_random(void *buffer, size_t length)
@@ -47,17 +45,17 @@
     assert(buffer != NULL);
 
     for (size_t i = 0; i < length; i++) {
-#if SOC_LP_TIMER_SUPPORTED
-        random = REG_READ(WDEV_RND_REG);
+#if !SOC_RTC_TIMER_V1
+        random = rng_ll_read_data();
         start = esp_cpu_get_cycle_count();
         do {
-            random ^= REG_READ(WDEV_RND_REG);
+            random ^= rng_ll_read_data();
             now = esp_cpu_get_cycle_count();
         } while (now - start < RNG_CPU_WAIT_CYCLE_NUM);
 
         // XOR the RT slow clock, which is asynchronous, to add some entropy and improve
         // the distribution
-        uint32_t current_rtc_timer_counter = (lp_timer_hal_get_cycle_count() & 0xFF);
+        uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
         random = random ^ current_rtc_timer_counter;
 
         buffer_bytes[i] = random & 0xFF;
@@ -70,10 +68,10 @@
                as-is, we repeatedly read the RNG register and XOR all
                values.
             */
-            random = REG_READ(WDEV_RND_REG);
+            random = rng_ll_read_data();
             start = esp_cpu_get_cycle_count();
             do {
-                random ^= REG_READ(WDEV_RND_REG);
+                random ^= rng_ll_read_data();
                 now = esp_cpu_get_cycle_count();
             } while (now - start < RNG_CPU_WAIT_CYCLE_NUM);
         }
@@ -83,10 +81,10 @@
 }
 #endif // BOOTLOADER_BUILD
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING
 static void s_non_functional(const char *func)
 {
-    ESP_EARLY_LOGW("rand", "%s non-functional for FPGA builds", func);
+    ESP_EARLY_LOGW("rand", "%s non-functional as RNG has not been supported yet", func);
 }
 
 void bootloader_random_enable()
@@ -98,4 +96,4 @@ void bootloader_random_disable()
 {
     s_non_functional(__func__);
 }
-#endif // CONFIG_IDF_ENV_FPGA
+#endif // CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING

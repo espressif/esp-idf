@@ -1,0 +1,22 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_MODE
+        prompt "Central Mode"
+        default EXAMPLE_MODE_WITH_CONNECTION
+        help
+            Select the central operation mode.
+
+        config EXAMPLE_MODE_WITH_CONNECTION
+            bool "With Connection (read key from peripheral)"
+            help
+                Connect to peripheral to read Key Material characteristic.
+                This is the standard way when key is not pre-shared.
+
+        config EXAMPLE_MODE_NO_CONNECTION
+            bool "No Connection (use pre-shared key)"
+            help
+                Use pre-configured key to decrypt without connecting.
+                Key must match the peripheral's key.
+    endchoice
+
+endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
 #include "unity.h"
-#include "bootloader_random.h"
+#include "esp_random.h"
 
 typedef struct {
     uint8_t unencoded[24];
@@ -107,7 +107,6 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
     int useful_data_in_byte;
     uint8_t buf[32];
     uint32_t encoded[8];
-    bootloader_random_enable();
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
         printf("EFUSE_CODING_SCHEME_NONE\n");
@@ -127,7 +126,7 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
         memset(buf, 0, sizeof(buf));
         memset(encoded, 0, sizeof(encoded));
         // get test data
-        bootloader_fill_random(buf, useful_data_in_byte);
+        esp_fill_random(buf, useful_data_in_byte);
         memset(buf, 0, i);
 
         esp_efuse_utility_reset();
@@ -176,7 +175,6 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
         TEST_ASSERT_EQUAL_HEX32_ARRAY(buf, w_data_after_coding, 8);
     }
     esp_efuse_utility_reset();
-    bootloader_random_disable();
 }
 
 TEST_CASE("Test data does not match the coding scheme", "[efuse]")

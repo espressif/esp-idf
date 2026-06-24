@@ -1,11 +1,61 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF Gatt Server Service Table Example
 
 This example shows how to create a GATT service with an attribute table defined in one place. Provided API releases the user from adding attributes one by one as implemented in BLUEDROID. A demo of the other method to create the attribute table is presented in [gatt_server_demo](../gatt_server).
 
 Please, check this [tutorial](tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md) for more information about this example.
+
+## Flow Diagram
+
+```
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                    GATT Server Initialization Flow                       │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+    ┌───────────────────┐
+    │   GATT Server     │
+    └─────────┬─────────┘
+              │
+              │  1. Define Attribute Table (gatt_db[])
+              │     ┌─────────────────────────────────────┐
+              │     │  [0] Service Declaration            │
+              │     │  [1] Char Declaration               │
+              │     │  [2] Char Value                     │
+              │     │  [3] CCCD (Notify Enable)           │
+              │     │  ...                                │
+              │     └─────────────────────────────────────┘
+              │
+              │  2. esp_ble_gatts_create_attr_tab()
+              │     - Create all attributes at once
+              │
+              │  3. ESP_GATTS_CREAT_ATTR_TAB_EVT
+              │     - Receive handle table
+              │
+              │  4. esp_ble_gatts_start_service()
+              │
+              │  5. Start Advertising
+              │
+              ▼
+    ┌───────────────────┐                         ┌───────────────────┐
+    │   GATT Server     │                         │   GATT Client     │
+    │   (Advertising)   │                         │                   │
+    └─────────┬─────────┘                         └─────────┬─────────┘
+              │                                             │
+              │                      Scan & Connect         │
+              │ <───────────────────────────────────────────│
+              │                                             │
+              │  Service Discovery                          │
+              │ ───────────────────────────────────────────>│
+              │                                             │
+              │  Read/Write/Notify Operations               │
+              │ <──────────────────────────────────────────>│
+              │                                             │
+    ┌─────────┴─────────┐                         ┌─────────┴─────────┐
+    │   GATT Server     │                         │   GATT Client     │
+    └───────────────────┘                         └───────────────────┘
+```
 
 ## How to Use Example
 

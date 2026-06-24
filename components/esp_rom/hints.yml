@@ -1,0 +1,8 @@
+-
+    re: "(error: implicit declaration of function|undefined reference to) '(gpio_pad_set_drv|gpio_pad_pullup|gpio_pad_select_gpio|gpio_pad_unhold|gpio_matrix_in|gpio_matrix_out)'"
+    hint: "The rom GPIO functions have been renamed. Please replace with the APIs in 'esp_rom_gpio.h'."
+
+-
+    re: "fatal error: (esp_rom_tjpgd.h): No such file or directory"
+    hint: "{} was removed. Please use esp_jpeg component from IDF component manager instead.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
+    match_to_output: True

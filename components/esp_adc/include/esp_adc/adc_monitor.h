@@ -65,7 +65,8 @@ typedef struct {
 esp_err_t adc_new_continuous_monitor(adc_continuous_handle_t handle, const adc_monitor_config_t *monitor_cfg, adc_monitor_handle_t *ret_handle);
 
 /**
- * @brief Register threshold interrupt callbacks for allocated monitor.
+ * @brief Register/Unregister threshold interrupt callbacks for allocated monitor.
+ *        Passing `cbs` contain the NULL `over_high/below_low` will unregister relative callbacks.
  *
  * @param[in]  monitor_handle       Monitor handle
  * @param[in]  cbs                  Pointer to a adc_monitor_evt_cbs_t struct

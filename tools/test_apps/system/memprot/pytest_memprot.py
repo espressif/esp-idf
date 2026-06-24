@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import logging
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 MEM_TEST_UNICORE = {
     'esp32s2': [
@@ -14,43 +14,27 @@ MEM_TEST_UNICORE = {
         ['DRAM0_RTCFAST', 'WR'],
         ['PERI1_RTCSLOW', 'WR'],
         ['PERI2_RTCSLOW_0', 'WRX'],
-        ['PERI2_RTCSLOW_1', 'WRX']
+        ['PERI2_RTCSLOW_1', 'WRX'],
     ],
-    'esp32c3': [
-        ['IRAM0_SRAM', 'WRX'],
-        ['DRAM0_SRAM', 'WR'],
-        ['IRAM0_RTCFAST', 'WRX']
-    ],
-    'esp32s3': [
-        ['IRAM0_SRAM (core 0)', 'WRX'],
-        ['DRAM0_SRAM (core 0)', 'WR']
-        # temporarily disabled unless IDF-5208 gets merged
-        # ['IRAM0_RTCFAST', 'WR'],
-    ],
+    'esp32c3': [['IRAM0_SRAM', 'WRX'], ['DRAM0_SRAM', 'WR'], ['IRAM0_RTCFAST', 'WRX']],
+    'esp32s3': [['IRAM0_SRAM (core 0)', 'WRX'], ['DRAM0_SRAM (core 0)', 'WR'], ['IRAM0_RTCFAST (core 0)', 'WRX']],
 }
 
 MEM_TEST_MULTICORE = {
     'esp32s3': [
-        # instruction execute test temporarily disabled
-        # ['IRAM0_SRAM (core 0)', 'WRX'],
-        ['IRAM0_SRAM (core 0)', 'WR'],
+        ['IRAM0_SRAM (core 0)', 'WRX'],
         ['DRAM0_SRAM (core 0)', 'WR'],
-        # instruction execute test temporarily disabled
-        # ['IRAM0_SRAM (core 1)', 'WRX'],
-        ['IRAM0_SRAM (core 1)', 'WR'],
-        ['DRAM0_SRAM (core 1)', 'WR']
-        # temporarily disabled unless IDF-5208 gets merged
-        # ['IRAM0_RTCFAST', 'WR'],
+        ['IRAM0_RTCFAST (core 0)', 'WRX'],
+        ['IRAM0_SRAM (core 1)', 'WRX'],
+        ['DRAM0_SRAM (core 1)', 'WR'],
+        ['IRAM0_RTCFAST (core 1)', 'WRX'],
     ]
 }
 
 
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32c3'], indirect=['target'])
 def test_sys_memprot(dut: Dut) -> None:
-
     current_target = dut.target
 
     unicore = dut.app.sdkconfig.get('FREERTOS_UNICORE')

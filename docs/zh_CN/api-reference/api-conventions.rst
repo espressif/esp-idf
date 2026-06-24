@@ -10,7 +10,7 @@ ESP-IDF 提供了几种编程接口：
 
 * 在 ESP-IDF 组件的公共头文件中声明的 C 函数、结构体、枚举、类型定义和预处理器宏。编程指南的 API 参考部分描述了这些函数、结构体和类型。
 * 编译系统函数、预定义变量和选项，详情请参阅 :ref:`ESP-IDF CMake 构建系统 API <cmake_buildsystem_api>`。
-* :doc:`Kconfig <kconfig>` 选项，可用于代码及编译系统文件 (``CMakeLists.txt``)。
+* :ref:`Kconfig <configs-in-C-Cmake>` 选项，可用于代码及编译系统文件 (``CMakeLists.txt``)。
 * :doc:`主机工具 <../api-guides/tools/index>` 及其命令行参数。
 
 ESP-IDF 由多个组件组成，组件中包含专门为 ESP 芯片编写的代码或第三方库（即第三方组件）。对于某些第三方库，ESP-IDF 提供专用的包装器和接口，以简化对第三方库的使用，或提高其与 ESP-IDF 其他功能的兼容性。某些情况下，第三方组件将直接呈现底层库的原始 API。
@@ -145,7 +145,7 @@ ESP-IDF 无法确保版本间的二进制兼容性。这意味着，如果使用
 * 为缓解安全问题做出的更改，或以更安全的行为取代不安全的默认行为的更改。
 * 从未运行成功的功能。例如，如果某个函数或枚举值从未成功使用，则可能会以修复的形式将其重命名或删除。这包括依赖于非功能芯片硬件功能的软件功能。
 * 未明确记录的意外或未定义行为可能会被修复或更改，如缺少参数范围验证。
-* 在菜单配置中 :doc:`Kconfig <kconfig>` 选项的位置。
+* 在菜单配置中 :ref:`Kconfig <project-configuration-guide>` 选项的位置。
 * 示例项目的位置和名称。
 
 .. _指定初始化器: https://en.cppreference.com/w/c/language/struct_initialization

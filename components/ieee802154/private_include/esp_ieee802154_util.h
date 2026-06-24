@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +8,31 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "esp_ieee802154_dev.h"
 #include "hal/ieee802154_ll.h"
 #include "esp_timer.h"
+#include "soc/ieee802154_struct.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define IEEE802154_TAG "ieee802154"
+
+#define IEEE802154_OQPSK_2P4G_CHANNEL_MIN 11
+#define IEEE802154_OQPSK_2P4G_CHANNEL_MAX 26
+
+#define IEEE802154_RETURN_ON_FALSE_SILENTLY(a, ret) do {    \
+                if (unlikely(!(a))) {                       \
+                    return ret;                             \
+                }                                           \
+} while(0)
+
+static inline bool ieee802154_is_valid_channel(uint8_t channel)
+{
+    return ((channel <= IEEE802154_OQPSK_2P4G_CHANNEL_MAX) && (channel >= IEEE802154_OQPSK_2P4G_CHANNEL_MIN));
+}
 
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_RF_ENABLE() ieee802154_rf_enable()
@@ -24,8 +43,9 @@ extern "C" {
 #endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_PROBE(a) do { \
             IEEE802154_RECORD_EVENT(a); \
-            ieee802154_record_abort(a); \
+            IEEE802154_RECORD_ABORT(a); \
             IEEE802154_TXRX_STATISTIC(a); \
+            IEEE802154_RECORD_FRAME(a); \
             } while(0)
 
 #if CONFIG_IEEE802154_RECORD_EVENT
@@ -64,7 +84,7 @@ typedef struct {
 #if CONFIG_IEEE802154_RECORD_STATE
 #define IEEE802154_ASSERT_RECORD_STATE_SIZE CONFIG_IEEE802154_RECORD_STATE_SIZE
 #define ieee802154_set_state(a) do { s_ieee802154_state = a; \
-            sprintf(g_ieee802154_probe.state[g_ieee802154_probe.state_index].line_str, "%d", __LINE__); \
+            g_ieee802154_probe.state[g_ieee802154_probe.state_index].line = __LINE__; \
             g_ieee802154_probe.state[g_ieee802154_probe.state_index].timestamp = esp_timer_get_time(); \
             g_ieee802154_probe.state[g_ieee802154_probe.state_index++].state = a; \
             g_ieee802154_probe.state_index = \
@@ -75,7 +95,7 @@ typedef struct {
  * @brief The table of recording IEEE802154 state command.
  */
 typedef struct {
-    char line_str[5];           /*!< record which line in esp_ieee802154_dev.c changes the state */
+    uint32_t line;           /*!< record which line in esp_ieee802154_dev.c changes the state */
     ieee802154_state_t state;   /*!< record current radio state */
     uint64_t timestamp;         /*!< record timestamp */
 } ieee802154_state_info_t;
@@ -86,7 +106,7 @@ typedef struct {
 #if CONFIG_IEEE802154_RECORD_CMD
 #define IEEE802154_ASSERT_RECORD_CMD_SIZE CONFIG_IEEE802154_RECORD_CMD_SIZE
 #define ieee802154_set_cmd(a) do { ieee802154_ll_set_cmd(a); \
-            sprintf(g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index].line_str, "%d", __LINE__); \
+            g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index].line = __LINE__; \
             g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index].timestamp = esp_timer_get_time(); \
             g_ieee802154_probe.cmd[g_ieee802154_probe.cmd_index++].cmd = a; \
             g_ieee802154_probe.cmd_index = \
@@ -97,7 +117,7 @@ typedef struct {
  * @brief The table of recording IEEE802154 radio command.
  */
 typedef struct {
-    char line_str[5];           /*!< record which line in esp_ieee802154_dev.c set the command */
+    uint32_t line;           /*!< record which line in esp_ieee802154_dev.c set the command */
     ieee802154_ll_cmd_t cmd;    /*!< record current command */
     uint64_t timestamp;         /*!< record timestamp */
 } ieee802154_cmd_info_t;
@@ -107,7 +127,7 @@ typedef struct {
 
 #if CONFIG_IEEE802154_RECORD_ABORT
 #define IEEE802154_ASSERT_RECORD_ABORT_SIZE CONFIG_IEEE802154_RECORD_ABORT_SIZE
-#define ieee802154_record_abort(a) do { \
+#define IEEE802154_RECORD_ABORT(a) do { \
             if (a == IEEE802154_EVENT_RX_ABORT) { \
                 g_ieee802154_probe.abort[g_ieee802154_probe.abort_index].abort_reason.rx \
                     = ieee802154_ll_get_rx_abort_reason(); \
@@ -137,46 +157,120 @@ typedef struct {
     uint64_t timestamp;         /*!< record timestamp*/
 } ieee802154_abort_info_t;
 #else
-#define ieee802154_record_abort(a)
+#define IEEE802154_RECORD_ABORT(a)
 #endif // CONFIG_IEEE802154_RECORD_ABORT
+
+#if CONFIG_IEEE802154_RECORD_TXRX_FRAME
+#define IEEE802154_RECORD_TXRX_FRAME_SIZE CONFIG_IEEE802154_RECORD_TXRX_FRAME_SIZE
+#define IEEE802154_RECORD_FRAME_TYPE_INVALID    0
+#define IEEE802154_RECORD_FRAME_TYPE_RX         1
+#define IEEE802154_RECORD_FRAME_TYPE_TX         2
+#define IEEE802154_RECORD_FRAME_TYPE_RX_ACK     3
+#define IEEE802154_RECORD_FRAME_TYPE_TX_ACK     4
+#define IEEE802154_RECORD_FRAME_TYPE_VALID_MAX  5
+
+#define IEEE802154_DEBUG_RX_FRAME_DUMP(type) do {\
+                g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].frame_type = type; \
+                g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].mac_conf = IEEE802154.conf.val; \
+                if ((((uint8_t *)IEEE802154.dma_rx_addr - &s_rx_frame[0][0]) % IEEE802154_RX_FRAME_SIZE) != 0 \
+                        || (((uint8_t *)IEEE802154.dma_rx_addr - &s_rx_frame[0][0]) / IEEE802154_RX_FRAME_SIZE) > CONFIG_IEEE802154_RX_BUFFER_SIZE) { \
+                    g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].rx_buffer_index = -1; \
+                } else { \
+                    g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].rx_buffer_index = \
+                        (((uint8_t *)IEEE802154.dma_rx_addr - &s_rx_frame[0][0]) / IEEE802154_RX_FRAME_SIZE); \
+                } \
+                memcpy(g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].dump_frame,\
+                    (void *)IEEE802154.dma_rx_addr, \
+                    IEEE802154_FRAME_MAX_LEN + 1); \
+                g_ieee802154_probe.frame[g_ieee802154_probe.frame_index++].timestamp = esp_timer_get_time(); \
+                g_ieee802154_probe.frame_index = (g_ieee802154_probe.frame_index == IEEE802154_RECORD_TXRX_FRAME_SIZE) ? \
+                    0 : g_ieee802154_probe.frame_index; \
+                } while (0)
+
+#define IEEE802154_DEBUG_TX_FRAME_DUMP(type) do { \
+                g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].frame_type = type; \
+                g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].mac_conf = IEEE802154.conf.val; \
+                memcpy(g_ieee802154_probe.frame[g_ieee802154_probe.frame_index].dump_frame,\
+                    (void *)IEEE802154.dma_tx_addr, \
+                    IEEE802154_FRAME_MAX_LEN + 1); \
+                g_ieee802154_probe.frame[g_ieee802154_probe.frame_index++].timestamp = esp_timer_get_time(); \
+                g_ieee802154_probe.frame_index = (g_ieee802154_probe.frame_index == IEEE802154_RECORD_TXRX_FRAME_SIZE) ? \
+                    0 : g_ieee802154_probe.frame_index; \
+                } while (0)
+
+#define IEEE802154_RECORD_FRAME(a) do { \
+                if (a == IEEE802154_EVENT_RX_DONE) { \
+                    IEEE802154_DEBUG_RX_FRAME_DUMP(IEEE802154_RECORD_FRAME_TYPE_RX); \
+                } else if (a == IEEE802154_EVENT_ACK_RX_DONE) { \
+                    IEEE802154_DEBUG_RX_FRAME_DUMP(IEEE802154_RECORD_FRAME_TYPE_RX_ACK); \
+                } else if (a == IEEE802154_EVENT_TX_DONE) { \
+                    IEEE802154_DEBUG_TX_FRAME_DUMP(IEEE802154_RECORD_FRAME_TYPE_TX); \
+                } else if (a == IEEE802154_EVENT_ACK_TX_DONE) { \
+                    if (s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK) { \
+                        IEEE802154_DEBUG_TX_FRAME_DUMP(IEEE802154_RECORD_FRAME_TYPE_TX_ACK); \
+                    } \
+                } \
+            } while(0)
+typedef struct {
+    uint8_t frame_type;
+    uint8_t dump_frame[IEEE802154_FRAME_MAX_LEN + 1];
+    int8_t rx_buffer_index;
+    uint32_t mac_conf;
+    uint64_t timestamp;
+} ieee802154_txrx_frame_info_t;
+#else
+#define IEEE802154_RECORD_FRAME(a)
+#endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
 
 /**
  * @brief The table of recording IEEE802154 information.
  */
 typedef struct {
 #if CONFIG_IEEE802154_RECORD_EVENT
-    ieee802154_event_info_t event[IEEE802154_ASSERT_RECORD_EVENT_SIZE]; /*!< record radio event */
-    uint8_t event_index;                                                /*!< the index of event */
+    ieee802154_event_info_t event[IEEE802154_ASSERT_RECORD_EVENT_SIZE];     /*!< record radio event */
+    uint8_t event_index;                                                    /*!< the index of event */
 #endif // CONFIG_IEEE802154_RECORD_EVENT
 #if CONFIG_IEEE802154_RECORD_STATE
-    ieee802154_state_info_t state[IEEE802154_ASSERT_RECORD_STATE_SIZE]; /*!< record radio state */
-    uint8_t state_index;                                                /*!< the index of state */
+    ieee802154_state_info_t state[IEEE802154_ASSERT_RECORD_STATE_SIZE];     /*!< record radio state */
+    uint8_t state_index;                                                    /*!< the index of state */
 #endif // CONFIG_IEEE802154_RECORD_STATE
 #if CONFIG_IEEE802154_RECORD_CMD
-    ieee802154_cmd_info_t cmd[IEEE802154_ASSERT_RECORD_CMD_SIZE];       /*!< record radio command */
-    uint8_t cmd_index;                                                  /*!< the index of command */
+    ieee802154_cmd_info_t cmd[IEEE802154_ASSERT_RECORD_CMD_SIZE];           /*!< record radio command */
+    uint8_t cmd_index;                                                      /*!< the index of command */
 #endif // CONFIG_IEEE802154_RECORD_CMD
 #if CONFIG_IEEE802154_RECORD_ABORT
-    ieee802154_abort_info_t abort[IEEE802154_ASSERT_RECORD_ABORT_SIZE]; /*!< record radio abort */
-    uint8_t abort_index;                                                  /*!< the index of abort */
+    ieee802154_abort_info_t abort[IEEE802154_ASSERT_RECORD_ABORT_SIZE];     /*!< record radio abort */
+    uint8_t abort_index;                                                    /*!< the index of abort */
 #endif // CONFIG_IEEE802154_RECORD_ABORT
+#if CONFIG_IEEE802154_RECORD_TXRX_FRAME
+    ieee802154_txrx_frame_info_t frame[IEEE802154_RECORD_TXRX_FRAME_SIZE];  /*!< record txrx frame */
+    uint8_t frame_index;                                                    /*!< the index of frame */
+#endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
 } ieee802154_probe_info_t;
 
 extern ieee802154_probe_info_t g_ieee802154_probe;
 
-#if CONFIG_IEEE802154_ASSERT
+#if CONFIG_IEEE802154_RECORD
 /**
  * @brief  This function print rich information, which is useful for debug.
  *         Only can be used when `IEEE802154_ASSERT` is enabled.
  *
  */
-void ieee802154_assert_print(void);
+void ieee802154_record_print(void);
+#endif
+
+#if CONFIG_IEEE802154_ASSERT
+
+#if CONFIG_IEEE802154_RECORD
 #define IEEE802154_ASSERT(a) do { \
-                                    if(!(a)) { \
-                                        ieee802154_assert_print(); \
+                                    if(unlikely(!(a))) { \
+                                        ieee802154_record_print(); \
                                         assert(a); \
                                     } \
                                 } while (0)
+#else
+#error "CONFIG_IEEE802154_RECORD must be enabled when CONFIG_IEEE802154_ASSERT enabled"
+#endif
 #else // CONFIG_IEEE802154_ASSERT
 #define IEEE802154_ASSERT(a) assert(a)
 #endif // CONFIG_IEEE802154_ASSERT
@@ -245,6 +339,33 @@ void ieee802154_tx_break_coex_nums_update(void);
 #define IEEE802154_TX_BREAK_COEX_NUMS_UPDATE()
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
 
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+/**
+ * @brief  Count the rx buffer used.
+ *
+ * @param[in]  is_free  True for rx buffer frees and false for rx buffer allocates.
+ *
+ */
+void ieee802154_rx_buffer_statistic_is_free(bool is_free);
+
+/**
+ * @brief  Clear the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void ieee802154_rx_buffer_statistic_clear(void);
+
+/**
+ * @brief  Print the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void ieee802154_rx_buffer_statistic_print(void);
+
+#define IEEE802154_RX_BUFFER_STAT_IS_FREE(a) ieee802154_rx_buffer_statistic_is_free(a)
+#else
+#define IEEE802154_RX_BUFFER_STAT_IS_FREE(a)
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
 // TODO: replace etm code using common interface
 
 #define IEEE802154_ETM_CHANNEL0           0
@@ -261,7 +382,7 @@ typedef enum {
     IEEE802154_SCENE_RX_AT,     /*!< IEEE802154 radio coexistence scene RX AT */
 } ieee802154_txrx_scene_t;
 
-#if !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
 
 /**
  * @brief  Set the IEEE802154 radio coexistence scene during transmitting or receiving.
@@ -280,9 +401,9 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene);
 #endif // !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 
 /**
- * @brief  Convert the frequence to the index of channel.
+ * @brief  Convert the frequency to the index of channel.
  *
- * @param[in]  freq  The frequence where the radio is processing.
+ * @param[in]  freq  The frequency where the radio is processing.
  *
  * @return
  *          The channel index.
@@ -291,12 +412,12 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene);
 uint8_t ieee802154_freq_to_channel(uint8_t freq);
 
 /**
- * @brief  Convert the index of channel to the frequence.
+ * @brief  Convert the index of channel to the frequency.
  *
  * @param[in]  channel  The index of channel where the radio is processing.
  *
  * @return
- *          The frequence.
+ *          The frequency.
  *
  */
 uint8_t ieee802154_channel_to_freq(uint8_t channel);
@@ -320,6 +441,26 @@ void ieee802154_etm_set_event_task(uint32_t channel, uint32_t event, uint32_t ta
  *
  */
 void ieee802154_etm_channel_clear(uint32_t channel);
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+
+/**
+ * @brief  Set the IEEE802.15.4 coexist config.
+ *
+ * @param[in]  config     The config of IEEE802.15.4 coexist.
+ *
+ */
+void ieee802154_set_coex_config(esp_ieee802154_coex_config_t config);
+
+/**
+ * @brief  Get the IEEE802.15.4 coexist config.
+ *
+ * @return
+ *        - The config of IEEE802.15.4 coexist.
+ *
+ */
+esp_ieee802154_coex_config_t ieee802154_get_coex_config(void);
+#endif
 
 #ifdef __cplusplus
 }

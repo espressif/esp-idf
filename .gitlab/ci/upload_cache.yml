@@ -21,7 +21,7 @@ upload-pip-cache:
     policy: push
   script:
     - rm -rf .cache/pip  # clear old packages
-    - bash install.sh --enable-ci --enable-pytest
+    - bash install.sh --enable-ci --enable-test-specific
   parallel:
     matrix:
       - GEO: [ 'shiny',  'brew' ]

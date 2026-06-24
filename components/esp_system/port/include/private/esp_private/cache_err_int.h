@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,20 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Cache error information
+ */
+typedef struct {
+    const char* err_str;    /*!< Error message for the current panic */
+    uint32_t vaddr;     /*!< Virtual address that caused the error */
+    uint32_t size;      /*!< Size of the access which caused the error */
+} esp_cache_err_info_t;
 
 /**
  * @brief initialize cache invalid access interrupt
@@ -34,11 +44,11 @@ void esp_cache_err_int_init(void);
 int esp_cache_err_get_cpuid(void);
 
 /**
- * @brief Returns a pointer to the cache error message
+ * @brief Get error info for the current cache exception
  *
- * @return const char* Pointer to the error message
+ * @err_info struct containing the information of the current error
  */
-const char *esp_cache_err_panic_string(void);
+void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info);
 
 /**
  * @brief Checks if any cache errors are active
@@ -47,6 +57,24 @@ const char *esp_cache_err_panic_string(void);
  * @return false
  */
 bool esp_cache_err_has_active_err(void);
+
+/**
+ * @brief Clear any cache errors interrupt
+ *
+ */
+void esp_cache_err_clear_active_err(void);
+
+#if SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
+/**
+ * @brief Saves and clears active access errors
+ *
+ * @note Some access errors needs to be cleared to allow the cache to operate again,
+ *       otherwise accessing e.g rodata from flash might give invalid data
+ *
+ */
+void esp_cache_err_acs_save_and_clr(void);
+
+#endif //SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
 
 #ifdef __cplusplus
 }

@@ -3,15 +3,17 @@ menu "ESP-Driver:I2S Configurations"
     config I2S_ISR_IRAM_SAFE
         bool "I2S ISR IRAM-Safe"
         default n
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_GDMA_SUPPORTED
         help
             Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
             executable when the cache is disabled (e.g. SPI Flash write).
 
-    config I2S_SUPPRESS_DEPRECATE_WARN
-        bool "Suppress legacy driver deprecated warning"
+    config I2S_CTRL_FUNC_IN_IRAM
+        bool "Place I2S control functions into IRAM"
         default n
         help
-            Enable this option will suppress the deprecation warnings of using APIs in legacy I2S driver.
+            Place I2S control functions into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
 
     config I2S_ENABLE_DEBUG_LOG
         bool "Enable I2S debug log"

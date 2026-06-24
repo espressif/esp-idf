@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -43,7 +43,6 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <xtensa/config/core.h>
-#include <xtensa/hal.h>             /* required for xthal_get_ccount. [refactor-todo] use cpu_hal instead */
 #include <xtensa/xtruntime.h>       /* required for XTOS_SET_INTLEVEL. [refactor-todo] add common intr functions to esp_hw_support */
 #include "xt_instr_macros.h"
 #include "spinlock.h"
@@ -57,16 +56,7 @@
 #include "esp_rom_sys.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 #include "portbenchmark.h"
-
-/* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
-#include <xtensa/config/system.h>
-#include <xtensa_api.h>
-
-/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
-#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#include "esp_timer.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,12 +131,9 @@ typedef uint32_t TickType_t;
 BaseType_t xPortInIsrContext(void);
 
 /**
- * @brief Asserts if in ISR context
+ * @brief Assert if in ISR context
  *
  * - Asserts on xPortInIsrContext() internally
- *
- * @note [refactor-todo] Check if this API is still required
- * @note [refactor-todo] Check if this should be inlined
  */
 void vPortAssertIfInISR(void);
 
@@ -172,7 +159,7 @@ BaseType_t xPortInterruptedFromISRContext(void);
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void);
 
 /**
- * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ * @brief Re-enable interrupts in a nested manner (meant to be called from ISRs)
  *
  * @warning Only applies to current CPU.
  * @param prev_level Previous interrupt level
@@ -241,6 +228,22 @@ static inline void __attribute__((always_inline)) vPortEnterCritical(portMUX_TYP
  * @param[in] mux Spinlock
  */
 void vPortExitCritical(portMUX_TYPE *mux);
+
+/**
+ * @brief Claim thread-safe region start
+ *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeClaim(void);
+
+/**
+ * @brief Claim thread-safe region end
+ *        Restores normal port critical behavior
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeDisclaim(void);
 
 /**
  * @brief FreeRTOS Compliant version of xPortEnterCriticalTimeout()
@@ -358,10 +361,11 @@ void vApplicationSleep(TickType_t xExpectedIdleTime);
 /**
  * @brief Get the tick rate per second
  *
- * @note [refactor-todo] make this inline
+ * @deprecated This function will be removed in IDF 7.0. Use CONFIG_FREERTOS_HZ directly instead.
+ * @note [refactor-todo] Remove this function in IDF 7.0 (IDF-14115)
  * @return uint32_t Tick rate in Hz
  */
-uint32_t xPortGetTickRateHz(void);
+uint32_t xPortGetTickRateHz(void) __attribute__((deprecated("This function will be removed in IDF 7.0. Use CONFIG_FREERTOS_HZ directly instead.")));
 
 /**
  * @brief Set a watchpoint to watch the last 32 bytes of the stack
@@ -389,9 +393,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void);
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 
@@ -427,6 +428,9 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portSET_INTERRUPT_MASK_FROM_ISR()                   xPortSetInterruptMaskFromISR()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
 
+/**
+ * @brief Assert if in ISR context
+ */
 #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
 /**
@@ -460,7 +464,7 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portENTER_CRITICAL_ISR(mux)                 vPortEnterCritical(mux)
 #define portEXIT_CRITICAL_ISR(mux)                  vPortExitCritical(mux)
 
-#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux)
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux, timeout)
 #define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe(mux)
 #define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe(mux)
 
@@ -513,14 +517,9 @@ extern void _frxt_setup_switch( void );     //Defined in portasm.S
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 
-/**
- * - Fine resolution uses ccount
- * - ALT is coarse and uses esp_timer
- * @note [refactor-todo] Make fine and alt timers mutually exclusive
- */
-#define portGET_RUN_TIME_COUNTER_VALUE() xthal_get_ccount()
-#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x) do {x = (uint32_t)esp_timer_get_time();} while(0)
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()        xPortGetRunTimeCounterValue()
 #endif
 
 // --------------------- TCB Cleanup -----------------------
@@ -608,7 +607,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     uint32_t ps_reg = 0;
 
     //Get the current value of PS (processor status) register
-    RSR(PS, ps_reg);
+    RSR(XT_REG_PS, ps_reg);
 
     /*
      * intlevel = (ps_reg & 0xf);
@@ -675,7 +674,7 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
 #else

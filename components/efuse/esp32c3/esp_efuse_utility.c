@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "soc/efuse_periph.h"
 #include "hal/efuse_hal.h"
 
-static const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 #ifdef CONFIG_EFUSE_VIRTUAL
 extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
@@ -86,12 +86,6 @@ esp_err_t esp_efuse_utility_check_errors(void)
         }
     }
     return ESP_OK;
-}
-
-// Burn values written to the efuse write registers
-esp_err_t esp_efuse_utility_burn_chip(void)
-{
-    return esp_efuse_utility_burn_chip_opt(false, true);
 }
 
 esp_err_t esp_efuse_utility_burn_chip_opt(bool ignore_coding_errors, bool verify_written_data)

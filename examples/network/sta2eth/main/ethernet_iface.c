@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,13 +20,13 @@
  *  - this results in better throughput
  *  - might cause ARP conflicts if the PC is also connected to the same AP with another NIC
  */
-#define ETH_BRIDGE_PROMISCUOUS  0
+#define ETH_BRIDGE_PROMISCUOUS  CONFIG_EXAMPLE_ETHERNET_USE_PROMISCUOUS
 
 /**
  * Set this to 1 to runtime update HW addresses in DHCP messages
  * (this is needed if the client uses 61 option and the DHCP server applies strict rules on assigning addresses)
  */
-#define MODIFY_DHCP_MSGS        0
+#define MODIFY_DHCP_MSGS        CONFIG_EXAMPLE_MODIFY_DHCP_MESSAGES
 
 static const char *TAG = "example_wired_ethernet";
 static esp_eth_handle_t s_eth_handle = NULL;
@@ -49,7 +49,11 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Up");
-        esp_netif_dhcps_start(netif);
+        if (netif) {
+            // Start DHCP server only if we "have" the actual netif (provisioning mode)
+            // (if netif==NULL we are only forwarding frames, no lwip involved)
+            esp_netif_dhcps_start(netif);
+        }
         esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
         ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
                  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
@@ -57,7 +61,9 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
         break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
-        esp_netif_dhcps_stop(netif);
+        if (netif) {
+            esp_netif_dhcps_stop(netif);
+        }
         s_ethernet_is_connected = false;
         break;
     case ETHERNET_EVENT_START:
@@ -101,6 +107,17 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
 #define DHCP_PORT_OUT 0x44
 #define DHCP_MACIG_COOKIE_OFFSET (8 + 236)
 #define DHCP_HW_ADDRESS_OFFSET (36)
+/**
+ * The minimum size of a DHCP packet is 236 bytes.
+ * This includes the DHCP header and the minimum-sized DHCP message, which is a DHCPDISCOVER or
+ * DHCPREQUEST message with no options.
+ * The value 285 bytes includes the Ethernet frame overhead:
+ * - Ethernet header: 14 bytes (6 dest MAC + 6 src MAC + 2 type)
+ * - IP header: 20 bytes
+ * - UDP header: 8 bytes
+ * - DHCP message: 236 bytes
+ * - Total: 14 + 20 + 8 + 236 = 278 bytes minimum, rounded up to 285 for safety margin
+ */
 #define MIN_DHCP_PACKET_SIZE (285)
 #define IP_HEADER_SIZE (20)
 #define DHCP_DISCOVER 1
@@ -117,6 +134,10 @@ static void update_udp_checksum(uint16_t *udp_header, uint16_t* ip_header)
     // add UDP payload
     for (int i = 0; i < payload_len/2; i++) {
         sum += htons(*ptr++);
+    }
+    // add the padding if the packet length is odd
+    if (payload_len & 1) {
+        sum += (*((uint8_t *)ptr) << 8);
     }
     // add some IP header data
     ptr = ip_header + 6;
@@ -261,7 +282,7 @@ esp_err_t wired_bridge_init(wired_rx_cb_t rx_cb, wired_free_cb_t free_cb)
 {
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // Check for multiple Ethernet interfaces
     if (1 < eth_port_cnt) {
@@ -314,7 +335,7 @@ esp_err_t wired_netif_init(void)
 {
     uint8_t eth_port_cnt = 0;
     esp_eth_handle_t *eth_handles;
-    ESP_ERROR_CHECK(example_eth_init(&eth_handles, &eth_port_cnt));
+    ESP_ERROR_CHECK(ethernet_init_all(&eth_handles, &eth_port_cnt));
 
     // Check or multiple ethernet interface
     if (1 < eth_port_cnt) {

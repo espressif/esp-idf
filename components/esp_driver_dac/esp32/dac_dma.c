@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,11 +18,11 @@
 #include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "../dac_priv_dma.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/esp_clk.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
@@ -56,7 +56,7 @@ static uint32_t s_dac_set_apll_freq(uint32_t mclk)
     uint32_t expt_freq = mclk * div;
     /* Set APLL coefficients to the given frequency */
     uint32_t real_freq = 0;
-    esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
     if (ret == ESP_ERR_INVALID_ARG) {
         return 0;
     }
@@ -113,14 +113,14 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
 #endif
     esp_err_t ret = ESP_OK;
     /* Acquire DMA peripheral */
-    ESP_RETURN_ON_ERROR(i2s_platform_acquire_occupation(DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), TAG, "Failed to acquire DAC DMA peripheral");
+    ESP_RETURN_ON_ERROR(i2s_platform_acquire_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), TAG, "Failed to acquire DAC DMA peripheral");
     /* Allocate DAC DMA peripheral object */
     s_ddp = (dac_dma_periph_i2s_t *)heap_caps_calloc(1, sizeof(dac_dma_periph_i2s_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_ddp, ESP_ERR_NO_MEM, err, TAG, "No memory for DAC DMA object");
     s_ddp->periph_dev = (void *)I2S_LL_GET_HW(DAC_DMA_PERIPH_I2S_NUM);
 
     if (is_apll) {
-        periph_rtc_apll_acquire();
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true), err, TAG, "APLL enable failed");
         s_ddp->use_apll = true;
     }
     ESP_GOTO_ON_ERROR(s_dac_dma_periph_set_clock(freq_hz, is_apll), err, TAG, "Failed to set clock of DMA peripheral");
@@ -149,17 +149,19 @@ err:
 
 esp_err_t dac_dma_periph_deinit(void)
 {
-    ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
-    ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
-    i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_EOF | I2S_LL_EVENT_TX_TEOF, false);
-    if (s_ddp) {
-        if (s_ddp->use_apll) {
-            periph_rtc_apll_release();
-            s_ddp->use_apll = false;
-        }
-        free(s_ddp);
-        s_ddp = NULL;
+    if (!s_ddp) {
+        return ESP_OK;
     }
+
+    ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
+    ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
+    i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_EOF | I2S_LL_EVENT_TX_TEOF, false);
+    if (s_ddp->use_apll) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false), TAG, "APLL disable failed");
+        s_ddp->use_apll = false;
+    }
+    free(s_ddp);
+    s_ddp = NULL;
 
     return ESP_OK;
 }

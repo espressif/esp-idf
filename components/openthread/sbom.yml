@@ -1,5 +1,5 @@
 name: 'openthread component'
-version: '2023-07-06'
+version: '2025-06-12'
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 description: Espressif fork of OpenThread project, used to maintain ESP-specific patches and release branches
 manifests:

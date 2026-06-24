@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #ifndef __HWCRYPTO_REG_H__
@@ -99,7 +99,6 @@
 #define AES_STATE_IDLE 0
 #define AES_STATE_BUSY 1
 #define AES_STATE_DONE 2
-
 
 /* Crypto DMA */
 #define CRYPTO_DMA_CONF0_REG             ((DR_REG_CRYPTO_DMA_BASE) + 0x00)

@@ -653,6 +653,7 @@ PROVIDE ( ld_acl_tx_packet_type_select = 0x4002fb40 );
 PROVIDE ( ld_acl_sched = 0x40033268 );
 PROVIDE ( ld_acl_sniff_sched = 0x4003340c );
 PROVIDE ( ld_acl_sniff_exit = 0x400312b4 );
+PROVIDE ( ld_sco_evt_canceled_cbk = 0x40031e18 );
 PROVIDE ( ld_acl_rx = 0x4003274c );
 PROVIDE ( ld_acl_tx = 0x4002ffdc );
 PROVIDE ( ld_acl_rx_sync = 0x4002fbec );
@@ -662,13 +663,18 @@ PROVIDE ( ld_acl_clk_isr = 0x40030cf8 );
 PROVIDE ( ld_acl_rsw_frm_cbk = 0x40033bb0 );
 PROVIDE ( ld_sco_modify = 0x40031778 );
 PROVIDE ( lm_cmd_cmp_send = 0x40051838 );
+PROVIDE ( ld_sco_resched_cbk = 0x40031a10 );
 PROVIDE ( ld_sco_frm_cbk = 0x400349dc );
+PROVIDE ( ld_sco_evt_start_cbk = 0x40031afc );
+PROVIDE ( ld_sco_evt_stop_cbk = 0x40031d78 );
+PROVIDE ( ld_acl_rsw_evt_start_cbk = 0x40031154 );
 PROVIDE ( ld_acl_sco_rsvd_check = 0x4002fa94 );
 PROVIDE ( ld_acl_sniff_frm_cbk = 0x4003482c );
 PROVIDE ( ld_inq_end = 0x4003ab48 );
 PROVIDE ( ld_inq_sched = 0x4003aba4 );
 PROVIDE ( ld_inq_frm_cbk = 0x4003ae4c );
 PROVIDE ( ld_pscan_frm_cbk = 0x4003ebe4 );
+PROVIDE ( ld_pscan_evt_start_cbk = 0x4003e924 );
 PROVIDE ( r_ld_acl_active_hop_types_get = 0x40036e10 );
 PROVIDE ( r_ld_acl_afh_confirm = 0x40036d40 );
 PROVIDE ( r_ld_acl_afh_prepare = 0x40036c84 );
@@ -745,6 +751,9 @@ PROVIDE ( r_ld_csb_tx_en = 0x4003a1c0 );
 PROVIDE ( r_ld_csb_tx_init = 0x4003a0e8 );
 PROVIDE ( r_ld_csb_tx_reset = 0x4003a0f8 );
 PROVIDE ( r_ld_csb_tx_set_data = 0x4003a6c0 );
+PROVIDE ( ld_csb_tx_sched = 0x40039c1c );
+PROVIDE ( ld_csb_tx_evt_start_cbk = 0x40039d0c );
+PROVIDE ( ld_csb_tx_evt_canceled_cbk = 0x40039ee4 );
 PROVIDE ( r_ld_fm_clk_isr = 0x4003a7a8 );
 PROVIDE ( r_ld_fm_frame_isr = 0x4003a82c );
 PROVIDE ( r_ld_fm_init = 0x4003a760 );
@@ -768,10 +777,14 @@ PROVIDE ( r_ld_iscan_restart = 0x4003ba44 );
 PROVIDE ( r_ld_iscan_start = 0x4003bb28 );
 PROVIDE ( r_ld_iscan_stop = 0x4003bf1c );
 PROVIDE ( r_ld_iscan_tx_pwr_get = 0x4003c138 );
+PROVIDE ( ld_iscan_evt_start_cbk = 0x4003b58c );
 PROVIDE ( r_ld_page_init = 0x4003d808 );
 PROVIDE ( r_ld_page_reset = 0x4003d814 );
 PROVIDE ( r_ld_page_start = 0x4003d848 );
 PROVIDE ( r_ld_page_stop = 0x4003da54 );
+PROVIDE ( ld_page_frm_cbk = 0x4003d280 );
+PROVIDE ( ld_page_em_init = 0x4003cb34 );
+PROVIDE ( ld_page_evt_start_cbk = 0x4003cf40);
 PROVIDE ( r_ld_pca_coarse_clock_adjust = 0x4003e324 );
 PROVIDE ( r_ld_pca_init = 0x4003deb4 );
 PROVIDE ( r_ld_pca_initiate_clock_dragging = 0x4003e4ac );
@@ -1163,10 +1176,6 @@ PROVIDE ( rom_get_pwctrl_correct = 0x400065d4 );
 PROVIDE ( rom_get_rfcal_rxiq_data = 0x40005bbc );
 PROVIDE ( rom_get_rf_gain_qdb = 0x40006290 );
 PROVIDE ( rom_get_sar_dout = 0x40006564 );
-PROVIDE ( rom_i2c_readReg = 0x40004148 );
-PROVIDE ( rom_i2c_readReg_Mask = 0x400041c0 );
-PROVIDE ( rom_i2c_writeReg = 0x400041a4 );
-PROVIDE ( rom_i2c_writeReg_Mask = 0x400041fc );
 PROVIDE ( rom_index_to_txbbgain = 0x40004df8 );
 PROVIDE ( rom_iq_est_disable = 0x40005590 );
 PROVIDE ( rom_iq_est_enable = 0x40005514 );
@@ -1474,7 +1483,7 @@ PROVIDE ( uart_tx_switch = 0x40009028 );
 
 /*
 These functions are part of the ROM GPIO driver. We do not use them; the provided esp-idf functions
-replace them and this way we can re-use the fixed RAM addresses these routines need.
+replace them and this way we can reuse the fixed RAM addresses these routines need.
 */
 /* <-- So you don't read over it: This comment disables the next lines.
 PROVIDE ( gpio_init = 0x40009c20 );
@@ -1492,18 +1501,18 @@ PROVIDE ( gpio_register_get = 0x40009cbc );
 PROVIDE ( gpio_register_set = 0x40009bbc );
 */
 /* These are still part of that driver, but have been verified not to use static RAM, so they can be used. */
-PROVIDE ( gpio_output_set = 0x40009b24 );
-PROVIDE ( gpio_output_set_high = 0x40009b5c );
-PROVIDE ( gpio_input_get = 0x40009b88 );
-PROVIDE ( gpio_input_get_high = 0x40009b9c );
-PROVIDE ( gpio_matrix_in = 0x40009edc );
-PROVIDE ( gpio_matrix_out = 0x40009f0c );
-PROVIDE ( gpio_pad_select_gpio = 0x40009fdc );
-PROVIDE ( gpio_pad_set_drv = 0x4000a11c );
-PROVIDE ( gpio_pad_pulldown = 0x4000a348 );
-PROVIDE ( gpio_pad_pullup = 0x4000a22c );
-PROVIDE ( gpio_pad_hold = 0x4000a734 );
-PROVIDE ( gpio_pad_unhold = 0x4000a484 );
+PROVIDE ( rom_gpio_output_set = 0x40009b24 );
+PROVIDE ( rom_gpio_output_set_high = 0x40009b5c );
+PROVIDE ( rom_gpio_input_get = 0x40009b88 );
+PROVIDE ( rom_gpio_input_get_high = 0x40009b9c );
+PROVIDE ( rom_gpio_matrix_in = 0x40009edc );
+PROVIDE ( rom_gpio_matrix_out = 0x40009f0c );
+PROVIDE ( rom_gpio_pad_select_gpio = 0x40009fdc );
+PROVIDE ( rom_gpio_pad_set_drv = 0x4000a11c );
+PROVIDE ( rom_gpio_pad_pulldown = 0x4000a348 );
+PROVIDE ( rom_gpio_pad_pullup = 0x4000a22c );
+PROVIDE ( rom_gpio_pad_hold = 0x4000a734 );
+PROVIDE ( rom_gpio_pad_unhold = 0x4000a484 );
 
 /*
 These functions are part of the non-os kernel (etsc).
@@ -1608,8 +1617,10 @@ PROVIDE ( TASK_DESC_LLD = 0x3ff98b58 );
 
 PROVIDE ( ld_acl_clk_isr = 0x40030cf8 );
 PROVIDE ( ld_acl_evt_canceled_cbk = 0x40033944 );
+PROVIDE ( ld_acl_rsw_evt_canceled_cbk = 0x40033364 );
 PROVIDE ( ld_acl_evt_stop_cbk = 0x40033870 );
 PROVIDE ( ld_acl_evt_start_cbk = 0x40030ab0 );
+PROVIDE ( ld_acl_sniff_evt_start_cbk = 0x40031360 );
 PROVIDE ( ld_acl_test_mode_update = 0x40032050 );
 PROVIDE ( ld_acl_resched = 0x40033814 );
 PROVIDE ( ld_acl_rx_isr = 0x40033aa8 );
@@ -1620,9 +1631,20 @@ PROVIDE ( ld_pscan_em_init = 0x4003e5e8 );
 PROVIDE ( ld_acl_rsw_start = 0x40032e90 );
 PROVIDE ( ld_acl_sniff_enter = 0x40031244 );
 PROVIDE ( ld_acl_sniff_trans_sched = 0x40033734 );
+PROVIDE ( ld_acl_afh_apply = 0x40030e94 );
+PROVIDE ( ld_acl_afh_switch_on_cbk = 0x40030fa8 );
+PROVIDE ( ld_acl_afh_switch_off_cbk = 0x400310c4 );
 PROVIDE ( lc_pwr_decr_ind_handler = 0x4002859c );
 PROVIDE ( lc_pwr_incr_ind_handler = 0x400284a8 );
 PROVIDE ( lc_pwr_max_ind_handler = 0x40028690 );
+PROVIDE ( lc_setup_sync_param_check = 0x4002354c );
+PROVIDE ( lc_lmp_rsp_to_flow_spec_handler = 0x400297f0 );
+PROVIDE ( lc_lmp_rsp_to_ind_handler = 0x4002a674 );
+PROVIDE ( lc_pca_sscan_clk_ind_handler = 0x4002a38c );
+PROVIDE ( lc_op_loc_unsniff_req_handler = 0x40028be0 );
+PROVIDE ( lc_op_loc_sniff_req_handler = 0x40028ccc );
+PROVIDE ( lc_op_loc_switch_req_handler = 0x40028df4 );
+PROVIDE ( lc_op_loc_sync_con_req_handler = 0x40028f6c );
 
 PROVIDE ( lm_sync_conf = 0x3ffb8348 );
 PROVIDE ( lm_nb_sync_active = 0x3ffb8346 );

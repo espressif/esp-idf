@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -30,12 +30,12 @@
 #define L2CAP_TAG                     "L2CAP_TAG"
 #define SDP_TAG                       "SDP_TAG"
 #define EXAMPLE_DEVICE_NAME           "ESP_BT_L2CAP_CLIENT"
-#define TARGET_DEVICE_NAME            "ESP_BT_L2CAP_SERVER"
 #define L2CAP_DATA_LEN                100
 #define BT_L2CAP_DYNMIC_PSM           0x1001
 #define BT_UNUSED_RFCOMM              -1
 #define BT_UNKONWN_PROFILE_VERSION    0x0102
 
+static const char remote_device_name[] = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
 static esp_bt_l2cap_cntl_flags_t sec_mask = ESP_BT_L2CAP_SEC_AUTHENTICATE;
 static char *sdp_service_name = "Unknown_profile";
 static const uint8_t  UUID_UNKNOWN[] = {0x00, 0x00, 0x10, 0x10, 0x00, 0x00, 0x10, 0x00,
@@ -125,7 +125,7 @@ static void filter_inquiry_scan_result(esp_bt_gap_cb_param_t *param)
     /* search for target device in its Extended Inqury Response */
     if (eir) {
         get_name_from_eir(eir, peer_bdname, NULL);
-        if (strcmp((char *)peer_bdname, TARGET_DEVICE_NAME) == 0) {
+        if (strcmp((char *)peer_bdname, remote_device_name) == 0) {
             ESP_LOGI(L2CAP_TAG, "Found a target device, address %s, name %s", bda_str, peer_bdname);
             ESP_LOGI(L2CAP_TAG, "Cancel device discovery ...");
             esp_bt_gap_cancel_discovery();
@@ -179,12 +179,12 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 #if (CONFIG_EXAMPLE_SSP_ENABLED == true)
     /* when Security Simple Pairing user confirmation requested, this event comes */
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     /* when Security Simple Pairing passkey notified, this event comes */
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %"PRIu32, param->key_notif.passkey);
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey: %06"PRIu32, param->key_notif.passkey);
         break;
     /* when Security Simple Pairing passkey requested, this event comes */
     case ESP_BT_GAP_KEY_REQ_EVT:
@@ -255,8 +255,9 @@ static void esp_bt_l2cap_cb(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_cb_param
     case ESP_BT_L2CAP_CLOSE_EVT:
     case ESP_BT_L2CAP_CL_INIT_EVT:
     case ESP_BT_L2CAP_START_EVT:
-    case ESP_BT_L2CAP_SRV_STOP_EVT: {
-        bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL);
+    case ESP_BT_L2CAP_SRV_STOP_EVT:
+    case ESP_BT_L2CAP_VFS_REGISTER_EVT: {
+        bt_app_work_dispatch(esp_hdl_bt_l2cap_cb_evt, event, param, sizeof(esp_bt_l2cap_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -306,6 +307,9 @@ static void esp_hdl_bt_l2cap_cb_evt(uint16_t event, void *p_param)
     case ESP_BT_L2CAP_SRV_STOP_EVT:
         ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_CLOSE_EVT: status:%d, psm = 0x%x", l2cap_param->srv_stop.status, l2cap_param->srv_stop.psm);
         break;
+    case ESP_BT_L2CAP_VFS_REGISTER_EVT:
+        ESP_LOGI(L2CAP_TAG, "ESP_BT_L2CAP_VFS_REGISTER_EVT: status:%d", l2cap_param->vfs_register.status);
+        break;
     default:
         break;
     }
@@ -320,7 +324,7 @@ static void esp_sdp_cb(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
     case ESP_SDP_SEARCH_COMP_EVT:
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
     case ESP_SDP_REMOVE_RECORD_COMP_EVT: {
-        bt_app_work_dispatch(esp_hdl_sdp_cb_evt, event, param, sizeof(esp_sdp_cb_param_t), NULL);
+        bt_app_work_dispatch(esp_hdl_sdp_cb_evt, event, param, sizeof(esp_sdp_cb_param_t), NULL, NULL);
         break;
     }
     default:
@@ -331,7 +335,7 @@ static void esp_sdp_cb(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *param)
 
 static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
 {
-    esp_bluetooth_sdp_record_t record = {0};
+    esp_bluetooth_sdp_raw_record_t record = {0};
     esp_sdp_cb_param_t *sdp_param = (esp_sdp_cb_param_t *)p_param;
     char bda_str[18] = {0};
 
@@ -347,7 +351,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
             record.hdr.rfcomm_channel_number = BT_UNUSED_RFCOMM;
             record.hdr.l2cap_psm = BT_L2CAP_DYNMIC_PSM;
             record.hdr.profile_version = BT_UNKONWN_PROFILE_VERSION;
-            esp_sdp_create_record(&record);
+            esp_sdp_create_record((esp_bluetooth_sdp_record_t *)&record);
         }
         break;
     case ESP_SDP_DEINIT_EVT:
@@ -355,7 +359,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
         break;
     case ESP_SDP_SEARCH_COMP_EVT:
         ESP_LOGI(SDP_TAG, "ESP_SDP_SEARCH_COMP_EVT: status:%d", sdp_param->search.status);
-        if (sdp_param->search.status == ESP_SDP_SUCCESS) {
+        if (sdp_param->search.status == ESP_SDP_SUCCESS && sdp_param->search.record_count > 0 && sdp_param->search.records) {
             ESP_LOGI(SDP_TAG, "Remote device address: %s", bda2str(sdp_param->search.remote_addr, bda_str, sizeof(bda_str)));
             ESP_LOGI(SDP_TAG, "Remote device record count: %d", sdp_param->search.record_count);
             ESP_LOGI(SDP_TAG, "Remote device rfcomm channel number: %"PRId32, sdp_param->search.records->hdr.rfcomm_channel_number);
@@ -366,7 +370,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
         ESP_LOGI(SDP_TAG, "ESP_SDP_CREATE_RECORD_COMP_EVT: status:%d", sdp_param->create_record.status);
         if (sdp_param->create_record.status == ESP_SDP_SUCCESS) {
-            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(EXAMPLE_DEVICE_NAME);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
         }

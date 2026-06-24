@@ -13,7 +13,7 @@ SPI 从机半双工模式
 协议
 ^^^^^^^^
 
-有关主设备与 SPI 从机通信的详细信息，请参阅 :doc:`/api-reference/protocols/esp_spi_slave_protocol`。
+有关主设备与 SPI 从机通信的详细信息，请参阅 `ESP SPI 从机半双工协议 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_ 。
 
 通过不同类型的事务，从设备为主设备提供以下服务：
 
@@ -48,6 +48,13 @@ SPI 从机半双工模式
 
 结构体 :cpp:type:`spi_bus_config_t` 指定了总线的初始化方式，结构体 :cpp:type:`spi_slave_hd_slot_config_t` 指定了 SPI 从机驱动程序的运行方式。
 
+如需使用 3-wire 模式，也称 single I/O (SIO) 模式，请在 :cpp:member:`spi_slave_hd_slot_config_t::flags` 中设置 :c:macro:`SPI_SLAVE_HD_3WIRE_MODE`。该模式下，MOSI 同时用于输入和输出数据，因此 :cpp:member:`spi_bus_config_t::mosi_io_num` 必须设置为支持输出的 GPIO。MISO 信号线不会使用，:cpp:member:`spi_bus_config_t::miso_io_num` 可以设置为 ``-1``。在该模式下，主设备应使用 1-bit SPI Slave HD 命令。带有 DIO/QIO 等 mask 的命令会使硬件选择 2 线或 4 线数据阶段，与 3-wire 模式不兼容，导致数据出错。
+
+启用/禁用从机驱动（可选）
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+从机驱动程序支持在程序初始化后通过调用 :cpp:func:`spi_slave_hd_disable` / :cpp:func:`spi_slave_hd_enable` 来禁用/启用驱动程序，以便能够更改时钟或电源配置或休眠以节省电量。默认情况下，驱动程序在初始化后为“启用”状态。
+
 从机反初始化（可选）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -57,6 +64,12 @@ SPI 从机半双工模式
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 要通过 DMA 通道向主设备发送数据，应用程序需要先将数据正确地封装在 :cpp:type:`spi_slave_hd_data_t` 描述符结构体中，然后再将数据描述符和通道参数 :cpp:enumerator:`SPI_SLAVE_CHAN_TX` 传递给 :cpp:func:`spi_slave_hd_queue_trans`。数据描述符的指针存储在队列中，一旦接收到主设备的 Rd_DMA 命令，就会按照调用 :cpp:func:`spi_slave_hd_queue_trans` 时数据进入队列的顺序，依次将数据发送给主设备。
+
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    驱动程序支持使用 PSRAM 进行传输。直接传入 PSRAM 地址作为 :cpp:member:`spi_slave_hd_data_t::data` 即可。对于 DMA 接收通道，其内存地址和传输长度有对齐要求，使用 :cpp:func:`heap_caps_malloc` 分配内存可以自动处理对齐要求。对于不能控制的内存，也可以使用 :c:macro:`SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO` 标志位，驱动会自动从 PSRAM 重新分配满足要求的内存。
+
+    请注意该功能共享 MSPI 总线带宽（总线频率 * 总线位宽），因此主机对该设备的传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**，此时获取传输结果会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
 应用程序需要检查数据发送的结果。为此，应用程序可以调用 :cpp:func:`spi_slave_hd_get_trans_res`，并将通道参数设置为 :cpp:enumerator:`SPI_SLAVE_CHAN_TX`。该函数将阻塞程序，直到主设备发起的 Rd_DMA 命令事务成功完成或超时。函数中的参数 ``out_trans`` 将输出刚刚完成的数据描述符的指针，从而提供有关已完成的发送操作的信息。
 
@@ -121,11 +134,27 @@ SPI 从机半双工模式
 
 当主机发送 ``CMD8``、``CMD9`` 或 ``CMDA`` 时，从机会触发相应的动作。目前，``CMD8`` 固定用于指示 ``Rd_DMA`` 段的终止。要接收通用中断，可以在从机初始化时为 ``CMD9`` 和 ``CMDA`` 注册回调函数，详情请参阅 :ref:`spi_slave_hd_callbacks`。
 
+.. only:: SOC_SPI_SUPPORT_SLEEP_RETENTION
 
-应用示例
--------------------
+    睡眠保留
+    ^^^^^^^^
 
-查看从机设备/主机通信的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_slave_hd` 目录。
+    {IDF_TARGET_NAME} 支持在进入 **Light Sleep** 之前保留 SPI 寄存器中的内容，并在唤醒后恢复。即程序不需要在 **Light Sleep** 唤醒后重新配置 SPI。
+
+    该特性可以通过置位配置中的 :c:macro:`SPICOMMON_BUSFLAG_SLP_ALLOW_PD` 标志位启用。启用后驱动允许系统在 Light Sleep 时对 SPI 掉电，同时保存寄存器配置。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+
+    注意在 Slave 角色下，不支持在所有传输（发送和接收）未完成时进入睡眠，否则将会出错。
+
+.. only:: not esp32
+
+  应用示例
+  -------------------
+
+  查看从机设备/主机通信的示例代码，请前往 ESP-IDF 示例的 :example:`peripherals/spi_slave_hd` 目录。
+
+  :example:`peripherals/spi_slave_hd/append_mode` 演示了如何使用 SPI Slave HD 驱动程序和 ESSL 驱动程序进行通信（ESSL 驱动程序是基于 SPI 主机驱动程序的封装层，用于与半双工模式的 SPI 从设备通信）。
+
+  :example:`peripherals/spi_slave_hd/segment_mode` 演示了两种使用 SPI 从机半双工分段模式的方法：一种是使用 SPI 从机半双工驱动程序，通过两个任务与 SPI 主机进行多次通信；另一种是使用 ESP 串行从机连接 API 与从机进行多次数据交换。
 
 
 API 参考

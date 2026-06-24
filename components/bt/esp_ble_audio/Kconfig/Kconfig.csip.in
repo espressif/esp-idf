@@ -1,0 +1,95 @@
+# Bluetooth Audio - Broadcast Assistant configuration options
+#
+# SPDX-FileCopyrightText: 2020 Bose Corporation
+# SPDX-FileCopyrightText: 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#################### Coordinated Set Identification Service ####################
+
+config BT_CSIP_SET_MEMBER
+    bool "Coordinated Set Identification Profile Set Member support"
+    help
+        This option enables support for Coordinated Set Identification
+        Profile Set Member role and the Coordinated Set Identification
+        Service.
+
+if BT_CSIP_SET_MEMBER
+
+    config BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA
+        bool "Coordinated Set Identification Service Test Sample Data"
+        help
+            Enable the use of the sample data defined by the CSIS spec SIRK.
+            This will use the sample SIRK, prand and LTK.
+
+            WARNING: This option enables anyone to track and decrypt the SIRK
+            (if encrypted) using public sample data.
+            Should not be used for production builds.
+
+    config BT_CSIP_SET_MEMBER_ENC_SIRK_SUPPORT
+        bool "Support for encrypted SIRK"
+        default y
+        help
+            Enables support encrypting the SIRK.
+
+    config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
+        int "Coordinated Set Identification Profile max service instance count"
+        default 1
+        range 1 255
+        help
+            This option sets the maximum number of instances of Coordinated Set
+            Identification Services. If the service is declared as primary service
+            then only a single instance is possible.
+
+            Enabling BT_CAP_ACCEPTOR_SET_MEMBER will take one of the allocated
+            instances.
+
+    config BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
+        bool "SIRK notifiable Support"
+        help
+            This option enables support for clients to be notified on SIRK changes.
+
+    config BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
+        bool "Set Size notifiable support"
+        help
+            This option enables support for clients to be notified on Set Size changes.
+
+endif # BT_CSIP_SET_MEMBER
+
+#################### Coordinated Set Identification Client ####################
+
+config BT_CSIP_SET_COORDINATOR
+    bool "Coordinated Set Identification Profile Set Coordinator Support"
+    help
+        This option enables support for Coordinated Set Identification
+        Profile Set Coordinator.
+
+if BT_CSIP_SET_COORDINATOR
+
+    config BT_CSIP_SET_COORDINATOR_TEST_SAMPLE_DATA
+        bool "Coordinated Set Identification Service Test Sample Data"
+        help
+            Enable the use of the sample data defined by the CSIS spec.
+            This will use the sample SIRK, prand and LTK.
+
+            WARNING: This option enables the client to use the sample data
+            to locate members and decrypt the SIRK, and thus won't work
+            with set members that are not using the sample data.
+            Should not be used for production builds.
+
+    config BT_CSIP_SET_COORDINATOR_MAX_CSIS_INSTANCES
+        int "Coordinated Set Identification Service Count"
+        default 1
+        range 1 3
+        help
+            Sets the number of service instances, which corresponds to the number
+            of different sets the peer device may be in.
+
+    config BT_CSIP_SET_COORDINATOR_ENC_SIRK_SUPPORT
+        bool "Support for encrypted SIRK"
+        default y
+        help
+            Enables support encrypting the SIRK.
+
+endif # BT_CSIP_SET_COORDINATOR

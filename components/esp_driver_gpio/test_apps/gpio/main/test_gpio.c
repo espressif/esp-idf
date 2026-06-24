@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,14 +21,13 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "driver/gpio.h"
-#include "hal/gpio_ll.h"
-#include "soc/gpio_periph.h"
+#include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "spi_flash_mmap.h"
 #include "esp_attr.h"
@@ -51,12 +50,13 @@ static volatile int edge_intr_times = 0;   // use this to get how many times the
 static gpio_config_t test_init_io(gpio_num_t num)
 {
     TEST_ASSERT(GPIO_IS_VALID_OUTPUT_GPIO(num));
+    TEST_ESP_OK(gpio_reset_pin(num));
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = (1ULL << num),
-        .pull_down_en = 0,
-        .pull_up_en = 0,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     return io_conf;
 }
@@ -68,7 +68,7 @@ static void test_gpio_config_mode_input_output(gpio_num_t num)
 {
     gpio_config_t input_output_io = test_init_io(num);
     input_output_io.mode = GPIO_MODE_INPUT_OUTPUT;
-    input_output_io.pull_up_en = 1;
+    input_output_io.pull_up_en = GPIO_PULLUP_ENABLE;
     TEST_ESP_OK(gpio_config(&input_output_io));
 }
 
@@ -83,16 +83,16 @@ TEST_CASE("GPIO_config_parameters_test", "[gpio]")
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
     // test a non-exist pin
-    io_config.pin_bit_mask = ((uint64_t)1 << GPIO_NUM_MAX);
+    io_config.pin_bit_mask = BIT64(GPIO_NUM_MAX);
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
     // test an available pin
-    io_config.pin_bit_mask = ((uint64_t)1 << TEST_GPIO_EXT_OUT_IO);
+    io_config.pin_bit_mask = BIT64(TEST_GPIO_EXT_OUT_IO);
     TEST_ESP_OK(gpio_config(&io_config));
 
     //This IO is just used for input, C3 and S3 doesn't have input only pin.
 #if SOC_HAS_INPUT_ONLY_PIN
-    io_config.pin_bit_mask = ((uint64_t)1 << TEST_GPIO_INPUT_ONLY_PIN);
+    io_config.pin_bit_mask = BIT64(TEST_GPIO_INPUT_ONLY_PIN);
     io_config.mode = GPIO_MODE_INPUT;
     TEST_ESP_OK(gpio_config(&io_config));
     io_config.mode = GPIO_MODE_OUTPUT;
@@ -504,12 +504,11 @@ TEST_CASE("GPIO_iram_interrupt_safe_test", "[gpio]")
 // Inter-connect input pin and output pin through an internal signal
 static void gpio_interconnect_input_output_pin(uint32_t input_pin, uint32_t output_pin, uint32_t signal_idx)
 {
+    gpio_hal_context_t hal = {
+        .dev = &GPIO,
+    };
     // signal256 -> output pin -> signal_idx -> input_pin
-    // Set output pin IE to be able to connect to the signal
-    gpio_ll_input_enable(&GPIO, output_pin);
-    esp_rom_gpio_connect_in_signal(output_pin, signal_idx, 0);
-    // Input pin OE to be able to connect to the signal is done by the esp_rom_gpio_connect_out_signal function
-    esp_rom_gpio_connect_out_signal(input_pin, signal_idx, 0, 0);
+    gpio_hal_matrix_interconnect(&hal, output_pin, input_pin, signal_idx);
 }
 #endif
 
@@ -560,6 +559,9 @@ TEST_CASE("GPIO_get_level_from_fixed_voltage_test", "[gpio]")
     printf("TEST_GPIO_EXT_IN_IO(GPIO%d)'s level is: %d\n", TEST_GPIO_EXT_IN_IO, level2);
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, level2, "get level error! the level should be low!");
 }
+
+#if !CONFIG_IDF_ENV_FPGA
+// On FPGA do not support GPIO pull down
 
 TEST_CASE("GPIO_io_pull_up/down_function", "[gpio]")
 {
@@ -661,6 +663,8 @@ TEST_CASE("GPIO_mode_test", "[gpio]")
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, !level);
     TEST_ASSERT_EQUAL_INT_MESSAGE(!level, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_INPUT_OUTPUT set error, it gives incorrect output");
 }
+
+#endif //!CONFIG_IDF_ENV_FPGA
 
 static void prompt_to_continue(const char *str)
 {
@@ -796,7 +800,7 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 {
     const int test_pins[] = {USB_INT_PHY0_DP_GPIO_NUM,
                              USB_INT_PHY0_DM_GPIO_NUM,
-#if CONFIG_IDF_TARGET_ESP32P4 // TODO: Use proper soc_caps macro
+#ifdef USB_INT_PHY1_DP_GPIO_NUM
                              USB_INT_PHY1_DP_GPIO_NUM,
                              USB_INT_PHY1_DM_GPIO_NUM
 #endif
@@ -804,13 +808,8 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 
     for (int i = 0; i < sizeof(test_pins) / sizeof(int); i++) {
         int pin = test_pins[i];
-        gpio_config_t io_conf = {
-            .intr_type = GPIO_INTR_DISABLE,
-            .mode = GPIO_MODE_INPUT_OUTPUT,
-            .pin_bit_mask = BIT64(pin),
-            .pull_down_en = 0,
-            .pull_up_en = 0,
-        };
+        gpio_config_t io_conf = test_init_io(pin);
+        io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
         gpio_config(&io_conf);
 
         // test pin
@@ -842,7 +841,7 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
     // Therefore, when D+ pin's pull-up value is set to 0, it will also clear USB D+ pull-up value to allow
     // its full functionality as a normal gpio pin
     const int test_pins[] = {USB_INT_PHY0_DP_GPIO_NUM,
-#if CONFIG_IDF_TARGET_ESP32P4 // TODO: Use proper soc_caps macro
+#ifdef USB_INT_PHY1_DP_GPIO_NUM
                              USB_INT_PHY1_DP_GPIO_NUM,
 #endif
                             };
@@ -851,8 +850,8 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
         int pin = test_pins[i];
         gpio_config_t input_io = test_init_io(pin);
         input_io.mode = GPIO_MODE_INPUT;
-        input_io.pull_up_en = 0;
-        input_io.pull_down_en = 1;
+        input_io.pull_up_en = GPIO_PULLUP_DISABLE;
+        input_io.pull_down_en = GPIO_PULLDOWN_ENABLE;
         gpio_config(&input_io);
 
         TEST_ASSERT_EQUAL_INT(0, gpio_get_level(pin));
@@ -860,14 +859,13 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
 }
 #endif //SOC_USB_SERIAL_JTAG_SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
-// TODO: IDF-8638 Remove when light sleep is supported on ESP32C5
+#if SOC_LIGHT_SLEEP_SUPPORTED
 // Ignored in CI because it needs manually connect TEST_GPIO_INPUT_LEVEL_LOW_PIN to 3.3v to wake up from light sleep
 TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
 {
     gpio_config_t io_config = test_init_io(TEST_GPIO_INPUT_LEVEL_LOW_PIN);
     io_config.mode = GPIO_MODE_INPUT;
-    io_config.pull_down_en = 1;
+    io_config.pull_down_en = GPIO_PULLDOWN_ENABLE;
     gpio_config(&io_config);
     TEST_ESP_OK(gpio_wakeup_enable(TEST_GPIO_INPUT_LEVEL_LOW_PIN, GPIO_INTR_HIGH_LEVEL));
     TEST_ESP_OK(esp_sleep_enable_gpio_wakeup());
@@ -876,6 +874,77 @@ TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     esp_light_sleep_start();
     printf("Waked up from light sleep\n");
-    TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_GPIO);
+    TEST_ASSERT(esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_GPIO));
 }
 #endif
+
+#if SOC_DEEP_SLEEP_SUPPORTED
+// Pick one digital IO for each target to test is enough
+static void gpio_deep_sleep_hold_test_first_stage(void)
+{
+    printf("configure a digital pin to hold during deep sleep");
+    int io_num = TEST_GPIO_DEEP_SLEEP_HOLD_PIN;
+    TEST_ASSERT(GPIO_IS_VALID_DIGITAL_IO_PAD(io_num));
+
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
+
+    gpio_config_t io_conf = test_init_io(io_num);
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
+    TEST_ESP_OK(gpio_config(&io_conf));
+
+    const bool initial_level = gpio_get_level(io_num);
+    TEST_ESP_OK(gpio_set_level(io_num, !initial_level));
+
+    // Enable global persistence
+    TEST_ESP_OK(gpio_hold_en(io_num));
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    // On such target, digital IOs cannot be held individually in Deep-sleep
+    // Extra step is required, so that all digital IOs can automatically get held when entering Deep-sleep
+    gpio_deep_sleep_hold_en();
+#endif
+    vTaskDelay(pdMS_TO_TICKS(200));
+    TEST_ESP_OK(gpio_set_level(io_num, initial_level));
+    TEST_ASSERT_EQUAL_INT(!initial_level, gpio_get_level(io_num));
+    vTaskDelay(pdMS_TO_TICKS(200));
+
+    esp_deep_sleep_start();
+}
+
+static void gpio_deep_sleep_hold_test_second_stage(void)
+{
+    int io_num = TEST_GPIO_DEEP_SLEEP_HOLD_PIN;
+    // Check reset reason is waking up from deepsleep
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3 // DIG-399
+    bool level = gpio_get_level(io_num);
+    // Set level should not take effect since hold is still active (and the INPUT_OUTPUT mode should still be held)
+    TEST_ESP_OK(gpio_set_level(io_num, !level));
+    TEST_ASSERT_EQUAL_INT(level, gpio_get_level(io_num));
+#endif
+
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    gpio_deep_sleep_hold_dis();
+#endif
+    TEST_ESP_OK(gpio_hold_dis(io_num));
+
+    gpio_config_t io_conf = test_init_io(io_num);
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
+    TEST_ESP_OK(gpio_config(&io_conf));
+
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3 // DIG-399
+    // Check that the hold level after wakeup is the level before entering deep sleep
+    TEST_ASSERT_EQUAL_INT(!level, gpio_get_level(io_num));
+#endif
+}
+
+/*
+ * Test digital IOs hold function during deep sleep.
+ * This test case can only check the hold state after waking up from deep sleep
+ * If you want to check that the digital IO hold function works properly during deep sleep,
+ * please use logic analyzer or oscilloscope
+ */
+TEST_CASE_MULTIPLE_STAGES("GPIO_deep_sleep_output_hold_test", "[gpio]",
+                          gpio_deep_sleep_hold_test_first_stage,
+                          gpio_deep_sleep_hold_test_second_stage)
+#endif // SOC_DEEP_SLEEP_SUPPORTED

@@ -1,15 +1,48 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <inttypes.h>
-#include "esp_timer.h"
-#include "sdmmc_common.h"
+#include "freertos/FreeRTOS.h"
+#include <sys/param.h> // for MIN/MAX
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_cmd";
 
+/**
+ * @brief Get the effective chunk size for unaligned multi-block transfers.
+ *
+ * Returns the configured value, or 1 (single-block) when the field is left
+ * at its zero-initialised default.
+ */
+static inline size_t get_chunk_size(const sdmmc_card_t *card)
+{
+    size_t chunk_size = card->host.unaligned_multi_block_rw_max_chunk_size;
+    return (chunk_size != 0) ? chunk_size : 1;
+}
+
+static esp_err_t allocate_dma_buf(size_t* actual_size, size_t block_size, void **buf)
+{
+    if (actual_size == NULL || buf == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t size = *actual_size;
+    do {
+        if (*actual_size < block_size) {
+            ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+            return ESP_ERR_NO_MEM;
+        }
+        *buf = heap_caps_malloc(*actual_size, MALLOC_CAP_DMA);
+        if (!*buf) {
+            *actual_size /= 2;
+            ESP_LOGD(TAG, "%s: required space for buffer of size %d not available, trying again with size %zu", __func__, size, *actual_size);
+        }
+    } while (!*buf);
+    return ESP_OK;
+}
 
 esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd)
 {
@@ -264,7 +297,22 @@ esp_err_t sdmmc_send_cmd_set_relative_addr(sdmmc_card_t* card, uint16_t* out_rca
     if (err != ESP_OK) {
         return err;
     }
-    *out_rca = (card->is_mmc) ? mmc_rca : SD_R6_RCA(cmd.response);
+
+    if (card->is_mmc) {
+        *out_rca = mmc_rca;
+    } else {
+        uint16_t response_rca = SD_R6_RCA(cmd.response);
+        if (response_rca == 0) {
+            // Try to get another RCA value if RCA value in the previous response was 0x0000
+            // The value 0x0000 is reserved to set all cards into the Stand-by State with CMD7
+            err = sdmmc_send_cmd(card, &cmd);
+            if (err != ESP_OK) {
+                return err;
+            }
+            response_rca = SD_R6_RCA(cmd.response);
+        }
+        *out_rca = response_rca;
+    }
     return ESP_OK;
 }
 
@@ -326,14 +374,13 @@ esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr)
 {
     size_t datalen = 8;
     esp_err_t err = ESP_FAIL;
-    void *buf = NULL;
-    size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    err = esp_dma_capable_malloc(datalen, &dma_mem_info, &buf, &actual_size);
-    if (err != ESP_OK) {
-        return err;
+
+    void *buf = heap_caps_malloc(datalen, MALLOC_CAP_DMA);
+    if (!buf) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
+    size_t actual_size = heap_caps_get_allocated_size(buf);
 
     sdmmc_command_t cmd = {
             .data = buf,
@@ -394,6 +441,42 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_num_blocks)
+{
+    size_t datalen = sizeof(uint32_t);
+    esp_err_t err = ESP_OK;
+
+    void *buf = heap_caps_malloc(datalen, MALLOC_CAP_DMA);
+    if (!buf) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
+    }
+    size_t actual_size = heap_caps_get_allocated_size(buf);
+
+    sdmmc_command_t cmd = {
+        .data = buf,
+        .datalen = datalen,
+        .buflen = actual_size,
+        .blklen = datalen,
+        .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ,
+        .opcode = SD_APP_SEND_NUM_WR_BLOCKS
+    };
+
+    err = sdmmc_send_app_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        free(buf);
+        ESP_LOGE(TAG, "%s: sdmmc_send_app_cmd returned 0x%x, failed to get number of written write blocks", __func__, err);
+        return err;
+    }
+
+    size_t result = __builtin_bswap32(*(uint32_t*)buf);
+    if (out_num_blocks) {
+        *out_num_blocks = result;
+    }
+    free(buf);
+    return err;
+}
+
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
@@ -403,33 +486,64 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
 
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (esp_dma_is_buffer_alignment_satisfied(src, block_size * block_count, dma_mem_info)) {
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, src, block_size * block_count);
+
+    if (is_aligned
+        #if !SOC_SDMMC_PSRAM_DMA_CAPABLE
+            && !esp_ptr_external_ram(src)
+        #endif
+    ) {
         err = sdmmc_write_sectors_dma(card, src, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the write into
-        // separate single block writes, if needed, and allocate a temporary
+        // separate (multi) block writes, if needed, and allocate a temporary
         // DMA-capable buffer.
-        void *tmp_buf = NULL;
-        size_t actual_size = 0;
-        err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
-        if (err != ESP_OK) {
-            return err;
+        size_t chunk_size = get_chunk_size(card);
+        size_t blocks_per_write = MIN(chunk_size, block_count);
+
+        // prefer using DMA aligned buffer if available over allocating local temporary buffer
+        bool use_dma_aligned_buffer = (card->host.dma_aligned_buffer != NULL);
+        void* buf = card->host.dma_aligned_buffer;
+
+        size_t actual_size = block_size * blocks_per_write;
+        if (!use_dma_aligned_buffer) {
+            // Allocate a temporary DMA-capable buffer.
+            // We don't want to force the allocation into SPIRAM, the allocator
+            // will decide based on the buffer size and memory availability.
+            // We start with the largest buffer possible to minimize the number of read iterations, but if that fails, we try smaller sizes down to a single block.
+            err = allocate_dma_buf(&actual_size, block_size, &buf);
+            if (err != ESP_OK) {
+                return err;
+            }
+            blocks_per_write = actual_size / block_size;
+        } else {
+            // Check that the provided dma_aligned_buffer is large enough
+            actual_size = heap_caps_get_allocated_size(buf);
+            blocks_per_write = actual_size / card->csd.sector_size;
+            size_t chunk_size = get_chunk_size(card);
+            blocks_per_write = MIN(chunk_size, blocks_per_write);
+            if (blocks_per_write == 0) {
+                ESP_LOGE(TAG, "%s: buffer smaller than sector size: buf=%d, sector=%d", __func__, actual_size, card->csd.sector_size);
+                return ESP_ERR_INVALID_SIZE;
+            }
         }
 
         const uint8_t* cur_src = (const uint8_t*) src;
-        for (size_t i = 0; i < block_count; ++i) {
-            memcpy(tmp_buf, cur_src, block_size);
-            cur_src += block_size;
-            err = sdmmc_write_sectors_dma(card, tmp_buf, start_block + i, 1, actual_size);
+        for (size_t i = 0; i < block_count; i += blocks_per_write) {
+            // make sure not to write more than the remaining blocks, i.e. block_count - i
+            blocks_per_write = MIN(blocks_per_write, (block_count - i));
+            memcpy(buf, cur_src, block_size * blocks_per_write);
+            cur_src += block_size * blocks_per_write;
+            err = sdmmc_write_sectors_dma(card, buf, start_block + i, blocks_per_write, actual_size);
             if (err != ESP_OK) {
-                ESP_LOGD(TAG, "%s: error 0x%x writing block %d+%d",
-                        __func__, err, start_block, i);
+                ESP_LOGD(TAG, "%s: error 0x%x writing blocks %d+[%d..%d]",
+                        __func__, err, start_block, i, i + blocks_per_write - 1);
                 break;
             }
         }
-        free(tmp_buf);
+        if (!use_dma_aligned_buffer) {
+            free(buf);
+        }
     }
     return err;
 }
@@ -459,36 +573,48 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     } else {
         cmd.arg = start_block * block_size;
     }
+
+    uint32_t status = 0;
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    esp_err_t err_cmd13 = sdmmc_send_cmd_send_status(card, &status);
+
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        if (cmd.opcode == MMC_WRITE_BLOCK_MULTIPLE) {
+            if (!host_is_spi(card)) {
+                sdmmc_wait_for_idle(card, status); // wait for the card to be idle (in transfer state)
+            } else {
+                vTaskDelay(1); // when the host is in spi mode
+            }
+            size_t successfully_written_blocks = 0;
+            err = sdmmc_send_cmd_num_of_written_blocks(card, &successfully_written_blocks);
+            if (err == ESP_OK) {
+                ESP_LOGD(TAG, "%s: successfully wrote %zu blocks out of %zu", __func__, successfully_written_blocks, block_count);
+            } else {
+                ESP_LOGE(TAG, "%s: sdmmc_send_cmd_num_of_written_blocks returned 0x%x", __func__, err);
+            }
+        }
+        if (err_cmd13 == ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x, status 0x%" PRIx32, __func__, err, status);
+        } else {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x, failed to get status (0x%x)", __func__, err, err_cmd13);
+        }
         return err;
     }
-    uint32_t status = 0;
-    size_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
-    int64_t t1 = 0;
+
     /* SD mode: wait for the card to become idle based on R1 status */
-    while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
-        t1 = esp_timer_get_time();
-        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
-            ESP_LOGE(TAG, "write sectors dma - timeout");
-            return ESP_ERR_TIMEOUT;
-        }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
-        err = sdmmc_send_cmd_send_status(card, &status);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
-            return err;
-        }
-        if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%" PRIu32 ")", (uint32_t) count);
+    if (!host_is_spi(card)) {
+        err = sdmmc_wait_for_idle(card, status);
+        switch (err) {
+            case ESP_OK:
+                break;
+            case ESP_ERR_TIMEOUT:
+                ESP_LOGE(TAG, "%s: sdmmc_wait_for_idle timeout", __func__);
+                return ESP_ERR_TIMEOUT;
+            default:
+                return err;
         }
     }
+
     /* SPI mode: although card busy indication is based on the busy token,
      * SD spec recommends that the host checks the results of programming by sending
      * SEND_STATUS command. Some of the conditions reported in SEND_STATUS are not
@@ -523,36 +649,67 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
 
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (esp_dma_is_buffer_alignment_satisfied(dst, block_size * block_count, dma_mem_info)) {
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, dst, block_size * block_count);
+
+    if (is_aligned
+        #if !SOC_SDMMC_PSRAM_DMA_CAPABLE
+            && !esp_ptr_external_ram(dst)
+        #endif
+    ) {
         err = sdmmc_read_sectors_dma(card, dst, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the read into
-        // separate single block reads, if needed, and allocate a temporary
+        // separate (multi) block reads, if needed, and allocate a temporary
         // DMA-capable buffer.
-        void *tmp_buf = NULL;
-        size_t actual_size = 0;
-        err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
-        if (err != ESP_OK) {
-            return err;
-        }
-        uint8_t* cur_dst = (uint8_t*) dst;
-        for (size_t i = 0; i < block_count; ++i) {
-            err = sdmmc_read_sectors_dma(card, tmp_buf, start_block + i, 1, actual_size);
+        size_t chunk_size = get_chunk_size(card);
+        size_t blocks_per_read = MIN(chunk_size, block_count);
+
+        // prefer using DMA aligned buffer if available over allocating local temporary buffer
+        bool use_dma_aligned_buffer = (card->host.dma_aligned_buffer != NULL);
+        void* buf = card->host.dma_aligned_buffer;
+
+        size_t actual_size = block_size * blocks_per_read;
+        if (!use_dma_aligned_buffer) {
+            // Allocate a temporary DMA-capable buffer.
+            // We don't want to force the allocation into SPIRAM, the allocator
+            // will decide based on the buffer size and memory availability.
+            // We start with the largest buffer possible to minimize the number of read iterations, but if that fails, we try smaller sizes down to a single block.
+            err = allocate_dma_buf(&actual_size, block_size, &buf);
             if (err != ESP_OK) {
-                ESP_LOGD(TAG, "%s: error 0x%x writing block %d+%d",
-                        __func__, err, start_block, i);
+                return err;
+            }
+            blocks_per_read = actual_size / block_size;
+        } else {
+            // Check that the provided dma_aligned_buffer is large enough
+            actual_size = heap_caps_get_allocated_size(buf);
+            blocks_per_read = actual_size / card->csd.sector_size;
+            size_t chunk_size = get_chunk_size(card);
+            blocks_per_read = MIN(chunk_size, blocks_per_read);
+            if (blocks_per_read == 0) {
+                ESP_LOGE(TAG, "%s: buffer smaller than sector size: buf=%d, sector=%d", __func__, actual_size, card->csd.sector_size);
+                return ESP_ERR_INVALID_SIZE;
+            }
+        }
+
+        uint8_t* cur_dst = (uint8_t*) dst;
+        for (size_t i = 0; i < block_count; i += blocks_per_read) {
+            // make sure not to read more than the remaining blocks, i.e. block_count - i
+            blocks_per_read = MIN(blocks_per_read, (block_count - i));
+            err = sdmmc_read_sectors_dma(card, buf, start_block + i, blocks_per_read, actual_size);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: error 0x%x reading blocks %d+[%d..%d]",
+                        __func__, err, start_block, i, i + blocks_per_read - 1);
                 break;
             }
-            memcpy(cur_dst, tmp_buf, block_size);
-            cur_dst += block_size;
+            memcpy(cur_dst, buf, block_size * blocks_per_read);
+            cur_dst += block_size * blocks_per_read;
         }
-        free(tmp_buf);
+        if (!use_dma_aligned_buffer) {
+            free(buf);
+        }
     }
     return err;
 }
-
 esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
         size_t start_block, size_t block_count, size_t buffer_len)
 {
@@ -577,34 +734,31 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
     } else {
         cmd.arg = start_block * block_size;
     }
+
+    uint32_t status = 0;
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    esp_err_t err_cmd13 = sdmmc_send_cmd_send_status(card, &status);
+
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        if (err_cmd13 == ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x, status 0x%" PRIx32, __func__, err, status);
+        } else {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x, failed to get status (0x%x)", __func__, err, err_cmd13);
+        }
         return err;
     }
-    uint32_t status = 0;
-    size_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
-    int64_t t1 = 0;
+
     /* SD mode: wait for the card to become idle based on R1 status */
-    while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
-        t1 = esp_timer_get_time();
-        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
-            ESP_LOGE(TAG, "read sectors dma - timeout");
-            return ESP_ERR_TIMEOUT;
-        }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
-        err = sdmmc_send_cmd_send_status(card, &status);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
-            return err;
-        }
-        if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+    if (!host_is_spi(card)) {
+        err = sdmmc_wait_for_idle(card, status);
+        switch (err) {
+            case ESP_OK:
+                break;
+            case ESP_ERR_TIMEOUT:
+                ESP_LOGE(TAG, "%s: sdmmc_wait_for_idle timeout", __func__);
+                return ESP_ERR_TIMEOUT;
+            default:
+                return err;
         }
     }
     return ESP_OK;

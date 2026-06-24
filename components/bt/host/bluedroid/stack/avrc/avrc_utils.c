@@ -171,7 +171,8 @@ tAVRC_STS avrc_pars_pass_thru(tAVRC_MSG_PASS *p_msg, UINT16 *p_vendor_unique_id)
     UINT16      id;
     tAVRC_STS  status = AVRC_STS_BAD_CMD;
 
-    if (p_msg->op_id == AVRC_ID_VENDOR && p_msg->pass_len == AVRC_PASS_THRU_GROUP_LEN) {
+    if (p_msg && p_msg->p_pass_data && p_msg->op_id == AVRC_ID_VENDOR &&
+        p_msg->pass_len == AVRC_PASS_THRU_GROUP_LEN) {
         p_data = p_msg->p_pass_data;
         AVRC_BE_STREAM_TO_CO_ID (co_id, p_data);
         if (co_id == AVRC_CO_METADATA) {

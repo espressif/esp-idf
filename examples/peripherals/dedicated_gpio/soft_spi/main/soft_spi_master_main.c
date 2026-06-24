@@ -9,8 +9,6 @@
 #include "esp_check.h"
 #include "soft_spi.h"
 
-#define READ_COUNT  16
-
 const char* EXAMPLE_TAG = "soft_spi_master";
 
 void app_main(void)

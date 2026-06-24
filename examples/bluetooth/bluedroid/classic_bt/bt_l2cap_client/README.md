@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S31 |
+| ----------------- | ----- | --------- |
 
 ESP-IDF BT-L2CAP-CLIENT EXAMPLE
 ===================================
@@ -10,7 +10,7 @@ This example is to show how to use the APIs of **Logical Link Control and Adapta
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate the example, it is supposed to connect to [bt_l2cap_server example](../bt_l2cap_server) in ESP-IDF.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate the example, it is supposed to connect to [bt_l2cap_server example](../bt_l2cap_server) in ESP-IDF.
 
 ### Configure the project
 
@@ -48,7 +48,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 For the first step, this example performs device discovery to search for a target device whose device name is "ESP_BT_L2CAP_SERVER". If a candidate target is found, the local device will initiate connection with it.
 
-When you run this example, the explain prints the following at the very begining:
+When you run this example, the explain prints the following at the very beginning:
 ```
 I (1383) L2CAP_TAG: ESP_BT_L2CAP_INIT_EVT: status:0
 

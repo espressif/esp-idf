@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF Gatt Security Server Example
 
@@ -8,6 +8,56 @@ This example shows how to use the APIs to connect to and encrypt with peer devic
 To test this example, you can run [gatt_security_client_demo](../gatt_security_client), which starts scanning, connects to and starts encryption with `gatt_security_server_demo` automatically.
 
 Please, check this [tutorial](tutorial/Gatt_Security_Server_Example_Walkthrough.md) for more information about this example.
+
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │   Security   │                                    │   Security   │
+    │    Server    │                                    │    Client    │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Initialization ───────────           │
+           │                                                   │
+           │  1. Set Security Parameters                       │
+           │     - IO Capability                               │
+           │     - Auth Requirements                           │
+           │     - Key Size                                    │
+           │  2. Create GATT Service                           │
+           │  3. Start Advertising                             │
+           │                                                   │
+           │  ─────────── Connection ───────────               │
+           │                                                   │
+           │                          Scan & Connect           │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── Security Request ───────────         │
+           │                                                   │
+           │  ESP_GAP_BLE_SEC_REQ_EVT                          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Send Security Response                           │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Pairing Process ───────────          │
+           │                                                   │
+           │  Exchange Pairing Features                        │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  Key Generation & Distribution                    │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  Link Encrypted                                   │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  ESP_GAP_BLE_AUTH_CMPL_EVT                        │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │   Security   │                                    │   Security   │
+    │    Server    │                                    │    Client    │
+    └──────────────┘                                    └──────────────┘
+```
 
 ## How to Use Example
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,24 @@ static const char* TAG = "nvs_page_host_test";
 #include "unity.h"
 #include "test_fixtures.hpp"
 #include "esp_log.h"
+#include "spi_flash_mmap.h"
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
 
 using namespace std;
 using namespace nvs;
+
+#define DEFAULT_PURGE_AFTER_ERASE false
 
 void test_Page_load_reading_header_fails()
 {
@@ -648,7 +663,7 @@ void test_Page_eraseItem__uninitialized()
 {
     Page page;
 
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value", DEFAULT_PURGE_AFTER_ERASE));
 }
 
 void test_Page_eraseItem__key_not_found()
@@ -659,7 +674,7 @@ void test_Page_eraseItem__key_not_found()
 
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
 
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "different"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "different", DEFAULT_PURGE_AFTER_ERASE));
 
     TEST_ASSERT_EQUAL(2, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(122, fix.page.getErasedEntryCount());
@@ -679,7 +694,7 @@ void test_Page_eraseItem__write_fail()
     // simulated write failure should fail the eraseItem call
     fix.fail_write_at(1);
 
-    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_ERR_FLASH_OP_FAIL, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value", DEFAULT_PURGE_AFTER_ERASE));
 
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
@@ -693,7 +708,7 @@ void test_Page_eraseItem__write_succeed()
     TEST_ASSERT_EQUAL(2, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(122, fix.page.getErasedEntryCount());
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
-    TEST_ASSERT_EQUAL(ESP_OK, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value"));
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.eraseItem<uint8_t>(NVSValidPageFixture::NS_INDEX, "test_value", DEFAULT_PURGE_AFTER_ERASE));
     TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
     TEST_ASSERT_EQUAL(123, fix.page.getErasedEntryCount());
     TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, fix.page.state());
@@ -906,6 +921,237 @@ void test_Page_calcEntries__invalid()
     TEST_ASSERT_EQUAL(0, nvsStats.namespace_count);
 }
 
+void test_Page_write_read_float()
+{
+    NVSPageFixture fix;
+
+    float val = 3.14159265f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    float read_val = 0.0f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.readItem(1, ItemType::FLOAT, "fval", &read_val, sizeof(read_val)));
+    TEST_ASSERT_EQUAL_FLOAT(val, read_val);
+}
+
+void test_Page_write_read_double()
+{
+    NVSPageFixture fix;
+
+    double val = 2.718281828459045;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::DOUBLE, "dval", &val, sizeof(val)));
+
+    double read_val = 0.0;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.readItem(1, ItemType::DOUBLE, "dval", &read_val, sizeof(read_val)));
+    TEST_ASSERT_EQUAL_DOUBLE(val, read_val);
+}
+
+void test_Page_cmp__float_type_mismatch()
+{
+    NVSPageFixture fix;
+
+    float val = 1.5f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    int32_t int_val = 42;
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.cmpItem(1, ItemType::I32, "fval", &int_val, sizeof(int_val)));
+}
+
+void test_Page_cmp__double_type_mismatch()
+{
+    NVSPageFixture fix;
+
+    double val = 1.5;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::DOUBLE, "dval", &val, sizeof(val)));
+
+    int64_t int_val = 42;
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.cmpItem(1, ItemType::I64, "dval", &int_val, sizeof(int_val)));
+}
+
+void test_Page_cmp__float_content_match()
+{
+    NVSPageFixture fix;
+
+    float val = 1.5f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    float cmp_val = 1.5f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.cmpItem(1, ItemType::FLOAT, "fval", &cmp_val, sizeof(cmp_val)));
+}
+
+void test_Page_cmp__float_content_mismatch()
+{
+    NVSPageFixture fix;
+
+    float val = 1.5f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    float cmp_val = 2.5f;
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_CONTENT_DIFFERS, fix.page.cmpItem(1, ItemType::FLOAT, "fval", &cmp_val, sizeof(cmp_val)));
+}
+
+void test_Page_cmp__double_content_match()
+{
+    NVSPageFixture fix;
+
+    double val = 9.99;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::DOUBLE, "dval", &val, sizeof(val)));
+
+    double cmp_val = 9.99;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.cmpItem(1, ItemType::DOUBLE, "dval", &cmp_val, sizeof(cmp_val)));
+}
+
+void test_Page_find__float_wrong_type()
+{
+    NVSPageFixture fix;
+
+    float val = 1.0f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.findItem(1, ItemType::I32, "fval"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.findItem(1, ItemType::U32, "fval"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.findItem(1, ItemType::DOUBLE, "fval"));
+}
+
+void test_Page_find__double_wrong_type()
+{
+    NVSPageFixture fix;
+
+    double val = 1.0;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::DOUBLE, "dval", &val, sizeof(val)));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.findItem(1, ItemType::I64, "dval"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.findItem(1, ItemType::U64, "dval"));
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.findItem(1, ItemType::FLOAT, "dval"));
+}
+
+void test_Page_readItem__float_as_double_type_mismatch()
+{
+    NVSPageFixture fix;
+
+    float val = 1.5f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+
+    double read_val = 0.0;
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.readItem(1, ItemType::DOUBLE, "fval", &read_val, sizeof(read_val)));
+}
+
+void test_Page_readItem__double_as_float_type_mismatch()
+{
+    NVSPageFixture fix;
+
+    double val = 1.5;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::DOUBLE, "dval", &val, sizeof(val)));
+
+    float read_val = 0.0f;
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_TYPE_MISMATCH, fix.page.readItem(1, ItemType::FLOAT, "dval", &read_val, sizeof(read_val)));
+}
+
+void test_Page_eraseItem__float_success()
+{
+    NVSPageFixture fix;
+
+    float val = 1.5f;
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.writeItem(1, ItemType::FLOAT, "fval", &val, sizeof(val)));
+    TEST_ASSERT_EQUAL(1, fix.page.getUsedEntryCount());
+
+    TEST_ASSERT_EQUAL(ESP_OK, fix.page.eraseItem(1, ItemType::FLOAT, "fval", DEFAULT_PURGE_AFTER_ERASE));
+    TEST_ASSERT_EQUAL(0, fix.page.getUsedEntryCount());
+
+    float read_val = 0.0f;
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, fix.page.readItem(1, ItemType::FLOAT, "fval", &read_val, sizeof(read_val)));
+}
+
+// Backward compatibility test: verifies that a page containing entries with unknown
+// data types (simulating float/double as seen by old firmware) loads successfully.
+// Known-type entries must survive, unknown-type entries must be erased, and the page
+// must remain ACTIVE and writable.
+void test_Page_load__unknown_type_entries_erased_known_survive()
+{
+    PartitionEmulationFixture fix;
+    fix.erase_all();
+
+    // Phase 1: Write a page with known-type and float/double entries via the Page API
+    {
+        Page page;
+        TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
+        TEST_ASSERT_EQUAL(Page::PageState::UNINITIALIZED, page.state());
+
+        uint8_t u8_val = 42;
+        TEST_ASSERT_EQUAL(ESP_OK, page.writeItem(1, ItemType::U8, "u8_key", &u8_val, sizeof(u8_val)));
+
+        int32_t i32_val = 12345;
+        TEST_ASSERT_EQUAL(ESP_OK, page.writeItem(1, ItemType::I32, "i32_key", &i32_val, sizeof(i32_val)));
+
+        float f_val = 3.14f;
+        TEST_ASSERT_EQUAL(ESP_OK, page.writeItem(1, ItemType::FLOAT, "f_key", &f_val, sizeof(f_val)));
+
+        double d_val = 2.718;
+        TEST_ASSERT_EQUAL(ESP_OK, page.writeItem(1, ItemType::DOUBLE, "d_key", &d_val, sizeof(d_val)));
+
+        TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, page.state());
+        TEST_ASSERT_EQUAL(4, page.getUsedEntryCount());
+    }
+
+    // Phase 2: Patch the float and double entries to use synthetic unknown type values.
+    // This simulates how pre-float firmware would see these entries: valid CRC but
+    // unrecognized datatype, causing checkHeaderConsistency() to return false.
+    //
+    // Entry layout: page_header(32B) + entry_table(32B) + entries at 64B stride
+    //   Entry 0 at offset  64: U8 (known)
+    //   Entry 1 at offset  96: I32 (known)
+    //   Entry 2 at offset 128: FLOAT -> patch to 0x34 (unknown)
+    //   Entry 3 at offset 160: DOUBLE -> patch to 0x38 (unknown)
+
+    Item item;
+
+    TEST_ASSERT_EQUAL(ESP_OK, fix.part.read_raw(128, &item, sizeof(item)));
+    TEST_ASSERT_EQUAL(ItemType::FLOAT, item.datatype);
+    item.datatype = static_cast<ItemType>(0x34);
+    item.crc32 = item.calculateCrc32();
+    TEST_ASSERT_EQUAL(ESP_OK, fix.write_raw(128, &item, sizeof(item)));
+
+    TEST_ASSERT_EQUAL(ESP_OK, fix.part.read_raw(160, &item, sizeof(item)));
+    TEST_ASSERT_EQUAL(ItemType::DOUBLE, item.datatype);
+    item.datatype = static_cast<ItemType>(0x38);
+    item.crc32 = item.calculateCrc32();
+    TEST_ASSERT_EQUAL(ESP_OK, fix.write_raw(160, &item, sizeof(item)));
+
+    // Phase 3: Reload the page from the patched partition data.
+    // This simulates booting old firmware that does not know about float/double.
+    {
+        Page page;
+        TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part, 0));
+
+        // The page must remain ACTIVE — unknown entries must not corrupt it
+        TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, page.state());
+
+        // Known-type entries must be fully readable with correct values
+        uint8_t read_u8 = 0;
+        TEST_ASSERT_EQUAL(ESP_OK, page.readItem(1, ItemType::U8, "u8_key", &read_u8, sizeof(read_u8)));
+        TEST_ASSERT_EQUAL(42, read_u8);
+
+        int32_t read_i32 = 0;
+        TEST_ASSERT_EQUAL(ESP_OK, page.readItem(1, ItemType::I32, "i32_key", &read_i32, sizeof(read_i32)));
+        TEST_ASSERT_EQUAL(12345, read_i32);
+
+        // Unknown-type entries must have been erased during load
+        TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, page.findItem(1, ItemType::ANY, "f_key"));
+        TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, page.findItem(1, ItemType::ANY, "d_key"));
+
+        // Only the 2 known-type entries should remain
+        TEST_ASSERT_EQUAL(2, page.getUsedEntryCount());
+
+        // The page must still be writable — verify by adding a new entry
+        uint8_t new_val = 99;
+        TEST_ASSERT_EQUAL(ESP_OK, page.writeItem(1, ItemType::U8, "new_key", &new_val, sizeof(new_val)));
+        TEST_ASSERT_EQUAL(3, page.getUsedEntryCount());
+
+        uint8_t read_new = 0;
+        TEST_ASSERT_EQUAL(ESP_OK, page.readItem(1, ItemType::U8, "new_key", &read_new, sizeof(read_new)));
+        TEST_ASSERT_EQUAL(99, read_new);
+    }
+}
+
 int main(int argc, char **argv)
 {
 #define TEMPORARILY_DISABLED(x)
@@ -965,6 +1211,23 @@ int main(int argc, char **argv)
     RUN_TEST(test_Page_calcEntries__active_wo_blob);
     RUN_TEST(test_Page_calcEntries__active_with_blob);
     RUN_TEST(test_Page_calcEntries__invalid);
+    RUN_TEST(test_Page_write_read_float);
+    RUN_TEST(test_Page_write_read_double);
+    RUN_TEST(test_Page_cmp__float_type_mismatch);
+    RUN_TEST(test_Page_cmp__double_type_mismatch);
+    RUN_TEST(test_Page_cmp__float_content_match);
+    RUN_TEST(test_Page_cmp__float_content_mismatch);
+    RUN_TEST(test_Page_cmp__double_content_match);
+    RUN_TEST(test_Page_find__float_wrong_type);
+    RUN_TEST(test_Page_find__double_wrong_type);
+    RUN_TEST(test_Page_readItem__float_as_double_type_mismatch);
+    RUN_TEST(test_Page_readItem__double_as_float_type_mismatch);
+    RUN_TEST(test_Page_eraseItem__float_success);
+    RUN_TEST(test_Page_load__unknown_type_entries_erased_known_survive);
     int failures = UNITY_END();
     return failures;
 }
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif

@@ -10,6 +10,7 @@
 
     third-party-tools/platformio
     third-party-tools/clion
+    third-party-tools/wokwi
     third-party-tools/visualgdb
 
 有关这些第三方工具的问题，请寻求该工具的支持渠道或用户社区的帮助。
@@ -30,5 +31,3 @@
 * 如果你有兴趣参与到 ESP-IDF 的开发, 请查阅 :doc:`contribute/index`。
 
 * 关于 {IDF_TARGET_NAME} 的其它信息，请查看官网 `文档 <https://espressif.com/zh-hans/support/download/documents>`_ 版块。
-
-* 关于本文档的 PDF 和 HTML 格式下载（最新版本和早期版本），请点击 `下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>`_。

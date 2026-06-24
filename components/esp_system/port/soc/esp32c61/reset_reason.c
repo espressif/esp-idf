@@ -7,10 +7,7 @@
 #include "esp_system.h"
 #include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
-#include "soc/rtc_periph.h"
 #include "esp32c61/rom/rtc.h"
-
-// TODO: [ESP32C61] IDF-9267
 
 static void esp_reset_reason_clear_hint(void);
 
@@ -49,6 +46,7 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CPU0_MWDT1:
         return ESP_RST_WDT;
 
+    case RESET_REASON_RTC_BROWN_OUT:
     case RESET_REASON_SYS_BROWN_OUT:
         return ESP_RST_BROWNOUT;
 
@@ -62,8 +60,8 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CPU0_JTAG:
         return ESP_RST_JTAG;
 
-    case RESET_REASON_CORE_SDIO:
-        return ESP_RST_SDIO;
+    case RESET_REASON_CPU_LOCKUP:
+        return ESP_RST_CPU_LOCKUP;
 
     default:
         return ESP_RST_UNKNOWN;
@@ -101,7 +99,7 @@ esp_reset_reason_t esp_reset_reason(void)
 #define RST_REASON_SHIFT 16
 
 /* in IRAM, can be called from panic handler */
-void IRAM_ATTR esp_reset_reason_set_hint(esp_reset_reason_t hint)
+void esp_reset_reason_set_hint(esp_reset_reason_t hint)
 {
     assert((hint & (~RST_REASON_MASK)) == 0);
     uint32_t val = hint | (hint << RST_REASON_SHIFT) | RST_REASON_BIT;

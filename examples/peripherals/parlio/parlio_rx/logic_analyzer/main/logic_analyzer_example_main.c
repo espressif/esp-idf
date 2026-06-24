@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -15,14 +15,14 @@
 #include "esp_probe_streams.h"
 
 // Alias of the Kconfig options
-#if CONFIG_EXAMPLE_TCP_STREAM
+#if CONFIG_EXAMPLE_DUMP_VIA_TCP
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "esp_event.h"
 
 #define EXAMPLE_HOST_IP_ADDR    CONFIG_EXAMPLE_HOST_IP_ADDR     // Host IP (string)
 #define EXAMPLE_HOST_PORT       CONFIG_EXAMPLE_HOST_PORT        // Host port (int)
-#elif CONFIG_EXAMPLE_FLASH_STREAM
+#elif CONFIG_EXAMPLE_DUMP_VIA_FS
 #define EXAMPLE_MOUNT_POINT     "/esp_probe"
 #define EXAMPLE_DATA_FILE_PATH  EXAMPLE_MOUNT_POINT"/probe_raw.dat"
 #define EXAMPLE_PARTITION_LABEL CONFIG_EXAMPLE_PARTITION_LABEL  // Flash partition label (string, see 'partitions.csv')
@@ -71,20 +71,27 @@ FILE *example_probe_init(void)
 {
     FILE *f = NULL;
     // Create dump stream
-#if CONFIG_EXAMPLE_TCP_STREAM
+#if CONFIG_EXAMPLE_DUMP_VIA_TCP
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(example_connect());
     f = esp_probe_open_tcp_stream(EXAMPLE_HOST_IP_ADDR, EXAMPLE_HOST_PORT);
-#elif CONFIG_EXAMPLE_FLASH_STREAM
+#elif CONFIG_EXAMPLE_DUMP_VIA_FS
     ESP_ERROR_CHECK(esp_probe_init_spiflash_fatfs(EXAMPLE_MOUNT_POINT, EXAMPLE_PARTITION_LABEL, NULL));
     f = esp_probe_open_file_stream(EXAMPLE_DATA_FILE_PATH);
 #endif
     assert(f);
 
     // Configure and allocate the ESP probe
+#if CONFIG_EXAMPLE_DATA_BUFFER_MODE
     esp_probe_config_t config = ESP_PROBE_DEFAULT_BUFFER_CONFIG(EXAMPLE_SAMPLE_RATE_HZ, EXAMPLE_STORAGE_DEPTH_KB);
+#elif CONFIG_EXAMPLE_DATA_STREAM_MODE
+    esp_probe_config_t config = ESP_PROBE_DEFAULT_STREAM_CONFIG(EXAMPLE_SAMPLE_RATE_HZ);
+#else  // CONFIG_EXAMPLE_DATA_BUFFER_STREAM_MODE
+    esp_probe_config_t config = ESP_PROBE_DEFAULT_BUFFER_STREAM_CONFIG(EXAMPLE_SAMPLE_RATE_HZ, EXAMPLE_STORAGE_DEPTH_KB);
+#endif
+
     // Set the GPIOs to be probed
     memcpy(&config.probe_gpio, &s_probe_gpio, sizeof(s_probe_gpio));
     ESP_ERROR_CHECK(esp_new_probe(&config, &s_probe));
@@ -108,10 +115,10 @@ void example_probe_deinit(FILE *f)
     s_probe = NULL;
 
     // Close the output stream
-#if CONFIG_EXAMPLE_TCP_STREAM
+#if CONFIG_EXAMPLE_DUMP_VIA_TCP
     esp_probe_close_tcp_stream(f);
     example_disconnect();
-#elif CONFIG_EXAMPLE_FLASH_STREAM
+#elif CONFIG_EXAMPLE_DUMP_VIA_FS
     esp_probe_close_file_stream(f);
     esp_probe_deinit_spiflash_fatfs(EXAMPLE_PARTITION_LABEL);
 #endif

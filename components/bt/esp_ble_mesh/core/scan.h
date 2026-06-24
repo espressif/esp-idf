@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,15 +33,21 @@ int bt_mesh_scan_enable(void);
 
 int bt_mesh_scan_disable(void);
 
+int bt_mesh_scan_param_update(struct bt_mesh_scan_param *scan_param);
+
 int bt_mesh_scan_with_wl_enable(void);
 
 struct bt_mesh_ble_scan_param {
     uint32_t duration;
 };
 
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
 int bt_mesh_start_ble_scan(struct bt_mesh_ble_scan_param *param);
 
 int bt_mesh_stop_ble_scan(void);
+
+bool bt_mesh_ble_scan_state_get(void);
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_SCAN */
 
 #ifdef __cplusplus
 }

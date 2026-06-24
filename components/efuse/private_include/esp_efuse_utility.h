@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,9 +29,16 @@ extern "C" {
  * @brief Structure range address by blocks
  */
 typedef struct {
-    uint32_t start;
-    uint32_t end;
+    uintptr_t start;
+    uintptr_t end;
 } esp_efuse_range_addr_t;
+
+/**
+ * @brief Current nesting level of eFuse batch write mode.
+ *
+ * This state is shared between the public eFuse API implementation.
+ */
+extern int s_batch_writing_mode;
 
 /**
  * @brief This is type of function that will handle the efuse field register.
@@ -235,7 +242,7 @@ void esp_efuse_utility_erase_efuses_in_flash(void);
  *
  * @return a numeric read register address of the first word in the block.
  */
-uint32_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block);
+uintptr_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block);
 
 /**
  * @brief Checks the correctness of burned data in the given block.

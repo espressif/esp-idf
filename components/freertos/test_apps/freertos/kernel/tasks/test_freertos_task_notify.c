@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include "driver/gptimer.h"
 #include "unity.h"
 #include "test_utils.h"
+
+#if SOC_GPTIMER_SUPPORTED
 
 #define NO_OF_NOTIFS    4
 #define NO_OF_TASKS     2       //Sender and receiver
@@ -196,9 +198,10 @@ TEST_CASE("Test Task_Notify", "[freertos]")
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
     }
 }
+#endif //SOC_GPTIMER_SUPPORTED
 
 /* Test causes asserts, so it cannot be run as a normal unity test case.
-   Test case is ran as a seperate test case in test_task_notify_too_high_index_fails
+   Test case is ran as a separate test case in test_task_notify_too_high_index_fails
  */
 TEST_CASE("Notify too high index fails", "[ignore]")
 {
@@ -207,7 +210,7 @@ TEST_CASE("Notify too high index fails", "[ignore]")
 }
 
 /* Test causes asserts, so it cannot be run as a normal unity test case.
-   Test case is ran as a seperate test case in test_task_notify_wait_too_high_index_fails
+   Test case is ran as a separate test case in test_task_notify_wait_too_high_index_fails
  */
 TEST_CASE("Notify Wait too high index fails", "[ignore]")
 {

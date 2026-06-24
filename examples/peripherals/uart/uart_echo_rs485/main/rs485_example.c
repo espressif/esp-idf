@@ -25,21 +25,24 @@
 
 // Note: Some pins on target chip cannot be assigned for UART communication.
 // Please refer to documentation for selected board and target to configure pins using Kconfig.
-#define ECHO_TEST_TXD   (CONFIG_ECHO_UART_TXD)
-#define ECHO_TEST_RXD   (CONFIG_ECHO_UART_RXD)
+#define ECHO_TEST_TXD           (CONFIG_ECHO_RS485_TX_IO)
+#define ECHO_TEST_RXD           (CONFIG_ECHO_RS485_RX_IO)
 
-// RTS for RS485 Half-Duplex Mode manages DE/~RE
-#define ECHO_TEST_RTS   (CONFIG_ECHO_UART_RTS)
+// DTR for RS485 Half-Duplex Mode manages DE/~RE
+// However, on ESP32 non-UART0 port, DTR signal does not exist, so we use RTS instead
+// RTS is managed by the software inside the driver, while DTR is controlled by the hardware directly, which eliminates latency
+#if CONFIG_IDF_TARGET_ESP32
+#define ECHO_TEST_RTS           (CONFIG_ECHO_RS485_DIRECTION_IO)
+#else
+#define ECHO_TEST_DTR           (CONFIG_ECHO_RS485_DIRECTION_IO)
+#endif
 
-// CTS is not used in RS485 Half-Duplex Mode
-#define ECHO_TEST_CTS   (UART_PIN_NO_CHANGE)
-
-#define BUF_SIZE        (127)
-#define BAUD_RATE       (CONFIG_ECHO_UART_BAUD_RATE)
+#define BUF_SIZE                (127)
+#define BAUD_RATE               (CONFIG_ECHO_UART_BAUD_RATE)
 
 // Read packet timeout
 #define PACKET_READ_TICS        (100 / portTICK_PERIOD_MS)
-#define ECHO_TASK_STACK_SIZE    (2048)
+#define ECHO_TASK_STACK_SIZE    (CONFIG_ECHO_TASK_STACK_SIZE)
 #define ECHO_TASK_PRIO          (10)
 #define ECHO_UART_PORT          (CONFIG_ECHO_UART_PORT_NUM)
 
@@ -84,7 +87,11 @@ static void echo_task(void *arg)
     ESP_LOGI(TAG, "UART set pins, mode and install driver.");
 
     // Set UART pins as per KConfig settings
-    ESP_ERROR_CHECK(uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS));
+#if CONFIG_IDF_TARGET_ESP32
+    ESP_ERROR_CHECK(uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+#else
+    ESP_ERROR_CHECK(uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, ECHO_TEST_DTR, UART_PIN_NO_CHANGE));
+#endif
 
     // Set RS485 half duplex mode
     ESP_ERROR_CHECK(uart_set_mode(uart_num, UART_MODE_RS485_HALF_DUPLEX));
@@ -94,8 +101,9 @@ static void echo_task(void *arg)
 
     // Allocate buffers for UART
     uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
+    assert(data);
 
-    ESP_LOGI(TAG, "UART start recieve loop.\r");
+    ESP_LOGI(TAG, "UART start receive loop.\r");
     echo_send(uart_num, "Start RS485 UART test.\r\n", 24);
 
     while (1) {
@@ -112,7 +120,7 @@ static void echo_task(void *arg)
             for (int i = 0; i < len; i++) {
                 printf("0x%.2X ", (uint8_t)data[i]);
                 echo_send(uart_num, (const char*)&data[i], 1);
-                // Add a Newline character if you get a return charater from paste (Paste tests multibyte receipt/buffer)
+                // Add a Newline character if you get a return character from paste (Paste tests multibyte receipt/buffer)
                 if (data[i] == '\r') {
                     echo_send(uart_num, "\n", 1);
                 }

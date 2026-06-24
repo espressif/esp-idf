@@ -1,6 +1,6 @@
 /*
- * FreeRTOS Kernel V11.0.1
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
@@ -142,13 +142,13 @@ BaseType_t MPU_xTaskGetSchedulerState( void ) FREERTOS_SYSTEM_CALL;
  * with all the APIs. */
 BaseType_t MPU_xTaskCreate( TaskFunction_t pxTaskCode,
                             const char * const pcName,
-                            const uint16_t usStackDepth,
+                            const configSTACK_DEPTH_TYPE uxStackDepth,
                             void * const pvParameters,
                             UBaseType_t uxPriority,
                             TaskHandle_t * const pxCreatedTask ) PRIVILEGED_FUNCTION;
 TaskHandle_t MPU_xTaskCreateStatic( TaskFunction_t pxTaskCode,
                                     const char * const pcName,
-                                    const uint32_t ulStackDepth,
+                                    const configSTACK_DEPTH_TYPE uxStackDepth,
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
@@ -361,12 +361,12 @@ size_t MPU_xStreamBufferNextMessageLengthBytes( StreamBufferHandle_t xStreamBuff
  * with all the APIs. */
 StreamBufferHandle_t MPU_xStreamBufferGenericCreate( size_t xBufferSizeBytes,
                                                      size_t xTriggerLevelBytes,
-                                                     BaseType_t xIsMessageBuffer,
+                                                     BaseType_t xStreamBufferType,
                                                      StreamBufferCallbackFunction_t pxSendCompletedCallback,
                                                      StreamBufferCallbackFunction_t pxReceiveCompletedCallback ) PRIVILEGED_FUNCTION;
 StreamBufferHandle_t MPU_xStreamBufferGenericCreateStatic( size_t xBufferSizeBytes,
                                                            size_t xTriggerLevelBytes,
-                                                           BaseType_t xIsMessageBuffer,
+                                                           BaseType_t xStreamBufferType,
                                                            uint8_t * const pucStreamBufferStorageArea,
                                                            StaticStreamBuffer_t * const pxStaticStreamBuffer,
                                                            StreamBufferCallbackFunction_t pxSendCompletedCallback,
@@ -388,5 +388,6 @@ BaseType_t MPU_xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBu
                                                   BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 BaseType_t MPU_xStreamBufferReceiveCompletedFromISR( StreamBufferHandle_t xStreamBuffer,
                                                      BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
+BaseType_t MPU_xStreamBufferResetFromISR( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 #endif /* MPU_PROTOTYPES_H */

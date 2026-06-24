@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,17 +13,10 @@
 #include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
-typedef enum {
-    MODEM_CLOCK_XTAL32K_CODE = 0,
-    MODEM_CLOCK_RC32K_CODE   = 1,
-    MODEM_CLOCK_EXT32K_CODE  = 2
-} modem_clock_32k_clk_src_code_t;
-
 void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap)
 {
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
-    switch (domain)
-    {
+    switch (domain) {
     case MODEM_CLOCK_DOMAIN_MODEM_APB:
         modem_syscon_ll_set_modem_apb_icg_bitmap(hal->syscon_dev, bitmap);
         break;
@@ -59,12 +52,11 @@ void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_conte
     }
 }
 
-uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
+uint32_t IRAM_ATTR modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
 {
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
     uint32_t bitmap = 0;
-    switch (domain)
-    {
+    switch (domain) {
     case MODEM_CLOCK_DOMAIN_MODEM_APB:
         bitmap = modem_syscon_ll_get_modem_apb_icg_bitmap(hal->syscon_dev);
         break;
@@ -101,22 +93,36 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
     return bitmap;
 }
 
-void IRAM_ATTR modem_clock_hal_enable_modem_adc_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)
+void IRAM_ATTR modem_clock_hal_enable_modem_common_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     if (enable) {
-        modem_syscon_ll_enable_fe_adc_clock(hal->syscon_dev, enable);
-        modem_syscon_ll_enable_fe_dac_clock(hal->syscon_dev, enable);
-        modem_syscon_ll_enable_fe_pwdet_clock(hal->syscon_dev, enable);
         modem_syscon_ll_enable_fe_apb_clock(hal->syscon_dev, enable);
         modem_syscon_ll_enable_fe_80m_clock(hal->syscon_dev, enable);
     }
+}
+
+bool IRAM_ATTR modem_clock_hal_modem_common_fe_clock_is_enabled(modem_clock_hal_context_t *hal)
+{
+    return modem_syscon_ll_fe_apb_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_80m_clock_is_enabled(hal->syscon_dev);
 }
 
 void IRAM_ATTR modem_clock_hal_enable_modem_private_fe_clock(modem_clock_hal_context_t *hal, bool enable)
 {
     if (enable) {
         modem_syscon_ll_enable_fe_160m_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_dac_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_pwdet_clock(hal->syscon_dev, enable);
+        modem_syscon_ll_enable_fe_adc_clock(hal->syscon_dev, enable);
     }
+}
+
+bool IRAM_ATTR modem_clock_hal_modem_private_fe_clock_is_enabled(modem_clock_hal_context_t *hal)
+{
+    return modem_syscon_ll_fe_160m_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_dac_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_pwdet_clock_is_enabled(hal->syscon_dev) &&
+           modem_syscon_ll_fe_adc_clock_is_enabled(hal->syscon_dev);
 }
 
 void modem_clock_hal_set_ble_rtc_timer_divisor_value(modem_clock_hal_context_t *hal, uint32_t  divider)
@@ -141,8 +147,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         modem_lpcon_ll_enable_ble_rtc_timer_slow_osc(hal->lpcon_dev, true);
         break;
@@ -154,15 +159,15 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
         break;
     case MODEM_CLOCK_LPCLK_SRC_RC32K:
         modem_lpcon_ll_enable_ble_rtc_timer_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_RC32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_RC32K);
         break;
     case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
         modem_lpcon_ll_enable_ble_rtc_timer_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_XTAL32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_XTAL32K);
         break;
     case MODEM_CLOCK_LPCLK_SRC_EXT32K:
         modem_lpcon_ll_enable_ble_rtc_timer_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_EXT32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_EXT32K);
         break;
     default:
         HAL_ASSERT(0);
@@ -181,8 +186,7 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         modem_lpcon_ll_enable_coex_lpclk_slow_osc(hal->lpcon_dev, true);
         break;
@@ -194,15 +198,15 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
         break;
     case MODEM_CLOCK_LPCLK_SRC_RC32K:
         modem_lpcon_ll_enable_coex_lpclk_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_RC32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_RC32K);
         break;
     case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
         modem_lpcon_ll_enable_coex_lpclk_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_XTAL32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_XTAL32K);
         break;
     case MODEM_CLOCK_LPCLK_SRC_EXT32K:
         modem_lpcon_ll_enable_coex_lpclk_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_EXT32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_EXT32K);
         break;
     default:
         HAL_ASSERT(0);
@@ -221,8 +225,7 @@ void modem_clock_hal_select_wifi_lpclk_source(modem_clock_hal_context_t *hal, mo
 {
     HAL_ASSERT(src < MODEM_CLOCK_LPCLK_SRC_MAX);
 
-    switch (src)
-    {
+    switch (src) {
     case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
         modem_lpcon_ll_enable_wifi_lpclk_slow_osc(hal->lpcon_dev, true);
         break;
@@ -234,15 +237,15 @@ void modem_clock_hal_select_wifi_lpclk_source(modem_clock_hal_context_t *hal, mo
         break;
     case MODEM_CLOCK_LPCLK_SRC_RC32K:
         modem_lpcon_ll_enable_wifi_lpclk_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_RC32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_RC32K);
         break;
     case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
         modem_lpcon_ll_enable_wifi_lpclk_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_XTAL32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_XTAL32K);
         break;
     case MODEM_CLOCK_LPCLK_SRC_EXT32K:
         modem_lpcon_ll_enable_wifi_lpclk_32k_xtal(hal->lpcon_dev, true);
-        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_EXT32K_CODE);
+        modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_32K_SRC_EXT32K);
         break;
     default:
         HAL_ASSERT(0);

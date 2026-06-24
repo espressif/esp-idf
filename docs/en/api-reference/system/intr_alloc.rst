@@ -22,22 +22,26 @@ Overview
 
     The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 4 core local interrupt sources (CLINT). See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32h4
 
     The {IDF_TARGET_NAME} has two cores, with 32 external asynchronous interrupts each. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT) on each core. See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
+.. only:: esp32c5 or esp32c61
+
+    The {IDF_TARGET_NAME} has one core, with 32 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT). For details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **High-Performance CPU** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
+
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
-A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc` (or :cpp:func:`esp_intr_alloc_intrstatus`). It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
+A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc`, :cpp:func:`esp_intr_alloc_bind`, :cpp:func:`esp_intr_alloc_intrstatus`, :cpp:func:`esp_intr_alloc_intrstatus_bind`, or :cpp:func:`esp_intr_alloc_info`. It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.
 
 The interrupt allocator presents two different types of interrupts, namely shared interrupts and non-shared interrupts, both of which require different handling. Non-shared interrupts will allocate a separate interrupt for every :cpp:func:`esp_intr_alloc` call, and this interrupt is use solely for the peripheral attached to it, with only one ISR that will get called. Shared interrupts can have multiple peripherals triggering them, with multiple ISRs being called when one of the peripherals attached signals an interrupt. Thus, ISRs that are intended for shared interrupts should check the interrupt status of the peripheral they service in order to check if any action is required.
 
 Non-shared interrupts can be either level- or edge-triggered. Shared interrupts can only be level interrupts due to the chance of missed interrupts when edge interrupts are used.
 
-To illustrate why shard interrupts can only be level-triggered, take the scenario where peripheral A and peripheral B share the same edge-triggered interrupt. Peripheral B triggers an interrupt and sets its interrupt signal high, causing a low-to-high edge, which in turn latches the CPU's interrupt bit and triggers the ISR. The ISR executes, checks that peripheral A did not trigger an interrupt, and proceeds to handle and clear peripheral B's interrupt signal. Before the ISR returns, the CPU clears its interrupt bit latch. Thus, during the entire interrupt handling process, if peripheral A triggers an interrupt, it will be missed due the CPU clearing the interrupt bit latch.
+To illustrate why shared interrupts can only be level-triggered, take the scenario where peripheral A and peripheral B share the same edge-triggered interrupt. Peripheral B triggers an interrupt and sets its interrupt signal high, causing a low-to-high edge, which in turn latches the CPU's interrupt bit and triggers the ISR. The ISR executes, checks that peripheral A did not trigger an interrupt, and proceeds to handle and clear peripheral B's interrupt signal. Before the ISR returns, the CPU clears its interrupt bit latch. Thus, during the entire interrupt handling process, if peripheral A triggers an interrupt, it will be missed due the CPU clearing the interrupt bit latch.
 
 
-.. only:: esp32 or esp32s3
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_XTENSA
 
     Multicore Issues
     ----------------
@@ -67,7 +71,7 @@ To illustrate why shard interrupts can only be level-triggered, take the scenari
 
     The remaining interrupt sources are from external peripherals.
 
-.. only:: esp32p4
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_RISCV
 
     Multicore Considerations
     ------------------------
@@ -85,17 +89,45 @@ To illustrate why shard interrupts can only be level-triggered, take the scenari
 
     Care should be taken when calling :cpp:func:`esp_intr_alloc` from a task which is not pinned to a core. During task switching, these tasks can migrate between cores. Therefore it is impossible to tell which CPU the interrupt is allocated on, which makes it difficult to free the interrupt handle and may also cause debugging difficulties. It is advised to use :cpp:func:`xTaskCreatePinnedToCore` with a specific CoreID argument to create tasks that allocate interrupts. In the case of internal interrupt sources, this is required.
 
+.. _iram_safe_interrupts_handlers:
 
 IRAM-Safe Interrupt Handlers
 ----------------------------
 
-The ``ESP_INTR_FLAG_IRAM`` flag registers an interrupt handler that always runs from IRAM (and reads all its data from DRAM), and therefore does not need to be disabled during flash erase and write operations.
+When performing write and erase operations on SPI flash, {IDF_TARGET_NAME} will disable the cache, making SPI flash and SPIRAM inaccessible for interrupt handlers. This is why there are two types of interrupt handlers in ESP-IDF, which have their advantages and disadvantages:
 
-This is useful for interrupts which need a guaranteed minimum execution latency, as flash write and erase operations can be slow (erases can take tens or hundreds of milliseconds to complete).
+**IRAM-safe interrupt handlers** - only access code and data in internal memory (IRAM for code, DRAM for data).
 
-It can also be useful to keep an interrupt handler in IRAM if it is called very frequently, to avoid flash cache misses.
+.. list::
 
-Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+    - **+** **Latency**: They execute relatively fast and with low latency, since they are not blocked by slow flash write and erase operations (erases can take tens or hundreds of milliseconds to complete). This is useful for interrupts which need a guaranteed minimum execution latency.
+    - **-** **Internal memory use**: They consume precious internal memory that could otherwise be used for something else.
+    - **+** **Cache misses**: They do not rely on the cache with potential cache misses since the code and data are in internal memory already.
+    - **Usage**: To register such an interrupt via the interrupt allocator API, use the :c:macro:`ESP_INTR_FLAG_IRAM` flag.
+
+**Non-IRAM-safe interrupt handlers** - may access code and (read-only) data in flash.
+
+.. list::
+
+    - **-** **Latency**: In case of flash operations, these interrupt handlers are postponed, which makes their average latency longer and less predictable.
+    - **+** **Internal memory use**: They do not use any or not as much memory in internal RAM as IRAM-safe interrupts.
+    - **Usage**: To register such an interrupt via the interrupt allocator API, do *not* use the :c:macro:`ESP_INTR_FLAG_IRAM` flag.
+
+*Note that there is nothing that explicitly marks an interrupt handler as IRAM-safe.* An interrupt handler is IRAM-safe implicitly if and only if the code and data it may access are placed in internal memory. The term "IRAM-safe" is actually a bit misleading, since there are more requirements than just placing the handler's code in IRAM memory. Examples of interrupt handlers that are **not** IRAM-safe include:
+
+.. list::
+
+    - A handler that has some of its code placed in flash memory.
+    - A handler that is placed in IRAM but calls functions placed in flash memory.
+    - A handler that accesses a read-only variable placed in flash, even though the handler's code is actually placed in IRAM.
+
+For details on placing code and data in IRAM or DRAM, see :ref:`how-to-place-code-in-iram`.
+
+For more details about SPI flash operations and their interactions with interrupt handlers, see the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>`.
+
+.. note::
+
+    Never register an interrupt handler with ``ESP_INTR_FLAG_IRAM`` flag if you are not 100% sure that all the code and data that the interrupt ever accesses are in IRAM (code) or DRAM (data). Disregarding this will lead to (sometimes spurious) :ref:`cache errors <cache_error>`. This must also be true for code and data accessed indirectly through function calls.
 
 .. _intr-alloc-shared-interrupts:
 
@@ -106,9 +138,13 @@ Several handlers can be assigned to a same source, given that all handlers are a
 
 Sources attached to non-shared interrupt do not support this feature.
 
-.. only:: not SOC_CPU_HAS_FLEXIBLE_INTC
+By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only priority level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at priority levels 2 and 3.
 
-    By default, when ``ESP_INTR_FLAG_SHARED`` flag is specified, the interrupt allocator will allocate only priority level 1 interrupts. Use ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` to also allow allocating shared interrupts at priority levels 2 and 3.
+**Private shared interrupts** (``ESP_INTR_FLAG_SHARED_PRIVATE``) behave like ``ESP_INTR_FLAG_SHARED`` in that they allow multiple sources to share the same CPU interrupt line. However, unlike regular shared interrupts, these lines are never selected automatically by the interrupt allocator.
+
+In other words, even when using ``ESP_INTR_FLAG_SHARED``, no allocation function will ever choose an interrupt line that was created with ``ESP_INTR_FLAG_SHARED_PRIVATE``. These lines are effectively reserved and can only be used by explicitly binding new sources to them (e.g., via ``esp_intr_alloc_bind()`` or related APIs).
+
+This allows you to define a fixed set of interrupt sources sharing a single CPU line (for example, multiple GPIO sources) without the risk of the allocator reusing that line for unrelated interrupts.
 
 Though the framework supports this feature, you have to use it **very carefully**. There usually exist two ways to stop an interrupt from being triggered: **disable the source** or **mask peripheral interrupt status**. ESP-IDF only handles enabling and disabling of the source itself, leaving status and mask bits to be handled by users.
 
@@ -117,6 +153,15 @@ Though the framework supports this feature, you have to use it **very carefully*
 .. note::
 
     Leaving some status bits unhandled without masking them, while disabling the handlers for them, will cause the interrupt(s) to be triggered indefinitely, resulting therefore in a system crash.
+
+When calling :cpp:func:`esp_intr_alloc` or :cpp:func:`esp_intr_alloc_intrstatus`, the interrupt allocator selects the first interrupt that meets the level requirements for mapping the specified source, without considering other sources already mapped to the shared interrupt line. However, by using the functions :cpp:func:`esp_intr_alloc_bind` or :cpp:func:`esp_intr_alloc_intrstatus_bind`, you can explicitly specify the interrupt handler to be shared with the given interrupt source.
+
+For private shared interrupts, the first allocation uses ``ESP_INTR_FLAG_SHARED_PRIVATE`` (with :cpp:func:`esp_intr_alloc` or :cpp:func:`esp_intr_alloc_intrstatus`), and subsequent sources are attached via the same functions, still with ``ESP_INTR_FLAG_SHARED_PRIVATE`` flag and the returned handle.
+
+Named Groups
+^^^^^^^^^^^^
+
+Shared interrupts groups, public or private, can be defined by name. This is done via the ``bind_by.name`` field of the :cpp:type:`esp_intr_alloc_info_t` structure. If a shared interrupt group with the specified name already exists (created by an earlier call using the same name), the new source is attached to that group. Otherwise, a new shared interrupt group is allocated and tagged with that name. Only one of ``bind_by.handle`` or ``bind_by.name`` may be set. The usual flag rules (e.g., interrupt level, SHARED vs SHARED_PRIVATE) still apply. This does not affect the behavior of public shared interrupts: interrupt allocation functions can still attach new sources to existing public shared lines without specifying a name or handle.
 
 
 Troubleshooting Interrupt Allocation

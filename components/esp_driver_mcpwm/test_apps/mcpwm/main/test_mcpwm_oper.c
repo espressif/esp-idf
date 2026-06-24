@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_oper.h"
 #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_gen.h"
@@ -16,8 +16,8 @@
 
 TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
 {
-    const int total_operators = SOC_MCPWM_OPERATORS_PER_GROUP * SOC_MCPWM_GROUPS;
-    mcpwm_timer_handle_t timers[SOC_MCPWM_GROUPS];
+    const int total_operators = MCPWM_LL_GET(OPERATORS_PER_GROUP) * MCPWM_LL_GET(GROUP_NUM);
+    mcpwm_timer_handle_t timers[MCPWM_LL_GET(GROUP_NUM)];
     mcpwm_oper_handle_t operators[total_operators];
 
     mcpwm_timer_config_t timer_config = {
@@ -29,28 +29,28 @@ TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
     mcpwm_operator_config_t operator_config = {
     };
     printf("install one MCPWM timer for each group\r\n");
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         timer_config.group_id = i;
         TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timers[i]));
     }
     printf("install MCPWM operators for each group\r\n");
     int k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         operator_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_OPERATORS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(OPERATORS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operators[k++]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_operator(&operator_config, &operators[0]));
     }
     printf("connect MCPWM timer and operators\r\n");
     k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
-        for (int j = 0; j < SOC_MCPWM_OPERATORS_PER_GROUP; j++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
+        for (int j = 0; j < MCPWM_LL_GET(OPERATORS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_operator_connect_timer(operators[k++], timers[i]));
         }
     }
 
-#if SOC_MCPWM_GROUPS > 1
+#if MCPWM_LL_GET(GROUP_NUM) > 1
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_operator_connect_timer(operators[0], timers[1]));
 #endif
 
@@ -58,7 +58,7 @@ TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
     for (int i = 0; i < total_operators; i++) {
         TEST_ESP_OK(mcpwm_del_operator(operators[i]));
     }
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         TEST_ESP_OK(mcpwm_del_timer(timers[i]));
     }
 }
@@ -121,6 +121,22 @@ static bool IRAM_ATTR test_ost_brake_on_gpio_fault_callback(mcpwm_oper_handle_t 
 
 TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
 {
+    const int cbc_fault_gpio = TEST_FAULT_GPIO1;
+    const int ost_fault_gpio = TEST_FAULT_GPIO2;
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
+    printf("init gpios to read generator output and simulate fault signal\r\n");
+    gpio_config_t fault_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(cbc_fault_gpio) | BIT(ost_fault_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&fault_gpio_conf));
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_a_gpio) | BIT(gen_b_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("install timer\r\n");
     mcpwm_timer_config_t timer_config = {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
@@ -151,13 +167,9 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,
         .flags.active_level = 1,
-        .flags.io_loop_back = true,
-        .flags.pull_down = true,
     };
     mcpwm_fault_handle_t gpio_cbc_fault = NULL;
     mcpwm_fault_handle_t gpio_ost_fault = NULL;
-    const int cbc_fault_gpio = TEST_FAULT_GPIO1;
-    const int ost_fault_gpio = TEST_FAULT_GPIO2;
 
     gpio_fault_config.gpio_num = cbc_fault_gpio;
     TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_cbc_fault));
@@ -180,14 +192,12 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
-    const int gen_a_gpio = TEST_PWMA_GPIO;
-    const int gen_b_gpio = TEST_PWMB_GPIO;
+
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
     mcpwm_generator_config_t generator_config = {
-        .flags.io_loop_back = true,
+        .gen_gpio_num = gen_a_gpio,
     };
-    generator_config.gen_gpio_num = gen_a_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
@@ -249,10 +259,23 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(cbc_fault_gpio));
+    TEST_ESP_OK(gpio_reset_pin(ost_fault_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_a_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_b_gpio));
 }
 
 TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
 {
+    const int gen_a_gpio = TEST_PWMA_GPIO;
+    const int gen_b_gpio = TEST_PWMB_GPIO;
+    printf("init gpios to read generator output\r\n");
+    gpio_config_t gen_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT(gen_a_gpio) | BIT(gen_b_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&gen_gpio_conf));
+
     printf("install timer\r\n");
     mcpwm_timer_config_t timer_config = {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
@@ -286,14 +309,11 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
-    const int gen_a_gpio = TEST_PWMA_GPIO;
-    const int gen_b_gpio = TEST_PWMB_GPIO;
     mcpwm_gen_handle_t gen_a = NULL;
     mcpwm_gen_handle_t gen_b = NULL;
     mcpwm_generator_config_t generator_config = {
-        .flags.io_loop_back = true,
+        .gen_gpio_num = gen_a_gpio,
     };
-    generator_config.gen_gpio_num = gen_a_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
@@ -360,4 +380,6 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
     TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
+    TEST_ESP_OK(gpio_reset_pin(gen_a_gpio));
+    TEST_ESP_OK(gpio_reset_pin(gen_b_gpio));
 }

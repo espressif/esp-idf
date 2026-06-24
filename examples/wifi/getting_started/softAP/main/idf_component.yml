@@ -1,0 +1,10 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/esp_wifi_remote:
+    version: ">=0.10,<2.0"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"
+  espressif/esp_hosted:
+    version: "~2"
+    rules:
+      - if: "target in [esp32p4, esp32h2]"

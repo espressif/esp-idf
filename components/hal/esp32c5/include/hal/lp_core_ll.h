@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,11 +14,11 @@
 #include <stdbool.h>
 #include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
+#include "soc/lp_aon_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #define LP_CORE_LL_WAKEUP_SOURCE_HP_CPU    BIT(0) // Started by HP core (1 single wakeup)
 #define LP_CORE_LL_WAKEUP_SOURCE_LP_UART   BIT(1) // Enable wake-up by a certain number of LP UART RX pulses
@@ -31,14 +31,17 @@ extern "C" {
  *
  * @param enable true to enable, false to disable
  */
-static inline void lp_core_ll_enable_bus_clock(bool enable)
+static inline void _lp_core_ll_enable_bus_clock(bool enable)
 {
     LPPERI.clk_en.lp_cpu_ck_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_core_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_core_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_core_ll_enable_bus_clock(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        _lp_core_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
 
 /**
  * @brief Reset the lp_core module
@@ -52,8 +55,23 @@ static inline void lp_core_ll_reset_register(void)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define lp_core_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_core_ll_reset_register(__VA_ARGS__)
+#define lp_core_ll_reset_register(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        lp_core_ll_reset_register(__VA_ARGS__); \
+    } while(0)
 
+/**
+ * @brief Enable fast access of LP memory
+ *
+ * @note When fast access is activated, LP-core cannot access LP mem during deep sleep
+ *
+ * @param enable Enable if true, disable if false
+ */
+static inline void lp_core_ll_fast_lp_mem_enable(bool enable)
+{
+    LP_AON.lpbus.fast_mem_mux_sel = enable;
+    LP_AON.lpbus.fast_mem_mux_sel_update = 1;
+}
 
 /**
  * @brief Trigger a LP_CORE_LL_WAKEUP_SOURCE_HP_CPU wake-up on the lp core
@@ -118,6 +136,42 @@ static inline uint32_t lp_core_ll_get_wakeup_source(void)
 static inline void lp_core_ll_request_sleep(void)
 {
     PMU.lp_ext.pwr1.sleep_req = 1;
+}
+
+/**
+ * @brief Get which interrupts have triggered on the LP core
+ *
+ * @return uint8_t bit mask of triggered LP interrupt sources
+ */
+static inline uint8_t lp_core_ll_get_triggered_interrupt_srcs(void)
+{
+    return LPPERI.interrupt_source.lp_interrupt_source;
+}
+
+/**
+ * @brief Enable wakeup from LP UART.
+ */
+static inline void lp_core_ll_enable_lp_uart_wakeup(bool enable)
+{
+    LPPERI.mem_ctrl.uart_wakeup_en = enable;
+}
+
+/**
+ * @brief Get the flag that marks whether LP CPU is awakened by ETM
+ *
+ * @return Return true if lpcore is woken up by soc_etm
+ */
+static inline bool lp_core_ll_get_etm_wakeup_flag(void)
+{
+    return LP_AON.lpcore.lpcore_etm_wakeup_flag;
+}
+
+/**
+ * @brief Clear the flag that marks whether LP CPU is awakened by soc_etm
+ */
+static inline void lp_core_ll_clear_etm_wakeup_flag(void)
+{
+    LP_AON.lpcore.lpcore_etm_wakeup_flag_clr = 0x01;
 }
 
 #ifdef __cplusplus

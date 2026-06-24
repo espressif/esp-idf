@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -43,7 +43,7 @@ static void ds18b20_write_bit(bool bit)
     }
 
     /* Write slot duration at least 60 us */
-    ulp_riscv_delay_cycles(60 * ULP_RISCV_CYCLES_PER_US);
+    ulp_riscv_delay_us(60);
     ulp_riscv_gpio_output_level(EXAMPLE_1WIRE_GPIO, 1);
 }
 
@@ -56,11 +56,11 @@ static bool ds18b20_read_bit(void)
     ulp_riscv_gpio_output_level(EXAMPLE_1WIRE_GPIO, 1);
 
     /* Must sample within 15 us of the failing edge */
-    ulp_riscv_delay_cycles(5 * ULP_RISCV_CYCLES_PER_US);
+    ulp_riscv_delay_us(5);
     bit = ulp_riscv_gpio_get_level(EXAMPLE_1WIRE_GPIO);
 
     /* Read slot duration at least 60 us */
-    ulp_riscv_delay_cycles(55 * ULP_RISCV_CYCLES_PER_US);
+    ulp_riscv_delay_us(55);
 
     return bit;
 }
@@ -86,15 +86,15 @@ bool ds18b20_reset_pulse(void)
     bool presence_pulse;
     /* min 480 us reset pulse + 480 us reply time is specified by datasheet */
     ulp_riscv_gpio_output_level(EXAMPLE_1WIRE_GPIO, 0);
-    ulp_riscv_delay_cycles(480 * ULP_RISCV_CYCLES_PER_US);
+    ulp_riscv_delay_us(480);
 
     ulp_riscv_gpio_output_level(EXAMPLE_1WIRE_GPIO, 1);
 
     /* Wait for ds18b20 to pull low before sampling */
-    ulp_riscv_delay_cycles(60 * ULP_RISCV_CYCLES_PER_US);
+    ulp_riscv_delay_us(60);
     presence_pulse = ulp_riscv_gpio_get_level(EXAMPLE_1WIRE_GPIO) == 0;
 
-    ulp_riscv_delay_cycles(420 * ULP_RISCV_CYCLES_PER_US);
+    ulp_riscv_delay_us(420);
 
     return presence_pulse;
 }

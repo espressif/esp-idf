@@ -1,0 +1,9 @@
+# Persistent-storage-format test partition layout.
+# CONFIG_PARTITION_TABLE_CUSTOM=y is needed for this file to be picked up.
+# The NVS partition is the target for the pre-flashed fixture images
+# under fixtures/.
+#
+# Name,            Type,  SubType,    Offset,    Size, Flags
+nvs,               data,  nvs,        0xA000,    0x6000,
+esp_secure_cert,   0x3F,          ,   0x10000,   0x2000,
+factory,           app,   factory,    0x20000,         1M,

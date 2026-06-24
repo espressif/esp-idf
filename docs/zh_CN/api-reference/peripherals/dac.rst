@@ -22,27 +22,6 @@ DAC 外设支持以下列方式输出模拟信号：
 
 其他模拟输出选项可参考 :doc:`Sigma-Delta 调制 <sdm>` 和 :doc:`LED PWM 控制器 <ledc>`。这两个模块均输出高频的 PWM/PDM 信号，也可借助硬件低通滤波输出较低频率的模拟信号。
 
-DAC 文件结构
-------------
-
-.. figure:: ../../../_static/diagrams/dac/dac_file_structure.png
-    :align: center
-    :alt: DAC 文件结构
-
-    DAC 文件结构
-
-
-**需包含在 DAC 应用程序中的公共头文件包括：**
-
-- ``dac.h``：原有 DAC 驱动的最上层头文件，只包含在使用原有驱动 API 的应用程序中。
-- ``dac_oneshot.h``：新 DAC 驱动的最上层头文件，应包含在使用新驱动 API（单次模式）的应用程序中。
-- ``dac_cosine.h``：新 DAC 驱动的最上层头文件，应包含在使用新驱动 API（余弦模式）的应用程序中。
-- ``dac_continuous.h``：新 DAC 驱动的最上层头文件，应包含在使用新驱动 API（连续模式）的应用程序中。
-
-.. note::
-
-    原有驱动程序与新驱动程序无法共存。使用原有驱动需包含 ``dac.h``，使用新驱动需包含 ``dac_oneshot.h``、 ``dac_cosine.h`` 和 ``dac_continuous.h``。后续更新或将移除原有驱动程序。
-
 功能概览
 --------
 
@@ -111,6 +90,8 @@ IRAM 安全
 
 此时在 cache 被禁用时仍可以运行中断，但会增加 IRAM 内存消耗。
 
+.. _dac-iram-safe:
+
 线程安全
 ^^^^^^^^
 
@@ -119,8 +100,7 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^^
 
-- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 `IRAM 安全 <#iram-safe>`__。
-- :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN` 控制是否在使用原有 DAC 驱动时关闭警告信息。
+- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 :ref:`dac-iram-safe`。
 - :ref:`CONFIG_DAC_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 .. only:: esp32
@@ -130,11 +110,10 @@ Kconfig 选项
 应用示例
 --------
 
-``单次模式``、 ``连续模式`` 和 ``余弦模式`` 的基本示例如下所示：
-
-- :example:`peripherals/dac/dac_oneshot`
-- :example:`peripherals/dac/dac_continuous`
-- :example:`peripherals/dac/dac_cosine_wave`
+- :example:`peripherals/dac/dac_continuous/signal_generator` 演示了在 {IDF_TARGET_NAME} 上使用 DAC 驱动程序输出连续电压的两种方式：通过 DMA 传输、以及通过定时器中断。两种方式可以生成不同的波形，如正弦波、三角波、锯齿波和方波。
+- :example:`peripherals/dac/dac_continuous/dac_audio` 演示了如何在 {IDF_TARGET_NAME} 上使用 DAC 驱动程序播放存储在 buffer 中的音频，每秒钟通过扬声器或耳机播放一次。
+- :example:`peripherals/dac/dac_cosine_wave` 演示了如何在 {IDF_TARGET_NAME} 开发板上使用 DAC 驱动程序在两个通道上输出余弦波，并且可以通过示波器或内部的 ADC 通道进行监控。
+- :example:`peripherals/dac/dac_oneshot` 演示了如何在 {IDF_TARGET_NAME} 上使用 DAC 驱动程序输出每 500 毫秒阶跃增加一次的电压，并且会定期复位为 0。输出的电压可通过 ADC 或可选的示波器进行监测。
 
 API 参考
 --------
@@ -143,4 +122,4 @@ API 参考
 .. include-build-file:: inc/dac_cosine.inc
 .. include-build-file:: inc/dac_continuous.inc
 .. include-build-file:: inc/components/esp_driver_dac/include/driver/dac_types.inc
-.. include-build-file:: inc/components/hal/include/hal/dac_types.inc
+.. include-build-file:: inc/components/esp_hal_ana_conv/include/hal/dac_types.inc

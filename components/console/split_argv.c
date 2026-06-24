@@ -40,7 +40,7 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
     char *next_arg_start = line;
     char *out_ptr = line;
     for (char *in_ptr = line; argc < argv_size - 1; ++in_ptr) {
-        int char_in = (unsigned char) *in_ptr;
+        int char_in = (unsigned char) * in_ptr;
         if (char_in == 0) {
             break;
         }
@@ -80,7 +80,7 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
             } else {
                 /* unrecognized escape character, skip */
             }
-            state = (split_state_t) (state & (~SS_FLAG_ESCAPE));
+            state = (split_state_t)(state & (~SS_FLAG_ESCAPE));
             break;
 
         case SS_ARG:

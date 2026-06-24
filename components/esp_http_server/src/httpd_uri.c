@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,11 +146,13 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
 
     for (int i = 0; i < hd->config.max_uri_handlers; i++) {
         if (hd->hd_calls[i] == NULL) {
+            ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // False-positive detection. TODO GCC-366
             hd->hd_calls[i] = malloc(sizeof(httpd_uri_t));
             if (hd->hd_calls[i] == NULL) {
                 /* Failed to allocate memory */
                 return ESP_ERR_HTTPD_ALLOC_MEM;
             }
+            ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 
             /* Copy URI string */
             hd->hd_calls[i]->uri = strdup(uri_handler->uri);
@@ -164,11 +166,23 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             hd->hd_calls[i]->method   = uri_handler->method;
             hd->hd_calls[i]->handler  = uri_handler->handler;
             hd->hd_calls[i]->user_ctx = uri_handler->user_ctx;
+#ifdef CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT
+            hd->hd_calls[i]->ws_pre_handshake_cb = uri_handler->ws_pre_handshake_cb;
+#endif
+#ifdef CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT
+            hd->hd_calls[i]->ws_post_handshake_cb = uri_handler->ws_post_handshake_cb;
+#endif
 #ifdef CONFIG_HTTPD_WS_SUPPORT
             hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
             hd->hd_calls[i]->handle_ws_control_frames = uri_handler->handle_ws_control_frames;
             if (uri_handler->supported_subprotocol) {
                 hd->hd_calls[i]->supported_subprotocol = strdup(uri_handler->supported_subprotocol);
+                if (hd->hd_calls[i]->supported_subprotocol == NULL) {
+                    /* Failed to allocate memory */
+                    free((void *)hd->hd_calls[i]->uri);
+                    free(hd->hd_calls[i]);
+                    return ESP_ERR_HTTPD_ALLOC_MEM;
+                }
             } else {
                 hd->hd_calls[i]->supported_subprotocol = NULL;
             }
@@ -199,6 +213,9 @@ esp_err_t httpd_unregister_uri_handler(httpd_handle_t handle,
             ESP_LOGD(TAG, LOG_FMT("[%d] removing %s"), i, hd->hd_calls[i]->uri);
 
             free((char*)hd->hd_calls[i]->uri);
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            free((char*)hd->hd_calls[i]->supported_subprotocol);
+#endif // CONFIG_HTTPD_WS_SUPPORT
             free(hd->hd_calls[i]);
             hd->hd_calls[i] = NULL;
 
@@ -237,6 +254,9 @@ esp_err_t httpd_unregister_uri(httpd_handle_t handle, const char *uri)
             ESP_LOGD(TAG, LOG_FMT("[%d] removing %s"), i, uri);
 
             free((char*)hd->hd_calls[i]->uri);
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            free((char*)hd->hd_calls[i]->supported_subprotocol);
+#endif // CONFIG_HTTPD_WS_SUPPORT
             free(hd->hd_calls[i]);
             hd->hd_calls[i] = NULL;
             found = true;
@@ -268,6 +288,9 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd)
         ESP_LOGD(TAG, LOG_FMT("[%d] removing %s"), i, hd->hd_calls[i]->uri);
 
         free((char*)hd->hd_calls[i]->uri);
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+        free((char*)hd->hd_calls[i]->supported_subprotocol);
+#endif // CONFIG_HTTPD_WS_SUPPORT
         free(hd->hd_calls[i]);
         hd->hd_calls[i] = NULL;
     }
@@ -312,6 +335,13 @@ esp_err_t httpd_uri(struct httpd_data *hd)
 #ifdef CONFIG_HTTPD_WS_SUPPORT
     struct httpd_req_aux   *aux = req->aux;
     if (uri->is_websocket && aux->ws_handshake_detect && uri->method == HTTP_GET) {
+#ifdef CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT
+        if (uri->ws_pre_handshake_cb && uri->ws_pre_handshake_cb(req) != ESP_OK) {
+            ESP_LOGW(TAG, LOG_FMT("ws_pre_handshake_cb failed"));
+            return ESP_FAIL;
+        }
+#endif /* CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT */
+
         ESP_LOGD(TAG, LOG_FMT("Responding WS handshake to sock %d"), aux->sd->fd);
         esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req, uri->supported_subprotocol);
         if (ret != ESP_OK) {
@@ -322,9 +352,17 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         aux->sd->ws_handler = uri->handler;
         aux->sd->ws_control_frames = uri->handle_ws_control_frames;
         aux->sd->ws_user_ctx = uri->user_ctx;
-    }
-#endif
 
+#ifdef CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT
+        if (uri->ws_post_handshake_cb && uri->ws_post_handshake_cb(req) != ESP_OK) {
+            ESP_LOGW(TAG, LOG_FMT("ws_post_handshake_cb failed"));
+            return ESP_FAIL;
+        }
+#endif /* CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT */
+        /* If the request is websocket handshake, then do not call the uri->handler */
+        return ESP_OK;
+    }
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
     /* Invoke handler */
     if (uri->handler(req) != ESP_OK) {
         /* Handler returns error, this socket should be closed */

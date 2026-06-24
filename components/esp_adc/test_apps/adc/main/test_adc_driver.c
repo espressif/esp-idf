@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,12 +52,7 @@ static bool IRAM_ATTR s_alarm_callback(gptimer_handle_t timer, const gptimer_ala
 
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     TEST_ESP_OK(adc_oneshot_read_isr(test_ctx->oneshot_handle, ADC1_TEST_CHAN0, &adc_raw));
-    esp_rom_printf("adc raw: %d\r\n", adc_raw);
-    if (test_ctx->level) {
-        TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw);
-    } else {
-        TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw);
-    }
+    test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, test_ctx->level, adc_raw, false, false);
 
     // check the count value at alarm event
     vTaskNotifyGiveFromISR(test_ctx->task_handle, &high_task_wakeup);
@@ -80,7 +75,7 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_12,
+        .atten = TEST_ADC_DRIVER_DEFAULT_ATTEN,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(isr_test_ctx.oneshot_handle, ADC1_TEST_CHAN0, &config));
 
@@ -168,10 +163,9 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 50 * 1000,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_12;
+    adc_pattern[0].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -203,7 +197,7 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
             cnt++;
         }
         esp_rom_printf("avg: %" PRIu32 "\n", sum / cnt);
-        TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, sum / cnt);
+        test_assert_adc_raw(ADC_UNIT_1, ADC1_TEST_CHAN0, false, sum / cnt, false, false);
     }
 
     TEST_ESP_OK(adc_continuous_stop(handle));
@@ -226,10 +220,9 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][manual][ignore
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 50 * 1000,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_12;
+    adc_pattern[0].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -279,10 +272,9 @@ TEST_CASE("ADC continuous test after restarting", "[adc_continuous][ignore]")
     adc_continuous_config_t dig_cfg = {
         .sample_freq_hz = 50 * 1000,
         .conv_mode = ADC_CONV_SINGLE_UNIT_1,
-        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_12;
+    adc_pattern[0].atten = TEST_ADC_DRIVER_DEFAULT_ATTEN;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -322,13 +314,13 @@ TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")
     };
     TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
 
-    adc_iir_filter_handle_t filter_hdl[SOC_ADC_DIGI_IIR_FILTER_NUM + 1] = {};
+    adc_iir_filter_handle_t filter_hdl[ADC_LL_DIGI_IIR_FILTER_NUM + 1] = {};
     adc_continuous_iir_filter_config_t filter_config = {
         .unit = ADC_UNIT_1,
         .channel = ADC_CHANNEL_0,
         .coeff = ADC_DIGI_IIR_FILTER_COEFF_2,
     };
-    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+    for (int i = 0; i < ADC_LL_DIGI_IIR_FILTER_NUM; i++) {
 #if SOC_ADC_DIG_IIR_FILTER_UNIT_BINDED
         //On these chips, the unit and the filter_id should be the same
         filter_config.unit = i;
@@ -337,9 +329,9 @@ TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")
     }
 
     filter_config.unit = ADC_UNIT_1;
-    TEST_ASSERT(adc_new_continuous_iir_filter(handle, &filter_config, &filter_hdl[SOC_ADC_DIGI_IIR_FILTER_NUM]) == ESP_ERR_NOT_FOUND);
+    TEST_ASSERT(adc_new_continuous_iir_filter(handle, &filter_config, &filter_hdl[ADC_LL_DIGI_IIR_FILTER_NUM]) == ESP_ERR_NOT_FOUND);
 
-    for (int i = 0; i < SOC_ADC_DIGI_IIR_FILTER_NUM; i++) {
+    for (int i = 0; i < ADC_LL_DIGI_IIR_FILTER_NUM; i++) {
         TEST_ESP_OK(adc_del_continuous_iir_filter(filter_hdl[i]));
     }
 

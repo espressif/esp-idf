@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@ Don't put any other code into this file. */
 #include "hal/adc_types.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/critical_section.h"
 
 extern portMUX_TYPE rtc_spinlock;
 
@@ -23,9 +24,9 @@ static __attribute__((constructor)) void adc2_init_code_calibration(void)
 {
     adc_hal_calibration_init(ADC_UNIT_2);
     adc_calc_hw_calibration_code(ADC_UNIT_2, ADC_ATTEN_DB_12);
-    portENTER_CRITICAL(&rtc_spinlock);
+    esp_os_enter_critical(&rtc_spinlock);
     adc_set_hw_calibration_code(ADC_UNIT_2, ADC_ATTEN_DB_12);
-    portEXIT_CRITICAL(&rtc_spinlock);
+    esp_os_exit_critical(&rtc_spinlock);
 }
 
 /** Don't call `adc2_cal_include` in user code. */

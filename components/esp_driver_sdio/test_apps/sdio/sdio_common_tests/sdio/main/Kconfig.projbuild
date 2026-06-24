@@ -1,0 +1,13 @@
+menu "SDIO Slave Test Slave Configuration"
+    choice TEST_SDIO_HOST_TARGET
+        prompt "SDIO Host Chip"
+        default TEST_SDIO_HOST_TARGET_ESP32
+        help
+            SDIO Host chip target
+
+        config TEST_SDIO_HOST_TARGET_ESP32
+            bool "SDIO Host ESP32"
+        config TEST_SDIO_HOST_TARGET_ESP32P4
+            bool "SDIO Host ESP32P4"
+    endchoice
+endmenu

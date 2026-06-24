@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /**
-* @brief  Default configuration reference of OT esp-netif
+* @brief  Default configuration reference of OpenThread esp-netif
 */
 #define ESP_NETIF_INHERENT_DEFAULT_OPENTHREAD() \
     {   \
@@ -62,10 +62,30 @@ void esp_openthread_netif_glue_deinit(void);
  * @brief This function acquires the OpenThread netif.
  *
  * @return
- *      The OpenThread netif or NULL if not initialzied.
+ *      The OpenThread netif or NULL if not initialized.
  *
  */
 esp_netif_t *esp_openthread_get_netif(void);
+
+/**
+ * @brief This function register a handler for meshcop-e service publish event and remove event.
+ *
+ * @param[in] handler       The handler.
+ * @param[in] for_publish   The usage of handler, true for publish event and false for remove event.
+ *
+ */
+void esp_openthread_register_meshcop_e_handler(esp_event_handler_t handler, bool for_publish);
+
+/**
+ * @brief This function judges the target address is openthread mesh local or not.
+ *
+ * @param[in]    address   The address.
+ *
+ * @return
+ *      - True if the address is openthread mesh local, otherwise false
+ *
+ */
+bool is_openthread_internal_mesh_local_addr(const otIp6Address *address);
 
 #ifdef __cplusplus
 }

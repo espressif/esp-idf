@@ -116,9 +116,9 @@ Generally, try to avoid using the raw SPI flash functions to the "main" SPI flas
 SPI Flash Size
 --------------
 
-The SPI flash size is configured by writing a field in the software bootloader image header, flashed at offset 0x1000.
+The SPI flash size is configured by writing a field in the ESP-IDF second stage bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by ``esptool.py`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+By default, the SPI flash size is detected by ``esptool`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
@@ -145,7 +145,7 @@ Refer to the :doc:`Flash Encryption documentation </security/flash-encryption>` 
 Memory Mapping API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB", esp32c2=16 ~ 64 KB}
+{IDF_TARGET_CACHE_SIZE:default="64 KB", esp32c2=16~64 KB}
 
 {IDF_TARGET_NAME} features memory hardware which allows regions of flash memory to be mapped into instruction and data address spaces. This mapping works only for read operations. It is not possible to modify contents of flash memory by writing to a mapped memory region.
 
@@ -175,6 +175,10 @@ Note that since memory mapping happens in pages, it may be possible to read data
 SPI Flash Implementation
 ------------------------
 
+.. note::
+
+    The header files in ``components/spi_flash/include/esp_flash_chips/`` directory are **semi-public** - they are intended for expert users who need to implement custom chip drivers for unsupported flash chips, but they are **not considered stable API** and may change without notice. For most use cases, you should use the public APIs in ``esp_flash.h`` instead.
+
 The ``esp_flash_t`` structure holds chip data as well as three important parts of this API:
 
 1. The host driver, which provides the hardware support to access the chip;
@@ -184,7 +188,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 Host Driver
 ^^^^^^^^^^^
 
-The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``hal/include/hal`` folder). This interface provides some common functions to communicate with the chip.
+The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``esp_hal_mspi/include/hal`` folder). This interface provides some common functions to communicate with the chip.
 
 In other files of the SPI HAL, some of these functions are implemented with existing {IDF_TARGET_NAME} memory-spi functionalities. However, due to the speed limitations of {IDF_TARGET_NAME}, the HAL layer cannot provide high-speed implementations to some reading commands (so the support for it was dropped). The files (``memspi_host_driver.h`` and ``.c``) implement the high-speed version of these commands with the ``common_command`` function provided in the HAL, and wrap these functions as ``spi_flash_host_driver_t`` for upper layer to use.
 
@@ -193,7 +197,7 @@ You can also implement your own host driver, even with the GPIO. As long as all 
 Chip Driver
 ^^^^^^^^^^^
 
-The chip driver, defined in ``spi_flash_chip_driver.h``, wraps basic functions provided by the host driver for the API layer to use.
+The chip driver, defined in ``esp_flash_chips/spi_flash_chip_driver.h``, wraps basic functions provided by the host driver for the API layer to use.
 
 Some operations need some commands to be sent first, or read some status afterwards. Some chips need different commands or values, or need special communication ways.
 
@@ -205,6 +209,11 @@ The chip driver relies on the host driver.
 
 OS Functions
 ^^^^^^^^^^^^
+
+.. toctree::
+   :hidden:
+
+   ../spi_features
 
 Currently the OS function layer provides entries of a lock and delay.
 
@@ -252,6 +261,102 @@ Once the flash operation is complete, the function on CPU A sets another flag, `
 Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``).
 
 In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
+
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+
+    .. _internal_memory_saving_for_flash_driver:
+
+    Internal Memory Saving For Flash Driver
+    ---------------------------------------
+
+    The ESP-IDF provides options to optimize the usage of IRAM by selectively placing certain functions into flash memory via turning off :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`. It allows SPI flash operation functions to be executed from flash memory instead of IRAM. Thus it saves IRAM memory for other significant time-critical functions or tasks.
+
+    However, this has some implications for flash itself. Functions placed into flash memory may have slightly increased execution times compared to those placed in IRAM. Applications with strict timing requirements or those heavily reliant on SPI flash operations may need to evaluate the trade-offs before enabling this option.
+
+    .. note::
+
+        :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` should not be turned off when :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` is not enabled, otherwise it will cause critical crash. As for flash suspend feature, please refer to :ref:`auto-suspend` for more information.
+
+    Resource Consumption
+    ^^^^^^^^^^^^^^^^^^^^
+
+    Use the :doc:`/api-guides/tools/idf-size` tool to check the code and data consumption of the SPI flash driver. The following are the test results under 2 different conditions (using ESP32-C2 as an example):
+
+    **Note that the following data are not exact values and are for reference only; they may differ on different chip models.**
+
+    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is enabled:
+
+    .. list-table:: Resource Consumption
+       :widths: 20 10 10 10 10 10 10 10 10 10
+       :header-rows: 1
+
+       * - Component Layer
+         - Total Size
+         - DIRAM
+         - .bss
+         - .data
+         - .text
+         - Flash Code
+         - .text
+         - Flash Data
+         - .rodata
+       * - hal
+         - 4624
+         - 4038
+         - 0
+         - 0
+         - 4038
+         - 586
+         - 586
+         - 0
+         - 0
+       * - spi_flash
+         - 14074
+         - 11597
+         - 82
+         - 1589
+         - 9926
+         - 2230
+         - 2230
+         - 247
+         - 247
+
+    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is disabled:
+
+    .. list-table:: Resource Consumption
+       :widths: 20 10 10 10 10 10 10 10 10 10
+       :header-rows: 1
+
+       * - Component Layer
+         - Total Size
+         - DIRAM
+         - .bss
+         - .data
+         - .text
+         - Flash Code
+         - .text
+         - Flash Data
+         - .rodata
+       * - hal
+         - 4632
+         - 0
+         - 0
+         - 0
+         - 0
+         - 4632
+         - 4632
+         - 0
+         - 0
+       * - spi_flash
+         - 14569
+         - 1399
+         - 22
+         - 429
+         - 948
+         - 11648
+         - 11648
+         - 1522
+         - 1522
 
 Related Documents
 ------------------

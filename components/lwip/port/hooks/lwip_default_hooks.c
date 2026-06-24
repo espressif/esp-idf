@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,21 @@
 #include "lwip/prot/dhcp.h"
 #include "lwip/dhcp.h"
 #include "lwip/prot/iana.h"
+#include "esp_log.h"
 #include <string.h>
 
+#ifndef __weak
 #define __weak __attribute__((weak))
+#endif
+
+/**
+ * Default lwip behavior is to silence LWIP_ERROR() if LWIP_DEBUG is not set.
+ * In some case (if IDF hooks are used), we need to log the error message
+ * instead of silently ignoring it -- using this macro
+ */
+#define LWIP_ERROR_LOG(message, expression, handler) do { if (!(expression)) { \
+  ESP_LOGE("LWIP_ERROR", message); \
+  handler;}} while(0)
 
 #ifdef CONFIG_LWIP_HOOK_IP6_ROUTE_DEFAULT
 struct netif *__weak
@@ -56,11 +68,25 @@ const ip_addr_t *__weak lwip_hook_ip6_select_source_address(struct netif *netif,
 #endif
 
 #ifdef CONFIG_LWIP_HOOK_IP6_INPUT_DEFAULT
+/**
+ * @brief The default IPv6 input hook checks if we already have an IPv6 address (netif->ip6_addr[0] is link local),
+ * so we drop all incoming IPv6 packets if the input netif has no LL address.
+ *
+ * LWIP accepts IPv6 multicast packets even if the ip6_addr[] for the given address wasn't set,
+ * this may cause trouble if we enable IPv6 SLAAC (LWIP_IPV6_AUTOCONFIG), but have not created any LL address.
+ * If the router sends a packet to all nodes 0xff01::1 with RDNSS servers, it would be accepted and rewrite
+ * DNS server info with IPv6 values (which won't be routable without any IPv6 address assigned)
+ */
 int __weak lwip_hook_ip6_input(struct pbuf *p, struct netif *inp)
 {
-    LWIP_UNUSED_ARG(p);
-    LWIP_UNUSED_ARG(inp);
-
+    /* Check if the first IPv6 address (link-local) is unassigned (all zeros).
+     * If the address is empty, it indicates that no link-local address has been configured,
+     * and the interface should not accept incoming IPv6 traffic. */
+    if (ip6_addr_isany(ip_2_ip6(&inp->ip6_addr[0]))) {
+        /* We don't have an LL address -> eat this packet here, so it won't get accepted on the input netif */
+        pbuf_free(p);
+        return 1;
+    }
     return 0;
 }
 #endif
@@ -175,6 +201,18 @@ int dhcp_set_vendor_class_identifier(uint8_t len, const char * str)
 }
 #endif /* LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS */
 
+#if defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT)
+void __weak lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset)
+{
+    LWIP_UNUSED_ARG(dhcp);
+    LWIP_UNUSED_ARG(state);
+    LWIP_UNUSED_ARG(len);
+    LWIP_UNUSED_ARG(p);
+    LWIP_UNUSED_ARG(offset);
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("lwip_dhcp_on_extra_option(): Received DHCP option %d\n", option));
+}
+#endif /* CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT */
+
 void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset)
 {
     LWIP_UNUSED_ARG(dhcp);
@@ -215,6 +253,10 @@ void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uin
          pbuf_copy_partial(p, &dhcp_option_vsi, copy_len, offset) == copy_len, return;);
     } /* DHCP_OPTION_VSI */
 #endif /* LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS */
+#if !defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_NONE)
+    lwip_dhcp_on_extra_option(dhcp, state, option, len, p, offset);
+#endif
+
 }
 
 void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg *msg_out, uint16_t *options_out_len)
@@ -229,8 +271,9 @@ void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg 
       state == DHCP_STATE_REQUESTING || state == DHCP_STATE_BACKING_OFF || state == DHCP_STATE_SELECTING) {
     size_t i;
     u8_t *options = msg_out->options + *options_out_len;
-    LWIP_ERROR("dhcp_append(client_id): options_out_len + 3 + netif->hwaddr_len <= DHCP_OPTIONS_LEN",
-               *options_out_len + 3U + netif->hwaddr_len <= DHCP_OPTIONS_LEN, return;);
+    /* size of this option is not hwaddr_len, but hwaddr_len + 1 (IANA_HWTYPE_ETHERNET) */
+    LWIP_ERROR_LOG("dhcp_append(client_id): options_out_len + 3 + (netif->hwaddr_len + 1) <= DHCP_OPTIONS_LEN, please increase LWIP_DHCP_OPTIONS_LEN",
+               *options_out_len + 3U + (netif->hwaddr_len + 1) <= DHCP_OPTIONS_LEN, return;);
     *options_out_len = *options_out_len + netif->hwaddr_len + 3;
     *options++ = DHCP_OPTION_CLIENT_ID;
     *options++ = netif->hwaddr_len + 1; /* option size */
@@ -260,7 +303,7 @@ void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg 
       }
 #endif /* LWIP_NETIF_HOSTNAME */
     }
-    LWIP_ERROR("dhcp_append(vci): options_out_len + 3 + vci_size <= DHCP_OPTIONS_LEN",
+    LWIP_ERROR_LOG("dhcp_append(vci): options_out_len + 3 + vci_size <= DHCP_OPTIONS_LEN, please increase LWIP_DHCP_OPTIONS_LEN",
                *options_out_len + 3U + len <= DHCP_OPTIONS_LEN, return;);
     if (p) {
       u8_t *options = msg_out->options + *options_out_len;

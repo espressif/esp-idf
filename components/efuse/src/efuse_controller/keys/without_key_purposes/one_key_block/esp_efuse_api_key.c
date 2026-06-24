@@ -20,7 +20,7 @@
 
 static esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t purpose);
 
-static __attribute__((unused)) const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 /**
  * @brief Keys and their attributes are packed into a structure

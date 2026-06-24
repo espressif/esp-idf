@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,36 +11,13 @@ extern "C" {
 #endif
 
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 #include "ulp_riscv_register_ops.h"
+#include "hal/gpio_types.h"
+#include "hal/rtc_io_ll.h"
 #include "ulp_riscv_interrupt.h"
-
-typedef enum {
-    GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
-    GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
-    GPIO_NUM_2 = 2,     /*!< GPIO2, input and output */
-    GPIO_NUM_3 = 3,     /*!< GPIO3, input and output */
-    GPIO_NUM_4 = 4,     /*!< GPIO4, input and output */
-    GPIO_NUM_5 = 5,     /*!< GPIO5, input and output */
-    GPIO_NUM_6 = 6,     /*!< GPIO6, input and output */
-    GPIO_NUM_7 = 7,     /*!< GPIO7, input and output */
-    GPIO_NUM_8 = 8,     /*!< GPIO8, input and output */
-    GPIO_NUM_9 = 9,     /*!< GPIO9, input and output */
-    GPIO_NUM_10 = 10,   /*!< GPIO10, input and output */
-    GPIO_NUM_11 = 11,   /*!< GPIO11, input and output */
-    GPIO_NUM_12 = 12,   /*!< GPIO12, input and output */
-    GPIO_NUM_13 = 13,   /*!< GPIO13, input and output */
-    GPIO_NUM_14 = 14,   /*!< GPIO14, input and output */
-    GPIO_NUM_15 = 15,   /*!< GPIO15, input and output */
-    GPIO_NUM_16 = 16,   /*!< GPIO16, input and output */
-    GPIO_NUM_17 = 17,   /*!< GPIO17, input and output */
-    GPIO_NUM_18 = 18,   /*!< GPIO18, input and output */
-    GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
-    GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
-    GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
-    GPIO_NUM_MAX,
-} gpio_num_t;
 
 typedef enum {
     ULP_RISCV_GPIO_INTR_DISABLE = 0,    /*!< Disable RTC GPIO interrupt                             */
@@ -59,10 +36,8 @@ typedef enum {
 
 static inline void ulp_riscv_gpio_init(gpio_num_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32S2
-    SET_PERI_REG_MASK(SENS_SAR_IO_MUX_CONF_REG, SENS_IOMUX_CLK_GATE_EN_M);
-#elif CONFIG_IDF_TARGET_ESP32S3
-    SET_PERI_REG_MASK(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_IOMUX_CLK_EN_M);
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    rtcio_ll_enable_io_clock(true);
 #endif
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_MUX_SEL);
     REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_FUN_SEL, 0);
@@ -109,7 +84,7 @@ static inline uint8_t ulp_riscv_gpio_get_level(gpio_num_t gpio_num)
 
 static inline void ulp_riscv_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
 {
-    REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num * 4, RTC_IO_TOUCH_PAD0_DRV, mode);
+    REG_SET_FIELD(RTC_GPIO_PIN0_REG + gpio_num * 4, RTC_GPIO_PIN0_PAD_DRIVER, mode);
 }
 
 static inline void ulp_riscv_gpio_pullup(gpio_num_t gpio_num)

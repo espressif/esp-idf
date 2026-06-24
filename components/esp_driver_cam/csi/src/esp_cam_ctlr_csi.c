@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_cam_ctlr.h"
 #include "esp_cam_ctlr_csi.h"
@@ -19,12 +20,15 @@
 #include "esp_cam_ctlr_csi_internal.h"
 #include "hal/mipi_csi_ll.h"
 #include "hal/color_hal.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mipi_csi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_cache.h"
 
-#if CONFIG_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
 #define CSI_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define CSI_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -42,11 +46,16 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
 static esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr);
 static esp_err_t s_ctlr_del(esp_cam_ctlr_t *cam_ctlr);
 static esp_err_t s_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam_ctlr_evt_cbs_t *cbs, void *user_data);
+static esp_err_t s_csi_ctlr_get_internal_buffer(esp_cam_ctlr_handle_t handle, uint32_t fb_num, const void **fb0, ...);
+static esp_err_t s_csi_ctlr_get_buffer_length(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len);
 static esp_err_t s_csi_ctlr_enable(esp_cam_ctlr_handle_t ctlr);
 static esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t ctlr);
 static esp_err_t s_ctlr_csi_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, uint32_t timeout_ms);
+static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps);
+static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config);
+static bool s_is_color_format_conversion_supported(cam_ctlr_color_t color_format);
 
 static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
 {
@@ -64,7 +73,6 @@ static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
                 mipi_csi_ll_enable_host_bus_clock(i, 1);
                 mipi_csi_ll_reset_host_clock(i);
             }
-            _lock_release(&s_platform.mutex);
             break;
         }
     }
@@ -95,22 +103,41 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(config->data_lane_num <= MIPI_CSI_HOST_LL_LANE_NUM_MAX, ESP_ERR_INVALID_ARG, TAG, "lane num should be equal or smaller than %d", MIPI_CSI_HOST_LL_LANE_NUM_MAX);
+    if (!config->data_type.bits_per_pixel) {
+        ESP_RETURN_ON_FALSE(config->input_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "input_data_color_type must be specified");
+        ESP_RETURN_ON_FALSE(config->output_data_color_type != 0, ESP_ERR_INVALID_ARG, TAG, "output_data_color_type must be specified");
+    }
+
+    bool is_less_v1 = false;  //version 1 since P4 rev3
+#if CONFIG_IDF_TARGET_ESP32P4
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+        is_less_v1 = true;
+    }
+#endif
+    ESP_RETURN_ON_FALSE(!(is_less_v1 && (config->input_8bit_swap_en || config->input_16bit_swap_en)), ESP_ERR_NOT_SUPPORTED, TAG, "input 8bit or 16bit swap is not supported on this chip");
 
     csi_controller_t *ctlr = heap_caps_calloc(1, sizeof(csi_controller_t), CSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_NO_MEM, TAG, "no mem for csi controller context");
+
+    ret = s_csi_claim_controller(ctlr);
+    if (ret != ESP_OK) {
+        //claim fail, clean and return directly
+        free(ctlr);
+        ESP_RETURN_ON_ERROR(ret, TAG, "no available csi controller");
+    }
 
     ESP_LOGD(TAG, "config->queue_items: %d", config->queue_items);
     ctlr->trans_que = xQueueCreateWithCaps(config->queue_items, sizeof(esp_cam_ctlr_trans_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(ctlr->trans_que, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction queue");
 
-    //claim a controller, then do assignment
-    ESP_GOTO_ON_ERROR(s_csi_claim_controller(ctlr), err, TAG, "no available csi controller");
 #if SOC_ISP_SHARE_CSI_BRG
     ESP_GOTO_ON_ERROR(mipi_csi_brg_claim(MIPI_CSI_BRG_USER_CSI, &ctlr->csi_brg_id), err, TAG, "csi bridge is in use already");
     ctlr->csi_brg_in_use = true;
 #endif
 
     mipi_csi_phy_clock_source_t clk_src = !config->clk_src ? MIPI_CSI_PHY_CLK_SRC_DEFAULT : config->clk_src;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "clock source enable failed");
     PERIPH_RCC_ATOMIC() {
         // phy clock source setting
         mipi_csi_ll_set_phy_clock_source(ctlr->csi_id, clk_src);
@@ -124,39 +151,49 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ESP_LOGD(TAG, "ctlr->h_res: 0d %"PRId32, ctlr->h_res);
     ESP_LOGD(TAG, "ctlr->v_res: 0d %"PRId32, ctlr->v_res);
 
+    ctlr->custom_data_depth = config->data_type.bits_per_pixel;
     //in color type
-    color_space_pixel_format_t in_color_format = {
-        .color_type_id = config->input_data_color_type,
-    };
-    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_format);
-    ctlr->in_color_format = in_color_format;
-    ctlr->in_bpp = in_bits_per_pixel;
+    if (!config->data_type.bits_per_pixel) {
+        int in_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->input_data_color_type);
+        ESP_GOTO_ON_FALSE(in_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported input color format");
+        ctlr->in_color_format = config->input_data_color_type;
+        ctlr->in_bpp = in_bits_per_pixel;
+    } else {
+        ctlr->in_bpp = config->data_type.bits_per_pixel;
+    }
     ESP_LOGD(TAG, "ctlr->in_bpp: 0d %d", ctlr->in_bpp);
 
-    //out color type
-    color_space_pixel_format_t out_color_format = {
-        .color_type_id = config->output_data_color_type,
-    };
-    int out_bits_per_pixel = color_hal_pixel_format_get_bit_depth(out_color_format);
-    ctlr->out_bpp = out_bits_per_pixel;
+    if (!config->data_type.bits_per_pixel) {
+        //out color type
+        int out_bits_per_pixel = color_hal_pixel_format_fourcc_get_bit_depth(config->output_data_color_type);
+
+        ESP_GOTO_ON_FALSE(out_bits_per_pixel != 0, ESP_ERR_INVALID_ARG, err, TAG, "unsupported output color format");
+        ctlr->out_color_format = config->output_data_color_type;
+        ctlr->out_bpp = out_bits_per_pixel;
+    } else {
+        ctlr->out_bpp = config->data_type.bits_per_pixel;
+    }
     ESP_LOGD(TAG, "ctlr->out_bpp: 0d %d", ctlr->out_bpp);
 
     // Note: Width * Height * BitsPerPixel must be divisible by 8
-    int fb_size_in_bits = config->v_res * config->h_res * out_bits_per_pixel;
+    int fb_size_in_bits = config->v_res * config->h_res * ctlr->out_bpp;
     ESP_GOTO_ON_FALSE((fb_size_in_bits % 8 == 0), ESP_ERR_INVALID_ARG, err, TAG, "framesize not 8bit aligned");
     ctlr->fb_size_in_bytes = fb_size_in_bits / 8;
     ESP_LOGD(TAG, "ctlr->fb_size_in_bytes=%d", ctlr->fb_size_in_bytes);
 
-    size_t dma_alignment = 4;  //TODO: IDF-9126, replace with dwgdma alignment API
-    size_t cache_alignment = 1;
-    ESP_GOTO_ON_ERROR(esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM | ESP_CACHE_MALLOC_FLAG_DMA, &cache_alignment), err, TAG, "failed to get cache alignment");
-    size_t alignment = MAX(cache_alignment, dma_alignment);
-    ESP_LOGD(TAG, "alignment: 0x%x\n", alignment);
+    ctlr->bk_buffer_dis = config->bk_buffer_dis;
+    if (!ctlr->bk_buffer_dis) {
+        size_t dma_alignment = 4;  //TODO: IDF-9126, replace with dwgdma alignment API
+        size_t cache_alignment = 1;
+        ESP_GOTO_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &cache_alignment), err, TAG, "failed to get cache alignment");
+        size_t alignment = MAX(cache_alignment, dma_alignment);
+        ESP_LOGD(TAG, "alignment: 0x%x\n", alignment);
 
-    ctlr->backup_buffer = heap_caps_aligned_alloc(alignment, ctlr->fb_size_in_bytes, MALLOC_CAP_SPIRAM);
-    ESP_GOTO_ON_FALSE(ctlr->backup_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for backup buffer");
-    ESP_LOGD(TAG, "ctlr->backup_buffer: %p\n", ctlr->backup_buffer);
-    esp_cache_msync((void *)(ctlr->backup_buffer), ctlr->fb_size_in_bytes, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        ctlr->backup_buffer = heap_caps_aligned_alloc(alignment, ctlr->fb_size_in_bytes, MALLOC_CAP_SPIRAM);
+        ESP_GOTO_ON_FALSE(ctlr->backup_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for backup buffer");
+        ESP_LOGD(TAG, "ctlr->backup_buffer: %p\n", ctlr->backup_buffer);
+        esp_cache_msync((void *)(ctlr->backup_buffer), ctlr->fb_size_in_bytes, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    }
 
     mipi_csi_hal_config_t hal_config;
     hal_config.frame_height = config->h_res;
@@ -166,6 +203,28 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     hal_config.byte_swap_en = config->byte_swap_en;
     mipi_csi_hal_init(&ctlr->hal, &hal_config);
     mipi_csi_brg_ll_set_burst_len(ctlr->hal.bridge_dev, 512);
+    if (!config->data_type.bits_per_pixel) {
+        //for yuv, rgb and raw
+        mipi_csi_brg_ll_set_data_type_min(ctlr->hal.bridge_dev, 0x12);
+        mipi_csi_brg_ll_set_data_type_max(ctlr->hal.bridge_dev, 0x2f);
+    } else {
+        mipi_csi_brg_ll_set_data_type_min(ctlr->hal.bridge_dev, config->data_type.data_type_min);
+        mipi_csi_brg_ll_set_data_type_max(ctlr->hal.bridge_dev, config->data_type.data_type_max);
+    }
+    mipi_csi_brg_ll_enable_color_conversion(ctlr->hal.bridge_dev, true);
+
+    cam_ctlr_format_conv_config_t format_conv_config = {
+        .src_format = config->input_data_color_type,
+        .dst_format = config->output_data_color_type,
+    };
+    ESP_GOTO_ON_ERROR(s_csi_ctlr_format_conversion(&(ctlr->base), &format_conv_config), err, TAG, "failed to configure format conversion");
+
+    if (config->input_8bit_swap_en) {
+        mipi_csi_brg_ll_set_8bit_swap(ctlr->hal.bridge_dev, true);
+    }
+    if (config->input_16bit_swap_en) {
+        mipi_csi_brg_ll_set_16bit_swap(ctlr->hal.bridge_dev, true);
+    }
 
     //---------------DWGDMA Init For CSI------------------//
     dw_gdma_channel_handle_t csi_dma_chan = NULL;
@@ -198,6 +257,10 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     };
     ESP_GOTO_ON_ERROR(dw_gdma_channel_register_event_callbacks(csi_dma_chan, &csi_dma_cbs, ctlr), err, TAG, "failed to register dwgdma callback");
 
+#if CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "cam_csi_ctlr", &ctlr->pm_lock), err, TAG, "failed to create pm lock");
+#endif //CONFIG_PM_ENABLE
+
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ctlr->csi_fsm = CSI_FSM_INIT;
     ctlr->base.del = s_ctlr_del;
@@ -207,6 +270,10 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ctlr->base.disable = s_csi_ctlr_disable;
     ctlr->base.receive = s_ctlr_csi_receive;
     ctlr->base.register_event_callbacks = s_register_event_callbacks;
+    ctlr->base.get_internal_buffer = s_csi_ctlr_get_internal_buffer;
+    ctlr->base.get_buffer_len = s_csi_ctlr_get_buffer_length;
+    ctlr->base.alloc_buffer = s_csi_ctlr_alloc_buffer;
+    ctlr->base.format_conversion = s_csi_ctlr_format_conversion;
 
     *ret_handle = &(ctlr->base);
 
@@ -223,6 +290,12 @@ esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr)
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
 
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(ctlr->pm_lock), TAG, "delete pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
+
     if (ctlr->dma_chan) {
         ESP_RETURN_ON_ERROR(dw_gdma_del_channel(ctlr->dma_chan), TAG, "failed to delete dwgdma channel");
     }
@@ -237,7 +310,9 @@ esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr)
     PERIPH_RCC_ATOMIC() {
         mipi_csi_ll_enable_phy_config_clock(ctlr->csi_id, 0);
     }
-    free(ctlr->backup_buffer);
+    if (!ctlr->bk_buffer_dis) {
+        free(ctlr->backup_buffer);
+    }
     vQueueDeleteWithCaps(ctlr->trans_que);
     free(ctlr);
 
@@ -251,12 +326,42 @@ static esp_err_t s_ctlr_del(esp_cam_ctlr_t *cam_ctlr)
     return ESP_OK;
 }
 
-static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
+static esp_err_t s_csi_ctlr_get_internal_buffer(esp_cam_ctlr_handle_t handle, uint32_t fb_num, const void **fb0, ...)
+{
+    csi_controller_t *csi_ctlr = __containerof(handle, csi_controller_t, base);
+    ESP_RETURN_ON_FALSE((csi_ctlr->csi_fsm >= CSI_FSM_INIT) && (csi_ctlr->backup_buffer), ESP_ERR_INVALID_STATE, TAG, "driver don't initialized or back_buffer not available");
+    ESP_RETURN_ON_FALSE(fb_num && fb_num <= 1, ESP_ERR_INVALID_ARG, TAG, "invalid frame buffer number");
+
+    csi_ctlr->bk_buffer_exposed = true;
+    const void **fb_itor = fb0;
+    va_list args;
+    va_start(args, fb0);
+    for (uint32_t i = 0; i < fb_num; i++) {
+        if (fb_itor) {
+            *fb_itor = csi_ctlr->backup_buffer;
+            fb_itor = va_arg(args, const void **);
+        }
+    }
+    va_end(args);
+
+    return ESP_OK;
+}
+
+static esp_err_t s_csi_ctlr_get_buffer_length(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len)
+{
+    csi_controller_t *csi_ctlr = __containerof(handle, csi_controller_t, base);
+    ESP_RETURN_ON_FALSE((csi_ctlr->csi_fsm >= CSI_FSM_INIT) && (csi_ctlr->backup_buffer), ESP_ERR_INVALID_STATE, TAG, "driver don't initialized or back_buffer not available");
+
+    *ret_fb_len = csi_ctlr->fb_size_in_bytes;
+    return ESP_OK;
+}
+
+IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
 {
     bool need_yield = false;
     BaseType_t high_task_woken = pdFALSE;
     csi_controller_t *ctlr = (csi_controller_t *)user_data;
-    bool use_backup = false;
+    bool has_new_trans = false;
 
     dw_gdma_block_transfer_config_t csi_dma_transfer_config = {};
     csi_dma_transfer_config = (dw_gdma_block_transfer_config_t) {
@@ -280,26 +385,40 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
 
     if (ctlr->cbs.on_get_new_trans) {
         need_yield = ctlr->cbs.on_get_new_trans(&(ctlr->base), &new_trans, ctlr->cbs_user_data);
-        assert(new_trans.buflen >= ctlr->fb_size_in_bytes);
-        csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
+        if (new_trans.buffer && new_trans.buflen >= ctlr->fb_size_in_bytes) {
+            csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
+            has_new_trans = true;
+        }
     } else if (xQueueReceiveFromISR(ctlr->trans_que, &new_trans, &high_task_woken) == pdTRUE) {
-        assert(new_trans.buflen >= ctlr->fb_size_in_bytes);
-        csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
-    } else {
-        use_backup = true;
-        new_trans.buffer = ctlr->backup_buffer;
-        new_trans.buflen = ctlr->fb_size_in_bytes;
-        ESP_EARLY_LOGD(TAG, "no new buffer, use driver internal buffer");
-        csi_dma_transfer_config.dst.addr = (uint32_t)ctlr->backup_buffer;
+        if (new_trans.buffer && new_trans.buflen >= ctlr->fb_size_in_bytes) {
+            csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
+            has_new_trans = true;
+        }
     }
+
+    if (!has_new_trans) {
+        if (!ctlr->bk_buffer_dis) {
+            new_trans.buffer = ctlr->backup_buffer;
+            new_trans.buflen = ctlr->fb_size_in_bytes;
+            ESP_EARLY_LOGD(TAG, "no new buffer or no long enough new buffer, use driver internal buffer");
+            csi_dma_transfer_config.dst.addr = (uint32_t)ctlr->backup_buffer;
+        } else {
+            assert(false && "no new buffer, and no driver internal buffer");
+        }
+    }
+
+    esp_err_t ret = esp_cache_msync((void *)(new_trans.buffer), new_trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    assert(ret == ESP_OK);
+    (void)ret;
 
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
     dw_gdma_channel_config_transfer(chan, &csi_dma_transfer_config);
     dw_gdma_channel_enable_ctrl(chan, true);
 
-    if (!use_backup) {
-        esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    if ((ctlr->trans.buffer != ctlr->backup_buffer) || ctlr->bk_buffer_exposed) {
+        esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
         assert(ret == ESP_OK);
+        (void)ret;
         assert(ctlr->cbs.on_trans_finished);
         if (ctlr->cbs.on_trans_finished) {
             ctlr->trans.received_size = ctlr->fb_size_in_bytes;
@@ -321,7 +440,7 @@ esp_err_t s_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "driver starts already, not allow cbs register");
 
-#if CONFIG_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }
@@ -345,6 +464,11 @@ esp_err_t s_csi_ctlr_enable(esp_cam_ctlr_handle_t handle)
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_ENABLED;
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(ctlr->pm_lock), TAG, "acquire pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
@@ -354,10 +478,15 @@ esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
-    ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_ENABLED, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_ENABLED, ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_INIT;
+#if CONFIG_PM_ENABLE
+    if (ctlr->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(ctlr->pm_lock), TAG, "release pm_lock failed");
+    }
+#endif // CONFIG_PM_ENABLE
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
@@ -371,13 +500,26 @@ esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle)
     ESP_RETURN_ON_FALSE(ctlr->cbs.on_trans_finished, ESP_ERR_INVALID_STATE, TAG, "no on_trans_finished callback registered");
 
     esp_cam_ctlr_trans_t trans = {};
+    bool has_new_trans = false;
+
     if (ctlr->cbs.on_get_new_trans) {
         ctlr->cbs.on_get_new_trans(handle, &trans, ctlr->cbs_user_data);
-        ESP_RETURN_ON_FALSE(trans.buffer, ESP_ERR_INVALID_STATE, TAG, "no ready transaction, cannot start");
-    } else {
-        trans.buffer = ctlr->backup_buffer;
-        trans.buflen = ctlr->fb_size_in_bytes;
+        if (trans.buffer) {
+            has_new_trans = true;
+        }
     }
+
+    if (!has_new_trans) {
+        if (!ctlr->bk_buffer_dis) {
+            trans.buffer = ctlr->backup_buffer;
+            trans.buflen = ctlr->fb_size_in_bytes;
+        } else {
+            ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "no ready transaction, and no backup buffer");
+        }
+    }
+
+    ESP_RETURN_ON_ERROR(esp_cache_msync((void *)(trans.buffer), trans.buflen, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "failed to sync(M2C) trans buffer");
 
     ESP_LOGD(TAG, "trans.buffer: %p, trans.buflen: %d", trans.buffer, trans.buflen);
     ctlr->trans = trans;
@@ -424,7 +566,7 @@ esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle)
     ESP_RETURN_ON_ERROR(dw_gdma_channel_enable_ctrl(ctlr->dma_chan, false), TAG, "failed to disable dwgdma");
 
     portENTER_CRITICAL(&ctlr->spinlock);
-    ctlr->csi_fsm = CSI_FSM_INIT;
+    ctlr->csi_fsm = CSI_FSM_ENABLED;
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
@@ -452,4 +594,65 @@ esp_err_t s_ctlr_csi_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t 
     }
 
     return ESP_OK;
+}
+
+static void *s_csi_ctlr_alloc_buffer(esp_cam_ctlr_t *handle, size_t size, uint32_t buf_caps)
+{
+    csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
+
+    if (!ctlr) {
+        ESP_LOGE(TAG, "invalid argument: handle is null");
+        return NULL;
+    }
+
+    void *buffer = heap_caps_calloc(1, size, buf_caps);
+    if (!buffer) {
+        ESP_LOGE(TAG, "failed to allocate buffer");
+        return NULL;
+    }
+
+    ESP_LOGD(TAG, "Allocated camera buffer: %p, size: %zu", buffer, size);
+
+    return buffer;
+}
+
+static bool s_is_color_format_conversion_supported(cam_ctlr_color_t color_format)
+{
+    return (color_format == CAM_CTLR_COLOR_RGB888 ||
+            color_format == CAM_CTLR_COLOR_RGB565 ||
+            color_format == CAM_CTLR_COLOR_YUV420 ||
+            color_format == CAM_CTLR_COLOR_YUV422_YVYU ||
+            color_format == CAM_CTLR_COLOR_YUV422_YUYV ||
+            color_format == CAM_CTLR_COLOR_YUV422_UYVY ||
+            color_format == CAM_CTLR_COLOR_YUV422_VYUY);
+}
+
+static esp_err_t s_csi_ctlr_format_conversion(esp_cam_ctlr_t *handle, const cam_ctlr_format_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(handle && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
+
+    if (ctlr->custom_data_depth || config->src_format == config->dst_format) {
+        mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, true);
+        return ESP_OK;
+    } else {
+#if CONFIG_IDF_TARGET_ESP32P4
+        //If ESP32P4 chip version is less than v3.0, not support color format conversion
+        unsigned chip_version = efuse_hal_chip_revision();
+        if (!ESP_CHIP_REV_ABOVE(chip_version, 300)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+#endif
+
+        if (!s_is_color_format_conversion_supported(config->src_format) || !s_is_color_format_conversion_supported(config->dst_format)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        } else {
+            mipi_csi_brg_ll_set_input_color_format(ctlr->hal.bridge_dev, config->src_format);
+            mipi_csi_brg_ll_set_output_color_format(ctlr->hal.bridge_dev, config->dst_format);
+            mipi_csi_brg_ll_set_color_mode_bypass(ctlr->hal.bridge_dev, false);
+        }
+        ctlr->in_color_format = config->src_format;
+        ctlr->out_color_format = config->dst_format;
+        return ESP_OK;
+    }
 }

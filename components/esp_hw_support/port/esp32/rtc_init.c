@@ -11,7 +11,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/dport_reg.h"
 #include "hal/efuse_ll.h"
-#include "soc/gpio_periph.h"
+#include "soc/gpio_reg.h"
 #ifndef BOOTLOADER_BUILD
 #include "esp_private/sar_periph_ctrl.h"
 #endif

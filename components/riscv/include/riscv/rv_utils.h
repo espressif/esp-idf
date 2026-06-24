@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,20 +9,52 @@
 #include <stdint.h>
 
 #include "soc/soc_caps.h"
-#include "soc/assist_debug_reg.h"
 #include "soc/interrupt_reg.h"
 #include "esp_attr.h"
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
+#include "riscv/csr_pie.h"
+#include "riscv/csr_dsp.h"
+#include "sdkconfig.h"
+
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+#include "esp_private/interrupt_clic.h"
+#endif
+
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+#include "secure_service_num.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Check whether the current privilege level is Machine (M) mode */
+#if CONFIG_SECURE_ENABLE_TEE
+#define IS_PRV_M_MODE()  (RV_READ_CSR(CSR_PRV_MODE) == PRV_M)
+#else
+#define IS_PRV_M_MODE()  (1UL)
+#endif
+
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+/* [ESP-TEE] Callback function for accessing interrupt management services through REE */
+extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
+#endif
+
+#if SOC_CPU_HAS_CSR_PC
 /*performance counter*/
 #define CSR_PCER_MACHINE    0x7e0
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
+#define CSR_PCCR_USER       0x802
+#endif /* SOC_CPU_HAS_CSR_PC */
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+#define MHCR 0x7c1
+#define MHCR_RS (1<<4)   /* R/W, address return stack set bit */
+#define MHCR_BFE (1<<5)  /* R/W, allow predictive jump set bit */
+#define MHCR_BTB (1<<12) /* R/W, branch target prediction enable bit */
+#endif  //SOC_BRANCH_PREDICTOR_SUPPORTED
 
 #if SOC_CPU_HAS_FPU
 
@@ -42,27 +74,6 @@ extern "C" {
 /* SW defined level which the interrupt module will mask interrupt with priority less than threshold during critical sections
    and spinlocks */
 #define RVHAL_EXCM_LEVEL    4
-
-/* SW defined interrupt threshold level to allow all interrupts */
-#if SOC_INT_CLIC_SUPPORTED
-/* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-#define RVHAL_INTR_ENABLE_THRESH    0
-#else
-#define RVHAL_INTR_ENABLE_THRESH    1
-#endif /* SOC_INT_CLIC_SUPPORTED */
-
-/* On CLIC, the interrupt threshold is stored in the upper (NLBITS) of the mintthresh register, with the other (8 - NLBITS)
- * defaulted to 1. We form the interrupt level bits here to avoid doing this at run time */
-#if SOC_INT_CLIC_SUPPORTED
-/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
-#define CLIC_INT_THRESH(intlevel)       (((((intlevel) << (8 - NLBITS))) | 0x1f) << CLIC_CPU_INT_THRESH_S)
-
-/* Helper macro to set interrupt level RVHAL_EXCM_LEVEL. Used during critical sections */
-#define RVHAL_EXCM_LEVEL_CLIC           (CLIC_INT_THRESH(RVHAL_EXCM_LEVEL - 1))
-
-/* Helper macro to enable interrupts. */
-#define RVHAL_INTR_ENABLE_THRESH_CLIC   (CLIC_INT_THRESH(RVHAL_INTR_ENABLE_THRESH))
-#endif /* SOC_INT_CLIC_SUPPORTED */
 
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
  *
@@ -95,232 +106,212 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
     return sp;
 }
 
+/* Switch the stack pointer to a new address.
+ *
+ * Unlike the Xtensa SET_STACK, no window register management is required on
+ * RISC-V; a plain register move is sufficient.  The "memory" clobber prevents
+ * the compiler from reordering any accesses across the switch.
+ */
+FORCE_INLINE_ATTR void rv_utils_set_sp(void *new_sp)
+{
+    asm volatile ("mv sp, %0" :: "r"(new_sp) : "memory");
+}
+
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
 {
-#if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7848
-    return RV_READ_CSR(mcycle);
+#if !SOC_CPU_HAS_CSR_PC
+    return RV_READ_CSR(cycle);
 #else
-    return RV_READ_CSR(CSR_PCCR_MACHINE);
+    if (IS_PRV_M_MODE()) {
+        return RV_READ_CSR(CSR_PCCR_MACHINE);
+    } else {
+        return RV_READ_CSR(CSR_PCCR_USER);
+    }
 #endif
 }
 
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
-#if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7848
-    RV_WRITE_CSR(mcycle, ccount);
+#if !SOC_CPU_HAS_CSR_PC
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_SET_CYCLE_COUNT, ccount);
 #else
-    RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
+    RV_WRITE_CSR(mcycle, ccount);
 #endif
+#else
+    if (IS_PRV_M_MODE()) {
+        RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
+    } else {
+        RV_WRITE_CSR(CSR_PCCR_USER, ccount);
+    }
+#endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_set_threadptr(void *ptr)
+{
+    asm volatile("mv tp, %0" :: "r"(ptr));
+}
+
+FORCE_INLINE_ATTR void *rv_utils_get_threadptr(void)
+{
+    void *thread_ptr;
+    asm volatile("mv %0, tp" : "=r"(thread_ptr));
+    return thread_ptr;
 }
 
 /* ------------------------------------------------- CPU Interrupts ----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ---------------- Interrupt Descriptors ------------------
-
 // --------------- Interrupt Configuration -----------------
-#if SOC_INT_CLIC_SUPPORTED
-FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
-{
-#define MTVT 0x307
-    RV_WRITE_CSR(MTVT, mtvt_val);
-}
-#endif
 
 FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 {
-#if SOC_INT_CLIC_SUPPORTED
-    mtvec_val |= 3; // Set MODE field to 3 to treat MTVT + 4*interrupt_id as the service entry address for HW vectored interrupts
-#else
-    mtvec_val |= 1; // Set MODE field to treat MTVEC as a vector base address
-#endif
-    RV_WRITE_CSR(mtvec, mtvec_val);
+    RV_WRITE_CSR(mtvec, mtvec_val | MTVEC_MODE_CSR);
 }
 
-// TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
-#if SOC_INT_CLIC_SUPPORTED && !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
- FORCE_INLINE_ATTR __attribute__((pure)) uint32_t rv_utils_get_interrupt_level(void)
+FORCE_INLINE_ATTR void rv_utils_set_xtvec(uint32_t xtvec_val)
 {
-#if CONFIG_IDF_TARGET_ESP32P4
-    // As per CLIC specs, mintstatus CSR should be at 0xFB1, however esp32p4 implements it at 0x346
-    #define MINTSTATUS 0x346
-#elif CONFIG_IDF_TARGET_ESP32C5
-    // TODO: [ESP32C5] IDF-8654, IDF-8655 (inherit from P4) Check the correctness
-    #define MINTSTATUS 0x346
-#elif CONFIG_IDF_TARGET_ESP32C61
-    // TODO: [ESP32C61] IDF-9261, IDF-9262 (inherit from c6) Check
-    #define MINTSTATUS 0xFB1
-    #define MINTTHRESH 0x347
-#else
-    #error "rv_utils_get_mintstatus() is not implemented. Check for correct mintstatus register address."
-#endif /* CONFIG_IDF_TARGET_ESP32P4 */
-    uint32_t mintstatus = RV_READ_CSR(MINTSTATUS);
-    return ((mintstatus >> 24) & 0xFF); // Return the mintstatus[31:24] bits to get the mil field
+    xtvec_val |= MTVEC_MODE_CSR; // Set MODE field to treat XTVEC as a vector base address
+    if (IS_PRV_M_MODE()) {
+        RV_WRITE_CSR(mtvec, xtvec_val);
+    } else {
+        RV_WRITE_CSR(utvec, xtvec_val);
+    }
 }
-#endif /* SOC_INT_CLIC_SUPPORTED */
 
 // ------------------ Interrupt Control --------------------
 
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+
+extern uint32_t g_xintthresh[SOC_CPU_CORES_NUM];
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_raise(void)
+{
+    /**
+     * Make sure NOT to use `g_xintthresh[rv_utils_get_core_id()] = rv_utils_set_intlevel_regval(0xff);`
+     * since that statement would let the compiler first calculate the offset in `g_xintthresh` array
+     * before setting the interrupt threshold, which may lead to a race condition if an interrupt occurs in between.
+     */
+    uint32_t threshold = rv_utils_set_intlevel_regval(0xff);
+    g_xintthresh[rv_utils_get_core_id()] = threshold;
+}
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_lower(void)
+{
+    rv_utils_restore_intlevel_regval(g_xintthresh[rv_utils_get_core_id()]);
+}
+
+#else
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_raise(void)
+{
+}
+
+FORCE_INLINE_ATTR void rv_utils_xintthres_lower(void)
+{
+}
+
+#endif // __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+
+
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_ENABLE, intr_mask);
+#else
     // Disable all interrupts to make updating of the interrupt mask atomic.
+    rv_utils_xintthres_raise();
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    rv_utils_xintthres_lower();
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_DISABLE, intr_mask);
+#else
     // Disable all interrupts to make updating of the interrupt mask atomic.
+    rv_utils_xintthres_raise();
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-}
-
-
-#if SOC_INT_CLIC_SUPPORTED
-
-FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
-{
-    // TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    #define MINTTHRESH         0x347
-    RV_WRITE_CSR(MINTTHRESH, restoreval);
-#elif CONFIG_IDF_TARGET_ESP32C61
-    // TODO: [ESP32C61] IDF-9261, changed in verify code, pls check
-    // RV_WRITE_CSR(MINTTHRESH, restoreval);
-#else
-    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
-#endif  // !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-}
-
-FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(uint32_t intlevel)
-{
-    uint32_t old_thresh;
-    // TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    old_thresh = RV_READ_CSR(MINTTHRESH);
-    RV_WRITE_CSR(MINTTHRESH, ((intlevel << (8 - NLBITS)) | 0x1f));
-#else
-    // TODO: [ESP32C61] IDF-9261 pls check
-    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-
-    old_thresh = REG_GET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH);
-    old_thresh = (old_thresh >> (8 - NLBITS));
-    /* Upper bits should already be 0, but let's be safe and keep NLBITS */
-    old_thresh &= BIT(NLBITS) - 1;
-
-    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((intlevel << (8 - NLBITS))) | 0x1f);
-    /**
-     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
-     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
-     * operations is forced, making the new threshold active. It is then safe to re-enable MIE bit in mstatus.
-     */
-    REG_READ(CLIC_INT_THRESH_REG);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-#endif
-    return old_thresh;
-}
-
-/* Direct register write version of rv_utils_restore_intlevel(). Used to speed up critical sections. */
-FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel_regval(uint32_t restoreval)
-{
-    /* This function expects restoreval to be in the format needed to restore the interrupt level with
-     * a single write to the mintthresh register without further manipulations needed.
-     * This is done to quicken up exit for critical sections */
-    REG_WRITE(CLIC_INT_THRESH_REG, restoreval);
-
-    /**
-     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
-     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
-     * operations is forced, making the new threshold active.
-     *
-     * Without this we risk executing the next several instrucitons before getting interrupted
-     * This is especially bad if we immediatly enter a new critical section
-     */
-    REG_READ(CLIC_INT_THRESH_REG);
-}
-
-/* Direct register write version of rv_utils_set_intlevel(). Used to speed up critical sections. */
-FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel_regval(uint32_t intlevel)
-{
-    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    uint32_t old_thresh = REG_READ(CLIC_INT_THRESH_REG);
-
-    /* This function expects the interrupt level to be available in the format needed for mintthresh reg.
-     * Providing an absolute interrupt level will result in incorrect behavior.
-     * See CLIC_INT_THRESH() macro for details of how the interrupt level must be provided. */
-    REG_WRITE(CLIC_INT_THRESH_REG, intlevel);
-    /**
-     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
-     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
-     * operations is forced, making the new threshold active. It is then safe to re-enable MIE bit in mstatus.
-     */
-    REG_READ(CLIC_INT_THRESH_REG);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-
-    /* We return the mintthresh register value and NOT the absolute interrupt threshold level.
-     * This is done to avoid extra bit manipulations during critical sections. */
-    return old_thresh;
-}
-
-FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_mask_int_level_lower_than(uint32_t intlevel)
-{
-    /* CLIC's set interrupt level is inclusive, i.e. it does mask the set level  */
-    return rv_utils_set_intlevel(intlevel - 1);
-}
-
-#endif /* SOC_INT_CLIC_SUPPORTED */
-
-
-FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
-{
-#if SOC_INT_CLIC_SUPPORTED
-    unsigned intr_ena_mask = 0;
-    unsigned intr_num;
-    for (intr_num = 0; intr_num < 32; intr_num++) {
-        if (REG_GET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET), CLIC_INT_IE))
-            intr_ena_mask |= BIT(intr_num);
-    }
-    return intr_ena_mask;
-#else
-    return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
-#endif
-}
-
-FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
-{
-#if SOC_INT_CLIC_SUPPORTED
-    REG_SET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET) , CLIC_INT_IP);
-#else
-    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
+    rv_utils_xintthres_lower();
 #endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_INTR_GLOBAL_ENABLE);
+#else
     RV_SET_CSR(mstatus, MSTATUS_MIE);
+#endif
+    rv_utils_xintthres_lower();
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
 {
+    rv_utils_xintthres_raise();
+#if CONFIG_SECURE_ENABLE_TEE
+    if (IS_PRV_M_MODE()) {
+        RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    } else {
+        RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    }
+#else
     RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+#endif
 }
 
+FORCE_INLINE_ATTR void rv_utils_intr_set_type(int intr_num, enum intr_type type)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(3, SS_RV_UTILS_INTR_SET_TYPE, intr_num, type);
+#else
+    esprv_int_set_type(intr_num, type);
+#endif
+}
 
-#if SOC_CPU_HAS_FPU
+FORCE_INLINE_ATTR void rv_utils_intr_set_priority(int rv_int_num, int priority)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(3, SS_RV_UTILS_INTR_SET_PRIORITY, rv_int_num, priority);
+#else
+    esprv_int_set_priority(rv_int_num, priority);
+#endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_set_threshold(int priority_threshold)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_SET_THRESHOLD, priority_threshold);
+#else
+    esprv_int_set_threshold(priority_threshold);
+#endif
+}
+
+/**
+ * The other rv_utils functions related to each interrupt controller are defined in `interrupt_clic.h`, `interrupt_plic.h`,
+ * and `interrupt_intc.h`.
+ */
 
 /* ------------------------------------------------- FPU Related ----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-FORCE_INLINE_ATTR bool rv_utils_enable_fpu(void)
+#if SOC_CPU_HAS_FPU
+
+FORCE_INLINE_ATTR void rv_utils_enable_fpu(void)
 {
-    /* Set mstatus[14:13] to 0b01 to start the floating-point unit initialization */
+    /* Set mstatus[14:13] to 0b01 to enable the floating-point unit */
     RV_SET_CSR(mstatus, CSR_MSTATUS_FPU_ENA);
+}
+
+FORCE_INLINE_ATTR bool rv_utils_clear_fpu(void) {
     /* On the ESP32-P4, the FPU can be used directly after setting `mstatus` bit 13.
      * Since the interrupt handler expects the FPU states to be either 0b10 or 0b11,
      * let's write the FPU CSR and clear the dirty bit afterwards. */
@@ -341,9 +332,92 @@ FORCE_INLINE_ATTR void rv_utils_disable_fpu(void)
 #endif /* SOC_CPU_HAS_FPU */
 
 
+/* ------------------------------------------------- PIE Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_CPU_HAS_PIE
+
+FORCE_INLINE_ATTR void rv_utils_enable_pie(void)
+{
+    RV_WRITE_CSR(CSR_PIE_STATE_REG, 1);
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_pie(void)
+{
+    RV_WRITE_CSR(CSR_PIE_STATE_REG, 0);
+}
+
+#endif /* SOC_CPU_HAS_PIE */
+
+
+/* ------------------------------------------------- DSP Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_CPU_HAS_DSP
+
+FORCE_INLINE_ATTR void rv_utils_enable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 1);
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_dsp(void)
+{
+    RV_WRITE_CSR(CSR_DSP_STATE_REG, 0);
+}
+
+#endif /* SOC_CPU_HAS_DSP */
+
+
+
 /* -------------------------------------------------- Memory Ports -----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_ASYNCHRONOUS_BUS_ERROR_MODE
+
+FORCE_INLINE_ATTR uintptr_t rv_utils_asynchronous_bus_get_error_pc(void)
+{
+    uint32_t error_pc;
+    uint32_t mcause, mexstatus;
+
+    mexstatus = RV_READ_CSR(MEXSTATUS);
+    /* MEXSTATUS: Bit 8: Indicates that a load/store access fault (MCAUSE=5/7)
+     * is due to bus-error exception. If this bit is not cleared before exiting
+     * the exception handler, it will trigger a bus error again.
+     * Since we have not mechanisms to recover a normal program execution after
+     * load/store error appears, do nothing. */
+    if ((mexstatus & BIT(8)) == 0) {
+        return 0;
+    }
+    mcause = RV_READ_CSR(mcause) & 0xFF;
+    if (mcause == 5) { /* Load access fault */
+        /* Get the oldest PC at which the load instruction failed */
+        error_pc = RV_READ_CSR(LDPC1);
+        if (error_pc == 0) {
+            error_pc = RV_READ_CSR(LDPC0);
+        }
+    } else if (mcause == 7) { /* Store access fault */
+        /* Get the oldest PC at which the store instruction failed */
+        error_pc = RV_READ_CSR(STPC2);
+        if (error_pc == 0) {
+            error_pc = RV_READ_CSR(STPC1);
+            if (error_pc == 0) {
+                error_pc = RV_READ_CSR(STPC0);
+            }
+        }
+    } else {
+        return 0;
+    }
+    /* Bit 0: Valid bit indicating that this CSR holds the PC (program counter).
+     * Clear this bit */
+    return error_pc & ~(1);
+}
+
+#endif // SOC_ASYNCHRONOUS_BUS_ERROR_MODE
 
 /* ---------------------------------------------------- Debugging ------------------------------------------------------
  *
@@ -353,8 +427,8 @@ FORCE_INLINE_ATTR void rv_utils_disable_fpu(void)
 
 FORCE_INLINE_ATTR void rv_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
 {
-    /* The code bellow sets breakpoint which will trigger `Breakpoint` exception
-     * instead transfering control to debugger. */
+    /* The code below sets breakpoint which will trigger `Breakpoint` exception
+     * instead transferring control to debugger. */
     RV_WRITE_CSR(tselect, bp_num);
     RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
     RV_WRITE_CSR(tdata1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
@@ -403,8 +477,8 @@ FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
 {
     RV_WRITE_CSR(tselect, bp_num);
     /* tdata1 is a WARL(write any read legal) register
-     * We can just write 0 to it
-     */
+    * We can just write 0 to it
+    */
     RV_WRITE_CSR(tdata1, 0);
 }
 
@@ -422,10 +496,10 @@ FORCE_INLINE_ATTR bool rv_utils_is_trigger_fired(int id)
 
 // ---------------------- Debugger -------------------------
 
-FORCE_INLINE_ATTR bool rv_utils_dbgr_is_attached(void)
-{
-    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
-}
+/** To use hal function for compatibility meanwhile keep hal dependency private,
+ *  this function is implemented in rv_utils.c
+ */
+bool rv_utils_dbgr_is_attached(void);
 
 FORCE_INLINE_ATTR void rv_utils_dbgr_break(void)
 {
@@ -454,8 +528,12 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
     );
 #else
     // For a single core RV target has no atomic CAS instruction, we can achieve atomicity by disabling interrupts
-    unsigned old_mstatus;
-    old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    unsigned old_xstatus;
+    if (IS_PRV_M_MODE()) {
+        old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    } else {
+        old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    }
     // Compare and set
     uint32_t old_value;
     old_value = *addr;
@@ -463,7 +541,11 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
         *addr = new_value;
     }
     // Restore interrupts
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    if (IS_PRV_M_MODE()) {
+        RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
+    } else {
+        RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
+    }
 
 #endif //__riscv_atomic
     return (old_value == compare_value);
@@ -472,11 +554,20 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
 FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
 {
-#define MHCR 0x7c1
-#define MHCR_RS (1<<4)   /* R/W, address return stack set bit */
-#define MHCR_BFE (1<<5)  /* R/W, allow predictive jump set bit */
-#define MHCR_BTB (1<<12) /* R/W, branch target prediction enable bit */
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_EN_BRANCH_PREDICTOR);
+#else
     RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_dis_branch_predictor(void)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_DIS_BRANCH_PREDICTOR);
+#else
+    RV_CLEAR_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 #endif
 

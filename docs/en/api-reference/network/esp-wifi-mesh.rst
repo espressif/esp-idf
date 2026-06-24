@@ -302,12 +302,11 @@ Therefore, application calls to Wi-Fi APIs should be placed in between calls of 
 Application Examples
 --------------------
 
-ESP-IDF contains these ESP-WIFI-MESH example projects:
+- :example:`mesh/internal_communication` demonstrates how to use the mesh APIs to establish a mesh network, configure it, start it, handle events, and send and receive messages across the network.
 
-:example:`The Internal Communication Example <mesh/internal_communication>` demonstrates how to set up a ESP-WIFI-MESH network and have the root node send a data packet to every node within the network.
+- :example:`mesh/ip_internal_network` demonstrates how to use mesh to create an IP capable sub-network where all nodes publish their IP and internal mesh layer to an MQTT broker while using internal communication.
 
-:example:`The Manual Networking Example <mesh/manual_networking>` demonstrates how to use ESP-WIFI-MESH without the self-organizing features. This example shows how to program a node to manually scan for a list of potential parent nodes and select a parent node based on custom criteria.
-
+- :example:`mesh/manual_networking` demonstrates how to manually configure a mesh network using ESP-MESH, including scanning for parent candidates, selecting a suitable parent for a node, and configuring network settings.
 
 .. ------------------------- ESP-WIFI-MESH API Reference ---------------------------
 

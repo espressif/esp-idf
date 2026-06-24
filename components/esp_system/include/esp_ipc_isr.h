@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
+#include "esp_err.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -39,11 +41,14 @@ typedef void (*esp_ipc_isr_func_t)(void* arg);
  *    - in C or assembly for RISCV chips (such as ESP32P4).
  *
  * @note This function is not available in single-core mode.
+ * @note This function can be called even if the other core is stalled
+ *       (either via esp_ipc_isr_stall_other_cpu() or esp_ipc_isr_stall_other_cpu_safe()).
+ *       This allows safely stalling the other CPU and executing one or more callbacks before releasing it.
  *
  * @param[in]   func    Pointer to a function of type void func(void* arg) to be executed
  * @param[in]   arg     Arbitrary argument of type void* to be passed into the function
  */
-void esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg) ;
+void esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg);
 
 /**
  * @brief Execute an ISR callback on the other CPU
@@ -58,6 +63,9 @@ void esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg) ;
  * the callback completes.
  *
  * @note This function is not available in single-core mode.
+ * @note This function can be called even if the other core is stalled
+ *       (either via esp_ipc_isr_stall_other_cpu() or esp_ipc_isr_stall_other_cpu_safe()).
+ *       This allows safely stalling the other CPU and executing one or more callbacks before releasing it.
  *
  * @param[in]   func    Pointer to a function of type void func(void* arg) to be executed
  * @param[in]   arg     Arbitrary argument of type void* to be passed into the function
@@ -71,19 +79,51 @@ void esp_ipc_isr_call_blocking(esp_ipc_isr_func_t func, void* arg);
 #define esp_ipc_isr_asm_call_blocking(func, arg) esp_ipc_isr_call_blocking(func, arg)
 
 /**
- * @brief Stall the other CPU
+ * @brief Stall the other CPU unconditionally
  *
- * This function will stall the other CPU. The other CPU is stalled by busy-waiting in the context of a High Priority
- * Interrupt. The other CPU will not be resumed until esp_ipc_isr_release_other_cpu() is called.
+ * This function forces the other CPU to enter a busy-wait loop within a High Priority Interrupt context,
+ * effectively stalling its execution until esp_ipc_isr_release_other_cpu() is called.
  *
- * - This function is internally implemented using IPC ISR
- * - This function is used for DPORT workaround.
- * - If the stall feature is paused using esp_ipc_isr_stall_pause(), this function will have no effect
+ * Typical use cases include:
+ *  - DPORT workaround (e.g., DPORT or APB registers) on dual-core ESP32 chips prior to v2.0.
+ *  - Scenarios where the state of the other CPU does not need to be checked, stalling unconditionally.
  *
- * @note This function is not available in single-core mode.
- * @note It is the caller's responsibility to avoid deadlocking on spinlocks
+ * Implementation details:
+ *  - The function is initialized after FreeRTOS startup.
+ *  - When invoked, it signals the other CPU to enter a high-priority interrupt and remain stalled.
+ *  - If the other CPU is already in a high-priority interrupt, it is considered stalled.
+ *  - The other CPU will remain stalled until esp_ipc_isr_release_other_cpu() is called.
+ *  - This function does not check the current state (e.g., critical section or ISR) of the other CPU.
+ *    To avoid potential deadlocks on spinlocks, use esp_ipc_isr_stall_other_cpu_safe() instead.
+ *  - If the stall feature is paused via esp_ipc_isr_stall_pause(), this function has no effect.
+ *
+ * @note Not available in single-core mode.
+ * @note The caller is responsible for ensuring no deadlocks on spinlocks occur. Use esp_ipc_isr_stall_other_cpu_safe() for safer operation.
  */
 void esp_ipc_isr_stall_other_cpu(void);
+
+/**
+ * @brief Safely stall the other CPU
+ *
+ * Attempts to stall the other CPU only if it is not currently in a critical section or ISR context.
+ * If the other CPU is in a critical section or ISR, the function will return an error.
+ *
+ * This helps to prevent potential deadlocks when both CPUs may access shared resources/spinlocks.
+ *
+ * @note This function is intended for scenarios where safe stalling is required and the state of the other CPU must be checked.
+ *
+ * @return
+ *      - ESP_OK: The other CPU was successfully stalled.
+ *      - ESP_ERR_NOT_ALLOWED: The other CPU is in a critical section or ISR context and cannot be stalled.
+ */
+esp_err_t esp_ipc_isr_stall_other_cpu_safe(void);
+
+/**
+ * @brief Check whether the other CPU is currently stalled
+ *
+ * @return true if the other CPU has entered the IPC ISR stall loop, false otherwise.
+ */
+bool esp_ipc_isr_is_other_cpu_stalled(void);
 
 /**
  * @brief Release the other CPU
@@ -109,7 +149,7 @@ void esp_ipc_isr_stall_pause(void);
 /**
  * @brief Abort a CPU stall
  *
- * This function will abort any stalling routine of the other CPU due to a pervious call to
+ * This function will abort any stalling routine of the other CPU due to a previous call to
  * esp_ipc_isr_stall_other_cpu(). This function aborts the stall in a non-recoverable manner, thus should only be called
  * in case of a panic().
  *
@@ -128,6 +168,8 @@ void esp_ipc_isr_stall_resume(void);
 #else // CONFIG_ESP_IPC_ISR_ENABLE
 
 #define esp_ipc_isr_stall_other_cpu()
+#define esp_ipc_isr_stall_other_cpu_safe() (ESP_OK)
+#define esp_ipc_isr_is_other_cpu_stalled() (false)
 #define esp_ipc_isr_release_other_cpu()
 #define esp_ipc_isr_stall_pause()
 #define esp_ipc_isr_stall_abort()

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+cfg trailing_bytes 0			#End program as soon as the input EOFs.
+cfg prefetch true				#We expect M0/M1 to be filled
+cfg lut_width_bits 8			#Not really applicable here
+
+#Does nothing, so host logic will go into timeout
+
+loop:
+	read 0,
+	write 0,
+	jmp loop

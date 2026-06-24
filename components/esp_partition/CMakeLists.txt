@@ -1,35 +1,81 @@
-set(srcs "partition.c")
-set(priv_reqs esp_system bootloader_support spi_flash app_update partition_table)
-set(reqs)
-set(include_dirs "include")
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
-idf_build_get_property(build_dir BUILD_DIR)
-idf_build_get_property(target IDF_TARGET)
-if(${target} STREQUAL "linux")
-    list(APPEND srcs "partition_linux.c")
-    set(priv_reqs partition_table)
+set(reqs esp_blockdev)
 
-    # Steal some include directories from bootloader_support hal and spi_flash components:
-    idf_component_get_property(hal_dir hal COMPONENT_DIR)
-    idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
-    idf_component_get_property(spi_flash_dir spi_flash COMPONENT_DIR)
-    list(APPEND include_dirs include ${hal_dir}/include ${bootloader_support_dir}/include ${spi_flash_dir}/include)
+# bootloader build simplified version
+if(BOOTLOADER_BUILD)
+    set(srcs "partition_bootloader.c")
+    list(APPEND reqs spi_flash)
+    set(priv_reqs "bootloader_support" "efuse")
+
+    idf_component_register(SRCS "${srcs}"
+        INCLUDE_DIRS "include"
+        REQUIRES ${reqs}
+        PRIV_REQUIRES ${priv_reqs})
+
+# esp-tee build simplified version
+elseif(esp_tee_build)
+    set(srcs "partition_tee.c")
+    list(APPEND reqs spi_flash)
+    set(priv_reqs "tee_flash_mgr" "efuse")
+
+    idf_component_register(SRCS "${srcs}"
+        INCLUDE_DIRS "include"
+        REQUIRES ${reqs}
+        PRIV_REQUIRES ${priv_reqs})
+
+# regular, OS build
 else()
-    list(APPEND srcs "partition_target.c")
-endif()
+    set(srcs "partition.c")
+    set(priv_reqs esp_system spi_flash partition_table efuse)
+    set(reqs esp_blockdev)
+    set(private_include_dirs)
 
-idf_component_register(SRCS "${srcs}"
-    INCLUDE_DIRS ${include_dirs}
-    REQUIRES ${reqs}
-    PRIV_REQUIRES ${priv_reqs})
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(target IDF_TARGET)
 
-if(${target} STREQUAL "linux")
-    # set BUILD_DIR because partition_linux.c uses a file created in the build directory
-    target_compile_definitions(${COMPONENT_LIB} PRIVATE "BUILD_DIR=\"${build_dir}\"")
-endif()
+    if(${target} STREQUAL "linux")
+        list(APPEND srcs "partition_linux.c")
 
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-    # These flags are GCC specific
-    set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
-        " -fno-inline-small-functions -fno-inline-functions-called-once")
+        # Steal some include directories from bootloader_support components:
+        idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
+        set(private_include_dirs ${bootloader_support_dir}/include)
+    else()
+        list(APPEND priv_reqs bootloader_support app_update)
+        list(APPEND srcs "partition_target.c")
+    endif()
+
+    idf_component_register(SRCS "${srcs}"
+        INCLUDE_DIRS "include"
+        PRIV_INCLUDE_DIRS ${private_include_dirs}
+        REQUIRES ${reqs}
+        PRIV_REQUIRES ${priv_reqs})
+
+    if(${target} STREQUAL "linux")
+        # set BUILD_DIR because partition_linux.c uses a file created in the build directory
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE "BUILD_DIR=\"${build_dir}\"")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
+
+        # Create the linux_flash_data target that accumulates partition data entries
+        # registered by esp_partition_register_target(). The target may already exist if
+        # a project_include.cmake ran before this CMakeLists.txt.
+        if(NOT TARGET linux_flash_data)
+            add_custom_target(linux_flash_data)
+        endif()
+
+        # Generate a manifest file listing all partition data binaries to pre-load
+        # into the emulated flash. Each line has format: "<hex_offset> <absolute_path>".
+        # Generator expressions are evaluated after all CMakeLists.txt processing completes,
+        # so all entries accumulated by esp_partition_register_target() will be included.
+        file(GENERATE
+             OUTPUT "${build_dir}/linux_flash_data.txt"
+             CONTENT "$<JOIN:$<TARGET_PROPERTY:linux_flash_data,FLASH_DATA_ENTRIES>,\n>\n")
+    endif()
+
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        # These flags are GCC specific
+        set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
+            " -fno-inline-small-functions -fno-inline-functions-called-once")
+    endif()
+
 endif()

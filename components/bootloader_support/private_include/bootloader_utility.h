@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,11 @@
 #include "esp_image_format.h"
 #include "bootloader_config.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /**
  * @brief Load partition table.
  *
@@ -16,7 +21,7 @@
  * OTA data partition, factory app partition, and test app partition.
  *
  * @param[out] bs Bootloader state structure used to save read data.
- * @return        Return true if the partition table was succesfully loaded and MD5 checksum is valid.
+ * @return        Return true if the partition table was successfully loaded and MD5 checksum is valid.
  */
 bool bootloader_utility_load_partition_table(bootloader_state_t* bs);
 
@@ -32,6 +37,13 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs);
  * @return       Returns the index on success, INVALID_INDEX otherwise.
  */
 int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs);
+
+/**
+ * @brief Load and verify the TEE image from the selected partition
+ *
+ * @param bs Bootloader state structure
+ */
+void bootloader_utility_load_tee_image(const bootloader_state_t *bs);
 
 /**
  * @brief Load the selected partition and start application.
@@ -51,8 +63,13 @@ __attribute__((__noreturn__)) void bootloader_utility_load_boot_image(const boot
 /**
  * @brief Load that application which was worked before we go to the deep sleep.
  *
+ * If chip supports the RTC memory:
  * Checks the reboot reason if it is the deep sleep and has a valid partition in the RTC memory
  * then try to load the application which was worked before we go to the deep sleep.
+ *
+ * If chip does not support the RTC memory:
+ * Checks the reboot reason if it is the deep sleep then the partition table is read
+ * to select and load an application which was worked before we go to the deep sleep.
  *
  */
 void bootloader_utility_load_boot_image_from_deep_sleep(void);
@@ -120,3 +137,21 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
  * @return ESP_OK if secure boot digest is generated successfully.
  */
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest);
+
+/** @brief Generates the digest of the data between offset & offset+length.
+ *
+ * This function should be used when the size of the data is larger than 3.2MB.
+ * The MMU capacity is 3.2MB (50 pages - 64KB each). This function generates the SHA-384
+ * of the data in chunks of 3.2MB, considering the MMU capacity.
+ *
+ * @param[in]  flash_offset  Offset of the data in flash.
+ * @param[in]  len           Length of data in bytes.
+ * @param[out] digest        Pointer to buffer where the digest is written, if ESP_OK is returned.
+ *
+ * @return ESP_OK if secure boot digest is generated successfully.
+ */
+esp_err_t bootloader_sha384_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest);
+
+#ifdef __cplusplus
+}
+#endif

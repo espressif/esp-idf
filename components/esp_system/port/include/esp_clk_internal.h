@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,15 @@ extern "C" {
  *
  * Private clock-related functions
  */
+
+/**
+ * @brief Initialize rtc-related settings
+ *
+ * Called from cpu_start.c, not intended to be called from other places.
+ * This function configures the power related stuff.
+ * After this the MSPI timing tuning can be done.
+ */
+void esp_rtc_init(void);
 
 /**
  * @brief Initialize clock-related settings

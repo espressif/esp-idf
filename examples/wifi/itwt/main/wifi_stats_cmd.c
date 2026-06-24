@@ -15,7 +15,6 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
-#include "wifi_stats.h"
 #include "esp_private/esp_wifi_he_private.h"
 
 /*******************************************************

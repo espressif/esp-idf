@@ -5,3 +5,6 @@ components/esp_driver_pcnt/test_apps/pulse_cnt:
     - if: SOC_PCNT_SUPPORTED != 1
   depends_components:
     - esp_driver_pcnt
+    - esp_hal_pcnt
+    - esp_hw_support
+    - soc

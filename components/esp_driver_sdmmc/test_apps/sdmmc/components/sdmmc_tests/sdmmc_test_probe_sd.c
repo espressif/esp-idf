@@ -7,13 +7,14 @@
 #include "unity.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
+#include "esp_heap_caps.h"
 
 #define SDMMC_FREQ_CUSTOM_10M     10000
 
 static void do_one_sdmmc_probe_test(int slot, int width, int freq_khz, int ddr)
 {
     sdmmc_card_t card;
-    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr);
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, ddr, &card);
     sdmmc_card_print_info(stdout, &card);
     uint8_t* buffer = heap_caps_calloc(512, 1, MALLOC_CAP_DMA);

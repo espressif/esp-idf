@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,10 +64,9 @@ TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
     TEST_ASSERT(m1==m2);
 }
 
-#if CONFIG_SPIRAM_USE_MALLOC
 
-#if (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
-TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed memory is exhausted", "[heap]")
+#if CONFIG_SPIRAM_USE_MALLOC && (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
+TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed memory is exhausted", "[heap][psram]")
 {
     char** dmaMem=malloc(sizeof(char*)*512);
     assert(dmaMem);
@@ -85,8 +84,44 @@ TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed m
 }
 #endif
 
-#endif
+#if CONFIG_SPIRAM
+TEST_CASE("Check if default cap allocates in external memory in priority", "[heap][psram]")
+{
+    const size_t alloc_size = 256;
+    const uint32_t internal_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL;
+    const uint32_t external_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM;
 
+    // get the free internal memory size
+    size_t free_internal_memory = heap_caps_get_free_size(internal_cap);
+    size_t free_external_memory = heap_caps_get_free_size(external_cap);
+
+    // allocate a small amount of memory using MALLOC_CAP_DEFAULT
+    void * ptr = heap_caps_malloc(alloc_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+
+    // check that external memory is used by making sure the free internal memory size is unchanged
+    // and the free external memory size has decreased by at least the size of the allocation
+    TEST_ASSERT(free_internal_memory == heap_caps_get_free_size(internal_cap));
+    TEST_ASSERT(free_external_memory >= heap_caps_get_free_size(external_cap) + alloc_size);
+
+    heap_caps_free(ptr);
+    free_internal_memory = heap_caps_get_free_size(internal_cap);
+    free_external_memory = heap_caps_get_free_size(external_cap);
+
+    // only test malloc if CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL is equal to 0 since otherwise, allocations
+    // with size under the limit will be done internally.
+#if (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL == 0)
+    // test again using malloc
+    ptr = malloc(alloc_size);
+    TEST_ASSERT_NOT_NULL(ptr);
+
+    TEST_ASSERT(free_internal_memory == heap_caps_get_free_size(internal_cap));
+    TEST_ASSERT(free_external_memory >= heap_caps_get_free_size(external_cap) + alloc_size);
+
+    heap_caps_free(ptr);
+#endif
+}
+#endif
 
 /* As you see, we are desperately trying to outsmart the compiler, so that it
  * doesn't warn about oversized allocations in the next two unit tests.
@@ -119,7 +154,9 @@ TEST_CASE("alloc overflows should all fail", "[heap]")
     /* will overflow when the size is rounded up to word align it */
     TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_32BIT));
 
+#if CONFIG_HEAP_HAS_EXEC_HEAP
     TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_EXEC));
+#endif
 }
 
 TEST_CASE("unreasonable allocs should all fail", "[heap]")
@@ -168,15 +205,21 @@ TEST_CASE("test get allocated size", "[heap]")
     void *ptr_array[iterations];
 
     for (size_t i = 0; i < iterations; i++) {
-        ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_DEFAULT);
+        ptr_array[i] = heap_caps_malloc(alloc_sizes[i], MALLOC_CAP_INTERNAL);
         TEST_ASSERT_NOT_NULL(ptr_array[i]);
 
         // test that the heap_caps_get_allocated_size() returns the right number of bytes (aligned to 4 bytes
         // since the heap component aligns to 4 bytes)
         const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
         const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
-        printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_sizes[i], aligned_size, real_size);
-        TEST_ASSERT_EQUAL(aligned_size, real_size);
+        TEST_ASSERT(aligned_size <= real_size);
+
+        // test the heap_caps_get_containing_block_size() returns the right number of bytes
+        // when the pointer to the first, last (calculated from the requested size) and to a byte
+        // in the middle of the chunk is passed as parameter
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i]));
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + alloc_sizes[i] - 1));
+        TEST_ASSERT(aligned_size <= heap_caps_get_containing_block_size(ptr_array[i] + (alloc_sizes[i] / 2)));
 
         heap_caps_free(ptr_array[i]);
     }

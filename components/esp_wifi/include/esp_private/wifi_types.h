@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,16 @@ typedef struct {
 } wifi_ioctl_config_t;
 
 /**
+  * @brief Mode for WiFi beacon drop
+  *
+  */
+typedef enum {
+    WIFI_BEACON_DROP_DISABLED,
+    WIFI_BEACON_DROP_AUTO,
+    WIFI_BEACON_DROP_FORCED,
+} wifi_beacon_drop_t;
+
+/**
   * @brief WiFi beacon monitor parameter configuration
   *
   */
@@ -59,7 +69,62 @@ typedef struct {
     uint16_t    modem_state_consecutive;    /**< PMU MODEM state consecutive count limit */
     uint16_t    rf_ctrl_wait_cycle;         /**< RF on wait time (unit: Modem APB clock cycle) */
 #endif
+    wifi_beacon_drop_t  beacon_drop;        /**< Whether to drop the beacon if the beacon lost exceeds loss_threshold */
 } wifi_beacon_monitor_config_t;
+
+/**
+  * @brief WiFi beacon sample parameter configuration
+  *
+  */
+typedef struct {
+    uint16_t    sample_period;              /**< Sample beacon period, unit: number of beacons */
+    uint8_t     resample_period;            /**< Resample period if beacon drop is active under the auto mode, unit: hours */
+    /**< Standard triggers beacon drop when the expected rx beacon probability falls below this value under the auto mode, unit: percentage */
+    uint8_t     standard;
+    /**< Difference triggers an unstable event when the actual rx beacon probability continuously falls below the expected probability by this value, unit: percentage  */
+    uint8_t     difference;
+} wifi_beacon_offset_config_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping NPBA Type subfield values (internal use)
+  */
+typedef enum {
+    WIFI_NAN_NPBA_TYPE_ADVERTISE = 0,   /**< Advertise supported bootstrapping methods */
+    WIFI_NAN_NPBA_TYPE_REQUEST   = 1,   /**< Bootstrapping request from initiator */
+    WIFI_NAN_NPBA_TYPE_RESPONSE  = 2,   /**< Bootstrapping response from responder */
+} wifi_nan_npba_type_t;
+
+/**
+  * @brief NAN Pairing Bootstrapping Attribute parameters for follow-up TX (internal use)
+  *
+  * When provided to internal follow-up send path, Wi-Fi firmware/proprietary layer
+  * composes NPBA in SSI and transmits a regular NAN follow-up.
+  */
+typedef struct {
+    wifi_nan_npba_type_t type;   /**< NPBA type subfield */
+    uint8_t status;              /**< Pairing status (wifi_nan_pairing_status_t) */
+    uint16_t method;             /**< Selected/matched bootstrapping method */
+    uint8_t reason_code;         /**< Rejection reason code */
+    uint16_t comeback_after;     /**< Comeback defer time in TUs */
+    uint32_t cookie;             /**< Comeback cookie */
+} wifi_nan_pairing_npba_params_t;
+
+/**
+ * @brief Container for optional internal follow-up TX parameters.
+ *
+ * Aggregates everything beyond the basic @c wifi_nan_followup_params_t that
+ * the firmware/proprietary layer may need to compose a follow-up frame:
+ * NPBA attribute parameters (NAN pairing), a pre-wrapped Shared Key
+ * Descriptor blob (NAN PASN follow-up), and a NAN Identity Resolution
+ * Attribute (NIRA) blob. Any field may be NULL/zeroed when not in use.
+ */
+typedef struct {
+    wifi_nan_pairing_npba_params_t *pairing_npba; /**< NPBA params, or NULL */
+    uint8_t *shared_key_wrapped;                  /**< Encoded Shared Key Descriptor attr, or NULL */
+    uint16_t shared_key_wrapped_len;              /**< Length of @c shared_key_wrapped in bytes */
+    uint8_t *nira_attr;                           /**< Encoded NAN Identity Resolution Attribute, or NULL */
+    uint16_t nira_attr_len;                       /**< Length of @c nira_attr in bytes */
+} extra_params_internal_t;
 
 #ifdef __cplusplus
 }

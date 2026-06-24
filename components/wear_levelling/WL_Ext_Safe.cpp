@@ -50,7 +50,7 @@ WL_Ext_Safe::~WL_Ext_Safe()
 {
 }
 
-esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Partition *partition)
+esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Flash_Access *partition)
 {
     esp_err_t result = ESP_OK;
 

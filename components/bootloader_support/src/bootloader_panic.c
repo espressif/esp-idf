@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +17,7 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
     esp_rom_printf("Assert failed in %s, %s:%d (%s)\r\n", func, file, line, expr);
 #endif
 
-    while (1) {
-    }
+    ESP_INFINITE_LOOP();
 }
 
 void abort(void)
@@ -31,6 +30,5 @@ void abort(void)
         esp_cpu_dbgr_break();
     }
 #endif
-    while (1) {
-    }
+    ESP_INFINITE_LOOP();
 }

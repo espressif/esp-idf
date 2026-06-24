@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
 #include "nimble/nimble_port.h"
@@ -17,10 +16,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x12,
-    0x12, 0X09, 'e', 'x', 't', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'l', '2', 'c', 'o', 'c',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x12,
+    0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'e', 'x', 't', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'l', '2', 'c', 'o', 'c',
 };
 #endif
 
@@ -80,7 +79,7 @@ ext_bleprph_advertise(void)
 {
     struct ble_gap_ext_adv_params params;
     struct os_mbuf *data;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     int rc;
 
     /* use defaults for non-set params */
@@ -89,12 +88,12 @@ ext_bleprph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using the inferred address type */
+    params.own_addr_type = own_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
-    //params.tx_power = 127;
+    params.tx_power = 127;
     params.sid = 1;
 
     params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
@@ -133,7 +132,6 @@ bleprph_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
-    const char *name;
     int rc;
 
     /**
@@ -160,6 +158,7 @@ bleprph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+    const char *name;
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
@@ -197,8 +196,8 @@ bleprph_l2cap_coc_accept(uint16_t conn_handle, uint16_t peer_mtu,
 {
     struct os_mbuf *sdu_rx;
 
-    console_printf("LE CoC accepting, chan: 0x%08lx, peer_mtu %d\n",
-                   (uint32_t) chan, peer_mtu);
+    console_printf("LE CoC accepting, chan: 0x%08x, peer_mtu %d\n",
+                   (unsigned) (uint32_t) chan, peer_mtu);
 
     sdu_rx = os_mbuf_get_pkthdr(&sdu_os_mbuf_pool, 0);
     if (!sdu_rx) {
@@ -340,6 +339,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             bleprph_print_conn_desc(&desc);
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
             rc = ble_l2cap_create_server(psm, MTU, bleprph_l2cap_coc_event_cb, NULL);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to create L2CAP CoC server; rc=%d", rc);
+            }
 #endif
         }
         return 0;

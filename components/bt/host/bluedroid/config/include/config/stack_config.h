@@ -12,10 +12,11 @@
 
 struct bluedroid_config {
     bool (*get_ssp_enabled)(void);
+    bool (*get_sc_enabled) (void);
 };
 
-bt_status_t bluedriod_config_init(esp_bluedroid_config_t *cfg);
+bt_status_t bluedroid_config_init(esp_bluedroid_config_t *cfg);
 
-void bluedriod_config_deinit(void);
+void bluedroid_config_deinit(void);
 
-const struct bluedroid_config *bluedriod_config_get(void);
+const struct bluedroid_config *bluedroid_config_get(void);

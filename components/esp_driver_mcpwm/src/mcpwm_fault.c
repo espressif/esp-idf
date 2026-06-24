@@ -1,32 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_check.h"
-#include "esp_err.h"
-#include "esp_log.h"
+#include "mcpwm_private.h"
 #include "esp_memory_utils.h"
-#include "soc/soc_caps.h"
-#include "soc/mcpwm_periph.h"
-#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_fault.h"
 #include "driver/gpio.h"
-#include "mcpwm_private.h"
-
-static const char *TAG = "mcpwm";
+#include "esp_private/gpio.h"
 
 static void mcpwm_gpio_fault_default_isr(void *args);
 static esp_err_t mcpwm_del_gpio_fault(mcpwm_fault_handle_t fault);
@@ -39,7 +21,7 @@ static esp_err_t mcpwm_gpio_fault_register_to_group(mcpwm_gpio_fault_t *fault, i
 
     int fault_id = -1;
     portENTER_CRITICAL(&group->spinlock);
-    for (int i = 0; i < SOC_MCPWM_GPIO_FAULTS_PER_GROUP; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP); i++) {
         if (!group->gpio_faults[i]) {
             fault_id = i;
             group->gpio_faults[i] = fault;
@@ -85,13 +67,10 @@ static esp_err_t mcpwm_gpio_fault_destroy(mcpwm_gpio_fault_t *fault)
 
 esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fault_handle_t *ret_fault)
 {
-#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     mcpwm_gpio_fault_t *fault = NULL;
     ESP_GOTO_ON_FALSE(config && ret_fault, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
+    ESP_GOTO_ON_FALSE(config->group_id < MCPWM_LL_GET(GROUP_NUM) && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
     if (config->intr_priority) {
         ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & MCPWM_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err,
@@ -107,20 +86,10 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     mcpwm_hal_context_t *hal = &group->hal;
     int fault_id = fault->fault_id;
 
-    // if interrupt priority specified before, it cannot be changed until the group is released
-    // check if the new priority specified consistents with the old one
-    ESP_GOTO_ON_ERROR(mcpwm_check_intr_priority(group, config->intr_priority), err, TAG, "set group interrupt priority failed");
-
     // GPIO configuration
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0), // also enable the output path if `io_loop_back` is enabled
-        .pin_bit_mask = (1ULL << config->gpio_num),
-        .pull_down_en = config->flags.pull_down,
-        .pull_up_en = config->flags.pull_up,
-    };
-    ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config fault GPIO failed");
-    esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group_id].gpio_faults[fault_id].fault_sig, 0);
+    gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
+    gpio_input_enable(config->gpio_num);
+    esp_rom_gpio_connect_in_signal(config->gpio_num, soc_mcpwm_signals[group_id].gpio_faults[fault_id].fault_sig, 0);
 
     // set fault detection polarity
     // different gpio faults share the same config register, using a group level spin lock
@@ -134,6 +103,7 @@ esp_err_t mcpwm_new_gpio_fault(const mcpwm_gpio_fault_config_t *config, mcpwm_fa
     // fill in other operator members
     fault->base.type = MCPWM_FAULT_TYPE_GPIO;
     fault->gpio_num = config->gpio_num;
+    fault->intr_priority = config->intr_priority;
     fault->base.del = mcpwm_del_gpio_fault;
     *ret_fault = &fault->base;
     ESP_LOGD(TAG, "new gpio fault (%d,%d) at %p, GPIO: %d", group_id, fault_id, fault, config->gpio_num);
@@ -151,10 +121,10 @@ static esp_err_t mcpwm_del_gpio_fault(mcpwm_fault_handle_t fault)
     mcpwm_gpio_fault_t *gpio_fault = __containerof(fault, mcpwm_gpio_fault_t, base);
     mcpwm_group_t *group = fault->group;
     mcpwm_hal_context_t *hal = &group->hal;
+    int group_id = group->group_id;
     int fault_id = gpio_fault->fault_id;
 
     ESP_LOGD(TAG, "del GPIO fault (%d,%d)", group->group_id, fault_id);
-    gpio_reset_pin(gpio_fault->gpio_num);
 
     portENTER_CRITICAL(&group->spinlock);
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_FAULT_MASK(fault_id), false);
@@ -163,6 +133,10 @@ static esp_err_t mcpwm_del_gpio_fault(mcpwm_fault_handle_t fault)
 
     // disable fault detection
     mcpwm_ll_fault_enable_detection(hal->dev, fault_id, false);
+
+    // disconnect signal from the GPIO pin
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
+                                   soc_mcpwm_signals[group_id].gpio_faults[fault_id].fault_sig, 0);
 
     // recycle memory resource
     ESP_RETURN_ON_ERROR(mcpwm_gpio_fault_destroy(gpio_fault), TAG, "destroy GPIO fault failed");
@@ -237,7 +211,7 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     mcpwm_hal_context_t *hal = &group->hal;
     int fault_id = gpio_fault->fault_id;
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_CACHE_SAFE
     if (cbs->on_fault_enter) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_fault_enter), ESP_ERR_INVALID_ARG, TAG, "on_fault_enter callback not in IRAM");
     }
@@ -252,11 +226,18 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     // lazy install interrupt service
     if (!gpio_fault->intr) {
         // we want the interrupt service to be enabled after allocation successfully
-        int isr_flags = MCPWM_INTR_ALLOC_FLAG & ~ESP_INTR_FLAG_INTRDISABLED;
-        isr_flags |= mcpwm_get_intr_priority_flag(group);
-        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
-                                                      (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_FAULT_MASK(fault_id),
-                                                      mcpwm_gpio_fault_default_isr, gpio_fault, &gpio_fault->intr), TAG, "install interrupt service for gpio fault failed");
+        int isr_flags = (MCPWM_INTR_ALLOC_FLAG & ~ESP_INTR_FLAG_INTRDISABLED) |
+                        (gpio_fault->intr_priority ? (1 << gpio_fault->intr_priority) : MCPWM_ALLOW_INTR_PRIORITY_MASK);
+        esp_intr_alloc_info_t intr_info = {
+            .source = soc_mcpwm_signals[group_id].irq_id,
+            .flags = isr_flags,
+            .intrstatusreg = (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev),
+            .intrstatusmask = MCPWM_LL_EVENT_FAULT_MASK(fault_id),
+            .handler = mcpwm_gpio_fault_default_isr,
+            .arg = gpio_fault,
+            .bind_by.name = soc_mcpwm_signals[group_id].module_name,
+        };
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_info(&intr_info, &gpio_fault->intr), TAG, "install interrupt service for gpio fault failed");
     }
 
     // different mcpwm events share the same interrupt control register
@@ -271,7 +252,7 @@ esp_err_t mcpwm_fault_register_event_callbacks(mcpwm_fault_handle_t fault, const
     return ESP_OK;
 }
 
-static void IRAM_ATTR mcpwm_gpio_fault_default_isr(void *args)
+static void mcpwm_gpio_fault_default_isr(void *args)
 {
     mcpwm_gpio_fault_t *fault = (mcpwm_gpio_fault_t *)args;
     mcpwm_group_t *group = fault->base.group;

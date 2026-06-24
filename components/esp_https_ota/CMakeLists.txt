@@ -6,5 +6,8 @@ endif()
 
 idf_component_register(SRCS "src/esp_https_ota.c"
                     INCLUDE_DIRS "include"
-                    REQUIRES esp_http_client bootloader_support esp_app_format esp_event
-                    PRIV_REQUIRES log app_update)
+                    REQUIRES esp_http_client esp_bootloader_format esp_app_format
+                             esp_event esp_partition
+                    PRIV_REQUIRES log app_update efuse)
+
+idf_define_esp_err_codes(HEADERS include/esp_https_ota.h)

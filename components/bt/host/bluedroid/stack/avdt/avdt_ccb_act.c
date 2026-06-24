@@ -218,9 +218,20 @@ void avdt_ccb_hdl_discover_rsp(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
 void avdt_ccb_hdl_getcap_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
 {
     tAVDT_SCB       *p_scb;
+    UINT8           sig_id = AVDT_SIG_GETCAP;
 
     /* look up scb for seid sent to us */
     p_scb = avdt_scb_by_hdl(p_data->msg.single.seid);
+
+    if (p_scb == NULL) {
+        p_data->msg.hdr.err_code = AVDT_ERR_SEID;
+        p_data->msg.hdr.err_param = p_data->msg.single.seid;
+        if (p_data->msg.hdr.sig_id == AVDT_SIG_GET_ALLCAP) {
+            sig_id = AVDT_SIG_GET_ALLCAP;
+        }
+        avdt_msg_send_rej(p_ccb, sig_id, &p_data->msg);
+        return;
+    }
 
     p_data->msg.svccap.p_cfg = &p_scb->cs.cfg;
 
@@ -300,6 +311,10 @@ void avdt_ccb_hdl_start_rsp(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     UINT8       *p;
     tAVDT_SCB   *p_scb;
 
+    if (p_ccb->p_curr_cmd == NULL) {
+        return;
+    }
+
     /* determine rsp or rej event */
     event = (p_data->msg.hdr.err_code == 0) ?
             AVDT_SCB_MSG_START_RSP_EVT : AVDT_SCB_MSG_START_REJ_EVT;
@@ -368,6 +383,10 @@ void avdt_ccb_hdl_suspend_rsp(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     int         i;
     UINT8       *p;
     tAVDT_SCB   *p_scb;
+
+    if (p_ccb->p_curr_cmd == NULL) {
+        return;
+    }
 
     /* determine rsp or rej event */
     event = (p_data->msg.hdr.err_code == 0) ?
@@ -505,13 +524,15 @@ void avdt_ccb_snd_start_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     tAVDT_MSG       avdt_msg;
     UINT8           seid_list[AVDT_NUM_SEPS];
 
+    p_data->msg.multi.num_seps = (p_data->msg.multi.num_seps > AVDT_NUM_SEPS) ?
+                                 AVDT_NUM_SEPS : p_data->msg.multi.num_seps;
     /* make copy of our seid list */
     memcpy(seid_list, p_data->msg.multi.seid_list, p_data->msg.multi.num_seps);
 
     /* verify all streams in the right state */
     if ((avdt_msg.hdr.err_param = avdt_scb_verify(p_ccb, AVDT_VERIFY_OPEN, p_data->msg.multi.seid_list,
                                   p_data->msg.multi.num_seps, &avdt_msg.hdr.err_code)) == 0) {
-        /* set peer seid list in messsage */
+        /* set peer seid list in message */
         avdt_scb_peer_seid_list(&p_data->msg.multi);
 
         /* send command */
@@ -576,13 +597,15 @@ void avdt_ccb_snd_suspend_cmd(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     tAVDT_MSG       avdt_msg;
     UINT8           seid_list[AVDT_NUM_SEPS];
 
+    p_data->msg.multi.num_seps = (p_data->msg.multi.num_seps > AVDT_NUM_SEPS) ?
+                                 AVDT_NUM_SEPS : p_data->msg.multi.num_seps;
     /* make copy of our seid list */
     memcpy(seid_list, p_data->msg.multi.seid_list, p_data->msg.multi.num_seps);
 
     /* verify all streams in the right state */
     if ((avdt_msg.hdr.err_param = avdt_scb_verify(p_ccb, AVDT_VERIFY_STREAMING, p_data->msg.multi.seid_list,
                                   p_data->msg.multi.num_seps, &avdt_msg.hdr.err_code)) == 0) {
-        /* set peer seid list in messsage */
+        /* set peer seid list in message */
         avdt_scb_peer_seid_list(&p_data->msg.multi);
 
         /* send command */
@@ -690,6 +713,12 @@ void avdt_ccb_cmd_fail(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     tAVDT_SCB       *p_scb;
 
     if (p_ccb->p_curr_cmd != NULL) {
+        if (p_ccb->p_curr_cmd->event < 1 || p_ccb->p_curr_cmd->event > AVDT_SIG_MAX) {
+            osi_free(p_ccb->p_curr_cmd);
+            p_ccb->p_curr_cmd = NULL;
+            return;
+        }
+
         /* set up data */
         msg.hdr.err_code = p_data->err_code;
         msg.hdr.err_param = 0;
@@ -1076,7 +1105,7 @@ void avdt_ccb_ll_opened(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     /* call callback */
     if (p_ccb->p_conn_cback) {
         avdt_ctrl.hdr.err_code = 0;
-        avdt_ctrl.hdr.err_param = p_data->msg.hdr.err_param;
+        avdt_ctrl.hdr.err_param = (p_data != NULL) ? p_data->msg.hdr.err_param : 0;
         (*p_ccb->p_conn_cback)(0, p_ccb->peer_addr, AVDT_CONNECT_IND_EVT, &avdt_ctrl);
     }
 }

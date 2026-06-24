@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(PROTO_COMPILER "protoc")
 set(PROTO_C_COMPILER "protoc-c")

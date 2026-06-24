@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,21 +19,21 @@ wl_handle_t ff_wl_handles[FF_VOLUMES] = {
         [0 ... FF_VOLUMES - 1] = WL_INVALID_HANDLE
 };
 
-DSTATUS ff_wl_initialize (BYTE pdrv)
+static DSTATUS ff_wl_initialize (BYTE pdrv)
 {
     return 0;
 }
 
-DSTATUS ff_wl_status (BYTE pdrv)
+static DSTATUS ff_wl_status (BYTE pdrv)
 {
     return 0;
 }
 
-DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
+static DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_wl_read - pdrv=%i, sector=%i, count=%i", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
-    assert(wl_handle + 1);
+    assert(wl_handle != WL_INVALID_HANDLE);
     esp_err_t err = wl_read(wl_handle, sector * wl_sector_size(wl_handle), buff, count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_read failed (0x%x)", err);
@@ -42,11 +42,11 @@ DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
-DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
+static DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_wl_write - pdrv=%i, sector=%i, count=%i", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
-    assert(wl_handle + 1);
+    assert(wl_handle != WL_INVALID_HANDLE);
     esp_err_t err = wl_erase_range(wl_handle, sector * wl_sector_size(wl_handle), count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_erase_range failed (0x%x)", err);
@@ -60,11 +60,11 @@ DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
-DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
+static DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 {
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
     ESP_LOGV(TAG, "ff_wl_ioctl: cmd=%i", cmd);
-    assert(wl_handle + 1);
+    assert(wl_handle != WL_INVALID_HANDLE);
     switch (cmd) {
     case CTRL_SYNC:
         return RES_OK;

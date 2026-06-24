@@ -1,7 +1,7 @@
 # Set usual component variables
 set(COMPONENT_SRCS "ulp_riscv_example_main.c")
 set(COMPONENT_ADD_INCLUDEDIRS "")
-set(COMPONENT_REQUIRES soc nvs_flash ulp driver)
+set(COMPONENT_REQUIRES soc nvs_flash ulp)
 
 register_component()
 

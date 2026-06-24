@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,29 +30,18 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
-    if (ctx && ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
-        BT_ERR("Invalid destination address 0x0000");
-        return ESP_ERR_INVALID_ARG;
-    }
-
     /* When data is NULL, it is mandatory to set length to 0 to prevent users from misinterpreting parameters. */
     if (data == NULL) {
         length = 0;
     }
 
+    /* Compute op_len from opcode before length validation */
     if (opcode < 0x100) {
         op_len = 1;
     } else if (opcode < 0x10000) {
         op_len = 2;
     } else {
         op_len = 3;
-    }
-
-    if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
-        if (op_len + length > model->pub->msg->size) {
-            BT_ERR("Too small publication msg size %d", model->pub->msg->size);
-            return ESP_ERR_INVALID_ARG;
-        }
     }
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
@@ -70,21 +59,80 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
                    ESP_BLE_MESH_MIC_LONG : ESP_BLE_MESH_MIC_SHORT;
     }
 
+    if (ctx) {
+        if (ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
+            BT_ERR("Invalid destination address 0x0000");
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if (ctx->enh.adv_cfg_used &&
+            ctx->enh.adv_cfg.channel_map & BIT(3)) {
+            BT_ERR("Invalid channel map 0x%04x: bit 3 is reserved", ctx->enh.adv_cfg.channel_map);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+#if CONFIG_BLE_MESH_EXT_ADV
+        if (ctx->enh.ext_adv_cfg_used) {
+            if (ctx->enh.ext_adv_cfg.primary_phy == ESP_BLE_MESH_ADV_PHY_CODED) {
+                BT_ERR("Primary phy can't be set to coded phy");
+                return ESP_ERR_INVALID_ARG;
+            }
+
+            if (ctx->enh.ext_adv_cfg.primary_phy == ESP_BLE_MESH_ADV_PHY_UNASSIGNED) {
+                ctx->enh.ext_adv_cfg.primary_phy = ESP_BLE_MESH_ADV_PHY_DEFAULT;
+            }
+
+            if (ctx->enh.ext_adv_cfg.secondary_phy == ESP_BLE_MESH_ADV_PHY_UNASSIGNED) {
+                ctx->enh.ext_adv_cfg.secondary_phy = ESP_BLE_MESH_ADV_PHY_DEFAULT;
+            }
+        }
+#if CONFIG_BLE_MESH_LONG_PACKET
+        if (ctx->enh.long_pkt_cfg_used &&
+            (ctx->enh.long_pkt_cfg != ESP_BLE_MESH_LONG_PACKET_FORCE &&
+             ctx->enh.long_pkt_cfg != ESP_BLE_MESH_LONG_PACKET_PREFER)) {
+            BT_ERR("Invalid long packet configuration %d (expected FORCE=1 or PREFER=2)",
+                ctx->enh.long_pkt_cfg);
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        if (ctx->enh.long_pkt_cfg_used && (op_len + length + mic_len > ESP_BLE_MESH_EXT_SDU_MAX_LEN)) {
+            BT_ERR("The length(%d) exceeds the maximum length supported by the long packet", length);
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (((!ctx->enh.long_pkt_cfg_used) && op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX))) {
+            BT_ERR("Too large data length %d", length);
+            return ESP_ERR_INVALID_ARG;
+        }
+#endif /* CONFIG_BLE_MESH_LONG_PACKET */
+#endif /* CONFIG_BLE_MESH_EXT_ADV */
+    } // if (ctx)
+
     if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {
         BT_ERR("Too large data length %d", length);
         return ESP_ERR_INVALID_ARG;
     }
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
+        if (op_len + length > model->pub->msg->size) {
+            BT_ERR("Too small publication msg size %d", model->pub->msg->size);
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
         bt_mesh_model_msg_init(model->pub->msg, opcode);
-        net_buf_simple_add_mem(model->pub->msg, data, length);
+        if (length > 0) {
+            net_buf_simple_add_mem(model->pub->msg, data, length);
+        }
     } else {
-        msg_data = (uint8_t *)bt_mesh_malloc(op_len + length);
+        msg_data = (uint8_t *)bt_mesh_calloc(op_len + length);
         if (msg_data == NULL) {
             return ESP_ERR_NO_MEM;
         }
         esp_ble_mesh_model_msg_opcode_init(msg_data, opcode);
-        memcpy(msg_data + op_len, data, length);
+        if (length > 0) {
+            memcpy(msg_data + op_len, data, length);
+        }
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -576,9 +624,9 @@ esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op, esp_ble
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_src) &&
-        !ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_dst) &&
-        !ESP_BLE_MESH_ADDR_IS_GROUP(info->hb_dst)) {
+    if (!(ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_src) &&
+        (ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_dst) ||
+        ESP_BLE_MESH_ADDR_IS_GROUP(info->hb_dst)))) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -651,6 +699,7 @@ esp_err_t esp_ble_mesh_provisioner_open_settings_with_uid(const char *uid)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_UID;
 
+    memset(arg.open_settings_with_uid.uid, 0, sizeof(arg.open_settings_with_uid.uid));
     strncpy(arg.open_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)
@@ -694,6 +743,7 @@ esp_err_t esp_ble_mesh_provisioner_close_settings_with_uid(const char *uid, bool
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_UID;
 
+    memset(arg.close_settings_with_uid.uid, 0, sizeof(arg.close_settings_with_uid.uid));
     strncpy(arg.close_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
     arg.close_settings_with_uid.erase = erase;
 
@@ -737,6 +787,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_settings_with_uid(const char *uid)
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_UID;
 
+    memset(arg.delete_settings_with_uid.uid, 0, sizeof(arg.delete_settings_with_uid.uid));
     strncpy(arg.delete_settings_with_uid.uid, uid, ESP_BLE_MESH_SETTINGS_UID_SIZE);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL, NULL)

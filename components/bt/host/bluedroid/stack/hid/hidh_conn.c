@@ -353,7 +353,6 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
 {
     UINT8 dhandle;
     tHID_CONN    *p_hcon = NULL;
-    UINT32  reason;
     tHID_HOST_DEV_CTB *p_dev = NULL;
 
     /* Find CCB based on CID, and verify we are in a state to accept this message */
@@ -388,8 +387,10 @@ static void hidh_l2cif_connect_cfm (UINT16 l2cap_cid, UINT16 result)
         } else
 #endif
         {
-            reason = HID_L2CAP_CONN_FAIL | (UINT32) result ;
-            hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
+            p_hcon->disc_reason = HID_L2CAP_CONN_FAIL | (UINT32) result;
+            if (p_hcon->conn_state == HID_CONN_STATE_UNUSED) {
+                hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason, NULL ) ;
+            }
         }
         return;
     }
@@ -457,8 +458,8 @@ static void hidh_l2cif_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 
     if (l2cap_cid == p_hcon->ctrl_cid) {
         p_hcon->conn_flags |= HID_CONN_FLAGS_HIS_CTRL_CFG_DONE;
-        if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&
-                (p_hcon->conn_flags & HID_CONN_FLAGS_MY_CTRL_CFG_DONE)) {
+        if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) && (p_hcon->conn_flags & HID_CONN_FLAGS_MY_CTRL_CFG_DONE) &&
+            (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_INTR)) {
             /* Connect interrupt channel */
             p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;  /* Reset initial reason for CLOSE_EVT: Connection Attempt was made but failed */
             if ((p_hcon->intr_cid = L2CA_ConnectReq (HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr)) == 0) {
@@ -521,15 +522,17 @@ static void hidh_l2cif_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     /* If configuration failed, disconnect the channel(s) */
     if (p_cfg->result != L2CAP_CFG_OK) {
         hidh_conn_disconnect (dhandle);
-        reason = HID_L2CAP_CFG_FAIL | (UINT32) p_cfg->result ;
-        hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, reason, NULL ) ;
+        p_hcon->disc_reason = HID_L2CAP_CFG_FAIL | (UINT32) p_cfg->result ;
+        if (p_hcon->conn_state == HID_CONN_STATE_UNUSED) {
+            hh_cb.callback( dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE, p_hcon->disc_reason, NULL ) ;
+        }
         return;
     }
 
     if (l2cap_cid == p_hcon->ctrl_cid) {
         p_hcon->conn_flags |= HID_CONN_FLAGS_MY_CTRL_CFG_DONE;
-        if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&
-                (p_hcon->conn_flags & HID_CONN_FLAGS_HIS_CTRL_CFG_DONE)) {
+        if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) && (p_hcon->conn_flags & HID_CONN_FLAGS_HIS_CTRL_CFG_DONE) &&
+            (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_INTR)) {
             /* Connect interrupt channel */
             p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;  /* Reset initial reason for CLOSE_EVT: Connection Attempt was made but failed */
             if ((p_hcon->intr_cid = L2CA_ConnectReq (HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr)) == 0) {
@@ -763,6 +766,11 @@ static void hidh_l2cif_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
         return;
     }
 
+    if (p_msg->len < 1) {
+        HIDH_TRACE_WARNING ("HID-Host Rcvd Empty L2CAP data");
+        osi_free (p_msg);
+        return;
+    }
 
     ttype    = HID_GET_TRANS_FROM_HDR(*p_data);
     param    = HID_GET_PARAM_FROM_HDR(*p_data);
@@ -968,7 +976,7 @@ tHID_STATUS hidh_conn_initiate (UINT8 dhandle)
     p_dev->conn.disc_reason = HID_L2CAP_CONN_FAIL;  /* Reset initial reason for CLOSE_EVT: Connection Attempt was made but failed */
 
     /* We are the originator of this connection */
-    p_dev->conn.conn_flags = HID_CONN_FLAGS_IS_ORIG;
+    p_dev->conn.conn_flags |= HID_CONN_FLAGS_IS_ORIG;
 
     if (p_dev->attr_mask & HID_SEC_REQUIRED) {
         service_id = BTM_SEC_SERVICE_HIDH_SEC_CTRL;
@@ -989,6 +997,20 @@ tHID_STATUS hidh_conn_initiate (UINT8 dhandle)
     return ( HID_SUCCESS );
 }
 
+/*******************************************************************************
+**
+** Function         hidh_conn_is_orig
+**
+** Description      This function check if we are the originator of this connection
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+BOOLEAN hidh_conn_is_orig(UINT8 dhandle)
+{
+    tHID_HOST_DEV_CTB *p_dev = &hh_cb.devices[dhandle];
+    return (p_dev->conn.conn_flags & HID_CONN_FLAGS_IS_ORIG);
+}
 
 /*******************************************************************************
 **

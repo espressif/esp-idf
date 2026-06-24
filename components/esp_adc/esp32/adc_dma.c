@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 
 #include "hal/i2s_types.h"
 #include "driver/i2s_types.h"
-#include "soc/i2s_periph.h"
+#include "hal/i2s_periph.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/adc_dma.h"
 #include "hal/i2s_ll.h"
@@ -43,7 +43,12 @@ static IRAM_ATTR void adc_dma_intr_handler(void *arg)
 
 esp_err_t adc_dma_intr_event_init(adc_continuous_ctx_t *adc_ctx)
 {
-    return (esp_intr_alloc(i2s_periph_signal[ADC_DMA_I2S_HOST].irq, ESP_INTR_FLAG_IRAM, adc_dma_intr_handler,
+    int intr_flags = ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED;
+#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE
+    intr_flags |= ESP_INTR_FLAG_IRAM;
+#endif
+
+    return (esp_intr_alloc(i2s_periph_signal[ADC_DMA_I2S_HOST].irq, intr_flags, adc_dma_intr_handler,
                            (void *)adc_ctx, &adc_ctx->adc_dma.dma_intr_hdl));
 }
 
@@ -51,7 +56,7 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
 {
     esp_err_t ret = ESP_OK;
     //ADC utilises I2S0 DMA on ESP32
-    ret = i2s_platform_acquire_occupation(ADC_DMA_I2S_HOST, "adc");
+    ret = i2s_platform_acquire_occupation(I2S_CTLR_HP, ADC_DMA_I2S_HOST, "adc");
     if (ret != ESP_OK) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -62,7 +67,7 @@ esp_err_t adc_dma_init(adc_dma_t *adc_dma)
 esp_err_t adc_dma_deinit(adc_dma_t adc_dma)
 {
     esp_intr_free(adc_dma.dma_intr_hdl);
-    i2s_platform_release_occupation(ADC_DMA_I2S_HOST);
+    i2s_platform_release_occupation(I2S_CTLR_HP, ADC_DMA_I2S_HOST);
     return ESP_OK;
 }
 

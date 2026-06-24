@@ -1,0 +1,14 @@
+menu "Example 'GATT CLIENT THROUGHPUT' Config"
+
+    config GATTS_NOTIFY_THROUGHPUT
+        bool "test the gatts notify throughput"
+        help
+            If this config item is set, then the 'GATTC_WRITE_THROUGHPUT' config should be close, it can't test both
+            write or notify at the same time at this demo
+
+    config GATTC_WRITE_THROUGHPUT
+        bool "test the gattc write throughput"
+        help
+            If this config item is set, then the 'GATTS_NOTIFY_THROUGHPUT' config should be close, it can't test both
+            write or notify at the same time at this demo
+endmenu

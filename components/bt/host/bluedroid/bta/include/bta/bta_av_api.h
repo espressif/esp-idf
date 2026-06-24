@@ -30,6 +30,7 @@
 #include "stack/avdt_api.h"
 #include "stack/a2d_api.h"
 #include "bta/bta_api.h"
+#include "common/bt_target.h"
 
 #if (BTA_AV_INCLUDED == TRUE)
 
@@ -43,14 +44,14 @@
 #define BTA_AV_FAIL_STREAM      3       /* stream connection failed */
 #define BTA_AV_FAIL_RESOURCES   4       /* no resources */
 #define BTA_AV_FAIL_ROLE        5       /* failed due to role management related issues */
-#define BTA_AV_FAIL_GET_CAP     6       /* get capability failed due to no SEP availale on the peer  */
+#define BTA_AV_FAIL_GET_CAP     6       /* get capability failed due to no SEP available on the peer  */
 
 typedef UINT8 tBTA_AV_STATUS;
 
 /* AV features masks */
 #define BTA_AV_FEAT_RCTG        0x0001  /* remote control target */
 #define BTA_AV_FEAT_RCCT        0x0002  /* remote control controller */
-#define BTA_AV_FEAT_PROTECT     0x0004  /* streaming media contect protection */
+#define BTA_AV_FEAT_PROTECT     0x0004  /* streaming media context protection */
 #define BTA_AV_FEAT_VENDOR      0x0008  /* remote control vendor dependent commands */
 #define BTA_AV_FEAT_REPORT      0x0020  /* use reporting service for VDP */
 #define BTA_AV_FEAT_METADATA    0x0040  /* remote control Metadata Transfer command/response */
@@ -60,6 +61,7 @@ typedef UINT8 tBTA_AV_STATUS;
 #define BTA_AV_FEAT_ADV_CTRL    0x0200  /* remote control Advanced Control command/response */
 #define BTA_AV_FEAT_DELAY_RPT   0x0400  /* allow delay reporting */
 #define BTA_AV_FEAT_ACP_START   0x0800  /* start stream when 2nd SNK was accepted   */
+#define BTA_AV_FEAT_COVER_ART   0x1000  /* remote control target cover art */
 
 /* Internal features */
 #define BTA_AV_FEAT_NO_SCO_SSPD 0x8000  /* Do not suspend av streaming as to AG events(SCO or Call) */
@@ -95,7 +97,7 @@ typedef UINT8 tBTA_AV_HNDL;
 #endif
 
 #ifndef BTA_AV_MAX_SEPS
-#define BTA_AV_MAX_SEPS         1
+#define BTA_AV_MAX_SEPS         AVDT_NUM_SEPS
 #endif
 
 #ifndef BTA_AV_MAX_A2DP_MTU
@@ -107,6 +109,7 @@ typedef UINT8 tBTA_AV_HNDL;
 #define BTA_AV_MAX_VDP_MTU      1008
 #endif
 
+#define BTA_AV_CA_IMG_HDL_LEN   7                       /* Cover Art image handle len, fixed to 7 */
 
 /* codec type */
 #define BTA_AV_CODEC_SBC        A2D_MEDIA_CT_SBC        /* SBC media codec type */
@@ -224,6 +227,12 @@ typedef UINT8 tBTA_AV_CODE;
 
 typedef UINT8 tBTA_AV_ERR;
 
+/* type codes for BTA_AV_API_CA_GET */
+#define BTA_AV_CA_GET_IMAGE_PROPERTIES      0x01
+#define BTA_AV_CA_GET_IMAGE                 0x02
+#define BTA_AV_CA_GET_LINKED_THUMBNAIL      0x03
+
+typedef UINT8 tBTA_AV_GET_TYPE;
 
 /* AV callback events */
 #define BTA_AV_ENABLE_EVT       0       /* AV enabled */
@@ -248,17 +257,28 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_META_MSG_EVT     17      /* metadata messages */
 #define BTA_AV_REJECT_EVT       18      /* incoming connection rejected */
 #define BTA_AV_RC_FEAT_EVT      19      /* remote control channel peer supported features update */
-#define BTA_AV_MEDIA_SINK_CFG_EVT    20      /* command to configure codec */
+#define BTA_AV_MEDIA_CFG_EVT    20      /* command to configure codec */
 #define BTA_AV_MEDIA_DATA_EVT   21      /* sending data to Media Task */
 #define BTA_AV_SET_DELAY_VALUE_EVT   22      /* set delay reporting value */
 #define BTA_AV_GET_DELAY_VALUE_EVT   23      /* get delay reporting value */
 #define BTA_AV_SNK_PSC_CFG_EVT  24      /* Protocol service capabilities. */
+#define BTA_AV_SEP_REG_EVT      25      /* stream endpoint registered */
+
+/* still keep Cover Art event here if Cover Art feature not enabled */
+#define BTA_AV_CA_STATUS_EVT    26  /* Cover Art Client status event */
+#define BTA_AV_CA_DATA_EVT      27  /* Cover Art response body data */
+
+/* Incoming stream configuration indication received while local stream SSM is in INIT state.
+ * This is used to notify upper layers (BTC) that the stream state was force-switched to INCOMING
+ * to handle the new signalling/configuration. */
+#define BTA_AV_INCOMING_CFG_EVT 28
+
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          25
+#define BTA_AV_MAX_EVT          29
 
 
 /* function types for call-out functions */
-typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 *p_codec_type, UINT8 *p_codec_info,
+typedef BOOLEAN (*tBTA_AV_CO_INIT) (UINT8 seid, UINT8 *p_codec_type, UINT8 *p_codec_info,
                                     UINT8 *p_num_protect, UINT8 *p_protect_info, UINT8 tsep);
 typedef void (*tBTA_AV_CO_DISC_RES) (tBTA_AV_HNDL hndl, UINT8 num_seps,
                                      UINT8 num_snk, UINT8 num_src, BD_ADDR addr, UINT16 uuid_local);
@@ -328,6 +348,12 @@ typedef struct {
     tBTA_AVRC_CO_FUNCTS *p_bta_avrc_cos;
 } tBTA_AV_REGISTER;
 
+/* Event associated with BTA_AV_SEP_REG_EVT */
+typedef struct {
+    UINT8           seid;
+    tBTA_AV_STATUS  reg_state;
+} tBTA_AV_SEP_REG;
+
 /* data associated with BTA_AV_OPEN_EVT */
 #define BTA_AV_EDR_2MBPS        0x01
 #define BTA_AV_EDR_3MBPS        0x02
@@ -341,6 +367,7 @@ typedef struct {
     BOOLEAN         starting;
     tBTA_AV_EDR     edr;        /* 0, if peer device does not support EDR */
     UINT8           sep;        /*  sep type of peer device */
+    UINT16          mtu;
 } tBTA_AV_OPEN;
 
 /* data associated with BTA_AV_CLOSE_EVT */
@@ -481,12 +508,36 @@ typedef struct {
     UINT16          psc_mask;
 } tBTA_AV_SNK_PSC_CFG;
 
+/* data associated with BTA_AV_INCOMING_CFG_EVT */
+typedef struct {
+    BD_ADDR         bd_addr;
+} tBTA_AV_INCOMING;
+
+#if BTA_AV_CA_INCLUDED
+
+/* data associated with BTA_AV_CA_STATUS_EVT */
+typedef struct {
+    BOOLEAN         connected;      /* whether Cover Art connection is connected */
+    UINT16          reason;         /* connect failed or disconnect reason */
+} tBTA_AV_CA_STATUS;
+
+/* data associated with BTA_AV_CA_DATA_EVT */
+typedef struct {
+    UINT16          status;         /* OBEX response status */
+    BOOLEAN         final;          /* final data packet */
+    UINT16          data_len;       /* data len */
+    UINT8           *p_data;        /* point to the data in p_hdr */
+    BT_HDR          *p_hdr;         /* after data pass to application, free this packet */
+} tBTA_AV_CA_DATA;
+
+#endif
 
 /* union of data associated with AV callback */
 typedef union {
     tBTA_AV_CHNL        chnl;
     tBTA_AV_ENABLE      enable;
     tBTA_AV_REGISTER    registr;
+    tBTA_AV_SEP_REG     sep_reg;
     tBTA_AV_OPEN        open;
     tBTA_AV_CLOSE       close;
     tBTA_AV_START       start;
@@ -506,6 +557,11 @@ typedef union {
     tBTA_AV_RC_FEAT     rc_feat;
     tBTA_AV_DELAY       delay;
     tBTA_AV_SNK_PSC_CFG psc;
+    tBTA_AV_INCOMING    incoming;
+#if BTA_AV_CA_INCLUDED
+    tBTA_AV_CA_STATUS   ca_status;
+    tBTA_AV_CA_DATA     ca_data;
+#endif
 } tBTA_AV;
 
 /* union of data associated with AV Media callback */
@@ -620,6 +676,8 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
                     UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback,
                     tBTA_AV_CO_FUNCTS *bta_av_cos, tBTA_AVRC_CO_FUNCTS *bta_avrc_cos,
                     UINT8 tsep);
+
+void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 idx, UINT8 tsep, tBTA_AV_CODEC codec_type, UINT8 *p_codec_info, tBTA_AV_DATA_CBACK *p_data_cback);
 
 /*******************************************************************************
 **
@@ -864,6 +922,47 @@ void BTA_AvMetaRsp(UINT8 rc_handle, UINT8 label, tBTA_AV_CODE rsp_code,
 **
 *******************************************************************************/
 void BTA_AvMetaCmd(UINT8 rc_handle, UINT8 label, tBTA_AV_CMD cmd_code, BT_HDR *p_pkt);
+
+#if BTA_AV_CA_INCLUDED
+
+/*******************************************************************************
+**
+** Function         BTA_AvCaOpen
+**
+** Description      Open a Cover Art OBEX connection to peer device. This function
+**                  can only be used if peer device TG support Cover Art feature and
+**                  AV is enabled with feature BTA_AV_FEAT_METADATA.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvCaOpen(UINT8 rc_handle, UINT16 pref_packet_len);
+
+/*******************************************************************************
+**
+** Function         BTA_AvCaClose
+**
+** Description      Close a Cover Art OBEX connection.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvCaClose(UINT8 rc_handle);
+
+/*******************************************************************************
+**
+** Function         BTA_AvCaGet
+**
+** Description      Start the process to get image properties, get image or get
+**                  linked thumbnail. This function can only be used if Cover Art
+**                  OBEX connection is established.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AvCaGet(UINT8 rc_handle, tBTA_AV_GET_TYPE type, UINT8 *image_handle, UINT8 *image_descriptor, UINT16 image_descriptor_len);
+
+#endif /* BTA_AV_CA_INCLUDED */
 
 #ifdef __cplusplus
 }

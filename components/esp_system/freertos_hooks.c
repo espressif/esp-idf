@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,14 +10,14 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "esp_freertos_hooks.h"
-#include "esp_cpu.h"
 
 #include "sdkconfig.h"
+#include "esp_cpu.h"
 
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
-#endif
+#endif // CONFIG_PM_ENABLE
 
 //We use just a static array here because it's not expected many components will need
 //an idle or tick hook.
@@ -27,7 +27,7 @@ static portMUX_TYPE hooks_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static esp_freertos_idle_cb_t idle_cb[CONFIG_FREERTOS_NUMBER_OF_CORES][MAX_HOOKS] = {0};
 static esp_freertos_tick_cb_t tick_cb[CONFIG_FREERTOS_NUMBER_OF_CORES][MAX_HOOKS] = {0};
 
-void IRAM_ATTR esp_vApplicationTickHook(void)
+void esp_vApplicationTickHook(void)
 {
     int n;
     int core = xPortGetCoreID();
@@ -57,7 +57,6 @@ void esp_vApplicationIdleHook(void)
 #else
     esp_cpu_wait_for_intr();
 #endif
-
 }
 
 esp_err_t esp_register_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t new_idle_cb, UBaseType_t cpuid)

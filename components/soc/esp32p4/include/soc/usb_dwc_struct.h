@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -13,8 +13,12 @@ extern "C" {
 #endif
 
 /*
-Registers and fields were generated based on a set of configuration options.
-See ESP32-P4 "usb_dwc_cfg.h" for more details.
+Registers and fields were generated based on a set of USB-DWC configuration options.
+ESP32-P4 contains 2 instances of USB-DWC with different configurations and versions, the structure below corresponds to the High Speed v4.30a instance.
+The Full Speed instance contains a subset of registers from High Speed instance, the user (HAL) is responsible for accessing only existing fields.
+
+List of changes v4.00a -> v4.30a
+- GRSTCTL register now contains the CSftRstDone bit which indicates the completion of a soft reset.
 */
 
 /* ---------------------------- Register Types ------------------------------ */
@@ -33,7 +37,7 @@ typedef union {
         uint32_t hnpreq: 1;
         uint32_t hstsethnpen: 1;
         uint32_t devhnpen: 1;
-        uint32_t ehen: 1;
+        uint32_t ehen: 1;    // codespell:ignore ehen
         uint32_t reserved_13: 2;
         uint32_t dbncefltrbypass: 1;
         uint32_t conidsts: 1;
@@ -126,7 +130,8 @@ typedef union {
         uint32_t rxfflsh: 1;
         uint32_t txfflsh: 1;
         uint32_t txfnum: 5;
-        uint32_t reserved_11: 19;
+        uint32_t reserved_11: 18;
+        uint32_t csftrstdone: 1;
         uint32_t dmareq: 1;
         uint32_t ahbidle: 1;
     };
@@ -1368,6 +1373,7 @@ _Static_assert(sizeof(usb_dwc_dev_t) == 0xe08, "Invalid size of usb_dwc_dev_t st
 #endif
 
 extern usb_dwc_dev_t USB_DWC_HS;
+extern usb_dwc_dev_t USB_DWC_FS;
 
 #ifdef __cplusplus
 }

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include "hal/sha_types.h"
@@ -68,6 +60,13 @@ extern "C" {
  * sha_type SHA2_384, 64 bytes for sha_type SHA2_512.
  */
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output);
+
+/**
+ * @brief Set the mode for the SHA engine
+ *
+ * @param sha_type The SHA algorithm type
+ */
+void esp_sha_set_mode(esp_sha_type sha_type);
 
 /* @brief Begin to execute a single SHA block operation
  *

@@ -107,7 +107,7 @@ l2cap_client_t *l2cap_client_new(const l2cap_client_callbacks_t *callbacks, void
 
     ret->remote_mtu = L2CAP_MTU_DEFAULT;
     ret->outbound_fragments = list_new(NULL);
-    if (!ret) {
+    if (!ret->outbound_fragments) {
         L2CAP_TRACE_ERROR("%s unable to allocate outbound L2CAP fragment list.", __func__);
         goto error;
     }
@@ -368,11 +368,18 @@ static void read_ready_cb(uint16_t local_channel_id, BT_HDR *packet)
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
         L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
+        osi_free(packet);
         return;
     }
 
     // TODO(sharvil): eliminate copy from BT_HDR.
     buffer_t *buffer = buffer_new(packet->len);
+    if (!buffer) {
+        L2CAP_TRACE_ERROR("%s unable to new a buffer\n", __func__);
+        osi_free(packet);
+        return;
+    }
+
     memcpy(buffer_ptr(buffer), packet->data + packet->offset, packet->len);
     osi_free(packet);
 
@@ -393,7 +400,7 @@ static void fragment_packet(l2cap_client_t *client, buffer_t *packet)
     assert(packet != NULL);
 
     // TODO(sharvil): eliminate copy into BT_HDR.
-    BT_HDR *bt_packet = osi_malloc(buffer_length(packet) + L2CAP_MIN_OFFSET);
+    BT_HDR *bt_packet = osi_malloc(sizeof(BT_HDR) + buffer_length(packet) + L2CAP_MIN_OFFSET);
     bt_packet->offset = L2CAP_MIN_OFFSET;
     bt_packet->len = buffer_length(packet);
     memcpy(bt_packet->data + bt_packet->offset, buffer_ptr(packet), buffer_length(packet));
@@ -408,7 +415,7 @@ static void fragment_packet(l2cap_client_t *client, buffer_t *packet)
             break;
         }
 
-        BT_HDR *fragment = osi_malloc(client->remote_mtu + L2CAP_MIN_OFFSET);
+        BT_HDR *fragment = osi_malloc(sizeof(BT_HDR) + client->remote_mtu + L2CAP_MIN_OFFSET);
         fragment->offset = L2CAP_MIN_OFFSET;
         fragment->len = client->remote_mtu;
         memcpy(fragment->data + fragment->offset, bt_packet->data + bt_packet->offset, client->remote_mtu);

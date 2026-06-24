@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -25,14 +25,13 @@
 #include "sdkconfig.h"
 #include "bt_app_core.h"
 #include "bt_app_hf.h"
-#include "osi/allocator.h"
 
 const char *c_hf_evt_str[] = {
     "CONNECTION_STATE_EVT",              /*!< SERVICE LEVEL CONNECTION STATE CONTROL */
     "AUDIO_STATE_EVT",                   /*!< AUDIO CONNECTION STATE CONTROL */
     "VR_STATE_CHANGE_EVT",               /*!< VOICE RECOGNITION CHANGE */
     "VOLUME_CONTROL_EVT",                /*!< AUDIO VOLUME CONTROL */
-    "UNKNOW_AT_CMD",                     /*!< UNKNOW AT COMMAND RECIEVED */
+    "UNKNOW_AT_CMD",                     /*!< UNKNOWN AT COMMAND RECEIVED */
     "IND_UPDATE",                        /*!< INDICATION UPDATE */
     "CIND_RESPONSE_EVT",                 /*!< CALL & DEVICE INDICATION */
     "COPS_RESPONSE_EVT",                 /*!< CURRENT OPERATOR EVENT */
@@ -46,6 +45,7 @@ const char *c_hf_evt_str[] = {
     "WBS_EVT",                           /*!< CURRENT CODEC EVT */
     "BCS_EVT",                           /*!< CODEC NEGO EVT */
     "PKT_STAT_EVT",                      /*!< REQUEST PACKET STATUS EVT */
+    "PROF_STATE_EVT",                    /*!< Indicate HF init or deinit complete */
 };
 
 //esp_hf_connection_state_t
@@ -230,7 +230,7 @@ static void bt_app_send_data_task(void *arg)
             if (frame_data_num == 0) {
                 continue;
             }
-            buf = osi_malloc(frame_data_num);
+            buf = (uint8_t *)malloc(frame_data_num);
             if (!buf) {
                 ESP_LOGE(BT_HF_TAG, "%s, no mem", __FUNCTION__);
                 continue;
@@ -240,7 +240,7 @@ static void bt_app_send_data_task(void *arg)
             if (!done) {
                 ESP_LOGE(BT_HF_TAG, "rb send fail");
             }
-            osi_free(buf);
+            free(buf);
             vRingbufferGetInfo(s_m_rb, NULL, NULL, NULL, NULL, &item_size);
 
             if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
@@ -258,7 +258,7 @@ static void bt_app_send_data_task(void *arg)
 void bt_app_send_data(void)
 {
     s_send_data_Semaphore = xSemaphoreCreateBinary();
-    xTaskCreate(bt_app_send_data_task, "BtAppSendDataTask", 2048, NULL, configMAX_PRIORITIES - 3, &s_bt_app_send_data_task_handler);
+    xTaskCreate(bt_app_send_data_task, "BtAppSendDataTask", 4 * 1024, NULL, configMAX_PRIORITIES - 3, &s_bt_app_send_data_task_handler);
     s_m_rb = xRingbufferCreate(ESP_HFP_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
     const esp_timer_create_args_t c_periodic_timer_args = {
             .callback = &bt_app_send_data_timer_cb,
@@ -279,6 +279,7 @@ void bt_app_send_data_shut_down(void)
     if(s_periodic_timer) {
         ESP_ERROR_CHECK(esp_timer_stop(s_periodic_timer));
         ESP_ERROR_CHECK(esp_timer_delete(s_periodic_timer));
+        s_periodic_timer = NULL;
     }
     if (s_send_data_Semaphore) {
         vSemaphoreDelete(s_send_data_Semaphore);
@@ -286,6 +287,7 @@ void bt_app_send_data_shut_down(void)
     }
     if (s_m_rb) {
         vRingbufferDelete(s_m_rb);
+        s_m_rb = NULL;
     }
     return;
 }
@@ -293,7 +295,7 @@ void bt_app_send_data_shut_down(void)
 
 void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 {
-    if (event <= ESP_HF_PKT_STAT_NUMS_GET_EVT) {
+    if (event <= ESP_HF_PROF_STATE_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
         ESP_LOGE(BT_HF_TAG, "APP HFP invalid event %d", event);
@@ -355,7 +357,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 
         case ESP_HF_IND_UPDATE_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--UPDATE INDCATOR!");
+            ESP_LOGI(BT_HF_TAG, "--UPDATE INDICATOR!");
             esp_hf_call_status_t call_state = 1;
             esp_hf_call_setup_status_t call_setup_state = 2;
             esp_hf_network_state_t ntk_state = 1;
@@ -460,6 +462,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
                 if (param->out_call.type == ESP_HF_DIAL_NUM) {
                     // dia_num
                     ESP_LOGI(BT_HF_TAG, "--Dial number \"%s\".", param->out_call.num_or_loc);
+                    esp_hf_ag_cmee_send(param->out_call.remote_addr, ESP_HF_AT_RESPONSE_CODE_OK, ESP_HF_CME_AG_FAILURE);
                     esp_hf_ag_out_call(param->out_call.remote_addr,1,0,1,0,param->out_call.num_or_loc,0);
                 } else if (param->out_call.type == ESP_HF_DIAL_MEM) {
                     // dia_mem
@@ -496,6 +499,17 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_PKT_STAT_NUMS_GET_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "ESP_HF_PKT_STAT_NUMS_GET_EVT: %d.", event);
+            break;
+        }
+        case ESP_HF_PROF_STATE_EVT:
+        {
+            if (ESP_HF_INIT_SUCCESS == param->prof_stat.state) {
+                ESP_LOGI(BT_HF_TAG, "AG PROF STATE: Init Complete");
+            } else if (ESP_HF_DEINIT_SUCCESS == param->prof_stat.state) {
+                ESP_LOGI(BT_HF_TAG, "AG PROF STATE: Deinit Complete");
+            } else {
+                ESP_LOGE(BT_HF_TAG, "AG PROF STATE error: %d", param->prof_stat.state);
+            }
             break;
         }
 

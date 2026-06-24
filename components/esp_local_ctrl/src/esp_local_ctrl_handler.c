@@ -1,22 +1,15 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
 #include <esp_err.h>
 #include <esp_log.h>
 
+#include "esp_compiler.h"
 #include "esp_local_ctrl.h"
 #include "esp_local_ctrl_priv.h"
 #include "esp_local_ctrl.pb-c.h"
@@ -32,6 +25,7 @@ static const char* TAG = "esp_local_ctrl_handler";
 
 typedef struct esp_local_ctrl_cmd {
     int cmd_num;
+    int expected_payload_case;
     esp_err_t (*command_handler)(LocalCtrlMessage *req,
                                  LocalCtrlMessage *resp, void **ctx);
 } esp_local_ctrl_cmd_t;
@@ -48,14 +42,17 @@ static esp_err_t cmd_set_prop_vals_handler(LocalCtrlMessage *req,
 static esp_local_ctrl_cmd_t cmd_table[] = {
     {
         .cmd_num = LOCAL_CTRL_MSG_TYPE__TypeCmdGetPropertyCount,
+        .expected_payload_case = LOCAL_CTRL_MESSAGE__PAYLOAD_CMD_GET_PROP_COUNT,
         .command_handler = cmd_get_prop_count_handler
     },
     {
         .cmd_num = LOCAL_CTRL_MSG_TYPE__TypeCmdGetPropertyValues,
+        .expected_payload_case = LOCAL_CTRL_MESSAGE__PAYLOAD_CMD_GET_PROP_VALS,
         .command_handler = cmd_get_prop_vals_handler
     },
     {
         .cmd_num = LOCAL_CTRL_MSG_TYPE__TypeCmdSetPropertyValues,
+        .expected_payload_case = LOCAL_CTRL_MESSAGE__PAYLOAD_CMD_SET_PROP_VALS,
         .command_handler = cmd_set_prop_vals_handler
     }
 };
@@ -127,11 +124,13 @@ static esp_err_t cmd_get_prop_vals_handler(LocalCtrlMessage *req,
     if (ret == ESP_OK) {
         resp_payload->n_props = 0;
         for (size_t i = 0; i < req->cmd_get_prop_vals->n_indices; i++) {
+            ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // False-positive detection. TODO GCC-366
             resp_payload->props[i] = malloc(sizeof(PropertyInfo));
             if (!resp_payload->props[i]) {
                 resp_payload->status = STATUS__InternalError;
                 break;
             }
+            ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
             resp_payload->n_props++;
             property_info__init(resp_payload->props[i]);
             resp_payload->props[i]->name  = descs[i].name;
@@ -240,6 +239,12 @@ static esp_err_t esp_local_ctrl_command_dispatcher(LocalCtrlMessage *req,
     int cmd_index = lookup_cmd_handler(req->msg);
     if (cmd_index < 0) {
         ESP_LOGE(TAG, "Invalid command handler lookup");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (req->payload_case != cmd_table[cmd_index].expected_payload_case) {
+        ESP_LOGE(TAG, "Payload type mismatch: msg_type %d expects payload %d, got %d",
+                 req->msg, cmd_table[cmd_index].expected_payload_case, req->payload_case);
         return ESP_ERR_INVALID_ARG;
     }
 

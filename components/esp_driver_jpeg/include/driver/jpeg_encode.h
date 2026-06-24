@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,12 @@ extern "C" {
  * @brief JPEG encoder configure structure
  */
 typedef struct {
-    uint32_t height;                         /*!< Number of pixels in the horizontal direction */
+    uint32_t height;                        /*!< Number of pixels in the horizontal direction */
     uint32_t width;                         /*!< Number of pixels in the vertical direction */
     jpeg_enc_input_format_t src_type;       /*!< Source type of raw image to be encoded, see `jpeg_enc_src_type_t` */
     jpeg_down_sampling_type_t sub_sample;   /*!< JPEG subsampling method */
-    uint32_t image_quality;                 /*!< JPEG compressing quality, value from 1-100 */
+    uint32_t image_quality;                 /*!< JPEG compressing quality, value from 1-100, higher value means higher quality */
+    bool pixel_reverse;                     /*!< Whether to reverse the input pixel order, for detailed pixel order please refer to TRM */
 } jpeg_encode_cfg_t;
 
 /**
@@ -31,14 +32,19 @@ typedef struct {
  */
 typedef struct {
     int intr_priority;                    /*!< JPEG interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
-    int timeout_ms;                       /*!< JPEG timeout threshold for handling a picture, should larger than valid decode time in ms. For example, for 30fps decode, this value must larger than 34. -1 means wait forever */
+    int timeout_ms;                       /*!< JPEG timeout threshold for handling a picture, should larger than valid encode time in ms. For example, for 30fps encode, this value must larger than 34. -1 means wait forever */
+    struct {
+        uint32_t allow_pd:               1;   /*!< If set, the driver will backup/restore the JPEG registers before/after entering/exist sleep mode.
+                                                   By this approach, the system can power off JPEG's power domain.
+                                                   This can save power, but at the expense of more RAM being consumed */
+    } flags;                              /*!< JPEG engine configuration flags */
 } jpeg_encode_engine_cfg_t;
 
 /**
  * @brief JPEG encoder memory allocation config
  */
 typedef struct {
-    jpeg_enc_buffer_alloc_direction_t buffer_direction;  /*!< Buffer direction for jpeg decoder memory allocation */
+    jpeg_enc_buffer_alloc_direction_t buffer_direction;  /*!< Buffer direction for jpeg encoder memory allocation */
 } jpeg_encode_memory_alloc_cfg_t;
 
 /**

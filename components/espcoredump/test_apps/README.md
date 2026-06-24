@@ -7,7 +7,7 @@ The unit tests are currently run only on the chips listed above just to save CI 
 
 When adding new test cases, check if the `depends_components` list in `.build-test-rules.yml` needs to be updated to include additional components. The test app will only be built and tested when these components are modified.
 
-See also the [panic test app](../../../tools/test_apps/system/panic) which serves as an integration test for espcoredump and is run on all supported chips.
+See also the [panic coredump test app](../../../tools/test_apps/system/panic/coredump) which serves as an integration test for espcoredump and is run on all supported chips.
 
 To build and run this test app, using esp32c3 target for example:
 

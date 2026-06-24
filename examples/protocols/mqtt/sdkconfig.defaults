@@ -1,0 +1,3 @@
+# Enable the built-in certificate bundle for TLS server verification
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y

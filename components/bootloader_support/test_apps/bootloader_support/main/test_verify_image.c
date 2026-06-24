@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,38 @@
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 #include "esp_image_format.h"
+#include "sdkconfig.h"
+
+#define SPLIT_TEST_FREE_MMU_PAGES 2
+#define SPLIT_TEST_MMU_PAGE_SIZE CONFIG_MMU_PAGE_SIZE
+#define SPLIT_TEST_RODATA_SIZE (SPLIT_TEST_MMU_PAGE_SIZE + 64)
+
+static uint32_t s_mmap_free_pages_override;
+
+static const uint8_t s_split_test_rodata[SPLIT_TEST_RODATA_SIZE] = {
+    [0] = 0xA5,
+    [SPLIT_TEST_RODATA_SIZE - 1] = 0x5A,
+};
+
+uint32_t __wrap_bootloader_mmap_get_free_pages(void)
+{
+    if (s_mmap_free_pages_override != 0) {
+        return s_mmap_free_pages_override;
+    }
+    extern uint32_t __real_bootloader_mmap_get_free_pages(void);
+    return __real_bootloader_mmap_get_free_pages();
+}
+
+#if !CONFIG_IDF_TARGET_ESP32
+static uint32_t s_first_segment_app_desc_check_count;
+
+esp_err_t __wrap_bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint32_t max_rev_full)
+{
+    s_first_segment_app_desc_check_count++;
+    extern esp_err_t __real_bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint32_t max_rev_full);
+    return __real_bootloader_common_check_efuse_blk_validity(min_rev_full, max_rev_full);
+}
+#endif
 
 TEST_CASE("Verify bootloader image in flash", "[bootloader_support]")
 {
@@ -52,6 +84,40 @@ TEST_CASE("Verify unit test app image", "[bootloader_support]")
     TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_verify(ESP_IMAGE_VERIFY, &running_pos, &data));
     TEST_ASSERT_NOT_EQUAL(0, data.image_len);
     TEST_ASSERT_TRUE(data.image_len <= running->size);
+}
+
+TEST_CASE("Verify unit test app image with split first segment", "[bootloader_support]")
+{
+    const volatile uint8_t *rodata = s_split_test_rodata;
+    TEST_ASSERT_EQUAL_HEX8(0xA5, rodata[0]);
+    TEST_ASSERT_EQUAL_HEX8(0x5A, rodata[SPLIT_TEST_RODATA_SIZE - 1]);
+
+    esp_image_metadata_t metadata = { 0 };
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    TEST_ASSERT_NOT_NULL(running);
+    const esp_partition_pos_t running_pos  = {
+        .offset = running->address,
+        .size = running->size,
+    };
+
+    TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_verify(ESP_IMAGE_VERIFY, &running_pos, &metadata));
+    TEST_ASSERT_GREATER_THAN(SPLIT_TEST_MMU_PAGE_SIZE, metadata.segments[0].data_len);
+    TEST_ASSERT_NOT_EQUAL(0, metadata.segment_data[0] & (SPLIT_TEST_MMU_PAGE_SIZE - 1));
+
+    memset(&metadata, 0, sizeof(metadata));
+#if !CONFIG_IDF_TARGET_ESP32
+    s_first_segment_app_desc_check_count = 0;
+#endif
+
+    s_mmap_free_pages_override = SPLIT_TEST_FREE_MMU_PAGES;
+    esp_err_t ret = esp_image_verify(ESP_IMAGE_VERIFY, &running_pos, &metadata);
+    s_mmap_free_pages_override = 0;
+
+    TEST_ASSERT_EQUAL_HEX(ESP_OK, ret);
+    TEST_ASSERT_NOT_EQUAL(0, metadata.image_len);
+#if !CONFIG_IDF_TARGET_ESP32
+    TEST_ASSERT_EQUAL_UINT32(1, s_first_segment_app_desc_check_count);
+#endif
 }
 
 void check_label_search (int num_test, const char *list, const char *t_label, bool result)

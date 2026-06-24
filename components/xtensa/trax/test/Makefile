@@ -22,10 +22,10 @@ $(PROG_ELF): $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $<
 
 $(PROG_BIN): $(PROG_ELF)
-	esptool.py --chip esp32 elf2image --output $@ --flash_freq 40m --flash_mode dio $<
+	esptool --chip esp32 elf2image --output $@ --flash-freq 40m --flash-mode dio $<
 
 flash: $(PROG_BIN)
-	esptool.py --port $(ESPPORT) write_flash 0x1000 $(PROG_BIN)
+	esptool --port $(ESPPORT) write-flash 0x1000 $(PROG_BIN)
 
 test:
 	rm -f $(TRACE_FILE)

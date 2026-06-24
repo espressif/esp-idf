@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -12,19 +12,16 @@
 #endif
 
 #include "esp_bit_defs.h"
-#include "reg_base.h"
+#include "soc/reg_base.h"
 
 #define PRO_CPU_NUM (0)
 
 #define REG_UHCI_BASE(i)                        (DR_REG_UHCI0_BASE)                      // only one UHCI on C6
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x1000)        // UART0 and UART1
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_BASE(i) + 0x0)
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE + (i) * 0x1000)
-#define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_FLASH_SPI0_BASE + (i) * 0x1000)  // SPIMEM0 and SPIMEM1
 #define REG_SPI_BASE(i)                         (((i)>=2) ? (DR_REG_SPI2_BASE + (i-2) * 0x1000) : (0))    // GPSPI2 and GPSPI3
 #define REG_I2C_BASE(i)                         (DR_REG_I2C0_BASE + (i) * 0x1000)
-#define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE + (i) * 0x1000)
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x1000)       // TWAI0 and TWAI1
 
 //Registers Operation {{
@@ -135,13 +132,7 @@
 //}}
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 10*1000000 )
-#define  CPU_CLK_FREQ_ROM                            ( 40*1000000 )
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (90)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                ( 90*1000000 )
-#define  REF_CLK_FREQ                                ( 1000000 )
-#define  XTAL_CLK_FREQ                               (40*1000000)
-#define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
 /* Overall memory map */
@@ -163,8 +154,8 @@
 #define SOC_IROM_MASK_HIGH 0x4fc20000
 #define SOC_DROM_MASK_LOW  0x4fc00000
 #define SOC_DROM_MASK_HIGH 0x4fc20000
-#define SOC_TCM_LOW     0x30100000
-#define SOC_TCM_HIGH    0x30102000
+#define SOC_SPM_LOW     0x30100000
+#define SOC_SPM_HIGH    0x30102000
 #define SOC_IRAM_LOW    0x4ff00000
 #define SOC_IRAM_HIGH   0x4ffc0000
 #define SOC_DRAM_LOW    0x4ff00000
@@ -188,6 +179,9 @@
 #define SOC_DIRAM_DRAM_LOW    0x4ff00000
 #define SOC_DIRAM_DRAM_HIGH   0x4ffc0000
 #define SOC_DIRAM_ROM_RESERVE_HIGH 0x4ff40000
+
+#define MAP_DRAM_TO_IRAM(addr) (addr)
+#define MAP_IRAM_TO_DRAM(addr) (addr)
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x4ff00000
@@ -221,8 +215,17 @@
 #define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
+#define SOC_ROM_STACK_START_REV2    0x4ffbcfc0
 #define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
+
+// non-cacheable offset for memory behind the cache
+#define SOC_NON_CACHEABLE_OFFSET_SRAM        0x40000000
+#define SOC_NON_CACHEABLE_OFFSET_PSRAM       0x40000000
+
+#define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
+#define LP_RAM_END        0x50110000
+#define LP_ROM_DRAM_SIZE  (LP_RAM_END - LP_ROM_DRAM_START)
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.

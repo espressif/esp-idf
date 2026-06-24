@@ -21,7 +21,8 @@ extern "C" {
 typedef struct {
     int intr_priority;                  /*!< MCPWM comparator interrupt priority,
                                              if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-    struct {
+    /// Extra configuration flags for comparator
+    struct extra_mcpwm_comparator_flags {
         uint32_t update_cmp_on_tez: 1;  /*!< Whether to update compare value when timer count equals to zero (tez) */
         uint32_t update_cmp_on_tep: 1;  /*!< Whether to update compare value when timer count equals to peak (tep) */
         uint32_t update_cmp_on_sync: 1; /*!< Whether to update compare value on sync event */

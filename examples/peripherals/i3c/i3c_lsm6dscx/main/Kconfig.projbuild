@@ -1,0 +1,24 @@
+menu "Example Configuration"
+
+    menu "I3C Master"
+        config I3C_MASTER_SCL
+            int "SCL GPIO Num"
+            default 32 if IDF_TARGET_ESP32P4
+            help
+                GPIO number for I3C Master clock line.
+
+        config I3C_MASTER_SDA
+            int "SDA GPIO Num"
+            default 33 if IDF_TARGET_ESP32P4
+            help
+                GPIO number for I3C Master data line.
+
+        config I3C_DYNAMIC_ADDRESS_ASSIGN_BY_ENTDAA
+            bool "assign i3c dynamic address by entdaa"
+            default n
+            help
+                Select to assign i3c dynamic address by entdaa, otherwise use setdata
+
+    endmenu
+
+endmenu

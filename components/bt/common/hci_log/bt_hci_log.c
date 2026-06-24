@@ -1,0 +1,411 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include "hci_log/bt_hci_log.h"
+#include "bt_common.h"
+#include "osi/mutex.h"
+#include "esp_attr.h"
+#include "esp_timer.h"
+
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+
+static const char *const TAG = "bt_hci_log";
+
+#define BT_HCI_LOG_PRINT_TAG                     (1)
+#define BT_HCI_LOG_DATA_BUF_SIZE                 (1024 * HCI_LOG_DATA_BUFFER_SIZE)
+#define BT_HCI_LOG_ADV_BUF_SIZE                  (1024 * HCI_LOG_ADV_BUFFER_SIZE)
+/* Max payload per HCI log line; larger inputs are dropped (not logged). */
+#define BT_HCI_LOG_RECORD_PAYLOAD_MAX            (2048U)
+
+typedef struct {
+    osi_mutex_t mutex_lock;
+    uint64_t log_record_in;
+    uint64_t log_record_out;
+    uint64_t buf_size;
+    uint8_t *p_hci_log_buffer;
+    uint8_t index;
+    bool overflow;
+} bt_hci_log_t;
+
+static const char s_hex_to_char_mapping[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+};
+
+static bt_hci_log_t g_bt_hci_log_data_ctl  = {0};
+static bt_hci_log_t g_bt_hci_log_adv_ctl  = {0};
+
+uint8_t bt_hci_log_h4_type_to_data_type(uint8_t h4_type)
+{
+    switch (h4_type) {
+    case 0x05:
+        return HCI_LOG_DATA_TYPE_ISO_DATA;
+    default:
+        return h4_type;
+    }
+}
+
+esp_err_t bt_hci_log_init(void)
+{
+    uint8_t *g_bt_hci_log_data_buffer = NULL;
+    uint8_t *g_bt_hci_log_adv_buffer  = NULL;
+
+    g_bt_hci_log_data_buffer = malloc(BT_HCI_LOG_DATA_BUF_SIZE);
+    if (!g_bt_hci_log_data_buffer) {
+        return ESP_ERR_NO_MEM;
+    }
+    g_bt_hci_log_adv_buffer = malloc(BT_HCI_LOG_ADV_BUF_SIZE);
+    if (!g_bt_hci_log_adv_buffer) {
+        if (g_bt_hci_log_data_buffer) {
+            free(g_bt_hci_log_data_buffer);
+            g_bt_hci_log_data_buffer = NULL;
+        }
+        return ESP_ERR_NO_MEM;
+    }
+
+    memset(g_bt_hci_log_data_buffer, 0, BT_HCI_LOG_DATA_BUF_SIZE);
+    memset(g_bt_hci_log_adv_buffer, 0, BT_HCI_LOG_ADV_BUF_SIZE);
+
+    memset(&g_bt_hci_log_data_ctl, 0, sizeof(bt_hci_log_t));
+    g_bt_hci_log_data_ctl.buf_size = BT_HCI_LOG_DATA_BUF_SIZE;
+    g_bt_hci_log_data_ctl.p_hci_log_buffer = g_bt_hci_log_data_buffer;
+
+    memset(&g_bt_hci_log_adv_ctl, 0, sizeof(bt_hci_log_t));
+    g_bt_hci_log_adv_ctl.buf_size = BT_HCI_LOG_ADV_BUF_SIZE;
+    g_bt_hci_log_adv_ctl.p_hci_log_buffer = g_bt_hci_log_adv_buffer;
+
+    if (osi_mutex_new((osi_mutex_t *)&g_bt_hci_log_data_ctl.mutex_lock) != 0) {
+        bt_hci_log_deinit();
+        return ESP_FAIL;
+    }
+    if (osi_mutex_new((osi_mutex_t *)&g_bt_hci_log_adv_ctl.mutex_lock) != 0) {
+        bt_hci_log_deinit();
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t bt_hci_log_deinit(void)
+{
+    if (g_bt_hci_log_data_ctl.p_hci_log_buffer) {
+        free(g_bt_hci_log_data_ctl.p_hci_log_buffer);
+        g_bt_hci_log_data_ctl.p_hci_log_buffer = NULL;
+    }
+
+    if (g_bt_hci_log_adv_ctl.p_hci_log_buffer) {
+        free(g_bt_hci_log_adv_ctl.p_hci_log_buffer);
+        g_bt_hci_log_adv_ctl.p_hci_log_buffer = NULL;
+    }
+
+    osi_mutex_free((osi_mutex_t *)&g_bt_hci_log_data_ctl.mutex_lock);
+    osi_mutex_free((osi_mutex_t *)&g_bt_hci_log_adv_ctl.mutex_lock);
+
+    memset(&g_bt_hci_log_data_ctl, 0, sizeof(bt_hci_log_t));
+    memset(&g_bt_hci_log_adv_ctl, 0, sizeof(bt_hci_log_t));
+
+    return ESP_OK;
+}
+
+#if (BT_HCI_LOG_PRINT_TAG)
+static char IRAM_ATTR *bt_data_type_to_str(uint8_t data_type)
+{
+    char *tag = NULL;
+    switch (data_type)
+    {
+    case HCI_LOG_DATA_TYPE_COMMAND:
+        // hci cmd data
+        tag = "C";
+        break;
+    case HCI_LOG_DATA_TYPE_H2C_ACL:
+        // host to controller hci acl data
+        tag = "H";
+        break;
+    case HCI_LOG_DATA_TYPE_SCO:
+        // hci sco data
+        tag = "S";
+        break;
+    case HCI_LOG_DATA_TYPE_EVENT:
+        // hci event
+        tag = "E";
+        break;
+    case HCI_LOG_DATA_TYPE_ADV:
+        // controller adv report data
+        tag = NULL;
+        break;
+    case HCI_LOG_DATA_TYPE_C2H_ACL:
+        // controller to host hci acl data
+        tag = "D";
+        break;
+    case HCI_LOG_DATA_TYPE_SELF_DEFINE:
+        // self-defining data
+        tag = "S";
+        break;
+    case HCI_LOG_DATA_TYPE_ISO_DATA:
+        // 5.2 iso data
+        tag = "I";
+        break;
+        break;
+    default:
+        // unknown data type
+        tag = "U";
+        break;
+    }
+
+    return tag;
+}
+#endif
+
+void bt_hci_log_record_hex(bt_hci_log_t *p_hci_log_ctl, uint8_t *hex, uint16_t hex_len)
+{
+    uint8_t hci_log_char;
+    uint8_t *g_hci_log_buffer;
+
+    g_hci_log_buffer = p_hci_log_ctl->p_hci_log_buffer;
+
+    while (hex_len--)
+    {
+        hci_log_char = ((*hex) >> 4);
+
+        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = s_hex_to_char_mapping [hci_log_char];
+
+        if (++ p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
+            p_hci_log_ctl->log_record_in = 0;
+        }
+        if (p_hci_log_ctl->log_record_in == p_hci_log_ctl->log_record_out) {
+            p_hci_log_ctl->overflow = true;
+        }
+
+        hci_log_char = ((*hex) & 0x0f);
+
+        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = s_hex_to_char_mapping [hci_log_char];
+
+        if (++p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
+            p_hci_log_ctl->log_record_in = 0;
+        }
+
+        if (p_hci_log_ctl->log_record_in == p_hci_log_ctl->log_record_out) {
+            p_hci_log_ctl->overflow = true;
+        }
+
+        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = ' ';
+
+        if (++ p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
+            p_hci_log_ctl->log_record_in = 0;
+        }
+        if (p_hci_log_ctl->log_record_in == p_hci_log_ctl->log_record_out) {
+            p_hci_log_ctl->overflow = true;
+        }
+
+        ++ hex;
+    }
+}
+
+void bt_hci_log_record_string(bt_hci_log_t *p_hci_log_ctl, char *string)
+{
+    uint8_t *g_hci_log_buffer;
+
+    g_hci_log_buffer = p_hci_log_ctl->p_hci_log_buffer;
+
+    if (string == NULL) {
+        return;
+    }
+
+    /* Avoid unbounded memory scan if string is not NUL-terminated. */
+    const size_t max_len = 256;
+    size_t len = strnlen(string, max_len);
+
+    for (size_t i = 0; i < len; i++) {
+        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = (uint8_t)string[i];
+
+        if (++p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
+            p_hci_log_ctl->log_record_in = 0;
+        }
+
+        if (p_hci_log_ctl->log_record_in == p_hci_log_ctl->log_record_out) {
+            p_hci_log_ctl->overflow = true;
+        }
+    }
+}
+
+esp_err_t IRAM_ATTR bt_hci_log_record_data(bt_hci_log_t *p_hci_log_ctl, char *str, uint8_t data_type, uint8_t *data, uint16_t data_len)
+{
+    osi_mutex_t mutex_lock;
+    uint8_t *g_hci_log_buffer;
+    int64_t ts;
+    uint8_t *temp_buf;
+    uint16_t record_len;
+
+    if (!p_hci_log_ctl->p_hci_log_buffer) {
+        return ESP_FAIL;
+    }
+
+    g_hci_log_buffer = p_hci_log_ctl->p_hci_log_buffer;
+
+    if (!g_hci_log_buffer) {
+        return ESP_FAIL;
+    }
+    if (p_hci_log_ctl->mutex_lock == NULL) {
+        return ESP_FAIL;
+    }
+
+    if ((data_len == 0) || (data == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ts = esp_timer_get_time();
+
+    if (data_len > BT_HCI_LOG_RECORD_PAYLOAD_MAX) {
+        ESP_LOGW(TAG, "HCI log record dropped: data_len=%u (max %u)",
+                 (unsigned)data_len, (unsigned)BT_HCI_LOG_RECORD_PAYLOAD_MAX);
+        return ESP_FAIL;
+    }
+
+    record_len = (uint16_t)((uint32_t)data_len + 8U);
+
+    temp_buf = (uint8_t *)malloc((size_t)record_len);
+    if (!temp_buf) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    memset(temp_buf, 0x0, (size_t)record_len);
+
+    memcpy(temp_buf, &ts, 8);
+    memcpy(temp_buf + 8, data, data_len);
+
+    mutex_lock = p_hci_log_ctl->mutex_lock;
+    osi_mutex_lock(&mutex_lock, OSI_MUTEX_MAX_TIMEOUT);
+
+#if (1)
+    // Add hci data index
+    bt_hci_log_record_hex(p_hci_log_ctl, &p_hci_log_ctl->index, 1);
+#endif
+
+#if (BT_HCI_LOG_PRINT_TAG)
+    char *tag = NULL;
+    tag = bt_data_type_to_str(data_type);
+
+    if (tag) {
+        bt_hci_log_record_string(p_hci_log_ctl, tag);
+
+        g_hci_log_buffer[p_hci_log_ctl->log_record_in] = ':';
+
+        if (++p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
+            p_hci_log_ctl->log_record_in = 0;
+        }
+
+        if (p_hci_log_ctl->log_record_in == p_hci_log_ctl->log_record_out) {
+            p_hci_log_ctl->overflow = true;
+        }
+    }
+#endif
+
+    if (str) {
+        bt_hci_log_record_string(p_hci_log_ctl, str);
+    }
+
+    bt_hci_log_record_hex(p_hci_log_ctl, temp_buf, record_len);
+
+    g_hci_log_buffer[p_hci_log_ctl->log_record_in] = '\n';
+
+    if (++p_hci_log_ctl->log_record_in >= p_hci_log_ctl->buf_size) {
+        p_hci_log_ctl->log_record_in = 0;
+    }
+
+    if (p_hci_log_ctl->log_record_in == p_hci_log_ctl->log_record_out) {
+        p_hci_log_ctl->overflow = true;
+    }
+
+    p_hci_log_ctl->index ++;
+
+    osi_mutex_unlock(&mutex_lock);
+
+    free(temp_buf);
+
+    return ESP_OK;
+}
+
+void bt_hci_log_data_show(bt_hci_log_t *p_hci_log_ctl)
+{
+    volatile uint64_t log_record_in,log_record_out;
+    uint8_t *g_hci_log_buffer;
+
+    if (!p_hci_log_ctl->p_hci_log_buffer) {
+        return;
+    }
+    if (p_hci_log_ctl->mutex_lock == NULL) {
+        return;
+    }
+
+    osi_mutex_t mutex_lock = p_hci_log_ctl->mutex_lock;
+
+    osi_mutex_lock(&mutex_lock, OSI_MUTEX_MAX_TIMEOUT);
+
+    log_record_in  = p_hci_log_ctl->log_record_in;
+    log_record_out = p_hci_log_ctl->log_record_out;
+
+    g_hci_log_buffer = p_hci_log_ctl->p_hci_log_buffer;
+
+    if (p_hci_log_ctl->overflow) {
+        log_record_out = log_record_in;
+        printf("%c",g_hci_log_buffer[log_record_out]);
+
+        if (++log_record_out >= p_hci_log_ctl->buf_size) {
+            log_record_out = 0;
+        }
+    }
+
+    while (log_record_in != log_record_out)
+    {
+        printf("%c",g_hci_log_buffer[log_record_out]);
+
+        if (++log_record_out >= p_hci_log_ctl->buf_size) {
+            log_record_out = 0;
+        }
+    }
+
+    p_hci_log_ctl->log_record_out = log_record_out;
+    p_hci_log_ctl->overflow = false;
+
+    osi_mutex_unlock(&mutex_lock);
+}
+static bool enable_hci_log_flag = true;
+void bt_hci_log_record_hci_enable(bool enable)
+{
+    enable_hci_log_flag = enable;
+}
+
+esp_err_t IRAM_ATTR bt_hci_log_record_hci_data(uint8_t data_type, uint8_t *data, uint16_t data_len)
+{
+    if (!enable_hci_log_flag) return ESP_OK;
+    return bt_hci_log_record_data(&g_bt_hci_log_data_ctl, NULL, data_type, data, data_len);
+}
+
+esp_err_t IRAM_ATTR bt_hci_log_record_custom_data(char *string, uint8_t *data, uint8_t data_len)
+{
+    if (!enable_hci_log_flag) return ESP_OK;
+    return bt_hci_log_record_data(&g_bt_hci_log_data_ctl, string, HCI_LOG_DATA_TYPE_SELF_DEFINE, data, data_len);
+}
+
+esp_err_t IRAM_ATTR bt_hci_log_record_hci_adv(uint8_t data_type, uint8_t *data, uint8_t data_len)
+{
+    if (!enable_hci_log_flag) return ESP_OK;
+    return bt_hci_log_record_data(&g_bt_hci_log_adv_ctl, NULL, data_type, data, data_len);
+}
+
+void bt_hci_log_hci_data_show(void)
+{
+    bt_hci_log_data_show(&g_bt_hci_log_data_ctl);
+}
+
+void bt_hci_log_hci_adv_show(void)
+{
+    bt_hci_log_data_show(&g_bt_hci_log_adv_ctl);
+}
+
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)

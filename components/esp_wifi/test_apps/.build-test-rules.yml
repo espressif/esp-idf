@@ -1,12 +1,41 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_wifi/test_apps/wifi_connect:
+components/esp_wifi/test_apps/:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
+
+  disable_test:
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: lack of runner
+  depends_components:
+    - esp_hw_support
+    - esp_rom
+    - esp_system
+    - esp_timer
+    - freertos
+    - esp_event
+    - esp_wifi
+    - esp_phy
+    - esp_netif
+    - esp_coex
+    - wpa_supplicant
+    - mbedtls
+    - esp_pm
+
+components/esp_wifi/test_apps/wifi_nvs_config:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3", "esp32c2"]
-      reason: leak of runner
-
-components/esp_wifi/test_apps/wifi_function:
-  disable:
-    - if: SOC_WIFI_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32s31"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_hw_support
+    - esp_rom
+    - esp_system
+    - esp_timer
+    - freertos
+    - esp_event
+    - nvs_flash
+    - esp_wifi

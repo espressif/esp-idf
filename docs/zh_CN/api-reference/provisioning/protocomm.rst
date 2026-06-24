@@ -49,12 +49,15 @@ Protocomm 为以下各种传输提供框架：
 
     启用多个安全版本后可以动态控制安全版本，但也会增加固件大小。
 
+.. warning::
+    ``protocomm_security0`` 不提供加密或身份验证，不应在生产环境中使用。建议在所有生产场景中使用 ``protocomm_security2`` （SRP6a + AES-GCM）。
+
 .. only:: SOC_WIFI_SUPPORTED
 
     使用 Security 2 的 SoftAP + HTTP 传输方案示例
     --------------------------------------------------
 
-    示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_softap.c`。
+    示例用法请参阅 `network_provisioning/src/scheme_softap.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_softap.c>`_。
 
     .. highlight:: c
 
@@ -161,7 +164,7 @@ Protocomm 为以下各种传输提供框架：
     使用 Security 1 的 SoftAP + HTTP 传输方案示例
     -------------------------------------------------
 
-    示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_softap.c`。
+    示例用法请参阅 `network_provisioning/src/scheme_softap.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_softap.c>`_。
 
     .. highlight:: c
 
@@ -245,7 +248,7 @@ Protocomm 为以下各种传输提供框架：
     使用 Security 0 的低功耗蓝牙传输方案示例
     -------------------------------------------
 
-    示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_ble.c`。
+    示例用法请参阅 `network_provisioning/src/scheme_ble.c <https://github.com/espressif/idf-extra-components/blob/master/network_provisioning/src/scheme_ble.c>`_。
 
     .. highlight:: c
 

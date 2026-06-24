@@ -1,10 +1,53 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF BLE throughput GATT CLIENT Test
 
 This is the demo used to test the BLE throughput, this demo should used with throughput server demo together.
 The throughput of BLE can up to 720-767 Kbps between to ESP32 board.
+
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  Throughput  │                                    │  Throughput  │
+    │    Client    │                                    │    Server    │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Connection Setup ───────────         │
+           │                                                   │
+           │  1. Scan for "THROUGHPUT_DEMO"                    │  Advertising
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  2. Connect                                       │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  3. MTU Exchange (517 bytes)                      │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  4. Enable Notification                           │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  ─────────── Throughput Test ───────────          │
+           │                                                   │
+           │  Mode 1: Notify Test (Server → Client)            │
+           │ <═══════════════════════════════════════════════  │
+           │  Continuous notifications (514 bytes/packet)      │
+           │                                                   │
+           │  Mode 2: Write Test (Client → Server)             │
+           │ ═══════════════════════════════════════════════>  │
+           │  Continuous writes (514 bytes/packet)             │
+           │                                                   │
+           │  ─────────── Statistics ───────────               │
+           │                                                   │
+           │  Calculate: Bytes/s, bits/s                       │
+           │  Expected: 600-767 Kbps                           │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  Throughput  │                                    │  Throughput  │
+    │    Client    │                                    │    Server    │
+    └──────────────┘                                    └──────────────┘
+```
 
 ## How to Use Example
 

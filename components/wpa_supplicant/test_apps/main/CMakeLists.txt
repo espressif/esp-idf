@@ -4,13 +4,20 @@ idf_component_register(SRCS
                         "test_eloop.c"
                         "test_fast_pbkdf2.c"
                         "test_offchannel.c"
+                        "test_rom_md5.c"
                         "test_sae.c"
+                        "test_sae_h2e.c"
                         "test_wpa_supplicant_main.c"
+                        "test_wifi_external_bss.c"
                     PRIV_INCLUDE_DIRS "."
-                    PRIV_REQUIRES wpa_supplicant mbedtls esp_wifi esp_event unity
+                    PRIV_REQUIRES wpa_supplicant mbedtls esp_wifi esp_event unity esp_psram esp_timer
                     WHOLE_ARCHIVE)
 
 idf_component_get_property(esp_supplicant_dir wpa_supplicant COMPONENT_DIR)
+
+if(CONFIG_ESP_WIFI_TESTING_OPTIONS)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TESTING_OPTIONS)
+endif()
 
 # Calculate MD5 value of header file esp_wifi_driver.h
 file(MD5 ${esp_supplicant_dir}/esp_supplicant/src/esp_wifi_driver.h WIFI_SUPPLICANT_MD5)

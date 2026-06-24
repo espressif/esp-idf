@@ -85,10 +85,20 @@ enum {
     BTA_AV_ROLE_CHANGE_EVT,
     BTA_AV_AVDT_DELAY_RPT_EVT,
     BTA_AV_ACP_CONNECT_EVT,
-
+#if BTA_AV_CA_INCLUDED
+    /* these events are handled by the Cover Art Client state machine */
+    BTA_AV_API_CA_OPEN_EVT,
+    BTA_AV_API_CA_CLOSE_EVT,
+    BTA_AV_API_CA_GET_EVT,
+    BTA_AV_CA_RESPONSE_EVT,
+    BTA_AV_CA_RESPONSE_FINAL_EVT,
+    BTA_AV_CA_GOEP_CONNECT_EVT,
+    BTA_AV_CA_GOEP_DISCONNECT_EVT,
+#endif
     /* these events are handled outside of the state machine */
     BTA_AV_API_ENABLE_EVT,
     BTA_AV_API_REGISTER_EVT,
+    BTA_AV_API_REG_SEP_EVT,
     BTA_AV_API_DEREGISTER_EVT,
     BTA_AV_API_DISCONNECT_EVT,
     BTA_AV_CI_SRC_DATA_READY_EVT,
@@ -115,8 +125,15 @@ enum {
 #define BTA_AV_FIRST_SM_EVT     BTA_AV_API_DISABLE_EVT
 #define BTA_AV_LAST_SM_EVT      BTA_AV_AVRC_NONE_EVT
 
+#if BTA_AV_CA_INCLUDED
+/* events for AVRC Cover Art state machine */
+#define BTA_AV_CA_FIRST_SM_EVT     BTA_AV_API_CA_OPEN_EVT
+#define BTA_AV_CA_LAST_SM_EVT      BTA_AV_CA_GOEP_DISCONNECT_EVT
+#endif
+
 /* events for AV stream control block state machine */
 #define BTA_AV_FIRST_SSM_EVT    BTA_AV_API_OPEN_EVT
+#define BTA_AV_LAST_SSM_EVT     BTA_AV_ACP_CONNECT_EVT
 
 /* events that do not go through state machine */
 #define BTA_AV_FIRST_NSM_EVT    BTA_AV_API_ENABLE_EVT
@@ -180,6 +197,15 @@ typedef struct {
     tBTA_AVRC_CO_FUNCTS *bta_avrc_cos;
 } tBTA_AV_API_REG;
 
+/* data type for BTA_AV_API_REG_SEP_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT8               seid;
+    UINT8               tsep;
+    tBTA_AV_CODEC       codec_type;
+    UINT8               codec_info[AVDT_CODEC_SIZE];
+    tBTA_AV_DATA_CBACK *p_data_cback;
+} tBTA_AV_API_REG_SEP;
 
 enum {
     BTA_AV_RS_NONE,     /* straight API call */
@@ -348,6 +374,52 @@ typedef struct {
     BT_HDR              hdr;
 } tBTA_AV_API_GET_DELAY_VALUE;
 
+#if BTA_AV_CA_INCLUDED
+
+/* data type for BTA_AV_API_CA_OPEN_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT16              mtu;
+} tBTA_AV_API_CA_OPEN;
+
+/* data type for BTA_AV_API_CA_CLOSE_EVT */
+typedef struct {
+    BT_HDR              hdr;
+} tBTA_AV_API_CA_CLOSE;
+
+/* data type for BTA_AV_API_CA_GET_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    tBTA_AV_GET_TYPE    type;
+    UINT8               image_handle[7];
+    /* Image descriptor used in get image function */
+    UINT16              image_descriptor_len;
+    UINT8               *image_descriptor;
+} tBTA_AV_API_CA_GET;
+
+/* data type for BTA_AV_CA_RESPONSE_EVT and BTA_AV_CA_RESPONSE_FINAL_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    BT_HDR              *pkt;
+    UINT8               opcode;
+    BOOLEAN             srm_en;
+    BOOLEAN             srm_wait;
+} tBTA_AV_CA_RESPONSE;
+
+/* data type for BTA_AV_CA_CONNECT_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT16              max_rx;
+} tBTA_AV_CA_CONNECT;
+
+/* data type for BTA_AV_CA_DISCONNECT_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT16              reason;
+} tBTA_AV_CA_DISCONNECT;
+
+#endif /* BTA_AV_CA_INCLUDED */
+
 /* initiator/acceptor role for adaption */
 #define BTA_AV_ROLE_AD_INT          0x00       /* initiator */
 #define BTA_AV_ROLE_AD_ACP          0x01       /* acceptor */
@@ -364,6 +436,7 @@ typedef union {
     BT_HDR                  hdr;
     tBTA_AV_API_ENABLE      api_enable;
     tBTA_AV_API_REG         api_reg;
+    tBTA_AV_API_REG_SEP     api_reg_sep;
     tBTA_AV_API_OPEN        api_open;
     tBTA_AV_API_STOP        api_stop;
     tBTA_AV_API_DISCNT      api_discnt;
@@ -382,6 +455,14 @@ typedef union {
     tBTA_AV_API_META_RSP    api_meta_rsp;
     tBTA_AV_API_SET_DELAY_VALUE api_set_delay_vlaue;
     tBTA_AV_API_GET_DELAY_VALUE api_get_delay_value;
+#if BTA_AV_CA_INCLUDED
+    tBTA_AV_API_CA_OPEN     api_ca_open;
+    tBTA_AV_API_CA_CLOSE    api_ca_close;
+    tBTA_AV_API_CA_GET      api_ca_get;
+    tBTA_AV_CA_RESPONSE     ca_response;
+    tBTA_AV_CA_CONNECT      ca_connect;
+    tBTA_AV_CA_DISCONNECT   ca_disconnect;
+#endif
 } tBTA_AV_DATA;
 
 typedef void (tBTA_AV_VDP_DATA_ACT)(void *p_scb);
@@ -405,8 +486,8 @@ typedef union {
 #define BTA_AV_Q_TAG_START              0x02 /* before start sending media packets */
 #define BTA_AV_Q_TAG_STREAM             0x03 /* during streaming */
 
-#define BTA_AV_WAIT_ACP_CAPS_ON         0x01 /* retriving the peer capabilities */
-#define BTA_AV_WAIT_ACP_CAPS_STARTED    0x02 /* started while retriving peer capabilities */
+#define BTA_AV_WAIT_ACP_CAPS_ON         0x01 /* retrieving the peer capabilities */
+#define BTA_AV_WAIT_ACP_CAPS_STARTED    0x02 /* started while retrieving peer capabilities */
 #define BTA_AV_WAIT_ROLE_SW_RES_OPEN    0x04 /* waiting for role switch result after API_OPEN, before STR_OPENED */
 #define BTA_AV_WAIT_ROLE_SW_RES_START   0x08 /* waiting for role switch result before streaming */
 #define BTA_AV_WAIT_ROLE_SW_STARTED     0x10 /* started while waiting for role switch result */
@@ -462,7 +543,7 @@ typedef struct {
     BOOLEAN             use_rc;         /* TRUE if AVRCP is allowed */
     BOOLEAN             started;        /* TRUE if stream started */
     UINT8               co_started;     /* non-zero, if stream started from call-out perspective */
-    BOOLEAN             recfg_sup;      /* TRUE if the first attempt to reconfigure the stream was successfull, else False if command fails */
+    BOOLEAN             recfg_sup;      /* TRUE if the first attempt to reconfigure the stream was successful, else False if command fails */
     BOOLEAN             suspend_sup;    /* TRUE if Suspend stream is supported, else FALSE if suspend command fails */
     BOOLEAN             deregistring;   /* TRUE if deregistering */
     BOOLEAN             sco_suspend;    /* TRUE if SUSPEND is issued automatically for SCO */
@@ -471,8 +552,9 @@ typedef struct {
     UINT8               wait;           /* set 0x1, when getting Caps as ACP, set 0x2, when started */
     UINT8               q_tag;          /* identify the associated q_info union member */
     BOOLEAN             no_rtp_hdr;     /* TRUE if add no RTP header*/
-    UINT8               disc_rsn;       /* disconenction reason */
+    UINT8               disc_rsn;       /* disconnection reason */
     UINT16              uuid_int;       /*intended UUID of Initiator to connect to */
+    BOOLEAN             force_incoming; /* TRUE if stream SSM state is force-switched to INCOMING due to CONFIG_IND while in INIT, else FALSE */
 } tBTA_AV_SCB;
 
 #define BTA_AV_RC_ROLE_MASK     0x10
@@ -480,6 +562,13 @@ typedef struct {
 #define BTA_AV_RC_ROLE_ACP      0x10
 
 #define BTA_AV_RC_CONN_MASK     0x20
+
+#define BTA_AV_CA_IMG_HDL_UTF16_LEN     16      /* Cover Art image handle in utf-16 format, fixed to 16 */
+
+#define BTA_AV_CA_SRM_DISABLE       0x00
+#define BTA_AV_CA_SRM_ENABLE_REQ    0x01
+#define BTA_AV_CA_SRM_WAIT          0x02
+#define BTA_AV_CA_SRM_ENABLE        0x03
 
 /* type for AV RCP control block */
 /* index to this control block is the rc handle */
@@ -491,6 +580,14 @@ typedef struct {
     tBTA_AV_FEAT        peer_features;  /* peer features mask */
     UINT16              peer_ct_features;
     UINT16              peer_tg_features;
+#if BTA_AV_CA_INCLUDED
+    UINT16              cover_art_l2cap_psm;    /* OBEX over L2CAP PSM */
+    UINT16              cover_art_goep_hdl;     /* Cover Art client GOEP connection handle */
+    UINT8               cover_art_state;        /* Cover Art client state machine */
+    UINT32              cover_art_cid;          /* Cover Art client connection id */
+    UINT16              cover_art_max_tx;       /* max packet length peer device can receive */
+    UINT16              cover_art_max_rx;       /* max packet length we can receive */
+#endif
 } tBTA_AV_RCB;
 #define BTA_AV_NUM_RCB      (BTA_AV_NUM_STRS  + 2)
 
@@ -582,7 +679,7 @@ extern tBTA_AV_CB *bta_av_cb_ptr;
 #endif
 
 /* config struct */
-extern tBTA_AV_CFG *p_bta_av_cfg;
+extern const tBTA_AV_CFG *p_bta_av_cfg;
 
 extern const tBTA_AV_SACT bta_av_a2d_action[];
 extern const tBTA_AV_SACT bta_av_vdp_action[];
@@ -704,6 +801,19 @@ extern void bta_av_set_delay_value (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_do_disc_vdp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_vdp_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_reg_vdp (tAVDT_CS *p_cs, char *p_service_name, void *p_data);
+
+#if BTA_AV_CA_INCLUDED
+extern void bta_av_ca_api_open(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_api_close(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_api_get(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_response(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_response_final(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_goep_connect(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_goep_disconnect(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_force_disconnect(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_sm_execute(tBTA_AV_RCB *p_rcb, UINT16 event, tBTA_AV_DATA *p_data);
+extern void bta_av_ca_reset(tBTA_AV_RCB *p_rcb);
+#endif
 
 #endif  ///BTA_AV_INCLUDED == TRUE
 

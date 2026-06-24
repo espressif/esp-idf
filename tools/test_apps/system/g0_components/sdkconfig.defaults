@@ -1,0 +1,3 @@
+# G0 components test does not use IDF's linker scripts, so stray sections could exist.
+# Suppress linker's messages about orphan sections.
+CONFIG_COMPILER_ORPHAN_SECTIONS_PLACE=y

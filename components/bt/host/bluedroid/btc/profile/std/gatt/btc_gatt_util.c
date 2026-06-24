@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,16 +27,16 @@ int uuidType(unsigned char *p_uuid)
     int all_zero = 1;
 
     for (i = 0; i != 16; ++i) {
+        /* Check if bytes 12-13 are non-zero for all_zero detection */
+        if (p_uuid[i] != 0) {
+            all_zero = 0;
+        }
         if (i == 12 || i == 13) {
             continue;
         }
 
         if (p_uuid[i] == BASE_UUID[i]) {
             ++match;
-        }
-
-        if (p_uuid[i] != 0) {
-            all_zero = 0;
         }
     }
     if (all_zero) {
@@ -82,23 +82,6 @@ void btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src)
 /*******************************************************************************
  * BTC -> BTA conversion functions
  *******************************************************************************/
-
-void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src)
-{
-    p_dest->len = p_src->len;
-    if (p_src->len == LEN_UUID_16) {
-        p_dest->uu.uuid16 = p_src->uuid.uuid16;
-    } else if (p_src->len == LEN_UUID_32) {
-        p_dest->uu.uuid32 = p_src->uuid.uuid32;
-    } else if (p_src->len == LEN_UUID_128) {
-        memcpy(&p_dest->uu.uuid128, p_src->uuid.uuid128, p_dest->len);
-    } else if (p_src->len == 0) {
-        /* do nothing for now, there's some scenario will input 0 */
-    } else {
-        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
-    }
-}
-
 void btc_to_bta_gatt_id(tBTA_GATT_ID *p_dest, esp_gatt_id_t *p_src)
 {
     p_dest->inst_id = p_src->inst_id;
@@ -115,23 +98,6 @@ void btc_to_bta_srvc_id(tBTA_GATT_SRVC_ID *p_dest, esp_gatt_srvc_id_t *p_src)
 /*******************************************************************************
  * BTA -> BTC conversion functions
  *******************************************************************************/
-void bta_to_btc_uuid(esp_bt_uuid_t *p_dest, tBT_UUID *p_src)
-{
-    p_dest->len = p_src->len;
-    if (p_src->len == LEN_UUID_16) {
-        p_dest->uuid.uuid16 = p_src->uu.uuid16;
-    } else if (p_src->len == LEN_UUID_32) {
-        p_dest->uuid.uuid32 = p_src->uu.uuid32;
-    } else if (p_src->len == LEN_UUID_128) {
-        memcpy(&p_dest->uuid.uuid128, p_src->uu.uuid128, p_dest->len);
-    } else if (p_src->len == 0) {
-        /* do nothing for now, there's some scenario will input 0
-           such as, receive notify, the descriptor may be 0 */
-    } else {
-        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
-    }
-}
-
 void bta_to_btc_gatt_id(esp_gatt_id_t *p_dest, tBTA_GATT_ID *p_src)
 {
     p_dest->inst_id = p_src->inst_id;
@@ -148,9 +114,11 @@ void btc_to_bta_response(tBTA_GATTS_RSP *p_dest, esp_gatt_rsp_t *p_src)
 {
     p_dest->attr_value.auth_req = p_src->attr_value.auth_req;
     p_dest->attr_value.handle   = p_src->attr_value.handle;
-    p_dest->attr_value.len      = p_src->attr_value.len;
     p_dest->attr_value.offset   = p_src->attr_value.offset;
-    memcpy(p_dest->attr_value.value, p_src->attr_value.value, ESP_GATT_MAX_ATTR_LEN);
+    uint16_t copy_len = (p_src->attr_value.len <= ESP_GATT_MAX_ATTR_LEN)
+                    ? p_src->attr_value.len : ESP_GATT_MAX_ATTR_LEN;
+    p_dest->attr_value.len      = copy_len;  /* match actual bytes copied (defensive if src len > buffer) */
+    memcpy(p_dest->attr_value.value, p_src->attr_value.value, copy_len);
 }
 
 uint16_t get_uuid16(tBT_UUID *p_uuid)
@@ -180,13 +148,18 @@ uint16_t set_read_value(uint8_t *gattc_if, esp_ble_gattc_cb_param_t *p_dest, tBT
     if (( p_src->status == BTA_GATT_OK ) && (p_src->p_value != NULL))
     {
         BTC_TRACE_DEBUG("%s len = %d ", __func__, p_src->p_value->len);
-        p_dest->read.value_len = p_src->p_value->len;
         if ( p_src->p_value->len > 0  && p_src->p_value->p_value != NULL ) {
+            p_dest->read.value_len = p_src->p_value->len;
             p_dest->read.value = p_src->p_value->p_value;
+            len += p_src->p_value->len;
+        } else {
+            /* len>0 but p_value==NULL would leave value uninitialized; avoid that */
+            p_dest->read.value_len = 0;
+            p_dest->read.value = NULL;
         }
-        len += p_src->p_value->len;
     } else {
         p_dest->read.value_len = 0;
+        p_dest->read.value = NULL;
     }
 
     return len;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,12 +107,16 @@ static esp_err_t event_start_select(int                  nfds,
     for (int i = 0; i < nfds; i++) {
         _lock_acquire_recursive(&s_events[i].lock);
         if (s_events[i].fd == i && (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds))) {
+            event_select_args_t *event_select_args =
+                (event_select_args_t *)malloc(sizeof(event_select_args_t));
+            if (!event_select_args) {
+                _lock_release_recursive(&s_events[i].lock);
+                return ESP_ERR_NO_MEM;
+            }
             if (s_events[i].support_isr) {
                 portENTER_CRITICAL(&s_events[i].data_spin_lock);
             }
 
-            event_select_args_t *event_select_args =
-                (event_select_args_t *)malloc(sizeof(event_select_args_t));
             event_select_args->fd = i;
             event_select_args->signal_sem = signal_sem;
 
@@ -239,7 +243,7 @@ static ssize_t signal_event_fd_from_isr(int fd, const void *data, size_t size)
     return ret;
 }
 
-static ssize_t event_write(int fd, const void *data, size_t size)
+static ssize_t event_write(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
 {
     ssize_t ret = -1;
 
@@ -280,7 +284,7 @@ static ssize_t event_write(int fd, const void *data, size_t size)
     return ret;
 }
 
-static ssize_t event_read(int fd, void *data, size_t size)
+static ssize_t event_read(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
 {
     ssize_t ret = -1;
 
@@ -314,7 +318,7 @@ static ssize_t event_read(int fd, void *data, size_t size)
     return ret;
 }
 
-static int event_close(int fd)
+static int event_close(__attribute__((unused)) void *ctx, int fd)
 {
     int ret = -1;
 
@@ -347,6 +351,22 @@ static int event_close(int fd)
     return ret;
 }
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_vfs_eventfd_select = {
+    .start_select = &event_start_select,
+    .end_select   = &event_end_select,
+};
+#endif
+
+static const esp_vfs_fs_ops_t s_vfs_eventfd = {
+    .write_p = &event_write,
+    .read_p = &event_read,
+    .close_p = &event_close,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    .select = &s_vfs_eventfd_select,
+#endif
+};
+
 esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
 {
     if (config == NULL || config->max_fds >= MAX_FDS) {
@@ -363,17 +383,7 @@ esp_err_t esp_vfs_eventfd_register(const esp_vfs_eventfd_config_t *config)
         s_events[i].fd = FD_INVALID;
     }
 
-    esp_vfs_t vfs = {
-        .flags        = ESP_VFS_FLAG_DEFAULT,
-        .write        = &event_write,
-        .close        = &event_close,
-        .read         = &event_read,
-#ifdef CONFIG_VFS_SUPPORT_SELECT
-        .start_select = &event_start_select,
-        .end_select   = &event_end_select,
-#endif
-    };
-    return esp_vfs_register_with_id(&vfs, NULL, &s_eventfd_vfs_id);
+    return esp_vfs_register_fs_with_id(&s_vfs_eventfd, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL, &s_eventfd_vfs_id);
 }
 
 esp_err_t esp_vfs_eventfd_unregister(void)

@@ -1,0 +1,15 @@
+dependencies:
+  bt_app_core_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/bt_app_core_utils
+  bredr_app_common_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/bredr_app_common_utils
+  a2dp_sink_common_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/a2dp_utils/a2dp_sink_common_utils
+  a2dp_sink_int_codec_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/a2dp_utils/a2dp_sink_int_codec_utils
+  avrcp_common_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/avrcp_utils/avrcp_common_utils
+  avrcp_metadata_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/avrcp_utils/avrcp_metadata_utils
+  avrcp_abs_vol_utils:
+    path: ${IDF_PATH}/examples/bluetooth/bluedroid/classic_bt/common/avrcp_utils/avrcp_abs_vol_utils

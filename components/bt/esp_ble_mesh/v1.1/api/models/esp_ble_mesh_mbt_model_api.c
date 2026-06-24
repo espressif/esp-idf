@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,20 +20,20 @@ extern int bt_mesh_get_transfer_progress(void *model, uint16_t unicast_addr,
                                          uint8_t *block_percent, uint8_t *chunk_percent);
 extern int bt_mesh_get_blob_reception_progress(void *model, uint8_t *reception_progress);
 
-esp_err_t esp_ble_mesh_register_mbt_client_callback(esp_ble_mesh_mbt_client_cb_t callback)
+esp_err_t esp_ble_mesh_register_mbt_client_callback(esp_ble_mesh_mbt_client_cb_t callback) __attribute__((deprecated))
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_MBT_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_retrieve_capabilities(esp_ble_mesh_retrieve_capabilities_t *input)
+esp_err_t esp_ble_mesh_mbt_client_retrieve_capabilities(esp_ble_mesh_retrieve_capabilities_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
     if (input == NULL || input->model == NULL ||
-        (input->unicast_addr_count && input->unicast_addr == NULL)) {
+            (input->unicast_addr_count && input->unicast_addr == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -51,14 +51,14 @@ esp_err_t esp_ble_mesh_mbt_client_retrieve_capabilities(esp_ble_mesh_retrieve_ca
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_transfer_blob(esp_ble_mesh_transfer_blob_t *input)
+esp_err_t esp_ble_mesh_mbt_client_transfer_blob(esp_ble_mesh_transfer_blob_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
     if (input == NULL || input->model == NULL ||
-        (input->unicast_addr_count && input->unicast_addr == NULL) ||
-        input->blob_data == NULL) {
+            (input->unicast_addr_count && input->unicast_addr == NULL) ||
+            input->blob_data == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -76,7 +76,7 @@ esp_err_t esp_ble_mesh_mbt_client_transfer_blob(esp_ble_mesh_transfer_blob_t *in
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_send_block(esp_ble_mesh_send_block_t *input)
+esp_err_t esp_ble_mesh_mbt_client_send_block(esp_ble_mesh_send_block_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -97,7 +97,7 @@ esp_err_t esp_ble_mesh_mbt_client_send_block(esp_ble_mesh_send_block_t *input)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_send_data(esp_ble_mesh_send_data_t *input)
+esp_err_t esp_ble_mesh_mbt_client_send_data(esp_ble_mesh_send_data_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -118,7 +118,7 @@ esp_err_t esp_ble_mesh_mbt_client_send_data(esp_ble_mesh_send_data_t *input)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_determine_block_status(esp_ble_mesh_determine_block_status_t *input)
+esp_err_t esp_ble_mesh_mbt_client_determine_block_status(esp_ble_mesh_determine_block_status_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -139,13 +139,13 @@ esp_err_t esp_ble_mesh_mbt_client_determine_block_status(esp_ble_mesh_determine_
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_determine_transfer_status(esp_ble_mesh_determine_transfer_status_t *input)
+esp_err_t esp_ble_mesh_mbt_client_determine_transfer_status(esp_ble_mesh_determine_transfer_status_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
     if (input == NULL || input->model == NULL ||
-        (input->unicast_addr_count && input->unicast_addr == NULL)) {
+            (input->unicast_addr_count && input->unicast_addr == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -163,13 +163,13 @@ esp_err_t esp_ble_mesh_mbt_client_determine_transfer_status(esp_ble_mesh_determi
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_cancel_transfer(esp_ble_mesh_cancel_transfer_t *input)
+esp_err_t esp_ble_mesh_mbt_client_cancel_transfer(esp_ble_mesh_cancel_transfer_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
     if (input == NULL || input->model == NULL ||
-        (input->unicast_addr_count && input->unicast_addr == NULL)) {
+            (input->unicast_addr_count && input->unicast_addr == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -188,13 +188,13 @@ esp_err_t esp_ble_mesh_mbt_client_cancel_transfer(esp_ble_mesh_cancel_transfer_t
 }
 
 const esp_ble_mesh_blob_receiver_t *esp_ble_mesh_mbt_client_get_blob_receiver(esp_ble_mesh_model_t *model,
-                                                                                        uint16_t unicast_addr)
+                                                                              uint16_t unicast_addr) __attribute__((deprecated))
 {
     return (const esp_ble_mesh_blob_receiver_t *)bt_mesh_get_blob_receiver((struct bt_mesh_model *)model,
                                                                            unicast_addr);
 }
 
-const esp_ble_mesh_blob_receiver_t **esp_ble_mesh_mbt_client_get_active_blob_receiver(esp_ble_mesh_model_t *model)
+const esp_ble_mesh_blob_receiver_t **esp_ble_mesh_mbt_client_get_active_blob_receiver(esp_ble_mesh_model_t *model) __attribute__((deprecated))
 {
     return (const esp_ble_mesh_blob_receiver_t **)bt_mesh_get_active_blob_receiver((struct bt_mesh_model *)model);
 }
@@ -202,14 +202,14 @@ const esp_ble_mesh_blob_receiver_t **esp_ble_mesh_mbt_client_get_active_blob_rec
 esp_err_t esp_ble_mesh_mbt_client_get_transfer_progress(esp_ble_mesh_model_t *model,
                                                         uint16_t unicast_addr,
                                                         uint8_t *block_percent,
-                                                        uint8_t *chunk_percent)
+                                                        uint8_t *chunk_percent) __attribute__((deprecated))
 {
     return (bt_mesh_get_transfer_progress((struct bt_mesh_model *)model, unicast_addr,
                                           block_percent, chunk_percent) == 0 ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_mbt_client_set_transfer_ttl(esp_ble_mesh_model_t *model,
-                                                   uint8_t transfer_ttl)
+                                                   uint8_t transfer_ttl) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -231,7 +231,7 @@ esp_err_t esp_ble_mesh_mbt_client_set_transfer_ttl(esp_ble_mesh_model_t *model,
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_clear_transfer_ttl(esp_ble_mesh_model_t *model)
+esp_err_t esp_ble_mesh_mbt_client_clear_transfer_ttl(esp_ble_mesh_model_t *model) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -253,7 +253,7 @@ esp_err_t esp_ble_mesh_mbt_client_clear_transfer_ttl(esp_ble_mesh_model_t *model
 }
 
 esp_err_t esp_ble_mesh_mbt_client_set_app_idx(esp_ble_mesh_model_t *model,
-                                              uint16_t app_idx)
+                                              uint16_t app_idx) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -275,7 +275,7 @@ esp_err_t esp_ble_mesh_mbt_client_set_app_idx(esp_ble_mesh_model_t *model,
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_clear_app_idx(esp_ble_mesh_model_t *model)
+esp_err_t esp_ble_mesh_mbt_client_clear_app_idx(esp_ble_mesh_model_t *model) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -297,7 +297,7 @@ esp_err_t esp_ble_mesh_mbt_client_clear_app_idx(esp_ble_mesh_model_t *model)
 }
 
 esp_err_t esp_ble_mesh_mbt_client_set_multicast_addr(esp_ble_mesh_model_t *model,
-                                                     uint16_t multicast_addr)
+                                                     uint16_t multicast_addr) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -319,7 +319,7 @@ esp_err_t esp_ble_mesh_mbt_client_set_multicast_addr(esp_ble_mesh_model_t *model
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_client_clear_multicast_addr(esp_ble_mesh_model_t *model)
+esp_err_t esp_ble_mesh_mbt_client_clear_multicast_addr(esp_ble_mesh_model_t *model) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_client_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -342,14 +342,14 @@ esp_err_t esp_ble_mesh_mbt_client_clear_multicast_addr(esp_ble_mesh_model_t *mod
 #endif /* CONFIG_BLE_MESH_MBT_CLI */
 
 #if CONFIG_BLE_MESH_MBT_SRV
-esp_err_t esp_ble_mesh_register_mbt_server_callback(esp_ble_mesh_mbt_server_cb_t callback)
+esp_err_t esp_ble_mesh_register_mbt_server_callback(esp_ble_mesh_mbt_server_cb_t callback) __attribute__((deprecated))
 {
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_MBT_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_server_initialize_blob_receive(esp_ble_mesh_initialize_blob_receive_t *input)
+esp_err_t esp_ble_mesh_mbt_server_initialize_blob_receive(esp_ble_mesh_initialize_blob_receive_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_server_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -370,7 +370,7 @@ esp_err_t esp_ble_mesh_mbt_server_initialize_blob_receive(esp_ble_mesh_initializ
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_server_cancel_blob_receive(esp_ble_mesh_cancel_blob_receive_t *input)
+esp_err_t esp_ble_mesh_mbt_server_cancel_blob_receive(esp_ble_mesh_cancel_blob_receive_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_server_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -391,7 +391,7 @@ esp_err_t esp_ble_mesh_mbt_server_cancel_blob_receive(esp_ble_mesh_cancel_blob_r
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_mbt_server_set_blob_capabilities(esp_ble_mesh_set_blob_capabilities_t *input)
+esp_err_t esp_ble_mesh_mbt_server_set_blob_capabilities(esp_ble_mesh_set_blob_capabilities_t *input) __attribute__((deprecated))
 {
     btc_ble_mesh_mbt_server_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -413,7 +413,7 @@ esp_err_t esp_ble_mesh_mbt_server_set_blob_capabilities(esp_ble_mesh_set_blob_ca
 }
 
 esp_err_t esp_ble_mesh_mbt_server_get_blob_reception_progress(esp_ble_mesh_model_t *model,
-                                                              uint8_t *reception_progress)
+                                                              uint8_t *reception_progress) __attribute__((deprecated))
 {
     return (bt_mesh_get_blob_reception_progress((struct bt_mesh_model *)model,
                                                 reception_progress) == 0 ? ESP_OK : ESP_FAIL);

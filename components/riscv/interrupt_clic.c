@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,16 @@
 #include "riscv/rv_utils.h"
 #include "hal/interrupt_clic_ll.h"
 #include "esp_private/interrupt_clic.h"
+#include "esp_attr.h"
 
+#if __riscv_zcmp && SOC_CPU_ZCMP_WORKAROUND
+/* Due to a hardware bug, the interrupt threshold must be saved before disabling the interrupts.
+ * Make sure the array is always accessible. */
+#if CONFIG_IDF_TARGET_ESP32P4
+SPM_DRAM_ATTR
+#endif
+uint32_t g_xintthresh[SOC_CPU_CORES_NUM];
+#endif
 
 void intr_matrix_route(int intr_src, int intr_num)
 {
@@ -40,3 +49,44 @@ void esprv_int_set_vectored(int rv_int_num, bool vectored)
 {
     interrupt_clic_ll_set_vectored(rv_int_num + RV_EXTERNAL_INT_OFFSET, vectored);
 }
+
+
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+DRAM_ATTR esprv_int_mgmt_t esp_tee_intr_sec_srv_cb = NULL;
+
+void esprv_int_setup_mgmt_cb(void *fptr)
+{
+    esp_tee_intr_sec_srv_cb = (esprv_int_mgmt_t)fptr;
+}
+
+
+/* NOTE: Overriding ROM-based interrupt configuration symbols */
+void esprv_int_enable(uint32_t unmask)
+{
+    rv_utils_intr_enable(unmask);
+}
+
+
+void esprv_int_disable(uint32_t mask)
+{
+    rv_utils_intr_disable(mask);
+}
+
+
+void esprv_int_set_type(int intr_num, enum intr_type type)
+{
+    rv_utils_intr_set_type(intr_num, type);
+}
+
+
+void esprv_int_set_priority(int rv_int_num, int priority)
+{
+    rv_utils_intr_set_priority(rv_int_num, priority);
+}
+
+
+void esprv_int_set_threshold(int priority_threshold)
+{
+    rv_utils_intr_set_threshold(priority_threshold);
+}
+#endif

@@ -1,0 +1,5 @@
+dependencies:
+  tee_ota_ops:
+    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_ota_ops
+  protocol_examples_common:
+    path: ${IDF_PATH}/examples/common_components/protocol_examples_common

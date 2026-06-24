@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -14,18 +14,16 @@
 #endif
 
 #include "esp_bit_defs.h"
-#include "reg_base.h"
+#include "soc/reg_base.h"
 
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
-
 
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr)
-
 
 #ifndef __ASSEMBLER__
 
@@ -155,18 +153,9 @@
 //}}
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 26*1000000 )
-#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  UART_CLK_FREQ                               APB_CLK_FREQ
-#define  WDT_CLK_FREQ                                APB_CLK_FREQ
-#define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
-#define  SPI_CLK_DIV                                 4
-#define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
-#define  GPIO_MATRIX_DELAY_NS                        25
 //}}
 
 /* Overall memory map */

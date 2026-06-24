@@ -61,7 +61,7 @@ const UINT16  bta_av_audio_flush_to[] = {
     0  /* 5 streams */
 };     /* AVDTP audio transport channel flush timeout */
 
-/* Note: Android doesnt support AVRC_SUPF_TG_GROUP_NAVI  */
+/* Note: Android doesn't support AVRC_SUPF_TG_GROUP_NAVI  */
 /* Note: if AVRC_SUPF_TG_GROUP_NAVI is set, bta_av_cfg.avrc_group should be TRUE */
 #if AVRC_METADATA_INCLUDED == TRUE
 #define BTA_AV_RC_SNK_SUPF_TG       (AVRC_SUPF_TG_CAT2) /* TODO: | AVRC_SUPF_TG_APP_SETTINGS) */
@@ -105,6 +105,6 @@ const tBTA_AV_CFG bta_av_cfg = {
     {0},                    /* Default AVRCP target name */
 };
 
-tBTA_AV_CFG *p_bta_av_cfg = (tBTA_AV_CFG *) &bta_av_cfg;
+const tBTA_AV_CFG *p_bta_av_cfg = &bta_av_cfg;
 
 #endif /* if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE) */

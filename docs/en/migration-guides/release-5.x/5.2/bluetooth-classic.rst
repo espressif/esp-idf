@@ -5,11 +5,11 @@ Bluetooth Classic
 
 Bluedroid
 ---------
+- The following Bluedroid APIs have been changed:
 
-    The following Bluedroid API have been removed:
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_bt_main.h`
 
-    - :component_file:`bt/host/bluedroid/api/include/api/esp_bt_main.h`
+        - The function ``esp_bluedroid_init`` has been deprecated and replaced by ``esp_bluedroid_init_with_cfg``.
+        - A new configuration structure ``esp_bluedroid_config_t`` has been introduced as a parameter for ``esp_bluedroid_init_with_cfg``. The field ``ssp_en`` in this structure determines the pairing mode.
 
-        - Remove ``esp_err_t esp_bluedroid_init(void)``
-
-            - Bluedroid stack initialization API has been replaced by ``esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)``. Macro ``BT_BLUEDROID_INIT_CONFIG_DEFAULT()`` provides the default configuration for the initialization. The original function can be deleted directly.
+- The configuration ``CONFIG_BT_SSP_ENABLED`` has been removed, as pairing mode can now be configured at runtime.

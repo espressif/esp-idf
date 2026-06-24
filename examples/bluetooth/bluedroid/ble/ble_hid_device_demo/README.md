@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF BLE HID Example
 
@@ -12,6 +12,54 @@ This example implement a BLE HID device profile related functions, in which the 
 
 Users can choose different reports according to their own application scenarios.
 BLE HID profile inheritance and USB HID class.
+
+## Flow Diagram
+
+```
+    ┌──────────────┐                                    ┌──────────────┐
+    │  BLE HID     │                                    │   Host       │
+    │   Device     │                                    │ (PC/Phone)   │
+    └──────┬───────┘                                    └──────┬───────┘
+           │                                                   │
+           │  ─────────── Initialization ───────────           │
+           │                                                   │
+           │  1. Create HID Service                            │
+           │     - HID Information Char                        │
+           │     - Report Map Char                             │
+           │     - Report Chars (Mouse/Keyboard/Consumer)      │
+           │     - HID Control Point Char                      │
+           │  2. Start Advertising                             │
+           │                                                   │
+           │  ─────────── Connection & Pairing ───────────     │
+           │                                                   │
+           │                           Scan & Connect          │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  Pairing (Bonding)                                │
+           │ <────────────────────────────────────────────────>│
+           │                                                   │
+           │  Enable Report Notification                       │
+           │ <───────────────────────────────────────────────  │
+           │                                                   │
+           │  ─────────── HID Data Transfer ───────────        │
+           │                                                   │
+           │  Send Keyboard Report                             │
+           │  (Key Press/Release)                              │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  Send Mouse Report                                │
+           │  (X/Y Movement, Buttons)                          │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+           │  Send Consumer Report                             │
+           │  (Volume +/-, Media Control)                      │
+           │ ───────────────────────────────────────────────>  │
+           │                                                   │
+    ┌──────┴───────┐                                    ┌──────┴───────┐
+    │  BLE HID     │                                    │    Host      │
+    │   Device     │                                    │ (PC/Phone)   │
+    └──────────────┘                                    └──────────────┘
+```
 
 ## How to Use Example
 

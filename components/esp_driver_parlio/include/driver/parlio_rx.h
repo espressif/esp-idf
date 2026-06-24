@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@ extern "C" {
 typedef struct {
     size_t                  trans_queue_depth;      /*!< Depth of internal transaction queue */
     size_t                  max_recv_size;          /*!< Maximum receive size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
+    size_t                  dma_burst_size;         /*!< DMA burst size, in bytes */
     size_t                  data_width;             /*!< Parallel IO data width, can set to 1/2/4/8/..., but can't be greater than PARLIO_RX_UNIT_MAX_DATA_WIDTH */
     parlio_clock_source_t   clk_src;                /*!< Parallel IO clock source */
     uint32_t                ext_clk_freq_hz;        /*!< The external source clock frequency. Only be valid when select PARLIO_CLK_SRC_EXTERNAL as clock source */
@@ -32,16 +33,17 @@ typedef struct {
                                                          Only takes effect when using level or pulse delimiter, set to `-1` if only use the soft delimiter */
     gpio_num_t              data_gpio_nums[PARLIO_RX_UNIT_MAX_DATA_WIDTH]; /*!< Parallel IO data GPIO numbers, set to `-1` if it's not used,
                                                                                 The driver will take [0 .. (data_width - 1)] as the data pins */
-    struct {
+    /// Extra configuration flags for PARLIO RX unit
+    struct extra_parlio_rx_unit_flags {
         uint32_t            free_clk : 1;           /*!< Whether the input external clock is a free-running clock. A free-running clock will always keep running (e.g. I2S bclk),
                                                          a non-free-running clock will start when there are data transporting and stop when the bus idle (e.g. SPI).
                                                          This flag only takes effect when select PARLIO_CLK_SRC_EXTERNAL as clock source */
         uint32_t            clk_gate_en : 1;        /*!< Enable RX clock gating, only available when the clock direction is output(not supported on ESP32-C6)
                                                          the output clock will be controlled by the valid gpio,
                                                          i.e. high level of valid gpio to enable the clock output, low to disable */
-        uint32_t            io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t            io_no_init: 1;          /*!< Set to skip initializing the GPIO, but only attach the pralio rx signals to those GPIOs via IO Matrix.
-                                                         So that the signals that have attached to those GPIO won't be overwritten. Mainly used for self communication or self monitoring */
+        uint32_t            allow_pd: 1;            /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
+                                                         By this approach, the system can power off PARLIO's power domain.
+                                                         This can save power, but at the expense of more RAM being consumed. */
     } flags;                                        /*!< RX driver flags */
 } parlio_rx_unit_config_t;
 
@@ -158,10 +160,9 @@ typedef struct {
     parlio_bit_pack_order_t bit_pack_order;         /*!< Set how we pack the bits into one bytes, set 1 to pack the bits into a byte from LSB,
                                                          otherwise from MSB */
     uint32_t                eof_data_len;           /*!< Set the data length to trigger the End Of Frame (EOF, i.e. transaction done)
-                                                         interrupt, if the data length is set to `0`, that mean the EOF will only triggers
-                                                         when the end pulse detected, please ensure there is an end pulse for a frame and
-                                                         `parlio_rx_pulse_delimiter_config_t::has_end_pulse` flag is set */
-    uint32_t                timeout_ticks;          /*!< The number of APB clock ticks to trigger timeout interrupt. Set 0 to disable the receive timeout interrupt */
+                                                         interrupt, if the data length is set to `0`, that mean the EOF will only triggers */
+    uint32_t                timeout_ticks;          /*!< The number of APB clock ticks to trigger timeout interrupt. Set 0 to disable the receive timeout interrupt
+                                                         The timeout counter starts when soft delimiter is stopped but the data is still not enough for EOF. */
 } parlio_rx_soft_delimiter_config_t;
 
 /**
@@ -269,6 +270,29 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
                                  void *payload,
                                  size_t payload_size,
                                  const parlio_receive_config_t* recv_cfg);
+
+/**
+ * @brief Receive data by Parallel IO RX unit in ISR context (e.g. inside a callback function)
+ * @note  This function should only be called in ISR context, and the callback function should not block.
+ * @note  The payload buffer should be accessible in ISR context.
+ *        The payload buffer will be sent to the tail of the transaction queue.
+ *
+ * @param[in]  rx_unit       Parallel IO RX unit handle that created by `parlio_new_rx_unit`
+ * @param[in]  payload       The payload buffer pointer
+ * @param[in]  payload_size  The size of the payload buffer, in bytes.
+ * @param[in]  recv_cfg      The configuration of this receive transaction
+ * @param[out] hp_task_woken Whether the high priority task is woken (Optional, set NULL if not needed)
+ * @return
+ *      - ESP_OK: success to queue the transaction
+ *      - ESP_FAIL: failed to queue the transaction since the queue is full
+ *      - ESP_ERR_INVALID_ARG: invalid arguments, some conditions are not met
+ *      - ESP_ERR_INVALID_STATE: invalid state
+ */
+esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
+                                          void *payload,
+                                          size_t payload_size,
+                                          const parlio_receive_config_t* recv_cfg,
+                                          bool *hp_task_woken);
 
 /**
  * @brief Wait for all pending RX transactions done

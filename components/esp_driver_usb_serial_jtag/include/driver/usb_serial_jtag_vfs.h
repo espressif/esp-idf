@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* TODO IDF-14810: Rename so esp_console does not appear in the name. */
+/**
+ * @brief Parameters for console device: USB-SERIAL-JTAG
+ *
+ * @note It's an empty structure for now, reserved for future
+ *
+ */
+typedef struct esp_console_dev_usb_serial_jtag_config {
+
+} esp_console_dev_usb_serial_jtag_config_t;
 
 /**
  * @brief add /dev/usbserjtag virtual filesystem driver

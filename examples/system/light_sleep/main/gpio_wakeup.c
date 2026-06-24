@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,16 +13,30 @@
  * You can also change this to another pin.
  */
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2 \
-    || CONFIG_IDF_TARGET_ESP32C6
+    || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
 #define BOOT_BUTTON_NUM         9
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define BOOT_BUTTON_NUM         28
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define BOOT_BUTTON_NUM         35
+#elif CONFIG_IDF_TARGET_ESP32S31
+#define BOOT_BUTTON_NUM         61
 #else
 #define BOOT_BUTTON_NUM         0
 #endif
 
+/* In esp32h21 and esp32h4, the boot button is disconnected from GPIO */
+#if CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
+#undef BOOT_BUTTON_NUM
+#endif
+
+#ifdef BOOT_BUTTON_NUM
 /* Use boot button as gpio input */
 #define GPIO_WAKEUP_NUM         BOOT_BUTTON_NUM
+#else
+#define GPIO_WAKEUP_NUM         CONFIG_EXAMPLE_GPIO_WAKEUP_NUM
+#endif
+
 /* "Boot" button is active low */
 #define GPIO_WAKEUP_LEVEL       0
 
@@ -42,10 +56,13 @@ esp_err_t example_register_gpio_wakeup(void)
     gpio_config_t config = {
             .pin_bit_mask = BIT64(GPIO_WAKEUP_NUM),
             .mode = GPIO_MODE_INPUT,
-            .pull_down_en = false,
-            .pull_up_en = false,
+            .pull_down_en = GPIO_PULLDOWN_DISABLE,
+            .pull_up_en = GPIO_PULLUP_DISABLE,
             .intr_type = GPIO_INTR_DISABLE
     };
+#ifndef BOOT_BUTTON_NUM
+    config.pull_up_en = GPIO_PULLUP_ENABLE;
+#endif
     ESP_RETURN_ON_ERROR(gpio_config(&config), TAG, "Initialize GPIO%d failed", GPIO_WAKEUP_NUM);
 
     /* Enable wake up from GPIO */

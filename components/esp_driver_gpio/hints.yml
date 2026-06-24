@@ -1,0 +1,18 @@
+-
+    re: "has no member named 'io_loop_back'"
+    hint: "If you want to bind different driver objects to the same GPIO, just set them with the same GPIO number."
+
+-
+    re: "has no member named '{}'"
+    hint: "Please include 'driver/gpio.h' and call 'gpio_set_pull_mode' to set the correct pull mode."
+    variables:
+        -
+            re_variables: ['pull_up']
+            hint_variables: []
+        -
+            re_variables: ['pull_down']
+            hint_variables: []
+
+-
+    re: "has no member named 'io_od_mode'"
+    hint: "Please include 'driver/gpio.h' and call 'gpio_od_enable' to enable the open-drain mode."

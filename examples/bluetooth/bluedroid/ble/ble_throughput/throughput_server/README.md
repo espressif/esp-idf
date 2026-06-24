@@ -1,10 +1,52 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF BLE throughput GATT SERVER Test
 
 This is the demo used to test the BLE throughput, this demo should used with throughput client demo together.
 The throughput of BLE can up to 720-767 Kbps between to ESP32 board.
+
+## Flow Diagram
+
+```
+    ┌──────────────────┐                           ┌──────────────────┐
+    │ Throughput Server│                           │ Throughput Client│
+    │   (this example) │                           │                  │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  1. Initialize BLE                           │
+             │  2. Create GATT Service                      │
+             │  3. Add Characteristic (Notify)              │
+             │  4. Start Advertising                        │
+             │                                              │
+             │  ─────────── Connection Setup ───────────    │
+             │                                              │
+             │         Connection Request                   │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │  5. Accept Connection                        │
+             │                                              │
+             │         MTU Exchange (517 bytes)             │
+             │ <═══════════════════════════════════════════>│
+             │                                              │
+             │         Enable Notification                  │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │  ─────────── Throughput Test ───────────     │
+             │                                              │
+             │      Notification Data (large packets)       │
+             │ ════════════════════════════════════════════>│
+             │      Notification Data (large packets)       │
+             │ ════════════════════════════════════════════>│
+             │      ... (continuous data stream) ...        │
+             │ ════════════════════════════════════════════>│
+             │                                              │  Calculate
+             │                                              │  Throughput
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │ Throughput Server│                           │ Throughput Client│
+    └──────────────────┘                           └──────────────────┘
+```
 
 ## How to Use Example
 

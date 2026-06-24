@@ -74,8 +74,17 @@
 #define WLAN_AUTH_FT			2
 #define WLAN_AUTH_SAE           	3
 #define WLAN_AUTH_LEAP			128
+#define WLAN_AUTH_PASN			7
 
 #define WLAN_AUTH_CHALLENGE_LEN 128
+
+/* Authentication transaction sequence number */
+#define WLAN_AUTH_TR_SEQ_SAE_COMMIT 1
+#define WLAN_AUTH_TR_SEQ_SAE_CONFIRM 2
+
+#define WLAN_AUTH_TR_SEQ_PASN_AUTH1 1
+#define WLAN_AUTH_TR_SEQ_PASN_AUTH2 2
+#define WLAN_AUTH_TR_SEQ_PASN_AUTH3 3
 
 #define WLAN_CAPABILITY_ESS BIT(0)
 #define WLAN_CAPABILITY_IBSS BIT(1)
@@ -160,6 +169,8 @@
 #define WLAN_STATUS_UNKNOWN_PASSWORD_IDENTIFIER 123
 #define WLAN_STATUS_SAE_HASH_TO_ELEMENT 126
 #define WLAN_STATUS_SAE_PK 127
+#define WLAN_STATUS_INVALID_PUBLIC_KEY 136
+#define WLAN_STATUS_PASN_BASE_AKMP_FAILED 137
 
 /* Reason codes (IEEE Std 802.11-2016, 9.4.1.7, Table 9-45) */
 #define WLAN_REASON_UNSPECIFIED 1
@@ -186,6 +197,8 @@
 #define WLAN_REASON_INVALID_RSN_IE_CAPAB 22
 #define WLAN_REASON_IEEE_802_1X_AUTH_FAILED 23
 #define WLAN_REASON_CIPHER_SUITE_REJECTED 24
+#define WLAN_REASON_INVALID_PMKID 49
+#define WLAN_REASON_INVALID_MDE 50
 
 /* Information Element IDs (IEEE Std 802.11-2016, 9.4.2.1, Table 9-77) */
 #define WLAN_EID_SSID 0
@@ -224,7 +237,9 @@
 #define WLAN_EID_20_40_BSS_INTOLERANT 73
 #define WLAN_EID_OVERLAPPING_BSS_SCAN_PARAMS 74
 #define WLAN_EID_MMIE 76
+#define WLAN_EID_ADV_PROTO 108
 #define WLAN_EID_EXT_CAPAB 127
+#define WLAN_EID_MIC 140
 #define WLAN_EID_VENDOR_SPECIFIC 221
 #define WLAN_EID_CAG_NUMBER 237
 #define WLAN_EID_AP_CSN 239
@@ -256,11 +271,16 @@
 #define WLAN_EID_EXT_REJECTED_GROUPS 92
 #define WLAN_EID_EXT_ANTI_CLOGGING_TOKEN 93
 #define WLAN_EID_EXT_AKM_SUITE_SELECTOR 114
+#define WLAN_EID_EXT_PASN_ENCRYPTED_DATA 140
+#define WLAN_EID_EXT_PASN_PARAMS 100
+#define WLAN_EID_EXT_PASN_ENCRYPTED_DATA 140
 
 /* Extended RSN Capabilities */
 /* bits 0-3: Field length (n-1) */
 #define WLAN_RSNX_CAPAB_SAE_H2E 5
 #define WLAN_RSNX_CAPAB_SAE_PK 6
+#define WLAN_RSNX_CAPAB_SECURE_LTF 8
+#define WLAN_RSNX_CAPAB_KEK_IN_PASN 18
 
 #define WLAN_EXT_CAPAB_20_40_COEX 0
 #define WLAN_EXT_CAPAB_BSS_TRANSITION 19
@@ -297,8 +317,15 @@
 #define WLAN_TIMEOUT_KEY_LIFETIME 2
 #define WLAN_TIMEOUT_ASSOC_COMEBACK 3
 
-#define OUI_WFA 0x506f9a
+/* DPP Public Action frame identifiers - OUI_WFA */
 #define DPP_OUI_TYPE 0x1A
+#define OUI_WFA 0x506f9a
+#define WFA_RSNE_OVERRIDE_OUI_TYPE 0x29
+#define WFA_RSNXE_OVERRIDE_OUI_TYPE 0x2b
+#define WFA_RSN_SELECTION_OUI_TYPE 0x2c
+#define RSNE_OVERRIDE_IE_VENDOR_TYPE 0x506f9a29
+#define RSNXE_OVERRIDE_IE_VENDOR_TYPE 0x506f9a2b
+#define RSN_SELECTION_IE_VENDOR_TYPE 0x506f9a2c
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
@@ -398,6 +425,25 @@ struct ieee80211_action {
         struct ieee80211_public_action public_action;
     } u;
 } STRUCT_PACKED;
+
+/* Authentication frame (management frame, type AUTH). Layout is the same as
+ * the auth variant of struct ieee80211_mgmt (u.auth) for PASN and other
+ * auth frame handling. */
+struct ieee80211_auth {
+	le16 frame_control;
+	le16 duration;
+	u8 da[6];
+	u8 sa[6];
+	u8 bssid[6];
+	le16 seq_ctrl;
+	struct {
+		le16 auth_alg;
+		le16 auth_transaction;
+		le16 status_code;
+		/* possibly followed by Challenge text */
+		u8 variable[];
+	} STRUCT_PACKED auth;
+};
 #endif /* ESP_SUPPLICANT */
 
 #define IEEE80211_MAX_MMPDU_SIZE 2304
@@ -558,8 +604,12 @@ struct ieee80211_ht_operation {
 /* 2 - Reserved */
 #define WMM_TSPEC_DIRECTION_BI_DIRECTIONAL 3
 
-#define MBO_IE_VENDOR_TYPE 0x506f9a16
 #define OSEN_IE_VENDOR_TYPE 0x506f9a12
+#define NAN_IE_VENDOR_TYPE 0x506f9a13
+#define NAN_SDF_VENDOR_TYPE 0x506f9a13
+#define NAN_OUI_TYPE 0x13
+#define MBO_IE_VENDOR_TYPE 0x506f9a16
+#define NAN_NAF_VENDOR_TYPE 0x506f9a18
 #define SAE_PK_IE_VENDOR_TYPE 0x506f9a1f
 #define SAE_PK_OUI_TYPE 0x1f
 #define MBO_OUI_TYPE 22
@@ -926,6 +976,7 @@ enum phy_type {
 	PHY_TYPE_HT = 7,
 	PHY_TYPE_DMG = 8,
 	PHY_TYPE_VHT = 9,
+	PHY_TYPE_HE = 14,
 };
 
 /* IEEE P802.11-REVmc/D5.0, 9.4.2.37 - Neighbor Report element */

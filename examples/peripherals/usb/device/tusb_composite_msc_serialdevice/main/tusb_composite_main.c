@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,33 +10,63 @@
 #include "esp_partition.h"
 #include "esp_check.h"
 #include "tinyusb.h"
-#include "tusb_msc_storage.h"
-#include "tusb_cdc_acm.h"
+#include "tinyusb_default_config.h"
+#include "tinyusb_msc.h"
+#include "tinyusb_cdc_acm.h"
 
 #define BASE_PATH "/usb" // base path to mount the partition
 
 static const char *TAG = "example_main";
-static uint8_t buf[CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1];
+static uint8_t rx_buf[CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1];
 
+/**
+ * @brief Application Queue
+ */
+static QueueHandle_t app_queue;
+typedef struct {
+    uint8_t buf[CONFIG_TINYUSB_CDC_RX_BUFSIZE + 1];     // Data buffer
+    size_t buf_len;                                     // Number of bytes received
+    uint8_t itf;                                        // Index of CDC device interface
+} app_message_t;
+
+/**
+ * @brief CDC device RX callback
+ *
+ * CDC device signals, that new data were received
+ *
+ * @param[in] itf   CDC device index
+ * @param[in] event CDC event type
+ */
 void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event)
 {
     /* initialization */
     size_t rx_size = 0;
 
     /* read */
-    esp_err_t ret = tinyusb_cdcacm_read(itf, buf, CONFIG_TINYUSB_CDC_RX_BUFSIZE, &rx_size);
+    esp_err_t ret = tinyusb_cdcacm_read(itf, rx_buf, CONFIG_TINYUSB_CDC_RX_BUFSIZE, &rx_size);
     if (ret == ESP_OK) {
-        ESP_LOGI(TAG, "Data from channel %d:", itf);
-        ESP_LOG_BUFFER_HEXDUMP(TAG, buf, rx_size, ESP_LOG_INFO);
-    } else {
-        ESP_LOGE(TAG, "Read error");
-    }
 
-    /* write back */
-    tinyusb_cdcacm_write_queue(itf, buf, rx_size);
-    tinyusb_cdcacm_write_flush(itf, 0);
+        app_message_t tx_msg = {
+            .buf_len = rx_size,
+            .itf = itf,
+        };
+
+        /* Copy received message to application queue buffer */
+        memcpy(tx_msg.buf, rx_buf, rx_size);
+        xQueueSend(app_queue, &tx_msg, 0);
+    } else {
+        ESP_LOGE(TAG, "Read Error");
+    }
 }
 
+/**
+ * @brief CDC device line change callback
+ *
+ * CDC device signals, that the DTR, RTS states changed
+ *
+ * @param[in] itf   CDC device index
+ * @param[in] event CDC event type
+ */
 void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
 {
     int dtr = event->line_state_changed_data.dtr;
@@ -107,45 +137,44 @@ static esp_err_t storage_init_spiflash(wl_handle_t *wl_handle)
 
 void app_main(void)
 {
+    // Create FreeRTOS primitives
+    app_queue = xQueueCreate(5, sizeof(app_message_t));
+    assert(app_queue);
+    app_message_t msg;
+
     ESP_LOGI(TAG, "Initializing storage...");
 
     static wl_handle_t wl_handle = WL_INVALID_HANDLE;
+
     ESP_ERROR_CHECK(storage_init_spiflash(&wl_handle));
 
-    const tinyusb_msc_spiflash_config_t config_spi = {
-        .wl_handle = wl_handle
+    tinyusb_msc_storage_handle_t storage_hdl = NULL;
+
+    const tinyusb_msc_storage_config_t storage_cfg = {
+        .mount_point = TINYUSB_MSC_STORAGE_MOUNT_APP,       // Initial mount point to APP
+        .medium.wl_handle = wl_handle,
+        .fat_fs = {
+            .base_path = BASE_PATH,                        // User specific base path
+        },
     };
-    ESP_ERROR_CHECK(tinyusb_msc_storage_init_spiflash(&config_spi));
-    ESP_ERROR_CHECK(tinyusb_msc_storage_mount(BASE_PATH));
+
+    ESP_ERROR_CHECK(tinyusb_msc_new_storage_spiflash(&storage_cfg, &storage_hdl));
+
     file_operations();
 
     ESP_LOGI(TAG, "USB Composite initialization");
-    const tinyusb_config_t tusb_cfg = {
-        .device_descriptor = NULL,
-        .string_descriptor = NULL,
-        .string_descriptor_count = 0,
-        .external_phy = false,
-#if (TUD_OPT_HIGH_SPEED)
-        .fs_configuration_descriptor = NULL,
-        .hs_configuration_descriptor = NULL,
-        .qualifier_descriptor = NULL,
-#else
-        .configuration_descriptor = NULL,
-#endif // TUD_OPT_HIGH_SPEED
-    };
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_config_cdcacm_t acm_cfg = {
-        .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
-        .rx_unread_buf_sz = 64,
         .callback_rx = &tinyusb_cdc_rx_callback, // the first way to register a callback
         .callback_rx_wanted_char = NULL,
         .callback_line_state_changed = NULL,
         .callback_line_coding_changed = NULL
     };
 
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+    ESP_ERROR_CHECK(tinyusb_cdcacm_init(&acm_cfg));
     /* the second way to register a callback */
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
                         TINYUSB_CDC_ACM_0,
@@ -153,4 +182,21 @@ void app_main(void)
                         &tinyusb_cdc_line_state_changed_callback));
 
     ESP_LOGI(TAG, "USB Composite initialization DONE");
+    while (1) {
+        if (xQueueReceive(app_queue, &msg, portMAX_DELAY)) {
+            if (msg.buf_len) {
+
+                /* Print received data*/
+                ESP_LOGI(TAG, "Data from channel %d:", msg.itf);
+                ESP_LOG_BUFFER_HEXDUMP(TAG, msg.buf, msg.buf_len, ESP_LOG_INFO);
+
+                /* write back */
+                tinyusb_cdcacm_write_queue(msg.itf, msg.buf, msg.buf_len);
+                esp_err_t err = tinyusb_cdcacm_write_flush(msg.itf, 0);
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "CDC ACM write flush error: %s", esp_err_to_name(err));
+                }
+            }
+        }
+    }
 }

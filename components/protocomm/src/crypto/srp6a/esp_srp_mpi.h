@@ -9,9 +9,7 @@
 #include "string.h"
 #include "stdio.h"
 
-#include "mbedtls/bignum.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/private/bignum.h"
 #include "esp_random.h"
 
 #ifdef __cplusplus
@@ -46,6 +44,10 @@ int esp_mpi_a_exp_b_mod_c(esp_mpi_t *result, esp_mpi_t *a, esp_mpi_t *b, esp_mpi
 int esp_mpi_a_mul_b_mod_c(esp_mpi_t *result, esp_mpi_t *a, esp_mpi_t *b, esp_mpi_t *c, esp_mpi_ctx_t *ctx);
 
 int esp_mpi_a_add_b_mod_c(esp_mpi_t *result, esp_mpi_t *a, esp_mpi_t *b, esp_mpi_t *c, esp_mpi_ctx_t *ctx);
+
+int esp_mpi_a_mod_b(esp_mpi_t *result, const esp_mpi_t *a, const esp_mpi_t *b);
+
+int esp_mpi_cmp_int(const esp_mpi_t *a, int value);
 
 #ifdef __cplusplus
 }

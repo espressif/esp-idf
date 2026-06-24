@@ -3,6 +3,7 @@ if(NOT "${target}" STREQUAL "linux")
     return()
 endif()
 
+set(srcs "lock.c")
 set(includes "include")
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND srcs getrandom.c assert_func.c)
@@ -15,11 +16,11 @@ idf_component_register(INCLUDE_DIRS ${includes}
                        REQUIRED_IDF_TARGETS linux
                        SRCS ${srcs})
 
-if(${IDF_TARGET} STREQUAL "linux")
-    find_library(LIB_BSD bsd)
-    if(LIB_BSD)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
-    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
-    endif()
+target_link_libraries(${COMPONENT_LIB} PRIVATE pthread)
+
+find_library(LIB_BSD bsd)
+if(LIB_BSD)
+    target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
+elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
 endif()

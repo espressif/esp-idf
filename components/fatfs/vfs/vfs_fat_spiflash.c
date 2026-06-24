@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,11 +15,15 @@
 #include "wear_levelling.h"
 #include "diskio_wl.h"
 
+// If the available sectors based on partition size are less than 128,
+// the root directory sector should be set to 1.
+#define MIN_REQ_SEC    128
+
 static const char* TAG = "vfs_fat_spiflash";
 
 static vfs_fat_spiflash_ctx_t *s_ctx[FF_VOLUMES] = {};
 
-extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag in esp_vfs_t struct externally
+extern esp_err_t esp_vfs_set_readonly_flag(const char* base_path); // from vfs/vfs.c to set readonly flag externally
 
 static bool s_get_context_id_by_label(const char *label, uint32_t *out_id)
 {
@@ -74,43 +78,69 @@ vfs_fat_spiflash_ctx_t* get_vfs_fat_spiflash_ctx(wl_handle_t wlhandle)
     return NULL;
 }
 
-static esp_err_t s_f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags)
+static esp_err_t s_f_mount_rw(FATFS *fs, const char *drv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags, size_t sec_num)
 {
     FRESULT fresult = f_mount(fs, drv, 1);
-    if (fresult != FR_OK) {
-        ESP_LOGW(TAG, "f_mount failed (%d)", fresult);
-
-        bool need_mount_again = (fresult == FR_NO_FILESYSTEM || fresult == FR_INT_ERR) && mount_config->format_if_mount_failed;
-        if (!need_mount_again) {
-            return ESP_FAIL;
-        }
-
-        const size_t workbuf_size = 4096;
-        void *workbuf = ff_memalloc(workbuf_size);
-        if (workbuf == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-
-        size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, mount_config->allocation_unit_size);
-        ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-        const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (mount_config->use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
-        fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
-        free(workbuf);
-        workbuf = NULL;
-        ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
-
-        if (out_flags) {
-            *out_flags |= FORMATTED_DURING_LAST_MOUNT; // set flag
-        }
-
-        ESP_LOGI(TAG, "Mounting again");
-        fresult = f_mount(fs, drv, 0);
-        ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mount failed after formatting (%d)", fresult);
-    } else {
+    if (fresult == FR_OK) {
         if (out_flags) {
             *out_flags  &= ~FORMATTED_DURING_LAST_MOUNT; // reset flag
         }
+        return ESP_OK;
     }
+
+    const char *msg = "Unknown";
+    const char *note = "";
+    bool recoverable = false;
+
+    switch (fresult) {
+        case FR_NO_FILESYSTEM:
+            msg = "No filesystem detected";
+            note = "(This may indicate corrupt FS, or attempt to mount read-only fatfsgen image for write)";
+            recoverable = true;
+            break;
+        case FR_INT_ERR:
+            msg = "Assertion failed";
+            recoverable = true;
+            break;
+        default:
+            break;
+    }
+
+    if (!recoverable || !mount_config->format_if_mount_failed) {
+        ESP_LOGE(TAG, "f_mount failed with error: \"%s\" [%d]. %s", msg, fresult, note);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGW(TAG, "FatFS mount (f_mount) failed with error: \"%s\" [%d]. Retrying after format...", msg, fresult);
+
+    const size_t workbuf_size = 4096;
+    void *workbuf = ff_memalloc(workbuf_size);
+    if (workbuf == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, mount_config->allocation_unit_size);
+    ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
+    UINT root_dir_entries;
+    if (CONFIG_WL_SECTOR_SIZE == 512) {
+        root_dir_entries = 16;
+    } else {
+        root_dir_entries = 128;
+    }
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (mount_config->use_one_fat ? 1 : 2), 0, (sec_num <= MIN_REQ_SEC ? root_dir_entries : 0), alloc_unit_size};
+    fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
+    free(workbuf);
+    workbuf = NULL;
+    ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
+
+    if (out_flags) {
+        *out_flags |= FORMATTED_DURING_LAST_MOUNT; // set flag
+    }
+
+    ESP_LOGI(TAG, "Mounting again");
+    fresult = f_mount(fs, drv, 1);
+    ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mount failed after formatting (%d)", fresult);
+
     return ESP_OK;
 }
 
@@ -141,29 +171,30 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     char drv[3] = {(char)('0' + pdrv), ':', 0};
     ESP_GOTO_ON_ERROR(ff_diskio_register_wl_partition(pdrv, *wl_handle), fail, TAG, "ff_diskio_register_wl_partition failed pdrv=%i, error - 0x(%x)", pdrv, ret);
 
-    FATFS *fs;
+    FATFS *fs = NULL;
     esp_vfs_fat_conf_t conf = {
         .base_path = base_path,
         .fat_drive = drv,
         .max_files = mount_config->max_files,
     };
-    ret = esp_vfs_fat_register_cfg(&conf, &fs);
+    ret = esp_vfs_fat_register(&conf, &fs);
     if (ret == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "esp_vfs_fat_register_cfg failed 0x(%x)", ret);
+        ESP_LOGD(TAG, "esp_vfs_fat_register failed 0x(%x)", ret);
         goto fail;
     }
 
     vfs_fat_x_ctx_flags_t flags = 0;
 
+    size_t sec_num = wl_size(*wl_handle) / wl_sector_size(*wl_handle);
     // Try to mount partition
-    ret = s_f_mount_rw(fs, drv, mount_config, &flags);
+    ret = s_f_mount_rw(fs, drv, mount_config, &flags, sec_num);
     if (ret != ESP_OK) {
         goto fail;
     }
 
-    ctx = calloc(sizeof(vfs_fat_spiflash_ctx_t), 1);
+    ctx = calloc(1, sizeof(vfs_fat_spiflash_ctx_t));
     ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, fail, TAG, "no mem");
     ctx->partition = data_partition;
     ctx->by_label = (partition_label != NULL);
@@ -184,6 +215,11 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     return ESP_OK;
 
 fail:
+    /* Unmount FatFs volume if we had registered and attempted mount (e.g. s_f_mount_rw
+     * failed). Otherwise FatFs[vol] can be left set with a dangling pointer after
+     * esp_vfs_fat_unregister_path frees the context, and the volume mutex stays
+     * created; a later f_getfree then crashes in lock_volume / ff_mutex_take. */
+    f_mount(0, drv, 0);
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     free(ctx);
@@ -224,6 +260,7 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
 
     wl_handle_t temp_handle = WL_INVALID_HANDLE;
     uint32_t id = FF_VOLUMES;
+    size_t sec_num = 0;
 
     bool found = s_get_context_id_by_label(partition_label, &id);
     if (!found) {
@@ -239,16 +276,20 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
         }
         ESP_RETURN_ON_ERROR(esp_vfs_fat_spiflash_mount_rw_wl(base_path, partition_label, mount_cfg, &temp_handle), TAG, "Failed to mount");
         found = s_get_context_id_by_label(partition_label, &id);
+        sec_num = wl_size(temp_handle) / wl_sector_size(temp_handle);
         assert(found);
         if (s_ctx[id]->flags & FORMATTED_DURING_LAST_MOUNT) {
             ESP_LOGD(TAG, "partition was formatted during mounting, skipping another format");
-            return ESP_OK;
+            ret = ESP_OK;
+            goto mount_back;
         }
     } else {
         partition_was_mounted = true;
         if (cfg) {
             s_ctx[id]->mount_config = *cfg;
         }
+        temp_handle = s_ctx[id]->wlhandle;
+        sec_num = wl_size(temp_handle) / wl_sector_size(temp_handle);
     }
 
     //unmount
@@ -265,7 +306,13 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
     }
     size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(CONFIG_WL_SECTOR_SIZE, s_ctx[id]->mount_config.allocation_unit_size);
     ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (s_ctx[id]->mount_config.use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
+    UINT root_dir_entries;
+    if (CONFIG_WL_SECTOR_SIZE == 512) {
+        root_dir_entries = 16;
+    } else {
+        root_dir_entries = 128;
+    }
+    const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), (s_ctx[id]->mount_config.use_one_fat ? 1 : 2), 0, (sec_num <= MIN_REQ_SEC ? root_dir_entries : 0), alloc_unit_size};
     fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
     free(workbuf);
     workbuf = NULL;
@@ -273,7 +320,7 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
 
 mount_back:
     if (partition_was_mounted) {
-        esp_err_t err = s_f_mount_rw(s_ctx[id]->fs, drv, &s_ctx[id]->mount_config, NULL);
+        esp_err_t err = s_f_mount_rw(s_ctx[id]->fs, drv, &s_ctx[id]->mount_config, NULL, sec_num);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "failed to mount back, go to recycle");
             goto recycle;
@@ -319,17 +366,17 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     char drv[3] = {(char)('0' + pdrv), ':', 0};
     ESP_GOTO_ON_ERROR(ff_diskio_register_raw_partition(pdrv, data_partition), fail, TAG, "ff_diskio_register_raw_partition failed pdrv=%i, error - 0x(%x)", pdrv, ret);
 
-    FATFS *fs;
+    FATFS *fs = NULL;
     esp_vfs_fat_conf_t conf = {
         .base_path = base_path,
         .fat_drive = drv,
         .max_files = mount_config->max_files,
     };
-    ret = esp_vfs_fat_register_cfg(&conf, &fs);
+    ret = esp_vfs_fat_register(&conf, &fs);
     if (ret == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "esp_vfs_fat_register_cfg failed 0x(%x)", ret);
+        ESP_LOGD(TAG, "esp_vfs_fat_register failed 0x(%x)", ret);
         goto fail;
     }
 
@@ -348,6 +395,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     return ESP_OK;
 
 fail:
+    f_mount(0, drv, 0);   /* Unmount on failed mount so FatFs[vol] and mutex are cleaned up */
     esp_vfs_fat_unregister_path(base_path);
     ff_diskio_unregister(pdrv);
     return ret;

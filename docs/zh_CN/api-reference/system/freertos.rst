@@ -24,14 +24,14 @@ ESP-IDF FreeRTOS
 
         ESP-IDF FreeRTOS 是目前 ESP-IDF 默认的 FreeRTOS 实现。
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
     .. _amazon_smp_freertos:
 
     Amazon SMP FreeRTOS
     ^^^^^^^^^^^^^^^^^^^
 
-        Amazon SMP FreeRTOS 是由 Amazon 官方支持的 FreeRTOS SMP 实现。Amazon SMP FreeRTOS 能够支持 N 核，即双核以上。通过 :ref:`CONFIG_FREERTOS_SMP` 选项能够启用 Amazon SMP FreeRTOS。关于 Amazon SMP FreeRTOS 的更多细节，请参考 `官方 Amazon SMP FreeRTOS 文档 <https://freertos.org/zh-cn-cmn-s/symmetric-multiprocessing-introduction.html>`__。
+        Amazon SMP FreeRTOS 是由 Amazon 官方支持的 FreeRTOS SMP 实现。Amazon SMP FreeRTOS 能够支持 N 核，即双核以上。通过 ``CONFIG_FREERTOS_SMP`` 选项能够启用 Amazon SMP FreeRTOS（仅适用于 ESP32）。关于 Amazon SMP FreeRTOS 的更多细节，请参考 `官方 Amazon SMP FreeRTOS 文档 <https://freertos.org/zh-cn-cmn-s/symmetric-multiprocessing-introduction.html>`__。
 
         .. warning::
 
@@ -47,7 +47,7 @@ ESP-IDF FreeRTOS
 
 **然而，对于 ESP-IDF 中的所有 FreeRTOS 移植，FreeRTOSConfig.h 头文件被视为私有文件，用户不得修改。** 由于该选项在 ESP-IDF 中是必选项或不被支持，``FreeRTOSConfig.h`` 中的大量内核配置选项均为硬编码。所有用户可配置的内核配置选项都在 ``Component Config/FreeRTOS/Kernel`` 下的 menuconfig 中。
 
-关于用户可配置内核选项的完整列表，参见 :doc:`/api-reference/kconfig`。下列为常用的内核配置选项：
+关于用户可配置内核选项的完整列表，请参见 :ref:`Kconfig 选项参考 <configuration-options-reference>`。下列为常用的内核配置选项：
 
 - :ref:`CONFIG_FREERTOS_UNICORE`：仅在核 0 上运行 FreeRTOS。注意，这 **不等同于运行原生 FreeRTOS。** 另外，此选项还可能影响除 :component:`freertos` 外其他组件的行为。关于在单核上运行 FreeRTOS 的更多内容，请参考 :ref:`freertos-idf-single-core` （使用 ESP-IDF FreeRTOS 时）或参考 Amazon SMP FreeRTOS 的官方文档，还可以在 ESP-IDF 组件中搜索 ``CONFIG_FREERTOS_UNICORE``。
 
@@ -140,3 +140,10 @@ FreeRTOS 堆
 
     - 使用一个 ``...CreateWithCaps()`` API，如 :cpp:func:`xTaskCreateWithCaps` 和 :cpp:func:`xQueueCreateWithCaps` 来分配任务或对象（参见 :ref:`freertos-idf-additional-api` 获取更多详细信息）。
     - 使用 :cpp:func:`heap_caps_malloc` 为这些对象手动分配外部内存，然后使用 FreeRTOS 的一个 ``...CreateStatic()`` 函数从分配的内存中创建对象。
+
+应用示例
+--------------------
+
+- :example:`system/freertos/basic_freertos_smp_usage` 演示了如何在 {IDF_TARGET_NAME} 的 SMP 架构中使用基本的 FreeRTOS API 进行任务创建、通信、同步和批处理。
+
+- :example:`system/freertos/real_time_stats` 演示了如何使用 FreeRTOS 的 vTaskGetRunTimeStats() 函数来获取任务在指定时间段内的 CPU 使用统计信息，而不是整个 FreeRTOS 运行时间的统计信息。

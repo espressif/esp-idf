@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -67,8 +67,8 @@ static esp_ble_adv_data_t hidd_adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
     .include_txpower = true,
-    .min_interval = 0x0006, //slave connection min interval, Time = min_interval * 1.25 msec
-    .max_interval = 0x0010, //slave connection max interval, Time = max_interval * 1.25 msec
+    .min_interval = ESP_BLE_GAP_CONN_ITVL_MS(7.5), //slave connection min interval
+    .max_interval = ESP_BLE_GAP_CONN_ITVL_MS(20), //slave connection max interval
     .appearance = 0x03c0,       //HID Generic,
     .manufacturer_len = 0,
     .p_manufacturer_data =  NULL,
@@ -80,8 +80,8 @@ static esp_ble_adv_data_t hidd_adv_data = {
 };
 
 static esp_ble_adv_params_t hidd_adv_params = {
-    .adv_int_min        = 0x20,
-    .adv_int_max        = 0x30,
+    .adv_int_min        = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .adv_int_max        = ESP_BLE_GAP_ADV_ITVL_MS(30),
     .adv_type           = ADV_TYPE_IND,
     .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
     //.peer_addr            =
@@ -97,7 +97,7 @@ static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *
         case ESP_HIDD_EVENT_REG_FINISH: {
             if (param->init_finish.state == ESP_HIDD_INIT_OK) {
                 //esp_bd_addr_t rand_addr = {0x04,0x11,0x11,0x11,0x11,0x05};
-                esp_bt_dev_set_device_name(HIDD_DEVICE_NAME);
+                esp_ble_gap_set_device_name(HIDD_DEVICE_NAME);
                 esp_ble_gap_config_adv_data(&hidd_adv_data);
 
             }
@@ -148,7 +148,6 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
 	 break;
      case ESP_GAP_BLE_AUTH_CMPL_EVT:
-        sec_conn = true;
         esp_bd_addr_t bd_addr;
         memcpy(bd_addr, param->ble_security.auth_cmpl.bd_addr, sizeof(esp_bd_addr_t));
         ESP_LOGI(HID_DEMO_TAG, "remote BD_ADDR: %08x%04x",\
@@ -156,8 +155,12 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                 (bd_addr[4] << 8) + bd_addr[5]);
         ESP_LOGI(HID_DEMO_TAG, "address type = %d", param->ble_security.auth_cmpl.addr_type);
         ESP_LOGI(HID_DEMO_TAG, "pair status = %s",param->ble_security.auth_cmpl.success ? "success" : "fail");
-        if(!param->ble_security.auth_cmpl.success) {
-            ESP_LOGE(HID_DEMO_TAG, "fail reason = 0x%x",param->ble_security.auth_cmpl.fail_reason);
+        if (param->ble_security.auth_cmpl.success) {
+            sec_conn = true;
+            ESP_LOGI(HID_DEMO_TAG, "secure connection established.");
+        } else {
+            ESP_LOGE(HID_DEMO_TAG, "pairing failed, reason = 0x%x",
+                     param->ble_security.auth_cmpl.fail_reason);
         }
         break;
     default:
@@ -216,8 +219,8 @@ void app_main(void)
         return;
     }
 
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    ret = esp_bluedroid_init_with_cfg(&cfg);
     if (ret) {
         ESP_LOGE(HID_DEMO_TAG, "%s init bluedroid failed", __func__);
         return;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 #include "sdkconfig.h"
 #include "bootloader_common.h"
 #include "soc/efuse_reg.h"
-#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 
@@ -34,14 +33,16 @@
 #include "soc/extmem_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/spi_periph.h"
+#include "soc/soc_caps.h"
+
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 
-static const char *TAG = "boot.esp32s2";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32s2");
 
-static void wdt_reset_cpu0_info_enable(void)
+#if SOC_RTC_WDT_SUPPORTED
+void bootloader_enable_cpu_reset_info(void)
 {
     DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
     DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
@@ -49,7 +50,7 @@ static void wdt_reset_cpu0_info_enable(void)
     REG_WRITE(ASSIST_DEBUG_PRO_RCD_RECORDING, 1);
 }
 
-static void wdt_reset_info_dump(int cpu)
+void bootloader_dump_wdt_reset_info(int cpu)
 {
     uint32_t inst = 0, pid = 0, stat = 0, data = 0, pc = 0,
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
@@ -82,31 +83,29 @@ static void wdt_reset_info_dump(int cpu)
     ESP_LOGD(TAG, "WDT reset info: %s CPU PDEBUGLS0DATA 0x%08"PRIx32, cpu_name, lsdata);
 }
 
-static void bootloader_check_wdt_reset(void)
+bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t rst_reason)
 {
-    int wdt_rst = 0;
-    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    (void) cpu;
     if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
         rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
-        wdt_rst = 1;
+        return true;
     }
-    if (wdt_rst) {
-        // if reset by WDT dump info from trace port
-        wdt_reset_info_dump(0);
-    }
-    wdt_reset_cpu0_info_enable();
+    return false;
 }
 
 static void bootloader_super_wdt_auto_feed(void)
 {
     REG_SET_BIT(RTC_CNTL_SWD_CONF_REG, RTC_CNTL_SWD_AUTO_FEED_EN);
 }
+#endif // SOC_RTC_WDT_SUPPORTED
 
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+#if SOC_RTC_WDT_SUPPORTED
     bootloader_super_wdt_auto_feed();
+#endif
     // protect memory region
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`
@@ -126,7 +125,7 @@ esp_err_t bootloader_init(void)
 
     // init eFuse virtual mode (read eFuses to RAM)
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+    ESP_EARLY_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
 #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
     esp_efuse_init_virtual_mode_in_ram();
 #endif
@@ -140,10 +139,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    // init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // Workaround: normal ROM bootloader exits with DROM0 cache unmasked, but 2nd bootloader exits with it masked.
     REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);
     // update flash ID
@@ -167,10 +164,12 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happend
-    bootloader_check_wdt_reset();
+    // check reset reason and dump diagnostic info
+    bootloader_check_reset();
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
 

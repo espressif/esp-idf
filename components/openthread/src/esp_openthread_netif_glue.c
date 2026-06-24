@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_openthread.h"
+#include "esp_openthread_border_router.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue_priv.h"
@@ -33,6 +34,7 @@
 #include "openthread/ip6.h"
 #include "openthread/link.h"
 #include "openthread/message.h"
+#include "openthread/platform/infra_if.h"
 #include "openthread/thread.h"
 
 typedef struct {
@@ -43,8 +45,6 @@ typedef struct {
 static esp_openthread_netif_glue_t s_openthread_netif_glue = {
     .event_fd = -1,
 };
-
-ESP_EVENT_DEFINE_BASE(OPENTHREAD_EVENT);
 
 static QueueHandle_t s_packet_queue;
 static esp_netif_t *s_openthread_netif;
@@ -104,9 +104,13 @@ static void process_thread_address(const otIp6AddressInfo *address_info, bool is
         } else {
             ip_event_add_ip6_t add_addr;
             add_addr.addr = addr;
-            // if an address is not mesh local or link local, we set preferred for this address.
-            add_addr.preferred =
-                is_mesh_local_addr(address_info->mAddress) || is_link_local_addr(address_info->mAddress) ? 0 : 1;
+            // Only mark the address as preferred if
+            // it is marked preferred by OpenThread and it is neither a mesh-local nor a link-local address.
+            if (address_info->mPreferred == 0 || is_mesh_local_addr(address_info->mAddress) || is_link_local_addr(address_info->mAddress)) {
+                add_addr.preferred = 0;
+            } else {
+                add_addr.preferred = 1;
+            }
             if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_GOT_IP6, &add_addr, sizeof(add_addr), 0) != ESP_OK) {
                 ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to post OpenThread got ip6 address event");
             }
@@ -177,7 +181,21 @@ static esp_err_t openthread_netif_transmit(void *handle, void *buffer, size_t le
     otError ot_error = OT_ERROR_NONE;
 
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-    otMessage *message = otIp6NewMessage(esp_openthread_get_instance(), NULL);
+
+    otMessageSettings settings = {};
+    switch (otThreadGetDeviceRole(esp_openthread_get_instance()))
+    {
+    case OT_DEVICE_ROLE_DISABLED:
+        settings.mLinkSecurityEnabled = false;
+        settings.mPriority = OT_MESSAGE_PRIORITY_LOW;
+        break;
+    default:
+        settings.mLinkSecurityEnabled = true;
+        settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
+        break;
+    }
+
+    otMessage *message = otIp6NewMessage(esp_openthread_get_instance(), &settings);
     if (message == NULL) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate OpenThread message");
         ExitNow(error = ESP_ERR_NO_MEM);
@@ -201,6 +219,31 @@ exit:
     }
     esp_openthread_task_switching_lock_release();
     return error;
+}
+
+static esp_event_handler_t meshcop_e_publish_handler = NULL;
+static void esp_openthread_meshcop_e_publish_handler(void *args, esp_event_base_t base, int32_t event_id, void *data)
+{
+    if (meshcop_e_publish_handler) {
+        meshcop_e_publish_handler(args, base, event_id, data);
+    }
+}
+
+static esp_event_handler_t meshcop_e_remove_handler = NULL;
+static void esp_openthread_meshcop_e_remove_handler(void *args, esp_event_base_t base, int32_t event_id, void *data)
+{
+    if (meshcop_e_remove_handler) {
+        meshcop_e_remove_handler(args, base, event_id, data);
+    }
+}
+
+void esp_openthread_register_meshcop_e_handler(esp_event_handler_t handler, bool for_publish)
+{
+    if (for_publish) {
+        meshcop_e_publish_handler = handler;
+    } else {
+        meshcop_e_remove_handler = handler;
+    }
 }
 
 static esp_err_t register_openthread_event_handlers(esp_netif_t *esp_netif)
@@ -229,6 +272,12 @@ static esp_err_t register_openthread_event_handlers(esp_netif_t *esp_netif)
     ESP_RETURN_ON_ERROR(esp_event_handler_register(OPENTHREAD_EVENT, OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE,
                                                    esp_netif_action_leave_ip6_multicast_group, esp_netif),
                         OT_PLAT_LOG_TAG, "OpenThread interface leave ip6 multicast group event register failed");
+    ESP_RETURN_ON_ERROR(esp_event_handler_register(OPENTHREAD_EVENT, OPENTHREAD_EVENT_PUBLISH_MESHCOP_E,
+                                                   esp_openthread_meshcop_e_publish_handler, NULL),
+                        OT_PLAT_LOG_TAG, "OpenThread publish meshcop-e service event register failed");
+    ESP_RETURN_ON_ERROR(esp_event_handler_register(OPENTHREAD_EVENT, OPENTHREAD_EVENT_REMOVE_MESHCOP_E,
+                                                   esp_openthread_meshcop_e_remove_handler, NULL),
+                        OT_PLAT_LOG_TAG, "OpenThread remove meshcop-e service event register failed");
     return ESP_OK;
 }
 
@@ -244,6 +293,8 @@ static void unregister_openthread_event_handlers(void)
                                  esp_netif_action_join_ip6_multicast_group);
     esp_event_handler_unregister(OPENTHREAD_EVENT, OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE,
                                  esp_netif_action_leave_ip6_multicast_group);
+    esp_event_handler_unregister(OPENTHREAD_EVENT, OPENTHREAD_EVENT_PUBLISH_MESHCOP_E, esp_openthread_meshcop_e_publish_handler);
+    esp_event_handler_unregister(OPENTHREAD_EVENT, OPENTHREAD_EVENT_REMOVE_MESHCOP_E, esp_openthread_meshcop_e_remove_handler);
 }
 
 static esp_err_t openthread_netif_post_attach(esp_netif_t *esp_netif, void *args)
@@ -285,11 +336,13 @@ void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *con
     otIp6SetAddressCallback(instance, process_thread_address, instance);
     otIp6SetReceiveCallback(instance, process_thread_receive, instance);
     otIp6SetReceiveFilterEnabled(instance, true);
-    otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_DISABLED);
+    otIcmp6SetEchoMode(instance, OT_ICMP6_ECHO_HANDLER_RLOC_ALOC_ONLY);
 
     s_openthread_netif_glue.event_fd = eventfd(0, 0);
     if (s_openthread_netif_glue.event_fd < 0) {
         ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to create event fd for Thread netif");
+        vQueueDelete(s_packet_queue);
+        s_packet_queue = NULL;
         ExitNow(error = ESP_FAIL);
     }
     s_openthread_netif_glue.base.post_attach = openthread_netif_post_attach;
@@ -345,4 +398,17 @@ esp_err_t esp_openthread_netif_glue_process(otInstance *instance, const esp_open
 esp_netif_t *esp_openthread_get_netif(void)
 {
     return s_openthread_netif;
+}
+
+otError otPlatGetInfraIfLinkLayerAddress(otInstance *aInstance, uint32_t aIfIndex, otPlatInfraIfLinkLayerAddress *aInfraIfLinkLayerAddress)
+{
+    esp_netif_t *backbone_netif = esp_openthread_get_backbone_netif();
+    if (esp_netif_get_netif_impl_index(backbone_netif) != aIfIndex) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to get LL address, error: Invalid If index");
+        return OT_ERROR_FAILED;
+    } else {
+        esp_netif_get_mac(backbone_netif, aInfraIfLinkLayerAddress->mAddress);
+        aInfraIfLinkLayerAddress->mLength = 6;
+        return OT_ERROR_NONE;
+    }
 }

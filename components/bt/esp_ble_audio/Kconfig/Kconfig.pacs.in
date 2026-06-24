@@ -1,0 +1,87 @@
+# Bluetooth Audio - Published Audio Capabilities configuration options
+#
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_PAC_SNK
+    bool "Sink PAC Characteristic Support"
+    help
+        This option enables support for Sink Published Audio Capabilities.
+
+if BT_PAC_SNK
+
+    config BT_PAC_SNK_NOTIFIABLE
+        bool "Sink PAC Notifiable Support"
+        help
+            This option enables support for clients to be notified on the Sink
+            PAC Characteristic changes.
+
+    config BT_PAC_SNK_LOC
+        bool "Sink PAC Location Support"
+        default y
+        help
+            This option enables support for Sink PAC Location Characteristic.
+
+    config BT_PAC_SNK_LOC_WRITEABLE
+        bool "Sink PAC Location Writable Support"
+        depends on BT_PAC_SNK_LOC
+        help
+            This option enables support for clients to write to the Sink PAC
+            Location Characteristic.
+
+    config BT_PAC_SNK_LOC_NOTIFIABLE
+        bool "Sink Audio Location Notifiable Support"
+        depends on BT_PAC_SNK_LOC
+        help
+            This option enables support for clients to be notified on the Sink
+            Audio Location Characteristic changes.
+
+endif # BT_PACS_SNK
+
+config BT_PAC_SRC
+    bool "Source PAC Characteristic Support"
+    help
+        This option enables support for Source Published Audio Capabilities.
+
+if BT_PAC_SRC
+
+    config BT_PAC_SRC_NOTIFIABLE
+        bool "Source PAC Notifiable Support"
+        help
+            This option enables support for clients to be notified on the Source
+            PAC Characteristic changes.
+
+    config BT_PAC_SRC_LOC
+        bool "Source PAC Location Support"
+        default y
+        help
+            This option enables support for Source PAC Location Characteristic.
+
+    config BT_PAC_SRC_LOC_WRITEABLE
+        bool "Source PAC Location Writable Support"
+        depends on BT_PAC_SRC_LOC
+        help
+            This option enables support for clients to write to the Source PAC
+            Location Characteristic.
+
+    config BT_PAC_SRC_LOC_NOTIFIABLE
+        bool "Source Audio Location Notifiable Support"
+        depends on BT_PAC_SRC_LOC
+        help
+            This option enables support for clients to be notified on the Source
+            Audio Location Characteristic changes.
+
+endif # BT_PAC_SRC
+
+config BT_PACS
+    bool # hidden
+    default y if BT_PAC_SNK || BT_PAC_SRC
+
+config BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE
+    bool "Supported Audio Context Notifiable Support"
+    depends on BT_PACS
+    help
+        This option enables support for clients to be notified on the
+        Supported Audio Contexts Characteristic changes.

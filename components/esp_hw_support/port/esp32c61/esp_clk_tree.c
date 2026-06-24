@@ -1,21 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+#include <stdatomic.h>
 #include "esp_clk_tree.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "esp_log.h"
 #include "soc/rtc.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "esp_clk_tree";
+ESP_LOG_ATTR_TAG(TAG, "esp_clk_tree");
 
-//TODO: [ESP32C61] IDF-9249
+static _Atomic int16_t s_pll_src_cg_ref_cnt[SOC_MOD_CLK_INVALID] = { 0 };
 
 esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_src_freq_precision_t precision,
 uint32_t *freq_value)
@@ -26,14 +29,35 @@ uint32_t *freq_value)
 
     uint32_t clk_src_freq = 0;
     switch (clk_src) {
+    case SOC_MOD_CLK_CPU:
+        clk_src_freq = clk_hal_cpu_get_freq_hz();
+        break;
+    case SOC_MOD_CLK_XTAL:
+        clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
+        break;
     case SOC_MOD_CLK_PLL_F80M:
         clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_PLL_F120M:
+        clk_src_freq = CLK_LL_PLL_120M_FREQ_MHZ * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F160M:
         clk_src_freq = CLK_LL_PLL_160M_FREQ_MHZ * MHZ;
         break;
-    case SOC_MOD_CLK_PLL_F240M:
-        clk_src_freq = CLK_LL_PLL_240M_FREQ_MHZ * MHZ;
+    case SOC_MOD_CLK_SPLL:
+        clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ * MHZ;
+        break;
+    case SOC_MOD_CLK_RTC_SLOW:
+        clk_src_freq = esp_clk_tree_lp_slow_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_RTC_FAST:
+        clk_src_freq = esp_clk_tree_lp_fast_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_RC_FAST:
+        clk_src_freq = esp_clk_tree_rc_fast_get_freq_hz(precision);
+        break;
+    case SOC_MOD_CLK_XTAL32K:
+        clk_src_freq = esp_clk_tree_xtal32k_get_freq_hz(precision);
         break;
     default:
         break;
@@ -42,5 +66,56 @@ uint32_t *freq_value)
     ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
                         "freq shouldn't be 0, calibration failed");
     *freq_value = clk_src_freq;
+    return ESP_OK;
+}
+
+esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_freq_value, uint32_t *ret_freq_value)
+{
+    (void)clk_src; (void)expt_freq_value; (void)ret_freq_value;
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+void esp_clk_tree_initialize(void)
+{
+}
+
+bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+{
+    (void)clk_circuit;
+    return false;
+}
+
+bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+{
+    (void)clk_circuit; (void)enable;
+    return false; // TODO: PM-653
+}
+
+esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
+{
+    if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
+        // some conditions is legal, e.g. -1 means external clock source
+        return ESP_OK;
+    }
+    int16_t prev_ref_cnt = 0;
+    if (enable) {
+        prev_ref_cnt = atomic_fetch_add(&s_pll_src_cg_ref_cnt[clk_src], 1);
+    } else {
+        prev_ref_cnt = atomic_fetch_sub(&s_pll_src_cg_ref_cnt[clk_src], 1);
+        if (prev_ref_cnt <= 0) {
+            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", clk_src);
+            atomic_store(&s_pll_src_cg_ref_cnt[clk_src], 0);
+            return ESP_OK;
+        }
+    }
+    if ((prev_ref_cnt == 0 && enable) || (prev_ref_cnt == 1 && !enable)) {
+        switch (clk_src) {
+        case SOC_MOD_CLK_RC_FAST:
+            enable ? rtc_dig_clk8m_enable() : rtc_dig_clk8m_disable();
+            break;
+        default:
+            break;
+        }
+    }
     return ESP_OK;
 }

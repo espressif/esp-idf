@@ -17,7 +17,6 @@
 extern "C" {
 #endif
 
-
 #if SOC_ASSIST_DEBUG_SUPPORTED
 FORCE_INLINE_ATTR void assist_debug_hal_sp_int_enable(uint32_t core_id)
 {

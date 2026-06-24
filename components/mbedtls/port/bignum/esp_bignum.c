@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +28,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "bignum_impl.h"
 
 #include "mbedtls/bignum.h"
@@ -41,7 +41,7 @@
  *   bignum. This number may be less than the size of the bignum
  *
  * - Naming convention hw_words for the hardware length of the operation. This number maybe be rounded up
- *   for targets that requres this (e.g. ESP32), and may be larger than any of the numbers
+ *   for targets that requires this (e.g. ESP32), and may be larger than any of the numbers
  *   involved in the calculation.
  *
  * - Timing behaviour of these functions will depend on the length of the inputs. This is fundamentally
@@ -54,12 +54,142 @@ static const __attribute__((unused)) char *TAG = "bignum";
 #define ciL    (sizeof(mbedtls_mpi_uint))         /* chars in limb  */
 #define biL    (ciL << 3)                         /* bits  in limb  */
 
+/* Convert bit count to word count
+ */
+static inline size_t bits_to_words(size_t bits)
+{
+    return (bits + 31) / 32;
+}
+
+/* Return the number of words actually used to represent an mpi
+   number.
+*/
+#if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+
 #if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
 #if defined(CONFIG_PM_ENABLE)
 static esp_pm_lock_handle_t s_pm_cpu_lock;
 static esp_pm_lock_handle_t s_pm_sleep_lock;
 #endif
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+
+static size_t mpi_words(const mbedtls_mpi *mpi)
+{
+    for (size_t i = mpi->MBEDTLS_PRIVATE(n); i > 0; i--) {
+        if (mpi->MBEDTLS_PRIVATE(p[i - 1]) != 0) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+#endif //(MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+
+/**
+ *
+ * There is a need for the value of integer N' such that B^-1(B-1)-N^-1N'=1,
+ * where B^-1(B-1) mod N=1. Actually, only the least significant part of
+ * N' is needed, hence the definition N0'=N' mod b. We reproduce below the
+ * simple algorithm from an article by Dusse and Kaliski to efficiently
+ * find N0' from N0 and b
+ */
+static mbedtls_mpi_uint modular_inverse(const mbedtls_mpi *M)
+{
+    int i;
+    uint64_t t = 1;
+    uint64_t two_2_i_minus_1 = 2;   /* 2^(i-1) */
+    uint64_t two_2_i = 4;           /* 2^i */
+    uint64_t N = M->MBEDTLS_PRIVATE(p[0]);
+
+    for (i = 2; i <= 32; i++) {
+        if ((mbedtls_mpi_uint) N * t % two_2_i >= two_2_i_minus_1) {
+            t += two_2_i_minus_1;
+        }
+
+        two_2_i_minus_1 <<= 1;
+        two_2_i <<= 1;
+    }
+
+    return (mbedtls_mpi_uint)(UINT32_MAX - t + 1);
+}
+
+/* Calculate Rinv = RR^2 mod M, where:
+ *
+ *  R = b^n where b = 2^32, n=num_words,
+ *  R = 2^N (where N=num_bits)
+ *  RR = R^2 = 2^(2*N) (where N=num_bits=num_words*32)
+ *
+ * This calculation is computationally expensive (mbedtls_mpi_mod_mpi)
+ * so caller should cache the result where possible.
+ *
+ * DO NOT call this function while holding esp_mpi_enable_hardware_hw_op().
+ *
+ */
+static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words)
+{
+    int ret;
+    size_t num_bits = num_words * 32;
+    mbedtls_mpi RR;
+    mbedtls_mpi_init(&RR);
+    MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&RR, num_bits * 2, 1));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(Rinv, &RR, M));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shrink(Rinv, num_words));
+
+cleanup:
+    mbedtls_mpi_free(&RR);
+
+    return ret;
+}
+
+
+
+
+/* Z = (X * Y) mod M
+
+   Not an mbedTLS function
+*/
+int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M)
+{
+    int ret = 0;
+
+    size_t x_bits = mbedtls_mpi_bitlen(X);
+    size_t y_bits = mbedtls_mpi_bitlen(Y);
+    size_t m_bits = mbedtls_mpi_bitlen(M);
+    size_t z_bits = MIN(m_bits, x_bits + y_bits);
+    size_t x_words = bits_to_words(x_bits);
+    size_t y_words = bits_to_words(y_bits);
+    size_t m_words = bits_to_words(m_bits);
+    size_t z_words = bits_to_words(z_bits);
+    size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, MAX(y_words, m_words))); /* longest operand */
+    mbedtls_mpi Rinv;
+    mbedtls_mpi_uint Mprime;
+
+    /* Calculate and load the first stage montgomery multiplication */
+    mbedtls_mpi_init(&Rinv);
+    MBEDTLS_MPI_CHK(calculate_rinv(&Rinv, M, hw_words));
+    Mprime = modular_inverse(M);
+
+    esp_mpi_enable_hardware_hw_op();
+    /* Load and start a (X * Y) mod M calculation */
+    esp_mpi_mul_mpi_mod_hw_op(X, Y, M, &Rinv, Mprime, hw_words);
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, z_words));
+
+    /* Read back the result */
+    mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), z_words);
+    Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
+
+cleanup:
+    mbedtls_mpi_free(&Rinv);
+    esp_mpi_disable_hardware_hw_op();
+
+    return ret;
+}
+
+#if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+
+#if defined (CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
 
 static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
 {
@@ -71,7 +201,6 @@ static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
         portYIELD_FROM_ISR();
     }
 }
-
 
 static esp_err_t esp_mpi_isr_initialise(void)
 {
@@ -134,133 +263,7 @@ static int esp_mpi_wait_intr(void)
 
     return 0;
 }
-
 #endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT
-
-/* Convert bit count to word count
- */
-static inline size_t bits_to_words(size_t bits)
-{
-    return (bits + 31) / 32;
-}
-
-/* Return the number of words actually used to represent an mpi
-   number.
-*/
-#if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
-static size_t mpi_words(const mbedtls_mpi *mpi)
-{
-    for (size_t i = mpi->MBEDTLS_PRIVATE(n); i > 0; i--) {
-        if (mpi->MBEDTLS_PRIVATE(p[i - 1]) != 0) {
-            return i;
-        }
-    }
-    return 0;
-}
-
-#endif //(MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
-
-/**
- *
- * There is a need for the value of integer N' such that B^-1(B-1)-N^-1N'=1,
- * where B^-1(B-1) mod N=1. Actually, only the least significant part of
- * N' is needed, hence the definition N0'=N' mod b. We reproduce below the
- * simple algorithm from an article by Dusse and Kaliski to efficiently
- * find N0' from N0 and b
- */
-static mbedtls_mpi_uint modular_inverse(const mbedtls_mpi *M)
-{
-    int i;
-    uint64_t t = 1;
-    uint64_t two_2_i_minus_1 = 2;   /* 2^(i-1) */
-    uint64_t two_2_i = 4;           /* 2^i */
-    uint64_t N = M->MBEDTLS_PRIVATE(p[0]);
-
-    for (i = 2; i <= 32; i++) {
-        if ((mbedtls_mpi_uint) N * t % two_2_i >= two_2_i_minus_1) {
-            t += two_2_i_minus_1;
-        }
-
-        two_2_i_minus_1 <<= 1;
-        two_2_i <<= 1;
-    }
-
-    return (mbedtls_mpi_uint)(UINT32_MAX - t + 1);
-}
-
-/* Calculate Rinv = RR^2 mod M, where:
- *
- *  R = b^n where b = 2^32, n=num_words,
- *  R = 2^N (where N=num_bits)
- *  RR = R^2 = 2^(2*N) (where N=num_bits=num_words*32)
- *
- * This calculation is computationally expensive (mbedtls_mpi_mod_mpi)
- * so caller should cache the result where possible.
- *
- * DO NOT call this function while holding esp_mpi_enable_hardware_hw_op().
- *
- */
-static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words)
-{
-    int ret;
-    size_t num_bits = num_words * 32;
-    mbedtls_mpi RR;
-    mbedtls_mpi_init(&RR);
-    MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&RR, num_bits * 2, 1));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(Rinv, &RR, M));
-
-cleanup:
-    mbedtls_mpi_free(&RR);
-
-    return ret;
-}
-
-
-
-
-/* Z = (X * Y) mod M
-
-   Not an mbedTLS function
-*/
-int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M)
-{
-    int ret = 0;
-
-    size_t x_bits = mbedtls_mpi_bitlen(X);
-    size_t y_bits = mbedtls_mpi_bitlen(Y);
-    size_t m_bits = mbedtls_mpi_bitlen(M);
-    size_t z_bits = MIN(m_bits, x_bits + y_bits);
-    size_t x_words = bits_to_words(x_bits);
-    size_t y_words = bits_to_words(y_bits);
-    size_t m_words = bits_to_words(m_bits);
-    size_t z_words = bits_to_words(z_bits);
-    size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, MAX(y_words, m_words))); /* longest operand */
-    mbedtls_mpi Rinv;
-    mbedtls_mpi_uint Mprime;
-
-    /* Calculate and load the first stage montgomery multiplication */
-    mbedtls_mpi_init(&Rinv);
-    MBEDTLS_MPI_CHK(calculate_rinv(&Rinv, M, hw_words));
-    Mprime = modular_inverse(M);
-
-    esp_mpi_enable_hardware_hw_op();
-    /* Load and start a (X * Y) mod M calculation */
-    esp_mpi_mul_mpi_mod_hw_op(X, Y, M, &Rinv, Mprime, hw_words);
-
-    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, z_words));
-
-    /* Read back the result */
-    mpi_hal_read_result_hw_op(Z->MBEDTLS_PRIVATE(p), Z->MBEDTLS_PRIVATE(n), z_words);
-    Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
-
-cleanup:
-    mbedtls_mpi_free(&Rinv);
-    esp_mpi_disable_hardware_hw_op();
-
-    return ret;
-}
-
-#if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
 
 #ifdef ESP_MPI_USE_MONT_EXP
 /*
@@ -357,12 +360,44 @@ cleanup2:
 static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
 {
     int ret = 0;
+    mbedtls_mpi X_temp;
+    const mbedtls_mpi *X_ptr = X;
 
     mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
-    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
+    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) otherwise &RR_new */
     mbedtls_mpi_uint Mprime;
 
-    size_t x_words = mpi_words(X);
+    mbedtls_mpi_init(&X_temp);
+    mbedtls_mpi_init(&Rinv_new);
+
+    /* Validate modulus M and exponent Y first to avoid passing invalid inputs to reduction */
+    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->MBEDTLS_PRIVATE(p[0]) & 1) == 0) {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if (mbedtls_mpi_cmp_int(Y, 0) < 0) {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
+        ret = mbedtls_mpi_lset(Z, 1);
+        goto cleanup;
+    }
+
+    /* Perform base reduction if absolute value of base X is larger than modulus M */
+    if (mbedtls_mpi_cmp_abs(X, M) >= 0) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&X_temp, X));
+        X_temp.MBEDTLS_PRIVATE(s) = 1;
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&X_temp, &X_temp, M));
+        if (mbedtls_mpi_cmp_int(&X_temp, 0) != 0) {
+            X_temp.MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s);
+        }
+        X_ptr = &X_temp;
+    }
+
+    size_t x_words = mpi_words(X_ptr);
     size_t y_words = mpi_words(Y);
     size_t m_words = mpi_words(M);
 
@@ -372,30 +407,21 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     size_t num_words = mpi_hal_calc_hardware_words(MAX(m_words, MAX(x_words, y_words)));
 
     if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
-        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
-    }
-
-    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->MBEDTLS_PRIVATE(p[0]) & 1) == 0) {
-        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
-    }
-
-    if (mbedtls_mpi_cmp_int(Y, 0) < 0) {
-        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
-    }
-
-    if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
-        return mbedtls_mpi_lset(Z, 1);
+        ret = MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+        goto cleanup;
     }
 
     /* Determine RR pointer, either _RR for cached value
        or local RR_new */
     if (_Rinv == NULL) {
-        mbedtls_mpi_init(&Rinv_new);
         Rinv = &Rinv_new;
     } else {
         Rinv = _Rinv;
     }
-    if (Rinv->MBEDTLS_PRIVATE(p) == NULL) {
+    /* Rinv depends on num_words, which may vary with blinded exponents.
+       calculate_rinv() stores Rinv with exactly num_words limbs, so the
+       allocation size is used here as the cache tag. */
+    if (Rinv->MBEDTLS_PRIVATE(p) == NULL || Rinv->MBEDTLS_PRIVATE(n) != num_words) {
         MBEDTLS_MPI_CHK(calculate_rinv(Rinv, M, num_words));
     }
 
@@ -403,7 +429,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 
     // Montgomery exponentiation: Z = X ^ Y mod M  (HAC 14.94)
 #ifdef ESP_MPI_USE_MONT_EXP
-    ret = mpi_montgomery_exp_calc(Z, X, Y, M, Rinv, num_words, Mprime) ;
+    ret = mpi_montgomery_exp_calc(Z, X_ptr, Y, M, Rinv, num_words, Mprime) ;
     MBEDTLS_MPI_CHK(ret);
 #else
     esp_mpi_enable_hardware_hw_op();
@@ -416,7 +442,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     }
 #endif
 
-    esp_mpi_exp_mpi_mod_hw_op(X, Y, M, Rinv, Mprime, num_words);
+    esp_mpi_exp_mpi_mod_hw_op(X_ptr, Y, M, Rinv, Mprime, num_words);
     ret = mbedtls_mpi_grow(Z, m_words);
     if (ret != 0) {
         esp_mpi_disable_hardware_hw_op();
@@ -438,7 +464,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 #endif
 
     // Compensate for negative X
-    if (X->MBEDTLS_PRIVATE(s) == -1 && (Y->MBEDTLS_PRIVATE(p[0]) & 1) != 0) {
+    if (X_ptr->MBEDTLS_PRIVATE(s) == -1 && (Y->MBEDTLS_PRIVATE(p[0]) & 1) != 0) {
         Z->MBEDTLS_PRIVATE(s) = -1;
         MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(Z, M, Z));
     } else {
@@ -446,13 +472,10 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     }
 
 cleanup:
-    if (_Rinv == NULL) {
-        mbedtls_mpi_free(&Rinv_new);
-    }
+    mbedtls_mpi_free(&Rinv_new);
+    mbedtls_mpi_free(&X_temp);
     return ret;
 }
-
-#endif /* (MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK) */
 
 /*
  * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
@@ -463,7 +486,6 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 {
     int ret;
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
-    /* Try hardware API first and then fallback to software */
     ret = esp_mpi_exp_mod( X, A, E, N, _RR );
     if( ret == MBEDTLS_ERR_MPI_NOT_ACCEPTABLE ) {
         ret = mbedtls_mpi_exp_mod_soft( X, A, E, N, _RR );
@@ -477,6 +499,8 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
 
     return ret;
 }
+
+#endif /* (MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK) */
 
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
 
@@ -493,7 +517,6 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     size_t y_words = bits_to_words(y_bits);
     size_t z_words = bits_to_words(x_bits + y_bits);
     size_t hw_words = mpi_hal_calc_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
-
     /* Short-circuit eval if either argument is 0 or 1.
 
        This is needed as the mpi modular division
@@ -502,8 +525,8 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
        argument is zero or one.
     */
     if (x_bits == 0 || y_bits == 0) {
-        mbedtls_mpi_lset(Z, 0);
-        return 0;
+        ret = mbedtls_mpi_lset(Z, 0);
+        return ret;
     }
     if (x_bits == 1) {
         ret = mbedtls_mpi_copy(Z, Y);

@@ -3,19 +3,28 @@ menu "ESP-TLS"
         prompt "Choose SSL/TLS library for ESP-TLS (See help for more Info)"
         default ESP_TLS_USING_MBEDTLS
         help
-            The ESP-TLS APIs support multiple backend TLS libraries. Currently mbedTLS and WolfSSL are
-            supported. Different TLS libraries may support different features and have different resource
-            usage. Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
+            The ESP-TLS APIs support multiple backend TLS libraries. mbedTLS is supported by default.
+            Custom TLS stacks can be registered via esp_tls_register_stack() API when
+            CONFIG_ESP_TLS_CUSTOM_STACK is selected. Different TLS libraries may support different
+            features and have different resource usage. Consult the ESP-TLS documentation in ESP-IDF
+            Programming guide for more details.
         config ESP_TLS_USING_MBEDTLS
             bool "mbedTLS"
-        config ESP_TLS_USING_WOLFSSL
-            depends on TLS_STACK_WOLFSSL
-            bool "wolfSSL (License info in wolfSSL directory README)"
+            select MBEDTLS_TLS_ENABLED
+        config ESP_TLS_CUSTOM_STACK
+            bool "Custom TLS stack (register via esp_tls_register_stack())"
+            help
+                When selected, allows external components to register their own TLS stack implementation
+                via esp_tls_register_stack() API. The custom stack must be registered before creating
+                any TLS connections, otherwise TLS operations will fail.
+
+                External components can provide any TLS stack implementation by implementing the
+                esp_tls_stack_ops_t interface.
     endchoice
 
     config ESP_TLS_USE_SECURE_ELEMENT
         bool "Use Secure Element (ATECC608A) with ESP-TLS"
-        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
+        depends on ESP_TLS_USING_MBEDTLS
         select ATCA_MBEDTLS_ECDSA
         select ATCA_MBEDTLS_ECDSA_SIGN
         select ATCA_MBEDTLS_ECDSA_VERIFY
@@ -26,6 +35,7 @@ menu "ESP-TLS"
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
         depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED
+        select MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL
         default y
         help
             Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral
@@ -62,29 +72,28 @@ menu "ESP-TLS"
     config ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
         bool "ESP-TLS Server: Set minimum Certificate Verification mode to Optional"
         depends on ESP_TLS_USING_MBEDTLS
+        default n
         help
-            When this option is enabled, the peer (here, the client) certificate is checked by the server,
-            however the handshake continues even if verification failed. By default, the
-            peer certificate is not checked and ignored by the server.
+            When this option is enabled, the ESP-TLS server can be configured to
+            request client certificates optionally. This is done by setting the
+            client_cert_authmode_optional field in the esp_https_server_config_t structure.
 
             mbedtls_ssl_get_verify_result() can be called after the handshake is complete to
-            retrieve status of verification.
+            retrieve status of verification of the client certificate, if presented.
 
     config ESP_TLS_PSK_VERIFICATION
         bool "Enable PSK verification"
         select MBEDTLS_PSK_MODES if ESP_TLS_USING_MBEDTLS
         select MBEDTLS_KEY_EXCHANGE_PSK if ESP_TLS_USING_MBEDTLS
-        select MBEDTLS_KEY_EXCHANGE_DHE_PSK if ESP_TLS_USING_MBEDTLS && MBEDTLS_DHM_C
         select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK if ESP_TLS_USING_MBEDTLS && MBEDTLS_ECDH_C
-        select MBEDTLS_KEY_EXCHANGE_RSA_PSK if ESP_TLS_USING_MBEDTLS
         help
             Enable support for pre shared key ciphers, supported for both mbedTLS as well as
-            wolfSSL TLS library.
+            custom TLS stacks.
 
     config ESP_TLS_INSECURE
         bool "Allow potentially insecure options"
         help
-            You can enable some potentially insecure options. These options should only be used for testing pusposes.
+            You can enable some potentially insecure options. These options should only be used for testing purposes.
             Only enable these options if you are very sure.
 
     config ESP_TLS_SKIP_SERVER_CERT_VERIFY
@@ -100,19 +109,13 @@ menu "ESP-TLS"
             with a server which has a fake identity, provided that the server certificate
             is not provided either through API or other mechanism like ca_store etc.
 
-    config ESP_WOLFSSL_SMALL_CERT_VERIFY
-        bool "Enable SMALL_CERT_VERIFY"
-        depends on ESP_TLS_USING_WOLFSSL
+
+    config ESP_TLS_DYN_BUF_STRATEGY_SUPPORTED
+        bool
         default y
         help
-            Enables server verification with Intermediate CA cert, does not authenticate full chain
-            of trust upto the root CA cert (After Enabling this option client only needs to have Intermediate
-            CA certificate of the server to authenticate server, root CA cert is not necessary).
-
-    config ESP_DEBUG_WOLFSSL
-        bool "Enable debug logs for wolfSSL"
-        depends on ESP_TLS_USING_WOLFSSL
-        help
-            Enable detailed debug prints for wolfSSL SSL library.
+            Enable support for dynamic buffer strategy for ESP-TLS. This is the hidden config option kept
+            for external components like OTA, to find out whether the dynamic buffer strategy is supported
+            for particular ESP-IDF version.
 
 endmenu

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 
@@ -40,13 +40,10 @@ PROVIDE ( RSA       = 0x6008A000 );
 PROVIDE ( ECC       = 0x6008B000 );
 PROVIDE ( DS        = 0x6008C000 );
 PROVIDE ( HMAC      = 0x6008D000 );
-
+PROVIDE ( ECDSA     = 0x6008E000 );
 PROVIDE ( IO_MUX         = 0x60090000 );
 PROVIDE ( GPIO           = 0x60091000 );
 PROVIDE ( GPIO_EXT       = 0x60091f00 );
-PROVIDE ( SDM            = 0x60091f00 );
-PROVIDE ( GLITCH_FILTER  = 0x60091f30 );
-PROVIDE ( GPIO_ETM       = 0x60091f60 );
 
 PROVIDE ( MEM_ACS_MONITOR   = 0x60092000 );
 PROVIDE ( PAU               = 0x60093000 );
@@ -66,7 +63,7 @@ PROVIDE ( LP_TIMER      = 0x600B0C00 );
 PROVIDE ( LP_AON        = 0x600B1000 );
 PROVIDE ( LP_WDT        = 0x600B1C00 );
 PROVIDE ( I2C_ANA_MST   = 0x600B2400 );
-PROVIDE ( LPPERI       = 0x600B2800 );
+PROVIDE ( LPPERI        = 0x600B2800 );
 PROVIDE ( LP_ANA_PERI   = 0x600B2C00 );
 PROVIDE ( LP_APM        = 0x600B3800 );
 PROVIDE ( OTP_DEBUG     = 0x600B3C00 );

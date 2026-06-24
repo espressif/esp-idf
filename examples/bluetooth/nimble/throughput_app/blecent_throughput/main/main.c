@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,17 +49,30 @@
 #define WRITE_THROUGHPUT                   2
 #define NOTIFY_THROUGHPUT                  3
 
-#define READ_THROUGHPUT_PAYLOAD            500
-#define WRITE_THROUGHPUT_PAYLOAD           500
+#define READ_THROUGHPUT_PAYLOAD            510 /* MTU(512) - ATT read rsp header(1) - 1 (avoid Read Blob) */
+#define WRITE_THROUGHPUT_PAYLOAD           509 /* MTU(512) - ATT write cmd header(3) */
 #define LL_PACKET_TIME                     2120
 #define LL_PACKET_LENGTH                   251
 static const char *tag = "blecent_throughput";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
-static uint8_t peer_addr[6];
 static SemaphoreHandle_t xSemaphore;
 static int mbuf_len_total;
 static int failure_count;
-static int conn_params_def[] = {40, 40, 0, 500, 80, 80};
+static TaskHandle_t throughput_task_handle = NULL;
+static int conn_params_def[] = {6, 6, 0, 500, 12, 24};
+/* test_data accepts test_name and test_time from CLI */
+static int test_data[6] = {1, 600, 0, 0, 0, 0};
+static int mtu_def = 512;
+static ble_addr_t conn_addr;
+static uint16_t handle;
+#define PHY_1M            0
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+static int current_phy_updated;
+#define PHY_2M            1
+#define PHY_CODED_S2      2
+#define PHY_CODED_S8      3
+#endif
+
 static struct ble_gap_upd_params conn_params = {
     /** Minimum value for connection interval in 1.25ms units */
     .itvl_min = CONFIG_EXAMPLE_CONN_ITVL_MIN,
@@ -75,10 +88,20 @@ static struct ble_gap_upd_params conn_params = {
     .max_ce_len = CONFIG_EXAMPLE_CONN_CE_LEN_MAX,
 };
 
-static int mtu_def = 512;
-/* test_data accepts test_name and test_time from CLI */
-static int test_data[] = {1, 600};
 void ble_store_config_init(void);
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
+{
+    int rc = ble_gap_set_prefered_default_le_phy(tx_phys_mask, rx_phys_mask);
+    if (rc == 0) {
+        ESP_LOGI(tag, "Default LE PHY set successfully; tx_phy = %d, rx_phy = %d",
+                    tx_phys_mask, rx_phys_mask);
+    } else {
+        ESP_LOGE(tag, "Failed to set default LE PHY");
+    }
+}
+#endif
 
 static int
 blecent_notify(uint16_t conn_handle, uint16_t val_handle,
@@ -203,35 +226,121 @@ static int blecent_read(uint16_t conn_handle, uint16_t val_handle,
     return 0;
 
 err:
+    xSemaphoreGive(xSemaphore);
     /* Terminate the connection. */
     vTaskDelay(100 / portTICK_PERIOD_MS);
     return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+// Function to update PHY dynamically
+int update_phy(uint16_t conn_handle, uint8_t phy_mode)
+{
+    int rc;
+    switch (phy_mode) {
+        case PHY_1M:
+            current_phy_updated = 0;
+            rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_1M_PREF_MASK, BLE_HCI_LE_PHY_1M_PREF_MASK, 0);
+            if(rc != 0) {
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: 1M failed, rc=%d", rc);
+            }
+            else {
+                ESP_LOGI(tag, "Requested PHY: 1M");
+            }
+            return rc;
+
+        case PHY_2M:
+            current_phy_updated = 0;
+            rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_2M_PREF_MASK, BLE_HCI_LE_PHY_2M_PREF_MASK, 0);
+            if(rc != 0) {
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: 2M failed, rc=%d", rc);
+            }
+            else {
+                ESP_LOGI(tag, "Requested PHY: 2M");
+            }
+            return rc;
+
+        case PHY_CODED_S2:
+            current_phy_updated = 0;
+            rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x01);
+            if(rc != 0) {
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: Coded S2 failed, rc=%d", rc);
+            }
+            else {
+                ESP_LOGI(tag, "Requested PHY: Coded S2");
+            }
+            return rc;
+
+        case PHY_CODED_S8:
+            current_phy_updated = 0;
+            rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x02);
+            if(rc != 0) {
+                current_phy_updated = 1;
+                ESP_LOGE(tag, "Requested PHY: Coded S8 failed, rc=%d", rc);
+            }
+            else {
+                ESP_LOGI(tag, "Requested PHY: Coded S8");
+            }
+            return rc;
+
+        default:
+            ESP_LOGE(tag, "Invalid PHY mode selected.");
+            return BLE_HS_EINVAL;
+    }
+
+    return rc;
+}
+#endif
 
 static void throughput_task(void *arg)
 {
     struct peer *peer = (struct peer *)arg;
     const struct peer_chr *chr;
     const struct peer_dsc *dsc;
+    struct ble_gap_conn_desc desc;
+    uint16_t conn_handle;
     int rc = 0;
 
+    /* Store conn_handle immediately to avoid UAF if peer is freed */
+    if (peer == NULL) {
+        ESP_LOGE(tag, "Invalid peer, deleting task");
+        throughput_task_handle = NULL;
+        vTaskDelete(NULL);
+        return;
+    }
+    conn_handle = peer->conn_handle;
+
     while (1) {
+        /* Check if connection is still valid using stored conn_handle */
+        rc = ble_gap_conn_find(conn_handle, &desc);
+        if (rc != 0) {
+            ESP_LOGI(tag, "Connection lost, deleting throughput task");
+            throughput_task_handle = NULL;
+            vTaskDelete(NULL);
+            return;
+        }
+
         vTaskDelay(4000 / portTICK_PERIOD_MS);
         ESP_LOGI(tag, "Format for throughput demo:: throughput read 100");
-        printf(" ==================================================================\n");
-        printf(" |                 Steps to test nimble throughput                |\n");
-        printf(" |                                                                |\n");
-        printf(" |  1. Enter throughput [--Type] [--Test time]                    |\n");
-        printf(" |  Type: read/write/notify.                                      |\n");
-        printf(" |  Test time: Enter value in seconds.                            |\n");
-        printf(" |                                                                |\n");
-        printf(" |  e.g. throughput read 600                                      |\n");
-        printf(" |                                                                |\n");
-        printf(" |  ** Enter 'throughput read 60' for reading char for 60 seconds |\n");
-        printf(" |  OR 'throughput write 60' for writing to char for 60 seconds   |\n");
-        printf(" |  OR 'throughput notify 60' for notifications (for 60 seconds)**|\n");
-        printf(" |                                                                |\n");
-        printf(" =================================================================\n\n");
+        printf(" ====================================================================================\n");
+        printf(" |                 Steps to test nimble throughput                                   |\n");
+        printf(" |                                                                                   |\n");
+        printf(" |  1. Enter throughput [--Type] [--Test time] [--Phy]                               |\n");
+        printf(" |  Type: read/write/notify.                                                         |\n");
+        printf(" |  Test time: Enter value in seconds.                                               |\n");
+        printf(" |  Phy mode: Enter value in 0 for 1M, 1 for 2M ,2 for Coded S2,                     |\n");
+        printf(" |              3 for Coded S8.                                                      |\n");
+        printf(" |                                                                                   |\n");
+        printf(" |  e.g. throughput read 600 3                                                       |\n");
+        printf(" |                                                                                   |\n");
+        printf(" |  ** Enter 'throughput read 60 0' for reading char for 60 seconds on 1M Phy        |\n");
+        printf(" |  OR 'throughput write 60 1' for writing to char for 60 seconds on 2M Phy          |\n");
+        printf(" |  OR 'throughput notify 60 2' for notifications (for 60 seconds) on s=2 coded phy**|\n");
+        printf(" |                                                                                   |\n");
+        printf(" =====================================================================================\n\n");
         /* XXX Delay ? */
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 
@@ -239,10 +348,25 @@ static void throughput_task(void *arg)
             /* No command supplied, start with reading */
             test_data[0] = READ_THROUGHPUT;
             test_data[1] = 60;
+            test_data[2] = 0;
             ESP_LOGI(tag, "No command received from user, start with READ op"
                      " with 60 seconds test time");
         }
         scli_reset_queue();
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+        if(test_data[2] >= 0) {
+            rc = update_phy(conn_handle, test_data[2]);
+            if(rc != 0) {
+                ESP_LOGE(tag, "Failed to update phy, rc=%d. Skipping PHY update wait.", rc);
+                /* Flag is already set to 1 on failure, but skip wait loop for clarity */
+            } else {
+                /* Wait for PHY update event to complete */
+                while (!current_phy_updated) {
+                    vTaskDelay(100 / portTICK_PERIOD_MS);
+                }
+            }
+        }
+#endif
 
         switch (test_data[0]) {
 
@@ -259,10 +383,17 @@ static void throughput_task(void *arg)
             }
 
             if (test_data[1] > 0) {
-                rc = blecent_read(peer->conn_handle, chr->chr.val_handle,
+                rc = blecent_read(conn_handle, chr->chr.val_handle,
                                   blecent_repeat_read, (void *) peer, test_data[1]);
                 if (rc != 0) {
                     ESP_LOGE(tag, "Error while reading from GATTS; rc = %d", rc);
+                    /* Delete task on critical error (connection lost or fatal error) */
+                    if (rc == BLE_HS_ENOTCONN || rc == BLE_HS_EDONE) {
+                        ESP_LOGI(tag, "Connection error, deleting throughput task");
+                        throughput_task_handle = NULL;
+                        vTaskDelete(NULL);
+                        return;
+                    }
                 }
             } else {
                 ESP_LOGE(tag, "Please enter non-zero value for test time in seconds!!");
@@ -280,9 +411,16 @@ static void throughput_task(void *arg)
             }
 
             if (test_data[1] > 0) {
-                rc = blecent_write(peer->conn_handle, chr->chr.val_handle, (void *) peer, test_data[1]);
+                rc = blecent_write(conn_handle, chr->chr.val_handle, (void *) peer, test_data[1]);
                 if (rc != 0) {
                     ESP_LOGE(tag, "Error while writing data; rc = %d", rc);
+                    /* Delete task on critical error (connection lost or fatal error) */
+                    if (rc == BLE_HS_ENOTCONN || rc == BLE_HS_EDONE) {
+                        ESP_LOGI(tag, "Connection error, deleting throughput task");
+                        throughput_task_handle = NULL;
+                        vTaskDelete(NULL);
+                        return;
+                    }
                 }
             } else {
                 ESP_LOGE(tag, "Please enter non-zero value for test time in seconds!!");
@@ -308,10 +446,17 @@ static void throughput_task(void *arg)
                 break;
             }
 
-            rc = blecent_notify(peer->conn_handle, dsc->dsc.handle,
+            rc = blecent_notify(conn_handle, dsc->dsc.handle,
                                 NULL, (void *) peer, test_data[1]);
             if (rc != 0) {
                 ESP_LOGE(tag, "Subscribing to notification failed; rc = %d ", rc);
+                /* Delete task on critical error (connection lost or fatal error) */
+                if (rc == BLE_HS_ENOTCONN || rc == BLE_HS_EDONE) {
+                    ESP_LOGI(tag, "Connection error, deleting throughput task");
+                    throughput_task_handle = NULL;
+                    vTaskDelete(NULL);
+                    return;
+                }
             } else {
                 ESP_LOGI(tag, "Subscribed to notifications. Throughput number"
                          " can be seen on peripheral terminal after %d seconds",
@@ -326,13 +471,20 @@ static void throughput_task(void *arg)
 
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
-    vTaskDelete(NULL);
 }
 
 static void
 blecent_read_write_subscribe(const struct peer *peer)
 {
-    xTaskCreate(throughput_task, "throughput_task", 4096, (void *) peer, 10, NULL);
+    /* Delete previous task if it exists */
+    /* Capture handle and set global to NULL atomically to prevent race condition
+     * where task deletes itself between NULL check and vTaskDelete call */
+    TaskHandle_t task_to_delete = throughput_task_handle;
+    throughput_task_handle = NULL;
+    if (task_to_delete != NULL) {
+        vTaskDelete(task_to_delete);
+    }
+    xTaskCreate(throughput_task, "throughput_task", 4096, (void *) peer, 10, &throughput_task_handle);
     return;
 }
 
@@ -371,7 +523,7 @@ static void
 blecent_scan(void)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params;
+    struct ble_gap_disc_params disc_params = {0};
     int rc;
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -406,6 +558,78 @@ blecent_scan(void)
     }
 }
 
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+/**
+ * Indicates whether we should try to connect to the sender of the specified
+ * advertisement.  The function returns a positive result if the device
+ * advertises connectability and support for the LE PHY service.
+ */
+static int
+ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
+{
+    int offset = 0;
+    int ad_struct_len = 0;
+    uint8_t test_addr[6];
+    uint8_t parsed_addr[6];
+    uint8_t phy_uuid_found = 0;
+
+    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
+            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+        return 0;
+    }
+    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+       //  ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+        /* Convert string to address */
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, parsed_addr);
+        for (int i = 0; i < 6; i++) {
+            test_addr[5 - i] = parsed_addr[i];
+        }
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+            return 0;
+        }
+    }
+
+    /* The device has to advertise support LE PHY UUID (0xABF2).
+    */
+    do {
+        if (offset + 1 >= (int)disc->length_data) {  /* At least read length and type */
+            break;
+        }
+        ad_struct_len = disc->data[offset];
+
+        if (!ad_struct_len || offset + ad_struct_len + 1 > (int)disc->length_data) {
+            break;
+        }
+
+        /* Search for Complete Local Name (AD type 0x09) */
+        if (disc->data[offset + 1] == 0x09 && phy_uuid_found) {
+            int name_len = disc->data[offset] - 1;  /* Length minus type byte */
+            char serv_name[] = "nimble_prph";
+            if (name_len > 0) {
+                ESP_LOGI(tag, "Device Name = %.*s", name_len, (char *)&disc->data[offset + 2]);
+                if (name_len == strlen(serv_name) &&
+                    memcmp(&disc->data[offset + 2], serv_name, name_len) == 0) {
+                    ESP_LOGI(tag, "central connect to `nimble_prph` success");
+                    return 1;
+                }
+                return 0;
+            }
+        }
+
+        /* Search if LE PHY UUID is advertised */
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03 &&
+            offset + 3 < (int)disc->length_data &&
+            disc->data[offset + 2] == 0xAB && disc->data[offset + 3] == 0xF2) {
+            phy_uuid_found = 1;
+        }
+
+        offset += ad_struct_len + 1;
+
+    } while (offset < (int)disc->length_data);
+
+    return phy_uuid_found;
+}
+ #else
 /**
  * Indicates whether we should try to connect to the sender of the specified
  * advertisement.  The function returns a positive result if the device
@@ -417,7 +641,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
-
+    uint8_t test_addr[6];
     rc = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
     if (rc != 0) {
         return 0;
@@ -426,10 +650,8 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -454,6 +676,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     }
     return 0;
 }
+#endif
 
 /**
  * Connects to the sender of the specified advertisement of it looks
@@ -461,22 +684,36 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
  * support for the Alert Notification service.
  */
 static void
-blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
+blecent_connect_if_interesting(void *disc)
 {
     uint8_t own_addr_type;
     int rc;
 
     /* Don't do anything if we don't care about this advertiser. */
-    if (!blecent_should_connect(disc)) {
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    const struct ble_gap_ext_disc_desc *disc_ext = (const struct ble_gap_ext_disc_desc *)disc;
+    if (!ext_blecent_should_connect(disc_ext)) {
         return;
     }
+    /* Copy addr information for next connection */
+    memcpy(&conn_addr, &disc_ext->addr, sizeof(conn_addr));
+#else
+    const struct ble_gap_disc_desc *disc_desc = (const struct ble_gap_disc_desc *)disc;
+    if (!blecent_should_connect(disc_desc)) {
+        return;
+    }
+    /* Copy addr information for next connection */
+    memcpy(&conn_addr, &disc_desc->addr, sizeof(conn_addr));
+#endif
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         MODLOG_DFLT(DEBUG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* Figure out address to use for connect (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -488,12 +725,12 @@ blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
     /* Try to connect the the advertiser.  Allow 30 seconds (30000 ms) for
      * timeout.
      */
-    rc = ble_gap_connect(own_addr_type, &disc->addr, 30000, NULL,
+    rc = ble_gap_connect(own_addr_type, &conn_addr, 30000, NULL,
                          blecent_gap_event, NULL);
     if (rc != 0) {
         ESP_LOGE(tag, "Error: Failed to connect to device; addr_type=%d "
                  "addr=%s; rc=%d\n",
-                 disc->addr.type, addr_str(disc->addr.val), rc);
+                 conn_addr.type, addr_str(conn_addr.val), rc);
         return;
     }
 }
@@ -529,7 +766,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         print_adv_fields(&fields);
 
         /* Try to connect to the advertiser if it looks interesting. */
@@ -588,6 +825,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             blecent_scan();
         }
 
+        handle = event->connect.conn_handle;
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
@@ -596,8 +834,19 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         print_conn_desc(&event->disconnect.conn);
         ESP_LOGI(tag, " ");
 
+        /* Delete throughput task if it exists */
+        /* Capture handle and set global to NULL atomically to prevent race condition
+         * where task deletes itself between NULL check and vTaskDelete call */
+        TaskHandle_t task_to_delete = throughput_task_handle;
+        throughput_task_handle = NULL;
+        if (task_to_delete != NULL) {
+            vTaskDelete(task_to_delete);
+        }
+
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
+        vTaskDelay(200);
+
         /* Resume scanning. */
         blecent_scan();
         return 0;
@@ -619,7 +868,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */
         mbuf_len_total = mbuf_len_total + OS_MBUF_PKTLEN(event->notify_rx.om);
-        ESP_LOGI(tag, "received %s; conn_handle = %d attr_handle = %d "
+        ESP_LOGD(tag, "received %s; conn_handle = %d attr_handle = %d "
                  "attr_len = %d ; Total length = %d",
                  event->notify_rx.indication ?
                  "indication" :
@@ -638,6 +887,21 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.value);
         return 0;
 
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    case BLE_GAP_EVENT_EXT_DISC:
+        /* An advertisement report was received during GAP discovery. */
+
+        blecent_connect_if_interesting(&event->ext_disc);
+        return 0;
+
+    case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
+        current_phy_updated = 1;
+        ESP_LOGI(tag, "PHY Update Event: Status=%d, Conn_Handle=0x%04X, TX_PHY=%d, RX_PHY=%d",
+            event->phy_updated.status, event->phy_updated.conn_handle,
+            event->phy_updated.tx_phy, event->phy_updated.rx_phy);
+        return 0;
+#endif
+
     default:
         return 0;
     }
@@ -654,17 +918,28 @@ blecent_on_sync(void)
 {
     int rc;
     bool yes = false;
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    uint8_t all_phy;
+#endif
 
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    all_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK | BLE_HCI_LE_PHY_CODED_PREF_MASK;
+
+    set_default_le_phy(all_phy, all_phy);
+#endif
 
     ESP_LOGI(tag, "Do you want to configure connection params ? ");
     ESP_LOGI(tag, "If yes then enter in this format: `Insert Yes` ");
     if (scli_receive_yesno(&yes)) {
         if (yes) {
             ESP_LOGI(tag, " Enter preferred MTU, format:: `MTU 512` ");
-            if (scli_receive_key(&mtu_def)) {
+            int mtu_buf[6];
+            if (scli_receive_key(mtu_buf)) {
+                mtu_def = mtu_buf[0];
                 ESP_LOGI(tag, "MTU provided by user= %d", mtu_def);
             } else {
                 ESP_LOGD(tag, "No input for setting MTU; use default mtu = %d", mtu_def);
@@ -735,8 +1010,13 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+    assert(rc == 0);
+#else
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
+#endif
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("gattc-throughput");

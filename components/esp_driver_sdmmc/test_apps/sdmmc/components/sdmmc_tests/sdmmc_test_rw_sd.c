@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 static void do_one_sdmmc_perf_test(int slot, int width, int freq_khz, int ddr, FILE* perf_log)
 {
     sdmmc_card_t card;
-    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr);
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, ddr, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_rw_performance(&card, perf_log);
@@ -35,6 +35,11 @@ TEST_CASE("sdmmc read/write performance, slot 0, 4-bit DDR", "[sdmmc]")
 TEST_CASE("sdmmc read/write performance, slot 0, 8-bit", "[sdmmc]")
 {
     do_one_sdmmc_perf_test(SLOT_0, 8, SDMMC_FREQ_HIGHSPEED, NO_DDR, NULL);
+}
+
+TEST_CASE("sdmmc read/write performance, slot 1, 1-bit", "[sdmmc]")
+{
+    do_one_sdmmc_perf_test(SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, NO_DDR, NULL);
 }
 
 TEST_CASE("sdmmc read/write performance, slot 1, 4-bit", "[sdmmc]")
@@ -63,7 +68,7 @@ TEST_CASE("sdmmc read/write performance, slot 1, 4-bit DDR", "[sdmmc]")
 static void do_one_sdmmc_rw_test_with_offset(int slot, int width, int freq_khz, int ddr)
 {
     sdmmc_card_t card;
-    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr);
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, ddr, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_rw_with_offset(&card);
@@ -85,7 +90,7 @@ TEST_CASE("sdmmc read/write performance with offset, slot 1, 4-bit", "[sdmmc]")
 static void do_one_sdmmc_rw_test_unaligned_buffer(int slot, int width, int freq_khz, int ddr)
 {
     sdmmc_card_t card;
-    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr);
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, ddr, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_test_rw_unaligned_buffer(&card);
@@ -100,4 +105,26 @@ TEST_CASE("sdmmc read/write using unaligned buffer, slot 0, 4-bit", "[sdmmc]")
 TEST_CASE("sdmmc read/write using unaligned buffer, slot 1, 4-bit", "[sdmmc]")
 {
     do_one_sdmmc_rw_test_unaligned_buffer(SLOT_1, 4, SDMMC_FREQ_DEFAULT, 0);
+}
+
+/* ========== Read/write tests with higher priority tasks running concurrently ========== */
+
+static void do_one_sdmmc_rw_test_highprio_task(int slot, int width)
+{
+    sdmmc_card_t card;
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, SDMMC_FREQ_DEFAULT, NO_DDR, NO_EMMC);
+    sdmmc_test_sd_begin(slot, width, SDMMC_FREQ_DEFAULT, NO_DDR, &card);
+    sdmmc_card_print_info(stdout, &card);
+    sdmmc_test_rw_highprio_task(&card);
+    sdmmc_test_sd_end(&card);
+}
+
+TEST_CASE("sdmmc read/write with concurrent high-prio task, slot 0, 4-bit", "[sdmmc]")
+{
+    do_one_sdmmc_rw_test_highprio_task(0, 4);
+}
+
+TEST_CASE("sdmmc read/write with concurrent high-prio task, slot 1, 4-bit", "[sdmmc]")
+{
+    do_one_sdmmc_rw_test_highprio_task(1, 4);
 }

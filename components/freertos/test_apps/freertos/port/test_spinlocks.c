@@ -20,6 +20,7 @@
 #include "esp_cpu.h"
 
 #include "test_utils.h"
+#include "freertos_performance.h"
 
 #if !CONFIG_FREERTOS_SMP    // Known issue in Amazon SMP FreeRTOS port IDF-6204
 

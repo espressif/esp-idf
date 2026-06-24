@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,6 @@
  * the API, otherwise you may get unexpected behavior!!!
  *
  */
-
 
 #ifndef __ESP_WIFI_INTERNAL_H__
 #define __ESP_WIFI_INTERNAL_H__
@@ -35,10 +34,333 @@
 extern "C" {
 #endif
 
+#define WIFI_MAC_ADDR_LEN  6   /**< Length of an 802.11 MAC address in octets */
+#ifndef NAN_IPV6_IDENTIFIER_LEN
+#define NAN_IPV6_IDENTIFIER_LEN  8   /**< Length of a NAN IPv6 interface identifier in octets */
+#endif
+
 typedef struct {
     QueueHandle_t handle; /**< FreeRTOS queue handler */
     void *storage;        /**< storage for FreeRTOS queue */
 } wifi_static_queue_t;
+
+/**
+  * @brief NAN Datapath Security Type (Wi-Fi Aware v4.0 §9.5.16.1 Table 85, "Security Present" bit)
+  */
+typedef enum {
+    WIFI_NAN_SECURITY_OPEN      = 0,    /**< NDP does not require security */
+    WIFI_NAN_SECURITY_ENCRYPTED = 1,    /**< NDP requires security */
+} wifi_nan_security_type_t;
+
+/**
+  * @brief NAN single-PMKID security parameters
+  *
+  * @note Holds one derived ND-PMK + ND-PMKID per spec §7.1.3.5. Used both for
+  *       the blob's per-service derived cache (own-side Publish SDF SCIA TX)
+  *       and for the host's per-NDL handshake state (M1-M4). Single PMKID is
+  *       sufficient because every spec key derivation step yields exactly one
+  *       PMKID for a given (PMK, peer NMIs, Service ID) tuple.
+  *       Shared between WiFi libraries and NAN app layer.
+  */
+typedef struct {
+    wifi_nan_security_type_t type;     /**< Security Type (Open/Encrypted) */
+    uint16_t csid_bitmap;              /**< Selected Cipher Suite ID bit (WIFI_NAN_CSID_BIT_*) */
+    uint8_t nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];     /**< ND-PMK */
+    uint8_t nd_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< ND-PMKID */
+    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection. Reserved: not supported right now. */
+    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t reserved: 6;               /**< Reserved */
+} wifi_nan_security_params_t;
+
+/**
+  * @brief NAN peer security and pairing material parsed from Publish/Subscribe SDF
+  *
+  * @note Per Wi-Fi Aware v4.0 §7.1.3.5, a publisher SDF SCIA may advertise
+  *       multiple ND-PMKIDs (one per cached PMK). The receiver stores them
+  *       and matches against locally-derived PMKID at NDP-initiation time.
+  *       Pairing flags mirror wifi_event_nan_svc_match_t and are filled by the
+  *       NAN blob when parsing CSIA/SCIA/DCEA.
+  *       Internal only — not part of the public API. Shared between WiFi
+  *       libraries and NAN app layer.
+  */
+#define NAN_PEER_MAX_PMKIDS  2  /**< Internal cap; can grow without API impact */
+typedef struct {
+    uint16_t csid_bitmap;              /**< Peer's advertised Cipher Suite ID bitmap (WIFI_NAN_CSID_BIT_*) */
+    uint8_t num_pmkids;                /**< Number of parsed PMKIDs */
+    uint8_t pmkids[NAN_PEER_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< Parsed ND-PMKIDs */
+    uint8_t group_data_prot: 1;        /**< Peer advertises group data frame protection */
+    uint8_t group_mgmt_prot: 1;        /**< Peer advertises group mgmt frame protection */
+    uint8_t pairing_setup: 1;          /**< Pairing setup: 0 - disabled, 1 - enabled */
+    uint8_t npk_nik_caching: 1;        /**< NPK/NIK caching: 0 - disabled, 1 - enabled (valid if pairing_setup) */
+    uint8_t reserved: 4;               /**< Reserved */
+} wifi_nan_peer_sdf_security_t;
+
+/* NAN Peer info parsed from SDF */
+struct nan_cb_peer_info {
+    uint8_t peer_mac[WIFI_MAC_ADDR_LEN];                    /**< Peer NMI / interface MAC */
+    uint8_t peer_svc_id;                                    /**< Peer's service instance ID */
+    uint16_t sdea;                                          /**< SDEA control field bits */
+    uint32_t device_caps;                                   /**< NAN device capabilities */
+    uint8_t ssi_ver;                                        /**< SSI version (service_match) */
+    uint8_t *ssi;                                           /**< Service-specific information */
+    uint16_t ssi_len;                                       /**< SSI length in bytes */
+    wifi_nan_peer_sdf_security_t *peer_security_params;     /**< Peer's discovery security params parsed from SDF */
+    nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
+};
+
+/* NDP Peer info parsed from NAF. */
+struct ndp_cb_peer_info {
+    uint8_t ndp_id;
+    uint8_t peer_nmi[WIFI_MAC_ADDR_LEN];
+    uint8_t peer_ndi[WIFI_MAC_ADDR_LEN];
+    uint8_t *ssi;
+    uint16_t ssi_len;
+};
+
+/* NAN Pairing Bootstrapping parameters parsed from SDF */
+struct nan_cb_npba_t {
+    uint8_t type;
+    uint8_t status;
+    uint16_t methods;
+};
+
+/* Host-side callbacks the closed-source NAN blob fires up into nan_app.
+ * Registered once at nan_app init; all callbacks run in blob/WiFi-task
+ * context, so handlers must be non-blocking and avoid heavy work. */
+struct nan_sync_callbacks {
+    /* Subscriber side: a Publish SDF matching the local subscribe was
+     * received from a peer.
+     *   sub_id    -- local subscribe service instance ID
+     *   peer_info -- publisher details (see struct nan_cb_peer_info)
+     *   npba      -- NPBA parsed from Publish SDF (Advertise), or NULL */
+    void (* service_match)(uint8_t sub_id, struct nan_cb_peer_info *peer_info,
+                           struct nan_cb_npba_t *npba);
+
+    /* Publisher side: a Solicited Publish SDF was just transmitted in
+     * response to a Subscribe match. Fires once per recipient.
+     *   pub_id    -- local publish service instance ID
+     *   peer_info -- subscriber MAC and its service instance ID */
+    void (* replied)(uint8_t pub_id, struct nan_cb_peer_info *peer_info);
+
+    /* Either side: a Follow-up SDF was received for an existing service
+     * match (post-discovery messaging).
+     *   svc_id    -- local service instance ID this Follow-up targets
+     *   peer_info -- sender MAC and SSI payload
+     *   shared_key_attr -- Shared key descriptor attribute, if any
+     *   shared_key_attr_buf_len -- total attribute length for pointer
+     *                          shared_key_attr (0 if shared_key_attr is NULL)
+     *   npba -- NAN Pairing Bootstrapping parameters, if any */
+    void (* receive)(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
+                     uint8_t *shared_key_attr, uint16_t shared_key_attr_len,
+                     struct nan_cb_npba_t *npba);
+
+    /* Publisher side (NDP Responder): an NDP Request (M1) was received.
+     * Host either auto-accepts or waits for esp_wifi_nan_datapath_resp()
+     * depending on the publish-time ndp_resp_needed flag.
+     *   pub_id      -- local publish instance bound to this request
+     *   peer_info   -- initiator's ndp_id, NMI, NDI, SSI
+     *   device_caps -- initiator's NAN device capabilities */
+    void (* ndp_indication)(uint8_t pub_id, struct ndp_cb_peer_info *peer_info, uint32_t device_caps);
+
+    /* Either side: NDP setup completed (success or rejection).
+     *   status          -- NDP_STATUS_ACCEPTED / NDP_STATUS_REJECTED
+     *   peer_info       -- peer ndp_id, NMI, NDI
+     *   own_ndi         -- locally-assigned NDI for this NDP
+     *   ipv6_identifier -- 8-byte IPv6 interface identifier learnt from
+     *                      the peer; all-zero if the peer did not
+     *                      advertise one (host then derives it from the
+     *                      peer NDI). */
+    void (* ndp_confirm)(uint8_t status, struct ndp_cb_peer_info *peer_info,
+                         uint8_t own_ndi[WIFI_MAC_ADDR_LEN],
+                         uint8_t ipv6_identifier[NAN_IPV6_IDENTIFIER_LEN]);
+
+    /* Either side: an established NDP was torn down.
+     *   reason   -- termination reason code (peer-initiated, timeout, ...)
+     *   ndp_id   -- NDP identifier of the terminated path
+     *   init_ndi -- initiator's NDI for this NDP */
+    void (* ndp_terminated)(uint8_t reason, uint8_t ndp_id,
+                            uint8_t init_ndi[WIFI_MAC_ADDR_LEN]);
+
+    /* TX completion for a host-queued NAN action frame (Follow-up, etc.).
+     *   context   -- opaque tag matching the original TX request
+     *   tx_status -- true on transmit success, false on failure */
+    void (* action_txdone)(uint32_t context, bool tx_status);
+
+    /* Initiator-side M2 RX indication. Blob fires this after parsing the
+     * Responder NDI from the M2 NDP attribute (Wi-Fi Aware v4.0 §9.5.16.1
+     * Table 82) and before invoking esp_nan_verify_ndp_resp_mic, so the
+     * host can populate ndl->peer_ndi for spec-correct PTK derivation
+     * (§7.1.3.5: PTK uses Data Interface addresses). */
+    void (* ndp_response_indication)(struct ndp_cb_peer_info *peer_info);
+    void (* receive_pasn)(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
+    uint32_t (* get_nira_len)(void);
+    int (* construct_nira)(uint8_t *frm);
+};
+
+/* Host helpers for NAN encrypted-datapath, registered via
+ * esp_nan_internal_register_secure_dp_funcs() at nan_app init.
+ * Security-gated fields are NULL when CONFIG_ESP_WIFI_NAN_SECURITY=n. */
+struct nan_secure_dp_funcs {
+    /* === Always-present helpers === */
+
+    /* Fired by the blob after a host-built NDP setup frame (M2/M4) is
+     * transmitted, so the host can advance its NDP setup state machine.
+     *   msg_type  -- 0x01 = M2 (NDP Response), 0x02 = M4 (Security Install)
+     *   tx_status -- true on TX success, false on failure */
+    void (*ndp_tx_done_cb)(uint8_t ndp_id, const uint8_t *peer_nmi,
+                           uint8_t msg_type, bool tx_status);
+
+    /* === Security-gated helpers (NULL when SECURITY=n) === */
+
+    /* --- Length getters: callers use these to size TX buffers before
+     *     invoking the matching construct_*() / get_*_key_desc helper. --- */
+
+    /* Byte length of the CSIA emitted for the union of the two cipher
+     * suite bitmaps (Wi-Fi Aware v4.0 §9.5.21.2). */
+    uint32_t (*get_csia_len)(uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
+
+    /* Byte length of a SCIA carrying @c num_pmkids 16-octet ND-PMKIDs
+     * (§9.5.21.4). */
+    uint32_t (*get_scia_len)(uint8_t num_pmkids);
+
+    /* Byte length of a NAN Shared Key Descriptor attribute (§9.5.21.5)
+     * with the given Key Data field length. */
+    uint32_t (*get_shared_key_desc_attr_len)(uint16_t key_data_len);
+
+    /* Byte length of the M4 Shared Key Descriptor including any
+     * encrypted KDE payload (GTK/IGTK/BIGTK). */
+    int (*ndp_security_install_get_shared_desc_len)(void);
+
+    /* --- CSIA / SCIA construction. Each writes a complete NAN
+     *     attribute (header + body) at @c frm and returns bytes
+     *     written, or -1 on error. --- */
+
+    /* Build CSIA from the negotiated own/peer cipher suite bitmaps. */
+    int (*construct_csia)(uint8_t *frm, uint8_t pub_id,
+                          uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
+
+    /* Build SCIA for a Publish SDF: emits one SCID per provisioned
+     * ND-PMKID so subscribers can recognise themselves (§9.5.21.4). */
+    int (*construct_scia_publish)(uint8_t *frm, uint8_t pub_id,
+                                  uint8_t num_pmkids,
+                                  const uint8_t pmkids[][ESP_WIFI_NAN_NDP_PMKID_LEN]);
+
+    /* Build SCIA for an NDP Request (M1): single SCID matching the
+     * (ndp_id, peer_nmi) credential the initiator selected. */
+    int (*construct_scia_ndp_req)(uint8_t *frm, uint8_t ndp_id,
+                                  const uint8_t *peer_nmi);
+
+    /* Build SCIA for an NDP Response (M2): echoes the SCID accepted
+     * by the responder. */
+    int (*construct_scia_ndp_resp)(uint8_t *frm, uint8_t ndp_id,
+                                   const uint8_t *peer_nmi);
+
+    /* --- Shared Key Descriptor builders (M1 / M2 / M3 / M4).
+     *     Each writes the full NAN Shared Key Descriptor attribute
+     *     (§9.5.21.5) into @c buf; the MIC field is left zeroed and
+     *     must be populated by the matching update_*_mic helper after
+     *     the rest of the frame body is in place. Return bytes
+     *     written, -1 on error. --- */
+
+    /* M1 (NDP Request): Nonce = INonce, no MIC required. */
+    int (*get_ndp_req_shared_key_desc)(uint8_t *buf, size_t buf_len,
+                                       uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M2 (NDP Response): Nonce = RNonce, MIC over M2 body. */
+    int (*get_ndp_resp_shared_key_desc)(uint8_t *buf, size_t buf_len,
+                                        uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M3 (NDP Confirm): MIC over (Auth_Token || M3 body). */
+    int (*get_ndp_confirm_shared_key_desc)(uint8_t *buf, size_t buf_len,
+                                           uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M4 (Security Install): install bit set; carries any GTK / IGTK /
+     * BIGTK KDEs encrypted under ND-KEK. */
+    int (*get_ndp_security_install_key_desc)(uint8_t *buf, size_t buf_len,
+                                             uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* Compute and cache SHA-256(M1_body)[0:16] in the (ndp_id, peer_nmi)
+     * NDL slot. The cached Authentication Token is later prepended when
+     * computing/verifying the M3 MIC (Wi-Fi Aware v4.0 §7.1.3.5). */
+    int (*capture_m1_auth_token)(const uint8_t *m1_body, size_t body_len,
+                                 uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* --- MIC compute (TX path). Fill the Key MIC field in
+     *     @c key_desc_attr (which sits inside @c m*_body) using
+     *     ND-KCK derived for this NDP. Return 0 on success. --- */
+
+    /* M2 MIC: HMAC over the entire M2 body. */
+    int (*update_ndp_resp_mic)(uint8_t *m2_body, size_t body_len,
+                               uint8_t *key_desc_attr,
+                               uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M3 MIC: HMAC over (cached M1 Auth_Token || M3 body). */
+    int (*update_ndp_confirm_mic)(uint8_t *m3_body, size_t body_len,
+                                  uint8_t *key_desc_attr,
+                                  uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M4 MIC: HMAC over the entire M4 body. */
+    int (*update_ndp_security_install_mic)(uint8_t *m4_body, size_t body_len,
+                                           uint8_t *key_desc_attr,
+                                           uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* --- MIC verify (RX path). Recompute the expected Key MIC over
+     *     the same input as the matching update_* helper and compare
+     *     against the value in @c key_desc_attr. Return 0 on pass,
+     *     -1 on mismatch -- caller tears down the NDP on -1. --- */
+
+    /* M2 MIC verify (initiator). */
+    int (*verify_ndp_resp_mic)(uint8_t *m2_body, size_t body_len,
+                               uint8_t *key_desc_attr,
+                               uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M3 MIC verify (responder; uses cached M1 Auth_Token). */
+    int (*verify_ndp_confirm_mic)(uint8_t *m3_body, size_t body_len,
+                                  uint8_t *key_desc_attr,
+                                  uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* M4 MIC verify (initiator). */
+    int (*verify_ndp_security_install_mic)(uint8_t *m4_body, size_t body_len,
+                                           uint8_t *key_desc_attr,
+                                           uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* --- RX-path attribute parsers. --- */
+
+    /* Parse CSIA from a received NDP setup frame and populate the
+     * negotiated cipher-suite bitmap in @c param. */
+    void (*parse_ndp_csia)(void *frm, size_t buf_len, wifi_nan_security_params_t *param);
+
+    /* Parse SCIA from a received NDP setup frame and populate the
+     * selected ND-PMKID + Publish ID in @c param. */
+    void (*parse_ndp_scia)(void *frm, size_t buf_len, wifi_nan_security_params_t *param);
+
+    /* Parse the NAN Shared Key Descriptor attribute from a received
+     * M2/M3/M4 frame: advances the NDL replay counter, captures the
+     * peer Nonce, decrypts KDE payloads, and installs GTK/IGTK/BIGTK
+     * as applicable. */
+    void (*parse_ndp_key_desc)(void *frm, size_t buf_len, uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* Parse security-related attributes from an inbound Publish SDF
+     * (CSIA + SCIA list) and populate @c security so the subscriber
+     * state machine can pick a compatible credential. */
+    esp_err_t (*parse_publish_security)(const uint8_t *attrs, size_t attrs_len,
+                                        wifi_nan_peer_sdf_security_t *security);
+
+    /* Derives ND-PMK + ND-PMKID for each credential in sec_cfg->creds[] and
+     * writes one entry per credential into out_derived[0..num_credentials).
+     * Caller passes service_name + the original publish/subscribe security
+     * cfg. out_derived must point at an array of at least
+     * ESP_WIFI_NAN_MAX_CREDS_PER_SVC entries. All inputs are treated as
+     * read-only. Returns ESP_FAIL or NULL when CONFIG_ESP_WIFI_NAN_SECURITY=n. */
+    esp_err_t (*derive_security_params)(const char *service_name,
+                                        const wifi_nan_discovery_security_params_t *sec_cfg,
+                                        wifi_nan_security_params_t *out_derived);
+
+    /* Returns the cipher-suite bitmap negotiated for an in-flight NDP,
+     * or 0 if the NDP is open. Used by RX/TX paths to decide whether
+     * to apply CCMP/GCMP and which key length to use. */
+    uint16_t (*get_ndp_security_csid)(uint8_t ndp_id, const uint8_t *peer_nmi);
+};
 
 /**
   * @brief WiFi log level
@@ -46,7 +368,7 @@ typedef struct {
   */
 typedef enum {
     WIFI_LOG_NONE = 0,
-    WIFI_LOG_ERROR ,      /*enabled by default*/
+    WIFI_LOG_ERROR,       /*enabled by default*/
     WIFI_LOG_WARNING,     /*enabled by default*/
     WIFI_LOG_INFO,        /*enabled by default*/
     WIFI_LOG_DEBUG,       /*can be set in menuconfig*/
@@ -73,7 +395,6 @@ typedef enum {
 #define WIFI_LOG_SUBMODULE_IOCTL (1<<1) /*logs related to API calling*/
 #define WIFI_LOG_SUBMODULE_CONN  (1<<2) /*logs related to connecting*/
 #define WIFI_LOG_SUBMODULE_SCAN  (1<<3) /*logs related to scanning*/
-
 
 /**
  * @brief Initialize Wi-Fi Driver
@@ -214,7 +535,6 @@ esp_err_t esp_wifi_internal_wapi_deinit(void);
   *    - others  : failed to register the callback
   */
 esp_err_t esp_wifi_internal_reg_netstack_buf_cb(wifi_netstack_buf_ref_cb_t ref, wifi_netstack_buf_free_cb_t free);
-
 
 /**
   * @brief     The WiFi RX callback function
@@ -370,7 +690,7 @@ esp_err_t esp_wifi_internal_esp_wifi_he_md5_check(const char *md5);
   *
   * @return    A pointer to the memory allocated on success, NULL on failure
   */
-void *wifi_malloc( size_t size );
+void *wifi_malloc(size_t size);
 
 /**
   * @brief     Reallocate a chunk of memory for WiFi driver
@@ -382,7 +702,7 @@ void *wifi_malloc( size_t size );
   *
   * @return    A pointer to the memory allocated on success, NULL on failure
   */
-void *wifi_realloc( void *ptr, size_t size );
+void *wifi_realloc(void *ptr, size_t size);
 
 /**
   * @brief     Callocate memory for WiFi driver
@@ -394,7 +714,7 @@ void *wifi_realloc( void *ptr, size_t size );
   *
   * @return    A pointer to the memory allocated on success, NULL on failure
   */
-void *wifi_calloc( size_t n, size_t size );
+void *wifi_calloc(size_t n, size_t size);
 
 /**
   * @brief     Update WiFi MAC time
@@ -403,7 +723,7 @@ void *wifi_calloc( size_t n, size_t size );
   *
   * @return    Always returns ESP_OK
   */
-typedef esp_err_t (* wifi_mac_time_update_cb_t)( uint32_t time_delta );
+typedef esp_err_t (* wifi_mac_time_update_cb_t)(uint32_t time_delta);
 
 /**
   * @brief     Update WiFi MAC time
@@ -412,7 +732,7 @@ typedef esp_err_t (* wifi_mac_time_update_cb_t)( uint32_t time_delta );
   *
   * @return    Always returns ESP_OK
   */
-esp_err_t esp_wifi_internal_update_mac_time( uint32_t time_delta );
+esp_err_t esp_wifi_internal_update_mac_time(uint32_t time_delta);
 
 /**
   * @brief     Set current WiFi log level
@@ -489,6 +809,9 @@ esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *pr
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG : invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT : No connection between STA and AP
   */
 esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t aid, uint8_t *primary, uint8_t *second);
 
@@ -500,6 +823,9 @@ esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t
   *
   * @return
   *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG : invalid argument
+  *    - ESP_ERR_WIFI_NOT_STARTED : WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_CONNECT : No connection between STA and AP
   */
 esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
 
@@ -539,7 +865,6 @@ void esp_wifi_power_domain_on(void);
  */
 void esp_wifi_power_domain_off(void);
 
-
 #if (CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_MODEM_RETENTION_BY_REGDMA)
 /**
   * @brief     Get wifi mac sleep retention hardware context configuration and size
@@ -549,6 +874,26 @@ void esp_wifi_power_domain_off(void);
   * @return    A pointer that point to wifi mac sleep renteiton hardware context configuration table
   */
 void * esp_wifi_internal_mac_retention_context_get(int *config_size);
+#endif
+
+#if CONFIG_MAC_BB_PD && SOC_PM_MODEM_RETENTION_BY_REGDMA
+/**
+ * @brief Attach Wi-Fi MAC sleep retention (REGDMA) linked list after allocation.
+ *
+ * @return
+ *    - ESP_OK on success
+ *    - error code from sleep retention otherwise
+ */
+esp_err_t esp_wifi_internal_mac_sleep_retention_attach(void);
+
+/**
+ * @brief Detach Wi-Fi MAC sleep retention (REGDMA) linked list before free.
+ *
+ * @return
+ *    - ESP_OK on success
+ *    - error code from sleep retention otherwise
+ */
+esp_err_t esp_wifi_internal_mac_sleep_retention_detach(void);
 #endif
 
 #if CONFIG_MAC_BB_PD
@@ -618,13 +963,18 @@ esp_err_t esp_wifi_internal_set_spp_amsdu(wifi_interface_t ifidx, bool spp_cap, 
 void esp_wifi_internal_update_light_sleep_default_params(int min_freq_mhz, int max_freq_mhz);
 
 /**
- * @brief   Set the delay time for wifi to enter the sleep state when light sleep
+ * @brief   Update WIFI modem sleep default parameters
+ */
+void esp_wifi_internal_update_modem_sleep_default_params(void);
+
+/**
+ * @brief   Set the min active time for wifi to enter the sleep state when light sleep
  *
- * @param   return_to_sleep_delay: minimum timeout time  for waiting to receive
+ * @param   min_active_time: minimum timeout time  for waiting to receive
  *                      data, when no data is received during the timeout period,
  *                      the wifi enters the sleep process.
  */
-void esp_wifi_set_sleep_delay_time(uint32_t return_to_sleep_delay);
+void esp_wifi_set_sleep_min_active_time(uint32_t min_active_time);
 
 /**
  * @brief   Set wifi keep alive time
@@ -632,6 +982,17 @@ void esp_wifi_set_sleep_delay_time(uint32_t return_to_sleep_delay);
  * @param   keep_alive_time: keep alive time
  */
 void esp_wifi_set_keep_alive_time(uint32_t keep_alive_time);
+
+/**
+  * @brief      Set the min broadcast data wait time for wifi to enter the sleep state
+  *
+  * @attention  Default sleep wait broadcast data time is 15000, Uint µs.
+  *
+  * @param      time: When the station knows through the beacon that the AP
+  *                   will send broadcast packet, it will wait for a minimum of
+  *                   wait_broadcast_data_time before entering the sleep process.
+  */
+void esp_wifi_set_sleep_wait_broadcast_data_time(uint32_t time);
 
 /**
  * @brief   Configure wifi beacon montior default parameters
@@ -696,26 +1057,32 @@ esp_err_t esp_nan_internal_subscribe_service(const wifi_nan_subscribe_cfg_t *sub
   *
   * @attention  This API should be called after WIFI_EVENT_NAN_SVC_MATCH event is received.
   *
-  * @param      fup_params  Configuration parameters for sending a Follow-up to the Peer.
+  * @param[in]  fup_params  Configuration parameters for sending a Follow-up to the Peer.
+  * @param[out] context Context returned for Follow-up frame to be matched in Tx done.
+  * @param[in]  params_i Optional internal-only extras (NPBA / wrapped Shared Key Descriptor).
+  *                      If NULL, follow-up is sent with provided `fup_params->ssi`.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_send_followup(const wifi_nan_followup_params_t *fup_params);
+esp_err_t esp_nan_internal_send_followup(wifi_nan_followup_params_t *fup_params, uint32_t *context,
+                                         extra_params_internal_t *params_i);
 
 /**
   * @brief      Send Datapath Request to the Publisher with matching service
   *
   * @attention  This API should be called after WIFI_EVENT_NAN_SVC_MATCH event is received.
   *
-  * @param      req  NAN Datapath Request parameters.
+  * @param[in]      req  NAN Datapath Request parameters.
+  * @param[out]     ndp_id  Pointer to the NDP ID in the NAN Datapath Request.
+  * @param[in]      ipv6_identifier IPV6 Address Identifier to be sent in the NDPE attribute.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *ndp_id);
+esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *ndp_id, uint8_t ipv6_identifier[8]);
 
 /**
   * @brief      Send Datapath Response to accept or reject the received request
@@ -723,12 +1090,13 @@ esp_err_t esp_nan_internal_datapath_req(wifi_nan_datapath_req_t *req, uint8_t *n
   * @attention  This API should be called on the Publisher after receiving WIFI_EVENT_NDP_INDICATION event.
   *
   * @param      resp  NAN Datapath Response parameters.
+  * @param      ipv6_identifier IPV6 Address Identifier to be sent in the NDPE attribute.
   *
   * @return
   *    - ESP_OK: succeed
   *    - others: failed
   */
-esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp);
+esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp, uint8_t ipv6_identifier[8]);
 
 /**
   * @brief      End NAN Datapath that is active
@@ -742,6 +1110,156 @@ esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp);
   *    - others: failed
   */
 esp_err_t esp_nan_internal_datapath_end(wifi_nan_datapath_end_req_t *req);
+
+/**
+  * @brief      End NAN Datapath that is active
+  *
+  * @attention  This API should be called after receiving WIFI_EVENT_NDP_CONFIRM event.
+  *
+  * @param      req  NAN Datapath end request parameters.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_nan_internal_register_callbacks(struct nan_sync_callbacks *cb);
+
+/**
+  * @brief Register the NAN secure-datapath helper table with the WiFi libraries.
+  *
+  * Pass a pointer to a static struct populated by the host; pass NULL to
+  * deregister at deinit time.
+  *
+  * @param fns Pointer to populated nan_secure_dp_funcs (or NULL to deregister)
+  * @return ESP_OK on success
+  */
+esp_err_t esp_nan_internal_register_secure_dp_funcs(struct nan_secure_dp_funcs *fns);
+
+/**
+ * @brief      Install NAN pairwise/group key into Wi-Fi firmware key table
+ *
+
+ * @param[in]  alg       Cipher algorithm identifier (for CCMP use 3)
+ * @param[in]  addr      Peer address used for key lookup (NDI for NAN data path)
+ * @param[in]  key_idx   Key index (use 0 for pairwise key)
+ * @param[in]  set_tx    Set key as TX key when non-zero
+ * @param[in]  seq       Initial sequence/RSC value (typically 8 bytes)
+ * @param[in]  seq_len   Length of seq in bytes
+ * @param[in]  key       Key material
+ * @param[in]  key_len   Key length in bytes
+ * @param[in]  key_flag  Key usage flags bitmask
+ *
+ * @return     0 on success, negative value on failure
+ */
+int esp_wifi_set_nan_key_internal(int alg, uint8_t *addr, int key_idx, int set_tx,
+                                  uint8_t *seq, size_t seq_len, uint8_t *key, size_t key_len, int key_flag);
+
+/**
+  * @brief     Connect WiFi station to the AP.
+  *
+  * @attention 1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_MODE: WiFi mode error
+  *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
+  *    - ESP_ERR_WIFI_SSID: SSID of AP which station connects is invalid
+  */
+esp_err_t esp_wifi_connect_internal(void);
+
+/**
+  * @brief     Disconnect WiFi station from the AP.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi was not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
+  *    - ESP_FAIL: other WiFi internal errors
+  *
+  */
+esp_err_t esp_wifi_disconnect_internal(void);
+
+/**
+ * @brief      Get length of NAN Identity Resolution Attribute (NIRA)
+ *
+ * @return     Length in bytes
+ */
+uint32_t esp_nan_get_nira_len(void);
+
+/**
+ * @brief      Construct dummy NAN Identity Resolution Attribute (NIRA)
+ *
+ * @param[out] frm     Buffer to write the attribute to
+ *
+ * @return     Number of bytes written
+ */
+int esp_nan_construct_nira(uint8_t *frm);
+
+/**
+  * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.
+  *
+  * @return 32-bit time value, unit: microsecond. This time is only 32 bits, which means it will overflow and reset to 0 after approximately 71 minutes.
+  *         Therefore, when using it, the time difference between two consecutive readings should not be too long.
+  */
+uint32_t esp_wifi_internal_get_mac_clock_time(void);
+
+#if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+/**
+ * @brief   Configure wifi beacon offset default parameters
+ *
+ * @param   config: the configuration parameters for wifi beacon offset
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_beacon_offset_configure(wifi_beacon_offset_config_t *config);
+#endif
+
+/**
+ * @brief empty init pm_beacon_offset.
+ */
+void pm_beacon_offset_funcs_empty_init(void);
+
+/**
+ * @brief This API is not context safe and enable easy fragment just for internal test only.
+ */
+void esp_wifi_enable_easy_fragment(bool enable);
+
+/**
+  * @brief     Function signature for received Vendor-Specific Information Element callback with return value.
+  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
+  * @param     type Information element type, based on frame type received.
+  * @param     sa Source 802.11 address.
+  * @param     vnd_ie Pointer to the vendor specific element data received.
+  * @param     rssi Received signal strength indication.
+  */
+typedef esp_err_t (*esp_vendor_ie_cb_with_ret_t)(void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
+
+/**
+  * @brief     Register Vendor-Specific Information Element monitoring callback.
+  *
+  * @param     cb   Callback function with return value
+  * @param     ctx  Context argument, passed to callback function.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_set_vendor_ie_with_ret_cb(esp_vendor_ie_cb_with_ret_t cb, void *ctx);
+
+/**
+ * @brief Weak Wi-Fi assert hook.
+ *
+ * The Wi-Fi library provides a weak default implementation. Applications may
+ * define this symbol to override the default behavior for debugging.
+ *
+ * @note This is intended for diagnostics only and is not part of normal Wi-Fi
+ * operation.
+ */
+void wifi_assert(bool expr, const char *file, const char *func, int line);
 
 #ifdef __cplusplus
 }

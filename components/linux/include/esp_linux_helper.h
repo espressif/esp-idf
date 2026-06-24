@@ -5,11 +5,7 @@
  */
 #pragma once
 
-/*
- * NOTE: This file is deprecated and will be removed in the future.
- *       Use include sys/cdefs.h instead, it will also include
- *       the corresponding libbsd header. TODO: IDF-9391
- */
+#warning "This file is deprecated, as __containerof is available via libbsd. To use __containerof, include string.h."
 
 #ifdef __cplusplus
 extern "C" {

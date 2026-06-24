@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,9 @@
 #include "driver/gpio.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
-#include "soc/adc_periph.h"
+#include "esp_private/regi2c_ctrl.h"
+#include "hal/adc_periph.h"
+#include "hal/adc_ll.h"
 
 static const char *TAG = "adc_common";
 
@@ -29,7 +31,7 @@ esp_err_t adc_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_
 
     bool found = false;
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
-        for (int j = 0; j < SOC_ADC_MAX_CHANNEL_NUM; j++) {
+        for (int j = 0; j < ADC_LL_MAX_CHANNEL_NUM; j++) {
             if (adc_channel_io_map[i][j] == io_num) {
                 *channel = j;
                 *unit_id = i;
@@ -56,9 +58,13 @@ esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * con
 ---------------------------------------------------------------*/
 static __attribute__((constructor)) void adc_hw_calibration(void)
 {
-    adc_apb_periph_claim();
+    ANALOG_CLOCK_ENABLE();
     //Calculate all ICode
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
+        if (ADC_LL_NEED_APB_PERIPH_CLAIM(i)) {
+            adc_apb_periph_claim();
+        }
+
         adc_hal_calibration_init(i);
         for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
             /**
@@ -73,6 +79,10 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
             }
 #endif
         }
+        if (ADC_LL_NEED_APB_PERIPH_CLAIM(i)) {
+            adc_apb_periph_free();
+        }
     }
+    ANALOG_CLOCK_DISABLE();
 }
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED

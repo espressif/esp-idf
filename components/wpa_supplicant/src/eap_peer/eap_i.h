@@ -311,6 +311,7 @@ struct eap_sm {
 	size_t eapKeyDataLen;
 	struct wpabuf *lastRespData;
 	const struct eap_method *m;
+	bool eap_process_started;
 };
 
 typedef enum {

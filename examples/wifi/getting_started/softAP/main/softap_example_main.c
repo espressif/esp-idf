@@ -28,6 +28,12 @@
 #define EXAMPLE_ESP_WIFI_CHANNEL   CONFIG_ESP_WIFI_CHANNEL
 #define EXAMPLE_MAX_STA_CONN       CONFIG_ESP_MAX_STA_CONN
 
+#if CONFIG_ESP_GTK_REKEYING_ENABLE
+#define EXAMPLE_GTK_REKEY_INTERVAL CONFIG_ESP_GTK_REKEY_INTERVAL
+#else
+#define EXAMPLE_GTK_REKEY_INTERVAL 0
+#endif
+
 static const char *TAG = "wifi softAP";
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -39,8 +45,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                  MAC2STR(event->mac), event->aid);
     } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
         wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
-        ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
-                 MAC2STR(event->mac), event->aid);
+        ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d, reason=%d",
+                 MAC2STR(event->mac), event->aid, event->reason);
     }
 }
 
@@ -75,9 +81,16 @@ void wifi_init_softap(void)
             .pmf_cfg = {
                     .required = true,
             },
+#ifdef CONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT
+            .bss_max_idle_cfg = {
+                .period = WIFI_AP_DEFAULT_MAX_IDLE_PERIOD,
+                .protected_keep_alive = 1,
+            },
+#endif
+            .gtk_rekey_interval = EXAMPLE_GTK_REKEY_INTERVAL,
         },
     };
-    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
+    if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0 && wifi_config.ap.authmode != WIFI_AUTH_OWE) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 

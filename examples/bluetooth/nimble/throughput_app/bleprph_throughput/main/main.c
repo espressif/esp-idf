@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,16 +16,30 @@
 #include "services/gap/ble_svc_gap.h"
 #include "gatts_sens.h"
 #include "../src/ble_hs_hci_priv.h"
+#include "esp_timer.h"
 
-#define NOTIFY_THROUGHPUT_PAYLOAD 500
-#define MIN_REQUIRED_MBUF         2 /* Assuming payload of 500Bytes and each mbuf can take 292Bytes.  */
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+static uint8_t ext_adv_pattern[] = {
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x0c, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '_', 'p', 'r', 'p', 'h'
+};
+
+static uint8_t s_current_phy;
+#endif
+
+static const char *device_name = "nimble_prph";
+
+#define NOTIFY_THROUGHPUT_PAYLOAD 509 /* MTU(512) - ATT notify header(3) */
+#define MIN_REQUIRED_MBUF         2 /* Assuming payload of 500Bytes and each mbuf can take 292Bytes. */
+#define NOTIFY_PIPELINE_DEPTH    15 /* Number of notifications to keep in flight for throughput */
 #define PREFERRED_MTU_VALUE       512
 #define LL_PACKET_TIME            2120
 #define LL_PACKET_LENGTH          251
 #define MTU_DEF                   512
 
 static const char *tag = "bleprph_throughput";
-static const char *device_name = "nimble_prph";
 static SemaphoreHandle_t notify_sem;
 static bool notify_state;
 static int notify_test_time = 60;
@@ -35,6 +49,33 @@ static uint8_t dummy;
 static uint8_t gatts_addr_type;
 
 static int gatts_gap_event(struct ble_gap_event *event, void *arg);
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
+{
+    int rc = ble_gap_set_prefered_default_le_phy(tx_phys_mask, rx_phys_mask);
+    if (rc == 0) {
+        ESP_LOGI(tag, "Default LE PHY set successfully");
+    } else {
+        ESP_LOGE(tag, "Failed to set default LE PHY");
+    }
+}
+
+static struct os_mbuf *
+ext_get_data(uint8_t ext_adv_pattern[], int size)
+{
+    struct os_mbuf *data;
+    int rc;
+
+    data = os_msys_get_pkthdr(size, 0);
+    assert(data);
+
+    rc = os_mbuf_append(data, ext_adv_pattern, size);
+    assert(rc == 0);
+
+    return data;
+}
+#endif
 
 /**
  * Utility function to log an array of bytes.
@@ -83,6 +124,54 @@ bleprph_print_conn_desc(struct ble_gap_conn_desc *desc)
                 desc->sec_state.bonded);
 }
 
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+/**
+ * Enables advertising with the following parameters:
+ *     o General discoverable mode.
+ *     o Undirected connectable mode.
+ */
+static void
+ext_bleprph_advertise(void)
+{
+    struct ble_gap_ext_adv_params params;
+    struct os_mbuf *data = NULL;
+    uint8_t instance = 0;
+    int rc;
+
+    /* use defaults for non-set params */
+    memset (&params, 0, sizeof(params));
+
+    params.scannable = 1;
+    params.legacy_pdu = 1;
+
+    /*enable connectable advertising for all Phy*/
+    params.connectable = 1;
+
+    /* advertise using random addr */
+    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+
+    /* Set current phy; get mbuf for scan rsp data; fill mbuf with scan rsp data */
+    params.primary_phy = BLE_HCI_LE_PHY_1M_PREF_MASK ;
+    params.secondary_phy = BLE_HCI_LE_PHY_2M_PREF_MASK ;
+    data = ext_get_data(ext_adv_pattern, sizeof(ext_adv_pattern));
+    params.sid = 0;
+
+    params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+
+    /* configure instance 0 */
+    rc = ble_gap_ext_adv_configure(instance, &params, NULL,
+                                   gatts_gap_event, NULL);
+    assert (rc == 0);
+
+    rc = ble_gap_ext_adv_set_data(instance, data);
+    assert (rc == 0);
+
+    /* start advertising */
+    rc = ble_gap_ext_adv_start(instance, 0, 0);
+    assert (rc == 0);
+}
+#else
 /*
  * Enables advertising with parameters:
  *     o General discoverable mode
@@ -139,6 +228,7 @@ gatts_advertise(void)
         return;
     }
 }
+#endif
 
 /* This function sends notifications to the client */
 static void
@@ -188,9 +278,8 @@ notify_task(void *arg)
                     do {
                         om = ble_hs_mbuf_from_flat(payload, sizeof(payload));
                         if (om == NULL) {
-                            /* Memory not available for mbuf */
-                            ESP_LOGE(tag, "No MBUFs available from pool, retry..");
-                            vTaskDelay(100 / portTICK_PERIOD_MS);
+                            /* Memory not available for mbuf, yield briefly */
+                            vTaskDelay(1);
                         }
                     } while (om == NULL);
 
@@ -199,18 +288,14 @@ notify_task(void *arg)
                         ESP_LOGE(tag, "Error while sending notification; rc = %d", rc);
                         notify_count -= 1;
                         xSemaphoreGive(notify_sem);
-                        /* Most probably error is because we ran out of mbufs (rc = 6),
-                         * increase the mbuf count/size from menuconfig. Though
-                         * inserting delay is not good solution let us keep it
-                         * simple for time being so that the mbufs get freed up
-                         * (?), of course assumption is we ran out of mbufs */
-                        vTaskDelay(10 / portTICK_PERIOD_MS);
+                        /* Yield to let mbufs free up */
+                        vTaskDelay(1);
                     }
                 } else {
-                    ESP_LOGE(tag, "Not enough OS_MBUFs available; reduce notify count ");
                     xSemaphoreGive(notify_sem);
                     notify_count -= 1;
-                    vTaskDelay(10 / portTICK_PERIOD_MS);
+                    /* Yield briefly to let mbufs free up */
+                    vTaskDelay(1);
                 }
 
                 end_time = esp_timer_get_time();
@@ -251,7 +336,11 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising */
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+            ext_bleprph_advertise();
+#else
             gatts_advertise();
+#endif
         }
 
         rc = ble_hs_hci_util_set_data_len(event->connect.conn_handle,
@@ -268,7 +357,12 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
         ESP_LOGI(tag, "disconnect; reason = %d", event->disconnect.reason);
 
         /* Connection terminated; resume advertising */
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+        ble_gap_ext_adv_stop(0);
+        ext_bleprph_advertise();
+#else
         gatts_advertise();
+#endif
         break;
 
     case BLE_GAP_EVENT_CONN_UPDATE:
@@ -282,7 +376,11 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_ADV_COMPLETE:
         ESP_LOGI(tag, "adv complete ");
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+        ext_bleprph_advertise();
+#else
         gatts_advertise();
+#endif
         break;
 
     case BLE_GAP_EVENT_SUBSCRIBE:
@@ -295,7 +393,14 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
                 ESP_LOGI(tag, "notify test time = %d", *(int *)arg);
                 notify_test_time = *((int *)arg);
             }
-            xSemaphoreGive(notify_sem);
+            if (notify_state) {
+                /* Prime the notification pipeline to allow multiple in-flight
+                 * notifications. This enables the controller to fill connection
+                 * events with back-to-back PDUs for maximum throughput. */
+                for (int i = 0; i < NOTIFY_PIPELINE_DEPTH; i++) {
+                    xSemaphoreGive(notify_sem);
+                }
+            }
         } else if (event->subscribe.attr_handle != notify_handle) {
             notify_state = event->subscribe.cur_notify;
         }
@@ -321,7 +426,15 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.conn_handle,
                  event->mtu.value);
         break;
-    }
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    case BLE_GAP_EVENT_PHY_UPDATE_COMPLETE:
+        ESP_LOGI(tag, "PHY Update Event: Status=%d, Conn_Handle=0x%04X, TX_PHY=%d, RX_PHY=%d",
+            event->phy_updated.status, event->phy_updated.conn_handle,
+            event->phy_updated.tx_phy, event->phy_updated.rx_phy);
+
+#endif
+        }
     return 0;
 }
 
@@ -329,6 +442,9 @@ static void
 gatts_on_sync(void)
 {
     int rc;
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    uint8_t all_phy;
+#endif
     uint8_t addr_val[6] = {0};
 
     rc = ble_hs_id_infer_auto(0, &gatts_addr_type);
@@ -338,7 +454,18 @@ gatts_on_sync(void)
     ESP_LOGI(tag, "Device Address: ");
     print_addr(addr_val);
     /* Begin advertising */
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    s_current_phy = BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK | BLE_HCI_LE_PHY_CODED_PREF_MASK;;
+
+    all_phy =  BLE_HCI_LE_PHY_1M_PREF_MASK | BLE_HCI_LE_PHY_2M_PREF_MASK | BLE_HCI_LE_PHY_CODED_PREF_MASK;
+
+    set_default_le_phy(all_phy, all_phy);
+
+    ext_bleprph_advertise();
+#else
     gatts_advertise();
+#endif
+
 }
 
 static void
@@ -385,14 +512,19 @@ void app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize Notify Task */
-    xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, NULL);
-
+    BaseType_t task_rc = xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, NULL);
+    if (task_rc != pdPASS) {
+        ESP_LOGE(tag, "Failed to create notify_task (rc=%d)", task_rc);
+        return ;
+    }
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
 
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     /* Start the task */
     nimble_port_freertos_init(gatts_host_task);

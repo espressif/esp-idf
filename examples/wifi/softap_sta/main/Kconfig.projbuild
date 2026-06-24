@@ -25,8 +25,14 @@ menu "Example Configuration"
         config ESP_MAX_STA_CONN_AP
             int "Maximal STA connections"
             default 4
+            range 1 4 if IDF_TARGET_ESP32C2
+            range 1 15
             help
-                Max number of the STA connects to AP.
+                Maximum number of STAs allowed to connect to the soft-AP (wifi_config_t.ap.max_connection).
+                Upper bound matches ESP_WIFI_MAX_CONN_NUM in esp_wifi_types_native.h:
+                1-4 on ESP32-C2, 1-15 on other Wi-Fi chips.
+                Soft-AP and ESP-NOW share encryption keys; see Wi-Fi driver documentation
+                if ESP-NOW is enabled.
     endmenu
 
     menu "STA Configuration"
@@ -56,9 +62,9 @@ menu "Example Configuration"
             default ESP_WIFI_AUTH_WPA2_PSK
             help
                 The weakest authmode to accept in the scan mode.
-                This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present
+                This value defaults to ESP_WIFI_AUTH_WPA2_PSK in case password is present
                 and ESP_WIFI_AUTH_OPEN is used. Please select ESP_WIFI_AUTH_WEP / ESP_WIFI_AUTH_WPA_PSK
-                incase AP is operating in WEP / WPA mode.
+                in case AP is operating in WEP / WPA mode.
 
             config ESP_WIFI_AUTH_OPEN
                 bool "OPEN"

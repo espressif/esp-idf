@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +8,7 @@
 
 /* If memory protection interrupts are meant to trigger a panic, attach them to panic handler,
  * else, attach them to the interrupt handler. */
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    #define MEMPROT_ISR _panic_handler
-#else
-    #define MEMPROT_ISR _interrupt_handler
-#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#define MEMPROT_ISR _interrupt_handler
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     #define ASTDBG_ISR _panic_handler

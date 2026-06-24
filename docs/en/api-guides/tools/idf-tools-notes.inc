@@ -45,6 +45,14 @@ On Linux and macOS, it is recommended to install CMake using the OS-specific pac
 
 ---
 
+.. tool-esp-clang-libs-notes
+
+---
+
+.. tool-esp-clangd-notes
+
+---
+
 .. tool-ninja-notes
 
 On Linux and macOS, it is recommended to install ninja using the OS-specific package manager (like apt, yum, brew, etc.). However, for convenience it is possible to install ninja using idf_tools.py along with the other tools.
@@ -80,6 +88,11 @@ Some ESP-specific instructions for running QEMU for Xtensa chips are here: https
 .. tool-qemu-riscv32-notes
 
 Some ESP-specific instructions for running QEMU for RISC-V chips are here: https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32c3/README.md
+
+---
+
+.. tool-esp-idf-configdep-notes
+
 
 ---
 

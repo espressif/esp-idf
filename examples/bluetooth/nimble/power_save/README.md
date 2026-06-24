@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 Bluetooth Power Save Example
 =================================
@@ -22,6 +22,16 @@ This example contains some build configurations. For each configuration, a few c
 - `sdkconfig.32m.esp32h2`: ESP32H2 uses main XTAL as low power clock in light sleep enabled.
 - `sdkconfig.defaults.esp32c2`: ESP32C2 uses 32kHz XTAL as low power clock in light sleep enabled.
 - `sdkconfig.26m.esp32c2`: ESP32C2 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32c5`: ESP32C5 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.48m.esp32c5`: ESP32C5 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32c61`: ESP32C61 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.40m.esp32c61`: ESP32C61 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32s31`: ESP32S31 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.40m.esp32s31`: ESP32S31 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32h4`: ESP32H4 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.32m.esp32h4`: ESP32H4 uses main XTAL as low power clock in light sleep enabled.
+- `sdkconfig.defaults.esp32h21`: ESP32H21 uses 32kHz XTAL as low power clock in light sleep enabled.
+- `sdkconfig.32m.esp32h21`: ESP32H21 uses main XTAL as low power clock in light sleep enabled.
 
 ## How to use example
 
@@ -141,3 +151,4 @@ X: This feature is currently not supported.
 - ESP32 does not support the use of main XTAL in light sleep mode, so an external 32kHz crystal is required.
 - ESP32C2 support XTAL frequency of 26MHz and 40MHz, the XTAL frequency is set to 26MHz in default.
 - ESP32C2 support external 32kHz crystal by connecting the crystal to the chip through pin0
+- ESP32C6 REQUIRES CONFIG_ESP_PHY_MAC_BB_PD to be set for light sleep to run properly

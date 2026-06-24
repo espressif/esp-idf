@@ -6,12 +6,12 @@ Overview
 
 A Bluetooth HID device is a device providing the service of human or other data input and output to and from a Bluetooth HID Host. Users can use the Bluetooth HID Device APIs to make devices like keyboards, mice, joysticks and so on.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-Check :example:`bluetooth/bluedroid/classic_bt` folder in ESP-IDF examples, which contains the following application:
+- :example:`bluetooth/bluedroid/classic_bt/bt_hid_mouse_device` demonstrates how to implement a Bluetooth HID device by simulating a Bluetooth HID mouse device that periodically sends reports to a remote Bluetooth HID host.
 
-* This is an example of Bluetooth HID mouse device. The device running this example can be discovered and connected by a Bluetooth HID Host device such as a PC, and the pointer will move left and right after HID connection is established - :example:`bluetooth/bluedroid/classic_bt/bt_hid_mouse_device`
+- :example:`bluetooth/esp_hid_device` demonstrates how to create a Bluetooth Classic or Bluetooth LE HID device, which can function as a mouse or a remote control, depending on the mode set by the user.
 
 API Reference
 -------------

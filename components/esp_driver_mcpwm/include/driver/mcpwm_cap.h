@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,12 @@ typedef struct {
     int group_id;                         /*!< Specify from which group to allocate the capture timer */
     mcpwm_capture_clock_source_t clk_src; /*!< MCPWM capture timer clock source */
     uint32_t resolution_hz;               /*!< Resolution of capture timer */
+    /// Extra configuration flags for capture timer
+    struct extra_mcpwm_capture_timer_flags {
+        uint32_t allow_pd: 1;       /*!< Set to allow power down. When this flag set, the driver will backup/restore the MCPWM registers before/after entering/exist sleep mode.
+                                      By this approach, the system can power off MCPWM's power domain.
+                                      This can save power, but at the expense of more RAM being consumed.*/
+    } flags;                        /*!< Extra configuration flags for timer */
 } mcpwm_capture_timer_config_t;
 
 /**
@@ -85,7 +91,7 @@ esp_err_t mcpwm_capture_timer_disable(mcpwm_cap_timer_handle_t cap_timer);
 esp_err_t mcpwm_capture_timer_start(mcpwm_cap_timer_handle_t cap_timer);
 
 /**
- * @brief Start MCPWM capture timer
+ * @brief Stop MCPWM capture timer
  *
  * @param[in] cap_timer MCPWM capture timer, allocated by `mcpwm_new_capture_timer()`
  * @return
@@ -138,15 +144,10 @@ typedef struct {
     uint32_t prescale;               /*!< Prescale of input signal, effective frequency = cap_input_clk/prescale */
 
     /// Extra configuration flags for capture channel
-    struct extra_flags {
+    struct extra_capture_channel_flags {
         uint32_t pos_edge: 1;          /*!< Whether to capture on positive edge */
         uint32_t neg_edge: 1;          /*!< Whether to capture on negative edge */
-        uint32_t pull_up: 1;           /*!< Whether to pull up internally */
-        uint32_t pull_down: 1;         /*!< Whether to pull down internally */
         uint32_t invert_cap_signal: 1; /*!< Invert the input capture signal */
-        uint32_t io_loop_back: 1;      /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t keep_io_conf_at_exit: 1; /*!< For debug/test, whether to keep the GPIO configuration when capture channel is deleted.
-                                            By default, driver will reset the GPIO pin at exit. */
     } flags;                           /*!< Extra configuration flags for capture channel */
 } mcpwm_capture_channel_config_t;
 
@@ -241,6 +242,20 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
  *      - ESP_FAIL: Trigger software catch failed because of other error
  */
 esp_err_t mcpwm_capture_channel_trigger_soft_catch(mcpwm_cap_channel_handle_t cap_channel);
+
+/**
+ * @brief Get the last captured value of the MCPWM capture channel
+ *
+ * @note  To convert the count value to a time, user can use `mcpwm_capture_timer_get_resolution` to get the resolution of the capture timer.
+ *
+ * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`
+ * @param[out] value Returned capture value
+ * @return
+ *      - ESP_OK: Get capture value successfully
+ *      - ESP_ERR_INVALID_ARG: Get capture value failed because of invalid argument
+ *      - ESP_FAIL: Get capture value failed because of other error
+ */
+esp_err_t mcpwm_capture_get_latched_value(mcpwm_cap_channel_handle_t cap_channel, uint32_t *value);
 
 #ifdef __cplusplus
 }

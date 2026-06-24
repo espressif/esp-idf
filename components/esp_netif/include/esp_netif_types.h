@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,10 +34,12 @@ extern "C" {
 #define ESP_ERR_ESP_NETIF_MLD6_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x0B
 #define ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED       ESP_ERR_ESP_NETIF_BASE + 0x0C
 #define ESP_ERR_ESP_NETIF_DHCPS_START_FAILED    ESP_ERR_ESP_NETIF_BASE + 0x0D
+#define ESP_ERR_ESP_NETIF_TX_FAILED             ESP_ERR_ESP_NETIF_BASE + 0x0E
+
 
 
 /**
- * @brief Definition of ESP-NETIF bridge controll
+ * @brief Definition of ESP-NETIF bridge control
  */
 #define ESP_NETIF_BR_FLOOD      -1
 #define ESP_NETIF_BR_DROP        0
@@ -89,18 +91,28 @@ typedef enum{
     ESP_NETIF_IP_REQUEST_RETRY_TIME         = 52,   /**< Request IP address retry counter */
     ESP_NETIF_VENDOR_CLASS_IDENTIFIER       = 60,   /**< Vendor Class Identifier of a DHCP client */
     ESP_NETIF_VENDOR_SPECIFIC_INFO          = 43,   /**< Vendor Specific Information of a DHCP server */
+    ESP_NETIF_CAPTIVEPORTAL_URI             = 114,  /**< Captive Portal Identification */
 } esp_netif_dhcp_option_id_t;
 
 /** IP event declarations */
 typedef enum {
     IP_EVENT_STA_GOT_IP,               /*!< station got IP from connected AP */
     IP_EVENT_STA_LOST_IP,              /*!< station lost IP and the IP is reset to 0 */
-    IP_EVENT_AP_STAIPASSIGNED,         /*!< soft-AP assign an IP to a connected station */
+    IP_EVENT_ASSIGNED_IP_TO_CLIENT,    /*!< DHCP server assigned an IP to a connected client */
+    IP_EVENT_AP_STAIPASSIGNED __attribute__((deprecated("Use IP_EVENT_ASSIGNED_IP_TO_CLIENT instead")))
+                              = IP_EVENT_ASSIGNED_IP_TO_CLIENT,         /*!< compatibility enum,
+                                            soft-AP assign an IP to a connected station
+                                            @deprecated Use IP_EVENT_ASSIGNED_IP_TO_CLIENT instead */
     IP_EVENT_GOT_IP6,                  /*!< station or ap or ethernet interface v6IP addr is preferred */
     IP_EVENT_ETH_GOT_IP,               /*!< ethernet got IP from connected AP */
     IP_EVENT_ETH_LOST_IP,              /*!< ethernet lost IP and the IP is reset to 0 */
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
+    IP_EVENT_TX_RX,                    /*!< transmitting/receiving data packet */
+    IP_EVENT_NETIF_UP,                 /*!< unified netif status: interface became up */
+    IP_EVENT_NETIF_DOWN,               /*!< unified netif status: interface went down */
+    IP_EVENT_CUSTOM_GOT_IP,            /*!< custom netif got IP (for user-defined interfaces) */
+    IP_EVENT_CUSTOM_LOST_IP,           /*!< custom netif lost IP (for user-defined interfaces) */
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -127,7 +139,7 @@ typedef struct {
  */
 typedef struct {
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
-    esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gatway IP address */
+    esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gateway IP address */
     bool ip_changed;                 /*!< Whether the assigned IP has changed or not */
 } ip_event_got_ip_t;
 
@@ -144,13 +156,57 @@ typedef struct {
     bool preferred;                 /*!< The default preference of the address */
 } ip_event_add_ip6_t;
 
-/** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
+/** Event structure for IP_EVENT_ASSIGNED_IP_TO_CLIENT event
+ *
+ * This event is posted when a local DHCP server (e.g., SoftAP) assigns an IPv4
+ * address to a client. The structure carries the assigned IPv4 address and the
+ * client's MAC address. If DHCP server support is disabled via Kconfig
+ * (CONFIG_LWIP_DHCPS=n), the \c ip field is not populated.
+ *
+ * If enabled by Kconfig (CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME=y), the
+ * optional DHCP client hostname (option 12) is also included in the \c hostname
+ * field. The hostname is a null-terminated UTF-8 string and may be empty if the
+ * client did not provide one. Its maximum length (including the terminator) is
+ * bounded by CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN; longer hostnames are truncated.
+ * The value is sanitized to contain only letters, digits, dot, dash, and
+ * underscore. Applications should treat this field as untrusted input.
+ */
 typedef struct {
     esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
     uint8_t mac[6];    /*!< MAC address of the connected client */
-} ip_event_ap_staipassigned_t;
+    /* Client hostname as provided via DHCP option 12 (if available). */
+#ifdef CONFIG_LWIP_DHCPS_REPORT_CLIENT_HOSTNAME
+#define ESP_NETIF_HOSTNAME_MAX_LEN CONFIG_LWIP_DHCPS_MAX_HOSTNAME_LEN
+#else
+#define ESP_NETIF_HOSTNAME_MAX_LEN 1 /* Minimal footprint when hostname reporting is disabled - just null terminator for API compatibility */
+#endif
+    char hostname[ESP_NETIF_HOSTNAME_MAX_LEN]; /*!< Optional DHCP client hostname (may be empty string) */
+} ip_event_assigned_ip_to_client_t;
 
+/** Compatibility event structure for ip_event_ap_staipassigned_t event
+ *  @deprecated Use ip_event_assigned_ip_to_client_t instead */
+__attribute__((deprecated("Use ip_event_assigned_ip_to_client_t instead of ip_event_ap_staipassigned_t")))
+typedef ip_event_assigned_ip_to_client_t ip_event_ap_staipassigned_t;
+
+typedef enum {
+    ESP_NETIF_TX = 0,  // Data is being transmitted.
+    ESP_NETIF_RX = 1,  // Data is being received.
+} esp_netif_tx_rx_direction_t;
+
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+/** Event structure for IP_EVENT_TRANSMIT and IP_EVENT_RECEIVE */
+typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
+    size_t len;             /*!< Length of the data */
+    esp_netif_tx_rx_direction_t dir; /*!< Directions for data transfer >*/
+} ip_event_tx_rx_t;
+#endif
+
+/** Event structure for IP_EVENT_LINK_UP/DOWN and IP_EVENT_NETIF_UP/DOWN */
+typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
+} ip_event_netif_status_t;
 
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_CLIENT = 1 << 0,
@@ -161,6 +217,7 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_IS_PPP = 1 << 5,
     ESP_NETIF_FLAG_IS_BRIDGE = 1 << 6,
     ESP_NETIF_FLAG_MLDV6_REPORT = 1 << 7,
+    ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED = 1 << 8,
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {
@@ -200,6 +257,7 @@ typedef struct esp_netif_inherent_config {
                                           A higher value of route_prio indicates
                                           a higher priority */
     bridgeif_config_t *bridge_info;  /*!< LwIP bridge configuration */
+    uint16_t mtu;                    /*!< Optional initial MTU (bytes). 0 = use stack default */
 } esp_netif_inherent_config_t;
 
 typedef struct esp_netif_config esp_netif_config_t;
@@ -226,6 +284,7 @@ struct esp_netif_driver_ifconfig {
     esp_err_t (*transmit)(void *h, void *buffer, size_t len); /*!< transmit function pointer */
     esp_err_t (*transmit_wrap)(void *h, void *buffer, size_t len, void *netstack_buffer); /*!< transmit wrap function pointer */
     void (*driver_free_rx_buffer)(void *h, void* buffer); /*!< free rx buffer function pointer */
+    esp_err_t (*driver_set_mac_filter)(void *h, const uint8_t *mac, size_t mac_len, bool add); /*!< set mac filter function pointer */
 };
 
 typedef struct esp_netif_driver_ifconfig esp_netif_driver_ifconfig_t;

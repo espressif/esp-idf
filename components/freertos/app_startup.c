@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,6 @@
 /* Required by esp_psram_extram_reserve_dma_pool() */
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
-#endif
-#ifdef CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
 #endif
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #include "esp_gdbstub.h"                    /* Required by esp_gdbstub_init() */
@@ -57,7 +54,7 @@ CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE should be identic
 // -------------------- Declarations -----------------------
 
 static void main_task(void* args);
-static const char* APP_START_TAG = "app_start";
+ESP_LOG_ATTR_TAG(APP_START_TAG, "app_start");
 
 // ------------------ CPU0 App Startup ---------------------
 
@@ -111,16 +108,10 @@ void esp_startup_start_app_other_cores(void)
     }
 
     // Wait for CPU0 to start FreeRTOS before progressing
-    extern volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS];
+    extern volatile unsigned port_xSchedulerRunning[CONFIG_FREERTOS_NUMBER_OF_CORES];
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
-
-#if CONFIG_APPTRACE_ENABLE
-    // [refactor-todo] move to esp_system initialization
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
-#endif
 
 #if CONFIG_ESP_INT_WDT
     // Initialize the interrupt watch dog for CPU1.
@@ -144,29 +135,29 @@ void esp_startup_start_app_other_cores(void)
  * - main_task will self delete if app_main returns
  * ------------------------------------------------------------------------------------------------------------------ */
 
-static const char* MAIN_TAG = "main_task";
+ESP_LOG_ATTR_TAG(MAIN_TAG, "main_task");
 
-#if !CONFIG_FREERTOS_UNICORE
-static volatile bool s_other_cpu_startup_done = false;
-static bool other_cpu_startup_idle_hook_cb(void)
+/* This function has to guarantee that all CPUs have finished the FreeRTOS initialization
+* and the startup stack is not in use.
+*/
+static void wait_for_all_cores_ready(void)
 {
-    s_other_cpu_startup_done = true;
-    return true;
+#if !CONFIG_FREERTOS_UNICORE
+    extern volatile unsigned port_uxCoreStartupDone[CONFIG_FREERTOS_NUMBER_OF_CORES];
+    bool all_cpus_has_been_started;
+    do {
+        all_cpus_has_been_started = true;
+        for (int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES; cpu++) {
+            all_cpus_has_been_started &= port_uxCoreStartupDone[cpu] != 0;
+        }
+    } while (!all_cpus_has_been_started);
+#endif // !CONFIG_FREERTOS_UNICORE
 }
-#endif
 
-static void main_task(void* args)
+// Reinitialize the startup stack heaps, so it can be used for heap allocation.
+static void reclaim_startup_stack_memory_for_heap(void)
 {
-    ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
-#if !CONFIG_FREERTOS_UNICORE
-    // Wait for FreeRTOS initialization to finish on other core, before replacing its startup stack
-    esp_register_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
-    while (!s_other_cpu_startup_done) {
-        ;
-    }
-    esp_deregister_freertos_idle_hook_for_cpu(other_cpu_startup_idle_hook_cb, !xPortGetCoreID());
-#endif
-
+    wait_for_all_cores_ready();
     // [refactor-todo] check if there is a way to move the following block to esp_system startup
     heap_caps_enable_nonos_stack_heaps();
 
@@ -180,6 +171,13 @@ static void main_task(void* args)
         }
     }
 #endif
+}
+
+static void main_task(void* args)
+{
+    ESP_LOGI(MAIN_TAG, "Started on CPU%d", (int)xPortGetCoreID());
+
+    reclaim_startup_stack_memory_for_heap();
 
     // Initialize TWDT if configured to do so
 #if CONFIG_ESP_TASK_WDT_INIT

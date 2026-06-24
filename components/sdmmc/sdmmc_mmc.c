@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
 
 #include <inttypes.h>
 #include <unistd.h>
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_mmc";
 
@@ -28,14 +28,12 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     esp_err_t err = ESP_OK;
     uint8_t* ext_csd = NULL;
     size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    err = esp_dma_capable_malloc(EXT_CSD_MMC_SIZE, &dma_mem_info, (void *)&ext_csd, &actual_size);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);
-        return err;
+    ext_csd = heap_caps_malloc(EXT_CSD_MMC_SIZE, MALLOC_CAP_DMA);
+    if (!ext_csd) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
-
+    actual_size = heap_caps_get_allocated_size(ext_csd);
     uint32_t sectors = 0;
 
     ESP_LOGD(TAG, "MMC version: %d", card->csd.mmc_ver);
@@ -69,7 +67,7 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     }
     /* For MMC cards, use speed value from EXT_CSD */
     card->csd.tr_speed = card->max_freq_khz * 1000;
-    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%d, is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
+    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%"PRId32", is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
     card->max_freq_khz = MIN(card->max_freq_khz, card->host.max_freq_khz);
 
     if (card->host.flags & SDMMC_HOST_FLAG_8BIT) {
@@ -257,13 +255,13 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
     /* ensure EXT_CSD buffer is available before starting any SD-card operation */
     uint8_t* ext_csd = NULL;
     size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    esp_err_t err = esp_dma_capable_malloc(EXT_CSD_MMC_SIZE, &dma_mem_info, (void *)&ext_csd, &actual_size);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);
-        return err;
+    esp_err_t err = ESP_FAIL;
+    ext_csd = heap_caps_malloc(EXT_CSD_MMC_SIZE, MALLOC_CAP_DMA);
+    if (!ext_csd) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
+    actual_size = heap_caps_get_allocated_size(ext_csd);
 
     /* ensure card is in transfer state before read ext_csd */
     uint32_t status;
@@ -272,8 +270,8 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
         ESP_LOGE(TAG, "%s: send_status returned 0x%x", __func__, err);
         goto out;
     }
-    status = ((status & MMC_R1_CURRENT_STATE_MASK) >> MMC_R1_CURRENT_STATE_POS);
-    if (status != MMC_R1_CURRENT_STATE_TRAN) {
+
+    if (MMC_R1_CURRENT_STATE_STATUS(status) != MMC_R1_CURRENT_STATE_TRAN) {
         ESP_LOGE(TAG, "%s: card not in transfer state", __func__);
         err = ESP_ERR_INVALID_STATE;
         goto out;

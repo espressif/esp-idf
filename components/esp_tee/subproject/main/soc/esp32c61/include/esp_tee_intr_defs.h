@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
+
+#include "soc/interrupt_matrix_reg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// LP_APM_M0_INTR
+#define TEE_SECURE_INT_APM_MASK_0  (0x00040000)
+// HP_APM_M0_INTR, HP_APM_M1_INTR, HP_APM_M2_INTR
+// HP_APM_M3_INTR, CPU_APM_M0_INTR, CPU_APM_M1_INTR
+#define TEE_SECURE_INT_APM_MASK_1  (0x0000003F)
+
+// LP_RTC_TIMER_INTR
+#define TEE_SECURE_INT_MASK_0      (TEE_SECURE_INT_APM_MASK_0 | 0x00008000)
+#if !CONFIG_SECURE_TEE_TEST_MODE
+// SHA_INTR
+#define TEE_SECURE_INT_MASK_1      (TEE_SECURE_INT_APM_MASK_1 | 0x10000000)
+#else
+// + TG0_T0_INTR (only for test mode)
+#define TEE_SECURE_INT_MASK_1      (TEE_SECURE_INT_APM_MASK_1 | 0x10004000)
+#endif
+// ECC_INTR, ECDSA_INTR
+#define TEE_SECURE_INT_MASK_2      (0x00000003)
+
+#define INTMTX_STATUS_REG_0        (INTERRUPT_CORE0_INT_STATUS_REG_0_REG)
+#define INTMTX_STATUS_REG_1        (INTERRUPT_CORE0_INT_STATUS_REG_1_REG)
+#define INTMTX_STATUS_REG_2        (INTERRUPT_CORE0_INT_STATUS_REG_2_REG)
+
+#define INTMTX_SEC_STATUS_REG            (INTERRUPT_CORE0_SECURE_STATUS_REG)
+#define INTMTX_SIG_IDX_ASSERT_IN_SEC_REG (INTERRUPT_CORE0_SIG_IDX_ASSERT_IN_SEC_REG)
+
+#ifdef __cplusplus
+}
+#endif

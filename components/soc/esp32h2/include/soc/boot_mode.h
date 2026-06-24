@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #ifndef _SOC_BOOT_MODE_H_
@@ -38,8 +38,6 @@
 
 /*Diagnostic Mode+UART0 download Mode*/
 #define IS_0111(v)                              (((v)&0x0f)==0x07)
-
-
 
 #define BOOT_MODE_GET()                         (GPIO_REG_READ(GPIO_STRAP_REG))
 

@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp32s3/rom/rtc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -16,7 +16,7 @@
 #include "esp_hw_log.h"
 #include "esp_cpu.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {

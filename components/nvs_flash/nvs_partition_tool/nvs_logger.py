@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import binascii
 import json
 import sys
-from typing import Any, Dict, List, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Union
 
-from nvs_parser import NVS_Entry, NVS_Partition, nvs_const
+from nvs_parser import nvs_const
+from nvs_parser import NVS_Entry
+from nvs_parser import NVS_Partition
 
 
 class NVS_Logger:
@@ -207,7 +212,7 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
                 + f', Span: {entry.metadata["span"]:03d}'
                 + f', Chunk Index: {entry.metadata["chunk_index"]:03d}'
                 + f', CRC32: {crc}'
-                + f' | {entry.key} : ',
+                + f' | {entry.key}: ',
                 end='',
             )
 
@@ -244,7 +249,7 @@ def dump_everything(nvs_partition: NVS_Partition, written_only: bool = False) ->
             if entry.metadata['span'] != 1:
                 for i, data in enumerate(entry.children):
                     nvs_log.info(
-                        f'{"": >6}0x{(i*nvs_const.entry_size):03x}  {data.dump_raw()}'
+                        f'{"": >6}0x{(i * nvs_const.entry_size):03x}  {data.dump_raw()}'
                     )
 
         # Dump trailing empty entries
@@ -272,9 +277,9 @@ def list_namespaces(nvs_partition: NVS_Partition) -> None:
                 ns[entry.data['value']] = entry.key
 
     # Print found namespaces
-    nvs_log.info(nvs_log.bold(f'Index : Namespace'))
+    nvs_log.info(nvs_log.bold(f'Index: Namespace'))
     for ns_index in sorted(ns):
-        nvs_log.info(f' {ns_index:03d}  :', nvs_log.cyan(ns[ns_index]))
+        nvs_log.info(f' {ns_index:03d}:', nvs_log.cyan(ns[ns_index]))
 
 
 def dump_key_value_pairs(nvs_partition: NVS_Partition) -> None:
@@ -324,7 +329,10 @@ def dump_key_value_pairs(nvs_partition: NVS_Partition) -> None:
                             chunk_index = f'[{entry.metadata["chunk_index"] - 128}]'
                         else:
                             chunk_index = f'[{entry.metadata["chunk_index"]}]'
-                    data = str(tmp)
+                    elif entry.metadata['type'] == 'string':
+                        data = str(tmp, 'utf-8')
+                    else:
+                        data = str(tmp)
 
                 if entry.metadata['namespace'] not in ns:
                     continue
@@ -456,3 +464,49 @@ def print_json(nvs: NVS_Partition) -> None:
             return json.JSONEncoder.default(self, obj)
 
     print(json.dumps(nvs.toJSON(), cls=NVSEncoder, indent=2))
+
+
+def print_minimal_json(nvs_partition: NVS_Partition) -> None:
+    # Get namespace list
+    ns = {}
+    for page in nvs_partition.pages:
+        for entry in page.entries:
+            if entry.state == 'Written' and entry.metadata['namespace'] == 0:
+                ns[entry.data['value']] = entry.key
+
+    # Prepare key-value pairs for JSON output
+    key_value_pairs = []
+    for page in nvs_partition.pages:
+        for entry in page.entries:
+            if entry.state == 'Written' and entry.metadata['namespace'] != 0:
+                data = ''
+                entry_type = entry.metadata['type']
+                if entry_type not in [
+                    'string',
+                    'blob_data',
+                    'blob_index',
+                    'blob',
+                ]:  # Non-variable length entry
+                    data = entry.data['value']
+                elif entry_type == 'blob_index':
+                    continue
+                else:  # Variable length entries
+                    tmp = b''
+                    for e in entry.children:  # Merge all children entries
+                        tmp += bytes(e.raw)
+                    tmp = tmp[: entry.data['size']]  # Discard padding
+                    if entry_type == 'string':
+                        data = str(tmp.rstrip(b'\x00'), 'utf-8')
+                    else:
+                        data = binascii.b2a_base64(tmp, newline=False).decode('ascii')
+
+                if entry.metadata['namespace'] in ns:
+                    key_value_pairs.append({
+                        'namespace': ns[entry.metadata['namespace']],
+                        'key': entry.key,
+                        'encoding': entry_type,  # Add type of data
+                        'data': data,  # Ensure data ends with a newline
+                        'state': entry.state,
+                        'is_empty': entry.is_empty if hasattr(entry, 'is_empty') else None,
+                    })
+    nvs_log.info(json.dumps(key_value_pairs, indent=4))

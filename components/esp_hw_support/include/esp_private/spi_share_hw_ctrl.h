@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,16 +12,10 @@
 #include "soc/spi_periph.h"
 #include "soc/gpio_struct.h"
 #include "esp_private/periph_ctrl.h"
-#include "freertos/FreeRTOS.h"
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define SPI_COMMON_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_COMMON_RCC_CLOCK_ATOMIC()
 #endif
 
 #define BUS_LOCK_DEBUG  0
@@ -29,7 +23,7 @@ extern "C" {
 #if BUS_LOCK_DEBUG
 #define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)  assert(x)
 #else
-#define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)
+#define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)  (void)(x)
 #endif
 
 #define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
@@ -49,7 +43,7 @@ typedef void (*bg_ctrl_func_t)(void*);
  * Call this if your driver wants to manage a SPI peripheral.
  *
  * @param host Peripheral to claim
- * @param source The caller indentification string.
+ * @param source The caller identification string.
  *
  * @return True if peripheral is claimed successfully; false if peripheral already is claimed.
  */
@@ -237,7 +231,7 @@ esp_err_t spi_bus_init_lock(spi_bus_lock_handle_t *out_lock, const spi_bus_lock_
  * Free the resources used by an SPI bus lock.
  *
  * @note All attached devices should have been unregistered before calling this
- *       funciton.
+ *       function.
  *
  * @param lock Handle to the lock to free.
  */
@@ -334,7 +328,7 @@ bool spi_bus_lock_touch(spi_bus_lock_dev_handle_t dev_handle);
  *  - ESP_OK: on success
  *  - ESP_ERR_INVALID_ARG: timeout is not portMAX_DELAY
  */
-esp_err_t spi_bus_lock_acquire_start(spi_bus_lock_dev_handle_t dev_handle, TickType_t wait);
+esp_err_t spi_bus_lock_acquire_start(spi_bus_lock_dev_handle_t dev_handle, uint32_t wait);
 
 /**
  * Release the bus acquired. Will pass the acquiring processor to other blocked
@@ -395,7 +389,7 @@ esp_err_t spi_bus_lock_bg_request(spi_bus_lock_dev_handle_t dev_handle);
  *  - ESP_ERR_INVALID_STATE: The device is not the acquiring bus.
  *  - ESP_ERR_INVALID_ARG: Timeout is not portMAX_DELAY.
  */
-esp_err_t spi_bus_lock_wait_bg_done(spi_bus_lock_dev_handle_t dev_handle, TickType_t wait);
+esp_err_t spi_bus_lock_wait_bg_done(spi_bus_lock_dev_handle_t dev_handle, uint32_t wait);
 
 /**
  * Handle interrupt and closure of last operation. Should be called at the beginning of the ISR,
@@ -437,7 +431,7 @@ bool spi_bus_lock_bg_entry(spi_bus_lock_handle_t lock);
  * @return false if retry is required, indicating that there is pending BG request.
  *         otherwise true and quit ISR is allowed.
  */
-bool spi_bus_lock_bg_exit(spi_bus_lock_handle_t lock, bool wip, BaseType_t* do_yield);
+bool spi_bus_lock_bg_exit(spi_bus_lock_handle_t lock, bool wip, int* do_yield);
 
 /**
  * Check whether there is device asking for the acquiring device, and the desired
@@ -447,7 +441,7 @@ bool spi_bus_lock_bg_exit(spi_bus_lock_handle_t lock, bool wip, BaseType_t* do_y
  *        there is no acquiring device.
  *
  * @param lock The SPI bus lock.
- * @param out_dev_lock The recommended device for hte next operation. It's the new
+ * @param out_dev_lock The recommended device for the next operation. It's the new
  *        acquiring device when found, otherwise a device that has active BG request.
  *
  * @return true if the ISR need to quit (new acquiring device has no active BG
@@ -487,7 +481,7 @@ bool spi_bus_lock_bg_clear_req(spi_bus_lock_dev_handle_t dev_lock);
  * Check if there is any active BG requests.
  *
  * @param lock The SPI bus lock.
- * @return true if any device has active BG requst, otherwise false.
+ * @return true if any device has active BG request, otherwise false.
  */
 bool spi_bus_lock_bg_req_exist(spi_bus_lock_handle_t lock);
 

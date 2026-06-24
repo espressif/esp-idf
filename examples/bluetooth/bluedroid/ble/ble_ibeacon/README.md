@@ -1,9 +1,64 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF iBeacon demo
 
 From welcoming people as they arrive at a sporting event to providing information about a nearby museum exhibit, iBeacon opens a new world of possibilities for location awareness, and countless opportunities for interactivity between iOS devices and iBeacon hardware.
+
+## Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           iBeacon System                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐                           ┌──────────────────┐
+    │  iBeacon Sender  │                           │ iBeacon Receiver │
+    │   (Advertiser)   │                           │    (Scanner)     │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  ─────────── Sender Operation ───────────    │
+             │                                              │
+             │  1. Initialize BLE                           │
+             │  2. Configure iBeacon Data:                  │
+             │     - Proximity UUID (16 bytes)              │
+             │     - Major ID (2 bytes)                     │
+             │     - Minor ID (2 bytes)                     │
+             │     - TX Power (1 byte)                      │
+             │  3. Start Advertising                        │
+             │                                              │
+             │  ─────────── Broadcasting ───────────        │
+             │                                              │
+             │     iBeacon Advertisement Packet             │
+             │  ═══════════════════════════════════════════>│
+             │     (Broadcast every ~100ms)                 │
+             │                                              │
+             │                                              │  ─── Receiver ───
+             │                                              │
+             │                                              │  1. Start Scan
+             │                                              │  2. Receive Adv
+             │                                              │  3. Parse iBeacon:
+             │                                              │     - UUID
+             │                                              │     - Major/Minor
+             │                                              │     - RSSI
+             │                                              │  4. Calculate
+             │                                              │     Distance
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │  iBeacon Sender  │                           │ iBeacon Receiver │
+    └──────────────────┘                           └──────────────────┘
+
+
+                    ┌─────────────────────────────────┐
+                    │    iBeacon Packet Structure     │
+                    ├─────────────────────────────────┤
+                    │  Prefix:     9 bytes            │
+                    │  UUID:       16 bytes           │
+                    │  Major:      2 bytes            │
+                    │  Minor:      2 bytes            │
+                    │  TX Power:   1 byte             │
+                    └─────────────────────────────────┘
+```
 
 ## How to Use Example
 

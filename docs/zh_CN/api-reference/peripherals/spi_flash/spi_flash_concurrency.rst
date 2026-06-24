@@ -13,13 +13,13 @@ SPI1 flash 并发约束
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
-    在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`auto-suspend`，查看详细信息。
+    在 {IDF_TARGET_NAME} 上，配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。该选项是可选的，依赖于特定的 SPI Flash 型号，因此默认是关闭的。请参阅 :ref:`auto-suspend`，查看详细信息。
 
     禁用该选项时，在读取/写入/擦除 flash 期间，必须禁用 cache。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
-    在 {IDF_TARGET_NAME} 上，启用配置选项 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` （默认禁用）和 :ref:`CONFIG_SPIRAM_RODATA` （默认禁用）后将允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`xip_from_psram`，查看详细信息。
+    在 {IDF_TARGET_NAME} 上，启用配置选项 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` （默认禁用）后将允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`xip_from_psram`，查看详细信息。
 
     禁用该选项时，在读取/写入/擦除 flash 期间，必须禁用 cache。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
 
@@ -40,7 +40,7 @@ SPI1 flash 并发约束
 
     .. note::
 
-        同时启用 :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` 和 :ref:`CONFIG_SPIRAM_RODATA` 选项后，不会禁用 cache。
+        启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后，不会禁用 cache。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
@@ -76,6 +76,13 @@ IRAM 安全中断处理程序
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 如果在注册时没有设置 ``ESP_INTR_FLAG_IRAM`` 标志，当禁用 cache 时，将不会执行中断处理程序。一旦 cache 恢复，非 IRAM 安全的中断将重新启用，中断处理程序随即再次正常运行。这意味着，只要禁用了 cache，就不会发生相应的硬件事件。
+
+.. only:: SOC_DMA_CAN_ACCESS_FLASH
+
+    当 DMA 也可以访问 Flash 中的数据时
+    ----------------------------------
+
+    当 DMA 正在从 Flash 中读取数据时，来自 SPI1 的擦/写操作优先级会更高，如果 Flash 的 auto-suspend 功能没有开启，将会导致 DMA 读到错误的数据。建议在擦写 Flash 之前先停止 DMA 对 Flash 的访问。如果 DMA 不可以停止，比如 LCD 需要持续刷新保存在 Flash 中的图像数据，建议将此类数据拷贝到 PSRAM 或者内部的 SRAM 中。
 
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND

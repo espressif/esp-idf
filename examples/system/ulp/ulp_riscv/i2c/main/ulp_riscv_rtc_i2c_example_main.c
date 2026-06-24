@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -52,7 +52,7 @@ void app_main(void)
     int32_t pressure = 0;
     oss_mode_t oss_mode;
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    uint32_t causes = esp_sleep_get_wakeup_causes();
 
     /* Not a wakeup from ULP
      * Initialize RTC I2C
@@ -61,8 +61,8 @@ void app_main(void)
      * Load the ULP firmware
      * Go to deep sleep
      */
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
-        printf("Not a ULP-RISC V wakeup (cause = %d)\n", cause);
+    if (!(causes & BIT(ESP_SLEEP_WAKEUP_ULP))) {
+        printf("Not a ULP-RISC V wakeup (causes = %lx)\n", causes);
 
         /* Initialize RTC I2C */
         init_i2c();
@@ -76,7 +76,7 @@ void app_main(void)
         ulp_riscv_i2c_master_write_to_device(&data_wr, 1);
 
         /* Confirm that the sensor is alive
-         * The BMP180 returns the chip id 0x55 on quering reg addr 0xD0
+         * The BMP180 returns the chip id 0x55 on querying reg addr 0xD0
          */
         ulp_riscv_i2c_master_set_slave_reg_addr(BMP180_SENSOR_REG_ADDR_WHO_AM_I);
         ulp_riscv_i2c_master_read_from_device(&data_rd, 1);
@@ -103,7 +103,7 @@ void app_main(void)
 
         /* Calculate real temperature value */
         temperature = bmp180_calculate_real_temp((int32_t)ut_data);
-        printf("Real Temperature = %f deg celcius\n", (float)(temperature/10.0));
+        printf("Real Temperature = %f deg celsius\n", (float)(temperature/10.0));
 
         /* Calculate real pressure value */
         pressure = bmp180_calculate_real_pressure(up_data, (int32_t)ut_data, oss_mode);
@@ -120,7 +120,7 @@ void app_main(void)
     }
 
     /* ULP RISC-V read and detected a temperature or pressure above the limit */
-    if (cause == ESP_SLEEP_WAKEUP_ULP) {
+    if (causes & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         printf("ULP RISC-V woke up the main CPU\n");
 
         /* Pause ULP while we are using the RTC I2C from the main CPU */
@@ -138,7 +138,7 @@ void app_main(void)
         /* Calculate real temperature and pressure again */
         temperature = 0;
         temperature = bmp180_calculate_real_temp((int32_t)ulp_ut_data);
-        printf("New Real Temperature = %f deg celcius\n", (float)(temperature/10.0));
+        printf("New Real Temperature = %f deg celsius\n", (float)(temperature/10.0));
 
         /* Calculate real pressure value */
         pressure = 0;
@@ -283,19 +283,19 @@ static void bmp180_read_up_data(int32_t *up_data, oss_mode_t oss_mode)
     {
         case OSS_0:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_0;
-            wait = 5; // Wait atleast 4.5 msec
+            wait = 5; // Wait at least 4.5 msec
             break;
         case OSS_1:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_1;
-            wait = 8; // Wait atleast 7.5 msec
+            wait = 8; // Wait at least 7.5 msec
             break;
         case OSS_2:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_2;
-            wait = 14; // Wait atleast 13.5 msec
+            wait = 14; // Wait at least 13.5 msec
             break;
         case OSS_3:
             cmd = BMP180_SENSOR_CMD_READ_PRESSURE_OSS_3;
-            wait = 26; // Wait atleast 25.5 msec
+            wait = 26; // Wait at least 25.5 msec
             break;
     }
 

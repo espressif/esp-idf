@@ -39,7 +39,7 @@ extern int g_wpa_password_len;
 extern u8 *g_wpa_new_password;
 extern int g_wpa_new_password_len;
 
-extern char *g_wpa_ttls_phase2_type;
+extern const char *g_wpa_ttls_phase2_type;
 extern char *g_wpa_phase1_options;
 
 extern u8 *g_wpa_pac_file;
@@ -48,6 +48,11 @@ extern int g_wpa_pac_file_len;
 extern bool g_wpa_suiteb_certification;
 extern bool g_wpa_default_cert_bundle;
 extern int (*esp_crt_bundle_attach_fn)(void *conf);
+
+#ifndef CONFIG_TLS_INTERNAL_CLIENT
+extern char *g_wpa_domain_match;
+#endif
+extern uint32_t g_eap_method_mask;
 
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);

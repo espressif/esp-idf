@@ -4,8 +4,8 @@ Espressif's Frameworks
 
 Here you will find a collection of the official Espressif libraries and frameworks.
 
-Espressif Audio Development Framework
--------------------------------------
+Espressif Advanced Development Framework
+----------------------------------------
 
 The ESP-ADF is a comprehensive framework for audio applications including:
 
@@ -15,7 +15,7 @@ The ESP-ADF is a comprehensive framework for audio applications including:
 * Bluetooth speakers
 * Internet radios
 * Hands-free devices
-* Speech decognition
+* Speech recognition
 
 This framework is available on GitHub: `ESP-ADF <https://github.com/espressif/esp-adf>`_.
 
@@ -84,7 +84,7 @@ This solution is available on Github: `ESP-IoT-Solution on GitHub <https://githu
 ESP-Protocols
 -------------
 
-The `ESP-Protocols <https://github.com/espressif/esp-protocols>`_ repository contains a collection of protocol components for ESP-IDF. The code within ESP-Protocols is organized into separate components, allowing them to be easily integrated into an ESP-IDF project. Additionally, each component is available in `IDF Component Registry <https://components.espressif.com/>`_.
+The `ESP-Protocols <https://github.com/espressif/esp-protocols>`_ repository contains a collection of protocol components for ESP-IDF. The code within ESP-Protocols is organized into separate components, allowing them to be easily integrated into an ESP-IDF project. Additionally, each component is available in `ESP Component Registry <https://components.espressif.com/>`_.
 
 ESP-Protocols components:
 
@@ -92,9 +92,13 @@ ESP-Protocols components:
 
 * `mdns <https://components.espressif.com/component/espressif/mdns>`_ (mDNS) is a multicast UDP service that is used to provide local network service and host discovery. See the `mdns documentation <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html>`_.
 
-* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for ESP-IDF that contains implementation of WebSocket protocol client for ESP32. See the `esp_websocket_client documentation <https://docs.espressif.com/projects/esp-protocols/esp_websocket_client/docs/latest/index.html>`_. For detailes of WebSocket protocol client, see `WebSocket_protocol_client <https://datatracker.ietf.org/doc/html/rfc6455>`_.
+* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for ESP-IDF that contains implementation of WebSocket protocol client for ESP32. See the `esp_websocket_client documentation <https://docs.espressif.com/projects/esp-protocols/esp_websocket_client/docs/latest/index.html>`_. For details of WebSocket protocol client, see `WebSocket_protocol_client <https://datatracker.ietf.org/doc/html/rfc6455>`_.
 
 * `asio <https://components.espressif.com/component/espressif/asio>`_ is a cross-platform C++ library, see https://think-async.com/Asio/. It provides a consistent asynchronous model using a modern C++ approach. See the `asio documentation <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_.
+
+* `esp_wifi_remote <https://components.espressif.com/component/espressif/esp_wifi_remote>`_ is a Wi-Fi communication library that provides standard Wi-Fi API and networking of an external, Wi-Fi capable ESP32 chipset connected to the target device via a specified transport interface. See the :doc:`../api-guides/wifi-expansion`.
+
+* `esp-extconn <https://components.espressif.com/component/espressif/esp-extconn>`_ is a Wi-Fi communication library that provides external wireless connectivity (Wi-Fi and Bluetooth) for ESP chips that do not have built-in wireless capabilities. See the :doc:`../api-guides/wifi-expansion`.
 
 ESP-BSP
 -------
@@ -104,4 +108,4 @@ The `ESP-BSP <https://github.com/espressif/esp-bsp>`_ repository contains Board 
 ESP-IDF-CXX
 -----------
 
-`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ contains C++ wrappers for part of ESP-IDF. The focuses are on ease of use, safety, automatic resource management. They also move error checking from runtime to compile time to prevent running failure. There are C++ classes for ESP-Timer, I2C, SPI, GPIO and other peripherals or features of ESP-IDF. ESP-IDF-CXX is `available as a component <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ from the component registry. Please check the project's `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_ for more information.
+`ESP-IDF-CXX <https://github.com/espressif/esp-idf-cxx>`_ contains C++ wrappers for part of ESP-IDF. The focuses are on ease of use, safety, automatic resource management. They also move error checking from runtime to compile time to prevent running failure. There are C++ classes for ESP-Timer, I2C, SPI, GPIO and other peripherals or features of ESP-IDF. ESP-IDF-CXX is available as a component from `ESP Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`__. Please check the project's `README.md <https://github.com/espressif/esp-idf-cxx/blob/main/README.md>`_ for more information.

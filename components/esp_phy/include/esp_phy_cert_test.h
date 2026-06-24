@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 typedef enum {
     //11b
@@ -19,7 +20,7 @@ typedef enum {
     PHY_RATE_2M  = 0x1,
     PHY_RATE_5M5 = 0x2,
     PHY_RATE_11M = 0x3,
-    //11g
+    //11g,11a
     PHY_RATE_6M  = 0xb,
     PHY_RATE_9M  = 0xf,
     PHY_RATE_12M = 0xa,
@@ -37,6 +38,27 @@ typedef enum {
     PHY_RATE_MCS5 = 0x15,
     PHY_RATE_MCS6 = 0x16,
     PHY_RATE_MCS7 = 0x17,
+    //11ax
+    PHY_RATE_11AX_MCS0   = 0x20,
+    PHY_RATE_11AX_MCS1   = 0x21,
+    PHY_RATE_11AX_MCS2   = 0x22,
+    PHY_RATE_11AX_MCS3   = 0x23,
+    PHY_RATE_11AX_MCS4   = 0x24,
+    PHY_RATE_11AX_MCS5   = 0x25,
+    PHY_RATE_11AX_MCS6   = 0x26,
+    PHY_RATE_11AX_MCS7   = 0x27,
+    PHY_RATE_11AX_MCS8   = 0x28,
+    PHY_RATE_11AX_MCS9   = 0x29,
+    //11ac
+    PHY_RATE_VHT_MCS0 = 0x30,
+    PHY_RATE_VHT_MCS1 = 0x31,
+    PHY_RATE_VHT_MCS2 = 0x32,
+    PHY_RATE_VHT_MCS3 = 0x33,
+    PHY_RATE_VHT_MCS4 = 0x34,
+    PHY_RATE_VHT_MCS5 = 0x35,
+    PHY_RATE_VHT_MCS6 = 0x36,
+    PHY_RATE_VHT_MCS7 = 0x37,
+    PHY_RATE_VHT_MCS8 = 0x38,
     PHY_WIFI_RATE_MAX
 } esp_phy_wifi_rate_t;
 
@@ -63,7 +85,7 @@ typedef struct {
     uint32_t phy_rx_correct_count; /*!< The number of desired packets received */
     int phy_rx_rssi;               /*!< Average RSSI of desired packets */
     uint32_t phy_rx_total_count;   /*!< The number of total packets received */
-    uint32_t phy_rx_result_flag;   /*!< 0 means no RX info; 1 means the lastest Wi-Fi RX info; 2 means the lastest BLE RX info. */
+    uint32_t phy_rx_result_flag;   /*!< 0 means no RX info; 1 means the latest Wi-Fi RX info; 2 means the latest BLE RX info. */
 } esp_phy_rx_result_t;
 
 /**
@@ -120,7 +142,7 @@ void esp_phy_cbw40m_en(bool en);
 void esp_phy_wifi_tx(uint32_t chan, esp_phy_wifi_rate_t rate, int8_t backoff, uint32_t length_byte, uint32_t packet_delay, uint32_t packet_num);
 
 /**
- * @brief Test start/stop command, used to stop transmitting or reciving state.
+ * @brief Test start/stop command, used to stop transmitting or receiving state.
  *
  * @param value:
  *     Value should be set to 3 before TX/RX.
@@ -187,6 +209,10 @@ void esp_phy_bt_tx_tone(uint32_t start, uint32_t chan, uint32_t power);
  * @param rx_result: This struct for storing RX information;
  */
 void esp_phy_get_rx_result(esp_phy_rx_result_t *rx_result);
+
+#if CONFIG_SOC_WIFI_HE_SUPPORT
+void esp_phy_11ax_tx_set(uint32_t he_format, uint32_t pe, uint32_t giltf_num, uint32_t ru_index);
+#endif
 
 #ifdef __cplusplus
 }

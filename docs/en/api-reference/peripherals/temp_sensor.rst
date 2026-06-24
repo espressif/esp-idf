@@ -8,29 +8,9 @@ Introduction
 
 The {IDF_TARGET_NAME} has a built-in sensor used to measure the chip's internal temperature. The temperature sensor module contains an 8-bit Sigma-Delta analog-to-digital converter (ADC) and a digital-to-analog converter (DAC) to compensate for the temperature measurement.
 
-Due to restrictions of hardware, the sensor has predefined measurement ranges with specific measurement errors. See the table below for details.
-
-.. list-table::
-    :header-rows: 1
-    :widths: 50 50
-    :align: center
-
-    * - Predefined Range (°C)
-      - Error (°C)
-    * - 50 ~ 125
-      - < 3
-    * - 20 ~ 100
-      - < 2
-    * - -10 ~ 80
-      - < 1
-    * - -30 ~ 50
-      - < 2
-    * - -40 ~ 20
-      - < 3
-
 .. note::
 
-    The temperature sensor is designed primarily to measure the temperature changes inside the chip. The internal temperature of a chip is usually higher than the ambient temperature, and is affected by factors such as the microcontroller's clock frequency or I/O load, and the external thermal environment.
+    The temperature sensor is designed primarily to measure the temperature **inside** the silicon. The sensor can reflect the temperature changes very well but it can't give a precise measurement value. So it's not recommended to use it for ambient temperature measurement.
 
 Functional Overview
 -------------------
@@ -59,6 +39,7 @@ In order to install a built-in temperature sensor instance, the first thing is t
 
 - :cpp:member:`range_min`: The minimum value of the testing range you have evaluated.
 - :cpp:member:`range_max`: The maximum value of the testing range you have evaluated.
+- :cpp:member:`allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the temperature sensor register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 After the ranges are set, the structure could be passed to :cpp:func:`temperature_sensor_install`, which will instantiate the temperature sensor instance and return a handle.
 
@@ -203,13 +184,15 @@ Unexpected Behaviors
     (1) Totally out of range, like 200 °C ~ 300 °C.
     (2) Cross the boundary of each predefined measurement. like 40 °C ~ 110 °C.
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-.. list::
+* :example:`peripherals/temperature_sensor/temp_sensor` demonstrates how to use the built-in temperature sensor, showcasing the measurement range and error based on different DAC levels and offsets.
 
-    * Temperature sensor reading example: :example:`peripherals/temperature_sensor/temp_sensor`.
-    :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: * Temperature sensor value monitor example: :example:`peripherals/temperature_sensor/temp_sensor_monitor`.
+.. only:: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+  * :example:`peripherals/temperature_sensor/temp_sensor_monitor` demonstrates how to use the temperature sensor to automatically monitor temperature values continuously, triggering an interrupt when a specific value is reached or when the change between two consecutive samplings is larger/smaller than the settings.
+
 
 API Reference
 ----------------------------------

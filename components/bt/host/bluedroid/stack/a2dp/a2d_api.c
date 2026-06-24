@@ -66,6 +66,8 @@ static void a2d_sdp_cback(UINT16 status)
 
     A2D_TRACE_API("a2d_sdp_cback status: %d", status);
 
+    memset(&a2d_svc, 0, sizeof(tA2D_Service));
+
     if (status == SDP_SUCCESS) {
         /* loop through all records we found */
         do {
@@ -74,7 +76,6 @@ static void a2d_sdp_cback(UINT16 status)
                                              a2d_cb.find.service_uuid, p_rec)) == NULL) {
                 break;
             }
-            memset(&a2d_svc, 0, sizeof(tA2D_Service));
 
             /* get service name */
             if ((p_attr = SDP_FindAttributeInRec(p_rec,

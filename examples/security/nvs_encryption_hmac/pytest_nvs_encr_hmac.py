@@ -1,25 +1,30 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 
 import pytest
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
-STR_KEY_VAL = ['Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-               'Fusce quis risus justo.',
-               'Suspendisse egestas in nisi sit amet auctor.',
-               'Pellentesque rhoncus dictum sodales.',
-               'In justo erat, viverra at interdum eget, interdum vel dui.']
+STR_KEY_VAL = [
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    'Fusce quis risus justo.',
+    'Suspendisse egestas in nisi sit amet auctor.',
+    'Pellentesque rhoncus dictum sodales.',
+    'In justo erat, viverra at interdum eget, interdum vel dui.',
+]
 
-ENCR_TEXT_ARR = ['fe ff ff ff 00 00 00 00  fe ff ff ff ff ff ff ff',
-                 'ca 8b c3 bb 2d c2 33 d6  6b d4 a7 3d 31 0e 9c 36',
-                 'bd c1 2a 10 87 44 5e 1c  4b 2c 7c 5d ac 97 48 63']
+ENCR_TEXT_ARR = [
+    'fe ff ff ff 00 00 00 00  fe ff ff ff ff ff ff ff',
+    'ca 8b c3 bb 2d c2 33 d6  6b d4 a7 3d 31 0e 9c 36',
+    'bd c1 2a 10 87 44 5e 1c  4b 2c 7c 5d ac 97 48 63',
+]
 
 
-@pytest.mark.esp32c3
 @pytest.mark.nvs_encr_hmac
 @pytest.mark.parametrize('config', ['nvs_encr_hmac'], indirect=True)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_nvs_flash_encr_keys_hmac(dut: IdfDut) -> None:
     # Logging example binary details
     binary_file = os.path.join(dut.app.binary_path, 'nvs_encryption_hmac.bin')

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,16 +14,8 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
-typedef esp_err_t esp_netif_recv_ret_t;
-#define ESP_NETIF_OPTIONAL_RETURN_CODE(expr) expr
-#else
-typedef void esp_netif_recv_ret_t;
-#define ESP_NETIF_OPTIONAL_RETURN_CODE(expr)
-#endif // CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
-
 typedef err_t (*init_fn_t)(struct netif*);
-typedef esp_netif_recv_ret_t (*input_fn_t)(void *netif, void *buffer, size_t len, void *eb);
+typedef esp_err_t (*input_fn_t)(void *netif, void *buffer, size_t len, void *eb);
 
 struct esp_netif_netstack_lwip_vanilla_config {
     init_fn_t init_fn;
@@ -57,7 +49,7 @@ err_t ethernetif_init(struct netif *netif);
  * @param len Input buffer size
  * @param l2_buff External buffer pointer (to be passed to custom input-buffer free)
  */
-esp_netif_recv_ret_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff);
+esp_err_t ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff);
 
 /**
  * @brief   LWIP's network stack init function for WiFi (AP)
@@ -87,7 +79,7 @@ err_t wlanif_init_nan(struct netif *netif);
  * @param len Input buffer size
  * @param l2_buff External buffer pointer (to be passed to custom input-buffer free)
  */
-esp_netif_recv_ret_t wlanif_input(void *h, void *buffer, size_t len, void* l2_buff);
+esp_err_t wlanif_input(void *h, void *buffer, size_t len, void* l2_buff);
 
 #ifdef __cplusplus
 }

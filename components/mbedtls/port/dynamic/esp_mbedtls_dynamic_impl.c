@@ -1,17 +1,33 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 #include "esp_mbedtls_dynamic_impl.h"
+#include "sdkconfig.h"
+
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
 
 #define COUNTER_SIZE (8)
 #define CACHE_IV_SIZE (16)
 #define CACHE_BUFFER_SIZE (CACHE_IV_SIZE + COUNTER_SIZE)
 
 #define TX_IDLE_BUFFER_SIZE (MBEDTLS_SSL_HEADER_LEN + CACHE_BUFFER_SIZE)
+
+#define ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl) \
+    do { \
+        if (ssl->MBEDTLS_PRIVATE(in_buf)) { \
+            esp_mbedtls_ssl_buf_states state = esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(in_buf)); \
+            if (state == ESP_MBEDTLS_SSL_BUF_STATIC) { \
+                return 0; \
+            } \
+        } \
+    } while(0)
+
 
 static const char *TAG = "Dynamic Impl";
 
@@ -133,6 +149,29 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
     ssl->MBEDTLS_PRIVATE(in_msgtype) = 0;
     ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
     ssl->MBEDTLS_PRIVATE(in_left) = 0;
+}
+
+esp_err_t esp_mbedtls_dynamic_set_rx_buf_static(mbedtls_ssl_context *ssl)
+{
+    unsigned char cache_buf[16];
+    memcpy(cache_buf, ssl->MBEDTLS_PRIVATE(in_buf), 16);
+    esp_mbedtls_reset_free_rx_buffer(ssl);
+
+    struct esp_mbedtls_ssl_buf *esp_buf;
+    int buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_BUFFER_LEN);
+    esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
+    if (!esp_buf) {
+        ESP_LOGE(TAG, "rx buf alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
+        return ESP_ERR_NO_MEM;
+    }
+    esp_mbedtls_init_ssl_buf(esp_buf, buffer_len);
+    init_rx_buffer(ssl, esp_buf->buf);
+
+    memcpy(ssl->MBEDTLS_PRIVATE(in_ctr), cache_buf, 8);
+    memcpy(ssl->MBEDTLS_PRIVATE(in_iv), cache_buf + 8, 8);
+    esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(in_buf), ESP_MBEDTLS_SSL_BUF_STATIC);
+    return ESP_OK;
+
 }
 
 static int esp_mbedtls_alloc_tx_buf(mbedtls_ssl_context *ssl, int len)
@@ -319,6 +358,12 @@ exit:
 
 int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 {
+    /*
+     * If RX buffer is set to static mode, this macro will return early
+     * and skip dynamic buffer allocation logic below
+     */
+    ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+
     int cached = 0;
     int ret = 0;
     int buffer_len;
@@ -347,6 +392,8 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input reads data times out");
         } else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input wants to read more data");
+        } else if (ret == MBEDTLS_ERR_SSL_CONN_EOF) {
+            ESP_LOGD(TAG, "mbedtls_ssl_fetch_input connection EOF");
         } else {
             ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=%d", -ret);
         }
@@ -359,6 +406,18 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     in_left = ssl->MBEDTLS_PRIVATE(in_left);
     in_msglen = ssl->MBEDTLS_PRIVATE(in_msglen);
     buffer_len = tx_buffer_len(ssl, in_msglen);
+
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    /* For TLS 1.3 ENCRYPTED_EXTENSIONS state, allocate max size buffer.
+     * This is needed because ChangeCipherSpec (1 byte) arrives first,
+     * followed immediately by EncryptedExtensions (potentially large).
+     * Since mbedtls processes both in the same read loop without returning
+     * to the wrapper, we need to allocate sufficient space upfront. */
+    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_ENCRYPTED_EXTENSIONS) {
+        buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_CONTENT_LEN);
+        ESP_LOGV(TAG, "TLS 1.3 ENCRYPTED_EXTENSIONS: allocating max buffer %d bytes", buffer_len);
+    }
+#endif
 
     ESP_LOGV(TAG, "message length is %d RX buffer length should be %d left is %d",
                 (int)in_msglen, (int)buffer_len, (int)ssl->MBEDTLS_PRIVATE(in_left));
@@ -398,6 +457,12 @@ exit:
 
 int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
 {
+    /*
+     * If RX buffer is set to static mode, this macro will return early
+     * and skip dynamic buffer free logic below
+     */
+    ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+
     int ret = 0;
     unsigned char buf[16];
     struct esp_mbedtls_ssl_buf *esp_buf;
@@ -470,15 +535,6 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
 }
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
-{
-#ifdef CONFIG_MBEDTLS_DHM_C
-    const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
-    mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
-#endif /* CONFIG_MBEDTLS_DHM_C */
-}
-
 void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 {
     mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
@@ -532,7 +588,18 @@ void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
     if (ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(ca_chain)) {
         mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        /* In case of mbedtls certificate bundle, we attach a "static const"
+         * dummy cert, thus we need to avoid the write operations (memset())
+         * performed by `mbedtls_x509_crt_free()`
+         */
+        if (!esp_crt_bundle_in_use(conf->MBEDTLS_PRIVATE(ca_chain))) {
+            mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
+        }
+#else
         mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
+#endif
+
         conf->MBEDTLS_PRIVATE(ca_chain) = NULL;
     }
 }

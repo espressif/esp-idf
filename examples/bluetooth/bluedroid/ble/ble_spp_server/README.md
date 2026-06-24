@@ -1,9 +1,45 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 ## ESP-IDF GATT SERVER SPP Example
 
 For description of this application please refer to [ESP-IDF GATT CLIENT SPP Example](../ble_spp_client/README.md)
+
+## Flow Diagram
+
+```
+   SPP Server                                              SPP Client
+ ┌───────────┐                                           ┌───────────┐
+ │   UART    │                                           │   UART    │
+ │ Terminal  │                                           │ Terminal  │
+ └─────┬─────┘                                           └─────┬─────┘
+       │                                                       │
+       │  ─────────── Initialization ───────────               │
+       │                                                       │
+       │  1. Create SPP Service (UUID: 0xABF0)                 │
+       │  2. Add Characteristics                               │
+       │  3. Start Advertising                                 │
+       │                                                       │
+       │  ─────────── Connection ───────────                   │
+       │                                                       │
+       │                          Scan & Connect               │
+       │ <───────────────────────────────────────────────────  │
+       │                                                       │
+       │  Connection Established                               │
+       │ ─────────────────────────────────────────────────────>│
+       │                                                       │
+       │  ─────────── Data Exchange ───────────                │
+       │                                                       │
+       │  UART Input ──> Notification (SPP_DATA_NOTIFY_CHAR)   │
+       │ ─────────────────────────────────────────────────────>│──> UART Output
+       │                                                       │
+       │  UART Output <── WriteNoRsp (SPP_DATA_RECV_CHAR)      │
+       │ <───────────────────────────────────────────────────  │<── UART Input
+       │                                                       │
+ ┌─────┴─────┐                                           ┌─────┴─────┐
+ │SPP Server │                                           │ SPP Client│
+ └───────────┘                                           └───────────┘
+```
 
 ## How to Use Example
 

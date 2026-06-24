@@ -7,19 +7,29 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#include <esp_wifi.h>
+#include <unistd.h>
 #include <esp_event.h>
 #include <esp_log.h>
-#include <esp_system.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "esp_netif.h"
-#include "esp_eth.h"
 #include "protocol_examples_common.h"
+#if !CONFIG_IDF_TARGET_LINUX
+#include <esp_wifi.h>
+#include <esp_system.h>
+#include "esp_eth.h"
+#endif  // !CONFIG_IDF_TARGET_LINUX
 
 #include <esp_https_server.h>
 #include "esp_tls.h"
 #include "sdkconfig.h"
+
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+#include "mbedtls/ssl_ciphersuites.h"
+#endif // CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
 
 /* A simple example that demonstrates how to create GET and POST
  * handlers and start an HTTPS server.
@@ -27,6 +37,7 @@
 
 static const char *TAG = "example";
 
+#ifdef CONFIG_ESP_HTTPS_SERVER_EVENTS
 /* Event handler for catching system events */
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
@@ -38,6 +49,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         }
     }
 }
+#endif // CONFIG_ESP_HTTPS_SERVER_EVENTS
 
 /* An HTTP GET handler */
 static esp_err_t root_get_handler(httpd_req_t *req)
@@ -127,6 +139,29 @@ static void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
             print_peer_cert_info(ssl_ctx);
 #endif
             break;
+
+        case HTTPD_SSL_USER_CB_SESS_ERROR:
+            ESP_LOGD(TAG, "At session error (handshake failed)");
+            // Get socket FD to log failing client IP address
+            sockfd = -1;
+            esp_ret = esp_tls_get_conn_sockfd(user_cb->tls, &sockfd);
+            if (esp_ret == ESP_OK && sockfd >= 0) {
+                struct sockaddr_storage addr;
+                socklen_t len = sizeof(addr);
+                if (getpeername(sockfd, (struct sockaddr*)&addr, &len) == 0) {
+                    char ip_str[INET6_ADDRSTRLEN];
+                    if (addr.ss_family == AF_INET) {
+                        inet_ntop(AF_INET, &((struct sockaddr_in*)&addr)->sin_addr, ip_str, sizeof(ip_str));
+                    } else if (addr.ss_family == AF_INET6) {
+                        inet_ntop(AF_INET6, &((struct sockaddr_in6*)&addr)->sin6_addr, ip_str, sizeof(ip_str));
+                    } else {
+                        strcpy(ip_str, "unknown");
+                    }
+                    ESP_LOGW(TAG, "SSL handshake failed from client IP: %s", ip_str);
+                }
+            }
+            break;
+
         default:
             ESP_LOGE(TAG, "Illegal state!");
             return;
@@ -149,15 +184,51 @@ static httpd_handle_t start_webserver(void)
 
     httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
 
+#if CONFIG_IDF_TARGET_LINUX
+    /* Use non-privileged port on Linux since port 443 requires root */
+    conf.port_secure = 8443;
+#endif
+
     extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
     extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
+
+    extern const unsigned char cacert_start[] asm("_binary_cacert_pem_start");
+    extern const unsigned char cacert_end[]   asm("_binary_cacert_pem_end");
     conf.servercert = servercert_start;
     conf.servercert_len = servercert_end - servercert_start;
+
+#if CONFIG_EXAMPLE_ENABLE_SKIP_CLIENT_CERT
+    conf.client_cert_authmode_optional = true;
+#endif // EXAMPLE_ENABLE_SKIP_CLIENT_CERT
+
+    conf.cacert_pem = cacert_start;
+    conf.cacert_len = cacert_end - cacert_start;
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
     conf.prvtkey_pem = prvtkey_pem_start;
     conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+    static const int ciphersuites_to_use[] = {
+        MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+        MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
+        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,
+        MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+        0,
+    };
+    conf.ciphersuites_list = ciphersuites_to_use;
+#else
+    conf.ciphersuites_list = NULL;
+#endif // CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
+
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_3_ONLY
+    conf.tls_version = ESP_TLS_VER_TLS_1_3;
+#elif CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_2_ONLY
+    conf.tls_version = ESP_TLS_VER_TLS_1_2;
+#else
+    conf.tls_version = ESP_TLS_VER_ANY;
+#endif // CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_TLS_1_3_ONLY
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
     conf.user_cb = https_server_user_callback;
@@ -174,6 +245,7 @@ static httpd_handle_t start_webserver(void)
     return server;
 }
 
+#if !CONFIG_IDF_TARGET_LINUX
 static esp_err_t stop_webserver(httpd_handle_t server)
 {
     // Stop the httpd server
@@ -201,6 +273,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
         *server = start_webserver();
     }
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 void app_main(void)
 {
@@ -214,6 +287,7 @@ void app_main(void)
      * and stop server when disconnection happens.
      */
 
+#if !CONFIG_IDF_TARGET_LINUX
 #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
@@ -222,11 +296,22 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+#endif // !CONFIG_IDF_TARGET_LINUX
+#ifdef CONFIG_ESP_HTTPS_SERVER_EVENTS
     ESP_ERROR_CHECK(esp_event_handler_register(ESP_HTTPS_SERVER_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+#endif // CONFIG_ESP_HTTPS_SERVER_EVENTS
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+
+#if CONFIG_IDF_TARGET_LINUX
+    /* On Linux, start the server directly since there are no WiFi/Ethernet events */
+    server = start_webserver();
+    while (server) {
+        sleep(5);
+    }
+#endif // CONFIG_IDF_TARGET_LINUX
 }

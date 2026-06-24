@@ -59,7 +59,7 @@
     hint: "'esp_secure_boot_verify_rsa_signature_block()' has been made private and is no longer available."
 
 -
-    re: "error: implicit declaration of function '{}'"
+    re: "error: (implicit declaration of function|use of undeclared identifier) '{}'"
     hint: '{0}.h header file is not included by esp_system.h anymore. It shall then be manually included with #include "{0}.h"'
     variables:
         -
@@ -107,9 +107,6 @@
         -
             re_variables: ['esp_panic.h']
             hint_variables: ['esp_panic.h', 'use functionalities provided in esp_debug_helpers.h']
-
-        -   re_variables: ['driver/can.h']
-            hint_variables: ['driver/can.h', 'driver/twai.h']
 
 -
     re: "error: implicit declaration of function 'esp_int_wdt_\\w+'"
@@ -163,14 +160,6 @@
             hint_variables: ['Backtrace Parser API', 'eh_frame_parser', 'eh_frame_parser']
 
 -
-    re: "fatal error: esp_adc_cal.h: No such file or directory"
-    hint: "``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc``. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. For more information run 'idf.py docs -sp migration-guides/release-5.x/peripherals.html'."
-
--
-    re: "fatal error: .*atca_mbedtls_wrap\\.h: No such file or directory"
-    hint: "To use CONFIG_ESP_TLS_USE_SECURE_ELEMENT option, please install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib'"
-
--
     re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
     hint: "Try to reinstall the toolchain for the chip that you trying to use. \nFor more information run 'idf.py docs -sp get-started/#installation' and follow the instructions for your system"
 
@@ -203,63 +192,45 @@
     hint: "The issue is better to resolve by replacing format specifiers to 'PRI'-family macros (include <inttypes.h> header file)."
 
 -
-    re: "Failed to resolve component 'esp_ipc'"
-    hint: "IPC component has been moved to esp_system. Any `REQUIRES esp_ipc` can simply be deleted as esp_system is REQUIRED by default."
+    re: "Failed to resolve component '{}'"
+    hint: "The {} component has been moved to {}. You can {}."
+    variables:
+        -
+            re_variables: ['esp_ipc']
+            hint_variables: ['IPC', 'esp_system', 'simply delete any `REQUIRES esp_ipc` as esp_system is REQUIRED by default']
+        -
+            re_variables: ['touch_element']
+            hint_variables: ['touch_element', 'ESP Component Registry', 'add this dependency by running `idf.py add-dependency "espressif/touch_element"`']
 
 -
-    re: "error: invalid use of incomplete typedef 'esp_tls_t'"
-    hint: "The struct 'esp_tls_t' has now been made private - its elements can be only be accessed/modified through respective getter/setter functions. Please refer to the migration guide for more information."
+    re: "Failed to resolve component 'newlib'"
+    hint: "newlib component has been renamed to esp_libc. Any `REQUIRES newlib` can simply be deleted as esp_libc is REQUIRED by default."
 
 -
     re: "error: enumeration value 'HTTP_EVENT_REDIRECT' not handled in switch"
     hint: "The event handler, specified in the 'event_handler' element, of the 'esp_http_client_config_t' struct now needs to handle the new 'HTTP_EVENT_REDIRECT' event case."
 
 -
-    re: "Failed to resolve component '(?!esp_ipc)(\\w+)'"
-    hint: "The component {} could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager or has been removed and refactored into some other component.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details about moved components.\nRefer to the build-system guide for more details about how components are found and included in the build."
+    re: "Failed to resolve component '(?!esp_ipc|newlib)(\\w+)'"
+    hint: "The component '{}' could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager, the component has been removed and refactored into some other component or the component may not be supported by the selected target.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details about moved components.\nRefer to the build-system guide for more details about how components are found and included in the build."
     match_to_output: True
 
 -
-    re: "fatal error: (esp_rom_tjpgd.h): No such file or directory"
-    hint: "{} was removed. Please use esp_jpeg component from IDF component manager instead.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
-    match_to_output: True
+    re: "fatal error: esp_private/freertos_debug.h: No such file or directory"
+    hint: "esp_private/freertos_debug.h has been moved to freertos/freertos_debug.h.\nThe task snapshot APIs are now public. Update your include to use the new public header."
 
 -
     re: "(fatal error: tcpip_adapter.h: No such file or directory|error: implicit declaration of function 'tcpip_adapter_init')"
     hint: "TCP/IP adapter compatibility layer has been removed. Please migrate to ESP-NETIF.\nRefer to the Networking migration guide, section TCP/IP adapter, for more details."
 
 -
-    re: "error: macro \"(ETH_\\w+_CONFIG)\" requires 2 arguments, but only 1 given"
-    hint: "Macro {} now accepts both SPI host and SPI device related configuration. The SPI-Ethernet Module initialization has been simplified to allocate an SPI device internally so the configuration structure requires the related configuration.\nPlease refer to the Networking migration guide, section SPI-Ethernet Module Initialization, for more details."
-    match_to_output: True
-
--
-    re: "error: implicit declaration of function '(esp_eth_detect_phy_addr)'"
-    hint: "Function {}() has been renamed to esp_eth_phy_802_3_detect_phy_addr().\nPlease refer to the Networking migration guide, section PHY Address Auto-detect, for more details."
-    match_to_output: True
-
--
-    re: "error: too few arguments to function '(esp_eth_mac_\\w+)'"
-    hint: "Function {}() has been refactored to accept device specific configuration and MAC specific configuration.\nPlease refer to the Ethernet section of Networking migration guide for more details."
-    match_to_output: True
-
--
-    re: "error: implicit declaration of function 'esp_eth_phy_new_{}'"
-    hint: "Function {}() has been removed, please use {}() instead.\nPlease refer to the Networking migration guide, section PHY Address Auto-detect, for more details."
-    variables:
-        -
-            re_variables: ['ksz8081']
-            hint_variables: ['esp_eth_phy_new_ksz8081', 'esp_eth_phy_new_ksz80xx']
-        -
-            re_variables: ['ksz8041']
-            hint_variables: ['esp_eth_phy_new_ksz8041', 'esp_eth_phy_new_ksz80xx']
-        -
-            re_variables: ['lan8720']
-            hint_variables: ['esp_eth_phy_new_lan8720', 'esp_eth_phy_new_lan87xx']
-
--
     re: "`iram0_0_seg' overflowed"
-    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduze IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+    hint: "The applications static IRAM usage is larger than the available IRAM size.\nFor more information on how to reduce IRAM usage run 'idf.py docs -sp api-guides/performance/ram-usage.html#optimizing-iram-usage' "
+
+-
+    re: "Failed to resolve component 'usb'"
+    hint: "USB host layer ('usb' component) was removed from ESP-IDF. Please use 'usb' component from IDF component manager instead.\nYou can install 'usb' component using 'idf.py add-dependency espressif/usb' command.\nRefer to the migration guide for more details."
+    match_to_output: True
 
 -
     re: "fatal error: (tinyusb.h): No such file or directory"
@@ -319,6 +290,11 @@
 -
     re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_NOT_FOUND"
     hint: "Device drivers are not correct.\nPlease check configuration of USB drivers: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/configure-ft2232h-jtag.html?highlight=zadig#configure-usb-drivers"
+
+-
+    re: "\\[-Werror=(address-of-packed-member|aggressive-loop-optimizations|attribute-warning|builtin-macro-redefined|cpp|designated-init|deprecated-declarations|discarded-array-qualifiers|discarded-qualifiers|div-by-zero|endif-labels|free-nonheap-object|if-not-aligned|ignored-attributes|incompatible-pointer-types|int-conversion|int-to-pointer-cast|lto-type-mismatch|multichar|overflow|override-init-side-effects|packed-bitfield-compat|pointer-compare|pointer-to-int-cast|return-local-addr|scalar-storage-order|shift-count-negative|shift-count-overflow|sizeof-array-argument|stringop-truncation| switch-bool|switch-outside-range|varargs)\\]"
+    hint: "The error(s) '{}' may appear after IDF upgrade since previous versions were not considering those warnings as errors.\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable errors for default warnings'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
+    match_to_output: True
 
 -
     re: "(-Werror=address|-Werror=use-after-free)"
@@ -424,5 +400,195 @@
     match_to_output: True
 
 -
-    re: "implicit declaration of function '(opendir|readdir|telldir|seekdir|rewinddir|closedir|readdir_r|scandir|alphasort)'"
+    re: "implicit declaration of function '(opendir|readdir|telldir|seekdir|rewinddir|closedir|readdir_r|scandir|alphasort|dirfd|fdclosedir|fdopendir|scandirat|versionsort|posix_getdents)'"
     hint: "Please include <dirent.h> (not <sys/dirent.h>)"
+
+-
+    re: "unplaced orphan section"
+    hint: "An orphan section was detected during linking stage. For more information run 'idf.py docs -sp migration-guides/release-6.x/build-system.html#linker-orphan-handling-behavior-changed-to-error'."
+
+-
+    re: "the current mclk multiple cannot perform integer division"
+    hint: "Please adjust the mclk multiple to get the accurate sample rate.\nFor example, if you're using 24-bit slot width or enabled 3 slots, then the mclk multiple should be a multiple of 3, otherwise the sample rate will be inaccurate."
+
+-
+    re: "discarded output section: .*\\.got"
+    hint: "Some objects being linked were compiled with the \"-fpic\"/\"-fpie\" options. These options may be suitable for \"linux\" builds, but must not be applied for esp32XX targets."
+
+-
+    re: "(error: Total discarded sections size is \\d+ bytes)|(region [`'.\\w]+ overflowed by \\d+ bytes)"
+    hint: "The binary size has exceeded the limit. To resolve the issue consider reducing the binary size.\nYou can explore size optimization techniques in the documentation by running 'idf.py docs -sp api-guides/performance/size.html#reducing-overall-size'.\nNote that the linker performed the dead code elimination."
+
+-
+    re: "implicit declaration of function '__VA_NARG__'"
+    hint: "__VA_NARG_ has been renamed. Please use ESP_VA_NARG instead"
+
+-
+    re: "Configuration descriptor larger than control transfer max length"
+    hint: "Connected USB device has a large Configuration descriptor.\nTo increase the transfer size, go to 'idf.py menuconfig' -> 'Component config' -> 'USB-OTG' -> 'Largest size of transfers to/from default endpoints' and set appropriate size."
+
+-
+    re: "error: implicit declaration of function '(socketpair|gai_strerror|getifaddrs|freeifaddrs)'"
+    hint: "{}() is not supported in IDF.\nTo use a simplified implementation of this function, add a dependency to sock_utils library 'idf.py add-dependency espressif/sock_utils'"
+    match_to_output: True
+
+-
+    re: "undefined reference to `(socketpair|gai_strerror|gethostname|getnameinfo|pipe|getifaddrs|freeifaddrs)'"
+    hint: "{}() is not supported in IDF.\nTo use a simplified implementation of this function, add a dependency to sock_utils library 'idf.py add-dependency espressif/sock_utils'"
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "The FreeRTOS compatibility function '{}' has been removed in ESP-IDF v6.0. Please use {} instead."
+    variables:
+        -
+            re_variables: ['xQueueGenericReceive']
+            hint_variables: ['xQueueGenericReceive', 'xQueueReceive(), xQueuePeek(), or xQueueSemaphoreTake() depending on your use case']
+        -
+            re_variables: ['vTaskDelayUntil']
+            hint_variables: ['vTaskDelayUntil', 'xTaskDelayUntil']
+        -
+            re_variables: ['ulTaskNotifyTake']
+            hint_variables: ['ulTaskNotifyTake', 'the macro ulTaskNotifyTake']
+        -
+            re_variables: ['xTaskNotifyWait']
+            hint_variables: ['xTaskNotifyWait', 'the macro xTaskNotifyWait']
+
+-
+    re: "(no previous prototype for 'vTaskPreDeletionHook'|undefined reference to `vTaskPreDeletionHook')"
+    hint: "CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK is enabled but your project does not provide vTaskPreDeletionHook( void * pxTCB ). Either disable the Kconfig option or implement the hook."
+
+-
+    re: "error: implicit declaration of function 'vPortCleanUpTCB'"
+    hint: "The legacy FreeRTOS hook vPortCleanUpTCB() has been removed from ESP-IDF. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK with vTaskPreDeletionHook( void * pxTCB ) instead."
+
+-
+    re: "cannot open linker script file bootloader.ld"
+    hint: "The file 'bootloader.ld' was renamed to 'bootloader.ld.in' in ESP-IDF v6.0. Please use update your build scripts."
+
+-
+    re: "fatal error: esp_wpa2.h: No such file or directory"
+    hint: "The header file 'esp_wpa2.h' has been removed. Please use 'esp_eap_client.h' instead."
+
+-
+    re: "error: implicit declaration of function '(esp_wifi_sta_wpa2_ent_enable|esp_wifi_sta_wpa2_ent_disable|esp_wifi_sta_wpa2_ent_set_identity|esp_wifi_sta_wpa2_ent_clear_identity|esp_wifi_sta_wpa2_ent_set_username|esp_wifi_sta_wpa2_ent_clear_username|esp_wifi_sta_wpa2_ent_set_password|esp_wifi_sta_wpa2_ent_clear_password|esp_wifi_sta_wpa2_ent_set_new_password|esp_wifi_sta_wpa2_ent_clear_new_password|esp_wifi_sta_wpa2_ent_set_ca_cert|esp_wifi_sta_wpa2_ent_clear_ca_cert|esp_wifi_sta_wpa2_ent_set_cert_key|esp_wifi_sta_wpa2_ent_clear_cert_key|esp_wifi_sta_wpa2_ent_set_disable_time_check|esp_wifi_sta_wpa2_ent_get_disable_time_check|esp_wifi_sta_wpa2_ent_set_ttls_phase2_method|esp_wifi_sta_wpa2_set_suiteb_192bit_certification|esp_wifi_sta_wpa2_ent_set_pac_file|esp_wifi_sta_wpa2_ent_set_fast_phase1_params|esp_wifi_sta_wpa2_use_default_cert_bundle)'"
+    hint: "The function '{}' has been removed from esp_wpa2.h. Please use the equivalent function from esp_eap_client.h instead."
+    match_to_output: True
+
+-
+    re: "error: too many arguments to function 'esp_supp_dpp_init'"
+    hint: "The function 'esp_supp_dpp_init' no longer accepts a callback. Please register for Wi-Fi events directly to get DPP events."
+
+-
+    re: "error: unknown type name '(esp_supp_dpp_event_t|esp_supp_dpp_event_cb_t)'"
+    hint: "The DPP event callback 'esp_supp_dpp_event_cb_t' and event enum 'esp_supp_dpp_event_t' have been removed. Please use Wi-Fi events directly."
+
+-
+    re: "error: implicit declaration of function 'esp_rrm_send_neighbor_rep_request'"
+    hint: "The function 'esp_rrm_send_neighbor_rep_request' has been removed. Use 'esp_rrm_send_neighbor_report_request' instead."
+
+-
+    re: "error: implicit declaration of function '(esp_wifi_set_ant_gpio|esp_wifi_get_ant_gpio|esp_wifi_set_ant|esp_wifi_get_ant)'"
+    hint: "The function '{}' has been removed. Please use the equivalent function from the esp_phy component (e.g. 'esp_phy_set_ant_gpio')."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_wifi_config_espnow_rate'"
+    hint: "The function 'esp_wifi_config_espnow_rate' has been removed. Use 'esp_now_set_peer_rate_config' instead."
+
+-
+    re: "(initialization|assignment) of 'wifi_nan_svc_proto_t \\*' from incompatible pointer type 'uint8_t \\*'"
+    hint: "The field 'proto' in structure 'wifi_nan_wfa_ssi_t' is now declared as 'uint8_t'. Update pointer usage accordingly, for example by using a 'uint8_t *' or copying the enum value into a separate variable."
+
+-
+    re: "error: too many arguments to function 'esp_wifi_wps_start'"
+    hint: "The function 'esp_wifi_wps_start' no longer accepts a 'timeout_ms' argument."
+
+-
+    re: "error: '(WIFI_AUTH_WPA3_EXT_PSK|WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE)' undeclared"
+    hint: "The authentication modes 'WIFI_AUTH_WPA3_EXT_PSK' and 'WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE' have been removed. Use 'WIFI_AUTH_WPA3_PSK' instead."
+
+-
+    re: "error: 'struct wifi_event_neighbor_report_t' has no member named 'report'"
+    hint: "In the 'wifi_event_neighbor_report_t' structure, the 'report' field has been removed. Please use the 'n_report' field instead."
+
+-
+    re: "fatal error: esp_interface.h: No such file or directory"
+    hint: "The header file 'esp_interface.h' has been removed. The 'wifi_interface_t' enum is now defined in 'esp_wifi_types_generic.h'. The enum values (e.g. 'WIFI_IF_STA', 'WIFI_IF_AP') are no longer defined based on 'ESP_IF_WIFI_STA', 'ESP_IF_WIFI_AP', etc."
+
+-
+    re: "error: 'use_get_report_api' undeclared"
+    hint: "The field 'use_get_report_api' from structure 'wifi_ftm_initiator_cfg_t' has been removed. Please use 'esp_wifi_ftm_get_report' to fetch raw FTM report data instead."
+
+-
+    re: "error: 'ftm_report_data' undeclared"
+    hint: "The field 'ftm_report_data' from structure 'wifi_event_ftm_report_t' has been removed. Please use 'esp_wifi_ftm_get_report' to fetch raw FTM report data instead."
+
+-
+    re: "error: 'svc_info' undeclared"
+    hint: "The field 'svc_info' from structures 'wifi_nan_publish_cfg_t', 'wifi_nan_subscribe_cfg_t', 'wifi_nan_followup_params_t', 'wifi_event_ndp_indication_t', 'wifi_event_ndp_confirm_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
+
+-
+    re: "error: 'peer_svc_info' undeclared"
+    hint: "The field 'peer_svc_info' from structure 'wifi_event_nan_receive_t' has been removed. Please use the equivalent fields 'ssi' and 'ssi_len' instead."
+
+-
+    re: "error: 'WIFI_EVENT_NAN_STARTED' undeclared"
+    hint: "The Wi-Fi NAN event 'WIFI_EVENT_NAN_STARTED' has been renamed to 'WIFI_EVENT_NAN_SYNC_STARTED'."
+
+-
+    re: "error: 'WIFI_EVENT_NAN_STOPPED' undeclared"
+    hint: "The Wi-Fi NAN event 'WIFI_EVENT_NAN_STOPPED' has been renamed to 'WIFI_EVENT_NAN_SYNC_STOPPED'."
+
+-
+    re: "error: too few arguments to function 'esp_wifi_nan_publish_service'"
+    hint: "The function argument 'ndp_resp_needed' of 'esp_wifi_nan_publish_service' has been moved to structure 'wifi_nan_publish_cfg_t'."
+
+-
+    re: "error: implicit declaration of function '{}'"
+    hint: "The NAN synchronization API '{}' has been renamed to '{}'."
+    variables:
+        -
+            re_variables: ['esp_wifi_nan_start']
+            hint_variables: ['esp_wifi_nan_start', 'esp_wifi_nan_sync_start']
+        -
+            re_variables: ['esp_wifi_nan_stop']
+            hint_variables: ['esp_wifi_nan_stop', 'esp_wifi_nan_sync_stop']
+        -
+            re_variables: ['WIFI_NAN_CONFIG_DEFAULT']
+            hint_variables: ['WIFI_NAN_CONFIG_DEFAULT', 'WIFI_NAN_SYNC_CONFIG_DEFAULT']
+
+-
+    re: "error: unknown type name 'wifi_nan_config_t'"
+    hint: "The structure 'wifi_nan_config_t' has been renamed to 'wifi_nan_sync_config_t'."
+
+-
+    re: "error: '(WIFI_REASON_ASSOC_EXPIRE|WIFI_REASON_NOT_AUTHED|WIFI_REASON_NOT_ASSOCED)' undeclared"
+    hint: "The Wi-Fi disconnection reason codes '{0}' have been removed. Please use '{1}', '{2}', and '{3}' respectively."
+    variables:
+        -
+            re_variables: ['WIFI_REASON_ASSOC_EXPIRE']
+            hint_variables: ['WIFI_REASON_ASSOC_EXPIRE', 'WIFI_REASON_AUTH_EXPIRE']
+        -
+            re_variables: ['WIFI_REASON_NOT_AUTHED']
+            hint_variables: ['WIFI_REASON_NOT_AUTHED', 'WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA']
+        -
+            re_variables: ['WIFI_REASON_NOT_ASSOCED']
+            hint_variables: ['WIFI_REASON_NOT_ASSOCED', 'WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA']
+
+-
+    re: "error: '(ESP_IF_WIFI_STA|ESP_IF_WIFI_AP)' undeclared"
+    hint: "The macros '{}' have been removed. Please use the enum values 'WIFI_IF_STA' and 'WIFI_IF_AP' directly."
+    match_to_output: True
+
+-
+    re: "error: 'MALLOC_CAP_EXEC' undeclared \\(first use in this function\\)"
+    hint: "MALLOC_CAP_EXEC capability cannot be used if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT or CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is enabled. \nFor further information about those configurations, run 'idf.py docs -sp api-reference/kconfig-reference.html#memory-protection'"
+
+-
+    re: "error: 'WIFI_BW_HT20' undeclared \\(first use in this function\\)"
+    hint: "The enum value 'WIFI_BW_HT20' has been removed. Use 'WIFI_BW20' instead."
+
+-
+    re: "error: 'WIFI_BW_HT40' undeclared \\(first use in this function\\)"
+    hint: "The enum value 'WIFI_BW_HT40' has been removed. Use 'WIFI_BW40' instead."

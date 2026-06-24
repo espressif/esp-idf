@@ -77,8 +77,8 @@ Xtensa 架构支持 32 个中断处理程序，这些中断分为从 1 到 7 的
 .. code-block:: none
 
         .section .iram1,"ax"
-        .global     xt_highint5
-        .type       xt_highint5,@function
+        .global     xt_highint4
+        .type       xt_highint4,@function
         .align      4
     xt_highint5:
         ... your code here
@@ -119,3 +119,5 @@ Xtensa 架构支持 32 个中断处理程序，这些中断分为从 1 到 7 的
 - 中等优先级的中断理论上也可以通过上述方式处理，但 ESP-IDF 尚不支持此功能。
 
 - 要检查 Xtensa 指令集架构 (ISA)，请参阅 `Xtensa ISA 摘要 <https://www.cadence.com/content/dam/cadence-www/global/en_US/documents/tools/ip/tensilica-ip/isa-summary.pdf>`_。
+
+:example:`system/nmi_isr` 提供了一个示例，可以在基于 Xtensa 架构的目标平台上实现自定义 NMI 处理程序。

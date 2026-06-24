@@ -1,11 +1,20 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 | Linux |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- | ----- |
 
 # Simple HTTPD Server Example
 
-The Example consists of HTTPD server demo with demostration of URI handling :
+The Example consists of HTTPD server demo with demonstration of URI handling :
     1. URI \hello for GET command returns "Hello World!" message
     2. URI \echo for POST command echoes back the POSTed message
+    3. URI \sse for GET command sends a message to client every second
+
+## User Callback
+
+The example includes a simple user callback that can be used to get the SSL context (connection information) when the server is being initialized. To enable the user callback, set `CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK` to `y` in the project configuration menu.
+
+## Server-Sent Events (SSE)
+
+The example also includes a simple SSE handler (having endpoint \sse), which sends a message to the client every second. To enable SSE, set `CONFIG_EXAMPLE_ENABLE_SSE_HANDLER` to `y` in the project configuration menu.
 
 ## How to use example
 
@@ -39,7 +48,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
         * run the test script : "python scripts/client.py \<IP\> \<port\> \<MSG\>"
             * the provided test script first does a GET \hello and displays the response
             * the script does a POST to \echo with the user input \<MSG\> and displays the response
-        * or use curl (asssuming IP is 192.168.43.130):
+        * or use curl (assuming IP is 192.168.43.130):
             1. "curl 192.168.43.130:80/hello"  - tests the GET "\hello" handler
             2. "curl -X POST --data-binary @anyfile 192.168.43.130:80/echo > tmpfile"
                 * "anyfile" is the file being sent as request body and "tmpfile" is where the body of the response is saved

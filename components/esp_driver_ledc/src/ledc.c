@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <sys/lock.h>
 #include <sys/param.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
@@ -11,18 +12,20 @@
 #include "freertos/idf_additions.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "soc/gpio_periph.h"
-#include "soc/ledc_periph.h"
+#include "hal/ledc_periph.h"
 #include "esp_clk_tree.h"
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
-#include "hal/gpio_hal.h"
 #include "driver/ledc.h"
-#include "esp_rom_gpio.h"
-#include "esp_rom_sys.h"
-#include "clk_ctrl_os.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_sleep.h"
 #include "esp_private/periph_ctrl.h"
+#include "driver/gpio.h"
+#include "esp_private/gpio.h"
+#include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "esp_memory_utils.h"
+#include "esp_private/sleep_retention.h"
 
 static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
@@ -44,17 +47,7 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_CLK_SRC_FREQ_PRECISION     ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX
 #endif
 
-#if !SOC_RCC_IS_INDEPENDENT
-#define LEDC_BUS_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LEDC_BUS_CLOCK_ATOMIC()
-#endif
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define LEDC_FUNC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define LEDC_FUNC_CLOCK_ATOMIC()
-#endif
+#define LEDC_USE_RETENTION_LINK  (SOC_LEDC_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 typedef enum {
     LEDC_FSM_IDLE,
@@ -85,9 +78,16 @@ typedef struct {
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
     ledc_clk_src_t timer_specific_clk[LEDC_TIMER_MAX];  /*!< Tracks the timer-specific clock selection for each timer */
 #endif
+    ledc_sleep_mode_t sleep_mode;                       /*!< Records the sleep strategy to be applied to the LEDC module */
+    bool channel_keep_alive[LEDC_CHANNEL_MAX];          /*!< Records whether each channel needs to keep output during sleep */
+    uint8_t timer_xpd_ref_cnt[LEDC_TIMER_MAX];          /*!< Records the timer (glb_clk) not power down during sleep requirement */
+    bool glb_clk_xpd;                                   /*!< Records the power strategy applied to the global clock */
+    uint64_t occupied_pin_mask[LEDC_CHANNEL_MAX];       /*!< Records the pins occupied by each channel */
 } ledc_obj_t;
 
-static ledc_obj_t *p_ledc_obj[LEDC_SPEED_MODE_MAX] = {0};
+static ledc_obj_t *p_ledc_obj[LEDC_SPEED_MODE_MAX] = {
+    [0 ... LEDC_SPEED_MODE_MAX - 1] = NULL,
+};
 static ledc_fade_t *s_ledc_fade_rec[LEDC_SPEED_MODE_MAX][LEDC_CHANNEL_MAX];
 static ledc_isr_handle_t s_ledc_fade_isr_handle = NULL;
 static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -114,45 +114,65 @@ static const ledc_slow_clk_sel_t s_glb_clks[] = LEDC_LL_GLOBAL_CLOCKS;
 static const ledc_clk_src_t s_timer_specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLOCKS;
 #endif
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t ledc_create_sleep_retention_link_cb(void *arg)
+{
+#if SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+
+    esp_err_t err = sleep_retention_entries_create(ledc_reg_retention_info[0].common.regdma_entry_array,
+                                                   ledc_reg_retention_info[0].common.array_size,
+                                                   REGDMA_LINK_PRI_LEDC, module);
+    bool slp_retention_create_failed = (err != ESP_OK);
+
+    for (int i = 0; i < SOC_LEDC_TIMER_NUM && !slp_retention_create_failed; i++) {
+        err = sleep_retention_entries_create(ledc_reg_retention_info[0].timer[i].regdma_entry_array,
+                                             ledc_reg_retention_info[0].timer[i].array_size,
+                                             REGDMA_LINK_PRI_LEDC, module);
+        slp_retention_create_failed |= (err != ESP_OK);
+    }
+
+    for (int j = 0; j < SOC_LEDC_CHANNEL_NUM && !slp_retention_create_failed; j++) {
+        err = sleep_retention_entries_create(ledc_reg_retention_info[0].channel[j].regdma_entry_array,
+                                             ledc_reg_retention_info[0].channel[j].array_size,
+                                             REGDMA_LINK_PRI_LEDC, module);
+        slp_retention_create_failed |= (err != ESP_OK);
+    }
+
+    ESP_RETURN_ON_FALSE(!slp_retention_create_failed, err, LEDC_TAG, "create retention link failed");
+#endif
+    return ESP_OK;
+}
+#endif
+
 static void ledc_ls_timer_update(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
 {
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
-        ledc_hal_ls_timer_update(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel);
+        ledc_hal_ls_timer_update(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel);
     }
 }
 
 static IRAM_ATTR void ledc_ls_channel_update(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
-        ledc_hal_ls_channel_update(&(p_ledc_obj[speed_mode]->ledc_hal), channel);
+        ledc_hal_ls_channel_update(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel);
     }
 }
 
 //We know that RC_FAST is about 8M/20M, but don't know the actual value. So we need to do a calibration.
 static bool ledc_slow_clk_calibrate(void)
 {
-    if (periph_rtc_dig_clk8m_enable()) {
-        s_ledc_slow_clk_rc_fast_freq = periph_rtc_dig_clk8m_get_freq();
+    if (esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &s_ledc_slow_clk_rc_fast_freq) != ESP_OK) {
+        ESP_LOGE(LEDC_TAG, "Calibrate RC_FAST_CLK failed");
+        return false;
+    }
 #if !SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-        /* Workaround: RC_FAST calibration cannot be performed, we can only use its theoretic freq */
-        ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
+    /* Workaround: RC_FAST calibration cannot be performed, we can only use its theoretic freq */
+    ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
 #else
-        ESP_LOGD(LEDC_TAG, "Calibrate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
+    ESP_LOGD(LEDC_TAG, "Calibrate RC_FAST_CLK : %"PRIu32" Hz", s_ledc_slow_clk_rc_fast_freq);
 #endif
-        return true;
-    }
-    ESP_LOGE(LEDC_TAG, "Calibrate RC_FAST_CLK failed");
-    return false;
-}
-
-static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_intr_type_t type)
-{
-    if (type == LEDC_INTR_FADE_END) {
-        ledc_hal_set_fade_end_intr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
-    } else {
-        ledc_hal_set_fade_end_intr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
-    }
-    return ESP_OK;
+    return true;
 }
 
 static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
@@ -161,7 +181,7 @@ static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
     if (fade) {
         xSemaphoreTake(fade->ledc_fade_sem, portMAX_DELAY);
         portENTER_CRITICAL(&ledc_spinlock);
-        ledc_enable_intr_type(mode, channel, LEDC_INTR_DISABLE);
+        ledc_ll_enable_interrupt(p_ledc_obj[mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(mode, channel), false);
         portEXIT_CRITICAL(&ledc_spinlock);
     }
 }
@@ -194,27 +214,26 @@ static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel
 {
     // The arguments are checked before internally calling this function.
     ledc_timer_t timer_sel;
-    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &timer_sel);
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &timer_sel);
     uint32_t max_duty;
-    ledc_hal_get_max_duty(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, &max_duty);
+    ledc_hal_get_max_duty(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel, &max_duty);
     return max_duty;
 }
 
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
-                         ledc_clk_src_t clk_src)
+static esp_err_t ledc_set_timer_params(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_hal_set_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, clock_divider);
+    ledc_hal_set_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel, clock_divider);
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
     /* Clock source can only be configured on targets which support timer-specific source clock. */
-    ledc_hal_set_clock_source(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, clk_src);
+    ledc_hal_set_clock_source(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel, clk_src);
     // TODO: acquire clk_src, and release old clk_src if initialized and different than new one [clk_tree]
     p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] = clk_src;
 #endif
-    ledc_hal_set_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, duty_resolution);
+    ledc_hal_set_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel, duty_resolution);
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
@@ -224,16 +243,68 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
                                             int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
     if (hpoint_val >= 0) {
-        ledc_hal_set_hpoint(&(p_ledc_obj[speed_mode]->ledc_hal), channel, hpoint_val);
+        ledc_hal_set_hpoint(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, hpoint_val);
     }
     if (duty_val >= 0) {
-        ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_val);
+        ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, duty_val);
     }
-    ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0, duty_direction, duty_cycle, duty_scale, duty_num);
+    ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, 0, duty_direction, duty_cycle, duty_scale, duty_num);
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-    ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
+    ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, 1);
+    // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
+    ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, 1);
 #endif
+    ESP_EARLY_LOGD(LEDC_TAG, "duty_config: duty-%d, dir-%d, cycle-%d, scale-%d, step-%d", duty_val, duty_direction, duty_cycle, duty_scale, duty_num);
     return ESP_OK;
+}
+
+/**
+ * return 1 if the global clock cannot keep alive in sleep, as an error raised
+ */
+static bool ledc_glb_clk_set_sleep_mode(ledc_mode_t speed_mode, bool xpd)
+{
+    bool glb_clk_xpd_err = false;
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_RC_FAST) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, xpd);
+        p_ledc_obj[speed_mode]->glb_clk_xpd = xpd;
+    }
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+    else if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_XTAL) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_XTAL_MODE, xpd);
+        p_ledc_obj[speed_mode]->glb_clk_xpd = xpd;
+    }
+#endif
+    else {
+        if (xpd) {
+            glb_clk_xpd_err = true;
+        }
+    }
+#endif
+    return glb_clk_xpd_err;
+}
+
+/**
+ * spinlock should wrap outside
+ * return 1 if the timer cannot keep alive in sleep, as an error raised
+ */
+static bool ledc_timer_clk_src_set_xpd_in_sleep(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
+{
+    p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_sel]++;
+    bool timer_clock_xpd_err = false;
+    // if the timer has not been configured yet, leave the xpd configuration to ledc_timer_config
+    if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] && p_ledc_obj[speed_mode]->glb_clk != LEDC_SLOW_CLK_UNINIT && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
+        timer_clock_xpd_err = ledc_glb_clk_set_sleep_mode(speed_mode, true);
+    }
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    else if (p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] != LEDC_TIMER_SPECIFIC_CLK_UNINIT) {
+        timer_clock_xpd_err = true;
+    }
+#endif
+    if (timer_clock_xpd_err) {
+        p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_sel]--;
+    }
+    return timer_clock_xpd_err;
 }
 
 esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_timer_t timer_sel)
@@ -241,10 +312,26 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    bool timer_xpd_err = false;
+    ledc_timer_t old_timer_sel;
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &old_timer_sel);
+
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_hal_bind_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, timer_sel);
+    ledc_hal_bind_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, timer_sel);
     ledc_ls_channel_update(speed_mode, channel);
+
+    if (p_ledc_obj[speed_mode]->channel_keep_alive[channel] && old_timer_sel != timer_sel) {
+        if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[old_timer_sel] > 0) {
+            p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[old_timer_sel]--;
+        }
+        // timer clock source should not be powered down during sleep
+        timer_xpd_err = ledc_timer_clk_src_set_xpd_in_sleep(speed_mode, timer_sel);
+    }
     portEXIT_CRITICAL(&ledc_spinlock);
+    if (timer_xpd_err) {
+        ESP_LOGW(LEDC_TAG, "the binded timer can't keep alive in sleep");
+    }
     return ESP_OK;
 }
 
@@ -254,7 +341,7 @@ esp_err_t ledc_timer_rst(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_hal_timer_rst(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel);
+    ledc_hal_timer_rst(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
@@ -266,7 +353,7 @@ esp_err_t ledc_timer_pause(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
     p_ledc_obj[speed_mode]->timer_is_stopped[timer_sel] = true;
-    ledc_hal_timer_pause(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel);
+    ledc_hal_timer_pause(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
@@ -278,17 +365,32 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
     p_ledc_obj[speed_mode]->timer_is_stopped[timer_sel] = false;
-    ledc_hal_timer_resume(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel);
+    ledc_hal_timer_resume(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
 }
+
+#if SOC_LEDC_SUPPORT_ETM
+esp_err_t ledc_channel_configure_maximum_timer_ovf_cnt(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t max_ovf_cnt)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_ARG_CHECK(max_ovf_cnt <= LEDC_LL_OVF_CNT_MAX, "max_ovf_cnt");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    ledc_hal_channel_configure_maximum_timer_ovf_cnt(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, max_ovf_cnt);
+    ledc_ls_channel_update(speed_mode, channel);
+
+    return ESP_OK;
+}
+#endif
 
 esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
 {
     esp_err_t ret;
     LEDC_ARG_CHECK(fn, "fn");
     portENTER_CRITICAL(&ledc_spinlock);
-    ret = esp_intr_alloc(ETS_LEDC_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
+    ret = esp_intr_alloc(ledc_periph_signal[0].irq_id, intr_alloc_flags, fn, arg, handle);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ret;
 }
@@ -296,23 +398,57 @@ esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
 static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
 {
     bool new_ctx = false;
+    bool group_acquired = false;
 
     // Prevent p_ledc_obj malloc concurrently
     _lock_acquire(&s_ledc_mutex[speed_mode]);
     if (!p_ledc_obj[speed_mode]) {
+        for (int i = 0; i < LEDC_SPEED_MODE_MAX; i++) {
+            if (p_ledc_obj[i]) {
+                group_acquired = true;
+                break;
+            }
+        }
         ledc_obj_t *ledc_new_mode_obj = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (ledc_new_mode_obj) {
             new_ctx = true;
-            ledc_hal_init(&(ledc_new_mode_obj->ledc_hal), speed_mode);
+            // initialize some fields
             ledc_new_mode_obj->glb_clk = LEDC_SLOW_CLK_UNINIT;
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
             memset(ledc_new_mode_obj->timer_specific_clk, LEDC_TIMER_SPECIFIC_CLK_UNINIT, sizeof(ledc_clk_src_t) * LEDC_TIMER_MAX);
 #endif
-            p_ledc_obj[speed_mode] = ledc_new_mode_obj;
-            LEDC_BUS_CLOCK_ATOMIC() {
-                ledc_ll_enable_bus_clock(true);
-                ledc_ll_enable_reset_reg(false);
+            ledc_new_mode_obj->sleep_mode = LEDC_SLEEP_MODE_INVALID;
+
+            // if the entire LEDC group is not acquired, do module based initialization
+            if (!group_acquired) {
+                PERIPH_RCC_ATOMIC() {
+                    ledc_ll_enable_bus_clock(0, true);
+                    ledc_ll_reset_register(0);
+                }
+                // Enable core clock gating at early stage, some LEDC registers and gamma RAM rely on the LEDC core clock existence
+                PERIPH_RCC_ATOMIC() {
+                    ledc_ll_enable_clock(0, true);
+                }
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP // for targets that is !SOC_LEDC_SUPPORT_SLEEP_RETENTION, retention module should still be inited to avoid TOP PD
+                // Initialize sleep retention module for LEDC
+                sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
+                sleep_retention_module_init_param_t init_param = {
+                    .cbs = {
+                        .create = {
+                            .handle = ledc_create_sleep_retention_link_cb,
+                            .arg = NULL,
+                        },
+                    },
+                    .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+                    .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+                };
+                if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                    ESP_LOGW(LEDC_TAG, "init sleep retention failed for ledc, power domain may be turned off during sleep");
+                }
+#endif
             }
+            ledc_hal_init(&(ledc_new_mode_obj->ledc_hal), 0);
+            p_ledc_obj[speed_mode] = ledc_new_mode_obj;
         }
     }
     _lock_release(&s_ledc_mutex[speed_mode]);
@@ -526,6 +662,8 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     ESP_LOGD(LEDC_TAG, "Using clock source %d (in %s mode), divisor: 0x%"PRIx32,
              timer_clk_src, (speed_mode == LEDC_LOW_SPEED_MODE ? "slow" : "fast"), div_param);
 
+    bool timer_clk_xpd_err = false;
+
     /* The following block configures the global clock.
      * Thus, in theory, this only makes sense when configuring the LOW_SPEED timer and the source clock is LEDC_SCLK (as
      * HIGH_SPEED timers won't be clocked by the global clock). However, there are some limitations due to HW design.
@@ -561,22 +699,38 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
-            LEDC_FUNC_CLOCK_ATOMIC() {
-                ledc_ll_enable_clock(p_ledc_obj[speed_mode]->ledc_hal.dev, true);
+            ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)glb_clk, true), LEDC_TAG, "clock source enable failed");
+            PERIPH_RCC_ATOMIC() {
                 ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
+            }
+        }
+        // acquire power domain for the timer clock source if desired and possible
+        if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] > 0 && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
+            timer_clk_xpd_err = ledc_glb_clk_set_sleep_mode(speed_mode, true);
+            if (timer_clk_xpd_err) {
+                p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] = 0;
             }
         }
         portEXIT_CRITICAL(&ledc_spinlock);
 
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
-
-        /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
-        extern void esp_sleep_periph_use_8m(bool use_or_not);
-        esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
     }
 
     /* The divisor is correct, we can write in the hardware. */
-    ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
+    ledc_set_timer_params(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
+
+    portENTER_CRITICAL(&ledc_spinlock);
+    if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] > 0 && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
+        // if still get into here, it means the speed mode is high speed mode
+        assert(speed_mode != LEDC_LOW_SPEED_MODE);
+        timer_clk_xpd_err = true;
+        p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] = 0;
+    }
+    portEXIT_CRITICAL(&ledc_spinlock);
+    if (timer_clk_xpd_err) {
+        ESP_LOGW(LEDC_TAG, "the timer can't keep alive in sleep");
+    }
+
     return ESP_OK;
 
 error:
@@ -601,6 +755,21 @@ static esp_err_t ledc_timer_del(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
         is_deleted = true;
         p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] = false;
         // TODO: release timer specific clk and global clk if possible [clk_tree]
+
+        // check if the acquired power domain for the timer clock source can be released
+        if (p_ledc_obj[speed_mode]->glb_clk_xpd) {
+            bool timer_clk_allow_pd = true;
+            for (int i = 0; i < LEDC_TIMER_MAX; i++) {
+                if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] && p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[i] > 0) {
+                    timer_clk_allow_pd = false;
+                    break;
+                }
+            }
+            if (timer_clk_allow_pd) {
+                ledc_glb_clk_set_sleep_mode(speed_mode, false);
+            }
+        }
+        ledc_ll_enable_timer_power(LEDC_LL_GET_HW(0), speed_mode, timer_sel, false);
     }
     portEXIT_CRITICAL(&ledc_spinlock);
     ESP_RETURN_ON_FALSE(is_configured && is_deleted, ESP_ERR_INVALID_STATE, LEDC_TAG, "timer hasn't been configured, or it is still running, please stop it with ledc_timer_pause first");
@@ -629,6 +798,10 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
         return ESP_ERR_NO_MEM;
     }
 
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_ll_enable_timer_power(LEDC_LL_GET_HW(0), speed_mode, timer_num, true);
+    portEXIT_CRITICAL(&ledc_spinlock);
+
     esp_err_t ret = ledc_set_timer_div(speed_mode, timer_num, timer_conf->clk_cfg, freq_hz, duty_resolution);
     if (ret == ESP_OK) {
         /* Make sure timer is running and reset the timer. */
@@ -638,14 +811,49 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
     return ret;
 }
 
-esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel)
+static esp_err_t _ledc_set_pin(int gpio_num, bool out_inv, ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    LEDC_ARG_CHECK(ledc_channel < LEDC_CHANNEL_MAX, "ledc_channel");
-    LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(gpio_num));
+    // check if the GPIO is already used by others, LEDC signal only uses the output path of the GPIO
+    if (old_gpio_rsv_mask & BIT64(gpio_num)) {
+        ESP_LOGW(LEDC_TAG, "GPIO %d is not usable, maybe conflict with others", gpio_num);
+    }
+    gpio_matrix_output(gpio_num, ledc_periph_signal[0].speed_mode[speed_mode].sig_out_idx[channel], out_inv, false);
+    portENTER_CRITICAL(&ledc_spinlock);
+    p_ledc_obj[speed_mode]->occupied_pin_mask[channel] |= BIT64(gpio_num);
+    portEXIT_CRITICAL(&ledc_spinlock);
+    return ESP_OK;
+}
+
+// One LEDC channel signal can be directed to multiple IOs as outputs
+esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t channel)
+{
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
-    gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
+    LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    return _ledc_set_pin(gpio_num, false, speed_mode, channel);
+}
+
+static esp_err_t ledc_channel_del(ledc_mode_t speed_mode, ledc_channel_t channel)
+{
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    portENTER_CRITICAL(&ledc_spinlock);
+    // release all the pins occupied by this channel
+    while (p_ledc_obj[speed_mode]->occupied_pin_mask[channel]) {
+        int gpio_num = __builtin_ffsll(p_ledc_obj[speed_mode]->occupied_pin_mask[channel]) - 1;
+        gpio_output_disable(gpio_num);
+        esp_gpio_revoke(BIT64(gpio_num));
+        p_ledc_obj[speed_mode]->occupied_pin_mask[channel] &= ~BIT64(gpio_num);
+    }
+    ledc_ll_enable_channel_power(LEDC_LL_GET_HW(0), speed_mode, channel, false);
+    portEXIT_CRITICAL(&ledc_spinlock);
+
+    // p_ledc_obj[speed_mode]->channel_keep_alive[channel] = false;
+    // TODO: dealing whether need to release the timer clock source xpd
+    // TODO: dealing whether can downgrade the sleep mode, so that retention link can be freed or peripheral clock can be gated during sleep
     return ESP_OK;
 }
 
@@ -656,15 +864,25 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     int gpio_num = ledc_conf->gpio_num;
     uint32_t ledc_channel = ledc_conf->channel;
     uint32_t timer_select = ledc_conf->timer_sel;
-    uint32_t intr_type = ledc_conf->intr_type;
     uint32_t duty = ledc_conf->duty;
     uint32_t hpoint = ledc_conf->hpoint;
     bool output_invert = ledc_conf->flags.output_invert;
     LEDC_ARG_CHECK(ledc_channel < LEDC_CHANNEL_MAX, "ledc_channel");
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+
+    if (ledc_conf->deconfigure) {
+        return ledc_channel_del(speed_mode, ledc_channel);
+    }
+
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
     LEDC_ARG_CHECK(timer_select < LEDC_TIMER_MAX, "timer_select");
-    LEDC_ARG_CHECK(intr_type < LEDC_INTR_MAX, "intr_type");
+    LEDC_ARG_CHECK(ledc_conf->sleep_mode < LEDC_SLEEP_MODE_INVALID, "sleep_mode");
+#if !SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(ledc_conf->sleep_mode != LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD, ESP_ERR_NOT_SUPPORTED, LEDC_TAG, "register back up is not supported");
+#if SOC_PM_SUPPORT_TOP_PD
+    esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON); //IDF-15643
+#endif
+#endif
 
     esp_err_t ret = ESP_OK;
 
@@ -672,7 +890,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     if (!new_speed_mode_ctx_created && !p_ledc_obj[speed_mode]) {
         return ESP_ERR_NO_MEM;
     }
-#if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4)
+#if LEDC_LL_GLOBAL_CLK_NC_BY_DEFAULT
     // On such targets, the default ledc core(global) clock does not connect to any clock source
     // Set channel configurations and update bits before core clock is on could lead to error
     // Therefore, we should connect the core clock to a real clock source to make it on before any ledc register operation
@@ -681,16 +899,21 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     else if (new_speed_mode_ctx_created) {
         portENTER_CRITICAL(&ledc_spinlock);
         if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_UNINIT) {
+            esp_clk_tree_enable_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, true);
             ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
         }
         portEXIT_CRITICAL(&ledc_spinlock);
     }
 #endif
 
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_ll_enable_channel_power(LEDC_LL_GET_HW(0), speed_mode, ledc_channel, true);
+    portEXIT_CRITICAL(&ledc_spinlock);
+
     /*set channel parameters*/
     /*   channel parameters decide how the waveform looks like in one period */
     /*   set channel duty and hpoint value, duty range is [0, (2**duty_res)], hpoint range is [0, (2**duty_res)-1] */
-    /*   Note: On ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2, ESP32P4, due to a hardware bug,
+    /*   Note: On ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32C6, ESP32H2 (rev < 1.2), ESP32P4 (rev < 3.0), due to a hardware bug,
      *         100% duty cycle (i.e. 2**duty_res) is not reachable when the binded timer selects the maximum duty
      *         resolution. For example, the max duty resolution on ESP32C3 is 14-bit width, then set duty to (2**14)
      *         will mess up the duty calculation in hardware.
@@ -700,25 +923,104 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     ledc_update_duty(speed_mode, ledc_channel);
     /*bind the channel with the timer*/
     ledc_bind_channel_timer(speed_mode, ledc_channel, timer_select);
-    /*set interrupt type*/
-    portENTER_CRITICAL(&ledc_spinlock);
-    ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
-    portEXIT_CRITICAL(&ledc_spinlock);
     ESP_LOGD(LEDC_TAG, "LEDC_PWM CHANNEL %"PRIu32"|GPIO %02u|Duty %04"PRIu32"|Time %"PRIu32,
              ledc_channel, gpio_num, duty, timer_select);
     /*set LEDC signal in gpio matrix*/
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
-    gpio_set_level(gpio_num, output_invert);
-    gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, output_invert, 0);
+    _ledc_set_pin(gpio_num, output_invert, speed_mode, ledc_channel);
+
+    // apply desired sleep strategy
+    bool slp_mode_conflict = false;
+    bool slp_retention_alloc __attribute__((unused)) = false;
+    bool slp_retention_free __attribute__((unused)) = false;
+    portENTER_CRITICAL(&ledc_spinlock);
+    if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD) {
+#if LEDC_USE_RETENTION_LINK
+        if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_NO_PD || p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
+            // conflict sleep strategy with other LEDC channels, power domain cannot be turned off
+            slp_mode_conflict = true;
+        } else {
+            p_ledc_obj[speed_mode]->sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD;
+            slp_retention_alloc = true;
+        }
+#endif
+    } else if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_NO_PD) {
+        if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_INVALID) {
+            p_ledc_obj[speed_mode]->sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD;
+        }
+#if LEDC_USE_RETENTION_LINK
+        else if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD) {
+            // conflict sleep strategy with other LEDC channels, power domain might still be turned off
+            slp_mode_conflict = true;
+        }
+#endif
+    } else if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
+        p_ledc_obj[speed_mode]->channel_keep_alive[ledc_channel] = true;
+#if LEDC_USE_RETENTION_LINK
+        if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD) {
+            // conflict sleep strategy with other LEDC channels, power domain won't be turned off
+            slp_mode_conflict = true;
+            slp_retention_free = true;
+        }
+#endif
+        p_ledc_obj[speed_mode]->sleep_mode = LEDC_SLEEP_MODE_KEEP_ALIVE;
+    }
+    portEXIT_CRITICAL(&ledc_spinlock);
+    if (slp_mode_conflict) {
+        ESP_LOGW(LEDC_TAG, "conflict sleep strategy with other LEDC channels, power domain may not be on/off as desired in sleep");
+    }
+#if LEDC_USE_RETENTION_LINK
+    if (slp_retention_alloc) {
+        if (sleep_retention_module_allocate(ledc_reg_retention_info[0].module_id) != ESP_OK) {
+            ESP_LOGW(LEDC_TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            if (sleep_retention_module_attach(ledc_reg_retention_info[0].module_id) != ESP_OK) {
+                ESP_LOGW(LEDC_TAG, "attach retention module failed, power domain can't turn off");
+            }
+        }
+    }
+    if (slp_retention_free) {
+        sleep_retention_module_detach(ledc_reg_retention_info[0].module_id);
+        sleep_retention_module_free(ledc_reg_retention_info[0].module_id);
+    }
+#endif
+
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
+        // 1. timer clock source should not be powered down during sleep
+        bool timer_xpd_err = false;
+        portENTER_CRITICAL(&ledc_spinlock);
+        timer_xpd_err = ledc_timer_clk_src_set_xpd_in_sleep(speed_mode, timer_select);
+        portEXIT_CRITICAL(&ledc_spinlock);
+        if (timer_xpd_err) {
+            ESP_LOGW(LEDC_TAG, "the binded timer can't keep alive in sleep");
+        }
+
+        // 2. keep IO output during sleep
+        gpio_sleep_sel_dis(gpio_num);
+#if CONFIG_IDF_TARGET_ESP32P4
+        // To workaround DIG-399, all LP IOs are held when LP_PERIPH is powered off to ensure EXT wakeup functionality
+        // But holding LP IOs will cause LEDC signal cannot output on the pad during sleep
+        // Therefore, we will force LP periph xpd in such case
+        if (GPIO_IS_HP_PERIPH_PD_WAKEUP_VALID_IO(gpio_num)) {
+            esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+        }
+#endif
+
+        // 3. keep related module integrated clock gating on during sleep
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_LEDC0, ESP_SLEEP_CLOCK_OPTION_UNGATE);
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
+#endif
+    }
+#endif
 
     return ret;
 }
 
 static void _ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
-    ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
-    ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
+    ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, true);
+    ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel);
     ledc_ls_channel_update(speed_mode, channel);
 }
 
@@ -739,9 +1041,8 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
     LEDC_ARG_CHECK_ISR(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_CHECK_ISR(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL_SAFE(&ledc_spinlock);
-    ledc_hal_set_idle_level(&(p_ledc_obj[speed_mode]->ledc_hal), channel, idle_level);
-    ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
-    ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, false);
+    ledc_hal_set_idle_level(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, idle_level);
+    ledc_hal_set_sig_out_en(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, false);
     ledc_ls_channel_update(speed_mode, channel);
     portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
@@ -824,7 +1125,7 @@ uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     uint32_t duty = 0;
-    ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty);
+    ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &duty);
     return duty;
 }
 
@@ -834,7 +1135,7 @@ int ledc_get_hpoint(ledc_mode_t speed_mode, ledc_channel_t channel)
     LEDC_CHECK(channel < LEDC_CHANNEL_MAX, "channel argument is invalid", LEDC_ERR_VAL);
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     uint32_t hpoint = 0;
-    ledc_hal_get_hpoint(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &hpoint);
+    ledc_hal_get_hpoint(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &hpoint);
     return hpoint;
 }
 
@@ -845,8 +1146,8 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     ledc_clk_cfg_t clk_cfg = LEDC_AUTO_CLK;
     uint32_t duty_resolution = 0;
-    ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clk_cfg);
-    ledc_hal_get_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &duty_resolution);
+    ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_num, &clk_cfg);
+    ledc_hal_get_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_num, &duty_resolution);
     return ledc_set_timer_div(speed_mode, timer_num, clk_cfg, freq_hz, duty_resolution);
 }
 
@@ -859,10 +1160,10 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     uint32_t clock_divider = 0;
     uint32_t duty_resolution = 0;
     ledc_clk_cfg_t clk_cfg = LEDC_AUTO_CLK;
-    ledc_hal_get_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clock_divider);
-    ledc_hal_get_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &duty_resolution);
-    ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clk_cfg);
-    uint32_t precision = (0x1 << duty_resolution);
+    ledc_hal_get_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_num, &clock_divider);
+    ledc_hal_get_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_num, &duty_resolution);
+    ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, timer_num, &clk_cfg);
+    uint64_t precision = (0x1 << duty_resolution);
     uint32_t src_clk_freq = 0;
     esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_cfg, LEDC_CLK_SRC_FREQ_PRECISION, &src_clk_freq);
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -888,11 +1189,13 @@ uint32_t ledc_find_suitable_duty_resolution(uint32_t src_clk_freq, uint32_t time
 {
     // Highest resolution is calculated when LEDC_CLK_DIV = 1 (i.e. div_param = 1 << LEDC_LL_FRACTIONAL_BITS)
     uint32_t div = (src_clk_freq + timer_freq / 2) / timer_freq; // rounded
-    uint32_t duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+    uint32_t ilog2_div = ilog2(div);
+    uint32_t duty_resolution = MIN(ilog2_div, SOC_LEDC_TIMER_BIT_WIDTH);
     uint32_t div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
     if (LEDC_IS_DIV_INVALID(div_param)) {
         div = src_clk_freq / timer_freq; // truncated
-        duty_resolution = MIN(ilog2(div), SOC_LEDC_TIMER_BIT_WIDTH);
+        ilog2_div = ilog2(div);
+        duty_resolution = MIN(ilog2_div, SOC_LEDC_TIMER_BIT_WIDTH);
         div_param = ledc_calculate_divisor(src_clk_freq, timer_freq, 1 << duty_resolution);
         if (LEDC_IS_DIV_INVALID(div_param)) {
             duty_resolution = 0;
@@ -921,12 +1224,13 @@ static void IRAM_ATTR ledc_fade_isr(void *arg)
         if (p_ledc_obj[speed_mode] == NULL) {
             continue;
         }
-        ledc_hal_get_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), &intr_status);
+        intr_status = ledc_ll_get_intr_status(p_ledc_obj[speed_mode]->ledc_hal.dev) & LEDC_LL_DUTY_CHANGE_END_INTR_MASK(speed_mode);
+        intr_status >>= __builtin_ctzll(LEDC_LL_DUTY_CHANGE_END_INTR_MASK(speed_mode));
         while (intr_status) {
             ledc_calc_fade_end_channel(&intr_status, &channel);
 
             // clear interrupt
-            ledc_hal_clear_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), channel);
+            ledc_ll_clear_intr_status(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel));
 
             if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
                 //fade object not initialized yet.
@@ -955,12 +1259,12 @@ static void IRAM_ATTR ledc_fade_isr(void *arg)
             int step = 0;
             int next_duty = 0;
             uint32_t duty_cur = 0;
-            ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
+            ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &duty_cur);
             uint32_t duty_tar = s_ledc_fade_rec[speed_mode][channel]->target_duty;
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
             // If a multi-fade is done, check that target duty computed in sw is equal to the duty at the end of the fade
             uint32_t range_num;
-            ledc_hal_get_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &range_num);
+            ledc_hal_get_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &range_num);
             if (range_num > 1) {
                 assert(duty_cur == duty_tar);
             }
@@ -1004,7 +1308,7 @@ static void IRAM_ATTR ledc_fade_isr(void *arg)
                                  cycle,
                                  scale);
                 s_ledc_fade_rec[speed_mode][channel]->fsm = LEDC_FSM_HW_FADE;
-                ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
+                ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel);
                 ledc_ls_channel_update(speed_mode, channel);
             }
             portEXIT_CRITICAL_ISR(&ledc_spinlock);
@@ -1077,9 +1381,10 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
 {
     portENTER_CRITICAL(&ledc_spinlock);
     uint32_t duty_cur = 0;
-    ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
+    ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &duty_cur);
     // When duty == max_duty, meanwhile, if scale == 1 and fade_down == 1, counter would overflow.
     if (duty_cur == ledc_get_max_duty(speed_mode, channel)) {
+        assert(duty_cur > 0);
         duty_cur -= 1;
     }
     s_ledc_fade_rec[speed_mode][channel]->speed_mode = speed_mode;
@@ -1118,19 +1423,19 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
     return ESP_OK;
 }
 
-static esp_err_t _ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int max_fade_time_ms)
+static esp_err_t _ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int desired_fade_time_ms)
 {
     ledc_timer_t timer_sel;
     uint32_t duty_cur = 0;
-    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &timer_sel);
-    ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &timer_sel);
+    ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &duty_cur);
     uint32_t freq = ledc_get_freq(speed_mode, timer_sel);
     uint32_t duty_delta = target_duty > duty_cur ? target_duty - duty_cur : duty_cur - target_duty;
 
     if (duty_delta == 0) {
         return _ledc_set_fade_with_step(speed_mode, channel, target_duty, 0, 0);
     }
-    uint32_t total_cycles = max_fade_time_ms * freq / 1000;
+    uint32_t total_cycles = desired_fade_time_ms * freq / 1000;
     if (total_cycles == 0) {
         ESP_LOGW(LEDC_TAG, LEDC_FADE_TOO_FAST_STR);
         return _ledc_set_fade_with_step(speed_mode, channel, target_duty, 0, 0);
@@ -1159,10 +1464,10 @@ static void _ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, led
     ledc_fade_t *fade = s_ledc_fade_rec[speed_mode][channel];
     fade->mode = fade_mode;
     // Clear interrupt status of channel
-    ledc_hal_clear_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), channel);
+    ledc_ll_clear_intr_status(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel));
     // Enable interrupt for channel
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_FADE_END);
+    ledc_ll_enable_interrupt(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel), true);
     // Set fade state to HW_FADE state for starting the fade
     assert(fade->fsm == LEDC_FSM_IDLE);
     fade->fsm = LEDC_FSM_HW_FADE;
@@ -1177,7 +1482,7 @@ static void _ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, led
     }
 }
 
-esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int max_fade_time_ms)
+esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int desired_fade_time_ms)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
@@ -1186,7 +1491,7 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
 
     _ledc_fade_hw_acquire(speed_mode, channel);
-    _ledc_set_fade_with_time(speed_mode, channel, target_duty, max_fade_time_ms);
+    _ledc_set_fade_with_time(speed_mode, channel, target_duty, desired_fade_time_ms);
     _ledc_fade_hw_release(speed_mode, channel);
     return ESP_OK;
 }
@@ -1227,17 +1532,19 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     ledc_fade_t *fade = s_ledc_fade_rec[speed_mode][channel];
-    ledc_fade_fsm_t state = fade->fsm;
+    bool skip = false;
     bool wait_for_idle = false;
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_fade_fsm_t state = fade->fsm;
     assert(state != LEDC_FSM_KILLED_PENDING);
     if (state == LEDC_FSM_IDLE) {
         // if there is no fade going on, do nothing
-        return ESP_OK;
+        skip = true;
+        goto exit;
     }
     // Fade state is either HW_FADE or ISR_CAL (there is a fade in process)
-    portENTER_CRITICAL(&ledc_spinlock);
     // Disable ledc channel interrupt first
-    ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_DISABLE);
+    ledc_ll_enable_interrupt(p_ledc_obj[speed_mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(speed_mode, channel), false);
     // Config duty to the duty cycle at this moment
     uint32_t duty_cur = ledc_get_duty(speed_mode, channel);
     ledc_duty_config(speed_mode,
@@ -1250,21 +1557,22 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
                      0                     //uint32_t duty_scale
                     );
     _ledc_update_duty(speed_mode, channel);
-    state = fade->fsm;
-    assert(state != LEDC_FSM_IDLE && state != LEDC_FSM_KILLED_PENDING);
     if (state == LEDC_FSM_HW_FADE) {
         fade->fsm = LEDC_FSM_IDLE;
     } else if (state == LEDC_FSM_ISR_CAL) {
         fade->fsm = LEDC_FSM_KILLED_PENDING;
         wait_for_idle = true;
     }
+exit:
     portEXIT_CRITICAL(&ledc_spinlock);
     if (wait_for_idle) {
         // Wait for ISR return, which gives the semaphore and switches state to IDLE
         _ledc_fade_hw_acquire(speed_mode, channel);
         assert(fade->fsm == LEDC_FSM_IDLE);
     }
-    _ledc_fade_hw_release(speed_mode, channel);
+    if (!skip) {
+        _ledc_fade_hw_release(speed_mode, channel);
+    }
     return ESP_OK;
 }
 #endif
@@ -1272,8 +1580,31 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
 esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 {
     LEDC_CHECK(s_ledc_fade_isr_handle == NULL, "fade function already installed", ESP_ERR_INVALID_STATE);
+
+    ledc_mode_t speed_mode = LEDC_SPEED_MODE_MAX;
+    for (int i = 0; i < LEDC_SPEED_MODE_MAX; i++) {
+        if (p_ledc_obj[i] != NULL) {
+            speed_mode = i;
+            break;
+        }
+    }
+    LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "LEDC not initialized, call ledc_timer_config first", ESP_ERR_INVALID_STATE);
+
+    uint32_t intr_mask = LEDC_LL_DUTY_CHANGE_END_INTR_MASK(LEDC_LOW_SPEED_MODE);
+#if SOC_LEDC_SUPPORT_HS_MODE
+    intr_mask |= LEDC_LL_DUTY_CHANGE_END_INTR_MASK(LEDC_HIGH_SPEED_MODE);
+#endif
+
     //OR intr_alloc_flags with ESP_INTR_FLAG_IRAM because the fade isr is in IRAM
-    return ledc_isr_register(ledc_fade_isr, NULL, intr_alloc_flags | ESP_INTR_FLAG_IRAM, &s_ledc_fade_isr_handle);
+    return esp_intr_alloc_intrstatus(
+               ledc_periph_signal[0].irq_id,
+               intr_alloc_flags | ESP_INTR_FLAG_IRAM,
+               (uint32_t)ledc_ll_get_intr_status_reg(p_ledc_obj[speed_mode]->ledc_hal.dev),
+               intr_mask,
+               ledc_fade_isr,
+               NULL,
+               &s_ledc_fade_isr_handle
+           );
 }
 
 void ledc_fade_func_uninstall(void)
@@ -1330,7 +1661,7 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
     return ESP_OK;
 }
 
-esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, uint32_t max_fade_time_ms, ledc_fade_mode_t fade_mode)
+esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, uint32_t desired_fade_time_ms, ledc_fade_mode_t fade_mode)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
@@ -1340,7 +1671,7 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
     _ledc_op_lock_acquire(speed_mode, channel);
     _ledc_fade_hw_acquire(speed_mode, channel);
-    _ledc_set_fade_with_time(speed_mode, channel, target_duty, max_fade_time_ms);
+    _ledc_set_fade_with_time(speed_mode, channel, target_duty, desired_fade_time_ms);
     _ledc_fade_start(speed_mode, channel, fade_mode);
     _ledc_op_lock_release(speed_mode, channel);
     return ESP_OK;
@@ -1370,12 +1701,14 @@ static esp_err_t _ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t cha
     uint32_t max_duty = ledc_get_max_duty(speed_mode, channel);
     LEDC_ARG_CHECK(start_duty <= max_duty, "start_duty");
     portENTER_CRITICAL(&ledc_spinlock);
-    ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), channel, start_duty);
+    ledc_hal_set_duty_int_part(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, start_duty);
     for (int i = 0; i < list_len; i++) {
         ledc_fade_param_config_t fade_param = fade_params_list[i];
-        ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, i, fade_param.dir, fade_param.cycle_num, fade_param.scale, fade_param.step_num);
+        ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, i, fade_param.dir, fade_param.cycle_num, fade_param.scale, fade_param.step_num);
     }
-    ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
+    ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, list_len);
+    // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
+    ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, list_len);
     portEXIT_CRITICAL(&ledc_spinlock);
     // Calculate target duty, and take account for overflow
     uint32_t target_duty = start_duty;
@@ -1458,7 +1791,7 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
     esp_err_t ret = ESP_OK;
 
     ledc_timer_t timer_sel;
-    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &timer_sel);
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, &timer_sel);
     uint32_t freq = ledc_get_freq(speed_mode, timer_sel);
 
     uint32_t dir = (end_duty > start_duty) ? LEDC_DUTY_DIR_INCREASE : LEDC_DUTY_DIR_DECREASE;
@@ -1510,6 +1843,10 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
                 scale = LEDC_LL_DUTY_SCALE_MAX;
             }
             step = duty_delta / scale;
+            // Ensure step * cycle doesn't exceed cycles_per_phase to prevent underflow to surplus_cycles_last_phase
+            if (step > cycles_per_phase) {
+                step = cycles_per_phase;
+            }
         }
 
         // Prepare for next phase calculation
@@ -1521,7 +1858,7 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
         }
         surplus_cycles_last_phase = cycles_per_phase - step * cycle;
         // If next phase is the last one, then account for all remaining duty and cycles
-        if (i == linear_phase_num - 2) {
+        if (linear_phase_num >= 2 && i == linear_phase_num - 2) {
             phase_tail = end_duty;
             surplus_cycles_last_phase += total_cycles - avg_cycles_per_phase * linear_phase_num;
         }
@@ -1574,7 +1911,7 @@ esp_err_t ledc_read_fade_param(ledc_mode_t speed_mode, ledc_channel_t channel, u
     LEDC_ARG_CHECK(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, "range");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
 
-    ledc_hal_get_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, range, dir, cycle, scale, step);
+    ledc_hal_get_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), speed_mode, channel, range, dir, cycle, scale, step);
     return ESP_OK;
 }
 #endif // SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED

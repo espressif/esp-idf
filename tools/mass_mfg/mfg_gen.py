@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import csv
-import distutils.dir_util
 import os
 from itertools import zip_longest
+from pathlib import Path
 
 import esp_idf_nvs_partition_gen.nvs_partition_gen as nvs_partition_gen
 
@@ -24,7 +23,7 @@ def create_temp_files(args):
 
 
 def strip_blank_lines(input_filename, output_filename):
-    with open(input_filename, 'r') as read_from, open(output_filename,'w', newline='') as write_to:
+    with open(input_filename, 'r', encoding='utf-8') as read_from, open(output_filename,'w', newline='', encoding='utf-8') as write_to:
         for line in read_from:
             if not line.isspace():
                 write_to.write(line)
@@ -33,7 +32,7 @@ def strip_blank_lines(input_filename, output_filename):
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
     """
-    with open(input_values_file, 'r') as values_file:
+    with open(input_values_file, 'r', encoding='utf-8') as values_file:
         values_file_reader = csv.reader(values_file, delimiter=',')
         next(values_file_reader)
 
@@ -49,7 +48,7 @@ def verify_keys_exist(values_file_keys, input_config_file):
     """
     keys_missing = []
 
-    with open(input_config_file,'r') as config_file:
+    with open(input_config_file,'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
 
         for line_num, line in enumerate(config_file_reader, start=1):
@@ -72,10 +71,10 @@ def verify_keys_exist(values_file_keys, input_config_file):
 def verify_datatype_encoding(input_config_file):
     """ Verify datatype and encodings from config file is valid
     """
-    valid_encodings = {'string', 'binary', 'hex2bin','u8', 'i8', 'u16', 'u32', 'i32','base64'}
+    valid_encodings = {'string', 'binary', 'hex2bin','u8', 'i8', 'u16', 'u32', 'i32', 'u64', 'i64','base64'}
     valid_datatypes = {'file','data','namespace'}
 
-    with open(input_config_file,'r') as config_file:
+    with open(input_config_file,'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
 
         for line_num, line in enumerate(config_file_reader, start=1):
@@ -91,7 +90,7 @@ def verify_file_data_count(input_config_file, keys_repeat):
     """ Verify count of data on each line in config file is equal to 3
     (as format must be: <key,type and encoding>)
     """
-    with open(input_config_file, 'r') as config_file:
+    with open(input_config_file, 'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
 
         for line_num, line in enumerate(config_file_reader, start=1):
@@ -137,7 +136,7 @@ def add_config_data_per_namespace(input_config_file):
     config_data_to_write = []
     config_data_per_namespace = []
 
-    with open(input_config_file,'r') as csv_config_file:
+    with open(input_config_file,'r', encoding='utf-8') as csv_config_file:
         config_file_reader = csv.reader(csv_config_file, delimiter=',')
 
         # `config_data_per_namespace` is added to `config_data_to_write` list after reading next namespace
@@ -183,7 +182,7 @@ def add_data_to_file(config_data_to_write, key_value_pair, output_csv_file):
     header = ['key', 'type', 'encoding', 'value']
     data_to_write = []
 
-    with open(output_csv_file, 'w', newline='') as target_csv_file:
+    with open(output_csv_file, 'w', newline='', encoding='utf-8') as target_csv_file:
         output_file_writer = csv.writer(target_csv_file, delimiter=',')
         output_file_writer.writerow(header)
 
@@ -209,13 +208,13 @@ def create_dir(filetype, output_dir_path):
     """
     output_target_dir = os.path.join(output_dir_path,filetype,'')
     if not os.path.isdir(output_target_dir):
-        distutils.dir_util.mkpath(output_target_dir)
+        Path(output_target_dir).mkdir(parents=True)
 
     return output_target_dir
 
 
 def set_repeat_value(total_keys_repeat, keys, csv_file, target_filename):
-    with open(csv_file, 'r') as read_from, open(target_filename,'w', newline='') as write_to:
+    with open(csv_file, 'r', encoding='utf-8') as read_from, open(target_filename,'w', newline='', encoding='utf-8') as write_to:
         csv_file_reader = csv.reader(read_from, delimiter=',')
         headers = next(csv_file_reader)
         values = next(csv_file_reader)
@@ -248,7 +247,7 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
     config_data_to_write = add_config_data_per_namespace(args.conf)
 
     try:
-        with open(args.values, 'r') as csv_values_file:
+        with open(args.values, 'r', encoding='utf-8') as csv_values_file:
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             keys = next(values_file_reader)
 
@@ -259,14 +258,17 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
         else:
             target_values_file = args.values
 
-        with open(target_values_file, 'r') as csv_values_file:
+        with open(target_values_file, 'r', encoding='utf-8') as csv_values_file:
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             next(values_file_reader)
 
-            # Create new directory(if doesn't exist) to store csv file generated
+            # Create new directory (if doesn't exist) to store csv file generated
             output_csv_target_dir = create_dir('csv', args.outdir)
-            # Create new directory(if doesn't exist) to store bin file generated
+            # Create new directory (if doesn't exist) to store bin file generated
             output_bin_target_dir = create_dir('bin', args.outdir)
+
+            if args.prefix_num:
+                prefix_num_start, prefix_num_digits = args.prefix_num
 
             for values_data_line in values_file_reader:
                 key_value_data = list(zip_longest(keys_in_values_file, values_data_line))
@@ -276,9 +278,22 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
 
                 key_value_pair = key_value_data[:]
 
-                # Verify if output csv file does not exist
-                csv_filename = args.prefix + '-' + file_identifier_value + '.' + 'csv'
+                if args.prefix_num:
+                    # Create file name prefix based on user supplied start and length
+                    prefix_number = f'{prefix_num_start:0{prefix_num_digits}}'
+                    csv_filename = args.prefix + '-' + prefix_number + '-' + file_identifier_value + '.' + 'csv'
+                    bin_filename = args.prefix + '-' + prefix_number + '-' + file_identifier_value + '.' + 'bin'
+                    if args.keygen:
+                        args.keyfile = 'keys-' + args.prefix + '-' + prefix_number + '-' + file_identifier_value
+                    prefix_num_start += 1
+                else:
+                    csv_filename = args.prefix + '-' + file_identifier_value + '.' + 'csv'
+                    bin_filename = args.prefix + '-' + file_identifier_value + '.' + 'bin'
+                    if args.keygen:
+                        args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
+
                 output_csv_file = output_csv_target_dir + csv_filename
+                # Verify if output csv file does not exist
                 if os.path.isfile(output_csv_file):
                     raise SystemExit('Target csv file: %s already exists.`' % output_csv_file)
 
@@ -286,16 +301,13 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
                 add_data_to_file(config_data_to_write, key_value_pair, output_csv_file)
                 print('\nCreated CSV file: ===>', output_csv_file)
 
-                # Verify if output bin file does not exist
-                bin_filename = args.prefix + '-' + file_identifier_value + '.' + 'bin'
                 output_bin_file = output_bin_target_dir + bin_filename
+                # Verify if output bin file does not exist
                 if os.path.isfile(output_bin_file):
                     raise SystemExit('Target binary file: %s already exists.`' % output_bin_file)
 
                 args.input = output_csv_file
                 args.output = os.path.join('bin', bin_filename)
-                if args.keygen:
-                    args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
 
                 if is_encr:
                     nvs_partition_gen.encrypt(args)
@@ -329,7 +341,7 @@ def verify_file_format(args):
         raise SystemExit('Error: values file: %s is empty.' % args.values)
 
     # Extract keys from config file
-    with open(args.conf, 'r') as config_file:
+    with open(args.conf, 'r', encoding='utf-8') as config_file:
         config_file_reader = csv.reader(config_file, delimiter=',')
         for config_data in config_file_reader:
             if 'namespace' not in config_data:
@@ -338,7 +350,7 @@ def verify_file_format(args):
                 keys_repeat.append(config_data[0])
 
     # Extract keys from values file
-    with open(args.values, 'r') as values_file:
+    with open(args.values, 'r', encoding='utf-8') as values_file:
         values_file_reader = csv.reader(values_file, delimiter=',')
         keys_in_values_file = next(values_file_reader)
 
@@ -399,6 +411,11 @@ def main():
                                 default=None,
                                 help='Size of NVS partition in bytes\
                                     \n(must be multiple of 4096)')
+        parser_gen.add_argument('--prefix_num',
+                                type=int,
+                                nargs=2,
+                                metavar=('start', 'length'),
+                                help='Prefix number (counter) start and length (in digits) to be added for each output filename')
         parser_gen.add_argument('--fileid',
                                 default=None,
                                 help='''Unique file identifier(any key in values file) \

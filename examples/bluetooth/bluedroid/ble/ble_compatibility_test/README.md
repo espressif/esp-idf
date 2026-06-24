@@ -1,9 +1,55 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF BLE Compatibility Test Example
 
 This example is to test the Bluetooth compatibility and mobile phones.
+
+## Flow Diagram
+
+```
+    ┌──────────────────┐                           ┌──────────────────┐
+    │    ESP32 BLE     │                           │   Mobile Phone   │
+    │ (Compatibility)  │                           │  (LightBlue App) │
+    └────────┬─────────┘                           └────────┬─────────┘
+             │                                              │
+             │  1. Initialize BLE                           │
+             │  2. Create GATT Services                     │
+             │  3. Start Advertising                        │
+             │                                              │
+             │  ─────────── Test Scenarios ───────────      │
+             │                                              │
+             │         Scan & Discover                      │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │         Connection Request                   │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │         Service Discovery                    │
+             │ <════════════════════════════════════════════│
+             │                                              │
+             │         Read Characteristic                  │
+             │ <════════════════════════════════════════════│
+             │         Read Response                        │
+             │ ════════════════════════════════════════════>│
+             │                                              │
+             │         Write Characteristic                 │
+             │ <════════════════════════════════════════════│
+             │         Write Confirmation                   │
+             │ ════════════════════════════════════════════>│
+             │                                              │
+             │         Enable Notification                  │
+             │ <════════════════════════════════════════════│
+             │         Notification Data                    │
+             │ ════════════════════════════════════════════>│
+             │                                              │
+             │         Disconnection                        │
+             │ <═══════════════════════════════════════════>│
+             │                                              │
+    ┌────────┴─────────┐                           ┌────────┴─────────┐
+    │    ESP32 BLE     │                           │   Mobile Phone   │
+    └──────────────────┘                           └──────────────────┘
+```
 
 ## How to Use Example
 

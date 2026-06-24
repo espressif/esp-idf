@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,8 @@ Scheduler suspension behavior differs significantly in SMP FreeRTOS, thus none o
 GP timer is used to trigger an interrupt. Test cases will register an interrupt callback called from the timer's
 interrupt callback. The functions below simply the interrupt registration/trigger/deregistration process.
 */
+
+#if SOC_GPTIMER_SUPPORTED
 
 static gptimer_handle_t gptimer = NULL;
 static bool (*registered_intr_callback)(void *) = NULL;
@@ -83,6 +85,8 @@ static void deregister_intr_cb(void)
     TEST_ESP_OK(gptimer_disable(gptimer_temp));
     TEST_ESP_OK(gptimer_del_timer(gptimer_temp));
 }
+
+#endif //SOC_GPTIMER_SUPPORTED
 
 /* ---------------------------------------------------------------------------------------------------------------------
 Test vTaskSuspendAll() and xTaskResumeAll() basic
@@ -223,6 +227,12 @@ TEST_CASE("Test vTaskSuspendAll() and xTaskResumeAll() multicore", "[freertos]")
         for (int j = 0; j < 2; j++) {
             xSemaphoreTake(done_sem, portMAX_DELAY);
         }
+
+        // Suspend the test tasks in case they haven't suspended themselves yet
+        vTaskSuspend(taskA_hdl);
+        vTaskSuspend(taskB_hdl);
+        vTaskDelay(10);
+
         // Cleanup the tasks
         vTaskDelete(taskA_hdl);
         vTaskDelete(taskB_hdl);
@@ -265,6 +275,9 @@ Expected:
 --------------------------------------------------------------------------------------------------------------------- */
 
 #if !CONFIG_FREERTOS_UNICORE
+
+#if SOC_GPTIMER_SUPPORTED
+
 static volatile int test_unblk_sync;
 static SemaphoreHandle_t test_unblk_done_sem;
 
@@ -332,6 +345,8 @@ static void test_unblk_a1_task(void *arg)
 
     // Cleanup A2 and interrupt
     deregister_intr_cb();
+    vTaskSuspend(a2_task_hdl);
+    vTaskDelay(10);
     vTaskDelete(a2_task_hdl);
 
     // Indicate done and wait to be deleted
@@ -384,15 +399,23 @@ TEST_CASE("Test vTaskSuspendAll allows scheduling on other cores", "[freertos]")
         for (int j = 0; j < 2; j++) {
             xSemaphoreTake(test_unblk_done_sem, portMAX_DELAY);
         }
+        // Suspend the test tasks in case they haven't suspended themselves yet
+        vTaskSuspend(a1_task_hdl);
+        vTaskSuspend(b1_task_hdl);
+        vTaskDelay(10);
+
         // Cleanup tasks
         vTaskDelete(a1_task_hdl);
         vTaskDelete(b1_task_hdl);
+        vTaskDelay(10);
     }
 
     vSemaphoreDelete(test_unblk_done_sem);
     // Add a short delay to allow the idle task to free any remaining task memory
     vTaskDelay(10);
 }
+
+#endif //SOC_GPTIMER_SUPPORTED
 
 /* ---------------------------------------------------------------------------------------------------------------------
 Test vTaskSuspendAll doesn't block unpinned tasks from being scheduled on other cores
@@ -505,6 +528,10 @@ TEST_CASE("Test vTaskSuspendAll doesn't block unpinned tasks from being schedule
     for (int i = 0; i < 2; i++) {
         xSemaphoreTake(test_unpinned_sem, portMAX_DELAY);
     }
+    // Suspend the test tasks in case they haven't suspended themselves yet
+    vTaskSuspend(pinned_task_hdl);
+    vTaskSuspend(unpinned_task_hdl);
+    vTaskDelay(10);
 
     // Cleanup
     vTaskDelete(pinned_task_hdl);
@@ -538,6 +565,8 @@ Expected:
 --------------------------------------------------------------------------------------------------------------------- */
 
 #define TEST_PENDED_NUM_BLOCKED_TASKS   4
+
+#if SOC_GPTIMER_SUPPORTED
 
 static bool test_pended_isr(void *arg)
 {
@@ -631,11 +660,16 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_running_task, "susp", 2048, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &susp_tsk_hdl, i));
         // Wait for to be notified to test completion
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // Suspend the test task in case it hasn't suspended itself yet
+        vTaskSuspend(susp_tsk_hdl);
+        vTaskDelay(10);
         vTaskDelete(susp_tsk_hdl);
     }
     // Add a short delay to allow the idle task to free any remaining task memory
     vTaskDelay(10);
 }
+
+#endif //SOC_GPTIMER_SUPPORTED
 
 /* ---------------------------------------------------------------------------------------------------------------------
 Test xTaskSuspendAll on both cores pends all tasks and xTaskResumeAll on both cores resumes all tasks
@@ -696,6 +730,7 @@ static void test_susp_task(void *arg)
     vTaskSuspend(NULL);
 }
 
+#if SOC_GPTIMER_SUPPORTED
 TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll on all cores resumes all tasks", "[freertos]")
 {
     volatile bool has_run[TEST_PENDED_NUM_BLOCKED_TASKS];
@@ -743,11 +778,16 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
 
     // Cleanup
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
+        vTaskSuspend(blkd_tasks[i]);
+        vTaskDelay(10);
         vTaskDelete(blkd_tasks[i]);
     }
+    vTaskSuspend(susp_task);
+    vTaskDelay(10);
     vTaskDelete(susp_task);
     vSemaphoreDelete(done_sem);
 }
+#endif //SOC_GPTIMER_SUPPORTED
 #endif  // !CONFIG_FREERTOS_UNICORE
 
 /* ---------------------------------------------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -35,7 +35,7 @@ typedef enum {
     ETS_GPIO_NMI_SOURCE,                        /**< interrupt of GPIO, NMI*/
     ETS_SPI1_INTR_SOURCE,                       /**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
     ETS_SPI2_INTR_SOURCE,                       /**< interrupt of SPI2, level*/
-    ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
+    ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
     ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
@@ -51,7 +51,7 @@ typedef enum {
     ETS_TG0_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, WATCH DOG, level*/
     ETS_TG1_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER0, level*/
     ETS_TG1_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP1, WATCHDOG, level*/
-    ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalied Access, LEVEL*/
+    ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalid Access, LEVEL*/
     ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
     ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
     ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */
@@ -81,7 +81,7 @@ typedef enum {
     ETS_BAK_PMS_VIOLATE_INTR_SOURCE,
     ETS_CACHE_CORE0_ACS_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,
-} periph_interrput_t;
+} periph_interrupt_t;
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

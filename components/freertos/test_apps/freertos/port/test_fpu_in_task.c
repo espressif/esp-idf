@@ -165,7 +165,7 @@ static void unpinned_task(void *arg)
     TEST_ASSERT_EQUAL(cur_core_num, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
-    // Reenable scheduling/preemption
+    // Re-enable scheduling/preemption
 #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     vTaskPreemptionEnable(NULL);
 #else
@@ -192,7 +192,7 @@ TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
 typedef struct {
     bool negative;
     TaskHandle_t main;
-} ParamsFPU;
+} fpu_params_t;
 
 /**
  * @brief Function performing some simple calculation using several FPU registers.
@@ -200,7 +200,7 @@ typedef struct {
  */
 void fpu_calculation(void* arg)
 {
-    ParamsFPU* p = (ParamsFPU*) arg;
+    fpu_params_t* p = (fpu_params_t*) arg;
     const bool negative = p->negative;
     const float init = negative ? -1.f : 1.f;
     float f = init;
@@ -236,13 +236,13 @@ TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]
     /* Create two tasks that are on the same core and use the same FPU */
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
     TaskHandle_t tasks[2];
-    ParamsFPU params[2] = {
+    fpu_params_t params[2] = {
         { .negative = false, .main = unity_task_handle },
         { .negative = true,  .main = unity_task_handle },
     };
 
     xTaskCreatePinnedToCore(fpu_calculation, "Task1", 2048, params + 0, UNITY_FREERTOS_PRIORITY + 1, &tasks[0], 1);
-    xTaskCreatePinnedToCore(fpu_calculation, "Task2", 2048, params + 1, UNITY_FREERTOS_PRIORITY + 2, &tasks[2], 1);
+    xTaskCreatePinnedToCore(fpu_calculation, "Task2", 2048, params + 1, UNITY_FREERTOS_PRIORITY + 1, &tasks[1], 1);
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);

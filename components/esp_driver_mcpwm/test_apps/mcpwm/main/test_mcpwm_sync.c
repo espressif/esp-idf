@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_timer.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
@@ -22,12 +22,12 @@ TEST_CASE("mcpwm_sync_source_install_uninstall", "[mcpwm]")
         .period_ticks = 200,
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
     };
-    const int total_timers = SOC_MCPWM_TIMERS_PER_GROUP * SOC_MCPWM_GROUPS;
+    const int total_timers = MCPWM_LL_GET(TIMERS_PER_GROUP) * MCPWM_LL_GET(GROUP_NUM);
     mcpwm_timer_handle_t timers[total_timers];
     int k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         timer_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_TIMERS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(TIMERS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timers[k++]));
         }
     }
@@ -44,12 +44,12 @@ TEST_CASE("mcpwm_sync_source_install_uninstall", "[mcpwm]")
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .gpio_num = TEST_SYNC_GPIO,
     };
-    const int total_gpio_sync_srcs = SOC_MCPWM_GROUPS * SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP;
+    const int total_gpio_sync_srcs = MCPWM_LL_GET(GROUP_NUM) * MCPWM_LL_GET(GPIO_SYNCHROS_PER_GROUP);
     mcpwm_sync_handle_t gpio_sync_srcs[total_gpio_sync_srcs];
     k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         gpio_sync_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(GPIO_SYNCHROS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_srcs[k++]));
         }
     }
@@ -106,6 +106,13 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
     //   |
     //   v
     // timer0-->timer1-->timer2
+    const int gpio_num = TEST_SYNC_GPIO;
+    gpio_config_t sync_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(gpio_num),
+    };
+    TEST_ESP_OK(gpio_config(&sync_gpio_conf));
+
     mcpwm_timer_config_t timer_config = {
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
         .group_id = 0,
@@ -116,9 +123,9 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
     mcpwm_timer_sync_src_config_t sync_config = {
         .flags.propagate_input_sync = 1, // reuse the input sync source as the output sync trigger
     };
-    mcpwm_timer_handle_t timers[SOC_MCPWM_TIMERS_PER_GROUP];
-    mcpwm_sync_handle_t sync_srcs[SOC_MCPWM_TIMERS_PER_GROUP];
-    for (int i = 0; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    mcpwm_timer_handle_t timers[MCPWM_LL_GET(TIMERS_PER_GROUP)];
+    mcpwm_sync_handle_t sync_srcs[MCPWM_LL_GET(TIMERS_PER_GROUP)];
+    for (int i = 0; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timers[i]));
         TEST_ESP_OK(mcpwm_new_timer_sync_src(timers[i], &sync_config, &sync_srcs[i]));
     }
@@ -127,17 +134,14 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
         .direction = MCPWM_TIMER_DIRECTION_UP,
     };
     mcpwm_sync_handle_t gpio_sync_src;
-    const int gpio_num = TEST_SYNC_GPIO;
     mcpwm_gpio_sync_src_config_t gpio_sync_config = {
         .group_id = 0,
         .gpio_num = gpio_num,
-        .flags.io_loop_back = true, // so that we can use gpio driver to simulate the sync signal
-        .flags.pull_down = true, // internally pull down
     };
     TEST_ESP_OK(mcpwm_new_gpio_sync_src(&gpio_sync_config, &gpio_sync_src));
     // put the GPIO into initial state
     gpio_set_level(gpio_num, 0);
-    for (int i = 1; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    for (int i = 1; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         sync_phase_config.sync_src = sync_srcs[i - 1];
         TEST_ESP_OK(mcpwm_timer_set_phase_on_sync(timers[i], &sync_phase_config));
     }
@@ -147,13 +151,14 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
     // simulate an GPIO sync signal
     gpio_set_level(gpio_num, 1);
     gpio_set_level(gpio_num, 0);
-    check_mcpwm_timer_phase(timers, SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP, 100, MCPWM_TIMER_DIRECTION_UP);
+    check_mcpwm_timer_phase(timers, MCPWM_LL_GET(CAPTURE_TIMERS_PER_GROUP), 100, MCPWM_TIMER_DIRECTION_UP);
 
     TEST_ESP_OK(mcpwm_del_sync_src(gpio_sync_src));
-    for (int i = 0; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         TEST_ESP_OK(mcpwm_del_sync_src(sync_srcs[i]));
         TEST_ESP_OK(mcpwm_del_timer(timers[i]));
     }
+    TEST_ESP_OK(gpio_reset_pin(gpio_num));
 }
 
 TEST_CASE("mcpwm_timer_sync_timer_phase_lock", "[mcpwm]")
@@ -170,8 +175,8 @@ TEST_CASE("mcpwm_timer_sync_timer_phase_lock", "[mcpwm]")
         .period_ticks = 500,
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP_DOWN,
     };
-    mcpwm_timer_handle_t timers[SOC_MCPWM_TIMERS_PER_GROUP];
-    for (int i = 0; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    mcpwm_timer_handle_t timers[MCPWM_LL_GET(TIMERS_PER_GROUP)];
+    for (int i = 0; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timers[i]));
     }
 
@@ -186,7 +191,7 @@ TEST_CASE("mcpwm_timer_sync_timer_phase_lock", "[mcpwm]")
         .direction = MCPWM_TIMER_DIRECTION_DOWN,
         .sync_src = sync_src,
     };
-    for (int i = 1; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    for (int i = 1; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         TEST_ESP_OK(mcpwm_timer_set_phase_on_sync(timers[i], &sync_phase_config));
     }
 
@@ -198,7 +203,7 @@ TEST_CASE("mcpwm_timer_sync_timer_phase_lock", "[mcpwm]")
 
     TEST_ESP_OK(mcpwm_timer_disable(timers[0]));
     TEST_ESP_OK(mcpwm_del_sync_src(sync_src));
-    for (int i = 0; i < SOC_MCPWM_TIMERS_PER_GROUP; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(TIMERS_PER_GROUP); i++) {
         TEST_ESP_OK(mcpwm_del_timer(timers[i]));
     }
 }

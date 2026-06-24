@@ -10,12 +10,6 @@ Introduction
 
 Delta-sigma modulation converts an analog voltage signal into a pulse frequency, or pulse density, which can be understood as pulse-density modulation (PDM) (refer to |wiki_ref|_).
 
-The main differences comparing to I2S PDM mode and DAC peripheral are:
-
-1. SDM has no clock signal, it is just like the DAC mode of PDM;
-2. SDM has no DMA, and it can not change its output density continuously. If you have to, you can update the density in a timer's callback;
-3. Based on the former two points, unlike the DAC peripheral, an external active or passive low-pass filter is required additionally to restore the analog wave (See :ref:`convert_to_analog_signal`).
-
 Typically, a Sigma-Delta modulated channel can be used in scenarios like:
 
 -  LED dimming
@@ -46,9 +40,8 @@ To install an SDM channel, you should call :cpp:func:`sdm_new_channel` to get a 
 
 - :cpp:member:`sdm_config_t::gpio_num` sets the GPIO that the PDM pulses output from.
 - :cpp:member:`sdm_config_t::clk_src` selects the source clock for the SDM module. Note that, all channels should select the same clock source.
-- :cpp:member:`sdm_config_t::sample_rate_hz` sets the sample rate of the SDM module.
+- :cpp:member:`sdm_config_t::sample_rate_hz` sets the sample rate of the SDM module. A higher sample rate can help to output signals with higher SNR (Signal to Noise Ratio), and easier to restore the original signal after the filter.
 - :cpp:member:`sdm_config_t::invert_out` sets whether to invert the output signal.
-- :cpp:member:`sdm_config_t::io_loop_back` is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
 
 The function :cpp:func:`sdm_new_channel` can fail due to various errors such as insufficient memory, invalid arguments, etc. Specifically, when there are no more free channels (i.e., all hardware SDM channels have been used up), :c:macro:`ESP_ERR_NOT_FOUND` will be returned.
 
@@ -109,13 +102,13 @@ There is a Kconfig option :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` that can put commo
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`sdm_new_channel` is guaranteed to be thread-safe by the driver, which means, the user can call it from different RTOS tasks without protection by extra locks.
+The driver uses critical sections to ensure atomic operations on registers. Key members in the driver handle are also protected by critical sections. The driver's internal state machine uses atomic instructions to ensure thread safety, with state checks preventing certain invalid concurrent operations (e.g., conflicts between `enable` and `delete`). Therefore, SDM driver APIs can be used in a multi-threaded environment without extra locking.
 
-The following functions are allowed to run under ISR context, the driver uses a critical section to prevent them being called concurrently in both task and ISR.
+The following functions can also be used in an interrupt context:
 
-- :cpp:func:`sdm_channel_set_pulse_density`
+.. list::
 
-Other functions that take the :cpp:type:`sdm_channel_handle_t` as the first positional parameter, are not treated as thread-safe. This means the user should avoid calling them from multiple tasks.
+    - :cpp:func:`sdm_channel_set_pulse_density`
 
 .. _sdm-kconfig-options:
 
@@ -141,12 +134,13 @@ For example, you can take the following `Sallen-Key topology Low Pass Filter`_ a
 
     Sallen-Key Low Pass Filter
 
+(Refer to :example_file:`peripherals/sigma_delta/sdm_dac/README.md` to see the waveforms before and after filtering.)
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-* 100 Hz sine wave that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_dac`.
-* LED driven by a GPIO that is modulated with Sigma-Delta: :example:`peripherals/sigma_delta/sdm_led`.
+* :example:`peripherals/sigma_delta/sdm_dac` demonstrates how to use the sigma-delta driver to act as an 8-bit DAC, and output a 100 Hz sine wave.
+* :example:`peripherals/sigma_delta/sdm_led` demonstrates how to use the sigma-delta driver to control the brightness of an LED or LCD backlight.
 
 API Reference
 -------------

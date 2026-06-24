@@ -160,27 +160,17 @@ Some old ways of disabling unit tests for targets, that have obvious disadvantag
 
     But please avoid using ``#else`` macro. When new target is added, the test case will fail at building stage, so that the maintainer will be aware of this, and choose one of the implementations explicitly.
 
-Building Unit Test App
-----------------------
+Building Unit Test Apps
+-----------------------
 
 Follow the setup instructions in the top-level esp-idf README. Make sure that ``IDF_PATH`` environment variable is set to point to the path of esp-idf top-level directory.
 
-Change into ``tools/unit-test-app`` directory to configure and build it:
+Change into the test app directory to configure and build it:
 
 * ``idf.py menuconfig`` - configure unit test app.
-* ``idf.py -T all build`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* ``idf.py -T "xxx yyy" build`` - build unit test app with tests for some space-separated specific components (For instance: ``idf.py -T heap build`` - build unit tests only for ``heap`` component directory).
-* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests excludes ``ulp`` and ``mbedtls`` components).
-
-.. note::
-
-    Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quotes: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
+* ``idf.py build`` - build unit test app.
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
-
-You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
-
-Use menuconfig to set the serial port for flashing. For more information, see :idf_file:`tools/unit-test-app/README.md`.
 
 Running Unit Tests
 ------------------
@@ -248,6 +238,13 @@ Similar to multi-device test cases, multi-stage test cases will also print sub-m
             (2)     "check_deepsleep_reset_reason"
 
 First time you execute this case, input ``1`` to run first stage (trigger deepsleep). After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage. The case only passes if the last stage passes and all previous stages trigger reset.
+
+Project Structure and Automated Workflows
+-----------------------------------------
+
+A good starting point on how to structure and test an application is the `Github ESP Test Template <https://github.com/espressif/gh-esp-test-template>`_ project. It shows how to set up and run tests both in simulation and on real hardware, using GitHub CI workflows.
+
+For more complex projects, tests would typically be split into several test-apps, testing each component separately. In these cases, you can use the tool `IDF Build Apps <https://github.com/espressif/idf-build-apps>`_ to automate finding and building all test-apps in your project.
 
 
 .. _cache-compensated-timer:
@@ -352,7 +349,6 @@ Examples of component mocks can be found under :idf:`tools/mocks` in the IDF dir
 
 - :component_file:`unit test for the NVS Page class <nvs_flash/host_test/nvs_page_test/README.md>`.
 - :component_file:`unit test for esp_event <esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp>`.
-- :component_file:`unit test for mqtt <mqtt/esp-mqtt/host_test/README.md>`.
 
 .. _adjustments_for_mocks:
 
@@ -368,3 +364,13 @@ The unit test needs to inform the cmake build system to mock dependent component
 Both methods will override existing components in ESP-IDF with the component mock. The latter is particularly convenient if you use component mocks that are already supplied by IDF.
 
 Users can refer to the ``esp_event`` host-based unit test and its :component_file:`esp_event/host_test/esp_event_unit_test/CMakeLists.txt` as an example of a component mock.
+
+Application Examples
+--------------------
+
+:example:`system/unit_test` demonstrates how to use the Unity library to add unit tests to custom components in an {IDF_TARGET_NAME} development environment, showcasing features such as assertions, test registration, and the use of UNITY_BEGIN() and UNITY_END() macros.
+
+Related Documentation
+---------------------
+
+- `Unit Testing with Unity in VS Code <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/additionalfeatures/unit-testing.html>`__

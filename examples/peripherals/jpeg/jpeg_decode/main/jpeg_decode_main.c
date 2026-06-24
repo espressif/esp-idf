@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,6 +11,7 @@
 #include "driver/sdmmc_host.h"
 #include "esp_attr.h"
 #include "driver/jpeg_decode.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
 static const char *TAG = "jpeg.example";
 static sdmmc_card_t *s_card;
@@ -20,6 +21,12 @@ const static char jpg_file_1080[] = "/sdcard/esp1080.jpg";
 const static char raw_file_1080[] = "/sdcard/out.rgb";
 const static char jpg_file_720[] = "/sdcard/esp720.jpg";
 const static char raw_file_720[] = "/sdcard/out2.rgb";
+
+#if CONFIG_IDF_TARGET_ESP32S31
+#define TIMEOUT_MS 80
+#else
+#define TIMEOUT_MS 40
+#endif
 
 static esp_err_t sdcard_init(void)
 {
@@ -38,6 +45,21 @@ static esp_err_t sdcard_init(void)
 
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+
+#if CONFIG_EXAMPLE_SDMMC_IO_POWER_INTERNAL_LDO
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = 4, // `LDO_VO4` is used as the SDMMC IO power
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to new an on-chip ldo power control driver");
+        return ret;
+    }
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -65,6 +87,13 @@ static void sdcard_deinit(void)
 {
     const char mount_point[] = MOUNT_POINT;
     esp_vfs_fat_sdcard_unmount(mount_point, s_card);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+    esp_err_t ret = sd_pwr_ctrl_del_on_chip_ldo(s_card->host.pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to delete on-chip ldo power control driver");
+        return;
+    }
+#endif
 }
 
 void app_main(void)
@@ -74,7 +103,7 @@ void app_main(void)
     jpeg_decoder_handle_t jpgd_handle;
 
     jpeg_decode_engine_cfg_t decode_eng_cfg = {
-        .timeout_ms = 40,
+        .timeout_ms = TIMEOUT_MS,
     };
 
     ESP_ERROR_CHECK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));

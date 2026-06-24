@@ -1,2 +1,2 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-P4 |
+| ----------------- | ----- | -------- |

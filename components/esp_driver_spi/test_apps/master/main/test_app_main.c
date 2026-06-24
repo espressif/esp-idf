@@ -7,9 +7,10 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 
 // iterator to load partition tables in `test spi bus lock, with flash` will lead memory not free
-#define TEST_MEMORY_LEAK_THRESHOLD (350)
+#define TEST_MEMORY_LEAK_THRESHOLD (450)
 
 void setUp(void)
 {

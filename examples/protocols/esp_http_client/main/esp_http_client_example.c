@@ -45,9 +45,6 @@ static const char *TAG = "HTTP_CLIENT";
 extern const char howsmyssl_com_root_cert_pem_start[] asm("_binary_howsmyssl_com_root_cert_pem_start");
 extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com_root_cert_pem_end");
 
-extern const char postman_root_cert_pem_start[] asm("_binary_postman_root_cert_pem_start");
-extern const char postman_root_cert_pem_end[]   asm("_binary_postman_root_cert_pem_end");
-
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     static char *output_buffer;  // Buffer to store response of http request from event handler
@@ -64,6 +61,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             break;
         case HTTP_EVENT_ON_HEADER:
             ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
+            break;
+        case HTTP_EVENT_ON_HEADERS_COMPLETE:
+            ESP_LOGD(TAG, "HTTP_EVENT_ON_HEADERS_COMPLETE");
             break;
         case HTTP_EVENT_ON_DATA:
             ESP_LOGD(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
@@ -108,8 +108,9 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_ON_FINISH:
             ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
             if (output_buffer != NULL) {
-                // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
-                // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
+#if CONFIG_EXAMPLE_ENABLE_RESPONSE_BUFFER_DUMP
+                ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
+#endif
                 free(output_buffer);
                 output_buffer = NULL;
             }
@@ -135,6 +136,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             esp_http_client_set_header(evt->client, "Accept", "text/html");
             esp_http_client_set_redirection(evt->client);
             break;
+        default:
+            break;
     }
     return ESP_OK;
 }
@@ -145,7 +148,7 @@ static void http_rest_with_url(void)
     // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
     /**
-     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
+     * NOTE: All the configuration parameters for http_client must be specified either in URL or as host and path parameters.
      * If host and path parameters are not set, query parameter will be ignored. In such cases,
      * query parameter should be specified in URL.
      *
@@ -159,6 +162,7 @@ static void http_rest_with_url(void)
         .user_data = local_response_buffer,        // Pass address of local buffer to get response
         .disable_auto_redirect = true,
     };
+    ESP_LOGI(TAG, "HTTP request with url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // GET
@@ -247,6 +251,7 @@ static void http_rest_with_hostname_path(void)
         .transport_type = HTTP_TRANSPORT_OVER_TCP,
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP request with hostname and path =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // GET
@@ -341,6 +346,7 @@ static void http_auth_basic(void)
         .auth_type = HTTP_AUTH_TYPE_BASIC,
         .max_authorization_retries = -1,
     };
+    ESP_LOGI(TAG, "HTTP Basic Auth request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -360,6 +366,7 @@ static void http_auth_basic_redirect(void)
         .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/basic-auth/user/passwd",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP Basic Auth redirect request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -381,6 +388,7 @@ static void http_auth_digest_md5(void)
         .url = "http://user:passwd@"CONFIG_EXAMPLE_HTTP_ENDPOINT"/digest-auth/auth/user/passwd/MD5/never",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP MD5 Digest Auth request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -401,6 +409,7 @@ static void http_auth_digest_sha256(void)
         .event_handler = _http_event_handler,
         .buffer_size_tx = 1024, // Increase buffer size as header size will increase as it contains SHA-256.
     };
+    ESP_LOGI(TAG, "HTTP SHA256 Digest Auth request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -422,7 +431,9 @@ static void https_with_url(void)
         .url = "https://www.howsmyssl.com",
         .event_handler = _http_event_handler,
         .crt_bundle_attach = esp_crt_bundle_attach,
+        .timeout_ms = 5000,
     };
+    ESP_LOGI(TAG, "HTTPS request with url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -430,6 +441,28 @@ static void https_with_url(void)
         ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %"PRId64,
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
+#if CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
+        ESP_LOGI(TAG, "Response headers: ");
+        char *header_value = NULL;
+        esp_err_t err = esp_http_client_get_response_header(client, "Content-Length", &header_value);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Content-Length: %s", header_value);
+        } else {
+            ESP_LOGE(TAG, "Error getting Content-Length header: %s", esp_err_to_name(err));
+        }
+        err = esp_http_client_get_response_header(client, "Date", &header_value);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Date: %s", header_value);
+        } else {
+            ESP_LOGE(TAG, "Error getting Date header: %s", esp_err_to_name(err));
+        }
+        err = esp_http_client_get_response_header(client, "Server", &header_value);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Server: %s", header_value);
+        } else {
+            ESP_LOGE(TAG, "Error getting Server header: %s", esp_err_to_name(err));
+        }
+#endif // CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS
     } else {
         ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
     }
@@ -445,7 +478,9 @@ static void https_with_hostname_path(void)
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
         .event_handler = _http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
+        .timeout_ms = 5000,
     };
+    ESP_LOGI(TAG, "HTTPS request with hostname and path =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -466,6 +501,7 @@ static void http_encoded_query(void)
         .path = "/get",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP GET request with encoded query =>");
 
     static const char query_val[] = "ABC xyz!012@#%&";
     char query_val_enc[64] = {0};
@@ -493,6 +529,7 @@ static void http_relative_redirect(void)
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/relative-redirect/3",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP Relative path redirect request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -512,6 +549,7 @@ static void http_absolute_redirect(void)
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/absolute-redirect/3",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP Absolute path redirect request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -532,6 +570,7 @@ static void http_absolute_redirect_manual(void)
         .event_handler = _http_event_handler,
         .disable_auto_redirect = true,
     };
+    ESP_LOGI(TAG, "HTTP Absolute path redirect (manual) request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -552,6 +591,7 @@ static void http_redirect_to_https(void)
         .event_handler = _http_event_handler,
         .cert_pem = howsmyssl_com_root_cert_pem_start,
     };
+    ESP_LOGI(TAG, "HTTP redirect to HTTPS request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -572,6 +612,7 @@ static void http_download_chunk(void)
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/stream-bytes/8912",
         .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTP chunk encoding request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -595,6 +636,7 @@ static void http_perform_as_stream_reader(void)
     esp_http_client_config_t config = {
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get",
     };
+    ESP_LOGI(TAG, "HTTP Stream reader request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
     if ((err = esp_http_client_open(client, 0)) != ESP_OK) {
@@ -620,15 +662,17 @@ static void http_perform_as_stream_reader(void)
     free(buffer);
 }
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void https_async(void)
 {
     esp_http_client_config_t config = {
         .url = "https://postman-echo.com/post",
         .event_handler = _http_event_handler,
-        .cert_pem = postman_root_cert_pem_start,
+        .crt_bundle_attach = esp_crt_bundle_attach,
         .is_async = true,
         .timeout_ms = 5000,
     };
+    ESP_LOGI(TAG, "HTTPS async requests =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
     const char *post_data = "Using a Palantír requires a person with great strength of will and wisdom. The Palantíri were meant to "
@@ -677,6 +721,7 @@ static void https_async(void)
     }
     esp_http_client_cleanup(client);
 }
+#endif
 
 static void https_with_invalid_url(void)
 {
@@ -684,6 +729,7 @@ static void https_with_invalid_url(void)
             .url = "https://not.existent.url",
             .event_handler = _http_event_handler,
     };
+    ESP_LOGI(TAG, "HTTPS request with invalid url =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err = esp_http_client_perform(client);
 
@@ -712,6 +758,7 @@ static void http_native_request(void)
     esp_http_client_config_t config = {
         .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/get",
     };
+    ESP_LOGI(TAG, "HTTP native request =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // GET Request
@@ -768,6 +815,192 @@ static void http_native_request(void)
     esp_http_client_cleanup(client);
 }
 
+/*
+ * http_chunked_request() tests chunked transfer encoding support.
+ *
+ * This test verifies that esp_http_client_chunk_write_begin/write/chunk_write_end correctly
+ * format data according to RFC 7230 chunked transfer encoding. It sends multiple chunks
+ * to demonstrate the chunked API usage.
+ *
+ * Test steps:
+ * 1. Set up POST request with chunked encoding (write_len = -1)
+ * 2. Write multiple chunks using chunk_write_begin() / write() / chunk_write_end() per chunk
+ * 3. Pass last_chunk=true in chunk_write_end() on the final chunk to send the terminator
+ * 4. Verify server accepts the request (Status 200)
+ */
+static void http_chunked_request(void)
+{
+    char output_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
+    esp_http_client_config_t config = {
+        .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/post",
+        .event_handler = _http_event_handler,
+        .user_data = output_buffer,
+        .timeout_ms = 10000,
+    };
+    ESP_LOGI(TAG, "HTTP chunked request test =>");
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+
+    // Open with write_len = -1 to enable chunked encoding (sets Transfer-Encoding: chunked and removes Content-Length automatically)
+    esp_err_t err = esp_http_client_open(client, -1);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
+        esp_http_client_cleanup(client);
+        return;
+    }
+
+    // Send multiple chunks to demonstrate chunked encoding
+    const char *chunk1 = "{\"message\":\"Hello";
+    const char *chunk2 = "\", \"chunks\":";
+    const char *chunk3 = "3}";
+    const char *chunks[] = { chunk1, chunk2, chunk3 };
+    const int num_chunks = sizeof(chunks) / sizeof(chunks[0]);
+
+    for (int i = 0; i < num_chunks; i++) {
+        int len = (int)strlen(chunks[i]);
+        if (esp_http_client_chunk_write_begin(client, len) != 0) {
+            ESP_LOGE(TAG, "Chunk write begin failed for chunk %d", i + 1);
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            return;
+        }
+        int wlen = esp_http_client_write(client, chunks[i], len);
+        if (wlen != len) {
+            ESP_LOGE(TAG, "Write failed for chunk %d (got %d, expected %d)", i + 1, wlen, len);
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            return;
+        }
+        bool is_last = (i == num_chunks - 1);
+        if (esp_http_client_chunk_write_end(client, is_last) != 0) {
+            ESP_LOGE(TAG, "Chunk write end failed for chunk %d", i + 1);
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            return;
+        }
+    }
+
+    // Fetch headers and read response
+    int64_t content_length = esp_http_client_fetch_headers(client);
+    if (content_length < 0) {
+        ESP_LOGE(TAG, "HTTP client fetch headers failed");
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return;
+    }
+
+    int status_code = esp_http_client_get_status_code(client);
+    ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %"PRId64, status_code, content_length);
+
+    if (status_code == 200) {
+        ESP_LOGI(TAG, "Chunked encoding test passed - server accepted the request");
+        // Read response only on success
+        int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
+        if (data_read >= 0) {
+            ESP_LOGD(TAG, "Response received: %.*s", data_read, output_buffer);
+        } else {
+            ESP_LOGE(TAG, "Failed to read response");
+        }
+    } else if (status_code == 400) {
+        ESP_LOGE(TAG, "Chunked encoding test failed - server rejected malformed request");
+    } else {
+        ESP_LOGW(TAG, "Chunked encoding test returned unexpected status code: %d", status_code);
+    }
+
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+}
+
+/*
+ * http_chunked_request_async() – chunked transfer encoding in async (non-blocking) mode.
+ * Same flow as http_chunked_request() but with is_async = true. Retry esp_http_client_write()
+ * with remaining data until the full body is written.
+ */
+static void http_chunked_request_async(void)
+{
+    char output_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
+    esp_http_client_config_t config = {
+        .url = "http://"CONFIG_EXAMPLE_HTTP_ENDPOINT"/post",
+        .event_handler = _http_event_handler,
+        .user_data = output_buffer,
+        .is_async = true,
+        .timeout_ms = 10000,
+    };
+    ESP_LOGI(TAG, "HTTP chunked request (async mode) test =>");
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_header(client, "Content-Type", "application/json");
+
+    if (esp_http_client_open(client, -1) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection");
+        esp_http_client_cleanup(client);
+        return;
+    }
+
+    const char *body = "{\"message\":\"Hello, async chunked encoding!\"}";
+    int body_len = (int)strlen(body);
+    int wlen;
+
+    // Send chunk header
+    if (esp_http_client_chunk_write_begin(client, body_len) != 0) {
+        ESP_LOGE(TAG, "Chunk write begin failed");
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return;
+    }
+
+    // Send chunk body with async retry
+    int written = 0;
+    while (written < body_len) {
+        wlen = esp_http_client_write(client, body + written, body_len - written);
+        if (wlen < 0) {
+            ESP_LOGE(TAG, "Write failed: %d", wlen);
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            return;
+        }
+        written += wlen;
+        if (written < body_len) {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+    }
+
+    // Send chunk trailer + final terminator
+    if (esp_http_client_chunk_write_end(client, true) != 0) {
+        ESP_LOGE(TAG, "Chunk write end failed");
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return;
+    }
+
+    int64_t content_length = esp_http_client_fetch_headers(client);
+    if (content_length < 0) {
+        ESP_LOGE(TAG, "HTTP client fetch headers failed");
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+        return;
+    }
+
+    int status_code = esp_http_client_get_status_code(client);
+    ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %"PRId64, status_code, content_length);
+
+    if (status_code == 200) {
+        ESP_LOGI(TAG, "Async chunked encoding test passed");
+        int n = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
+        if (n >= 0) {
+            ESP_LOGD(TAG, "Response: %.*s", n, output_buffer);
+        }
+    } else {
+        ESP_LOGW(TAG, "Async chunked test status: %d", status_code);
+    }
+
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+}
+
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void http_partial_download(void)
 {
@@ -776,6 +1009,7 @@ static void http_partial_download(void)
         .event_handler = _http_event_handler,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
+    ESP_LOGI(TAG, "HTTP partial download =>");
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     // Download a file excluding first 10 bytes
@@ -838,9 +1072,13 @@ static void http_test_task(void *pvParameters)
     http_redirect_to_https();
     http_download_chunk();
     http_perform_as_stream_reader();
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_async();
+#endif
     https_with_invalid_url();
     http_native_request();
+    http_chunked_request();
+    http_chunked_request_async();
 #if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     http_partial_download();
 #endif

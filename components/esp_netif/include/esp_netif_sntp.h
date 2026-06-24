@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <sys/time.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
@@ -17,14 +18,26 @@ extern "C" {
 #endif
 
 /**
- * @defgroup ESP_NETIF_SNTP_API ESP-NETIF SNTP API
- * @brief SNTP API for underlying TCP/IP stack
- *
+ * @brief SNTP event base for esp-netif
  */
+ESP_EVENT_DECLARE_BASE(NETIF_SNTP_EVENT);
 
-/** @addtogroup ESP_NETIF_SNTP_API
- * @{
+/**
+ * @brief Event IDs for NETIF_SNTP_EVENT
  */
+typedef enum {
+    NETIF_SNTP_TIME_SYNC = 0,  /**< System time synchronized via SNTP */
+} esp_netif_sntp_event_t;
+
+/**
+ * @brief Event payload for NETIF_SNTP_TIME_SYNC
+ *
+ * The event data passed to handlers registered for
+ * `NETIF_SNTP_EVENT`/`NETIF_SNTP_TIME_SYNC` is a pointer to this struct.
+ */
+typedef struct esp_netif_sntp_time_sync {
+    struct timeval tv;  ///< Time of synchronization as reported by SNTP
+} esp_netif_sntp_time_sync_t;
 
 
 /**
@@ -101,7 +114,7 @@ void esp_netif_sntp_deinit(void);
 /**
  * @brief Wait for time sync event
  * @param tout Specified timeout in RTOS ticks
- * @return ESP_TIMEOUT if sync event didn't came withing the timeout
+ * @return ESP_TIMEOUT if sync event didn't came within the timeout
  *         ESP_ERR_NOT_FINISHED if the sync event came, but we're in smooth update mode and still in progress (SNTP_SYNC_STATUS_IN_PROGRESS)
  *         ESP_OK if time sync'ed
  */
@@ -117,10 +130,6 @@ esp_err_t esp_netif_sntp_sync_wait(TickType_t tout);
  *         ESP_ERR_INVALID_ARG if invalid arguments
  */
 esp_err_t esp_netif_sntp_reachability(unsigned int index, unsigned int *reachability);
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

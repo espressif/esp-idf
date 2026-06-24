@@ -9,7 +9,19 @@
 ## Related <!-- Optional -->
 <!-- Related Jira issues and Github issues or write "No related issues"-->
 
-## Release notes <!-- Mandatory -->
-<!-- Either state release notes or write "No release notes" -->
+<!-- ## Dynamic Pipeline Configuration
+```yaml
+Test Case Filters:
+    # Only run tests that match the given substring expression (modified files/components will be ignored):
+    # Please use a list of strings. 
+    # This will run the test cases filtered like `pytest -k "(<list_item_1>) or (<list_item_2>) or ...`
+    # The fast pipeline will fail at the final stage.
+    # For example:
+      - test_sdm and not sdmmc
+      - test_hello_world
+    # This example will include all tests containing 'test_hello_world' in the name,
+    # and include all tests containing 'test_sdm' but not 'sdmmc' in the name.
+``` --><!-- Optional -->
 
-<!-- ## Breaking change notes --><!-- Optional -->
+<!-- Don't remove the next line - assigns the MR author as the assignee -->
+/assign me

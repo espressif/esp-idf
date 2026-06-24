@@ -17,6 +17,7 @@
 
 #include <sys/queue.h>
 #include <sys/time.h>
+#include <sys/lock.h>
 
 #include "esp_log.h"
 const static char *TAG = "esp_pthread";

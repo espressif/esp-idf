@@ -1,22 +1,57 @@
 idf_build_get_property(target IDF_TARGET)
-set(srcs "log.c" "log_buffers.c")
-set(priv_requires "")
-if(${target} STREQUAL "linux")
-    list(APPEND srcs "log_linux.c")
+idf_build_get_property(non_os_build NON_OS_BUILD)
+
+if(non_os_build)
+    set(system_target "noos")
 else()
-    list(APPEND priv_requires soc hal esp_hw_support)
+    if(${target} STREQUAL "linux")
+        set(system_target "linux")
+    else()
+        set(system_target "os")
+    endif()
+endif()
+
+set(srcs "src/${system_target}/log_timestamp.c"
+         "src/log_timestamp_common.c"
+         "src/${system_target}/log_lock.c"
+         "src/buffer/log_buffers.c"
+         "src/${system_target}/util.c"
+         "src/util.c"
+         "src/log_format_text.c"
+         "src/log_print.c"
+         "src/log.c")
+
+if((NOT non_os_build AND CONFIG_LOG_MODE_TEXT_EN) OR (non_os_build AND CONFIG_BOOTLOADER_LOG_MODE_TEXT_EN))
+    list(APPEND srcs "src/log_format_text.c")
+endif()
+
+if((NOT non_os_build AND CONFIG_LOG_MODE_BINARY_EN) OR (non_os_build AND CONFIG_BOOTLOADER_LOG_MODE_BINARY_EN))
+    list(APPEND srcs "src/log_format_binary.c")
+endif()
+
+set(priv_requires hal)
+
+if(NOT non_os_build)
+    list(APPEND priv_requires soc esp_hw_support)
+
+    list(APPEND srcs "src/os/log_write.c")
+
+    list(APPEND srcs "src/log_level/log_level.c"
+                     "src/log_level/tag_log_level/tag_log_level.c")
+
+    if(CONFIG_LOG_TAG_LEVEL_IMPL_LINKED_LIST OR CONFIG_LOG_TAG_LEVEL_IMPL_CACHE_AND_LINKED_LIST)
+        list(APPEND srcs "src/log_level/tag_log_level/linked_list/log_linked_list.c")
+    endif()
+
+    if(CONFIG_LOG_TAG_LEVEL_CACHE_ARRAY)
+        list(APPEND srcs "src/log_level/tag_log_level/cache/log_array.c")
+    elseif(CONFIG_LOG_TAG_LEVEL_CACHE_BINARY_MIN_HEAP)
+        list(APPEND srcs "src/log_level/tag_log_level/cache/log_binary_heap.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
-                    INCLUDE_DIRS "include"
-                    LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES ${priv_requires})
-
-if(NOT ${target} STREQUAL "linux")
-    # Ideally, FreeRTOS shouldn't be included into bootloader build, so the 2nd check should be unnecessary
-    if(freertos IN_LIST BUILD_COMPONENTS AND NOT BOOTLOADER_BUILD)
-        target_sources(${COMPONENT_TARGET} PRIVATE log_freertos.c)
-    else()
-        target_sources(${COMPONENT_TARGET} PRIVATE log_noos.c)
-    endif()
-endif()
+                       INCLUDE_DIRS "include"
+                       PRIV_INCLUDE_DIRS "include/esp_private"
+                       LDFRAGMENTS linker.lf
+                       PRIV_REQUIRES ${priv_requires})

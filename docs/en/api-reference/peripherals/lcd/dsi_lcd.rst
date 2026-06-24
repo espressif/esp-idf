@@ -1,7 +1,9 @@
 MIPI DSI Interfaced LCD
 =======================
 
-#. Create a DSI bus, it will initialize the DPHY as well.
+:link_to_translation:`zh_CN:[中文]`
+
+#. Create a DSI bus, and it will initialize the D-PHY as well.
 
     .. code-block:: c
 
@@ -9,16 +11,14 @@ MIPI DSI Interfaced LCD
         esp_lcd_dsi_bus_config_t bus_config = {
             .bus_id = 0, // index from 0, specify the DSI host to use
             .num_data_lanes = 2, // Number of data lanes to use, can't set a value that exceeds the chip's capability
-            .phy_clk_src = MIPI_DSI_PHY_CLK_SRC_DEFAULT, // Clock source for the DPHY
             .lane_bit_rate_mbps = EXAMPLE_MIPI_DSI_LANE_BITRATE_MBPS, // Bit rate of the data lanes, in Mbps
         };
         ESP_ERROR_CHECK(esp_lcd_new_dsi_bus(&bus_config, &mipi_dsi_bus));
 
-#. Derive the DBI interface from the DSI bus. The DBI interface mostly is used as the control IO layer in the esp_lcd component. This interface provides the functions to read/write the configuration registers inside the LCD device. In this step, you need to provide the following information:
+#. Derive the DBI interface from the DSI bus. The DBI interface mostly is used as the control IO layer in the esp_lcd component. This interface provides the functions to read or write the configuration registers inside the LCD device. In this step, you need to provide the following information:
 
-    - :cpp:member:`esp_lcd_dbi_io_config_t::virtual_channel`: The virtual channel number to use. The virtual channel is a logical channel that is used to multiplex the data from different sources. If you only have one LCD connected, you can set this to ``0``.
-    - :cpp:member:`esp_lcd_dbi_io_config_t::lcd_cmd_bits`: The bit width of the command that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
-    - :cpp:member:`esp_lcd_dbi_io_config_t::lcd_param_bits`: The bit width of the parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+    - :cpp:member:`esp_lcd_dbi_io_config_t::virtual_channel` sets the virtual channel number to use. The virtual channel is a logical channel that is used to multiplex the data from different sources. If you only have one LCD connected, you can set this to ``0``.
+    - :cpp:member:`esp_lcd_dbi_io_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_dbi_io_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
 
     .. code-block:: c
 
@@ -34,13 +34,13 @@ MIPI DSI Interfaced LCD
 
     - :cpp:member:`esp_lcd_panel_dev_config_t::bits_per_pixel` sets the bit width of each pixel. The LCD driver uses this value to calculate the number of bytes to send to the LCD controller chip.
     - :cpp:member:`esp_lcd_panel_dev_config_t::reset_gpio_num` sets the GPIO number of the reset pin. If the LCD controller chip does not have a reset pin, you can set this value to ``-1``.
-    - :cpp:member:`esp_lcd_panel_dev_config_t::rgb_ele_order` set the RGB element order of the pixel data, it can be **RGB** or **BGR**.
+    - :cpp:member:`esp_lcd_panel_dev_config_t::rgb_ele_order` sets the RGB element order of the pixel data, it can be **RGB** or **BGR**.
 
     .. code-block:: c
 
         esp_lcd_panel_handle_t ili9881c_ctrl_panel = NULL;
         esp_lcd_panel_dev_config_t lcd_dev_config = {
-            .bits_per_pixel = 24, // MIPI LCD usually uses 24bit (i.e., RGB888) per pixel
+            .bits_per_pixel = 24, // MIPI LCD usually uses 24 bit (i.e., RGB888) per pixel
             .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
             .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
         };
@@ -56,12 +56,11 @@ MIPI DSI Interfaced LCD
 
 #. However, you still can't send pixel data to the MIPI LCD with the control panel, because MIPI LCD has a high resolution and there's no GRAM in the LCD controller. We need to maintain the LCD frame buffer and flush it to the LCD via the MIPI DSI DPI interface. To allocate a DPI data panel, you need to provide many essential parameters, including the DPI clock frequency, the pixel format, the video timing, and so on.
 
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::virtual_channel` Like the DBI interface, we also need to set the virtual channel for the DPI interface. If you only have one LCD connected, you can set this to ``0``.
+    - :cpp:member:`esp_lcd_dpi_panel_config_t::virtual_channel` sets the virtual channel number to use. Like the DBI interface, we also need to set the virtual channel for the DPI interface. If you only have one LCD connected, you can set this to ``0``.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clk_src` sets the clock source for the DPI interface. The available clock sources are listed in :cpp:type:`mipi_dsi_dpi_clock_source_t`.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` sets the DPI clock frequency in MHz. Higher pixel clock frequency results in higher refresh rate, but may cause flickering if the DMA bandwidth is not sufficient or the LCD controller chip does not support high pixel clock frequency.
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` sets the pixel format of the pixel data. The available pixel formats are listed in :cpp:type:`lcd_color_rgb_pixel_format_t`. We usually use **RGB888** for MIPI LCD to get the best color depth.
+    - :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` sets the pixel format of the input pixel data. The available pixel formats are listed in :cpp:type:`lcd_color_format_t`. We usually use **RGB888** for MIPI LCD to get the best color depth.
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` sets the LCD panel specific timing parameters. All required parameters are listed in the :cpp:type:`esp_lcd_video_timing_t`, including the LCD resolution and blanking porches. Please fill them according to the datasheet of your LCD.
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_flags::use_dma2d` sets whether to use the DMA2D peripheral to copy the user data to the frame buffer, asynchronously.
 
     .. code-block:: c
 
@@ -70,7 +69,7 @@ MIPI DSI Interfaced LCD
             .virtual_channel = 0,
             .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
             .dpi_clock_freq_mhz = 1 * 1000,
-            .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
+            .in_color_format = LCD_COLOR_FMT_RGB888,
             .video_timing = {
                 .h_size = EXAMPLE_MIPI_DSI_LCD_H_RES,
                 .v_size = EXAMPLE_MIPI_DSI_LCD_V_RES,
@@ -81,10 +80,39 @@ MIPI DSI Interfaced LCD
                 .vsync_pulse_width = EXAMPLE_MIPI_DSI_LCD_VSYNC,
                 .vsync_front_porch = EXAMPLE_MIPI_DSI_LCD_VFP,
             },
-            .flags.use_dma2d = true,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
         ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
+
+#. Configure draw bitmap hook function (optional)
+
+    If you want to use DMA2D to implement draw bitmap, the driver has already implemented the DMA2D draw bitmap hook function, you only need to call :func:`esp_lcd_dpi_panel_enable_dma2d` to enable it.
+
+    .. code-block:: c
+
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
+
+    .. note::
+
+        Due to hardware limitation, if external memory encryption is enabled, DMA2D can only access address and length that are aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. You need to ensure that your draw buffer's address and length are aligned to {IDF_TARGET_SOC_MEMSPI_ENCRYPTION_ALIGNMENT} bytes. :example:`peripherals/lcd/mipi_dsi` shows how to use LVGL to constrain the redrawn area to ensure alignment.
+
+    If you need more advanced applications, you can add a custom hook for draw bitmap, such as using PPA to implement rotation, scaling, etc.
+
+    .. code-block:: c
+
+        esp_lcd_panel_hooks_t hooks = {
+            .draw_bitmap_hook = custom_draw_bitmap_hook,
+        };
+        ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_hooks(mipi_dpi_panel, &hooks, &user_ctx));
+
+Power Supply for MIPI DPHY
+--------------------------
+
+The MIPI DPHY on {IDF_TARGET_NAME} requires a dedicated 2.5V power supply. Please refer to your schematic and ensure that the power pin (often labeled ``VDD_MIPI_DPHY``) is properly connected to a 2.5V power source before using the MIPI DSI driver.
+
+.. only:: SOC_GP_LDO_SUPPORTED
+
+    On {IDF_TARGET_NAME}, the MIPI DPHY can be powered by the internal adjustable LDO. Connect the output pin of the LDO channel to the MIPI DPHY power pin. Before initializing the DSI driver, use the API provided in :doc:`/api-reference/peripherals/ldo_regulator` to configure the LDO output voltage to 2.5V.
 
 API Reference
 -------------

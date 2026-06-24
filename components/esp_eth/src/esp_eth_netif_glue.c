@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
 #include <inttypes.h>
 #include "esp_netif.h"
-#include "esp_eth_driver.h"
 #include "esp_eth_netif_glue.h"
 #include "esp_netif_net_stack.h"
 #include "esp_event.h"
@@ -30,11 +29,11 @@ struct esp_eth_netif_glue_t {
     esp_event_handler_instance_t get_ip_ctx_handler;
 };
 
-static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
+static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv, void *info)
 {
 #if CONFIG_ESP_NETIF_L2_TAP
     esp_err_t ret = ESP_OK;
-    ret = esp_vfs_l2tap_eth_filter(eth_handle, buffer, (size_t *)&length);
+    ret = esp_vfs_l2tap_eth_filter_frame(eth_handle, buffer, (size_t *)&length, info);
     if (length == 0) {
         return ret;
     }
@@ -47,19 +46,34 @@ static void eth_l2_free(void *h, void* buffer)
     free(buffer);
 }
 
+static esp_err_t eth_set_mac_filter(void *h, const uint8_t *eth_mac, size_t mac_len, bool add)
+{
+    esp_eth_handle_t *eth_handle = (esp_eth_handle_t *)h;
+    ESP_RETURN_ON_FALSE(mac_len == ETH_ADDR_LEN, ESP_ERR_INVALID_ARG, TAG, "invalid MAC length");
+    ESP_LOGD(TAG, "%s filter MAC: %02x:%02x:%02x:%02x:%02x:%02x", add ? "Add" : "Del", eth_mac[0], eth_mac[1],
+             eth_mac[2], eth_mac[3], eth_mac[4], eth_mac[5]);
+    if (add) {
+        ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, (void *)eth_mac), TAG, "failed to add mac filter");
+    } else {
+        ESP_RETURN_ON_ERROR(esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, (void *)eth_mac), TAG, "failed to delete mac filter");
+    }
+    return ESP_OK;
+}
+
 static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
 {
-    uint8_t eth_mac[6];
+    uint8_t eth_mac[ETH_ADDR_LEN];
     esp_eth_netif_glue_t *netif_glue = (esp_eth_netif_glue_t *)args;
     netif_glue->base.netif = esp_netif;
 
-    esp_eth_update_input_path(netif_glue->eth_driver, eth_input_to_netif, esp_netif);
+    esp_eth_update_input_path_info(netif_glue->eth_driver, eth_input_to_netif, esp_netif);
 
     // set driver related config to esp-netif
     esp_netif_driver_ifconfig_t driver_ifconfig = {
         .handle =  netif_glue->eth_driver,
         .transmit = esp_eth_transmit,
-        .driver_free_rx_buffer = eth_l2_free
+        .driver_free_rx_buffer = eth_l2_free,
+        .driver_set_mac_filter = eth_set_mac_filter
     };
 
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));
@@ -101,7 +115,7 @@ static void eth_action_connected(void *handler_args, esp_event_base_t base, int3
     if (netif_glue->eth_driver == eth_handle) {
         eth_speed_t speed;
         esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
-        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_100M ? 100000000 : 10000000);
+        esp_netif_set_link_speed(netif_glue->base.netif, speed == ETH_SPEED_1000M ? 1000000000 : speed == ETH_SPEED_100M ? 100000000 : 10000000);
         esp_netif_action_connected(netif_glue->base.netif, base, event_id, event_data);
     }
 }

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C6 | ESP32-H2 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S31 |
+| ----------------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | --------- |
 
 ESP-IDF UART HCI Controller
 ===========================
@@ -7,6 +7,9 @@ ESP-IDF UART HCI Controller
 This is a BLE controller use UART as HCI interface. 
 
 It can do the configuration of UART number and UART baudrate by menuconfig.
+
+When using Bluetooth HCI URAT, please make sure that the Espressif Vendor-specific HCI command is not enabled (Disabled by default).
+For detailed description information, please refer to `components/bt/include/$IDF_TARGET/include/esp_bt_vs.h`.
 
 ## BLE HCI example
 

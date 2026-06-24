@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -87,7 +87,6 @@
 #define AES_TEXT_IN_BASE        ((DR_REG_AES_BASE) + 0x20)
 #define AES_TEXT_OUT_BASE       ((DR_REG_AES_BASE) + 0x30)
 #define AES_IV_BASE             ((DR_REG_AES_BASE) + 0x50)
-
 
 /* HMAC Module */
 #define HMAC_SET_START_REG             ((DR_REG_HMAC_BASE) + 0x40)

@@ -2,7 +2,7 @@
 # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html
 # The following five lines of boilerplate have to be in your project's
 # CMakeLists in this exact order for cmake to work correctly
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 set(driver_components esp_eth esp_wifi openthread)
 
@@ -19,7 +19,7 @@ message(STATUS "Checking if sdkconfig contains CONFIG_TESTAPP_COMPONENT related 
 set(config_file "${CMAKE_CURRENT_SOURCE_DIR}/sdkconfig")
 if(EXISTS ${config_file})
     # If the config file exists, check for the non-default settings - LWIP or ESP-NETIF-without-LWIP
-    # otherwise (file missing or defalut settings) go with ESP_NETIF
+    # otherwise (file missing or default settings) go with ESP_NETIF
     file(READ ${config_file} config_file_content)
     string(FIND "${config_file_content}" "CONFIG_TESTAPP_COMPONENT_LWIP=y" match_lwip)
     string(FIND "${config_file_content}" "CONFIG_TESTAPP_COMPONENT_ESP_NETIF_WITHOUT_LWIP=y" match_netif_no_lwip)
@@ -55,7 +55,7 @@ idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 project(network_components)
 
-# Get the actual build commponents included in the build
+# Get the actual build components included in the build
 idf_build_get_property(build_components BUILD_COMPONENTS)
 
 message(STATUS "Build components needed my main and ${component_under_test}:")

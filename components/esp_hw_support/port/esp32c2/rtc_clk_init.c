@@ -17,9 +17,9 @@
 #include "esp_hw_log.h"
 #include "esp_cpu.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
-static const char *TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {

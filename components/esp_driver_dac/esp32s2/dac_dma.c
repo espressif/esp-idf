@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "../dac_priv_dma.h"
-#include "clk_ctrl_os.h"
+#include "esp_clk_tree.h"
 #if CONFIG_DAC_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
@@ -33,13 +33,13 @@
 #endif
 #include "esp_check.h"
 #include "esp_attr.h"
+#include "esp_heap_caps.h"
 
 #define DAC_DMA_PERIPH_SPI_HOST          SPI3_HOST
 
 typedef struct {
     void                *periph_dev;    /* DMA peripheral device address */
     uint32_t            dma_chan;
-    spi_dma_ctx_t       *spi_dma_ctx;   /* spi_dma context */
     intr_handle_t       intr_handle;    /* Interrupt handle */
     bool                use_apll;       /* Whether use APLL as digital controller clock source */
 } dac_dma_periph_spi_t;
@@ -52,7 +52,7 @@ static uint32_t s_dac_set_apll_freq(uint32_t expt_freq)
 {
     /* Set APLL coefficients to the given frequency */
     uint32_t real_freq = 0;
-    esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
     if (ret == ESP_ERR_INVALID_ARG) {
         return 0;
     }
@@ -138,16 +138,15 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     s_ddp->periph_dev = (void *)SPI_LL_GET_HW(DAC_DMA_PERIPH_SPI_HOST);
 
     if (is_apll) {
-        periph_rtc_apll_acquire();
+        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true), err, TAG, "APLL enable failed");
         s_ddp->use_apll = true;
     }
     /* When transmit alternately, twice frequency is needed to guarantee the convert frequency in one channel */
     uint32_t trans_freq_hz = freq_hz * (is_alternate ? 2 : 1);
     ESP_GOTO_ON_ERROR(s_dac_dma_periph_set_clock(trans_freq_hz, is_apll), err, TAG, "Failed to set clock of DMA peripheral");
-    ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO, &s_ddp->spi_dma_ctx),
+    ESP_GOTO_ON_ERROR(spicommon_dma_chan_alloc(DAC_DMA_PERIPH_SPI_HOST, SPI_DMA_CH_AUTO, 0),
                       err, TAG, "Failed to allocate dma peripheral channel");
-
-    s_ddp->dma_chan = s_ddp->spi_dma_ctx->rx_dma_chan.chan_id;
+    s_ddp->dma_chan = spi_bus_get_dma_ctx(DAC_DMA_PERIPH_SPI_HOST)->rx_dma_chan.chan_id;
     spi_ll_enable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
     dac_ll_digi_set_convert_mode(is_alternate);
     return ret;
@@ -158,16 +157,17 @@ err:
 
 esp_err_t dac_dma_periph_deinit(void)
 {
+    ESP_RETURN_ON_FALSE(s_ddp != NULL, ESP_ERR_INVALID_STATE, TAG, "DAC DMA peripheral is not initialized");
     ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
     if (s_ddp->dma_chan) {
-        ESP_RETURN_ON_ERROR(spicommon_dma_chan_free(s_ddp->spi_dma_ctx), TAG, "Failed to free dma peripheral channel");
+        ESP_RETURN_ON_ERROR(spicommon_dma_chan_free(DAC_DMA_PERIPH_SPI_HOST), TAG, "Failed to free dma peripheral channel");
     }
     ESP_RETURN_ON_FALSE(spicommon_periph_free(DAC_DMA_PERIPH_SPI_HOST), ESP_FAIL, TAG, "Failed to release DAC DMA peripheral");
     spi_ll_disable_intr(s_ddp->periph_dev, SPI_LL_INTR_OUT_EOF | SPI_LL_INTR_OUT_TOTAL_EOF);
     adc_apb_periph_free();
     if (s_ddp) {
         if (s_ddp->use_apll) {
-            periph_rtc_apll_release();
+            ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false), TAG, "APLL disable failed");
             s_ddp->use_apll = false;
         }
         free(s_ddp);

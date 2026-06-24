@@ -1,14 +1,18 @@
 QEMU Emulator
 =============
 
-Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU emulator with support for {IDF_TARGET_NAME}. This fork implements emulation of the CPU, memory, and several peripherals of {IDF_TARGET_NAME}. For more information about QEMU for {IDF_TARGET_NAME}, see the `documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md>`_.
+{IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
 
-:doc:`idf.py<idf-py>` allows for running and debugging applications in QEMU. This is a convenient way to test applications without having to flash them to real hardware.
+:link_to_translation:`zh_CN:[中文]`
+
+Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU emulator with support for {IDF_TARGET_NAME}. This fork implements emulation of the CPU, memory, and several peripherals of {IDF_TARGET_NAME}. For more information about QEMU for {IDF_TARGET_NAME}, see the `QEMU README documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md>`_.
+
+:doc:`idf.py <idf-py>` allows for running and debugging applications in QEMU. This is a convenient way to test applications without having to flash them to real hardware.
 
 Prerequisites
 -------------
 
-To use QEMU with ``idf.py`` you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. Before you use the pre-built binaries on Linux and macOS platroms please install system dependencies:
+To use QEMU with ``idf.py``, you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. Before you use the pre-built binaries on Linux and macOS platforms please install system dependencies:
 
 - Ubuntu and Debian:
 
@@ -56,7 +60,7 @@ To run an IDF application in QEMU, use the following command:
 
     idf.py qemu monitor
 
-This command builds the application, starts QEMU and opens :doc:`IDF monitor <idf-monitor>`, connecting it to the emulated UART port. You can see the console output of the application and interact with it. IDF Monitor also provides automatic decoding of panic backtraces and UART core dumps.
+This command builds the application, starts QEMU and opens :doc:`IDF monitor <idf-monitor>`, and connects IDF Monitor to the emulated UART port. You can see the console output of the application and interact with it. IDF Monitor also provides automatic decoding of panic backtraces and UART core dumps.
 
 Debugging
 ~~~~~~~~~
@@ -109,3 +113,74 @@ To launch QEMU with a virtual framebuffer device enabled, use the following comm
 When the ``--graphics`` option is used, QEMU opens an additional window where the framebuffer contents are displayed.
 
 To use the virtual framebuffer device in your application, you can add the `espressif/esp_lcd_qemu_rgb <https://components.espressif.com/components/espressif/esp_lcd_qemu_rgb>`_ component to your project. This component provides an esp_lcd compatible driver for the virtual framebuffer device.
+
+Efuse Emulation
+~~~~~~~~~~~~~~~
+
+QEMU supports emulation of eFuses. This can be a convenient way to test security-related features, such as secure boot and flash encryption, without having to perform irreversible operations on real hardware. For more detailed information, refer to the `QEMU documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#specifying-efuse-storage>`_.
+
+You can use :doc:`idf.py<idf-py>` eFuse-related commands to program eFuses. When you run any of these commands together with ``qemu`` command, the eFuses are programmed in QEMU, and the ``qemu_efuse.bin`` file is updated. For example,
+
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
+
+    .. code-block:: console
+
+        idf.py qemu efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+        idf.py qemu efuse-burn-key flash_encryption my_flash_encryption_key.bin
+
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES
+
+    .. code-block:: console
+
+        idf.py qemu efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+        idf.py qemu efuse-burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+
+    For details regarding the ``BLOCK`` and ``KEYPURPOSE``, please refer to the :doc:`../../security/flash-encryption` guide.
+
+To dump the eFuse summary, please use the following command:
+
+.. code-block:: console
+
+    idf.py qemu efuse-summary
+
+By default, the values of eFuses are read from and written to the ``qemu_efuse.bin`` file in the build directory. You can specify a different file using the ``--efuse-file`` option. For example,
+
+.. code-block:: console
+
+    idf.py qemu --efuse-file my_efuse.bin efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+    idf.py qemu --efuse-file my_efuse.bin monitor
+
+Specifying Flash Image
+~~~~~~~~~~~~~~~~~~~~~~
+
+By default, QEMU uses the ``qemu_flash.bin`` file in the build directory as the flash image. This file is generated based on the information available about the project from the ``flash_args`` file present in the build directory. If you want to use a different flash image file, you can specify it using the ``--flash-file`` option. For example,
+
+.. code-block:: console
+
+    idf.py qemu --flash-file my_flash.bin monitor
+
+
+The provided flash image must meet the following requirements for proper emulation:
+
+- The flash file size matches the value specified by :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+- The flash file includes all required binaries, such as the bootloader, partition table, and application firmware, placed at their respective memory offsets.
+
+
+Passing Extra Arguments to QEMU
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the ``--qemu-extra-args`` option to pass additional arguments directly to QEMU. This is useful when you need to enable advanced QEMU features or debugging options. For example:
+
+.. code-block:: console
+
+    idf.py qemu --qemu-extra-args="-d in_asm,cpu" monitor
+
+This command starts QEMU with the specified extra arguments. You can use this option to pass any valid QEMU command-line arguments, such as enabling debug output, configuring devices, or other advanced features.
+
+For more available QEMU options, please refer to the `official QEMU documentation <https://www.qemu.org/docs/master/>`_ or run ``idf.py qemu --help``.
+
+
+Emulating Secure Boot
+~~~~~~~~~~~~~~~~~~~~~
+
+QEMU supports emulation of secure boot v2 scheme. Please keep :ref:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` enabled to include signed bootloader image into the QEMU image artifact.

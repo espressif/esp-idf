@@ -691,8 +691,10 @@ int wnm_scan_process(struct wpa_supplicant *wpa_s, int reply_on_fail)
 	enum mbo_transition_reject_reason reason =
 		MBO_TRANSITION_REJECT_REASON_UNSPECIFIED;
 
-	if (!wpa_s->wnm_neighbor_report_elements)
+	if (!wpa_s->wnm_neighbor_report_elements) {
+		wpa_printf(MSG_INFO, "WNM: Neighbor report not available");
 		return 0;
+        }
 
 	wpa_dbg(wpa_s, MSG_DEBUG,
 		"WNM: Process scan results for BSS Transition Management");
@@ -706,7 +708,7 @@ int wnm_scan_process(struct wpa_supplicant *wpa_s, int reply_on_fail)
 	/* Compare the Neighbor Report and scan results */
 	bss = compare_scan_neighbor_results(wpa_s, 0, &reason);
 	if (!bss) {
-		wpa_printf(MSG_DEBUG, "WNM: No BSS transition candidate match found");
+		wpa_printf(MSG_INFO, "WNM: No BSS transition candidate match found");
 		status = WNM_BSS_TM_REJECT_NO_SUITABLE_CANDIDATES;
 		goto send_bss_resp_fail;
 	}

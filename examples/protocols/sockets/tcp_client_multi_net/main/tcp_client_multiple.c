@@ -11,7 +11,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_netif.h"
-#include "esp_eth.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -47,11 +46,7 @@ static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif
      */
 #if CONFIG_EXAMPLE_BIND_SOCKET_TO_NETIF_NAME
     struct ifreq ifr;
-#if !CONFIG_LWIP_NETIF_API
-    esp_netif_get_netif_impl_name(esp_netif, ifr.ifr_name);
-#else
     if_indextoname(esp_netif_get_netif_impl_index(esp_netif), ifr.ifr_name);
-#endif
     int ret = setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,  (void*)&ifr, sizeof(struct ifreq));
     if (ret < 0) {
         ESP_LOGE(TAG, "\"%s\" Unable to bind socket to specified interface: errno %d", netif_name, errno);
@@ -89,13 +84,13 @@ static void app_multiple_handle(esp_ip4_addr_t *ip4_addr, esp_netif_t *esp_netif
 
     ret = send(sock, payload, strlen(payload), 0);
     if (ret < 0) {
-        ESP_LOGE(TAG, "\"%s\" Error occured during sending: errno %d", netif_name, errno);
+        ESP_LOGE(TAG, "\"%s\" Error occurred during sending: errno %d", netif_name, errno);
         goto app_multiple_handle_fail;
     }
 
     ret = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
     if (ret < 0) {
-        ESP_LOGE(TAG, "\"%s\" Error occured during receiving: errno %d", netif_name, errno);
+        ESP_LOGE(TAG, "\"%s\" Error occurred during receiving: errno %d", netif_name, errno);
     } else if (ret > 0){
         rx_buffer[ret] = 0; // Null-terminate whatever we received and treat like a string
         ESP_LOGI(TAG, "\"%s\" Received Data %d bytes", netif_name, ret);

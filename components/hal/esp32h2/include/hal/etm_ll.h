@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,18 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/etm_types.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/pcr_struct.h"
+
+#define ETM_LL_GET(_attr) ETM_LL_ ## _attr
+#define ETM_LL_SUPPORT(_feat) ETM_LL_SUPPORT_ ## _feat
+
+// Number of ETM instances
+#define ETM_LL_INST_NUM 1
+
+// Number of channels in each ETM instance
+#define ETM_LL_CHANS_PER_INST 50
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +38,30 @@ static inline void etm_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
     PCR.etm_conf.etm_clk_en = enable;
+}
+
+/**
+ * @brief Enable the clock for ETM function
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void etm_ll_enable_function_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    (void)enable;
+}
+
+/**
+ * @brief Set the clock source for ETM
+ *
+ * @param group_id Group ID
+ * @param clk_src Clock source
+ */
+static inline void etm_ll_set_clock_source(int group_id, etm_clock_source_t clk_src)
+{
+    (void)group_id;
+    (void)clk_src;
 }
 
 /**
@@ -97,7 +131,7 @@ static inline bool etm_ll_is_channel_enabled(soc_etm_dev_t *hw, uint32_t chan)
  */
 static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, uint32_t event)
 {
-    hw->channel[chan].evt_id.evt_id = event;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].eid, evt_id, event);
 }
 
 /**
@@ -109,7 +143,7 @@ static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, ui
  */
 static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uint32_t task)
 {
-    hw->channel[chan].task_id.task_id = task;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, task_id, task);
 }
 
 #ifdef __cplusplus

@@ -1,0 +1,115 @@
+menu "Level Settings"
+
+    config LOG_MASTER_LEVEL
+        bool "Enable global master log level"
+        default "n"
+        help
+            Enables an additional global "master" log level check that occurs before a log tag cache
+            lookup. This is useful if you want to compile in a lot of logs that are selectable at
+            runtime, but avoid the performance hit during periods where you don't want log output.
+
+            Examples include remote log forwarding, or disabling logs during a time-critical or
+            CPU-intensive section and re-enabling them later. Results in larger program size
+            depending on number of logs compiled in.
+
+            If enabled, defaults to LOG_DEFAULT_LEVEL and can be set using
+            esp_log_set_level_master(). This check takes precedence over ESP_LOG_LEVEL_LOCAL.
+
+    config LOG_DYNAMIC_LEVEL_CONTROL
+        bool "Enable dynamic log level changes at runtime"
+        default y
+        help
+            Enabling this option allows dynamic changes to the log level at runtime
+            (using esp_log_level_set()), providing the ability to increase or decrease
+            the log level during program execution.
+            If disabled, the log level remains static once set at compile-time and calling
+            esp_log_level_set() will have no effect.
+            If binary size is a critical consideration and dynamic log level changes are not needed,
+            consider disabling this option when LOG_TAG_LEVEL_IMPL_NONE=y to minimize program size.
+
+    choice LOG_TAG_LEVEL_IMPL
+        bool "Method of tag level checks"
+        default LOG_TAG_LEVEL_IMPL_CACHE_AND_LINKED_LIST
+        help
+            Choose the per-tag log level implementation for the log library. This functionality is used
+            to enable/disable logs for a particular tag at run time. Applicable only for
+            application logs (i.e., not bootloader logs).
+
+        config LOG_TAG_LEVEL_IMPL_NONE
+            bool "None"
+            help
+                This option disables the ability to set the log level per tag.
+                The ability to change the log level at runtime depends on LOG_DYNAMIC_LEVEL_CONTROL.
+                If LOG_DYNAMIC_LEVEL_CONTROL is disabled, then changing the log level at runtime
+                using `esp_log_level_set()` is not possible.
+                This implementation is suitable for highly constrained environments.
+
+        config LOG_TAG_LEVEL_IMPL_LINKED_LIST
+            bool "Linked List"
+            select LOG_DYNAMIC_LEVEL_CONTROL
+            help
+                Select this option to use the linked list-only implementation (no cache) for log level retrieval.
+                This approach searches the linked list of all tags for the log level, which may be slower
+                for a large number of tags but may have lower memory requirements than the CACHE approach.
+                The linked list approach compares the whole strings of log tags for finding the log level.
+
+        config LOG_TAG_LEVEL_IMPL_CACHE_AND_LINKED_LIST
+            bool "Cache + Linked List"
+            select LOG_DYNAMIC_LEVEL_CONTROL
+            help
+                Select this option to use a hybrid mode: cache in combination with the linked list
+                for log tag level checks. This hybrid approach offers a balance between speed and memory usage.
+
+                The cache stores recently accessed log tags and their corresponding log levels, providing
+                faster lookups for frequently used tags. The cache approach compares the tag pointers, which is
+                faster than comparing the whole strings.
+
+                For less frequently used tags, the linked list is used to search for the log level, which may be
+                slower for a large number of tags but has lower memory requirements compared to a full cache.
+
+                This hybrid approach aims to improve the efficiency of log level retrieval by combining the benefits
+                of both cache and linked list implementations.
+    endchoice # LOG_TAG_LEVEL_IMPL
+
+    choice LOG_TAG_LEVEL_CACHE_IMPL
+        bool "Cache implementation"
+        default LOG_TAG_LEVEL_CACHE_BINARY_MIN_HEAP
+        depends on LOG_TAG_LEVEL_IMPL_CACHE_AND_LINKED_LIST
+        help
+            The cache stores recently accessed log tags (address of tag) and their corresponding log levels,
+            providing faster lookups for frequently used tags. Cache size can be configured using the
+            LOG_TAG_LEVEL_IMPL_CACHE_SIZE option. The cache approach compares the tag pointers, which is
+            faster than comparing the whole strings.
+
+        config LOG_TAG_LEVEL_CACHE_ARRAY
+            bool "Array"
+            help
+                This option enables the use of a simple array-based cache implementation for storing and
+                retrieving log tag levels. There is no additional code that reorders the cache for fast lookups.
+                Suitable for projects where memory usage optimization is crucial and the simplicity of implementation
+                is preferred.
+
+        config LOG_TAG_LEVEL_CACHE_BINARY_MIN_HEAP
+            bool "Binary Min-Heap"
+            help
+                This option enables the use of a binary min-heap-based cache implementation for efficient
+                storage and retrieval of log tag levels. It does automatically optimizing cache for fast lookups.
+                Suitable for projects where speed of lookup is critical and memory usage can accommodate
+                the overhead of maintaining a binary min-heap structure.
+    endchoice # LOG_TAG_LEVEL_CACHE_IMPL
+
+    config LOG_TAG_LEVEL_IMPL_CACHE_SIZE
+        int "Log Tag Cache Size"
+        default 31
+        depends on LOG_TAG_LEVEL_CACHE_ARRAY || LOG_TAG_LEVEL_CACHE_BINARY_MIN_HEAP
+        help
+            This option sets the size of the cache used for log tag entries. The cache stores recently accessed
+            log tags and their corresponding log levels, which helps improve the efficiency of log level retrieval.
+            The value must be a power of 2 minus 1 (e.g., 1, 3, 7, 15, 31, 63, 127, 255, ...)
+            to ensure proper cache behavior. For LOG_TAG_LEVEL_CACHE_ARRAY option the value can be any,
+            without restrictions.
+
+            Note: A larger cache size can improve lookup performance for frequently used log tags but may consume
+            more memory. Conversely, a smaller cache size reduces memory usage but may lead to more frequent cache
+            evictions for less frequently used log tags.
+endmenu

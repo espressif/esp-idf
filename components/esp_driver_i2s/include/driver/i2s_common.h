@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,10 @@ extern "C" {
     .dma_frame_num = 240, \
     .auto_clear_after_cb = false, \
     .auto_clear_before_cb = false, \
+    .allow_pd = false, \
     .intr_priority = 0, \
+    .tx_destination = I2S_DESTINATION_DMA, \
+    .rx_destination = I2S_DESTINATION_DMA, \
 }
 
 #define I2S_GPIO_UNUSED         GPIO_NUM_NC         /*!< Used in i2s_gpio_config_t for signals which are not used */
@@ -56,7 +59,7 @@ typedef struct {
  * @brief I2S controller channel configuration
 */
 typedef struct {
-    i2s_port_t          id;                 /*!< I2S port id */
+    int                 id;                 /*!< I2S port id */
     i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
 
     /* DMA configurations */
@@ -73,24 +76,42 @@ typedef struct {
     bool                auto_clear_before_cb; /*!< Set to auto clear DMA TX buffer before `on_sent` callback, I2S will always send zero automatically if no data to send
                                              *   So that user can access data in the callback that just finished to send.
                                              */
+    bool                allow_pd;           /*!< Set to allow power down. When this flag set, the driver will backup/restore the I2S registers before/after entering/exist sleep mode.
+                                             * By this approach, the system can power off I2S's power domain.
+                                             * This can save power, but at the expense of more RAM being consumed.
+                                             */
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
+    i2s_destination_t   tx_destination;     /*!< TX data path: DMA (memory) or Bluetooth (see `i2s_destination_t`). I2S0 only when set to `I2S_DESTINATION_BT`. Immutable after `i2s_new_channel`. */
+    i2s_destination_t   rx_destination;     /*!< RX data path: DMA (memory) or Bluetooth. Same constraints as `tx_destination`. */
 } i2s_chan_config_t;
 
 /**
  * @brief I2S channel information
  */
 typedef struct {
-    i2s_port_t          id;                 /*!< I2S port id */
+    int                 id;                 /*!< I2S port id */
     i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
     i2s_dir_t           dir;                /*!< I2S channel direction */
     i2s_comm_mode_t     mode;               /*!< I2S channel communication mode */
+    bool                is_enabled;         /*!< I2S channel is enabled or not */
     i2s_chan_handle_t   pair_chan;          /*!< I2S pair channel handle in duplex mode, always NULL in simplex mode */
     uint32_t            total_dma_buf_size; /*!< Total size of all the allocated DMA buffers
                                              *   - 0 if the channel has not been initialized
                                              *   - non-zero if the channel has been initialized
                                              */
+    i2s_clock_src_t     clk_src;            /*!< Clock source of I2S */
+    uint32_t            sclk_hz;            /*!< Source clock frequency */
+    uint32_t            mclk_hz;            /*!< MCLK frequency */
+    uint32_t            bclk_hz;            /*!< BCLK frequency */
+    const void          *mode_cfg;          /*!< Mode configuration, it need to be casted to the corresponding type according to the communication mode
+                                             *   - I2S_COMM_MODE_STD: i2s_std_config_t*
+                                             *   - I2S_COMM_MODE_TDM: i2s_tdm_config_t*
+                                             *   - I2S_COMM_MODE_PDM + I2S_DIR_RX: i2s_pdm_rx_config_t*
+                                             *   - I2S_COMM_MODE_PDM + I2S_DIR_TX: i2s_pdm_tx_config_t*
+                                             */
 } i2s_chan_info_t;
 
+/************************************************** Basic APIs ********************************************************/
 /**
  * @brief Allocate new I2S channel(s)
  * @note  The new created I2S channel handle will be REGISTERED state after it is allocated successfully.
@@ -106,13 +127,16 @@ typedef struct {
  *        For ESP32 and ESP32S2, the whole I2S controller (i.e. both RX and TX channel) will be occupied,
  *        even if only one of RX or TX channel is registered.
  *        For the other targets, another channel on this controller will still available.
+ * @note  `tx_destination` / `rx_destination` select the DMA memory path or Bluetooth data path when
+ *        supported. Requesting an unsupported destination or port returns an error.
  *
  * @param[in]   chan_cfg    I2S controller channel configurations
  * @param[out]  ret_tx_handle   I2S channel handler used for managing the sending channel(optional)
  * @param[out]  ret_rx_handle   I2S channel handler used for managing the receiving channel(optional)
  * @return
  *      - ESP_OK    Allocate new channel(s) success
- *      - ESP_ERR_NOT_SUPPORTED The communication mode is not supported on the current chip
+ *      - ESP_ERR_NOT_SUPPORTED The communication mode or data path is not supported on the current chip,
+ *                              or Bluetooth data path is requested on an unsupported port
  *      - ESP_ERR_INVALID_ARG   NULL pointer or illegal parameter in i2s_chan_config_t
  *      - ESP_ERR_NOT_FOUND     No available I2S channel found
  */
@@ -170,28 +194,6 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle);
 esp_err_t i2s_channel_disable(i2s_chan_handle_t handle);
 
 /**
- * @brief Preload the data into TX DMA buffer
- * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
- * @note  As the initial DMA buffer has no data inside, it will transmit the empty buffer after enabled the channel,
- *        this function is used to preload the data into the DMA buffer, so that the valid data can be transmitted immediately
- *        after the channel is enabled.
- * @note  This function can be called multiple times before enabling the channel, the buffer that loaded later will be concatenated
- *        behind the former loaded buffer. But when all the DMA buffers have been loaded, no more data can be preload then, please
- *        check the `bytes_loaded` parameter to see how many bytes are loaded successfully, when the `bytes_loaded` is smaller than
- *        the `size`, it means the DMA buffers are full.
- *
- * @param[in]   tx_handle   I2S TX channel handler
- * @param[in]   src         The pointer of the source buffer to be loaded
- * @param[in]   size        The source buffer size
- * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
- * @return
- *      - ESP_OK    Load data successful
- *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
- *      - ESP_ERR_INVALID_STATE This channel has not stated
- */
-esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src, size_t size, size_t *bytes_loaded);
-
-/**
  * @brief I2S write data
  * @note  Only allowed to be called when the channel state is RUNNING, (i.e., TX channel has been started and is not writing now)
  *        but the RUNNING only stands for the software state, it doesn't mean there is no the signal transporting on line.
@@ -242,8 +244,51 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
  *      - ESP_OK                Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG   Set event callbacks failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE Set event callbacks failed because the current channel state is not REGISTERED or READY
+ *      - ESP_ERR_NOT_SUPPORTED Set event callbacks failed because the channel does not use the DMA data path
  */
 esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2s_event_callbacks_t *callbacks, void *user_data);
+
+/************************************************ Advanced APIs *******************************************************/
+/**
+ * @brief Preload the data into TX DMA buffer
+ * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  As the initial DMA buffer has no data inside, it will transmit the empty buffer after enabled the channel,
+ *        this function is used to preload the data into the DMA buffer, so that the valid data can be transmitted immediately
+ *        after the channel is enabled.
+ * @note  This function can be called multiple times before enabling the channel, the buffer that loaded later will be concatenated
+ *        behind the former loaded buffer. But when all the DMA buffers have been loaded, no more data can be preload then, please
+ *        check the `bytes_loaded` parameter to see how many bytes are loaded successfully, when the `bytes_loaded` is smaller than
+ *        the `size`, it means the DMA buffers are full.
+ *
+ * @param[in]   tx_handle   I2S TX channel handler
+ * @param[in]   src         The pointer of the source buffer to be loaded
+ * @param[in]   size        The source buffer size
+ * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
+ * @return
+ *      - ESP_OK    Load data successful
+ *      - ESP_FAIL  Failed to push the message queue
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
+ *      - ESP_ERR_INVALID_STATE This channel has not stated
+ */
+esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src, size_t size, size_t *bytes_loaded);
+
+/**
+ * @brief Tune the I2S clock rate
+ * @note  Only allowed to be called when the channel state is READY, (i.e., channel has been initialized, but not started)
+ * @note  This function is mainly to fine-tuning the mclk to match the speed of producer and consumer.
+ *        So that to avoid exsaust of the memory to store the data from producer.
+ *        Please take care the how different the frequency error can be tolerant by your codec,
+ *        otherwise the codec might stop working if the frequency changes a lot.
+ *
+ * @param[in]  handle       I2S channel handler
+ * @param[in]  tune_cfg     The clock tuning configuration, can be NULL if only need the current clock result
+ * @param[out] tune_info    The clock tuning information, can be NULL if not needed
+ * @return
+ *      - ESP_OK                 Tune the clock successfully
+ *      - ESP_ERR_INVALID_ARG    Tune the clock failed because of the invalid argument like NULL pointer or out of range
+ *      - ESP_ERR_NOT_SUPPORTED  Tune the clock failed because this function does not support to tune the external clock source
+ */
+esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_config_t *tune_cfg, i2s_tuning_info_t *tune_info);
 
 #ifdef __cplusplus
 }

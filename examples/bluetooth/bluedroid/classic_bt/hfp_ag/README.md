@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S31 |
+| ----------------- | ----- | --------- |
 
 # Hands-Free Audio Gateway (HF-AG)
 
@@ -9,7 +9,7 @@ This example is to show how to use the APIs of Hands-Free Audio Gateway (hf_ag) 
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate this example, it should be connected to a Hands-Free Client running on a Headphone/Headset or on another ESP32 development board loaded with [hfp_hf](../hfp_hf) example of ESP-IDF.
+This example is designed to run on commonly available ESP32 and ESP32-S31 development boards, e.g. ESP32-DevKitC and so on. To operate this example, it should be connected to a Hands-Free Client running on a Headphone/Headset or on another ESP32 or ESP32-S31 development board loaded with [hfp_hf](../hfp_hf) example of ESP-IDF.
 
 ### Configure the project
 
@@ -23,7 +23,7 @@ idf.py menuconfig
 
 #### Data Path
 
-ESP32 HFP supports two types of audio datapath: PCM and HCI.
+ESP32 HFP supports two types of audio datapath: PCM and HCI. Currently, ESP32-S31 HFP only supports HCI.
 
 The default configuration is `PCM`, if you want to use `vHCI` you should configure the data path before building and downloading the binary.
 
@@ -35,7 +35,7 @@ The default configuration is `PCM`, if you want to use `vHCI` you should configu
 
     `Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> audio(SCO) data path --> PCM`.
 
-- vHCI: To use vHCI, audio data stream will be directed from Bluetooth Controller through vHCI on ESP32 and go through the Bluedroid to the Application layer. In menuconfig, you should choose vHCI in `menuconfig` path:
+- vHCI: To use vHCI, audio data stream will be directed from Bluetooth Controller through vHCI and go through the Bluedroid to the Application layer. In menuconfig, you should choose vHCI in `menuconfig` path:
 
     `Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> HCI`
 
@@ -43,9 +43,28 @@ The default configuration is `PCM`, if you want to use `vHCI` you should configu
 
     `Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
 
+#### PCM Signal Configurations
+
+PCM Signal supports three configurations in menuconfig: PCM Role, PCM Polar and Channel Mode(Stereo/Mono).
+
+- PCM Role: PCM role can be configured as PCM master or PCM slave. The default configuration is `Master`, you can change the PCM role in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> PCM Role`
+
+- PCM Polar: PCM polarity can be configured as Falling Edge or Rising Edge. The default configuration is `Falling Edge`, you can change the PCM polar in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> PCM Polar`
+
+- Channel Mode(Stereo/Mono): PCM frame synchronization signal can be configured as Stereo mode or Mono mode, where the Mono mode can be configured in two different forms(Mono mode 1 and Mono mode 2). As is shown in the figure ![Stereo/Mono](image/Channel_Mode_Stereo_Mono.png)
+
+  - Stereo Mode(Dual channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK. The FSYNC signal continues until the end of the current channel-data transmission.
+  - Mono Mode 1(Single channel): FSYNC signal starts to change a CLK clock cycle earlier than the DOUT signal, which means that the FSYNC signal takes effect a clock cycle earlier than the first bit of the current channel-data transmission. The FSYNC signal continues for one extra CLK clock cycle.
+  - Mono Mode 2(Single channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK. The FSYNC signal continues for one extra CLK clock cycle.
+
+- The default configuration is `Stereo Mode`, you can change the PCM Channel mode in `menuconfig` path:
+    `Component config --> Bluetooth --> Controller Options --> PCM Signal Configurations --> PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono) --> Channel Mode(Stereo/Mono)`
+
 ### Codec Choice
 
-ESP32 supports two types of codec for HFP audio data: `CVSD` and `mSBC`.
+Supported targets provide two types of codec for HFP audio data: `CVSD` and `mSBC`.
 
 `CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in use, we provide `Wide Band Speech` item in the `menuconfig`:
 
@@ -75,7 +94,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-When you flash and monitor this example, the commands help table prints the following log at the very begining:
+When you flash and monitor this example, the commands help table prints the following log at the very beginning:
 
 ```
 Type 'help' to get the list of commands.
@@ -137,12 +156,12 @@ You can type `cona` to establish the audio connection between HF Unit and AG dev
 
 #### Choice of Codec
 
-ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
+Supported targets support both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
 
 Since CVSD is the default codec in HFP, we just show the scenarios using mSBC:
 
 - If you enable `BT_HFP_WBS_ENABLE` in `menuconfig`, mSBC will be available.
-- If both HF Unit and AG support mSBC and `BT_HFP_WBS_ENABLE` is enabled, ESP32 chooses mSBC.
+- If both HF Unit and AG support mSBC and `BT_HFP_WBS_ENABLE` is enabled, the local device chooses mSBC.
 - If you use PCM data path, mSBC is not available.
 
 ### Answer or Reject an Incoming Call

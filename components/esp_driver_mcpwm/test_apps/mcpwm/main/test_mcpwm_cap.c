@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
-#include "soc/soc_caps.h"
+#include "hal/mcpwm_ll.h"
 #include "esp_private/esp_clk.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_sync.h"
@@ -22,12 +22,12 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
     mcpwm_capture_timer_config_t cap_timer_config = {
         .clk_src = MCPWM_CAPTURE_CLK_SRC_DEFAULT,
     };
-    int total_cap_timers = SOC_MCPWM_GROUPS * SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP;
+    int total_cap_timers = MCPWM_LL_GET(GROUP_NUM) * MCPWM_LL_GET(CAPTURE_TIMERS_PER_GROUP);
     mcpwm_cap_timer_handle_t cap_timers[total_cap_timers];
     int k = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         cap_timer_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(CAPTURE_TIMERS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timers[k++]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_capture_timer(&cap_timer_config, &cap_timers[0]));
@@ -38,11 +38,10 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
         .gpio_num = TEST_CAP_GPIO,
         .prescale = 2,
         .flags.pos_edge = true,
-        .flags.pull_up = true,
     };
-    mcpwm_cap_channel_handle_t cap_channels[total_cap_timers][SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER];
+    mcpwm_cap_channel_handle_t cap_channels[total_cap_timers][MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER)];
     for (int i = 0; i < total_cap_timers; i++) {
-        for (int j = 0; j < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER); j++) {
             TEST_ESP_OK(mcpwm_new_capture_channel(cap_timers[i], &cap_chan_config, &cap_channels[i][j]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_capture_channel(cap_timers[i], &cap_chan_config, &cap_channels[i][0]));
@@ -50,7 +49,7 @@ TEST_CASE("mcpwm_capture_install_uninstall", "[mcpwm]")
 
     printf("uninstall mcpwm capture channels and timers\r\n");
     for (int i = 0; i < total_cap_timers; i++) {
-        for (int j = 0; j < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(CAPTURE_CHANNELS_PER_TIMER); j++) {
             TEST_ESP_OK(mcpwm_del_capture_channel(cap_channels[i][j]));
         }
         TEST_ESP_OK(mcpwm_del_capture_timer(cap_timers[i]));
@@ -71,6 +70,14 @@ static bool test_capture_callback(mcpwm_cap_channel_handle_t cap_channel, const 
 
 TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
 {
+    printf("init a gpio to simulate the external capture signal\r\n");
+    const int cap_gpio = TEST_CAP_GPIO;
+    gpio_config_t ext_gpio_conf = {
+        .mode = GPIO_MODE_INPUT_OUTPUT,
+        .pin_bit_mask = BIT(cap_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&ext_gpio_conf));
+
     printf("install mcpwm capture timer\r\n");
     mcpwm_cap_timer_handle_t cap_timer = NULL;
     mcpwm_capture_timer_config_t cap_timer_config = {
@@ -80,7 +87,6 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     };
     TEST_ESP_OK(mcpwm_new_capture_timer(&cap_timer_config, &cap_timer));
 
-    const int cap_gpio = TEST_CAP_GPIO;
     // put the GPIO into a preset state
     gpio_set_level(cap_gpio, 0);
 
@@ -91,8 +97,6 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
         .prescale = 1,
         .flags.pos_edge = true,
         .flags.neg_edge = true,
-        .flags.io_loop_back = true, // so we can use GPIO functions to simulate the external capture signal
-        .flags.pull_up = true,
     };
     TEST_ESP_OK(mcpwm_new_capture_channel(cap_timer, &cap_chan_config, &pps_channel));
 
@@ -105,6 +109,12 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
 
     printf("enable capture channel\r\n");
     TEST_ESP_OK(mcpwm_capture_channel_enable(pps_channel));
+
+    printf("check input function before starting capture\r\n");
+    gpio_set_level(cap_gpio, 1);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(cap_gpio));
+    gpio_set_level(cap_gpio, 0);
+    TEST_ASSERT_EQUAL(0, gpio_get_level(cap_gpio));
 
     printf("enable and start capture timer\r\n");
     TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
@@ -127,6 +137,14 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_capture_channel(pps_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));
+
+    printf("check input function after removing capture\r\n");
+    gpio_set_level(cap_gpio, 1);
+    TEST_ASSERT_EQUAL(1, gpio_get_level(cap_gpio));
+    gpio_set_level(cap_gpio, 0);
+    TEST_ASSERT_EQUAL(0, gpio_get_level(cap_gpio));
+
+    TEST_ESP_OK(gpio_reset_pin(cap_gpio));
 }
 
 typedef struct {

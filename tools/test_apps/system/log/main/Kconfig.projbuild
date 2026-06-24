@@ -1,0 +1,11 @@
+menu "Example Configuration"
+
+    config EXAMPLE_USE_TEXT_LOG
+        bool "Use text log mode for main file"
+        default n
+        help
+            Enable this option to compile logs in the main file as text logs
+            even if global binary logging is enabled.
+            Used for testing purposes.
+
+endmenu

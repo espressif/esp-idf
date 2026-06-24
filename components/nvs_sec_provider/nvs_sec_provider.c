@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,11 @@
 #include "esp_fault.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-
 #include "nvs_flash.h"
 #include "nvs_sec_provider.h"
+#include "private/nvs_sec_provider_private.h"
 
+#include "esp_private/startup_internal.h"
 #if SOC_HMAC_SUPPORTED
 #include "bootloader_random.h"
 #include "esp_random.h"
@@ -79,28 +80,40 @@ esp_err_t nvs_sec_provider_register_flash_enc(const nvs_sec_config_flash_enc_t *
     return ESP_OK;
 }
 
-static void __attribute__((constructor)) nvs_sec_provider_register_flash_enc_ctr(void)
+
+ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_flash_enc_scheme, SECONDARY, BIT(0), 150)
 {
     ESP_EARLY_LOGI(TAG, "NVS Encryption - Registering Flash encryption-based scheme...");
 
     nvs_sec_config_flash_enc_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_FLASH_ENC_DEFAULT();
+
+    /*
+     * This checks partition with subtype nvs_keys from partition table, if NVS Encryption is enabled
+     * and "nvs_keys" do not exist in partition table, then warning message is printed. To fix the problem,
+     * please introduce partition with subtype "nvs_keys" in the partition table.
+     */
+
+    if (sec_scheme_cfg.nvs_keys_part == NULL) {
+        ESP_EARLY_LOGW(TAG, "Partition with subtype \"nvs_keys\" not found");
+    }
+
     nvs_sec_scheme_t *sec_scheme_handle_out = NULL;
 
-    nvs_sec_provider_register_flash_enc(&sec_scheme_cfg, &sec_scheme_handle_out);
+    return nvs_sec_provider_register_flash_enc(&sec_scheme_cfg, &sec_scheme_handle_out);
 }
 
 #endif
 
 #if SOC_HMAC_SUPPORTED
 
-#if CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID > 5
+#if CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID < 0
 #error "NVS Encryption (HMAC): Configured eFuse block (CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID) out of range!"
 #endif
 
 static esp_err_t compute_nvs_keys_with_hmac(hmac_key_id_t hmac_key_id, nvs_sec_cfg_t* cfg)
 {
-    uint32_t ekey_seed[8] = {[0 ... 7] = 0xAEBE5A5A};
-    uint32_t tkey_seed[8] = {[0 ... 7] = 0xCEDEA5A5};
+    uint32_t ekey_seed[8] = {[0 ... 7] = EKEY_SEED};
+    uint32_t tkey_seed[8] = {[0 ... 7] = TKEY_SEED};
 
     esp_err_t err = esp_hmac_calculate(hmac_key_id, ekey_seed, sizeof(ekey_seed), (uint8_t *)cfg->eky);
     if (err != ESP_OK) {
@@ -251,14 +264,15 @@ esp_err_t nvs_sec_provider_register_hmac(const nvs_sec_config_hmac_t *sec_scheme
 }
 
 #if CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
-static void __attribute__((constructor)) nvs_sec_provider_register_hmac_ctr(void)
+ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_hmac_scheme, SECONDARY, BIT(0), 151)
 {
     ESP_EARLY_LOGI(TAG, "NVS Encryption - Registering HMAC-based scheme...");
 
     nvs_sec_config_hmac_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_HMAC_DEFAULT();
+
     nvs_sec_scheme_t *sec_scheme_handle_out = NULL;
 
-    nvs_sec_provider_register_hmac(&sec_scheme_cfg, &sec_scheme_handle_out);
+    return nvs_sec_provider_register_hmac(&sec_scheme_cfg, &sec_scheme_handle_out);
 }
 #endif  // CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC
 
@@ -276,6 +290,7 @@ esp_err_t nvs_sec_provider_deregister(nvs_sec_scheme_t *sec_scheme_handle)
 
     free(sec_scheme_handle);
 
+    nvs_flash_deregister_security_scheme();
     return ESP_OK;
 }
 

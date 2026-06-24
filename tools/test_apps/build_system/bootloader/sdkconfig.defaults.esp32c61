@@ -1,0 +1,6 @@
+# ESP32-C61 has no RSA based Secure Boot V2; only the ECDSA scheme exists, and it
+# is not functional for certain input vectors (see SECURE_BOOT_V2_ECDSA_INSECURE),
+# so it is gated behind the insecure option. Force-enable it for this build-only test.
+CONFIG_SECURE_BOOT_INSECURE=y
+CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA=y
+CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME=y

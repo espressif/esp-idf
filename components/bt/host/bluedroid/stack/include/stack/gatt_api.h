@@ -139,7 +139,7 @@ typedef UINT16 tGATT_DISCONN_REASON;
 /* max length of an attribute value
 */
 #ifndef GATT_MAX_ATTR_LEN
-#define GATT_MAX_ATTR_LEN                   600
+#define GATT_MAX_ATTR_LEN                   GATT_MAX_MTU_SIZE
 #endif
 
 /* default GATT MTU size over LE link
@@ -151,7 +151,11 @@ typedef UINT16 tGATT_DISCONN_REASON;
 #define GATT_INVALID_CONN_ID                0xFFFF
 
 #ifndef GATT_CL_MAX_LCB
-#define GATT_CL_MAX_LCB                     12 // 22
+#if (GATT_MAX_PHY_CHANNEL > 12)
+#define GATT_CL_MAX_LCB                     GATT_MAX_PHY_CHANNEL
+#else
+#define GATT_CL_MAX_LCB                     12
+#endif
 #endif
 
 #ifndef GATT_MAX_SCCB
@@ -701,7 +705,7 @@ extern UINT8 GATT_SetTraceLevel (UINT8 new_level);
 **
 ** Function         GATTS_AddHandleRange
 **
-** Description      This function add the allocated handles range for the specifed
+** Description      This function add the allocated handles range for the specified
 **                  application UUID, service UUID and service instance
 **
 ** Parameter        p_hndl_range:   pointer to allocated handles information
@@ -720,7 +724,7 @@ extern BOOLEAN GATTS_AddHandleRange(tGATTS_HNDL_RANGE *p_hndl_range);
 **                  NV save callback function.  There can be one and only one
 **                  NV save callback function.
 **
-** Parameter        p_cb_info : callback informaiton
+** Parameter        p_cb_info : callback information
 **
 ** Returns          TRUE if registered OK, else FALSE
 **
@@ -1136,14 +1140,15 @@ extern  void GATT_StartIf (tGATT_IF gatt_if);
 **
 *******************************************************************************/
 extern BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type,
-                             BOOLEAN is_direct, tBT_TRANSPORT transport, BOOLEAN is_aux);
+                             BOOLEAN is_direct, tBT_TRANSPORT transport, BOOLEAN is_aux,
+                             BOOLEAN is_pawr_synced, UINT8 adv_handle, UINT8 subevent);
 
 
 /*******************************************************************************
 **
 ** Function         GATT_CancelConnect
 **
-** Description      This function terminate the connection initaition to a remote
+** Description      This function terminate the connection initiation to a remote
 **                  device on GATT channel.
 **
 ** Parameters       gatt_if: client interface. If 0 used as unconditionally disconnect,
@@ -1221,23 +1226,6 @@ extern BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if,
 extern BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
         UINT16 *p_conn_id, tBT_TRANSPORT transport);
 
-
-/*******************************************************************************
-**
-** Function         GATT_Listen
-**
-** Description      This function start or stop LE advertisement and listen for
-**                  connection.
-**
-** Parameters       gatt_if: application interface
-**                  p_bd_addr: listen for specific address connection, or NULL for
-**                             listen to all device connection.
-**                  start: is a direct connection or a background auto connection
-**
-** Returns          TRUE if advertisement is started; FALSE if adv start failure.
-**
-*******************************************************************************/
-extern BOOLEAN GATT_Listen (tGATT_IF gatt_if, BOOLEAN start, BD_ADDR_PTR bd_addr);
 
 /*******************************************************************************
 **

@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -35,6 +35,7 @@
  *----------------------------------------------------------------------*/
 
 #include "sdkconfig.h"
+#include <stdbool.h>
 #include <string.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
@@ -48,6 +49,7 @@
 #include "esp_private/crosscore_int.h"
 #include "hal/crosscore_int_ll.h"
 #include "esp_attr.h"
+#include "esp_compiler.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
@@ -56,8 +58,13 @@
 #include "portmacro.h"
 #include "port_systick.h"
 #include "esp_memory_utils.h"
-#if CONFIG_IDF_TARGET_ESP32P4
-#include "soc/hp_system_reg.h"
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
+
+#if SOC_CPU_HAS_HWLOOP
+#include "riscv/csr.h"
+#include "riscv/csr_hwlp.h"
 #endif
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
@@ -92,8 +99,10 @@ _Static_assert(offsetof( StaticTask_t, pxDummy8 ) == PORT_OFFSET_PX_END_OF_STACK
 volatile UBaseType_t port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 volatile UBaseType_t port_uxInterruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c
 volatile UBaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
+volatile bool port_xThreadSafeClaimed = false;
 volatile UBaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
+volatile UBaseType_t port_uxCoreStartupDone[portNUM_PROCESSORS] = {0};  // Indicates whether the core has completed its startup sequence
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
 
@@ -125,14 +134,34 @@ StackType_t *xIsrStackBottom[portNUM_PROCESSORS] = {0};
 BaseType_t xPortStartScheduler(void)
 {
 #if ( SOC_CPU_COPROC_NUM > 0 )
+
+#if SOC_CPU_HAS_FPU
     /* Disable FPU so that the first task to use it will trigger an exception */
     rv_utils_disable_fpu();
-#endif
+#endif /* SOC_CPU_HAS_FPU */
+
+#if SOC_CPU_HAS_PIE
+    /* Similarly, disable PIE */
+    rv_utils_disable_pie();
+#endif /* SOC_CPU_HAS_PIE */
+
+#if SOC_CPU_HAS_DSP
+    rv_utils_disable_dsp();
+#endif /* SOC_CPU_HAS_DSP */
+
+#if SOC_CPU_HAS_HWLOOP
+    /* Initialize the Hardware loop feature */
+    RV_WRITE_CSR(CSR_HWLP_STATE_REG, HWLP_INITIAL_STATE);
+#endif /* SOC_CPU_HAS_HWLOOP */
+#endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
+
     /* Initialize all kernel state tracking variables */
     BaseType_t coreID = xPortGetCoreID();
     port_uxInterruptNesting[coreID] = 0;
     port_uxCriticalNesting[coreID] = 0;
+    port_xThreadSafeClaimed = false;
     port_xSchedulerRunning[coreID] = 0;
+    port_uxCoreStartupDone[coreID] = 0;
 
     /* Initialize ISR Stack(s) */
     for (int i = 0; i < portNUM_PROCESSORS; i++) {
@@ -145,8 +174,8 @@ BaseType_t xPortStartScheduler(void)
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-    esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH); /* set global interrupt masking level */
     rv_utils_intr_global_enable();
+    esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH); /* set global interrupt masking level */
 
     vPortYield();
 
@@ -230,7 +259,7 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
 #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
-    __asm__ volatile(".cfi_undefined ra");  // tell to debugger that it's outermost (inital) frame
+    __asm__ volatile(".cfi_undefined ra");  // tell to debugger that it's outermost (initial) frame
     extern void __attribute__((noreturn)) panic_abort(const char *details);
     static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
     pxCode(pvParameters);
@@ -278,15 +307,19 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
     const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
     RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
 
-    /* If the Task used any coprocessor, check if it is the actual owner of any.
-     * If yes, reset the owner. */
-    if (sa->sa_enable != 0) {
+    /* If the Task ever saved the original stack pointer, restore it before returning */
+    if (sa->sa_allocator != 0) {
         /* Restore the original lowest address of the stack in the TCB */
         task->pxDummy6 = sa->sa_tcbstack;
 
         /* Get the core the task is pinned on */
         #if ( configNUM_CORES > 1 )
             const BaseType_t coreID = task->xDummyCoreID;
+            /* If the task is not pinned on any core, it didn't use any coprocessor than need to be freed (FPU or PIE).
+             * If it used the HWLP coprocessor, it has nothing to clear since there is no "owner" for it. */
+            if (coreID == tskNO_AFFINITY) {
+                return;
+            }
         #else /* configNUM_CORES > 1 */
             const BaseType_t coreID = 0;
         #endif /* configNUM_CORES > 1 */
@@ -356,7 +389,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -374,7 +407,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     | Coproc. Save Area         | <- RvCoprocSaveArea
     | ------------------------- |
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -430,7 +463,7 @@ BaseType_t xPortInIsrContext(void)
     /* Disable interrupts to fetch the coreID atomically */
     irqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 
-    /* Return the interrupt nexting counter for this core */
+    /* Return the interrupt nesting counter for this core */
     ret = port_uxInterruptNesting[xPortGetCoreID()];
 
     /* Restore interrupts */
@@ -443,46 +476,34 @@ BaseType_t xPortInIsrContext(void)
 #endif /* (configNUM_CORES > 1) */
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+void vPortAssertIfInISR(void)
 {
-    /* Return the interrupt nexting counter for this core */
+    /* Assert if the interrupt nesting count is > 0 */
+    configASSERT(xPortInIsrContext() == 0);
+}
+
+BaseType_t xPortInterruptedFromISRContext(void)
+{
+    /* Return the interrupt nesting counter for this core */
     return port_uxInterruptNesting[xPortGetCoreID()];
 }
 
 UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
-    UBaseType_t prev_int_level = 0;
-
+    UBaseType_t prev_int_level = 0, int_level = 0;
 #if !SOC_INT_CLIC_SUPPORTED
-    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    prev_int_level = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
-    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    int_level = RVHAL_EXCM_LEVEL;
 #else
-    /* When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-    prev_int_level = rv_utils_set_intlevel_regval(RVHAL_EXCM_LEVEL_CLIC);
-#endif /* !SOC_INIT_CLIC_SUPPORTED */
-    /**
-     * In theory, this function should not return immediately as there is a
-     * delay between the moment we mask the interrupt threshold register and
-     * the moment a potential lower-priority interrupt is triggered (as said
-     * above), it should have a delay of 2 machine cycles/instructions.
-     *
-     * However, in practice, this function has an epilogue of one instruction,
-     * thus the instruction masking the interrupt threshold register is
-     * followed by two instructions: `ret` and `csrrs` (RV_SET_CSR).
-     * That's why we don't need any additional nop instructions here.
-     */
+    int_level = RVHAL_EXCM_LEVEL_CLIC;
+#endif
+
+    prev_int_level = rv_utils_set_intlevel_regval(int_level);
     return prev_int_level;
 }
 
 void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 {
-#if !SOC_INT_CLIC_SUPPORTED
-    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, prev_int_level);
-#else
     rv_utils_restore_intlevel_regval(prev_int_level);
-#endif /* SOC_INIT_CLIC_SUPPORTED */
     /**
      * The delay between the moment we unmask the interrupt threshold register
      * and the moment the potential requested interrupt is triggered is not
@@ -508,6 +529,9 @@ void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 #if (configNUM_CORES > 1)
 BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return pdPASS;
+    }
     /* Interrupts may already be disabled (if this function is called in nested
      * manner). However, there's no atomic operation that will allow us to check,
      * thus we have to disable interrupts again anyways.
@@ -535,17 +559,24 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 
 void __attribute__((optimize("-O3"))) vPortExitCriticalMultiCore(portMUX_TYPE *mux)
 {
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
     /* This function may be called in a nested manner. Therefore, we only need
-     * to reenable interrupts if this is the last call to exit the critical. We
+     * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
     spinlock_release(mux);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
+    /* Critical section nesting count must never be negative */
+    configASSERT( nesting > 0 );
+
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNesting[coreID] = nesting;
+
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);
@@ -578,12 +609,29 @@ void vPortExitCriticalCompliance(portMUX_TYPE *mux)
 }
 #endif /* (configNUM_CORES > 1) */
 
+void xPortThreadSafeClaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(!port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = true;
+}
+
+void xPortThreadSafeDisclaim(void)
+{
+    configASSERT(!xPortCanYield());
+    configASSERT(port_xThreadSafeClaimed);
+    port_xThreadSafeClaimed = false;
+}
+
 void vPortEnterCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortEnterCritical(void) is not supported on single-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortEnterCritical(void) is not supported on multi-core targets. Please use vPortEnterCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
     BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
     port_uxCriticalNesting[0]++;
 
@@ -595,11 +643,19 @@ void vPortEnterCritical(void)
 void vPortExitCritical(void)
 {
 #if (configNUM_CORES > 1)
-        esp_rom_printf("vPortExitCritical(void) is not supported on single-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
+        esp_rom_printf("vPortExitCritical(void) is not supported on multi-core targets. Please use vPortExitCriticalMultiCore(portMUX_TYPE *mux) instead.\n");
         abort();
 #endif /* (configNUM_CORES > 1) */
+    if (unlikely(port_xThreadSafeClaimed)) {
+        return;
+    }
+
+    /* Critical section nesting count must never be negative */
+    configASSERT( port_uxCriticalNesting[0] > 0 );
+
     if (port_uxCriticalNesting[0] > 0) {
         port_uxCriticalNesting[0]--;
+
         if (port_uxCriticalNesting[0] == 0) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[0]);
         }
@@ -697,7 +753,7 @@ static void vPortTLSPointersDelCb( void *pxTCB )
         if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL ) {  //If del cb is set
             /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
             if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
-                ESP_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
+                ESP_EARLY_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
                 abort();
             }
 
@@ -714,16 +770,6 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         extern void vTaskPreDeletionHook( void * pxTCB );
         vTaskPreDeletionHook( pxTCB );
     #endif /* CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK */
-
-    #if ( CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP )
-        /*
-         * If the user is using the legacy task pre-deletion hook, call it.
-         * Todo: Will be removed in IDF-8097
-         */
-        #warning "CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP is deprecated. Use CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK instead."
-        extern void vPortCleanUpTCB( void * pxTCB );
-        vPortCleanUpTCB( pxTCB );
-    #endif /* CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP */
 
     #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
         /* Call TLS pointers deletion callbacks */
@@ -787,9 +833,14 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
     /* Check if coprocessor area is allocated */
     if (allocate && sa->sa_coprocs[coproc] == NULL) {
         const uint32_t coproc_sa_sizes[] = {
-            RV_COPROC0_SIZE, RV_COPROC1_SIZE
+            RV_COPROC0_SIZE, RV_COPROC1_SIZE, RV_COPROC2_SIZE
         };
-        /* The allocator points to a usable part of the stack, use it for the coprocessor */
+        const uint32_t coproc_sa_align[] = {
+            RV_COPROC0_ALIGN, RV_COPROC1_ALIGN, RV_COPROC2_ALIGN
+        };
+        /* The allocator points to a usable part of the stack, use it for the coprocessor.
+         * Align it up to the coprocessor save area requirement */
+        sa->sa_allocator = (sa->sa_allocator + coproc_sa_align[coproc] - 1) & ~(coproc_sa_align[coproc] - 1);
         sa->sa_coprocs[coproc] = (void*) (sa->sa_allocator);
         sa->sa_allocator += coproc_sa_sizes[coproc];
         /* Update the lowest address of the stack to prevent FreeRTOS performing overflow/watermark checks on the coprocessors contexts */
@@ -800,9 +851,9 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
         if (task_sp <= task->pxDummy6) {
             /* In theory we need to call vApplicationStackOverflowHook to trigger the stack overflow callback,
              * but in practice, since we are already in an exception handler, this won't work, so let's manually
-             * trigger an exception with the previous FPU owner's TCB */
+             * trigger an exception with the previous coprocessor owner's TCB */
             g_panic_abort = true;
-            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving FPU context!\n";
+            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving coprocessor context!\n";
             xt_unhandled_exception(task_sp);
         }
     }
@@ -820,8 +871,10 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
  *
  * @param coreid    Current core
  * @param coproc    Coprocessor to save context of
+ * @param owner     New owner of the coprocessor. Can be NULL to clear the owner.
  *
- * @returns Coprocessor former owner's save area
+ * @returns Coprocessor former owner's save area, can be NULL if there was no owner yet, can be -1 if
+ *          the former owner is the same as the new owner.
  */
 RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* owner)
 {
@@ -830,8 +883,11 @@ RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* 
     StaticTask_t** owner_addr = &port_uxCoprocOwner[ coreid ][ coproc ];
     /* Atomically exchange former owner with the new one */
     StaticTask_t* former = Atomic_SwapPointers_p32((void**) owner_addr, owner);
-    /* Get the save area of former owner */
-    if (former != NULL) {
+    /* Get the save area of former owner. small optimization here, if the former owner is the new owner,
+     * return -1. This will simplify the assembly code while making it faster. */
+    if (former == owner) {
+        sa = (void*) -1;
+    } else if (former != NULL) {
         /* Allocate coprocessor memory if not available yet */
         sa = pxPortGetCoprocArea(former, true, coproc);
     }
@@ -852,8 +908,90 @@ void vPortCoprocUsedInISR(void* frame)
     xt_unhandled_exception(frame);
 }
 
+#if CONFIG_IDF_TARGET_ESP32S31
+/* On the ESP32-S31, the PIE is only available on core 1, so we need to perform a few checks when core 0 uses a PIE instruction.
+ * the functions here will help us with that. */
+
+/**
+ * @brief Called when a task uses a PIE instruction on core 0.
+ *
+ * @param task Task that used the PIE instruction
+ * @param frame Frame of the PIE instruction
+ *
+ * @returns The context to save with the current FPU context when the current task was the FPU owner,
+ *          NULL if the task is not the owner of the FPU on the current core.
+ */
+void* vPortTaskUsedPIEOnCPU0(StaticTask_t* task, void* frame)
+{
+#if CONFIG_FREERTOS_UNICORE
+    g_panic_abort = true;
+    g_panic_abort_details = (char *) "ERROR: PIE coprocessor is not supported in unicore configuration!\n";
+    xt_unhandled_exception(frame);
+    return NULL;
+#else
+    void* context_to_save = NULL;
+    /* Make sure we are not in an interrupt context nor in a critical section */
+    if (xPortInIsrContext()) {
+        /* We are in an interrupt context, abort */
+        vPortCoprocUsedInISR(frame);
+    }
+    /* Since we count on crosscore interrupt to reschedule the current task, we must not be in a
+     * critical section. In other words, we must be able to yield */
+    if (!xPortCanYield()) {
+        g_panic_abort = true;
+        g_panic_abort_details = (char *) "ERROR: PIE coprocessor must not be used in critical sections!\n";
+        xt_unhandled_exception(frame);
+    }
+
+    /* Check if the current task is the owner of the FPU on the current core. No need to make the following two instructions
+     * atomic since we are in an exception context, we can't be interrupted by an interrupt. */
+    if (port_uxCoprocOwner[0][FPU_COPROC_IDX] == task) {
+        /* Task is the owner of the FPU on the current core, set the new owner to NULL and return the save area to fill */
+        RvCoprocSaveArea* sa = pxPortUpdateCoprocOwner(0, FPU_COPROC_IDX, NULL);
+        /* `sa` is not NULL here for sure */
+        context_to_save = sa->sa_coprocs[FPU_COPROC_IDX];
+    }
+    /* Migrate the task to core 1. NOTE: This will override any existing pinning of the task */
+    vPortTaskPinToCore(task, 1);
+    /* Raised an error if the scheduler is NOT running on core 0 */
+    if (!port_xSchedulerRunning[0]) {
+        /* Scheduler is not running on core 0, raise an error */
+        g_panic_abort = true;
+        g_panic_abort_details = (char *) "ERROR: Scheduler is not running on core 0, task must migrate to core 1!\n";
+        xt_unhandled_exception(frame);
+    }
+    /* Send a cross-core interrupt on the current core, it won't be triggered until we return from the exception handler */
+    esp_crosscore_int_send_yield(0);
+    return context_to_save;
+#endif /* CONFIG_FREERTOS_UNICORE */
+}
+
+#endif /* CONFIG_IDF_TARGET_ESP32S31 */
+
+
 #endif /* SOC_CPU_COPROC_NUM > 0 */
+
+/* ------------------------------------------------ Run Time Stats ------------------------------------------------- */
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+    return (configRUN_TIME_COUNTER_TYPE) esp_timer_get_time();
+#else
+    return 0;
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
+#if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW
+BaseType_t xPortFPUContextIsDirty(BaseType_t core_id)
+{
+    return (BaseType_t)(port_uxCoprocOwner[core_id][FPU_COPROC_IDX] != NULL);
+}
+#endif /* (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW */

@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import print_function
-
 import http.client
 import logging
 import os
@@ -14,6 +11,7 @@ import sys
 import pexpect
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
     import wifi_tools
@@ -68,12 +66,11 @@ def test_captive_page(ip: str, port: str, uri: str) -> bool:
     return True
 
 
-@pytest.mark.esp32
 @pytest.mark.wifi_wlan
 @pytest.mark.temp_skip_ci(targets=['esp32'], reason='unstable case')
 @pytest.mark.xfail(reason='Runner unable to connect to target over WiFi', run=False)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_example_captive_portal(dut: Dut) -> None:
-
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'captive_portal.bin')
     bin_size = os.path.getsize(binary_file)
@@ -103,7 +100,9 @@ def test_example_captive_portal(dut: Dut) -> None:
         except RuntimeError as err:
             logging.info('error: {}'.format(err))
         try:
-            got_ip = dut.expect(r'DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)', timeout=60)[1].decode()
+            got_ip = dut.expect(r'DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)', timeout=60)[
+                1
+            ].decode()
             logging.info('got_ip: {}'.format(got_ip))
             if ip != got_ip:
                 raise RuntimeError('SoftAP connected to another host! {} != {}'.format(ip, got_ip))

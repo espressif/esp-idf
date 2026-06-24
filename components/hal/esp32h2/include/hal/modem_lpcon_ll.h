@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,12 @@ __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_test_clk(modem_lpcon_dev_t *hw, bool en)
 {
     hw->test_conf.clk_en = en;
+}
+
+__attribute__((always_inline))
+static inline bool modem_lpcon_ll_test_clk_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->test_conf.clk_en;
 }
 
 __attribute__((always_inline))
@@ -68,9 +74,9 @@ static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool 
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_clock(modem_lpcon_dev_t *hw, bool en)
+static inline bool modem_lpcon_ll_coex_clock_is_enabled(modem_lpcon_dev_t *hw)
 {
-    hw->clk_conf.clk_i2c_mst_en = en;
+    return hw->clk_conf.clk_coex_en;
 }
 
 __attribute__((always_inline))
@@ -80,15 +86,15 @@ static inline void modem_lpcon_ll_enable_fe_mem_clock(modem_lpcon_dev_t *hw, boo
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_coex_force_clock(modem_lpcon_dev_t *hw, bool en)
+static inline bool modem_lpcon_ll_fe_mem_clock_is_enabled(modem_lpcon_dev_t *hw)
 {
-    hw->clk_conf_force_on.clk_coex_fo = en;
+    return hw->clk_conf.clk_fe_mem_en;
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_force_clock(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_enable_coex_force_clock(modem_lpcon_dev_t *hw, bool en)
 {
-    hw->clk_conf_force_on.clk_i2c_mst_fo = en;
+    hw->clk_conf_force_on.clk_coex_fo = en;
 }
 
 __attribute__((always_inline))
@@ -105,23 +111,10 @@ static inline void modem_lpcon_ll_reset_coex(modem_lpcon_dev_t *hw)
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_reset_i2c_master(modem_lpcon_dev_t *hw)
-{
-    hw->rst_conf.rst_i2c_mst = 1;
-    hw->rst_conf.rst_i2c_mst = 0;
-}
-
-__attribute__((always_inline))
 static inline void modem_lpcon_ll_reset_all(modem_lpcon_dev_t *hw)
 {
     hw->rst_conf.val = 0xf;
     hw->rst_conf.val = 0;
-}
-
-__attribute__((always_inline))
-static inline uint32_t modem_lpcon_ll_get_date(modem_lpcon_dev_t *hw)
-{
-    return hw->date.val;
 }
 
 #ifdef __cplusplus

@@ -19,6 +19,9 @@
 #include "argtable3/argtable3.h"
 #include "protocol_examples_common.h"
 #include "ping/ping_sock.h"
+#include "esp_check.h"
+
+const static char *TAG = "echo_example";
 
 static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
@@ -62,11 +65,16 @@ static void cmd_ping_on_ping_end(esp_ping_handle_t hdl, void *args)
     } else {
         loss = 0;
     }
+#ifdef CONFIG_LWIP_IPV4
     if (IP_IS_V4(&target_addr)) {
         printf("\n--- %s ping statistics ---\n", inet_ntoa(*ip_2_ip4(&target_addr)));
-    } else {
+    }
+#endif
+#ifdef CONFIG_LWIP_IPV6
+    if (IP_IS_V6(&target_addr)) {
         printf("\n--- %s ping statistics ---\n", inet6_ntoa(*ip_2_ip6(&target_addr)));
     }
+#endif
     printf("%" PRIu32 " packets transmitted, %" PRIu32 " received, %" PRIu32 "%% packet loss, time %" PRIu32 "ms\n",
            transmitted, received, loss, total_time_ms);
     // delete the ping sessions, so that we clean up all resources and can create a new ping session
@@ -81,6 +89,7 @@ static struct {
     struct arg_int *count;
     struct arg_int *tos;
     struct arg_int *ttl;
+    struct arg_int *interface;
     struct arg_str *host;
     struct arg_end *end;
 } ping_args;
@@ -119,6 +128,10 @@ static int do_ping_cmd(int argc, char **argv)
         config.ttl = (uint32_t)(ping_args.ttl->ival[0]);
     }
 
+    if (ping_args.interface->count > 0) {
+        config.interface = (uint32_t)(ping_args.interface->ival[0]);
+    }
+
     // parse IP address
     struct sockaddr_in6 sock_addr6;
     ip_addr_t target_addr;
@@ -136,13 +149,18 @@ static int do_ping_cmd(int argc, char **argv)
             printf("ping: unknown host %s\n", ping_args.host->sval[0]);
             return 1;
         }
+#ifdef CONFIG_LWIP_IPV4
         if (res->ai_family == AF_INET) {
             struct in_addr addr4 = ((struct sockaddr_in *) (res->ai_addr))->sin_addr;
             inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
-        } else {
+        }
+#endif
+#ifdef CONFIG_LWIP_IPV6
+        if (res->ai_family == AF_INET6) {
             struct in6_addr addr6 = ((struct sockaddr_in6 *) (res->ai_addr))->sin6_addr;
             inet6_addr_to_ip6addr(ip_2_ip6(&target_addr), &addr6);
         }
+#endif
         freeaddrinfo(res);
     }
     config.target_addr = target_addr;
@@ -155,9 +173,8 @@ static int do_ping_cmd(int argc, char **argv)
         .on_ping_end = cmd_ping_on_ping_end
     };
     esp_ping_handle_t ping;
-    esp_ping_new_session(&config, &cbs, &ping);
-    esp_ping_start(ping);
-
+    ESP_RETURN_ON_FALSE(esp_ping_new_session(&config, &cbs, &ping) == ESP_OK, -1, TAG, "esp_ping_new_session failed");
+    ESP_RETURN_ON_FALSE(esp_ping_start(ping) == ESP_OK, -1, TAG, "esp_ping_start() failed");
     return 0;
 }
 
@@ -169,6 +186,7 @@ static void register_ping(void)
     ping_args.count = arg_int0("c", "count", "<n>", "Stop after sending count packets");
     ping_args.tos = arg_int0("Q", "tos", "<n>", "Set Type of Service related bits in IP datagrams");
     ping_args.ttl = arg_int0("T", "ttl", "<n>", "Set Time to Live related bits in IP datagrams");
+    ping_args.interface = arg_int0("I", "interface", "<n>", "Set Interface number");
     ping_args.host = arg_str1(NULL, NULL, "<host>", "Host address");
     ping_args.end = arg_end(1);
     const esp_console_cmd_t ping_cmd = {
@@ -182,24 +200,6 @@ static void register_ping(void)
 }
 
 static esp_console_repl_t *s_repl = NULL;
-
-/* handle 'quit' command */
-static int do_cmd_quit(int argc, char **argv)
-{
-    printf("ByeBye\r\n");
-    s_repl->del(s_repl);
-    return 0;
-}
-
-static esp_err_t register_quit(void)
-{
-    esp_console_cmd_t command = {
-        .command = "quit",
-        .help = "Quit REPL environment",
-        .func = &do_cmd_quit
-    };
-    return esp_console_cmd_register(&command);
-}
 
 void app_main(void)
 {
@@ -232,11 +232,12 @@ void app_main(void)
     /* automatic connection per menuconfig */
     ESP_ERROR_CHECK(example_connect());
 #endif
+    struct ifreq ifr;
+    ESP_ERROR_CHECK(esp_netif_get_netif_impl_name(EXAMPLE_INTERFACE, ifr.ifr_name));
+    printf("Connected on interface: %s (%d)", ifr.ifr_name, esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE));
 
     /* register command `ping` */
     register_ping();
-    /* register command `quit` */
-    register_quit();
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(s_repl));

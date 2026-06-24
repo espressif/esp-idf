@@ -97,7 +97,7 @@
       - ESP32 target configuration file. Can be used together with one of the ``interface/`` configuration files.
     * - ``target/esp32-solo-1.cfg``
       - Target configuration file for ESP32-SOLO-1 module. Different from ``esp32.cfg`` in that it only configures one CPU.
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - JTAG adapter configuration file for ESP-WROVER-KIT and ESP-Prog boards.
 
 ---
@@ -112,7 +112,7 @@
       - Description
     * - ``ESP32_FLASH_VOLTAGE``
       - When using 1.8 V flash ESP32 based modules, set this variable to ``1.8``. Refer to :ref:`jtag-debugging-tip-code-flash-voltage`.
-    * - ``ESP32_ONLYCPU``
+    * - ``ESP_ONLYCPU``
       - For multi-core targets, can be set to ``1`` to only enable single core debugging.
 
 ---
@@ -163,12 +163,12 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP-WROVER-KIT
-.. |devkit-name-with-link| replace:: :doc:`ESP-WROVER-KIT <../../hw-reference/index>`
+.. |devkit-name-with-link| replace:: `ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html>`__
 
 ---
 
 .. devkit-hw-config
 
-* Enable on-board JTAG functionality by setting JP8 according to :doc:`../../hw-reference/esp32/get-started-wrover-kit`, Section :ref:`get-started-esp-wrover-kit-v4.1-setup-options`.
+* Enable on-board JTAG functionality by setting JP8 according to `ESP-WROVER-KIT <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html>`__.
 
 ---

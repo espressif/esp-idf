@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,16 +39,25 @@ void btc_ble_mesh_srpl_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_SRPL_CLIENT_SEND:
+        dst->srpl_send.params = NULL;
+        dst->srpl_send.msg = NULL;
+
         dst->srpl_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->srpl_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_srpl_client_msg_t));
-        if (dst->srpl_send.params && dst->srpl_send.msg) {
-            memcpy(dst->srpl_send.params, src->srpl_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->srpl_send.msg, src->srpl_send.msg,
-                   sizeof(esp_ble_mesh_srpl_client_msg_t));
-        } else {
+        if (!dst->srpl_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+        memcpy(dst->srpl_send.params, src->srpl_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
+        dst->srpl_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_srpl_client_msg_t));
+        if (!dst->srpl_send.msg) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->srpl_send.params);
+            dst->srpl_send.params = NULL;
+            break;
+        }
+        memcpy(dst->srpl_send.msg, src->srpl_send.msg, sizeof(esp_ble_mesh_srpl_client_msg_t));
         break;
     default:
         BT_DBG("%s, Unknown act %d", __func__, msg->act);
@@ -205,8 +214,8 @@ void btc_ble_mesh_srpl_client_recv_pub_cb(uint32_t opcode,
     }
 
     bt_mesh_srpl_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_SRPL_CLIENT_RECV_PUB,
-        model, ctx, buf->data, buf->len);
+                                      BTC_BLE_MESH_EVT_SRPL_CLIENT_RECV_PUB,
+                                      model, ctx, buf->data, buf->len);
 }
 
 static int btc_ble_mesh_srpl_client_send(esp_ble_mesh_client_common_param_t *params,
@@ -249,7 +258,7 @@ void btc_ble_mesh_srpl_client_call_handler(btc_msg_t *msg)
         cb.send.err_code = btc_ble_mesh_srpl_client_send(arg->srpl_send.params,
                                                          arg->srpl_send.msg);
         btc_ble_mesh_srpl_client_cb(&cb,
-            ESP_BLE_MESH_SRPL_CLIENT_SEND_COMP_EVT);
+                                    ESP_BLE_MESH_SRPL_CLIENT_SEND_COMP_EVT);
         break;
     default:
         break;

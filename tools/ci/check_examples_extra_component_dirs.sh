@@ -5,7 +5,8 @@ set -uo pipefail
 # Examples shouldn't use EXTRA_COMPONENT_DIRS, instead the dependencies should be specified in idf_component.yml files
 
 output=$(find ${IDF_PATH}/examples -name "CMakeLists.txt" -not -path "**/managed_components/**" -not -path "**/build/**")
-files=$(egrep "set\(EXTRA_COMPONENT_DIRS" ${output} | cut -d ":" -f 1)
+# Make sure the regex doesn't match the text `BOOTLOADER_EXTRA_COMPONENT_DIRS`
+files=$(egrep "[^A-Za-Z0-9_]EXTRA_COMPONENT_DIRS" ${output} | cut -d ":" -f 1)
 found_issues=0
 for file in ${files}
 do

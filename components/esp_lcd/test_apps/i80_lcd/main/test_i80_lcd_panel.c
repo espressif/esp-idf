@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -9,17 +9,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "esp_random.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
+#include "esp_lcd_nt35510.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_commands.h"
 #include "soc/soc_caps.h"
 #include "driver/gpio.h"
 #include "test_i80_board.h"
 
-#if SOC_I2S_LCD_I80_VARIANT
+#if SOC_HAS(I2S_I80_LCD)
 #include "driver/i2s_std.h"
+#include "hal/i2s_ll.h"
 
 TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
 {
@@ -49,9 +50,11 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
-#endif // SOC_I2S_LCD_I80_VARIANT
+#endif // SOC_HAS(I2S_I80_LCD)
 
-#if SOC_LCDCAM_SUPPORTED
+#if SOC_LCDCAM_I80_LCD_SUPPORTED
+#include "hal/lcd_ll.h"
+
 TEST_CASE("lcd_i80_device_swap_color_bytes", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
@@ -173,11 +176,16 @@ TEST_CASE("lcd_i80_device_clock_mode", "[lcd]")
     }
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
-#endif // SOC_LCDCAM_SUPPORTED
+#endif // SOC_LCDCAM_I80_LCD_SUPPORTED
 
 TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
 {
-    esp_lcd_i80_bus_handle_t i80_buses[SOC_LCD_I80_BUSES] = {};
+#if SOC_HAS(I2S_I80_LCD)
+#define TEST_NUM_LCD_I80_BUSES I2S_LL_GET(INST_NUM)
+#elif SOC_HAS(LCDCAM_I80_LCD)
+#define TEST_NUM_LCD_I80_BUSES LCD_LL_GET(I80_BUS_NUM)
+#endif
+    esp_lcd_i80_bus_handle_t i80_buses[TEST_NUM_LCD_I80_BUSES] = {};
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
@@ -195,7 +203,7 @@ TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
         .bus_width = 8,
         .max_transfer_bytes = TEST_LCD_H_RES * 40 * sizeof(uint16_t)
     };
-    for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+    for (int i = 0; i < TEST_NUM_LCD_I80_BUSES; i++) {
         TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_buses[i]));
     }
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, esp_lcd_new_i80_bus(&bus_config, &i80_buses[0]));
@@ -215,7 +223,7 @@ TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
     for (int i = 0; i < 10; i++) {
         TEST_ESP_OK(esp_lcd_panel_io_del(io_handles[i]));
     }
-    for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+    for (int i = 0; i < TEST_NUM_LCD_I80_BUSES; i++) {
         TEST_ESP_OK(esp_lcd_del_i80_bus(i80_buses[i]));
     }
 }
@@ -296,12 +304,6 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
             .dc_data_level = 1,
         },
     };
-    esp_lcd_panel_handle_t panel_handle = NULL;
-    esp_lcd_panel_dev_config_t panel_config = {
-        .reset_gpio_num = TEST_LCD_RST_GPIO,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .bits_per_pixel = 16,
-    };
 
     printf("testing bus-width=16bit, cmd/param bit-width=8bit\r\n");
     bus_config.bus_width = 16;
@@ -309,14 +311,12 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 8;
     io_config.lcd_param_bits = 8;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
 
     esp_lcd_panel_io_tx_param(io_handle, 0x1A, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B, (uint8_t[]) {
         0x11, 0x22, 0x33
     }, 3);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 
@@ -326,13 +326,11 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 16;
     io_config.lcd_param_bits = 16;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B02, (uint16_t[]) {
         0x11, 0x22, 0x33
     }, 6);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 
@@ -342,13 +340,11 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 8;
     io_config.lcd_param_bits = 8;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_io_tx_param(io_handle, 0x1A, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B, (uint8_t[]) {
         0x11, 0x22, 0x33
     }, 3);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 
@@ -358,21 +354,19 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     io_config.lcd_cmd_bits = 16;
     io_config.lcd_param_bits = 16;
     TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
-    TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
     esp_lcd_panel_io_tx_param(io_handle, 0x1A01, NULL, 0);
     esp_lcd_panel_io_tx_param(io_handle, 0x1B02, (uint16_t[]) {
         0x11, 0x22, 0x33
     }, 6);
     esp_lcd_panel_io_tx_param(io_handle, 0x1C03, NULL, 0);
-    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
 
-TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
+TEST_CASE("lcd_panel_with_i80_interface (st7789, 8bits)", "[lcd]")
 {
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
-    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);
+    uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(img);
 
     gpio_config_t bk_gpio_config = {
@@ -437,9 +431,9 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
     for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 100);
+        int y_start = rand() % (TEST_LCD_V_RES - 100);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     }
@@ -455,7 +449,7 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
 }
 
 // TODO: support the test on I2S LCD (IDF-7202)
-#if !SOC_I2S_LCD_I80_VARIANT
+#if !SOC_HAS(I2S_I80_LCD)
 TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
 {
     int x_start = 100;
@@ -465,7 +459,7 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
     void *color_data = malloc(color_size);
     TEST_ASSERT_NOT_NULL(color_data);
-    uint8_t color_byte = esp_random() & 0xFF;
+    uint8_t color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
 
     printf("creating i80 bus and IO driver\r\n");
@@ -550,7 +544,7 @@ TEST_CASE("i80_lcd_send_colors_to_fixed_region", "[lcd]")
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
     // change to another color
-    color_byte = esp_random() & 0xFF;
+    color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
     for (int i = 0; i < steps; i++) {
         TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));

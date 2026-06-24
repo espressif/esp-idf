@@ -8,6 +8,7 @@
 #include "unity_test_runner.h"
 #include "unity_test_utils.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 
 // Some resources are lazy allocated in RMT driver, so we reserved this threadhold when checking memory leak
 // A better way to check a potential memory leak is running a same case by twice, for the second time, the memory usage delta should be zero

@@ -20,6 +20,8 @@ struct rsn_pmksa_cache_entry {
     os_time_t expiration;
     int akmp; /* WPA_KEY_MGMT_* */
     u8 aa[ETH_ALEN];
+    /** Supplicant MAC (SPA) this PMKSA was created for; used when matching cache */
+    u8 spa[ETH_ALEN];
 
     os_time_t reauth_time;
 
@@ -52,7 +54,7 @@ pmksa_cache_init(void (*free_cb)(struct rsn_pmksa_cache_entry *entry,
         void *ctx, struct wpa_sm *sm);
 void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa);
 struct rsn_pmksa_cache_entry * pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
-        const u8 *aa, const u8 *pmkid,
+        const u8 *aa, const u8 *spa, const u8 *pmkid,
         const void *network_ctx);
 int pmksa_cache_list(struct rsn_pmksa_cache *pmksa, char *buf, size_t len);
 struct rsn_pmksa_cache_entry *
@@ -72,6 +74,8 @@ pmksa_cache_get_opportunistic(struct rsn_pmksa_cache *pmksa,
         void *network_ctx, const u8 *aa);
 void pmksa_cache_flush(struct rsn_pmksa_cache *pmksa, void *network_ctx,
         const u8 *pmk, size_t pmk_len);
+void pmksa_cache_remove(struct rsn_pmksa_cache *pmksa,
+			struct rsn_pmksa_cache_entry *entry);
 
 #else /* IEEE8021X_EAPOL */
 
@@ -88,8 +92,8 @@ static inline void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa)
 }
 
     static inline struct rsn_pmksa_cache_entry *
-pmksa_cache_get(struct rsn_pmksa_cache *pmksa, const u8 *aa, const u8 *pmkid,
-        const void *network_ctx)
+pmksa_cache_get(struct rsn_pmksa_cache *pmksa, const u8 *aa, const u8 *spa,
+        const u8 *pmkid, const void *network_ctx)
 {
     return NULL;
 }
@@ -131,6 +135,12 @@ static inline void pmksa_cache_flush(struct rsn_pmksa_cache *pmksa,
         const u8 *pmk, size_t pmk_len)
 {
 }
+
+void pmksa_cache_remove(struct rsn_pmksa_cache *pmksa,
+			struct rsn_pmksa_cache_entry *entry)
+{
+}
+
 
 #endif /* IEEE8021X_EAPOL */
 

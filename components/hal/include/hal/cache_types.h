@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,7 @@ typedef enum {
  *
  * @note
  * These enumurations are abstract concepts. Virtual address reside in one of these buses.
- * Therefore, use `cache_ll_l1_get_bus(cache_id, vaddr_start, len)` to convert your vaddr into buses first
+ * Therefore, use `cache_ll_l1_get_bus(bus_id, vaddr_start, len)` to convert your vaddr into buses first
  */
 typedef enum {
     CACHE_BUS_IBUS0 = BIT(0),
@@ -33,6 +33,14 @@ typedef enum {
     CACHE_BUS_DBUS1 = BIT(4),
     CACHE_BUS_DBUS2 = BIT(5),
 } cache_bus_mask_t;
+
+/**
+ * @brief Preload order
+ */
+typedef enum {
+    CACHE_PRELOAD_ORDER_ASCENDING,
+    CACHE_PRELOAD_ORDER_DESCENDING,
+} cache_preload_order_t;
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -43,6 +43,9 @@ extern "C" {
 #define SOC_DRAM_PSRAM_ADDRESS_LOW                   SOC_IRAM_PSRAM_ADDRESS_LOW
 #define SOC_DRAM_PSRAM_ADDRESS_HIGH                  SOC_IRAM_PSRAM_ADDRESS_HIGH
 
+#define SOC_IRAM_FLASH_PSRAM_OFFSET                  (SOC_IRAM_PSRAM_ADDRESS_LOW - SOC_IRAM_FLASH_ADDRESS_LOW)
+#define SOC_DRAM_FLASH_PSRAM_OFFSET                  SOC_IRAM_FLASH_PSRAM_OFFSET
+
 #define SOC_BUS_SIZE(bus_name)                       (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
 #define SOC_ADDRESS_IN_BUS(bus_name, vaddr)          ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 
@@ -50,7 +53,6 @@ extern "C" {
 #define SOC_ADDRESS_IN_DRAM0_CACHE(vaddr)            SOC_ADDRESS_IN_BUS(SOC_DRAM0_CACHE, vaddr)
 #define SOC_ADDRESS_IN_DRAM_FLASH(vaddr)             SOC_ADDRESS_IN_BUS(SOC_DRAM_FLASH, vaddr)
 #define SOC_ADDRESS_IN_DRAM_PSRAM(vaddr)             SOC_ADDRESS_IN_BUS(SOC_DRAM_PSRAM, vaddr)
-
 
 #define SOC_MMU_FLASH_VALID                 BIT(12)
 #define SOC_MMU_FLASH_INVALID               0
@@ -62,8 +64,6 @@ extern "C" {
 
 #define SOC_MMU_FLASH_SENSITIVE             BIT(13)
 #define SOC_MMU_PSRAM_SENSITIVE             BIT(12)
-
-#define SOC_NON_CACHEABLE_OFFSET            0x40000000
 
 /**
  * MMU entry valid bit mask for mapping value.
@@ -97,10 +97,12 @@ extern "C" {
  * MMU Linear Address
  *----------------------------------------------------------------------------*/
 /**
- * - 64KB MMU page size: the last 0xFFFF, which is the offset
- * - 1024 MMU entries for flash, 1024 MMU entries for psram, needs 0xFFF to hold it.
+ * - 64KB MMU page size: the lower 0xFFFF bits are the page offset
+ * - Flash linear addresses start from 0x00000000, PSRAM linear addresses start from 0x08000000
+ * - The mask keeps the bits needed to distinguish flash and PSRAM linear ranges while discarding
+ *   the upper virtual-address tag bits
  *
- * Therefore, 0x3F,FFFF
+ * Therefore, use 0x0FFFFFFF.
  */
 #define SOC_MMU_LINEAR_ADDR_MASK            0xFFFFFFF
 
@@ -122,7 +124,6 @@ extern "C" {
 #else
 #define SOC_MMU_PSRAM_LINEAR_ADDRESS_HIGH     (SOC_MMU_LINEAR_ADDR_MASK + 1)
 #endif
-
 
 #ifdef __cplusplus
 }

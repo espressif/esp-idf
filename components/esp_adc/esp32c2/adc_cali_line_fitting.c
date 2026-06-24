@@ -14,6 +14,7 @@
 #include "esp_heap_caps.h"
 #include "esp_efuse_rtc_calib.h"
 #include "soc/soc_caps.h"
+#include "hal/adc_ll.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
 
@@ -123,7 +124,7 @@ static esp_err_t check_valid(const adc_cali_line_fitting_config_t *config)
         ESP_LOGW(TAG, "Experimental: ADC Atten 0 calibration can now only used for inputs lower than 950mV. Calibration Scheme may get updated, DON'T USE FOR MASS PRODUCTION!");
     }
 
-    bool available_oneshot_bitwidth = (config->bitwidth >= SOC_ADC_RTC_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_RTC_MAX_BITWIDTH);
+    bool available_oneshot_bitwidth = (config->bitwidth >= ADC_LL_RTC_MIN_BITWIDTH && config->bitwidth <= ADC_LL_RTC_MAX_BITWIDTH);
     bool available_dma_bitwidth = (config->bitwidth >= SOC_ADC_DIGI_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_DIGI_MAX_BITWIDTH);
     bool default_bitwidth_mark = (config->bitwidth == ADC_BITWIDTH_DEFAULT);
     bool available_bitwidth = (available_oneshot_bitwidth || available_dma_bitwidth || default_bitwidth_mark);

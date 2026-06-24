@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,8 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
     int i, j, k;
     int err = 0;
 
+    BT_DBG("DeviceAutoEnterNetwork");
+
     if (info == NULL || !BLE_MESH_ADDR_IS_UNICAST(info->unicast_addr) ||
         !BLE_MESH_ADDR_IS_GROUP(info->group_addr)) {
         return -EINVAL;
@@ -48,13 +50,15 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
 
-    /* The device becomes a node and enters the network */
-    err = bt_mesh_provision(info->net_key, info->net_idx, info->flags, info->iv_index,
-                            info->unicast_addr, info->dev_key);
+    err = bt_mesh_pre_provision(info->net_key, info->net_idx, info->flags, info->iv_index,
+                                info->unicast_addr, info->dev_key);
     if (err) {
-        BT_ERR("bt_mesh_provision() failed (err %d)", err);
+        BT_ERR("bt_mesh_pre_provision() failed (err %d)", err);
         return err;
     }
+
+    /* The device becomes a node and enters the network */
+    bt_mesh_provision();
 
     /* Adds application key to device */
     sub = bt_mesh_subnet_get(info->net_idx);
@@ -139,6 +143,8 @@ int bt_mesh_test_update_white_list(struct bt_mesh_white_list *wl)
 {
     int err = 0;
 
+    BT_DBG("TestUpdateWhiteList");
+
     if (wl == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
@@ -157,7 +163,7 @@ int bt_mesh_test_update_white_list(struct bt_mesh_white_list *wl)
 
 int bt_mesh_test_start_scanning(bool wl_en)
 {
-    BT_INFO("Scan with filter policy %s", wl_en ? "enabled" : "disabled");
+    BT_DBG("TestStartScanning, wl_en %u", wl_en);
 
     if (wl_en) {
         return bt_mesh_scan_with_wl_enable();
@@ -168,6 +174,8 @@ int bt_mesh_test_start_scanning(bool wl_en)
 
 int bt_mesh_test_stop_scanning(void)
 {
+    BT_DBG("TestStopScanning");
+
     return bt_mesh_scan_disable();
 }
 #endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */
@@ -181,6 +189,8 @@ void bt_mesh_test_register_net_pdu_cb(bt_mesh_test_net_pdu_cb_t cb)
 
 void bt_mesh_test_set_seq(uint32_t seq)
 {
+    BT_DBG("TestSetSeq, Seq 0x%06x", seq);
+
     if (seq > 0xFFFFFF) {
         BT_ERR("Invalid SEQ 0x%08x", seq);
         return;

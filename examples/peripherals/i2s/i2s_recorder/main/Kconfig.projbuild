@@ -32,9 +32,11 @@ menu "Example Configuration"
 
         config EXAMPLE_SAMPLE_RATE
             int "Audio Sample Rate"
-            default 44100
+            default 44100 if SOC_I2S_SUPPORTS_PDM2PCM
+            default 5644800
             help
-                Set the audio sample rate frequency. Usually 16000 or 44100 Hz.
+                Set the audio sample rate frequency. Usually 16000 or 44100 Hz if PCM data format supported.
+                Oversample rate usually can be 2048000 or 5644800 Hz if only raw PDM data format supported.
 
         config EXAMPLE_BIT_SAMPLE
             int "Audio Bit Sample"

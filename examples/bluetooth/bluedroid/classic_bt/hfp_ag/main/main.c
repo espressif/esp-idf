@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,15 +22,31 @@
 #include "esp_hf_ag_api.h"
 #include "bt_app_hf.h"
 #include "gpio_pcm_config.h"
+#if CONFIG_EXAMPLE_ENABLE_CONSOLE_REPL
 #include "esp_console.h"
+#endif
 #include "app_hf_msg_set.h"
 
 #define BT_HF_AG_TAG    "HF_AG_DEMO_MAIN"
+
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 
 /* event for handler "hf_ag_hdl_stack_up */
 enum {
     BT_APP_EVT_STACK_UP = 0,
 };
+
+static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
 
 /* handler for bluetooth stack enabled events */
 static void bt_hf_hdl_stack_evt(uint16_t event, void *p_param)
@@ -40,9 +56,7 @@ static void bt_hf_hdl_stack_evt(uint16_t event, void *p_param)
     {
         case BT_APP_EVT_STACK_UP:
         {
-            /* set up device name */
-            char *dev_name = "ESP_HFP_AG";
-            esp_bt_dev_set_device_name(dev_name);
+            esp_bt_gap_set_device_name(local_device_name);
 
             esp_hf_ag_register_callback(bt_app_hf_cb);
 
@@ -73,6 +87,7 @@ static void bt_hf_hdl_stack_evt(uint16_t event, void *p_param)
 
 void app_main(void)
 {
+    char bda_str[18] = {0};
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -101,22 +116,26 @@ void app_main(void)
         return;
     }
 
+    ESP_LOGI(BT_HF_TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
     /* create application task */
     bt_app_task_start_up();
 
     /* Bluetooth device name, connection mode and profile set up */
-    bt_app_work_dispatch(bt_hf_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+    bt_app_work_dispatch(bt_hf_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL, NULL);
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
     /* configure the PCM interface and PINs used */
     app_gpio_pcm_io_cfg();
+#elif CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
+    ESP_LOGW(BT_HF_TAG, "PCM GPIO is not supported on this chip; use HCI SCO data path");
 #endif
 
-    /* configure externel chip for acoustic echo cancellation */
+    /* configure external chip for acoustic echo cancellation */
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
     app_gpio_aec_io_cfg();
 #endif /* ACOUSTIC_ECHO_CANCELLATION_ENABLE */
 
+#if CONFIG_EXAMPLE_ENABLE_CONSOLE_REPL
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -138,4 +157,5 @@ void app_main(void)
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
+#endif
 }

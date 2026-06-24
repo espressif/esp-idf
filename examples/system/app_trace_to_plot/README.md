@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # Application Level Tracing Example (Plotting)
 
@@ -13,8 +13,8 @@ UART logs are time consuming and can significantly slow down the function that c
 
 To run this example, you need a supported target dev board connected to a JTAG adapter, which can come in the following forms:
 
-* [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
-* ESP32, ESP32-S2 or ESP32-C2 core board (e.g. ESP32-DevKitC, [ESP32-S2-Saola-1](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
+* [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/esp-wrover-kit/index.html) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
+* ESP32, ESP32-S2 or ESP32-C2 core board (e.g. ESP32-DevKitC, [ESP32-S2-Saola-1](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s2/esp32-s2-saola-1/index.html)) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
 - For ESP32-C3 or ESP32-S3, any board with the built-in USB interface (USB_SERIAL_JTAG).
 
 This example will assume that an ESP-WROVER-KIT is used.
@@ -52,14 +52,16 @@ idf.py -p PORT flash monitor
 python read_trace.py --plot-config data.json --source tcp://localhost:53535 --output-file data.log
 ```
 
-**Start App Trace:** Start OpenOCD and App Trace on the target by entering the command below. This command will start OpenOCD and collect all of the bytes from JTAG log data and send them to the tcp socket `tcp://localhost:53535` (note `tcp://` depends on which IP address and port number openned). Assuming that OpenOCD was started in this example's directory, `data.log` will be saved here as well.
+**Start App Trace:** Start OpenOCD and App Trace on the target by entering the command below. This command will start OpenOCD and collect all of the bytes from JTAG log data and send them to the tcp socket `tcp://localhost:53535` (note `tcp://` depends on which IP address and port number opened). Assuming that OpenOCD was started in this example's directory, `data.log` will be saved here as well.
 
 After running the plotting tool and starting apptrace with OpenOCD separately, you need access plotting on related socket address. Default address is `http://127.0.0.1:8055/` and also address can be seen from `read_trace.py` output. You can see the plotting result by accessing the address from browser.
 
 
 ```bash
-idf.py openocd --openocd-commands 'reset;esp apptrace start tcp://localhost:53535 0 -1 5'
+idf.py openocd --openocd-commands "-f board/esp32-wrover-kit-3.3v.cfg -c 'init;reset;esp apptrace start tcp://localhost:53535 0 -1 5'"
 ```
+
+![App Trace Plot Output](telemetry.png)
 
 **Note:** data.json file is an example for plot config file. It can be changed or modified.
 
@@ -69,7 +71,7 @@ idf.py openocd --openocd-commands 'reset;esp apptrace start tcp://localhost:5353
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
-### Configration file and data format
+### Configuration file and data format
 
 #### General format of json file is:
 
@@ -108,7 +110,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 | xaxis_title      | Title of x axis in the plot (e.g "time")                                                                                                                                          |
 | yaxis_title      | Title of y axis in the plot (e.g "values", "sensor data")                                                                                                                         |
 
-**Note:** Plotting works with plotly subplot feature. `id`, `timestamp_flag`, `data_size` and `data_type` are the mandatory elements. In addition to these elements, you can config your plot with [properties are passed to the constructor of the specified trace type](https://plotly.com/python/reference/scatter/). Data transfering is in {'x': ..., 'y': ..., ...} format. Graph types like Pie or Scatter3D won't work. Scatter, histogram, box, line and similar graph types are working.
+**Note:** Plotting works with plotly subplot feature. `id`, `timestamp_flag`, `data_size` and `data_type` are the mandatory elements. In addition to these elements, you can config your plot with [properties are passed to the constructor of the specified trace type](https://plotly.com/python/reference/scatter/). Data transferring is in {'x': ..., 'y': ..., ...} format. Graph types like Pie or Scatter3D won't work. Scatter, histogram, box, line and similar graph types are working.
 
 #### Data format in microcontroller side is:
 
@@ -133,6 +135,6 @@ struct format {
 
 On ESP32 boards, one likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose a target board/module with a 3.3 V powered SPI flash is being used, but the configuration file (ex. `board/esp32-wrover.cfg` for ESP32) is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the target as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash to the target when OpenOCD is connected.
 
-To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Modules and Boards](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
+To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Dev Kits](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32/index.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
 
 (For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)

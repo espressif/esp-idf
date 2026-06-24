@@ -4,10 +4,16 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-idf_component_register(SRCS "esp_ota_ops.c" "esp_ota_app_desc.c"
+idf_component_register(SRCS "esp_ota_ops.c"
                     INCLUDE_DIRS "include"
                     REQUIRES partition_table bootloader_support esp_app_format esp_bootloader_format esp_partition
                     PRIV_REQUIRES esptool_py efuse spi_flash)
+
+if(CONFIG_SECURE_SIGNED_DATA_PARTITION)
+    idf_component_optional_requires(PRIVATE mbedtls)
+endif()
+
+idf_define_esp_err_codes(HEADERS include/esp_ota_ops.h)
 
 if(NOT BOOTLOADER_BUILD)
     partition_table_get_partition_info(otadata_offset "--partition-type data --partition-subtype ota" "offset")
@@ -29,7 +35,9 @@ if(NOT BOOTLOADER_BUILD)
 
         add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
         add_dependencies(flash blank_ota_data)
-        add_dependencies(encrypted-flash blank_ota_data)
+        if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+            add_dependencies(encrypted-flash blank_ota_data)
+        endif()
 
         set(otatool_py "${python}" "${COMPONENT_DIR}/otatool.py")
 

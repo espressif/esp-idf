@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 #pragma once
 
@@ -196,23 +196,19 @@
 #define PWM1_SYNC2_PAD_IN_IDX                              100
 #define PWM1_CH2_B_PAD_OUT_IDX                             100
 #define PWM1_F0_PAD_IN_IDX                                 101
-#define ADP_CHRG_PAD_OUT_IDX                               101
 #define PWM1_F1_PAD_IN_IDX                                 102
-#define ADP_DISCHRG_PAD_OUT_IDX                            102
 #define PWM1_F2_PAD_IN_IDX                                 103
-#define ADP_PRB_EN_PAD_OUT_IDX                             103
 #define PWM1_CAP0_PAD_IN_IDX                               104
-#define ADP_SNS_EN_PAD_OUT_IDX                             104
 #define PWM1_CAP1_PAD_IN_IDX                               105
 #define TWAI0_STANDBY_PAD_OUT_IDX                          105
 #define PWM1_CAP2_PAD_IN_IDX                               106
 #define TWAI1_STANDBY_PAD_OUT_IDX                          106
-#define GMII_MDI_PAD_IN_IDX                                107
+#define MII_MDI_PAD_IN_IDX                                107
 #define TWAI2_STANDBY_PAD_OUT_IDX                          107
-#define GMAC_PHY_COL_PAD_IN_IDX                            108
-#define GMII_MDC_PAD_OUT_IDX                               108
-#define GMAC_PHY_CRS_PAD_IN_IDX                            109
-#define GMII_MDO_PAD_OUT_IDX                               109
+#define EMAC_PHY_COL_PAD_IN_IDX                            108
+#define MII_MDC_PAD_OUT_IDX                               108
+#define EMAC_PHY_CRS_PAD_IN_IDX                            109
+#define MII_MDO_PAD_OUT_IDX                               109
 #define USB_OTG11_IDDIG_PAD_IN_IDX                         110
 #define USB_SRP_DISCHRGVBUS_PAD_OUT_IDX                    110
 #define USB_OTG11_AVALID_PAD_IN_IDX                        111
@@ -224,7 +220,6 @@
 #define USB_SRP_SESSEND_PAD_IN_IDX                         114
 #define USB_OTG11_DRVVBUS_PAD_OUT_IDX                      114
 #define USB_SRP_CHRGVBUS_PAD_OUT_IDX                       115
-#define OTG_DRVVBUS_PAD_OUT_IDX                            116
 #define ULPI_CLK_PAD_IN_IDX                                117
 #define RNG_CHAIN_CLK_PAD_OUT_IDX                          117
 #define USB_HSPHY_REFCLK_IN_IDX                            118
@@ -260,9 +255,7 @@
 #define I3C_SLV_SCL_PAD_OUT_IDX                            136
 #define I3C_SLV_SDA_PAD_IN_IDX                             137
 #define I3C_SLV_SDA_PAD_OUT_IDX                            137
-#define ADP_PRB_PAD_IN_IDX                                 138
 #define I3C_MST_SCL_PULLUP_EN_PAD_OUT_IDX                  138
-#define ADP_SNS_PAD_IN_IDX                                 139
 #define I3C_MST_SDA_PULLUP_EN_PAD_OUT_IDX                  139
 #define USB_JTAG_TDO_BRIDGE_PAD_IN_IDX                     140
 #define USB_JTAG_TDI_BRIDGE_PAD_OUT_IDX                    140
@@ -339,21 +332,21 @@
 #define LCD_DATA_OUT_PAD_OUT22_IDX                         176
 #define CAM_DATA_IN_PAD_IN15_IDX                           177
 #define LCD_DATA_OUT_PAD_OUT23_IDX                         177
-#define GMAC_PHY_RXDV_PAD_IN_IDX                           178
-#define GMAC_PHY_TXEN_PAD_OUT_IDX                          178
-#define GMAC_PHY_RXD0_PAD_IN_IDX                           179
-#define GMAC_PHY_TXD0_PAD_OUT_IDX                          179
-#define GMAC_PHY_RXD1_PAD_IN_IDX                           180
-#define GMAC_PHY_TXD1_PAD_OUT_IDX                          180
-#define GMAC_PHY_RXD2_PAD_IN_IDX                           181
-#define GMAC_PHY_TXD2_PAD_OUT_IDX                          181
-#define GMAC_PHY_RXD3_PAD_IN_IDX                           182
-#define GMAC_PHY_TXD3_PAD_OUT_IDX                          182
-#define GMAC_PHY_RXER_PAD_IN_IDX                           183
-#define GMAC_PHY_TXER_PAD_OUT_IDX                          183
-#define GMAC_RX_CLK_PAD_IN_IDX                             184
+#define EMAC_PHY_RXDV_PAD_IN_IDX                           178
+#define EMAC_PHY_TXEN_PAD_OUT_IDX                          178
+#define EMAC_PHY_RXD0_PAD_IN_IDX                           179
+#define EMAC_PHY_TXD0_PAD_OUT_IDX                          179
+#define EMAC_PHY_RXD1_PAD_IN_IDX                           180
+#define EMAC_PHY_TXD1_PAD_OUT_IDX                          180
+#define EMAC_PHY_RXD2_PAD_IN_IDX                           181
+#define EMAC_PHY_TXD2_PAD_OUT_IDX                          181
+#define EMAC_PHY_RXD3_PAD_IN_IDX                           182
+#define EMAC_PHY_TXD3_PAD_OUT_IDX                          182
+#define EMAC_PHY_RXER_PAD_IN_IDX                           183
+#define EMAC_PHY_TXER_PAD_OUT_IDX                          183
+#define EMAC_RX_CLK_PAD_IN_IDX                             184
 #define DBG_CH0_CLK_IDX                                    184
-#define GMAC_TX_CLK_PAD_IN_IDX                             185
+#define EMAC_TX_CLK_PAD_IN_IDX                             185
 #define DBG_CH1_CLK_IDX                                    185
 #define PARLIO_RX_CLK_PAD_IN_IDX                           186
 #define PARLIO_RX_CLK_PAD_OUT_IDX                          186
@@ -458,13 +451,13 @@
 #define CORE_GPIO_IN_PAD_IN27_IDX                          241
 #define CORE_GPIO_OUT_PAD_OUT27_IDX                        241
 #define CORE_GPIO_IN_PAD_IN28_IDX                          242
-#define CORE_GPIO_OUT_PAD_OUT28_IDX                        242
+#define PARLIO_TX_CS_PAD_OUT_IDX                           242    // only exists on ESP32P4 Rev. 3.0 and later
 #define CORE_GPIO_IN_PAD_IN29_IDX                          243
-#define CORE_GPIO_OUT_PAD_OUT29_IDX                        243
+#define EMAC_PTP_PPS_PAD_OUT_IDX                           243
 #define CORE_GPIO_IN_PAD_IN30_IDX                          244
-#define CORE_GPIO_OUT_PAD_OUT30_IDX                        244
+#define ANA_COMP0_OUT_IDX                                  244
 #define CORE_GPIO_IN_PAD_IN31_IDX                          245
-#define CORE_GPIO_OUT_PAD_OUT31_IDX                        245
+#define ANA_COMP1_OUT_IDX                                  245
 #define RMT_SIG_PAD_IN0_IDX                                246
 #define RMT_SIG_PAD_OUT0_IDX                               246
 #define RMT_SIG_PAD_IN1_IDX                                247
@@ -485,4 +478,5 @@
 #define SIG_IN_FUNC254_IDX                                 254
 #define SIG_IN_FUNC255_IDX                                 255
 #define SIG_IN_FUNC255_IDX                                 255
+// version date 230403
 #define SIG_GPIO_OUT_IDX                                   256

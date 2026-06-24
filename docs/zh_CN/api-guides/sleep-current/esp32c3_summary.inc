@@ -3,10 +3,10 @@
   :widths: 20  20 30 20 20
 
   * - 项目
-    - Modem Sleep
-    - Modem Sleep+DFS
-    - auto light Sleep
-    - Deep Sleep
+    - Modem-sleep
+    - Modem-sleep+DFS
+    - Auto Ligh-sleep
+    - Deep-sleep
 
   * - 休眠
     - 自动

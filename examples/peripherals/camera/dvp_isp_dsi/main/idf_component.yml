@@ -1,0 +1,7 @@
+dependencies:
+  idf:
+    version: ">=5.3.0"
+  dsi_init:
+    path: ${IDF_PATH}/examples/peripherals/camera/common_components/dsi_init
+  sensor_init:
+    path: ${IDF_PATH}/examples/peripherals/camera/common_components/sensor_init

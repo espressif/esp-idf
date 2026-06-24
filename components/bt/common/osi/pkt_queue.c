@@ -19,12 +19,13 @@ struct pkt_queue {
 
 struct pkt_queue *pkt_queue_create(void)
 {
-    struct pkt_queue *queue = calloc(1, sizeof(struct pkt_queue));
+    struct pkt_queue *queue = osi_calloc(sizeof(struct pkt_queue));
     if (queue == NULL) {
         return NULL;
     }
     if (osi_mutex_new(&queue->lock) != 0) {
         osi_free(queue);
+        return NULL;
     }
     struct pkt_queue_header *p = &queue->header;
     STAILQ_INIT(p);

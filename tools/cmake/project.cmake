@@ -1,5 +1,100 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
+
+# When the IDF_BUILD_V2 environment variable is set, transparently delegate
+# to Build system v2 (cmakev2). This allows existing Build system v1 projects
+# to be built with Build system v2 without modifying their CMakeLists.txt.
+# The project() macro is wrapped to automatically call idf_project_default()
+# after the real CMake project() call, bridging the API difference between
+# Build system v1 and Build system v2.
+#
+# Build system v1 pattern (no changes needed):
+#   include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+#   idf_build_set_property(...)   # optional, works with Build system v2 infra
+#   project(my_app)
+#
+# With IDF_BUILD_V2=y set in the environment, this becomes equivalent to:
+#   include($ENV{IDF_PATH}/tools/cmakev2/idf.cmake)
+#   idf_build_set_property(...)
+#   project(my_app C CXX ASM)
+#   idf_project_default()
+if($ENV{IDF_BUILD_V2})
+    message(STATUS "IDF Build System V2 (cmakev2) activated via IDF_BUILD_V2 shim")
+
+    # Include the Build system v2 (cmakev2) entry point. This sets up all
+    # Build system v2 infrastructure (build properties, target, toolchain,
+    # kconfig, etc.). idf.cmake's file-level __init_idf_path() call publishes
+    # ${idf_path} to this scope, so no further set() is needed here.
+    include(${CMAKE_CURRENT_LIST_DIR}/../cmakev2/idf.cmake)
+
+    # Mark that we are running through the Build system v1 compatibility shim
+    # so that Build system v2 internals can enable backward-compatible build
+    # properties.
+    idf_build_set_property(__V1_COMPAT_SHIM 1)
+
+    # Use the standard CMake trick to save the real project() command.
+    # After these two overrides, __project() calls the original CMake
+    # project(). See https://cmake.org/pipermail/cmake/2015-October/061751.html
+    function(project)
+    endfunction()
+
+    function(_project)
+    endfunction()
+
+    macro(project project_name)
+        # Call the real CMake project() with the languages required by cmakev2.
+        __project(${project_name} C CXX ASM)
+
+        # Restore project() for sub-projects and third-party libraries that
+        # may call project() themselves (e.g. components/mbedtls calls
+        # add_subdirectory(mbedtls) which runs `project("Mbed TLS")`).
+        #
+        # The override is a function() (own variable scope), so PROJECT_*
+        # variables set by __project() must be explicitly propagated to
+        # PARENT_SCOPE — otherwise the caller (and any subsequent
+        # add_subdirectory() within that caller) sees the IDF top-level
+        # project's source/binary dirs instead of the third-party project's.
+        # See tools/cmake/project.cmake's mature override at the Build
+        # system v1 path for the full set of mirrored variables.
+        function(project)
+            set(project_ARGV ARGV)
+            __project(${${project_ARGV}})
+
+            set(PROJECT_NAME "${PROJECT_NAME}" PARENT_SCOPE)
+            set(PROJECT_BINARY_DIR "${PROJECT_BINARY_DIR}" PARENT_SCOPE)
+            set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}" PARENT_SCOPE)
+            set(PROJECT_VERSION "${PROJECT_VERSION}" PARENT_SCOPE)
+            set(PROJECT_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}" PARENT_SCOPE)
+            set(PROJECT_VERSION_MINOR "${PROJECT_VERSION_MINOR}" PARENT_SCOPE)
+            set(PROJECT_VERSION_PATCH "${PROJECT_VERSION_PATCH}" PARENT_SCOPE)
+            set(PROJECT_VERSION_TWEAK "${PROJECT_VERSION_TWEAK}" PARENT_SCOPE)
+            set(PROJECT_DESCRIPTION "${PROJECT_DESCRIPTION}" PARENT_SCOPE)
+            set(PROJECT_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}" PARENT_SCOPE)
+
+            set(${PROJECT_NAME}_BINARY_DIR "${${PROJECT_NAME}_BINARY_DIR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_SOURCE_DIR "${${PROJECT_NAME}_SOURCE_DIR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_MAJOR "${${PROJECT_NAME}_VERSION_MAJOR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_VERSION_TWEAK "${${PROJECT_NAME}_VERSION_TWEAK}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_DESCRIPTION "${${PROJECT_NAME}_DESCRIPTION}" PARENT_SCOPE)
+            set(${PROJECT_NAME}_HOMEPAGE_URL "${${PROJECT_NAME}_HOMEPAGE_URL}" PARENT_SCOPE)
+        endfunction()
+
+        # If the app set COMPONENTS before project(), forward it to Build
+        # system v2 via a build property so __project_default() can use the
+        # correct component list instead of the hardcoded "main".
+        if(DEFINED COMPONENTS)
+            idf_build_set_property(__SHIM_COMPONENTS "${COMPONENTS}")
+        endif()
+
+        # Initialize and build the project using Build system v2.
+        idf_project_default()
+    endmacro()
+
+    return()
+endif()
 
 # Get the currently selected sdkconfig file early, so this doesn't
 # have to be done multiple times on different places.
@@ -61,13 +156,13 @@ if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
     idf_build_set_property(IDF_COMPONENT_MANAGER 1)
 endif()
 # Set component manager interface version
-idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 2)
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 5)
 
 #
 # Parse and store the VERSION argument provided to the project() command.
 #
 function(__parse_and_store_version_arg)
-    # The project_name is the fisrt argument that was passed to the project() command
+    # The project_name is the first argument that was passed to the project() command
     set(project_name ${ARGV0})
 
     # Parse other arguments passed to the project() call
@@ -77,22 +172,22 @@ function(__parse_and_store_version_arg)
     cmake_parse_arguments(PROJECT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # If the VERSION keyword exists but no version string is provided then raise a warning
-    if((NOT PROJECT_VERSION
-        OR PROJECT_VERSION STREQUAL "NOTFOUND")
-        AND NOT PROJECT_VERSION STREQUAL "0")
+    if(("${PROJECT_VERSION}" STREQUAL ""
+        OR "${PROJECT_VERSION}" STREQUAL "NOTFOUND")
+        AND NOT "${PROJECT_VERSION}" STREQUAL "0")
         message(STATUS "VERSION keyword not followed by a value or was followed by a value that expanded to nothing.")
         # Default the version to 1 in this case
         set(project_ver 1)
     else()
         # Check if version is valid. cmake allows the version to be in the format <major>[.<minor>[.<patch>[.<tweak>]]]]
-        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid ${PROJECT_VERSION})
-        if(NOT version_valid AND NOT PROJECT_VERSION STREQUAL "0")
+        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid "${PROJECT_VERSION}")
+        if(NOT version_valid AND NOT "${PROJECT_VERSION}" STREQUAL "0")
             message(SEND_ERROR "Version \"${PROJECT_VERSION}\" format invalid.")
             return()
         endif()
 
         # Split the version string into major, minor, patch, and tweak components
-        string(REPLACE "." ";" version_components ${PROJECT_VERSION})
+        string(REPLACE "." ";" version_components "${PROJECT_VERSION}")
         list(GET version_components 0 PROJECT_VERSION_MAJOR)
         list(LENGTH version_components version_length)
         if(version_length GREATER 1)
@@ -263,6 +358,7 @@ function(__all_component_info output)
         __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
         __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
         __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+        __component_get_property(component_source ${target} COMPONENT_SOURCE)
 
         if(prefix STREQUAL build_prefix)
             set(name ${name})
@@ -282,6 +378,7 @@ function(__all_component_info output)
             "            \"target\": \"${target}\","
             "            \"prefix\": \"${prefix}\","
             "            \"dir\": \"${dir}\","
+            "            \"source\": \"${component_source}\","
             "            \"lib\": \"${lib}\","
             "            \"reqs\": ${reqs},"
             "            \"priv_reqs\": ${priv_reqs},"
@@ -351,7 +448,13 @@ function(__project_info test_components)
     include(${sdkconfig_cmake})
     idf_build_get_property(COMPONENT_KCONFIGS KCONFIGS)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
-    idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
+
+    __generate_gdbinit()
+    idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
+    idf_build_get_property(gdbinit_files_symbols GDBINIT_FILES_SYMBOLS)
+    idf_build_get_property(gdbinit_files_py_extensions GDBINIT_FILES_PY_EXTENSIONS)
+    idf_build_get_property(gdbinit_files_connect GDBINIT_FILES_CONNECT)
+    __get_openocd_options(debug_arguments_openocd)
 
     if(CONFIG_APP_BUILD_TYPE_RAM)
         set(PROJECT_BUILD_TYPE ram_app)
@@ -374,6 +477,7 @@ function(__project_info test_components)
     # file with cmake's variables substituted and unprocessed generator expressions. The second
     # step, with file(GENERATE), processes the temporary file and substitute generator expression
     # into the final project_description.json file.
+    set(HINTS_FILE "${build_dir}/hints.yml")
     configure_file("${idf_path}/tools/cmake/project_description.json.in"
         "${build_dir}/project_description.json.templ")
     file(READ "${build_dir}/project_description.json.templ" project_description_json_templ)
@@ -383,6 +487,25 @@ function(__project_info test_components)
 
     # Generate component dependency graph
     depgraph_generate("${build_dir}/component_deps.dot")
+
+    # Assumption: all hints.yml files are bare YAML lists (no "---" document
+    # separators). Plain string concatenation is safe under this assumption.
+    # Note for consumers: yaml.safe_load() only parses the first YAML document,
+    # so document separators in source files would cause data loss.
+    set(_merged_hints "")
+    set(_global_hints_file "${idf_path}/tools/idf_py_actions/hints.yml")
+    if(EXISTS "${_global_hints_file}")
+        file(READ "${_global_hints_file}" _hints_content)
+        string(APPEND _merged_hints "${_hints_content}\n")
+    endif()
+    foreach(_comp_dir ${build_component_paths} ${test_component_paths})
+        set(_hints_file "${_comp_dir}/hints.yml")
+        if(EXISTS "${_hints_file}")
+            file(READ "${_hints_file}" _hints_content)
+            string(APPEND _merged_hints "${_hints_content}\n")
+        endif()
+    endforeach()
+    file(WRITE "${build_dir}/hints.yml" "${_merged_hints}")
 
     # We now have the following component-related variables:
     #
@@ -420,11 +543,11 @@ function(__project_init components_var test_components_var)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${extra_cxxflags}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${extra_cppflags}" APPEND)
 
-    function(__project_component_dir component_dir)
+    function(__project_component_dir component_dir component_source)
         get_filename_component(component_dir "${component_dir}" ABSOLUTE)
         # The directory itself is a valid idf component
         if(EXISTS ${component_dir}/CMakeLists.txt)
-            idf_build_component(${component_dir})
+            idf_build_component(${component_dir} ${component_source})
         else()
             idf_build_get_property(exclude_dirs EXTRA_COMPONENT_EXCLUDE_DIRS)
             # otherwise, check whether the subfolders are potential idf components
@@ -433,7 +556,7 @@ function(__project_init components_var test_components_var)
                 if(IS_DIRECTORY ${component_dir} AND NOT ${component_dir} IN_LIST exclude_dirs)
                     __component_dir_quick_check(is_component ${component_dir})
                     if(is_component)
-                        idf_build_component(${component_dir})
+                        idf_build_component(${component_dir} ${component_source})
                     endif()
                 endif()
             endforeach()
@@ -451,11 +574,11 @@ function(__project_init components_var test_components_var)
             if(NOT EXISTS ${component_abs_path})
                 message(FATAL_ERROR "Directory specified in COMPONENT_DIRS doesn't exist: ${component_abs_path}")
             endif()
-            __project_component_dir(${component_dir})
+            __project_component_dir(${component_dir} "project_components")
         endforeach()
     else()
         if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/main")
-            __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main")
+            __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main" "project_components")
         endif()
 
         paths_with_spaces_to_list(EXTRA_COMPONENT_DIRS)
@@ -464,12 +587,12 @@ function(__project_init components_var test_components_var)
             if(NOT EXISTS ${component_abs_path})
                 message(FATAL_ERROR "Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: ${component_abs_path}")
             endif()
-            __project_component_dir("${component_dir}")
+            __project_component_dir("${component_dir}" "project_extra_components")
         endforeach()
 
         # Look for components in the usual places: CMAKE_CURRENT_LIST_DIR/main,
         # extra component dirs, and CMAKE_CURRENT_LIST_DIR/components
-        __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
+        __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components" "project_components")
     endif()
 
     # For bootloader components, we only need to set-up the Kconfig files.
@@ -487,6 +610,36 @@ function(__project_init components_var test_components_var)
             endif()
         endif()
     endforeach()
+
+    # If a minimal build is requested, set COMPONENTS to "main" only if the COMPONENTS
+    # variable is not already defined. The COMPONENTS variable takes precedence over
+    # the MINIMAL_BUILD property.
+    idf_build_get_property(minimal_build MINIMAL_BUILD)
+    if(minimal_build)
+        if(DEFINED COMPONENTS)
+            message(WARNING "The MINIMAL_BUILD property is disregarded because the COMPONENTS variable is defined.")
+            set(minimal_build OFF)
+            idf_build_set_property(MINIMAL_BUILD OFF)
+        else()
+            # The minimal build feature is enabled; check whether the 'main'
+            # component target exists, ensuring that the component is
+            # recognized by the build system.
+            idf_build_get_property(prefix __PREFIX)
+            set(main_component_target ___${prefix}_main)
+            if(NOT TARGET ${main_component_target})
+                message(FATAL_ERROR "MINIMAL_BUILD is enabled but component main was not found. "
+                    "Please ensure the main component exists (in '${CMAKE_CURRENT_LIST_DIR}/main' "
+                    "or disable MINIMAL_BUILD, or explicitly set the COMPONENTS variable.")
+            endif()
+
+            set(COMPONENTS main ${TEST_COMPONENTS})
+            set(minimal_build ON)
+        endif()
+    else()
+        set(minimal_build OFF)
+    endif()
+
+    message(STATUS "Minimal build - ${minimal_build}")
 
     spaces2list(COMPONENTS)
     spaces2list(EXCLUDE_COMPONENTS)
@@ -521,7 +674,7 @@ function(__project_init components_var test_components_var)
                     set(include 0)
                 endif()
                 if(include AND EXISTS ${component_dir}/test)
-                    __component_add(${component_dir}/test ${component_name})
+                    __component_add(${component_dir}/test ${component_name} "project_components")
                     list(APPEND test_components ${component_name}::test)
                 endif()
             endif()
@@ -550,18 +703,55 @@ macro(project project_name)
 
     __target_set_toolchain()
 
+    # Build compiler launcher chain
+    set(compiler_launcher_chain "")
+    # Add custom wrapper if enabled (FIRST in chain)
+    if(CONFIGDEP_ENABLE)
+        # Check that esp-idf-kconfig >= CONFIGDEP_MIN_KCONFIG_VERSION is installed
+        # (required for cdep_tree / configdep support; version is defined in kconfig.cmake)
+        __check_python_package_min_version(${PYTHON} esp-idf-kconfig
+            "${CONFIGDEP_MIN_KCONFIG_VERSION}" _kconfig_version_ok)
+        if(_kconfig_version_ok)
+            find_program(CONFIGDEP_FOUND esp-idf-configdep)
+            if(CONFIGDEP_FOUND)
+                message(STATUS "esp-idf-configdep will be used for faster recompilation")
+                list(APPEND compiler_launcher_chain "esp-idf-configdep")
+            else()
+                message(WARNING "esp-idf-configdep enabled but not found. Re-run install and export scripts.")
+            endif()
+        else()
+            message(WARNING "esp-idf-configdep not supported by esp-idf-kconfig "
+                "(>= ${CONFIGDEP_MIN_KCONFIG_VERSION} required). Re-run install and export scripts.")
+        endif()
+    endif()
+
+    # Add ccache if enabled (SECOND in chain)
     if(CCACHE_ENABLE)
         find_program(CCACHE_FOUND ccache)
         if(CCACHE_FOUND)
             message(STATUS "ccache will be used for faster recompilation")
-            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+            list(APPEND compiler_launcher_chain "ccache")
         else()
             message(WARNING "enabled ccache in build but ccache program not found")
         endif()
     endif()
 
+    # Apply the launcher chain - CMake automatically creates semicolon-separated list
+    if(compiler_launcher_chain)
+        set(CMAKE_C_COMPILER_LAUNCHER ${compiler_launcher_chain})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${compiler_launcher_chain})
+        set(CMAKE_ASM_COMPILER_LAUNCHER ${compiler_launcher_chain})
+
+        # Debug: show what the launcher chain looks like
+        string(REPLACE ";" " -> " launcher_display "${compiler_launcher_chain}")
+        message(STATUS "Compiler launcher chain: ${launcher_display}")
+    else()
+        message(STATUS "No compiler launcher chain will be used.")
+    endif()
+
     # The actual call to project()
     __project(${project_name} C CXX ASM)
+    __linux_build_set_lang_version()
 
     # Generate compile_commands.json (needs to come after project call).
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -581,7 +771,7 @@ macro(project project_name)
         # Set the variables that project() normally sets, documented in the
         # command's docs.
         #
-        # https://cmake.org/cmake/help/v3.16/command/project.html
+        # https://cmake.org/cmake/help/v3.22/command/project.html
         #
         # There is some nuance when it comes to setting version variables in terms of whether
         # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original
@@ -663,7 +853,7 @@ macro(project project_name)
     # 3. git describe if the project is in a git repository
     # 4. Default to 1 if none of the above conditions are true
     #
-    # PS: PROJECT_VER will get overidden later if CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined.
+    # PS: PROJECT_VER will get overridden later if CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined.
     #     See components/esp_app_format/CMakeLists.txt.
     if(NOT DEFINED PROJECT_VER)
         # Read the version information from the version.txt file if it is present
@@ -674,7 +864,7 @@ macro(project project_name)
             # Check if version information was passed to project() via the VERSION argument
             set(version_keyword_present FALSE)
             foreach(arg ${ARGN})
-                if(${arg} STREQUAL "VERSION")
+                if("${arg}" STREQUAL "VERSION")
                     set(version_keyword_present TRUE)
                 endif()
             endforeach()
@@ -707,14 +897,33 @@ macro(project project_name)
 
     message(STATUS "Building ESP-IDF components for target ${IDF_TARGET}")
 
-    idf_build_process(${IDF_TARGET}
-                    SDKCONFIG_DEFAULTS "${sdkconfig_defaults}"
-                    SDKCONFIG ${sdkconfig}
-                    BUILD_DIR ${build_dir}
-                    PROJECT_NAME ${CMAKE_PROJECT_NAME}
-                    PROJECT_DIR ${CMAKE_CURRENT_LIST_DIR}
-                    PROJECT_VER "${project_ver}"
-                    COMPONENTS "${components};${test_components}")
+    set(result 0)
+    set(retried 0)
+
+    while(true)
+        idf_build_process(${IDF_TARGET}
+            SDKCONFIG_DEFAULTS "${sdkconfig_defaults}"
+            SDKCONFIG ${sdkconfig}
+            BUILD_DIR ${build_dir}
+            PROJECT_NAME ${CMAKE_PROJECT_NAME}
+            PROJECT_DIR ${CMAKE_CURRENT_LIST_DIR}
+            PROJECT_VER "${project_ver}"
+            COMPONENTS "${components};${test_components}"
+        )
+
+        if(result EQUAL 0)
+            break()
+        elseif(result EQUAL 10 AND retried EQUAL 0)
+            set(retried 1)
+        elseif(result EQUAL 10 AND retried EQUAL 1)
+            message(WARNING "Missing required kconfig option after retry. Re-running the build process.")
+            set(retried 2)
+        elseif(result EQUAL 10 AND retried EQUAL 2)
+            message(FATAL_ERROR "Missing required kconfig option after last retry. Terminating build.")
+        else()
+            message(FATAL_ERROR "idf_build_process failed with exit code ${result}")
+        endif()
+    endwhile()
 
     # Special treatment for 'main' component for standard projects (not part of core build system).
     # Have it depend on every other component in the build. This is
@@ -753,27 +962,28 @@ macro(project project_name)
         COMMAND ${CMAKE_COMMAND} -E touch ${project_elf_src}
         VERBATIM)
     add_custom_target(_project_elf_src DEPENDS "${project_elf_src}")
+
+    # On the Linux (host) target the standard GNU ld processes static archives
+    # in a single left-to-right pass, which fails when component libraries (or
+    # their transitive dependencies such as the mbedtls sub-libraries) have
+    # circular symbol references.  Wrap all archives in --start-group /
+    # --end-group so the linker re-scans until every symbol is resolved.
+    if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        string(CONCAT _link_exe_template
+            "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS>"
+            " <OBJECTS> -o <TARGET>"
+            " -Wl,--start-group <LINK_LIBRARIES> -Wl,--end-group")
+        set(CMAKE_C_LINK_EXECUTABLE "${_link_exe_template}")
+        string(REPLACE "<CMAKE_C_COMPILER>" "<CMAKE_CXX_COMPILER>"
+            _link_exe_template "${_link_exe_template}")
+        string(REPLACE "<CMAKE_C_LINK_FLAGS>" "<CMAKE_CXX_LINK_FLAGS>"
+            _link_exe_template "${_link_exe_template}")
+        set(CMAKE_CXX_LINK_EXECUTABLE "${_link_exe_template}")
+        unset(_link_exe_template)
+    endif()
+
     add_executable(${project_elf} "${project_elf_src}")
     add_dependencies(${project_elf} _project_elf_src)
-
-    if(__PROJECT_GROUP_LINK_COMPONENTS)
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
-    endif()
-
-    if(test_components)
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--whole-archive")
-        foreach(test_component ${test_components})
-            if(TARGET ${test_component})
-                target_link_libraries(${project_elf} PRIVATE ${test_component})
-            endif()
-        endforeach()
-        target_link_libraries(${project_elf} PRIVATE "-Wl,--no-whole-archive")
-    endif()
-
-    idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
-    if(test_components)
-        list(REMOVE_ITEM build_components ${test_components})
-    endif()
 
     if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
         # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
@@ -782,6 +992,33 @@ macro(project project_name)
         set(linker_type "Darwin")
     else()
         set(linker_type "GNU")
+    endif()
+
+    if(__PROJECT_GROUP_LINK_COMPONENTS)
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
+    endif()
+
+    if(test_components)
+        if(linker_type STREQUAL "GNU")
+            target_link_libraries(${project_elf} PRIVATE "-Wl,--whole-archive")
+            foreach(test_component ${test_components})
+                if(TARGET ${test_component})
+                    target_link_libraries(${project_elf} PRIVATE ${test_component})
+                endif()
+            endforeach()
+            target_link_libraries(${project_elf} PRIVATE "-Wl,--no-whole-archive")
+        elseif(linker_type STREQUAL "Darwin")
+            foreach(test_component ${test_components})
+                if(TARGET ${test_component})
+                    target_link_libraries(${project_elf} PRIVATE "-Wl,-force_load" ${test_component})
+                endif()
+            endforeach()
+        endif()
+    endif()
+
+    idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
+    if(test_components)
+        list(REMOVE_ITEM build_components ${test_components})
     endif()
 
     foreach(build_component ${build_components})
@@ -824,6 +1061,13 @@ macro(project project_name)
         if(${result} EQUAL 0)
             # Do not print RWX segment warnings
             target_link_options(${project_elf} PRIVATE "-Wl,--no-warn-rwx-segments")
+        endif()
+        if(CONFIG_COMPILER_ORPHAN_SECTIONS_WARNING)
+            # Print warnings if orphan sections are found
+            target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=warn")
+        elseif(CONFIG_COMPILER_ORPHAN_SECTIONS_ERROR)
+            # Throw error if orphan sections are found
+            target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=error")
         endif()
         unset(idf_target)
     endif()
@@ -879,6 +1123,34 @@ macro(project project_name)
 
     # Add DFU build and flash targets
     __add_dfu_targets()
+
+    # Add uf2 related targets
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(target IDF_TARGET)
+
+    set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
+    set(UF2_CMD ${python} "${idf_path}/tools/mkuf2.py" write --chip ${target})
+
+    add_custom_target(uf2
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "UF2_CMD=${UF2_CMD}"
+        -D "UF2_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
+        -P "${idf_path}/tools/cmake/run_uf2_cmds.cmake"
+        USES_TERMINAL
+        VERBATIM
+        )
+
+    add_custom_target(uf2-app
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_PATH=${idf_path}"
+        -D "UF2_CMD=${UF2_CMD}"
+        -D "UF2_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
+        -P "${idf_path}/tools/cmake/run_uf2_cmds.cmake"
+        USES_TERMINAL
+        VERBATIM
+        )
 
     idf_build_executable(${project_elf})
 

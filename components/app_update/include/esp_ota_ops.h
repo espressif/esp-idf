@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_app_desc.h"
+#include "esp_app_format.h"
 #include "esp_bootloader_desc.h"
 #include "esp_flash_partitions.h"
 #include "soc/soc_caps.h"
@@ -32,6 +33,8 @@ extern "C"
 #define ESP_ERR_OTA_SMALL_SEC_VER                (ESP_ERR_OTA_BASE + 0x04)  /*!< Error if the firmware has a secure version less than the running firmware. */
 #define ESP_ERR_OTA_ROLLBACK_FAILED              (ESP_ERR_OTA_BASE + 0x05)  /*!< Error if flash does not have valid firmware in passive partition and hence rollback is not possible */
 #define ESP_ERR_OTA_ROLLBACK_INVALID_STATE       (ESP_ERR_OTA_BASE + 0x06)  /*!< Error if current active firmware is still marked in pending validation state (ESP_OTA_IMG_PENDING_VERIFY), essentially first boot of firmware image post upgrade and hence firmware upgrade is not possible */
+#define ESP_ERR_OTA_ALREADY_IN_PROGRESS          (ESP_ERR_OTA_BASE + 0x07)  /*!< Error if another OTA operation is already in progress on the same partition */
+#define ESP_ERR_OTA_SPI_MODE_MISMATCH            (ESP_ERR_OTA_BASE + 0x08)  /*!< Error if the firmware's SPI flash mode doesn't match the running firmware */
 
 
 /**
@@ -42,30 +45,6 @@ extern "C"
  */
 typedef uint32_t esp_ota_handle_t;
 
-/**
- * @brief   Return esp_app_desc structure. This structure includes app version.
- *
- * @note This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_app_get_description`
- *
- * Return description for running app.
- * @return Pointer to esp_app_desc structure.
- */
-const esp_app_desc_t *esp_ota_get_app_description(void) __attribute__((deprecated("Please use esp_app_get_description instead")));
-
-/**
- * @brief   Fill the provided buffer with SHA256 of the ELF file, formatted as hexadecimal, null-terminated.
- * If the buffer size is not sufficient to fit the entire SHA256 in hex plus a null terminator,
- * the largest possible number of bytes will be written followed by a null.
- *
-* @note This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_app_get_elf_sha256`
- *
- * @param dst   Destination buffer
- * @param size  Size of the buffer
- * @return      Number of bytes written to dst (including null terminator)
- */
-int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated("Please use esp_app_get_elf_sha256 instead")));
 
 /**
  * @brief   Commence an OTA update writing to the specified partition.
@@ -82,7 +61,12 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  * it will lead to the ESP_ERR_OTA_ROLLBACK_INVALID_STATE error. Confirm the running app before to run download a new app,
  * use esp_ota_mark_app_valid_cancel_rollback() function for it (this should be done as early as possible when you first download a new application).
  *
- * @param partition Pointer to info for partition which will receive the OTA update. Required.
+ * Note: Rollback is applicable only for app type partitions.
+ * Note: For Rollback - The OTA data slot corresponding to the last boot application partition will be invalidated.
+ *
+ * @param partition  Pointer to info for partition which will receive the OTA update. Required.
+ *                   This is considered as the staging partition (where OTA is downloaded), be default this also considered as the final partition which supposed to be updated.
+ *                   The final partition can be overwritten using esp_ota_set_final_partition() after calling esp_ota_begin() to relocate contents to the final destination partition.
  * @param image_size Size of new OTA app image. Partition will be erased in order to receive this size of image. If 0 or OTA_SIZE_UNKNOWN, the entire partition is erased.
  * @param out_handle On success, returns a handle which should be used for subsequent esp_ota_write() and esp_ota_end() calls.
 
@@ -91,6 +75,7 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  *    - ESP_ERR_INVALID_ARG: partition or out_handle arguments were NULL, or partition doesn't point to an OTA app partition.
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_OTA_PARTITION_CONFLICT: Partition holds the currently running firmware, cannot update in place.
+ *    - ESP_ERR_OTA_ALREADY_IN_PROGRESS: Another OTA operation is already in progress on the same partition.
  *    - ESP_ERR_NOT_FOUND: Partition argument not found in partition table.
  *    - ESP_ERR_OTA_SELECT_INFO_INVALID: The OTA data partition contains invalid data.
  *    - ESP_ERR_INVALID_SIZE: Partition doesn't fit in configured flash size.
@@ -98,6 +83,58 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  *    - ESP_ERR_OTA_ROLLBACK_INVALID_STATE: If the running app has not confirmed state. Before performing an update, the application must be valid.
  */
 esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp_ota_handle_t* out_handle);
+
+/**
+ * @brief   Resume an interrupted OTA update by continuing to write to the specified partition.
+ *
+ * This function is used when an OTA update was previously started and needs to be resumed after an interruption.
+ * It continues the OTA process from the specified offset within the partition.
+ *
+ * Unlike esp_ota_begin(), this function does not erase the partition which receives the OTA update, but rather expects that part of the image
+ * has already been written correctly, and it resumes writing from the given offset.
+ *
+ * @param partition Pointer to info for the partition which is receiving the OTA update. Required.
+ * @param erase_size Specifies how much flash memory to erase before resuming OTA, depending on whether a sequential write or a bulk erase is being used.
+ * @param image_offset Offset from where to resume the OTA process. Should be set to the number of bytes already written.
+ * @param out_handle On success, returns a handle that should be used for subsequent esp_ota_write() and esp_ota_end() calls.
+ *
+ * @return
+ *    - ESP_OK: OTA operation resumed successfully.
+ *    - ESP_ERR_INVALID_ARG: partition, out_handle were NULL or image_offset arguments is negative, or partition doesn't point to an OTA app partition.
+ *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
+ *    - ESP_ERR_OTA_PARTITION_CONFLICT: Partition holds the currently running firmware, cannot update in place.
+ *    - ESP_ERR_OTA_ALREADY_IN_PROGRESS: Another OTA operation is already in progress on the same partition.
+ *    - ESP_ERR_NOT_FOUND: Partition argument not found in partition table.
+ *    - ESP_ERR_OTA_SELECT_INFO_INVALID: The OTA data partition contains invalid data.
+ *    - ESP_ERR_INVALID_SIZE: Partition doesn't fit in configured flash size.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ */
+esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_size, const size_t image_offset, esp_ota_handle_t *out_handle);
+
+/**
+ * @brief Set the final destination partition for OTA update
+ *
+ * This function configures the specified final partition as the destination for the OTA update.
+ * It also allows setting a flag to indicate if the image should be copied from the staging
+ * partition to the final partition after the OTA update completes. Otherwise, copying will need
+ * to be handled by custom code using esp_partition_copy().
+ *
+ * @note This can be called after esp_ota_begin() and before the OTA update has started (before esp_ota_write()).
+ *
+ * @param handle OTA update handle obtained from esp_ota_begin().
+ * @param final Pointer to the final destination partition where the new image will be verified and potentially finalized.
+ *              This partition must not be NULL.
+ * @param finalize_with_copy Boolean flag indicating if the downloaded image should be copied
+ *                           from the staging partition to the final partition upon completion.
+ *                           Set to False if you intend to perform the final copy process manually later.
+ *
+ * @return
+ *      - ESP_OK: final destination partition set successfully.
+ *      - ESP_ERR_INVALID_STATE: Once the OTA update has started, changing the final destination partition is prohibited.
+ *      - ESP_ERR_INVALID_ARG: Invalid arguments were passed (e.g., final partition is NULL).
+ *      - ESP_ERR_NOT_FOUND: OTA handle not found or final partition verification failed.
+ */
+esp_err_t esp_ota_set_final_partition(esp_ota_handle_t handle, const esp_partition_t *final, bool finalize_with_copy);
 
 /**
  * @brief   Write OTA update data to partition
@@ -113,9 +150,10 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  * @return
  *    - ESP_OK: Data was written to flash successfully, or size = 0
  *    - ESP_ERR_INVALID_ARG: handle is invalid.
- *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
- *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
+ *    - ESP_ERR_INVALID_SIZE: if write would go out of bounds of the partition
+ *    - or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
 
@@ -136,9 +174,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
  * @return
  *    - ESP_OK: Data was written to flash successfully.
  *    - ESP_ERR_INVALID_ARG: handle is invalid.
- *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
- *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
  */
 esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, size_t size, uint32_t offset);
 
@@ -148,6 +184,11 @@ esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, s
  * @param handle  Handle obtained from esp_ota_begin().
  *
  * @note After calling esp_ota_end(), the handle is no longer valid and any memory associated with it is freed (regardless of result).
+ * @note If either the final or staging partitions were for the bootloader, then at the end of this function,
+ *       the bootloader is reset to its default offset: esp_image_bootloader_offset_set(ESP_PRIMARY_BOOTLOADER_OFFSET)
+ *
+ * If the finalize_with_copy option is set, the staging partition will be copied to the final partition at the end of this function.
+ * Otherwise, copying will need to be handled by custom code using esp_partition_copy().
  *
  * @return
  *    - ESP_OK: Newly written OTA app image is valid.
@@ -173,6 +214,8 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle);
 /**
  * @brief Configure OTA data for a new boot partition
  *
+ * Equivalent to esp_image_verify() followed by esp_ota_set_boot_partition_skip_validate().
+ *
  * @note If this function returns ESP_OK, calling esp_restart() will boot the newly configured app partition.
  *
  * @param partition Pointer to info for partition containing app image to boot.
@@ -185,6 +228,21 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle);
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash erase or write failed.
  */
 esp_err_t esp_ota_set_boot_partition(const esp_partition_t* partition);
+
+/**
+ * @brief Configure OTA data for a new boot partition without validating the image
+ *
+ * @note If this function returns ESP_OK, calling esp_restart() will boot the newly configured app partition.
+ *
+ * @param partition Pointer to info for partition containing app image to boot.
+ *
+ * @return
+ *    - ESP_OK: OTA data updated, next reboot will use specified partition.
+ *    - ESP_ERR_INVALID_ARG: partition argument was NULL or didn't point to a valid OTA partition of type "app".
+ *    - ESP_ERR_NOT_FOUND: OTA data partition not found.
+ *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash erase or write failed.
+ */
+esp_err_t esp_ota_set_boot_partition_skip_validate(const esp_partition_t* partition);
 
 /**
  * @brief Get partition info of currently configured boot app
@@ -256,7 +314,7 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
  * @brief Returns the description structure of the bootloader.
  *
  * @param[in] bootloader_partition Pointer to bootloader partition.
- *                                 If NULL, then the current bootloader is used (the default location).
+ *                                 If NULL, then the PRIMARY bootloader is used (the default location).
  *                                 offset = CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
  *                                 size = CONFIG_PARTITION_TABLE_OFFSET - CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
  * @param[out] desc     Structure of info about bootloader.
@@ -268,6 +326,20 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
  *  - or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_ota_get_bootloader_description(const esp_partition_t *bootloader_partition, esp_bootloader_desc_t *desc);
+
+/**
+ * @brief Invalidate the OTA data slot associated with the last boot application partition.
+ *
+ * This function erases the OTA data slot corresponding to the last boot application partition,
+ * making the partition invalid for booting in future. The application partition itself
+ * is not erased, preserving its contents.
+ *
+ * @return
+ *      - ESP_OK: Successfully invalidated the OTA data slot.
+ *      - ESP_FAIL: Failed to invalidate the OTA data slot (e.g., invalid parameters, no OTA data partition, or other errors).
+ *      - Other error codes from `esp_partition_erase_range`.
+ */
+esp_err_t esp_ota_invalidate_inactive_ota_data_slot(void);
 
 /**
  * @brief Returns number of ota partitions provided in partition table.
@@ -286,11 +358,23 @@ uint8_t esp_ota_get_app_partition_count(void);
 esp_err_t esp_ota_mark_app_valid_cancel_rollback(void);
 
 /**
- * @brief This function is called to roll back to the previously workable app with reboot.
+ * @brief This function is called to roll back to the previously workable app without reboot.
  *
- * If rollback is successful then device will reset else API will return with error code.
  * Checks applications on a flash drive that can be booted in case of rollback.
  * If the flash does not have at least one app (except the running app) then rollback is not possible.
+ * @return
+ *  - ESP_OK: if successful.
+ *  - ESP_FAIL: if not successful.
+ *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible because the available OTA partitions
+ *    on the flash do not contain a valid application.
+ */
+esp_err_t esp_ota_mark_app_invalid_rollback(void);
+
+/**
+ * @brief This function is called to roll back to the previously workable app with reboot.
+ *
+ * Equivalent to calling esp_ota_mark_app_invalid_rollback(), and, if successful, followed by esp_restart().
+ *
  * @return
  *  - ESP_FAIL: if not successful.
  *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible due to flash does not have any apps.
@@ -300,7 +384,7 @@ esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot(void);
 /**
  * @brief Returns last partition with invalid state (ESP_OTA_IMG_INVALID or ESP_OTA_IMG_ABORTED).
  *
- * @return partition.
+ * @return Pointer to the last invalid partition, or NULL if no invalid partition is recorded.
  */
 const esp_partition_t* esp_ota_get_last_invalid_partition(void);
 
@@ -337,6 +421,31 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void);
  *        - False: The rollback is not possible.
  */
 bool esp_ota_check_rollback_is_possible(void);
+
+/**
+ * @brief Check image validity including chip ID, chip revision, and optionally SPI flash mode.
+ *
+ * This function performs comprehensive validation of an OTA image:
+ * - Verifies the chip ID matches the current chip
+ * - Verifies the chip revision meets the image requirements
+ * - Optionally verifies the SPI flash mode matches (if app_desc is provided)
+ *
+ * For bootloader partitions (ESP_PARTITION_TYPE_BOOTLOADER), the maximum chip revision check is skipped.
+ * For application partitions (ESP_PARTITION_TYPE_APP), both minimum and maximum chip revision are checked.
+ *
+ * @param[in] part_type Partition type (ESP_PARTITION_TYPE_APP or ESP_PARTITION_TYPE_BOOTLOADER)
+ * @param[in] img_hdr Pointer to the image header for chip ID and revision checks
+ * @param[in] app_desc Pointer to the app descriptor for SPI mode check (can be NULL to skip SPI mode verification)
+ *
+ * @return
+ *      - ESP_OK: Image is valid for this chip
+ *      - ESP_ERR_INVALID_ARG: img_hdr is NULL or part_type is not APP or BOOTLOADER
+ *      - ESP_ERR_INVALID_VERSION: Chip ID or chip revision mismatch
+ *      - ESP_ERR_OTA_SPI_MODE_MISMATCH: SPI flash mode does not match (only when app_desc is provided)
+ */
+esp_err_t esp_ota_check_image_validity(esp_partition_type_t part_type,
+                                       const esp_image_header_t *img_hdr,
+                                       const esp_app_desc_t *app_desc);
 
 #if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1 && (CONFIG_SECURE_BOOT_V2_ENABLED || __DOXYGEN__)
 

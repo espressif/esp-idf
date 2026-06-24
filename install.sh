@@ -7,6 +7,8 @@ basedir=$(dirname "$0")
 IDF_PATH=$(cd "${basedir}"; pwd -P)
 export IDF_PATH
 
+echo "INFO: Using IDF_PATH '${IDF_PATH}' for installation."
+
 echo "Detecting the Python interpreter"
 . "${IDF_PATH}/tools/detect_python.sh"
 

@@ -1,4 +1,0 @@
-dependencies:
-  espressif/esp_encrypted_img: "^2.0.1"
-  protocol_examples_common:
-    path: ${IDF_PATH}/examples/common_components/protocol_examples_common

@@ -20,6 +20,8 @@ extern "C" {
 #endif
 
 #define MMU_LL_PSRAM_ENTRY_START_ID    1152
+#define MMU_LL_END_DROM_ENTRY_VADDR    (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
+#define MMU_LL_END_DROM_ENTRY_ID       (64 - 1)
 
 /**
  * Convert MMU virtual address to linear address
@@ -103,13 +105,13 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 
     if (type & MMU_VADDR_DATA) {
         valid |= (SOC_ADDRESS_IN_DRAM1_CACHE(vaddr_start) && SOC_ADDRESS_IN_DRAM1_CACHE(vaddr_end)) ||
-                (SOC_ADDRESS_IN_DROM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_DROM0_CACHE(vaddr_end));
+                 (SOC_ADDRESS_IN_DROM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_DROM0_CACHE(vaddr_end));
     }
 
     if (type & MMU_VADDR_INSTRUCTION) {
         valid |= (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end)) ||
-                (SOC_ADDRESS_IN_IRAM1_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM1_CACHE(vaddr_end)) ||
-                (SOC_ADDRESS_IN_IROM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IROM0_CACHE(vaddr_end));
+                 (SOC_ADDRESS_IN_IRAM1_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM1_CACHE(vaddr_end)) ||
+                 (SOC_ADDRESS_IN_IROM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IROM0_CACHE(vaddr_end));
     }
 
     return valid;
@@ -220,14 +222,14 @@ static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32
 
     DPORT_INTERRUPT_DISABLE();
     switch (mmu_id) {
-        case MMU_TABLE_CORE0:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], mmu_val);
-            break;
-        case MMU_TABLE_CORE1:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], mmu_val);
-            break;
-        default:
-            HAL_ASSERT(false);
+    case MMU_TABLE_CORE0:
+        DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], mmu_val);
+        break;
+    case MMU_TABLE_CORE1:
+        DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], mmu_val);
+        break;
+    default:
+        HAL_ASSERT(false);
     }
     DPORT_INTERRUPT_RESTORE();
 }
@@ -246,14 +248,14 @@ static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
 
     DPORT_INTERRUPT_DISABLE();
     switch (mmu_id) {
-        case MMU_TABLE_CORE0:
-            mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id]);
-            break;
-        case MMU_TABLE_CORE1:
-            mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id]);
-            break;
-        default:
-            HAL_ASSERT(false);
+    case MMU_TABLE_CORE0:
+        mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id]);
+        break;
+    case MMU_TABLE_CORE1:
+        mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id]);
+        break;
+    default:
+        HAL_ASSERT(false);
     }
     DPORT_INTERRUPT_RESTORE();
     return mmu_value;
@@ -271,14 +273,14 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
     HAL_ASSERT(entry_id < SOC_MMU_ENTRY_NUM);
     DPORT_INTERRUPT_DISABLE();
     switch (mmu_id) {
-        case MMU_TABLE_CORE0:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID);
-            break;
-        case MMU_TABLE_CORE1:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID);
-            break;
-        default:
-            HAL_ASSERT(false);
+    case MMU_TABLE_CORE0:
+        DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID);
+        break;
+    case MMU_TABLE_CORE1:
+        DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID);
+        break;
+    default:
+        HAL_ASSERT(false);
     }
     DPORT_INTERRUPT_RESTORE();
 }
@@ -302,7 +304,7 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
  * @param mmu_id   MMU ID
  * @param entry_id MMU entry ID
  *
- * @return         Ture for MMU entry is valid; False for invalid
+ * @return         True for MMU entry is valid; False for invalid
  */
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {

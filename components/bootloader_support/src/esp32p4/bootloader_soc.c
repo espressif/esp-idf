@@ -1,16 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdbool.h>
+#include "soc/lp_analog_peri_reg.h"
 
 void bootloader_ana_super_wdt_reset_config(bool enable)
-{
-    //TODO: IDF-7514
-}
-
-void bootloader_ana_bod_reset_config(bool enable)
 {
     //TODO: IDF-7514
 }

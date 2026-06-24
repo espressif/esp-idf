@@ -37,9 +37,17 @@ typedef enum {
     BTC_AVRC_STATUS_API_SND_META_EVT,
     BTC_AVRC_STATUS_API_SND_PLAY_STATUS_EVT,
     BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT,
+    BTC_AVRC_STATUS_API_SND_GET_PLAY_STATUS_EVT,
     BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT,
     BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT,
-    BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT
+    BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT,
+#if BTC_AV_CA_INCLUDED
+    BTC_AVRC_CT_API_COVER_ART_CONNECT_EVT,
+    BTC_AVRC_CT_API_COVER_ART_DISCONNECT_EVT,
+    BTC_AVRC_CT_API_COVER_ART_GET_IMAGE_PROPERTIES_EVT,
+    BTC_AVRC_CT_API_COVER_ART_GET_IMAGE_EVT,
+    BTC_AVRC_CT_API_COVER_ART_GET_LINKED_THUMBNAIL_EVT,
+#endif
 } btc_avrc_act_t;
 
 typedef struct {
@@ -69,6 +77,10 @@ typedef struct {
     uint8_t tl;
 } get_caps_cmd_t;
 
+typedef struct {
+    uint8_t tl;
+} get_play_status_cmd_t;
+
 #define BTC_AVRC_MIN_VOLUME 0x00
 #define BTC_AVRC_MAX_VOLUME 0x7f
 
@@ -77,6 +89,28 @@ typedef struct {
     uint8_t volume;
 } set_abs_vol_cmd_t;
 
+#if BTC_AV_CA_INCLUDED
+
+typedef struct {
+    uint16_t mtu;
+} ca_conn_t;
+
+typedef struct {
+    uint8_t image_handle[7];
+} ca_get_img_prop_t;
+
+typedef struct {
+    uint8_t image_handle[7];
+    uint16_t image_descriptor_len;
+    uint8_t *image_descriptor;
+} ca_get_img_t;
+
+typedef struct {
+    uint8_t image_handle[7];
+} ca_get_lk_thn_t;
+
+#endif /* BTC_AV_CA_INCLUDED */
+
 /* btc_avrc_args_t */
 typedef union {
     pt_cmd_t pt_cmd;
@@ -84,7 +118,14 @@ typedef union {
     rn_cmd_t rn_cmd;
     ps_cmd_t ps_cmd;
     get_caps_cmd_t get_caps_cmd;
+    get_play_status_cmd_t get_play_status_cmd;
     set_abs_vol_cmd_t set_abs_vol_cmd;
+#if BTC_AV_CA_INCLUDED
+    ca_conn_t ca_conn;
+    ca_get_img_prop_t ca_get_img_prop;
+    ca_get_img_t ca_get_img;
+    ca_get_lk_thn_t ca_get_lk_thn;
+#endif
 } btc_avrc_args_t;
 
 /* btc_avrc_tg_act_t */
@@ -110,7 +151,7 @@ typedef enum {
         BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
         if (btc_rc_cb.rc_connected == FALSE) { \
             BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
-        return ESP_ERR_INVALID_STATE; \
+            return BT_STATUS_FAIL; \
         } \
     } while (0)
 
@@ -124,6 +165,9 @@ typedef struct {
 
 typedef struct {
     BOOLEAN                     rc_connected;
+#if BTC_AV_CA_INCLUDED
+    BOOLEAN                     rc_cover_art_connected;
+#endif
     UINT8                       rc_handle;
     tBTA_AV_FEAT                rc_features;
     UINT16                      rc_ct_features;
@@ -162,6 +206,8 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 ********************************************************************************/
 void btc_avrc_ct_call_handler(btc_msg_t *msg);
 void btc_avrc_tg_call_handler(btc_msg_t *msg);
+void btc_avrc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_avrc_arg_deep_free(btc_msg_t *msg);
 void btc_avrc_tg_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_avrc_tg_arg_deep_free(btc_msg_t *msg);
 
@@ -179,6 +225,8 @@ uint16_t btc_avrc_tg_get_rn_supported_evt(void);
 bool btc_avrc_tg_check_rn_supported_evt(uint16_t evt_set);
 bool btc_avrc_tg_rn_evt_supported(uint8_t event_id);
 bool btc_avrc_ct_rn_evt_supported(uint8_t event_id);
+bool btc_avrc_ct_check_cover_art_support(void);
+void btc_avrc_get_profile_status(esp_avrc_profile_status_t *param);
 
 #endif  ///BTC_AV_INCLUDED == TRUE
 

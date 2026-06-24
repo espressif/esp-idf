@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,13 +15,15 @@
 #include "services/gap/ble_svc_gap.h"
 #include "ble_cts_cent.h"
 #include "services/cts/ble_svc_cts.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 static const char *tag = "NimBLE_CTS_CENT";
 static int ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg);
-static uint8_t peer_addr[6];
 
-static char *day_of_week[7] = {
-    "Unknown"
+static char *day_of_week[8] = {
+    "Unknown",
     "Monday",
     "Tuesday",
     "Wednesday",
@@ -34,10 +36,14 @@ void ble_store_config_init(void);
 static void ble_cts_cent_scan(void);
 
 void printtime(struct ble_svc_cts_curr_time ctime) {
+    uint8_t dow = ctime.et_256.d_d_t.day_of_week;
+    const char *dow_str = (dow >= 1 && dow <= 7) ? day_of_week[dow] : day_of_week[0];
+    if (dow >= 8) {
+        dow = 0;
+    }
     ESP_LOGI(tag, "Date : %d/%d/%d %s", ctime.et_256.d_d_t.d_t.day,
                                      ctime.et_256.d_d_t.d_t.month,
-                                     ctime.et_256.d_d_t.d_t.year,
-                                     day_of_week[ctime.et_256.d_d_t.day_of_week]);
+                                     ctime.et_256.d_d_t.d_t.year, dow_str);
     ESP_LOGI(tag, "hours : %d minutes : %d ",
                              ctime.et_256.d_d_t.d_t.hours,
                              ctime.et_256.d_d_t.d_t.minutes);
@@ -45,6 +51,7 @@ void printtime(struct ble_svc_cts_curr_time ctime) {
     ESP_LOGI(tag, "fractions : %d\n", ctime.et_256.fractions_256);
 }
 
+#if MYNEWT_VAL(BLE_GATTC)
 /**
  * Application callback.  Called when the read of the cts current time
  * characteristic has completed.
@@ -55,6 +62,7 @@ ble_cts_cent_on_read(uint16_t conn_handle,
                      struct ble_gatt_attr *attr,
                      void *arg)
 {
+    int rc = 0;
     struct ble_svc_cts_curr_time ctime; /* store the read time */
     MODLOG_DFLT(INFO, "Read Current time complete; status=%d conn_handle=%d\n",
                 error->status, conn_handle);
@@ -66,8 +74,12 @@ ble_cts_cent_on_read(uint16_t conn_handle,
         goto err;
     }
     MODLOG_DFLT(INFO, "\n");
-    ble_hs_mbuf_to_flat(attr->om, &ctime, sizeof(ctime), NULL);
-    printtime(ctime);
+    rc = ble_hs_mbuf_to_flat(attr->om, &ctime, sizeof(ctime), NULL);
+    if (rc == 0 && ctime.et_256.d_d_t.day_of_week <= 7) {
+        printtime(ctime);
+    } else {
+        MODLOG_DFLT(WARN, "Invalid CTS time data; rc=%d day_of_week=%d\n", rc, ctime.et_256.d_d_t.day_of_week);
+    }
     return 0;
 err:
     /* Terminate the connection. */
@@ -138,6 +150,7 @@ ble_cts_cent_on_disc_complete(const struct peer *peer, int status, void *arg)
      */
     ble_cts_cent_read_time(peer);
 }
+#endif
 
 /**
  * Initiates the GAP general discovery procedure.
@@ -146,7 +159,7 @@ static void
 ble_cts_cent_scan(void)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params;
+    struct ble_gap_disc_params disc_params = {0};
     int rc;
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -193,18 +206,17 @@ ext_ble_cts_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
-
+    uint8_t test_addr[6];
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+
+	/* Convert string to address */
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -222,7 +234,7 @@ ext_ble_cts_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         /* Search if cts UUID is advertised */
         if (disc->data[offset + 1] == 0x03) {
             int temp = 2;
-            while(temp < disc->data[offset + 1]) {
+            while (temp < ad_struct_len) {
                 if(disc->data[offset + temp] == 0x05 &&
                    disc->data[offset + temp + 1] == 0x18) {
                     return 1;
@@ -243,7 +255,7 @@ ble_cts_cent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
-
+    uint8_t test_addr[6];
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -259,10 +271,8 @@ ble_cts_cent_should_connect(const struct ble_gap_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -303,12 +313,14 @@ ble_cts_cent_connect_if_interesting(void *disc)
     }
 #endif
 
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
     if (rc != 0) {
         MODLOG_DFLT(DEBUG, "Failed to cancel scan; rc=%d\n", rc);
         return;
     }
+#endif
 
     /* Figure out address to use for connect (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -364,7 +376,7 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        /* An advertisment report was received during GAP discovery. */
+        /* An advertisement report was received during GAP discovery. */
         print_adv_fields(&fields);
 
         /* Try to connect to the advertiser if it looks interesting. */
@@ -405,6 +417,14 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+            rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+                return 0;
+            }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
             /* Perform service discovery */
             rc = peer_disc_all(event->connect.conn_handle,
                                ble_cts_cent_on_disc_complete, NULL);
@@ -412,6 +432,8 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
                 return 0;
             }
+#endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
 #endif
         } else {
             /* Connection attempt failed; resume scanning. */
@@ -448,15 +470,42 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+        rc =  ble_gattc_cache_assoc(desc.peer_id_addr);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "Cache Association Failed; rc=%d\n", rc);
+            return 0;
+        }
+#else
+#if MYNEWT_VAL(BLE_GATTC)
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->connect.conn_handle,
+        rc = peer_disc_all(event->enc_change.conn_handle,
                            ble_cts_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
 #endif
+#endif // BLE_GATT_CACHING_ASSOC_ENABLE
+#endif
         return 0;
+
+    case BLE_GAP_EVENT_CACHE_ASSOC:
+#if MYNEWT_VAL(BLE_GATT_CACHING_ASSOC_ENABLE)
+          /* Cache association result for this connection */
+          MODLOG_DFLT(INFO, "cache association; conn_handle=%d status=%d cache_state=%s\n",
+                      event->cache_assoc.conn_handle,
+                      event->cache_assoc.status,
+                      (event->cache_assoc.cache_state == 0) ? "INVALID" : "LOADED");
+          /* Perform service discovery */
+          rc = peer_disc_all(event->cache_assoc.conn_handle,
+                             ble_cts_cent_on_disc_complete, NULL);
+          if(rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                return 0;
+          }
+#endif
+          return 0;
 
     case BLE_GAP_EVENT_NOTIFY_RX:
         /* Peer sent us a notification or indication. */
@@ -482,10 +531,10 @@ ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg)
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
-        /* An advertisment report was received during GAP discovery. */
-        ext_print_adv_report(&event->disc);
+        /* An advertisement report was received during GAP discovery. */
+        ext_print_adv_report(&event->ext_disc);
 
-        ble_cts_cent_connect_if_interesting(&event->disc);
+        ble_cts_cent_connect_if_interesting(&event->ext_disc);
         return 0;
 #endif
 
@@ -546,12 +595,19 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+    assert(rc == 0);
+#else
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
+#endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-cts-cent");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

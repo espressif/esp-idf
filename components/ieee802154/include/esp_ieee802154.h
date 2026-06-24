@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,10 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_ieee802154_types.h"
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,23 +59,69 @@ uint8_t esp_ieee802154_get_channel(void);
 esp_err_t esp_ieee802154_set_channel(uint8_t channel);
 
 /**
- * @brief  Get the transmit power.
+ * @brief  Get the transmission power for the current channel.
  *
- * @return The transmit power in dBm.
+ * @return The transmission power in dBm.
  *
  */
 int8_t esp_ieee802154_get_txpower(void);
 
 /**
- * @brief  Set the transmit power.
+ * @brief  Set the transmission power for all channels.
  *
- * @param[in]  power  The transmit power in dBm.
+ * @param[in]  power  The transmission power in dBm.
  *
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_txpower(int8_t power);
+
+/**
+ * @brief  Set the transmission power table.
+ *
+ * @param[in]  power_table  The power table.
+ *
+ * @return
+ *        - ESP_OK   Set the transmission power table to successfully.
+ */
+esp_err_t esp_ieee802154_set_power_table(esp_ieee802154_txpower_table_t power_table);
+
+/**
+ * @brief  Get the transmission power table.
+ *
+ * @param[out]  out_power_table  The power table.
+ *
+ * @return
+ *        - ESP_OK                  Get the transmission power table successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid arguments.
+ *
+ */
+esp_err_t esp_ieee802154_get_power_table(esp_ieee802154_txpower_table_t *out_power_table);
+
+/**
+ * @brief  Set the transmission power for a specific channel.
+ *
+ * @param[in]  channel  The channel.
+ * @param[in]  power    The power.
+ *
+ * @return
+ *        - ESP_OK                  Set the transmission power for a specific channel successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid arguments.
+ */
+esp_err_t esp_ieee802154_set_power_with_channel(uint8_t channel, int8_t power);
+
+/**
+ * @brief  Get the transmission power for a specific channel.
+ *
+ * @param[in]  channel    The channel.
+ * @param[out] out_power  The power.
+ *
+ * @return
+ *        - ESP_OK                  Get the transmission power for a specific channel successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid arguments.
+ */
+esp_err_t esp_ieee802154_get_power_with_channel(uint8_t channel, int8_t *out_power);
 
 /**
  * @brief  Get the promiscuous mode.
@@ -136,8 +186,12 @@ esp_err_t esp_ieee802154_receive(void);
  *                    |-----------------------------------------------------------------------|
  * @param[in]  cca    Perform CCA before transmission if it's true, otherwise transmit the frame directly.
  *
+ * @note During transmission, the hardware calculates the FCS, and send it over the air right after the MAC payload,
+ *       so you just need to prepare the length, mac header and mac payload content.
+ *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG on an invalid frame.
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
@@ -146,14 +200,21 @@ esp_err_t esp_ieee802154_transmit(const uint8_t *frame, bool cca);
 /**
  * @brief  Set the time to wait for the ack frame.
  *
- * @param[in]  timeout  The time to wait for the ack frame, in symbol unit (16 us).
- *                      Default: 0x006C, Range: 0x0000 - 0xFFFF.
+ * @param[in]  timeout  The time to wait for the ack frame, in us.
+ *                      It Should be a multiple of 16. The default value is 1728 us (108 * 16).
  *
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_ack_timeout(uint32_t timeout);
+
+/**
+ * @brief  Get the time to wait for the ack frame.
+ *
+ * @return  The time to wait for the ack frame, in us.
+ */
+uint32_t esp_ieee802154_get_ack_timeout(void);
 
 /**
  * @brief  Get the device PAN ID.
@@ -196,10 +257,11 @@ esp_err_t esp_ieee802154_set_short_address(uint16_t short_address);
 /**
  * @brief  Get the device extended address.
  *
- * @param[out]  ext_addr  The pointer to the device extended address.
+ * @param[out]  ext_addr  The pointer to the device extended address. Must not be NULL.
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG if ext_addr is NULL.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_get_extended_address(uint8_t *ext_addr);
@@ -207,10 +269,11 @@ esp_err_t esp_ieee802154_get_extended_address(uint8_t *ext_addr);
 /**
  * @brief  Set the device extended address.
  *
- * @param[in]  ext_addr  The pointer to the device extended address.
+ * @param[in]  ext_addr  The pointer to the device extended address. Must not be NULL.
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG if ext_addr is NULL.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_extended_address(const uint8_t *ext_addr);
@@ -263,10 +326,11 @@ esp_err_t esp_ieee802154_set_multipan_short_address(esp_ieee802154_multipan_inde
  * @brief  Get the device extended address for specific interface.
  *
  * @param[in]  index  The interface index.
- * @param[out]  ext_addr  The pointer to the device extended address.
+ * @param[out]  ext_addr  The pointer to the device extended address. Must not be NULL.
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG if ext_addr is NULL.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_get_multipan_extended_address(esp_ieee802154_multipan_index_t index, uint8_t *ext_addr);
@@ -275,10 +339,11 @@ esp_err_t esp_ieee802154_get_multipan_extended_address(esp_ieee802154_multipan_i
  * @brief  Set the device extended address for specific interface.
  *
  * @param[in]  index  The interface index.
- * @param[in]  ext_addr  The pointer to the device extended address.
+ * @param[in]  ext_addr  The pointer to the device extended address. Must not be NULL.
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG if addr is NULL.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_multipan_extended_address(esp_ieee802154_multipan_index_t index, const uint8_t *ext_addr);
@@ -348,12 +413,13 @@ esp_err_t esp_ieee802154_set_pending_mode(esp_ieee802154_pending_mode_t pending_
 /**
  * @brief  Add address to the source matching table.
  *
- * @param[in]  addr      The pointer to the address.
+ * @param[in]  addr      The pointer to the address. Must not be NULL.
  * @param[in]  is_short  Short address or Extended address.
  *
  * @return
  *      - ESP_OK on success.
  *      - ESP_ERR_NO_MEM if the pending table is full.
+ *      - ESP_ERR_INVALID_ARG if addr is NULL.
  *
  */
 esp_err_t esp_ieee802154_add_pending_addr(const uint8_t *addr, bool is_short);
@@ -361,12 +427,13 @@ esp_err_t esp_ieee802154_add_pending_addr(const uint8_t *addr, bool is_short);
 /**
  * @brief  Remove address from the source matching table.
  *
- * @param[in]  addr      The pointer to the address.
+ * @param[in]  addr      The pointer to the address. Must not be NULL.
  * @param[in]  is_short  Short address or Extended address.
  *
  * @return
  *      - ESP_OK on success.
  *      - ESP_ERR_NOT_FOUND if the address was not found from the source matching table.
+ *      - ESP_ERR_INVALID_ARG if addr is NULL.
  *
  */
 esp_err_t esp_ieee802154_clear_pending_addr(const uint8_t *addr, bool is_short);
@@ -379,6 +446,7 @@ esp_err_t esp_ieee802154_clear_pending_addr(const uint8_t *addr, bool is_short);
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
+ *
  */
 esp_err_t esp_ieee802154_reset_pending_table(bool is_short);
 
@@ -398,6 +466,7 @@ int8_t esp_ieee802154_get_cca_threshold(void);
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
+ *
  */
 esp_err_t esp_ieee802154_set_cca_threshold(int8_t cca_threshold);
 
@@ -417,6 +486,7 @@ esp_ieee802154_cca_mode_t esp_ieee802154_get_cca_mode(void);
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
+ *
  */
 esp_err_t esp_ieee802154_set_cca_mode(esp_ieee802154_cca_mode_t cca_mode);
 
@@ -428,6 +498,7 @@ esp_err_t esp_ieee802154_set_cca_mode(esp_ieee802154_cca_mode_t cca_mode);
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
+ *
  */
 esp_err_t esp_ieee802154_set_rx_when_idle(bool enable);
 
@@ -477,6 +548,10 @@ esp_err_t esp_ieee802154_receive_handle_done(const uint8_t *frame);
  *                    |-----------------------------------------------------------------------|
  * @param[in]  frame_info  More information of the received frame, refer to esp_ieee802154_frame_info_t.
  *
+ * @note  During receiving, the hardware calculates the FCS of the received frame, and may drop it if the FCS doesn't match, only the valid
+ *        frames will be received and notified by esp_ieee802154_receive_done(). Please note that the FCS field is replaced by RSSI and LQI
+ *        value of the received frame.
+ *
  */
 extern void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);
 
@@ -523,18 +598,24 @@ extern void esp_ieee802154_transmit_sfd_done(uint8_t *frame);
 extern void esp_ieee802154_energy_detect_done(int8_t power);
 
 /**
- * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time.
+ * @brief  The receive window for receive_at has finished.
  *
- * @note   Radio will start receiving after the timestamp, and continue receiving until it receives a valid frame.
- *         Refer to `esp_ieee802154_receive_done()`.
+ */
+extern void esp_ieee802154_receive_at_done(void);
+
+/**
+ * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time, for a specific duration.
  *
- * @param[in]  time  A specific timestamp for starting receiving.
+ * @note   Radio will start receiving after the timestamp, and continue receiving for the specific duration.
+ *
+ * @param[in]  time      A specific timestamp for starting receiving.
+ * @param[in]  duration  A specific duration after which to stop receiving. Set duration = 0 to rx indefinitely.
  * @return
  *      - ESP_OK on success
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
-esp_err_t esp_ieee802154_receive_at(uint32_t time);
+esp_err_t esp_ieee802154_receive_at(uint32_t time, uint32_t duration);
 
 /**
  * @brief  Transmit the given frame at a specific time.
@@ -547,6 +628,7 @@ esp_err_t esp_ieee802154_receive_at(uint32_t time);
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG on an invalid frame.
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
@@ -571,12 +653,13 @@ uint8_t esp_ieee802154_get_recent_lqi(void);
 /**
  * @brief  Set the key and addr for a frame needs to be encrypted by HW.
  *
- * @param[in]  frame  A frame needs to be encrypted. Refer to `esp_ieee802154_transmit()`.
- * @param[in]  key    A 16-bytes key for encryption.
- * @param[in]  addr   An 8-bytes addr for HW to generate nonce, in general, is the device extended address.
+ * @param[in]  frame  A frame needs to be encrypted. Refer to `esp_ieee802154_transmit()`. Must not be NULL.
+ * @param[in]  key    A 16-bytes key for encryption. Must not be NULL.
+ * @param[in]  addr   An 8-bytes addr for HW to generate nonce, in general, is the device extended address. Must not be NULL.
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG if frame, key, or addr is NULL.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uint8_t *addr);
@@ -585,7 +668,7 @@ esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uin
  * @brief  This function will be called when a received frame needs to be acked with Enh-Ack, the upper
  *         layer should generate the Enh-Ack frame in this callback function.
  *
- * @param[in]  frame          The received frame.
+ * @param[in]  frame          The received frame. Must not be NULL.
  * @param[in]  frame_info     The frame information. Refer to `esp_ieee802154_frame_info_t`.
  * @param[out] enhack_frame   The Enh-ack frame need to be generated via this function, HW will send it back after AIFS.
  *
@@ -613,6 +696,152 @@ void esp_ieee802154_txrx_statistic_clear(void);
  */
 void esp_ieee802154_txrx_statistic_print(void);
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
+
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+/**
+ * @brief  Print the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void esp_ieee802154_rx_buffer_statistic_clear(void);
+
+/**
+ * @brief  Clear the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void esp_ieee802154_rx_buffer_statistic_print(void);
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+#if CONFIG_IEEE802154_RECORD
+
+/**
+ * @brief  Print the current IEEE802.15.4 event/command/state record.
+ *
+ */
+void esp_ieee802154_record_print(void);
+#endif // CONFIG_IEEE802154_RECORD
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+
+/**
+ * @brief  Set the IEEE802.15.4 coexist config.
+ *
+ * @param[in]  config     The config of IEEE802.15.4 coexist.
+ *
+ */
+void esp_ieee802154_set_coex_config(esp_ieee802154_coex_config_t config);
+
+/**
+ * @brief  Get the IEEE802.15.4 coexist config.
+ *
+ * @return
+ *        - The config of IEEE802.15.4 coexist.
+ *
+ */
+esp_ieee802154_coex_config_t esp_ieee802154_get_coex_config(void);
+#endif
+
+/**
+ * @brief  Register process callbacks for events generated by the IEEE 802.15.4 subsystem.
+ *
+ * @param[in]  cb_list The event process callback list, please refer to `esp_ieee802154_event_cb_list_t`.
+ *
+ * @note  This API should be called only when IEEE 802.15.4 subsystem is not enabled
+ *        or after IEEE 802.15.4 subsystem is disabled (refer to `esp_ieee802154_disable`).
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ *
+ */
+esp_err_t esp_ieee802154_event_callback_list_register(esp_ieee802154_event_cb_list_t cb_list);
+
+/**
+ * @brief  Unregister process callbacks for events generated by the IEEE 802.15.4 subsystem.
+ *
+ * @note  This API should be called only when IEEE 802.15.4 subsystem is not enabled
+ *        or after IEEE 802.15.4 subsystem is disabled (refer to `esp_ieee802154_disable`).
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ *
+ */
+esp_err_t esp_ieee802154_event_callback_list_unregister(void);
+
+/**
+ * @brief  Add a pending address to the multipan table for the specified interface.
+ *
+ * @note   This API should be called only when the IEEE 802.15.4 subsystem is enabled.
+ *
+ * @param  inf_index  Index of the interface.
+ * @param  addr       Pointer to the address to add.
+ * @param  is_short   True if the address is a short address, false if extended.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_add_pending_addr(esp_ieee802154_multipan_index_t inf_index, const uint8_t *addr, bool is_short);
+
+/**
+ * @brief  Remove a pending address from the multipan table for the specified interface.
+ *
+ * @note   This API should be called only when the IEEE 802.15.4 subsystem is enabled.
+ *
+ * @param  inf_index  Index of the interface.
+ * @param  addr       Pointer to the address to remove.
+ * @param  is_short   True if the address is a short address, false if extended.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_clear_pending_addr(esp_ieee802154_multipan_index_t inf_index, const uint8_t *addr, bool is_short);
+
+/**
+ * @brief  Reset the pending address table for the specified interface.
+ *
+ * @note   This API clears all pending addresses of the specified type (short or extended) for the interface.
+ *
+ * @param  inf_index  Index of the interface.
+ * @param  is_short   True to reset short addresses, false to reset extended addresses.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_reset_pending_table(esp_ieee802154_multipan_index_t inf_index, bool is_short);
+
+/**
+ * @brief  Get the auto frame pending mode of the specified multipan interface.
+ *
+ * @note   This API returns the logical pending mode configured for a given multipan
+ *         interface. The value is used by the ACK generation logic together with the
+ *         per-interface pending address table.
+ *
+ * @param  inf_index  Index of the multipan interface.
+ *
+ * @return
+ *      - Current pending mode of type refer to esp_ieee802154_pending_mode_t
+ */
+esp_ieee802154_pending_mode_t esp_ieee802154_multipan_get_pending_mode(esp_ieee802154_multipan_index_t inf_index);
+
+/**
+ * @brief  Set the auto frame pending mode of the specified multipan interface.
+ *
+ * @note   This API configures the logical pending mode for a given multipan interface.
+ *         The configured mode is used by the ACK generation logic together with the
+ *         per-interface pending address table.
+ *
+ * @param  inf_index      Index of the multipan interface.
+ * @param  pending_mode   Pending mode to set for this interface.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, esp_ieee802154_pending_mode_t pending_mode);
 
 #ifdef __cplusplus
 }

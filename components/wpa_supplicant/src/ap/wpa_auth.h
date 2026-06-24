@@ -12,6 +12,7 @@
 #include "common/defs.h"
 #include "common/eapol_common.h"
 #include "common/wpa_common.h"
+#include "ap/hostapd.h"
 
 #ifdef _MSC_VER
 #pragma pack(push, 1)
@@ -127,6 +128,9 @@ struct ft_remote_r1kh {
 struct wpa_auth_config {
 	int wpa;
 	int wpa_key_mgmt;
+#ifdef CONFIG_WPA3_COMPAT
+	int rsn_override_key_mgmt;
+#endif
 	int wpa_pairwise;
 	int wpa_group;
 	int wpa_group_rekey;
@@ -134,6 +138,9 @@ struct wpa_auth_config {
 	int wpa_gmk_rekey;
 	int wpa_ptk_rekey;
 	int rsn_pairwise;
+#ifdef CONFIG_WPA3_COMPAT
+	int rsn_override_pairwise;
+#endif
 	int rsn_preauth;
 	int eapol_version;
 	int wmm_enabled;
@@ -143,7 +150,14 @@ struct wpa_auth_config {
 	int tx_status;
 #ifdef CONFIG_IEEE80211W
 	enum mfp_options ieee80211w;
+#ifdef CONFIG_WPA3_COMPAT
+	enum mfp_options rsn_override_mfp;
+#endif
 #endif /* CONFIG_IEEE80211W */
+	int group_mgmt_cipher;
+#ifdef CONFIG_SAE
+	int sae_require_mfp;
+#endif /* CONFIG_SAE */
 #ifdef CONFIG_IEEE80211R
 #define SSID_LEN 32
 	u8 ssid[SSID_LEN];
@@ -163,6 +177,10 @@ struct wpa_auth_config {
 	int ap_mlme;
 	enum sae_pwe sae_pwe;
 	struct rsn_sppamsdu_sup spp_sup;
+	u8 transition_disable;
+#ifdef CONFIG_WPA3_COMPAT
+	int rsn_override_omit_rsnxe;
+#endif
 };
 
 typedef enum {
@@ -295,9 +313,22 @@ int wpa_wnmsleep_igtk_subelem(struct wpa_state_machine *sm, u8 *pos);
 
 int wpa_auth_uses_sae(struct wpa_state_machine *sm);
 int wpa_auth_pmksa_add_sae(struct wpa_authenticator *wpa_auth, const u8 *addr,
-			    const u8 *pmk, const u8 *pmkid,bool cache_pmksa);
+			    const u8 *pmk, size_t pmk_len, const u8 *pmkid,bool cache_pmksa, int akmp);
 void wpa_auth_add_sae_pmkid(struct wpa_state_machine *sm, const u8 *pmkid);
 void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
 			    const u8 *sta_addr);
+void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
+                               size_t len);
+static inline bool wpa_auth_pmf_enabled(struct wpa_auth_config *conf)
+{
+#ifdef CONFIG_WPA3_COMPAT
+       return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION ||
+               conf->rsn_override_mfp != NO_MGMT_FRAME_PROTECTION;
+#else
+       return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION;
+#endif
+}
+uint8_t *wpa_auth_write_assoc_resp_owe(struct hostapd_data *hapd, struct wpa_state_machine *sm,
+		            u8 *pos, size_t max_len);
 
 #endif /* WPA_AUTH_H */

@@ -23,4 +23,44 @@ menu "Example Configuration"
         help
             Send a reply to the Follow Up sent by a Subscriber
 
+    menu "Security Configuration"
+        config EXAMPLE_NAN_SECURITY_ENABLED
+            bool "Enable NAN Security"
+            depends on ESP_WIFI_NAN_SECURITY
+            default y
+            help
+                Enable encrypted NAN datapath (NDP Security) for this example.
+                When enabled the publisher advertises a secured service and
+                accepts only encrypted NDP setups from subscribers that share
+                the same credential (passphrase or PMK).
+                Disable to advertise an open (unencrypted) service.
+
+        choice EXAMPLE_NAN_SECURITY_METHOD
+            prompt "Security Method"
+            depends on EXAMPLE_NAN_SECURITY_ENABLED
+            default EXAMPLE_NAN_SEC_METHOD_PASSPHRASE
+            help
+                Choose the method for NAN discovery security.
+
+            config EXAMPLE_NAN_SEC_METHOD_PASSPHRASE
+                bool "Passphrase-based (Password)"
+            config EXAMPLE_NAN_SEC_METHOD_PMK
+                bool "Direct PMK (32-byte hex)"
+        endchoice
+
+        config EXAMPLE_NAN_PASSPHRASE
+            string "Passphrase"
+            depends on EXAMPLE_NAN_SEC_METHOD_PASSPHRASE
+            default "password"
+            help
+                Passphrase for NAN Discovery security.
+
+        config EXAMPLE_NAN_PMK
+            string "Direct PMK (Hex)"
+            depends on EXAMPLE_NAN_SEC_METHOD_PMK
+            default "ee3585063056d164d15454ad39010d4e2640b0d82fb24a2d6899862d273c68bf"
+            help
+                32-byte hex string representing the PMK.
+    endmenu
+
 endmenu

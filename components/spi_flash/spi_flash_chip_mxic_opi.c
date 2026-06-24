@@ -5,12 +5,13 @@
  */
 
 #include <stdlib.h>
-#include "spi_flash_chip_generic.h"
-#include "spi_flash_defs.h"
 #include "esp_log.h"
 #include "string.h"
 #include <sys/param.h> // For MIN/MAX
+
 #include "hal/spi_flash_hal.h"
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_chip_generic.h"
 
 #define CMD_OPI_FLASH_MXIC(cmd)              ((((~(cmd) & 0xff) << 8)) | ((cmd) & 0xff))
 #define CMD_OPI_FLASH_MXIC_CHIP_ERASE        0x9F60
@@ -88,7 +89,7 @@ esp_err_t spi_flash_chip_mxic_opi_set_write_protect(esp_flash_t *chip, bool writ
 static void spi_flash_chip_mxic_opi_get_data_length_zoom(esp_flash_io_mode_t io_mode, uint32_t *length_zoom)
 {
     /* Under STR mode, one byte occupies one single clock. While under DTR mode, one byte occupies half clock.
-       For exmaple, if an operation needs 3 clock dummy, host send 3 dummy bytes under STR mode, while 6 dummy bytes under DTR mode.
+       For example, if an operation needs 3 clock dummy, host send 3 dummy bytes under STR mode, while 6 dummy bytes under DTR mode.
        Therefore, we need to adjust data zoom to fit the clock here. */
     assert((io_mode == SPI_FLASH_OPI_STR) || (io_mode == SPI_FLASH_OPI_DTR));
     *length_zoom = (io_mode == SPI_FLASH_OPI_STR) ? 1 : 2;
@@ -208,6 +209,7 @@ esp_err_t spi_flash_chip_mxic_opi_erase_sector(esp_flash_t *chip, uint32_t start
             .command = CMD_OPI_FLASH_MXIC(CMD_SECTOR_ERASE_4B),
             .address_bitlen = 32,
             .address = start_address,
+            .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
         };
         err = chip->host->driver->common_command(chip->host, &t);
         chip->busy = 1;
@@ -237,6 +239,7 @@ esp_err_t spi_flash_chip_mxic_opi_erase_block(esp_flash_t *chip, uint32_t start_
             .command = CMD_OPI_FLASH_MXIC(CMD_LARGE_BLOCK_ERASE_4B),
             .address_bitlen = 32,
             .address = start_address,
+            .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
         };
         err = chip->host->driver->common_command(chip->host, &t);
         chip->busy = 1;
@@ -268,6 +271,7 @@ esp_err_t spi_flash_chip_mxic_opi_page_program(esp_flash_t *chip, const void *bu
             .address = address,
             .mosi_len = length,
             .mosi_data = buffer,
+            .flags = SPI_FLASH_TRANS_FLAG_PE_CMD,
         };
         chip->host->driver->common_command(chip->host, &t);
         chip->busy = 1;
@@ -358,7 +362,7 @@ esp_err_t spi_flash_chip_xmic_opi_set_io_mode(esp_flash_t *chip)
 }
 
 // This function should only be called after opi mode initialization. So, only configure for OPI-STR/OPI-DTR mode
-// not support other mode in this file, return `ESP_ERR_FLASH_NOT_INITIALISED` directely.
+// not support other mode in this file, return `ESP_ERR_FLASH_NOT_INITIALISED` directly.
 esp_err_t spi_flash_chip_xmic_opi_config_host_io_mode(esp_flash_t *chip, uint32_t flags)
 {
     uint32_t dummy_cyclelen_base;

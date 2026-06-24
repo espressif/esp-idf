@@ -6,10 +6,10 @@
 Bluedroid
 ---------
 
-    以下 Bluedroid API 已被移除：
+- 以下 Bluedroid API 发生变更
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_bt_main.h`
 
-    - :component_file:`bt/host/bluedroid/api/include/api/esp_bt_main.h`
+        - 函数 ``esp_bluedroid_init`` 已被弃用，并由 ``esp_bluedroid_init_with_cfg`` 取代。
+        - 新增配置结构体 ``esp_bluedroid_config_t`` 作为 ``esp_bluedroid_init_with_cfg`` 的参数引入。该结构体中的 ``ssp_en`` 字段用于确定配对模式。
 
-        - 移除 ``esp_err_t esp_bluedroid_init(void)``
-
-            - Bluedroid 协议栈初始化 API 已被替换为 ``esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)``。宏 ``BT_BLUEDROID_INIT_CONFIG_DEFAULT()`` 用于提供默认的初始化参数。原来的初始化函数可以直接删除。
+- 配置选项 ``CONFIG_BT_SSP_ENABLED`` 已被移除，因为配对模式现在可以在运行时进行配置。

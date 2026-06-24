@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdio.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -20,8 +21,21 @@
 #include "esp_private/partition_linux.h"
 #include "esp_log.h"
 #include "spi_flash_mmap.h"
+#include <dlfcn.h>
 
-static const char *TAG = "linux_spiflash";
+ESP_LOG_ATTR_TAG(TAG, "linux_spiflash");
+
+typedef int (*ftruncate_func_t)(int fd, off_t length);
+static ftruncate_func_t __orig_ftruncate = NULL;
+
+void __attribute__((constructor)) init_orig_funcs(void)
+{
+    __orig_ftruncate = (ftruncate_func_t) dlsym(RTLD_NEXT, "ftruncate");
+    if (__orig_ftruncate == NULL) {
+        ESP_LOGE(TAG, "Failed to load original ftruncate function: %s", dlerror());
+        abort();
+    }
+}
 
 static void *s_spiflash_mem_file_buf = NULL;
 static int s_spiflash_mem_file_fd = -1;
@@ -67,6 +81,8 @@ const char *esp_partition_type_to_str(const uint32_t type)
     switch (type) {
     case PART_TYPE_APP: return "app";
     case PART_TYPE_DATA: return "data";
+    case PART_TYPE_BOOTLOADER: return "bootloader";
+    case PART_TYPE_PARTITION_TABLE: return "partition_table";
     default: return "unknown";
     }
 }
@@ -74,6 +90,19 @@ const char *esp_partition_type_to_str(const uint32_t type)
 const char *esp_partition_subtype_to_str(const uint32_t type, const uint32_t subtype)
 {
     switch (type) {
+    case PART_TYPE_BOOTLOADER:
+        switch (subtype) {
+        case PART_SUBTYPE_BOOTLOADER_PRIMARY: return "primary";
+        case PART_SUBTYPE_BOOTLOADER_OTA: return "ota";
+        case PART_SUBTYPE_BOOTLOADER_RECOVERY: return "recovery";
+        default: return "unknown";
+        }
+    case PART_TYPE_PARTITION_TABLE:
+        switch (subtype) {
+        case PART_SUBTYPE_PARTITION_TABLE_PRIMARY: return "primary";
+        case PART_SUBTYPE_PARTITION_TABLE_OTA: return "ota";
+        default: return "unknown";
+        }
     case PART_TYPE_APP:
         switch (subtype) {
         case PART_SUBTYPE_FACTORY: return "factory";
@@ -93,6 +122,157 @@ const char *esp_partition_subtype_to_str(const uint32_t type, const uint32_t sub
         }
     default: return "unknown";
     }
+}
+
+// Calculate required emulated flash size from a partition table binary.
+// Returns 0 on failure.
+static size_t esp_partition_calc_required_flash_size_from_file(const char *partition_file_path)
+{
+    if (partition_file_path == NULL || partition_file_path[0] == '\0') {
+        return 0;
+    }
+
+    FILE *fp = fopen(partition_file_path, "rb");
+    if (fp == NULL) {
+        return 0;
+    }
+
+    // Determine file size as an additional lower bound
+    if (fseek(fp, 0L, SEEK_END) != 0) {
+        fclose(fp);
+        return 0;
+    }
+    long file_size = ftell(fp);
+    if (file_size < 0) {
+        fclose(fp);
+        return 0;
+    }
+    if (fseek(fp, 0L, SEEK_SET) != 0) {
+        fclose(fp);
+        return 0;
+    }
+
+    size_t max_end = 0;
+    size_t max_entries = file_size / sizeof(esp_partition_info_t);
+    for (size_t i = 0; i < max_entries; i++) {
+        esp_partition_info_t entry;
+        size_t r = fread(&entry, 1, sizeof(entry), fp);
+        if (r != sizeof(entry) || entry.magic != ESP_PARTITION_MAGIC) {
+            break;
+        }
+        uint32_t end = entry.pos.offset + entry.pos.size;
+        if (end > max_end) {
+            max_end = end;
+        }
+    }
+
+    fclose(fp);
+
+    // Also ensure the flash holds the partition table itself at its offset
+    size_t min_from_table_blob = (size_t)file_size + ESP_PARTITION_TABLE_OFFSET;
+    size_t required = (max_end > min_from_table_blob) ? max_end : min_from_table_blob;
+
+    // Round up to emulated sector size
+    size_t sector = ESP_PARTITION_EMULATED_SECTOR_SIZE;
+    size_t rem = required % sector;
+    if (rem != 0) {
+        required += (sector - rem);
+    }
+
+    return required;
+}
+
+// Load pre-built partition data binaries into the emulated flash.
+// Reads a manifest file (BUILD_DIR "/linux_flash_data.txt") where each line
+// has format: "<hex_offset> <absolute_path_to_binary>".
+// Each binary is copied into s_spiflash_mem_file_buf at the given offset.
+static void esp_partition_load_flash_data(void)
+{
+    const char *manifest_path = BUILD_DIR "/linux_flash_data.txt";
+    FILE *manifest = fopen(manifest_path, "r");
+    if (manifest == NULL) {
+        // No manifest file — nothing to pre-load (this is normal for projects
+        // that don't use esp_partition_register_target())
+        return;
+    }
+
+    char line[PATH_MAX + 32];
+    while (fgets(line, sizeof(line), manifest) != NULL) {
+        // Skip empty lines
+        size_t len = strlen(line);
+        if (len == 0) {
+            continue;
+        }
+        // Trim trailing newline
+        if (line[len - 1] == '\n') {
+            line[len - 1] = '\0';
+            len--;
+        }
+        if (len == 0) {
+            continue;
+        }
+
+        // Parse "<hex_offset> <path>"
+        char *space = strchr(line, ' ');
+        if (space == NULL) {
+            ESP_LOGW(TAG, "Malformed line in flash data manifest: %s", line);
+            continue;
+        }
+        *space = '\0';
+        const char *offset_str = line;
+        const char *file_path = space + 1;
+
+        unsigned long offset = strtoul(offset_str, NULL, 0);
+        if (offset == 0 && offset_str[0] != '0') {
+            ESP_LOGW(TAG, "Invalid offset in flash data manifest: %s", offset_str);
+            continue;
+        }
+
+        FILE *data_file = fopen(file_path, "rb");
+        if (data_file == NULL) {
+            ESP_LOGW(TAG, "Failed to open flash data file %s: %s", file_path, strerror(errno));
+            continue;
+        }
+
+        // Get file size
+        if (fseek(data_file, 0L, SEEK_END) != 0) {
+            ESP_LOGW(TAG, "Failed to seek in flash data file %s: %s", file_path, strerror(errno));
+            fclose(data_file);
+            continue;
+        }
+        long data_size = ftell(data_file);
+        if (data_size < 0) {
+            ESP_LOGW(TAG, "Failed to get size of flash data file %s: %s", file_path, strerror(errno));
+            fclose(data_file);
+            continue;
+        }
+        if (fseek(data_file, 0L, SEEK_SET) != 0) {
+            ESP_LOGW(TAG, "Failed to seek in flash data file %s: %s", file_path, strerror(errno));
+            fclose(data_file);
+            continue;
+        }
+
+        // Verify the data fits within the emulated flash
+        if (offset + (size_t)data_size > s_esp_partition_file_mmap_ctrl_act.flash_file_size) {
+            ESP_LOGW(TAG, "Flash data file %s (offset: 0x%lx, size: %ld) exceeds emulated flash size (%" PRIu32 " B). Skipping.",
+                     file_path, offset, data_size, (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size);
+            fclose(data_file);
+            continue;
+        }
+
+        // Copy the data into the emulated flash at the specified offset
+        uint8_t *dst = (uint8_t *)s_spiflash_mem_file_buf + offset;
+        size_t bytes_read = fread(dst, 1, (size_t)data_size, data_file);
+        fclose(data_file);
+
+        if (bytes_read != (size_t)data_size) {
+            ESP_LOGW(TAG, "Partial read of flash data file %s: expected %ld bytes, got %zu", file_path, data_size, bytes_read);
+        } else {
+            ESP_LOGV(TAG, "Loaded flash data: %s at offset 0x%lx (%ld bytes)", file_path, offset, data_size);
+        }
+    }
+
+    fclose(manifest);
 }
 
 esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
@@ -121,20 +301,9 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
         open_existing_file = true;
     } else {
-        // Open temporary file. If size was specified, also partition table has to be specified, otherwise raise error.
-        // If none of size, partition table were specified, defaults are used.
-        // Name of temporary file is available in s_esp_partition_file_mmap_ctrl.flash_file_name
-
+        // name of temporary file and its size is available in s_esp_partition_file_mmap_ctrl.flash_file_name and s_esp_partition_file_mmap_ctrl_input.flash_file_size respectively
         bool has_partfile = (strlen(s_esp_partition_file_mmap_ctrl_input.partition_file_name) > 0);
         bool has_len = (s_esp_partition_file_mmap_ctrl_input.flash_file_size > 0);
-
-        // conflicting input
-        if (has_partfile != has_len) {
-            ESP_LOGE(TAG, "Invalid combination of Partition file name: %s flash file size: %" PRIu32 " was specified. Use either both parameters or none.",
-                     s_esp_partition_file_mmap_ctrl_input.partition_file_name,
-                     (uint32_t) s_esp_partition_file_mmap_ctrl_input.flash_file_size);
-            return ESP_ERR_INVALID_ARG;
-        }
 
         // check if partition file is present, if not, use default
         if (!has_partfile) {
@@ -143,10 +312,13 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             strlcpy(s_esp_partition_file_mmap_ctrl_act.partition_file_name, s_esp_partition_file_mmap_ctrl_input.partition_file_name, sizeof(s_esp_partition_file_mmap_ctrl_act.partition_file_name));
         }
 
-        // check if flash size is present, if not set to default
-        if (!has_len) {
-            s_esp_partition_file_mmap_ctrl_act.flash_file_size = ESP_PARTITION_DEFAULT_EMULATED_FLASH_SIZE;
-        } else {
+        // derive the partition size from the s_esp_partition_file_mmap_ctrl_act.partition_file_name
+        size_t derived_size = esp_partition_calc_required_flash_size_from_file(s_esp_partition_file_mmap_ctrl_act.partition_file_name);
+        // if derived size is zero, use default partition size
+        s_esp_partition_file_mmap_ctrl_act.flash_file_size = (derived_size > 0) ? derived_size : ESP_PARTITION_DEFAULT_EMULATED_FLASH_SIZE;
+
+        // if the size of the temporary file is specified, check if the given partition size fits within it
+        if (has_len && s_esp_partition_file_mmap_ctrl_input.flash_file_size > derived_size) {
             s_esp_partition_file_mmap_ctrl_act.flash_file_size = s_esp_partition_file_mmap_ctrl_input.flash_file_size;
         }
 
@@ -202,7 +374,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
         do {
             // resize file
-            if (ftruncate(s_spiflash_mem_file_fd, s_esp_partition_file_mmap_ctrl_act.flash_file_size) != 0) {
+            if (__orig_ftruncate && __orig_ftruncate(s_spiflash_mem_file_fd, s_esp_partition_file_mmap_ctrl_act.flash_file_size) != 0) {
                 ESP_LOGE(TAG, "Failed to set size of SPI FLASH memory emulation file %s: %s", s_esp_partition_file_mmap_ctrl_act.flash_file_name, strerror(errno));
                 ret = ESP_ERR_INVALID_SIZE;
                 break;
@@ -231,6 +403,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             if (fseek(f_partition_table, 0L, SEEK_END) != 0) {
                 ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -244,6 +417,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
                          (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size,
                          (int) (partition_table_file_size + ESP_PARTITION_TABLE_OFFSET));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -251,6 +425,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
             if (fseek(f_partition_table, 0L, SEEK_SET) != 0) {
                 ESP_LOGE(TAG, "Failed to seek in partition table file %s: %s", s_esp_partition_file_mmap_ctrl_act.partition_file_name, strerror(errno));
                 ret =  ESP_ERR_INVALID_SIZE;
+                fclose(f_partition_table);
                 break;
             }
 
@@ -263,6 +438,10 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
                 ret = ESP_ERR_INVALID_STATE;
                 break;
             }
+
+            // Load any pre-built partition data binaries into the emulated flash.
+            // The manifest file is generated at build time by esp_partition_register_target().
+            esp_partition_load_flash_data();
         } while (false);
     }
 
@@ -364,7 +543,7 @@ esp_err_t esp_partition_file_munmap(void)
 
 esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offset, const void *src, size_t size)
 {
-    assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
+    assert(partition != NULL && s_spiflash_mem_file_buf != NULL && src != NULL);
 
     if (partition->readonly) {
         return ESP_ERR_NOT_ALLOWED;
@@ -377,6 +556,15 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
     }
     if (dst_offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    // Ensure write stays within mapped flash file size
+    if (s_esp_partition_file_mmap_ctrl_act.flash_file_size > 0) {
+        size_t start = (size_t)partition->address + dst_offset;
+        size_t max_len = s_esp_partition_file_mmap_ctrl_act.flash_file_size;
+        if ((start > max_len) || ((size + start) > max_len)) {
+            return ESP_ERR_INVALID_SIZE;
+        }
     }
 
     void *dst_addr = s_spiflash_mem_file_buf + partition->address + dst_offset;
@@ -396,12 +584,14 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 
     for (size_t x = 0; x < new_size; x++) {
 
+#ifdef CONFIG_ESP_PARTITION_ERASE_CHECK
         // Check if address to be written was erased first
         if((~((uint8_t *)dst_addr)[x] & ((uint8_t *)src)[x]) != 0) {
             ESP_LOGW(TAG, "invalid flash operation detected");
             ret = ESP_ERR_FLASH_OP_FAIL;
             break;
         }
+#endif // CONFIG_ESP_PARTITION_ERASE_CHECK
 
         // AND with destination byte (to emulate real NOR FLASH behavior)
         ((uint8_t *)dst_addr)[x] &= ((uint8_t *)src)[x];
@@ -412,7 +602,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 
 esp_err_t esp_partition_read(const esp_partition_t *partition, size_t src_offset, void *dst, size_t size)
 {
-    assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
+    assert(partition != NULL && s_spiflash_mem_file_buf != NULL && dst != NULL);
 
     if (partition->encrypted) {
         return  ESP_ERR_NOT_SUPPORTED;
@@ -422,6 +612,15 @@ esp_err_t esp_partition_read(const esp_partition_t *partition, size_t src_offset
     }
     if (src_offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    // Ensure read stays within mapped flash file size
+    if (s_esp_partition_file_mmap_ctrl_act.flash_file_size > 0) {
+        size_t start = (size_t)partition->address + src_offset;
+        size_t max_len = s_esp_partition_file_mmap_ctrl_act.flash_file_size;
+        if ((start > max_len) || ((size + start) > max_len)) {
+            return ESP_ERR_INVALID_SIZE;
+        }
     }
 
     void *src_addr = s_spiflash_mem_file_buf + partition->address + src_offset;
@@ -448,7 +647,7 @@ esp_err_t esp_partition_write_raw(const esp_partition_t *partition, size_t dst_o
 
 esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t offset, size_t size)
 {
-    assert(partition != NULL);
+    assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
 
     if (partition->readonly) {
         return ESP_ERR_NOT_ALLOWED;
@@ -458,6 +657,15 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
     }
     if (offset + size > partition->size || size % partition->erase_size != 0) {
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    // Ensure erase stays within mapped flash file size
+    if (s_esp_partition_file_mmap_ctrl_act.flash_file_size > 0) {
+        size_t start = (size_t)partition->address + offset;
+        size_t max_len = s_esp_partition_file_mmap_ctrl_act.flash_file_size;
+        if ((start > max_len) || ((size + start) > max_len)) {
+            return ESP_ERR_INVALID_SIZE;
+        }
     }
 
     void *target_addr = s_spiflash_mem_file_buf + partition->address + offset;
@@ -540,6 +748,11 @@ esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_input(void)
 esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_act(void)
 {
     return &s_esp_partition_file_mmap_ctrl_act;
+}
+
+uint32_t esp_partition_get_main_flash_sector_size(void)
+{
+    return ESP_PARTITION_EMULATED_SECTOR_SIZE;
 }
 
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
@@ -665,7 +878,7 @@ static bool esp_partition_hook_erase(const void *dstAddr, size_t *size)
         }
     }
 
-    // update statistcs for all sectors until power down cycle
+    // update statistics for all sectors until power down cycle
     for (size_t sector_index = first_sector_idx; sector_index < first_sector_idx + sector_count; sector_index++) {
         ++s_esp_partition_stat_erase_ops;
         s_esp_partition_stat_sector_erase_count[sector_index]++;

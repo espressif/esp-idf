@@ -8,6 +8,6 @@
 
 #include "soc/soc_caps.h"
 
-#if SOC_TOUCH_SENSOR_SUPPORTED
+#if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION < 3
 #include "driver/touch_sensor.h"
 #endif

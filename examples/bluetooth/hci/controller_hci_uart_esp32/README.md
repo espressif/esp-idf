@@ -8,6 +8,9 @@ This is a btdm controller use UART as HCI IO. This require the UART device suppo
 
 It can do the configuration of UART number and UART baudrate by menuconfig.
 
+When using Bluetooth HCI URAT, please make sure that the Espressif Vendor-specific HCI command is not enabled (Disabled by default).
+For detailed description information, please refer to `components/bt/include/esp32/include/esp_bt_vs.h`.
+
 ## How to use example
 
 ### Hardware Required

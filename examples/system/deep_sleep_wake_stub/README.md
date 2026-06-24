@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
 
 # Deep Sleep Wake Stub Example
 
@@ -8,6 +8,15 @@
 The [Deep-sleep wake stub](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/deep-sleep-stub.html) is used to RTC fast boot mode that avoid the SPI flash booting, thus speeding up the wakeup process. This example demonstrates how to implement the wake stub.
 
 In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in rtc memory the address of a running partition and uses it when it wakes up. This example allows you to skip all image checks and speed up the boot.
+
+> [!NOTE]
+> It is recommended to use a development board with an external USB-UART chip to debug this example. If you're using the USB-Serial-JTAG port to view logs from this example, note that the internal USB peripheral will be disabled during deep_sleep for power saving. This will result in:
+> - Serial output interruption
+> - Host-side errors like ClearCommError failed
+> - Windows may show "Unknown USB device"
+> - Even after wakeup, USB connection may not automatically recover
+>
+> See: [USB Serial/JTAG console sleep mode considerations](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/usb-serial-jtag-console.html#sleep-mode-considerations)
 
 ## How to use example
 
@@ -81,4 +90,4 @@ wake stub: going to deep sleep
 
 > 2. The wake-up time shown in this example may be reduced by disabling the logs printed by ROM code. For most ESP chips, this ROM printing takes about 6100 us. In the product firmware, users can temporarily or permanently turn off ROM printing by calling ``esp_deep_sleep_disable_rom_logging`` or by setting ``menuconfig`` > ``Boot ROM Behavior`` > ``Permanently disable logging`` to speed up the wake-up.(ESP32 does not support suppressing ROM logging through menuconfig, but it can be suppressed by grounding GPIO15)
 
-> 3. Here is a method for roughly estimating optimal wake-up time: Taking ESP32-C6 as an example, the wake-up time from stub printing is about 6500 us. However, by substracting the ROM printing overhead of 6100 us and adding the system initialization overhead of 280 us, the wake-up overhead is estimated to be around 680 us. Users also can modify the example to configure GPIO wake-up and obtain a more realistic and accurate wake-up time by grabbing GPIO signals with a logic analyzer.
+> 3. Here is a method for roughly estimating optimal wake-up time: Taking ESP32-C6 as an example, the wake-up time from stub printing is about 6500 us. However, by subtracting the ROM printing overhead of 6100 us and adding the system initialization overhead of 280 us, the wake-up overhead is estimated to be around 680 us. Users also can modify the example to configure GPIO wake-up and obtain a more realistic and accurate wake-up time by grabbing GPIO signals with a logic analyzer.

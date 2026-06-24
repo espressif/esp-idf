@@ -1,0 +1,20 @@
+menu "Example Configuration"
+
+    config ESP_WIFI_USD_PUB_SVC_NAME
+        string "USD publish service name"
+        default "ESP-USD-TEST"
+
+    config ESP_WIFI_USD_PUB_TTL
+        int "Time to live (in seconds)"
+        range 0 1000
+        default 100
+        help
+            Time to live of the Publish instance, in seconds. If TTL = 0, only one publish message is transmitted.
+
+    config ESP_WIFI_USD_SVC_SPECIFIC_INFO
+        string "Service specific info to be transmitted in a followup message"
+        default "Welcome"
+        help
+            SSI to be transmitted in a followup frame
+
+endmenu

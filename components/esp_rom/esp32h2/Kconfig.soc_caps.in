@@ -55,7 +55,7 @@ config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
 
-config ESP_ROM_WITHOUT_REGI2C
+config ESP_ROM_HAS_SPI_FLASH_MMAP
     bool
     default y
 
@@ -64,6 +64,10 @@ config ESP_ROM_HAS_NEWLIB
     default y
 
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG
     bool
     default y
 
@@ -94,3 +98,27 @@ config ESP_ROM_HAS_VERSION
 config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
     bool
     default y
+
+config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+    bool
+    default y
+
+config ESP_ROM_NO_USB_SERIAL_OUTPUT_API
+    bool
+    default y
+
+config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+    bool
+    default y
+
+config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+    bool
+    default y
+
+config ESP_ROM_ECDSA_VERIFY_PATCH
+    bool
+    default y
+
+config ESP_ROM_BOOTLOADER_OFFSET_FLASH
+    hex
+    default 0x0

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #ifndef _DPORT_ACCESS_H_
@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 #include "soc.h"
-#include "uart_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

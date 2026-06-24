@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,27 +13,33 @@
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/uart.h"
 #include "soc/rtc.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "esp_private/rtc_clk.h"
-#include "soc/io_mux_reg.h"
+#include "hal/gpio_ll.h"
 #include "soc/soc.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
+#include "esp_attr.h"
 
-static const char *TAG = "rtc_clk";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 
 // Current PLL frequency, in 480MHZ. Zero if PLL is not enabled.
 static int s_cur_pll_freq;
 
 void rtc_clk_cpu_freq_to_xtal(int freq, int div);
-static void rtc_clk_cpu_freq_to_8m(void);
+static void rtc_clk_cpu_freq_to_rc_fast(void);
 
 void rtc_clk_32k_enable_external(void)
 {
-    // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
-    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+    gpio_ll_input_enable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    gpio_ll_input_disable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
@@ -66,6 +72,16 @@ bool rtc_clk_8md256_enabled(void)
 
 void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
 {
+#ifndef BOOTLOADER_BUILD
+    // Keep the RTC8M_CLK on in sleep if RTC clock is rc_fast_d256.
+    if ((clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) && (esp_sleep_sub_mode_dump_config(NULL)[ESP_SLEEP_RTC_USE_RC_FAST_MODE] == 0)) { // Switch to RC_FAST_D256
+        esp_sleep_sub_mode_config(ESP_SLEEP_RTC_USE_RC_FAST_MODE, true);
+    } else if (clk_src != SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
+        // This is the only user of ESP_SLEEP_RTC_USE_RC_FAST_MODE submode, so force disable it.
+        esp_sleep_sub_mode_force_disable(ESP_SLEEP_RTC_USE_RC_FAST_MODE);
+    }
+#endif
+
     clk_ll_rtc_slow_set_src(clk_src);
 
     /* Why we need to connect this clock to digital?
@@ -76,7 +92,6 @@ void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src)
     } else {
         clk_ll_xtal32k_digi_disable();
     }
-
     esp_rom_delay_us(SOC_DELAY_RTC_SLOW_CLK_SWITCH);
 }
 
@@ -122,13 +137,13 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
     /* Analog part */
-    regi2c_ctrl_ll_bbpll_calibration_start();
+    clk_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
-    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    while(!clk_ll_bbpll_calibration_is_done());
     esp_rom_delay_us(10);
     /* BBPLL CALIBRATION STOP */
-    regi2c_ctrl_ll_bbpll_calibration_stop();
+    clk_ll_bbpll_calibration_stop();
 
     s_cur_pll_freq = pll_freq;
 }
@@ -204,7 +219,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         }
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
         if (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL) {
             rtc_clk_bbpll_disable();
         }
@@ -273,11 +288,16 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_bbpll_disable();
 }
 
-void rtc_clk_cpu_set_to_default_config(void)
+FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 {
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+}
+
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_freq_set_xtal();
 }
 
 /**
@@ -285,7 +305,7 @@ void rtc_clk_cpu_set_to_default_config(void)
  * Must satisfy: cpu_freq = XTAL_FREQ / div.
  * Does not disable the PLL.
  */
-void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
+FORCE_IRAM_ATTR void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
 {
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
@@ -296,7 +316,7 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     esp_rom_set_cpu_ticks_per_us(20);
     clk_ll_cpu_set_divider(1);
@@ -304,7 +324,7 @@ static void rtc_clk_cpu_freq_to_8m(void)
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);
 }
 
-soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+FORCE_IRAM_ATTR soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {
@@ -319,7 +339,7 @@ void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
     clk_ll_xtal_store_freq_mhz(xtal_freq);
 }
 
-void rtc_clk_apb_freq_update(uint32_t apb_freq)
+FORCE_IRAM_ATTR void rtc_clk_apb_freq_update(uint32_t apb_freq)
 {
    clk_ll_apb_store_freq_hz(apb_freq);
 }
@@ -354,24 +374,6 @@ void rtc_dig_clk8m_disable(void)
 bool rtc_dig_8m_enabled(void)
 {
     return clk_ll_rc_fast_digi_is_enabled();
-}
-
-// Workaround for bootloader not calibrated well issue.
-// Placed in IRAM because disabling BBPLL may influence the cache
-void rtc_clk_recalib_bbpll(void)
-{
-    rtc_cpu_freq_config_t old_config;
-    rtc_clk_cpu_freq_get_config(&old_config);
-
-    // There are two paths we arrive here: 1. CPU reset. 2. Other reset reasons.
-    // - For other reasons, the bootloader will set CPU source to BBPLL and enable it. But there are calibration issues.
-    //   Turn off the BBPLL and do calibration again to fix the issue.
-    // - For CPU reset, the CPU source will be set to XTAL, while the BBPLL is kept to meet USB Serial JTAG's
-    //   requirements. In this case, we don't touch BBPLL to avoid USJ disconnection.
-    if (old_config.source == SOC_CPU_CLK_SRC_PLL) {
-        rtc_clk_cpu_freq_set_xtal();
-        rtc_clk_cpu_freq_set_config(&old_config);
-    }
 }
 
 /* Name used in libphy.a:phy_chip_v7.o

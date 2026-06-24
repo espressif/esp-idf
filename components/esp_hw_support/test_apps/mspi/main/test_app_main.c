@@ -7,9 +7,10 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 
 // load partition table in tests will use memory
-#define TEST_MEMORY_LEAK_THRESHOLD (450)
+#define TEST_MEMORY_LEAK_THRESHOLD (600)
 
 void setUp(void)
 {

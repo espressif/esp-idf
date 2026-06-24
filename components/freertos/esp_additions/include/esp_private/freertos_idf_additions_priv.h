@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@
  * The following macros are convenience macros used to account for different
  * thread safety behavior between single-core and SMP in ESP-IDF FreeRTOS.
  *
- * For thread saftey...
+ * For thread safety...
  *
  * - Single-core will use the following for thread safety (depending on situation)
  *      - `vTaskSuspendAll()`/`xTaskResumeAll()` for non-deterministic operations
@@ -119,12 +119,24 @@
     }
 
 /* Macros that enter/exit a critical section only when building for SMP */
+#if !defined prvENTER_CRITICAL_SMP_ONLY
     #define prvENTER_CRITICAL_SMP_ONLY( pxLock )
+#endif
+#if !defined prvEXIT_CRITICAL_SMP_ONLY
     #define prvEXIT_CRITICAL_SMP_ONLY( pxLock )
+#endif
+#if !defined prvENTER_CRITICAL_ISR_SMP_ONLY
     #define prvENTER_CRITICAL_ISR_SMP_ONLY( pxLock )
+#endif
+#if !defined prvEXIT_CRITICAL_ISR_SMP_ONLY
     #define prvEXIT_CRITICAL_ISR_SMP_ONLY( pxLock )
+#endif
+#if !defined prvENTER_CRITICAL_SAFE_SMP_ONLY
     #define prvENTER_CRITICAL_SAFE_SMP_ONLY( pxLock )
+#endif
+#if !defined prvEXIT_CRITICAL_SAFE_SMP_ONLY
     #define prvEXIT_CRITICAL_SAFE_SMP_ONLY( pxLock )
+#endif
 
 /* Macros that enter/exit a critical section only when building for single-core */
     #define prvENTER_CRITICAL_SC_ONLY( pxLock )              taskENTER_CRITICAL( pxLock )

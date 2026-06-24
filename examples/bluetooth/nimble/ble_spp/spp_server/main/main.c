@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -63,7 +63,6 @@ ble_spp_server_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
-    const char *name;
     int rc;
 
     /**
@@ -90,6 +89,7 @@ ble_spp_server_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+    const char *name;
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
@@ -163,7 +163,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
         ble_spp_server_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
 
-        conn_handle_subs[event->disconnect.conn.conn_handle] = false;
+        if (event->disconnect.conn.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            conn_handle_subs[event->disconnect.conn.conn_handle] = false;
+        }
 
         /* Connection terminated; resume advertising. */
         ble_spp_server_advertise();
@@ -202,7 +204,9 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify,
                     event->subscribe.prev_indicate,
                     event->subscribe.cur_indicate);
-        conn_handle_subs[event->subscribe.conn_handle] = true;
+        if (event->subscribe.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            conn_handle_subs[event->subscribe.conn_handle] = true;
+        }
         return 0;
 
     default:
@@ -328,9 +332,12 @@ gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
 int gatt_svr_init(void)
 {
     int rc = 0;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
-
+#endif
     rc = ble_gatts_count_cfg(new_ble_svc_gatt_defs);
 
     if (rc != 0) {
@@ -360,6 +367,10 @@ void ble_server_uart_task(void *pvParameters)
                 if (event.size) {
                     uint8_t *ntf;
                     ntf = (uint8_t *)malloc(sizeof(uint8_t) * event.size);
+                    if (ntf == NULL) {
+                        MODLOG_DFLT(ERROR, "malloc failed for UART data, size=%u", event.size);
+                        continue;
+                    }
                     memset(ntf, 0x00, event.size);
                     uart_read_bytes(UART_NUM_0, ntf, event.size, portMAX_DELAY);
 
@@ -412,8 +423,6 @@ static void ble_spp_uart_init(void)
 void
 app_main(void)
 {
-    int rc;
-
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -459,6 +468,8 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
+#if MYNEWT_VAL(BLE_GATTS)
+    int rc;
     /* Register custom service */
     rc = gatt_svr_init();
     assert(rc == 0);
@@ -466,6 +477,7 @@ app_main(void)
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-ble-spp-svr");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();

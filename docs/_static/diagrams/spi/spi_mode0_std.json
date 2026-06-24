@@ -1,0 +1,22 @@
+{
+  "signal": [
+    {
+      "name": "CS",
+      "wave": "10.......1"
+    },
+    {
+      "name": "CLK",
+      "wave": "l.P.......l",
+      "phase": 0.5
+    },
+    {
+      "name": "MISO",
+      "wave": "x22222222x",
+      "phase": 0,
+      "data": "7 6 5 4 3 2 1 0"
+    }
+  ],
+  "foot": {
+    "text": "SPI normal mode 0"
+  }
+}

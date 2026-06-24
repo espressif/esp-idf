@@ -1,0 +1,17 @@
+menu "DCDC Regulator Configurations"
+    depends on SOC_DCDC_SUPPORTED
+
+    config ESP_SLEEP_DCM_VSET_VAL_IN_SLEEP
+        int "DCDC voltage parameter during sleep"
+        default 14
+        range 0 31
+        help
+            This value determines the voltage of the DCDC chip during sleep. The same parameter value may
+            correspond to different voltage values on different models of DCDC chips. Please update this
+            value according to the model of external DCDC selected in your hardware solution.
+
+            For the DCDC chip model recommended by ESP, the recommended configuration
+            values are listed below:
+
+            - TI-TLV62569/TLV62569P: 14
+endmenu

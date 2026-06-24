@@ -12,12 +12,6 @@ The IDF Clang Tidy is a tool that uses `clang-tidy <https://clang.llvm.org/extra
 
    Only clang based toolchain is currently supported. It has to be activated by setting ``IDF_TOOLCHAIN=clang`` in the environment or in CMake cache before configuring the project.
 
-.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
-
-   .. warning::
-
-      This tool does not support RISC-V based chips yet. For now, we do not provide clang based toolchain for RISC-V.
-
 Prerequisites
 =============
 

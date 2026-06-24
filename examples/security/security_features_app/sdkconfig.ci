@@ -1,0 +1,4 @@
+# This file uses insecure configurations for testing purpose
+# Do not use this configurations for you project
+CONFIG_SECURE_BOOT_SIGNING_KEY="test/test_secure_boot_signing_key.pem"
+CONFIG_EXAMPLE_SECURE_JTAG_TOKEN_PATH="test/secure_jtag_token.bin"

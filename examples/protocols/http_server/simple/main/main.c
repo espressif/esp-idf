@@ -22,7 +22,8 @@
 #include "esp_netif.h"
 #include "esp_tls.h"
 #include "esp_check.h"
-
+#include <time.h>
+#include <sys/time.h>
 #if !CONFIG_IDF_TARGET_LINUX
 #include <esp_wifi.h>
 #include <esp_system.h>
@@ -392,14 +393,48 @@ static const httpd_uri_t ctrl = {
     .user_ctx  = NULL
 };
 
+#if CONFIG_EXAMPLE_ENABLE_SSE_HANDLER
+/* An HTTP GET handler for SSE */
+static esp_err_t sse_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, "text/event-stream");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-cache");
+    httpd_resp_set_hdr(req, "Connection", "keep-alive");
+
+    char sse_data[64];
+    while (1) {
+        struct timeval tv;
+        gettimeofday(&tv, NULL); // Get the current time
+        int64_t time_since_boot = tv.tv_sec; // Time since boot in seconds
+        esp_err_t err;
+        int len = snprintf(sse_data, sizeof(sse_data), "data: Time since boot: %" PRIi64 " seconds\n\n", time_since_boot);
+        if ((err = httpd_resp_send_chunk(req, sse_data, len)) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to send sse data (returned %02X)", err);
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Send data every second
+    }
+
+    httpd_resp_send_chunk(req, NULL, 0); // End response
+    return ESP_OK;
+}
+
+static const httpd_uri_t sse = {
+    .uri       = "/sse",
+    .method    = HTTP_GET,
+    .handler   = sse_handler,
+    .user_ctx  = NULL
+};
+#endif // CONFIG_EXAMPLE_ENABLE_SSE_HANDLER
+
 static httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 #if CONFIG_IDF_TARGET_LINUX
-    // Setting port as 8001 when building for Linux. Port 80 can be used only by a priviliged user in linux.
-    // So when a unpriviliged user tries to run the application, it throws bind error and the server is not started.
-    // Port 8001 can be used by an unpriviliged user as well. So the application will not throw bind error and the
+    // Setting port as 8001 when building for Linux. Port 80 can be used only by a privileged user in linux.
+    // So when a unprivileged user tries to run the application, it throws bind error and the server is not started.
+    // Port 8001 can be used by an unprivileged user as well. So the application will not throw bind error and the
     // server will be started.
     config.server_port = 8001;
 #endif // !CONFIG_IDF_TARGET_LINUX
@@ -414,9 +449,12 @@ static httpd_handle_t start_webserver(void)
         httpd_register_uri_handler(server, &echo);
         httpd_register_uri_handler(server, &ctrl);
         httpd_register_uri_handler(server, &any);
-        #if CONFIG_EXAMPLE_BASIC_AUTH
+#if CONFIG_EXAMPLE_ENABLE_SSE_HANDLER
+        httpd_register_uri_handler(server, &sse); // Register SSE handler
+#endif
+#if CONFIG_EXAMPLE_BASIC_AUTH
         httpd_register_basic_auth(server);
-        #endif
+#endif
         return server;
     }
 

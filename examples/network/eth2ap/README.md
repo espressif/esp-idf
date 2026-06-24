@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- |
 
 # eth2ap Example
 (See the README.md file in the upper level 'examples' directory for more information about examples. To try a more complex application about Ethernet to WiFi data forwarding, please go to [iot-solution](https://github.com/espressif/esp-iot-solution/tree/release/v1.0/examples/eth2wifi).)
@@ -17,13 +17,12 @@ The similarities on MAC layer between Ethernet and Wi-Fi make it easy to forward
 
 ### Hardware Required
 
-To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports up to four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
+To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Espressif supports multiple Ethernet PHYs. The full list of supported PHYs is available at [esp-eth-drivers](https://github.com/espressif/esp-eth-drivers) repository. If your PHY is IEEE 802.3 compliant, you can use `Generic PHY` driver for most use cases.
 
-Besides that, `esp_eth` component can drive third-party Ethernet module which integrates MAC and PHY and provides common communication interface (e.g. SPI, USB, etc). This example will take the **DM9051** as an example, illustrating how to install the Ethernet driver in the same manner.
+Besides that, `esp_eth` component can drive third-party Ethernet module which integrates MAC and PHY and provides common communication interface (e.g. SPI, USB, etc). The full list of supported SPI Ethernet modules is also available at [esp-eth-drivers](https://github.com/espressif/esp-eth-drivers) repository.
 
-#### Pin Assignment
-
-See common pin assignments for Ethernet examples from [upper level](../README.md#common-pin-assignments).
+> [!NOTE]
+> `Generic 802.3 PHY` basic functionality should always work for PHY compliant with IEEE 802.3. However, some specific features might be limited. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is a case, use driver tailored to that specific chip.
 
 ### Configure the project
 
@@ -66,7 +65,7 @@ I (538) system_api: Base MAC address is not set, read default base MAC address f
 I (538) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (568) wifi: wifi firmware version: ec61a20
 I (568) wifi: config NVS flash: enabled
-I (568) wifi: config nano formating: disabled
+I (568) wifi: config nano formatting: disabled
 I (568) wifi: Init dynamic tx buffer num: 32
 I (568) wifi: Init data frame dynamic rx buffer num: 32
 I (578) wifi: Init management frame dynamic rx buffer num: 32

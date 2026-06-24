@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,23 +8,10 @@
 #include "sdkconfig.h"
 #include <esp_err.h>
 #include <stdint.h>
+#include "rom/secure_boot.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/secure_boot.h"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
@@ -44,4 +31,8 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
 
 #endif /* CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT */
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

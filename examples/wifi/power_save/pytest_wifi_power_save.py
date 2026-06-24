@@ -1,15 +1,15 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 
 import pexpect
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 bad_event_str = [
-    'bcn_timout',
+    'bcn_timeout',
     'm f probe req l',
     'abort() was called',
     'Guru Meditation Error',
@@ -31,7 +31,7 @@ def _run_test(dut: Dut) -> None:
         pass
 
     try:
-        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=20)
+        dut.expect(r'got ip: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)
         log_after_got_ip = dut.expect(pexpect.TIMEOUT, timeout=10).decode()
         if any(s in log_after_got_ip for s in bad_event_str):
             logging.info('Abnormal connection log:')
@@ -41,18 +41,16 @@ def _run_test(dut: Dut) -> None:
         raise RuntimeError('Failed to get ip in power save mode')
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
-@pytest.mark.esp32c6
 @pytest.mark.wifi_ap
+@idf_parametrize(
+    'target',
+    ['esp32', 'esp32c2', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32c5', 'esp32c61'],
+    indirect=['target'],
+)
 def test_wifi_power_save(dut: Dut) -> None:
     _run_test(dut)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.wifi_ap
 @pytest.mark.parametrize(
     'config',
@@ -61,17 +59,62 @@ def test_wifi_power_save(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
 def test_wifi_power_save_pd_top(dut: Dut) -> None:
     _run_test(dut)
 
 
-@pytest.mark.esp32c2
+@pytest.mark.wifi_ap
+@pytest.mark.parametrize(
+    'config',
+    [
+        'pd_modem',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c6', 'esp32c5', 'esp32c61'], indirect=['target'])
+def test_wifi_power_save_pd_modem(dut: Dut) -> None:
+    _run_test(dut)
+
+
 @pytest.mark.wifi_ap
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'config, baud', [
+    'config, baud',
+    [
         ('c2_xtal26m', '74880'),
-    ], indirect=True
+    ],
+    indirect=True,
 )
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_wifi_power_save_esp32c2_26mhz(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.wifi_ap
+@pytest.mark.xtal_26mhz
+@pytest.mark.esp32c2_rev2
+@pytest.mark.parametrize(
+    'config, baud',
+    [
+        ('esp32c2_rev2_xtal26m', '74880'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_wifi_power_save_esp32c2_rev2_26mhz(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.wifi_ap
+@pytest.mark.esp32c3_rev1
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32c3_rev1',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_wifi_power_save_esp32c3_rev1(dut: Dut) -> None:
     _run_test(dut)

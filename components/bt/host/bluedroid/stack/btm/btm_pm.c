@@ -45,6 +45,8 @@
 //#include "bt_utils.h"
 //#include "osi/include/log.h"
 #include "osi/allocator.h"
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*****************************************************************************/
 /*      to handle different modes                                            */
 /*****************************************************************************/
@@ -543,7 +545,7 @@ static tBTM_PM_MODE btm_pm_get_set_mode(UINT8 pm_id, tBTM_PM_MCB *p_cb, tBTM_PM_
 ** Function     btm_pm_snd_md_req
 ** Description  get the resulting mode and send the resuest to host controller
 ** Returns      tBTM_STATUS
-**, BOOLEAN *p_chg_ind
+**
 *******************************************************************************/
 static tBTM_STATUS btm_pm_snd_md_req(UINT8 pm_id, UINT16 link_hdl, tBTM_PM_PWR_MD *p_mode)
 {
@@ -565,6 +567,8 @@ static tBTM_STATUS btm_pm_snd_md_req(UINT8 pm_id, UINT16 link_hdl, tBTM_PM_PWR_M
         /* already in the resulting mode */
         if ( (mode == BTM_PM_MD_ACTIVE) ||
                 ((md_res.max >= p_cb->interval) && (md_res.min <= p_cb->interval)) ) {
+            // Clear request change indication because already in result mode
+            p_cb->chg_ind = FALSE;
             return BTM_CMD_STORED;
         }
         /* Otherwise, needs to wake, then sleep */
@@ -689,7 +693,7 @@ static void btm_pm_check_stored(void)
 ** Description      This function is called when an HCI command status event occurs
 **                  for power manager related commands.
 **
-** Input Parms      status - status of the event (HCI_SUCCESS if no errors)
+** Input Params     status - status of the event (HCI_SUCCESS if no errors)
 **
 ** Returns          none.
 **
@@ -717,7 +721,7 @@ void btm_pm_proc_cmd_status(UINT8 status)
 #if BTM_PM_DEBUG == TRUE
         BTM_TRACE_DEBUG( "btm_pm_proc_cmd_status new state:0x%x", p_cb->state);
 #endif // BTM_PM_DEBUG
-    } else { /* the command was not successfull. Stay in the same state */
+    } else { /* the command was not successful. Stay in the same state */
         pm_status = BTM_PM_STS_ERROR;
     }
 
@@ -743,7 +747,7 @@ void btm_pm_proc_cmd_status(UINT8 status)
 **
 ** Description      This function is called when an HCI mode change event occurs.
 **
-** Input Parms      hci_status - status of the event (HCI_SUCCESS if no errors)
+** Input Params     hci_status - status of the event (HCI_SUCCESS if no errors)
 **                  hci_handle - connection handle associated with the change
 **                  mode - HCI_MODE_ACTIVE, HCI_MODE_HOLD, HCI_MODE_SNIFF, or HCI_MODE_PARK
 **                  interval - number of baseband slots (meaning depends on mode)
@@ -818,9 +822,10 @@ void btm_pm_proc_mode_change (UINT8 hci_status, UINT16 hci_handle, UINT8 mode, U
             (*btm_cb.pm_reg_db[yy].cback)( p->remote_addr, mode, interval, hci_status);
         }
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If mode change was because of an active role switch or change link key */
     btm_cont_rswitch(p, btm_find_dev(p->remote_addr), hci_status);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
@@ -864,9 +869,7 @@ void btm_pm_proc_ssr_evt (UINT8 *p, UINT16 evt_len)
     /* notify registered parties */
     for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
         if (btm_cb.pm_reg_db[xx].mask & BTM_PM_REG_NOTIF) {
-            if ( p_acl) {
-                (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
-            }
+            (*btm_cb.pm_reg_db[xx].cback)( p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr, status);
         }
     }
 }
@@ -901,7 +904,7 @@ BOOLEAN btm_pm_device_in_active_or_sniff_mode(void)
 
     return FALSE;
 }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_pm_device_in_scan_state
@@ -930,7 +933,7 @@ BOOLEAN btm_pm_device_in_scan_state(void)
 
     return FALSE;
 }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_PM_ReadControllerState
@@ -944,9 +947,13 @@ tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void)
 {
     if (TRUE == btm_pm_device_in_active_or_sniff_mode()) {
         return BTM_CONTRL_ACTIVE;
-    } else if (TRUE == btm_pm_device_in_scan_state()) {
+    }
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    else if (TRUE == btm_pm_device_in_scan_state()) {
         return BTM_CONTRL_SCAN;
-    } else {
+    }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+    else {
         return BTM_CONTRL_IDLE;
     }
 }
@@ -963,3 +970,5 @@ static const char *mode_to_string(tBTM_PM_MODE mode)
     }
 }
 #endif
+
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)

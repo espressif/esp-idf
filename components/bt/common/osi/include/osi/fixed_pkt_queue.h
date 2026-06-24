@@ -76,4 +76,8 @@ void fixed_pkt_queue_unregister_dequeue(fixed_pkt_queue_t *queue);
 
 void fixed_pkt_queue_process(fixed_pkt_queue_t *queue);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif

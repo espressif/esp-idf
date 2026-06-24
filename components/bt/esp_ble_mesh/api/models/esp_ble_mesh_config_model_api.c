@@ -14,6 +14,10 @@
 #if CONFIG_BLE_MESH_CFG_CLI
 esp_err_t esp_ble_mesh_register_config_client_callback(esp_ble_mesh_cfg_client_cb_t callback)
 {
+    if (callback == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_CONFIG_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);

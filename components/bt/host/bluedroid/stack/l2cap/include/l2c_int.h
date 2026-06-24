@@ -25,6 +25,7 @@
 #define L2C_INT_H
 
 #include <stdbool.h>
+#include "common/bt_target.h"
 #include "stack/btm_api.h"
 #include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
@@ -65,7 +66,7 @@
 #define L2CAP_WAIT_UNPARK_TOUT       2            /* 2 seconds */
 #define L2CAP_LINK_INFO_RESP_TOUT    2            /* 2 seconds */
 #define L2CAP_UPDATE_CONN_PARAM_TOUT 6            /* 6 seconds */
-#define L2CAP_BLE_LINK_CONNECT_TOUT  BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT  // configed in menuconfig
+#define L2CAP_BLE_LINK_CONNECT_TOUT  BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT  // configured in menuconfig
 #define L2CAP_BLE_CONN_PARAM_UPD_TOUT   30        /* 30 seconds */
 
 /* quick timer uses millisecond unit */
@@ -75,15 +76,21 @@
 
 #define L2CAP_CACHE_ATT_ACL_NUM      10
 
+/* Maximum number of host-driven Create_Connection retries before reporting
+ * connection_exist failure to the application layer. */
+#define L2CAP_MAX_RECONNECT_ON_COLLISION   BR_EDR_MAX_RECONNECT_ON_COLLISION
+/* Back-off (in seconds) between two host-driven Create_Connection retries. */
+#define L2C_LP_CONN_RETRY_DELAY_TOUT 1            /* 1 second */
+
 /* Define the possible L2CAP channel states. The names of
 ** the states may seem a bit strange, but they are taken from
 ** the Bluetooth specification.
 */
 typedef enum {
-    CST_CLOSED,                           /* Channel is in clodes state           */
+    CST_CLOSED,                           /* Channel is in closed state           */
     CST_ORIG_W4_SEC_COMP,                 /* Originator waits security clearence  */
     CST_TERM_W4_SEC_COMP,                 /* Acceptor waits security clearence    */
-    CST_W4_L2CAP_CONNECT_RSP,             /* Waiting for peer conenct response    */
+    CST_W4_L2CAP_CONNECT_RSP,             /* Waiting for peer connect response    */
     CST_W4_L2CA_CONNECT_RSP,              /* Waiting for upper layer connect rsp  */
     CST_CONFIG,                           /* Negotiating configuration            */
     CST_OPEN,                             /* Data transfer state                  */
@@ -208,8 +215,8 @@ typedef struct {
     UINT32      controller_idle;            /* # of times less than 2 packets in controller */
     /* when the xmit window was closed          */
     UINT32      pkts_retransmitted;         /* # of packets that were retransmitted     */
-    UINT32      retrans_touts;              /* # of retransmission timouts              */
-    UINT32      xmit_ack_touts;             /* # of xmit ack timouts                    */
+    UINT32      retrans_touts;              /* # of retransmission timeouts              */
+    UINT32      xmit_ack_touts;             /* # of xmit ack timeouts                    */
 
 #define L2CAP_ERTM_STATS_NUM_AVG 10
 #define L2CAP_ERTM_STATS_AVG_NUM_SAMPLES 100
@@ -379,6 +386,11 @@ typedef struct t_l2c_linkcb {
     BOOLEAN             in_use;                     /* TRUE when in use, FALSE when not */
     tL2C_LINK_STATE     link_state;
     BOOLEAN             is_aux;                     /* This variable used for BLE 5.0 or higher version when do auxiliary connection */
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BOOLEAN is_pawr_synced;
+    UINT8 adv_handle;
+    UINT8 subevent;
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     TIMER_LIST_ENT      timer_entry;                /* Timer list entry for timeout evt */
     UINT16              handle;                     /* The handle used with LM          */
 
@@ -386,8 +398,15 @@ typedef struct t_l2c_linkcb {
 
     tL2C_CCB            *p_pending_ccb;             /* ccb of waiting channel during link disconnect */
     TIMER_LIST_ENT      info_timer_entry;           /* Timer entry for info resp timeout evt */
-    TIMER_LIST_ENT      upda_con_timer;             /* Timer entry for update connection parametr */
+    TIMER_LIST_ENT      upda_con_timer;             /* Timer entry for update connection parameter */
     BD_ADDR             remote_bd_addr;             /* The BD address of the remote     */
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    UINT8               br_edr_create_con_retries;  /* Host-driven Create_Connection retry counter,
+                                                     * incremented for each non-success Connection
+                                                     * Complete that keeps CCBs on this LCB. */
+    TIMER_LIST_ENT      retry_timer_entry;          /* Back-off timer between host-driven
+                                                     * Create_Connection retries.       */
+#endif
 
     UINT8               link_role;                  /* Master or slave                  */
     UINT8               id;
@@ -456,7 +475,7 @@ typedef struct t_l2c_linkcb {
     */
    /* create connection retry count*/
    UINT8                retry_create_con;
-   UINT32               start_time_s;
+   int64_t              start_time_s;
 #endif
 
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
@@ -483,19 +502,24 @@ typedef struct {
 
     list_t          *p_lcb_pool;                    /* Link Control Block pool          */
     list_t          *p_ccb_pool;                    /* Channel Control Block pool       */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2C_RCB        rcb_pool[MAX_L2CAP_CLIENTS];    /* Registration info pool           */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8           desire_role;                    /* desire to be master/slave when accepting a connection */
     BOOLEAN         disallow_switch;                /* FALSE, to allow switch at create conn */
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          num_lm_acl_bufs;                /* # of ACL buffers on controller   */
     UINT16          idle_timeout;                   /* Idle timeout                     */
 
     list_t          *rcv_pending_q;                 /* Recv pending queue               */
     TIMER_LIST_ENT  rcv_hold_tle;                   /* Timer list entry for rcv hold    */
 
-    tL2C_LCB        *p_cur_hcit_lcb;                /* Current HCI Transport buffer     */
+    // tL2C_LCB        *p_cur_hcit_lcb;                /* Current HCI Transport buffer     */
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          num_links_active;               /* Number of links active           */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
     UINT16          non_flushable_pbf;              /* L2CAP_PKT_START_NON_FLUSHABLE if controller supports */
@@ -524,13 +548,16 @@ typedef struct {
     tL2C_RCB                 ble_rcb_pool[BLE_MAX_L2CAP_CLIENTS]; /* Registration info pool          */
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tL2CA_ECHO_DATA_CB      *p_echo_data_cb;                /* Echo data callback */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 #if (defined(L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE) && (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == TRUE))
     UINT16              high_pri_min_xmit_quota;    /* Minimum number of ACL credit for high priority link */
 #endif /* (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == TRUE) */
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16          dyn_psm;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 } tL2C_CB;
 
 
@@ -599,7 +626,7 @@ extern BOOLEAN  l2cu_start_post_bond_timer (UINT16 handle);
 extern void     l2cu_release_lcb (tL2C_LCB *p_lcb);
 extern tL2C_LCB *l2cu_find_lcb_by_bd_addr (BD_ADDR p_bd_addr, tBT_TRANSPORT transport);
 extern tL2C_LCB *l2cu_find_lcb_by_handle (UINT16 handle);
-extern uint8_t l2cu_plcb_active_count(void);
+extern uint8_t l2cu_ble_plcb_active_count(void);
 extern void     l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding);
 
 extern UINT8    l2cu_get_conn_role (tL2C_LCB *p_this_lcb);
@@ -720,10 +747,13 @@ extern BOOLEAN  l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_b
 extern BOOLEAN  l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason);
 extern BOOLEAN  l2c_link_hci_qos_violation (UINT16 handle);
 extern void     l2c_link_timeout (tL2C_LCB *p_lcb);
+#if (CLASSIC_BT_INCLUDED == TRUE)
+extern void     l2c_link_create_conn_retry (tL2C_LCB *p_lcb);
+#endif
 extern void     l2c_info_timeout (tL2C_LCB *p_lcb);
 extern void     l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf);
 extern void     l2c_link_adjust_allocation (void);
-extern void     l2c_link_process_num_completed_pkts (UINT8 *p);
+extern void     l2c_link_process_num_completed_pkts (UINT8 *p, UINT8 evt_len);
 extern void     l2c_link_process_num_completed_blocks (UINT8 controller_id, UINT8 *p, UINT16 evt_len);
 extern void     l2c_link_processs_num_bufs (UINT16 num_lm_acl_bufs);
 extern UINT8    l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles);

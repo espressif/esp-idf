@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,12 +21,16 @@
 #include "soc/soc_caps.h"
 #include "esp_private/dw_gdma.h"
 
+#if CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef enum {
-    CSI_FSM_INIT,
+    CSI_FSM_INIT = 1,
     CSI_FSM_ENABLED,
     CSI_FSM_STARTED,
 } csi_fsm_t;
@@ -46,8 +50,9 @@ struct csi_controller_t {
     mipi_csi_hal_context_t      hal;                //hal context
     csi_fsm_t                   csi_fsm;            //driver fsm
     portMUX_TYPE                spinlock;           //spinlock
-    color_space_pixel_format_t  in_color_format;    //input color format
-    color_space_pixel_format_t  out_color_format;   //output color format
+    cam_ctlr_color_t            in_color_format;    //input color format
+    cam_ctlr_color_t            out_color_format;   //output color format
+    uint32_t                    custom_data_depth;  //custom data depth, bits per pixel
     uint32_t                    h_res;              //input horizontal resolution
     uint32_t                    v_res;              //input vertical resolution
     int                         in_bpp;             //input data type, bit per pixel
@@ -55,11 +60,16 @@ struct csi_controller_t {
     size_t                      fb_size_in_bytes;   //Frame buffer size, in bytes
     esp_cam_ctlr_trans_t        trans;              //Saved done transaction to be given out to callers
     void                        *backup_buffer;     //backup buffer to make csi bridge can work to avoid wrong state
+    bool                        bk_buffer_exposed;  //status of if back_buffer is exposed to users
+    bool                        bk_buffer_dis;      //Allow to not malloc backup_buffer
     QueueHandle_t               trans_que;          //transaction queue
     esp_cam_ctlr_evt_cbs_t      cbs;                //user callbacks
     void                        *cbs_user_data;     //callback userdata
     dw_gdma_channel_handle_t    dma_chan;           //dwgdma channel handle
     size_t                      csi_transfer_size;  //csi transfer size for dwgdma
+#if CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t        pm_lock;            //Power management lock
+#endif
     esp_cam_ctlr_t base;
 };
 

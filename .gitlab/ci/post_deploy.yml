@@ -1,0 +1,34 @@
+.post_deploy_template:
+  stage: post_deploy
+  image: $ESP_ENV_IMAGE
+
+generate_failed_jobs_report:
+  extends:
+    - .post_deploy_template
+  tags: [build, shiny]
+  when: always
+  dependencies: # Do not download artifacts from the previous stages
+  needs:
+    - pipeline_variables
+  artifacts:
+    expire_in: 2 week
+    when: always
+    paths:
+      - job_report.html
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type job
+
+sync_support_status:
+  extends:
+    - .post_deploy_template
+    - .rules:master:push
+  tags: [ brew, github_sync ]
+  needs:
+    - push_to_github
+  cache: []
+  before_script: []
+  script:
+    - curl --fail --request POST --form token="$IDF_STATUS_TRIG_TOKEN" --form ref="$IDF_STATUS_BRANCH" --form "variables[UPLOAD_TO_S3]=true" "$IDF_STATUS_TRIG_URL"
+  environment:
+    name: sync_support_status_production
+    deployment_tier: production

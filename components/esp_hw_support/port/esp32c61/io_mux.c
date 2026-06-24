@@ -1,35 +1,67 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/FreeRTOS.h"
 #include "esp_private/io_mux.h"
-#include "hal/gpio_ll.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/critical_section.h"
+#include "hal/rtc_io_ll.h"
 
-//TODO: [ESP32C61] IDf-9316
+#define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
 
-static portMUX_TYPE s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
-static soc_module_clk_t s_io_mux_clk_src = 0; // by default, the clock source is not set explicitly by any consumer (e.g. SDM, Filter)
+DEFINE_CRIT_SECTION_LOCK_STATIC(s_io_mux_spinlock);
 
-esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
+static rtc_io_status_t s_rtc_io_status = {
+    .rtc_io_enabled_cnt = { 0 },
+    .rtc_io_using_mask = 0
+};
+
+void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 {
-    bool clk_conflict = false;
-    // check is the IO MUX has been set to another clock source
-    portENTER_CRITICAL(&s_io_mux_spinlock);
-    if (s_io_mux_clk_src != 0 && s_io_mux_clk_src != clk_src) {
-        clk_conflict = true;
-    } else {
-        s_io_mux_clk_src = clk_src;
+    uint32_t rtc_io_num = gpio_num - RTCIO_LL_GPIO_NUM_OFFSET;
+    assert(rtc_io_num < SOC_RTCIO_PIN_COUNT);
+    esp_os_enter_critical(&s_io_mux_spinlock);
+    if (enable) {
+        if (s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] == 0) {
+            s_rtc_io_status.rtc_io_using_mask |= (1ULL << rtc_io_num);
+        }
+        s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num]++;
+    } else if (!enable && (s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] > 0)) {
+        s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num]--;
+        if (s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] == 0) {
+            s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << rtc_io_num);
+        }
     }
-    portEXIT_CRITICAL(&s_io_mux_spinlock);
-
-    if (clk_conflict) {
-        return ESP_ERR_INVALID_STATE;
+    RTCIO_RCC_ATOMIC() {
+        if (s_rtc_io_status.rtc_io_using_mask == 0) {
+            rtcio_ll_enable_io_clock(false);
+        } else {
+            rtcio_ll_enable_io_clock(true);
+        }
     }
+    esp_os_exit_critical(&s_io_mux_spinlock);
+}
 
-    gpio_ll_iomux_set_clk_src(clk_src);
+void io_mux_force_disable_lp_io_clock(gpio_num_t gpio_num)
+{
+    uint32_t rtc_io_num = gpio_num - RTCIO_LL_GPIO_NUM_OFFSET;
+    assert(rtc_io_num < SOC_RTCIO_PIN_COUNT);
+    esp_os_enter_critical(&s_io_mux_spinlock);
+    s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] = 0;
+    s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << rtc_io_num);
+    if (s_rtc_io_status.rtc_io_using_mask == 0) {
+        RTCIO_RCC_ATOMIC() {
+            rtcio_ll_enable_io_clock(false);
+        }
+    }
+    esp_os_exit_critical(&s_io_mux_spinlock);
+}
 
-    return ESP_OK;
+bool io_mux_is_lp_io_in_use(gpio_num_t gpio_num)
+{
+    uint32_t rtc_io_num = gpio_num - RTCIO_LL_GPIO_NUM_OFFSET;
+    assert(rtc_io_num < SOC_RTCIO_PIN_COUNT);
+    return s_rtc_io_status.rtc_io_enabled_cnt[rtc_io_num] > 0;
 }

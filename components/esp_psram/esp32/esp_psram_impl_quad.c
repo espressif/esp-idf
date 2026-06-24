@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "esp_types.h"
 #include "esp_bit_defs.h"
 #include "esp_log.h"
-#include "../esp_psram_impl.h"
+#include "esp_private/esp_psram_impl.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "rom/efuse.h"
@@ -23,17 +23,18 @@
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
-#include "soc/spi_periph.h"
 #include "soc/chip_revision.h"
 #include "driver/gpio.h"
 #include "hal/efuse_hal.h"
 #include "hal/gpio_hal.h"
-#include "esp_private/spi_common_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
 #include "bootloader_flash_config.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "soc/spi_reg.h"
+#include "soc/spi_pins.h"
+#include "esp_private/spi_share_hw_ctrl.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"
@@ -93,11 +94,12 @@ typedef enum {
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
 // hardcode the flash pins as well, making this code incompatible with either a setup
 // that has the flash on non-standard pins or ESP32s with built-in flash.
-#define PSRAM_SPIQ_SD0_IO          7
-#define PSRAM_SPID_SD1_IO          8
-#define PSRAM_SPIWP_SD3_IO         10
-#define PSRAM_SPIHD_SD2_IO         9
+#define PSRAM_SPIQ_SD0_IO          MSPI_IOMUX_PIN_NUM_MISO
+#define PSRAM_SPID_SD1_IO          MSPI_IOMUX_PIN_NUM_MOSI
+#define PSRAM_SPIHD_SD2_IO         MSPI_IOMUX_PIN_NUM_HD
+#define PSRAM_SPIWP_SD3_IO         MSPI_IOMUX_PIN_NUM_WP
 
+// HSPI Pins
 #define FLASH_HSPI_CLK_IO          14
 #define FLASH_HSPI_CS_IO           15
 #define PSRAM_HSPI_SPIQ_SD0_IO     12
@@ -170,19 +172,19 @@ typedef struct {
 //For 4MB PSRAM, we need one more SPI host, select which one to use by kconfig
 #ifdef CONFIG_SPIRAM_OCCUPY_HSPI_HOST
 #define PSRAM_SPI_MODULE    PERIPH_HSPI_MODULE
-#define PSRAM_SPI_HOST      HSPI_HOST
+#define PSRAM_SPI_HOST      SPI2_HOST
 #define PSRAM_CLK_SIGNAL    HSPICLK_OUT_IDX
 #define PSRAM_SPI_NUM       PSRAM_SPI_2
 #define PSRAM_SPICLKEN      DPORT_SPI2_CLK_EN
 #elif defined CONFIG_SPIRAM_OCCUPY_VSPI_HOST
 #define PSRAM_SPI_MODULE    PERIPH_VSPI_MODULE
-#define PSRAM_SPI_HOST      VSPI_HOST
+#define PSRAM_SPI_HOST      SPI3_HOST
 #define PSRAM_CLK_SIGNAL    VSPICLK_OUT_IDX
 #define PSRAM_SPI_NUM       PSRAM_SPI_3
 #define PSRAM_SPICLKEN      DPORT_SPI3_CLK_EN
 #else   //set to SPI avoid HSPI and VSPI being used
 #define PSRAM_SPI_MODULE    PERIPH_SPI_MODULE
-#define PSRAM_SPI_HOST      SPI_HOST
+#define PSRAM_SPI_HOST      SPI1_HOST
 #define PSRAM_CLK_SIGNAL    SPICLK_OUT_IDX
 #define PSRAM_SPI_NUM       PSRAM_SPI_1
 #define PSRAM_SPICLKEN      DPORT_SPI01_CLK_EN
@@ -235,8 +237,8 @@ typedef struct {
     uint16_t addrBitLen;         /*!< Address byte length*/
     uint32_t *txData;            /*!< Point to send data buffer*/
     uint16_t txDataBitLen;       /*!< Send data byte length.*/
-    uint32_t *rxData;            /*!< Point to recevie data buffer*/
-    uint16_t rxDataBitLen;       /*!< Recevie Data byte length.*/
+    uint32_t *rxData;            /*!< Point to receive data buffer*/
+    uint16_t rxDataBitLen;       /*!< Receive Data byte length.*/
     uint32_t dummyBitLen;
 } psram_cmd_t;
 
@@ -607,7 +609,7 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
 
     // setp3: keep cs as high level
     //        send 128 cycles clock
-    //        send 1 bit high levle in ninth clock from the back to PSRAM SIO1
+    //        send 1 bit high level in ninth clock from the back to PSRAM SIO1
     static gpio_hal_context_t _gpio_hal = {
         .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
@@ -800,20 +802,21 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
     esp_rom_gpio_connect_in_signal(psram_io->psram_spihd_sd2_io, SPIHD_IN_IDX, 0);
 
     //select pin function gpio
-    if ((psram_io->flash_clk_io == SPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
+    if ((psram_io->flash_clk_io == MSPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
         //flash clock signal should come from IO MUX.
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUNC_SD_CLK_SPICLK);
+        gpio_ll_func_sel(&GPIO, psram_io->flash_clk_io, MSPI_FUNC_NUM);
     } else {
         //flash clock signal should come from GPIO matrix.
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, psram_io->flash_clk_io, PIN_FUNC_GPIO);
     }
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->flash_cs_io],  PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->psram_cs_io],  PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->psram_clk_io], PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->psram_spiq_sd0_io],  PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->psram_spid_sd1_io],  PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->psram_spihd_sd2_io], PIN_FUNC_GPIO);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[psram_io->psram_spiwp_sd3_io], PIN_FUNC_GPIO);
+
+    gpio_ll_func_sel(&GPIO, psram_io->flash_cs_io,  PIN_FUNC_GPIO);
+    gpio_ll_func_sel(&GPIO, psram_io->psram_cs_io,  PIN_FUNC_GPIO);
+    gpio_ll_func_sel(&GPIO, psram_io->psram_clk_io, PIN_FUNC_GPIO);
+    gpio_ll_func_sel(&GPIO, psram_io->psram_spiq_sd0_io,  PIN_FUNC_GPIO);
+    gpio_ll_func_sel(&GPIO, psram_io->psram_spid_sd1_io,  PIN_FUNC_GPIO);
+    gpio_ll_func_sel(&GPIO, psram_io->psram_spihd_sd2_io, PIN_FUNC_GPIO);
+    gpio_ll_func_sel(&GPIO, psram_io->psram_spiwp_sd3_io, PIN_FUNC_GPIO);
 
     uint32_t flash_id = g_rom_flashchip.device_id;
     if (flash_id == FLASH_ID_GD25LQ32C) {
@@ -866,7 +869,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_cs_io  = D2WD_PSRAM_CS_IO;
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
-        abort();
+        return ESP_FAIL;
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH)) {
         ESP_EARLY_LOGI(TAG, "This chip is %s",
                        (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) ? "ESP32-PICO" : "ESP32-U4WDH");
@@ -909,8 +912,8 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
 
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
-        psram_io.flash_clk_io       = SPI_IOMUX_PIN_NUM_CLK;
-        psram_io.flash_cs_io        = SPI_IOMUX_PIN_NUM_CS;
+        psram_io.flash_clk_io       = MSPI_IOMUX_PIN_NUM_CLK;
+        psram_io.flash_cs_io        = MSPI_IOMUX_PIN_NUM_CS0;
         psram_io.psram_spiq_sd0_io  = PSRAM_SPIQ_SD0_IO;
         psram_io.psram_spid_sd1_io  = PSRAM_SPID_SD1_IO;
         psram_io.psram_spiwp_sd3_io = PSRAM_SPIWP_SD3_IO;
@@ -955,7 +958,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
             /* We need to delay CLK to the PSRAM with respect to the clock signal as output by the SPI peripheral.
             We do this by routing it signal to signal 224/225, which are used as a loopback; the extra run through
-            the GPIO matrix causes the delay. We use GPIO20 (which is not in any package but has pad logic in
+            the GPIO matrix causes the delay. We use GPIO28/29 (which is not in any package but has pad logic in
             silicon) as a temporary pad for this. So the signal path is:
             SPI CLK --> GPIO28 --> signal224(in then out) --> internal GPIO29 --> signal225(in then out) --> GPIO17(PSRAM CLK)
             */
@@ -985,7 +988,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
          */
         psram_read_id(spi_num, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
+            PSRAM_LOG_NOTFOUND(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
         }
     }
@@ -1172,4 +1175,19 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 {
     return esp_psram_impl_get_physical_size(out_size_bytes);
 }
+
+/******************************* Halfsleep Mode *******************************/
+// This PSRAM device does not support halfsleep mode
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_enter_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_SLEEP_CODE_ATTR void esp_psram_impl_exit_halfsleep_mode(void)
+{
+}
+
+PSRAM_HALFSLEEP_RESUME_CODE_ATTR void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
+{
+}
+
 #endif // CONFIG_SPIRAM

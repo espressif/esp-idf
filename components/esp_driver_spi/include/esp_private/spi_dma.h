@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+#include <stddef.h>
 #include "stdbool.h"
 #include "hal/spi_types.h"
 
@@ -37,6 +38,22 @@ typedef struct {
 void spi_dma_enable_burst(spi_dma_chan_handle_t chan_handle, bool data_burst, bool desc_burst);
 
 /**
+ * Get the alignment constraints for DMA
+ *
+ * @param chan_handle   Context of the spi_dma channel.
+ * @param internal_size The alignment size for internal memory.
+ * @param external_size The alignment size for external memory.
+ */
+void spi_dma_get_alignment_constraints(spi_dma_chan_handle_t chan_handle, size_t *internal_size, size_t *external_size);
+
+/**
+ * Re-trigger a HW pre-load to pick up appended linked descriptor
+ *
+ * @param chan_handle   Context of the spi_dma channel.
+ */
+void spi_dma_append(spi_dma_chan_handle_t chan_handle);
+
+/**
  * Reset dma channel for spi_dma
  *
  * @param chan_handle   Context of the spi_dma channel.
@@ -50,6 +67,13 @@ void spi_dma_reset(spi_dma_chan_handle_t chan_handle);
  * @param addr          Addr of linked dma descriptor to mount
  */
 void spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr);
+
+/**
+ * Get EOF descriptor for a dma channel
+ *
+ * @param chan_handle   Context of the spi_dma channel.
+ */
+uint32_t spi_dma_get_eof_desc(spi_dma_chan_handle_t chan_handle);
 
 #endif  //!SOC_GDMA_SUPPORTED
 

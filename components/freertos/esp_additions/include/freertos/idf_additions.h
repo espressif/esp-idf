@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,7 +120,7 @@
  *
  * If CONFIG_FREERTOS_UNICORE is enabled, this function simply returns 0.
  *
- * [refactor-todo] See if this needs to be deprecated (IDF-8145)(IDF-8164)
+ * [refactor-todo] See if this needs to be deprecated (IDF-8145)
  *
  * @note If CONFIG_FREERTOS_SMP is enabled, please call vTaskCoreAffinityGet()
  * instead.
@@ -195,14 +195,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask );
  * Returns the lowest stack memory address, regardless of whether the stack
  * grows up or down.
  *
- * [refactor-todo] Change return type to StackType_t (IDF-8158)
- *
  * @param xTask Handle of the task associated with the stack returned.
  * Set xTask to NULL to return the stack of the calling task.
  *
  * @return A pointer to the start of the stack.
  */
-uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
+StackType_t * xTaskGetStackStart( TaskHandle_t xTask );
 
 /* --------------------------------------------- TLSP Deletion Callbacks -------------------------------------------- */
 
@@ -338,6 +336,11 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask );
 /**
  * @brief Deletes a task previously created using xTaskCreateWithCaps() or
  * xTaskCreatePinnedToCoreWithCaps()
+ *
+ * @note It is recommended to use this API to delete tasks from another task's
+ * context, rather than self-deletion. When the task is being deleted, it is vital
+ * to ensure that it is not running on another core. This API must not be called
+ * from an interrupt context.
  *
  * @param xTaskToDelete A handle to the task to be deleted
  */
@@ -623,30 +626,14 @@ void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
 
 #endif /* configSUPPORT_STATIC_ALLOCATION == 1 */
 
-
 /* --------------------------------------------------- Deprecated ------------------------------------------------------
  * Deprecated IDF FreeRTOS API additions.
- * Todo: Remove in v6.0 (IDF-8499)
+ * Todo: Remove in v7.0 (IDF-13569)
  * ------------------------------------------------------------------------------------------------------------------ */
-
 /** @cond */
-static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetCoreID() instead." ) ) )
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
-{
-    return xTaskGetCoreID( xTask );
-}
 
-static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetIdleTaskHandleForCore() instead." ) ) )
-TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t xCoreID )
-{
-    return xTaskGetIdleTaskHandleForCore( xCoreID );
-}
+uint8_t * pxTaskGetStackStart( TaskHandle_t xTask ) __attribute__((deprecated("Use xTaskGetStackStart() for improved type safety")));
 
-static inline __attribute__( ( always_inline, deprecated( "This function is deprecated and will be removed in ESP-IDF 6.0. Please use xTaskGetCurrentTaskHandleForCore() instead." ) ) )
-TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t xCoreID )
-{
-    return xTaskGetCurrentTaskHandleForCore( xCoreID );
-}
 /** @endcond */
 
 /* *INDENT-OFF* */

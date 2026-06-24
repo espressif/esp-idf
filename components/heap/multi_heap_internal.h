@@ -56,6 +56,7 @@ size_t multi_heap_free_size_impl(multi_heap_handle_t heap);
 size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap);
 size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p);
 void *multi_heap_get_block_address_impl(multi_heap_block_handle_t block);
+void *multi_heap_find_containing_block_impl(multi_heap_handle_t heap, void *ptr);
 
 /* Some internal functions for heap poisoning use */
 

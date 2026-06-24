@@ -1,0 +1,3 @@
+# Merged when pytest uses config "passive_hidden_ap" (or set SDKCONFIG_DEFAULTS to include this file).
+# Enables the hidden passive-channel AP test and WIFI_INIT passive-hidden feature bit only for that build.
+CONFIG_ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT=y

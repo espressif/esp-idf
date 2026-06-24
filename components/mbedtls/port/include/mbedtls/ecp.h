@@ -5,7 +5,8 @@
  */
 #pragma once
 
-#include_next "mbedtls/ecp.h"
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include_next "mbedtls/private/ecp.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus

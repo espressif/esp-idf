@@ -5,3 +5,6 @@ components/wear_levelling/test_apps:
     - if: IDF_TARGET in ["esp32", "esp32c3"]
       temporary: true
       reason: the other targets are not tested yet
+  depends_components:
+    - esp_partition
+    - wear_levelling

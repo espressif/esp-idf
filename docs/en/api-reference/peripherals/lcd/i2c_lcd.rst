@@ -1,5 +1,7 @@
 I2C Interfaced LCD
-------------------
+==================
+
+:link_to_translation:`zh_CN:[中文]`
 
 #. Create I2C bus. Please refer to :doc:`I2C API doc </api-reference/peripherals/i2c>` for more details.
 
@@ -20,7 +22,8 @@ I2C Interfaced LCD
 
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::dev_addr` sets the I2C device address of the LCD controller chip. The LCD driver uses this address to communicate with the LCD controller chip.
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::scl_speed_hz` sets the I2C clock frequency in Hz. The value should not exceed the range recommended in the LCD spec.
-    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` set the bit width of the command and parameter recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::transaction_timeout_ms` sets the timeout (in milliseconds) for each underlying I2C transfer. Setting this to 0 or -1 means to wait indefinitely. If a positive value is specified, panel IO calls will return ``ESP_ERR_TIMEOUT`` when the timeout is reached. This is useful for cases like shared buses or when a slave device could potentially hang the bus.
 
     .. code-block:: c
 
@@ -48,3 +51,8 @@ I2C Interfaced LCD
             .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
+
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_lcd_io_i2c.inc

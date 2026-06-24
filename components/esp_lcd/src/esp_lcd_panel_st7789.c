@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_compiler.h"
 
 #define ST7789_CMD_RAMCTRL               0xb0
 #define ST7789_DATA_LITTLE_ENDIAN_BIT    (1 << 3)
@@ -39,13 +40,14 @@ static esp_err_t panel_st7789_invert_color(esp_lcd_panel_t *panel, bool invert_c
 static esp_err_t panel_st7789_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_st7789_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
+static esp_err_t panel_st7789_set_brightness(esp_lcd_panel_t *panel, int brightness);
 static esp_err_t panel_st7789_disp_on_off(esp_lcd_panel_t *panel, bool off);
 static esp_err_t panel_st7789_sleep(esp_lcd_panel_t *panel, bool sleep);
 
 typedef struct {
     esp_lcd_panel_t base;
     esp_lcd_panel_io_handle_t io;
-    int reset_gpio_num;
+    gpio_num_t reset_gpio_num;
     bool reset_level;
     int x_gap;
     int y_gap;
@@ -66,6 +68,8 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
     esp_err_t ret = ESP_OK;
     st7789_panel_t *st7789 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // leak detection of st7789 because saving st7789->base address
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     st7789 = calloc(1, sizeof(st7789_panel_t));
     ESP_GOTO_ON_FALSE(st7789, ESP_ERR_NO_MEM, err, TAG, "no mem for st7789 panel");
 
@@ -122,6 +126,7 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
     st7789->base.draw_bitmap = panel_st7789_draw_bitmap;
     st7789->base.invert_color = panel_st7789_invert_color;
     st7789->base.set_gap = panel_st7789_set_gap;
+    st7789->base.set_brightness = panel_st7789_set_brightness;
     st7789->base.mirror = panel_st7789_mirror;
     st7789->base.swap_xy = panel_st7789_swap_xy;
     st7789->base.disp_on_off = panel_st7789_disp_on_off;
@@ -139,6 +144,7 @@ err:
         free(st7789);
     }
     return ret;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 static esp_err_t panel_st7789_del(esp_lcd_panel_t *panel)
@@ -198,7 +204,6 @@ static esp_err_t panel_st7789_draw_bitmap(esp_lcd_panel_t *panel, int x_start, i
                                           const void *color_data)
 {
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
-    assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     esp_lcd_panel_io_handle_t io = st7789->io;
 
     x_start += st7789->x_gap;
@@ -281,6 +286,18 @@ static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_g
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
     st7789->x_gap = x_gap;
     st7789->y_gap = y_gap;
+    return ESP_OK;
+}
+
+static esp_err_t panel_st7789_set_brightness(esp_lcd_panel_t *panel, int brightness)
+{
+    st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
+    esp_lcd_panel_io_handle_t io = st7789->io;
+    ESP_RETURN_ON_FALSE(brightness >= 0 && brightness <= 0xFF, ESP_ERR_INVALID_ARG, TAG,
+                        "brightness out of range");
+    uint8_t brightness_value = (uint8_t)brightness;
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_WRDISBV, &brightness_value, 1), TAG,
+                        "io tx param failed");
     return ESP_OK;
 }
 

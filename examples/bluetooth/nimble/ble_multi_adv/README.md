@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # BLE Multi Adv Example
 
@@ -11,7 +11,14 @@ It starts 4 types of advertising:
 * Non connectable extended
 * Connectable extended
 * Scannable legacy
-* Legacy withe specified duration(5 sec)
+* Legacy with specified duration(5 sec)
+
+## Service UUID Notes
+
+* The example registers two 16-bit GATT services and one custom 128-bit GATT service.
+* All advertising instances include the two 16-bit service UUIDs.
+* The connectable advertiser also includes the 128-bit service UUID.
+* UUID values in advertising payloads are populated from the same UUID definitions used in the GATT server.
 
 ## How to Use Example
 
@@ -30,7 +37,7 @@ idf.py menuconfig
 
 To configure number of advertising instances:
 
-* Component config → Bluetooth → NimBLE Options → Enable BLE 5 feature → Maximum number of extended advertising instances
+* Component config → Bluetooth → NimBLE Options → BLE 5.x Features → Enable BLE 5 feature → Enable extended advertising → Maximum number of extended advertising instances
 
 ### Hardware Required
 

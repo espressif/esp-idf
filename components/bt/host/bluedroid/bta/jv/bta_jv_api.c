@@ -19,7 +19,7 @@
 /******************************************************************************
  *
  *  This is the implementation of the JAVA API for Bluetooth Wireless
- *  Technology (JABWT) as specified by the JSR82 specificiation
+ *  Technology (JABWT) as specified by the JSR82 specification
  *
  ******************************************************************************/
 
@@ -35,7 +35,6 @@
 #include "stack/gap_api.h"
 
 #include "common/bt_target.h"
-#include "stack/sdp_api.h"
 
 
 #if (defined BTA_JV_INCLUDED && BTA_JV_INCLUDED == TRUE)
@@ -74,6 +73,14 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK *p_cback)
     p_bta_jv_cfg->p_sdp_raw_data = (UINT8 *)osi_malloc(p_bta_jv_cfg->sdp_raw_size);
     p_bta_jv_cfg->p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(p_bta_jv_cfg->sdp_db_size);
     if (p_bta_jv_cfg->p_sdp_raw_data == NULL || p_bta_jv_cfg->p_sdp_db == NULL) {
+        if (p_bta_jv_cfg->p_sdp_raw_data) {
+            osi_free(p_bta_jv_cfg->p_sdp_raw_data);
+            p_bta_jv_cfg->p_sdp_raw_data = NULL;
+        }
+        if (p_bta_jv_cfg->p_sdp_db) {
+            osi_free( p_bta_jv_cfg->p_sdp_db);
+            p_bta_jv_cfg->p_sdp_db = NULL;
+        }
         return BTA_JV_NO_DATA;
     }
 #endif
@@ -278,11 +285,18 @@ tBTA_JV_STATUS BTA_JvStartDiscovery(BD_ADDR bd_addr, UINT16 num_uuid,
     tBTA_JV_API_START_DISCOVERY *p_msg;
 
     APPL_TRACE_API( "BTA_JvStartDiscovery");
+    if ((num_uuid > BTA_JV_MAX_UUIDS) || ((num_uuid > 0) && (p_uuid_list == NULL))) {
+        APPL_TRACE_ERROR("invalid uuid list: num_uuid=%u", num_uuid);
+        return BTA_JV_FAILURE;
+    }
+
     if ((p_msg = (tBTA_JV_API_START_DISCOVERY *)osi_malloc(sizeof(tBTA_JV_API_START_DISCOVERY))) != NULL) {
         p_msg->hdr.event = BTA_JV_API_START_DISCOVERY_EVT;
         bdcpy(p_msg->bd_addr, bd_addr);
         p_msg->num_uuid = num_uuid;
-        memcpy(p_msg->uuid_list, p_uuid_list, num_uuid * sizeof(tSDP_UUID));
+        if (p_uuid_list && (num_uuid > 0)) {
+            memcpy(p_msg->uuid_list, p_uuid_list, num_uuid * sizeof(tSDP_UUID));
+        }
         p_msg->num_attr = 0;
         p_msg->user_data = user_data;
         bta_sys_sendmsg(p_msg);
@@ -313,7 +327,12 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(const char *name, UINT32 channel, void *
     if ((p_msg = (tBTA_JV_API_CREATE_RECORD *)osi_malloc(sizeof(tBTA_JV_API_CREATE_RECORD))) != NULL) {
         p_msg->hdr.event = BTA_JV_API_CREATE_RECORD_EVT;
         p_msg->user_data = user_data;
-        strcpy(p_msg->name, name);
+        if (name) {
+            strncpy(p_msg->name, name, ESP_SDP_SERVER_NAME_MAX);
+            p_msg->name[ESP_SDP_SERVER_NAME_MAX] = '\0';
+        } else {
+            p_msg->name[0] = '\0';
+        }
         p_msg->channel = channel;
         bta_sys_sendmsg(p_msg);
         status = BTA_JV_SUCCESS;
@@ -680,9 +699,7 @@ tBTA_JV_STATUS BTA_JvL2capStopServerLE(UINT16 local_chan, void *user_data)
 **
 ** Function         BTA_JvL2capRead
 **
-** Description      This function reads data from an L2CAP connecti;
-    tBTA_JV_RFC_CB  *p_cb = rc->p_cb;
-on
+** Description      This function reads data from an L2CAP connection
 **                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
 **                  called with BTA_JV_L2CAP_READ_EVT.
 **
@@ -691,7 +708,7 @@ on
 *******************************************************************************/
 int BTA_JvL2capRead(UINT32 handle, UINT32 req_id, UINT8 *p_data, UINT16 len)
 {
-    tBTA_JV_L2CAP_READ evt_data;
+    tBTA_JV_L2CAP_READ evt_data = {0};
 
     APPL_TRACE_API( "%s", __func__);
 
@@ -893,7 +910,7 @@ tBTA_JV_STATUS BTA_JvRfcommConfig(BOOLEAN enable_l2cap_ertm)
 **
 ** Function         BTA_JvRfcommConnect
 **
-** Description      This function makes an RFCOMM conection to a remote BD
+** Description      This function makes an RFCOMM connection to a remote BD
 **                  Address.
 **                  When the connection is initiated or failed to initiate,
 **                  tBTA_JV_RFCOMM_CBACK is called with BTA_JV_RFCOMM_CL_INIT_EVT
@@ -1120,7 +1137,9 @@ tBTA_JV_STATUS BTA_JvRfcommReady(UINT32 handle, UINT32 *p_data_size)
             status = BTA_JV_SUCCESS;
         }
     }
-    *p_data_size = size;
+    if (p_data_size) {
+        *p_data_size = size;
+    }
     return (status);
 }
 
@@ -1204,7 +1223,7 @@ tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given)
  ** Parameters:  handle,  JV handle from RFCOMM or L2CAP
  **              app_id:  app specific pm ID, can be BTA_JV_PM_ALL, see bta_dm_cfg.c for details
  **              BTA_JV_PM_ID_CLEAR: removes pm management on the handle. init_st is ignored and
- **              BTA_JV_CONN_CLOSE is called implicitely
+ **              BTA_JV_CONN_CLOSE is called implicitly
  **              init_st:  state after calling this API. typically it should be BTA_JV_CONN_OPEN
  **
  ** Returns      BTA_JV_SUCCESS, if the request is being processed.

@@ -1,0 +1,22 @@
+# This Config is used for configure the MMU.
+# Be configured based on flash size selection.
+# Invisible to users.
+
+config MMU_PAGE_SIZE_8KB
+    bool
+    default n
+
+config MMU_PAGE_SIZE_16KB
+    bool
+    default y if ESPTOOLPY_FLASHSIZE_1MB
+    default n
+
+config MMU_PAGE_SIZE_32KB
+    bool
+    default y if ESPTOOLPY_FLASHSIZE_2MB
+    default n
+
+config MMU_PAGE_SIZE_64KB
+    bool
+    default y if !MMU_PAGE_SIZE_32KB && !MMU_PAGE_SIZE_16KB && !MMU_PAGE_SIZE_8KB
+    default n

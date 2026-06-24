@@ -1,36 +1,171 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
 
 # ESP-IDF Gatt Client Multi Connection Example
 
-This example shows the usage of APIs to create a GATT multi-connection client. It can be used to connect to three GATT servers at the same time.
+This example demonstrates how to use the BLE GATT client APIs to create a multi-connection client that can connect to multiple GATT servers simultaneously. By default, it supports connecting to up to 3 GATT servers at the same time.
 
-To test this example, please run [gatt_server_demo](../gatt_server) to create three GATT server devices, namely ESP_GATTS_DEMO_a, ESP_GATTS_DEMO_b and ESP_GATTS_DEMO_c, `Gatt_client_multi_connection_demo` will connect to these three gatt server demos, and then exchange data.
+## How It Works
 
-Please, check this [tutorial](tutorial/Gatt_Client_Multi_Connection_Example_Walkthrough.md) for more information about this example.
+The example creates three GATT client profiles (A, B, C), each corresponding to one connection. It scans for devices with specific names, connects to them, discovers services, registers for notifications, and exchanges data with each server.
+
+### Target Devices
+
+The example searches for three GATT servers with the following names:
+- `ESP_GATTS_DEMO_a` → Profile A
+- `ESP_GATTS_DEMO_b` → Profile B
+- `ESP_GATTS_DEMO_c` → Profile C
+
+You can use the [gatt_server](../gatt_server) example to create these server devices by modifying the device name.
+
+## Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        GATT Client Multi-Connection                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐
+    │   GATTC Client   │
+    │ (Multi-Connect)  │
+    └────────┬─────────┘
+             │
+             │  1. Start Scanning
+             │
+             ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                         Scan for BLE Devices                           │
+    │         Looking for: ESP_GATTS_DEMO_a, _b, _c                          │
+    └────────────────────────────────────────────────────────────────────────┘
+             │
+             │  Found device matching name?
+             │
+             ├─────────────────────┬─────────────────────┐
+             ▼                     ▼                     ▼
+    ┌────────────────┐    ┌────────────────┐    ┌────────────────┐
+    │ ESP_GATTS_DEMO_a│    │ ESP_GATTS_DEMO_b│    │ ESP_GATTS_DEMO_c│
+    │   (Server A)   │    │   (Server B)   │    │   (Server C)   │
+    └───────┬────────┘    └───────┬────────┘    └───────┬────────┘
+            │                     │                     │
+            ▼                     ▼                     ▼
+    ┌───────────────────────────────────────────────────────────────────────┐
+    │                    For Each Connected Device:                         │
+    ├───────────────────────────────────────────────────────────────────────┤
+    │  2. Stop Scanning                                                     │
+    │  3. Connect (esp_ble_gattc_enh_open)                                  │
+    │  4. MTU Exchange                                                      │
+    │  5. Service Discovery (UUID: 0x00FF)                                  │
+    │  6. Find Characteristic (UUID: 0xFF01)                                │
+    │  7. Register for Notification                                         │
+    │  8. Write CCCD (Enable Notification)                                  │
+    │  9. Write Test Data (35 bytes)                                        │
+    │ 10. Resume Scanning for remaining devices                             │
+    └───────────────────────────────────────────────────────────────────────┘
+             │
+             │  All 3 devices connected?
+             ▼
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                         Stop Scanning                                  │
+    │              Continue receiving notifications from all devices          │
+    └────────────────────────────────────────────────────────────────────────┘
+
+
+                    ┌────────────────────────────────────┐
+                    │     Connection Sequence Detail     │
+                    └────────────────────────────────────┘
+
+     Client                                              Server
+       │                                                   │
+       │  ─────────── Connection Phase ───────────         │
+       │                                                   │
+       │  Connect Request                                  │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  Connection Established                           │
+       │ <────────────────────────────────────────────────>│
+       │                                                   │
+       │  MTU Exchange Request                             │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  MTU Exchange Response                            │
+       │ <──────────────────────────────────────────────── │
+       │                                                   │
+       │  ─────────── Service Discovery ───────────        │
+       │                                                   │
+       │  Discover Services (UUID: 0x00FF)                 │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  Service Found                                    │
+       │ <──────────────────────────────────────────────── │
+       │                                                   │
+       │  Get Characteristic (UUID: 0xFF01)                │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  Characteristic Found                             │
+       │ <──────────────────────────────────────────────── │
+       │                                                   │
+       │  ─────────── Enable Notification ───────────      │
+       │                                                   │
+       │  Register for Notify                              │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  Write CCCD (0x0001 = Enable Notify)              │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  ─────────── Data Exchange ───────────            │
+       │                                                   │
+       │  Write Characteristic (35 bytes test data)        │
+       │ ────────────────────────────────────────────────> │
+       │                                                   │
+       │  Notification (data from server)                  │
+       │ <──────────────────────────────────────────────── │
+       │                                                   │
+```
 
 ## How to Use Example
 
-Before project configuration and build, be sure to set the correct chip target using:
+### Hardware Required
+
+* Four development boards with supported SoC:
+  - One board for the GATT Client (this example)
+  - Three boards for GATT Servers (using [gatt_server](../gatt_server) example)
+* Four USB cables for power supply and programming
+
+See [Development Boards](https://www.espressif.com/en/products/devkits) for more information.
+
+### Setup GATT Servers
+
+1. Flash the [gatt_server](../gatt_server) example to three separate boards
+2. Modify each server's device name before flashing:
+   - Server 1: Change `ESP_GATT_DEMO` to `ESP_GATTS_DEMO_a`
+   - Server 2: Change `ESP_GATT_DEMO` to `ESP_GATTS_DEMO_b`
+   - Server 3: Change `ESP_GATT_DEMO` to `ESP_GATTS_DEMO_c`
+
+### Configure the Project
+
+Set the correct chip target:
 
 ```bash
 idf.py set-target <chip_name>
 ```
 
-The code can be modified to connect to more devices (up to 4 devices by default). If you need to connect to more devices (more than 4 devices), you need to change `BT/BLE MAX ACL CONNECTIONS` in menuconfig.
+**Connecting More Than 4 Devices:**
 
-### Hardware Required
+The default maximum number of ACL connections is 4. To connect more devices:
 
-* A development board with ESP32/ESP32-C3/ESP32-C2/ESP32-H2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
-* A USB cable for Power supply and programming
+```bash
+idf.py menuconfig
+```
 
-See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
+Navigate to: `Component config` → `Bluetooth` → `Bluedroid Options` → `BT/BLE MAX ACL CONNECTIONS`
 
 ### Build and Flash
 
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
+```bash
+idf.py -p PORT flash monitor
+```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+(To exit the serial monitor, type `Ctrl-]`.)
 
 See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 

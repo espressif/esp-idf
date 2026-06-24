@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 def deepsleep_test(dut: Dut, case_name: str) -> None:
@@ -19,21 +20,15 @@ def deepsleep_test(dut: Dut, case_name: str) -> None:
         dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=10)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c2
 @pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 == 1'), indirect=['target'])
 def test_rtc_8md256_deepsleep(dut: Dut) -> None:
     deepsleep_test(dut, '"Can use 8MD256 as RTC clock source in deepsleep"')
 
 
 # Only targets with SOC_PM_SUPPORT_RTC_PERIPH_PD defined
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_rtc_8md256_deepsleep_force_rtcperiph(dut: Dut) -> None:
     deepsleep_test(dut, '"Can use 8MD256 as RTC clock source in deepsleep (force rtc_periph)"')
 
@@ -48,18 +43,13 @@ def lightsleep_test(dut: Dut, case_name: str) -> None:
         dut.expect(r'Returned from light sleep, reason: timer', timeout=10)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
 @pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256 == 1'), indirect=['target'])
 def test_rtc_8md256_lightsleep(dut: Dut) -> None:
     lightsleep_test(dut, '"Can use 8MD256 as RTC clock source in lightsleep"')
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_rtc_8md256_lightsleep_force_rtcperiph(dut: Dut) -> None:
     lightsleep_test(dut, '"Can use 8MD256 as RTC clock source in lightsleep (force rtc_periph)"')

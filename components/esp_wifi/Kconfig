@@ -1,7 +1,5 @@
-
 menu "Wi-Fi"
-    # TODO: Disable WIFI support on ESP32-H2 (WIFI-5796)
-    # visible if SOC_WIFI_SUPPORTED
+    visible if (SOC_WIFI_SUPPORTED || SOC_WIRELESS_HOST_SUPPORTED)
 
     config ESP_WIFI_ENABLED
         bool
@@ -28,8 +26,8 @@ menu "Wi-Fi"
             int "Max number of WiFi static RX buffers"
             range 2 25 if !SOC_WIFI_HE_SUPPORT
             range 2 128 if SOC_WIFI_HE_SUPPORT
-            default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-            default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 10 if !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+            default 16 if (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
             help
                 Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
                 The static rx buffers are allocated when esp_wifi_init is called, they are not freed
@@ -80,7 +78,7 @@ menu "Wi-Fi"
                 bool "Static"
             config ESP_WIFI_DYNAMIC_TX_BUFFER
                 bool "Dynamic"
-                depends on !SPIRAM_USE_MALLOC
+                depends on !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
         endchoice
 
         config ESP_WIFI_TX_BUFFER_TYPE
@@ -105,8 +103,8 @@ menu "Wi-Fi"
 
         config ESP_WIFI_CACHE_TX_BUFFER_NUM
             int "Max number of WiFi cache TX buffers"
-            depends on SPIRAM
-            range 16 128
+            depends on (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+            range 0 128
             default 32
             help
                 Set the number of WiFi cache TX buffer number.
@@ -203,8 +201,8 @@ menu "Wi-Fi"
             depends on ESP_WIFI_AMPDU_RX_ENABLED
             range 2 32 if !SOC_WIFI_HE_SUPPORT
             range 2 64 if SOC_WIFI_HE_SUPPORT
-            default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-            default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 6 if !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+            default 16 if (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
             help
                 Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
                 compatibility but more memory. Most of time we should NOT change the default value unless special
@@ -215,7 +213,7 @@ menu "Wi-Fi"
 
         config ESP_WIFI_AMSDU_TX_ENABLED
             bool "WiFi AMSDU TX"
-            depends on SPIRAM
+            depends on (ESP_WIFI_CACHE_TX_BUFFER_NUM >= 2)
             default n
             help
                 Select this option to enable AMSDU TX feature
@@ -267,7 +265,10 @@ menu "Wi-Fi"
             range 6 32
             default 32
             help
-                Set the number of WiFi management short buffer.
+                Set the maximum number of Wi-Fi management short buffers. These buffers are dynamically allocated,
+                with their size determined by the length of the management packet to be sent. When a management
+                packet is less than 64 bytes, the Wi-Fi driver classifies it as a short management packet and
+                assigns it to one of these buffers.
 
         config ESP_WIFI_IRAM_OPT
             bool "WiFi IRAM speed optimization"
@@ -280,7 +281,7 @@ menu "Wi-Fi"
 
         config ESP_WIFI_EXTRA_IRAM_OPT
             bool "WiFi EXTRA IRAM speed optimization"
-            default y if IDF_TARGET_ESP32C6
+            default y if SOC_WIFI_HE_SUPPORT
             default n
             help
                 Select this option to place additional frequently called Wi-Fi library functions
@@ -306,10 +307,17 @@ menu "Wi-Fi"
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
 
+        config ESP_WIFI_ENABLE_SAE_H2E
+            bool "Enable SAE-H2E"
+            default y
+            depends on ESP_WIFI_ENABLE_WPA3_SAE
+            help
+                Select this option to enable SAE-H2E
+
         config ESP_WIFI_ENABLE_SAE_PK
             bool "Enable SAE-PK"
             default y
-            depends on ESP_WIFI_ENABLE_WPA3_SAE
+            depends on ESP_WIFI_ENABLE_SAE_H2E
             help
                 Select this option to enable SAE-PK
 
@@ -331,10 +339,35 @@ menu "Wi-Fi"
                 explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
                 for details.
 
+        config ESP_WIFI_WPA3_COMPATIBLE_SUPPORT
+            bool "Enable WPA3 Compatible support"
+            default y
+            depends on ESP_WIFI_ENABLE_SAE_H2E
+            help
+                Select this option to support wpa3_compatible mode for station and AP
+
+        config ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP
+            bool "Enable OWE-ONLY SOFTAP"
+            default y
+            select ESP_WIFI_MBEDTLS_CRYPTO
+            depends on ESP_WIFI_SOFTAP_SUPPORT
+            help
+                Select this option to allow the device to enable OWE Only mode for softap.
+
+        config ESP_WIFI_PASN_SUPPORT
+            bool "Enable PASN support"
+            default n
+            help
+                Pre-Association Security Negotiation (PASN) for Wi-Fi NAN.
+                The wpa_supplicant exposes CONFIG_PASN when this is on.
+
         config ESP_WIFI_SLP_IRAM_OPT
             bool "WiFi SLP IRAM speed optimization"
             select PM_SLP_DEFAULT_PARAMS_OPT
-            select PERIPH_CTRL_FUNC_IN_IRAM
+            select PM_SLEEP_FUNC_IN_IRAM
+            select ESP_PERIPH_CTRL_FUNC_IN_IRAM
+            select ESP_PHY_IRAM_OPT
+            default y if SOC_WIFI_HE_SUPPORT
             help
                 Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
                 Some functions can be put in IRAM either by ESP_WIFI_IRAM_OPT and ESP_WIFI_RX_IRAM_OPT, or this one.
@@ -347,17 +380,40 @@ menu "Wi-Fi"
             int "Minimum active time"
             range 8 60
             default 50
-            depends on ESP_WIFI_SLP_IRAM_OPT
             help
-                The minimum timeout for waiting to receive data, unit: milliseconds.
+                Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station enters the active state,
+                it will work for at least ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME. If a data packet is received or sent
+                during this period, the time will be refreshed. If the time is up, but the station still has packets
+                to receive or send, the time will also be refreshed. unit: milliseconds.
+
+        config ESP_WIFI_BSS_MAX_IDLE_SUPPORT
+            bool "Enable bss max idle support"
+            default y if (SOC_WIFI_HE_SUPPORT || ESP_WIFI_WNM_SUPPORT)
+            help
+                Enables bss max idle support for Station and SoftAP. BSS max idle period enables an SoftAP to indicate
+                a time period during which the AP does not disassociate a STA due to nonreceipt of frames from the STA.
+                For station, max idle period is default 10 (1000TUs) and can be set through
+                ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME. For softap, bss max idle parameters will be set through
+                bss_max_idle_cfg in wifi_ap_config_t.
 
         config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
             int "Maximum keep alive time"
             range 10 60
             default 10
-            depends on ESP_WIFI_SLP_IRAM_OPT
             help
-                The maximum time that wifi keep alive, unit: seconds.
+                Only for station. If no packet has been sent within ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME, a null data
+                packet will be sent to maintain the connection with the AP. If ESP_WIFI_BSS_MAX_IDLE_SUPPORT is set,
+                it will be sent as bss max idle period in association request. unit: seconds.
+
+        config ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+            int "Minimum wait broadcast data time"
+            range 10 30
+            default 15
+            help
+                Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station knows through the beacon
+                that AP will send broadcast packet, it will wait for ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+                before entering the sleep process. If a broadcast packet is received with more data bits, the time
+                will refreshed. unit: milliseconds.
 
         config ESP_WIFI_FTM_ENABLE
             bool "WiFi FTM"
@@ -392,7 +448,7 @@ menu "Wi-Fi"
 
         config ESP_WIFI_GMAC_SUPPORT
             bool "WiFi GMAC Support(GMAC128 and GMAC256)"
-            default n
+            default y
             help
                 Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
 
@@ -418,7 +474,8 @@ menu "Wi-Fi"
         config ESP_WIFI_SLP_BEACON_LOST_TIMEOUT
             int "Beacon loss timeout"
             range 5 100
-            default 10
+            default 25 if ESP_COEX_SW_COEXIST_ENABLE
+            default 10 if (!ESP_COEX_SW_COEXIST_ENABLE)
             depends on ESP_WIFI_SLP_BEACON_LOST_OPT
             help
                 Timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond.
@@ -429,8 +486,9 @@ menu "Wi-Fi"
             default 3
             depends on ESP_WIFI_SLP_BEACON_LOST_OPT
             help
-                Maximum number of consecutive lost beacons allowed, WiFi keeps Rx state when
-                the number of consecutive beacons lost is greater than the given threshold.
+                Maximum number of consecutive lost beacons allowed, the WiFi Rx state behaviour
+                will be determined by ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_POLICY
+                when the number of consecutive beacons lost is greater than the given threshold.
 
         config ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
             int "Delta early time for RF PHY on"
@@ -450,6 +508,77 @@ menu "Wi-Fi"
                 Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
                 be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
 
+        choice ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_POLICY
+            prompt "Beacon strategy when beacon loss exceeds threshold"
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+            default ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_AUTO
+            help
+                Select the strategy to apply when the number of lost beacons exceeds the threshold.
+
+                - "Receive beacon": Keep RF on until a beacon is successfully received.
+
+                - "Drop beacon": Turn off RF and skip beacon reception during this period.
+
+                - "Auto": Beacon will been dropped only if ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE enabled
+                          and expected rx beacon probability stays below the standard.
+
+            config ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_RECEIVE
+                bool "Receive beacon"
+            config ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_DROP
+                bool "Drop beacon"
+            config ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_AUTO
+                bool "Auto"
+        endchoice
+
+        config ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+            bool "Sample beacon to calculate beacon offset"
+            default n
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT && !ESP_WIFI_ENHANCED_LIGHT_SLEEP
+            help
+                Select to enable feature sampling beacons to calculate beacon offset.
+
+        menu "Beacon Sample Configuration Options"
+            visible if ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+            config ESP_WIFI_SLP_SAMPLE_BEACON_COUNT
+                int "Sample beacons at wifi connected to adjust beacon parameters"
+                range 100 1200
+                default 300
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Numble of sampled beacons at wifi connected to adjust beacon parameters.
+
+            config ESP_WIFI_SLP_SAMPLE_BEACON_DIFFERENCE_PERCENT
+                int "Difference percentage triggers unstable event"
+                range 0 100
+                default 20
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Difference triggers event WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE
+                    when the actual rx beacon probability continuously falls below
+                    the expected probability by this value.
+                    unit: percentage
+
+            config ESP_WIFI_SLP_SAMPLE_BEACON_STANDARD_PERCENT
+                int "Standard percentage triggers beacon drop"
+                range 0 100
+                default 55
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Standard triggers beacon drop when the expected rx beacon probability
+                    falls below this value under ESP_WIFI_SLP_BEACON_LOST_DROP_BEACON_AUTO mode.
+                    unit: percentage
+
+            config ESP_WIFI_SLP_SAMPLE_BEACON_RESAMPLE_PERIOD
+                int "Resample period"
+                range 0 255
+                default 3
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Resample period if beacon drop is active under ESP_WIFI_SLP_BEACON_LOST_DROP_BEACON_AUTO mode.
+                    It means never resample if setting this value to 0.
+                    unit: hours
+        endmenu # "Beacon Sample Configuration Options"
+
         config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
             int "Maximum espnow encrypt peers number"
             range 0 4 if IDF_TARGET_ESP32C2
@@ -463,20 +592,47 @@ menu "Wi-Fi"
                 Maximum espnow encrypted peers number + maximum number of connections of SoftAP = Max hardware
                 keys number. When using ESP mesh, this value should be set to a maximum of 6.
 
-        config ESP_WIFI_NAN_ENABLE
-            bool "WiFi Aware"
+        config ESP_WIFI_NAN_SYNC_ENABLE
+            bool "Enable Wi-Fi Aware: Synchronization (NAN-Sync)"
             default n
             depends on SOC_WIFI_NAN_SUPPORT
+            select LWIP_IPV6
             help
-                Enable WiFi Aware (NAN) feature.
+                Enable Wi-Fi Aware: Synchronization feature (NAN-Sync).
 
-        config ESP_WIFI_ENABLE_WIFI_TX_STATS
-            bool "Enable Wi-Fi transmission statistics"
-            depends on SOC_WIFI_HE_SUPPORT
-            default "y"
+        config ESP_WIFI_NAN_SECURITY
+            bool "Enable Wi-Fi Aware: Encrypted Pairwise Datapath (NDP Security)"
+            depends on ESP_WIFI_NAN_SYNC_ENABLE && IDF_EXPERIMENTAL_FEATURES && ESP_WIFI_MBEDTLS_CRYPTO
+            select MBEDTLS_PKCS5_C
+            select MBEDTLS_SHA256_C
+            default n
             help
-                Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category
-                will use 346 bytes memory.
+                Enable encrypted pairwise datapath for Wi-Fi Aware (NAN).
+                Adds PBKDF2 key derivation (mbedTLS PKCS#5), 4-way handshake (M1-M4),
+                PTK derivation, and CCMP key installation for secured NAN
+                data links. Disable to save code size when only open
+                datapaths are needed.
+
+                Requires ESP_WIFI_MBEDTLS_CRYPTO + MBEDTLS_PKCS5_C + MBEDTLS_SHA256_C
+                for ND-PMK derivation via pbkdf2_sha256() (MBEDTLS_MD_C is pulled in
+                transitively by MBEDTLS_PKCS5_C).
+
+        config ESP_WIFI_NAN_USD_ENABLE
+            bool "Enable Wi-Fi Aware: Unsynchronized service discovery (NAN-USD)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            default n
+            help
+                Enable Wi-Fi Aware: Unsynchronized service discovery (NAN-USD)
+
+        config ESP_WIFI_NAN_PAIRING
+            bool "Enable NAN Pairing"
+            depends on ESP_WIFI_NAN_SECURITY && IDF_EXPERIMENTAL_FEATURES && ESP_WIFI_MBEDTLS_CRYPTO
+            select ESP_WIFI_PASN_SUPPORT
+            default n
+            help
+                Enable NAN Pairing support. This allows devices to establish
+                secure pairing using bootstrapping methods like PIN code.
+                Requires PASN in wpa_supplicant (ESP_WIFI_PASN_SUPPORT)
 
         config ESP_WIFI_MBEDTLS_CRYPTO
             bool "Use MbedTLS crypto APIs"
@@ -535,6 +691,7 @@ menu "Wi-Fi"
         config ESP_WIFI_SUITE_B_192
             bool "Enable NSA suite B support with 192 bit key"
             default n
+            depends on ESP_WIFI_ENTERPRISE_SUPPORT
             depends on SOC_WIFI_GCMP_SUPPORT
             select ESP_WIFI_GCMP_SUPPORT
             select ESP_WIFI_GMAC_SUPPORT
@@ -547,20 +704,38 @@ menu "Wi-Fi"
             default n
             help
                 Select this option to enable 802.11k 802.11v APIs(RRM and BTM support).
+
+        config ESP_WIFI_RRM_SUPPORT
+            bool "Enable 802.11k APIs Support"
+            depends on ESP_WIFI_11KV_SUPPORT
+            default y
+            help
+                Select this option to enable 802.11k APIs(RRM support).
                 Only APIs which are helpful for network assisted roaming
                 are supported for now.
-                Enable this option with BTM and RRM enabled in sta config
+                Enable this option with RRM enabled in sta config
                 to make device ready for network assisted roaming.
-                BTM: BSS transition management enables an AP to request a station to transition
-                to a specific AP, or to indicate to a station a set of preferred APs.
                 RRM: Radio measurements enable STAs to understand the radio environment,
                 it enables STAs to observe and gather data on radio link performance
                 and on the radio environment. Current implementation adds beacon report,
                 link measurement, neighbor report.
 
+        config ESP_WIFI_WNM_SUPPORT
+            bool "Enable 802.11v APIs Support"
+            depends on ESP_WIFI_11KV_SUPPORT
+            default y
+            help
+                Select this option to enable 802.11v APIs(BTM support).
+                Only APIs which are helpful for network assisted roaming
+                are supported for now.
+                Enable this option with BTM enabled in sta config
+                to make device ready for network assisted roaming.
+                BTM: BSS transition management enables an AP to request a station to transition
+                to a specific AP, or to indicate to a station a set of preferred APs.
+
         config ESP_WIFI_SCAN_CACHE
             bool "Keep scan results in cache"
-            depends on ESP_WIFI_11KV_SUPPORT
+            depends on ESP_WIFI_RRM_SUPPORT
             default n
             help
                 Keep scan results in cache, if not enabled, those
@@ -570,24 +745,19 @@ menu "Wi-Fi"
             bool "Enable Multi Band Operation Certification Support"
             default n
             select ESP_WIFI_11KV_SUPPORT
+            select ESP_WIFI_RRM_SUPPORT
+            select ESP_WIFI_WNM_SUPPORT
             select ESP_WIFI_SCAN_CACHE
             help
                 Select this option to enable WiFi Multiband operation certification support.
 
         config ESP_WIFI_ENABLE_ROAMING_APP
-            bool "Advanced support for Wi-Fi Roaming (Experimental)"
-            depends on IDF_EXPERIMENTAL_FEATURES
+            bool "Advanced support for Wi-Fi Roaming"
             default n
-            select ESP_WIFI_SCAN_CACHE
             help
                 Enable Espressif's roaming app to allow for efficient Wi-Fi roaming.
                 This includes configurable periodic environment scans, maintaining a cache of the
                 best APs, handling low rssi events etc.
-
-                Risk Warning
-                Please note that this feature is still experimental and enabling this potentially can
-                lead to unpredictable scanning, connection and roaming attempts.
-                We are still working on tuning and optimising this feature to ensure reliable and stable use.
 
         menu "Configure roaming App"
             depends on ESP_WIFI_ENABLE_ROAMING_APP
@@ -600,6 +770,17 @@ menu "Wi-Fi"
             select ESP_WIFI_MBEDTLS_CRYPTO
             help
                 Select this option to enable WiFi Easy Connect Support.
+
+        config ESP_WIFI_DPP_MAX_CONF_OBJ
+            int "Maximum number of DPP configuration objects"
+            depends on ESP_WIFI_DPP_SUPPORT
+            range 1 10
+            default 3
+            help
+                Maximum number of configuration objects that can be received and stored
+                during a DPP configuration exchange. DPP v2 configurators may send
+                multiple configuration objects (e.g., for different SSIDs or AKMs).
+                Increasing this value will increase the memory usage for DPP events.
 
         config ESP_WIFI_11R_SUPPORT
             bool "Enable 802.11R (Fast Transition) Support"
@@ -614,10 +795,18 @@ menu "Wi-Fi"
             help
                 Select this option to enable WPS registrar support in softAP mode.
 
+        config ESP_WIFI_ENABLE_WIFI_TX_STATS
+            bool "Enable Wi-Fi transmission statistics"
+            depends on SOC_WIFI_HE_SUPPORT
+            default n
+            help
+                Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category
+                will use 346 bytes memory.
+
         config ESP_WIFI_ENABLE_WIFI_RX_STATS
             bool "Enable Wi-Fi reception statistics"
             depends on SOC_WIFI_HE_SUPPORT
-            default "y"
+            default n
             help
                 Enable Wi-Fi reception statistics. Total support 2 access category. Each access category
                 will use 190 bytes memory.
@@ -625,9 +814,46 @@ menu "Wi-Fi"
         config ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
             bool "Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics"
             depends on ESP_WIFI_ENABLE_WIFI_RX_STATS
-            default "y"
+            default n
             help
                 Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics. Will use 10932 bytes memory.
+
+        config ESP_WIFI_TX_HETB_QUEUE_NUM
+            int "WiFi TX HE TB QUEUE number for STA HE TB PPDU transmission"
+            depends on SOC_WIFI_HE_SUPPORT
+            range 1 4
+            default 3
+            help
+                Set the maximum number of queue that can be aggregated by the STA in the A-MPDU carried in the
+                HE TB PPDU.
+
+        config ESP_WIFI_ENABLE_DUMP_HESIGB
+            bool "Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs"
+            depends on SOC_WIFI_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs.
+
+        config ESP_WIFI_ENABLE_DUMP_MU_CFO
+            bool "Enable Wi-Fi dump MU CFO"
+            depends on SOC_WIFI_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump MU CFO.
+
+        config ESP_WIFI_ENABLE_DUMP_CTRL_NDPA
+            bool "Enable Wi-Fi dump NDPA frames"
+            depends on SOC_WIFI_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump NDPA frames.
+
+        config ESP_WIFI_ENABLE_DUMP_CTRL_BFRP
+            bool "Enable Wi-Fi dump BFRP frames"
+            depends on SOC_WIFI_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump BFRP frames.
 
         menu "WPS Configuration Options"
             config ESP_WIFI_WPS_STRICT
@@ -649,6 +875,14 @@ menu "Wi-Fi"
                     be shared to other devices, making it in readable format increases
                     that risk, also passphrase requires pbkdf2 to convert in psk.
 
+            config ESP_WIFI_WPS_RECONNECT_ON_FAIL
+                bool "Reconnect to previous SSID if WPS failed"
+                default n
+                help
+                    Select this option to enable reconnection to previous SSID if WPS fails.
+                    This option will only work if station was connected to a network
+                    when WPS was started.
+
         endmenu # "WPS Configuration Options"
 
 
@@ -662,12 +896,6 @@ menu "Wi-Fi"
 
                 Enabling this could increase the build size ~60kb
                 depending on the project logging level.
-
-        config ESP_WIFI_TESTING_OPTIONS
-            bool "Add DPP testing code"
-            default n
-            help
-                Select this to enable unity test for DPP.
 
         config ESP_WIFI_ENTERPRISE_SUPPORT
             bool "Enable enterprise option"
@@ -692,6 +920,41 @@ menu "Wi-Fi"
                 Select this configuration to free dynamic buffers during WiFi enterprise connection.
                 This will enable chip to reduce heap consumption during WiFi enterprise connection.
 
+        config ESP_WIFI_MODEM_RF_FLAG_UPDATE_DEBUG
+            bool "Enable debug assertions for modem RF flag update"
+            depends on ESP_WIFI_ENHANCED_LIGHT_SLEEP
+            default n
+            help
+                Enable debug assertions to verify modem RF flag update operations.
+                This option enables assert checks to verify that modem RF power state
+                is correctly cleared before pmu sleep.
+
+        config ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT
+            bool "Support station connection to hidden APs using passive scan when country policy is auto"
+            default n
+            help
+                Select this option to enable/disable support for station connections
+                to hidden APs using passive scan when the country policy is set to auto.
+
+        config ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
+            bool "WiFi Privacy Enhancements enabled"
+            default n
+            help
+                Select this option to enable WiFi Privacy Enhancements (enables random mac,
+                seq number, dialogue token number, vendor seq number cnt).
+                Supported on station interface only; softAP may be added in future.
+
+        config ESP_WIFI_RMAC_AUTO_RESET_INTERVAL
+            int "Random MAC Auto-Reset Interval time"
+            depends on ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED
+            range 1 24
+            default 12
+            help
+                Interval in hours to rotate the random MAC while not connected to an AP.
+                Values below 1 or above 24 are not allowed.
+
     endif # wifi enabled
 
 endmenu # Wi-Fi
+
+rsource "remote/Kconfig.remote"

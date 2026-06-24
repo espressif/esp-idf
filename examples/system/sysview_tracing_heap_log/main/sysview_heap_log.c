@@ -9,13 +9,15 @@
 
 #include "sdkconfig.h"
 #include <inttypes.h>
-#include "esp_sysview_trace.h"
+#include "esp_err.h"
+#include "esp_app_trace.h"
+#include "esp_sysview_heap_trace_module.h" // from esp_sysview managed component
 #include "esp_heap_trace.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-
+#include "esp_trace.h"
 
 static const char *TAG = "example";
 
@@ -53,7 +55,7 @@ static void alloc_task(void *p)
     snprintf(task_name, sizeof(task_name), "free%d", task_args->idx);
     xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, CONFIG_FREERTOS_NUMBER_OF_CORES-1);
 
-    // here GDB will stop at brekpoint and execute OpenOCD command to start tracing
+    // here GDB will stop at breakpoint and execute OpenOCD command to start tracing
     for(int i = 1; i < 10; i++) {
         uint32_t sz = 2*i*(task_args->idx + 1);
         void *p = malloc(sz/2);
@@ -71,8 +73,22 @@ static void alloc_task(void *p)
     }
 }
 
+esp_trace_open_params_t esp_trace_get_user_params(void)
+{
+    esp_trace_open_params_t trace_params = {
+        .core_cfg = NULL,
+        .encoder_name = "sysview",
+        .encoder_cfg = NULL,
+        .transport_name = "apptrace",
+        .transport_cfg = NULL,
+    };
+    return trace_params;
+}
+
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Ready for OpenOCD connection");
+
     const int num_allocers = 3;
     char task_name[20];
     // redirect log messages to the host using SystemView tracing module
@@ -100,6 +116,6 @@ void app_main(void)
         uint32_t val = ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
         ESP_LOGI(TAG, "Got notify val %"PRIu32, val);
     }
-    // here GDB will stop at brekpoint and execute OpenOCD command to stop tracing
+    // here GDB will stop at breakpoint and execute OpenOCD command to stop tracing
     heap_trace_stop();
 }

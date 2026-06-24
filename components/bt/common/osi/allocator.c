@@ -20,6 +20,12 @@
 
 #include "bt_common.h"
 #include "osi/allocator.h"
+#if HEAP_MEMORY_STATS
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
+#endif
 
 extern void *pvPortZalloc(size_t size);
 extern void vPortFree(void *pv);
@@ -198,6 +204,28 @@ uint32_t osi_mem_dbg_get_max_size_section(uint8_t index)
 }
 #endif
 
+#if HEAP_MEMORY_STATS
+static size_t s_mem_used_size = 0;
+static SemaphoreHandle_t s_mem_mutex = NULL;
+
+int osi_mem_init(void)
+{
+    s_mem_mutex = xSemaphoreCreateMutex();
+    if (s_mem_mutex == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+void osi_mem_deinit(void)
+{
+    if (s_mem_mutex) {
+        vSemaphoreDelete(s_mem_mutex);
+        s_mem_mutex = NULL;
+    }
+}
+#endif
+
 char *osi_strdup(const char *str)
 {
     size_t size = strlen(str) + 1;  // + 1 for the null terminator
@@ -213,42 +241,52 @@ char *osi_strdup(const char *str)
 
 void *osi_malloc_func(size_t size)
 {
-#if HEAP_MEMORY_DEBUG
-    void *p;
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    p = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    p = malloc(size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-    osi_mem_dbg_record(p, size, __func__, __LINE__);
+    void *p = osi_malloc_base(size);
+
+    if (size != 0 && p == NULL) {
+        OSI_TRACE_ERROR("malloc failed (caller=%p size=%u)", __builtin_return_address(0), size);
+        OSI_TRACE_ERROR("heap info: free=%d, largest_block=%d",
+            heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+#if HEAP_ALLOCATION_FAILS_ABORT
+        assert(0);
+#endif
+    }
+
+#if HEAP_MEMORY_STATS
+    if (s_mem_mutex != NULL && p != NULL) {
+        size_t alloc_size = heap_caps_get_allocated_size(p);
+        xSemaphoreTake(s_mem_mutex, portMAX_DELAY);
+        s_mem_used_size += alloc_size;
+        xSemaphoreGive(s_mem_mutex);
+    }
+#endif
+
     return p;
-#else
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    return malloc(size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void *osi_calloc_func(size_t size)
 {
-#if HEAP_MEMORY_DEBUG
-    void *p;
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    p = heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    p = calloc(1, size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-    osi_mem_dbg_record(p, size, __func__, __LINE__);
+    void *p = osi_calloc_base(size);
+
+    if (size != 0 && p == NULL) {
+        OSI_TRACE_ERROR("calloc failed (caller=%p size=%u)", __builtin_return_address(0), size);
+        OSI_TRACE_ERROR("heap info: free=%d, largest_block=%d",
+            heap_caps_get_free_size(MALLOC_CAP_DEFAULT), heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+#if HEAP_ALLOCATION_FAILS_ABORT
+        assert(0);
+#endif
+    }
+
+#if HEAP_MEMORY_STATS
+    if (s_mem_mutex != NULL && p != NULL) {
+        size_t alloc_size = heap_caps_get_allocated_size(p);
+        xSemaphoreTake(s_mem_mutex, portMAX_DELAY);
+        s_mem_used_size += alloc_size;
+        xSemaphoreGive(s_mem_mutex);
+    }
+#endif
+
     return p;
-#else
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    return calloc(1, size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void osi_free_func(void *ptr)
@@ -256,5 +294,28 @@ void osi_free_func(void *ptr)
 #if HEAP_MEMORY_DEBUG
     osi_mem_dbg_clean(ptr, __func__, __LINE__);
 #endif
+
+#if HEAP_MEMORY_STATS
+    if (s_mem_mutex != NULL && ptr != NULL) {
+        size_t free_size = heap_caps_get_allocated_size(ptr);
+        xSemaphoreTake(s_mem_mutex, portMAX_DELAY);
+        if (s_mem_used_size >= free_size) {
+            s_mem_used_size -= free_size;
+        } else {
+            OSI_TRACE_ERROR("The size of malloc and free not match: alloc_size=%u free_size=%u",
+                s_mem_used_size, free_size);
+        }
+        xSemaphoreGive(s_mem_mutex);
+    }
+#endif
+
     free(ptr);
 }
+
+#if HEAP_MEMORY_STATS
+// Get the size of memory allocated by Bluedroid but not yet freed
+uint32_t esp_host_used_heap_size_get(void)
+{
+    return s_mem_used_size;
+}
+#endif

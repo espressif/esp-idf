@@ -3,8 +3,6 @@
 # Limit test esp_pm auto light sleep logic with faster ticks and faster code
 CONFIG_FREERTOS_HZ=1000
 CONFIG_COMPILER_OPTIMIZATION_PERF=y
-# Minimize the automatic light sleep entry threshold
-CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP=2
 
 # Enable PM options for automatic sleeping and DFS
 CONFIG_PM_DFS_INIT_AUTO=y

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 /* multi_heap is a heap implementation for handling multiple
-   heterogenous heaps in a single program.
+   heterogeneous heaps in a single program.
 
    Any contiguous block of memory can be registered as a heap.
 */
@@ -229,6 +229,29 @@ typedef bool (*multi_heap_walker_cb_t)(void *block_ptr, size_t block_size, int b
  * @param user_data Opaque pointer to user defined data
  */
 void multi_heap_walk(multi_heap_handle_t heap, multi_heap_walker_cb_t walker_func, void *user_data);
+
+/*
+ * @brief Get the size of the block (including eventual metadata added by the heap component) located at p
+ *
+ * @param heap The heap in which the pointer p is located
+ * @param p The pointer to the data block to retrieve the same from
+ * @return size_t The size of the data block in bytes.
+ */
+size_t multi_heap_get_full_block_size(multi_heap_handle_t heap, void *p);
+
+/**
+ * @brief Function walking through a given heap and returning the pointer to the
+ * allocated block containing the pointer passed as parameter.
+ *
+ * @note The heap parameter must be valid and the pointer parameter must
+ * belong to a block of allocated memory. The app will crash with an
+ * assertion failure if at least one of the parameter is invalid.
+ *
+ * @param heap The heap to walk through
+ * @param ptr The pointer to find the allocated block of
+ * @return Pointer to the allocated block containing the pointer ptr
+ */
+void *multi_heap_find_containing_block(multi_heap_handle_t heap, void *ptr);
 
 #ifdef __cplusplus
 }

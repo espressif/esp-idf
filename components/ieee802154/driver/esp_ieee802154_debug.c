@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,6 @@
 
 #if CONFIG_IEEE802154_DEBUG
 ieee802154_probe_info_t g_ieee802154_probe;
-#define TAG "ieee802154_debug"
 
 #if CONFIG_IEEE802154_RECORD_EVENT
 static char *ieee802154_get_event_string(ieee802154_ll_event_t events)
@@ -78,6 +77,16 @@ static char *ieee802154_state_string[] = {
     "ED",
     "CCA",
 };
+
+static char *ieee802154_state_to_string(ieee802154_state_t state)
+{
+    char *state_string = "INVALID";
+    if (state < sizeof(ieee802154_state_string) / sizeof(ieee802154_state_string[0])) {
+        state_string = ieee802154_state_string[state];
+    }
+    return state_string;
+}
+
 #endif // CONFIG_IEEE802154_RECORD_STATE
 
 #if CONFIG_IEEE802154_RECORD_CMD
@@ -127,7 +136,7 @@ static char *ieee802154_get_cmd_string(ieee802154_ll_cmd_t cmd)
 #endif // CONFIG_IEEE802154_RECORD_CMD
 
 #if CONFIG_IEEE802154_RECORD_EVENT || CONFIG_IEEE802154_RECORD_ABORT
-static char *ieee80154_rx_abort_reason_string[] = {
+static char *ieee802154_rx_abort_reason_string[] = {
     "RSVD",                                         //   = 0,
     "RX_STOP",                                      //   = 1,
     "SFD_TIMEOUT",                                  //   = 2,
@@ -149,7 +158,7 @@ static char *ieee80154_rx_abort_reason_string[] = {
     "ED_COEX_REJECT",                               //   = 26,
 };
 
-static char *ieee80154_tx_abort_reason_string[] = {
+static char *ieee802154_tx_abort_reason_string[] = {
     "RSVD",                                         //   = 0,
     "RX_ACK_STOP",                                  //   = 1,
     "RX_ACK_SFD_TIMEOUT",                           //   = 2,
@@ -170,73 +179,142 @@ static char *ieee80154_tx_abort_reason_string[] = {
     "CCA_BUSY",                                     //   = 25,
 };
 
+static char *ieee802154_abort_reason_to_string(ieee802154_ll_rx_abort_reason_t reason, bool is_tx_abort)
+{
+    char *abort_reason_string = "UNKNOWN";
+    if (is_tx_abort) {
+        if (reason < sizeof(ieee802154_tx_abort_reason_string) / sizeof(ieee802154_tx_abort_reason_string[0])) {
+            abort_reason_string = ieee802154_tx_abort_reason_string[reason];
+        }
+    } else {
+        if (reason < sizeof(ieee802154_rx_abort_reason_string) / sizeof(ieee802154_rx_abort_reason_string[0])) {
+            abort_reason_string = ieee802154_rx_abort_reason_string[reason];
+        }
+    }
+    return abort_reason_string;
+}
+
 #endif // CONFIG_IEEE802154_RECORD_EVENT
 
-#if CONFIG_IEEE802154_ASSERT
-void ieee802154_assert_print(void)
+#if CONFIG_IEEE802154_RECORD
+#if CONFIG_IEEE802154_RECORD_TXRX_FRAME
+static void ieee802154_dump_frame_print(const uint8_t *frame)
+{
+    if (frame == NULL) {
+        ESP_EARLY_LOGW(IEEE802154_TAG, "Invalid frame, frame is NULL");
+        return;
+    }
+    if (frame[0] < IEEE802154_FRAME_MIN_LEN) {
+        ESP_EARLY_LOGW(IEEE802154_TAG, "Invalid frame, frame length is %d", frame[0]);
+        return;
+    }
+    for (uint8_t i = 1; i < frame[0]; i+=8) {
+        uint8_t end = (i + 7 < frame[0]) ? i + 7 : frame[0] - 1;
+        ESP_EARLY_LOGW(IEEE802154_TAG, "frag(%03d:%03d~%03d): %02x %02x %02x %02x %02x %02x %02x %02x",
+                                frame[0], i, end,
+                                frame[i],
+                                (i+1 < frame[0]) ? frame[i+1] : 0,
+                                (i+2 < frame[0]) ? frame[i+2] : 0,
+                                (i+3 < frame[0]) ? frame[i+3] : 0,
+                                (i+4 < frame[0]) ? frame[i+4] : 0,
+                                (i+5 < frame[0]) ? frame[i+5] : 0,
+                                (i+6 < frame[0]) ? frame[i+6] : 0,
+                                (i+7 < frame[0]) ? frame[i+7] : 0);
+    }
+}
+#endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
+
+void ieee802154_record_print(void)
 {
 #if CONFIG_IEEE802154_RECORD_EVENT
-    ESP_EARLY_LOGW(TAG, "Print the record event, current event index: %d", g_ieee802154_probe.event_index);
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record event, current event index: %d", g_ieee802154_probe.event_index);
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_EVENT_SIZE; i++) {
         char event_log[200] = { 0 };
         char abort_log[100] = { 0 };
         snprintf(event_log, 200,"index %2d: event: 0x%4x, %15s, state:%10s, timestamp: %lld", i, g_ieee802154_probe.event[i].event,
             ieee802154_get_event_string(g_ieee802154_probe.event[i].event),
-            ieee802154_state_string[g_ieee802154_probe.event[i].state],
+            ieee802154_state_to_string(g_ieee802154_probe.event[i].state),
             g_ieee802154_probe.event[i].timestamp);
         if (g_ieee802154_probe.event[i].event == IEEE802154_EVENT_RX_ABORT) {
             snprintf(abort_log, 100, "rx abort reason: %4x, %20s", g_ieee802154_probe.event[i].abort_reason.rx,
-                ieee80154_rx_abort_reason_string[g_ieee802154_probe.event[i].abort_reason.rx]);
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.event[i].abort_reason.rx, false));
         } else if (g_ieee802154_probe.event[i].event == IEEE802154_EVENT_TX_ABORT) {
             snprintf(abort_log, 100, "tx abort reason: %4x, %20s", g_ieee802154_probe.event[i].abort_reason.tx,
-                ieee80154_tx_abort_reason_string[g_ieee802154_probe.event[i].abort_reason.tx]);
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.event[i].abort_reason.tx, true));
         }
-        ESP_EARLY_LOGW(TAG, "%s %s", event_log, abort_log);
+        ESP_EARLY_LOGW(IEEE802154_TAG, "%s %s", event_log, abort_log);
     }
-    ESP_EARLY_LOGW(TAG,"Print the record event done.\n");
+    ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record event done.");
 #endif // CONFIG_IEEE802154_RECORD_EVENT
 
 #if CONFIG_IEEE802154_RECORD_STATE
-    ESP_EARLY_LOGW(TAG, "Print the record state, current state index: %d", g_ieee802154_probe.state_index);
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record state, current state index: %d", g_ieee802154_probe.state_index);
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_STATE_SIZE; i++) {
-        ESP_EARLY_LOGW(TAG, "index %2d: line:%5s, state:%10s, timestamp: %lld",
-            i, g_ieee802154_probe.state[i].line_str,
-            ieee802154_state_string[g_ieee802154_probe.state[i].state],
+        ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5lu, state:%10s, timestamp: %lld",
+            i, g_ieee802154_probe.state[i].line,
+            ieee802154_state_to_string(g_ieee802154_probe.state[i].state),
             g_ieee802154_probe.state[i].timestamp);
     }
-    ESP_EARLY_LOGW(TAG,"Print the record state done.\n");
+    ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record state done.");
 #endif // CONFIG_IEEE802154_RECORD_STATE
 
 #if CONFIG_IEEE802154_RECORD_CMD
-    ESP_EARLY_LOGW(TAG, "Print the record cmd, current cmd index: %d", g_ieee802154_probe.cmd_index);
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record cmd, current cmd index: %d", g_ieee802154_probe.cmd_index);
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_CMD_SIZE; i++) {
-        ESP_EARLY_LOGW(TAG, "index %2d: line:%5s, cmd:%10s, timestamp: %lld",
-            i, g_ieee802154_probe.cmd[i].line_str,
+        ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: line:%5lu, cmd:%10s, timestamp: %lld",
+            i, g_ieee802154_probe.cmd[i].line,
             ieee802154_get_cmd_string(g_ieee802154_probe.cmd[i].cmd),
             g_ieee802154_probe.cmd[i].timestamp);
     }
-    ESP_EARLY_LOGW(TAG,"Print the record cmd done.\n");
+    ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record cmd done.");
 #endif // CONFIG_IEEE802154_RECORD_CMD
 
 #if CONFIG_IEEE802154_RECORD_ABORT
-    ESP_EARLY_LOGW(TAG, "Print the record abort, current abort index: %d", g_ieee802154_probe.abort_index);
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record abort, current abort index: %d", g_ieee802154_probe.abort_index);
     for (uint8_t i = 0; i < IEEE802154_ASSERT_RECORD_ABORT_SIZE; i++) {
         if (g_ieee802154_probe.abort[i].is_tx_abort) {
-            ESP_EARLY_LOGW(TAG, "index %2d: tx abort: %4x, %15s, timestamp: %lld",
+            ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: tx abort: %4x, %15s, timestamp: %lld",
                 i, g_ieee802154_probe.abort[i].abort_reason.tx,
-                ieee80154_tx_abort_reason_string[g_ieee802154_probe.abort[i].abort_reason.tx],
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.abort[i].abort_reason.tx, true),
                 g_ieee802154_probe.abort[i].timestamp);
         } else {
-            ESP_EARLY_LOGW(TAG, "index %2d: rx abort: %4x, %15s, timestamp: %lld",
+            ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: rx abort: %4x, %15s, timestamp: %lld",
                 i, g_ieee802154_probe.abort[i].abort_reason.rx,
-                ieee80154_rx_abort_reason_string[g_ieee802154_probe.abort[i].abort_reason.rx],
+                ieee802154_abort_reason_to_string(g_ieee802154_probe.abort[i].abort_reason.rx, false),
                 g_ieee802154_probe.abort[i].timestamp);
         }
     }
-    ESP_EARLY_LOGW(TAG,"Print the record abort done.\n");
+    ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record abort done.");
 #endif // CONFIG_IEEE802154_RECORD_ABORT
+
+#if CONFIG_IEEE802154_RECORD_TXRX_FRAME
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the dumping tx/rx frame, current frame index: %d", g_ieee802154_probe.frame_index);
+    for (uint8_t i = 0; i < IEEE802154_RECORD_TXRX_FRAME_SIZE; i++) {
+        if (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_INVALID \
+            || g_ieee802154_probe.frame[i].frame_type >= IEEE802154_RECORD_FRAME_TYPE_VALID_MAX) {
+            continue;
+        }
+        if (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_RX \
+            || g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_RX_ACK) {
+            ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: %s frame, length: %d, buffer index: %d(%s buffer), timestamp: %lld, mac conf: %08x, packet:",
+                i, (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_RX) ? "rx" : "rx ack",
+                g_ieee802154_probe.frame[i].dump_frame[0], g_ieee802154_probe.frame[i].rx_buffer_index,
+                (g_ieee802154_probe.frame[i].rx_buffer_index < 0 ? "Invalid" :\
+                    (g_ieee802154_probe.frame[i].rx_buffer_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) ? "Stub" : "Valid"),
+                    g_ieee802154_probe.frame[i].timestamp, g_ieee802154_probe.frame[i].mac_conf);
+        } else if (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_TX \
+            || g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_TX_ACK) {
+            ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: %s frame, length: %d, timestamp: %lld, mac conf: %08x, packet:",
+                i, (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_TX) ? "tx" : "tx ack",
+                g_ieee802154_probe.frame[i].dump_frame[0], g_ieee802154_probe.frame[i].timestamp,
+                g_ieee802154_probe.frame[i].mac_conf);
+        }
+        ieee802154_dump_frame_print(g_ieee802154_probe.frame[i].dump_frame);
+    }
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the dumped tx/rx frame done.");
+#endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
 }
-#endif // CONFIG_IEEE802154_ASSERT
+#endif // CONFIG_IEEE802154_RECORD
 
 #if CONFIG_IEEE802154_TXRX_STATISTIC
 static ieee802154_txrx_statistic_t s_ieee802154_txrx_statistic;
@@ -330,45 +408,101 @@ void ieee802154_txrx_statistic_print(void)
     uint64_t rx_success_nums = s_ieee802154_txrx_statistic.rx.done_nums - s_ieee802154_txrx_statistic.rx.abort.tx_ack_coex_break_nums;
 
 
-    ESP_LOGW(TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-10s%-15llu%9.2f%%|%-25s%-15llu%9.2f%%|", "", "Done:", s_ieee802154_txrx_statistic.tx.done_nums, tx_done_ratio*100, "Success:", tx_success_nums, tx_success_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_direct_num:", tx_direct_num, tx_direct_num_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_deferred_num:", s_ieee802154_txrx_statistic.tx.deferred_nums, tx_deferred_num_ratio*100);
-    ESP_LOGW(TAG, "+                    +-----------------------------------+--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "rx_ack_coex_break:", s_ieee802154_txrx_statistic.tx.abort.rx_ack_coex_break_nums, tx_abort_rx_ack_coex_break_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "rx_ack_timeout:", s_ieee802154_txrx_statistic.tx.abort.rx_ack_timeout_nums, tx_abort_rx_ack_timeout_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-5s%-15llu|%-10s%-15llu%9.2f%%|%-25s%-15llu%9.2f%%|", "TX:", s_ieee802154_txrx_statistic.tx.nums, "Abort", tx_abort_nums, tx_abort_ratio*100, "tx_coex_break:", s_ieee802154_txrx_statistic.tx.abort.tx_coex_break_nums, tx_abort_tx_coex_break_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_security_error:", s_ieee802154_txrx_statistic.tx.abort.tx_security_error_nums, tx_abort_tx_security_error_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "cca_failed:", s_ieee802154_txrx_statistic.tx.abort.cca_failed_nums, tx_abort_cca_failed_ratio*100);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "cca_busy:", s_ieee802154_txrx_statistic.tx.abort.cca_busy_nums, tx_abort_cca_busy_ratio*100);
-    ESP_LOGW(TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-10s%-25llu|%-25s%-25llu|", "", "Done:", s_ieee802154_txrx_statistic.rx.done_nums, "Success:", rx_success_nums);
-    ESP_LOGW(TAG, "+                    +-----------------------------------+--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "tx_ack_coex_break:", s_ieee802154_txrx_statistic.rx.abort.tx_ack_coex_break_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "sfd_timeout:", s_ieee802154_txrx_statistic.rx.abort.sfd_timeout_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "crc_error:", s_ieee802154_txrx_statistic.rx.abort.crc_error_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-10s%-25llu|%-25s%-25llu|", "RX", "Abort", rx_abort_nums, "filter_fail:", s_ieee802154_txrx_statistic.rx.abort.filter_fail_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "no_rss:", s_ieee802154_txrx_statistic.rx.abort.no_rss_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "rx_coex_break:", s_ieee802154_txrx_statistic.rx.abort.rx_coex_break_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "rx_restart:", s_ieee802154_txrx_statistic.rx.abort.rx_restart_nums);
-    ESP_LOGW(TAG, "+                    +                                   +--------------------------------------------------+");
-    ESP_LOGW(TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "ed_abort:", s_ieee802154_txrx_statistic.rx.abort.ed_abort_nums);
-    ESP_LOGW(TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-10s%-15llu%9.2f%%|%-25s%-15llu%9.2f%%|", "", "Done:", s_ieee802154_txrx_statistic.tx.done_nums, tx_done_ratio*100, "Success:", tx_success_nums, tx_success_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_direct_num:", tx_direct_num, tx_direct_num_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_deferred_num:", s_ieee802154_txrx_statistic.tx.deferred_nums, tx_deferred_num_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +-----------------------------------+--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "rx_ack_coex_break:", s_ieee802154_txrx_statistic.tx.abort.rx_ack_coex_break_nums, tx_abort_rx_ack_coex_break_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "rx_ack_timeout:", s_ieee802154_txrx_statistic.tx.abort.rx_ack_timeout_nums, tx_abort_rx_ack_timeout_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-5s%-15llu|%-10s%-15llu%9.2f%%|%-25s%-15llu%9.2f%%|", "TX:", s_ieee802154_txrx_statistic.tx.nums, "Abort", tx_abort_nums, tx_abort_ratio*100, "tx_coex_break:", s_ieee802154_txrx_statistic.tx.abort.tx_coex_break_nums, tx_abort_tx_coex_break_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "tx_security_error:", s_ieee802154_txrx_statistic.tx.abort.tx_security_error_nums, tx_abort_tx_security_error_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "cca_failed:", s_ieee802154_txrx_statistic.tx.abort.cca_failed_nums, tx_abort_cca_failed_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-15llu%9.2f%%|", "", "", "cca_busy:", s_ieee802154_txrx_statistic.tx.abort.cca_busy_nums, tx_abort_cca_busy_ratio*100);
+    ESP_LOGW(IEEE802154_TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-10s%-25llu|%-25s%-25llu|", "", "Done:", s_ieee802154_txrx_statistic.rx.done_nums, "Success:", rx_success_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +-----------------------------------+--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "tx_ack_coex_break:", s_ieee802154_txrx_statistic.rx.abort.tx_ack_coex_break_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "sfd_timeout:", s_ieee802154_txrx_statistic.rx.abort.sfd_timeout_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "crc_error:", s_ieee802154_txrx_statistic.rx.abort.crc_error_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-10s%-25llu|%-25s%-25llu|", "RX", "Abort", rx_abort_nums, "filter_fail:", s_ieee802154_txrx_statistic.rx.abort.filter_fail_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "no_rss:", s_ieee802154_txrx_statistic.rx.abort.no_rss_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "rx_coex_break:", s_ieee802154_txrx_statistic.rx.abort.rx_coex_break_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "rx_restart:", s_ieee802154_txrx_statistic.rx.abort.rx_restart_nums);
+    ESP_LOGW(IEEE802154_TAG, "+                    +                                   +--------------------------------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-35s|%-25s%-25llu|", "", "", "ed_abort:", s_ieee802154_txrx_statistic.rx.abort.ed_abort_nums);
+    ESP_LOGW(IEEE802154_TAG, "+--------------------+-----------------------------------+--------------------------------------------------+");
 }
 
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
+
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+#define IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL 10
+#define IEEE802154_RX_BUFFER_GET_USED_LEVEL(a) (((a) * IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL) / (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1))
+static uint16_t s_rx_buffer_used_nums = 0;
+static uint64_t s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1];
+
+void ieee802154_rx_buffer_statistic_is_free(bool is_free)
+{
+    if (is_free) {
+        if (s_rx_buffer_used_nums > 0) {
+            s_rx_buffer_used_nums--;
+        }
+    } else {
+        s_rx_buffer_used_nums++;
+        // (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1) means buffer full.
+        if (s_rx_buffer_used_nums > (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1)) {
+            s_rx_buffer_used_nums = CONFIG_IEEE802154_RX_BUFFER_SIZE + 1;
+        }
+        uint8_t level = IEEE802154_RX_BUFFER_GET_USED_LEVEL(s_rx_buffer_used_nums);
+        if (level <= IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL) {
+            s_rx_buffer_used_water_level[level]++;
+        }
+    }
+}
+
+void ieee802154_rx_buffer_statistic_clear(void)
+{
+    memset((void*)s_rx_buffer_used_water_level, 0, sizeof(uint64_t)*(IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1));
+}
+
+void ieee802154_rx_buffer_statistic_print(void)
+{
+    uint64_t total_times = 0;
+    float percentage = 0.0f;
+    for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1); i++) {
+        total_times += s_rx_buffer_used_water_level[i];
+    }
+    ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-25u|", "rx buff total size:", CONFIG_IEEE802154_RX_BUFFER_SIZE);
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-25llu|", "buffer alloc times:", total_times);
+    ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
+    for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL); i++) {
+        percentage = (total_times > 0) ? ((float)s_rx_buffer_used_water_level[i] / (float)total_times) * 100 : 0.0f;
+        ESP_LOGW(IEEE802154_TAG, "|%4d%%%5s%4d%%%10s|%-15llu%9.2f%%|",
+            ((i) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), "~",
+            ((i + 1) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), " used:",
+            s_rx_buffer_used_water_level[i], percentage);
+    }
+    percentage = (total_times > 0) ? ((float)s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL] / (float)total_times) * 100 : 0.0f;
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-15llu%9.2f%%|", "full used:",
+        s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL], percentage);
+    ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
+}
+
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
 
 #endif // CONFIG_IEEE802154_DEBUG

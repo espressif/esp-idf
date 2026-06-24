@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,10 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "driver/uart_vfs.h"
+#include "driver/esp_private/uart_vfs.h"
 #include "driver/uart.h"
 #include "driver/uart_select.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "hal/uart_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_vfs_dev.h" // Old headers for the aliasing functions
@@ -27,17 +28,17 @@
 // Token signifying that no character is available
 #define NONE -1
 
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDOUT_LINE_ENDING_CR
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_LF
 #endif
 
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDIN_LINE_ENDING_CRLF
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDIN_LINE_ENDING_CR
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
@@ -53,14 +54,18 @@
 typedef void (*tx_func_t)(int, int);
 // UART read bytes function type
 typedef int (*rx_func_t)(int);
+// UART get available received bytes function type
+typedef size_t (*get_available_data_len_func_t)(int);
 
-// Basic functions for sending and receiving bytes over UART
+// Basic functions for sending, receiving bytes, and get available data length over UART
 static void uart_tx_char(int fd, int c);
 static int uart_rx_char(int fd);
+static size_t uart_get_avail_data_len(int fd);
 
-// Functions for sending and receiving bytes which use UART driver
+// Functions for sending, receiving bytes, and get available data length which use UART driver
 static void uart_tx_char_via_driver(int fd, int c);
 static int uart_rx_char_via_driver(int fd);
+static size_t uart_get_avail_data_len_via_driver(int fd);
 
 typedef struct {
     // Pointers to UART peripherals
@@ -82,6 +87,8 @@ typedef struct {
     tx_func_t tx_func;
     // Functions used to read bytes from UART. Default to "basic" functions.
     rx_func_t rx_func;
+    // Function used to get available data bytes from UART. Default to "basic" functions.
+    get_available_data_len_func_t get_avail_data_len_func;
 } uart_vfs_context_t;
 
 #define VFS_CTX_DEFAULT_VAL(uart_dev) (uart_vfs_context_t) {\
@@ -91,6 +98,7 @@ typedef struct {
     .rx_mode = DEFAULT_RX_MODE,\
     .tx_func = uart_tx_char,\
     .rx_func = uart_rx_char,\
+    .get_avail_data_len_func = uart_get_avail_data_len,\
 }
 
 //If the context should be dynamically initialized, remove this structure
@@ -140,7 +148,7 @@ static esp_err_t uart_end_select(void *end_select_args);
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-static int uart_open(const char *path, int flags, int mode)
+static int uart_open(__attribute__((unused)) void *ctx, const char *path, int flags, int mode)
 {
     // this is fairly primitive, we should check if file is opened read only,
     // and error out if write is requested
@@ -160,6 +168,19 @@ static int uart_open(const char *path, int flags, int mode)
     s_ctx[fd]->non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
 
     return fd;
+}
+
+size_t uart_get_avail_data_len(int fd)
+{
+    uart_dev_t* uart = s_ctx[fd]->uart;
+    return uart_ll_get_rxfifo_len(uart);
+}
+
+size_t uart_get_avail_data_len_via_driver(int fd)
+{
+    size_t buffered_size = 0;
+    uart_get_buffered_data_len(fd, &buffered_size);
+    return buffered_size;
 }
 
 static void uart_tx_char(int fd, int c)
@@ -195,7 +216,7 @@ static int uart_rx_char(int fd)
 static int uart_rx_char_via_driver(int fd)
 {
     uint8_t c;
-    int timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
+    TickType_t timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
     int n = uart_read_bytes(fd, &c, 1, timeout);
     if (n <= 0) {
         return NONE;
@@ -203,24 +224,26 @@ static int uart_rx_char_via_driver(int fd)
     return c;
 }
 
-static ssize_t uart_write(int fd, const void * data, size_t size)
+static ssize_t uart_write(__attribute__((unused)) void *ctx, int fd, const void * data, size_t size)
 {
     assert(fd >= 0 && fd < 3);
+    tx_func_t tx_func = s_ctx[fd]->tx_func;
+    esp_line_endings_t tx_mode = s_ctx[fd]->tx_mode;
     const char *data_c = (const char *)data;
-    /*  Even though newlib does stream locking on each individual stream, we need
+    /*  Even though libc does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
      *  same UART.
      */
     _lock_acquire_recursive(&s_ctx[fd]->write_lock);
     for (size_t i = 0; i < size; i++) {
         int c = data_c[i];
-        if (c == '\n' && s_ctx[fd]->tx_mode != ESP_LINE_ENDINGS_LF) {
-            s_ctx[fd]->tx_func(fd, '\r');
-            if (s_ctx[fd]->tx_mode == ESP_LINE_ENDINGS_CR) {
+        if (c == '\n' && tx_mode != ESP_LINE_ENDINGS_LF) {
+            tx_func(fd, '\r');
+            if (tx_mode == ESP_LINE_ENDINGS_CR) {
                 continue;
             }
         }
-        s_ctx[fd]->tx_func(fd, c);
+        tx_func(fd, c);
     }
     _lock_release_recursive(&s_ctx[fd]->write_lock);
     return size;
@@ -248,43 +271,70 @@ static void uart_return_char(int fd, int c)
     s_ctx[fd]->peek_char = c;
 }
 
-static ssize_t uart_read(int fd, void* data, size_t size)
+static ssize_t uart_read(__attribute__((unused)) void *ctx, int fd, void* data, size_t size)
 {
     assert(fd >= 0 && fd < 3);
     char *data_c = (char *) data;
     size_t received = 0;
+    size_t available_size = 0;
+    int c = NONE; // store the read char
     _lock_acquire_recursive(&s_ctx[fd]->read_lock);
-    while (received < size) {
-        int c = uart_read_char(fd);
-        if (c == '\r') {
-            if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CR) {
-                c = '\n';
-            } else if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CRLF) {
-                /* look ahead */
-                int c2 = uart_read_char(fd);
-                if (c2 == NONE) {
-                    /* could not look ahead, put the current character back */
-                    uart_return_char(fd, c);
-                    break;
-                }
-                if (c2 == '\n') {
-                    /* this was \r\n sequence. discard \r, return \n */
+
+    if (!s_ctx[fd]->non_blocking) {
+        c = uart_read_char(fd); // blocking until data available for non-O_NONBLOCK mode
+    }
+
+    // find the actual fetch size
+    available_size += s_ctx[fd]->get_avail_data_len_func(fd);
+    if (c != NONE) {
+        available_size++;
+    }
+    if (s_ctx[fd]->peek_char != NONE) {
+        available_size++;
+    }
+    size_t fetch_size = MIN(available_size, size);
+
+    if (fetch_size > 0) {
+        do {
+            if (c == NONE) { // for non-O_NONBLOCK mode, there is already a pre-fetched char
+                c = uart_read_char(fd);
+            }
+            assert(c != NONE);
+
+            if (c == '\r') {
+                if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CR) {
                     c = '\n';
-                } else {
-                    /* \r followed by something else. put the second char back,
-                     * it will be processed on next iteration. return \r now.
-                     */
-                    uart_return_char(fd, c2);
+                } else if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CRLF) {
+                    /* look ahead */
+                    int c2 = uart_read_char(fd);
+                    fetch_size--;
+                    if (c2 == NONE) {
+                        /* could not look ahead, put the current character back */
+                        uart_return_char(fd, c);
+                        c = NONE;
+                        break;
+                    }
+                    if (c2 == '\n') {
+                        /* this was \r\n sequence. discard \r, return \n */
+                        c = '\n';
+                    } else {
+                        /* \r followed by something else. put the second char back,
+                         * it will be processed on next iteration. return \r now.
+                         */
+                        uart_return_char(fd, c2);
+                        fetch_size++;
+                    }
                 }
             }
-        } else if (c == NONE) {
-            break;
-        }
-        data_c[received] = (char) c;
-        ++received;
-        if (c == '\n') {
-            break;
-        }
+
+            data_c[received] = (char) c;
+            ++received;
+            c = NONE;
+        } while (received < fetch_size);
+    }
+
+    if (c != NONE) { // fetched, but not used
+        uart_return_char(fd, c);
     }
     _lock_release_recursive(&s_ctx[fd]->read_lock);
     if (received > 0) {
@@ -294,7 +344,7 @@ static ssize_t uart_read(int fd, void* data, size_t size)
     return -1;
 }
 
-static int uart_fstat(int fd, struct stat * st)
+static int uart_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
 {
     assert(fd >= 0 && fd < 3);
     memset(st, 0, sizeof(*st));
@@ -302,13 +352,13 @@ static int uart_fstat(int fd, struct stat * st)
     return 0;
 }
 
-static int uart_close(int fd)
+static int uart_close(__attribute__((unused)) void *ctx, int fd)
 {
     assert(fd >= 0 && fd < 3);
     return 0;
 }
 
-static int uart_fcntl(int fd, int cmd, int arg)
+static int uart_fcntl(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
 {
     assert(fd >= 0 && fd < 3);
     int result = 0;
@@ -329,7 +379,7 @@ static int uart_fcntl(int fd, int cmd, int arg)
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
 
-static int uart_access(const char *path, int amode)
+static int uart_access(__attribute__((unused)) void *ctx, const char *path, int amode)
 {
     int ret = -1;
 
@@ -352,7 +402,7 @@ static int uart_access(const char *path, int amode)
 
 #endif // CONFIG_VFS_SUPPORT_DIR
 
-static int uart_fsync(int fd)
+static int uart_fsync(__attribute__((unused)) void *ctx, int fd)
 {
     assert(fd >= 0 && fd < 3);
     _lock_acquire_recursive(&s_ctx[fd]->write_lock);
@@ -394,13 +444,32 @@ static esp_err_t unregister_select(uart_select_args_t *args)
         for (int i = 0; i < s_registered_select_num; ++i) {
             if (s_registered_selects[i] == args) {
                 const int new_size = s_registered_select_num - 1;
-                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
-                // last item.
-                s_registered_selects[i] = s_registered_selects[new_size];
-                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
-                // Shrinking a buffer with realloc is guaranteed to succeed.
-                s_registered_select_num = new_size;
-                ret = ESP_OK;
+                // Move last element to fill gap (only if not removing the last element)
+                if (i < new_size) {
+                    s_registered_selects[i] = s_registered_selects[new_size];
+                }
+                if (new_size == 0) {
+                    // Free the entire array
+                    free(s_registered_selects);
+                    s_registered_selects = NULL;
+                    s_registered_select_num = 0;
+                    ret = ESP_OK;
+                } else {
+                    // Shrink the array
+                    uart_select_args_t **new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *), UART_VFS_MALLOC_FLAGS);
+                    if (new_selects == NULL) {
+                        // Realloc failed - restore moved element
+                        if (i < new_size) {
+                            s_registered_selects[new_size] = s_registered_selects[i];
+                        }
+                        ret = ESP_ERR_NO_MEM;
+                    } else {
+                        // Success - update pointer
+                        s_registered_selects = new_selects;
+                        s_registered_select_num = new_size;
+                        ret = ESP_OK;
+                    }
+                }
                 break;
             }
         }
@@ -519,7 +588,6 @@ static esp_err_t uart_end_select(void *end_select_args)
             if (s_uart_select_count[i] == 0) {
                 uart_set_select_notif_callback(i, NULL);
             }
-            break;
         }
     }
     portEXIT_CRITICAL(uart_get_selectlock());
@@ -534,7 +602,7 @@ static esp_err_t uart_end_select(void *end_select_args)
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
+static int uart_tcsetattr(__attribute__((unused)) void *ctx, int fd, int optional_actions, const struct termios *p)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -739,7 +807,7 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
     return 0;
 }
 
-static int uart_tcgetattr(int fd, struct termios *p)
+static int uart_tcgetattr(__attribute__((unused)) void *ctx, int fd, struct termios *p)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -833,7 +901,7 @@ static int uart_tcgetattr(int fd, struct termios *p)
     }
 
     {
-        uint32_t baudrate;
+        uint32_t baudrate = 0;
         if (uart_get_baudrate(fd, &baudrate) != ESP_OK) {
             errno = EINVAL;
             return -1;
@@ -948,7 +1016,7 @@ static int uart_tcgetattr(int fd, struct termios *p)
     return 0;
 }
 
-static int uart_tcdrain(int fd)
+static int uart_tcdrain(__attribute__((unused)) void *ctx, int fd)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -963,7 +1031,7 @@ static int uart_tcdrain(int fd)
     return 0;
 }
 
-static int uart_tcflush(int fd, int select)
+static int uart_tcflush(__attribute__((unused)) void *ctx, int fd, int select)
 {
     if (fd < 0 || fd >= UART_NUM) {
         errno = EBADF;
@@ -985,38 +1053,55 @@ static int uart_tcflush(int fd, int select)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-static const esp_vfs_t uart_vfs = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
-    .write = &uart_write,
-    .open = &uart_open,
-    .fstat = &uart_fstat,
-    .close = &uart_close,
-    .read = &uart_read,
-    .fcntl = &uart_fcntl,
-    .fsync = &uart_fsync,
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    .access = &uart_access,
+static const esp_vfs_dir_ops_t s_vfs_uart_dir = {
+    .access_p = &uart_access,
+};
 #endif // CONFIG_VFS_SUPPORT_DIR
+
 #ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_vfs_uart_select = {
     .start_select = &uart_start_select,
     .end_select = &uart_end_select,
+};
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+static const esp_vfs_termios_ops_t s_vfs_uart_termios = {
+    .tcsetattr_p = &uart_tcsetattr,
+    .tcgetattr_p = &uart_tcgetattr,
+    .tcdrain_p = &uart_tcdrain,
+    .tcflush_p = &uart_tcflush,
+};
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
+
+static const esp_vfs_fs_ops_t s_vfs_uart = {
+    .write_p = &uart_write,
+    .open_p = &uart_open,
+    .fstat_p = &uart_fstat,
+    .close_p = &uart_close,
+    .read_p = &uart_read,
+    .fcntl_p = &uart_fcntl,
+    .fsync_p = &uart_fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    .dir = &s_vfs_uart_dir,
+#endif // CONFIG_VFS_SUPPORT_DIR
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    .select = &s_vfs_uart_select,
 #endif // CONFIG_VFS_SUPPORT_SELECT
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    .tcsetattr = &uart_tcsetattr,
-    .tcgetattr = &uart_tcgetattr,
-    .tcdrain = &uart_tcdrain,
-    .tcflush = &uart_tcflush,
+    .termios = &s_vfs_uart_termios,
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
-const esp_vfs_t *esp_vfs_uart_get_vfs(void)
+const esp_vfs_fs_ops_t *esp_vfs_uart_get_vfs(void)
 {
-    return &uart_vfs;
+    return &s_vfs_uart;
 }
 
 void uart_vfs_dev_register(void)
 {
-    ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &uart_vfs, NULL));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/dev/uart", &s_vfs_uart, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, NULL));
 }
 
 int uart_vfs_dev_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
@@ -1061,6 +1146,7 @@ void uart_vfs_dev_use_nonblocking(int uart_num)
     _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
     s_ctx[uart_num]->tx_func = uart_tx_char;
     s_ctx[uart_num]->rx_func = uart_rx_char;
+    s_ctx[uart_num]->get_avail_data_len_func = uart_get_avail_data_len;
     _lock_release_recursive(&s_ctx[uart_num]->write_lock);
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
@@ -1071,35 +1157,81 @@ void uart_vfs_dev_use_driver(int uart_num)
     _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
     s_ctx[uart_num]->tx_func = uart_tx_char_via_driver;
     s_ctx[uart_num]->rx_func = uart_rx_char_via_driver;
+    s_ctx[uart_num]->get_avail_data_len_func = uart_get_avail_data_len_via_driver;
     _lock_release_recursive(&s_ctx[uart_num]->write_lock);
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
 
 #if CONFIG_ESP_CONSOLE_UART
+esp_err_t uart_vfs_dev_port_init(const esp_console_dev_uart_config_t *config,
+                                 esp_line_endings_t rx_mode,
+                                 esp_line_endings_t tx_mode)
+{
+    if (config == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (uart_vfs_dev_port_set_rx_line_endings(config->channel, rx_mode) == -1) {
+        return ESP_FAIL;
+    }
+
+    if (uart_vfs_dev_port_set_tx_line_endings(config->channel, tx_mode) == -1) {
+        return ESP_FAIL;
+    }
+
+    /* Configure UART. Note that REF_TICK/XTAL is used so that the baud rate remains
+     * correct while APB frequency is changing in light sleep mode.
+     */
+#if SOC_UART_SUPPORT_REF_TICK
+    uart_sclk_t clk_source = UART_SCLK_REF_TICK;
+    // REF_TICK clock can't provide a high baudrate
+    if (config->baud_rate > 1 * 1000 * 1000) {
+        clk_source = UART_SCLK_DEFAULT;
+        ESP_LOGW("uart_vfs", "light sleep UART wakeup might not work at the configured baud rate");
+    }
+#elif SOC_UART_SUPPORT_XTAL_CLK
+    uart_sclk_t clk_source = UART_SCLK_XTAL;
+#else
+#error "No UART clock source is aware of DFS"
+#endif // SOC_UART_SUPPORT_xxx
+    const uart_config_t uart_driver_config = {
+        .baud_rate = config->baud_rate,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .source_clk = clk_source,
+    };
+
+    uart_param_config(config->channel, &uart_driver_config);
+    uart_set_pin(config->channel, config->tx_gpio_num, config->rx_gpio_num, -1, -1);
+
+    /* Install UART driver for interrupt-driven reads and writes */
+    const esp_err_t ret = uart_driver_install(config->channel, 256, 0, 0, NULL, 0);
+    if (ret != ESP_OK) {
+        uart_driver_delete(config->channel);
+        return ret;
+    }
+
+    /* Tell VFS to use UART driver */
+    uart_vfs_dev_use_driver(config->channel);
+
+    return ESP_OK;
+}
+
+void uart_vfs_dev_port_deinit(const esp_console_dev_uart_config_t *config)
+{
+    uart_vfs_dev_use_nonblocking(config->channel);
+    uart_driver_delete(config->channel);
+}
+
 ESP_SYSTEM_INIT_FN(init_vfs_uart, CORE, BIT(0), 110)
 {
     uart_vfs_dev_register();
     return ESP_OK;
 }
-#endif
+#endif // CONFIG_ESP_CONSOLE_UART
 
 void uart_vfs_include_dev_init(void)
 {
     // Linker hook function, exists to make the linker examine this file
 }
-
-// -------------------------- esp_vfs_dev_uart_xxx ALIAS (deprecated) ----------------------------
-
-void esp_vfs_dev_uart_register(void) __attribute__((alias("uart_vfs_dev_register")));
-
-void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_rx_line_endings")));
-
-void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_set_tx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_rx_line_endings")));
-
-int esp_vfs_dev_uart_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode) __attribute__((alias("uart_vfs_dev_port_set_tx_line_endings")));
-
-void esp_vfs_dev_uart_use_nonblocking(int uart_num) __attribute__((alias("uart_vfs_dev_use_nonblocking")));
-
-void esp_vfs_dev_uart_use_driver(int uart_num) __attribute__((alias("uart_vfs_dev_use_driver")));

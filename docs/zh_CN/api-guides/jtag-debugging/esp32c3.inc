@@ -97,7 +97,7 @@
       - ESP32-C3 目标配置文件。可以和某个 ``interface/`` 下的配置文件一同使用。
     * - ``interface/esp_usb_jtag.cfg``
       - 适用于 ESP32-C3 的 JTAG 适配器配置文件。
-    * - ``interface/ftdi/esp32_devkitj_v1.cfg``
+    * - ``interface/ftdi/esp_ftdi.cfg``
       - 适用于 ESP-Prog 的 JTAG 适配器配置文件。
 
 ---

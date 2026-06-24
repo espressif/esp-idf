@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | --------- |
+
 # ESP-BLE-MESH Examples
 
 [ESP-BLE-MESH](../../../components/bt/esp_ble_mesh/) is the official Bluetooth® Mesh stack of Espressif Systems. We will provide long-term support for new features, performance optimization, etc.

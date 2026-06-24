@@ -1,0 +1,17 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/security/secure_boot:
+  enable:
+    - if: CONFIG_NAME == "qemu" and IDF_TARGET not in ["esp32s31"] #IDF-14442
+      reason: the test can only run on an FPGA as efuses need to be reset during the test.
+  disable:
+    - if: CONFIG_NAME != "qemu" or IDF_TARGET == "linux"
+      reason: Skipping redundant CI builds for all the targets.
+    - if: IDF_TARGET == "esp32h4"
+      reason: Secure Boot V2 is disabled on ESP32-H4 (ECDSA-only, vulnerable scheme), so the secure boot test app does not apply.
+
+tools/test_apps/security/signed_app_no_secure_boot:
+  enable:
+    - if: IDF_TARGET in ["esp32c3"]
+      temporary: true
+      reason: No need to test on all targets

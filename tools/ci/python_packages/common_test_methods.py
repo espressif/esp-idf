@@ -1,17 +1,26 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 import socket
-from typing import Any, List
+from typing import Any
+from typing import List
 
-import netifaces
+from idf_ci_utils import IDF_PATH
+
+try:
+    import netifaces
+except ImportError:
+    from unittest.mock import MagicMock
+
+    netifaces = MagicMock()
+    logging.warning('netifaces is not installed. Please install it to get network interface information.')
+
 import yaml
 
 ENV_CONFIG_FILE_SEARCH = [
-    os.path.join(os.environ['IDF_PATH'], 'EnvConfig.yml'),
-    os.path.join(os.environ['IDF_PATH'], 'ci-test-runner-configs', os.environ.get('CI_RUNNER_DESCRIPTION', ''), 'EnvConfig.yml'),
+    os.path.join(IDF_PATH, 'EnvConfig.yml'),
+    os.path.join(IDF_PATH, 'ci-test-runner-configs', os.environ.get('CI_RUNNER_DESCRIPTION', ''), 'EnvConfig.yml'),
 ]
 ENV_CONFIG_TEMPLATE = '''
 $IDF_PATH/EnvConfig.yml:

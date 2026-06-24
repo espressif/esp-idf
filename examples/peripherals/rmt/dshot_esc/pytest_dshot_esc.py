@@ -1,18 +1,13 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_RMT_SUPPORTED == 1'), indirect=['target'])
 def test_dshot_esc_example(dut: Dut) -> None:
     dut.expect_exact('example: Create RMT TX channel')
     dut.expect_exact('example: Install Dshot ESC encoder')

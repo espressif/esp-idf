@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "rom/efuse.h"
 #include "esp_efuse.h"
@@ -12,12 +14,16 @@
 #include "esp_check.h"
 #include "esp_efuse_utility.h"
 #include "esp_system.h"
-#include "esp_flash_encrypt.h"
-#include "esp_secure_boot.h"
 #include "esp_log.h"
 #include "esp_private/startup_internal.h"
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #include "esp_partition.h"
+#endif
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+#include "esp_flash_encrypt.h"
+#endif
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+#include "esp_secure_boot.h"
 #endif
 #include "sdkconfig.h"
 
@@ -25,7 +31,7 @@
 #include "esp_app_desc.h"
 #endif
 
-static __attribute__((unused)) const char *TAG = "efuse_init";
+ESP_LOG_ATTR_TAG(TAG, "efuse_init");
 
 ESP_SYSTEM_INIT_FN(init_efuse_check, CORE, BIT(0), 1)
 {
@@ -42,7 +48,7 @@ ESP_SYSTEM_INIT_FN(init_efuse_show_app_info, CORE, BIT(0), 21)
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
         ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s", CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
-                        efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
+                        efuse_hal_get_disable_wafer_version_major() ? ESP_LOG_ATTR_STR("(constraint ignored)") : "");
         unsigned revision = efuse_hal_chip_revision();
         ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
     }
@@ -58,7 +64,20 @@ static void init_efuse_virtual(void)
     // esp_flash must be initialized in advance because here we read the efuse partition.
     const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
     if (efuse_partition) {
+        /*
+         * esp_partition_find_first triggers the reading of partitions from the partition table.
+         * However, since the efuses have not yet been read from the 'efuse_em' partition,
+         * the encryption flag for these partitions is set to false.
+         *
+         * Unloading all partitions ensures that the next time the esp_partition API is called,
+         * the efuses will have been read, and the correct encryption flags will be applied.
+         */
         esp_efuse_init_virtual_mode_in_flash(efuse_partition->address, efuse_partition->size);
+        esp_partition_unload_all();
+
+        // Use volatile to ensure this function call is not optimized out and the partition table will be loaded again.
+        volatile const esp_partition_t *dummy_partition = esp_partition_find_first(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+        (void) dummy_partition;
     }
 #else // !CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
     // For efuse virtual mode we need to seed virtual efuses from efuse_regs.
@@ -88,7 +107,9 @@ static esp_err_t init_efuse_secure(void)
     if (esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, NULL)) {
         // ECDSA key purpose block is present and hence permanently enable
         // the hardware TRNG supplied k mode (most secure mode)
-        ESP_RETURN_ON_ERROR(esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K), TAG, "Failed to enable hardware k mode");
+        if (!CONFIG_IDF_TARGET_ESP32H2 || (CONFIG_IDF_TARGET_ESP32H2 && !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102))) {
+            ESP_RETURN_ON_ERROR(esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K), TAG, "Failed to enable hardware k mode");
+        }
     }
 #endif
 

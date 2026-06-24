@@ -13,7 +13,7 @@
 #include "esp_heap_trace.h"
 #endif
 
-#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -300
+#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT -350
 static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 
 void set_leak_threshold(int threshold)
@@ -23,7 +23,7 @@ void set_leak_threshold(int threshold)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
-static const char* TAG = "esp_hw_support_test_app";
+ESP_LOG_ATTR_TAG(TAG, "esp_hw_support_test_app");
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
 {

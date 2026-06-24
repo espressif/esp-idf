@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdint.h>
+#include "esp_err.h"
 
 /**
  * @brief Set the I2C slave device address
@@ -34,8 +35,9 @@ void ulp_riscv_i2c_master_set_slave_reg_addr(uint8_t slave_reg_addr);
  *
  * @param data_rd       Buffer to hold data to be read
  * @param size          Size of data to be read in bytes
+ * @return esp_err_t    ESP_OK when successful
  */
-void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size);
+esp_err_t ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size);
 
 /**
  * @brief Write to I2C slave device
@@ -44,8 +46,9 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size);
  *
  * @param data_wr       Buffer which holds the data to be written
  * @param size          Size of data to be written in bytes
+ * @return esp_err_t    ESP_OK when successful
  */
-void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size);
+esp_err_t ulp_riscv_i2c_master_write_to_device(const uint8_t *data_wr, size_t size);
 
 #ifdef __cplusplus
 }

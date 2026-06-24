@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,8 +18,16 @@
 #include "common/dpp.h"
 #include "sdkconfig.h"
 #include "test_wpa_supplicant_common.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #ifdef CONFIG_ESP_WIFI_TESTING_OPTIONS
+static unsigned int dpp_test_task_stack_high_watermark_bytes(void)
+{
+    return (unsigned int)(uxTaskGetStackHighWaterMark(NULL) *
+                          sizeof(StackType_t));
+}
+
 struct dpp_global {
     void *msg_ctx;
     struct dl_list bootstrap; /* struct dpp_bootstrap_info */
@@ -32,9 +40,50 @@ extern u8 dpp_nonce_override[DPP_MAX_NONCE_LEN];
 extern size_t dpp_nonce_override_len;
 #define MAX_FRAME_SIZE 1200
 
+static void dpp_test_clear_overrides(void)
+{
+    dpp_protocol_key_override_len = 0;
+    dpp_nonce_override_len = 0;
+    os_memset(dpp_protocol_key_override, 0, sizeof(dpp_protocol_key_override));
+    os_memset(dpp_nonce_override, 0, sizeof(dpp_nonce_override));
+}
+
+static u32 dpp_test_prod_limit_us(void)
+{
+#if !defined(CONFIG_MBEDTLS_HARDWARE_ECC) && !defined(CONFIG_MBEDTLS_HARDWARE_MPI)
+    return 0;
+#elif CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+    return 305000;
+#elif SOC_ECC_SUPPORTED
+    return 100000;
+#else
+    return 100000;
+#endif
+}
+
+static int dpp_test_leak_threshold(void)
+{
+    return 400;
+}
+
+static void dpp_test_log_auth_timing(const char *label,
+                                     const struct dpp_authentication *auth)
+{
+    TEST_ASSERT_NOT_NULL(auth);
+
+    ESP_LOGI("DPP Test",
+             "%s timing(us): parse=%llu response_form=%llu total=%llu",
+             label,
+             (unsigned long long) auth->auth_req_parse_us,
+             (unsigned long long) auth->auth_resp_form_us,
+             (unsigned long long) auth->auth_req_total_us);
+    ESP_LOGI("DPP Test", "%s task stack high watermark(bytes): %u",
+             label, dpp_test_task_stack_high_watermark_bytes());
+}
+
 TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
 {
-    set_leak_threshold(130);
+    set_leak_threshold(dpp_test_leak_threshold());
     /* Global variables */
     char command[1200] = {0};
     const u8 *frame;
@@ -66,6 +115,10 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         sprintf(command, "type=qrcode key=%s", key);
         id = dpp_bootstrap_gen(dpp, command);
         uri =  dpp_bootstrap_get_uri(dpp, id);
+        if (uri == NULL) {
+            ESP_LOGE("DPP Test", "Failed to get URI from bootstrap id");
+            TEST_ASSERT(0);
+        }
         printf("uri is =%s\n", uri);
         printf("is  be =%s\n", bootstrap_info);
         TEST_ASSERT((strcmp(uri, bootstrap_info) == 0));
@@ -130,6 +183,10 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
         auth_instance = dpp_auth_req_rx(NULL, 1, 0, NULL,
                                         dpp_bootstrap_get_id(dpp, id), 2412, frame, frame + 6, len - 6);
 
+        TEST_ASSERT_NOT_NULL(auth_instance);
+        TEST_ASSERT_NOT_NULL(auth_instance->resp_msg);
+        dpp_test_log_auth_timing("Vector responder", auth_instance);
+
         /* auth response u8 */
         hex_len = os_strlen(auth_resp);
         if (hex_len > 2 * MAX_FRAME_SIZE) {
@@ -172,7 +229,83 @@ TEST_CASE("Test vectors DPP responder p256", "[wpa_dpp]")
     {
         dpp_auth_deinit(auth_instance);
         dpp_global_deinit(dpp);
+        dpp_test_clear_overrides();
     }
     ESP_LOGI("DPP Test", "Test case passed");
+}
+
+TEST_CASE("Test DPP responder p256 production timing", "[wpa_dpp][performance]")
+{
+    struct dpp_global_config dpp_conf;
+    struct dpp_global *dpp = NULL;
+    struct dpp_bootstrap_info *responder_bi = NULL;
+    struct dpp_bootstrap_info *initiator_bi = NULL;
+    struct dpp_authentication *initiator_auth = NULL;
+    struct dpp_authentication *responder_auth = NULL;
+    struct wpabuf *conf = NULL;
+    const u8 *frame;
+    size_t len;
+    int responder_id;
+    int initiator_id;
+    u32 limit_us = dpp_test_prod_limit_us();
+
+    set_leak_threshold(dpp_test_leak_threshold());
+    os_memset(&dpp_conf, 0, sizeof(dpp_conf));
+    dpp = dpp_global_init(&dpp_conf);
+    TEST_ASSERT_NOT_NULL(dpp);
+
+    responder_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
+    TEST_ASSERT(responder_id > 0);
+    initiator_id = dpp_bootstrap_gen(dpp, "type=qrcode curve=P-256");
+    TEST_ASSERT(initiator_id > 0);
+
+    responder_bi = dpp_bootstrap_get_id(dpp, responder_id);
+    initiator_bi = dpp_bootstrap_get_id(dpp, initiator_id);
+    TEST_ASSERT_NOT_NULL(responder_bi);
+    TEST_ASSERT_NOT_NULL(initiator_bi);
+
+    dpp_test_clear_overrides();
+    initiator_auth = dpp_auth_init(NULL, responder_bi, initiator_bi,
+                                   DPP_CAPAB_CONFIGURATOR, 2412, NULL, 0);
+    TEST_ASSERT_NOT_NULL(initiator_auth);
+    TEST_ASSERT_NOT_NULL(initiator_auth->req_msg);
+
+    frame = wpabuf_head_u8(initiator_auth->req_msg) + 2;
+    len = wpabuf_len(initiator_auth->req_msg) - 2;
+    responder_auth = dpp_auth_req_rx(NULL, DPP_CAPAB_ENROLLEE, 0,
+                                     NULL, responder_bi, 2412,
+                                     frame, frame + DPP_HDR_LEN,
+                                     len - DPP_HDR_LEN);
+    TEST_ASSERT_NOT_NULL(responder_auth);
+    TEST_ASSERT_NOT_NULL(responder_auth->resp_msg);
+    dpp_test_log_auth_timing("Production responder", responder_auth);
+    if (limit_us) {
+        ESP_LOGI("DPP Test",
+                 "Production responder timing gate(us): total=%llu limit=%u",
+                 (unsigned long long) responder_auth->auth_req_total_us,
+                 limit_us);
+        TEST_ASSERT_MESSAGE(responder_auth->auth_req_total_us <= limit_us,
+                            "DPP responder production timing regression");
+    }
+
+    frame = wpabuf_head_u8(responder_auth->resp_msg) + 2;
+    len = wpabuf_len(responder_auth->resp_msg) - 2;
+    conf = dpp_auth_resp_rx(initiator_auth, frame, frame + DPP_HDR_LEN,
+                            len - DPP_HDR_LEN);
+    TEST_ASSERT_NOT_NULL(conf);
+    TEST_ASSERT_EQUAL_INT(1, initiator_auth->auth_success);
+
+    frame = wpabuf_head_u8(conf) + 2;
+    len = wpabuf_len(conf) - 2;
+    TEST_ASSERT_EQUAL_INT(0, dpp_auth_conf_rx(responder_auth, frame,
+                                              frame + DPP_HDR_LEN,
+                                              len - DPP_HDR_LEN));
+    TEST_ASSERT_EQUAL_INT(1, responder_auth->auth_success);
+
+    wpabuf_free(conf);
+    dpp_auth_deinit(responder_auth);
+    dpp_auth_deinit(initiator_auth);
+    dpp_global_deinit(dpp);
+    dpp_test_clear_overrides();
 }
 #endif

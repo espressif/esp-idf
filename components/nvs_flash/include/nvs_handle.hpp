@@ -1,5 +1,9 @@
-#ifndef NVS_HANDLE_HPP_
-#define NVS_HANDLE_HPP_
+/*
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
 
 #include <string>
 #include <memory>
@@ -8,6 +12,18 @@
 #include "nvs.h"
 
 namespace nvs {
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
 
 /**
  * The possible blob types. This is a helper definition for template functions.
@@ -21,6 +37,8 @@ enum class ItemType : uint8_t {
     I32  = NVS_TYPE_I32,
     U64  = NVS_TYPE_U64,
     I64  = NVS_TYPE_I64,
+    FLOAT  = NVS_TYPE_FLOAT,
+    DOUBLE = NVS_TYPE_DOUBLE,
     SZ   = NVS_TYPE_STR,
     BLOB = 0x41,
     BLOB_DATA = NVS_TYPE_BLOB,
@@ -28,6 +46,9 @@ enum class ItemType : uint8_t {
     ANY  = NVS_TYPE_ANY
 };
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif
 
 /**
  * @brief A handle allowing nvs-entry related operations on the NVS.
@@ -192,6 +213,11 @@ public:
     virtual esp_err_t erase_all() = 0;
 
     /**
+     * Purges all erased entries in the scope of this handle. The scope may vary, depending on the implementation.
+     */
+    virtual esp_err_t purge_all() = 0;
+
+    /**
      * Commits all changes done through this handle so far.
      * Currently, NVS writes to storage right after the set and get functions,
      * but this is not guaranteed.
@@ -274,6 +300,15 @@ constexpr ItemType itemTypeOf()
     return static_cast<ItemType>(((std::is_signed<T>::value)?0x10:0x00) | sizeof(T));
 }
 
+/**
+ * Help to translate IEEE 754 floating-point types into ItemType.
+ */
+template<typename T, typename std::enable_if<std::is_floating_point<T>::value, char>::type = 0>
+constexpr ItemType itemTypeOf()
+{
+    return static_cast<ItemType>(0x20 | sizeof(T));
+}
+
 template<typename T>
 constexpr ItemType itemTypeOf(const T&)
 {
@@ -292,5 +327,3 @@ esp_err_t NVSHandle::get_item(const char *key, T &value) {
 }
 
 } // nvs
-
-#endif // NVS_HANDLE_HPP_

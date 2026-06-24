@@ -1,0 +1,5 @@
+dependencies:
+  espressif/ethernet_init:
+    version: "~1.3.0"
+  ptpd:
+    path: ${IDF_PATH}/examples/ethernet/ptp/components/ptpd

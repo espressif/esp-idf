@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32S31
 #define TEST_PCNT_GPIO_A 20
 #define TEST_PCNT_GPIO_B 21
 #define TEST_PCNT_GPIO_Z 22
@@ -27,6 +27,7 @@ extern "C" {
 #define TEST_PCNT_CALLBACK_ATTR
 #endif // CONFIG_PCNT_ISR_IRAM_SAFE
 
+void test_gpio_init_for_simulation(int gpio_sig);
 void test_gpio_simulate_rising_edge(int gpio_sig, size_t times);
 void test_gpio_simulate_quadrature_signals(int gpio_sig_a, int gpio_sig_b, size_t times);
 

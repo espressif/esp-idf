@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "diskio_impl.h"
+#include "private_include/diskio_sdmmc_private.h"
 #include "ffconf.h"
 #include "ff.h"
 #include "sdmmc_cmd.h"
@@ -34,12 +35,12 @@ static DSTATUS ff_sdmmc_card_available(BYTE pdrv)
 *   fails. This error value is checked throughout the FATFS code.
 *   Both functions return 0 on success.
 */
-DSTATUS ff_sdmmc_initialize (BYTE pdrv)
+static DSTATUS ff_sdmmc_initialize (BYTE pdrv)
 {
     return ff_sdmmc_card_available(pdrv);
 }
 
-DSTATUS ff_sdmmc_status(BYTE pdrv)
+static DSTATUS ff_sdmmc_status(BYTE pdrv)
 {
     if (s_disk_status_check_en[pdrv]) {
         return ff_sdmmc_card_available(pdrv);
@@ -47,7 +48,7 @@ DSTATUS ff_sdmmc_status(BYTE pdrv)
     return 0;
 }
 
-DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
+static DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
 {
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
@@ -59,7 +60,7 @@ DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
-DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
+static DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 {
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
@@ -72,7 +73,7 @@ DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
 }
 
 #if FF_USE_TRIM
-DRESULT ff_sdmmc_trim (BYTE pdrv, DWORD start_sector, DWORD sector_count)
+static DRESULT ff_sdmmc_trim (BYTE pdrv, DWORD start_sector, DWORD sector_count)
 {
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
@@ -88,7 +89,7 @@ DRESULT ff_sdmmc_trim (BYTE pdrv, DWORD start_sector, DWORD sector_count)
 }
 #endif //FF_USE_TRIM
 
-DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
+static DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
 {
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
@@ -142,4 +143,15 @@ BYTE ff_diskio_get_pdrv_card(const sdmmc_card_t* card)
         }
     }
     return 0xff;
+}
+
+BYTE ff_diskio_get_pdrv_cnt_card(const sdmmc_card_t* card)
+{
+    BYTE num = 0;
+    for (int i = 0; i < FF_VOLUMES; i++) {
+        if (card == s_cards[i]) {
+            num += 1;
+        }
+    }
+    return num;
 }

@@ -71,12 +71,16 @@ static void btc_a2dp_datapath_open(void)
         /* Start the media task to encode SBC */
         btc_a2dp_source_start_audio_req();
 
+#if (BTC_AV_EXT_CODEC == FALSE)
         /* make sure we update any changed sbc encoder params */
         btc_a2dp_source_encoder_update();
+#endif
     }
 #endif
 #if (BTC_AV_SINK_INCLUDED == TRUE)
-    btc_aa_ctrl_cb.data_channel_open = TRUE;
+    if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
+        btc_aa_ctrl_cb.data_channel_open = TRUE;
+    }
 #endif
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,9 @@
 #include "common/bt_target.h"
 #include "bta/bta_sdp_api.h"
 #include "bt_sdp.h"
+#include "esp_sdp_api.h"
 
-#if (defined BTC_SDP_INCLUDED && BTC_SDP_INCLUDED == TRUE)
+#if (defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE)
 
 typedef enum {
     BTC_SDP_ACT_INIT = 0,
@@ -32,9 +33,9 @@ typedef union {
     } search;
 
     //BTC_SDP_ACT_CREATE_RECORD
-    struct creat_record_arg {
+    struct create_record_arg {
         bluetooth_sdp_record *record;
-    } creat_record;
+    } create_record;
 
     //BTC_SDP_ACT_REMOVE_RECORD
     struct remove_record_arg {
@@ -49,5 +50,7 @@ void btc_sdp_arg_deep_free(btc_msg_t *msg);
 void btc_sdp_call_handler(btc_msg_t *msg);
 void btc_sdp_cb_handler(btc_msg_t *msg);
 
-#endif ///defined BTC_SDP_INCLUDED && BTC_SDP_INCLUDED == TRUE
+void btc_sdp_get_protocol_status(esp_sdp_protocol_status_t *param);
+
+#endif ///defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE
 #endif ///__BTC_SDP_H__

@@ -79,6 +79,7 @@ static void avdt_sec_check_complete_term (BD_ADDR bd_addr, tBT_TRANSPORT transpo
     tL2CAP_CFG_INFO cfg;
     tAVDT_TC_TBL    *p_tbl;
     UNUSED(p_ref_data);
+    UNUSED(transport);
 
     AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d\n", res);
     if (!bd_addr) {
@@ -97,9 +98,11 @@ static void avdt_sec_check_complete_term (BD_ADDR bd_addr, tBT_TRANSPORT transpo
         /* Send response to the L2CAP layer. */
         L2CA_ConnectRsp (bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
-        /* store idx in LCID table, store LCID in routing table */
-        avdt_cb.ad.lcid_tbl[p_tbl->lcid - L2CAP_BASE_APPL_CID] = avdt_ad_tc_tbl_to_idx(p_tbl);
-        avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
+        if (p_tbl->lcid >= L2CAP_BASE_APPL_CID && (p_tbl->lcid - L2CAP_BASE_APPL_CID) < MAX_L2CAP_CHANNELS) {
+            /* store idx in LCID table, store LCID in routing table */
+            avdt_cb.ad.lcid_tbl[p_tbl->lcid - L2CAP_BASE_APPL_CID] = avdt_ad_tc_tbl_to_idx(p_tbl);
+            avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
+        }
 
         /* transition to configuration state */
         p_tbl->state = AVDT_AD_ST_CFG;
@@ -134,11 +137,13 @@ static void avdt_sec_check_complete_orig (BD_ADDR bd_addr, tBT_TRANSPORT transpo
     tL2CAP_CFG_INFO cfg;
     tAVDT_TC_TBL    *p_tbl;
     UNUSED(p_ref_data);
+    UNUSED(transport);
 
     AVDT_TRACE_DEBUG("avdt_sec_check_complete_orig res: %d\n", res);
     if (bd_addr) {
         p_ccb = avdt_ccb_by_bd(bd_addr);
     }
+
     p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_SEC_INT);
     if (p_tbl == NULL) {
         return;
@@ -188,6 +193,11 @@ void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
         } else {
             /* allocate and set up entry; first channel is always signaling */
             p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
+            if (p_tbl == NULL) {
+                avdt_ccb_dealloc(p_ccb, NULL);
+                L2CA_ConnectRsp(bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0);
+                return;
+            }
             p_tbl->my_mtu = avdt_cb.rcb.ctrl_mtu;
             p_tbl->my_flush_to = L2CAP_DEFAULT_FLUSH_TO;
             p_tbl->tcid = AVDT_CHAN_SIG;
@@ -238,10 +248,11 @@ void avdt_l2c_connect_ind_cback(BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 
 
     /* if result ok, proceed with connection */
     if (result == L2CAP_CONN_OK) {
-        /* store idx in LCID table, store LCID in routing table */
-        avdt_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] = avdt_ad_tc_tbl_to_idx(p_tbl);
-        avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
-
+        if (lcid >= L2CAP_BASE_APPL_CID && lcid < (L2CAP_BASE_APPL_CID + MAX_L2CAP_CHANNELS)) {
+            /* store idx in LCID table, store LCID in routing table */
+            avdt_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] = avdt_ad_tc_tbl_to_idx(p_tbl);
+            avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
+        }
         /* transition to configuration state */
         p_tbl->state = AVDT_AD_ST_CFG;
 
@@ -420,13 +431,12 @@ void avdt_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
         if (ack_needed) {
             /* send L2CAP disconnect response */
             L2CA_DisconnectRsp(lcid);
-        } else {
-            if ((p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx)) != NULL) {
-                UINT16 rsn = L2CA_GetDisconnectReason(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
-                if (rsn != 0 && rsn != HCI_ERR_PEER_USER) {
-                    disc_rsn = AVDT_DISC_RSN_ABNORMAL;
-                    AVDT_TRACE_EVENT("avdt link disc rsn 0x%x", rsn);
-                }
+        }
+        if ((p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx)) != NULL) {
+            UINT16 rsn = L2CA_GetDisconnectReason(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
+            if (rsn != 0 && rsn != HCI_ERR_PEER_USER) {
+                disc_rsn = AVDT_DISC_RSN_ABNORMAL;
+                AVDT_TRACE_EVENT("avdt link disc rsn 0x%x", rsn);
             }
         }
 

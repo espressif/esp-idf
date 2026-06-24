@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ROM function interface esp32c6lite.rom.spiflash.ld for esp32c6lite
+/* ROM function interface esp32c61.rom.spiflash.ld for esp32c61
  *
  *
- * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum d875746dfc29a51e6d327cc923b7a095
+ * Generated from ./target/esp32c6lite/interface-esp32c6lite.yml md5sum 27eb0efac0883ee622c22767242c9457
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -18,8 +18,8 @@
  ***************************************/
 
 /* Functions */
-spi_flash_disable_cache = 0x40000204;
-spi_flash_restore_cache = 0x40000208;
+rom_spi_flash_disable_cache = 0x40000204;
+rom_spi_flash_restore_cache = 0x40000208;
 spi_flash_cache_enabled = 0x4000020c;
 spi_flash_enable_cache = 0x40000210;
 esp_enable_cache_flash_wrap = 0x40000214;
@@ -38,8 +38,8 @@ spi_flash_munmap = 0x40000228;
 spi_flash_mmap_dump = 0x4000022c;
 spi_flash_check_and_flush_cache = 0x40000230;
 spi_flash_mmap_get_free_pages = 0x40000234;
-spi_flash_cache2phys = 0x40000238;
-spi_flash_phys2cache = 0x4000023c;
+PROVIDE(spi_flash_cache2phys = 0x40000238); /* patched when XIP */
+PROVIDE(spi_flash_phys2cache = 0x4000023c); /* patched when XIP */
 
 
 /***************************************
@@ -51,15 +51,15 @@ esp_flash_chip_driver_initialized = 0x40000240;
 esp_flash_read_id = 0x40000244;
 esp_flash_get_size = 0x40000248;
 esp_flash_erase_chip = 0x4000024c;
-esp_flash_erase_region = 0x40000250;
+rom_esp_flash_erase_region = 0x40000250;
 esp_flash_get_chip_write_protect = 0x40000254;
 esp_flash_set_chip_write_protect = 0x40000258;
 esp_flash_get_protectable_regions = 0x4000025c;
 esp_flash_get_protected_region = 0x40000260;
 esp_flash_set_protected_region = 0x40000264;
 esp_flash_read = 0x40000268;
-esp_flash_write = 0x4000026c;
-esp_flash_write_encrypted = 0x40000270;
+rom_esp_flash_write = 0x4000026c;
+rom_esp_flash_write_encrypted = 0x40000270;
 esp_flash_read_encrypted = 0x40000274;
 esp_flash_get_io_mode = 0x40000278;
 esp_flash_set_io_mode = 0x4000027c;

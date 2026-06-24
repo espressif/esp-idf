@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,9 @@
 #include "freertos/queue.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "soc/rtc_io_periph.h"
+#include "hal/rtc_io_periph.h"
 #include "soc/soc_caps.h"
+#include "hal/rtc_io_ll.h"
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 static const char *TAG = "rtcio_test";
@@ -233,13 +234,54 @@ TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
 #endif //SOC_RTCIO_HOLD_SUPPORTED
+
+#if SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
+/*
+ * test interrupt functionality
+ */
+TEST_CASE("RTCIO_interrupt_test", "[rtcio]")
+{
+    gpio_num_t test_io = s_test_map[TEST_RTCIO_INTR_PIN_INDEX];
+    uint32_t rtc_io_idx = rtc_io_number_get(test_io);
+
+    TEST_ESP_OK(rtc_gpio_init(test_io));
+    TEST_ESP_OK(rtc_gpio_set_direction(test_io, RTC_GPIO_MODE_INPUT_OUTPUT));
+    TEST_ESP_OK(rtc_gpio_set_level(test_io, 0));
+    rtcio_ll_intr_enable(rtc_io_idx, GPIO_INTR_HIGH_LEVEL);
+
+    int cnt = 0;
+    while (cnt < TEST_COUNT) {
+        TEST_ASSERT_EQUAL_INT(cnt % 2, rtc_gpio_get_level(test_io));
+        TEST_ASSERT_EQUAL_INT(cnt % 2, !!(rtcio_ll_get_interrupt_status() & (1 << rtc_io_idx)));
+        cnt++;
+        TEST_ESP_OK(rtc_gpio_set_level(test_io, cnt % 2));
+        rtcio_ll_clear_interrupt_status();  // since we are testing level-triggered interrupt, we need to clear the status after setting the level back
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    TEST_ESP_OK(rtc_gpio_set_level(test_io, 0));
+    rtcio_ll_intr_enable(rtc_io_idx, GPIO_INTR_POSEDGE);
+    cnt = 0;
+    while (cnt < TEST_COUNT) {
+        TEST_ESP_OK(rtc_gpio_set_level(test_io, 1));
+        TEST_ASSERT_EQUAL_INT(1, !!(rtcio_ll_get_interrupt_status() & (1 << rtc_io_idx)));
+        rtcio_ll_clear_interrupt_status();
+        TEST_ESP_OK(rtc_gpio_set_level(test_io, 0));
+        TEST_ASSERT_EQUAL_INT(0, !!(rtcio_ll_get_interrupt_status() & (1 << rtc_io_idx)));
+        cnt++;
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    rtcio_ll_intr_enable(rtc_io_idx, GPIO_INTR_DISABLE);
+    TEST_ESP_OK(rtc_gpio_deinit(test_io));
+}
+#endif //SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP && (SOC_RTCIO_PIN_COUNT > 0)
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
 #if SOC_DEEP_SLEEP_SUPPORTED
 // It is not necessary to test every rtcio pin, it will take too much ci testing time for deep sleep
 // Only tests on s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX] pin
-// (ESP32: IO25, ESP32S2, S3: IO6, C6: IO5, H2: IO12) these pads' default configuration is low level
-#define TEST_RTCIO_DEEP_SLEEP_PIN_INDEX 5
+// The default configuration of these pads is low level
 
 static void rtcio_deep_sleep_hold_test_first_stage(void)
 {
@@ -248,12 +290,13 @@ static void rtcio_deep_sleep_hold_test_first_stage(void)
 
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2000000));
 
+    gpio_reset_pin(io_num);
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT_OUTPUT,
         .pin_bit_mask = (1ULL << io_num),
-        .pull_down_en = 0,
-        .pull_up_en = 0,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
     };
     gpio_config(&io_conf);
 
@@ -269,8 +312,10 @@ static void rtcio_deep_sleep_hold_test_second_stage(void)
     int io_num = s_test_map[TEST_RTCIO_DEEP_SLEEP_PIN_INDEX];
     // Check reset reason is waking up from deepsleep
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3 // DIG-399
     // Pin should stay at high level after the deep sleep
     TEST_ASSERT_EQUAL_INT(1, gpio_get_level(io_num));
+#endif
 
     gpio_hold_dis(io_num);
 }

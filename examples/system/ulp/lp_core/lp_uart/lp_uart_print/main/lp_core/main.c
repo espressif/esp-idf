@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "ulp_lp_core_print.h"
 #include "ulp_lp_core_utils.h"
+#include "ulp_lp_core_uart.h"
 
 int main (void)
 {
@@ -17,6 +18,7 @@ int main (void)
     lp_core_printf("This program has run %d times\r\n", ++iteration);
     lp_core_printf("%s", separator);
     lp_core_printf("\n");
+    lp_core_uart_tx_flush(LP_UART_NUM_0);
 
     return 0;
 }

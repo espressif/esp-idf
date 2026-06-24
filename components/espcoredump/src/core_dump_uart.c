@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
+
 #include <string.h>
 #include "soc/uart_reg.h"
-#include "soc/gpio_periph.h"
+#include "soc/uart_pins.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "esp_core_dump_types.h"
@@ -14,8 +16,6 @@
 #include "esp_rom_sys.h"
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
-
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
 
 void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_uart_print_write_start")));
 void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_uart_print_write_end")));
@@ -119,6 +119,7 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *wr_data, 
         /* Copy to stack to avoid alignment restrictions. */
         char *tmp = buf + (sizeof(buf) - len);
         memcpy(tmp, addr, len);
+        esp_core_dump_checksum_update(&wr_data->checksum_ctx, tmp, len);
         esp_core_dump_b64_encode((const uint8_t *)tmp, len, (uint8_t *)buf);
         addr += len;
         ESP_COREDUMP_PRINT("%s\r\n", buf);
@@ -126,7 +127,6 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *wr_data, 
 
     if (wr_data) {
         wr_data->off += data_len;
-        esp_core_dump_checksum_update(&wr_data->checksum_ctx, data, data_len);
     }
     return err;
 }
@@ -147,17 +147,15 @@ static esp_err_t esp_core_dump_uart_hw_init(void)
     uint32_t tm_cur = 0;
     int ch = 0;
 
-    // TODO: move chip dependent code to portable part
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+    };
+
     //Make sure txd/rxd are enabled
     // use direct reg access instead of gpio_pullup_dis which can cause exception when flash cache is disabled
-    REG_CLR_BIT(GPIO_PIN_REG_1, FUN_PU);
-#if CONFIG_IDF_TARGET_ESP32P4
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U_PAD_GPIO38, FUNC_GPIO38_UART0_RXD_PAD);
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U_PAD_GPIO37, FUNC_GPIO37_UART0_TXD_PAD);
-#else
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_U0RXD);
-    gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_U0TXD);
-#endif
+    gpio_hal_pullup_dis(&gpio_hal, U0TXD_GPIO_NUM);
+    gpio_hal_func_sel(&gpio_hal, U0RXD_GPIO_NUM, U0RXD_MUX_FUNC);
+    gpio_hal_func_sel(&gpio_hal, U0TXD_GPIO_NUM, U0TXD_MUX_FUNC);
     ESP_COREDUMP_LOGI("Press Enter to print core dump to UART...");
     const int cpu_ticks_per_ms = esp_clk_cpu_freq() / 1000;
     tm_end = esp_cpu_get_cycle_count() / cpu_ticks_per_ms + CONFIG_ESP_COREDUMP_UART_DELAY;
@@ -177,4 +175,3 @@ void esp_core_dump_init(void)
 {
     ESP_COREDUMP_LOGI("Init core dump to UART");
 }
-#endif

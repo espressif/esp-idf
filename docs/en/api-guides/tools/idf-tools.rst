@@ -35,7 +35,7 @@ This file is used by the :idf_file:`tools/idf_tools.py` script when installing t
 Tools Installation Directory
 ----------------------------
 
-The ``IDF_TOOLS_PATH`` environment variable specifies the location where the tools are to be downloaded and installed. If not set, the default location will be ``HOME/.espressif`` on Linux and macOS, and ``%USER_PROFILE%\.espressif`` on Windows.
+The ``IDF_TOOLS_PATH`` environment variable specifies the location where the tools are to be downloaded and installed. If not set, the default location will be ``$HOME/.espressif`` on Linux and macOS, and ``%USER_PROFILE%\.espressif`` on Windows.
 
 Inside the ``IDF_TOOLS_PATH`` directory, the tools installation scripts create the following directories and files:
 
@@ -43,6 +43,10 @@ Inside the ``IDF_TOOLS_PATH`` directory, the tools installation scripts create t
 - ``tools`` — where the tools are extracted. The tools are extracted into subdirectories: ``tools/TOOL_NAME/VERSION/``. This arrangement allows different versions of tools to be installed side by side.
 - ``idf-env.json`` — user install options, such as targets and features, are stored in this file. Targets are selected chip targets for which tools are installed and kept up-to-date. Features determine the Python package set which should be installed. These options will be discussed later.
 - ``python_env`` —  not related to the tools; virtual Python environments are installed in the sub-directories. Note that the Python environment directory can be placed elsewhere by setting the ``IDF_PYTHON_ENV_PATH`` environment variable.
+
+  - ``idf_version.txt`` — located within each specific Python environment sub-directory under ``python_env``, this file records the ESP-IDF version corresponding to that environment. The version is stored in a format like ``5.3`` to represent ESP-IDF version ``v5.3``.
+
+- ``root_managed_components`` — directory managed by ``idf-component-manager`` for components installed globally.
 - ``espidf.constraints.*.txt`` — one constraint file for each ESP-IDF release containing Python package version requirements.
 
 GitHub Assets Mirror
@@ -56,8 +60,11 @@ To use Espressif's download server, set the environment variable ``IDF_GITHUB_AS
 
 Any mirror server can be used provided the URL matches the ``github.com`` download URL format. For any GitHub asset URL that the install process downloads, it will replace ``https://github.com`` with ``https://${IDF_GITHUB_ASSETS}``.
 
-.. note:: The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
+.. note::
 
+    The Espressif download server currently does not mirror everything from GitHub, but only files attached as Assets to some releases, as well as source archives for some releases.
+
+.. _idf-tools-py:
 
 ``idf_tools.py`` Script
 -----------------------
@@ -117,7 +124,7 @@ The :idf_file:`tools/idf_tools.py` script bundled with ESP-IDF performs several 
 
 * ``check``: For each tool, checks whether the tool is available in the system path and in ``IDF_TOOLS_PATH``.
 
-* ``install-python-env``: Creates a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory or directly in the directory set by the ``IDF_PYTHON_ENV_PATH`` environment variable, and install the required Python packages there.
+* ``install-python-env``: Creates a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory or directly in the directory set by the ``IDF_PYTHON_ENV_PATH`` environment variable, and installs the required Python packages there. If the Python virtual environment already exists, packages inside are updated to their latest versions with respect to the ``espidf.constraints.*.txt`` file.
 
   * An optional ``--features`` argument allows one to specify a comma-separated list of features to be added or removed.
 
@@ -164,7 +171,7 @@ These scripts accept optionally a comma-separated list of chip targets and ``--e
 
 To install tools for all chip targets, run the scripts without any optional arguments using ``idf_tools.py install --targets=all``. Similarly, to install Python packages for core ESP-IDF functionality, run ``idf_tools.py install-python-env --features=core``.
 
-It is also possible to install tools for specific chip targets. For example, ``install.sh esp32`` installs tools only for ESP32. See :ref:`Step 3. Set up the Tools <get-started-set-up-tools>` for more examples.
+It is also possible to install tools for specific chip targets. For example, ``install.sh esp32`` installs tools only for ESP32. See :ref:`Step 3. Set up the Tools <get-started-set-up-tools-legacy>` for more examples.
 
 ``install.sh --enable-XY`` enables feature ``XY`` (by running ``idf_tools.py install-python-env --features=core,XY``).
 
@@ -182,18 +189,30 @@ Since the installed tools are not permanently added to the user or system ``PATH
 
 .. note::
 
-    To modify the shell environment in Bash, ``export.sh`` must be "sourced" by using the ``. ./export.sh`` command. Please ensure to include the leading dot and space.
+    To modify the shell environment in Bash, ``export.sh`` must be "sourced" by using the command ``. ./export.sh``. Please ensure to include the leading dot and space.
 
-    ``export.sh`` may be used with shells other than Bash (such as zsh). However, in this case, it is required to set the ``IDF_PATH`` environment variable before running the script. When used in Bash, the script guesses the ``IDF_PATH`` value from its own location.
+    ``export.sh`` may be used with various shells like Bash, Zsh, sh, dash, etc. When using Bash or Zsh, you can run it from any path (e.g., ``. ./<<some_path>>/export.sh``) as it automatically detects ``IDF_PATH``. For other shells, it must be run from the ESP-IDF directory (``. ./export.sh``) to locate ``IDF_PATH`` correctly.
 
-In addition to calling ``idf_tools.py``, these scripts list the directories that have been added to the ``PATH``.
+activate.py
+~~~~~~~~~~~
+
+The environment setup is handled by the underlying ``tools/activate.py`` Python script. This script performs all necessary preparations and checks, generating a temporary file that is subsequently sourced by the export script.
+
+``activate.py`` can also function as a standalone command. When run, it launches a new child shell with an ESP-IDF environment, which can be utilized and then exited with the ``exit`` command. Upon exiting the child shell, you will return to the parent shell from which the script was initially executed.
+
+Additionally, the specific behavior of the ``activate.py`` script can be modified with various options, such as spawning a specific shell with ESP-IDF using the ``--shell`` option. For more information on available options, use the ``activate.py --help`` command.
+
+.. note::
+
+    When using ``activate.py`` on Windows, it should be executed with ``python activate.py``. This ensures the script runs in the current terminal window rather than launching a new one that closes immediately.
+
 
 Other Installation Methods
 --------------------------
 
 Depending on the environment, more user-friendly wrappers for ``idf_tools.py`` are provided:
 
-* :ref:`ESP-IDF Tools Installer <get-started-windows-tools-installer>` can download and install the tools. Internally the installer uses ``idf_tools.py``.
+* :ref:`ESP-IDF Installation Manager <get-started-how-to-get-esp-idf>` can download and install the tools. Internally the installer uses ``idf_tools.py``.
 * `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ includes a menu item to set up the tools. Internally the plugin calls ``idf_tools.py``.
 * `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_ includes an onboarding flow. This flow helps set up the tools. Although the extension does not rely on ``idf_tools.py``, the same installation method is used.
 
@@ -202,6 +221,8 @@ Custom Installation
 
 Although the methods above are recommended for ESP-IDF users, they are not a must for building ESP-IDF applications. ESP-IDF build system expects that all the necessary tools are installed somewhere, and made available in the ``PATH``.
 
+When performing a custom installation, ensure that the ``ESP_IDF_VERSION`` environment variable is set to reflect the current ESP-IDF version, using a format like ``5.3`` to represent ESP-IDF version ``v5.3``. This variable is required by some components for version-specific configurations and is typically set by the ``idf_tools.py export`` script in standard installations.
+
 .. _idf-tools-uninstall:
 
 Uninstall ESP-IDF
@@ -209,7 +230,7 @@ Uninstall ESP-IDF
 
 Uninstalling ESP-IDF requires removing both the tools and the environment variables that have been configured during the installation.
 
-* Windows users using the :ref:`Windows ESP-IDF Tools Installer <get-started-windows-tools-installer>` can simply run the uninstall wizard to remove ESP-IDF.
+* Users using the :ref:`ESP-IDF Installation Manager <get-started-how-to-get-esp-idf>` can remove ESP-IDF in the graphical user interface (GUI) or command line interface (CLI).
 * To remove an installation performed by running the supported :ref:`install scripts <idf-tools-install>`, simply delete the :ref:`tools installation directory <idf-tools-path>` including the downloaded and installed tools. Any environment variables set by the :ref:`export scripts <idf-tools-export>` are not permanent and will not be present after opening a new environment.
 * When dealing with a custom installation, in addition to deleting the tools as mentioned above, you may also need to manually revert any changes to environment variables or system paths that were made to accommodate the ESP-IDF tools (e.g., ``IDF_PYTHON_ENV_PATH`` or ``IDF_TOOLS_PATH``). If you manually copied any tools, you would need to track and delete those files manually.
 * If you installed any plugins like the `ESP-IDF Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or `VSCode ESP-IDF Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_, you should follow the specific uninstallation instructions described in the documentation of those components.

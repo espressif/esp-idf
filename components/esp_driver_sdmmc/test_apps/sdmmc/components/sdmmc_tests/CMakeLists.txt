@@ -9,7 +9,9 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
                      "sdmmc_test_erase_sd.c"
                      "sdmmc_test_trim_sd.c"
                      "sdmmc_test_discard_sd.c"
-                     "sdmmc_test_sanitize_sd.c")
+                     "sdmmc_test_sanitize_sd.c"
+                     "sdmmc_test_various_cmds.c"
+                     "sdmmc_test_card_init.c")
 endif()
 
 set(priv_requires "sdmmc"
@@ -20,5 +22,6 @@ set(priv_requires "sdmmc"
 )
 
 idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS "."
                        PRIV_REQUIRES ${priv_requires}
                        WHOLE_ARCHIVE TRUE)

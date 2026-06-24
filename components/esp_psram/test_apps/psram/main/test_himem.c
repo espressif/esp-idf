@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include "inttypes.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -104,6 +105,60 @@ TEST_CASE("high psram memory test", "[himem]")
 
     printf("Done!\n");
     vTaskDelay(100);
+}
+
+#define CACHE_BLOCKSIZE     (32*1024)
+#define ALLOCATIONS_SIZE    (CACHE_BLOCKSIZE / 2)
+#define MAX_ALLOCATIONS     ((4*1024*1024) / ALLOCATIONS_SIZE)
+
+TEST_CASE("psram heap doesn't affect himem", "[himem]")
+{
+    esp_himem_handle_t mh;
+    esp_himem_rangehandle_t rh;
+    uint32_t *ptr = NULL;
+    /* Array containing all the areas from the heap */
+    void* allocs[MAX_ALLOCATIONS] = { 0 };
+    int allocs_idx = 0;
+
+    /* Allocate a physical block from the PSRAM */
+    ESP_ERROR_CHECK(esp_himem_alloc(CACHE_BLOCKSIZE, &mh));
+    /* Allocate a range of virtual memory where we can map the allocated block */
+    ESP_ERROR_CHECK(esp_himem_alloc_map_range(ESP_HIMEM_BLKSZ, &rh));
+    /* Map that physical block in the allocated virtual memory */
+    ESP_ERROR_CHECK(esp_himem_map(mh, rh, 0, 0, ESP_HIMEM_BLKSZ, 0, (void**)&ptr));
+    /* Memset that part of the memory with an arbitrary pattern */
+    memset(ptr, 0x42, CACHE_BLOCKSIZE);
+
+    /* Allocate heap memory in PSRAM until there is no more memory */
+    while (1) {
+        uint8_t* data = heap_caps_malloc(ALLOCATIONS_SIZE, MALLOC_CAP_SPIRAM);
+        /* If the allocation failed, there is no more memory, we can break */
+        if (data == NULL) {
+            break;
+        }
+        assert(allocs_idx < MAX_ALLOCATIONS);
+        allocs[allocs_idx++] = data;
+        /* Set the allocated memory to another pattern */
+        memset(data, 0xAB, ALLOCATIONS_SIZE);
+    }
+
+    /* Make sure we allocated more than 127 blocks */
+    printf("Allocated %d blocks\n", allocs_idx);
+    TEST_ASSERT_GREATER_THAN_INT(127, allocs_idx);
+
+    /* Check if the himem block has been altered by the heap */
+    TEST_ASSERT_EACH_EQUAL_INT8(0x42, ptr, CACHE_BLOCKSIZE);
+
+    /* Free all the allocated memories */
+    for (int i = 0; i < allocs_idx; i++) {
+        heap_caps_free(allocs[i]);
+    }
+
+    ESP_ERROR_CHECK(esp_himem_unmap(rh, ptr, ESP_HIMEM_BLKSZ));
+    ESP_ERROR_CHECK(esp_himem_free(mh));
+    ESP_ERROR_CHECK(esp_himem_free_map_range(rh));
+
+    printf("Success!\n");
 }
 
 #endif

@@ -1,2 +1,5 @@
 idf_component_register(SRCS "flash_encrypt_main.c"
-                    INCLUDE_DIRS ".")
+                            "flash_encrypt_fatfs.c"
+                       PRIV_REQUIRES vfs nvs_flash spi_flash efuse bootloader_support
+                                     fatfs espcoredump nvs_sec_provider esp_psram
+                       INCLUDE_DIRS ".")

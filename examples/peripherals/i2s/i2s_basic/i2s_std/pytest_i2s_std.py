@@ -1,35 +1,44 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_I2S_SUPPORTED == 1'),
+    indirect=['target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_i2s_basic_example(dut: Dut) -> None:
-
-    dut.expect(r'D \(([0-9]+)\) i2s_common: tx channel is registered on I2S0 successfully', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_common: rx channel is registered on I2S0 successfully', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_common: DMA malloc info: dma_desc_num = ([0-9]+), '
-               r'dma_desc_buf_size = dma_frame_num \* slot_num \* data_bit_width = ([0-9]+)', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_std: Clock division info: \[sclk\] ([0-9]+) Hz '
-               r'\[mdiv\] ([0-9]+) \[mclk\] ([0-9]+) Hz \[bdiv\] ([0-9]+) \[bclk\] ([0-9]+) Hz', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_std: The tx channel on I2S0 has been initialized to STD mode successfully', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_common: DMA malloc info: dma_desc_num = ([0-9]+), '
-               r'dma_desc_buf_size = dma_frame_num \* slot_num \* data_bit_width = ([0-9]+)', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_std: Clock division info: \[sclk\] ([0-9]+) Hz '
-               r'\[mdiv\] ([0-9]+) \[mclk\] ([0-9]+) Hz \[bdiv\] ([0-9]+) \[bclk\] ([0-9]+) Hz', timeout=5)
-    dut.expect(r'D \(([0-9]+)\) i2s_std: The rx channel on I2S0 has been initialized to STD mode successfully', timeout=5)
-    chan_enable_pattern = [
-        r'D \(([0-9]+)\) i2s_common: i2s tx channel enabled',
-        r'D \(([0-9]+)\) i2s_common: i2s rx channel enabled'
-    ]
+    dut.expect(r'i2s_common: tx channel is registered on I2S0 successfully', timeout=5)
+    dut.expect(r'i2s_common: rx channel is registered on I2S0 successfully', timeout=5)
+    dut.expect(
+        r'i2s_common: DMA malloc info: dma_desc_num = ([0-9]+), '
+        r'dma_desc_buf_size = dma_frame_num \* slot_num \* data_bit_width = ([0-9]+)',
+        timeout=5,
+    )
+    dut.expect(
+        r'i2s_std: Clock division info: \[sclk\] ([0-9]+) Hz '
+        r'\[mdiv\] ([0-9]+) ([0-9]+)/([0-9]+) \[mclk\] ([0-9]+) Hz \[bdiv\] ([0-9]+) \[bclk\] ([0-9]+) Hz',
+        timeout=5,
+    )
+    dut.expect(r'i2s_std: The tx channel on I2S0 has been initialized to STD mode successfully', timeout=5)
+    dut.expect(
+        r'i2s_common: DMA malloc info: dma_desc_num = ([0-9]+), '
+        r'dma_desc_buf_size = dma_frame_num \* slot_num \* data_bit_width = ([0-9]+)',
+        timeout=5,
+    )
+    dut.expect(
+        r'i2s_std: Clock division info: \[sclk\] ([0-9]+) Hz '
+        r'\[mdiv\] ([0-9]+) ([0-9]+)/([0-9]+) \[mclk\] ([0-9]+) Hz \[bdiv\] ([0-9]+) \[bclk\] ([0-9]+) Hz',
+        timeout=5,
+    )
+    dut.expect(r'i2s_std: The rx channel on I2S0 has been initialized to STD mode successfully', timeout=5)
+    chan_enable_pattern = [r'i2s_common: i2s tx channel enabled', r'i2s_common: i2s rx channel enabled']
     dut.expect(chan_enable_pattern, timeout=5)
     dut.expect(chan_enable_pattern, timeout=5)
     dut.expect(r'Write Task: i2s write ([0-9]+) bytes', timeout=5)

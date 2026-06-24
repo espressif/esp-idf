@@ -13,7 +13,7 @@
 /*
  * SPDX-FileCopyrightText: 2016 Intel Corporation
  * SPDX-FileCopyrightText: 2011-2014 Wind River Systems, Inc.
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,20 +24,28 @@
 #ifndef CONFIG_ATOMIC_OPERATIONS_BUILTIN
 
 /**
-*
-* @brief Atomic get primitive
-*
-* @param target memory location to read from
-*
-* This routine provides the atomic get primitive to atomically read
-* a value from <target>. It simply does an ordinary load.  Note that <target>
-* is expected to be aligned to a 4-byte boundary.
-*
-* @return The value read from <target>
-*/
+ *
+ * @brief Atomic get primitive
+ *
+ * @param target memory location to read from
+ *
+ * This routine provides the atomic get primitive to atomically read
+ * a value from <target>. It simply does an ordinary load.  Note that <target>
+ * is expected to be aligned to a 4-byte boundary.
+ *
+ * @return The value read from <target>
+ */
 bt_mesh_atomic_val_t bt_mesh_atomic_get(const bt_mesh_atomic_t *target)
 {
-    return *target;
+    bt_mesh_atomic_val_t ret;
+
+    bt_mesh_atomic_lock();
+
+    ret = *target;
+
+    bt_mesh_atomic_unlock();
+
+    return ret;
 }
 
 /**
@@ -168,6 +176,20 @@ bt_mesh_atomic_val_t bt_mesh_atomic_inc(bt_mesh_atomic_t *target)
     bt_mesh_atomic_unlock();
 
     return ret;
+}
+
+bool bt_mesh_atomic_cas(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val)
+{
+    bt_mesh_atomic_lock();
+
+    if (*target == excepted) {
+        *target = new_val;
+        bt_mesh_atomic_unlock();
+        return true;
+    }
+
+    bt_mesh_atomic_unlock();
+    return false;
 }
 
 #endif /* #ifndef CONFIG_ATOMIC_OPERATIONS_BUILTIN */

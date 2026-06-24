@@ -1,9 +1,15 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
-default_stages: [commit]
+default_stages: [pre-commit]
 
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.9.7"
+    hooks:
+      - id: ruff-format
+      - id: ruff
+        args: [ "--fix", "--show-fixes" ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -14,6 +20,7 @@ repos:
         # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
         # 3 - any directory named 'testdata'
         # 4 - protobuf auto-generated files
+        # 5 - COPYING files
         exclude: &whitespace_excludes |
           (?x)^(
             .+\.(md|rst|map|bin)|
@@ -23,13 +30,17 @@ repos:
             .*.pb-c.h|
             .*.pb-c.c|
             .*.yuv|
-            .*.rgb
+            .*.rgb|
+            .*.gray|
+            .*COPYING.*|
+            docs/sphinx-known-warnings\.txt
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
       - id: check-executables-have-shebangs
       - id: mixed-line-ending
         args: ['-f=lf']
+        exclude: *whitespace_excludes
       - id: double-quote-string-fixer
       - id: no-commit-to-branch
         name: Do not use more than one slash in the branch name
@@ -37,23 +48,8 @@ repos:
       - id: no-commit-to-branch
         name: Do not use uppercase letters in the branch name
         args: ['--pattern', '^[^A-Z]*[A-Z]']
-  - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
-    hooks:
-      - id: flake8
-        args: ['--config=.flake8', '--tee', '--benchmark']
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
-    hooks:
-      - id: reorder-python-imports
-        name: Reorder Python imports
-        args: [--py38-plus]
-        exclude: >
-          (?x)^(
-              .*_pb2.py
-          )$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
   - repo: local
@@ -70,11 +66,6 @@ repos:
         language: python
         pass_filenames: false
         always_run: true
-      - id: check-deprecated-kconfigs-options
-        name: Check if any Kconfig Options Deprecated
-        entry: tools/ci/check_deprecated_kconfigs.py
-        language: python
-        files: 'sdkconfig\.ci$|sdkconfig\.rename$|sdkconfig.*$'
       - id: cmake-lint
         name: Check CMake Files Format
         entry: cmakelint --linelength=120 --spaces=4 --filter=-whitespace/indent
@@ -103,10 +94,10 @@ repos:
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
         additional_dependencies:
-          - 'mypy==0.940'
-          - 'mypy-extensions==0.4.3'
-          - 'types-setuptools==57.4.14'
-          - 'types-PyYAML==0.1.9'
+          - 'mypy<1.20.2'
+          - 'mypy-extensions'
+          - 'types-setuptools'
+          - 'types-PyYAML'
           - 'types-requests'
         exclude: >
           (?x)^(
@@ -126,7 +117,7 @@ repos:
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
         language: python
-        files: '^tools/.+'
+        files: '^(tools/.+|.gitlab/ci/rules\.yml)'
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
@@ -150,11 +141,11 @@ repos:
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
         language: python
-        files: 'tools/test_apps/.+|examples/.+|components/.+|tools/idf_py_actions/constants.py|tools/ci/check_build_test_rules.py'
+        files: 'tools/.+|examples/.+|components/.+'
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.0
+          - idf-build-apps>=2.16.1,<3
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -169,15 +160,6 @@ repos:
         files: 'tools/ci/sort_yaml\.py$'
         additional_dependencies:
           - ruamel.yaml
-      - id: check-build-test-rules-path-exists
-        name: check path in .build-test-rules.yml exists
-        entry: tools/ci/check_build_test_rules.py check-exist
-        language: python
-        additional_dependencies:
-          - PyYAML == 5.3.1
-        always_run: true
-        pass_filenames: false
-        require_serial: true
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
@@ -188,22 +170,48 @@ repos:
         name: Check gitlab yaml files
         entry: tools/ci/gitlab_yaml_linter.py
         language: python
-        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml'
+        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml|\.gitmodules'
         pass_filenames: false
         additional_dependencies:
           - PyYAML == 5.3.1
+      - id: check-wifi-remote-api
+        name: Check wifi-remote API generation
+        description: Runs generate_and_check.py and fails if any generated files differ from the index.
+        entry: bash -c "cd components/esp_wifi/remote/scripts/ && python3 generate_and_check.py"
+        language: system
+        files: >
+          (?x)^(
+            components/esp_wifi/remote/scripts/(ignore_extensions\.h|copyright_header\.h)|
+            components/esp_wifi/include/(esp_wifi.*|esp_mesh.*|esp_now.*)\.h|
+            components/esp_wifi/Kconfig|
+            components/wpa_supplicant/esp_supplicant/include/esp_eap_client\.h|
+            components/soc/.+/include/soc/Kconfig\.soc_caps\.in
+          )$
+        pass_filenames: false
+        verbose: true
+      - id: check-err-codes-registration
+        name: Check error code headers are registered
+        entry: tools/ci/check_err_codes_registration.py
+        language: python
+        files: 'components/.+\.h$|components/.+CMakeLists\.txt$'
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
+        files: "tools/ci/(\
+          executable-list\\.txt\
+          |mypy_ignore_list\\.txt\
+          |check_copyright_ignore\\.txt\
+          |exclude_check_tools_files\\.txt\
+        )"
   - repo: https://github.com/espressif/check-copyright/
-    rev: v1.0.3
+    rev: v1.1.1
     hooks:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.6.0
+    rev: v1.10.0
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
@@ -224,6 +232,11 @@ repos:
       name: shellcheck dash (export.sh)
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
+  - repo: https://github.com/espressif/esp-pwsh-check
+    rev: v1.0.1
+    hooks:
+    - id: check-powershell-scripts
+      stages: [manual]
   - repo: https://github.com/espressif/esp-idf-sbom.git
     rev: v0.13.0
     hooks:
@@ -236,6 +249,12 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.1.0
+    rev: v3.10.0
     hooks:
       - id: check-kconfig-files
+      - id: check-deprecated-kconfig-options
+  - repo: https://github.com/espressif/idf-ci
+    rev: v1.1.0
+    hooks:
+      - id: check-tests-missing-config
+        files: 'pytest_.*\.py$|sdkconfig(\..*)?$|\.idf_build_apps\.toml$|\.idf_ci\.toml$'

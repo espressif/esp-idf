@@ -13,19 +13,20 @@ The following C++ features are supported:
 - :ref:`cplusplus_multithreading`
 - :ref:`cplusplus_rtti`
 - :doc:`thread-local-storage` (``thread_local`` keyword)
+- :ref:`cplusplus_filesystem`
 - All C++ features implemented by GCC, except for some :ref:`cplusplus_limitations`. See `GCC documentation <https://gcc.gnu.org/projects/cxx-status.html>`_ for details on features implemented by GCC.
 
 
 ``esp-idf-cxx`` Component
 -------------------------
 
-`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ component provides higher-level C++ APIs for some of the ESP-IDF features. This component is available from the `ESP-IDF Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`_.
+`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ component provides higher-level C++ APIs for some of the ESP-IDF features. This component is available from the `ESP Component Registry <https://components.espressif.com/components/espressif/esp-idf-cxx>`_.
 
 
 C++ Language Standard
 ---------------------
 
-By default, ESP-IDF compiles C++ code with C++23 language standard with GNU extensions (``-std=gnu++23``).
+By default, ESP-IDF compiles C++ code using C++26 language standard with GNU extensions (``-std=gnu++26``) for chip targets. For Linux targets, ESP-IDF selects the highest C+ standard supported by your host compiler. To use the highest C++ standard, upgrade your Linux toolchain to a version that supports it.
 
 To compile the source code of a certain component using a different language standard, set the desired compiler flag in the component's ``CMakeLists.txt`` file:
 
@@ -44,7 +45,7 @@ Multithreading
 
 C++ threads, mutexes, and condition variables are supported. C++ threads are built on top of pthreads, which in turn wrap FreeRTOS tasks.
 
-See :example:`cxx/pthread` for an example of creating threads in C++.
+See :example:`cxx/pthread` for an example of creating threads in C++. Specifically, this example demonstrates how to use the ESP-pthread component to modify the stack sizes, priorities, names, and core affinities of C++ threads.
 
 .. note::
 
@@ -62,8 +63,7 @@ If an exception is thrown, but there is no ``catch`` block, the program is termi
 
 C++ Exceptions should **only** be used for exceptional cases, i.e., something happening unexpectedly and occurs rarely, such as events that happen less frequently than 1/100 times. **Do not** use them for control flow (see also the section about resource usage below). For more information on how to use C++ Exceptions, see the `ISO C++ FAQ <https://isocpp.org/wiki/faq/exceptions>`_ and `CPP Core Guidelines <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-errors>`_.
 
-See :example:`cxx/exceptions` for an example of C++ exception handling.
-
+See :example:`cxx/exceptions` for an example of C++ exception handling. Specifically, this example demonstrates how to enable and use C++ exceptions in {IDF_TARGET_NAME}, with a class that throws an exception from the constructor if the provided argument is equal to 0.
 
 C++ Exception Handling and Resource Usage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,8 +93,22 @@ Support for RTTI in ESP-IDF is disabled by default, but can be enabled using :re
 
 Enabling this option compiles all C++ files with RTTI support enabled, which allows using ``dynamic_cast`` conversion and ``typeid`` operator. Enabling this option typically increases the binary size by tens of kB.
 
-See :example:`cxx/rtti` for an example of using RTTI in ESP-IDF.
+See :example:`cxx/rtti` for an example of using RTTI in ESP-IDF. Specifically, this example demonstrates how to use the RTTI feature in ESP-IDF, enabling compile time support for RTTI, and showing how to print demangled type names of objects and functions, and how dynamic_cast behaves with objects of two classes derived from a common base class.
 
+.. _cplusplus_filesystem:
+
+Filesystem Library
+------------------
+
+C++ Filesystem library (``#include <filesystem>``) features are supported in ESP-IDF, with the following exceptions:
+
+- Since symbolic and hard links are not supported in ESP-IDF, related functions are not implemented.
+- ``std::filesystem::space`` is not implemented.
+- ``std::filesystem::resize_file`` is not implemented.
+- ``std::filesystem::current_path`` always returns ``/``. Setting the current path is not supported.
+- ``std::filesystem::permissions`` doesn't support setting file permissions.
+
+Note that the choice of the filesystem also affects the behavior of the filesystem library. For example, SPIFFS filesystem has limited support for directories, therefore the related std::filesystem functions may not work as they do on a filesystem which does support directories.
 
 Developing in C++
 -----------------
@@ -168,7 +182,7 @@ Designated Initializers
 
 Many of the ESP-IDF components use :ref:`api_reference_config_structures` as arguments to the initialization functions. ESP-IDF examples written in C routinely use `designated initializers <https://en.cppreference.com/w/c/language/struct_initialization>`_ to fill these structures in a readable and a maintainable way.
 
-C and C++ languages have different rules with regards to the designated initializers. For example, C++23 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
+C and C++ languages have different rules with regards to the designated initializers. For example, C++26 (currently the default in ESP-IDF) does not support out-of-order designated initialization, nested designated initialization, mixing of designated initializers and regular initializers, and designated initialization of arrays. Therefore, when porting ESP-IDF C examples to C++, some changes to the structure initializers may be necessary. See the `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_ for more details.
 
 
 ``iostream``
@@ -186,9 +200,7 @@ Limitations
 -----------
 
 - Linker script generator does not support function level placements for functions with C++ linkage.
-- Various section attributes (such as ``IRAM_ATTR``) are ignored when used with template functions.
 - Vtables are placed into Flash and are not accessible when the flash cache is disabled. Therefore, virtual function calls should be avoided in :ref:`iram-safe-interrupt-handlers`. Placement of Vtables cannot be adjusted using the linker script generator, yet.
-- C++ filesystem (``std::filesystem``) features are not supported.
 
 
 What to Avoid

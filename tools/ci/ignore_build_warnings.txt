@@ -23,12 +23,11 @@ warning: unknown kconfig symbol 'BTDM_CTRL_MODE_BTDM' assigned to*
 warning: unknown kconfig symbol 'CTRL_BTDM_MODEM_SLEEP' assigned to*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/system/deep_sleep/*
 warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/system/light_sleep/*
+warning: unknown kconfig symbol 'ESP_DEFAULT_CPU_FREQ_MHZ_80' assigned to 'y' in .*/examples/wifi/power_save/*
 warning: unknown kconfig symbol 'ESP32_REV_MIN_3' assigned to 'y' in .*/examples/system/ota/simple_ota_example/sdkconfig.ci.on_update_no_sb_rsa
 warning: unknown kconfig symbol 'ESP32_REV_MIN' assigned to '3' in .*/examples/system/ota/simple_ota_example/sdkconfig.ci.on_update_no_sb_rsa
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_CAL_CYCLES' assigned to '576' in .*/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
 warning: unknown kconfig symbol 'ESP32H4_RTC_CLK_SRC_EXT_CRYS' assigned to 'y' in .*/examples/bluetooth/nimble/blecent/sdkconfig.defaults.esp32h4
-warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/examples/wifi/iperf/*
-warning: unknown kconfig symbol 'LWIP_ETHARP_TRUST_IP_MAC' assigned to 'n' in .*/idf-app-test/apps/iperf/*
 warning: unknown kconfig symbol 'SPIRAM_FETCH_INSTRUCTIONS' assigned to 'y' in .*/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
 warning: unknown kconfig symbol 'SPIRAM_IGNORE_NOTFOUND' assigned to 'y' in .*/examples/network/simple_sniffer/sdkconfig.ci.mem
 warning: unknown kconfig symbol 'SPIRAM_RODATA' assigned to 'y' in .*/components/spi_flash/test_apps/mspi_test/sdkconfig.ci.psram
@@ -39,3 +38,14 @@ warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/protocol
 warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/protocols/https_request/sdkconfig.ci.ssldyn
 warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' in .*/components/bt/test_apps/sdkconfig.defaults
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in .*/components/wpa_supplicant/test_apps/sdkconfig.defaults
+ld: warning: ignoring duplicate libraries
+archive library: .+ the table of contents is empty
+WARNING: The following Kconfig variables were used in "if" clauses
+warning: unknown kconfig symbol 'ETHERNET_INTERNAL_SUPPORT' assigned to 'y' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: unknown kconfig symbol 'ETHERNET_PHY_GENERIC' assigned to 'y' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: unknown kconfig symbol 'ETHERNET_MDC_GPIO' assigned to '23' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: unknown kconfig symbol 'ETHERNET_MDIO_GPIO' assigned to '18' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: unknown kconfig symbol 'ETHERNET_PHY_RST_GPIO' assigned to '5' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: unknown kconfig symbol 'ETHERNET_PHY_ADDR' assigned to '1' in .*/examples/protocols/esp_http_client/sdkconfig.ci.*
+warning: \S+ changed binding to STB_WEAK
+warning: unknown kconfig symbol 'VFS_SUPPORT_IO' assigned to 'n' in .*/tools/test_apps/system/g1_components/sdkconfig.defaults

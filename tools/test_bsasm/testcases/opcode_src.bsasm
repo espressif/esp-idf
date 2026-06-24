@@ -1,0 +1,12 @@
+
+cfg lut_width_bits 32
+
+main:
+	if 0 main
+	ifn 32 main
+	if l0 main
+	ifn a0 main
+	if o0 main
+	ifn h main
+	if l main
+	ifn o31 main

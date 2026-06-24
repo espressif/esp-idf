@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,14 +14,20 @@
 #include "bootloader_random.h"
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
-#include "esp_flash_encrypt.h"
 #include "esp_cpu.h"
-#include "soc/rtc.h"
-#include "hal/wdt_hal.h"
-#include "hal/efuse_hal.h"
-#include "esp_bootloader_desc.h"
+#include "soc/soc_caps.h"
 
-static const char *TAG = "boot";
+#include "soc/rtc.h"
+#if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
+#include "hal/wdt_hal.h"
+#endif
+#include "hal/efuse_hal.h"
+#include "hal/cache_hal.h"
+#include "hal/mmu_hal.h"
+#include "esp_bootloader_desc.h"
+#include "esp_rom_sys.h"
+
+ESP_LOG_ATTR_TAG(TAG, "boot");
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
@@ -29,13 +35,18 @@ esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 
 void bootloader_clear_bss_section(void)
 {
-    memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+    memset(&_bss_start, 0, (uintptr_t)&_bss_end - (uintptr_t)&_bss_start);
 }
 
 esp_err_t bootloader_read_bootloader_header(void)
 {
     /* load bootloader image header */
-    if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &bootloader_image_hdr, sizeof(esp_image_header_t), true) != ESP_OK) {
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+    const uint32_t bootloader_flash_offset = esp_rom_get_bootloader_offset();
+#else
+    const uint32_t bootloader_flash_offset = ESP_PRIMARY_BOOTLOADER_OFFSET;
+#endif
+    if (bootloader_flash_read(bootloader_flash_offset, &bootloader_image_hdr, sizeof(esp_image_header_t), true) != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "failed to load bootloader image header!");
         return ESP_FAIL;
     }
@@ -44,10 +55,17 @@ esp_err_t bootloader_read_bootloader_header(void)
 
 esp_err_t bootloader_check_bootloader_validity(void)
 {
-    unsigned int revision = efuse_hal_chip_revision();
-    unsigned int major = revision / 100;
-    unsigned int minor = revision % 100;
-    ESP_EARLY_LOGI(TAG, "chip revision: v%d.%d", major, minor);
+    unsigned int chip_revision = efuse_hal_chip_revision();
+    unsigned int chip_major_rev = chip_revision / 100;
+    unsigned int chip_minor_rev = chip_revision % 100;
+    ESP_EARLY_LOGI(TAG, "chip revision: v%d.%d", chip_major_rev, chip_minor_rev);
+/* ESP32 doesn't have more memory and more efuse bits for block major version. */
+#if !CONFIG_IDF_TARGET_ESP32
+    unsigned int efuse_revision = efuse_hal_blk_version();
+    unsigned int efuse_major_rev = efuse_revision / 100;
+    unsigned int efuse_minor_rev = efuse_revision % 100;
+    ESP_EARLY_LOGI(TAG, "efuse block revision: v%d.%d", efuse_major_rev, efuse_minor_rev);
+#endif  // !CONFIG_IDF_TARGET_ESP32
     /* compare with the one set in bootloader image header */
     if (bootloader_common_check_chip_validity(&bootloader_image_hdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
         return ESP_FAIL;
@@ -57,6 +75,7 @@ esp_err_t bootloader_check_bootloader_validity(void)
 
 void bootloader_config_wdt(void)
 {
+#if SOC_RTC_WDT_SUPPORTED
     /*
      * At this point, the flashboot protection of RWDT and MWDT0 will have been
      * automatically enabled. We can disable flashboot protection as it's not
@@ -80,11 +99,16 @@ void bootloader_config_wdt(void)
     wdt_hal_write_protect_enable(&rwdt_ctx);
 #endif
 
-    //Disable MWDT0 flashboot protection. But only after we've enabled the RWDT first so that there's not gap in WDT protection.
+#endif /* SOC_RTC_WDT_SUPPORTED */
+
+#if SOC_WDT_SUPPORTED
+    //Disable MWDT0 flashboot protection. When RTC WDT is present, run this after RWDT
+    //setup above so there is no gap in WDT protection during bootloader.
     wdt_hal_context_t mwdt_ctx = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
     wdt_hal_write_protect_disable(&mwdt_ctx);
     wdt_hal_set_flashboot_en(&mwdt_ctx, false);
     wdt_hal_write_protect_enable(&mwdt_ctx);
+#endif /* SOC_WDT_SUPPORTED */
 }
 
 void bootloader_enable_random(void)
@@ -110,4 +134,31 @@ void bootloader_print_banner(void)
 #else
     ESP_EARLY_LOGI(TAG, "Multicore bootloader");
 #endif
+}
+
+void bootloader_init_ext_mem(void)
+{
+    //init cache hal
+    cache_hal_config_t cache_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        .l2_cache_size = CONFIG_CACHE_L2_CACHE_SIZE,
+        .l2_cache_line_size = CONFIG_CACHE_L2_CACHE_LINE_SIZE,
+#endif
+    };
+    cache_hal_init(&cache_config);
+    //reset mmu
+    mmu_hal_config_t mmu_config = {
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        .core_nums = 1,
+#else
+        .core_nums = SOC_CPU_CORES_NUM,
+#endif
+        .mmu_page_size = CONFIG_MMU_PAGE_SIZE,
+    };
+    mmu_hal_init(&mmu_config);
 }

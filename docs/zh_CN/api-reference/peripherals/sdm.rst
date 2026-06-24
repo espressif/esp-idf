@@ -10,12 +10,6 @@ Sigma-Delta 调制器 (SDM)
 
 Sigma-Delta 调制器可以将模拟电压信号转换为脉冲频率或脉冲密度，该过程称为脉冲密度调制 (PDM)（请参阅 |wiki_ref|_）。
 
-与 I2S 外设中的 PDM 模式和和数模转换器 (DAC) 相比，SDM 中的 PDM 主要有以下特点：
-
-1. SDM 没有时钟信号，类似于 PDM 的 DAC 模式；
-2. SDM 没有 DMA 支持，无法持续改变其输出密度。如果需要改变 SDM 的输出密度，可以在定时器的回调函数中进行操作；
-3. 基于以上两点，不同于 DAC，要还原模拟波形，还必须使用外部的有源或无源低通滤波器，详情请参阅 :ref:`convert_to_analog_signal`。
-
 Sigma-Delta 调制通道通常应用于以下场景：
 
 -  LED 调光
@@ -46,9 +40,8 @@ Sigma-Delta 调制通道通常应用于以下场景：
 
 - :cpp:member:`sdm_config_t::gpio_num` 设置 PDM 脉冲输出的 GPIO 管脚号。
 - :cpp:member:`sdm_config_t::clk_src` 选择 SDM 模块的时钟源。注意，所有通道选择的时钟源应保持一致。
-- :cpp:member:`sdm_config_t::sample_rate_hz` 设置 SDM 模块的采样率。
+- :cpp:member:`sdm_config_t::sample_rate_hz` 设置 SDM 模块的采样率。提高采样率可以提高输出信号的信噪比，更容易在后级通过滤波获取高精度的原始信号。
 - :cpp:member:`sdm_config_t::invert_out` 设置是否反转输出信号。
-- :cpp:member:`sdm_config_t::io_loop_back` 通过 GPIO 矩阵外设，启用 GPIO 的输入和输出功能。注意，该字段仅供调试使用。
 
 函数 :cpp:func:`sdm_new_channel` 可能因为各种原因失败，如内存不足、参数无效等。当缺少空闲通道（即所有的硬件 SDM 通道均在使用中）时，将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
 
@@ -109,13 +102,13 @@ Kconfig 选项 :ref:`CONFIG_SDM_CTRL_FUNC_IN_IRAM` 支持将常用的 IO 控制�
 线程安全
 ^^^^^^^^
 
-驱动程序会确保工厂函数 :cpp:func:`sdm_new_channel` 的线程安全，使用时，可以直接从不同的 RTOS 任务中调用此类函数，无需额外锁保护。
+驱动使用了临界区保证了对寄存器的原子操作。句柄内部的关键成员也受临界区保护。驱动内部的状态机使用了原子指令保证了线程安全，通过状态检查还能进一步防止一些不合法的并发操作（例如 `enable` 和 `delete` 冲突）。因此， SDM 驱动的 API 可以在多线程环境下使用，无需自行加锁。
 
-驱动程序设置了临界区，以防函数同时在任务和 ISR 中调用。因此，以下函数支持在 ISR 上下文运行：
+同时，以下这些函数还允许在中断上下文中使用：
 
-- :cpp:func:`sdm_channel_set_pulse_density`
+.. list::
 
-其他以 :cpp:type:`sdm_channel_handle_t` 作为第一个位置参数的函数均非线程安全，因此应避免从多个任务中调用这类函数。
+    - :cpp:func:`sdm_channel_set_pulse_density`
 
 .. _sdm-kconfig-options:
 
@@ -141,12 +134,13 @@ Kconfig 选项
 
     Sallen-Key 拓扑低通滤波器
 
+（滤波前后的波形请参阅文档 :example_file:`peripherals/sigma_delta/sdm_dac/README.md`）
 
 应用示例
 --------
 
-* 使用 Sigma-Delta 调制的 100 Hz 正弦波：:example:`peripherals/sigma_delta/sdm_dac`。
-* 使用 Sigma-Delta 调制、并由 GPIO 驱动的 LED：:example:`peripherals/sigma_delta/sdm_led`。
+* :example:`peripherals/sigma_delta/sdm_dac` 演示了如何使用 sigma-delta 驱动器作为 8 位 DAC（数字模拟转换器），并输出 100 Hz 的正弦波。
+* :example:`peripherals/sigma_delta/sdm_led` 演示了如何使用 sigma-delta 驱动器来控制 LED 或 LCD 背光的亮度。
 
 API 参考
 --------

@@ -13,19 +13,20 @@ ESP-IDF 支持以下 C++ 功能：
 - :ref:`cplusplus_multithreading`
 - :ref:`cplusplus_rtti`
 - :doc:`thread-local-storage` （``thread_local`` 关键字）
+- :ref:`cplusplus_filesystem`
 - 除部分 :ref:`cplusplus_limitations`，所有由 GCC 实现的 C++ 功能均受支持。有关由 GCC 所实现功能的详细信息，请参阅 `GCC 文档 <https://gcc.gnu.org/projects/cxx-status.html>`_。
 
 
 ``esp-idf-cxx`` 组件
 -------------------------
 
-`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ 组件为一些 ESP-IDF 中的功能提供了更高级别的 C++ API，该组件可以从 `ESP-IDF 组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ 中获取。
+`esp-idf-cxx <https://github.com/espressif/esp-idf-cxx>`_ 组件为一些 ESP-IDF 中的功能提供了更高级别的 C++ API，该组件可以从 `乐鑫组件注册表 <https://components.espressif.com/components/espressif/esp-idf-cxx>`_ 中获取。
 
 
 C++ 语言标准
 ---------------------
 
-默认情况下，ESP-IDF 使用 C++23 语言标准和 GNU 扩展 (``-std=gnu++23``) 编译 C++ 代码。
+对于芯片目标，ESP-IDF 默认使用带有 GNU 扩展的 C++26 语言标准 (``-std=gnu++26``) 来编译 C++ 代码。对于 Linux 目标，ESP-IDF 会选择你的编译器支持的最高 C++ 标准。此时如需使用最新的 C++ 语言标准，请将 Linux 工具链升级到支持该标准的版本。
 
 要使用其他语言标准编译特定组件的源代码，请按以下步骤，在组件的 CMakeLists.txt 文件中设置所需的编译器标志：
 
@@ -44,7 +45,7 @@ C++ 语言标准
 
 支持 C++ 线程，互斥锁和条件变量。C++ 线程基于 pthread 构建，而 pthread 封装了 FreeRTOS 任务。
 
-有关在 C++ 中创建线程的示例，请参阅 :example:`cxx/pthread`。
+有关在 C++ 中创建线程的示例，请参阅 :example:`cxx/pthread`。该示例演示了如何使用 ESP-pthread 组件修改 C++ 线程的堆栈大小、优先级、名称和内核亲和性。
 
 .. note::
 
@@ -62,8 +63,7 @@ ESP-IDF 默认禁用对 C++ 异常处理的支持，可以用 :ref:`CONFIG_COMPI
 
 C++ 异常处理应 **仅** 应用于异常情况，即意外情况及罕见情况，如发生频率低于 1% 的事件。**请勿** 将 C++ 异常处理用于流程控制，详情请参阅下文的资源使用部分。有关使用 C++ 异常处理的更多详情，请参阅 `ISO C++ FAQ <https://isocpp.org/wiki/faq/exceptions>`_ 和 `CPP 核心指南 <https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#S-errors>`_。
 
-有关 C++ 异常处理的示例，请参阅 :example:`cxx/exceptions`。
-
+有关 C++ 异常处理的示例，请参阅 :example:`cxx/exceptions`。该示例演示了如何在 {IDF_TARGET_NAME} 中启用和使用 C++ 异常，示例中声明了一个类，当提供的参数等于 0 时，这个类会在构造函数中抛出异常。
 
 C++ 异常处理及所需资源
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,8 +93,22 @@ ESP-IDF 默认禁用对 RTTI 的支持，可以用 :ref:`CONFIG_COMPILER_CXX_RTT
 
 启用此选项，将以启用了 RTTI 支持的方式编译所有的 C++ 文件，并支持使用 ``dynamic_cast`` 转换和 ``typeid`` 运算符。启用此选项通常会增加几十 KB 的二进制文件大小。
 
-有关在 ESP-IDF 中使用 RTTI 的示例，请参阅 :example:`cxx/rtti`。
+有关在 ESP-IDF 中使用 RTTI 的示例，请参阅 :example:`cxx/rtti`。该示例演示了如何在 ESP-IDF 中使用 RTTI 功能，启用编译时对 RTTI 的支持，并展示了如何打印对象和函数的去混淆类型名称，以及 dynamic_cast 在两个继承自同一基类的对象上如何表现。
 
+.. _cplusplus_filesystem:
+
+文件系统库
+----------
+
+ESP-IDF 支持 C++ 文件系统库 (``#include <filesystem>``)，但有部分功能尚未实现：
+
+- 由于 ESP-IDF 不支持符号链接和硬链接，因此相关函数未实现。
+- 未实现 ``std::filesystem::space``。
+- 未实现 ``std::filesystem::resize_file``。
+- ``std::filesystem::current_path`` 只返回 ``/``。不支持设置当前路径。
+- ``std::filesystem::permissions`` 不支持设置文件权限。
+
+请注意，文件系统的选择也会影响文件系统库的行为。例如，SPIFFS 文件系统对目录的支持有限，因此相关的 std::filesystem 函数可能无法像在支持目录的文件系统上那样正常工作。
 
 在 C++ 中进行开发
 -----------------
@@ -168,7 +182,7 @@ ESP-IDF 希望应用程序入口点 ``app_main`` 以 C 链接定义。当 ``app_
 
 许多 ESP-IDF 组件会以 :ref:`api_reference_config_structures` 作为初始化函数的参数。用 C 编写的 ESP-IDF 示例通常使用 `指定初始化器 <https://en.cppreference.com/w/c/language/struct_initialization>`_，以可读且可维护的方式填充有关结构体。
 
-C 和 C++ 语言对于指定初始化器有不同的规则。例如，C++23（当前在 ESP-IDF 中默认使用）不支持无序指定初始化、嵌套指定初始化、混合使用指定初始化器和常规初始化器，而对数组进行指定初始化。因此，当将 ESP-IDF 的 C 示例移植到 C++ 时，可能需要对结构体初始化器进行一些更改。详细信息请参阅 `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_。
+C 和 C++ 语言对于指定初始化器有不同的规则。例如，C++26（当前在 ESP-IDF 中默认使用）不支持无序指定初始化、嵌套指定初始化、混合使用指定初始化器和常规初始化器，而对数组进行指定初始化。因此，当将 ESP-IDF 的 C 示例移植到 C++ 时，可能需要对结构体初始化器进行一些更改。详细信息请参阅 `C++ aggregate initialization reference <https://en.cppreference.com/w/cpp/language/aggregate_initialization>`_。
 
 
 ``iostream``
@@ -186,9 +200,7 @@ ESP-IDF 支持 ``iostream`` 功能，但应注意：
 -----------
 
 - 链接脚本生成器不支持将具有 C++ 链接的函数单独放置在内存的特定位置。
-- 当与模板函数一起使用时，会忽略各种节属性（例如 ``IRAM_ATTR``）。
 - vtable 位于 flash 中，在禁用 flash 缓存时无法访问。因此，在 :ref:`iram-safe-interrupt-handlers` 中应避免调用虚拟函数。目前尚无法使用链接器脚本生成器调整 vtable 的放置位置。
-- 不支持 C++ 文件系统 (``std::filesystem``) 功能。
 
 
 注意事项

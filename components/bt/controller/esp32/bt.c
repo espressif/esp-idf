@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,9 @@
 #include "esp_task.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#endif
 #include "esp_bt.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -35,7 +37,9 @@
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
+#endif
 #include "esp_timer.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
@@ -43,6 +47,14 @@
 
 #include "esp_rom_sys.h"
 #include "hli_api.h"
+
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#else /* !CONFIG_BLE_LOG_ENABLED */
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 #if CONFIG_BT_ENABLED
 
@@ -92,6 +104,7 @@ do{\
 #define OSI_VERSION              0x00010005
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
+#define BLE_CONTROLLER_MALLOC_CAPS        (MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL)
 /* Types definition
  ************************************************************************
  */
@@ -233,20 +246,31 @@ extern uint32_t _data_end_btdm_rom;
 
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
-extern uint32_t _nimble_bss_start;
-extern uint32_t _nimble_bss_end;
-extern uint32_t _btdm_bss_start;
-extern uint32_t _btdm_bss_end;
+extern uint32_t _bt_controller_bss_start;
+extern uint32_t _bt_controller_bss_end;
 extern uint32_t _bt_data_start;
 extern uint32_t _bt_data_end;
-extern uint32_t _nimble_data_start;
-extern uint32_t _nimble_data_end;
-extern uint32_t _btdm_data_start;
-extern uint32_t _btdm_data_end;
+extern uint32_t _bt_controller_data_start;
+extern uint32_t _bt_controller_data_end;
 
 extern void config_bt_funcs_reset(void);
 extern void config_ble_funcs_reset(void);
 extern void config_btdm_funcs_reset(void);
+extern void btdm_aa_check_enhance_enable(void);
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+extern void bt_stack_enableSecCtrlVsCmd(bool en);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+extern void bt_stack_enablePwrCtrlVsCmd(bool en);
+#endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+#if defined(CONFIG_BT_NIMBLE_ENABLED) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+extern void bt_stack_enableCoexVsCmd(bool en);
+extern void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
+extern void adv_stack_enableClearLegacyAdvVsCmd(bool en);
+extern void advFilter_stack_enableDupExcListVsCmd(bool en);
+extern void arr_stack_enableMultiConnVsCmd(bool en);
+#endif // (CONFIG_BT_NIMBLE_ENABLED) || (CONFIG_BT_BLUEDROID_ENABLED)
 
 /* Local Function Declare
  *********************************************************************
@@ -448,7 +472,11 @@ static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit f
 
 #if CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
 // used low power clock
-static DRAM_ATTR uint8_t btdm_lpclk_sel;
+#if CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
+static DRAM_ATTR uint8_t btdm_lpclk_sel = ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL;
+#else
+static DRAM_ATTR uint8_t btdm_lpclk_sel = ESP_BT_SLEEP_CLOCK_MAIN_XTAL;
+#endif /* CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL */
 #endif /* #ifdef CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG */
 
 static DRAM_ATTR QueueHandle_t s_wakeup_req_sem = NULL;
@@ -760,7 +788,7 @@ static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block
  * @param  item  The message which will be send
  * @param  hptw  need do task yield or not
  * @return       send success or not
- *               There is an issue here:  When the queue is full, it may reture true but it send fail to the queue, sometimes.
+ *               There is an issue here:  When the queue is full, it may return true but it send fail to the queue, sometimes.
  *               But in Bluetooth controller's isr, We don't care about the return value.
  *               It only required tp send success when the queue is empty all the time.
  *               So, this function meets the requirement.
@@ -857,9 +885,22 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 #if CONFIG_FREERTOS_UNICORE
     cause_sw_intr((void *)intr_no);
 #else /* CONFIG_FREERTOS_UNICORE */
+#if CONFIG_FREERTOS_SMP
+    uint32_t state = portDISABLE_INTERRUPTS();
+#else
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
     if (xPortGetCoreID() == core_id) {
         cause_sw_intr((void *)intr_no);
+#if CONFIG_FREERTOS_SMP
+        portRESTORE_INTERRUPTS(state);
     } else {
+        portRESTORE_INTERRUPTS(state);
+#else
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+    } else {
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+#endif
         err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
     }
 #endif /* !CONFIG_FREERTOS_UNICORE */
@@ -868,7 +909,21 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 
 static void *malloc_internal_wrapper(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+}
+
+void *malloc_ble_controller_mem(size_t size)
+{
+    void *p = heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+    if(p == NULL) {
+        ESP_LOGE(BTDM_LOG_TAG, "Malloc failed");
+    }
+    return p;
+}
+
+uint32_t get_ble_controller_free_heap_size(void)
+{
+    return heap_caps_get_free_size(BLE_CONTROLLER_MALLOC_CAPS);
 }
 
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
@@ -932,7 +987,7 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
     assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
     // allow a maximum time uncertainty to be about 488ppm(1/2048) at least as clock drift
     // and set the timer in advance
-    uint32_t uncertainty = (us_to_sleep >> 11);
+    uint32_t uncertainty = (us_to_sleep / 1000);
     if (uncertainty < BTDM_MIN_TIMER_UNCERTAINTY_US) {
         uncertainty = BTDM_MIN_TIMER_UNCERTAINTY_US;
     }
@@ -1027,9 +1082,8 @@ static bool async_wakeup_request(int event)
 
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
-            btdm_in_wakeup_requesting_set(true);
-            // NO break
         case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
+            btdm_in_wakeup_requesting_set(true);
             if (!btdm_power_state_active()) {
                 do_wakeup_request = true;
 
@@ -1062,10 +1116,10 @@ static void async_wakeup_request_end(int event)
     bool request_lock = false;
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
+        case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             request_lock = true;
             break;
         case BTDM_ASYNC_WAKEUP_REQ_COEX:
-        case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             request_lock = false;
             break;
         default:
@@ -1281,7 +1335,45 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     return ret;
 }
 
-esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+typedef struct {
+    intptr_t start;
+    intptr_t end;
+    const char* name;
+} bt_area_t;
+
+
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
+{
+    esp_err_t ret = ESP_OK;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(BTDM_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
+
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (area1->end == area2->start) {
+        bt_area_t merged_area = {
+            .start = area1->start,
+            .end = area2->end,
+            .name = area1->name
+        };
+        ret = esp_bt_mem_release_area(&merged_area);
+    } else {
+        esp_bt_mem_release_area(area1);
+        ret = esp_bt_mem_release_area(area2);
+    }
+
+    return ret;
+}
+
+static esp_err_t esp_bt_controller_rom_mem_release(esp_bt_mode_t mode)
 {
     bool update = true;
     intptr_t mem_start=(intptr_t) NULL, mem_end=(intptr_t) NULL;
@@ -1292,7 +1384,8 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 
     //already released
     if (!(mode & btdm_dram_available_region[0].mode)) {
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGW(BTDM_LOG_TAG, "%s already released, mode %d",__func__, mode);
+        return ESP_OK;
     }
 
     for (int i = 0; i < sizeof(btdm_dram_available_region)/sizeof(btdm_dram_available_region_t); i++) {
@@ -1332,61 +1425,89 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
         }
     }
 
-    if (mode == ESP_BT_MODE_BTDM) {
-        mem_start = (intptr_t)&_btdm_bss_start;
-        mem_end = (intptr_t)&_btdm_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_btdm_data_start;
-        mem_end = (intptr_t)&_btdm_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-    }
     return ESP_OK;
+}
+
+esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode == ESP_BT_MODE_BTDM) {
+        bt_area_t cont_bss = {
+            .start = (intptr_t)&_bt_controller_bss_start,
+            .end   = (intptr_t)&_bt_controller_bss_end,
+            .name  = "BT Controller BSS",
+        };
+        bt_area_t cont_data = {
+            .start = (intptr_t)&_bt_controller_data_start,
+            .end   = (intptr_t)&_bt_controller_data_end,
+            .name  = "BT Controller Data"
+        };
+
+        ret = esp_bt_mem_release_areas(&cont_data, &cont_bss);
+    }
+
+    if (ret == ESP_OK) {
+        ret = esp_bt_controller_rom_mem_release(mode);
+    }
+
+    return ret;
 }
 
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
-    int ret;
-    intptr_t mem_start, mem_end;
+    esp_err_t ret = ESP_OK;
 
-    ret = esp_bt_controller_mem_release(mode);
-    if (ret != ESP_OK) {
-        return ret;
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
     }
+
+    bt_area_t bss = {
+        .start = (intptr_t)&_bt_bss_start,
+        .end   = (intptr_t)&_bt_bss_end,
+        .name  = "BT BSS",
+    };
+    bt_area_t cont_bss = {
+        .start = (intptr_t)&_bt_controller_bss_start,
+        .end   = (intptr_t)&_bt_controller_bss_end,
+        .name  = "BT Controller BSS",
+    };
+    bt_area_t data = {
+        .start = (intptr_t)&_bt_data_start,
+        .end   = (intptr_t)&_bt_data_end,
+        .name  = "BT Data",
+    };
+    bt_area_t cont_data = {
+        .start = (intptr_t)&_bt_controller_data_start,
+        .end   = (intptr_t)&_bt_controller_data_end,
+        .name  = "BT Controller Data"
+    };
+
+    /*
+     * Free data and BSS section for Bluetooth controller ROM code.
+     * Note that rom mem release must be performed before section _bt_data_start to _bt_data_end is released,
+     * otherwise `btdm_dram_available_region` will no longer be available when performing rom mem release and
+     * thus causing heap corruption.
+     */
+    ret = esp_bt_controller_rom_mem_release(mode);
 
     if (mode == ESP_BT_MODE_BTDM) {
-        mem_start = (intptr_t)&_bt_bss_start;
-        mem_end = (intptr_t)&_bt_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_bt_data_start;
-        mem_end = (intptr_t)&_bt_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        /* Start by freeing Bluetooth BSS section */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&bss, &cont_bss);
         }
 
-        mem_start = (intptr_t)&_nimble_bss_start;
-        mem_end = (intptr_t)&_nimble_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_nimble_data_start;
-        mem_end = (intptr_t)&_nimble_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        /* Do the same thing with the Bluetooth data section */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&data, &cont_data);
         }
     }
-    return ESP_OK;
+
+    return ret;
 }
 
 #if CONFIG_BTDM_CTRL_HLI
@@ -1400,14 +1521,127 @@ static void hli_queue_setup_pinned_to_core(int core_id)
 #if CONFIG_FREERTOS_UNICORE
     hli_queue_setup_cb(NULL);
 #else /* CONFIG_FREERTOS_UNICORE */
-    if (xPortGetCoreID() == core_id) {
-        hli_queue_setup_cb(NULL);
-    } else {
-        esp_ipc_call(core_id, hli_queue_setup_cb, NULL);
-    }
+    esp_ipc_call_blocking(core_id, hli_queue_setup_cb, NULL);
 #endif /* !CONFIG_FREERTOS_UNICORE */
 }
 #endif /* CONFIG_BTDM_CTRL_HLI */
+
+// init low-power control resources
+static esp_err_t btdm_low_power_mode_init(void)
+{
+    esp_err_t err = ESP_OK;
+
+#ifdef CONFIG_PM_ENABLE
+    s_btdm_allow_light_sleep = false;
+#endif
+
+    // set default sleep clock cycle and its fractional bits
+    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+    btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
+
+#if CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+    if (btdm_lpclk_sel == ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL) {
+        // check whether or not EXT_CRYS is working
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+#ifdef CONFIG_PM_ENABLE
+            s_btdm_allow_light_sleep = true;
+#endif
+        } else {
+            ESP_LOGW(BTDM_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
+                    "light sleep mode will not be able to apply when bluetooth is enabled");
+            btdm_lpclk_sel = ESP_BT_SLEEP_CLOCK_MAIN_XTAL; // set default value
+        }
+    } else if (btdm_lpclk_sel != ESP_BT_SLEEP_CLOCK_MAIN_XTAL) {
+        assert(0);
+    }
+
+    bool select_src_ret __attribute__((unused));
+    bool set_div_ret __attribute__((unused));
+    if (btdm_lpclk_sel == ESP_BT_SLEEP_CLOCK_MAIN_XTAL) {
+        ESP_LOGI(BTDM_LOG_TAG, "Using main XTAL as clock source");
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
+        set_div_ret = btdm_lpclk_set_div(esp_clk_xtal_freq() * 2 / MHZ - 1);
+        assert(select_src_ret && set_div_ret);
+        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+        btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
+    } else { // btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL32K
+        ESP_LOGI(BTDM_LOG_TAG, "Using external 32.768 kHz crystal/oscillator as clock source");
+        /* The enabling of the 32k crystal/oscillator depends on the RTC slow clock.
+         *  Therefore, if the 32k crystal/oscillator is enabled, selecting BTDM_LPCLK_SEL_RTC_SLOW
+         *  and BTDM_LPCLK_SEL_XTAL32K as the lp clock source is equivalent.
+         */
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_RTC_SLOW);
+        set_div_ret = btdm_lpclk_set_div(0);
+        assert(select_src_ret && set_div_ret);
+        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+        btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
+            (1000000 >> (15 - RTC_CLK_CAL_FRACT));
+        assert(btdm_lpcycle_us != 0);
+    }
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_ORIG);
+
+#elif CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_EVED
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_EVED);
+#else
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
+#endif
+
+#ifdef CONFIG_PM_ENABLE
+    if (!s_btdm_allow_light_sleep) {
+        if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
+            return err;
+        }
+    }
+    if ((err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock)) != ESP_OK) {
+        return err;
+    }
+    esp_timer_create_args_t create_args = {
+        .callback = btdm_slp_tmr_callback,
+        .arg = NULL,
+        .name = "btSlp"
+    };
+    if ((err = esp_timer_create(&create_args, &s_btdm_slp_tmr)) != ESP_OK) {
+        return err;
+    }
+
+    s_pm_lock_acquired = true;
+#endif
+
+    return err;
+}
+
+esp_bt_sleep_clock_t esp_bt_get_lpclk_src(void)
+{
+#if CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED &&
+            btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_BT_SLEEP_CLOCK_NONE;
+    }
+    return btdm_lpclk_sel;
+#else
+    return ESP_BT_SLEEP_CLOCK_NONE;
+#endif
+}
+
+esp_err_t esp_bt_set_lpclk_src(esp_bt_sleep_clock_t lpclk)
+{
+#if CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+    if (lpclk < ESP_BT_SLEEP_CLOCK_MAIN_XTAL || lpclk > ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (btdm_controller_status == ESP_BT_CONTROLLER_STATUS_INITED ||
+            btdm_controller_status == ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        ESP_LOGW(BTDM_LOG_TAG, "Please set the Bluetooth sleep clock source before Bluetooth initialization");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    btdm_lpclk_sel = lpclk;
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
@@ -1447,7 +1681,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     //overwrite some parameters
-    cfg->bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF;
+    cfg->bt_max_sync_conn = UC_BR_EDR_CTRL_MAX_SYNC_CONN_EFF;
     cfg->magic  = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL;
 
     if (((cfg->mode & ESP_BT_MODE_BLE) && (cfg->ble_max_conn <= 0 || cfg->ble_max_conn > BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT))
@@ -1458,71 +1692,24 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ESP_LOGI(BTDM_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
-    s_wakeup_req_sem = semphr_create_wrapper(1, 0);
-    if (s_wakeup_req_sem == NULL) {
-        err = ESP_ERR_NO_MEM;
-        goto error;
-    }
-
     esp_phy_modem_init();
 
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
 
+    /* Must call periph_module_enable(BT) before any step that may goto error,
+     * otherwise bt_controller_deinit_internal() will call periph_module_disable(BT)
+     * when ref is still 0, causing ref underflow (0-1=255) and subsequent
+     * init/enable failures (EM BASE MISMATCH, BLE assert, etc.) */
     periph_module_enable(PERIPH_BT_MODULE);
+    periph_module_reset(PERIPH_BT_MODULE);
 
-#ifdef CONFIG_PM_ENABLE
-    s_btdm_allow_light_sleep = false;
-#endif
-
-    // set default sleep clock cycle and its fractional bits
-    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
-
-#if CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
-
-    btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
-#if CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
-    // check whether or not EXT_CRYS is working
-    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32kHz XTAL
-#ifdef CONFIG_PM_ENABLE
-        s_btdm_allow_light_sleep = true;
-#endif
-    } else {
-        ESP_LOGW(BTDM_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
-                 "light sleep mode will not be able to apply when bluetooth is enabled");
-        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+    s_wakeup_req_sem = semphr_create_wrapper(1, 0);
+    if (s_wakeup_req_sem == NULL) {
+        err = ESP_ERR_NO_MEM;
+        goto error;
     }
-#else
-    btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
-#endif
-
-    bool select_src_ret __attribute__((unused));
-    bool set_div_ret __attribute__((unused));
-    if (btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
-        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
-        set_div_ret = btdm_lpclk_set_div(esp_clk_xtal_freq() * 2 / MHZ - 1);
-        assert(select_src_ret && set_div_ret);
-        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-        btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
-    } else { // btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL32K
-        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
-        set_div_ret = btdm_lpclk_set_div(0);
-        assert(select_src_ret && set_div_ret);
-        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-        btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
-            (1000000 >> (15 - RTC_CLK_CAL_FRACT));
-        assert(btdm_lpcycle_us != 0);
-    }
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_ORIG);
-
-#elif CONFIG_BTDM_CTRL_MODEM_SLEEP_MODE_EVED
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_EVED);
-#else
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
-#endif
 
 #if CONFIG_BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
     sdk_config_set_uart_flow_ctrl_enable(true);
@@ -1530,43 +1717,68 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     sdk_config_set_uart_flow_ctrl_enable(false);
 #endif
 
-#ifdef CONFIG_PM_ENABLE
-    if (!s_btdm_allow_light_sleep) {
-        if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
-            goto error;
-        }
-    }
-    if ((err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock)) != ESP_OK) {
-        goto error;
-    }
-    esp_timer_create_args_t create_args = {
-        .callback = btdm_slp_tmr_callback,
-        .arg = NULL,
-        .name = "btSlp"
-    };
-    if ((err = esp_timer_create(&create_args, &s_btdm_slp_tmr)) != ESP_OK) {
-        goto error;
-    }
-
-    s_pm_lock_acquired = true;
-#endif
-
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
 
-    btdm_cfg_mask = btdm_config_mask_load();
-
-    if (btdm_controller_init(btdm_cfg_mask, cfg) != 0) {
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(BTDM_LOG_TAG, "BLE Log v2 init failed");
         err = ESP_ERR_NO_MEM;
         goto error;
     }
+#else /* !CONFIG_BLE_LOG_ENABLED */
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    if (ble_log_spi_out_init() != 0) {
+        ESP_LOGE(BTDM_LOG_TAG, "BLE Log SPI output init failed");
+        err = ESP_ERR_NO_MEM;
+        goto error;
+    }
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
+
+    if ((err = btdm_low_power_mode_init()) != ESP_OK) {
+        ESP_LOGE(BTDM_LOG_TAG, "Low power module initialization failed");
+        goto error;
+    }
+
+    btdm_cfg_mask = btdm_config_mask_load();
+
+    err = btdm_controller_init(btdm_cfg_mask, cfg);
+
+    if (err != 0) {
+        ESP_LOGE(BTDM_LOG_TAG, "%s %d\n",__func__,err);
+        err = ESP_ERR_NO_MEM;
+        goto error;
+    }
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    bt_stack_enableSecCtrlVsCmd(true);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+    bt_stack_enablePwrCtrlVsCmd(true);
+#endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+#if defined(CONFIG_BT_NIMBLE_ENABLED) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+    bt_stack_enableCoexVsCmd(true);
+    scan_stack_enableAdvFlowCtrlVsCmd(true);
+    adv_stack_enableClearLegacyAdvVsCmd(true);
+    advFilter_stack_enableDupExcListVsCmd(true);
+    arr_stack_enableMultiConnVsCmd(true);
+#endif // (CONFIG_BT_NIMBLE_ENABLED) || (CONFIG_BT_BLUEDROID_ENABLED)
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
     return ESP_OK;
 
 error:
+
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     bt_controller_deinit_internal();
 
@@ -1579,17 +1791,38 @@ esp_err_t esp_bt_controller_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+#if CONFIG_BLE_LOG_ENABLED
+    ble_log_deinit();
+#else /* !CONFIG_BLE_LOG_ENABLED */
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#endif /* CONFIG_BLE_LOG_ENABLED */
+
     btdm_controller_deinit();
 
     bt_controller_deinit_internal();
 
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    bt_stack_enableSecCtrlVsCmd(false);
+#endif // CONFIG_BT_BLUEDROID_ENABLED
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+    bt_stack_enablePwrCtrlVsCmd(false);
+#endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+#if defined(CONFIG_BT_NIMBLE_ENABLED) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+    bt_stack_enableCoexVsCmd(false);
+    scan_stack_enableAdvFlowCtrlVsCmd(false);
+    adv_stack_enableClearLegacyAdvVsCmd(false);
+    advFilter_stack_enableDupExcListVsCmd(false);
+    arr_stack_enableMultiConnVsCmd(false);
+#endif // (CONFIG_BT_NIMBLE_ENABLED) || (CONFIG_BT_BLUEDROID_ENABLED)
+
     return ESP_OK;
 }
 
-static void bt_controller_deinit_internal(void)
+// deinit low power control resources
+static void btdm_low_power_mode_deinit(void)
 {
-    periph_module_disable(PERIPH_BT_MODULE);
-
 #ifdef CONFIG_PM_ENABLE
     if (!s_btdm_allow_light_sleep) {
         esp_pm_lock_delete(s_light_sleep_pm_lock);
@@ -1610,6 +1843,16 @@ static void bt_controller_deinit_internal(void)
     s_pm_lock_acquired = false;
 #endif
 
+    btdm_lpcycle_us = 0;
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
+}
+
+static void bt_controller_deinit_internal(void)
+{
+    periph_module_disable(PERIPH_BT_MODULE);
+
+    btdm_low_power_mode_deinit();
+
     if (s_wakeup_req_sem) {
         semphr_delete_wrapper(s_wakeup_req_sem);
         s_wakeup_req_sem = NULL;
@@ -1621,9 +1864,6 @@ static void bt_controller_deinit_internal(void)
     }
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-
-    btdm_lpcycle_us = 0;
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 
     esp_bt_power_domain_off();
 
@@ -1661,6 +1901,10 @@ static void patch_apply(void)
 #ifndef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
     config_ble_funcs_reset();
 #endif
+
+#if BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED
+    btdm_aa_check_enhance_enable();
+#endif
 }
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
@@ -1695,7 +1939,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     sdk_config_set_bt_pll_track_enable(true);
 
-    // inititalize bluetooth baseband
+    // initialize bluetooth baseband
     btdm_check_and_init_bb();
 
     ret = btdm_controller_enable(mode);
@@ -1735,6 +1979,7 @@ esp_err_t esp_bt_controller_disable(void)
         while (!btdm_power_state_active()) {
             esp_rom_delay_us(1000);
         }
+        async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA);
     }
 
     btdm_controller_disable();
@@ -1744,6 +1989,7 @@ esp_err_t esp_bt_controller_disable(void)
 #endif
 
     esp_phy_disable(PHY_MODEM_BT);
+    s_time_phy_rf_just_enabled = 0;
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     esp_unregister_shutdown_handler(bt_shutdown);
 
@@ -1779,6 +2025,11 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
 
 esp_err_t esp_bredr_tx_power_set(esp_power_level_t min_power_level, esp_power_level_t max_power_level)
 {
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+    UNUSED(min_power_level);
+    UNUSED(max_power_level);
+    return ESP_ERR_NOT_SUPPORTED;
+#else
     esp_err_t err;
     int ret;
 
@@ -1793,15 +2044,22 @@ esp_err_t esp_bredr_tx_power_set(esp_power_level_t min_power_level, esp_power_le
     }
 
     return err;
+#endif // #if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
 }
 
 esp_err_t esp_bredr_tx_power_get(esp_power_level_t *min_power_level, esp_power_level_t *max_power_level)
 {
+#if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
+    UNUSED(min_power_level);
+    UNUSED(max_power_level);
+    return ESP_ERR_NOT_SUPPORTED;
+#else
     if (bredr_txpwr_get((int *)min_power_level, (int *)max_power_level) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
     return ESP_OK;
+#endif // #if UC_BR_EDR_POWER_CTRL_VSC_ENABLED
 }
 
 esp_err_t esp_bt_sleep_enable (void)
@@ -1847,7 +2105,7 @@ esp_err_t esp_bredr_sco_datapath_set(esp_sco_data_path_t data_path)
     return ESP_OK;
 }
 
-esp_err_t esp_ble_scan_dupilcate_list_flush(void)
+esp_err_t esp_ble_scan_duplicate_list_flush(void)
 {
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -1856,9 +2114,14 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     return ESP_OK;
 }
 
+esp_err_t esp_ble_scan_dupilcate_list_flush(void)
+{
+    return esp_ble_scan_duplicate_list_flush();
+}
+
 /**
  * This function re-write controller's function,
- * As coredump can not show paramerters in function which is in a .a file.
+ * As coredump can not show parameters in function which is in a .a file.
  *
  * After coredump fixing this issue, just delete this function.
  */

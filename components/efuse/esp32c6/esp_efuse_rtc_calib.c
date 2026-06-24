@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,12 +127,5 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
     uint32_t chk_offset = (version == ESP_EFUSE_ADC_CALIB_VER1) ? 1500 : (atten == 2) ? 2900 : 2850;
     *out_digi = chk_offset + RTC_CALIB_GET_SIGNED_VAL(cal_vol, 9);
     *out_vol_mv = input_vout_mv[VER2IDX(version)][atten];
-    return ESP_OK;
-}
-
-esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal)
-{
-    // Currently calibration is not supported on ESP32-C6, IDF-5236
-    *tsens_cal = 0;
     return ESP_OK;
 }

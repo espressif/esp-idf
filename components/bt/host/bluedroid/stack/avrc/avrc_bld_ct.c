@@ -50,7 +50,7 @@ static tAVRC_STS avrc_bld_next_cmd (tAVRC_NEXT_CMD *p_cmd, BT_HDR *p_pkt)
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_start + 2; /* pdu + rsvd */
 
-    /* add fixed lenth 1 - pdu_id (1) */
+    /* add fixed length 1 - pdu_id (1) */
     UINT16_TO_BE_STREAM(p_data, 1);
     UINT8_TO_BE_STREAM(p_data, p_cmd->target_pdu);
     p_pkt->len = (p_data - p_start);
@@ -81,7 +81,7 @@ static tAVRC_STS avrc_bld_set_abs_volume_cmd (tAVRC_SET_VOLUME_CMD *p_cmd, BT_HD
     /* get the existing length, if any, and also the num attributes */
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_start + 2; /* pdu + rsvd */
-    /* add fixed lenth 1 - volume (1) */
+    /* add fixed length 1 - volume (1) */
     UINT16_TO_BE_STREAM(p_data, 1);
     UINT8_TO_BE_STREAM(p_data, (AVRC_MAX_VOLUME & p_cmd->volume));
     p_pkt->len = (p_data - p_start);
@@ -163,7 +163,7 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
             /* reserved 0, packet_type 0 */
             UINT8_TO_BE_STREAM(p_data, 0);
             /* continue to the next "case to add length */
-            /* add fixed lenth - 0 */
+            /* add fixed length - 0 */
             UINT16_TO_BE_STREAM(p_data, 0);
             break;
         }
@@ -187,6 +187,10 @@ static BT_HDR *avrc_bld_init_cmd_buffer(tAVRC_COMMAND *p_cmd)
 static tAVRC_STS avrc_bld_set_player_value_cmd(tAVRC_SET_APP_VALUE_CMD *p_cmd, BT_HDR *p_pkt)
 {
     UINT8 *p_data, *p_start;
+
+    if (p_cmd->p_vals == NULL) {
+        return AVRC_STS_BAD_PARAM;
+    }
 
     /* get the existing length, if any, and also the num attributes */
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -217,6 +221,10 @@ static tAVRC_STS avrc_bld_get_element_attr_cmd (tAVRC_GET_ELEM_ATTRS_CMD *p_cmd,
     int i;
     UINT8   *p_data, *p_start;
 
+    if (p_cmd->num_attr > AVRC_MAX_ELEM_ATTR_SIZE) {
+        return AVRC_STS_BAD_PARAM;
+    }
+
     AVRC_TRACE_API("avrc_bld_get_element_attr_cmd num_attr: %d", p_cmd->num_attr);
     /* get the existing length, if any, and also the num attributes */
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
@@ -233,6 +241,20 @@ static tAVRC_STS avrc_bld_get_element_attr_cmd (tAVRC_GET_ELEM_ATTRS_CMD *p_cmd,
         UINT32_TO_BE_STREAM(p_data, p_cmd->attrs[i]);
     }
 
+    p_pkt->len = (p_data - p_start);
+    return AVRC_STS_NO_ERROR;
+}
+
+static tAVRC_STS avrc_bld_get_play_status_cmd(tAVRC_CMD *p_cmd, BT_HDR *p_pkt)
+{
+    UINT8   *p_data, *p_start;
+
+    AVRC_TRACE_API("avrc_bld_get_play_status");
+    /* get the existing length */
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    /* add parameter length 0 */
+    UINT16_TO_BE_STREAM(p_data, 0);
     p_pkt->len = (p_data - p_start);
     return AVRC_STS_NO_ERROR;
 }
@@ -270,12 +292,13 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
     BT_HDR  *p_pkt;
     BOOLEAN alloc = FALSE;
 
-    AVRC_TRACE_API("AVRC_BldCommand: pdu=%x status=%x", p_cmd->cmd.pdu, p_cmd->cmd.status);
     if (!p_cmd || !pp_pkt) {
         AVRC_TRACE_API("AVRC_BldCommand. Invalid parameters passed. p_cmd=%p, pp_pkt=%p",
                        p_cmd, pp_pkt);
         return AVRC_STS_BAD_PARAM;
     }
+
+    AVRC_TRACE_API("AVRC_BldCommand: pdu=%x status=%x", p_cmd->cmd.pdu, p_cmd->cmd.status);
 
     if (*pp_pkt == NULL) {
         if ((*pp_pkt = avrc_bld_init_cmd_buffer(p_cmd)) == NULL) {
@@ -309,11 +332,19 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
         status = avrc_bld_get_element_attr_cmd(&p_cmd->get_elem_attrs, p_pkt);
         break;
 
+    case AVRC_PDU_GET_PLAY_STATUS:          /* 0x30 */
+        status = avrc_bld_get_play_status_cmd(&p_cmd->get_play_status, p_pkt);
+        break;
+
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
         status = avrc_bld_register_change_notfn(p_cmd->reg_notif.event_id, p_cmd->reg_notif.param, p_pkt);
         break;
     case AVRC_PDU_GET_CAPABILITIES:
         status = avrc_bld_get_caps_cmd(&p_cmd->get_caps, p_pkt);
+        break;
+
+    default:
+        status = AVRC_STS_BAD_PARAM;
         break;
     }
 

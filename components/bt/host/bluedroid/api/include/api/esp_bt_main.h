@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,9 +20,10 @@ extern "C" {
  * @brief Bluetooth stack status type, to indicate whether the bluetooth stack is ready.
  */
 typedef enum {
-    ESP_BLUEDROID_STATUS_UNINITIALIZED   = 0,        /*!< Bluetooth not initialized */
-    ESP_BLUEDROID_STATUS_INITIALIZED,                /*!< Bluetooth initialized but not enabled */
-    ESP_BLUEDROID_STATUS_ENABLED                     /*!< Bluetooth initialized and enabled */
+    ESP_BLUEDROID_STATUS_UNINITIALIZED   = 0,        /*!< Bluetooth stack is not initialized */
+    ESP_BLUEDROID_STATUS_INITIALIZED,                /*!< Bluetooth stack is initialized but not yet enabled */
+    ESP_BLUEDROID_STATUS_ENABLED,                    /*!< Bluetooth stack is fully initialized and enabled */
+    ESP_BLUEDROID_STATUS_DISABLING                    /*!< Bluetooth stack is in the process of being disabled */
 } esp_bluedroid_status_t;
 
 /**
@@ -30,11 +31,13 @@ typedef enum {
  */
 typedef struct {
     bool ssp_en; /*!< Whether SSP(secure simple pairing) or legacy pairing is used for Classic Bluetooth */
+    bool sc_en; /*!< Whether secure connection host support is enabled or disabled for Classic Bluetooth */
 } esp_bluedroid_config_t;
 
 #define BT_BLUEDROID_INIT_CONFIG_DEFAULT()                                                                             \
     {                                                                                                                  \
         .ssp_en = true,                                                                                                \
+        .sc_en = false,                                                                                                \
     }
 
 /**
@@ -46,7 +49,7 @@ typedef struct {
 esp_bluedroid_status_t esp_bluedroid_get_status(void);
 
 /**
- * @brief     Enable bluetooth, must after esp_bluedroid_init()/esp_bluedroid_init_with_cfg().
+ * @brief     Enable bluetooth, must after esp_bluedroid_init_with_cfg().
  *
  * @return
  *            - ESP_OK : Succeed
@@ -55,7 +58,10 @@ esp_bluedroid_status_t esp_bluedroid_get_status(void);
 esp_err_t esp_bluedroid_enable(void);
 
 /**
- * @brief     Disable bluetooth, must prior to esp_bluedroid_deinit().
+ * @brief     Disable Bluetooth, must be called prior to esp_bluedroid_deinit().
+ *
+ * @note      Before calling this API, ensure that all activities related to
+ *            the application, such as connections, scans, etc., are properly closed.
  *
  * @return
  *            - ESP_OK : Succeed
@@ -70,7 +76,7 @@ esp_err_t esp_bluedroid_disable(void);
  *            - ESP_OK : Succeed
  *            - Other  : Failed
  */
-esp_err_t esp_bluedroid_init(void) __attribute__((deprecated("Please use esp_bluedroid_init_with_cfg")));
+esp_err_t esp_bluedroid_init(void);
 
 /**
  * @brief     Init and alloc the resource for bluetooth, must be prior to every bluetooth stuff.
@@ -91,6 +97,11 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg);
  *            - Other  : Failed
  */
 esp_err_t esp_bluedroid_deinit(void);
+
+#if defined(CONFIG_EXAMPLE_CI_ID) && defined(CONFIG_EXAMPLE_CI_PIPELINE_ID)
+// Only for internal used (CI example test)
+char *esp_bluedroid_get_example_name(void);
+#endif
 
 #ifdef __cplusplus
 }

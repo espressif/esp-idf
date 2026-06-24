@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <sys/cdefs.h>
 #include "esp_tls.h"
 #include "esp_tls_error_capture_internal.h"
+#include "esp_compiler.h"
 
 typedef struct esp_tls_error_storage {
     struct esp_tls_last_error parent;   /*!< standard esp-tls last error container */
@@ -21,10 +22,10 @@ void esp_tls_internal_event_tracker_capture(esp_tls_error_handle_t h, uint32_t t
         if (type == ESP_TLS_ERR_TYPE_ESP) {
             storage->parent.last_error = code;
         } else if (type == ESP_TLS_ERR_TYPE_MBEDTLS ||
-                   type == ESP_TLS_ERR_TYPE_WOLFSSL) {
+                   type == ESP_TLS_ERR_TYPE_CUSTOM_STACK) {
             storage->parent.esp_tls_error_code = code;
         } else if (type == ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS ||
-                   type == ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS) {
+                   type == ESP_TLS_ERR_TYPE_CUSTOM_STACK_CERT_FLAGS) {
             storage->parent.esp_tls_flags = code;
         } else if (type == ESP_TLS_ERR_TYPE_SYSTEM) {
             storage->sock_errno = code;
@@ -34,11 +35,13 @@ void esp_tls_internal_event_tracker_capture(esp_tls_error_handle_t h, uint32_t t
 
 esp_tls_error_handle_t esp_tls_internal_event_tracker_create(void)
 {
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     // Allocating internal error storage which extends the parent type
     // `esp_tls_last_error` defined at interface level
     struct esp_tls_error_storage* storage =
             calloc(1, sizeof(struct esp_tls_error_storage));
     return &storage->parent;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 void esp_tls_internal_event_tracker_destroy(esp_tls_error_handle_t h)
@@ -55,11 +58,11 @@ esp_err_t esp_tls_get_and_clear_error_type(esp_tls_error_handle_t h, esp_tls_err
             *code = storage->parent.last_error;
             storage->parent.last_error = 0;
         } else if (type == ESP_TLS_ERR_TYPE_MBEDTLS ||
-                   type == ESP_TLS_ERR_TYPE_WOLFSSL) {
+                   type == ESP_TLS_ERR_TYPE_CUSTOM_STACK) {
             *code = storage->parent.esp_tls_error_code;
             storage->parent.esp_tls_error_code = 0;
         } else if (type == ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS ||
-                   type == ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS) {
+                   type == ESP_TLS_ERR_TYPE_CUSTOM_STACK_CERT_FLAGS) {
             *code = storage->parent.esp_tls_flags;
             storage->parent.esp_tls_flags = 0;
         } else if (type == ESP_TLS_ERR_TYPE_SYSTEM) {

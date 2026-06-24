@@ -18,8 +18,10 @@ extern "C" {
  *
  * @note Will block until the conversion is completed
  *
- * @note ADC should be initilized for ULP by main CPU by calling ulp_riscv_adc_init()
+ * @note ADC should be initialized for ULP by main CPU by calling ulp_riscv_adc_init()
  *       before calling this.
+ * @note When using ADC_UNIT_2, the caller must ensure that no other module (e.g., Wi-Fi or BT)
+ *       is accessing the ADC, as conflicts may lead to undefined behavior.
  *
  * @param      adc_n   ADC unit.
  * @param      channel ADC channel number.

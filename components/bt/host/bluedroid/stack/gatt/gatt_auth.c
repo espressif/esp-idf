@@ -80,6 +80,8 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
         }
 
         osi_free(p_data);
+    } else {
+        gatt_end_operation(p_clcb, GATT_NO_RESOURCES, NULL);
     }
 
     return status;
@@ -155,6 +157,8 @@ void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 s
 #endif  ///GATTC_INCLUDED == TRUE
     }
 }
+
+#if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_enc_cmpl_cback
@@ -167,7 +171,7 @@ void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 s
 void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_data, tBTM_STATUS result)
 {
     tGATT_TCB   *p_tcb;
-    UINT8       sec_flag;
+    UINT8       sec_flag = 0;
     BOOLEAN     status = FALSE;
     UNUSED(p_ref_data);
 
@@ -181,9 +185,8 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_d
         if (p_buf != NULL) {
             if (result == BTM_SUCCESS) {
                 if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM ) {
-                    BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, transport);
-
-                    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
+                    if (BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, transport) &&
+                            (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)) {
                         status = TRUE;
                     }
                 } else {
@@ -253,6 +256,7 @@ void gatt_notify_enc_cmpl(BD_ADDR bd_addr)
     }
     return;
 }
+#endif // (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         gatt_set_sec_act
@@ -268,6 +272,7 @@ void gatt_set_sec_act(tGATT_TCB *p_tcb, tGATT_SEC_ACTION sec_act)
         p_tcb->sec_act = sec_act;
     }
 }
+
 /*******************************************************************************
 **
 ** Function         gatt_get_sec_act
@@ -285,6 +290,7 @@ tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB *p_tcb)
     }
     return sec_act;
 }
+
 /*******************************************************************************
 **
 ** Function         gatt_determine_sec_act
@@ -298,7 +304,7 @@ tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB *p_tcb)
 tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
 {
     tGATT_SEC_ACTION    act = GATT_SEC_OK;
-    UINT8               sec_flag;
+    UINT8               sec_flag = 0;
     tGATT_TCB           *p_tcb = p_clcb->p_tcb;
     tGATT_AUTH_REQ      auth_req = p_clcb->auth_req;
     BOOLEAN             is_link_encrypted = FALSE;
@@ -420,7 +426,6 @@ tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB *p_tcb)
     return  encrypt_status ;
 }
 
-
 /*******************************************************************************
 **
 ** Function          gatt_convert_sec_action
@@ -450,6 +455,7 @@ static BOOLEAN gatt_convert_sec_action(tGATT_SEC_ACTION gatt_sec_act, tBTM_BLE_S
 
     return status;
 }
+
 /*******************************************************************************
 **
 ** Function         gatt_check_enc_req
@@ -517,6 +523,5 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
 
     return status;
 }
-
 
 #endif  /* BLE_INCLUDED */

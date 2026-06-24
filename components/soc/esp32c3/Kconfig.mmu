@@ -1,0 +1,7 @@
+# This Config is used for configure the MMU.
+# Be configured based on flash size selection.
+# Invisible to users.
+
+config MMU_PAGE_SIZE_64KB
+    bool
+    default y

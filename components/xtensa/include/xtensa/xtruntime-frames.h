@@ -37,8 +37,10 @@
 #define STRUCT_FIELD(ctype,size,pre,name)             .set pre##name, XT_STRUCT_OFFSET; .set XT_STRUCT_OFFSET, pre##name + size
 #define STRUCT_AFIELD(ctype,size,pre,name,n)          .set pre##name, XT_STRUCT_OFFSET;\
                                                       .set XT_STRUCT_OFFSET, pre##name + (size)*(n);
-#define STRUCT_AFIELD_A(ctype,size,align,pre,name,n)  .set pre##name, XT_STRUCT_OFFSET\
-                                                      .ifgt (align-1); .set pre##name, XT_STRUCT_OFFSET + (align - (XT_STRUCT_OFFSET & (align-1))); .endif\
+#define STRUCT_AFIELD_A(ctype,size,align,pre,name,n)  .set pre##name, XT_STRUCT_OFFSET; \
+                                                      .ifgt (align-1); \
+                                                      .set pre##name, XT_STRUCT_OFFSET + (align - (XT_STRUCT_OFFSET & (align-1))); \
+                                                      .endif; \
                                                       .set XT_STRUCT_OFFSET, pre##name + (size)*(n);
 #define STRUCT_END(sname)                             .set sname##Size, XT_STRUCT_OFFSET;
 #else /* __clang__ */
@@ -67,7 +69,7 @@
  *  stack frame is limited to 128 bytes (currently at 64).
  */
 STRUCT_BEGIN
-STRUCT_FIELD (long,4,KEXC_,pc)		/* "parm" */
+STRUCT_FIELD (long,4,KEXC_,pc)		/* "param" */
 STRUCT_FIELD (long,4,KEXC_,ps)
 STRUCT_AFIELD(long,4,KEXC_,areg, 4)	/* a12 .. a15 */
 STRUCT_FIELD (long,4,KEXC_,sar)		/* "save" */

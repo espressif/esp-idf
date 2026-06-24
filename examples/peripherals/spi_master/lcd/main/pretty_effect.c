@@ -19,6 +19,10 @@ uint16_t *pixels;
 //Grab a rgb16 pixel from the esp32_tiles image
 static inline uint16_t get_bgnd_pixel(int x, int y)
 {
+    // Clamp coordinates to valid image bounds
+    x = (x < 0) ? 0 : (x >= IMAGE_W) ? IMAGE_W - 1 : x;
+    y = (y < 0) ? 0 : (y >= IMAGE_H) ? IMAGE_H - 1 : y;
+
     //Get color of the pixel on x,y coords
     return (uint16_t) * (pixels + (y * IMAGE_W) + x);
 }
@@ -26,7 +30,7 @@ static inline uint16_t get_bgnd_pixel(int x, int y)
 //This variable is used to detect the next frame.
 static int prev_frame = -1;
 
-//Instead of calculating the offsets for each pixel we grab, we pre-calculate the valueswhenever a frame changes, then re-use
+//Instead of calculating the offsets for each pixel we grab, we pre-calculate the valueswhenever a frame changes, then reuse
 //these as we go through all the pixels in the frame. This is much, much faster.
 static int8_t xofs[320], yofs[240];
 static int8_t xcomp[320], ycomp[240];

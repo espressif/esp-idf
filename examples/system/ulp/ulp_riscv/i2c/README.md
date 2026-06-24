@@ -54,7 +54,7 @@ Reading initial uncompensated temperature and pressure data ...
 Uncompensated Temperature = 22865
 Uncompensated Pressure = 41768
 
-Real Temperature = 24.900000 deg celcius
+Real Temperature = 24.900000 deg celsius
 Real Pressure = 990.640000 hPa
 
 Entering in deep sleep
@@ -85,7 +85,7 @@ mb = -32768
 mc = -11786
 md = 2746
 
-New Real Temperature = 24.900000 deg celcius
+New Real Temperature = 24.900000 deg celsius
 New Real Pressure = 990.550000 hPa
 Entering in deep sleep
 ```

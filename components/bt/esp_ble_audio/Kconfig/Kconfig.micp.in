@@ -1,0 +1,62 @@
+# Bluetooth Audio - Microphone Control Service options
+#
+# SPDX-FileCopyrightText: 2020 Bose Corporation
+# SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+########### Microphone Control Profile Microphone Device ###########
+
+config BT_MICP_MIC_DEV
+    bool "Microphone Control Profile Microphone Device Support"
+    help
+        This option enables support for Microphone Control Profile
+        Microphone Device.
+
+if BT_MICP_MIC_DEV
+
+    config BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT
+        int "Audio Input Control Service instance count for \
+            Microphone Control Service Microphone Device"
+        default 0
+        range 0 BT_AICS_MAX_INSTANCE_COUNT
+        help
+            This option sets the number of instances of Audio Input Control
+            Services for Microphone Control Profile Microphone Device.
+
+    config BT_MICP_MIC_DEV_AICS
+        bool # Hidden
+        default y if BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT > 0
+        help
+            This hidden option makes it possible to easily check if AICS is
+            enabled for Microphone Control Profile Microphone Device.
+
+endif # BT_MICP_MIC_DEV
+
+########### Microphone Control Profile Microphone Controller ###########
+
+config BT_MICP_MIC_CTLR
+    bool "Microphone Control Profile Microphone Controller Support"
+    help
+        This option enables support for the Microphone Control Profile
+        Microphone Controller role
+
+if BT_MICP_MIC_CTLR
+
+    config BT_MICP_MIC_CTLR_MAX_AICS_INST
+        int "Maximum number of Audio Input Control Service instances to setup"
+        default 0
+        range 0 BT_AICS_CLIENT_MAX_INSTANCE_COUNT
+        help
+            Sets the maximum number of Audio Input Control Service (AICS)
+            instances to setup and use.
+
+    config BT_MICP_MIC_CTLR_AICS
+        bool # Hidden
+        default y if BT_MICP_MIC_CTLR_MAX_AICS_INST > 0
+        help
+            This hidden option makes it possible to easily check if AICS is
+            enabled for MICP client.
+
+endif # BT_MICP_MIC_CTLR

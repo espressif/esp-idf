@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include "unity.h"
 #include "esp_system.h"
+#include "sdkconfig.h"
 
 /* similar to UNITY_PRINT_EOL */
 #define UNITY_PRINT_TAB() UNITY_OUTPUT_CHAR('\t')
@@ -24,11 +25,11 @@ void unity_testcase_register(test_desc_t *desc)
     if (!s_unity_tests_first) {
         s_unity_tests_first = desc;
         s_unity_tests_last = desc;
-    } else {
-        test_desc_t *temp = s_unity_tests_first;
-        s_unity_tests_first = desc;
-        s_unity_tests_first->next = temp;
+        return;
     }
+    // Insert at the end
+    s_unity_tests_last->next = desc;
+    s_unity_tests_last = desc;
 }
 
 /* print the multiple function case name and its sub-menu
@@ -91,6 +92,13 @@ static int multiple_function_option(const test_desc_t *test_ms)
     }
     selection = atoi((const char *) cmdline) - 1;
     if (selection >= 0 && selection < test_ms->test_fn_count) {
+        UnityPrint("Running stage ");
+        UnityPrintNumber(selection + 1);
+        UnityPrint("...");
+        UNITY_PRINT_EOL();
+        // Unit test runner expects to see test name before the test starts
+        UNITY_OUTPUT_FLUSH();
+
         unity_default_test_run(test_ms->fn[selection], test_ms->name, test_ms->line);
     } else {
         UnityPrint("Invalid selection, your should input number 1-");

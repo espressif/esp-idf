@@ -1,0 +1,13 @@
+[sections:bt_bss]
+entries:
+    .bss+
+
+[sections:bt_common]
+entries:
+    COMMON
+
+[scheme:bt_extram_bss]
+entries:
+    bt_bss -> extern_ram
+    bt_common -> extern_ram
+    data -> dram0_data

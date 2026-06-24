@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,7 +78,7 @@ struct esp_netif_obj {
     // lwip netif related
     struct netif *lwip_netif;
     err_t (*lwip_init_fn)(struct netif*);
-    esp_netif_recv_ret_t (*lwip_input_fn)(void *input_netif_handle, void *buffer, size_t len, void *eb);
+    esp_err_t (*lwip_input_fn)(void *input_netif_handle, void *buffer, size_t len, void *eb);
     void * netif_handle;    // netif impl context (either vanilla lwip-netif or ppp_pcb)
     netif_related_data_t *related_data; // holds additional data for specific netifs
 #if ESP_DHCPS
@@ -89,6 +89,7 @@ struct esp_netif_obj {
     esp_err_t (*driver_transmit)(void *h, void *buffer, size_t len);
     esp_err_t (*driver_transmit_wrap)(void *h, void *buffer, size_t len, void *pbuf);
     void (*driver_free_rx_buffer)(void *h, void* buffer);
+    esp_err_t (*driver_set_mac_filter)(void *h, const uint8_t *mac, size_t mac_len, bool add);
 
     // dhcp related
     esp_netif_dhcp_status_t dhcpc_status;
@@ -98,6 +99,10 @@ struct esp_netif_obj {
     // event translation
     ip_event_t get_ip_event;
     ip_event_t lost_ip_event;
+    bool last_status_up;   // last effective up/down state for unified status event
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    bool tx_rx_events_enabled;
+#endif
 
     // misc flags, types, keys, priority
     esp_netif_flags_t flags;
@@ -112,4 +117,23 @@ struct esp_netif_obj {
     uint16_t max_fdb_sta_entries;
     uint8_t max_ports;
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
+    // mldv6 timer
+    bool mldv6_report_timer_started;
+
+#ifdef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+    ip_addr_t dns[DNS_MAX_SERVERS];
+#endif
+    // initial MTU preference to apply after netif_add(); 0 means use stack default
+    uint16_t configured_mtu;
 };
+
+typedef enum esp_netif_set_default_state {
+    ESP_NETIF_UNDEF,
+    ESP_NETIF_STARTED,
+    ESP_NETIF_GOT_IP,
+    ESP_NETIF_STOPPED,
+    ESP_NETIF_LOST_IP,
+    ESP_NETIF_SET_DEFAULT,
+} esp_netif_route_prio_action_t;
+
+esp_err_t esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_route_prio_action_t action);

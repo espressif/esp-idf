@@ -112,7 +112,7 @@ entries:
     tcp_out:tcp_rexmit_rto_prepare (noflash_text)
     tcp_out:tcp_rexmit (noflash_text)
     tcp_out:tcp_rexmit_fast (noflash_text)
-    tcp_out:tcp_output_control_segment (noflash_text)
+    tcp_out:tcp_output_control_segment_netif (noflash_text)
     tcp_out:tcp_rst (noflash_text)
     tcp_out:tcp_send_empty_ack (noflash_text)
     sys_arch:sys_arch_protect (noflash_text)

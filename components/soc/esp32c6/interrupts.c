@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/interrupts.h"
@@ -48,7 +48,7 @@ const char *const esp_isr_names[] = {
     [38] = "HP_APM_M3",
     [39] = "LP_APM0",
     [40] = "MSPI",
-    [41] = "I2S1",
+    [41] = "I2S0",
     [42] = "UHCI0",
     [43] = "UART0",
     [44] = "UART1",

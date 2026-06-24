@@ -9,11 +9,12 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "spi_flash_defs.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
 #include "rom/spi_flash.h"
-#include "spi_flash_override.h"
+
+#include "esp_flash_chips/spi_flash_defs.h"
+#include "esp_flash_chips/spi_flash_override.h"
 #include "esp_private/spi_flash_os.h"
 
 // TODO: These dependencies will be removed after remove bootloader_flash to G0.IDF-4609

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | --------- |
 
 # Wifi Power Save Example
 
@@ -14,6 +14,15 @@ Power save mode only works in station mode. If the modem sleep mode is enabled, 
 * Maximum modem sleep: In maximum modem sleep mode, station wakes up every listen interval to receive beacon. Broadcast data may be lost because station may be in sleep state at DTIM time. If listen interval is longer, more power is saved but broadcast data is more easy to lose.
 
 * others: not supported yet.
+
+> [!NOTE]
+> It is recommended to use a development board with an external USB-UART chip to debug this example. If you're using the USB-Serial-JTAG port to view logs from this example, note that the internal USB peripheral will be disabled during light_sleep for power saving. This will result in:
+> - Serial output interruption
+> - Host-side errors like ClearCommError failed
+> - Windows may show "Unknown USB device"
+> - Even after wakeup, USB connection may not automatically recover
+>
+> See: [USB Serial/JTAG console sleep mode considerations](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/usb-serial-jtag-console.html#sleep-mode-considerations)
 
 ### Typical current consumption with management enabled
 

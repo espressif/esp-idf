@@ -7,9 +7,9 @@ IDF 前端工具 - ``idf.py``
 
 - CMake_ 用于配置要构建的工程。
 - Ninja_ 用于构建工程。
-- `esptool.py`_ 用于烧录目标芯片。
+- `esptool`_ 用于烧录目标芯片。
 
-:ref:`第五步：开始使用 ESP-IDF 吧 <get-started-configure>` 简要介绍了设置 ``idf.py`` 以配置、构建及烧录工程的操作流程。
+:ref:`Windows <get-started-configure>`、 :ref:`Linux 或 macOS 配置项目 <get-started-configure-linux-macos>` 中简要介绍了设置 ``idf.py`` 以配置、构建及烧录工程的操作流程。
 
 .. important::
 
@@ -25,7 +25,7 @@ IDF 前端工具 - ``idf.py``
 
     idf.py create-project <project name>
 
-此命令将创建一个新的 ESP-IDF 工程。此外，使用 ``--path`` 选项可指定工程创建路径。
+此命令用于创建一个新的 ESP-IDF 工程。此外，使用 ``--path`` 参数，可以指定项目的创建路径。使用 ``--cpp`` 参数，可以生成 C++ 源文件（<项目名称>.cpp），而不是生成默认的 ``.c`` 文件，同时 ``app_main`` 函数将保持 C 语言链接方式。
 
 创建新组件：``create-component``
 ----------------------------------------
@@ -51,13 +51,13 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 .. important::
 
-    ``idf.py set-target`` 将清除构建目录，并重新生成 ``sdkconfig`` 文件，原来的 ``sdkconfig`` 文件保存为 ``sdkconfig.old``。
+    ``idf.py set-target`` 将清除 build 目录，并重新生成 ``sdkconfig`` 文件，原来的 ``sdkconfig`` 文件保存为 ``sdkconfig.old``。
 
 .. note::
 
     ``idf.py set-target`` 命令与以下操作效果相同：
 
-    1. 清除构建目录 (``idf.py fullclean``)
+    1. 清除 build 目录 (``idf.py fullclean``)
     2. 删除 sdkconfig 文件 (``mv sdkconfig sdkconfig.old``)
     3. 使用新的目标芯片重新配置工程 (``idf.py -DIDF_TARGET=esp32 reconfigure``)
 
@@ -83,7 +83,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将构建当前目录下的工程，具体步骤如下：
 
-  - 若有需要，创建构建子目录 ``build`` 保存构建输出文件，使用 ``-B`` 选项可改变子目录的路径。
+  - 若有需要，创建 build 目录。"build" 子目录可以保存构建输出文件，使用 ``-B`` 选项可改变子目录的路径。
   - 必要时运行 CMake_ 配置工程，并为主要构建工具生成构建文件。
   - 运行主要构建工具（Ninja_ 或 ``GNU Make``）。默认情况下，构建工具会完成自动检测，也可通过将 ``-G`` 选项传递给 ``idf.py`` 来显式设置构建工具。
 
@@ -98,7 +98,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py clean
 
-此命令可清除构建目录中的构建输出文件，下次构建时，工程将完全重新构建。注意，使用此选项不会删除构建文件夹内的 CMake 配置输出。
+此命令可清除 build 目录中的构建输出文件，下次构建时，工程将完全重新构建。注意，使用此选项不会删除 build 文件夹内的 CMake 配置输出。
 
 删除所有构建内容：``fullclean``
 -------------------------------------------
@@ -107,25 +107,95 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py fullclean
 
-此命令将删除所有 ``build`` 子目录内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除构建目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
+此命令将删除所有 build 目录下的内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除 build 目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
+
+.. _flash-with-idf-py:
 
 烧录工程：``flash``
 ------------------------
 
 .. code-block:: bash
 
-  idf.py flash
+    idf.py flash
 
 此命令将在需要时自动构建工程，随后将其烧录到目标芯片。使用 ``-p`` 和 ``-b`` 选项可分别设置串口名称和烧录程序的波特率。
 
-.. note:: 环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别设置 ``-p`` 和 ``-b`` 选项的默认值，在命令行上设置这些选项的参数可覆盖默认值。
+.. note::
 
-与 ``build`` 命令类似，使用 ``app``、``bootloader`` 或 ``partition-table`` 参数运行此命令，可选择仅烧录应用程序、引导加载程序或分区表。
+    环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别用于设置 ``-p`` 和 ``-b`` 选项的默认值。若在命令行中显式提供这些选项，则将覆盖默认值。
+
+``idf.py`` 在内部使用 ``esptool`` 的 ``write-flash`` 命令来烧录目标设备。可以通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令：``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool write-flash --help`` 或查看 `esptool 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
+
+与 ``build`` 命令类似，运行 ``flash`` 命令时还可以添加 ``app``、``bootloader`` 或 ``partition-table`` 参数，选择仅烧录应用程序、引导加载程序或分区表。
+
+默认情况下，若存在已烧录的二进制文件，则 ``idf.py flash`` 命令会尝试进行快速重新烧录（只重新烧录已更改的数据扇区，而非整个二进制文件）：如果构建目录中存在 ``*_flashed.bin`` 文件，构建系统会配置 ``esptool`` 仅写入已更改的 flash 区域，加快开发过程中的重复烧录速度。随后会对 flash 中所有已烧录的文件进行校验，确保其内容符合预期。若 flash 中的任何文件与预期内容不一致，则会改为执行全量烧录。
+
+若不存在 ``*_flashed.bin`` 文件，则 ``idf.py flash`` 会配置 esptool 先检查设备的 flash 内容，并跳过已存在于 flash 中的文件（使用 ``idf.py flash -a`` 或 ``--all`` 参数时不适用此行为）。
+
+每次成功烧录后，构建系统会在构建目录中保存所有已烧录文件（引导加载程序、分区表、应用程序以及其他任何资源）的副本，文件名带有 ``_flashed`` 后缀（例如，``bootloader_flashed.bin``、``partition-table_flashed.bin``）。下次执行 ``idf.py flash`` 命令时会自动使用这些文件，以便快速重新烧录。
+
+无论是否启用 :ref:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` 选项，快速重新烧录都可正常工作。启用该选项可调整应用程序二进制文件的布局，使修改集中在局部区域，从而进一步提升重新烧录的效率，需要重写的 flash 扇区会减少。但该选项可能会增加应用程序二进制文件的大小，不建议用于生产构建。
+
+全量烧录
+^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -a
+
+    idf.py flash --all
+
+``-a`` 或 ``--all`` 选项始终执行全量烧录（并非仅重新烧录已更改的扇区，而是烧录整个二进制文件）。在擦除 flash 之后、在烧录 flash 为空的新设备时，或在不想依赖先前的二进制文件时可以使用该参数。
+
+信任 flash 内容模式
+^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+    idf.py flash -t
+
+    idf.py flash --trust-flash-content
+
+使用快速重新烧录时，使用 ``-t`` 或 ``--trust-flash-content`` 参数可以跳过对不需要重新烧录的文件（例如，如果 ``bootloader.bin`` 自上次烧录以来没有变化）的 MD5 校验，以加快烧录过程。仅在确定设备 flash 内容自上次执行 ``idf.py flash`` 以来未被修改的情况下使用此选项。
+
+.. _merging-binaries:
+
+合并二进制文件：``merge-bin``
+-----------------------------
+
+.. code-block:: bash
+
+  idf.py merge-bin [-o output-file] [-f format] [<format-specific-options>]
+
+在某些情况下（例如将文件传输到另一台机器，且不借助 ESP-IDF 对其进行烧录），只烧录一个文件比烧录 ``idf.py build`` 生成的多个文件更为便捷。
+
+``idf.py merge-bin`` 命令会根据项目配置合并引导加载程序、分区表、应用程序本身以及其他分区（如果有的话），并在 build 文件夹中创建一个二进制文件 ``merged-binary.[bin|hex]``，之后可对其进行烧录。
+
+合并后的文件的输出格式可以是二进制 (raw)，IntelHex (hex) 以及 UF2 (uf2)。
+
+uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生成。``idf.py uf2`` 命令在功能上与 ``idf.py merge-bin -f uf2`` 命令等效，而将二进制文件合并成上述各种格式时，``idf.py merge-bin`` 命令更具灵活性与可选性。
+
+用法示例:
+
+.. code-block:: bash
+
+  idf.py merge-bin -o my-merged-binary.bin -f raw
+
+还有一些特定格式的选项，如下所示:
+
+- 仅针对 raw 格式：
+
+  - ``--flash-offset``：此选项创建的合并二进制文件应在指定偏移处进行烧录，而不是在标准偏移地址 0x0 处。
+  - ``--pad-to-size``：设置此选项，系统将在最终的二进制文件中添加 FF 字节直至文件大小与 flash 大小等同，从而确保烧录范围能够完整地覆盖整个 flash 芯片，且在烧录时整个 flash 芯片都被重写。
+
+- 仅针对 uf2 格式：
+
+  - ``--md5-disable``：该选项会在每个数据块的末尾禁用 MD5 校验和。在与 `tinyuf2 <https://github.com/adafruit/tinyuf2>`__ 等工具进行集成时，可以启用此选项。
 
 错误处理提示
 ==============================
 
-``idf.py`` 使用存储在 :idf_file:`tools/idf_py_actions/hints.yml` 中的提示数据库，当找到与给定错误相匹配的提示时，``idf.py`` 会打印该提示以尝试提供解决方案。目前，错误处理提示不支持 menuconfig 对象。
+``idf.py`` 会尝试提示如何解决错误。它会使用存储在 :idf_file:`tools/idf_py_actions/hints.yml` 中的提示数据库。此外，它还会从任意 ESP-IDF 组件或项目组件根目录下的 ``hints.yml`` 文件中加载组件特定的提示。如果发现与给定错误匹配的内容，系统将会打印出相应的提示。目前，menuconfig 目标尚不支持该自动错误解决提示。
 
 若无需该功能，可以通过 ``idf.py`` 的 ``--no-hints`` 参数关闭提示。
 
@@ -140,7 +210,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 命令 ``idf.py`` 支持 bash、zsh 和 fish shell 的 `shell 自动补全 <https://click.palletsprojects.com/shell-completion/>`_。
 
-调用命令 ``export`` 为 ``idf.py`` 启用自动补全（:ref:`第四步：设置环境变量 <get-started-set-up-env>`），按 TAB 键启动自动补全。输入 ``idf.py -`` 并按 TAB 键以自动补全选项。
+调用命令 ``export`` 为 ``idf.py`` 启用自动补全（:ref:`Windows <get-started-set-up-env>`、:ref:`Linux 或 macOS 设置环境<get-started-set-up-env-linux-macos>`），按 TAB 键启动自动补全。输入 ``idf.py -`` 并按 TAB 键以自动补全选项。
 
 预计未来版本将支持 PowerShell 自动补全。
 
@@ -180,7 +250,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 选项
 ^^^^^^^
 
-- ``--format`` 指定输出格式，可输出 ``text``、``csv``、 ``json`` 格式，默认格式为 ``text``。
+- ``--format`` 指定输出格式，可输出 ``text``、``csv``、``json2``、``tree``、``raw`` 格式，默认格式为 ``text``。
 - ``--output-file`` 可选参数，可以指定命令输出文件的文件名，而非标准输出。
 
 重新配置工程：``reconfigure``
@@ -201,6 +271,8 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将从 ESP-IDF 目录中删除生成的 Python 字节码。字节码在切换 ESP-IDF 和 Python 版本时可能会引起问题，建议在切换 Python 版本后运行此命令。
 
+.. _generate-uf2-binary:
+
 生成 UF2 二进制文件：``uf2``
 ---------------------------------
 
@@ -208,11 +280,13 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py uf2
 
-此命令将在构建目录中生成一个 UF2（`USB 烧录格式 <https://github.com/microsoft/uf2>`_) 二进制文件 ``uf2.bin``，该文件包含所有烧录目标芯片所必需的二进制文件，即引导加载程序、应用程序和分区表。
+此命令将在 build 目录中生成一个 UF2（`USB 烧录格式 <https://github.com/microsoft/uf2>`_) 二进制文件 ``uf2.bin``，该文件包含所有烧录目标芯片所必需的二进制文件，即引导加载程序、应用程序和分区表。
 
 在 ESP 芯片上运行 `ESP USB Bridge <https://github.com/espressif/esp-usb-bridge>`_ 项目将创建一个 USB 大容量存储设备，用户可以将生成的 UF2 文件复制到该 USB 设备中，桥接 MCU 将使用该文件来烧录目标 MCU。这一操作十分简单，只需将文件复制（或“拖放”）到文件资源管理器访问的公开磁盘中即可。
 
-如需仅为应用程序生成 UF2 二进制文件，即不包含加载引导程序和分区表，请使用 ``uf2-app`` 命令。
+如需仅为应用程序生成 UF2 二进制文件，即不包含引导加载程序和分区表，请使用 ``uf2-app`` 命令。
+
+``idf.py uf2`` 命令在功能上与 :ref:`上述 <merging-binaries>` ``idf.py merge-bin -f uf2`` 命令等效。而将二进制文件合并为除 uf2 以外的各种格式时，``idf.py merge-bin`` 命令更具灵活性和可选性。
 
 .. code-block:: bash
 
@@ -227,18 +301,180 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将打印 ``otadata`` 分区的内容，该分区存储当前所选 OTA 应用程序分区的信息。有关 ``otadata`` 分区的更多信息，请参阅 :doc:`/api-reference/system/ota`。
 
+ESP-IDF MCP 服务器
+------------------
+
+ESP-IDF 的 MCP（Model Context Protocol，模型上下文协议）服务器可实现 AI 与 ESP-IDF 项目的集成。该 MCP 服务器提供工具和资源，使 AI 助手能够通过标准化协议与 ESP-IDF 项目交互。通过自然语言，即可向 AI 助手下达诸如“设定目标芯片为 esp32”或“构建项目”之类的命令。
+
+启动 MCP 服务器
+^^^^^^^^^^^^^^^
+
+要配合 AI 助手使用 MCP 服务器，可配置智能体或 IDE 启动该服务器。具体来说，有两种实现方式：
+
+1. 使用 ``eim run`` （推荐）：通过 ESP-IDF 安装管理器 (ESP-IDF Installation Manager, EIM) 在已激活的 ESP-IDF 环境中启动一个新进程。该功能需要 EIM 0.8.1 或更高版本，且 **ESP-IDF 必须通过 EIM 安装程序安装**。该方案是最简单的选项，且无需先在 shell 中激活 ESP-IDF 环境。
+
+.. code-block:: bash
+
+  eim run "idf.py mcp-server"
+
+2. 直接使用 ``idf.py``：在已激活 ESP-IDF 环境的 shell 中运行 ``idf.py mcp-server`` 命令启动 MCP 服务器。必须在有效的 ESP-IDF 项目目录中执行该命令，或者使用 ``idf.py -C <project_dir> mcp-server`` 指定项目路径。
+
+.. code-block:: bash
+
+  idf.py mcp-server
+
+.. note::
+
+    MCP 服务器需要通过 EIM 安装器来安装 ``mcp`` 功能。有关如何安装特定功能，请参见 `EIM 文档 ＞ CLI 配置 - 全局功能 <https://docs.espressif.com/projects/idf-im-ui/en/latest/cli_configuration.html#global-features-all-versions>`_。
+
+可用工具与资源
+^^^^^^^^^^^^^^
+
+MCP 服务器提供以下可用的命令：
+
+- ``set target``：设置 ESP-IDF 的目标芯片（esp32，esp32s3，esp32c6 等）
+- ``build project``：使用当前目标构建 ESP-IDF 项目
+- ``flash project``：将已构建的项目烧录到已连接的设备，通过端口名称进行指定。
+- ``clean project``：清理构建产物
+
+同时提供以下资源：
+
+- ``project://config``：获取当前项目配置
+- ``project://status``：获取当前项目的构建状态和构建产物
+- ``project://devices``：获取已连接的设备列表
+
+将 ESP-IDF MCP 服务器添加至 IDE 和 AI 智能体
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Cursor IDE
+~~~~~~~~~~
+
+将 ESP-IDF MCP 服务器配置添加至 Cursor 的 ``mcp.json`` 文件中：
+
+.. code-block:: json
+
+  {
+    "mcpServers": {
+      "esp-idf-eim": {
+        "command": "eim",
+        "args": [
+          "run",
+          "idf.py mcp-server"
+        ],
+        "env": {
+          "IDF_MCP_WORKSPACE_FOLDER": "${workspaceFolder}"
+        }
+      }
+    }
+  }
+
+若想在 Cursor IDE 中使用 ESP-IDF MCP 服务器，请打开 ESP-IDF 项目文件夹并使用 AI 聊天窗口，AI 助手能够访问 ESP-IDF 专用工具，并帮助构建、烧录和管理项目。
+
+MCP 服务器能够通过 ``IDF_MCP_WORKSPACE_FOLDER`` 环境变量确认哪个目录包含 ESP-IDF 项目，确保服务器在正确的项目上下文中运行，使其能够访问项目的配置和构建文件，并在正确的位置执行诸如构建和烧录之类的操作。
+
+Claude 桌面版
+~~~~~~~~~~~~~
+
+使用 Claude CLI 添加 ESP-IDF MCP 服务器。
+
+使用 ``eim`` （无需事先激活 ESP-IDF）：
+
+.. code-block:: bash
+
+  claude mcp add --transport stdio esp-idf-eim -- eim run "idf.py mcp-server"
+
+使用 ``idf.py`` （必须在已激活的 ESP-IDF 环境中执行）：
+
+.. code-block:: bash
+
+  claude mcp add --transport stdio esp-idf -- idf.py mcp-server
+
+前往 ESP-IDF 项目目录，并运行 ``claude`` 命令，与 AI 助手聊天。
+
+
+配置预设：``--preset``
+========================
+
+ESP-IDF 支持 `CMake presets`_ 以简化多个构建配置的管理。此功能允许定义可重用的配置配置文件，这些文件指定构建目录、缓存变量和其他 CMake 设置。
+
+.. code-block:: bash
+
+  idf.py --preset <preset-name> build
+
+此命令使用指定的配置预设来构建项目。该预设定义了诸如构建目录位置、CMake 缓存变量（包括 ``SDKCONFIG`` 路径）和生成器首选项等设置。
+
+预设定义文件
+--------------
+
+在项目根目录下创建一个 ``CMakePresets.json`` 或 ``CMakeUserPresets.json`` 文件来定义 **配置预设**。例如：
+
+.. code-block:: json
+
+  {
+      "version": 3,
+      "configurePresets": [
+          {
+              "name": "default",
+              "binaryDir": "build/default",
+              "displayName": "Default Configuration",
+              "cacheVariables": {
+                  "SDKCONFIG": "./build/default/sdkconfig"
+              }
+          },
+          {
+              "name": "production",
+              "binaryDir": "build/production",
+              "displayName": "Production Build",
+              "cacheVariables": {
+                  "SDKCONFIG_DEFAULTS": "sdkconfig.defaults.prod_common;sdkconfig.defaults.production",
+                  "SDKCONFIG": "./build/production/sdkconfig"
+              }
+          }
+      ]
+  }
+
+.. note::
+
+    字段 ``version`` 代表 CMake Presets 的 JSON 模式版本。在本例中，其值设为 ``3``，以匹配 ESP-IDF 支持的最低 CMake 版本所支持的模式。如果你使用的是更高版本的 CMake，可以相应地增加 ``version`` 字段的值。请参阅 `CMake Presets`_。
+
+**当前限制**
+
+- ESP-IDF 目前不支持用于预设继承的 ``inherits`` 字段。包含继承的预设将显示警告。
+
+自动预设选择
+----------------
+
+如果未指定预设但存在 ``CMakePresets.json`` 文件，``idf.py`` 将自动选择一个预设：
+
+1.  如果存在名为 ``default`` 的预设，则将使用它。
+2.  否则，将选择文件中的第一个预设。
+
+.. note::
+
+    环境变量 ``IDF_PRESET`` 可用于设置默认预设名称，例如 ``export IDF_PRESET=production``。命令行参数会覆盖环境变量。
+
+**SDKCONFIG 文件位置**
+
+默认情况下，``sdkconfig`` 文件在项目根目录中创建。但是，在使用 CMake 预设时，可以使用 ``SDKCONFIG`` 缓存变量指定 ``sdkconfig`` 文件的自定义位置。
+
+完整示例请参阅 :example_file:`Multiple Build Configurations Example <build_system/cmake/multi_config/README.md>`。
+
+.. _idf_py_global_options:
+
 全局选项
 ==============
 
 运行 ``idf.py --help`` 列出所有可用的根级别选项。要列出特定子命令的选项，请运行 ``idf.py <command> --help``，如 ``idf.py monitor --help``。部分常用选项如下：
 
 - ``-C <dir>`` 支持从默认的当前工作目录覆盖工程目录。
-- ``-B <dir>`` 支持从工程目录的默认 ``build`` 子目录覆盖构建目录。
+- ``-B <dir>`` 支持从工程目录的默认 ``build`` 子目录覆盖 build 目录。
 - ``--ccache`` 可以在安装了 CCache_ 工具的前提下，在构建源文件时启用 CCache_，减少部分构建耗时。
 
 .. important::
 
     注意，某些旧版本 CCache_ 在某些平台上存在 bug，因此如果文件没有按预期重新构建，可禁用 CCache_ 并重新构建。可以通过将环境变量 ``IDF_CCACHE_ENABLE`` 设置为非零值来默认启用 CCache_。
+
+- ``--configdep`` 或 ``--no-configdep`` 用于启用或禁用基于 ``esp-idf-configdep`` 的重建优化。该工具会对编译器生成的依赖文件进行后处理，以减少因 ``sdkconfig.h`` 变更而导致的不必要重建。若重建时仅有少量配置选项频繁变更，这一功能尤为有用。该功能默认启用。若要永久启用 configdep，请将 ``IDF_CONFIGDEP_ENABLE`` 环境变量设置为 ``1``；若要永久禁用，则设置为 ``0``。
 
 - ``-v`` 会使 ``idf.py`` 和构建系统生成详细的构建输出，有助于调试构建错误。
 - ``--cmake-warn-uninitialized`` （或 ``-w``）将使 CMake 只显示在工程目录中发现的变量未初始化的警告，该选项仅控制 CMake 内部的 CMake 变量警告，不控制其他类型的构建警告。将环境变量 ``IDF_CMAKE_WARN_UNINITIALIZED`` 设置为非零值，可永久启用该选项。
@@ -255,13 +491,130 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   flash --baud 115200
 
-运行命令：``idf.py @custom_flash.txt monitor``
+运行命令：``idf.py "@custom_flash.txt" monitor``
 
-文件中的参数可以与额外的命令行参数结合使用，也支持同时使用带有 ``@`` 标注的多个文件。例如，另有一个文件 ``another_config.txt``，此时，可以通过指定 ``idf.py @custom_flash.txt @another_config.txt monitor`` 同时使用两个文件。
+文件中的参数可以与额外的命令行参数结合使用，也支持同时使用带有 ``@`` 标注的多个文件。例如，另有一个文件 ``another_config.txt``，此时，可以通过指定 ``idf.py "@custom_flash.txt" "@another_config.txt" monitor`` 同时使用两个文件。
 
-关于参数文件的更多示例，如通过 @filename 创建配置文件概要，请参阅 :example_file:`多个构建配置示例 <build_system/cmake/multi_config/README.md>`。
+关于参数文件的更多示例，如通过 @filename 创建配置文件概要，请参阅多个构建配置示例文档中的 `创建配置文件概要 <profile_file_>`_ 小节。
+
+扩展 ``idf.py``
+====================
+
+``idf.py`` 支持扩展功能。通过项目中的扩展文件以及参与构建的组件中的扩展文件，可以增加额外的子命令、全局选项和回调函数；通过暴露入口点的外部 Python 包，可以提供新的扩展功能。
+
+- **参与构建的组件**：在项目根目录，或注册在项目 ``CMakeLists.txt`` 中的组件根目录，放置名为 ``idf_ext.py`` 的文件，该文件会在项目配置完成后得到识别。运行 ``idf.py build`` 或 ``idf.py reconfigure``，新添加的命令即可生效。
+- **Python 入口点**：对于任何已安装的 Python 包，在 ``idf_extension`` 组中定义入口点后，就可以提供扩展功能。只要安装了 Python 包就可以使用扩展功能，无需重新构建项目。
+
+出于安全考虑，组件扩展仅从可信来源加载：
+
+- ESP-IDF 内置组件（位于 ``IDF_PATH/components`` 下）。
+- 项目组件（项目自身的 ``components/`` 目录）。
+- 在项目顶层 ``CMakeLists.txt`` 中，由 ``EXTRA_COMPONENT_DIRS`` 所列目录中的用户自定义组件。
+- 乐鑫组件注册表 (``https://components.espressif.com/``) 中的乐鑫组件，仅 ``espressif/`` 命名空间受信任。
+- 下载到 ``IDF_TOOLS_PATH/root_managed_components/`` 目录下的 IDF 托管组件。仅 ``espressif/`` 命名空间受信任。
+
+其他来源的扩展（例如通过 ``git``、本地 ``path`` 或 ``override_path`` 解析的组件）会被跳过，并给出警告。若要加载所有组件中的扩展，请设置 ``IDF_EXTENSION_ALLOW_UNTRUSTED=1``。
+
+.. important::
+
+   扩展不能定义与 ``idf.py`` 命令同名的子命令或选项。系统会检查自定义的动作和选项名称是否存在冲突，不允许覆盖默认命令，如有冲突会打印警告。对于 Python 入口点，必须使用唯一标识符，否则会忽略重复的入口点名称并发出警告。
+
+扩展文件示例
+----------------------
+
+扩展文件需要定义一个 ``action_extensions`` 函数，用于返回扩展的动作或选项。组件扩展 ``idf_ext.py`` 和基于包的扩展（例如 ``<package_name>_ext.py``）使用相同的结构，如下所示：
+
+.. code-block:: python
+
+  from typing import Any
+  import click
+
+  def action_extensions(base_actions: dict, project_path: str) -> dict:
+      def hello_test(subcommand_name: str, ctx: click.Context, global_args: dict, **action_args: Any) -> None:
+          message = action_args.get('message')
+          print(f"Running action: {subcommand_name}. Message: {message}")
+
+      def global_callback_detail(ctx: click.Context, global_args: dict, tasks: list) -> None:
+          if getattr(global_args, 'detail', False):
+              print(f"About to execute {len(tasks)} task(s): {[t.name for t in tasks]}")
+
+      return {
+          "version": "1",
+          "global_options": [
+              {
+                  "names": ["--detail", "-d"],
+                  "is_flag": True,
+                  "help": "Enable detailed output",
+              }
+          ],
+          "global_action_callbacks": [global_callback_detail],
+          "actions": {
+              "hello": {
+                  "callback": hello_test,
+                  "short_help": "Hello from component",
+                  "help": "Test command from component extension",
+                  "options": [
+                      {
+                          "names": ["--message", "-m"],
+                          "help":  "Custom message to display",
+                          "default": "Hi there!",
+                          "type": str,
+                      }
+                  ]
+              },
+          },
+      }
+
+
+扩展 API 参考
+-----------------------
+
+``action_extensions`` 函数接收两个参数： ``base_actions`` 表示当前已注册的所有命令， ``project_path`` 表示项目的绝对路径。该函数返回一个包含最多四个键的字典：
+
+- ``version``：表示扩展接口版本。当前 API 版本为 ``1``。此键为必填项。
+- ``global_options``：一组全局选项，适用于所有命令。每个选项都是一个字典，包含 ``names``、 ``help``、 ``type``、 ``is_flag``、 ``scope`` 等字段。
+- ``global_action_callbacks``：表示一组全局回调函数，在执行任何任务之前都会调用一次。每个全局回调函数接受三个参数：
+
+   - ``ctx``：即 `click context`_
+   - ``global_args``：所有可用的全局参数
+   - ``tasks``：将要执行的任务列表。任务指的是运行 ``idf.py`` 时所调用的具体动作或子命令
+
+- ``actions``：子命令字典，用于定义新的子命令。每个子命令都有一个 ``callback`` 函数，并且可以包含 ``options``、 ``arguments``、 ``dependencies`` 等。每个回调函数接受三到四个参数：
+
+   - ``subcommand_name``：命令的名称（在多个命令共享同一回调时很有用）
+   - ``ctx``：即 `click context`_
+   - ``global_args``：所有可用的全局参数
+   - ``**action_args``：传递给该子命令的具体参数，可选
+
+基本用法示例
+--------------------
+
+1) **通过项目组件提供扩展**
+
+  在项目根目录或某个已注册的组件目录下创建 ``idf_ext.py`` （例如 ``components/my_component/idf_ext.py`` ）。实现内容可参考上面的扩展文件示例。
+
+  运行 ``idf.py build`` 或 ``idf.py reconfigure`` 加载新命令，然后执行 ``idf.py --help`` 即可看到新扩展。
+
+2) **通过 Python 包入口点提供扩展**
+
+  使用上述扩展文件示例，在名为 ``<package_name>_ext.py`` 的模块中实现扩展，并通过 ``idf_extension`` 入口点组暴露 ``action_extensions`` 函数。例如，在 ``pyproject.toml`` 中配置：
+
+  .. code-block:: TOML
+
+    [project]
+    name = "my_comp"
+    version = "0.1.0"
+
+    [project.entry-points.idf_extension]
+    my_pkg_ext = "my_component.my_ext:action_extensions"
+
+
+  将该包安装到与 ``idf.py`` 相同的 Python 环境中（例如在包目录下执行 ``pip install -e .``）。建议使用唯一的模块名（例如 ``<package_name>_ext.py``）避免命名冲突。安装成功后，运行 ``idf.py --help`` 就可以看到新扩展命令。
 
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
-.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _esptool: https://github.com/espressif/esptool/#readme
 .. _CCache: https://ccache.dev/
+.. _click context: https://click.palletsprojects.com/en/stable/api/#context
+.. _CMake presets: https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html
+.. _profile_file: https://github.com/espressif/esp-idf/tree/release/v5.5/examples/build_system/cmake/multi_config#create-configuration-profile-files-via-filename

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -9,12 +9,14 @@
 #include "esp_app_trace_util.h"
 #include "sdkconfig.h"
 
+#define ESP_APPTRACE_PRINT_LOCK 0
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// Locks /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 #if ESP_APPTRACE_PRINT_LOCK
-static esp_apptrace_lock_t s_log_lock = {.irq_stat = 0, .portmux = portMUX_INITIALIZER_UNLOCKED};
+static esp_apptrace_lock_t s_log_lock = { .mux = portMUX_INITIALIZER_UNLOCKED };
 #endif
 
 int esp_apptrace_log_lock(void)
@@ -31,7 +33,7 @@ int esp_apptrace_log_lock(void)
 
 void esp_apptrace_log_unlock(void)
 {
- #if ESP_APPTRACE_PRINT_LOCK
+#if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_lock_give(&s_log_lock);
 #endif
 }
@@ -42,7 +44,7 @@ void esp_apptrace_log_unlock(void)
 
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
-    if (tmo->tmo != (int64_t)-1) {
+    if (tmo->tmo != (int64_t) -1) {
         tmo->elapsed = esp_timer_get_time() - tmo->start;
         if (tmo->elapsed >= tmo->tmo) {
             return ESP_ERR_TIMEOUT;
@@ -54,6 +56,12 @@ esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// LOCK ////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+void esp_apptrace_lock_init(esp_apptrace_lock_t *lock)
+{
+    portMUX_INITIALIZE(&lock->mux);
+    lock->int_state = 0;
+}
 
 esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *tmo)
 {
@@ -87,7 +95,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
 uint8_t *esp_apptrace_rb_produce(esp_apptrace_rb_t *rb, uint32_t size)
 {
     uint8_t *ptr = rb->data + rb->wr;
-    // check for avalable space
+    // check for available space
     if (rb->rd <= rb->wr) {
         // |?R......W??|
         if (rb->wr + size >= rb->size) {

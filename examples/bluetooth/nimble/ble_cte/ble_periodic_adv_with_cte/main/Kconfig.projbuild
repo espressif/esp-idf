@@ -1,0 +1,80 @@
+menu "Example Configuration"
+
+    choice
+        prompt "Direction Finding Mode"
+        default EXAMPLE_ADV_DIRECTION_FINDING_AOA
+        help
+            Select the direction finding technology for periodic advertising.
+
+        config EXAMPLE_ADV_DIRECTION_FINDING_AOA
+            bool "AoA (Constant Tone Only)"
+            help
+                Select this option for Angle of Arrival (AoA) mode.
+                The advertiser will send CTE with constant tone only,
+                no antenna switching required on the advertiser side.
+
+        config EXAMPLE_ADV_DIRECTION_FINDING_AOD
+            bool "AoD (Antenna Switching with GPIO Encoding)"
+            help
+                Select this option for Angle of Departure (AoD) mode.
+                The advertiser will send CTE with antenna switching pattern.
+                GPIOs are used as encoded bits to control multiple antennas.
+                For example: 2 GPIOs can control 4 antennas (00, 01, 10, 11).
+
+    endchoice
+
+    if EXAMPLE_ADV_DIRECTION_FINDING_AOD
+
+        config EXAMPLE_ANT_GPIO_BIT_COUNT
+            int "Number of GPIO bits for antenna encoding"
+            range 1 4
+            default 2
+            help
+                Select the number of GPIO pins used as encoded bits for antenna switching.
+                Each additional GPIO bit doubles the number of controllable antennas.
+                Example:
+                1 bit -> 2 antennas (0, 1)
+                2 bits -> 4 antennas (00, 01, 10, 11)
+                3 bits -> 8 antennas
+                4 bits -> 16 antennas
+
+        config EXAMPLE_ANT_GPIO_0
+            int "GPIO Bit 0 (LSB)"
+            range 0 39
+            default 0
+            help
+                GPIO pin number for the least significant bit (LSB) of antenna encoding.
+
+        config EXAMPLE_ANT_GPIO_1
+            int "GPIO Bit 1"
+            range 0 39
+            default 1
+            depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 1
+            help
+                GPIO pin number for bit 1 of antenna encoding.
+
+        config EXAMPLE_ANT_GPIO_2
+            int "GPIO Bit 2"
+            range 0 39
+            default 2
+            depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 2
+            help
+                GPIO pin number for bit 2 of antenna encoding.
+
+        config EXAMPLE_ANT_GPIO_3
+            int "GPIO Bit 3 (MSB)"
+            range 0 39
+            default 3
+            depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 3
+            help
+                GPIO pin number for the most significant bit (MSB) of antenna encoding.
+
+    endif # EXAMPLE_DIRECTION_FINDING_CTE
+
+    config EXAMPLE_RANDOM_ADDR
+        bool
+        prompt "Advertise RANDOM Address"
+        help
+            Use this option to advertise a random address instead of public address
+
+endmenu

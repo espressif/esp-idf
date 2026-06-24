@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +8,21 @@
 #include "esp_log.h"
 #include "esp_bluedroid_hci.h"
 #include "common/bt_target.h"
+#include "bt_common.h"
 #include "hci/hci_trans_int.h"
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
 #endif
+#include "hci_log/bt_hci_log.h"
 
 #define LOG_TAG "HCI_API"
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 static esp_bluedroid_hci_driver_operations_t s_hci_driver_ops = { 0 };
 
@@ -59,11 +68,28 @@ bool hci_host_check_send_available(void)
 
 void hci_host_send_packet(uint8_t *data, uint16_t len)
 {
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    if (data != NULL && len > 1) {
+        uint8_t data_type = bt_hci_log_h4_type_to_data_type(data[0]);
+        bt_hci_log_record_hci_data(data_type, &data[1], (uint16_t)(len - 1));
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(data_type, &data[1], (uint16_t)(len - 1));
+#endif
+    }
+#endif
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    ble_log_spi_out_hci_write(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#if CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED
+    ble_log_write_hci(BLE_LOG_HCI_DOWNSTREAM, data, len);
+#endif /* CONFIG_BLE_LOG_HOST_SIDE_HCI_LOG_ENABLED */
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     esp_vhci_host_send_packet(data, len);
 #else /* BT_CONTROLLER_INCLUDED == TRUE */
     if (s_hci_driver_ops.send) {
         s_hci_driver_ops.send(data, len);
+    } else {
+        ESP_LOGE(LOG_TAG, "%s send function is not registered", __func__);
     }
 #endif /* BT_CONTROLLER_INCLUDED == TRUE */
 }

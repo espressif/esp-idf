@@ -1,0 +1,9 @@
+menu "Test Configurations"
+
+    config TEST_LP_CORE_VAD_ENABLE
+        bool "Enable LP VAD test"
+        default n
+        help
+            Enable this to trigger LP VAD test
+
+endmenu

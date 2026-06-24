@@ -1,25 +1,44 @@
 menu "ESP-Driver:MCPWM Configurations"
     depends on SOC_MCPWM_SUPPORTED
-    config MCPWM_ISR_IRAM_SAFE
-        bool "Place MCPWM ISR function into IRAM"
-        default n
+
+    config MCPWM_ISR_HANDLER_IN_IRAM
+        bool "Place MCPWM ISR handler into IRAM to reduce latency"
+        default y
+        select MCPWM_OBJ_CACHE_SAFE
         help
-            This will ensure the MCPWM interrupt handle is IRAM-Safe, allow to avoid flash
-            cache misses, and also be able to run whilst the cache is disabled.
-            (e.g. SPI Flash write)
+            Place MCPWM ISR handler(s) in IRAM to reduce latency caused by cache miss.
+
+    config MCPWM_ISR_CACHE_SAFE
+        bool "Allow MCPWM ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
+        default n
+        select MCPWM_ISR_HANDLER_IN_IRAM
+        help
+            Enable this option to allow the MCPWM Interrupt Service Routine (ISR)
+            to execute even when the cache is disabled. This can be useful in scenarios where the cache
+            might be turned off, but the MCPWM functionality is still required to operate correctly.
 
     config MCPWM_CTRL_FUNC_IN_IRAM
-        bool "Place MCPWM control functions into IRAM"
+        bool "Place MCPWM control functions in IRAM"
+        default n
+        select MCPWM_OBJ_CACHE_SAFE
+        help
+            Place MCPWM control functions in IRAM, to reduce latency caused by cache miss.
+            If enabled, these functions can also be called when cache is disabled.
+
+    config MCPWM_OBJ_CACHE_SAFE
+        bool
         default n
         help
-            Place MCPWM control functions (like set_compare_value) into IRAM,
-            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
-            Enabling this option can improve driver performance as well.
+            This will ensure the MCPWM object will not be allocated from a memory region
+            where its cache can be disabled.
 
     config MCPWM_ENABLE_DEBUG_LOG
-        bool "Enable debug log"
+        bool "Force enable debug log"
         default n
         help
-            whether to enable the debug log message for MCPWM driver.
-            Note that, this option only controls the MCPWM driver log, won't affect other drivers.
+            If enabled, MCPWM component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option with caution, as it will increase the binary size.
 endmenu

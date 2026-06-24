@@ -1,0 +1,2 @@
+# This config option internally select 64KB MMU page size
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y

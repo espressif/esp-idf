@@ -8,7 +8,6 @@
 #include "unity.h"
 #include "hal/hal_utils.h"
 
-
 TEST_CASE("test_integral_division", "[clk_div]")
 {
     uint32_t int_div = 0;

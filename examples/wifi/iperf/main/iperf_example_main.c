@@ -35,30 +35,37 @@ extern int wifi_cmd_get_rx_statistics(int argc, char **argv);
 extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
 #endif
 
+#if defined(CONFIG_ESP_EXT_CONN_ENABLE) && defined(CONFIG_ESP_HOST_WIFI_ENABLED)
+#include "esp_extconn.h"
+#endif
 
-void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status)
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+#include "ext_coex_cmd.h"
+#endif
+
+void iperf_hook_show_wifi_stats(iperf_id_t instance_id, iperf_state_data_t *data, void *priv)
 {
-    if (status == IPERF_STARTED) {
+    if (data->state == IPERF_STARTED) {
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
-        if (type != IPERF_UDP_SERVER) {
+        if (data->traffic_type != IPERF_UDP_SERVER) {
             wifi_cmd_clr_tx_statistics(0, NULL);
         }
 #endif
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
-        if (type != IPERF_UDP_CLIENT) {
+        if (data->traffic_type != IPERF_UDP_CLIENT) {
             wifi_cmd_clr_rx_statistics(0, NULL);
         }
 #endif
     }
 
-    if (status == IPERF_STOPPED) {
+    if (data->state == IPERF_STOPPED) {
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
-        if (type != IPERF_UDP_SERVER) {
+        if (data->traffic_type != IPERF_UDP_SERVER) {
             wifi_cmd_get_tx_statistics(0, NULL);
         }
 #endif
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
-        if (type != IPERF_UDP_SERVER) {
+        if (data->traffic_type != IPERF_UDP_CLIENT) {
             wifi_cmd_get_rx_statistics(0, NULL);
         }
 #endif
@@ -69,6 +76,11 @@ void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status
 
 void app_main(void)
 {
+#if defined(CONFIG_ESP_EXT_CONN_ENABLE) && defined(CONFIG_ESP_HOST_WIFI_ENABLED)
+    esp_extconn_config_t ext_config = ESP_EXTCONN_CONFIG_DEFAULT();
+    esp_extconn_init(&ext_config);
+#endif
+
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -76,11 +88,21 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    /* initialise wifi */
-    app_wifi_initialise_config_t config = APP_WIFI_CONFIG_DEFAULT();
-    config.storage = WIFI_STORAGE_RAM;
-    config.ps_type = WIFI_PS_NONE;
-    app_initialise_wifi(&config);
+    /*
+    NOTE(#15855): wifi_cmd_initialize_wifi is a basic function to start wifi, set handlers and set wifi-cmd status.
+    For advanced usage, please refer to wifi_cmd.h or the document of wifi-cmd component: https://components.espressif.com/components/esp-qa/wifi-cmd
+
+    example:
+        wifi_cmd_wifi_init();
+        my_function();  // <---- more configs before wifi start
+        wifi_cmd_wifi_start();
+
+    Please note that some wifi commands such as "wifi start/restart" may not work as expected if "wifi_cmd_initialize_wifi" was not used.
+    */
+    /* initialise wifi and set wifi-cmd status */
+    wifi_cmd_initialize_wifi(NULL);
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
     esp_wifi_enable_rx_statistics(true, true);
@@ -111,10 +133,16 @@ void app_main(void)
 
     /* Register commands */
     register_system();
-    app_register_all_wifi_commands();
-    app_register_iperf_commands();
-    app_register_ping_commands();
-    app_register_iperf_hook_func(iperf_hook_show_wifi_stats);
+    /* From wifi-cmd */
+    wifi_cmd_register_all();
+    /* From iperf-cmd */
+    iperf_cmd_register_iperf();
+    iperf_cmd_set_iperf_state_handler(iperf_hook_show_wifi_stats, NULL);
+    /* From ping-cmd */
+    ping_cmd_register_ping();
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    register_cmd_extcoex();
+#endif
 
 
     printf("\n ==================================================\n");

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,10 +15,12 @@
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MMU_LL_END_DROM_ENTRY_VADDR         (SOC_DRAM_FLASH_ADDRESS_HIGH - 0x10000)
+#define MMU_LL_END_DROM_ENTRY_ID            (192 - 1)
 
 /**
  * Convert MMU virtual address to linear address
@@ -249,7 +251,7 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
  * @param mmu_id   MMU ID
  * @param entry_id MMU entry ID
  *
- * @return         Ture for MMU entry is valid; False for invalid
+ * @return         True for MMU entry is valid; False for invalid
  */
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {
@@ -375,6 +377,19 @@ static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t e
     }
 
     return vaddr_base + (entry_id << 16);
+}
+
+/**
+ * Check if the external memory vaddr belongs to the DPORT bus region
+ *
+ * @param vaddr start of the virtual address
+ *
+ * @return True for valid
+ */
+__attribute__((always_inline))
+static inline bool mmu_ll_vaddr_in_dport_bus_region(uint32_t vaddr)
+{
+    return (vaddr >= SOC_DPORT_CACHE_ADDRESS_LOW && vaddr < SOC_DPORT_CACHE_ADDRESS_HIGH);
 }
 
 #ifdef __cplusplus

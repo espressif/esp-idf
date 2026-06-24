@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +41,7 @@ extern "C" {
 #define PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT 1
 #define PMU_LP_DBIAS_SLEEP_0V7_DEFAULT      6
 
-#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     0
+#define PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US     480
 // The current value of this depends on the restoration time overhead of the longest chain in regdma
 #define PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US     390
 
@@ -85,7 +85,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
 
 typedef struct {
     pmu_hp_backup_reg_t     retention;
-    uint32_t                backup_clk;
+    uint32_t                backup_clk; // icg_func
 } pmu_hp_system_retention_param_t;
 
 const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pmu_hp_mode_t mode);
@@ -139,7 +139,9 @@ typedef union {
 
 typedef union {
     struct {
-        uint32_t reserved0 : 30;
+        uint32_t reserved0 : 27;
+        uint32_t bod_source_sel : 1;
+        uint32_t vddbat_mode : 2;
         uint32_t mem_dslp  : 1;
         uint32_t peri_pd_en: 1;
     };
@@ -259,13 +261,13 @@ typedef struct {
     } lp_sys[PMU_MODE_LP_MAX];
 } pmu_sleep_power_config_t;
 
-#define PMU_SLEEP_POWER_CONFIG_DEFAULT(pd_flags) {                          \
+#define PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags) {                       \
     .hp_sys = {                                                             \
         .dig_power = {                                                      \
-            .vdd_spi_pd_en = ((pd_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 0,   \
-            .wifi_pd_en    = ((pd_flags) & PMU_SLEEP_PD_MODEM)   ? 1 : 0,   \
-            .cpu_pd_en     = ((pd_flags) & PMU_SLEEP_PD_CPU)     ? 1 : 0,   \
-            .top_pd_en     = ((pd_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,   \
+            .vdd_spi_pd_en = ((sleep_flags) & PMU_SLEEP_PD_VDDSDIO) ? 1 : 0,\
+            .wifi_pd_en    = ((sleep_flags) & PMU_SLEEP_PD_MODEM)   ? 1 : 0,\
+            .cpu_pd_en     = ((sleep_flags) & PMU_SLEEP_PD_CPU)     ? 1 : 0,\
+            .top_pd_en     = ((sleep_flags) & PMU_SLEEP_PD_TOP)     ? 1 : 0,\
             .mem_pd_en     = 0,                                             \
             .mem_dslp      = 0                                              \
         },                                                                  \
@@ -277,7 +279,7 @@ typedef struct {
             .xpd_bbpll     = 0                                              \
         },                                                                  \
         .xtal = {                                                           \
-            .xpd_xtal      = ((pd_flags) & PMU_SLEEP_PD_XTAL) ? 0 : 1,      \
+            .xpd_xtal      = ((sleep_flags) & PMU_SLEEP_PD_XTAL) ? 0 : 1,   \
         }                                                                   \
     },                                                                      \
     .lp_sys[PMU_MODE_LP_ACTIVE] = {                                         \
@@ -286,23 +288,23 @@ typedef struct {
             .mem_dslp      = 0                                              \
         },                                                                  \
         .clk_power = {                                                      \
-            .xpd_xtal32k   = ((pd_flags) & PMU_SLEEP_PD_XTAL32K) ? 0 : 1,   \
-            .xpd_rc32k     = ((pd_flags) & PMU_SLEEP_PD_RC32K) ? 0 : 1,     \
+            .xpd_xtal32k   = ((sleep_flags) & PMU_SLEEP_PD_XTAL32K) ? 0 : 1,\
+            .xpd_rc32k     = ((sleep_flags) & PMU_SLEEP_PD_RC32K) ? 0 : 1,  \
             .xpd_fosc      = 1                                              \
         }                                                                   \
     },                                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                                          \
         .dig_power = {                                                      \
-            .peri_pd_en    = ((pd_flags) & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
+            .peri_pd_en    = ((sleep_flags) & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
             .mem_dslp      = 1                                              \
         },                                                                  \
         .clk_power = {                                                      \
-            .xpd_xtal32k   = ((pd_flags) & PMU_SLEEP_PD_XTAL32K) ? 0 : 1,   \
-            .xpd_rc32k     = ((pd_flags) & PMU_SLEEP_PD_RC32K) ? 0 : 1,     \
-            .xpd_fosc      = ((pd_flags) & PMU_SLEEP_PD_RC_FAST) ? 0 : 1    \
+            .xpd_xtal32k   = ((sleep_flags) & PMU_SLEEP_PD_XTAL32K) ? 0 : 1,\
+            .xpd_rc32k     = ((sleep_flags) & PMU_SLEEP_PD_RC32K) ? 0 : 1,  \
+            .xpd_fosc      = ((sleep_flags) & PMU_SLEEP_PD_RC_FAST) ? 0 : 1 \
         },                                                                  \
         .xtal = {                                                           \
-            .xpd_xtal      = ((pd_flags) & PMU_SLEEP_PD_XTAL) ? 0 : 1,      \
+            .xpd_xtal      = ((sleep_flags) & PMU_SLEEP_PD_XTAL) ? 0 : 1,   \
         }                                                                   \
     }                                                                       \
 }
@@ -310,12 +312,23 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
+    uint32_t                icg_func;
 } pmu_sleep_digital_config_t;
 
-#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags) {               \
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
     .syscntl = {                                                        \
-        .dig_pad_slp_sel = ((pd_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,     \
-    }                                                                   \
+        .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
+    },                                                                  \
+    .icg_func = (uint32_t)(clk_flags)                                   \
+}
+
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
+    .syscntl = {                                                        \
+        .dig_pad_slp_sel = 1,                                           \
+        .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
+    },                                                                  \
+    .icg_func = 0                                                       \
 }
 
 typedef struct {
@@ -327,7 +340,7 @@ typedef struct {
     } lp_sys[PMU_MODE_LP_MAX];
 } pmu_sleep_analog_config_t;
 
-#define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags) {    \
+#define PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags) { \
     .hp_sys = {                                             \
         .analog = {                                         \
             .xpd_trx         = PMU_XPD_TRX_SLEEP_DEFAULT,   \
@@ -340,7 +353,7 @@ typedef struct {
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
-            .drv_b         = PMU_LP_DRVB_DEEPSLEEP,         \
+            .drv_b         = PMU_LP_DRVB_LIGHTSLEEP,        \
             .pd_cur        = PMU_PD_CUR_SLEEP_DEFAULT,      \
             .bias_sleep    = PMU_BIASSLP_SLEEP_DEFAULT,     \
             .slp_xpd       = PMU_LP_SLP_XPD_SLEEP_DEFAULT,  \
@@ -351,7 +364,7 @@ typedef struct {
     }                                                       \
 }
 
-#define PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags) {    \
+#define PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags) { \
     .hp_sys = {                                             \
         .analog = {                                         \
             .xpd_trx       = PMU_XPD_TRX_SLEEP_DEFAULT,     \
@@ -379,7 +392,7 @@ typedef struct {
     pmu_hp_lp_param_t   hp_lp;
 } pmu_sleep_param_config_t;
 
-#define PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags) {                                  \
+#define PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags) {                               \
     .hp_sys = {                                                                     \
         .min_slp_slow_clk_cycle          = PMU_HP_SLEEP_MIN_SLOW_CLK_CYCLES,        \
         .analog_wait_target_cycle        = PMU_HP_ANALOG_WAIT_TARGET_CYCLES,        \
@@ -407,7 +420,7 @@ typedef struct {
 
 typedef struct pmu_sleep_machine_constant {
     struct {
-        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint8_t     reserved0;
         uint16_t    reserved1;
         uint16_t    analog_wait_time_us;        /* LP LDO power up wait time (unit: microsecond) */
@@ -418,7 +431,7 @@ typedef struct pmu_sleep_machine_constant {
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
     } lp;
     struct {
-        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
         uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
@@ -447,7 +460,7 @@ typedef struct pmu_sleep_machine_constant {
         .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US, \
         .regdma_a2s_work_time_us        = 0,    \
         .xtal_wait_stable_time_us       = 250,  \
-        .pll_wait_stable_time_us        = 1     \
+        .pll_wait_stable_time_us        = 50    \
     }                                           \
 }
 

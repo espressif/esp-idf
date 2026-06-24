@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,13 +38,15 @@ static int lib_printf(const char* tag, const char* format, va_list arg)
     if (i > 0) {
         ESP_LOGI(tag, "%s", temp);
     }
-    va_end(arg);
     return len;
 }
 
 int coexist_printf(const char* format, ...)
 {
     va_list arg;
+    /* coverity[uninit_use_in_call]
+    Event uninit_use_in_call: Using uninitialized value arg when calling __builtin_c23_va_start.
+    False-positive: arg will be initialized in the function va_start() */
     va_start(arg, format);
     int res = lib_printf("coexist", format, arg);
     va_end(arg);

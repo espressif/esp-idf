@@ -8,29 +8,9 @@
 
 {IDF_TARGET_NAME} 内置传感器，用于测量芯片内部的温度。该温度传感器模组包含一个 8 位 Sigma-Delta 模拟-数字转换器 (ADC) 和一个数字-模拟转换器 (DAC)，可以补偿测量结果，减少温度测量的误差。
 
-由于硬件限制，温度传感器存在预定义的测量范围及其对应误差，详见下表：
-
-.. list-table::
-    :header-rows: 1
-    :widths: 50 50
-    :align: center
-
-    * - 预定义测量范围 (°C)
-      - 测量误差 (°C)
-    * - 50 ~ 125
-      - < 3
-    * - 20 ~ 100
-      - < 2
-    * - -10 ~ 80
-      - < 1
-    * - -30 ~ 50
-      - < 2
-    * - -40 ~ 20
-      - < 3
-
 .. note::
 
-    温度传感器主要用于测量芯片内部的温度变化。芯片内部温度通常高于环境温度，并且受到微控制器的时钟频率或 I/O 负载、外部散热环境等因素影响。
+    温度传感器主要用于测量芯片内部的温度变化。温度值可用作衡量温度变化趋势，但无法提供精确的温度数值，因此不建议用作精准测量温度。
 
 功能概述
 -------------------
@@ -59,6 +39,7 @@
 
 - :cpp:member:`range_min`：所测量温度范围的最小值。
 - :cpp:member:`range_max`：所测量温度范围的最大值。
+- :cpp:member:`allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份温度传感器寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
 
 设置好温度范围后，将配置结构体传递给 :cpp:func:`temperature_sensor_install`，该函数将创建温度传感器模块并返回句柄。
 
@@ -206,10 +187,12 @@
 应用示例
 -------------------
 
-.. list::
+    * :example:`peripherals/temperature_sensor/temp_sensor` 演示了如何使用内置温度传感器，并展示了 DAC 电平和偏移量不同时的测量范围和误差。
 
-    * 读取温度传感器测量值：:example:`peripherals/temperature_sensor/temp_sensor`。
-    :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: * 监测温度传感器测量值：:example:`peripherals/temperature_sensor/temp_sensor_monitor`。
+.. only:: SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+
+  * :example:`peripherals/temperature_sensor/temp_sensor_monitor` 演示了如何使用温度传感器连续自动监测温度值，当温度达到特定值或或两个连续的采样之间的变化大于/小于设置时，触发中断。
+
 
 API 参考
 ----------------------------------

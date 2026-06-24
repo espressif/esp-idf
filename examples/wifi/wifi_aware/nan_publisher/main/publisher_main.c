@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,6 +11,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,17 +31,44 @@
 #else
 #define EXAMPLE_NAN_SVC_MSG            "Welcome"
 #endif
+#ifndef ETH_ALEN
+#define ETH_ALEN 6
+#endif
 
 static EventGroupHandle_t nan_event_group;
+static const char *TAG = "publisher";
+
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+static bool decode_hex_string(const char *hex, uint8_t *out, size_t out_len)
+{
+    if (!hex || !out || strlen(hex) != out_len * 2) {
+        return false;
+    }
+    for (size_t i = 0; i < out_len; i++) {
+        unsigned int byte;
+        if (sscanf(hex + 2 * i, "%2x", &byte) != 1) {
+            return false;
+        }
+        out[i] = (uint8_t)byte;
+    }
+    return true;
+}
+#endif
 
 static int NAN_RECEIVE = BIT0;
 uint8_t g_peer_inst_id;
+static uint8_t g_peer_mac[ETH_ALEN];
 
 static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t event_id, void *event_data)
 {
     wifi_event_nan_receive_t *evt = (wifi_event_nan_receive_t *)event_data;
     g_peer_inst_id = evt->peer_inst_id;
+    memcpy(g_peer_mac, evt->peer_if_mac, ETH_ALEN);
+    if (evt->ssi_len) {
+        ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
+    }
     xEventGroupSetBits(nan_event_group, NAN_RECEIVE);
 }
 
@@ -55,11 +83,12 @@ static void nan_ndp_indication_event_handler(void *arg, esp_event_base_t event_b
     wifi_nan_datapath_resp_t ndp_resp = {0};
     ndp_resp.accept = true; /* Accept incoming datapath request */
     ndp_resp.ndp_id = evt->ndp_id;
-    memcpy(ndp_resp.peer_mac, evt->peer_nmi, 6);
+    memcpy(ndp_resp.peer_mac, evt->peer_nmi, ETH_ALEN);
 
     esp_wifi_nan_datapath_resp(&ndp_resp);
 
 }
+
 void wifi_nan_publish(void)
 {
     nan_event_group = xEventGroupCreate();
@@ -70,17 +99,11 @@ void wifi_nan_publish(void)
                     NULL,
                     &instance_any_id));
 
-    /* ndp_require_consent
-     * If set to false - All incoming NDP requests will be internally accepted if valid.
-     * If set to true - All incoming NDP requests raise NDP_INDICATION event, upon which application can either accept or reject them.
-     */
-    bool ndp_require_consent = true;
-
     /* Start NAN Discovery */
-    wifi_nan_config_t nan_cfg = WIFI_NAN_CONFIG_DEFAULT();
+    wifi_nan_sync_config_t nan_cfg = WIFI_NAN_SYNC_CONFIG_DEFAULT();
 
     esp_netif_create_default_wifi_nan();
-    esp_wifi_nan_start(&nan_cfg);
+    esp_wifi_nan_sync_start(&nan_cfg);
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                     WIFI_EVENT_NDP_INDICATION,
@@ -99,27 +122,66 @@ void wifi_nan_publish(void)
 #endif
         .matching_filter = EXAMPLE_NAN_MATCHING_FILTER,
         .single_replied_event = 1,
+        /* 0 - All incoming NDP requests will be internally accepted,
+           1 - All incoming NDP requests raise NDP_INDICATION event and require esp_wifi_nan_datapath_resp to accept or reject.
+           This example uses 1 to exercise nan_ndp_indication_event_handler(). */
+        .ndp_resp_needed = 1,
+        .datapath_reqd = 1,
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+        .security_reqd = 1,
+#endif
     };
+#ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
+    wifi_nan_discovery_security_params_t security_cfg = {
+        .num_credentials = 1,
+        .creds = {
+            {
+                .csid = WIFI_NAN_CSID_NCS_SK_128,
+#ifdef CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK
+                .use_pmk = true,
+#else
+                .use_pmk = false,
+                .passphrase = CONFIG_EXAMPLE_NAN_PASSPHRASE,
+#endif
+            },
+        },
+    };
+    publish_cfg.security_cfg = &security_cfg;
+#endif
+#if defined(CONFIG_EXAMPLE_NAN_SECURITY_ENABLED) && defined(CONFIG_EXAMPLE_NAN_SEC_METHOD_PMK)
+    if (!decode_hex_string(CONFIG_EXAMPLE_NAN_PMK, security_cfg.creds[0].pmk,
+                           sizeof(security_cfg.creds[0].pmk))) {
+        ESP_LOGE(TAG, "Failed to decode CONFIG_EXAMPLE_NAN_PMK");
+        return;
+    }
+#endif
 
-    pub_id = esp_wifi_nan_publish_service(&publish_cfg, ndp_require_consent);
+    pub_id = esp_wifi_nan_publish_service(&publish_cfg);
     if (pub_id == 0) {
         return;
     }
+
+    wifi_nan_followup_params_t fup = {0};
+    fup.ssi_len = (strlen(EXAMPLE_NAN_SVC_MSG) < ESP_WIFI_MAX_FUP_SSI_LEN) ? strlen(EXAMPLE_NAN_SVC_MSG) : ESP_WIFI_MAX_FUP_SSI_LEN;
+    fup.ssi = calloc(1, fup.ssi_len);
+    if (!fup.ssi) {
+        ESP_LOGE(TAG, "Failed to allocate for Follow-up");
+        return;
+    }
+    memcpy((char *)fup.ssi, EXAMPLE_NAN_SVC_MSG, fup.ssi_len);
+    fup.inst_id = pub_id;
 
     while (1) {
         EventBits_t bits = xEventGroupWaitBits(nan_event_group, NAN_RECEIVE, pdFALSE, pdFALSE, portMAX_DELAY);
         if (bits & NAN_RECEIVE) {
             xEventGroupClearBits(nan_event_group, NAN_RECEIVE);
-            wifi_nan_followup_params_t fup = {0};
-            fup.inst_id = pub_id,
-            fup.peer_inst_id = g_peer_inst_id,
-            strlcpy(fup.svc_info, EXAMPLE_NAN_SVC_MSG, ESP_WIFI_MAX_SVC_INFO_LEN);
-
+            fup.peer_inst_id = g_peer_inst_id;
+            memcpy(fup.peer_mac, g_peer_mac, sizeof(fup.peer_mac));
             /* Reply to the message from a subscriber */
             esp_wifi_nan_send_message(&fup);
         }
-        vTaskDelay(10);
     }
+    free(fup.ssi);
 }
 
 void initialise_wifi(void)

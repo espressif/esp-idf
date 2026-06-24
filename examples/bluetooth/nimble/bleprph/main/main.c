@@ -30,10 +30,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0x18, 0x11,
-    0x11, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x11,
+    0x11, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
 
@@ -45,8 +45,14 @@ static uint8_t own_addr_type = BLE_OWN_ADDR_RANDOM;
 static uint8_t own_addr_type;
 #endif
 
+#if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
+static uint16_t cids[MYNEWT_VAL(BLE_EATT_CHAN_NUM)];
+static uint16_t bearers;
+#endif
+
 void ble_store_config_init(void);
 
+#if NIMBLE_BLE_CONNECT
 /**
  * Logs information about a connection to the console.
  */
@@ -73,6 +79,7 @@ bleprph_print_conn_desc(struct ble_gap_conn_desc *desc)
                 desc->sec_state.authenticated,
                 desc->sec_state.bonded);
 }
+#endif
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 /**
@@ -104,7 +111,7 @@ ext_bleprph_advertise(void)
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
-    //params.tx_power = 127;
+    params.tx_power = 127;
     params.sid = 1;
 
     params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
@@ -143,7 +150,9 @@ bleprph_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
+#endif
     int rc;
 
     /**
@@ -170,10 +179,12 @@ bleprph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
 
     fields.uuids16 = (ble_uuid16_t[]) {
         BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
@@ -231,10 +242,14 @@ static void bleprph_power_control(uint16_t conn_handle)
 static int
 bleprph_gap_event(struct ble_gap_event *event, void *arg)
 {
+#if NIMBLE_BLE_CONNECT
     struct ble_gap_conn_desc desc;
     int rc;
+#endif
 
     switch (event->type) {
+
+#if NIMBLE_BLE_CONNECT
     case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
@@ -355,6 +370,8 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
+            /* WARNING: Hardcoded passkey for demonstration only.
+             * In production, generate a random passkey per pairing. */
             pkey.passkey = 123456; // This is the passkey to be entered on peer
             ESP_LOGI(tag, "Enter passkey %" PRIu32 "on the peer side", pkey.passkey);
             rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
@@ -416,7 +433,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                      event->transmit_power.delta);
         return 0;
 
-     case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
+    case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
         MODLOG_DFLT(INFO, "Pathloss threshold event : conn_handle=%d current path loss=%d "
                            "zone_entered =%d",
                      event->pathloss_threshold.conn_handle,
@@ -424,8 +441,43 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                      event->pathloss_threshold.zone_entered);
         return 0;
 #endif
-    }
 
+#if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
+    case BLE_GAP_EVENT_EATT:
+        MODLOG_DFLT(INFO, "EATT %s : conn_handle=%d cid=%d",
+                event->eatt.status ? "disconnected" : "connected",
+                event->eatt.conn_handle,
+                event->eatt.cid);
+	if (event->eatt.status) {
+		/* Abort if disconnected */
+		return 0;
+	}
+	cids[bearers] = event->eatt.cid;
+	bearers += 1;
+	if (bearers != MYNEWT_VAL(BLE_EATT_CHAN_NUM)) {
+		/* Wait until all EATT bearers are connected before proceeding */
+		return 0;
+	}
+	/* Set the default bearer to use for further procedures */
+	rc = ble_att_set_default_bearer_using_cid(event->eatt.conn_handle, cids[0]);
+	if (rc != 0) {
+		MODLOG_DFLT(INFO, "Cannot set default EATT bearer, rc = %d\n", rc);
+		return rc;
+	}
+
+	return 0;
+#endif
+
+#if MYNEWT_VAL(BLE_CONN_SUBRATING)
+    case BLE_GAP_EVENT_SUBRATE_CHANGE:
+        MODLOG_DFLT(INFO, "Subrate change event : conn_handle=%d status=%d factor=%d",
+                    event->subrate_change.conn_handle,
+                    event->subrate_change.status,
+                    event->subrate_change.subrate_factor);
+        return 0;
+#endif
+#endif
+    }
     return 0;
 }
 
@@ -549,12 +601,22 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
 #endif
 
+#if MYNEWT_VAL(STATIC_PASSKEY) && NIMBLE_BLE_CONNECT
+    /* WARNING: Hardcoded passkey for demonstration only.
+     * In production, generate a random passkey per pairing. */
+    ble_sm_configure_static_passkey(456789, true);
+#endif
+
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
+#endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-bleprph");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
@@ -566,4 +628,11 @@ app_main(void)
     if (rc != ESP_OK) {
         ESP_LOGE(tag, "scli_init() failed");
     }
+
+#if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
+    bearers = 0;
+    for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
+        cids[i] = 0;
+    }
+#endif
 }

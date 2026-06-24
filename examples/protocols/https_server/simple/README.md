@@ -1,11 +1,11 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
-# HTTP server with SSL support using OpenSSL
+# HTTPS server
 
-This example creates a SSL server that returns a simple HTML page when you visit its root URL.
+This example creates an HTTPS server with SSL/TLS support using **ESP-TLS** that serves a simple HTML page when you visit its root URL.
 
-See the `esp_https_server` component documentation for details.
+For more information, refer to the [esp_https_server component documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/protocols/esp_https_server.html).
 
 ## How to use example
 Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
@@ -40,8 +40,14 @@ as trusted.
 You can generate a new certificate using the OpenSSL command line tool:
 
 ```
-openssl req -newkey rsa:2048 -nodes -keyout prvtkey.pem -x509 -days 3650 -out cacert.pem -subj "/CN=ESP32 HTTPS server example"
+openssl req -newkey rsa:2048 -nodes -keyout prvtkey.pem -x509 -days 3650 -out servercert.pem -subj "/CN=ESP32 HTTPS server example" -addext "keyUsage=critical,digitalSignature,keyEncipherment" -addext "subjectAltName=IP:<server_ip_address>"
 ```
+
+Replace `<server_ip_address>` with your ESP32's actual IP address (e.g., `192.168.20.178`). The Subject Alternative Name (SAN) extension is required for modern browsers to validate the certificate when connecting via IP address.
+
+**Important:** Use a static IP address for your ESP32. If the device uses a dynamic IP address, the IP may change, and you will need to regenerate the certificate with the new IP address each time it changes.
+
+**Note:** The pre-generated certificates in the `main/certs` directory do not include the SAN extension and will not work with modern browsers. You must generate new certificates with the SAN field containing your server's IP address for browser compatibility.
 
 Expiry time and metadata fields can be adjusted in the invocation.
 

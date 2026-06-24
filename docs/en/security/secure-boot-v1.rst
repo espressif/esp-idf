@@ -17,6 +17,9 @@ Secure boot is separate from the :doc:`flash-encryption` feature, and you can us
 
     Enabling secure boot limits your options for further updates of your {IDF_TARGET_NAME}. Make sure to read this document thoroughly and understand the implications of enabling secure boot.
 
+.. note::
+
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure`` based counterparts.
 
 Background
 ----------
@@ -27,7 +30,7 @@ Background
 
 - To understand the secure boot process, please familiarize yourself with the standard :doc:`../api-guides/startup`.
 
-- Both stages of the boot process, including initial software bootloader load and subsequent partition & app loading, are verified by the secure boot process, in a chain of trust relationship.
+- Both stages of the boot process, including initial second stage bootloader load and subsequent partition & app loading, are verified by the secure boot process, in a chain of trust relationship.
 
 
 Secure Boot Process Overview
@@ -39,18 +42,18 @@ This is a high-level overview of the secure boot process. Step-by-step instructi
 
 2. Secure boot defaults to signing images and partition table data during the build process. The ``Secure boot private signing key`` config item is a file path to an ECDSA public/private key pair in a PEM format file.
 
-3. The software bootloader image is built by ESP-IDF with secure boot support enabled, and the public key for signature verification is integrated into the bootloader image. This software bootloader image is flashed at offset 0x1000.
+3. The second stage bootloader image is built by ESP-IDF with secure boot support enabled, and the public key for signature verification is integrated into the bootloader image. This second stage bootloader image is flashed at offset 0x1000.
 
-4. On the first boot, the software bootloader follows the following process to enable a secure boot:
+4. On the first boot, the second stage bootloader follows the following process to enable a secure boot:
 
    - Hardware secure boot support generates a device-secure bootloader key and a secure digest. The secure bootloader key is generated with the help of the hardware RNG, and then stored in eFuse with read and write protection enabled. The digest is derived from the key, an initialization vector (IV), and the bootloader image contents.
    - The secure digest is flashed at offset 0x0 in the flash.
    - Depending on Secure Boot Configuration, eFuses are burned to disable JTAG and the ROM BASIC interpreter. It is **strongly recommended** that these options are turned on.
-   - Bootloader permanently enables secure boot by burning the ABS_DONE_0 eFuse. The software bootloader then becomes protected. After this point, the chip will only boot a bootloader image if the digest matches.
+   - Bootloader permanently enables secure boot by burning the ABS_DONE_0 eFuse. The second stage bootloader then becomes protected. After this point, the chip will only boot a bootloader image if the digest matches.
 
-5. On subsequent boots, the ROM bootloader sees that the secure boot eFuse is burned, reads the saved digest at 0x0, and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, and the calculated digest is not readable by software. For technical details see :ref:`secure-boot-hardware-support`.
+5. On subsequent boots, the first stage (ROM) bootloader sees that the secure boot eFuse is burned, reads the saved digest at 0x0, and uses hardware secure boot support to compare it with a newly calculated digest. If the digest does not match then booting will not continue. The digest and comparison are performed entirely by hardware, and the calculated digest is not readable by software. For technical details see :ref:`secure-boot-hardware-support`.
 
-6. When running in secure boot mode, the software bootloader uses the secure boot signing key, the public key of which is embedded in the bootloader itself and therefore validated as part of the bootloader, to verify the signature appended to all subsequent partition tables and app images before they are booted.
+6. When running in secure boot mode, the second stage bootloader uses the secure boot signing key, the public key of which is embedded in the bootloader itself and therefore validated as part of the bootloader, to verify the signature appended to all subsequent partition tables and app images before they are booted.
 
 
 Keys
@@ -70,7 +73,7 @@ The following keys are used by the secure boot process:
 
 - ``secure boot signing key`` is a standard ECDSA public/private key pair in PEM format, see :ref:`secure-boot-image-signing-algorithm`.
 
-  - The public key from this key pair is compiled into the software bootloader. It is only used for signature verification purposes and not signature creation. This public key is used to verify the second stage of booting, including the partition table and app image, before booting continues. The public key can be freely distributed; it does not need to be kept secret.
+  - The public key from this key pair is compiled into the second stage bootloader. It is only used for signature verification purposes and not signature creation. This public key is used to verify the second stage of booting, including the partition table and app image, before booting continues. The public key can be freely distributed; it does not need to be kept secret.
 
   - The private key from this key pair **must be securely kept private**, as anyone who has this key can authenticate to any bootloader that is configured with a secure boot and the matching public key.
 
@@ -92,7 +95,7 @@ How to Enable Secure Boot
 
 3. Set other menuconfig options as desired. Pay particular attention to the ``Bootloader Config`` options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
 
-4. When you run ``idf.py build`` for the first time, if the signing key is not found, then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
+4. When you run ``idf.py build`` for the first time, if the signing key is not found, then an error message will be printed with a command to generate a signing key via ``idf.py secure-generate-signing-key``.
 
 .. important::
 
@@ -102,7 +105,7 @@ How to Enable Secure Boot
 
    For production environments, we recommend generating the key pair using OpenSSL or another industry-standard encryption program. See :ref:`secure-boot-generate-key` for more details.
 
-5. Run ``idf.py bootloader`` to build a secure boot-enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool.py write_flash``.
+5. Run ``idf.py bootloader`` to build a secure boot-enabled bootloader. The build output will include a prompt for a flashing command, using ``esptool write-flash``.
 
 .. _secure-boot-resume-normal-flashing:
 
@@ -114,7 +117,7 @@ How to Enable Secure Boot
 
   ``idf.py flash`` does not flash the bootloader if secure boot is enabled.
 
-8. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
+8. Reset the {IDF_TARGET_NAME} and it will boot the second stage bootloader you flashed. The second stage bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
 .. note::
 
@@ -124,13 +127,13 @@ How to Enable Secure Boot
 
   If {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
-9. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed using the secure bootloader key, and then the software bootloader will verify the signed partition table and app image using the public key portion of the secure boot signing key.
+9. On subsequent boots, the secure boot hardware will verify the second stage bootloader has not changed using the secure bootloader key, and then the second stage bootloader will verify the signed partition table and app image using the public key portion of the secure boot signing key.
 
 
 .. _secure-boot-reflashable:
 
-Reflashable Software Bootloader
--------------------------------
+Reflashable Second Stage Bootloader
+-----------------------------------
 
 Configuration ``Secure Boot: One-Time Flash`` is the recommended configuration for production devices. In this mode, each device gets a unique key that is never stored outside the device.
 
@@ -146,11 +149,11 @@ To enable a reflashable bootloader:
 
 1. In the :ref:`project-configuration-menu`, select ``Bootloader Config`` > :ref:`CONFIG_SECURE_BOOT` > ``CONFIG_SECURE_BOOT_V1_ENABLED`` > :ref:`CONFIG_SECURE_BOOTLOADER_MODE` > ``Reflashable``.
 
-2. If necessary, set the :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING` based on the coding scheme used by the device. The coding scheme is shown in the ``Features`` line when ``esptool.py`` connects to the chip, or in the ``espefuse.py summary`` output.
+2. If necessary, set the :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING` based on the coding scheme used by the device. The coding scheme is shown in the ``Features`` line when ``esptool`` connects to the chip, or in the ``idf.py efuse-summary`` output.
 
 3. Please follow the steps shown in :ref:`secure-boot-generate-key` to generate the signing key. The path of the generated key file must be specified in the ``Secure Boot Configuration`` menu.
 
-4. Run ``idf.py bootloader``. A binary key file will be created, derived from the private key that is used for signing. Two sets of flashing steps will be printed. The first set of steps includes an ``espefuse.py burn_key secure_boot_v1 path_to/secure-bootloader-key-xxx.bin`` command which is used to write the bootloader key to eFuse. Flashing this key is a one-time-only process. The second set of steps can be used to reflash the bootloader with a pre-calculated digest, which is generated during the build process.
+4. Run ``idf.py bootloader``. A binary key file will be created, derived from the private key that is used for signing. Two sets of flashing steps will be printed. The first set of steps includes an ``idf.py efuse-burn-key secure_boot_v1 path_to/secure-bootloader-key-xxx.bin`` command which is used to write the bootloader key to eFuse. Flashing this key is a one-time-only process. The second set of steps can be used to reflash the bootloader with a pre-calculated digest, which is generated during the build process.
 
 5. Resume from :ref:`Step 6 of the one-time flashing process <secure-boot-resume-normal-flashing>`, to flash the bootloader and enable secure boot. Watch the console log output closely to ensure there were no errors in the secure boot configuration.
 
@@ -160,7 +163,7 @@ To enable a reflashable bootloader:
 Generating Secure Boot Signing Key
 ----------------------------------
 
-The build system will prompt you with a command to generate a new signing key via ``espsecure.py generate_signing_key``. This uses the python-ecdsa library, which in turn uses Python's ``os.urandom()`` as a random number source.
+The build system will prompt you with a command to generate a new signing key via ``idf.py secure-generate-signing-key``. This uses the python-ecdsa library, which in turn uses Python's ``os.urandom()`` as a random number source.
 
 The strength of the signing key is proportional to the random number source of the system, and the correctness of the algorithm used. For production devices, we recommend generating signing keys from a system with a quality entropy source and using the best available EC key generation utilities.
 
@@ -178,7 +181,7 @@ Remember that the strength of the secure boot system depends on keeping the sign
 Remote Signing of Images
 ------------------------
 
-For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine, which is the default ESP-IDF secure boot configuration. The ``espsecure.py`` command line program can be used to sign app images & partition table data for secure boot, on a remote system.
+For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine, which is the default ESP-IDF secure boot configuration. The ``espsecure`` command line program can be used to sign app images & partition table data for secure boot, on a remote system.
 
 To use remote signing, disable the option ``Sign binaries during build``. The private signing key does not need to be present on the build system. However, the public signature verification key is required because it is compiled into the bootloader, and can be used to verify image signatures during OTA updates.
 
@@ -186,21 +189,21 @@ To extract the public key from the private key:
 
 .. code-block::
 
-  espsecure.py extract_public_key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
+  espsecure extract-public-key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
 
 The path to the public signature verification key needs to be specified in the menuconfig under ``Secure boot public signature verification key`` in order to build the secure bootloader.
 
-After the app image and partition table are built, the build system will print signing steps using ``espsecure.py``:
+After the app image and partition table are built, the build system will print signing steps using ``idf.py``:
 
 .. code-block::
 
-  espsecure.py sign_data --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
+  idf.py secure-sign-data --version 1 --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
 
 The above command appends the image signature to the existing binary. You can use the `--output` argument to write the signed binary to a separate file:
 
 .. code-block::
 
-  espsecure.py sign_data --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
+  idf.py secure-sign-data --version 1 --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
 
 Secure Boot Best Practices
@@ -208,7 +211,7 @@ Secure Boot Best Practices
 
 * Generate the signing key on a system with a quality source of entropy.
 * Keep the signing key private at all times. A leak of this key will compromise the secure boot system.
-* Do not allow any third party to observe any aspects of the key generation or signing process using ``espsecure.py``. Both processes are vulnerable to timing or other side-channel attacks.
+* Do not allow any third party to observe any aspects of the key generation or signing process using ``espsecure`` or ``idf.py secure-`` subcommands. Both processes are vulnerable to timing or other side-channel attacks.
 * Enable all secure boot options in Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpreter, and disabling the UART bootloader encrypted flash access.
 * Use secure boot in combination with :doc:`flash-encryption` to prevent local readout of the flash contents.
 
@@ -226,7 +229,7 @@ The following sections contain low-level reference descriptions of various secur
 Secure Boot Hardware Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The first stage of secure boot verification, i.e., checking the software bootloader, is done via hardware. The {IDF_TARGET_NAME}'s secure boot support hardware can perform three basic operations:
+The first stage of secure boot verification, i.e., checking the second stage bootloader, is done via hardware. The {IDF_TARGET_NAME}'s secure boot support hardware can perform three basic operations:
 
 1. Generate a random sequence of bytes from a hardware random number generator.
 
@@ -242,7 +245,7 @@ Secure Bootloader Digest Algorithm
 
 Starting with an "image" of binary data as input, this algorithm generates a digest as output. The digest is sometimes referred to as an "abstract" in hardware documentation.
 
-For a Python version of this algorithm, see the ``espsecure.py`` tool in the :component:`/esptool_py` directory. Specifically, the ``digest_secure_bootloader`` command.
+For a Python version of this algorithm, see the ``espsecure`` tool in the :component:`/esptool_py` directory. Specifically, the ``digest-secure-bootloader`` command.
 
 Items marked with (^) are to fulfill hardware restrictions, as opposed to cryptographic restrictions.
 
@@ -284,13 +287,13 @@ Manual Commands
 
 Secure boot is integrated into the ESP-IDF build system, so ``idf.py build`` will automatically sign an app image if secure boot is enabled. ``idf.py bootloader`` will produce a bootloader digest if menuconfig is configured for it.
 
-However, it is possible to use the ``espsecure.py`` tool to make standalone signatures and digests.
+However, it is possible to use the ``idf.py secure-`` subcommands to make standalone signatures and digests.
 
 To sign a binary image:
 
 .. code-block::
 
-  espsecure.py sign_data --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
+  idf.py secure-sign-data --version 1 --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
 
 The keyfile is the PEM file containing an ECDSA private signing key.
 
@@ -298,15 +301,15 @@ To generate a bootloader digest:
 
 .. code-block::
 
-  espsecure.py digest_secure_bootloader --keyfile ./securebootkey.bin --output ./bootloader-digest.bin build/bootloader/bootloader.bin
+  idf.py secure-digest-secure-bootloader --keyfile ./securebootkey.bin --output ./bootloader-digest.bin bootloader/bootloader.bin
 
 The keyfile is the 32-byte raw secure boot key for the device.
 
-The output of the ``espsecure.py digest_secure_bootloader`` command is a single file that contains both the digest and the bootloader appended to it. To flash the combined digest plus bootloader to the device:
+The output of the ``idf.py secure-digest-secure-bootloader`` command is a single file that contains both the digest and the bootloader appended to it. To flash the combined digest plus bootloader to the device:
 
 .. code-block::
 
-  esptool.py write_flash 0x0 bootloader-digest.bin
+  esptool write-flash 0x0 bootloader-digest.bin
 
 
 .. _secure-boot-and-flash-encr:

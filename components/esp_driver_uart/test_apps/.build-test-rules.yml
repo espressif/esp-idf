@@ -4,25 +4,39 @@ components/esp_driver_uart/test_apps/rs485:
   disable:
     - if: SOC_UART_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET not in ["esp32", "esp32h2"]
       temporary: true
       reason: lack of runners
   depends_components:
     - esp_driver_uart
+    - esp_hal_uart
     - esp_driver_gpio
+    - esp_hw_support
+    - soc
 
 components/esp_driver_uart/test_apps/uart:
   disable:
     - if: SOC_UART_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8971
   depends_components:
     - esp_driver_uart
+    - esp_hal_uart
     - esp_driver_gpio
+    - esp_hw_support
+    - soc
 
 components/esp_driver_uart/test_apps/uart_vfs:
   depends_components:
     - esp_driver_uart
+    - esp_hal_uart
     - vfs
+    - esp_hw_support
+    - soc
+
+components/esp_driver_uart/test_apps/uhci:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_uart
+    - esp_driver_dma
+    - esp_hw_support
+    - soc

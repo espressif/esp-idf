@@ -1,17 +1,17 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import datetime
 import logging
-from typing import Any, Tuple
+from typing import Any
 
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.wifi_ap
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_get_time_from_sntp_server(dut: Dut) -> None:
     dut.expect('Time is not set yet. Connecting to WiFi and getting time over NTP.')
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
@@ -20,7 +20,7 @@ def test_get_time_from_sntp_server(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    dut.expect('IPv4 address:')
+    dut.expect('IPv4 address:', timeout=60)
 
     dut.expect('Initializing and starting SNTP')
     dut.expect('Notification of a time synchronization event')
@@ -31,11 +31,11 @@ def test_get_time_from_sntp_server(dut: Dut) -> None:
     NY_time = None
     SH_time = None
 
-    def check_time(prev_NY_time: Any, prev_SH_time: Any) -> Tuple[Any, Any]:
-        NY_str = dut.expect(r'The current date/time in New York is: ({})'.format(TIME_FORMAT_REGEX))[1].decode()
-        SH_str = dut.expect(r'The current date/time in Shanghai is: ({})'.format(TIME_FORMAT_REGEX))[1].decode()
-        logging.info('New York: "{}"'.format(NY_str))
-        logging.info('Shanghai: "{}"'.format(SH_str))
+    def check_time(prev_NY_time: Any, prev_SH_time: Any) -> tuple[Any, Any]:
+        NY_str = dut.expect(rf'The current date/time in New York is: ({TIME_FORMAT_REGEX})')[1].decode()
+        SH_str = dut.expect(rf'The current date/time in Shanghai is: ({TIME_FORMAT_REGEX})')[1].decode()
+        logging.info(f'New York: "{NY_str}"')
+        logging.info(f'Shanghai: "{SH_str}"')
         dut.expect('Entering deep sleep for 10 seconds')
         logging.info('Sleeping...')
         new_NY_time = datetime.datetime.strptime(NY_str, TIME_FORMAT)
@@ -49,5 +49,5 @@ def test_get_time_from_sntp_server(dut: Dut) -> None:
 
     NY_time, SH_time = check_time(NY_time, SH_time)
     for i in range(2, 4):
-        dut.expect('example: Boot count: {}'.format(i), timeout=30)
+        dut.expect(f'example: Boot count: {i}', timeout=30)
         NY_time, SH_time = check_time(NY_time, SH_time)

@@ -1,12 +1,10 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py efuse-summary
 
-    espefuse.py v4.6-dev
-    Connecting....
-    Detecting chip type... ESP32-C3
+    Executing action: efuse-summary
+    (...)
 
-    === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Calibration fuses:
@@ -80,8 +78,8 @@
                                                        oot_mode[3:0] is 0; 1; 2; 3; 6; 7)
     DIS_FORCE_DOWNLOAD (BLOCK0)                        Set this bit to disable the function that forces c = False R/W (0b0)
                                                        hip into download mode
-    DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)               Set this bit to disable flash encryption when in d = False R/W (0b0)
-                                                       ownload boot modes
+    DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)               Set this bit to disable flash encryption when in   = False R/W (0b0)
+                                                       download boot modes
     SPI_BOOT_CRYPT_CNT (BLOCK0)                        Enables flash encryption when 1 or 3 bits are set  = Disable R/W (0b000)
                                                        and disables otherwise
     SECURE_BOOT_KEY_REVOKE0 (BLOCK0)                   Revoke 1st secure boot key                         = False R/W (0b0)
@@ -99,8 +97,8 @@
     DIS_DOWNLOAD_MODE (BLOCK0)                         Set this bit to disable download mode (boot_mode[3 = False R/W (0b0)
                                                        :0] = 0; 1; 2; 3; 6; 7)
     ENABLE_SECURITY_DOWNLOAD (BLOCK0)                  Set this bit to enable secure UART download mode   = False R/W (0b0)
-    SECURE_VERSION (BLOCK0)                            Secure version (used by ESP-IDF anti-rollback feat = 0 R/W (0x0000)
-                                                       ure)
+    SECURE_VERSION (BLOCK0)                            Secure version (used by ESP-IDF anti-rollback      = 0 R/W (0x0000)
+                                                       feature)
     BLOCK_KEY0 (BLOCK4)
       Purpose: USER
                    Key0 or user data
@@ -153,31 +151,3 @@
     Wdt fuses:
     WDT_DELAY_SEL (BLOCK0)                             RTC watchdog timeout threshold; in unit of slow cl = 40000 R/W (0b00)
                                                        ock cycle
-
-
-To get a dump for all eFuse registers.
-
-.. code-block:: none
-
-    espefuse.py -p PORT dump
-
-    espefuse.py v4.6-dev
-    Connecting....
-    Detecting chip type... ESP32-C3
-    BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 80000000 00000000
-    MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: 790f968c 000058cf 00000000 020c0000 715424e0 0047d2f2
-    BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: 96046025 6f41fdc3 512cedbe 217ee31d d864ea41 5aba3a86 1e260363 00000009
-    BLOCK_USR_DATA  (BLOCK3          ) [3 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY0      (BLOCK4          ) [4 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY1      (BLOCK5          ) [5 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY2      (BLOCK6          ) [6 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY3      (BLOCK7          ) [7 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY4      (BLOCK8          ) [8 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_KEY5      (BLOCK9          ) [9 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-    BLOCK_SYS_DATA2 (BLOCK10         ) [10] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-
-    BLOCK0          (                ) [0 ] err__regs: 00000000 00000000 00000000 00000000 00000000 00000000
-    EFUSE_RD_RS_ERR0_REG        0x00000000
-    EFUSE_RD_RS_ERR1_REG        0x00000000
-
-    === Run "dump" command ===

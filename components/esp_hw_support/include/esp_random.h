@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,8 +22,10 @@ extern "C" {
  * Guide "Random Number Generation" section for necessary prerequisites.
  *
  * This function automatically busy-waits to ensure enough external entropy has been
- * introduced into the hardware RNG state, before returning a new random number. This delay
- * is very short (always less than 100 CPU cycles).
+ * introduced into the hardware RNG state, before returning a new random number.
+ * This delay makes sure the reading frequency does not exceed 15-75 KHz. The actual
+ * value is dependent on the specific chip. More information on this can be found in
+ * components/esp_hw_support/hw_random.c.
  *
  * @return Random value between 0 and UINT32_MAX
  */

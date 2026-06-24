@@ -30,7 +30,6 @@ extern "C" {
 #define PWDET_SAR_POWER_FORCE BIT(7)
 #define PWDET_SAR_POWER_CNTL  BIT(6)
 
-
 typedef enum {
     SAR_CTRL_LL_POWER_FSM,     //SAR power controlled by FSM
     SAR_CTRL_LL_POWER_ON,      //SAR power on
@@ -76,7 +75,6 @@ static inline void sar_ctrl_ll_set_power_mode_from_pwdet(sar_ctrl_ll_power_t mod
         REG_CLR_BIT(PWDET_CONF_REG, PWDET_SAR_POWER_CNTL);
     }
 }
-
 
 #ifdef __cplusplus
 }

@@ -1,14 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 #include "driver/gpio.h"
+#include "gpio_pcm_config.h"
+
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
-#include "gpio_pcm_config.h"
 #include "esp_rom_gpio.h"
+#endif
+
+#if CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
 
 #define GPIO_OUTPUT_PCM_FSYNC      (25)
 #define GPIO_OUTPUT_PCM_CLK_OUT    (5)
@@ -30,9 +35,9 @@ void app_gpio_pcm_io_cfg(void)
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = GPIO_OUTPUT_PCM_PIN_SEL;
     //disable pull-down mode
-    io_conf.pull_down_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //disable pull-up mode
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
@@ -44,8 +49,8 @@ void app_gpio_pcm_io_cfg(void)
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //enable pull-up mode
-    io_conf.pull_up_en = 0;
-    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 
@@ -55,6 +60,7 @@ void app_gpio_pcm_io_cfg(void)
     esp_rom_gpio_connect_out_signal(GPIO_OUTPUT_PCM_DOUT, PCMDOUT_IDX, false, false);
     esp_rom_gpio_connect_in_signal(GPIO_INPUT_PCM_DIN, PCMDIN_IDX, false);
 }
+#endif /* CONFIG_EXAMPLE_HFP_PCM_GPIO_SUPPORTED && CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM */
 
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
 
@@ -73,9 +79,9 @@ void app_gpio_aec_io_cfg(void)
     //bit mask of the pins that you want to set,e.g.GPIO18/19
     io_conf.pin_bit_mask = GPIO_OUTPUT_AEC_PIN_SEL;
     //disable pull-down mode
-    io_conf.pull_down_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     //disable pull-up mode
-    io_conf.pull_up_en = 0;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     //configure GPIO with the given settings
     gpio_config(&io_conf);
 

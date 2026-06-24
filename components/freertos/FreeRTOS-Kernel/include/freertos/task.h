@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -204,7 +204,6 @@ typedef enum
  * \ingroup Tasks
  */
 #define tskNO_AFFINITY      ( ( BaseType_t ) 0x7FFFFFFF )
-/* Todo: Update tskNO_AFFINITY value to -1 (IDF-7908) */
 
 /**
  * Macro to check if an xCoreID value is valid
@@ -452,10 +451,9 @@ typedef enum
  * Example usage:
  * @code{c}
  *
- *  // Dimensions of the buffer that the task being created will use as its stack.
- *  // NOTE:  This is the number of words the stack will hold, not the number of
- *  // bytes.  For example, if each stack item is 32-bits, and this is set to 100,
- *  // then 400 bytes (100 * 32-bits) will be allocated.
+ *  // Dimensions the buffer that the task being created will use as its stack.
+ *  // NOTE:  This is the number of bytes the stack will hold, not the number of
+ *  // words as found in vanilla FreeRTOS.
  #define STACK_SIZE 200
  *
  *  // Structure that will hold the TCB of the task being created.
@@ -488,7 +486,7 @@ typedef enum
  *      xHandle = xTaskCreateStatic(
  *                    vTaskCode,       // Function that implements the task.
  *                    "NAME",          // Text name for the task.
- *                    STACK_SIZE,      // Stack size in words, not bytes.
+ *                    STACK_SIZE,      // Stack size in bytes.
  *                    ( void * ) 1,    // Parameter passed into the task.
  *                    tskIDLE_PRIORITY,// Priority at which the task is created.
  *                    xStack,          // Array to use as the task's stack.
@@ -574,7 +572,7 @@ typedef enum
  * {
  *  vATask,     // pvTaskCode - the function that implements the task.
  *  "ATask",    // pcName - just a text name for the task to assist debugging.
- *  100,        // usStackDepth - the stack size DEFINED IN WORDS.
+ *  100,        // usStackDepth - the stack size DEFINED IN BYTES.
  *  NULL,       // pvParameters - passed into the task function as the function parameters.
  *  ( 1UL | portPRIVILEGE_BIT ),// uxPriority - task priority, set the portPRIVILEGE_BIT if the task should run in a privileged state.
  *  cStackBuffer,// puxStackBuffer - the buffer to be used as the task stack.
@@ -657,7 +655,7 @@ typedef enum
  * {
  *  vATask,     // pvTaskCode - the function that implements the task.
  *  "ATask",    // pcName - just a text name for the task to assist debugging.
- *  100,        // usStackDepth - the stack size DEFINED IN WORDS.
+ *  100,        // usStackDepth - the stack size DEFINED IN BYTES.
  *  NULL,       // pvParameters - passed into the task function as the function parameters.
  *  ( 1UL | portPRIVILEGE_BIT ),// uxPriority - task priority, set the portPRIVILEGE_BIT if the task should run in a privileged state.
  *  cStackBuffer,// puxStackBuffer - the buffer to be used as the task stack.
@@ -1494,9 +1492,9 @@ TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION; /
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in words, so on a 32 bit machine
- * a value of 1 means 4 bytes) since the task started.  The smaller the returned
- * number the closer the task has come to overflowing its stack.
+ * the minimum free stack space there has been in bytes (as opposed to words
+ * in the standard FreeRTOS documentation) since the task started.  The smaller
+ * the returned number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
  * same except for their return type.  Using configSTACK_DEPTH_TYPE allows the
@@ -1507,9 +1505,9 @@ TaskHandle_t xTaskGetHandle( const char * pcNameToQuery ) PRIVILEGED_FUNCTION; /
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in words, so
- * actual spaces on the stack rather than bytes) since the task referenced by
- * xTask was created.
+ * @return The smallest amount of free stack space there has been in bytes
+ * (as opposed to words in the standard FreeRTOS documentation) since the task
+ * referenced by xTask was created.
  */
 UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
@@ -1519,9 +1517,9 @@ UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTIO
  * this function to be available.
  *
  * Returns the high water mark of the stack associated with xTask.  That is,
- * the minimum free stack space there has been (in words, so on a 32 bit machine
- * a value of 1 means 4 bytes) since the task started.  The smaller the returned
- * number the closer the task has come to overflowing its stack.
+ * the minimum free stack space there has been in bytes (as opposed to words in
+ * the standard FreeRTOS documentation) since the task started.  The smaller the
+ * returned number the closer the task has come to overflowing its stack.
  *
  * uxTaskGetStackHighWaterMark() and uxTaskGetStackHighWaterMark2() are the
  * same except for their return type.  Using configSTACK_DEPTH_TYPE allows the
@@ -1532,9 +1530,9 @@ UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask ) PRIVILEGED_FUNCTIO
  * @param xTask Handle of the task associated with the stack to be checked.
  * Set xTask to NULL to check the stack of the calling task.
  *
- * @return The smallest amount of free stack space there has been (in words, so
- * actual spaces on the stack rather than bytes) since the task referenced by
- * xTask was created.
+ * @return The smallest amount of free stack space there has been in bytes
+ * (as opposed to words in the standard FreeRTOS documentation) since the task
+ * referenced by xTask was created.
  */
 configSTACK_DEPTH_TYPE uxTaskGetStackHighWaterMark2( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 

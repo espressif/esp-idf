@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,10 +17,10 @@
 #include "freertos/semphr.h"
 #include "freertos/stream_buffer.h"
 #include "freertos/message_buffer.h"
-#include "freertos/event_groups.h"
-#include "freertos/timers.h"
 #include "freertos/idf_additions.h"
 #include "esp_heap_caps.h"
+#include "esp_log.h"
+#include "freertos/portmacro.h"
 
 /* -------------------------------------------- Creation With Memory Caps ------------------------------------------- */
 
@@ -47,7 +47,7 @@
 
         /* Allocate memory for the task's stack using the provided memory caps
          * */
-        pxStack = heap_caps_malloc( usStackDepth, ( uint32_t ) uxMemoryCaps );
+        pxStack = heap_caps_malloc( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ), ( uint32_t ) uxMemoryCaps );
 
         if( ( pxTaskBuffer == NULL ) || ( pxStack == NULL ) )
         {
@@ -81,21 +81,132 @@ err:
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
-    void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
+    static void prvTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticTask_t * pxTaskBuffer;
         StackType_t * puxStackBuffer;
 
-        xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
-        configASSERT( xResult == pdTRUE );
+        /* The task to be deleted must not be running.
+         * So we suspend the task before deleting it. */
+        vTaskSuspend( xTaskToDelete );
 
-        /* Delete the task */
+        /* Wait until the task is no longer the current task on any core.
+         *
+         * Polling on pxCurrentTCBs[] (via xTaskGetCurrentTaskHandleForCore())
+         * matches the predicate vTaskDelete() uses to choose between immediate
+         * and IDLE-deferred TCB cleanup. By waiting on it here, we guarantee
+         * that the vTaskDelete() call below takes the immediate path and that
+         * prvDeleteTCB() runs synchronously before vTaskDelete() returns, so
+         * the heap_caps_free() / vPortFree() that follow cannot race with the
+         * IDLE task. */
+        for( ;; )
+        {
+            BaseType_t xStillOnCore = pdFALSE;
+
+            for( BaseType_t xCoreID = 0; xCoreID < configNUMBER_OF_CORES; xCoreID++ )
+            {
+                if( xTaskGetCurrentTaskHandleForCore( xCoreID ) == xTaskToDelete )
+                {
+                    xStillOnCore = pdTRUE;
+                    break;
+                }
+            }
+
+            if( xStillOnCore == pdFALSE )
+            {
+                break;
+            }
+
+            taskYIELD();
+        }
+
+        /* We can delete the task and free the memory buffers.
+         * First, we must call `vTaskDelete` so that the port task delete callback is called.
+         * On targets that have coprocessors, it may be possible that the stack pointer is modified (restored)
+         * during this phase, hence, it must be done before getting the statuc buffers out of the task. */
         vTaskDelete( xTaskToDelete );
 
         /* Free the memory buffers */
+        xResult = xTaskGetStaticBuffers( xTaskToDelete, &puxStackBuffer, &pxTaskBuffer );
+        configASSERT( xResult == pdTRUE );
+        configASSERT( puxStackBuffer != NULL );
+        configASSERT( pxTaskBuffer != NULL );
+
         heap_caps_free( puxStackBuffer );
         vPortFree( pxTaskBuffer );
+    }
+
+    static void prvTaskDeleteWithCapsTask( void * pvParameters )
+    {
+        TaskHandle_t xTaskToDelete = ( TaskHandle_t ) pvParameters;
+
+        /* Delete the WithCaps task */
+        prvTaskDeleteWithCaps( xTaskToDelete );
+
+        /* Delete the temporary clean up task */
+        vTaskDelete( NULL );
+    }
+
+    void vTaskDeleteWithCaps( TaskHandle_t xTaskToDelete )
+    {
+        /* THIS FUNCTION SHOULD NOT BE CALLED FROM AN INTERRUPT CONTEXT. */
+        /* TODO: Update it to use portASSERT_IF_IN_ISR() instead. (IDF-10540) */
+        vPortAssertIfInISR();
+
+        TaskHandle_t xCurrentTaskHandle = xTaskGetCurrentTaskHandle();
+        configASSERT( xCurrentTaskHandle != NULL );
+
+        if( ( xTaskToDelete == NULL ) || ( xTaskToDelete == xCurrentTaskHandle ) )
+        {
+            /* The WithCaps task is deleting itself. While, the task can put itself on the
+             * xTasksWaitingTermination list via the vTaskDelete() call, the idle
+             * task will not free the task TCB and stack memories we created statically
+             * during xTaskCreateWithCaps() or xTaskCreatePinnedToCoreWithCaps(). This
+             * task will never be rescheduled once it is on the xTasksWaitingTermination
+             * list and will not be able to clear the memories. Therefore, it will leak memory.
+             *
+             * To avoid this, we create a new "temporary clean up" task to delete the current task.
+             * This task is created at the priority of the task to be deleted with the same core
+             * affitinty. Its limited purpose is to delete the self-deleting task created WithCaps.
+             *
+             * This approach has the following problems -
+             * 1. Once a WithCaps task deletes itself via vTaskDeleteWithCaps(), it may end up in the
+             *    suspended tasks lists for a short time before being deleted. This can give an incorrect
+             *    picture about the system state.
+             *
+             * 2. This approach is wasteful and can be error prone. The temporary clean up task will need
+             *    system resources to get scheduled and cleanup the WithCaps task. It can be a problem if the system
+             *    has several self-deleting WithCaps tasks.
+             *
+             * TODO: A better approach could be either -
+             *
+             * 1. Delegate memory management to the application/user. This way the kernel needn't bother about freeing
+             *    the memory (like other static memory task creation APIs like xTaskCreateStatic()) (IDF-10521)
+             *
+             * 2. Have a post deletion hook/callback from the IDLE task to notify higher layers when it is safe to
+             *    perform activities such as clearing up the TCB and stack memories. (IDF-10522) */
+            if( xTaskCreatePinnedToCore( ( TaskFunction_t ) prvTaskDeleteWithCapsTask, "prvTaskDeleteWithCapsTask", configMINIMAL_STACK_SIZE, xCurrentTaskHandle, uxTaskPriorityGet( xTaskToDelete ), NULL, xPortGetCoreID() ) != pdFAIL )
+            {
+                /* Although the current task should get preemted immediately when prvTaskDeleteWithCapsTask is created,
+                 * for safety, we suspend the current task and wait for prvTaskDeleteWithCapsTask to delete it. */
+                vTaskSuspend( xTaskToDelete );
+
+                /* Should never reach here */
+                ESP_LOGE( "freertos_additions", "%s: Failed to suspend the task to be deleted", __func__ );
+                abort();
+            }
+            else
+            {
+                /* Failed to create the task to delete the current task. */
+                ESP_LOGE( "freertos_additions", "%s: Failed to create the task to delete the current task", __func__ );
+                abort();
+            }
+        }
+
+        /* Delete the WithCaps task */
+        prvTaskDeleteWithCaps( xTaskToDelete );
     }
 
 #endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
@@ -153,7 +264,8 @@ err:
 
     void vQueueDeleteWithCaps( QueueHandle_t xQueue )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticQueue_t * pxQueueBuffer;
         uint8_t * pucQueueStorageBuffer;
 
@@ -225,7 +337,8 @@ err:
 
     void vSemaphoreDeleteWithCaps( SemaphoreHandle_t xSemaphore )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticSemaphore_t * pxSemaphoreBuffer;
 
         /* Retrieve the buffer used to create the semaphore before deleting it
@@ -297,7 +410,8 @@ err:
     void vStreamBufferGenericDeleteWithCaps( StreamBufferHandle_t xStreamBuffer,
                                              BaseType_t xIsMessageBuffer )
     {
-        BaseType_t xResult;
+        /* Return value unused if asserts are disabled */
+        BaseType_t __attribute__( ( unused ) ) xResult;
         StaticStreamBuffer_t * pxStaticStreamBuffer;
         uint8_t * pucStreamBufferStorageArea;
 
@@ -327,59 +441,6 @@ err:
         /* Free the memory buffers */
         heap_caps_free( pxStaticStreamBuffer );
         heap_caps_free( pucStreamBufferStorageArea );
-    }
-
-#endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
-/*----------------------------------------------------------*/
-
-/* ------------------------------ Event Groups ------------------------------ */
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    EventGroupHandle_t xEventGroupCreateWithCaps( UBaseType_t uxMemoryCaps )
-    {
-        EventGroupHandle_t xEventGroup;
-        StaticEventGroup_t * pxEventGroupBuffer;
-
-        /* Allocate memory for the event group using the provided memory caps */
-        pxEventGroupBuffer = heap_caps_malloc( sizeof( StaticEventGroup_t ), uxMemoryCaps );
-
-        if( pxEventGroupBuffer == NULL )
-        {
-            return NULL;
-        }
-
-        /* Create the event group using static creation API */
-        xEventGroup = xEventGroupCreateStatic( pxEventGroupBuffer );
-
-        if( xEventGroup == NULL )
-        {
-            heap_caps_free( pxEventGroupBuffer );
-        }
-
-        return xEventGroup;
-    }
-
-#endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */
-/*----------------------------------------------------------*/
-
-#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-
-    void vEventGroupDeleteWithCaps( EventGroupHandle_t xEventGroup )
-    {
-        BaseType_t xResult;
-        StaticEventGroup_t * pxEventGroupBuffer;
-
-        /* Retrieve the buffer used to create the event group before deleting it
-         * */
-        xResult = xEventGroupGetStaticBuffer( xEventGroup, &pxEventGroupBuffer );
-        configASSERT( xResult == pdTRUE );
-
-        /* Delete the event group */
-        vEventGroupDelete( xEventGroup );
-
-        /* Free the memory buffer */
-        heap_caps_free( pxEventGroupBuffer );
     }
 
 #endif /* if ( configSUPPORT_STATIC_ALLOCATION == 1 ) */

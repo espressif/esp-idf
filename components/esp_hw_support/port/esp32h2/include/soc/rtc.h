@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,9 +54,6 @@ extern "C" {
 #define RTC_SLOW_CLK_32K_CAL_TIMEOUT_THRES(cycles)   (cycles << 12)
 #define RTC_FAST_CLK_8M_CAL_TIMEOUT_THRES(cycles)    (TIMG_RTC_CALI_TIMEOUT_THRES_V) // Just use the max timeout thres value
 
-#define OTHER_BLOCKS_POWERUP        1
-#define OTHER_BLOCKS_WAIT           1
-
 /* Delays for various clock sources to be enabled/switched.
  * All values are in microseconds.
  */
@@ -68,45 +65,9 @@ extern "C" {
 #define SOC_DELAY_LP_PLL_SWITCH             3
 #define SOC_DELAY_LP_PLL_ENABLE             50
 
-#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
-#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
-
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT  860
 #define RTC_CNTL_SCK_DCAP_DEFAULT    85
 #define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
-
-/* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
-#define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (1)
-#define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
-#define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
-#define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
-#define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
-#define RTC_CNTL_MIN_SLP_VAL_MIN                (2)
-
-/*
-set sleep_init default param
-*/
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
-#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
-#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
-#define RTC_CNTL_BIASSLP_SLEEP_ON  0
-#define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
-#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
-#define RTC_CNTL_PD_CUR_SLEEP_ON  0
-#define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
-#define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
-
-/*
-The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
-storing in efuse (based on ATE 5k ECO3 chips)
-*/
-#define K_RTC_MID_MUL10000 215
-#define K_DIG_MID_MUL10000 213
-#define V_RTC_MID_MUL10000  10800
-#define V_DIG_MID_MUL10000  10860
 
 /**
  * @brief CPU clock configuration structure
@@ -120,24 +81,12 @@ typedef struct rtc_cpu_freq_config_s {
 
 #define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
 
-#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
-#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
-
-/**
- * @brief Clock source to be calibrated using rtc_clk_cal function
- *
- * @note On previous targets, the enum values somehow reflects the register field values of TIMG_RTC_CALI_CLK_SEL
- *       However, this is not true on ESP32H2. The conversion to register field values is explicitly done in
- *       rtc_clk_cal_internal
- */
-typedef enum {
-    RTC_CAL_RTC_MUX = -1,                                  //!< Currently selected RTC_SLOW_CLK
-    RTC_CAL_RC_SLOW = SOC_RTC_SLOW_CLK_SRC_RC_SLOW,        //!< Internal 150kHz RC oscillator
-    RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
-    RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
-    RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpiox, as one type of 32k clock
-    RTC_CAL_RC_FAST                                        //!< Internal 8MHz RC oscillator
-} rtc_cal_sel_t;
+#define RTC_CAL_RTC_MUX _Pragma ("GCC warning \"'RTC_CAL_RTC_MUX' macro is deprecated\"") CLK_CAL_RTC_SLOW
+#define RTC_CAL_RC_SLOW _Pragma ("GCC warning \"'RTC_CAL_RC_SLOW' macro is deprecated\"") CLK_CAL_RC_SLOW
+#define RTC_CAL_RC32K _Pragma ("GCC warning \"'RTC_CAL_RC32K' macro is deprecated\"") CLK_CAL_RC32K
+#define RTC_CAL_32K_XTAL _Pragma ("GCC warning \"'RTC_CAL_32K_XTAL' macro is deprecated\"") CLK_CAL_32K_XTAL
+#define RTC_CAL_32K_OSC_SLOW _Pragma ("GCC warning \"'RTC_CAL_32K_OSC_SLOW' macro is deprecated\"") CLK_CAL_32K_OSC_SLOW
+#define RTC_CAL_RC_FAST _Pragma ("GCC warning \"'RTC_CAL_RC_FAST' macro is deprecated\"") CLK_CAL_RC_FAST
 
 /**
  * Initialization parameters for rtc_clk_init
@@ -158,8 +107,8 @@ typedef struct {
  * Default initializer for rtc_clk_config_t
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
-    .xtal_freq = SOC_XTAL_FREQ_32M, \
-    .cpu_freq_mhz = 96, \
+    .xtal_freq = CONFIG_XTAL_FREQ, \
+    .cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \
@@ -206,6 +155,11 @@ void rtc_clk_32k_enable(bool en);
  * @brief Configure 32 kHz XTAL oscillator to accept external clock signal
  */
 void rtc_clk_32k_enable_external(void);
+
+/**
+ * @brief Disable 32 kHz XTAL oscillator input.
+ */
+void rtc_clk_32k_disable_external(void);
 
 /**
  * @brief Get the state of 32k XTAL oscillator
@@ -354,8 +308,9 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
  * rtc_clk_cpu_freq_set_config when a switch to XTAL is needed.
  * Assumes that XTAL frequency has been determined — don't call in startup code.
  *
- * @note On ESP32H2, this function will check whether BBPLL can be disabled. If there is no consumer, then BBPLL will be
- * turned off. The behaviour is the same as using rtc_clk_cpu_freq_set_config to switch cpu clock source to XTAL.
+ * @note This function always disables BBPLL after switching the CPU clock source to XTAL for power saving purpose.
+ * If this is unwanted, please use rtc_clk_cpu_freq_set_config. It helps to check whether USB Serial JTAG is in use,
+ * if so, then BBPLL will not be turned off.
  */
 void rtc_clk_cpu_freq_set_xtal(void);
 
@@ -373,12 +328,12 @@ uint32_t rtc_clk_apb_freq_get(void);
  * 32k XTAL is being calibrated, but the oscillator has not started up (due to
  * incorrect loading capacitance, board design issue, or lack of 32 XTAL on board).
  *
- * @param cal_clk  clock to be measured
+ * @param cal_clk_sel  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average
  * @return average slow clock period in microseconds, Q13.19 fixed point format,
  *         or 0 if calibration has timed out
  */
-uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slow_clk_cycles);
+uint32_t rtc_clk_cal(soc_clk_freq_calculation_src_t cal_clk_sel, uint32_t slow_clk_cycles);
 
 /**
  * @brief Convert time interval from microseconds to RTC_SLOW_CLK cycles
@@ -412,15 +367,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period);
 uint64_t rtc_time_get(void);
 
 /**
- * @brief Busy loop until next RTC_SLOW_CLK cycle
- *
- * This function returns not earlier than the next RTC_SLOW_CLK clock cycle.
- * In some cases (e.g. when RTC_SLOW_CLK cycle is very close), it may return
- * one RTC_SLOW_CLK cycle later.
- */
-void rtc_clk_wait_for_slow_cycle(void);
-
-/**
  * @brief Enable the rtc digital 8M clock
  *
  * This function is used to enable the digital rtc 8M clock to support peripherals.
@@ -448,6 +394,14 @@ bool rtc_dig_8m_enabled(void);
  */
 uint32_t rtc_clk_freq_cal(uint32_t cal_val);
 
+/**
+ * @brief Calculate the slow clock period value by slow clock frequency
+ *
+ * @param freq_hz Frequency of the slow clock in Hz
+ * @return Fixed point value of slow clock period in microseconds
+ */
+uint32_t rtc_clk_freq_to_period(uint32_t freq_hz);
+
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
 // **WARNING**: The following are only for backwards compatibility.
 // Please use the declarations in soc/clk_tree_defs.h instead.
@@ -470,7 +424,7 @@ typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
  * @brief RTC FAST_CLK frequency values
  */
 typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
-#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 2
+#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_D2  //!< Main XTAL, divided by 2
 #define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 8 MHz RC oscillator
 
 /**

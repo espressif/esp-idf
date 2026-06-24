@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,10 @@ extern "C" {
 
 #include "sdkconfig.h"
 #include <stdint.h>
+#include <stdbool.h>
 #include "ulp_riscv_register_ops.h"
 #include "ulp_riscv_interrupt.h"
+#include "ulp_riscv_cpu_freq_shared.h"
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.
@@ -79,31 +81,83 @@ void ulp_riscv_timer_resume(void);
                 asm volatile("rdcycle %0;" : "=r"(__ccount)); \
                 __ccount; })
 
-#if CONFIG_IDF_TARGET_ESP32S2
-/* These are only approximate default numbers, the default frequency
-   of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting
-*/
-#define ULP_RISCV_CYCLES_PER_US 8.5
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define ULP_RISCV_CYCLES_PER_US 17.5
-#endif
-#define ULP_RISCV_CYCLES_PER_MS ULP_RISCV_CYCLES_PER_US*1000
+#define ULP_RISCV_CYCLES_PER_US ULP_RISCV_CYCLES_PER_US_NUM / ULP_RISCV_CYCLES_PER_US_DENOM
+#define ULP_RISCV_CYCLES_PER_MS 1000U * ULP_RISCV_CYCLES_PER_US
 
 /**
- * @brief Makes the co-processor busy wait for a certain number of cycles
+ * @brief Retrieves the current number of CPU cycles.
  *
- * @param cycles Number of cycles to busy wait
+ * @return The current CPU cycle count.
  */
-void static inline ulp_riscv_delay_cycles(uint32_t cycles)
+static inline uint32_t ulp_riscv_get_cpu_cycles(void)
 {
-    uint32_t start = ULP_RISCV_GET_CCOUNT();
-    /* Off with an estimate of cycles in this function to improve accuracy */
-    uint32_t end = start + cycles - 20;
+    return ULP_RISCV_GET_CCOUNT();
+}
 
-    while (ULP_RISCV_GET_CCOUNT()  < end) {
-        /* Wait */
+/**
+ * @brief Check whether an mcycle-based timeout has elapsed.
+ *
+ * @note A timeout value of -1 means "wait forever".
+ *       Other values are interpreted as unsigned cycle counts.
+ *
+ * @param start_cycle_count Cycle counter value captured at timeout start.
+ * @param cycles_to_wait Timeout in CPU cycles, or -1 to disable timeout.
+ *
+ * @return true if timeout elapsed, false otherwise.
+ */
+static inline bool ulp_riscv_is_timeout_elapsed(uint32_t start_cycle_count, int32_t cycles_to_wait)
+{
+    if (cycles_to_wait == -1) {
+        return false;
+    }
+
+    return (ulp_riscv_get_cpu_cycles() - start_cycle_count) >= (uint32_t)cycles_to_wait;
+}
+
+/**
+ * @brief Makes the co-processor busy-wait for a certain number of CPU cycles.
+ *
+ * @note This function is not accurate for delays shorter than 20 cycles because the
+ *       function overhead may exceed the requested delay.
+ *
+ * @note The maximum supported delay is 0x7FFFFFFF cycles.
+ *       For larger values, the behavior is undefined. Split longer delays into smaller
+ *       chunks if needed.
+ *
+ * For reference, this corresponds approximately to:
+ *       - ESP32-S2 ULP-RISC-V @ 8.5 MHz:  0x7FFFFFFF cycles ≈ 252.645 s
+ *       - ESP32-S3 ULP-RISC-V @ 17.5 MHz: 0x7FFFFFFF cycles ≈ 122.713 s
+ *
+ * @param cycles Number of cycles to busy-wait.
+ */
+static inline void ulp_riscv_delay_cycles(uint32_t cycles)
+{
+    if (cycles <= 20U) { // estimate of cycles for this function overhead
+        return;
+    }
+    // To improve accuracy subtract (20 + 15) cycles overhead, defined by delay calibration test
+    uint32_t start = ULP_RISCV_GET_CCOUNT() - 20U - 15U;
+    while ((uint32_t)(ULP_RISCV_GET_CCOUNT() - start) < cycles) {
+        /* busy wait */
     }
 }
+
+/**
+ * @brief Makes the co-processor busy-wait for a certain number of microseconds.
+ *
+ * @note This function is not accurate for short delays because the function overhead
+ *       may exceed the requested delay. For very small delays the implementation uses
+ *       a fixed sequence of NOPs (chip-dependent thresholds).
+ *
+ * @note The maximum supported delay depends on the ULP-RISC-V cycle counter width and on
+ *       the internal cycles-per-microsecond conversion. For values above the limits below,
+ *       the computed delay may overflow and the result is undefined.
+ *       - ESP32-S2 ULP-RISC-V @ 8.5 MHz: delay_us must be <= 252645135 (about 252.6 s)
+ *       - ESP32-S3 ULP-RISC-V @ 17.5 MHz: delay_us must be <= 122713351 (about 122.7 s)
+ *
+ * @param delay_us Number of microseconds to busy wait.
+ */
+void ulp_riscv_delay_us(uint32_t delay_us);
 
 /**
  * @brief Clears the GPIO wakeup interrupt bit

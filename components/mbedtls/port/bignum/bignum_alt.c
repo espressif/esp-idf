@@ -1,25 +1,23 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <assert.h>
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 #include "esp_crypto_lock.h"
 #include "bignum_impl.h"
 #include "mbedtls/bignum.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 
 #include "hal/mpi_hal.h"
-#include "hal/mpi_ll.h"
 
 void esp_mpi_enable_hardware_hw_op( void )
 {
     esp_crypto_mpi_lock_acquire();
 
     /* Enable RSA hardware */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
-    }
+    esp_crypto_mpi_enable_periph_clk(true);
 
     mpi_hal_enable_hardware_hw_op();
 }
@@ -27,12 +25,8 @@ void esp_mpi_enable_hardware_hw_op( void )
 
 void esp_mpi_disable_hardware_hw_op( void )
 {
-    mpi_hal_disable_hardware_hw_op();
-
     /* Disable RSA hardware */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
-    }
+    esp_crypto_mpi_enable_periph_clk(false);
 
     esp_crypto_mpi_lock_release();
 }
@@ -209,6 +203,8 @@ cleanup:
 void esp_mpi_exp_mpi_mod_hw_op(const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, const mbedtls_mpi *Rinv, mbedtls_mpi_uint Mprime, size_t num_words)
 {
     size_t y_bits = mbedtls_mpi_bitlen(Y);
+    assert(y_bits != 0);
+
     mpi_hal_set_mode(num_words - 1);
 
     /* Load M, X, Rinv, Mprime (Mprime is mod 2^32) */

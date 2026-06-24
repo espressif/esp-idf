@@ -1,5 +1,23 @@
 menu "eFuse Bit Manager"
 
+    config EFUSE_ENABLE_STAGED_TOKEN_API
+        bool "Enable staged eFuse token dump API"
+        default n
+        help
+            Allows esp_efuse_token_dump() to produce dump types that include
+            staged eFuse writes. Staging refers to pending eFuse writes
+            prepared in batch mode but not yet burned to hardware.
+
+            Token dump types:
+            - EFSR: current eFuse read state.
+            - EFSW: pending write state.
+            - EFSRW: combined read and pending write state.
+
+            Pending write tokens may contain sensitive data, including
+            plaintext keys, before eFuses are burned and read-protected.
+            Keep this option disabled in production firmware unless staged
+            token workflows are explicitly required.
+
     config EFUSE_CUSTOM_TABLE
         bool "Use custom eFuse table"
         default n
@@ -16,7 +34,8 @@ menu "eFuse Bit Manager"
 
     config EFUSE_VIRTUAL
         bool "Simulate eFuse operations in RAM"
-        default n
+        default n if !IDF_TARGET_LINUX
+        default y if IDF_TARGET_LINUX
         help
             If "n" - No virtual mode. All eFuse operations are real and use eFuse registers.
             If "y" - The virtual mode is enabled and all eFuse operations (read and write) are redirected
@@ -30,7 +49,7 @@ menu "eFuse Bit Manager"
 
     config EFUSE_VIRTUAL_KEEP_IN_FLASH
         bool "Keep eFuses in flash"
-        depends on EFUSE_VIRTUAL
+        depends on EFUSE_VIRTUAL && !IDF_TARGET_LINUX
         help
             In addition to the "Simulate eFuse operations in RAM" option, this option just adds
             a feature to keep eFuses after reboots in flash memory. To use this mode the partition_table

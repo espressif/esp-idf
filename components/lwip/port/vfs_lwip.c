@@ -1,0 +1,142 @@
+/*
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <string.h>
+#include <stdbool.h>
+#include <stdarg.h>
+#include <sys/errno.h>
+#include <sys/lock.h>
+#include <sys/fcntl.h>
+#include <sys/select.h>
+#include "esp_attr.h"
+#include "esp_vfs.h"
+#include "esp_private/socket.h"
+#include "sdkconfig.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+
+#ifndef CONFIG_VFS_SUPPORT_IO
+#error This file should only be built when CONFIG_VFS_SUPPORT_IO=y
+#endif
+
+_Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
+_Static_assert(FD_SETSIZE >= CONFIG_LWIP_MAX_SOCKETS, "FD_SETSIZE < CONFIG_LWIP_MAX_SOCKETS");
+_Static_assert(LWIP_SOCKET_OFFSET >= 6, "Not enough room for esp_stdio (LWIP_SOCKET_OFFSET < 6)");
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
+/**
+ * @brief This function is implemented only in FreeRTOS port (ingroup sys_sem)
+ * and has no official API counterpart in lwip's sys.h declarations
+ * Signals a semaphore from ISR
+ * @param sem the semaphore to signal
+ * @return 1 if the signal has caused a high-prio task to unblock (pxHigherPriorityTaskWoken)
+ */
+int sys_sem_signal_isr(sys_sem_t *sem);
+
+static void lwip_stop_socket_select(void *sem)
+{
+    sys_sem_signal(sem); //socket_select will return
+}
+
+static void lwip_stop_socket_select_isr(void *sem, BaseType_t *woken)
+{
+    if (sys_sem_signal_isr(sem) && woken) {
+        *woken = pdTRUE;
+    }
+}
+
+static void *lwip_get_socket_select_semaphore(void)
+{
+    /* Calling this from the same process as select() will ensure that the semaphore won't be allocated from
+     * ISR (lwip_stop_socket_select_isr).
+     */
+    return (void *) sys_thread_sem_get();
+}
+#else // CONFIG_VFS_SUPPORT_SELECT
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
+{
+    return lwip_select(nfds, readfds, writefds, errorfds, timeout);
+}
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
+static ssize_t lwip_write_r_wrapper(__attribute__((unused)) void *ctx, int fd, const void *data, size_t size)
+{
+    return lwip_write(fd, data, size);
+}
+
+static ssize_t lwip_read_r_wrapper(__attribute__((unused)) void *ctx, int fd, void *data, size_t size)
+{
+    return lwip_read(fd, data, size);
+}
+
+static int lwip_close_r_wrapper(__attribute__((unused)) void *ctx, int fd)
+{
+    return lwip_close(fd);
+}
+
+static int lwip_fcntl_r_wrapper(__attribute__((unused)) void *ctx, int fd, int cmd, int arg)
+{
+    return lwip_fcntl(fd, cmd, arg);
+}
+
+static int lwip_ioctl_r_wrapper(__attribute__((unused)) void *ctx, int fd, int cmd, va_list args)
+{
+    return lwip_ioctl(fd, cmd, va_arg(args, void *));
+}
+
+static int lwip_fstat(__attribute__((unused)) void *ctx, int fd, struct stat * st)
+{
+    if (st == NULL || fd < LWIP_SOCKET_OFFSET || fd > (MAX_FDS - 1)) {
+        errno = EBADF;
+        return -1;
+    }
+    memset(st, 0, sizeof(*st));
+    /* set the stat mode to socket type */
+    st->st_mode = S_IFSOCK;
+    return 0;
+}
+
+void esp_vfs_lwip_sockets_register(void)
+{
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
+    static const esp_vfs_select_ops_t s_lwip_select_ops = {
+        .socket_select = &lwip_select,
+        .stop_socket_select = &lwip_stop_socket_select,
+        .stop_socket_select_isr = &lwip_stop_socket_select_isr,
+        .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
+    };
+
+#endif
+
+    static const esp_vfs_fs_ops_t s_lwip_vfs = {
+        .write_p  = &lwip_write_r_wrapper,
+        .read_p   = &lwip_read_r_wrapper,
+        .close_p  = &lwip_close_r_wrapper,
+        .fstat_p  = &lwip_fstat,
+        .fcntl_p  = &lwip_fcntl_r_wrapper,
+        .ioctl_p  = &lwip_ioctl_r_wrapper,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+        .select = &s_lwip_select_ops,
+#endif
+    };
+
+    /* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1).
+     * LWIP file descriptors are registered from LWIP_SOCKET_OFFSET to MAX_FDS-1.
+     *
+     * Use ESP_VFS_FLAG_STATIC since s_lwip_vfs and subcomponents are static.
+     * No context pointer needed -> flags have no ESP_VFS_FLAG_CONTEXT_PTR.
+     */
+    ESP_ERROR_CHECK(esp_vfs_register_fd_range(&s_lwip_vfs,
+                                              ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR,
+                                              NULL /* ctx */,
+                                              LWIP_SOCKET_OFFSET,
+                                              MAX_FDS));
+}

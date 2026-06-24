@@ -6,10 +6,12 @@ set(original_srcs "spiffs/src/spiffs_cache.c"
                   "spiffs/src/spiffs_hydrogen.c"
                   "spiffs/src/spiffs_nucleus.c")
 
+set(srcs)
+set(pr)
 list(APPEND srcs "spiffs_api.c" ${original_srcs})
 
 if(NOT ${target} STREQUAL "linux")
-    list(APPEND pr bootloader_support esptool_py vfs)
+    list(APPEND pr bootloader_support vfs esptool_py)
     list(APPEND srcs "esp_spiffs.c")
 endif()
 
@@ -17,7 +19,7 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "include"
                        PRIV_INCLUDE_DIRS "." "spiffs/src"
                        REQUIRES esp_partition
-                       PRIV_REQUIRES ${pr} spi_flash)
+                       PRIV_REQUIRES ${pr})
 
 # Upstream SPIFFS code uses format specifiers in debug logging macros inconsistently
 list(TRANSFORM original_srcs PREPEND "${CMAKE_CURRENT_LIST_DIR}/")

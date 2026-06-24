@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,11 +39,11 @@ const uint8_t zigzag_arr[64] = {
  * decompression. It is used to decode the Huffman-coded symbols in the compressed
  * data stream during the decoding process.
  */
-const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_MAX][JPEG_DEC_BEST_HB_MAX] = {
-    {40, 40, 40, 32, 0},
-    {64, 32, 32, 64, 0},
-    {48, 32, 32, 48, 0},
-    {96,  0,  0,  0, 96},
+const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_NUM][JPEG_DEC_BEST_HB_MAX] = {
+    {40, 40, 40, 32, 0, 32},
+    {64, 32, 32, 64, 0, 32},
+    {48, 32, 32, 48, 0, 48},
+    {96,  0,  0,  0, 96, 0},
 };
 
 /**
@@ -53,11 +53,13 @@ const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_MAX][JPEG_DEC_BEST_HB_MAX] = {
  * compression. It is used to decode the Huffman-coded symbols in the compressed
  * data stream during the encoding process.
  */
-const uint32_t enc_hb_tbl[JPEG_ENC_BEST_HB_MAX][JPEG_DOWN_SAMPLING_MAX] = {
+const uint32_t enc_hb_tbl[JPEG_ENC_BEST_HB_MAX][JPEG_DOWN_SAMPLING_NUM] = {
     {40, 32, 32, 0},
     {0,  64, 0,  0},
     {64, 64, 48, 0},
-    {0,  0,  0,  128}
+    {0,  0,  0,  128},
+    {40,  0,  0,  0},
+    {0,  0,  48,  0},
 };
 
 /**

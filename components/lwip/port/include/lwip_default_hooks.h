@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "lwip/ip_addr.h"
 #include "lwip/arch.h"
 #include "lwip/err.h"
+#include "lwip/dns.h"
 #include "lwip/pbuf.h"
 #include "netif/dhcp_state.h"
 
@@ -55,11 +56,23 @@ int lwip_hook_netconn_external_resolve(const char *name, ip_addr_t *addr, u8_t a
 #define LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE lwip_hook_netconn_external_resolve
 #endif /* CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE... */
 
+#if defined(CONFIG_LWIP_HOOK_DNS_EXT_RESOLVE_CUSTOM)
+int lwip_hook_dns_external_resolve(const char *name, ip_addr_t *addr, dns_found_callback found, void *callback_arg,
+                                   u8_t addrtype, err_t *err);
+
+#define LWIP_HOOK_DNS_EXTERNAL_RESOLVE lwip_hook_dns_external_resolve
+#endif /* CONFIG_LWIP_HOOK_DNS_EXT_RESOLVE_CUSTOM */
+
+
 #if defined(CONFIG_LWIP_HOOK_IP6_INPUT_CUSTOM) || defined(CONFIG_LWIP_HOOK_IP6_INPUT_DEFAULT)
 int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp);
 
 #define LWIP_HOOK_IP6_INPUT lwip_hook_ip6_input
 #endif /* CONFIG_LWIP_HOOK_IP6_INPUT_CUSTIOM... */
+
+#if defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_CUSTOM) || defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT)
+void lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset);
+#endif /* CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_CUSTOM (or DEFAULT) */
 
 #ifdef CONFIG_LWIP_IPV4
 struct netif *

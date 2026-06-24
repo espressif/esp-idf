@@ -26,13 +26,19 @@ menu "PSRAM config"
 
     choice SPIRAM_SPEED
         prompt "Set PSRAM clock speed"
-        default SPIRAM_SPEED_20M
+        default SPIRAM_SPEED_200M
         help
             Select the speed for the PSRAM chip.
 
+        config SPIRAM_SPEED_250M
+            depends on !ESP32P4_SELECTS_REV_LESS_V3
+            bool "250MHz clock speed"
+
         config SPIRAM_SPEED_200M
-            depends on IDF_EXPERIMENTAL_FEATURES
             bool "200MHz clock speed"
+
+        config SPIRAM_SPEED_80M
+            bool "80MHz clock speed"
 
         config SPIRAM_SPEED_20M
             bool "20MHz clock speed"
@@ -41,8 +47,50 @@ menu "PSRAM config"
     config SPIRAM_SPEED
         int
         default 20 if SPIRAM_SPEED_20M
+        default 80 if SPIRAM_SPEED_80M
         default 100 if SPIRAM_SPEED_100M
         default 200 if SPIRAM_SPEED_200M
+        default 250 if SPIRAM_SPEED_250M
+
+    config SPIRAM_FETCH_INSTRUCTIONS
+        bool
+        help
+            Enable this option allows moving application's instruction segment from the SPI Flash to
+            PSRAM
+
+    config SPIRAM_RODATA
+        bool
+        help
+            Enable this option allows moving application's rodata segment from the SPI Flash to
+            PSRAM
+
+    config SPIRAM_XIP_FROM_PSRAM
+        bool "Enable Executable in place from (XiP) from PSRAM feature (READ HELP)"
+        default n
+        depends on SPIRAM_BOOT_INIT
+        select SPIRAM_FETCH_INSTRUCTIONS
+        select SPIRAM_RODATA
+        select SPIRAM_FLASH_LOAD_TO_PSRAM
+        help
+            If enabled, firmware in flash including instructions and data will be moved into PSRAM on startup,
+            firmware code will execute directly from PSRAM.
+
+            With this option enabled, code that requires execution during an MSPI1 Flash operation
+            does not have to be placed in IRAM. Therefore codes that need to be executing during Flash
+            operations can continue working normally.
+
+            Because P4 flash and PSRAM are using two separate SPI buses, moving flash content to PSRAM will
+            actually increase the load of the PSRAM MSPI bus, so the exact impact on performance will be dependent
+            on your app usage of PSRAM. For example, as the PSRAM bus speed could be much faster than flash bus speed,
+            if the instructions and data that are used to be in flash are not accessed very frequently, you might
+            get better performance with this option enabled. We suggest doing performance profiling to determine
+            if enabling this option.
+
+    config SPIRAM_FLASH_LOAD_TO_PSRAM
+        bool
+        help
+            This is a helper indicating this condition:
+            `CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_IDF_TARGET_ESP32P4`
 
     config SPIRAM_ECC_ENABLE
         bool "Enable PSRAM ECC"
@@ -51,17 +99,6 @@ menu "PSRAM config"
             Enable Error-Correcting Code function when accessing PSRAM.
 
             If enabled, 1/8 of the PSRAM total size will be reserved for error-correcting code.
-
-    config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        bool "Allow external memory as an argument to xTaskCreateStatic"
-        default y
-        help
-            Accessing memory in PSRAM has certain restrictions, so task stacks allocated by xTaskCreate
-            are by default allocated from internal RAM.
-
-            This option allows for passing memory allocated from PSRAM to be passed to xTaskCreateStatic.
-            This should only be used for tasks where the stack is never accessed while the L2Cache is
-            disabled, e.g. during SPI Flash operations
 
     source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
 

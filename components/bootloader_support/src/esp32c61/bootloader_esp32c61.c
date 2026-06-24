@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "esp_image_format.h"
 #include "flash_qio_mode.h"
 #include "esp_rom_gpio.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
 #include "soc/gpio_sig_map.h"
@@ -18,9 +18,9 @@
 #include "soc/assist_debug_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/spi_periph.h"
+#include "soc/soc_caps.h"
+
 #include "soc/cache_reg.h"
-#include "soc/io_mux_reg.h"
 #include "soc/pcr_reg.h"
 #include "esp32c61/rom/ets_sys.h"
 #include "esp32c61/rom/spi_flash.h"
@@ -39,41 +39,39 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
-#include "hal/clk_tree_ll.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
+#include "hal/regi2c_ctrl_ll.h"
+#include "hal/brownout_ll.h"
+#include "hal/axi_icm_ll.h"
 
-static const char *TAG = "boot.esp32c61";
+ESP_LOG_ATTR_TAG(TAG, "boot.esp32c61");
 
-static void wdt_reset_cpu0_info_enable(void)
+#if SOC_RTC_WDT_SUPPORTED
+void bootloader_enable_cpu_reset_info(void)
 {
     REG_SET_BIT(PCR_ASSIST_CONF_REG, PCR_ASSIST_CLK_EN);
     REG_CLR_BIT(PCR_ASSIST_CONF_REG, PCR_ASSIST_RST_EN);
     REG_WRITE(ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_0_RCD_RECORDEN);
 }
 
-static void wdt_reset_info_dump(int cpu)
+void bootloader_dump_wdt_reset_info(int cpu)
 {
     (void) cpu;
     // saved PC was already printed by the ROM bootloader.
     // nothing to do here.
 }
 
-static void bootloader_check_wdt_reset(void)
+bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t rst_reason)
 {
-    int wdt_rst = 0;
-    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    (void) cpu;
     if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
         rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
-        wdt_rst = 1;
+        return true;
     }
-    if (wdt_rst) {
-        // if reset by WDT dump info from trace port
-        wdt_reset_info_dump(0);
-    }
-    wdt_reset_cpu0_info_enable();
+    return false;
 }
 
 static void bootloader_super_wdt_auto_feed(void)
@@ -82,40 +80,32 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_SET_BIT(LP_WDT_SWD_CONFIG_REG, LP_WDT_SWD_AUTO_FEED_EN);
     REG_WRITE(LP_WDT_SWD_WPROTECT_REG, 0);
 }
+#endif // SOC_RTC_WDT_SUPPORTED
 
 static inline void bootloader_hardware_init(void)
 {
-    // In 80MHz flash mode, ROM sets the mspi module clk divider to 2, fix it here
-#if CONFIG_ESPTOOLPY_FLASHFREQ_80M && !CONFIG_APP_BUILD_TYPE_RAM
-    clk_ll_mspi_fast_set_hs_divider(6);
-    esp_rom_spiflash_config_clk(1, 0);
-    esp_rom_spiflash_config_clk(1, 1);
-    esp_rom_spiflash_fix_dummylen(0, 1);
-    esp_rom_spiflash_fix_dummylen(1, 1);
-#endif
-
-//TODO: [ESP32C61] IDF-9276
-#if CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    ESP_EARLY_LOGW(TAG, "ESP32C61 attention: analog i2c master clock enable skipped!!!");
-#else
-    ESP_LOGW(TAG, "ESP32C61 attention: analog i2c master clock enable skipped!!!");
-#endif
+    // Clear bit reset_event_bypass to ensure that the system bus is also reset during a core reset (WDT),
+    // preventing bus freezing caused by an incorrect MSPI core reset in ROM.
+    axi_icm_ll_reset_with_core_reset(true);
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
+    regi2c_ctrl_ll_master_configure_clock();
 }
 
 static inline void bootloader_ana_reset_config(void)
 {
-    //Enable super WDT reset.
-    bootloader_ana_super_wdt_reset_config(true);
-    //Enable BOD reset
-    bootloader_ana_bod_reset_config(true);
+    //Enable BOD reset (mode1)
+    brownout_ll_ana_reset_enable(true);
+    bootloader_power_glitch_reset_config(true);
 }
 
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
     bootloader_hardware_init();
-    // bootloader_ana_reset_config();   //TODO: [ESP32C61] IDF-9260
+    bootloader_ana_reset_config();
+#if SOC_RTC_WDT_SUPPORTED
     bootloader_super_wdt_auto_feed();
+#endif
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`
 #if !CONFIG_APP_BUILD_TYPE_RAM
@@ -130,7 +120,7 @@ esp_err_t bootloader_init(void)
 
     // init eFuse virtual mode (read eFuses to RAM)
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+    ESP_EARLY_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
 #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
     esp_efuse_init_virtual_mode_in_ram();
 #endif
@@ -143,10 +133,8 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
 
 #if !CONFIG_APP_BUILD_TYPE_RAM
-    //init cache hal
-    cache_hal_init();
-    //init mmu
-    mmu_hal_init();
+    // init cache and mmu
+    bootloader_init_ext_mem();
     // update flash ID
     bootloader_flash_update_id();
     // Check and run XMC startup flow
@@ -168,10 +156,12 @@ esp_err_t bootloader_init(void)
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
 
-    // check whether a WDT reset happened
-    bootloader_check_wdt_reset();
+    // check reset reason and dump diagnostic info
+    bootloader_check_reset();
+#if SOC_RTC_WDT_SUPPORTED || SOC_WDT_SUPPORTED
     // config WDT
     bootloader_config_wdt();
+#endif
     // enable RNG early entropy source
     bootloader_enable_random();
 

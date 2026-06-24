@@ -1,0 +1,107 @@
+# Bluetooth Object Transfer service
+
+# SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_OTS
+    bool "Object Transfer Service (OTS) [EXPERIMENTAL]"
+    select BT_OTS_SECONDARY_SVC
+    help
+        Enable Object Transfer Service.
+
+if BT_OTS
+
+    config BT_OTS_DIR_LIST_OBJ
+        bool "The Directory Listing Object"
+        help
+            Enables the Directory Listing Object, which is an object that contains all the metadata
+            from all other objects, for easy exposure to a client. Enabling this will use one of the
+            objects given by BT_OTS_MAX_OBJ_CNT.
+
+    config BT_OTS_DIR_LIST_OBJ_NAME
+        string "The object name of the Directory Listing Object"
+        default "Directory"
+        depends on BT_OTS_DIR_LIST_OBJ
+        help
+            The name of the Directory Listing Object when it is read by a client.
+
+    config BT_OTS_MAX_INST_CNT
+        int "Maximum number of available OTS instances"
+        default 1
+        range 1 1 if !BT_OTS_SECONDARY_SVC
+
+    config BT_OTS_SECONDARY_SVC
+        bool "Register OTS as Secondary Service"
+
+    config BT_OTS_OACP_CREATE_SUPPORT
+        bool "Support OACP Create Operation"
+        depends on BT_OTS_OACP_WRITE_SUPPORT
+        depends on BT_OTS_OBJ_NAME_WRITE_SUPPORT
+
+    config BT_OTS_OACP_CHECKSUM_SUPPORT
+        bool "Support OACP Calculate Checksum operation"
+
+    config BT_OTS_OACP_DELETE_SUPPORT
+        bool "Support OACP Delete Operation"
+
+    config BT_OTS_OACP_READ_SUPPORT
+        bool "Support OACP Read Operation"
+        default y
+
+    config BT_OTS_OACP_WRITE_SUPPORT
+        bool "Support OACP Write Operation"
+
+    config BT_OTS_OACP_PATCH_SUPPORT
+        bool "Support patching of objects"
+        depends on BT_OTS_OACP_WRITE_SUPPORT
+
+    config BT_OTS_OLCP_GO_TO_SUPPORT
+        bool "Support OLCP Go To Operation"
+        default y
+
+    config BT_OTS_OBJ_NAME_WRITE_SUPPORT
+        bool "Support object name write"
+
+endif # BT_OTS
+
+#### Object Transfer Service Client ################################
+
+config BT_OTS_CLIENT
+    bool "Object Transfer Service Client [Experimental]"
+    help
+        This option enables support for the Object Transfer Service Client.
+
+if BT_OTS || BT_OTS_CLIENT
+
+    config BT_OTS_MAX_OBJ_CNT
+        hex "Maximum number of objects that each service instance can store"
+        default 0x05
+        # Given the maximum size of a directory listing record (172) and the maximum size of an
+        # object using the net_buf implementation is 2^16-1, the maximum number of objects is given
+        # by 2^16-1 / 172 = 381 == 0x17D)
+        range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
+        # Max obj count is otherwise the non-RFU IDs available
+        range 0x01 0xFFFFFFFFFFFFFEFF
+
+    config BT_OTS_L2CAP_CHAN_TX_MTU
+        int "Size of TX MTU for Object Transfer Channel"
+        default 256
+        range 21 65533
+
+    config BT_OTS_L2CAP_CHAN_RX_MTU
+        int "Size of RX MTU for Object Transfer Channel"
+        # RX MTU will be truncated to account for the L2CAP PDU and SDU header.
+        default 256
+        range 21 65533    # TODO: check
+
+    config BT_OTS_OBJ_MAX_NAME_LEN
+        # int "Maximum object name length"
+        int # Fixed value (i.e. max 120) for now
+        # Max name length allowed by OTS spec is 120 octets
+        # TODO: Set separate max name length for client, as other
+        # servers may use the full 120 octets.
+        default 120
+        range 1 120
+
+endif # BT_OTS || BT_OTS_CLIENT

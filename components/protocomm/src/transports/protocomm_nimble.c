@@ -1,13 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <sys/param.h>
+#include <stdbool.h>
 #include <esp_log.h>
 #include <string.h>
 #include <inttypes.h>
+#include <limits.h>
 
 #include <protocomm.h>
 #include <protocomm_ble.h>
@@ -20,6 +22,7 @@
 #include "host/ble_uuid.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
+#include "services/gatt/ble_svc_gatt.h"
 
 static const char *TAG = "protocomm_nimble";
 
@@ -32,6 +35,13 @@ static uint16_t s_cached_conn_handle;
 
 /*  Standard 16 bit UUID for characteristic User Description*/
 #define BLE_GATT_UUID_CHAR_DSC              0x2901
+
+/* NimBLE ATT attribute values are bounded; enforce the same bound locally. */
+#ifndef BLE_ATT_ATTR_MAX_LEN
+#define BLE_ATT_ATTR_MAX_LEN                512
+#endif
+
+#define PROTOCOMM_NIMBLE_MAX_PAYLOAD_LEN    BLE_ATT_ATTR_MAX_LEN
 
 /********************************************************
 *       Maintain database for Attribute specific data   *
@@ -66,12 +76,18 @@ void ble_store_config_init(void);
 typedef struct _protocomm_ble {
     protocomm_t *pc_ble;
     protocomm_ble_name_uuid_t *g_nu_lookup;
-    ssize_t g_nu_lookup_count;
+    size_t g_nu_lookup_count;
     uint16_t gatt_mtu;
     unsigned ble_link_encryption:1;
+    unsigned ble_notify:1;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
+
+static bool protocomm_ble_transport_active(void)
+{
+    return (protoble_internal != NULL) && (protoble_internal->pc_ble != NULL);
+}
 static struct ble_gap_adv_params adv_params;
 static char *protocomm_ble_device_name;
 static struct ble_hs_adv_fields adv_data, resp_data;
@@ -79,6 +95,7 @@ static struct ble_hs_adv_fields adv_data, resp_data;
 static uint8_t *protocomm_ble_mfg_data;
 static size_t protocomm_ble_mfg_data_len;
 
+static uint8_t *protocomm_ble_addr;
 /**********************************************************************
 * Maintain database of uuid_name addresses to free memory afterwards  *
 **********************************************************************/
@@ -108,6 +125,7 @@ typedef void (simple_ble_cb_t)(struct ble_gap_event *event, void *arg);
 static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg);
 static void transport_simple_ble_disconnect(struct ble_gap_event *event, void *arg);
 static void transport_simple_ble_set_mtu(struct ble_gap_event *event, void *arg);
+static void simple_ble_gatts_clear_cached_values(void);
 
 typedef struct {
     /** Name to be displayed to devices scanning for ESP32 */
@@ -130,6 +148,12 @@ typedef struct {
     unsigned ble_sm_sc:1;
     /** BLE Link Encryption flag */
     unsigned ble_link_encryption:1;
+    /** BLE address */
+    uint8_t *ble_addr;
+    /**  Flag to keep BLE on */
+    unsigned keep_ble_on:1;
+    /** BLE Characteristic notify flag */
+    unsigned ble_notify:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -177,6 +201,11 @@ static void
 simple_ble_advertise(void)
 {
     int rc;
+
+    if (adv_data.uuids128 == NULL) {
+        ESP_LOGD(TAG, "Not advertising: UUID data already freed");
+        return;
+    }
 
     adv_data.flags = (BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP);
     adv_data.num_uuids128 = 1;
@@ -244,9 +273,6 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
         transport_simple_ble_disconnect(event, arg);
         /* Clear conn_handle value */
         s_cached_conn_handle = 0;
-        if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to post pairing event");
-        }
         /* Connection terminated; resume advertising. */
         simple_ble_advertise();
         return 0;
@@ -262,6 +288,14 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
                  event->mtu.value);
         transport_simple_ble_set_mtu(event, arg);
         return 0;
+    case BLE_GAP_EVENT_NOTIFY_TX:
+        ESP_LOGI(TAG, "notify_tx event; conn_handle=%d attr_handle=%d "
+                    "status=%d is_indication=%d",
+                    event->notify_tx.conn_handle,
+                    event->notify_tx.attr_handle,
+                    event->notify_tx.status,
+                    event->notify_tx.indication);
+        return 0;
     }
     return 0;
 }
@@ -269,14 +303,19 @@ simple_ble_gap_event(struct ble_gap_event *event, void *arg)
 /* Gets `g_nu_lookup name handler` from 128 bit UUID */
 static const char *uuid128_to_handler(uint8_t *uuid)
 {
+    if (!protocomm_ble_transport_active()) {
+        return NULL;
+    }
     /* Use it to convert 128 bit UUID to 16 bit UUID.*/
     uint8_t *uuid16 = uuid + 12;
-    for (int i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
-        if (protoble_internal->g_nu_lookup[i].uuid == *(uint16_t *)uuid16 ) {
-            ESP_LOGD(TAG, "UUID (0x%x) matched with proto-name = %s", *uuid16, protoble_internal->g_nu_lookup[i].name);
+    uint16_t short_uuid = 0;
+    memcpy(&short_uuid, uuid16, sizeof(short_uuid));
+    for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
+        if (protoble_internal->g_nu_lookup[i].uuid == short_uuid) {
+            ESP_LOGD(TAG, "UUID (0x%x) matched with proto-name = %s", short_uuid, protoble_internal->g_nu_lookup[i].name);
             return protoble_internal->g_nu_lookup[i].name;
         } else {
-            ESP_LOGD(TAG, "UUID did not match... %x", *uuid16);
+            ESP_LOGD(TAG, "UUID did not match... %x", short_uuid);
         }
     }
     return NULL;
@@ -287,16 +326,30 @@ static int
 gatt_svr_dsc_access(uint16_t conn_handle, uint16_t attr_handle, struct
                     ble_gatt_access_ctxt *ctxt, void *arg)
 {
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGW(TAG, "Ignoring descriptor access on inactive protocomm transport");
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
     if (ctxt->op != BLE_GATT_ACCESS_OP_READ_DSC) {
         ESP_LOGE(TAG, "Invalid operation on Read-only Descriptor");
         return BLE_ATT_ERR_UNLIKELY;
     }
 
-    int rc;
-    ssize_t temp_outlen = strlen(ctxt->dsc->arg);
+    if (ctxt->dsc == NULL || ctxt->dsc->arg == NULL) {
+        ESP_LOGE(TAG, "Descriptor argument is missing");
+        return BLE_ATT_ERR_UNLIKELY;
+    }
 
-    rc = os_mbuf_append(ctxt->om, ctxt->dsc->arg, temp_outlen);
-    return rc;
+    int rc;
+    size_t desc_len = strlen(ctxt->dsc->arg);
+    if (desc_len > PROTOCOMM_NIMBLE_MAX_PAYLOAD_LEN) {
+        ESP_LOGE(TAG, "Descriptor value too long: %d", (int)desc_len);
+        return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+    }
+
+    rc = os_mbuf_append(ctxt->om, ctxt->dsc->arg, desc_len);
+    return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
 /* Callback to handle GATT characteristic value Read & Write */
@@ -315,6 +368,11 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
     uint16_t data_len = 0;
     uint16_t data_buf_len = 0;
 
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGW(TAG, "Ignoring characteristic access on inactive protocomm transport");
+        return BLE_ATT_ERR_UNLIKELY;
+    }
+
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
         ESP_LOGD(TAG, "Read attempted for characteristic UUID = %s, attr_handle = %d",
@@ -324,6 +382,20 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                                              &temp_outbuf);
         if (rc != 0) {
             ESP_LOGE(TAG, "Characteristic with attr_handle = %d is not added to the list", attr_handle);
+            return 0;
+        }
+
+        if (temp_outlen < 0 || temp_outlen > PROTOCOMM_NIMBLE_MAX_PAYLOAD_LEN) {
+            ESP_LOGE(TAG, "Invalid response length for attr_handle=%d: %d", attr_handle, (int)temp_outlen);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
+
+        if (temp_outlen > 0 && temp_outbuf == NULL) {
+            ESP_LOGE(TAG, "NULL response buffer for attr_handle=%d", attr_handle);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+
+        if (temp_outlen == 0) {
             return 0;
         }
 
@@ -352,6 +424,11 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 
         /* Save the length of entire data */
         data_len = OS_MBUF_PKTLEN(ctxt->om);
+        if (data_len == 0 || data_len > PROTOCOMM_NIMBLE_MAX_PAYLOAD_LEN) {
+            ESP_LOGE(TAG, "Invalid write length: %d", data_len);
+            free(uuid);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
         ESP_LOGD(TAG, "Write attempt for uuid = %s, attr_handle = %d, data_len = %d",
                  ble_uuid_to_str(ctxt->chr->uuid, buf), attr_handle, data_len);
 
@@ -369,9 +446,31 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             free(data_buf);
             return BLE_ATT_ERR_UNLIKELY;
         }
+        if (data_buf_len != data_len) {
+            ESP_LOGE(TAG, "Mbuf flatten length mismatch: expected=%d actual=%d", data_len, data_buf_len);
+            free(uuid);
+            free(data_buf);
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
 
-        ret = protocomm_req_handle(protoble_internal->pc_ble,
-                                   uuid128_to_handler(uuid),
+        const char *ep_name = uuid128_to_handler(uuid);
+        if (ep_name == NULL) {
+            ESP_LOGE(TAG, "No endpoint mapped for characteristic UUID");
+            free(uuid);
+            free(data_buf);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+
+        protocomm_t *pc_ble = protoble_internal->pc_ble;
+        if (pc_ble == NULL) {
+            ESP_LOGW(TAG, "Ignoring characteristic access on inactive protocomm transport");
+            free(uuid);
+            free(data_buf);
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+
+        ret = protocomm_req_handle(pc_ble,
+                                   ep_name,
                                    conn_handle,
                                    data_buf,
                                    data_buf_len,
@@ -380,6 +479,15 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         free(uuid);
         free(data_buf);
         if (ret == ESP_OK) {
+            if (temp_outlen < 0 || temp_outlen > PROTOCOMM_NIMBLE_MAX_PAYLOAD_LEN) {
+                ESP_LOGE(TAG, "Invalid protocomm response length: %d", (int)temp_outlen);
+                free(temp_outbuf);
+                return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+            }
+            if (temp_outlen > 0 && temp_outbuf == NULL) {
+                ESP_LOGE(TAG, "Protocomm response buffer is NULL for non-zero length");
+                return BLE_ATT_ERR_UNLIKELY;
+            }
 
             /* Save data address and length outbuf and outlen internally */
             rc = simple_ble_gatts_set_attr_value(attr_handle, temp_outlen,
@@ -390,7 +498,7 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                 free(temp_outbuf);
             }
 
-            return rc;
+            return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
         } else {
             ESP_LOGE(TAG, "Invalid content received, killing connection");
             return BLE_ATT_ERR_INVALID_PDU;
@@ -437,6 +545,10 @@ int
 gatt_svr_init(const simple_ble_cfg_t *config)
 {
     int rc;
+
+    /* GATT service initialization */
+    ble_svc_gatt_init();
+
     rc = ble_gatts_count_cfg(config->gatt_db);
     if (rc != 0) {
         return rc;
@@ -461,10 +573,25 @@ simple_ble_on_sync(void)
 {
     int rc;
 
-    rc = ble_hs_util_ensure_addr(0);
-    if (rc != 0) {
-        ESP_LOGE(TAG, "Error loading address");
-        return;
+    if (protocomm_ble_addr) {
+         rc = ble_hs_id_set_rnd(protocomm_ble_addr);
+	 if (rc != 0) {
+             ESP_LOGE(TAG,"Error in setting address");
+	     return;
+	 }
+
+         rc = ble_hs_util_ensure_addr(1);
+	 if (rc != 0) {
+             ESP_LOGE(TAG,"Error loading address");
+	     return;
+	 }
+    }
+    else {
+        rc = ble_hs_util_ensure_addr(0);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Error loading address");
+            return;
+        }
     }
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -516,24 +643,27 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init(cfg);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error initializing GATT server");
-        return rc;
+        goto err_deinit_port;
     }
 
     /* Set device name, configure response data to be sent while advertising */
     rc = ble_svc_gap_device_name_set(cfg->device_name);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error setting device name");
-        return rc;
+        goto err_deinit_port;
     }
 
+    memset(&resp_data, 0, sizeof(resp_data));
     resp_data.name = (void *) ble_svc_gap_device_name();
     if (resp_data.name != NULL) {
         resp_data.name_len = strlen(ble_svc_gap_device_name());
         resp_data.name_is_complete = 1;
     }
+#endif
 
     /* Set manufacturer data if protocomm_ble_mfg_data points to valid data */
     if (protocomm_ble_mfg_data != NULL) {
@@ -547,6 +677,12 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     nimble_port_freertos_init(nimble_host_task);
 
     return 0;
+
+#if MYNEWT_VAL(BLE_GATTS)
+err_deinit_port:
+    nimble_port_deinit();
+    return rc;
+#endif
 }
 
 /* transport_simple BLE Fn */
@@ -562,26 +698,50 @@ static void transport_simple_ble_disconnect(struct ble_gap_event *event, void *a
         return;
     }
 
-    if (protoble_internal->pc_ble->sec &&
-            protoble_internal->pc_ble->sec->close_transport_session) {
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring disconnect");
+        return;
+    }
+
+    /* Avoid stale response reuse across sessions. */
+    simple_ble_gatts_clear_cached_values();
+
+    protocomm_t *pc_ble = protoble_internal->pc_ble;
+    if (pc_ble == NULL) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring disconnect");
+        return;
+    }
+
+    if (pc_ble->sec && pc_ble->sec->close_transport_session) {
         ret =
-            protoble_internal->pc_ble->sec->close_transport_session(protoble_internal->pc_ble->sec_inst, event->disconnect.conn.conn_handle);
+            pc_ble->sec->close_transport_session(pc_ble->sec_inst, event->disconnect.conn.conn_handle);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error closing the session after disconnect");
-        } else {
-            protocomm_ble_event_t ble_event = {};
-            /* Assign the event type */
-            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_DISCONNECTED;
-            /* Set the Disconnection handle */
-            ble_event.conn_handle = event->disconnect.conn.conn_handle;
-            ble_event.disconnect_reason = event->disconnect.reason;
-
-            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to post transport disconnection event");
-            }
         }
     }
+
+    protocomm_ble_event_t ble_event = {};
+    /* Assign the event type */
+    ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_DISCONNECTED;
+    /* Set the Disconnection handle */
+    ble_event.conn_handle = event->disconnect.conn.conn_handle;
+    ble_event.disconnect_reason = event->disconnect.reason;
+
+    if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post transport disconnection event");
+    }
+
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
+}
+
+static void simple_ble_gatts_clear_cached_values(void)
+{
+    struct data_mbuf *cur;
+    SLIST_FOREACH(cur, &data_mbuf_list, node) {
+        free(cur->outbuf);
+        cur->outbuf = NULL;
+        cur->outlen = 0;
+    }
 }
 
 static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
@@ -595,10 +755,20 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
         return;
     }
 
-    if (protoble_internal->pc_ble->sec &&
-            protoble_internal->pc_ble->sec->new_transport_session) {
+    if (!protocomm_ble_transport_active()) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring connect");
+        return;
+    }
+
+    protocomm_t *pc_ble = protoble_internal->pc_ble;
+    if (pc_ble == NULL) {
+        ESP_LOGD(TAG, "Protocomm BLE inactive, ignoring connect");
+        return;
+    }
+
+    if (pc_ble->sec && pc_ble->sec->new_transport_session) {
         ret =
-            protoble_internal->pc_ble->sec->new_transport_session(protoble_internal->pc_ble->sec_inst, event->connect.conn_handle);
+            pc_ble->sec->new_transport_session(pc_ble->sec_inst, event->connect.conn_handle);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error creating the session");
         } else {
@@ -618,6 +788,9 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
 
 static void transport_simple_ble_set_mtu(struct ble_gap_event *event, void *arg)
 {
+    if (!protocomm_ble_transport_active()) {
+        return;
+    }
     protoble_internal->gatt_mtu = event->mtu.value;
     return;
 }
@@ -697,6 +870,10 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
                                         BLE_GATT_CHR_F_WRITE_ENC;
     }
 
+    if (protoble_internal->ble_notify) {
+        (characteristics + idx)->flags |= BLE_GATT_CHR_F_NOTIFY;
+    }
+
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
     /* Out of 128 bit UUID, 16 bits from g_nu_lookup table. Currently
@@ -727,7 +904,7 @@ ble_gatt_add_primary_svcs(struct ble_gatt_svc_def *gatt_db_svcs, int char_count)
     gatt_db_svcs->type = BLE_GATT_SVC_TYPE_PRIMARY;
 
     /* Allocate (number of characteristics + 1) memory for characteristics, the
-     * addtional characteristic consist of all 0s indicating end of
+     * additional characteristic consist of all 0s indicating end of
      * characteristics */
     gatt_db_svcs->characteristics = (struct ble_gatt_chr_def *) calloc((char_count + 1),
                                     sizeof(struct ble_gatt_chr_def));
@@ -739,7 +916,7 @@ ble_gatt_add_primary_svcs(struct ble_gatt_svc_def *gatt_db_svcs, int char_count)
 }
 
 static int
-populate_gatt_db(struct ble_gatt_svc_def **gatt_db_svcs, const protocomm_ble_config_t *config)
+populate_gatt_db(struct ble_gatt_svc_def **gatt_db_svcs, const protocomm_ble_config_t *config, int char_count)
 {
     /* Allocate memory for 2 services, 2nd to be all NULL indicating end of
      * services */
@@ -763,13 +940,13 @@ populate_gatt_db(struct ble_gatt_svc_def **gatt_db_svcs, const protocomm_ble_con
     memcpy((void *) (*gatt_db_svcs)->uuid, &uuid128, sizeof(ble_uuid128_t));
 
     /* GATT: Add primary service. */
-    int rc = ble_gatt_add_primary_svcs(*gatt_db_svcs, config->nu_lookup_count);
+    int rc = ble_gatt_add_primary_svcs(*gatt_db_svcs, char_count);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error adding primary service !!!");
         return rc;
     }
 
-    for (int i = 0 ; i < config->nu_lookup_count; i++) {
+    for (int i = 0 ; i < char_count; i++) {
 
         /* GATT: Add characteristics to the service at index no. i*/
         rc = ble_gatt_add_characteristics((void *) (*gatt_db_svcs)->characteristics, i);
@@ -781,18 +958,37 @@ populate_gatt_db(struct ble_gatt_svc_def **gatt_db_svcs, const protocomm_ble_con
         rc = ble_gatt_add_char_dsc((void *) (*gatt_db_svcs)->characteristics,
                                    i, BLE_GATT_UUID_CHAR_DSC);
         if (rc != 0) {
-            ESP_LOGE(TAG, "Error adding GATT Discriptor !!");
+            ESP_LOGE(TAG, "Error adding GATT Descriptor !!");
             return rc;
         }
     }
     return 0;
 }
 
+static void free_uuid128_name_table(void)
+{
+    /* Free the uuid_name_table struct list if exists */
+    struct uuid128_name_buf *cur;
+    while (!SLIST_EMPTY(&uuid128_name_list)) {
+        cur = SLIST_FIRST(&uuid128_name_list);
+        SLIST_REMOVE_HEAD(&uuid128_name_list, link);
+        if (cur->uuid128_name_table) {
+            if (adv_data.uuids128 == (void *)cur->uuid128_name_table) {
+                adv_data.uuids128 = NULL;
+                adv_data.num_uuids128 = 0;
+            }
+            free(cur->uuid128_name_table);
+        }
+        free(cur);
+    }
+}
+
 static void protocomm_ble_cleanup(void)
 {
+    free_uuid128_name_table();
     if (protoble_internal) {
         if (protoble_internal->g_nu_lookup) {
-            for (unsigned i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
+            for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
                 if (protoble_internal->g_nu_lookup[i].name) {
                     free((void *)protoble_internal->g_nu_lookup[i].name);
                 }
@@ -812,6 +1008,11 @@ static void protocomm_ble_cleanup(void)
         free(protocomm_ble_mfg_data);
         protocomm_ble_mfg_data = NULL;
         protocomm_ble_mfg_data_len = 0;
+    }
+
+    if (protocomm_ble_addr) {
+        free(protocomm_ble_addr);
+        protocomm_ble_addr = NULL;
     }
 }
 
@@ -839,18 +1040,9 @@ static void free_gatt_ble_misc_memory(simple_ble_cfg_t *ble_config)
     }
 
     free(ble_config);
-    ble_config = NULL;
+    ble_cfg_p = NULL;
 
-    /* Free the uuid_name_table struct list if exists */
-    struct uuid128_name_buf *cur;
-    while (!SLIST_EMPTY(&uuid128_name_list)) {
-        cur = SLIST_FIRST(&uuid128_name_list);
-        SLIST_REMOVE_HEAD(&uuid128_name_list, link);
-        if (cur->uuid128_name_table) {
-            free(cur->uuid128_name_table);
-        }
-        free(cur);
-    }
+    free_uuid128_name_table();
 
     /* Free the data_mbuf list if exists */
     struct data_mbuf *curr;
@@ -868,9 +1060,32 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (config->manufacturer_data_len > 0 && config->manufacturer_data == NULL) {
+        ESP_LOGE(TAG, "Manufacturer data length set without data");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->nu_lookup_count <= 0 || config->nu_lookup_count > (ssize_t)(INT_MAX - 1)) {
+        ESP_LOGE(TAG, "Invalid nu_lookup_count: %d", (int)config->nu_lookup_count);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (config->manufacturer_data != NULL &&
+            (config->manufacturer_data_len <= 0 ||
+             config->manufacturer_data_len > MAX_BLE_MANUFACTURER_DATA_LEN)) {
+        ESP_LOGE(TAG, "Invalid manufacturer data length: %d", (int)config->manufacturer_data_len);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (protoble_internal) {
         ESP_LOGE(TAG, "Protocomm BLE already started");
         return ESP_FAIL;
+    }
+
+    size_t endpoint_count = (size_t)config->nu_lookup_count;
+    if (endpoint_count > (SIZE_MAX / sizeof(protocomm_ble_name_uuid_t))) {
+        ESP_LOGE(TAG, "Name UUID table size overflow");
+        return ESP_ERR_NO_MEM;
     }
 
     /* copy the 128 bit service UUID into local buffer to use as base 128 bit
@@ -894,16 +1109,13 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     if (temp_uuid128_name_buf == NULL) {
         ESP_LOGE(TAG, "Error allocating memory for UUID128 address database");
+        free(svc_uuid128);
+        adv_data.uuids128 = NULL;
+        adv_data.num_uuids128 = 0;
         return ESP_ERR_NO_MEM;
     }
     SLIST_INSERT_HEAD(&uuid128_name_list, temp_uuid128_name_buf, link);
     temp_uuid128_name_buf->uuid128_name_table = svc_uuid128;
-
-    if (adv_data.uuids128 == NULL) {
-        ESP_LOGE(TAG, "Error allocating memory for storing service UUID");
-        protocomm_ble_cleanup();
-        return ESP_ERR_NO_MEM;
-    }
 
     /* Store BLE device name internally */
     protocomm_ble_device_name = strdup(config->device_name);
@@ -915,8 +1127,14 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     /* Store BLE manufacturer data pointer */
     if (config->manufacturer_data != NULL) {
-        protocomm_ble_mfg_data = config->manufacturer_data;
-        protocomm_ble_mfg_data_len = config->manufacturer_data_len;
+        protocomm_ble_mfg_data = (uint8_t *)malloc((size_t)config->manufacturer_data_len);
+        if (protocomm_ble_mfg_data == NULL) {
+            ESP_LOGE(TAG, "Error allocating memory for manufacturer data");
+            protocomm_ble_cleanup();
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(protocomm_ble_mfg_data, config->manufacturer_data, (size_t)config->manufacturer_data_len);
+        protocomm_ble_mfg_data_len = (size_t)config->manufacturer_data_len;
     }
 
     protoble_internal = (_protocomm_ble_internal_t *) calloc(1, sizeof(_protocomm_ble_internal_t));
@@ -926,16 +1144,22 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         return ESP_ERR_NO_MEM;
     }
 
-    protoble_internal->g_nu_lookup_count =  config->nu_lookup_count;
-    protoble_internal->g_nu_lookup = malloc(config->nu_lookup_count * sizeof(protocomm_ble_name_uuid_t));
+    protoble_internal->g_nu_lookup_count = endpoint_count;
+    protoble_internal->g_nu_lookup = calloc(endpoint_count, sizeof(protocomm_ble_name_uuid_t));
     if (protoble_internal->g_nu_lookup == NULL) {
         ESP_LOGE(TAG, "Error allocating internal name UUID table");
         protocomm_ble_cleanup();
         return ESP_ERR_NO_MEM;
     }
 
-    for (unsigned i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
+    for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
         protoble_internal->g_nu_lookup[i].uuid = config->nu_lookup[i].uuid;
+        if (config->nu_lookup[i].name == NULL) {
+            ESP_LOGE(TAG, "Invalid endpoint name");
+            protocomm_ble_cleanup();
+            return ESP_ERR_INVALID_ARG;
+        }
+
         protoble_internal->g_nu_lookup[i].name = strdup(config->nu_lookup[i].name);
         if (protoble_internal->g_nu_lookup[i].name == NULL) {
             ESP_LOGE(TAG, "Error allocating internal name UUID entry");
@@ -949,6 +1173,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = BLE_ATT_MTU_DFLT;
     protoble_internal->ble_link_encryption = config->ble_link_encryption;
+    protoble_internal->ble_notify = config->ble_notify;
 
     simple_ble_cfg_t *ble_config = (simple_ble_cfg_t *) calloc(1, sizeof(simple_ble_cfg_t));
     if (ble_config == NULL) {
@@ -970,11 +1195,25 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->ble_bonding     = config->ble_bonding;
     ble_config->ble_sm_sc       = config->ble_sm_sc;
 
-    if (populate_gatt_db(&ble_config->gatt_db, config) != 0) {
+    if (config->ble_addr != NULL) {
+        protocomm_ble_addr = (uint8_t *)malloc(BLE_ADDR_LEN);
+        if (protocomm_ble_addr == NULL) {
+            ESP_LOGE(TAG, "Error allocating memory for BLE address");
+            free_gatt_ble_misc_memory(ble_config);
+            protocomm_ble_cleanup();
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(protocomm_ble_addr, config->ble_addr, BLE_ADDR_LEN);
+    }
+
+    if (populate_gatt_db(&ble_config->gatt_db, config, (int)endpoint_count) != 0) {
         ESP_LOGE(TAG, "Error populating GATT Database");
         free_gatt_ble_misc_memory(ble_config);
+        protocomm_ble_cleanup();
         return ESP_ERR_NO_MEM;
     }
+
+    ble_config->keep_ble_on = config->keep_ble_on;
 
     esp_err_t err = simple_ble_start(ble_config);
     ESP_LOGD(TAG, "Free Heap size after simple_ble_start= %" PRIu32, esp_get_free_heap_size());
@@ -993,37 +1232,50 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 esp_err_t protocomm_ble_stop(protocomm_t *pc)
 {
     ESP_LOGD(TAG, "protocomm_ble_stop called here...");
-    if ((pc != NULL) &&
-            (protoble_internal != NULL ) &&
-            (pc == protoble_internal->pc_ble)) {
-        esp_err_t ret = ESP_OK;
+    if ((pc == NULL) ||
+            (protoble_internal == NULL ) ||
+            (pc != protoble_internal->pc_ble)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
-        esp_err_t rc = ble_gap_adv_stop();
-        if (rc) {
-            ESP_LOGD(TAG, "Error in stopping advertisement with err code = %d",
-                     rc);
-        }
+    esp_err_t ret = ESP_OK;
+    bool ble_callbacks_active = true;
+    esp_err_t rc = ble_gap_adv_stop();
+    if (rc) {
+        ESP_LOGD(TAG, "Error in stopping advertisement with err code = %d",
+                 rc);
+    }
 
-#ifdef CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+    protoble_internal->pc_ble = NULL;
+
+    if (ble_cfg_p->keep_ble_on) {
 #ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
-	/* Keep BT stack on, but terminate the connection after provisioning */
-	rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-	if (rc) {
-	    ESP_LOGI(TAG, "Error in terminating connection rc = %d",rc);
-	}
-	free_gatt_ble_misc_memory(ble_cfg_p);
-#endif // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+       /* Keep BT stack on, but terminate the connection after provisioning */
+       rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+       if (rc) {
+           ESP_LOGI(TAG, "Error in terminating connection rc = %d", rc);
+       }
+       free_gatt_ble_misc_memory(ble_cfg_p);
+       ble_callbacks_active = false;
 #else
-	/* If flag is enabled, don't stop the stack. User application can start a new advertising to perform its BT activities */
+       ESP_LOGD(TAG, "Keeping BLE stack running after protocomm stop");
+#endif // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+    }
+    else {
+	    /* If flag is enabled, don't stop the stack. User application can start a new advertising to perform its BT activities */
         ret = nimble_port_stop();
         if (ret == 0) {
             nimble_port_deinit();
+        } else {
+            protoble_internal->pc_ble = pc;
+            return ret;
         }
         free_gatt_ble_misc_memory(ble_cfg_p);
-#endif // CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
-
-        protocomm_ble_cleanup();
-        return ret;
+        ble_callbacks_active = false;
     }
-    return ESP_ERR_INVALID_ARG;
+
+    if (!ble_callbacks_active) {
+        protocomm_ble_cleanup();
+    }
+    return ret;
 }

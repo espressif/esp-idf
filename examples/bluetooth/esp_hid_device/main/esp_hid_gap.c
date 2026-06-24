@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -278,6 +278,9 @@ static void handle_bt_device_result(struct disc_res_param *disc_res)
             GAP_DBG_PRINTF(", %s: ", gap_bt_prop_type_names[prop->type]);
         }
         if (prop->type == ESP_BT_GAP_DEV_PROP_BDNAME) {
+            if (prop->val == NULL) {
+                continue;
+            }
             name = (uint8_t *)prop->val;
             name_len = strlen((const char *)name);
             GAP_DBG_PRINTF("%s", (const char *)name);
@@ -358,22 +361,34 @@ static void handle_ble_device_result(struct ble_scan_result_evt_param *scan_rst)
     char name[64] = {0};
 
     uint8_t uuid_len = 0;
-    uint8_t *uuid_d = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_16SRV_CMPL, &uuid_len);
+    uint8_t *uuid_d = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                      scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                      ESP_BLE_AD_TYPE_16SRV_CMPL,
+                      &uuid_len);
     if (uuid_d != NULL && uuid_len) {
         uuid = uuid_d[0] + (uuid_d[1] << 8);
     }
 
     uint8_t appearance_len = 0;
-    uint8_t *appearance_d = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_APPEARANCE, &appearance_len);
+    uint8_t *appearance_d = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                                                    scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                                                    ESP_BLE_AD_TYPE_APPEARANCE,
+                                                    &appearance_len);
     if (appearance_d != NULL && appearance_len) {
         appearance = appearance_d[0] + (appearance_d[1] << 8);
     }
 
     uint8_t adv_name_len = 0;
-    uint8_t *adv_name = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
+    uint8_t *adv_name = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                                                 scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                                                 ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                 &adv_name_len);
 
     if (adv_name == NULL) {
-        adv_name = esp_ble_resolve_adv_data(scan_rst->ble_adv, ESP_BLE_AD_TYPE_NAME_SHORT, &adv_name_len);
+        adv_name = esp_ble_resolve_adv_data_by_type(scan_rst->ble_adv,
+                                            scan_rst->adv_data_len + scan_rst->scan_rsp_len,
+                                            ESP_BLE_AD_TYPE_NAME_SHORT,
+                                            &adv_name_len);
     }
 
     if (adv_name != NULL && adv_name_len) {
@@ -436,12 +451,12 @@ static void bt_gap_event_handler(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
 
 #if (CONFIG_EXAMPLE_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(TAG, "BT GAP CFM_REQ_EVT Please compare the numeric value: %" PRIu32,
+        ESP_LOGI(TAG, "BT GAP CFM_REQ_EVT Please compare the numeric value: %06" PRIu32,
                  param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(TAG, "BT GAP KEY_NOTIF_EVT passkey:%" PRIu32, param->key_notif.passkey);
+        ESP_LOGI(TAG, "BT GAP KEY_NOTIF_EVT passkey:%06" PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(TAG, "BT GAP KEY_REQ_EVT Please enter passkey!");
@@ -665,7 +680,7 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
     //esp_ble_io_cap_t iocap = ESP_IO_CAP_OUT;//you have to enter the key on the host
     //esp_ble_io_cap_t iocap = ESP_IO_CAP_IN;//you have to enter the key on the device
     esp_ble_io_cap_t iocap = ESP_IO_CAP_IO;//you have to agree that key matches on both
-    //esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;//device is not capable of input or output, unsecure
+    //esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;//device is not capable of input or output, insecure
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t rsp_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t key_size = 16; //the key size should be 7~16 bytes
@@ -701,7 +716,7 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
         return ret;
     }
 
-    if ((ret = esp_bt_dev_set_device_name(device_name)) != ESP_OK) {
+    if ((ret = esp_ble_gap_set_device_name(device_name)) != ESP_OK) {
         ESP_LOGE(TAG, "GAP set_device_name failed: %d", ret);
         return ret;
     }
@@ -753,6 +768,9 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
      */
     fields.flags = BLE_HS_ADV_F_DISC_GEN |
                    BLE_HS_ADV_F_BREDR_UNSUP;
+
+    fields.appearance = ESP_HID_APPEARANCE_GENERIC;
+    fields.appearance_is_present = 1;
 
     /* Indicate that the TX power level field should be included; have the
      * stack fill this value automatically.  This is done by assigning the
@@ -838,9 +856,13 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
         /* Encryption has been enabled or disabled for this connection. */
         MODLOG_DFLT(INFO, "encryption change event; status=%d ",
                 event->enc_change.status);
-        rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
-        assert(rc == 0);
-        ble_hid_task_start_up();
+        if (event->enc_change.status == 0) {
+            rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
+            assert(rc == 0);
+            ble_hid_task_start_up();
+        } else {
+            ESP_LOGW(TAG, "encryption failed; waiting for disconnect/retry");
+        }
         return 0;
 
     case BLE_GAP_EVENT_NOTIFY_TX:
@@ -871,7 +893,7 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_PASSKEY_ACTION:
         ESP_LOGI(TAG, "PASSKEY_ACTION_EVENT started");
         struct ble_sm_io pkey = {0};
-        int key = 0;
+        int key = 1;
 
         if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
             pkey.action = event->passkey.params.action;
@@ -946,10 +968,7 @@ static esp_err_t init_low_level(uint8_t mode)
     bt_cfg.mode = mode;
 #endif
 #if CONFIG_BT_HID_DEVICE_ENABLED
-    if (mode & ESP_BT_MODE_CLASSIC_BT) {
-        bt_cfg.bt_max_acl_conn = 3;
-        bt_cfg.bt_max_sync_conn = 3;
-    } else
+    if (!(mode & ESP_BT_MODE_CLASSIC_BT))
 #endif
     {
         ret = esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
@@ -1003,6 +1022,44 @@ static esp_err_t init_low_level(uint8_t mode)
 #endif /* CONFIG_BT_BLE_ENABLED */
     return ret;
 }
+
+static esp_err_t deinit_low_level(void)
+{
+    esp_err_t ret;
+
+    if (bt_scan_results) {
+        esp_hid_scan_results_free(bt_scan_results);
+        bt_scan_results = NULL;
+        num_bt_scan_results = 0;
+    }
+    if (ble_scan_results) {
+        esp_hid_scan_results_free(ble_scan_results);
+        ble_scan_results = NULL;
+        num_ble_scan_results = 0;
+    }
+
+    ret = esp_bluedroid_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bluedroid_disable failed: %d", ret);
+    }
+
+    ret = esp_bluedroid_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bluedroid_deinit failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_disable failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_deinit failed: %d", ret);
+    }
+
+    return ret;
+}
 #endif
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -1039,7 +1096,51 @@ static esp_err_t init_low_level(uint8_t mode)
 
     return ret;
 }
+
+static esp_err_t deinit_low_level(void)
+{
+    esp_err_t ret;
+
+    ret = esp_nimble_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_nimble_deinit failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_disable();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_disable failed: %d", ret);
+    }
+
+    ret = esp_bt_controller_deinit();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_bt_controller_deinit failed: %d", ret);
+    }
+
+    return ret;
+}
 #endif
+
+esp_err_t esp_hid_gap_deinit(void)
+{
+    esp_err_t ret;
+
+    ret = deinit_low_level();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "deinit_low_level failed: %d", ret);
+    }
+
+    if (bt_hidh_cb_semaphore != NULL) {
+        vSemaphoreDelete(bt_hidh_cb_semaphore);
+        bt_hidh_cb_semaphore = NULL;
+    }
+
+    if (ble_hidh_cb_semaphore != NULL) {
+        vSemaphoreDelete(ble_hidh_cb_semaphore);
+        ble_hidh_cb_semaphore = NULL;
+    }
+
+    return ESP_OK;
+}
 
 esp_err_t esp_hid_gap_init(uint8_t mode)
 {

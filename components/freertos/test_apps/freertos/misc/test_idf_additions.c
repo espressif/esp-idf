@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,17 @@ static void task_with_caps(void *arg)
     vTaskSuspend(NULL);
 }
 
-TEST_CASE("IDF additions: Task creation with memory caps", "[freertos]")
+static void task_with_caps_self_delete(void *arg)
+{
+    /* Wait for the unity task to indicate that this task should delete itself */
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    /* Although it is not recommended to self-delete a task with memory caps but this
+     * is done intentionally to test for memory leaks */
+    vTaskDeleteWithCaps(NULL);
+}
+
+TEST_CASE("IDF additions: Task creation with memory caps and deletion from another task", "[freertos]")
 {
     TaskHandle_t task_handle = NULL;
     StackType_t *puxStackBuffer;
@@ -61,6 +71,88 @@ TEST_CASE("IDF additions: Task creation with memory caps", "[freertos]")
     // Delete the task
     vTaskDeleteWithCaps(task_handle);
 }
+
+TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[freertos]")
+{
+    TaskHandle_t task_handle = NULL;
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    // Create a task with caps
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(task_with_caps_self_delete, "task", 4096, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &task_handle, UNITY_FREERTOS_CPU, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
+    // Get the task's memory
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    // Notify the task to delete itself
+    xTaskNotifyGive(task_handle);
+}
+
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
+
+TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletion stress test", "[freertos]")
+{
+#define TEST_NUM_TASKS      5
+#define TEST_NUM_ITERATIONS 1000
+    TaskHandle_t task_handle[TEST_NUM_TASKS];
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    for (int j = 0; j < TEST_NUM_ITERATIONS; j++) {
+        for (int i = 0; i < TEST_NUM_TASKS; i++) {
+            // Create a task with caps
+            TEST_ASSERT_EQUAL(pdPASS, xTaskCreateWithCaps(task_with_caps_self_delete, "task", 4096, NULL, UNITY_FREERTOS_PRIORITY, &task_handle[i], MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+            // Get the task's memory
+            TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle[i], &puxStackBuffer, &pxTaskBuffer));
+        }
+
+        for (int i = 0; i < TEST_NUM_TASKS; i++) {
+            // Notify the task to delete itself
+            xTaskNotifyGive(task_handle[i]);
+        }
+        // Let the scheduler run the self-delete tasks.
+        vTaskDelay(1);
+    }
+    // Allow the last batch to be freed by the cleanup task in vTaskDeleteWithCaps().
+    vTaskDelay(50);
+}
+
+#endif /* CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM */
+
+#if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
+
+static void task_with_caps_running_on_other_core(void *arg)
+{
+    /* Notify the unity task that this task is running on the other core */
+    xTaskNotifyGive((TaskHandle_t)arg);
+
+    /* We make sure that this task is running on the other core */
+    while (1) {
+        ;
+    }
+}
+
+TEST_CASE("IDF additions: Task creation with memory caps and deletion from another core", "[freertos]")
+{
+    TaskHandle_t task_handle = NULL;
+    StackType_t *puxStackBuffer;
+    StaticTask_t *pxTaskBuffer;
+
+    // Create a task with caps on the other core
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(task_with_caps_running_on_other_core, "task", 4096, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &task_handle, !UNITY_FREERTOS_CPU, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
+    // Get the task's memory
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
+    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    // Wait for the created task to start running
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // Delete the task from another core
+    vTaskDeleteWithCaps(task_handle);
+}
+
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
 TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos]")
 {
@@ -193,7 +285,7 @@ Expected:
 --------------------------------------------------------------------------------------------------------------------- */
 
 #define TEST_DELAY_MS 200
-static uint32_t tick_hook_count[portNUM_PROCESSORS];
+static volatile uint32_t tick_hook_count[portNUM_PROCESSORS];
 
 static void IRAM_ATTR tick_hook(void)
 {
@@ -207,9 +299,20 @@ static void suspend_task(void *arg)
     /* Fetch the current core ID */
     BaseType_t xCoreID = portGET_CORE_ID();
 
+    /* Warm up the cache by running the scheduler suspension/resumption once.
+     * This reduces the execution time variance caused by cache misses during
+     * the actual test on targets like the esp32p4.
+     */
+    vTaskSuspendAll();
+    xTaskResumeAll();
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     /* Register tick hook */
-    memset(tick_hook_count, 0, sizeof(tick_hook_count));
+    tick_hook_count[xCoreID] = 0;
     esp_register_freertos_tick_hook_for_cpu(tick_hook, xCoreID);
+
+    /* Read the tick hook count before suspending */
+    uint32_t initial_count = tick_hook_count[xCoreID];
 
     /* Suspend scheduler */
     vTaskSuspendAll();
@@ -223,30 +326,39 @@ static void suspend_task(void *arg)
     /* Delay for a further TEST_DELAY_MS milliseconds after scheduler resumption */
     vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_MS));
 
+    /* Read the final tick hook count */
+    uint32_t final_count = tick_hook_count[xCoreID];
+
     /* De-register tick hook */
     esp_deregister_freertos_tick_hook_for_cpu(tick_hook, xCoreID);
 
     /* Verify that the tick hook callback count equals the scheduler suspension time + the delay time.
      * We add a variation of 2 ticks to account for delays encountered during test setup and teardown.
      */
-    printf("Core%d tick_hook_count = %"PRIu32"\n", xCoreID, tick_hook_count[xCoreID]);
-    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, TEST_DELAY_MS * 2, tick_hook_count[xCoreID]);
+    printf("Core%d initial_count = %"PRIu32"\n", xCoreID, initial_count);
+    printf("Core%d final_count = %"PRIu32"\n", xCoreID, final_count);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, TEST_DELAY_MS * 2, final_count - initial_count);
 
     /* Signal main task of test completion */
     xTaskNotifyGive(main_task_hdl);
 
-    /* Cleanup */
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("IDF additions: IDF tick hooks during scheduler suspension", "[freertos]")
 {
     /* Run test for each core */
+    TaskHandle_t suspend_task_handle[portNUM_PROCESSORS];
     for (int x = 0; x < portNUM_PROCESSORS; x++) {
-        xTaskCreatePinnedToCore(&suspend_task, "suspend_task", 8192, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY, NULL, x);
+        xTaskCreatePinnedToCore(&suspend_task, "suspend_task", 8192, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY, &suspend_task_handle[x], x);
 
         /* Wait for test completion */
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        /* Cleanup */
+        vTaskSuspend(suspend_task_handle[x]);
+        vTaskDelay(10);
+        vTaskDelete(suspend_task_handle[x]);
     }
 }
 

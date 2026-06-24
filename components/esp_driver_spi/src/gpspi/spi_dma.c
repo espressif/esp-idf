@@ -1,13 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_attr.h"
 #include "esp_private/spi_dma.h"
 #include "hal/spi_ll.h"
 
-#if !SOC_GDMA_SUPPORTED
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_DMA_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_DMA_ISR_ATTR
+#endif
+
 void spi_dma_enable_burst(spi_dma_chan_handle_t chan_handle, bool data_burst, bool desc_burst)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
@@ -21,9 +27,43 @@ void spi_dma_enable_burst(spi_dma_chan_handle_t chan_handle, bool data_burst, bo
     }
 }
 
+void spi_dma_get_alignment_constraints(spi_dma_chan_handle_t chan_handle, size_t *internal_size, size_t *external_size)
+{
+    spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
+
+    if (chan_handle.dir == DMA_CHANNEL_DIRECTION_TX) {
+        *internal_size = 1; // TX don't need to follow dma alignment in driver design
+        *external_size = 1;
+    } else {
+        spi_dma_ll_get_rx_alignment_require(spi_dma, (uint32_t *)internal_size, (uint32_t *)external_size);
+    }
+}
+
+#if SOC_SPI_SUPPORT_SLAVE_HD_VER2
+void spi_dma_append(spi_dma_chan_handle_t chan_handle)
+{
+    spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
+
+    if (chan_handle.dir == DMA_CHANNEL_DIRECTION_TX) {
+        spi_dma_ll_tx_restart(spi_dma, chan_handle.chan_id);
+    } else {
+        spi_dma_ll_rx_restart(spi_dma, chan_handle.chan_id);
+    }
+}
+
 /************************************* IRAM CONTEXT **************************************/
 
-void spi_dma_reset(spi_dma_chan_handle_t chan_handle)
+uint32_t SPI_DMA_ISR_ATTR spi_dma_get_eof_desc(spi_dma_chan_handle_t chan_handle)
+{
+    spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
+
+    return (chan_handle.dir == DMA_CHANNEL_DIRECTION_TX) ?
+           spi_dma_ll_get_out_eof_desc_addr(spi_dma, chan_handle.chan_id) :
+           spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma, chan_handle.chan_id);
+}
+#endif  //SOC_SPI_SUPPORT_SLAVE_HD_VER2
+
+void SPI_DMA_ISR_ATTR spi_dma_reset(spi_dma_chan_handle_t chan_handle)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
 
@@ -34,7 +74,7 @@ void spi_dma_reset(spi_dma_chan_handle_t chan_handle)
     }
 }
 
-void spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr)
+void SPI_DMA_ISR_ATTR spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr)
 {
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
 
@@ -44,4 +84,3 @@ void spi_dma_start(spi_dma_chan_handle_t chan_handle, void *addr)
         spi_dma_ll_rx_start(spi_dma, chan_handle.chan_id, (lldesc_t *)addr);
     }
 }
-#endif

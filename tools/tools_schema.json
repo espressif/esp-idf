@@ -23,6 +23,7 @@
     "toolInfo": {
       "type": "object",
       "description": "Information about one tool",
+      "additionalProperties": false,
       "properties": {
         "name" : {
           "description": "Tool name (used as a directory name)",
@@ -69,6 +70,10 @@
         },
         "version_regex_replace": {
           "description": "If given, this will be used as substitute expression for the regex defined in version_regex, to obtain the version string. Not specifying this is equivalent to setting it to '\\1' (i.e. return the first capture group).",
+          "type": "string"
+        },
+        "tool_info_file": {
+          "description": "Tools info file path. Relative to tool install folder. If present tool version will be read from it instead of invoking the binary.",
           "type": "string"
         },
         "strip_container_dirs": {
@@ -131,6 +136,7 @@
     },
     "versionInfo": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "name" : {
           "description": "Version name (used as a directory name)",
@@ -153,13 +159,22 @@
         "linux-arm64": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
+        "linux-armhf": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
         "macos": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "macos-arm64": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
         "win32": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
         "win64": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "win-arm64": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
         "any": {
@@ -170,6 +185,7 @@
     "platformDownloadInfo": {
       "description": "Information about download artifact for one platform",
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "sha256": {
           "type": "string",
@@ -202,13 +218,14 @@
     "platformOverrideInfo": {
       "description": "Platform-specific values which override the defaults",
       "type": "object",
+      "additionalProperties": false,
       "properties": {
         "platforms": {
           "description": "List of platforms to which this override applies",
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-arm64", "macos", "macos-arm64", "win32", "win64"]
+            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-armhf", "linux-arm64", "macos", "macos-arm64", "win32", "win64", "win-arm64"]
           }
         },
         "export_paths": {
@@ -272,6 +289,27 @@
                 }
               }
             }
+          }
+        }
+      }
+    }
+  },
+  "$comment": "Condition verifying that version <=2 of tools.json must not contain 'tool_info_file' keyword in any of #/definitions/toolInfo properties.",
+  "if": {
+    "properties": {
+      "version": {
+        "maximum": 2
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "tools": {
+        "items": {
+          "not": {
+            "required": [
+              "tool_info_file"
+            ]
           }
         }
       }

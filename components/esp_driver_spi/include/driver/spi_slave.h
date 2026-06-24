@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,6 @@
 #define _DRIVER_SPI_SLAVE_H_
 
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "driver/spi_common.h"
 
 #ifdef __cplusplus
@@ -69,7 +67,9 @@ typedef struct {
  */
 struct spi_slave_transaction_t {
     uint32_t flags;                 ///< Bitwise OR of SPI_SLAVE_TRANS_* flags
-    size_t length;                  ///< Total data length, in bits
+    size_t length;                  ///< Total data length, in bits. It both for TX and RX, do NOT use together with independent length
+    size_t tx_length;               ///< Independent Tx data length, in bits, using with tx_buffer. do NOT use together with `length`
+    size_t rx_length;               ///< Independent Rx data length, in bits, using with rx_buffer. do NOT use together with `length`
     size_t trans_len;               ///< Transaction data length, in bits
     const void *tx_buffer;          ///< Pointer to transmit buffer, or NULL for no MOSI phase
     void *rx_buffer;                /**< Pointer to receive buffer, or NULL for no MISO phase.
@@ -80,7 +80,7 @@ struct spi_slave_transaction_t {
 };
 
 /**
- * @brief Initialize a SPI bus as a slave interface
+ * @brief Initialize a SPI bus as a slave interface and enable it by default
  *
  * @warning SPI0/1 is not supported
  *
@@ -120,6 +120,30 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
 esp_err_t spi_slave_free(spi_host_device_t host);
 
 /**
+ * @brief Enable the spi slave function for an initialized spi host
+ * @note No need to call this function additionally after `spi_slave_initialize`,
+ *       because it has been enabled already during the initialization.
+ *
+ * @param host SPI peripheral to be enabled
+ * @return
+ *         - ESP_OK                 On success
+ *         - ESP_ERR_INVALID_ARG    Unsupported host
+ *         - ESP_ERR_INVALID_STATE  Peripheral already enabled
+ */
+esp_err_t spi_slave_enable(spi_host_device_t host);
+
+/**
+ * @brief Disable the spi slave function for an initialized spi host
+ *
+ * @param host SPI peripheral to be disabled
+ * @return
+ *         - ESP_OK                 On success
+ *         - ESP_ERR_INVALID_ARG    Unsupported host
+ *         - ESP_ERR_INVALID_STATE  Peripheral already disabled
+ */
+esp_err_t spi_slave_disable(spi_host_device_t host);
+
+/**
  * @brief Queue a SPI transaction for execution
  *
  * @note On esp32, if trans length not WORD aligned, the rx buffer last word memory will still overwritten by DMA HW
@@ -141,9 +165,10 @@ esp_err_t spi_slave_free(spi_host_device_t host);
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_NO_MEM        if set flag `SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO` but there is no free memory
  *         - ESP_ERR_INVALID_STATE if sync data between Cache and memory failed
+ *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ``ticks_to_wait`` expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Get the result of a SPI transaction queued earlier
@@ -163,9 +188,11 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_NOT_SUPPORTED if flag `SPI_SLAVE_NO_RETURN_RESULT` is set
+ *         - ESP_ERR_INVALID_STATE if dma over/underflow error occurs during psram transfer
+ *         - ESP_ERR_TIMEOUT       if there was no completed transaction before ``ticks_to_wait`` expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transaction_t **trans_desc, uint32_t ticks_to_wait);
 
 /**
  * @brief Do a SPI transaction
@@ -182,9 +209,11 @@ esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transacti
  *                      out.
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_INVALID_STATE if dma over/underflow error occurs during psram transfer
+ *         - ESP_ERR_TIMEOUT       if the transaction cannot be queued or finished before ``ticks_to_wait`` expired
  *         - ESP_OK                on success
  */
-esp_err_t spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait);
+esp_err_t spi_slave_transmit(spi_host_device_t host, spi_slave_transaction_t *trans_desc, uint32_t ticks_to_wait);
 
 #ifdef __cplusplus
 }

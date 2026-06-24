@@ -1,6 +1,5 @@
 idf_component_register(
-    SRCS
-    "esp_zb_light.c"
-    "light_driver.c"
+    SRC_DIRS  "."
     INCLUDE_DIRS "."
+    PRIV_REQUIRES nvs_flash esp_driver_uart ieee802154
 )

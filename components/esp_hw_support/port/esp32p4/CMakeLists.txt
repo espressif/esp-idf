@@ -10,12 +10,15 @@ set(srcs "rtc_clk_init.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "esp_crypto_lock.c")
+    list(APPEND srcs "sar_periph_ctrl.c")
 
-    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs "mspi_timing_config.c")
+    if(CONFIG_SOC_PM_SLEEP_CLK_ICG_USE_REGDMA AND NOT CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+        list(APPEND srcs "pmu_sleep_clock_icg.c")
     endif()
+endif()
 
+if(NOT BOOTLOADER_BUILD AND CONFIG_ESP_ENABLE_PVT)
+    list(APPEND srcs "pmu_pvt.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

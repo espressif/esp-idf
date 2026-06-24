@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,12 +12,19 @@
 #include "soc/soc.h"
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
 #include "regi2c_ctrl.h"
+#include "esp_private/ocode_init.h"
+#include "esp_rom_sys.h"
+#include "soc/rtc.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -137,22 +144,22 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     };
 
     for (uint8_t idx = 0; idx < (sizeof(pmu_hp_domains) / sizeof(pmu_hp_power_domain_t)); idx++) {
-        pmu_ll_hp_set_power_force_reset     (ctx->hal->dev, pmu_hp_domains[idx], false);
-        pmu_ll_hp_set_power_force_isolate   (ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_power_up  (ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_no_reset  (ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_no_isolate(ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_power_down(ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_isolate   (ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_reset     (ctx->hal->dev, pmu_hp_domains[idx], false);
     }
     /* Isolate all memory banks while sleeping, avoid memory leakage current */
     pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
 
-    pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
-    pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_power_up  (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_no_reset  (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_no_isolate(ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_power_down(ctx->hal->dev, false);
+    pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
+    pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
 }
 
 static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system_param_t *param)
@@ -208,9 +215,6 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
 
 void pmu_init(void)
 {
-    /* Peripheral reg i2c power up */
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
@@ -220,4 +224,26 @@ void pmu_init(void)
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
+
+#if !CONFIG_IDF_ENV_FPGA
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+        esp_ocode_calib_init();
+    }
+#endif
+
+#if CONFIG_ESP_ENABLE_PVT
+    /*setup pvt function*/
+    uint32_t blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pvt_auto_dbias_init();
+        charge_pump_init();
+
+        pvt_func_enable(true);
+        charge_pump_enable(true);
+        esp_rom_delay_us(1000);
+    }
+    else {
+        ESP_HW_LOGW(TAG, "blk_version is less than 3, pvt function not supported in efuse.");
+    }
+#endif
 }

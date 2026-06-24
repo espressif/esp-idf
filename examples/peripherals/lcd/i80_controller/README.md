@@ -1,7 +1,7 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | --------- |
 
-# LVGL porting example (based on i80 interfaced LCD controller)
+# i80 LCD LVGL porting example
 
 LVGL is an open-source graphics library for creating modern GUIs. It has plenty of built-in graphical elements with low memory footprint, which is friendly for embedded GUI applications.
 
@@ -9,11 +9,11 @@ This example can be taken as a skeleton of porting the LVGL library onto the `es
 
 The whole porting code is located in [i80_controller_example_main.c](main/i80_controller_example_main.c), and the UI demo code is located in [lvgl_demo_ui.c](main/lvgl_demo_ui.c).
 
-The UI will display two images (one Espressif logo and another Espressif text), which have been converted into C arrays by the [online converting tool](https://lvgl.io/tools/imageconverter), and will be compiled directly into application binary.
+The UI will display two images (one Espressif logo and another Espressif text). You can choose to load images from a [LittleFS file system](https://github.com/joltwallet/esp_littlefs) or from embedded binary data. See [Image Resource](#image-resource) for more details.
 
-This example is constructed by [IDF component manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html), all the external dependency will be handled by the CMake build system automatically. In this case, it will help download the lvgl from [registry](https://components.espressif.com/component/lvgl/lvgl), with the version specified in the [manifest file](main/idf_component.yml).
+This example is constructed by [IDF component manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html), all the external dependency will be handled by the CMake build system automatically. In this case, it will help download the lvgl from the [ESP Component Registry](https://components.espressif.com/component/lvgl/lvgl), with the version specified in the [manifest file](main/idf_component.yml).
 
-This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL porting doc](https://docs.lvgl.io/master/porting/index.html).
+This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code.
 
 ## How to use the example
 
@@ -29,37 +29,33 @@ The connection between ESP Board and the LCD is as follows:
 
 ```text
    ESP Board                      LCD Screen
-┌─────────────┐              ┌────────────────┐
-│             │              │                │
-│         3V3 ├─────────────►│ VCC            │
-│             │              │                │
-│         GND ├──────────────┤ GND            │
-│             │              │                │
-│  DATA[0..7] │◄────────────►│ DATA[0..7]     │
-│             │              │                │
-│        PCLK ├─────────────►│ PCLK           │
-│             │              │                │
-│          CS ├─────────────►│ CS             │
-│             │              │                │
-│         D/C ├─────────────►│ D/C            │
-│             │              │                │
-│         RST ├─────────────►│ RST            │
-│             │              │                │
-│    BK_LIGHT ├─────────────►│ BCKL           │
-│             │              │                │
-│             │              └────────────────┘
-│             │                   LCD TOUCH
-│             │              ┌────────────────┐
-│             │              │                │
-│     I2C SCL ├─────────────►│ I2C SCL        │
-│             │              │                │
-│     I2C SDA │◄────────────►│ I2C SDA        │
-│             │              │                │
-└─────────────┘              └────────────────┘
-
++-------------+              +----------------+
+|             |              |                |
+|         3V3 +------------->| VCC            |
+|             |              |                |
+|         GND +--------------+ GND            |
+|             |              |                |
+|  DATA[0..7] |<------------>| DATA[0..7]     |
+|             |              |                |
+|        PCLK +------------->| PCLK (WR)      |
+|             |              |                |
+|          CS +------------->| CS             |
+|             |              |                |
+|         D/C +------------->| D/C            |
+|             |              |                |
+|         RST +------------->| RST            |
+|             |              |                |
+|    BK_LIGHT +------------->| BCKL           |
+|             |              |                |
+|         3V3 +------------->| RD             |
+|             |              |                |
++-------------+              +----------------+
 ```
 
-The GPIO number used by this example can be changed in [i80_controller_example_main.c](main/i80_controller_example_main.c).
+> [!IMPORTANT]
+> The 8080 interface also has an **RD** pin. The RD line must be **held high** when idle. (Connect to 3V3 or use pull-up resistors)
+
+
 Especially, please pay attention to the binary signal level used to turn the LCD backlight on, some LCD modules need a low level to turn it on, while others require a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [i80_controller_example_main.c](main/i80_controller_example_main.c).
 
 ### Build and Flash
@@ -69,14 +65,14 @@ Run `idf.py set-target <target-name>` to select one supported target that can ru
 Run `idf.py menuconfig` to open a terminal UI where you can tune specific configuration for this example in the `Example Configuration` menu.
 
 * `i80 LCD controller model`: Choose the LCD model to use by the example. If you choose `NT35510`, there will be another relevant configuration `NT35510 Data Width`, to choose the data line width for your NT35510 LCD module.
-
 * `Allocate color data from PSRAM`: Select this option if you want to allocate the LVGL draw buffers from PSRAM.
-
+* `Pixel clock frequency (Hz)`: Set the pixel clock frequency for the LCD controller.
 * `LCD image source from`: Select where to load the image resource. See [Image Resource](#image-resource) for more details.
+* `LCD GPIO Configuration`: Select the GPIO number used by this example
 
 Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from registry into `managed_components` folder.
+The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from the ESP Component Registry into `managed_components` folder.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -99,27 +95,38 @@ I (558) example: Starting LVGL task
 I (638) example: Display LVGL animation
 ```
 
-## Touch Screen Support
-
-This example supports touch screen connected via I2C. You can enable it by running `idf.py menuconfig` and navigating to `Example Configuration -> Enable LCD touch`. When touch is enabled, there will be a new button in the GUI that can restart the animation.
-
-These touch controllers are supported:
-
-* [GT911](https://github.com/espressif/esp-bsp/tree/master/components/lcd_touch/esp_lcd_touch_gt911)
-* [TT21100](https://github.com/espressif/esp-bsp/tree/master/components/lcd_touch/esp_lcd_touch_tt21100)
-* [FT5X06](https://github.com/espressif/esp-bsp/tree/master/components/lcd_touch/esp_lcd_touch_ft5x06)
-
 ## Image Resource
 
-This example supports two ways of reading images
+This example supports two ways of loading images, which can be selected via `LCD image source from` in the menuconfig:
 
-* from the [SPIFFS file system](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/spiffs.html). This is the suggested way we use in the example. It may take a little bit longer to load the image because of the bottleneck of the SPI flash read speed, but it will save the binary size.
-* from the embedded binary (i.e., pre-decode the image into an array and pack it together with the application firmware). By this way, you can get faster image loading speed at the cost of bloating your application binary. What's worse, if you enabled the [XIP from PSRAM](https://github.com/espressif/esp-idf/tree/master/examples/system/xip_from_psram) feature, it will increase the PSRAM usage as well.
+### File System (recommended)
+
+Load images from a [LittleFS file system](https://github.com/joltwallet/esp_littlefs). This approach saves binary size, though it may have slightly slower image loading due to SPI flash read speed.
+
+When this option is selected, the build system will:
+
+1. Use a custom partition table [partitions_lvgl_example.csv](partitions_lvgl_example.csv) that includes a `storage` partition for LittleFS.
+2. Automatically generate a LittleFS image from the PNG files in [main/images/filesystem](main/images/filesystem) and flash it to the `storage` partition.
+
+At runtime, the application mounts the LittleFS partition at `/littlefs` and LVGL accesses the images via its POSIX FS interface (e.g., `S:/littlefs/esp_logo.png`, where `S` is the drive letter).
+
+The following LVGL features are enabled for file system support (see [sdkconfig.ci.image_in_fs](sdkconfig.ci.image_in_fs)):
+
+* `LV_USE_LODEPNG`: Decode PNG images at runtime.
+* `LV_USE_FS_POSIX`: Enable POSIX file system interface in LVGL.
+* `LV_FS_POSIX_LETTER`: Set to `83` (ASCII for `S`) as the drive letter.
+* `PARTITION_TABLE_CUSTOM` : Use the custom partition table.
+
+### Embedded Binary (default)
+
+Pre-decode images into C arrays (via the [online converting tool](https://lvgl.io/tools/imageconverter)) and pack them together with the application firmware. This gives faster image loading speed at the cost of a larger application binary. If you have enabled the [XIP from PSRAM](https://github.com/espressif/esp-idf/tree/master/examples/system/xip_from_psram) feature, it will also increase the PSRAM usage.
 
 ## Troubleshooting
 
+* **Garbled or random display, or different image on each boot:** If your LCD has an RD pin with no internal pull-up, it must be held high. You can directly connect RD to the 3V3 or use a pull-up resistor.
+
 * Can't get a stable UI when `EXAMPLE_LCD_I80_COLOR_IN_PSRAM` is enabled.
 
-   This is because of the limited PSRAM bandwidth, compared to the internal SRAM. You can either decrease the PCLK clock `EXAMPLE_LCD_PIXEL_CLOCK_HZ` in [i80_controller_example_main.c](main/i80_controller_example_main.c) or increase the PSRAM working frequency `SPIRAM_SPEED` from the KConfig (e.g. **ESP32S3-Specific** -> **Set RAM clock speed**) or decrease the FPS in LVGL configuration. For illustration, this example has set the refresh period to 100ms in the default sdkconfig file.
+   This is because of the limited PSRAM bandwidth, compared to the internal SRAM. You can either decrease the PCLK clock `EXAMPLE_LCD_PIXEL_CLOCK_HZ` from the menuconfig or increase the PSRAM working frequency `SPIRAM_SPEED` from the KConfig (e.g. **Component-config** -> **ESP PSRAM** -> **PSRAM config** -> **Set PSRAM clock speed**) or decrease the FPS in LVGL configuration. In addition, enabling `SPIRAM_XIP_FROM_PSRAM` can help increase the PCLK frequency when the Frame Buffer is allocated from the PSRAM.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

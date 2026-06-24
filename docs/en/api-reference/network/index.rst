@@ -56,13 +56,14 @@ ESP-NETIF
 
    esp_netif
 
-IP Network Layer
-================
-
 .. toctree::
     :hidden:
 
+    esp_netif_programming
     esp_netif_driver
+
+IP Network Layer
+================
 
 Code examples for TCP/IP socket APIs are provided in the :example:`protocols/sockets` directory of ESP-IDF examples.
 

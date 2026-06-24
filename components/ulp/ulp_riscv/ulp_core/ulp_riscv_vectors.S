@@ -6,7 +6,7 @@
 
 #include "sdkconfig.h"
 #include "ulp_riscv_interrupt_ops.h"
-#include "riscv/rvruntime-frames.h"
+
     .equ SAVE_REGS, 17
     .equ CONTEXT_SIZE, (SAVE_REGS * 4)
 
@@ -19,46 +19,46 @@
  */
 .macro save_general_regs cxt_size=CONTEXT_SIZE
     addi sp, sp, -\cxt_size
-    sw   ra, RV_STK_RA(sp)
-    sw   tp, RV_STK_TP(sp)
-    sw   t0, RV_STK_T0(sp)
-    sw   t1, RV_STK_T1(sp)
-    sw   t2, RV_STK_T2(sp)
-    sw   a0, RV_STK_A0(sp)
-    sw   a1, RV_STK_A1(sp)
-    sw   a2, RV_STK_A2(sp)
-    sw   a3, RV_STK_A3(sp)
-    sw   a4, RV_STK_A4(sp)
-    sw   a5, RV_STK_A5(sp)
-    sw   a6, RV_STK_A6(sp)
-    sw   a7, RV_STK_A7(sp)
-    sw   t3, RV_STK_T3(sp)
-    sw   t4, RV_STK_T4(sp)
-    sw   t5, RV_STK_T5(sp)
-    sw   t6, RV_STK_T6(sp)
+    sw   ra, 0(sp)
+    sw   tp, 4(sp)
+    sw   t0, 8(sp)
+    sw   t1, 12(sp)
+    sw   t2, 16(sp)
+    sw   a0, 20(sp)
+    sw   a1, 24(sp)
+    sw   a2, 28(sp)
+    sw   a3, 32(sp)
+    sw   a4, 36(sp)
+    sw   a5, 40(sp)
+    sw   a6, 44(sp)
+    sw   a7, 48(sp)
+    sw   t3, 52(sp)
+    sw   t4, 56(sp)
+    sw   t5, 60(sp)
+    sw   t6, 64(sp)
 .endm
 
 /* Restore the general purpose registers (excluding gp) from the context on
  * the stack. The context is then deallocated. The default size is CONTEXT_SIZE
  * but it can be overridden. */
 .macro restore_general_regs cxt_size=CONTEXT_SIZE
-    lw   ra, RV_STK_RA(sp)
-    lw   tp, RV_STK_TP(sp)
-    lw   t0, RV_STK_T0(sp)
-    lw   t1, RV_STK_T1(sp)
-    lw   t2, RV_STK_T2(sp)
-    lw   a0, RV_STK_A0(sp)
-    lw   a1, RV_STK_A1(sp)
-    lw   a2, RV_STK_A2(sp)
-    lw   a3, RV_STK_A3(sp)
-    lw   a4, RV_STK_A4(sp)
-    lw   a5, RV_STK_A5(sp)
-    lw   a6, RV_STK_A6(sp)
-    lw   a7, RV_STK_A7(sp)
-    lw   t3, RV_STK_T3(sp)
-    lw   t4, RV_STK_T4(sp)
-    lw   t5, RV_STK_T5(sp)
-    lw   t6, RV_STK_T6(sp)
+    lw   ra, 0(sp)
+    lw   tp, 4(sp)
+    lw   t0, 8(sp)
+    lw   t1, 12(sp)
+    lw   t2, 16(sp)
+    lw   a0, 20(sp)
+    lw   a1, 24(sp)
+    lw   a2, 28(sp)
+    lw   a3, 32(sp)
+    lw   a4, 36(sp)
+    lw   a5, 40(sp)
+    lw   a6, 44(sp)
+    lw   a7, 48(sp)
+    lw   t3, 52(sp)
+    lw   t4, 56(sp)
+    lw   t5, 60(sp)
+    lw   t6, 64(sp)
     addi sp,sp, \cxt_size
 .endm
 
@@ -89,7 +89,7 @@ irq_vector:
     /* Restore the register context after returning from the C interrupt handler */
     restore_general_regs
 
-    /* Exit interrupt handler by executing the custom retirq instruction which will retore pc and re-enable interrupts */
+    /* Exit interrupt handler by executing the custom retirq instruction which will restore pc and re-enable interrupts */
     retirq_insn()
 
 #endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */

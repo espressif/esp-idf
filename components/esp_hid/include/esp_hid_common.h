@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +84,19 @@ extern "C" {
 /* Client Characteristic Configuration values */
 #define ESP_HID_CCC_NOTIFICATIONS_ENABLED   0x01      // Notifications enabled
 #define ESP_HID_CCC_INDICATIONS_ENABLED     0x02      // Indications enabled
+
+/* HID Task Size configuration */
+#ifdef  CONFIG_ESPHID_TASK_SIZE_BT
+#define BT_HID_DEVICE_TASK_SIZE_BT         CONFIG_ESPHID_TASK_SIZE_BT
+#else
+#define BT_HID_DEVICE_TASK_SIZE_BT         2048
+#endif
+
+#ifdef  CONFIG_ESPHID_TASK_SIZE_BLE
+#define BT_HID_DEVICE_TASK_SIZE_BLE         CONFIG_ESPHID_TASK_SIZE_BLE
+#else
+#define BT_HID_DEVICE_TASK_SIZE_BLE         4096
+#endif
 
 /* HID Transports */
 typedef enum {
@@ -202,8 +215,8 @@ esp_hid_report_map_t *esp_hid_parse_report_map(const uint8_t *hid_rm, size_t hid
 void esp_hid_free_report_map(esp_hid_report_map_t *map);
 
 /**
- * @brief Calculate the HID Device usage type from the BLE Apperance
- * @param appearance : BLE Apperance value
+ * @brief Calculate the HID Device usage type from the BLE Appearance
+ * @param appearance : BLE Appearance value
  *
  * @return: the hid usage type
  */

@@ -103,8 +103,6 @@
     I (190) boot: Disabling RNG early entropy source...
     I (214) cpu_start: Pro cpu up.
     I (214) cpu_start: Starting app cpu, entry point is 0x40374fa8
-    0x40374fa8: call_start_cpu1 at /home/marius/esp-idf_3/components/esp_system/port/cpu_start.c:160
-
     I (0) cpu_start: App cpu up.
     I (228) cpu_start: Pro cpu start user code
     I (228) cpu_start: cpu freq: 160000000

@@ -1,13 +1,23 @@
-安全
-====
+安全概述
+========
 
-{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA"}
+{IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA 或 ECDSA", esp32p4="RSA 或 ECDSA", esp32c5="RSA 或 ECDSA", esp32c61="ECDSA", esp32h21="RSA 或 ECDSA"}
 
-{IDF_TARGET_SIG_PERI:default="DS", esp32h2="DS 或 ECDSA", esp32p4="DS 或 ECDSA"}
+{IDF_TARGET_SIG_PERI:default="RSA_DS", esp32h2="RSA_DS 或 ECDSA_DS", esp32p4="RSA_DS 或 ECDSA_DS", esp32c5="RSA_DS 或 ECDSA_DS", esp32c61="ECDSA_DS"}
 
 :link_to_translation:`en:[English]`
 
 本指南概述了乐鑫解决方案中可用的整体安全功能。从 **安全** 角度考虑，强烈建议在使用乐鑫平台和 ESP-IDF 软件栈设计产品时参考本指南。
+
+.. note::
+
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
+
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      可以在 :doc:`../api-guides/tools/qemu` 中虚拟测试 {IDF_TARGET_NAME} 目标芯片的安全功能。安全工作流程建立后，便可在真实硬件上继续操作。
 
 目标
 ----
@@ -45,7 +55,7 @@
 
 * 在具备高质量熵源的系统上生成签名密钥。
 * 签名密钥始终保密；签名密钥泄露会危及安全启动系统。
-* 禁止第三方使用 ``espsecure.py`` 观察密钥生成或签名过程的相关细节，这两个过程都容易受到时序攻击或其他侧信道攻击的影响。
+* 不允许第三方使用 ``idf.py secure-`` 或 ``espsecure`` 命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
 * 确保正确烧录所有安全性 eFuse，包括禁用调试接口以及非必需的启动介质（例如 UART 下载模式）等。
 
 
@@ -65,7 +75,7 @@ flash 加密功能可以加密外部 flash 中的内容，从而保护存储在 
 flash 加密最佳实践
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* 建议在生产环境中使用 flash 加密的发布模式。
+* 建议在生产环境中使用 flash 加密的 :ref:`flash-enc-release-mode`。
 * 建议为每个设备生成唯一的 flash 加密密钥。
 * 启用 :ref:`secure_boot-guide` 作为额外保护层，防止 flash 在启动前遭受恶意攻击。
 
@@ -75,21 +85,39 @@ flash 加密最佳实践
     设备身份
     ~~~~~~~~~~~~~~~
 
-    在 {IDF_TARGET_NAME} 中，数字签名外设借助硬件加速，通过 HMAC 算法生成 RSA 数字签名。RSA 私钥仅限设备硬件访问，软件无法获取，保证了设备上存储密钥的安全性。
+    在 {IDF_TARGET_NAME} 中，RSA 数字签名外设借助硬件加速，通过 HMAC 算法生成 RSA 数字签名。RSA 私钥仅限设备硬件访问，软件无法获取，保证了设备上存储密钥的安全性。
 
     .. only:: SOC_ECDSA_SUPPORTED
 
-        {IDF_TARGET_NAME} 还支持 ECDSA 外设，用于生成硬件加速的 ECDSA 数字签名。ECDSA 私钥支持直接编程到 eFuse 块中，并在软件中标记为读保护。
+        {IDF_TARGET_NAME} 还支持 ECDSA_DS 外设，用于生成硬件加速的 ECDSA 数字签名。ECDSA 私钥支持直接编程到 eFuse 块中，并在软件中标记为读保护。
 
     {IDF_TARGET_SIG_PERI} 外设可以建立与远程终端之间的 **安全设备身份**，如基于 {IDF_TARGET_CIPHER_SCHEME} 加密算法的 TLS 双向认证。
 
     .. only:: not SOC_ECDSA_SUPPORTED
 
-        详情请参阅 :doc:`../api-reference/peripherals/ds`。
+        详情请参阅 :doc:`RSA 数字签名外设 (RSA_DS) <../api-reference/peripherals/ds>`。
 
     .. only:: SOC_ECDSA_SUPPORTED
 
-        详情请参阅 :doc:`../api-reference/peripherals/ecdsa` 及 :doc:`../api-reference/peripherals/ds`。
+        详情请参阅 :doc:`ECDSA 数字签名外设 (ECDSA_DS) <../api-reference/peripherals/ecdsa>` 及 :doc:`RSA 数字签名外设 (RSA_DS) <../api-reference/peripherals/ds>`。
+
+.. only:: SOC_KEY_MANAGER_SUPPORTED
+
+    密钥管理器
+    ~~~~~~~~~~
+
+    {IDF_TARGET_NAME} 中的密钥管理器外设提供硬件辅助的 **密钥部署和恢复** 功能，适用于加密密钥。密钥通过每块芯片独有的硬件唯一密钥 (HUK) 进行加密绑定，确保密钥内容不会暴露给软件可访问的内存。
+
+    密钥管理器支持以下加密外设的密钥管理：:doc:`ECDSA <../api-reference/peripherals/ecdsa>`、:doc:`HMAC <../api-reference/peripherals/hmac>`、:doc:`数字签名 (DS) <../api-reference/peripherals/ds>` 以及 flash 加密。
+
+    详情请参阅 :doc:`../api-reference/peripherals/key_manager`。
+
+    密钥管理器最佳实践
+    ^^^^^^^^^^^^^^^^^^
+
+    * 防止密钥管理器部署密钥的 ``key_recovery_info`` 遭受未授权修改或丢失。
+    * 在成功部署密钥后，锁定密钥管理器相关的安全 eFuse，防止重新部署同类型密钥。
+    * 除非明确需要，否则在已启用 flash 加密的情况下，避免部署新的 XTS-AES 密钥。
 
 .. only:: SOC_MEMPROT_SUPPORTED or SOC_CPU_IDRAM_SPLIT_USING_PMP
 
@@ -98,24 +126,59 @@ flash 加密最佳实践
 
     {IDF_TARGET_NAME} 可以通过架构或 PMS 等特定外设实现 **内存保护**，强制执行和监控内存以及某些外设的权限属性。使用相应外设，ESP-IDF 应用程序启动代码可以配置数据内存的读取/写入权限以及指令内存的读取/执行权限。如有任何操作尝试违反这些权限属性，如写入指令内存区域，将触发违规中断，导致系统 panic。
 
-    使用该功能需启用配置选项 :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE`，该选项默认启用。请注意，该功能的 API 是 **私有** 的，仅供 ESP-IDF 代码使用。
+    使用该功能需启用配置选项 :ref:`CONFIG_ESP_SYSTEM_MEMPROT`，该选项默认启用。请注意，该功能的 API 是 **私有** 的，仅供 ESP-IDF 代码使用。
 
     .. note::
 
         内存保护功能可以防止因软件漏洞导致的远程代码注入。
 
-.. only:: SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
+.. only:: SOC_CRYPTO_DPA_PROTECTION_SUPPORTED or SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
 
-    差分功耗分析 (DPA) 保护
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    防御侧信道攻击
+    ~~~~~~~~~~~~~~~~~
 
-    {IDF_TARGET_NAME} 支持针对 DPA 相关安全攻击的保护机制。DPA 保护通过动态调整加密外设的时钟频率，在其运行期间模糊了功耗消耗记录。时钟变化范围会根据配置的 DPA 安全级别改变。更多详情请参阅技术参考手册。
+    .. only:: SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
 
-    通过 :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` 可以调整 DPA 级别。级别越高安全性越强，但也可能会影响性能。默认启用最低级别 DPA 保护，可以根据安全需求修改。
+        差分功耗分析 (DPA) 保护
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    .. note::
+        {IDF_TARGET_NAME} 支持针对 DPA 相关安全攻击的保护机制。DPA 保护通过动态调整加密外设的时钟频率，在其运行期间模糊了功耗轨迹。时钟变化范围会根据配置的 DPA 安全级别改变。详情请参阅 **《{IDF_TARGET_NAME} 技术参考手册》** [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
 
-        请注意，为确保 DPA 保护正常工作，必须启用硬件 :doc:`RNG <../api-reference/system/random>`。
+        通过 :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` 可以调整 DPA 级别。级别越高安全性越强，但也可能会影响性能。默认启用最低级别 DPA 保护，可以根据安全需求修改。
+
+        .. note::
+
+            请注意，为确保 DPA 保护机制正常工作，必须启用硬件 :doc:`RNG <../api-reference/system/random>`。
+
+    .. only:: SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+
+        AES 外设的伪轮次功能
+        ^^^^^^^^^^^^^^^^^^^^^
+
+        {IDF_TARGET_NAME} 在 AES 外设中集成了伪轮次功能，使该外设能够在原始操作轮次前后随机插入伪轮次，并生成一个伪密钥来执行这些虚拟操作。
+        这些操作不会改变原始结果，但能够通过随机化功耗特征，提高实施侧信道分析攻击的复杂性。
+
+        可以使用 :ref:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` 选择伪轮次功能的强度。提高强度会增强该功能所提供的安全性，但会减缓加密/解密操作的速度。
+
+
+        .. list-table:: 伪轮次功能的不同强度对 AES 操作性能的影响
+            :widths: 10 10
+            :header-rows: 1
+            :align: center
+
+            * - **强度**
+              - **性能影响** [#]_
+            * - 低
+              - 20.9 %
+            * - 中
+              - 47.6 %
+            * - 高
+              - 72.4 %
+
+        .. [#] 上述性能数据通过 mbedtls 测试应用中的 AES 性能测试 :component_file:`test_psa_aes_perf.c <mbedtls/test_apps/mbedtls_ut/main/test_psa_aes_perf.c>` 计算得出。
+
+        考虑到上述性能影响，ESP-IDF 默认关闭伪轮次功能，避免对相关性能造成影响。但如果需要更高的安全性，仍然建议启用。
+
 
 调试接口
 ~~~~~~~~~~~~~~~~
@@ -138,7 +201,7 @@ UART 下载模式
 
     .. important::
 
-        如果禁用了 UART 下载模式，则无法在设备上使用 ``esptool.py``。
+        如果禁用了 UART 下载模式，则无法在设备上使用 ``esptool``。
 
 .. only:: SOC_SUPPORTS_SECURE_DL_MODE
 
@@ -146,12 +209,12 @@ UART 下载模式
 
     * 要启用安全 UART 下载模式，也可以调用 :cpp:func:`esp_efuse_enable_rom_secure_download_mode`。
     * 该模式下，禁止执行通过 UART 下载模式下载的任意代码。
-    * 该模式将限制部分涉及更新 SPI 配置的命令，如更改波特率、基本的 flash 写入以及通过 ``get_security_info`` 返回当前启用的安全功能摘要。
+    * 该模式将限制部分涉及更新 SPI 配置的命令，如更改波特率、基本的 flash 写入以及通过 ``get-security-info`` 返回当前启用的安全功能摘要。
     * 要完全禁用安全 UART 下载模式，可以将 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 设置为建议选项 ``Permanently disable ROM Download Mode``，或者在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
 
     .. important::
 
-        安全 UART 下载模式下，仅支持使用 ``--no-stub`` 参数调用 ``esptool.py``。
+        安全 UART 下载模式下，仅支持使用 ``--no-stub`` 参数调用 ``esptool``。
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -220,7 +283,7 @@ UART 下载模式
 
     ESP-IDF 提供了多种安全方案，可以在 ESP 设备和配网实体之间建立安全会话，具体方案请参阅 :ref:`provisioning_security_schemes`。
 
-    关于该功能的更多详情和代码示例，请参阅 :doc:`../api-reference/provisioning/wifi_provisioning`。
+    关于该功能的更多详情和代码示例，请参阅 `network_provisioning <https://github.com/espressif/idf-extra-components/tree/master/network_provisioning>`_。
 
     .. note::
 

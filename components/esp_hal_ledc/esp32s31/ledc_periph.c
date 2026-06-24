@@ -1,0 +1,284 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "hal/ledc_periph.h"
+#include "soc/gpio_sig_map.h"
+#include "soc/ledc_reg.h"
+
+/*
+ Bunch of constants for every LEDC peripheral: GPIO signals
+*/
+const ledc_signal_conn_t ledc_periph_signal[2] = {
+    {
+        .irq_id = ETS_LEDC0_INTR_SOURCE,
+        .speed_mode = {
+            [0] = {
+                .sig_out_idx = {
+                    LEDC0_LS_SIG_OUT_PAD_OUT0_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT1_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT2_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT3_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT4_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT5_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT6_IDX,
+                    LEDC0_LS_SIG_OUT_PAD_OUT7_IDX,
+                }
+            },
+        },
+    },
+    {
+        .irq_id = ETS_LEDC1_INTR_SOURCE,
+        .speed_mode = {
+            [0] = {
+                .sig_out_idx = {
+                    LEDC1_LS_SIG_OUT_PAD_OUT0_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT1_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT2_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT3_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT4_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT5_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT6_IDX,
+                    LEDC1_LS_SIG_OUT_PAD_OUT7_IDX,
+                }
+            },
+        },
+    },
+};
+
+/**
+ * LEDC registers to be saved for sleep retention
+ *
+ * channel:
+ * LEDC_CHx_CONF0_REG, LEDC_CHx_HPOINT_REG, LEDC_CHx_DUTY_R_REG -> LEDC_CHx_DUTY_REG,
+ * LEDC_CHx_GAMMA_CONF_REG, LEDC_CHx_GAMMA_RANGEi_REG
+ *
+ * timer:
+ * LEDC_TIMERn_CONF_REG, LEDC_TIMERn_CMP_REG,
+ *
+ * common:
+ * LEDC_INT_ENA_REG,
+ * LEDC_EVT_TASK_EN0_REG, LEDC_EVT_TASK_EN1_REG, LEDC_EVT_TASK_EN2_REG,
+ * LEDC_CONF_REG,
+ * LEDC_CH_POWER_UP_CONF_REG, LEDC_TIMER_POWER_UP_CONF_REG
+ *
+ * Note 1: Gamma parameter registers are backuped and restored. But we won't start a fade automatically after wake-up.
+ *         Instead, we will only start a PWM with a fixed duty cycle, the same value as before entering the sleep.
+ *
+ * Note 2: For timer/channel registers to get synced, update bits need to be set
+ *
+ * Note 3: Gamma RAM registers R/W relies both APB and function clock, therefore, retention requires the existence of function clock
+ */
+#define LEDC_COMMON_RETENTION_REGS_CNT  7
+#define LEDC_COMMON_RETENTION_REGS_BASE(i) (DR_REG_LEDC_BASE(i) + 0xc8)
+static const uint32_t ledc_common_regs_map[4] = {0x1c00001, 0x1c00, 0x0, 0x0};
+// If a fade is in process, the DUTY_CHNG_END_CHx intr bit is enabled, however, we don't want it to be restored after wake-up (no fade after wake-up).
+// Therefore, we can set it to 0 before backup the LEDC_INT_ENA_REG.
+#define LEDC_COMMON_RETENTION_ENTRIES(i) { \
+    [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_LEDC_LINK(0x00), \
+                                             LEDC_INT_ENA_REG(i), 0, \
+                                             (LEDC_DUTY_CHNG_END_CH0_INT_ENA_M | LEDC_DUTY_CHNG_END_CH1_INT_ENA_M | LEDC_DUTY_CHNG_END_CH2_INT_ENA_M | LEDC_DUTY_CHNG_END_CH3_INT_ENA_M | LEDC_DUTY_CHNG_END_CH4_INT_ENA_M | LEDC_DUTY_CHNG_END_CH5_INT_ENA_M | LEDC_DUTY_CHNG_END_CH6_INT_ENA_M | LEDC_DUTY_CHNG_END_CH7_INT_ENA_M), 0, 1), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [1] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_LEDC_LINK(0x01), \
+                                                LEDC_COMMON_RETENTION_REGS_BASE(i), LEDC_COMMON_RETENTION_REGS_BASE(i), \
+                                                LEDC_COMMON_RETENTION_REGS_CNT, 0, 0, \
+                                                ledc_common_regs_map[0], ledc_common_regs_map[1], \
+                                                ledc_common_regs_map[2], ledc_common_regs_map[3]), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+}
+
+#define LEDC_TIMER_RETENTION_ENTRIES(i, timer) { \
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_LEDC_LINK(0x00), \
+                                                 LEDC_TIMER##timer##_CONF_REG(i), LEDC_TIMER##timer##_CONF_REG(i), \
+                                                 1, 0, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_LEDC_LINK(0x01), \
+                                                 LEDC_TIMER##timer##_CMP_REG(i), LEDC_TIMER##timer##_CMP_REG(i), \
+                                                 1, 0, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_LEDC_LINK(0x02), \
+                                            LEDC_TIMER##timer##_CONF_REG(i), LEDC_TIMER##timer##_PARA_UP, \
+                                            LEDC_TIMER##timer##_PARA_UP_M, 1, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+}
+
+#define LEDC_CHANNEL_RETENTION_REGS_CNT 2
+static const uint32_t ledc_channel_regs_map[4] = {0x3, 0x0, 0x0, 0x0};
+static const uint32_t ledc_channel_gamma_regs_map[4] = {0xffff, 0x0, 0x0, 0x0};
+#define LEDC_CHANNEL_RETENTION_ENTRIES(i, chan) { \
+    [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_LEDC_LINK(0x00), \
+                                               LEDC_CH##chan##_CONF0_REG(i), LEDC_CH##chan##_CONF0_REG(i), \
+                                               LEDC_CHANNEL_RETENTION_REGS_CNT, 0, 0, \
+                                               ledc_channel_regs_map[0], ledc_channel_regs_map[1], \
+                                               ledc_channel_regs_map[2], ledc_channel_regs_map[3]), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_LEDC_LINK(0x01), \
+                                                 LEDC_CH##chan##_DUTY_R_REG(i), LEDC_CH##chan##_DUTY_REG(i), \
+                                                 1, 0, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_LEDC_LINK(0x02), \
+                                            LEDC_CH##chan##_CONF1_REG(i), LEDC_DUTY_START_CH##chan, \
+                                            LEDC_DUTY_START_CH##chan##_M, 1, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_LEDC_LINK(0x03), \
+                                            LEDC_CH##chan##_CONF0_REG(i), LEDC_PARA_UP_CH##chan, \
+                                            LEDC_PARA_UP_CH##chan##_M, 1, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_LEDC_LINK(0x04), \
+                                                 LEDC_CH##chan##_GAMMA_CONF_REG(i), LEDC_CH##chan##_GAMMA_CONF_REG(i), \
+                                                 1, 0, 0), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+    [5] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_LEDC_LINK(0x05), \
+                                               LEDC_CH##chan##_GAMMA_RANGE0_REG(i), LEDC_CH##chan##_GAMMA_RANGE0_REG(i), \
+                                               SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX, 0, 0, \
+                                               ledc_channel_gamma_regs_map[0], ledc_channel_gamma_regs_map[1], \
+                                               ledc_channel_gamma_regs_map[2], ledc_channel_gamma_regs_map[3]), \
+            .owner = LEDC_RETENTION_ENTRY }, \
+}
+
+static const regdma_entries_config_t ledc0_common_regdma_entries[] = LEDC_COMMON_RETENTION_ENTRIES(0);
+
+static const regdma_entries_config_t ledc0_timer0_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(0, 0);
+static const regdma_entries_config_t ledc0_timer1_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(0, 1);
+static const regdma_entries_config_t ledc0_timer2_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(0, 2);
+static const regdma_entries_config_t ledc0_timer3_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(0, 3);
+
+static const regdma_entries_config_t ledc0_channel0_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 0);
+static const regdma_entries_config_t ledc0_channel1_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 1);
+static const regdma_entries_config_t ledc0_channel2_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 2);
+static const regdma_entries_config_t ledc0_channel3_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 3);
+static const regdma_entries_config_t ledc0_channel4_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 4);
+static const regdma_entries_config_t ledc0_channel5_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 5);
+static const regdma_entries_config_t ledc0_channel6_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 6);
+static const regdma_entries_config_t ledc0_channel7_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(0, 7);
+
+static const regdma_entries_config_t ledc1_common_regdma_entries[] = LEDC_COMMON_RETENTION_ENTRIES(1);
+
+static const regdma_entries_config_t ledc1_timer0_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(1, 0);
+static const regdma_entries_config_t ledc1_timer1_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(1, 1);
+static const regdma_entries_config_t ledc1_timer2_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(1, 2);
+static const regdma_entries_config_t ledc1_timer3_regdma_entries[] = LEDC_TIMER_RETENTION_ENTRIES(1, 3);
+
+static const regdma_entries_config_t ledc1_channel0_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 0);
+static const regdma_entries_config_t ledc1_channel1_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 1);
+static const regdma_entries_config_t ledc1_channel2_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 2);
+static const regdma_entries_config_t ledc1_channel3_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 3);
+static const regdma_entries_config_t ledc1_channel4_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 4);
+static const regdma_entries_config_t ledc1_channel5_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 5);
+static const regdma_entries_config_t ledc1_channel6_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 6);
+static const regdma_entries_config_t ledc1_channel7_regdma_entries[] = LEDC_CHANNEL_RETENTION_ENTRIES(1, 7);
+
+const ledc_reg_retention_info_t ledc_reg_retention_info[2] = {
+    {
+        .common = {
+            .regdma_entry_array = ledc0_common_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_common_regdma_entries),
+        },
+        .timer[0] = {
+            .regdma_entry_array = ledc0_timer0_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_timer0_regdma_entries),
+        },
+        .timer[1] = {
+            .regdma_entry_array = ledc0_timer1_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_timer1_regdma_entries),
+        },
+        .timer[2] = {
+            .regdma_entry_array = ledc0_timer2_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_timer2_regdma_entries),
+        },
+        .timer[3] = {
+            .regdma_entry_array = ledc0_timer3_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_timer3_regdma_entries),
+        },
+        .channel[0] = {
+            .regdma_entry_array = ledc0_channel0_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel0_regdma_entries),
+        },
+        .channel[1] = {
+            .regdma_entry_array = ledc0_channel1_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel1_regdma_entries),
+        },
+        .channel[2] = {
+            .regdma_entry_array = ledc0_channel2_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel2_regdma_entries),
+        },
+        .channel[3] = {
+            .regdma_entry_array = ledc0_channel3_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel3_regdma_entries),
+        },
+        .channel[4] = {
+            .regdma_entry_array = ledc0_channel4_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel4_regdma_entries),
+        },
+        .channel[5] = {
+            .regdma_entry_array = ledc0_channel5_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel5_regdma_entries),
+        },
+        .channel[6] = {
+            .regdma_entry_array = ledc0_channel6_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel6_regdma_entries),
+        },
+        .channel[7] = {
+            .regdma_entry_array = ledc0_channel7_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc0_channel7_regdma_entries),
+        },
+        .module_id = SLEEP_RETENTION_MODULE_LEDC0,
+    },
+    {
+        .common = {
+            .regdma_entry_array = ledc1_common_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_common_regdma_entries),
+        },
+        .timer[0] = {
+            .regdma_entry_array = ledc1_timer0_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_timer0_regdma_entries),
+        },
+        .timer[1] = {
+            .regdma_entry_array = ledc1_timer1_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_timer1_regdma_entries),
+        },
+        .timer[2] = {
+            .regdma_entry_array = ledc1_timer2_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_timer2_regdma_entries),
+        },
+        .timer[3] = {
+            .regdma_entry_array = ledc1_timer3_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_timer3_regdma_entries),
+        },
+        .channel[0] = {
+            .regdma_entry_array = ledc1_channel0_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel0_regdma_entries),
+        },
+        .channel[1] = {
+            .regdma_entry_array = ledc1_channel1_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel1_regdma_entries),
+        },
+        .channel[2] = {
+            .regdma_entry_array = ledc1_channel2_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel2_regdma_entries),
+        },
+        .channel[3] = {
+            .regdma_entry_array = ledc1_channel3_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel3_regdma_entries),
+        },
+        .channel[4] = {
+            .regdma_entry_array = ledc1_channel4_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel4_regdma_entries),
+        },
+        .channel[5] = {
+            .regdma_entry_array = ledc1_channel5_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel5_regdma_entries),
+        },
+        .channel[6] = {
+            .regdma_entry_array = ledc1_channel6_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel6_regdma_entries),
+        },
+        .channel[7] = {
+            .regdma_entry_array = ledc1_channel7_regdma_entries,
+            .array_size = ARRAY_SIZE(ledc1_channel7_regdma_entries),
+        },
+        .module_id = SLEEP_RETENTION_MODULE_LEDC1,
+    },
+};

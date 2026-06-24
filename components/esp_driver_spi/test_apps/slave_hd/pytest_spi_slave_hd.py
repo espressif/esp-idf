@@ -1,33 +1,33 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+
 import pytest
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
-# If `test_env` is define, should not run on generic runner
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
 @pytest.mark.generic
-def test_slave_hd_single_dev(case_tester) -> None:       # type: ignore
-    for case in case_tester.test_menu:
-        if 'test_env' in case.attributes:
-            continue
-        case_tester.run_normal_case(case=case, reset=True)
+@pytest.mark.parametrize('config', ['release'], indirect=True)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_SPI_SUPPORT_SLAVE_HD_VER2 == 1 and IDF_TARGET not in ["esp32c5"]'),
+    indirect=['target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15615
+def test_slave_hd_single_dev(case_tester) -> None:  # type: ignore
+    case_tester.run_all_normal_cases(reset=True, timeout=180)
 
 
-# if `test_env` not defined, will run on `generic_multi_device` by default
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
+@pytest.mark.generic
+@pytest.mark.esp32c5_rev1
+@pytest.mark.parametrize('config', ['release'], indirect=True)
+@idf_parametrize('target', ['esp32c5'], indirect=['target'])
+def test_slave_hd_single_dev_esp32c5_rev1(case_tester) -> None:  # type: ignore
+    case_tester.run_all_normal_cases(reset=True, timeout=180)
+
+
 @pytest.mark.generic_multi_device
-@pytest.mark.parametrize('count', [2,], indirect=True)
-def test_slave_hd_multi_dev(case_tester) -> None:        # type: ignore
-    for case in case_tester.test_menu:
-        if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
-            case_tester.run_multi_dev_case(case=case, reset=True)
+@pytest.mark.parametrize('count, config', [(2, 'release')], indirect=True)
+@idf_parametrize('target', soc_filtered_targets('SOC_SPI_SUPPORT_SLAVE_HD_VER2 == 1'), indirect=['target'])
+def test_slave_hd_multi_dev(case_tester) -> None:  # type: ignore
+    case_tester.run_all_multi_dev_cases(reset=True)

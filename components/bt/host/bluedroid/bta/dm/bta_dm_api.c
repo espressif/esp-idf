@@ -29,6 +29,7 @@
 #include "stack/btm_api.h"
 #include "btm_int.h"
 #include <string.h>
+#include <assert.h>
 #include "bta/utl.h"
 #include "osi/allocator.h"
 
@@ -72,8 +73,10 @@ tBTA_STATUS BTA_EnableBluetooth(tBTA_DM_SEC_CBACK *p_cback)
     bta_sys_register (BTA_ID_DM, &bta_dm_reg );
     bta_sys_register (BTA_ID_DM_SEARCH, &bta_dm_search_reg );
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* if UUID list is not provided as static data */
     bta_sys_eir_register(bta_dm_eir_update_uuid);
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 
     if ((p_msg = (tBTA_DM_API_ENABLE *) osi_malloc(sizeof(tBTA_DM_API_ENABLE))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_ENABLE_EVT;
@@ -112,52 +115,6 @@ tBTA_STATUS BTA_DisableBluetooth(void)
 
 /*******************************************************************************
 **
-** Function         BTA_EnableTestMode
-**
-** Description      Enables bluetooth device under test mode
-**
-**
-** Returns          tBTA_STATUS
-**
-*******************************************************************************/
-tBTA_STATUS BTA_EnableTestMode(void)
-{
-    BT_HDR    *p_msg;
-
-    APPL_TRACE_API("BTA_EnableTestMode");
-
-    if ((p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        p_msg->event = BTA_DM_API_ENABLE_TEST_MODE_EVT;
-        bta_sys_sendmsg(p_msg);
-        return BTA_SUCCESS;
-    }
-    return BTA_FAILURE;
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DisableTestMode
-**
-** Description      Disable bluetooth device under test mode
-**
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DisableTestMode(void)
-{
-    BT_HDR    *p_msg;
-
-    APPL_TRACE_API("BTA_DisableTestMode");
-
-    if ((p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        p_msg->event = BTA_DM_API_DISABLE_TEST_MODE_EVT;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         BTA_DmSetDeviceName
 **
 ** Description      This function sets the Bluetooth name of local device
@@ -166,7 +123,7 @@ void BTA_DisableTestMode(void)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmSetDeviceName(const char *p_name)
+void BTA_DmSetDeviceName(const char *p_name, tBT_DEVICE_TYPE name_type)
 {
 
     tBTA_DM_API_SET_NAME    *p_msg;
@@ -176,6 +133,7 @@ void BTA_DmSetDeviceName(const char *p_name)
         /* truncate the name if needed */
         BCM_STRNCPY_S((char *)p_msg->name, p_name, BD_NAME_LEN);
         p_msg->name[BD_NAME_LEN] = '\0';
+        p_msg->name_type = name_type;
 
         bta_sys_sendmsg(p_msg);
     }
@@ -191,13 +149,14 @@ void BTA_DmSetDeviceName(const char *p_name)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback)
+void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback, tBT_DEVICE_TYPE name_type)
 {
     tBTA_DM_API_GET_NAME *p_msg;
 
     if ((p_msg = (tBTA_DM_API_GET_NAME *) osi_malloc(sizeof(tBTA_DM_API_GET_NAME))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_GET_NAME_EVT;
         p_msg->p_cback = p_cback;
+        p_msg->name_type = name_type;
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -227,6 +186,7 @@ void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status)
 }
 #endif
 
+#if (BLE_VENDOR_HCI_EN == TRUE)
 void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, tBTA_SEND_VENDOR_HCI_CMPL_CBACK p_vendor_cmd_complete_cback)
 {
     tBTA_DM_API_SEND_VENDOR_HCI_CMD *p_msg;
@@ -241,6 +201,54 @@ void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, 
         bta_sys_sendmsg(p_msg);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleClearAdv
+**
+** Description      This function is called to clear Advertising
+**
+** Parameters       p_adv_data_cback : clear adv complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleClearAdv (void)
+{
+    tBTA_DM_API_CLEAR_ADV  *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CLEAR_ADV *)
+                 osi_malloc(sizeof(tBTA_DM_API_CLEAR_ADV))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_CLEAR_ADV_EVT;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetCsaSupport(uint8_t csa_select)
+{
+    tBTA_DM_API_BLE_SET_CSA_SUPPORT *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_CSA_SUPPORT *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_CSA_SUPPORT)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT;
+        p_msg->csa_select = csa_select;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask)
+{
+    tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT;
+        p_msg->evt_mask = evt_mask;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -442,54 +450,51 @@ void BTA_DmGetRemoteName(BD_ADDR remote_addr, tBTA_CMPL_CB *rmt_name_cb)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmBleSetChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_channels_cb)
+void BTA_DmBleSetChannels(const uint8_t *channels)
 {
-
     tBTA_DM_API_BLE_SET_CHANNELS *p_msg;
 
     if ((p_msg = (tBTA_DM_API_BLE_SET_CHANNELS *) osi_malloc(sizeof(tBTA_DM_API_BLE_SET_CHANNELS))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_BLE_SET_CHANNELS_EVT;
-
-        p_msg->set_channels_cb = set_channels_cb;
         memcpy(p_msg->channels, channels, BLE_CHANNELS_LEN);
 
         bta_sys_sendmsg(p_msg);
     }
-
-
 }
 
-void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb)
+void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
     if ((p_msg = (tBTA_DM_API_UPDATE_WHITE_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_WHITE_LIST))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_UPDATE_WHITE_LIST_EVT;
         p_msg->add_remove = add_remove;
         p_msg->addr_type = addr_type;
-        p_msg->update_wl_cb = update_wl_cb;
         memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
 
         bta_sys_sendmsg(p_msg);
     }
 }
 
-void BTA_DmClearWhiteList(tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb)
+void BTA_DmClearWhiteList(void)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
     if ((p_msg = (tBTA_DM_API_UPDATE_WHITE_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_WHITE_LIST))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_CLEAR_WHITE_LIST_EVT;
-        p_msg->update_wl_cb = update_wl_cb;
 
         bta_sys_sendmsg(p_msg);
     }
 }
 
-void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
+void BTA_DmBleReadChannelMap(BD_ADDR remote_device)
 {
-    tBTA_DM_API_READ_ADV_TX_POWER *p_msg;
-    if ((p_msg = (tBTA_DM_API_READ_ADV_TX_POWER *)osi_malloc(sizeof(tBTA_DM_API_READ_ADV_TX_POWER))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT;
-        p_msg->read_tx_power_cb = cmpl_cb;
+    if (!remote_device) {
+        return;
+    }
+    tBTA_DM_API_READ_CH_MAP *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_READ_CH_MAP *)osi_malloc(sizeof(tBTA_DM_API_READ_CH_MAP))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_READ_CH_MAP_EVT;
+        memcpy(p_msg->remote_addr, remote_device, sizeof(BD_ADDR));
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -503,6 +508,65 @@ void BTA_DmReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB 
         memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
         p_msg->transport = transport;
         p_msg->read_rssi_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+void BTA_DmReadAclRealRssi(BD_ADDR remote_addr, tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_READ_ACL_REAL_RSSI *p_msg;
+    if ((p_msg = (tBTA_DM_API_READ_ACL_REAL_RSSI *)osi_malloc(sizeof(tBTA_DM_API_READ_ACL_REAL_RSSI))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_READ_ACL_REAL_RSSI_EVT;
+        memcpy(p_msg->remote_addr, remote_addr, sizeof(BD_ADDR));
+        p_msg->read_acl_real_rssi_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmReadNewConnTxPwrLvl(tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_READ_NEW_CONN_TX_PWR_LVL *p_msg;
+    if ((p_msg = (tBTA_DM_API_READ_NEW_CONN_TX_PWR_LVL *)osi_malloc(sizeof(tBTA_DM_API_READ_NEW_CONN_TX_PWR_LVL))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_READ_NEW_CONN_TX_PWR_LVL_EVT;
+        p_msg->read_new_conn_tx_pwr_lvl_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmWriteNewConnTxPwrLvl(INT8 pwr_lvl_min, INT8 pwr_lvl_max, tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_WRITE_NEW_CONN_TX_PWR_LVL *p_msg;
+    if ((p_msg = (tBTA_DM_API_WRITE_NEW_CONN_TX_PWR_LVL *)osi_malloc(sizeof(tBTA_DM_API_WRITE_NEW_CONN_TX_PWR_LVL))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_WRITE_NEW_CONN_TX_PWR_LVL_EVT;
+        p_msg->pwr_lvl_min = pwr_lvl_min;
+        p_msg->pwr_lvl_max = pwr_lvl_max;
+        p_msg->write_new_conn_tx_pwr_lvl_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (ESP_BT_CLASSIC_ENABLE_POWER_CTRL_VSC == TRUE)
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+void BTA_DmReadBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_READ_BREDR_TX_PWR_LVL *p_msg;
+    if ((p_msg = (tBTA_DM_API_READ_BREDR_TX_PWR_LVL *)osi_malloc(sizeof(tBTA_DM_API_READ_BREDR_TX_PWR_LVL))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_READ_BREDR_TX_PWR_LVL_EVT;
+        p_msg->type = type;
+        p_msg->read_bredr_tx_pwr_lvl_cb = cmpl_cb;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmWriteBredrTxPwrLvl(tBTM_TX_PWR_LVL_TYPE type, INT8 tx_power, tBTA_CMPL_CB *cmpl_cb)
+{
+    tBTA_DM_API_WRITE_BREDR_TX_PWR_LVL *p_msg;
+    if ((p_msg = (tBTA_DM_API_WRITE_BREDR_TX_PWR_LVL *)osi_malloc(sizeof(tBTA_DM_API_WRITE_BREDR_TX_PWR_LVL))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_WRITE_BREDR_TX_PWR_LVL_EVT;
+        p_msg->type = type;
+        p_msg->tx_power = tx_power;
+        p_msg->write_bredr_tx_pwr_lvl_cb = cmpl_cb;
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -536,6 +600,7 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
 
 
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -850,11 +915,13 @@ void BTA_DmSecureConnectionOobReply(BD_ADDR bd_addr, UINT8 *p_c, UINT8 *p_r)
 {
     tBTA_DM_API_SC_OOB_REPLY    *p_msg;
 
-    if ((p_msg = (tBTA_DM_API_SC_OOB_REPLY *) osi_malloc(sizeof(tBTA_DM_API_OOB_REPLY))) != NULL) {
+    if((p_c == NULL) || (p_r == NULL)) {
+        APPL_TRACE_ERROR("%s, p_c or p_r is NULL", __func__);
+        return;
+    }
+
+    if ((p_msg = (tBTA_DM_API_SC_OOB_REPLY *) osi_malloc(sizeof(tBTA_DM_API_SC_OOB_REPLY))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_SC_OOB_REPLY_EVT;
-        if((p_c == NULL) || (p_r == NULL)) {
-            return;
-        }
         memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);
         memcpy(p_msg->c, p_c, BT_OCTET16_LEN);
         memcpy(p_msg->r, p_r, BT_OCTET16_LEN);
@@ -980,7 +1047,7 @@ void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class, LINK_KEY link_key,
 **
 ** Function         BTA_DmRemoveDevice
 **
-** Description      This function removes a device fromthe security database list of
+** Description      This function removes a device from the security database list of
 **                  peer device. It manages unpairing even while connected.
 **
 **
@@ -1084,45 +1151,68 @@ UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr )
 tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,
                                     UINT32 *p_handle )
 {
-    tBTA_STATUS  status = BTA_FAILURE;
+    tBTA_STATUS status = BTA_FAILURE;
 
     if (bta_dm_di_cb.di_num < BTA_DI_NUM_MAX) {
         if (SDP_SetLocalDiRecord((tSDP_DI_RECORD *)p_device_info, p_handle) == SDP_SUCCESS) {
             if (!p_device_info->primary_record) {
-                bta_dm_di_cb.di_handle[bta_dm_di_cb.di_num] = *p_handle;
-                bta_dm_di_cb.di_num ++;
+                for (uint8_t i = 1; i < BTA_DI_NUM_MAX; i++) {
+                    if (!bta_dm_di_cb.di_handle[i]) {
+                        bta_dm_di_cb.di_handle[i] = *p_handle;
+                        break;
+                    }
+                }
+                bta_dm_di_cb.di_num++;
+            } else if (!bta_dm_di_cb.di_handle[0]) {
+                bta_dm_di_cb.di_handle[0] = *p_handle;
+                bta_dm_di_cb.di_num++;
+            } else {
+                assert(bta_dm_di_cb.di_handle[0] == (*p_handle));
             }
 
-            bta_sys_add_uuid(UUID_SERVCLASS_PNP_INFORMATION);
-            status =  BTA_SUCCESS;
+            if (!bta_dm_di_cb.uuid_added) {
+                bta_sys_add_uuid(UUID_SERVCLASS_PNP_INFORMATION);
+                bta_dm_di_cb.uuid_added = TRUE;
+            }
+
+            status = BTA_SUCCESS;
         }
     }
 
     return status;
 }
-#endif  ///SDP_INCLUDED == TRUE
+
 /*******************************************************************************
 **
-** Function         bta_dmexecutecallback
+** Function         BTA_DmRemoveLocalDiRecord
 **
-** Description      This function will request BTA to execute a call back in the context of BTU task
-**                  This API was named in lower case because it is only intended
-**                  for the internal customers(like BTIF).
+** Description      This function removes a DI record from the local SDP database.
 **
-** Returns          void
+** Returns          BTA_SUCCESS if record is removed successfully, otherwise error code.
 **
 *******************************************************************************/
-void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK *p_callback, void *p_param)
+tBTA_STATUS BTA_DmRemoveLocalDiRecord(UINT32 handle)
 {
-    tBTA_DM_API_EXECUTE_CBACK *p_msg;
+    tBTA_STATUS status = BTA_FAILURE;
 
-    if ((p_msg = (tBTA_DM_API_EXECUTE_CBACK *) osi_malloc(sizeof(tBTA_DM_API_EXECUTE_CBACK))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_EXECUTE_CBACK_EVT;
-        p_msg->p_param = p_param;
-        p_msg->p_exec_cback = p_callback;
-        bta_sys_sendmsg(p_msg);
+    for (uint8_t i = 0; i < BTA_DI_NUM_MAX; i++) {
+        if (bta_dm_di_cb.di_handle[i] == handle) {
+            if (SDP_DeleteRecord(handle)) {
+                bta_dm_di_cb.di_handle[i] = 0;
+                bta_dm_di_cb.di_num--;
+                status = BTA_SUCCESS;
+                break;
+            }
+        }
     }
+
+    if (bta_dm_di_cb.di_num == 0 && bta_dm_di_cb.uuid_added) {
+        bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
+    }
+
+    return status;
 }
+#endif  ///SDP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1198,7 +1288,7 @@ void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode
 ** Description      Send BLE SMP passkey reply.
 **
 ** Parameters:      bd_addr          - BD address of the peer
-**                  accept           - passkey entry sucessful or declined.
+**                  accept           - passkey entry successful or declined.
 **                  passkey          - passkey value, must be a 6 digit number,
 **                                     can be lead by 0.
 **
@@ -1333,66 +1423,7 @@ void BTA_DmSetBlePrefConnParams(BD_ADDR bd_addr,
 #endif
 }
 
-/*******************************************************************************
-**
-** Function         BTA_DmSetBleConnScanParams
-**
-** Description      This function is called to set scan parameters used in
-**                  BLE connection request
-**
-** Parameters:      scan_interval    - scan interval
-**                  scan_window      - scan window
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmSetBleConnScanParams(UINT32 scan_interval, UINT32 scan_window)
-{
-    tBTA_DM_API_BLE_SCAN_PARAMS  *p_msg;
-    if ((p_msg = (tBTA_DM_API_BLE_SCAN_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_BLE_SCAN_PARAMS))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SCAN_PARAMS));
-        p_msg->hdr.event = BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT;
-        p_msg->scan_int         = scan_interval;
-        p_msg->scan_window      = scan_window;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmSetBleScanParams
-**
-** Description      This function is called to set scan parameters
-**
-** Parameters:      client_if - Client IF
-**                  scan_interval - scan interval
-**                  scan_window - scan window
-**                  scan_mode - scan mode
-**                  scan_param_setup_status_cback - Set scan param status callback
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
-                            UINT32 scan_window, tBLE_SCAN_MODE scan_mode,
-                            tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback)
-{
-    tBTA_DM_API_BLE_SCAN_PARAMS *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_BLE_SCAN_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_BLE_SCAN_PARAMS))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SCAN_PARAMS));
-        p_msg->hdr.event = BTA_DM_API_BLE_SCAN_PARAM_EVT;
-        p_msg->client_if = client_if;
-        p_msg->scan_int = scan_interval;
-        p_msg->scan_window = scan_window;
-        p_msg->scan_mode = scan_mode;
-        p_msg->scan_param_setup_cback = scan_param_setup_cback;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleScanFilterParams
@@ -1411,7 +1442,7 @@ void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
 *******************************************************************************/
 void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
                                   UINT32 scan_window, tBLE_SCAN_MODE scan_mode, UINT8 scan_fil_poilcy,
-                                  UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback)
+                                  UINT8 addr_type_own, UINT8 scan_duplicate_filter)
 {
     tBTA_DM_API_BLE_SCAN_FILTER_PARAMS *p_msg;
 
@@ -1425,69 +1456,30 @@ void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
         p_msg->addr_type_own = addr_type_own;
         p_msg->scan_duplicate_filter = scan_duplicate_filter;
         p_msg->scan_filter_policy = scan_fil_poilcy;
-        p_msg->scan_param_setup_cback = scan_param_setup_cback;
 
         bta_sys_sendmsg(p_msg);
     }
 
 
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
-/*******************************************************************************
-**
-** Function         BTA_DmSetBleAdvParams
-**
-** Description      This function sets the advertising parameters BLE functionality.
-**                  It is to be called when device act in peripheral or broadcaster
-**                  role.
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
-                            tBLE_BD_ADDR *p_dir_bda)
-{
-#if BLE_INCLUDED == TRUE
-    tBTA_DM_API_BLE_ADV_PARAMS    *p_msg;
-
-    APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d\n", adv_int_min, adv_int_max);
-
-    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS *) osi_malloc(sizeof(tBTA_DM_API_BLE_ADV_PARAMS)
-                 + sizeof(tBLE_BD_ADDR))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS) + sizeof(tBLE_BD_ADDR));
-
-        p_msg->hdr.event = BTA_DM_API_BLE_ADV_PARAM_EVT;
-
-        p_msg->adv_int_min      = adv_int_min;
-        p_msg->adv_int_max      = adv_int_max;
-
-        if (p_dir_bda != NULL) {
-            p_msg->p_dir_bda = (tBLE_BD_ADDR *)(p_msg + 1);
-            memcpy(p_msg->p_dir_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
-        }
-
-        bta_sys_sendmsg(p_msg);
-    }
-#endif
-}
-
-void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
+#if (BLE_42_ADV_EN == TRUE)
+void BTA_DmAdvStartWithParams (UINT16 adv_int_min, UINT16 adv_int_max,
                                UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
-                               tBLE_BD_ADDR *p_dir_bda, tBTA_START_ADV_CMPL_CBACK p_start_adv_cb)
+                               tBLE_BD_ADDR *p_dir_bda)
 {
-#if BLE_INCLUDED == TRUE
     tBTA_DM_API_BLE_ADV_PARAMS_ALL    *p_msg;
 
-    APPL_TRACE_API ("BTA_DmSetBleAdvParamsAll: %d, %d\n", adv_int_min, adv_int_max);
+    APPL_TRACE_API ("BTA_DmAdvStartWithParams: %d, %d\n", adv_int_min, adv_int_max);
     APPL_TRACE_API ("adv_type = %d, addr_type_own = %d, chnl_map = %d, adv_fil_pol = %d\n",
                       adv_type, addr_type_own, chnl_map, adv_fil_pol);
     if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS_ALL *) osi_malloc(sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL)
                  + sizeof(tBLE_BD_ADDR))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS_ALL));
 
-        p_msg->hdr.event = BTA_DM_API_BLE_ADV_PARAM_All_EVT;
+        p_msg->hdr.event = BTA_DM_API_BLE_ADV_START_WITH_PARAMS_EVT;
 
         p_msg->adv_int_min      = adv_int_min;
         p_msg->adv_int_max      = adv_int_max;
@@ -1495,7 +1487,6 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
         p_msg->addr_type_own    = addr_type_own;
         p_msg->channel_map      = chnl_map;
         p_msg->adv_filter_policy    = adv_fil_pol;
-        p_msg->p_start_adv_cback    = p_start_adv_cb;
         if (p_dir_bda != NULL) {
             p_msg->p_dir_bda = (tBLE_BD_ADDR *)(p_msg + 1);
             memcpy(p_msg->p_dir_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
@@ -1503,8 +1494,9 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 
         bta_sys_sendmsg(p_msg);
     }
-#endif
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
+
 #endif  ///BLE_INCLUDED == TRUE
 
 
@@ -1513,6 +1505,7 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 ********************************************************************************/
 
 #if BLE_INCLUDED == TRUE
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetAdvConfig
@@ -1523,13 +1516,12 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 **                  p_adv_cfg: Pointer to User defined ADV data structure. This
 **                             memory space can not be freed until p_adv_data_cback
 **                             is received.
-**                  p_adv_data_cback: set adv data complete callback.
+**
 **
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_adv_cfg,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
+void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_adv_cfg)
 {
     tBTA_DM_API_SET_ADV_CONFIG  *p_msg;
 
@@ -1537,7 +1529,6 @@ void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_adv
                  osi_malloc(sizeof(tBTA_DM_API_SET_ADV_CONFIG))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_BLE_SET_ADV_CONFIG_EVT;
         p_msg->data_mask = data_mask;
-        p_msg->p_adv_data_cback = p_adv_data_cback;
         p_msg->p_adv_cfg = p_adv_cfg;
 
         bta_sys_sendmsg(p_msg);
@@ -1557,47 +1548,16 @@ void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_adv
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
+void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len)
 {
     tBTA_DM_API_SET_ADV_CONFIG_RAW  *p_msg;
 
     if ((p_msg = (tBTA_DM_API_SET_ADV_CONFIG_RAW *)
                  osi_malloc(sizeof(tBTA_DM_API_SET_ADV_CONFIG_RAW) + raw_adv_len)) != NULL) {
         p_msg->hdr.event = BTA_DM_API_BLE_SET_ADV_CONFIG_RAW_EVT;
-        p_msg->p_adv_data_cback = p_adv_data_cback;
         p_msg->p_raw_adv = (UINT8 *)(p_msg + 1);
         memcpy(p_msg->p_raw_adv, p_raw_adv, raw_adv_len);
         p_msg->raw_adv_len = raw_adv_len;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleSetLongAdv
-**
-** Description      This function is called to set long Advertising data
-**
-** Parameters       adv_data : long advertising data.
-**                  adv_data_len : long advertising data length.
-**                  p_adv_data_cback : set long adv data complete callback.
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
-{
-    tBTA_DM_API_SET_LONG_ADV  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_SET_LONG_ADV *)
-                 osi_malloc(sizeof(tBTA_DM_API_SET_LONG_ADV))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_SET_LONG_ADV_EVT;
-        p_msg->p_adv_data_cback = p_adv_data_cback;
-        p_msg->adv_data = adv_data;
-        p_msg->adv_data_len = adv_data_len;
 
         bta_sys_sendmsg(p_msg);
     }
@@ -1614,8 +1574,7 @@ void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_adv_cfg,
-                                 tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
+extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *p_adv_cfg)
 {
     tBTA_DM_API_SET_ADV_CONFIG  *p_msg;
 
@@ -1623,7 +1582,6 @@ extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *
                  osi_malloc(sizeof(tBTA_DM_API_SET_ADV_CONFIG))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_BLE_SET_SCAN_RSP_EVT;
         p_msg->data_mask = data_mask;
-        p_msg->p_adv_data_cback = p_adv_data_cback;
         p_msg->p_adv_cfg = p_adv_cfg;
 
         bta_sys_sendmsg(p_msg);
@@ -1638,20 +1596,18 @@ extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask, tBTA_BLE_ADV_DATA *
 **
 ** Parameters       p_raw_scan_rsp : raw scan_rspertising data.
 **                  raw_scan_rsp_len : raw scan_rspertising data length.
-**                  p_scan_rsp_data_cback : set scan_rsp data complete callback.
+**
 **
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback)
+void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len)
 {
     tBTA_DM_API_SET_ADV_CONFIG_RAW  *p_msg;
 
     if ((p_msg = (tBTA_DM_API_SET_ADV_CONFIG_RAW *)
                  osi_malloc(sizeof(tBTA_DM_API_SET_ADV_CONFIG_RAW) + raw_scan_rsp_len)) != NULL) {
         p_msg->hdr.event = BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT;
-        p_msg->p_adv_data_cback = p_scan_rsp_data_cback;
         p_msg->p_raw_adv = (UINT8 *)(p_msg + 1);
         memcpy(p_msg->p_raw_adv, p_raw_scan_rsp, raw_scan_rsp_len);
         p_msg->raw_adv_len = raw_scan_rsp_len;
@@ -1659,7 +1615,9 @@ void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         BTA_DmUpdateDuplicateExceptionalList
@@ -1669,176 +1627,24 @@ void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
 ** Parameters       subcode : add, remove or clean duplicate scan exceptional list.
 **                  type : device info type.
 **                  device_info:  device info
-**                  p_update_duplicate_ignore_list_cback :  update complete callback.
+**
 **
 ** Returns          None
 **
 *******************************************************************************/
-void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR device_info, tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK p_update_duplicate_exceptional_list_cback)
+void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR device_info)
 {
     tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST *p_msg;
     if ((p_msg = (tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST *)osi_malloc(sizeof(tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT;
         p_msg->subcode = subcode;
         p_msg->type = type;
-        p_msg->exceptional_list_cb = p_update_duplicate_exceptional_list_cback;
         memcpy(p_msg->device_info, device_info, sizeof(BD_ADDR));
 
         bta_sys_sendmsg(p_msg);
     }
 }
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleSetStorageParams
-**
-** Description      This function is called to override the BTA scan response.
-**
-** Parameters       batch_scan_full_max -Max storage space (in %) allocated to full scanning
-**                  batch_scan_trunc_max -Max storage space (in %) allocated to truncated scanning
-**                  batch_scan_notify_threshold -Setup notification level based on total space
-**                  p_setup_cback - Setup callback pointer
-**                  p_thres_cback - Threshold callback pointer
-**                  p_rep_cback - Reports callback pointer
-**                  ref_value - Ref value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleSetStorageParams(UINT8 batch_scan_full_max,
-                                      UINT8 batch_scan_trunc_max,
-                                      UINT8 batch_scan_notify_threshold,
-                                      tBTA_BLE_SCAN_SETUP_CBACK *p_setup_cback,
-                                      tBTA_BLE_SCAN_THRESHOLD_CBACK *p_thres_cback,
-                                      tBTA_BLE_SCAN_REP_CBACK *p_rep_cback,
-                                      tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_SET_STORAGE_CONFIG  *p_msg;
-    bta_dm_cb.p_setup_cback = p_setup_cback;
-    if ((p_msg = (tBTA_DM_API_SET_STORAGE_CONFIG *)
-                 osi_malloc(sizeof(tBTA_DM_API_SET_STORAGE_CONFIG))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_SETUP_STORAGE_EVT;
-        p_msg->p_setup_cback = bta_ble_scan_setup_cb;
-        p_msg->p_thres_cback = p_thres_cback;
-        p_msg->p_read_rep_cback = p_rep_cback;
-        p_msg->ref_value = ref_value;
-        p_msg->batch_scan_full_max = batch_scan_full_max;
-        p_msg->batch_scan_trunc_max = batch_scan_trunc_max;
-        p_msg->batch_scan_notify_threshold = batch_scan_notify_threshold;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleEnableBatchScan
-**
-** Description      This function is called to enable the batch scan
-**
-** Parameters       scan_mode -Batch scan mode
-**                  scan_interval - Scan interval
-**                  scan_window - Scan window
-**                  discard_rule -Discard rules
-**                  addr_type - Address type
-**                  ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleEnableBatchScan(tBTA_BLE_BATCH_SCAN_MODE scan_mode,
-                                     UINT32 scan_interval, UINT32 scan_window,
-                                     tBTA_BLE_DISCARD_RULE discard_rule,
-                                     tBLE_ADDR_TYPE        addr_type,
-                                     tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_ENABLE_SCAN  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_ENABLE_SCAN *) osi_malloc(sizeof(tBTA_DM_API_ENABLE_SCAN))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_ENABLE_BATCH_SCAN_EVT;
-        p_msg->scan_mode = scan_mode;
-        p_msg->scan_int = scan_interval;
-        p_msg->scan_window = scan_window;
-        p_msg->discard_rule = discard_rule;
-        p_msg->addr_type = addr_type;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleDisableBatchScan
-**
-** Description      This function is called to disable the batch scan
-**
-** Parameters       ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_DISABLE_SCAN  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_DISABLE_SCAN *)
-                 osi_malloc(sizeof(tBTA_DM_API_DISABLE_SCAN))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_DISABLE_BATCH_SCAN_EVT;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleReadScanReports
-**
-** Description      This function is called to read scan reports
-**
-** Parameters       scan_type -Batch scan mode
-**                  ref_value - Reference value
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleReadScanReports(tBTA_BLE_BATCH_SCAN_MODE scan_type,
-                                     tBTA_DM_BLE_REF_VALUE ref_value)
-{
-    tBTA_DM_API_READ_SCAN_REPORTS  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_READ_SCAN_REPORTS *)
-                 osi_malloc(sizeof(tBTA_DM_API_READ_SCAN_REPORTS))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_READ_SCAN_REPORTS_EVT;
-        p_msg->scan_type = scan_type;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleTrackAdvertiser
-**
-** Description      This function is called to track advertiser
-**
-** Parameters       ref_value - Reference value
-**                  p_track_adv_cback - Track ADV callback
-**
-** Returns          None
-**
-*******************************************************************************/
-extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
-                                     tBTA_BLE_TRACK_ADV_CBACK *p_track_adv_cback)
-{
-    tBTA_DM_API_TRACK_ADVERTISER  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_TRACK_ADVERTISER *)
-                 osi_malloc(sizeof(tBTA_DM_API_TRACK_ADVERTISER))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_TRACK_ADVERTISER_EVT;
-        p_msg->p_track_adv_cback = p_track_adv_cback;
-        p_msg->ref_value = ref_value;
-        bta_sys_sendmsg(p_msg);
-    }
-}
+#endif // ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 
 #endif
 
@@ -1846,61 +1652,37 @@ extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
 **                      BLE ADV data management API
 ********************************************************************************/
 #if BLE_INCLUDED == TRUE
-
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
-** Function         BTA_DmBleBroadcast
+** Function         BTA_DmBleAdvStop
 **
 ** Description      This function starts or stops LE broadcasting.
 **
-** Parameters       start: start or stop broadcast.
+** Parameters       void
 **
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb)
+extern void BTA_DmBleAdvStop (void)
 {
-    tBTA_DM_API_BLE_OBSERVE   *p_msg;
+    tBTA_DM_API_BLE_ADVACTION   *p_msg;
 
-    APPL_TRACE_API("BTA_DmBleBroadcast: start = %d \n", start);
+    APPL_TRACE_API("BTA_DmBleAdvStop\n");
 
-    if ((p_msg = (tBTA_DM_API_BLE_OBSERVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_OBSERVE))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_OBSERVE));
+    if ((p_msg = (tBTA_DM_API_BLE_ADVACTION *) osi_malloc(sizeof(tBTA_DM_API_BLE_ADVACTION))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADVACTION));
 
-        p_msg->hdr.event = BTA_DM_API_BLE_BROADCAST_EVT;
-        p_msg->start = start;
-        if (start == FALSE){
-            p_msg->p_stop_adv_cback= p_start_stop_adv_cb;
-        }
+        p_msg->hdr.event = BTA_DM_API_BLE_ADVSTOP_EVT;
 
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
-/*******************************************************************************
-**
-** Function         BTA_DmBleClearAdv
-**
-** Description      This function is called to clear Advertising
-**
-** Parameters       p_adv_data_cback : clear adv complete callback.
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
-{
-    tBTA_DM_API_CLEAR_ADV  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_CLEAR_ADV *)
-                 osi_malloc(sizeof(tBTA_DM_API_CLEAR_ADV))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_CLEAR_ADV_EVT;
-        p_msg->p_clear_adv_cback = p_clear_adv_cback;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
 #endif
+
+#if (BLE_GATT_BGCONN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetBgConnType
@@ -1931,6 +1713,7 @@ void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_BLE_SEL_
     }
 #endif
 }
+#endif// (BLE_GATT_BGCONN == TRUE)
 
 /*******************************************************************************
 **
@@ -2037,7 +1820,7 @@ void BTA_DmDiscoverExt(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_services,
 **                  p_services: if service is not empty, service discovery will be done.
 **                            for all GATT based service condition, put num_uuid, and
 **                            p_uuid is the pointer to the list of UUID values.
-**                  p_cback: callback functino when search is completed.
+**                  p_cback: callback function when search is completed.
 **
 **
 **
@@ -2125,12 +1908,12 @@ void BTA_DmBleUpdateConnectionParam(BD_ADDR bd_addr, UINT16 min_int,
 **
 ** Description      Enable/disable privacy on the local device
 **
-** Parameters:      privacy_enable   - enable/disabe privacy on remote device.
+** Parameters:      privacy_enable   - enable/disable privacy on remote device.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_CBACK *set_local_privacy_cback)
+void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable)
 {
     ///This function used the irk to generate the resolve address
 #if BLE_INCLUDED == TRUE && BLE_PRIVACY_SPT == TRUE
@@ -2141,7 +1924,6 @@ void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_
 
         p_msg->hdr.event = BTA_DM_API_LOCAL_PRIVACY_EVT;
         p_msg->privacy_enable   = privacy_enable;
-        p_msg->set_local_privacy_cback = set_local_privacy_cback;
         bta_sys_sendmsg(p_msg);
     }
 #else
@@ -2173,385 +1955,40 @@ void BTA_DmBleConfigLocalIcon(uint16_t icon)
     }
 }
 
+#if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
 /*******************************************************************************
 **
-** Function         BTA_BleEnableAdvInstance
+** Function         BTA_DmBleSetKeyMaterial
 **
-** Description      This function enable a Multi-ADV instance with the specififed
-**                  adv parameters
+** Description      Set the Encrypted Data Key Material in GAP service
 **
-** Parameters       p_params: pointer to the adv parameter structure.
-**                  p_cback: callback function associated to this adv instance.
-**                  p_ref: reference data pointer to this adv instance.
-**
-** Returns          BTA_SUCCESS if command started successfully; otherwise failure.
-**
-*******************************************************************************/
-void BTA_BleEnableAdvInstance (tBTA_BLE_ADV_PARAMS *p_params,
-                               tBTA_BLE_MULTI_ADV_CBACK *p_cback,
-                               void *p_ref)
-{
-    ///This function just used for vendor debug
-    tBTA_DM_API_BLE_MULTI_ADV_ENB    *p_msg;
-    UINT16 len = sizeof(tBTA_BLE_ADV_PARAMS) + sizeof(tBTA_DM_API_BLE_MULTI_ADV_ENB);
-
-    APPL_TRACE_API ("BTA_BleEnableAdvInstance");
-
-    if ((p_msg = (tBTA_DM_API_BLE_MULTI_ADV_ENB *) osi_malloc(len)) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_MULTI_ADV_ENB));
-
-        p_msg->hdr.event     = BTA_DM_API_BLE_MULTI_ADV_ENB_EVT;
-        p_msg->p_cback      = (void *)p_cback;
-        if (p_params != NULL) {
-            p_msg->p_params =  (void *)(p_msg + 1);
-            memcpy(p_msg->p_params, p_params, sizeof(tBTA_BLE_ADV_PARAMS));
-        }
-        p_msg->p_ref        = p_ref;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_BleUpdateAdvInstParam
-**
-** Description      This function update a Multi-ADV instance with the specififed
-**                  adv parameters.
-**
-** Parameters       inst_id: Adv instance to update the parameter.
-**                  p_params: pointer to the adv parameter structure.
-**
-** Returns          BTA_SUCCESS if command started successfully; otherwise failure.
-**
-*******************************************************************************/
-void BTA_BleUpdateAdvInstParam (UINT8 inst_id, tBTA_BLE_ADV_PARAMS *p_params)
-{
-    ///This function just used for vendor debug
-    tBTA_DM_API_BLE_MULTI_ADV_PARAM    *p_msg;
-    UINT16      len = sizeof(tBTA_BLE_ADV_PARAMS) + sizeof(tBTA_DM_API_BLE_MULTI_ADV_PARAM);
-
-    APPL_TRACE_API ("BTA_BleUpdateAdvInstParam");
-    if ((p_msg = (tBTA_DM_API_BLE_MULTI_ADV_PARAM *) osi_malloc(len)) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_MULTI_ADV_PARAM));
-        p_msg->hdr.event     = BTA_DM_API_BLE_MULTI_ADV_PARAM_UPD_EVT;
-        p_msg->inst_id        = inst_id;
-        p_msg->p_params =  (void *)(p_msg + 1);
-        memcpy(p_msg->p_params, p_params, sizeof(tBTA_BLE_ADV_PARAMS));
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_BleCfgAdvInstData
-**
-** Description      This function configure a Multi-ADV instance with the specififed
-**                  adv data or scan response data.
-**
-** Parameter        inst_id: Adv instance to configure the adv data or scan response.
-**                  is_scan_rsp: is the data scan response or adv data.
-**                  data_mask: adv data type as bit mask.
-**                  p_data: pointer to the ADV data structure tBTA_BLE_ADV_DATA. This
-**                  memory space can not be freed until BTA_BLE_MULTI_ADV_DATA_EVT
-**                  is sent to application.
-**
-** Returns          BTA_SUCCESS if command started successfully; otherwise failure.
-**
-*******************************************************************************/
-void BTA_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
-                            tBTA_BLE_AD_MASK data_mask,
-                            tBTA_BLE_ADV_DATA *p_data)
-{
-    ///This function just used for vendor debug
-    tBTA_DM_API_BLE_MULTI_ADV_DATA    *p_msg;
-    UINT16      len =  sizeof(tBTA_DM_API_BLE_MULTI_ADV_DATA) ;
-
-    APPL_TRACE_API ("BTA_BleCfgAdvInstData");
-
-    if ((p_msg = (tBTA_DM_API_BLE_MULTI_ADV_DATA *) osi_malloc(len)) != NULL) {
-        memset(p_msg, 0, len);
-        p_msg->hdr.event     = BTA_DM_API_BLE_MULTI_ADV_DATA_EVT;
-        p_msg->inst_id      = inst_id;
-        p_msg->is_scan_rsp  = is_scan_rsp;
-        p_msg->data_mask     = data_mask;
-        p_msg->p_data        = p_data;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_BleDisableAdvInstance
-**
-** Description      This function disable a Multi-ADV instance.
-**
-** Parameter        inst_id: instance ID to disable.
-**
-** Returns          BTA_SUCCESS if command started successfully; otherwise failure.
-**
-*******************************************************************************/
-void BTA_BleDisableAdvInstance (UINT8  inst_id)     //this function just used for vendor debug
-{
-    tBTA_DM_API_BLE_MULTI_ADV_DISABLE    *p_msg;
-
-    APPL_TRACE_API ("BTA_BleDisableAdvInstance: %d", inst_id);
-    if ((p_msg = (tBTA_DM_API_BLE_MULTI_ADV_DISABLE *)
-                 osi_malloc(sizeof(tBTA_DM_API_BLE_MULTI_ADV_DISABLE))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_MULTI_ADV_DISABLE));
-        p_msg->hdr.event    = BTA_DM_API_BLE_MULTI_ADV_DISABLE_EVT;
-        p_msg->inst_id      = inst_id;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleCfgFilterCondition
-**
-** Description      This function is called to configure the adv data payload filter
-**                  condition.
-**
-** Parameters       action: to read/write/clear
-**                  cond_type: filter condition type
-**                  filt_index - Filter index
-**                  p_cond: filter condition parameter
-**                  p_cmpl_back - Command completed callback
-**                  ref_value - Reference value
+** Parameters:      session_key - 16-byte session key (must not be NULL)
+**                  iv          - 8-byte initialization vector (must not be NULL)
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmBleCfgFilterCondition(tBTA_DM_BLE_SCAN_COND_OP action,
-                                 tBTA_DM_BLE_PF_COND_TYPE cond_type,
-                                 tBTA_DM_BLE_PF_FILT_INDEX filt_index,
-                                 tBTA_DM_BLE_PF_COND_PARAM *p_cond,
-                                 tBTA_DM_BLE_PF_CFG_CBACK *p_cmpl_cback,
-                                 tBTA_DM_BLE_REF_VALUE ref_value)
+void BTA_DmBleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv)
 {
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    tBTA_DM_API_CFG_FILTER_COND *p_msg;
-    APPL_TRACE_API ("BTA_DmBleCfgFilterCondition: %d, %d", action, cond_type);
+    tBTA_DM_API_KEY_MATERIAL *p_msg;
 
-    UINT16  len = sizeof(tBTA_DM_API_CFG_FILTER_COND) +
-                  sizeof(tBTA_DM_BLE_PF_COND_PARAM);
-    UINT8 *p;
-
-    if (NULL != p_cond) {
-        switch (cond_type) {
-        case BTA_DM_BLE_PF_SRVC_DATA_PATTERN:
-        case BTA_DM_BLE_PF_MANU_DATA:
-            /* Length of pattern and pattern mask and other elements in */
-            /* tBTA_DM_BLE_PF_MANU_COND */
-            len += ((p_cond->manu_data.data_len) * 2) +
-                   sizeof(UINT16) + sizeof(UINT16) + sizeof(UINT8);
-            break;
-
-        case BTA_DM_BLE_PF_LOCAL_NAME:
-            len += ((p_cond->local_name.data_len) + sizeof(UINT8));
-            break;
-
-        case BTM_BLE_PF_SRVC_UUID:
-        case BTM_BLE_PF_SRVC_SOL_UUID:
-            len += sizeof(tBLE_BD_ADDR) + sizeof(tBTA_DM_BLE_PF_COND_MASK);
-            break;
-
-        default:
-            break;
-        }
+    if (session_key == NULL || iv == NULL) {
+        APPL_TRACE_ERROR("%s: NULL pointer parameter", __func__);
+        return;
     }
 
-    if ((p_msg = (tBTA_DM_API_CFG_FILTER_COND *) osi_malloc(len)) != NULL) {
-        memset (p_msg, 0, len);
+    if ((p_msg = (tBTA_DM_API_KEY_MATERIAL *) osi_malloc(sizeof(tBTA_DM_API_KEY_MATERIAL))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_KEY_MATERIAL));
 
-        p_msg->hdr.event        = BTA_DM_API_CFG_FILTER_COND_EVT;
-        p_msg->action           = action;
-        p_msg->cond_type        = cond_type;
-        p_msg->filt_index       = filt_index;
-        p_msg->p_filt_cfg_cback = p_cmpl_cback;
-        p_msg->ref_value        = ref_value;
-        if (p_cond) {
-            p_msg->p_cond_param = (tBTA_DM_BLE_PF_COND_PARAM *)(p_msg + 1);
-            memcpy(p_msg->p_cond_param, p_cond, sizeof(tBTA_DM_BLE_PF_COND_PARAM));
-
-            p = (UINT8 *)(p_msg->p_cond_param + 1);
-
-            if (cond_type == BTA_DM_BLE_PF_SRVC_DATA_PATTERN ||
-                    cond_type == BTA_DM_BLE_PF_MANU_DATA) {
-                p_msg->p_cond_param->manu_data.p_pattern = p;
-                p_msg->p_cond_param->manu_data.data_len = p_cond->manu_data.data_len;
-                memcpy(p_msg->p_cond_param->manu_data.p_pattern, p_cond->manu_data.p_pattern,
-                       p_cond->manu_data.data_len);
-                p += p_cond->manu_data.data_len;
-
-                if (cond_type == BTA_DM_BLE_PF_MANU_DATA) {
-                    p_msg->p_cond_param->manu_data.company_id_mask =
-                        p_cond->manu_data.company_id_mask;
-                    if ( p_cond->manu_data.p_pattern_mask != NULL) {
-                        p_msg->p_cond_param->manu_data.p_pattern_mask = p;
-                        memcpy(p_msg->p_cond_param->manu_data.p_pattern_mask,
-                               p_cond->manu_data.p_pattern_mask, p_cond->manu_data.data_len);
-                    }
-                }
-            } else if (cond_type == BTA_DM_BLE_PF_LOCAL_NAME) {
-                p_msg->p_cond_param->local_name.p_data = p;
-                p_msg->p_cond_param->local_name.data_len =
-                    p_cond->local_name.data_len;
-                memcpy(p_msg->p_cond_param->local_name.p_data,
-                       p_cond->local_name.p_data, p_cond->local_name.data_len);
-            } else if ((cond_type == BTM_BLE_PF_SRVC_UUID
-                        || cond_type == BTM_BLE_PF_SRVC_SOL_UUID)) {
-                if (p_cond->srvc_uuid.p_target_addr != NULL) {
-                    p_msg->p_cond_param->srvc_uuid.p_target_addr = (tBLE_BD_ADDR *)(p);
-                    p_msg->p_cond_param->srvc_uuid.p_target_addr->type =
-                        p_cond->srvc_uuid.p_target_addr->type;
-                    memcpy(p_msg->p_cond_param->srvc_uuid.p_target_addr->bda,
-                           p_cond->srvc_uuid.p_target_addr->bda, BD_ADDR_LEN);
-                    p = (UINT8 *)( p_msg->p_cond_param->srvc_uuid.p_target_addr + 1);
-                }
-                if (p_cond->srvc_uuid.p_uuid_mask) {
-                    p_msg->p_cond_param->srvc_uuid.p_uuid_mask = (tBTA_DM_BLE_PF_COND_MASK *)p;
-                    memcpy(p_msg->p_cond_param->srvc_uuid.p_uuid_mask,
-                           p_cond->srvc_uuid.p_uuid_mask, sizeof(tBTA_DM_BLE_PF_COND_MASK));
-                }
-            }
-        }
-
+        p_msg->hdr.event = BTA_DM_API_KEY_MATERIAL_EVT;
+        memcpy(p_msg->session_key, session_key, 16);
+        memcpy(p_msg->iv, iv, 8);
         bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s: failed to allocate memory", __func__);
     }
-#else
-    UNUSED(action);
-    UNUSED(cond_type);
-    UNUSED(filt_index);
-    UNUSED(p_cond);
-    UNUSED(p_cmpl_cback);
-    UNUSED(ref_value);
+}
 #endif
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleScanFilterSetup
-**
-** Description      This function is called to setup the adv data payload filter param
-**
-** Parameters       p_target: enable the filter condition on a target device; if NULL
-**                  filt_index - Filter index
-**                  p_filt_params -Filter parameters
-**                  ref_value - Reference value
-**                  action - Add, delete or clear
-**                  p_cmpl_back - Command completed callback
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmBleScanFilterSetup(UINT8 action, tBTA_DM_BLE_PF_FILT_INDEX filt_index,
-                              tBTA_DM_BLE_PF_FILT_PARAMS *p_filt_params,
-                              tBLE_BD_ADDR *p_target,
-                              tBTA_DM_BLE_PF_PARAM_CBACK *p_cmpl_cback,
-                              tBTA_DM_BLE_REF_VALUE ref_value)
-{
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    tBTA_DM_API_SCAN_FILTER_PARAM_SETUP *p_msg;
-    APPL_TRACE_API ("BTA_DmBleScanFilterSetup: %d", action);
-
-    UINT16  len = sizeof(tBTA_DM_API_SCAN_FILTER_PARAM_SETUP) + sizeof(tBLE_BD_ADDR);
-
-    if ((p_msg = (tBTA_DM_API_SCAN_FILTER_PARAM_SETUP *) osi_malloc(len)) != NULL) {
-        memset (p_msg, 0, len);
-
-        p_msg->hdr.event        = BTA_DM_API_SCAN_FILTER_SETUP_EVT;
-        p_msg->action       = action;
-        p_msg->filt_index = filt_index;
-        if (p_filt_params) {
-            memcpy(&p_msg->filt_params, p_filt_params, sizeof(tBTA_DM_BLE_PF_FILT_PARAMS));
-        }
-        p_msg->p_filt_param_cback = p_cmpl_cback;
-        p_msg->ref_value        = ref_value;
-
-        if (p_target) {
-            p_msg->p_target = (tBLE_BD_ADDR *)(p_msg + 1);
-            memcpy(p_msg->p_target, p_target, sizeof(tBLE_BD_ADDR));
-        }
-
-        bta_sys_sendmsg(p_msg);
-    }
-#else
-    UNUSED(action);
-    UNUSED(filt_index);
-    UNUSED(p_filt_params);
-    UNUSED(p_target);
-    UNUSED(p_cmpl_cback);
-    UNUSED(ref_value);
-#endif
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleGetEnergyInfo
-**
-** Description      This function is called to obtain the energy info
-**
-** Parameters       p_cmpl_cback - Command complete callback
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK *p_cmpl_cback)
-{
-    tBTA_DM_API_ENERGY_INFO *p_msg;
-    APPL_TRACE_API ("BTA_DmBleGetEnergyInfo");
-
-    UINT16  len = sizeof(tBTA_DM_API_ENERGY_INFO) + sizeof(tBLE_BD_ADDR);
-
-    if ((p_msg = (tBTA_DM_API_ENERGY_INFO *) osi_malloc(len)) != NULL) {
-        memset (p_msg, 0, len);
-        p_msg->hdr.event        = BTA_DM_API_BLE_ENERGY_INFO_EVT;
-        p_msg->p_energy_info_cback = p_cmpl_cback;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         BTA_DmEnableScanFilter
-**
-** Description      This function is called to enable the adv data payload filter
-**
-** Parameters       action - enable or disable the APCF feature
-**                  p_cmpl_cback - Command completed callback
-**                  ref_value - Reference value
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmEnableScanFilter(UINT8 action, tBTA_DM_BLE_PF_STATUS_CBACK *p_cmpl_cback,
-                            tBTA_DM_BLE_REF_VALUE ref_value)
-{
-#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
-    tBTA_DM_API_ENABLE_SCAN_FILTER *p_msg;
-    APPL_TRACE_API ("BTA_DmEnableScanFilter: %d\n", action);
-
-    UINT16  len = sizeof(tBTA_DM_API_ENABLE_SCAN_FILTER) + sizeof(tBLE_BD_ADDR);
-
-    if ((p_msg = (tBTA_DM_API_ENABLE_SCAN_FILTER *) osi_malloc(len)) != NULL) {
-        memset (p_msg, 0, len);
-
-        p_msg->hdr.event        = BTA_DM_API_SCAN_FILTER_ENABLE_EVT;
-        p_msg->action       = action;
-        p_msg->ref_value    = ref_value;
-        p_msg->p_filt_status_cback = p_cmpl_cback;
-
-        bta_sys_sendmsg(p_msg);
-    }
-#else
-    UNUSED(action);
-    UNUSED(p_cmpl_cback);
-    UNUSED(ref_value);
-#endif
-}
 
 /*******************************************************************************
 **
@@ -2619,7 +2056,7 @@ void BTA_DmBleDisconnect(BD_ADDR bd_addr)
 **
 **
 *******************************************************************************/
-void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback)
+void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length)
 {
     tBTA_DM_API_BLE_SET_DATA_LENGTH *p_msg;
 
@@ -2628,12 +2065,12 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_S
         bdcpy(p_msg->remote_bda, remote_device);
         p_msg->hdr.event = BTA_DM_API_SET_DATA_LENGTH_EVT;
         p_msg->tx_data_length = tx_data_length;
-        p_msg->p_set_pkt_data_cback = p_set_pkt_data_cback;
 
         bta_sys_sendmsg(p_msg);
     }
 }
 
+#if (BLE_42_DTM_TEST_EN == TRUE)
 void BTA_DmBleDtmTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
     tBTA_DM_API_BLE_DTM_TX_START *p_msg;
@@ -2663,7 +2100,9 @@ void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
     tBTA_DM_API_BLE_DTM_STOP *p_msg;
@@ -2673,6 +2112,21 @@ void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
         p_msg->hdr.event = BTA_DM_API_DTM_STOP_EVT;
         p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
 
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
+
+void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode)
+{
+    tBTA_DM_API_SET_PRIVACY_MODE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_PRIVACY_MODE *)osi_malloc(sizeof(tBTA_DM_API_SET_PRIVACY_MODE)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PRIVACY_MODE_EVT;
+        p_msg->addr_type = addr_type;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        p_msg->privacy_mode = privacy_mode;
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -2690,7 +2144,7 @@ void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 **
 ** Parameters:      bd_addr       - Address of the peer device
 **                  transport     - transport of the link to be encruypted
-**                  p_callback    - Pointer to callback function to indicat the
+**                  p_callback    - Pointer to callback function to indicate the
 **                                  link encryption status
 **                  sec_act       - This is the security action to indicate
 **                                  what kind of BLE security level is required for
@@ -2723,80 +2177,9 @@ void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_DM_ENCR
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-/*******************************************************************************
-**
-** Function         BTA_DmCloseACL
-**
-** Description      This function force to close an ACL connection and remove the
-**                  device from the security database list of known devices.
-**
-** Parameters:      bd_addr       - Address of the peer device
-**                  remove_dev    - remove device or not after link down
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transport)
-{
-    tBTA_DM_API_REMOVE_ACL   *p_msg;
-
-    APPL_TRACE_API("BTA_DmCloseACL");
-
-    if ((p_msg = (tBTA_DM_API_REMOVE_ACL *) osi_malloc(sizeof(tBTA_DM_API_REMOVE_ACL))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_REMOVE_ACL));
-
-        p_msg->hdr.event = BTA_DM_API_REMOVE_ACL_EVT;
-
-        memcpy(p_msg->bd_addr, bd_addr, BD_ADDR_LEN);
-        p_msg->remove_dev      = remove_dev;
-        p_msg->transport       = transport;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
 #if BLE_INCLUDED == TRUE
-/*******************************************************************************
-**
-** Function         BTA_DmBleObserve
-**
-** Description      This procedure keep the device listening for advertising
-**                  events from a broadcast device.
-**
-** Parameters       start: start or stop observe.
-**
-** Returns          void
 
-**
-** Returns          void.
-**
-*******************************************************************************/
-extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb)
-{
-    tBTA_DM_API_BLE_OBSERVE   *p_msg;
-
-    APPL_TRACE_API("BTA_DmBleObserve:start = %d ", start);
-
-    if ((p_msg = (tBTA_DM_API_BLE_OBSERVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_OBSERVE))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_OBSERVE));
-
-        p_msg->hdr.event = BTA_DM_API_BLE_OBSERVE_EVT;
-        p_msg->start = start;
-        p_msg->duration = duration;
-        p_msg->p_cback = p_results_cb;
-        if (start){
-            p_msg->p_start_scan_cback = p_start_stop_scan_cb;
-        }
-        else {
-            p_msg->p_stop_scan_cback = p_start_stop_scan_cb;
-        }
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleScan
@@ -2813,8 +2196,7 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
 **
 *******************************************************************************/
 extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
-                             tBTA_DM_SEARCH_CBACK *p_results_cb,
-                             tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb)
+                             tBTA_DM_SEARCH_CBACK *p_results_cb)
 {
     tBTA_DM_API_BLE_SCAN   *p_msg;
 
@@ -2827,42 +2209,11 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
         p_msg->start = start;
         p_msg->duration = duration;
         p_msg->p_cback = p_results_cb;
-        if (start){
-            p_msg->p_start_scan_cback = p_start_stop_scan_cb;
-        }
-        else {
-            p_msg->p_stop_scan_cback = p_start_stop_scan_cb;
-        }
 
         bta_sys_sendmsg(p_msg);
     }
 }
-
-/*******************************************************************************
-**
-** Function         BTA_DmBleStopAdvertising
-**
-** Description      This function set the random address for the APP
-**
-** Parameters       void
-**
-** Returns          void
-**
-**
-*******************************************************************************/
-extern void BTA_DmBleStopAdvertising(void)
-{
-    BT_HDR   *p_msg;
-
-    APPL_TRACE_API("BTA_DmBleStopAdvertising\n");
-
-    if ((p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
-        memset(p_msg, 0, sizeof(BT_HDR));
-        p_msg->event = BTA_DM_API_BLE_STOP_ADV_EVT;
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2870,13 +2221,13 @@ extern void BTA_DmBleStopAdvertising(void)
 **
 ** Description      This function set the random address for the APP
 **
-** Parameters       rand_addr: the random address whith should be setting
+** Parameters       rand_addr: the random address with should be setting
 **                  p_set_rand_addr_cback: complete callback
 ** Returns          void
 **
 **
 *******************************************************************************/
-extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback)
+extern void BTA_DmSetRandAddress(BD_ADDR rand_addr)
 {
     tBTA_DM_APT_SET_DEV_ADDR *p_msg;
     APPL_TRACE_API("set the random address ");
@@ -2885,8 +2236,65 @@ extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_
         memcpy(p_msg->address, rand_addr, BD_ADDR_LEN);
         p_msg->hdr.event = BTA_DM_API_SET_RAND_ADDR_EVT;
         p_msg->addr_type = BLE_ADDR_RANDOM;
-        p_msg->p_set_rand_addr_cback = p_set_rand_addr_cback;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    }
+}
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetRpaTimeout
+**
+** Description      This function sets the Resolvable Private Address (RPA) timeout
+**                  for the Bluetooth device. The RPA timeout defines how long an RPA
+**                  remains in use before a new one is generated.
+**
+** Parameters       rpa_timeout: The timeout in seconds within the range of 1s to 1 hour
+**                               as defined by the Bluetooth specification. This duration
+**                               specifies how long the controller uses an RPA before
+**                               generating a new one.
+** Returns          void
+**
+**
+*******************************************************************************/
+void BTA_DmBleSetRpaTimeout(uint16_t rpa_timeout)
+{
+    tBTA_DM_API_SET_RPA_TIMEOUT *p_msg;
+    if ((p_msg = (tBTA_DM_API_SET_RPA_TIMEOUT *) osi_malloc(sizeof(tBTA_DM_API_SET_RPA_TIMEOUT))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_RPA_TIMEOUT));
+        p_msg->hdr.event = BTA_DM_API_SET_RPA_TIMEOUT_EVT;
+        p_msg->rpa_timeout = rpa_timeout; // Assign the RPA timeout value to the message
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleAddDevToResolvingList
+**
+** Description      This function adds a device to the resolving list of the
+**                  Bluetooth controller. The resolving list is used for resolving
+**                  the identity of devices using resolvable private addresses (RPAs).
+**
+** Parameters       addr: Bluetooth device address to be added to the resolving list
+**                  addr_type: Type of the address (public or random)
+**                  irk: Identity Resolving Key (IRK) of the device
+**                  add_dev_to_resolving_list_callback: Callback function to be invoked
+**                                                     upon completion of the operation
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmBleAddDevToResolvingList(BD_ADDR addr,
+                                    uint8_t addr_type,
+                                    PEER_IRK irk)
+{
+    tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST *p_msg;
+    if ((p_msg = (tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST *) osi_malloc(sizeof(tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST));
+        p_msg->hdr.event = BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT;
+        memcpy(p_msg->addr, addr, BD_ADDR_LEN); // Copy the device address to the message
+        p_msg->addr_type = addr_type;                      // Assign the address type to the message
+        memcpy(p_msg->irk, irk, PEER_IRK_LEN);            // Copy the IRK to the message
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -2900,6 +2308,344 @@ void BTA_DmClearRandAddress(void)
         bta_sys_sendmsg(p_msg);
     }
 }
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void BTA_DmBleGapEnhReadTransPwrLevel(uint16_t conn_handle, uint8_t phy)
+{
+    tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL *)osi_malloc(sizeof(tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_ENH_READ_TRANS_POWER_LEVEL;
+        p_msg->conn_handle = conn_handle;
+        p_msg->phy = phy;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy)
+{
+    tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL *)osi_malloc(sizeof(tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_READ_REM_TRANS_POWER_LEVEL;
+        p_msg->conn_handle = conn_handle;
+        p_msg->phy = phy;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                        uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent)
+{
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PATH_LOSS_REPORT_PARAMS;
+        p_msg->conn_handle = conn_handle;
+        p_msg->high_threshold = high_threshold;
+        p_msg->high_hysteresis = high_hysteresis;
+        p_msg->low_threshold = low_threshold;
+        p_msg->low_hysteresis = low_hysteresis;
+        p_msg->min_time_spent = min_time_spent;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable)
+{
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PATH_LOSS_REPORTING_EN;
+        p_msg->conn_handle = conn_handle;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable)
+{
+    tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_TRANS_POWER_REPORTING_EN;
+        p_msg->conn_handle = conn_handle;
+        p_msg->local_enable = local_enable;
+        p_msg->remote_enable = remote_enable;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void BTA_DmBleGapSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency, uint16_t continuation_number, uint16_t supervision_timeout)
+{
+    tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_DEFALT_SUBRATE;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSubrateReqest(uint16_t conn_handle, uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency, uint16_t continuation_number, uint16_t supervision_timeout)
+{
+    tBTA_DM_API_BLE_SUBRATE_REQUEST *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SUBRATE_REQUEST *)osi_malloc(sizeof(tBTA_DM_API_BLE_SUBRATE_REQUEST)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SUBRATE_REQUEST;
+        p_msg->conn_handle = conn_handle;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void BTA_DmBleGapSetHostFeature(uint16_t bit_num, uint8_t bit_val)
+{
+    tBTA_DM_API_SET_HOST_FEATURE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_HOST_FEATURE *) osi_malloc(sizeof(tBTA_DM_API_SET_HOST_FEATURE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_HOST_FEATURE));
+        p_msg->hdr.event = BTA_DM_API_SET_HOST_FEATURE_EVT;
+
+        p_msg->bit_num = bit_num;
+        p_msg->bit_val = bit_val;
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+void BTA_DmBleGapSetPASubevtData(uint8_t adv_handle, uint8_t num_subevents_with_data, uint8_t *subevent_params)
+{
+    tBTA_DM_API_BLE_PA_SUBEVENT_DATA *p_msg;
+    tBTA_BLE_SUBEVENT_PARAMS *p_subevent_params = (tBTA_BLE_SUBEVENT_PARAMS*)subevent_params;
+
+    if ((p_msg = (tBTA_DM_API_BLE_PA_SUBEVENT_DATA *)osi_malloc(sizeof(tBTA_DM_API_BLE_PA_SUBEVENT_DATA) + num_subevents_with_data * sizeof(tBTA_DM_API_BLE_SUBEVENT_PARAMS)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PA_SUBEVT_DATA;
+        p_msg->adv_handle = adv_handle;
+        p_msg->num_subevents_with_data = num_subevents_with_data;
+        p_msg->subevent_params = (tBTA_DM_API_BLE_SUBEVENT_PARAMS *)(p_msg + 1);
+        for (uint8_t i = 0; i < num_subevents_with_data; i++)
+        {
+            p_msg->subevent_params[i].subevent = p_subevent_params[i].subevent;
+            p_msg->subevent_params[i].response_slot_start = p_subevent_params[i].response_slot_start;
+            p_msg->subevent_params[i].response_slot_count = p_subevent_params[i].response_slot_count;
+            p_msg->subevent_params[i].subevent_data_len = p_subevent_params[i].subevent_data_len;
+            memcpy(&(p_msg->subevent_params[i].subevent_data), p_subevent_params[i].subevent_data, p_subevent_params[i].subevent_data_len);
+        }
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPeriodicAdvRspData(uint16_t sync_handle, uint16_t request_event, uint8_t request_subevent,
+                                        uint8_t rsp_subevent, uint8_t rsp_slot, uint8_t rsp_data_len, uint8_t *rsp_data)
+{
+    tBTA_DM_API_BLE_PA_RSP_DATA *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_PA_RSP_DATA *)osi_malloc(sizeof(tBTA_DM_API_BLE_PA_RSP_DATA) + rsp_data_len))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PA_RSP_DATA;
+        p_msg->sync_handle = sync_handle;
+        p_msg->request_event = request_event;
+        p_msg->request_subevent = request_subevent;
+        p_msg->rsp_subevent = rsp_subevent;
+        p_msg->rsp_slot = rsp_slot;
+        p_msg->rsp_data_len = rsp_data_len;
+        p_msg->rsp_data = (UINT8 *)(p_msg + 1);
+        if (rsp_data_len && rsp_data) {
+            memcpy(p_msg->rsp_data, rsp_data, rsp_data_len);
+        } else if (rsp_data_len) {
+            APPL_TRACE_ERROR("%s rsp_data is NULL", __func__);
+        }
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPeriodicSyncSubevt(uint16_t sync_handle, uint16_t periodic_adv_properties, uint8_t num_subevents_to_sync, uint8_t *subevent)
+{
+    tBTA_DM_API_BLE_PA_SYNC_SUBEVT *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_PA_SYNC_SUBEVT *)osi_malloc(sizeof(tBTA_DM_API_BLE_PA_SYNC_SUBEVT) + num_subevents_to_sync))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PA_SYNC_SUBEVT;
+        p_msg->sync_handle = sync_handle;
+        p_msg->periodic_adv_properties = periodic_adv_properties;
+        p_msg->num_subevents_to_sync = num_subevents_to_sync;
+        p_msg->subevent = (UINT8 *)(p_msg + 1);
+        if (num_subevents_to_sync && subevent) {
+            memcpy(p_msg->subevent, subevent, num_subevents_to_sync);
+        } else if (num_subevents_to_sync) {
+            APPL_TRACE_ERROR("%s subevent is NULL", __func__);
+        }
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+void BTA_DmBleGapReadLocalSupportedCaps(void)
+{
+    tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_READ_LOCAL_SUPP_CAPS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_READ_LOCAL_SUPPORTED_CAPS;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapReadRemoteSupportedCaps(uint16_t conn_handle)
+{
+    tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_READ_REMOTE_SUPP_CAPS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_READ_REMOTE_SUPPORTED_CAPS;
+        p_msg->conn_handle = conn_handle;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapWriteCachedRemoteSupportedCaps(tBTA_DM_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *write_cachedremote_supp_caps)
+{
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS *)osi_malloc(sizeof(tBTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPP_CAPS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_WRITE_CACHED_REMOTE_SUPPORTED_CAPS;
+        memcpy(&p_msg->conn_handle, &write_cachedremote_supp_caps->conn_handle, sizeof(tBTA_DM_CS_WRITE_CACHED_REMOTE_SUPP_CAPS));
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSecurityEnable(uint16_t conn_handle)
+{
+    tBTA_DM_API_CS_SECURITY_ENABLE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SECURITY_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_CS_SECURITY_ENABLE))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SECURITY_ENABLE;
+        p_msg->conn_handle = conn_handle;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetDefaultSetting(uint16_t conn_handle, uint8_t role_enable, uint8_t cs_sync_ant_selection, int8_t max_tx_power)
+{
+    tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_SET_DEFAULT_SETTING_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_DEFAULT_SETTINGS;
+        p_msg->conn_handle = conn_handle;
+        p_msg->role_enable = role_enable;
+        p_msg->cs_sync_ant_selection = cs_sync_ant_selection;
+        p_msg->max_tx_power = max_tx_power;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+void BTA_DmBleGapCsReadRemoteFaeTable(uint16_t conn_handle)
+{
+    tBTA_DM_API_CS_READ_REMOTE_TAB *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_READ_REMOTE_TAB *)osi_malloc(sizeof(tBTA_DM_API_CS_READ_REMOTE_TAB))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_READ_REMOTE_FAE_TABLE;
+        p_msg->conn_handle = conn_handle;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapWriteCachedRemoteFaeTable(uint16_t conn_handle, uint8_t *remote_fae_table, uint8_t table_len)
+{
+    tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TAB_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_WRITE_CACHED_REMOTE_FAE_TABLE;
+        p_msg->conn_handle = conn_handle;
+        memcpy(&p_msg->remote_fae_table[0], remote_fae_table, table_len);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsCreateConfig(tBTA_DM_CS_CREATE_CONFIG_PARAMS *create_config_params)
+{
+    tBTA_DM_API_CS_CREATE_CONFIG_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_CREATE_CONFIG_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_CREATE_CONFIG_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_CREATE_CONFIG;
+        memcpy(&p_msg->conn_handle, &create_config_params->conn_handle, sizeof(tBTA_DM_CS_CREATE_CONFIG_PARAMS));
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsRemoveConfig(uint16_t conn_handle, uint8_t config_id)
+{
+    tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_REMOVE_CONFIG_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_REMOVE_CONFIG;
+        p_msg->conn_handle = conn_handle;
+        p_msg->config_id = config_id;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetChannelClass(uint8_t *channel_class, uint8_t channl_len)
+{
+    tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_SET_CHANNEL_CLASS_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_CAHNNEL_CLASSIFICATION;
+        memcpy(&p_msg->channel_class[0], channel_class,  channl_len);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetProcPatams(tBTA_DM_CS_SET_PROC_PARAMS *set_proc_params)
+{
+    tBTA_DM_API_CS_SET_PROC_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_PROC_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_SET_PROC_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_PROCEDURE_PARAMS;
+        memcpy(&p_msg->conn_handle, &set_proc_params->conn_handle, sizeof(tBTA_DM_CS_SET_PROC_PARAMS));
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t enable)
+{
+    tBTA_DM_API_CS_PROC_ENABLE_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_PROC_ENABLE_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_CS_PROC_ENABLE_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_PROCEDURE_ENABLE;
+        p_msg->conn_handle = conn_handle;
+        p_msg->config_id = config_id;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 /*******************************************************************************
 **
@@ -2915,38 +2661,6 @@ void BTA_VendorInit (void)
     APPL_TRACE_API("BTA_VendorInit");
 }
 
-/*******************************************************************************
-**
-** Function         BTA_VendorCleanup
-**
-** Description      This function frees up Broadcom specific VS specific dynamic memory
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_VendorCleanup (void)
-{
-    tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-#if (BLE_INCLUDED == TRUE && BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE)
-    btm_ble_adv_filter_cleanup();       // when BLE_VND_INCLUDED is false, this function will be ignore, so move it out of "if"
-
-#if 0                                   //by TH, comment out temporarily
-    if (cmn_ble_vsc_cb.max_filter > 0) {
-        btm_ble_adv_filter_cleanup();
-#if BLE_PRIVACY_SPT == TRUE
-        btm_ble_resolving_list_cleanup ();
-#endif
-    }
-#endif
-
-    if (cmn_ble_vsc_cb.tot_scan_results_strg > 0) {
-        btm_ble_batchscan_cleanup();
-    }
-#endif
-
-}
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void BTA_DmBleGapReadPHY(BD_ADDR addr)
 {
@@ -2956,7 +2670,7 @@ void BTA_DmBleGapReadPHY(BD_ADDR addr)
         memset(p_msg, 0, sizeof(tBTA_DM_API_READ_PHY));
         p_msg->hdr.event = BTA_DM_API_READ_PHY_EVT;
         memcpy(p_msg->bd_addr, addr, BD_ADDR_LEN);
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -2968,13 +2682,13 @@ void BTA_DmBleGapSetPreferedDefaultPHY(tBTA_DM_BLE_GAP_PHY_MASK tx_phy_mask,
                                                           tBTA_DM_BLE_GAP_PHY_MASK rx_phy_mask)
 {
     tBTA_DM_API_SET_PER_DEF_PHY *p_msg;
-    APPL_TRACE_API("%s, Set prefered default phy.", __func__);
+    APPL_TRACE_API("%s, Set preferred default phy.", __func__);
     if ((p_msg = (tBTA_DM_API_SET_PER_DEF_PHY *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_DEF_PHY))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_DEF_PHY));
         p_msg->hdr.event = BTA_DM_API_SET_PER_DEF_PHY_EVT;
         p_msg->tx_phy_mask = tx_phy_mask;
         p_msg->rx_phy_mask = rx_phy_mask;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -2989,7 +2703,7 @@ void BTA_DmBleGapSetPreferedPHY(BD_ADDR addr,
                                                UINT16 phy_options)
 {
     tBTA_DM_API_SET_PER_PHY *p_msg;
-    APPL_TRACE_API("%s, Set prefered phy.", __func__);
+    APPL_TRACE_API("%s, Set preferred phy.", __func__);
     if ((p_msg = (tBTA_DM_API_SET_PER_PHY *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_PHY))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_PHY));
         p_msg->hdr.event = BTA_DM_API_SET_PER_PHY_EVT;
@@ -2998,13 +2712,13 @@ void BTA_DmBleGapSetPreferedPHY(BD_ADDR addr,
         p_msg->tx_phy_mask = tx_phy_mask;
         p_msg->rx_phy_mask = rx_phy_mask;
         p_msg->phy_options = phy_options;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 }
-
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 void BTA_DmBleGapExtAdvSetRandaddr(UINT16 instance, BD_ADDR addr)
 {
     tBTA_DM_API_EXT_ADV_SET_RAND_ADDR *p_msg;
@@ -3014,7 +2728,7 @@ void BTA_DmBleGapExtAdvSetRandaddr(UINT16 instance, BD_ADDR addr)
         p_msg->hdr.event = BTA_DM_API_SET_EXT_ADV_RAND_ADDR_EVT;
         p_msg->instance = instance;
         memcpy(&p_msg->rand_addr, addr, BD_ADDR_LEN);
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3032,7 +2746,7 @@ void BTA_DmBleGapExtAdvSetParams(UINT16 instance,
         p_msg->hdr.event = BTA_DM_API_SET_EXT_ADV_PARAMS_EVT;
         p_msg->instance = instance;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3055,7 +2769,7 @@ void BTA_DmBleGapConfigExtAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance, UINT16
         if (data) {
             memcpy(p_msg->data, data, length);
         }
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3075,7 +2789,7 @@ void BTA_DmBleGapExtAdvEnable(BOOLEAN enable, UINT8 num, tBTA_DM_BLE_EXT_ADV *ex
         if (ext_adv) {
             memcpy(p_msg->ext_adv, ext_adv, sizeof(tBTA_DM_BLE_EXT_ADV)*num);
         }
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3090,7 +2804,7 @@ void BTA_DmBleGapExtAdvSetRemove(UINT8 instance)
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE));
         p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_REMOVE_EVT;
         p_msg->instance = instance;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3104,13 +2818,15 @@ void BTA_DmBleGapExtAdvSetClear(void)
     if ((p_msg = (tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR *) osi_malloc(sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR));
         p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_CLEAR_EVT;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
                                                          tBTA_DM_BLE_Periodic_Adv_Params *params)
 {
@@ -3121,7 +2837,7 @@ void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SET_PARAMS_EVT;
         p_msg->instance = instance;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_Periodic_Adv_Params));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3139,11 +2855,12 @@ void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_CFG_DATA_EVT;
         p_msg->instance = instance;
         p_msg->length = length;
-        p_msg->data = (UINT8 *)(p_msg + 1);
-        memcpy(p_msg->data, data, length);
-        p_msg->data = length != 0 ? (UINT8 *)(p_msg + 1) : NULL;
+        p_msg->data = (length != 0) ? (UINT8 *)(p_msg + 1) : NULL;
+        if (data && length) {
+            memcpy(p_msg->data, data, length);
+        }
         p_msg->only_update_did = only_update_did;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3160,14 +2877,16 @@ void BTA_DmBleGapPeriodicAdvEnable(UINT8 enable, UINT8 instance)
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_ENABLE_EVT;
         p_msg->instance = instance;
         p_msg->enable = enable;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 void BTA_DmBleGapPeriodicAdvCreateSync(tBTA_DM_BLE_Periodic_Sync_Params *params)
 {
     tBTA_DM_API_PERIODIC_ADV_SYNC *p_msg;
@@ -3176,7 +2895,7 @@ void BTA_DmBleGapPeriodicAdvCreateSync(tBTA_DM_BLE_Periodic_Sync_Params *params)
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_EVT;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_Periodic_Sync_Params));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3191,7 +2910,7 @@ void BTA_DmBleGapPeriodicAdvSyncCancel(void)
     if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_CANCEL_EVT;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3207,7 +2926,7 @@ void BTA_DmBleGapPeriodicAdvSyncTerm(UINT16 sync_handle)
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_TERM));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_TERMINATE_EVT;
         p_msg->sync_handle = sync_handle;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3227,7 +2946,7 @@ void BTA_DmBleGapPeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type,
         p_msg->addr_type = addr_type;
         p_msg->sid = sid;
         memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3247,7 +2966,7 @@ void BTA_DmBleGapPeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type,
         p_msg->addr_type = addr_type;
         p_msg->sid = sid;
         memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3262,14 +2981,16 @@ void BTA_DmBleGapPeriodicAdvClearDev(void)
     if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_CLEAR_DEV_EVT;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void BTA_DmBleGapSetExtScanParams(tBTA_DM_BLE_EXT_SCAN_PARAMS *params)
 {
     tBTA_DM_API_SET_EXT_SCAN_PARAMS *p_msg;
@@ -3278,7 +2999,7 @@ void BTA_DmBleGapSetExtScanParams(tBTA_DM_BLE_EXT_SCAN_PARAMS *params)
         memset(p_msg, 0, sizeof(tBTA_DM_API_SET_EXT_SCAN_PARAMS));
         p_msg->hdr.event = BTA_DM_API_SET_EXT_SCAN_PARAMS_EVT;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_EXT_SCAN_PARAMS));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3296,13 +3017,14 @@ void BTA_DmBleGapExtScan(BOOLEAN start, UINT32 duration, UINT16 period)
         p_msg->start = start;
         p_msg->duration = duration;
         p_msg->period = period;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
                                                                  UINT8 phy_mask,
@@ -3330,7 +3052,7 @@ void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
         if (phy_coded_conn_params) {
             memcpy(&p_msg->phy_coded_conn_params, phy_coded_conn_params, sizeof(tBTA_DM_BLE_CONN_PARAMS));
         }
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3349,14 +3071,16 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
         p_msg->hdr.event = BTA_DM_API_EXT_CONN_EVT;
         p_msg->own_addr_type = own_addr_type;
         memcpy(p_msg->peer_addr, peer_addr, sizeof(BD_ADDR));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 
 }
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_50_DTM_TEST_EN == TRUE)
 void BTA_DmBleDtmEnhTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, uint8_t phy, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
     tBTA_DM_API_BLE_DTM_ENH_TX_START *p_msg;
@@ -3389,8 +3113,7 @@ void BTA_DmBleDtmEnhRxStart(uint8_t rx_channel, uint8_t phy, uint8_t modulation_
         bta_sys_sendmsg(p_msg);
     }
 }
-
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable)
@@ -3402,7 +3125,7 @@ void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable)
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_RECV_ENABLE_EVT;
         p_msg->sync_handle = sync_handle;
         p_msg->enable = enable;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3419,7 +3142,7 @@ void BTA_DmBleGapPeriodicAdvSyncTrans(BD_ADDR peer_addr, UINT16 service_data, UI
         memcpy(p_msg->addr, peer_addr, sizeof(BD_ADDR));
         p_msg->service_data = service_data;
         p_msg->sync_handle = sync_handle;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3436,7 +3159,7 @@ void BTA_DmBleGapPeriodicAdvSetInfoTrans(BD_ADDR peer_addr, UINT16 service_data,
         memcpy(p_msg->addr, peer_addr, sizeof(BD_ADDR));
         p_msg->service_data = service_data;
         p_msg->adv_hanlde = adv_handle;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3452,7 +3175,7 @@ void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PA
         p_msg->hdr.event = BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT;
         memcpy(p_msg->addr, peer_addr, sizeof(BD_ADDR));
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_PAST_PARAMS));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3460,4 +3183,575 @@ void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PA
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+void BTA_DmBleGapAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_low, INT8 rssi_high, UINT8 timeout)
+{
+    tBTA_DM_API_ADD_MONITOR_ADV_LIST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_ADD_MONITOR_ADV_LIST *) osi_malloc(sizeof(tBTA_DM_API_ADD_MONITOR_ADV_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ADD_MONITOR_ADV_LIST));
+        p_msg->hdr.event = BTA_DM_API_ADD_MONITOR_ADV_LIST_EVT;
+        p_msg->addr_type = addr_type;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        p_msg->rssi_low = rssi_low;
+        p_msg->rssi_high = rssi_high;
+        p_msg->timeout = timeout;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapRemoveMonitorAdvList(UINT8 addr_type, BD_ADDR addr)
+{
+    tBTA_DM_API_RMV_MONITOR_ADV_LIST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_RMV_MONITOR_ADV_LIST *) osi_malloc(sizeof(tBTA_DM_API_RMV_MONITOR_ADV_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_RMV_MONITOR_ADV_LIST));
+        p_msg->hdr.event = BTA_DM_API_RMV_MONITOR_ADV_LIST_EVT;
+        p_msg->addr_type = addr_type;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapClearMonitorAdvList(void)
+{
+    tBTA_DM_API_CLEAR_MONITOR_ADV_LIST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_CLEAR_MONITOR_ADV_LIST *) osi_malloc(sizeof(tBTA_DM_API_CLEAR_MONITOR_ADV_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_CLEAR_MONITOR_ADV_LIST));
+        p_msg->hdr.event = BTA_DM_API_CLEAR_MONITOR_ADV_LIST_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapReadMonitorAdvListSize(void)
+{
+    tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE *) osi_malloc(sizeof(tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE));
+        p_msg->hdr.event = BTA_DM_API_READ_MONITOR_ADV_LIST_SIZE_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapEnableMonitorAdv(UINT8 enable)
+{
+    tBTA_DM_API_ENABLE_MONITOR_ADV *p_msg;
+    APPL_TRACE_API("%s, enable = %d", __func__, enable);
+    if ((p_msg = (tBTA_DM_API_ENABLE_MONITOR_ADV *) osi_malloc(sizeof(tBTA_DM_API_ENABLE_MONITOR_ADV))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ENABLE_MONITOR_ADV));
+        p_msg->hdr.event = BTA_DM_API_ENABLE_MONITOR_ADV_EVT;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
+void BTA_DmBleGapIsoBigCreate(tBTA_DM_BLE_BIG_CREATE_PARAMS *p_big_creat_param)
+{
+    tBTA_DM_API_BIG_CREATE *p_msg;
+    APPL_TRACE_API("%s.", __func__);
+    if ((p_msg = (tBTA_DM_API_BIG_CREATE *) osi_malloc(sizeof(tBTA_DM_API_BIG_CREATE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BIG_CREATE));
+        p_msg->hdr.event = BTA_DM_API_ISO_BIG_CREATE_EVT;
+        p_msg->big_creat_param.big_handle = p_big_creat_param->big_handle;
+        p_msg->big_creat_param.adv_handle = p_big_creat_param->adv_handle;
+        p_msg->big_creat_param.num_bis = p_big_creat_param->num_bis;
+        p_msg->big_creat_param.sdu_interval = p_big_creat_param->sdu_interval;
+        p_msg->big_creat_param.max_sdu = p_big_creat_param->max_sdu;
+        p_msg->big_creat_param.max_transport_latency = p_big_creat_param->max_transport_latency;
+        p_msg->big_creat_param.rtn = p_big_creat_param->rtn;
+        p_msg->big_creat_param.phy = p_big_creat_param->phy;
+        p_msg->big_creat_param.packing = p_big_creat_param->packing;
+        p_msg->big_creat_param.framing = p_big_creat_param->framing;
+        p_msg->big_creat_param.encryption = p_big_creat_param->encryption;
+        memcpy(&p_msg->big_creat_param.broadcast_code[0], p_big_creat_param->broadcast_code, 16);
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+
+}
+
+void BTA_DmBleGapIsoBigCreateTest(tBTA_DM_BLE_BIG_CREATE_TEST_PARAMS *p_big_creat_test_param)
+{
+    tBTA_DM_API_BIG_CREATE_TEST *p_msg;
+    APPL_TRACE_API("%s.", __func__);
+    if ((p_msg = (tBTA_DM_API_BIG_CREATE_TEST *) osi_malloc(sizeof(tBTA_DM_API_BIG_CREATE_TEST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BIG_CREATE_TEST));
+        p_msg->hdr.event = BTA_DM_API_ISO_BIG_CREATE_TEST_EVT;
+        p_msg->big_creat_test_param.big_handle = p_big_creat_test_param->big_handle;
+        p_msg->big_creat_test_param.adv_handle = p_big_creat_test_param->adv_handle;
+        p_msg->big_creat_test_param.num_bis = p_big_creat_test_param->num_bis;
+        p_msg->big_creat_test_param.sdu_interval = p_big_creat_test_param->sdu_interval;
+        p_msg->big_creat_test_param.iso_interval = p_big_creat_test_param->iso_interval;
+        p_msg->big_creat_test_param.nse = p_big_creat_test_param->nse;
+        p_msg->big_creat_test_param.max_sdu = p_big_creat_test_param->max_sdu;
+        p_msg->big_creat_test_param.max_pdu = p_big_creat_test_param->max_pdu;
+        p_msg->big_creat_test_param.phy = p_big_creat_test_param->phy;
+        p_msg->big_creat_test_param.packing = p_big_creat_test_param->packing;
+        p_msg->big_creat_test_param.framing = p_big_creat_test_param->framing;
+        p_msg->big_creat_test_param.bn = p_big_creat_test_param->bn;
+        p_msg->big_creat_test_param.irc = p_big_creat_test_param->irc;
+        p_msg->big_creat_test_param.pto = p_big_creat_test_param->pto;
+        p_msg->big_creat_test_param.encryption = p_big_creat_test_param->encryption;
+        memcpy(&p_msg->big_creat_test_param.broadcast_code[0], p_big_creat_test_param->broadcast_code, 16);
+
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapIsoBigTerminate(tBTA_DM_BLE_BIG_TERMINATE_PARAMS *p_big_terminate_param)
+{
+    tBTA_DM_API_BIG_TERMINATE *p_msg;
+    APPL_TRACE_API("%s.", __func__);
+    if ((p_msg = (tBTA_DM_API_BIG_TERMINATE *) osi_malloc(sizeof(tBTA_DM_API_BIG_TERMINATE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BIG_TERMINATE));
+        p_msg->hdr.event = BTA_DM_API_ISO_BIG_TERMINATE_EVT;
+        p_msg->big_terminate_param.big_handle = p_big_terminate_param->big_handle;
+        p_msg->big_terminate_param.reason = p_big_terminate_param->reason;
+
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+void BTA_DmBleGapIsoBigSyncCreate(tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS *p_big_sync_param)
+{
+    tBTA_DM_API_BIG_SYNC_CREATE *p_msg;
+    APPL_TRACE_API("%s.", __func__);
+    if ((p_msg = (tBTA_DM_API_BIG_SYNC_CREATE *) osi_malloc(sizeof(tBTA_DM_API_BIG_SYNC_CREATE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BIG_SYNC_CREATE));
+        p_msg->hdr.event = BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT;
+
+        p_msg->big_sync_param.big_handle = p_big_sync_param->big_handle;
+        p_msg->big_sync_param.sync_handle = p_big_sync_param->sync_handle;
+        p_msg->big_sync_param.encryption = p_big_sync_param->encryption;
+        memcpy(&p_msg->big_sync_param.bc_code[0], &p_big_sync_param->bc_code[0], 16);
+        p_msg->big_sync_param.mse = p_big_sync_param->mse;
+        p_msg->big_sync_param.big_sync_timeout = p_big_sync_param->big_sync_timeout;
+        p_msg->big_sync_param.num_bis = p_big_sync_param->num_bis;
+        memcpy(&p_msg->big_sync_param.bis[0], &p_big_sync_param->bis[0], p_big_sync_param->num_bis);
+
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapIsoBigSyncTerminate(tBTA_DM_BLE_BIG_SYNC_TERMINATE_PARAMS *p_big_sync_terminate_param)
+{
+    tBTA_DM_API_BIG_SYNC_TERMINATE *p_msg;
+    APPL_TRACE_API("%s.", __func__);
+    if ((p_msg = (tBTA_DM_API_BIG_SYNC_TERMINATE *) osi_malloc(sizeof(tBTA_DM_API_BIG_SYNC_TERMINATE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BIG_SYNC_TERMINATE));
+        p_msg->hdr.event = BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT;
+
+        p_msg->big_sync_terminate_param.big_handle = p_big_sync_terminate_param->big_handle;
+
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+void BTA_DmBleGapIsoDataPathSet(tBTA_DM_BLE_ISO_SET_DATA_PATH_PARAMS *p_iso_data_path_param)
+{
+    tBTA_DM_API_ISO_DATA_PATH *p_msg;
+    uint8_t codec_cfg_len = p_iso_data_path_param->codec_len;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_ISO_DATA_PATH *) osi_malloc(sizeof(tBTA_DM_API_ISO_DATA_PATH) + codec_cfg_len)) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ISO_DATA_PATH));
+        p_msg->hdr.event = BTA_DM_API_ISO_SET_DATA_PATH_EVT;
+
+        p_msg->iso_data_path_param.conn_handle = p_iso_data_path_param->conn_handle;
+        p_msg->iso_data_path_param.data_path_dir = p_iso_data_path_param->data_path_dir;
+        p_msg->iso_data_path_param.data_path_id = p_iso_data_path_param->data_path_id;
+        p_msg->iso_data_path_param.coding_fmt = p_iso_data_path_param->coding_fmt;
+        p_msg->iso_data_path_param.company_id = p_iso_data_path_param->company_id;
+        p_msg->iso_data_path_param.vs_codec_id = p_iso_data_path_param->vs_codec_id;
+        p_msg->iso_data_path_param.controller_delay = p_iso_data_path_param->controller_delay;
+        p_msg->iso_data_path_param.codec_len = p_iso_data_path_param->codec_len;
+        p_msg->iso_data_path_param.codec_cfg = (codec_cfg_len != 0) ? (UINT8 *)(p_msg + 1) : NULL;
+        if (codec_cfg_len) {
+            memcpy(p_msg->iso_data_path_param.codec_cfg, p_iso_data_path_param->codec_cfg, p_iso_data_path_param->codec_len);
+        }
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapIsoDataPathRemove(tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS *p_iso_data_path_param)
+{
+    tBTA_DM_API_ISO_DATA_PATH_REMOVE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_ISO_DATA_PATH_REMOVE *) osi_malloc(sizeof(tBTA_DM_API_ISO_DATA_PATH_REMOVE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ISO_DATA_PATH_REMOVE));
+        p_msg->hdr.event = BTA_DM_API_ISO_REMOVE_DATA_PATH_EVT;
+
+        p_msg->iso_data_path_remove_param.conn_handle = p_iso_data_path_param->conn_handle;
+        p_msg->iso_data_path_remove_param.data_path_dir = p_iso_data_path_param->data_path_dir;
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapIsoReadTxSync(uint16_t iso_handle)
+{
+    tBTA_DM_API_ISO_READ_TX_SYNC *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_ISO_READ_TX_SYNC *) osi_malloc(sizeof(tBTA_DM_API_ISO_READ_TX_SYNC))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ISO_READ_TX_SYNC));
+        p_msg->hdr.event = BTA_DM_API_ISO_READ_TX_SYNC_EVT;
+
+        p_msg->iso_hdl= iso_handle;
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapIsoReadLinkQuality(uint16_t iso_handle)
+{
+    tBTA_DM_API_ISO_READ_LINK_QUALITY *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_ISO_READ_LINK_QUALITY *) osi_malloc(sizeof(tBTA_DM_API_ISO_READ_LINK_QUALITY))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ISO_READ_LINK_QUALITY));
+        p_msg->hdr.event = BTA_DM_API_ISO_READ_LINK_QUALITY_EVT;
+
+        p_msg->iso_hdl= iso_handle;
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+void BTA_DmBleIsoSetCigParams(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t worse_case_SCA, uint8_t packing,
+                            uint8_t framing, uint16_t mtl_c_to_p, uint16_t mtl_p_to_c, uint8_t cis_cnt, uint8_t *cis_params)
+{
+    tBTA_DM_API_SET_CIG_PARAM *p_buf;
+    if ((p_buf = (tBTA_DM_API_SET_CIG_PARAM *)osi_malloc(sizeof(tBTA_DM_API_SET_CIG_PARAM))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_SET_CIG_PARAMS_EVT;
+        p_buf->cig_id = cig_id;
+        p_buf->sdu_int_c_to_p = sdu_int_c_to_p;
+        p_buf->sdu_int_p_to_c = sdu_int_p_to_c;
+        p_buf->worse_case_SCA = worse_case_SCA;
+        p_buf->packing = packing;
+        p_buf->framing = framing;
+        p_buf->mtl_c_to_p = mtl_c_to_p;
+        p_buf->mtl_p_to_c = mtl_p_to_c;
+        p_buf->cis_cnt = cis_cnt;
+        memcpy(&p_buf->cis_params[0], cis_params, sizeof(struct bta_iso_cis_params) * cis_cnt);
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+void BTA_DmBleIsoSetCigParamsTest(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t ft_c_to_p, uint8_t ft_p_to_c,
+                                 uint16_t iso_interval, uint8_t worse_case_SCA, uint8_t packing, uint8_t framing, uint8_t cis_cnt, uint8_t *cis_params_test)
+{
+    tBTA_DM_API_SET_CIG_PARAM_TEST *p_buf;
+    if ((p_buf = (tBTA_DM_API_SET_CIG_PARAM_TEST *)osi_malloc(sizeof(tBTA_DM_API_SET_CIG_PARAM_TEST))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_SET_CIG_PARAMS_TEST_EVT;
+        p_buf->cig_id = cig_id;
+        p_buf->sdu_int_c_to_p = sdu_int_c_to_p;
+        p_buf->sdu_int_p_to_c = sdu_int_p_to_c;
+        p_buf->ft_c_to_p = ft_c_to_p;
+        p_buf->ft_p_to_c = ft_p_to_c;
+        p_buf->iso_interval = iso_interval;
+        p_buf->worse_case_SCA = worse_case_SCA;
+        p_buf->packing = packing;
+        p_buf->framing = framing;
+        p_buf->cis_cnt = cis_cnt;
+        memcpy(&p_buf->cis_params_test[0], cis_params_test, sizeof(struct bta_iso_cis_params_test) * cis_cnt);
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+void BTA_DmBleIsoCreateCis(uint8_t cig_count, uint8_t *cis_hdl_info)
+{
+    tBTA_DM_API_CREATE_CIS_PARAM *p_buf;
+    if ((p_buf = (tBTA_DM_API_CREATE_CIS_PARAM *)osi_malloc(sizeof(tBTA_DM_API_CREATE_CIS_PARAM))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_CREATE_CIS_EVT;
+        p_buf->cis_count = cig_count;
+
+        struct bta_iso_cis_hdls *hdls = (struct bta_iso_cis_hdls *)cis_hdl_info;
+
+        for (uint8_t i = 0; i < cig_count; i++)
+        {
+            p_buf->cis_hdls[i].cis_hdl = hdls[i].cis_hdl;
+            p_buf->cis_hdls[i].acl_hdl = hdls[i].acl_hdl;
+        }
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+void BTA_DmBleIsoRemoveCig(uint8_t cig_id)
+{
+    tBTA_DM_API_REMOVE_CIG_PARAM *p_buf;
+    if ((p_buf = (tBTA_DM_API_REMOVE_CIG_PARAM *)osi_malloc(sizeof(tBTA_DM_API_REMOVE_CIG_PARAM))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_REMOVE_CIG_PARAMS_EVT;
+        p_buf->cig_id = cig_id;
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+void BTA_DmBleIsoAcceptCisReq(uint16_t cis_handle)
+{
+    tBTA_DM_API_ACCEPT_CIS_REQ_PARAM *p_buf;
+    if ((p_buf = (tBTA_DM_API_ACCEPT_CIS_REQ_PARAM *)osi_malloc(sizeof(tBTA_DM_API_ACCEPT_CIS_REQ_PARAM))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_ACCEPT_CIS_REQ_PARAMS_EVT;
+        p_buf->cis_handle = cis_handle;
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+
+void BTA_DmBleIsoRejectCisReq(uint16_t cis_handle, uint8_t reason)
+{
+    tBTA_DM_API_REJECT_CIS_REQ_PARAM *p_buf;
+    if ((p_buf = (tBTA_DM_API_REJECT_CIS_REQ_PARAM *)osi_malloc(sizeof(tBTA_DM_API_REJECT_CIS_REQ_PARAM))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_REJECT_CIS_REQ_PARAMS_EVT;
+        p_buf->cis_handle = cis_handle;
+        p_buf->reason = reason;
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+void BTA_DmBleIsoDisconCis(uint16_t cis_handle, uint8_t reason)
+{
+    tBTA_DM_API_DISCON_CIS_PARAM *p_buf;
+    if ((p_buf = (tBTA_DM_API_DISCON_CIS_PARAM *)osi_malloc(sizeof(tBTA_DM_API_DISCON_CIS_PARAM))) != NULL) {
+        p_buf->hdr.event = BTA_DM_API_DISCON_CIS_EVT;
+        p_buf->cis_handle = cis_handle;
+        p_buf->reason = reason;
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+void BTA_DmBleCteSetConnectionlessTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_t cte_type,
+                                                uint8_t cte_count, uint8_t switching_pattern_len, uint8_t *antenna_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_SET_TRANS_PARAMS *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_SET_TRANS_PARAMS *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_SET_TRANS_PARAMS) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_SET_TRANS_PARAMS) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_TRANS_PARAMS;
+
+        p_buf->adv_handle = adv_handle;
+        p_buf->cte_len = cte_len;
+        p_buf->cte_type = cte_type;
+        p_buf->cte_count = cte_count;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len && antenna_ids) {
+            memcpy(p_buf->antenna_ids, antenna_ids, switching_pattern_len);
+        }
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionlessTransEnable(uint8_t adv_handle, uint8_t cte_en)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_SET_TRANS_ENABLE *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_SET_TRANS_ENABLE *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_SET_TRANS_ENABLE))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_SET_TRANS_ENABLE));
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_TRANS_ENABLE;
+
+        p_buf->adv_handle = adv_handle;
+        p_buf->cte_enable = cte_en;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                                    uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *ant_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_IQ_SAMP_EN *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_IQ_SAMP_EN *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_IQ_SAMP_EN) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_IQ_SAMP_EN) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_IQ_SAMPLING_EN;
+
+        p_buf->sync_handle = sync_handle;
+        p_buf->sampling_en = sampling_en;
+        p_buf->slot_dur = slot_dur;
+        p_buf->max_sampled_ctes = max_sampled_ctes;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len && ant_ids) {
+            memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
+        }
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void BTA_DmBleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                            uint8_t switching_pattern_len, uint8_t *ant_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_RECV_PARAMS *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_RECV_PARAMS *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_RECV_PARAMS) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_RECV_PARAMS) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_RECV_PARAMS;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->sampling_en = sampling_en;
+        p_buf->slot_dur = slot_dur;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len && ant_ids) {
+            memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
+        }
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte_types, uint8_t switching_pattern_len, uint8_t *ant_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS *) osi_malloc(sizeof(tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_TRANS_PARAMS;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->cte_types = cte_types;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len && ant_ids) {
+            memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
+        }
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionRequestEnable(uint16_t conn_handle, uint8_t enable, uint16_t cte_req_interval,
+                                            uint8_t req_cte_len, uint8_t req_cte_Type)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CONN_CTE_REQ_EN *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CONN_CTE_REQ_EN *) osi_malloc(sizeof(tBTA_DM_BLE_CONN_CTE_REQ_EN))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CONN_CTE_REQ_EN));
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_REQUEST_EN;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->enable = enable;
+        p_buf->cte_req_interval = cte_req_interval;
+        p_buf->req_cte_len = req_cte_len;
+        p_buf->req_cte_Type = req_cte_Type;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enable)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CONN_CTE_RSP_EN *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CONN_CTE_RSP_EN *) osi_malloc(sizeof(tBTA_DM_BLE_CONN_CTE_RSP_EN))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CONN_CTE_RSP_EN));
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_RESPONSE_EN;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->enable = enable;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void BTA_DmBleCteReadAntInfor(void)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_READ_ANT_INFOR *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_READ_ANT_INFOR *) osi_malloc(sizeof(tBTA_DM_BLE_READ_ANT_INFOR))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_READ_ANT_INFOR));
+        p_buf->hdr.event = BTA_DM_API_CTE_READ_ANTENNA_INFOR;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 #endif

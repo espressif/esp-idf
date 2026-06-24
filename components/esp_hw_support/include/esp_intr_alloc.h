@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,13 +41,15 @@ extern "C" {
 #define ESP_INTR_FLAG_EDGE          (1<<9)  ///< Edge-triggered interrupt
 #define ESP_INTR_FLAG_IRAM          (1<<10) ///< ISR can be called if cache is disabled
 #define ESP_INTR_FLAG_INTRDISABLED  (1<<11) ///< Return with this interrupt disabled
+#define ESP_INTR_FLAG_SHARED_PRIVATE (1<<12) ///< Interrupt can be shared with `*_bind` functions only
 
 #define ESP_INTR_FLAG_LOWMED    (ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3) ///< Low and medium prio interrupts. These can be handled in C.
 #define ESP_INTR_FLAG_HIGH      (ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6|ESP_INTR_FLAG_NMI) ///< High level interrupts. Need to be handled in assembly.
 
+/** Mask for all level flags */
 #define ESP_INTR_FLAG_LEVELMASK (ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3| \
                                  ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
-                                 ESP_INTR_FLAG_NMI) ///< Mask for all level flags
+                                 ESP_INTR_FLAG_NMI)
 
 
 /** @addtogroup Intr_Alloc_Pseudo_Src
@@ -81,6 +83,25 @@ extern "C" {
 #define ESP_INTR_DISABLE(inum) esp_intr_disable_source(inum)
 
 /**
+ * @brief Structure used to specify all the information needed to allocate an interrupt.
+ * This structure can be passed to the function esp_intr_alloc_info
+ */
+typedef struct {
+    int source;              /*!< Interrupt source to map */
+    int flags;               /*!< ORred mask of the ESP_INTR_FLAG_* defines */
+    uint32_t intrstatusreg;  /*!< Address of the interrupt status register */
+    uint32_t intrstatusmask; /*!< Mask of the interrupt status register */
+    intr_handler_t handler;  /*!< Interrupt handler to invoke upon triggered interrupt */
+    void *arg;               /*!< Argument to pass to the interrupt handler */
+    struct {
+        intr_handle_t handle; /*!< Handle of the interrupt to share with */
+        const char* name;     /*!< Name of the interrupt to share with */
+    } bind_by;                /*!< Interrupt to share with, to be populated when flags are set to
+                                * ESP_INTR_FLAG_SHARED or ESP_INTR_FLAG_SHARED_PRIVATE, and only provide one of
+                                * `handle` or `name`. */
+} esp_intr_alloc_info_t;
+
+/**
  * @brief Mark an interrupt as a shared interrupt
  *
  * This will mark a certain interrupt on the specified CPU as
@@ -93,7 +114,7 @@ extern "C" {
  *                   the int can be left enabled while the flash cache is disabled.
  *
  * @return ESP_ERR_INVALID_ARG if cpu or intno is invalid
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_in_iram);
 
@@ -107,7 +128,7 @@ esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_in_iram);
  * @param cpu CPU on which the interrupt should be marked as shared (0 or 1)
  *
  * @return ESP_ERR_INVALID_ARG if cpu or intno is invalid
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_reserve(int intno, int cpu);
 
@@ -130,9 +151,10 @@ esp_err_t esp_intr_reserve(int intno, int cpu);
  * @param flags An ORred mask of the ESP_INTR_FLAG_* defines. These restrict the
  *               choice of interrupts that this routine can choose from. If this value
  *               is 0, it will default to allocating a non-shared interrupt of level
- *               1, 2 or 3. If this is ESP_INTR_FLAG_SHARED, it will allocate a shared
- *               interrupt of level 1. Setting ESP_INTR_FLAG_INTRDISABLED will return
- *               from this function with the interrupt disabled.
+ *               1, 2 or 3. If ESP_INTR_FLAG_SHARED mask is provided, a shared interrupt of
+ *               the given level will be allocated (or level 1 if not specified).
+ *               Setting ESP_INTR_FLAG_INTRDISABLED will return from this function with the
+ *               interrupt disabled.
  * @param handler The interrupt handler. Must be NULL when an interrupt of level >3
  *               is requested, because these types of interrupts aren't C-callable.
  * @param arg    Optional argument for passed to the interrupt handler
@@ -142,13 +164,13 @@ esp_err_t esp_intr_reserve(int intno, int cpu);
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *arg, intr_handle_t *ret_handle);
 
 
 /**
- * @brief Allocate an interrupt with the given parameters.
+ * @brief Allocate an interrupt with the given parameters, including an interrupt status register.
  *
  *
  * This essentially does the same as esp_intr_alloc, but allows specifying a register and mask
@@ -164,9 +186,10 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
  * @param flags An ORred mask of the ESP_INTR_FLAG_* defines. These restrict the
  *               choice of interrupts that this routine can choose from. If this value
  *               is 0, it will default to allocating a non-shared interrupt of level
- *               1, 2 or 3. If this is ESP_INTR_FLAG_SHARED, it will allocate a shared
- *               interrupt of level 1. Setting ESP_INTR_FLAG_INTRDISABLED will return
- *               from this function with the interrupt disabled.
+ *               1, 2 or 3. If ESP_INTR_FLAG_SHARED mask is provided, a shared interrupt of
+ *               the given level will be allocated (or level 1 if not specified).
+ *               Setting ESP_INTR_FLAG_INTRDISABLED will return from this function with the
+ *               interrupt disabled.
  * @param intrstatusreg The address of an interrupt status register
  * @param intrstatusmask A mask. If a read of address intrstatusreg has any of the bits
  *               that are 1 in the mask set, the ISR will be called. If not, it will be
@@ -180,10 +203,121 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler, void *arg, intr_handle_t *ret_handle);
 
+
+/**
+ * @brief Allocate an interrupt with the given parameters that can be bound to an existing interrupt handler.
+ *
+ *
+ * This function does the same as esp_intr_alloc, but allows specifying a previously allocated handler as
+ * the interrupt to share with the given source. This can be very handy to treat two pre-determined interrupt
+ * sources in the same interrupt handler. The interrupt will be allocated on the same core as the given
+ * `shared_handle`. Moreover, make sure to specify the same interrupt level as the one being used by `shared_handle`
+ * to prevent any failure from this function.
+ *
+ * @param source The interrupt source. One of the ETS_*_INTR_SOURCE interrupt mux
+ *               sources, as defined in soc/soc.h, or one of the internal
+ *               ETS_INTERNAL_*_INTR_SOURCE sources as defined in this header.
+ * @param flags An ORred mask of the ESP_INTR_FLAG_* defines. These restrict the
+ *               choice of interrupts that this routine can choose from. If this value
+ *               is 0, it will default to allocating a non-shared interrupt of level
+ *               1, 2 or 3. If ESP_INTR_FLAG_SHARED mask is provided, a shared interrupt of
+ *               the given level will be allocated (or level 1 if not specified).
+ *               Setting ESP_INTR_FLAG_INTRDISABLED will return from this function with the
+ *               interrupt disabled.
+ * @param handler The interrupt handler. Must be NULL when an interrupt of level >3
+ *               is requested, because these types of interrupts aren't C-callable.
+ * @param arg    Optional argument for passed to the interrupt handler
+ * @param shared_handle Previously allocated interrupt to share the CPU interrupt line with. If NULL,
+ *               calling this function equivalent to esp_intr_alloc, else, ESP_INTR_FLAG_SHARED must
+ *               be provided in the flags parameter. If not NULL, the given `flags` must present the bit
+ *               ESP_INTR_FLAG_SHARED or ESP_INTR_FLAG_SHARED_PRIVATE.
+ * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
+ *               used to request details or free the interrupt. Can be NULL if no handle
+ *               is required.
+ *
+ * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
+ *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
+ *                           from the one assigned to the share_handle parameter.
+ *         ESP_OK on success
+ */
+esp_err_t esp_intr_alloc_bind(int source, int flags, intr_handler_t handler, void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle);
+
+
+/**
+ * @brief Allocate an interrupt with the given parameters, including an interrupt status register, that can
+ *        be bound to an existing interrupt handler
+ *
+ *
+ * This function does the same as esp_intr_alloc_intrstatus, but allows specifying a previously allocated handler as
+ * the interrupt to share with the given source. This can be very handy to treat two pre-determined interrupt
+ * sources in the same interrupt handler. The interrupt will be allocated on the same core as the given
+ * `shared_handle`. Moreover, make sure to specify the same interrupt level as the one being used by `shared_handle`
+ * to prevent any failure from this function.
+ *
+ * @param source The interrupt source. One of the ETS_*_INTR_SOURCE interrupt mux
+ *               sources, as defined in soc/soc.h, or one of the internal
+ *               ETS_INTERNAL_*_INTR_SOURCE sources as defined in this header.
+ * @param flags An ORred mask of the ESP_INTR_FLAG_* defines. These restrict the
+ *               choice of interrupts that this routine can choose from. If this value
+ *               is 0, it will default to allocating a non-shared interrupt of level
+ *               1, 2 or 3. If ESP_INTR_FLAG_SHARED mask is provided, a shared interrupt of
+ *               the given level will be allocated (or level 1 if not specified).
+ *               Setting ESP_INTR_FLAG_INTRDISABLED will return from this function with the
+ *               interrupt disabled.
+ * @param intrstatusreg The address of an interrupt status register
+ * @param intrstatusmask A mask. If a read of address intrstatusreg has any of the bits
+ *               that are 1 in the mask set, the ISR will be called. If not, it will be
+ *               skipped.
+ * @param handler The interrupt handler. Must be NULL when an interrupt of level >3
+ *               is requested, because these types of interrupts aren't C-callable.
+ * @param arg    Optional argument for passed to the interrupt handler
+ * @param shared_handle Previously allocated interrupt to share the CPU interrupt line with. If NULL,
+ *               calling this function equivalent to esp_intr_alloc, else, ESP_INTR_FLAG_SHARED must
+ *               be provided in the flags parameter. If not NULL, the given `flags` must present the bit
+ *               ESP_INTR_FLAG_SHARED or ESP_INTR_FLAG_SHARED_PRIVATE.
+ * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
+ *               used to request details or free the interrupt. Can be NULL if no handle
+ *               is required.
+ *
+ * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
+ *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
+ *                           from the one assigned to the share_handle parameter.
+ *         ESP_OK on success
+ */
+esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
+                                         void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle);
+
+
+/**
+ * @brief Allocate an interrupt with all the parameters in a single structure
+ *
+ * This function does the same as `esp_intr_alloc_intrstatus_bind`, but allows specifying all the parameters in a single structure.
+ * Check the parameters description in `esp_intr_alloc_intrstatus_bind` for more details.
+ *
+ * @note This function allows to create or join a group of interrupts to share a same interrupt line.
+ * When `ESP_INTR_FLAG_SHARED_PRIVATE` or `ESP_INTR_FLAG_SHARED` flags are set, `handle` or `name` can be used to specify
+ * the interrupt to share with (previously allocated). Only one of `handle` or `name` can be used, not both.
+ * If a `name` is passed but the interrupt to share with is not found, the function will create a new group of interrupts
+ * with the given name.
+ *
+ * @param info The information to allocate the interrupt.
+ * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
+ *               used to request details or free the interrupt. Can be NULL if no handle
+ *               is required.
+ *
+ * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
+ *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
+ *                           from the one assigned to the share_handle parameter.
+ *         ESP_OK on success
+ */
+esp_err_t esp_intr_alloc_info(const esp_intr_alloc_info_t *info, intr_handle_t *ret_handle);
 
 /**
  * @brief Disable and free an interrupt.
@@ -201,7 +335,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
  *
  * @return ESP_ERR_INVALID_ARG the handle is NULL
  *         ESP_FAIL failed to release this handle
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_free(intr_handle_t handle);
 
@@ -238,7 +372,7 @@ int esp_intr_get_intno(intr_handle_t handle);
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_disable(intr_handle_t handle);
 
@@ -251,7 +385,7 @@ esp_err_t esp_intr_disable(intr_handle_t handle);
  * @param handle The handle, as obtained by esp_intr_alloc or esp_intr_alloc_intrstatus
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_enable(intr_handle_t handle);
 
@@ -265,7 +399,7 @@ esp_err_t esp_intr_enable(intr_handle_t handle);
  *                   Handlers residing in IRAM can be called when cache is disabled.
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_OK otherwise
+ *         ESP_OK on success
  */
 esp_err_t esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram);
 
@@ -315,6 +449,18 @@ static inline int esp_intr_level_to_flags(int level)
  * @return ESP_OK on success
  */
 esp_err_t esp_intr_dump(FILE *stream);
+
+
+/**
+ * @brief Check if the given pointer is in the safe ISR area.
+ * In other words, make sure that the pointer's content is accessible at
+ * any time, regardless of the cache status
+ *
+ * @param ptr Pointer to check
+ *
+ * @return true if `ptr` points to ISR area, false else
+ */
+bool esp_intr_ptr_in_isr_region(void* ptr);
 
 /**@}*/
 

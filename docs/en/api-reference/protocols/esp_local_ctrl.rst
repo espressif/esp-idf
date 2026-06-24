@@ -97,13 +97,16 @@ You may set security for transport in ESP local control using following options:
 3. ``PROTOCOM_SEC0``: specifies that data will be exchanged as a plain text (no security).
 4. ``PROTOCOM_SEC_CUSTOM``: you can define your own security requirement. Please note that you will also have to provide ``custom_handle`` of type ``protocomm_security_t *`` in this context.
 
+.. warning::
+    It is strongly recommended to use ``PROTOCOM_SEC2`` for production deployments. ``PROTOCOM_SEC0`` provides no encryption or authentication, leaving device properties exposed to any client on the local network. ``PROTOCOM_SEC1`` provides weaker security compared to ``PROTOCOM_SEC2`` and its use is discouraged for new designs.
+
 .. note::
     The respective security schemes need to be enabled through the project configuration menu. Please refer to the Enabling protocom security version section in :doc:`Protocol Communication </api-reference/provisioning/protocomm>` for more details.
 
 Creating a Property
 -------------------
 
-Now that we know how to start the **esp_local_ctrl** service, let's add a property to it. Each property must have a unique ```name``` (string), a ``type`` (e.g., enum), ``flags``` (bit fields) and ``size```.
+Now that we know how to start the **esp_local_ctrl** service, let's add a property to it. Each property must have a unique ``name`` (string), a ``type`` (e.g., enum), ``flags`` (bit fields) and ``size``.
 
 The ``size`` is to be kept 0, if we want our property value to be of variable length (e.g., if it is a string or bytestream). For data types with fixed-length property value, like int, float, etc., setting the ``size`` field to the right value helps **esp_local_ctrl** to perform internal checks on arguments received with write requests.
 
@@ -178,7 +181,7 @@ Here is an example of ``set_prop_values()`` handler. Notice how we restrict from
         }
 
 
-For complete example see :example:`protocols/esp_local_ctrl`.
+For complete example see :example:`protocols/esp_local_ctrl`. The example demonstrates how to set up a secure ``esp_local_ctrl`` service over HTTPS transport for controlling devices on a local network.
 
 Client Side Implementation
 --------------------------

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,18 @@ typedef enum {
     COEX_SCHM_CALLBACK_TYPE_BT,
     COEX_SCHM_CALLBACK_TYPE_I154,
 } coex_schm_callback_type_t;
+
+typedef enum {
+    COEX_SCHM_ST_TYPE_WIFI = 0,
+    COEX_SCHM_ST_TYPE_BLE,
+    COEX_SCHM_ST_TYPE_BT,
+    COEX_SCHM_ST_TYPE_EXTERNAL_COEX,
+    COEX_SCHM_ST_TYPE_I154,
+} coex_schm_st_type_t;
+
+#define COEX_STATUS_GET_WIFI_BITMAP     (1 << COEX_SCHM_ST_TYPE_WIFI)
+#define COEX_STATUS_GET_BLE_BITMAP      (1 << COEX_SCHM_ST_TYPE_BLE)
+#define COEX_STATUS_GET_BT_BITMAP       (1 << COEX_SCHM_ST_TYPE_BT)
 
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
 typedef esp_err_t (* coex_set_lpclk_source_callback_t)(void);
@@ -94,9 +106,11 @@ esp_err_t coex_preference_set(coex_prefer_t prefer);
 
 /**
  * @brief Get software coexist status.
+ *
+ * @param bitmap : bitmap of the module getting status.
  * @return : software coexist status
  */
-uint32_t coex_status_get(void);
+uint32_t coex_status_get(uint8_t bitmap);
 
 /**
  * @brief WiFi requests coexistence.
@@ -311,9 +325,20 @@ int coex_schm_register_callback(coex_schm_callback_type_t type, void *callback);
  */
 esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
 
+#if SOC_BLE_ISO_SUPPORTED
+/**
+ * @brief Register coexistence iso end wifi callback function.
+ *
+ *  @param is_reg : register or unregister
+ *  @param funcs : coexistence iso end wifi function
+ *  @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_coex_configure_iso_end_wifi_cb(bool is_reg, void *funcs);
+#endif /* SOC_BLE_ISO_SUPPORTED */
+
 #if CONFIG_EXTERNAL_COEX_ENABLE
 /**
-  * @brief     Set external coexistence advanced informations, like working mode.
+  * @brief     Set external coexistence advanced information, like working mode.
   *
   * @param     out_pti1    This parameter no longer works, will be deprecated and later removed in future releases.
   * @param     out_pti2    This parameter no longer works, will be deprecated and later removed in future releases.
@@ -364,6 +389,34 @@ void esp_coex_external_set_wire_type(external_coex_wire_t wire_type);
 void esp_coex_external_set_txline(bool en);
 #endif    /*SOC_EXTERNAL_COEX_LEADER_TX_LINE*/
 #endif    /*External Coex*/
+
+#if CONFIG_ESP_COEX_POWER_MANAGEMENT
+/**
+  * @brief     Set coexist scheme flexible period
+  *
+  * @param     period    flexible period
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+int coex_schm_flexible_period_set(uint8_t period);
+
+/**
+  * @brief     Get coexist scheme flexible period
+  *
+  * @return    Coexist scheme flexible period
+  */
+uint8_t coex_schm_flexible_period_get(void);
+#endif
+
+/**
+ * @brief     Get coexistence scheme phase by phase index.
+ *
+ * @param     phase_idx    Coexistence phase index
+ *
+ * @return    Coexistence scheme phase
+ */
+void * coex_schm_get_phase_by_idx(int phase_idx);
 
 /**
   * @brief     Check the MD5 values of the coexistence adapter header files in IDF and WiFi library

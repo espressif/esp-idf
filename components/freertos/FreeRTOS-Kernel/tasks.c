@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -126,6 +126,29 @@
     #define configIDLE_TASK_NAME    "IDLE"
 #endif
 
+/* Reserve space for Core ID and null termination. */
+#if ( configNUMBER_OF_CORES > 9 )
+    /* More than 9 cores require 2 characters for core ID and 1 for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 3U )
+        #error Minimum required task name length is 3. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    3U
+
+#elif ( configNUMBER_OF_CORES > 1 )
+    /* Multi-core systems with up to 9 cores require 1 character for core ID and 1 for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 2U )
+        #error Minimum required task name length is 2. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    2U
+
+#else /* if ( configNUMBER_OF_CORES > 9 ) */
+    /* Reserve space for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 1U )
+        #error Minimum required task name length is 1. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    1U
+#endif /* if ( ( configNUMBER_OF_CORES > 1 ) */
+
 /*-----------------------------------------------------------*/
 
 /* Macros to check if an unblocked task causes a yield on the current core.
@@ -141,6 +164,11 @@
  *   - If a yield is required on the current core, this macro return pdTRUE
  *   - if a yield is required on the other core, this macro will internally
  *     trigger it.
+ *
+ * - In SMP, these macros must be called from a critical section (where the
+ *   kernel locks are taken).
+ * - In single-core, these macros must be called from a critical section or when
+ *   the scheduler is suspended.
  */
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskIS_YIELD_REQUIRED( pxTCB, xYieldEqualPriority )                                   prvIsYieldRequiredSMP( ( pxTCB ), ( pxTCB )->uxPriority, xYieldEqualPriority )
@@ -177,7 +205,12 @@
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
-/* Macros to check if a particular task is a currently running. */
+/* Macros to check if a particular task is a currently running.
+ *
+ * - In SMP, these macros must be called from a critical section (where the
+ *   kernel lock is taken).
+ * - In single-core, these macros must be called from a critical section or when
+ *   the scheduler is suspended */
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskIS_CURRENTLY_RUNNING( pxTCB )                     ( ( ( ( pxTCB ) == pxCurrentTCBs[ 0 ] ) || ( ( pxTCB ) == pxCurrentTCBs[ 1 ] ) ) ? pdTRUE : pdFALSE )
     #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID )    ( ( ( pxTCB ) == pxCurrentTCBs[ ( xCoreID ) ] ) ? pdTRUE : pdFALSE )
@@ -193,7 +226,12 @@
 /*-----------------------------------------------------------*/
 
 /* Macro to check if a particular task can currently be scheduled (i.e., is
- * the scheduler suspended). */
+ * the scheduler suspended).
+ *
+ * - In SMP, these macros must be called from a critical section (where the
+ *   kernel lock is taken).
+ * - In single-core, these macros must be called from a critical section or when
+ *   the scheduler is suspended */
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskCAN_BE_SCHEDULED( pxTCB )    prvCheckTaskCanBeScheduledSMP( pxTCB )
 #else
@@ -569,6 +607,9 @@ static BaseType_t prvCreateIdleTasks( void );
  * Exit:
  * - Returns pdTRUE if the current core requires yielding
  * - The other core will be triggered to yield if required
+ *
+ * @note This function must be called from a critical section where the kernel
+ *       lock is taken).
  */
 #if ( configNUMBER_OF_CORES > 1 )
 
@@ -589,6 +630,9 @@ static BaseType_t prvCreateIdleTasks( void );
  * - If a task is unpinned, check the scheduler suspension state on both cores.
  *   The task can be scheduled if the scheduler is not suspended on either of
  *   the cores.
+ *
+ * @note This function must be called from a critical section (where the kernel
+ *       lock is taken).
  */
 #if ( configNUMBER_OF_CORES > 1 )
 
@@ -772,6 +816,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
                                              UBaseType_t uxTaskPriority,
                                              BaseType_t xYieldEqualPriority )
     {
+        /* This function must be called from a critical section (where the kernel
+         * lock is taken). */
+
         configASSERT( uxTaskPriority < configMAX_PRIORITIES );
 
         /* Save core ID as we can no longer be preempted. */
@@ -825,6 +872,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
     static BaseType_t prvCheckTaskCanBeScheduledSMP( TCB_t * pxTCB )
     {
+        /* This function must be called from a critical section (where the kernel
+         * lock is taken). */
+
         BaseType_t xReturn;
 
         if( pxTCB->xCoreID == tskNO_AFFINITY )
@@ -2227,7 +2277,7 @@ static BaseType_t prvCreateIdleTasks( void )
     BaseType_t xCoreID;
 
     #if ( configNUMBER_OF_CORES > 1 )
-        char cIdleName[ configMAX_TASK_NAME_LEN ];
+    char cIdleName[ configMAX_TASK_NAME_LEN ] = { 0 };
     #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
 
     /* Add each idle task at the lowest priority. */
@@ -2235,7 +2285,7 @@ static BaseType_t prvCreateIdleTasks( void )
     {
         #if ( configNUMBER_OF_CORES > 1 )
         {
-            BaseType_t x;
+            BaseType_t xIdleTaskNameIndex;
 
             if( xReturn == pdFAIL )
             {
@@ -2248,14 +2298,17 @@ static BaseType_t prvCreateIdleTasks( void )
                 mtCOVERAGE_TEST_MARKER();
             }
 
-            for( x = ( BaseType_t ) 0; x < ( BaseType_t ) configMAX_TASK_NAME_LEN; x++ )
+            /* MISRA Ref 14.3.1 [Configuration dependent invariant] */
+            /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-143. */
+            /* coverity[misra_c_2012_rule_14_3_violation] */
+            for( xIdleTaskNameIndex = 0U; xIdleTaskNameIndex < ( configMAX_TASK_NAME_LEN - taskRESERVED_TASK_NAME_LENGTH ); xIdleTaskNameIndex++ )
             {
-                cIdleName[ x ] = configIDLE_TASK_NAME[ x ];
+                /* MISRA Ref 18.1.1 [Configuration dependent bounds checking] */
+                /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-181. */
+                /* coverity[misra_c_2012_rule_18_1_violation] */
+                cIdleName[ xIdleTaskNameIndex ] = configIDLE_TASK_NAME[ xIdleTaskNameIndex ];
 
-                /* Don't copy all configMAX_TASK_NAME_LEN if the string is shorter than
-                 * configMAX_TASK_NAME_LEN characters just in case the memory after the
-                 * string is not accessible (extremely unlikely). */
-                if( cIdleName[ x ] == ( char ) 0x00 )
+                if( cIdleName[ xIdleTaskNameIndex ] == ( char ) 0x00 )
                 {
                     break;
                 }
@@ -2265,26 +2318,9 @@ static BaseType_t prvCreateIdleTasks( void )
                 }
             }
 
-            /* Append the idle task number to the end of the name if there is space. */
-            if( x < ( BaseType_t ) configMAX_TASK_NAME_LEN )
-            {
-                cIdleName[ x ] = ( char ) ( xCoreID + '0' );
-                x++;
-
-                /* And append a null character if there is space. */
-                if( x < ( BaseType_t ) configMAX_TASK_NAME_LEN )
-                {
-                    cIdleName[ x ] = '\0';
-                }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                }
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
+            /* Append the idle task number to the end of the name. */
+            cIdleName[ xIdleTaskNameIndex ] = ( char ) ( xCoreID + '0' );
+            cIdleName[ xIdleTaskNameIndex + 1 ] = '\0';
         }
         #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
 
@@ -2462,22 +2498,29 @@ void vTaskEndScheduler( void )
 
 void vTaskSuspendAll( void )
 {
-    /* A critical section is not required as the variable is of type
+    /* For SMP, we need to take the kernel lock here as we are about to access
+     * kernel data structures.
+     *
+     * For single-core, a critical section is not required as the variable is of type
      * BaseType_t.  Please read Richard Barry's reply in the following link to a
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    {
+        /* portSOFTWARE_BARRIER() is only implemented for emulated/simulated ports that
+         * do not otherwise exhibit real time behaviour. */
+        portSOFTWARE_BARRIER();
 
-    /* portSOFTWARE_BARRIER() is only implemented for emulated/simulated ports that
-     * do not otherwise exhibit real time behaviour. */
-    portSOFTWARE_BARRIER();
+        /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
+         * is used to allow calls to vTaskSuspendAll() to nest. */
+        ++uxSchedulerSuspended[ portGET_CORE_ID() ];
 
-    /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
-     * is used to allow calls to vTaskSuspendAll() to nest. */
-    ++uxSchedulerSuspended[ portGET_CORE_ID() ];
-
-    /* Enforces ordering for ports and optimised compilers that may otherwise place
-     * the above increment elsewhere. */
-    portMEMORY_BARRIER();
+        /* Enforces ordering for ports and optimised compilers that may otherwise place
+         * the above increment elsewhere. */
+        portMEMORY_BARRIER();
+    }
+    /* Release the previously taken kernel lock. */
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 }
 /*----------------------------------------------------------*/
 
@@ -3029,19 +3072,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
                 /* Arrange for xTickCount to reach xNextTaskUnblockTime in
                  * xTaskIncrementTick() when the scheduler resumes.  This ensures
                  * that any delayed tasks are resumed at the correct time. */
-                #if ( configNUMBER_OF_CORES > 1 )
-                {
-                    /* In SMP, the entire tickless idle handling block
-                     * is replaced with a critical section, taking the kernel lock. */
-                    configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdFALSE );
-                }
-                #else /* configNUMBER_OF_CORES > 1 */
-                {
-                    /* In single-core, the entire tickless idle handling block
-                     * is done with scheduler suspended. */
-                    configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdTRUE );
-                }
-                #endif /* configNUMBER_OF_CORES > 1 */
+                configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdTRUE );
                 configASSERT( xTicksToJump != ( TickType_t ) 0 );
 
                 xPendedTicks++;
@@ -3822,7 +3853,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
             prvAddCurrentTaskToDelayedList( xTicksToWait, xWaitIndefinitely );
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
     }
 
 #endif /* configUSE_TIMERS */
@@ -4089,10 +4120,19 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
         if( taskIS_YIELD_REQUIRED( pxUnblockedTCB, pdFALSE ) == pdTRUE )
         {
             /* The unblocked task has a priority above that of the calling task, so
-             * a context switch is required.  This function is called with the
-             * scheduler suspended so xYieldPending is set so the context switch
-             * occurs immediately that the scheduler is resumed (unsuspended). */
-            xYieldPending[ xCurCoreID ] = pdTRUE;
+             * a context switch is required. */
+            #if ( configNUM_CORES > 1 )
+
+                /* In SMP mode, this function is called from a critical section, so we
+                 * yield the current core to schedule the unblocked task. */
+                portYIELD_WITHIN_API();
+            #else /* configNUM_CORES > 1 */
+
+                /* In single-core mode, this function is called with the scheduler suspended
+                 * so xYieldPending is set so the context switch occurs immediately once the
+                 * scheduler is resumed (unsuspended). */
+                xYieldPending[ xCurCoreID ] = pdTRUE;
+            #endif /* configNUM_CORES > 1 */
         }
     }
 }
@@ -4326,31 +4366,37 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
 
             if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
             {
-                prvENTER_CRITICAL_OR_SUSPEND_ALL( &xKernelLock );
+                /* In SMP mode, the entire tickless idle handling block
+                 * must be done with the kernel lock held. */
+                prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
                 {
-                    /* Now the scheduler is suspended, the expected idle
-                     * time can be sampled again, and this time its value can
-                     * be used. */
-                    configASSERT( xNextTaskUnblockTime >= xTickCount );
-                    xExpectedIdleTime = prvGetExpectedIdleTime();
-
-                    /* Define the following macro to set xExpectedIdleTime to 0
-                     * if the application does not want
-                     * portSUPPRESS_TICKS_AND_SLEEP() to be called. */
-                    configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( xExpectedIdleTime );
-
-                    if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
+                    vTaskSuspendAll();
                     {
-                        traceLOW_POWER_IDLE_BEGIN();
-                        portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
-                        traceLOW_POWER_IDLE_END();
+                        /* Now the scheduler is suspended, the expected idle
+                         * time can be sampled again, and this time its value can
+                         * be used. */
+                        configASSERT( xNextTaskUnblockTime >= xTickCount );
+                        xExpectedIdleTime = prvGetExpectedIdleTime();
+
+                        /* Define the following macro to set xExpectedIdleTime to 0
+                         * if the application does not want
+                         * portSUPPRESS_TICKS_AND_SLEEP() to be called. */
+                        configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( xExpectedIdleTime );
+
+                        if( xExpectedIdleTime >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP )
+                        {
+                            traceLOW_POWER_IDLE_BEGIN();
+                            portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime );
+                            traceLOW_POWER_IDLE_END();
+                        }
+                        else
+                        {
+                            mtCOVERAGE_TEST_MARKER();
+                        }
                     }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
+                    ( void ) xTaskResumeAll();
                 }
-                ( void ) prvEXIT_CRITICAL_OR_RESUME_ALL( &xKernelLock );
+                prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
             }
             else
             {
@@ -5478,7 +5524,7 @@ static void prvResetNextTaskUnblockTime( void )
                 #if ( configTASKLIST_INCLUDE_COREID == 1 )
                 {
                     const BaseType_t xCoreID = ( pxTaskStatusArray[ x ].xCoreID == tskNO_AFFINITY ) ? -1 : pxTaskStatusArray[ x ].xCoreID;
-                    sprintf( pcWriteBuffer, "\t%c\t%u\t%d\t%u\t%u\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( int ) xCoreID, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
+                    sprintf( pcWriteBuffer, "\t%c\t%u\t%u\t%u\t%d\r\n", cStatus, ( unsigned int ) pxTaskStatusArray[ x ].uxCurrentPriority, ( unsigned int ) pxTaskStatusArray[ x ].usStackHighWaterMark, ( unsigned int ) pxTaskStatusArray[ x ].xTaskNumber, ( int ) xCoreID ); /*lint !e586 sprintf() allowed as this is compiled with many compilers and this is a utility function only - not part of the core kernel implementation. */
                 }
                 #else /* configTASKLIST_INCLUDE_COREID == 1 */
                 {

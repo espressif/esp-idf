@@ -63,6 +63,7 @@ esp_pthread_cfg_t esp_pthread_get_default_config(void);
  * @return
  *      - ESP_OK if configuration was successfully set
  *      - ESP_ERR_NO_MEM if out of memory
+ *      - ESP_ERR_INVALID_ARG if cfg is NULL
  *      - ESP_ERR_INVALID_ARG if stack_size is less than PTHREAD_STACK_MIN
  *      - ESP_ERR_INVALID_ARG if stack_alloc_caps does not include MALLOC_CAP_8BIT
  */
@@ -79,6 +80,7 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg);
  *
  * @return
  *      - ESP_OK if the configuration was available
+ *      - ESP_ERR_INVALID_ARG if p is NULL
  *      - ESP_ERR_NOT_FOUND if a configuration wasn't previously set
  */
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p);

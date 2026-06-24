@@ -27,6 +27,8 @@ struct ble_instance_cb_register {
 
 void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg);
 int gatt_svr_init(void);
+const uint16_t *gatt_svr_service_uuids16(size_t *count);
+const uint8_t *gatt_svr_service_uuid128(void);
 
 #ifdef __cplusplus
 }

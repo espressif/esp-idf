@@ -1,17 +1,15 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import logging
 import time
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_example_ulp_fsm(dut: Dut) -> None:
     dut.expect_exact('Not ULP wakeup')
     dut.expect_exact('Entering deep sleep')
@@ -30,8 +28,9 @@ def test_example_ulp_fsm(dut: Dut) -> None:
         dut.expect_exact('ULP wakeup, saving pulse count', timeout=5)
         logging.info('Woke up...')
         init_count = int(dut.expect(r'Read pulse count from NVS:\s+(\d+)', timeout=5).group(1), 10)
-        assert nvs_value in (init_count, None), ('Read count is {} and previously written value is {}'
-                                                 ''.format(init_count, nvs_value))
+        assert nvs_value in (init_count, None), 'Read count is {} and previously written value is {}'.format(
+            init_count, nvs_value
+        )
 
         inc = int(dut.expect(r'Pulse count from ULP:\s+(\d+)', timeout=5).group(1), 10)
         assert inc in (5, 6), 'pulse count is {}'.format(inc)

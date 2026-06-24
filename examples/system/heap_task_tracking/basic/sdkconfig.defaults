@@ -1,0 +1,5 @@
+# enable the task tracking feature
+CONFIG_HEAP_TASK_TRACKING=y
+
+# keep task tracking information after the task is deleted
+CONFIG_HEAP_TRACK_DELETED_TASKS=y

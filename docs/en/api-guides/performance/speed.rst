@@ -3,8 +3,8 @@ Speed Optimization
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
-{IDF_TARGET_RF_TYPE:default="Wi-Fi/Bluetooth", esp32s2="Wi-Fi", esp32c6="Wi-Fi/Bluetooth/802.15.4", esp32h2="Bluetooth/802.15.4"}
+{IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
+{IDF_TARGET_RF_TYPE:default="Wi-Fi/Bluetooth", esp32s2="Wi-Fi", esp32c6="Wi-Fi/Bluetooth/802.15.4", esp32c61="Wi-Fi/Bluetooth", esp32h2="Bluetooth/802.15.4", esp32h21="Bluetooth/802.15.4", esp32h4="Bluetooth/802.15.4", esp32c5="Wi-Fi/Bluetooth/802.15.4"}
 
 Overview
 --------
@@ -88,6 +88,36 @@ The following optimizations improve the execution of nearly all code, including 
     :not SOC_CPU_HAS_FPU: - Avoid using floating point arithmetic ``float``. On {IDF_TARGET_NAME} these calculations are emulated in software and are very slow. If possible, use fixed point representations, a different method of integer representation, or convert part of the calculation to be integer only before switching to floating point.
     - Avoid using double precision floating point arithmetic ``double``. These calculations are emulated in software and are very slow. If possible then use an integer-based representation, or single-precision floating point.
 
+
+.. only:: esp32s2 or esp32s3 or esp32p4
+
+    Change cache size
+    ^^^^^^^^^^^^^^^^^
+
+    On {IDF_TARGET_NAME}, increasing the overall speed can be achieved to some degree by increasing the size of cache and thus potentially decreasing the frequency of "cache misses" through the Kconfig option(s) listed below.
+
+    .. list::
+
+        :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
+        :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
+        :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
+        :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
+        :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+
+
+    .. note::
+
+        Increasing the cache size will also result in reducing the amount of available RAM.
+
+
+.. only:: SOC_CACHE_L2_CACHE_SIZE_CONFIGURABLE
+
+    .. note::
+
+        On {IDF_TARGET_NAME}, the L2 cache size is configurable via the Kconfig option :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+        Setting the L2 cache size to its smallest value will maximize the available RAM while also potentially augmenting the frequency of "cache misses".
+        Setting the L2 cache size to its largest value will potentially lower the frequency of "cache misses" at the cost of reducing the available RAM.
+
 Reduce Logging Overhead
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -98,6 +128,7 @@ Although standard output is buffered, it is possible for an application to be li
     - Reduce the volume of log output by lowering the app :ref:`CONFIG_LOG_DEFAULT_LEVEL` (the equivalent bootloader setting is :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`). This also reduces the binary size, and saves some CPU time spent on string formatting.
     :not SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`.
     :SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. However, if you are using internal USB-CDC, the serial throughput is not dependent on the configured baud rate.
+    - If your application does not require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` and changing :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`. It helps to reduce memory usage and also contributes to speeding up log operations in your application about 10 times.
 
 Not Recommended
 ^^^^^^^^^^^^^^^
@@ -110,6 +141,7 @@ The following options also increase execution speed, but are not recommended as 
 
 .. _speed-targeted-optimizations:
 
+
 Targeted Optimizations
 ----------------------
 
@@ -121,7 +153,9 @@ The following changes increase the speed of a chosen part of the firmware applic
 
       IRAM is a limited resource, and using more IRAM may reduce available DRAM, so a strategic approach is needed when moving code to IRAM. See :ref:`iram` for more information.
 
-    -  Jump table optimizations can be re-enabled for individual source files that do not need to be placed in IRAM. For hot paths in large ``switch cases``, this improves performance. For instructions on how to add the ``-fjump-tables`` and ``-ftree-switch-conversion`` options when compiling individual source files, see :ref:`component_build_control`
+    -  Jump table optimizations can be re-enabled for individual source files that do not need to be placed in IRAM. For hot paths in large ``switch cases``, this improves performance. For instructions on how to add the ``-fjump-tables`` and ``-ftree-switch-conversion`` options when compiling individual source files, see :ref:`component_build_control`.
+
+    - Many ESP-IDF components and drivers provide configuration options to place performance-critical functions in IRAM for reduced latency and improved speed. These options typically have names like ``CONFIG_*_IN_IRAM``, ``CONFIG_*_ISR_IN_IRAM``, or ``CONFIG_*_IRAM_OPT``. Some examples are :ref:`CONFIG_FREERTOS_IN_IRAM` for FreeRTOS functions, :ref:`CONFIG_ESP_WIFI_IRAM_OPT` for Wi-Fi operations, :ref:`CONFIG_UART_ISR_IN_IRAM` for UART interrupt handling, and :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` for SPI operations. These options trade IRAM usage for speed, so they should be used selectively based on your application's performance requirements and available IRAM space.
 
 Improving Startup Time
 ----------------------
@@ -134,13 +168,15 @@ In addition to the overall performance improvements shown above, the following o
    :SOC_RTC_FAST_MEM_SUPPORTED: - If using Deep-sleep mode, setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` allows a faster wake from sleep. Note that if using Secure Boot, this represents a security compromise, as Secure Boot validation are not be performed on wake.
    - Setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` skips verifying the binary on every boot from the power-on reset. How much time this saves depends on the binary size and the flash settings. Note that this setting carries some risk if the flash becomes corrupt unexpectedly. Read the help text of the :ref:`config item <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` for an explanation and recommendations if using this option.
    - It is possible to save a small amount of time during boot by disabling RTC slow clock calibration. To do so, set :ref:`CONFIG_RTC_CLK_CAL_CYCLES` to 0. Any part of the firmware that uses RTC slow clock as a timing source will be less accurate as a result.
+   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:ref:`CONFIG_SPIRAM` enabled), enabling memory test on the external memory (:ref:`CONFIG_SPIRAM_MEMTEST`) can have a large impact on startup time (approximately 1 second per 4 MB of memory tested). Disabling the memory tests will reduce startup time at the expense of testing the external memory.
+   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:ref:`CONFIG_SPIRAM` enabled), enabling comprehensive poisoning will increase the startup time (approximately 300 milliseconds per 4 MiB of memory set) since all the memory used as heap (including the external memory) will be set to a default value.
 
 The example project :example:`system/startup_time` is pre-configured to optimize startup time. The file :example_file:`system/startup_time/sdkconfig.defaults` contain all of these settings. You can append these to the end of your project's own ``sdkconfig`` file to merge the settings, but please read the documentation for each setting first.
 
 Task Priorities
 ---------------
 
-As ESP-IDF FreeRTOS is a real-time operating system, it is necessary to ensure that high-throughput or low-slatency tasks are granted a high priority in order to run immediately. Priority is set when calling :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` and can be changed at runtime by calling :cpp:func:`vTaskPrioritySet`.
+As ESP-IDF FreeRTOS is a real-time operating system, it is necessary to ensure that high-throughput or low-latency tasks are granted a high priority in order to run immediately. Priority is set when calling :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` and can be changed at runtime by calling :cpp:func:`vTaskPrioritySet`.
 
 It is also necessary to ensure that tasks yield CPU (by calling :cpp:func:`vTaskDelay`, ``sleep()``, or by blocking on semaphores, queues, task notifications, etc) in order to not starve lower-priority tasks and cause problems for the overall system. The :ref:`task-watchdog-timer` provides a mechanism to automatically detect if task starvation happens. However, note that a TWDT timeout does not always indicate a problem, because sometimes the correct operation of the firmware requires some long-running computation. In these cases, tweaking the TWDT timeout or even disabling the TWDT may be necessary.
 
@@ -168,12 +204,11 @@ Common priorities are:
         - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`).
         - :doc:`/api-reference/system/esp_event` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``). This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`. It is possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
         - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``).
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` task has high priority (23).
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` task has high priority (23).
         :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2).
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``). The Bluetooth Controller needs to respond to requests with low latency, so it should always be among the highest priority task in the system.
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` task has high priority (21).
         - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the priority is medium-high (15). This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
-        - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with default priority 5 (:ref:`configurable<CONFIG_MQTT_TASK_PRIORITY>`), depending on :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG`, and also configurable at runtime by ``task_prio`` field in the :cpp:class:`esp_mqtt_client_config_t`)
         - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__.
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
@@ -185,7 +220,7 @@ Common priorities are:
         - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`). This task is pinned to Core 0.
         - :doc:`/api-reference/system/esp_event` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``) and it is pinned to Core 0. This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`, it is possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
         - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``) and is not pinned to any core (:ref:`configurable<CONFIG_LWIP_TCPIP_TASK_AFFINITY>`).
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` task has high priority (23) and is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP_WIFI_TASK_CORE_ID>`).
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi-driver/index` task has high priority (23) and is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP_WIFI_TASK_CORE_ID>`).
         :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2) and are not pinned to any core.
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) and is pinned to Core 0 by default (:ref:`configurable <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>`). The Bluetooth Controller needs to respond to requests with low latency, so it should always be among the highest priority task assigned to a single CPU.
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` task has high priority (21) and is pinned to Core 0 by default (:ref:`configurable <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>`).
@@ -197,8 +232,7 @@ Common priorities are:
                All Bluedroid Tasks are pinned to the same core, which is Core 0 by default (:ref:`configurable <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>`).
 
         - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the priority is medium-high (15) and the task is not pinned to any core. These settings can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
-        - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with default priority 5 (:ref:`configurable <CONFIG_MQTT_TASK_PRIORITY>`, depending on :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG`) and not pinned to any core (:ref:`configurable <CONFIG_MQTT_TASK_CORE_SELECTION_ENABLED>`).
-        - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://espressif.github.io/esp-protocols/mdns/en/index.html#performance-optimization>`__.
+        - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__.
 
 
 Choosing Task Priorities of the Application
@@ -206,13 +240,25 @@ Choosing Task Priorities of the Application
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    In general, it is not recommended to set task priorities higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. For very short timing-critical operations that do not use the network, use an ISR or a very restricted task (with very short bursts of runtime only) at the highest priority (24). Choosing priority 19 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still preempts the lwIP TCP/IP stack and other less time-critical internal functionality - this is the best option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at a lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
 
-.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+        In general, it is not recommended to set task priorities higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable.
+
+    For very short timing-critical operations that do not use the network, use an ISR or a very restricted task (with very short bursts of runtime only) at the highest priority (24).
+
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
+
+        Choosing priority 19 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still preempts the lwIP TCP/IP stack and other less time-critical internal functionality - this is the best option for time-critical tasks that do not perform network operations.
+
+    Any task that does TCP/IP network operations should run at a lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
+
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     With a few exceptions, most importantly the lwIP TCP/IP task, in the default configuration most built-in tasks are pinned to Core 0. This makes it quite easy for the application to place high priority tasks on Core 1. Using priority 19 or higher guarantees that an application task can run on Core 1 without being preempted by any built-in task. To further isolate the tasks running on each CPU, configure the :ref:`lwIP task <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` to only run on Core 0 instead of either core, which may reduce total TCP/IP throughput depending on what other tasks are running.
 
-    In general, it is not recommended to set task priorities on Core 0 higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. Choosing priority 19 and Core 0 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still pre-empts the lwIP TCP/IP stack and other less time-critical internal functionality. This is an option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
+
+        In general, it is not recommended to set task priorities on Core 0 higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. Choosing priority 19 and Core 0 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still pre-empts the lwIP TCP/IP stack and other less time-critical internal functionality. This is an option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
 
     .. note::
 
@@ -253,15 +299,20 @@ Improving Network Speed
 Improving I/O Performance
 -------------------------
 
-Using standard C library functions like ``fread`` and ``fwrite`` instead of platform specific unbuffered syscalls such as ``read`` and ``write`` can be slow.These functions are designed to be portable, so they are not necessarily optimized for speed, have a certain overhead and are buffered.
+Using standard C library functions like ``fread`` and ``fwrite`` instead of platform-specific unbuffered syscalls such as ``read`` and ``write``, may result in slower performance.
 
-:doc:`/api-reference/storage/fatfs` specific information and tips:
+The ``fread`` and ``fwrite`` functions are designed for portability rather than speed, introducing some overhead due to their buffered nature. Check the example :example:`storage/fatfs/getting_started` to see how to use these two functions.
+
+In contrast, the ``read`` and ``write`` functions are standard POSIX APIs that can be used directly when working with FatFs through VFS, with ESP-IDF handling the underlying implementation. Check the example :example:`storage/fatfs/fs_operations` to see how to use the two functions.
+
+Additional tips are provided below, and further details can be found in :doc:`/api-reference/storage/fatfs`.
 
 .. list::
 
-    - Maximum size of the R/W request = FatFS cluster size (allocation unit size).
-    - Use ``read`` and ``write`` instead of ``fread`` and ``fwrite``.
-    - To increase speed of buffered reading functions like ``fread`` and ``fgets``, you can increase a size of the file buffer (Newlib's default is 128 bytes) to a higher number like 4096, 8192 or 16384. This can be done locally via the ``setvbuf`` function used on a certain file pointer or globally applied to all files via modifying :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE`.
+    - The maximum size of a read/write request is equal to the FatFS cluster size (allocation unit size).
+    - For better performance, prefer using ``read`` and ``write`` over ``fread`` and ``fwrite``.
+    - To improve the speed of buffered reading functions like ``fread`` and ``fgets``, consider increasing the file buffer size. The default size in Newlib is 128 bytes, but you can increase it to 4096, 8192, or 16384 bytes. This can be made locally using the ``setvbuf`` function for a specific file pointer or globally by modifying the ``CONFIG_FATFS_VFS_FSTAT_BLKSIZE`` setting.
 
         .. note::
-            Setting a bigger buffer size also increases the heap memory usage.
+
+            Increasing the buffer size will also increase heap memory usage.

@@ -7,7 +7,8 @@
 #include "esp_system.h"
 #include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
-#include "soc/rtc_periph.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "esp32p4/rom/rtc.h"
 
 static void esp_reset_reason_clear_hint(void);
@@ -57,7 +58,9 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 
     case RESET_REASON_CORE_EFUSE_CRC:
 #if CONFIG_IDF_TARGET_ESP32P4
-        return ESP_RST_DEEPSLEEP; // TODO: IDF-9564
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+            return ESP_RST_DEEPSLEEP;
+        }
 #endif
         return ESP_RST_EFUSE;
 
@@ -100,7 +103,7 @@ esp_reset_reason_t esp_reset_reason(void)
 #define RST_REASON_SHIFT 16
 
 /* in IRAM, can be called from panic handler */
-void IRAM_ATTR esp_reset_reason_set_hint(esp_reset_reason_t hint)
+void esp_reset_reason_set_hint(esp_reset_reason_t hint)
 {
     assert((hint & (~RST_REASON_MASK)) == 0);
     uint32_t val = hint | (hint << RST_REASON_SHIFT) | RST_REASON_BIT;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,16 +40,25 @@ void btc_ble_mesh_lcd_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_LCD_CLIENT_SEND:
+        dst->lcd_send.params = NULL;
+        dst->lcd_send.msg = NULL;
+
         dst->lcd_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->lcd_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_lcd_client_msg_t));
-        if (dst->lcd_send.params && dst->lcd_send.msg) {
-            memcpy(dst->lcd_send.params, src->lcd_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->lcd_send.msg, src->lcd_send.msg,
-                   sizeof(esp_ble_mesh_lcd_client_msg_t));
-        } else {
+        if (!dst->lcd_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
         }
+        memcpy(dst->lcd_send.params, src->lcd_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
+        dst->lcd_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_lcd_client_msg_t));
+        if (!dst->lcd_send.msg) {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            /* Free the previously allocated resources */
+            bt_mesh_free(dst->lcd_send.params);
+            dst->lcd_send.params = NULL;
+            break;
+        }
+        memcpy(dst->lcd_send.msg, src->lcd_send.msg, sizeof(esp_ble_mesh_lcd_client_msg_t));
         break;
     default:
         BT_DBG("%s, Unknown act %d", __func__, msg->act);
@@ -115,6 +124,9 @@ static void btc_ble_mesh_lcd_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.large_comp_data_status.data = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->recv.large_comp_data_status.data) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 
@@ -130,6 +142,9 @@ static void btc_ble_mesh_lcd_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                     p_dest_data->recv.models_metadata_status.data = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->recv.models_metadata_status.data) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->params);
+                        p_dest_data->params = NULL;
                         return;
                     }
 
@@ -142,6 +157,7 @@ static void btc_ble_mesh_lcd_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_LCD_CLIENT_SEND_COMP_EVT:
     case ESP_BLE_MESH_LCD_CLIENT_SEND_TIMEOUT_EVT:
         break;
@@ -178,6 +194,7 @@ static void btc_ble_mesh_lcd_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_LCD_CLIENT_SEND_COMP_EVT:
     case ESP_BLE_MESH_LCD_CLIENT_SEND_TIMEOUT_EVT:
         if (arg->params) {
@@ -267,8 +284,8 @@ void btc_ble_mesh_lcd_client_recv_pub_cb(uint32_t opcode,
     }
 
     bt_mesh_lcd_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_LCD_CLIENT_RECV_PUB,
-        model, ctx, buf->data, buf->len);
+                                     BTC_BLE_MESH_EVT_LCD_CLIENT_RECV_PUB,
+                                     model, ctx, buf->data, buf->len);
 }
 
 static int btc_ble_mesh_lcd_client_send(esp_ble_mesh_client_common_param_t *params,
@@ -359,7 +376,7 @@ static inline void btc_ble_mesh_lcd_server_cb_to_app(esp_ble_mesh_lcd_server_cb_
 }
 
 static void btc_ble_mesh_lcd_server_cb(
-                esp_ble_mesh_lcd_server_cb_param_t *cb_params, uint8_t act)
+    esp_ble_mesh_lcd_server_cb_param_t *cb_params, uint8_t act)
 {
     btc_msg_t msg = {0};
 

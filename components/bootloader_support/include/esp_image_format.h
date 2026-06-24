@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,7 @@ typedef struct {
   uint32_t image_len; /* Length of image on flash, in bytes */
   uint8_t image_digest[32]; /* appended SHA-256 digest */
   uint32_t secure_version; /* secure version for anti-rollback, it is covered by sha256 (set if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y) */
+  uint32_t mmu_page_size; /* Flash MMU page size per binary header */
 } esp_image_metadata_t;
 
 typedef enum {
@@ -86,12 +87,12 @@ ESP_STATIC_ASSERT(sizeof(rtc_retain_mem_t) <= ESP_BOOTLOADER_RESERVE_RTC, "Reser
 #endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM
 
 /**
- * @brief Verify an app image.
+ * @brief Verify an app/bootloader image.
  *
  * If encryption is enabled, data will be transparently decrypted.
  *
  * @param mode Mode of operation (verify, silent verify, or load).
- * @param part Partition to load the app from.
+ * @param part Partition to load the app/bootloader from.
  * @param[inout] data Pointer to the image metadata structure which is be filled in by this function.
  *                    'start_addr' member should be set (to the start address of the image.)
  *                    Other fields will all be initialised by this function.
@@ -113,11 +114,11 @@ ESP_STATIC_ASSERT(sizeof(rtc_retain_mem_t) <= ESP_BOOTLOADER_RESERVE_RTC, "Reser
 esp_err_t esp_image_verify(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data);
 
 /**
- * @brief Get metadata of app
+ * @brief Get metadata of app/bootloader
  *
  * If encryption is enabled, data will be transparently decrypted.
  *
- * @param part Partition to load the app from.
+ * @param part Partition to load the app/bootloader from.
  * @param[out] metadata Pointer to the image metadata structure which is be filled in by this function.
  *                      Fields will all be initialised by this function.
  *
@@ -171,7 +172,7 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 esp_err_t bootloader_load_image_no_verify(const esp_partition_pos_t *part, esp_image_metadata_t *data);
 
 /**
- * @brief Verify the bootloader image.
+ * @brief Verify the PRIMARY bootloader image.
  *
  * @param[out] If result is ESP_OK and this pointer is non-NULL, it
  * will be set to the length of the bootloader image.
@@ -181,7 +182,7 @@ esp_err_t bootloader_load_image_no_verify(const esp_partition_pos_t *part, esp_i
 esp_err_t esp_image_verify_bootloader(uint32_t *length);
 
 /**
- * @brief Verify the bootloader image.
+ * @brief Verify the PRIMARY bootloader image.
  *
  * @param[out] Metadata for the image. Only valid if result is ESP_OK.
  *
@@ -197,6 +198,25 @@ esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data);
  */
 int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size);
 
+/**
+ * @brief Get the ota bootloader offset
+ *
+ * The esp_image_verify functions use the offset to distinguish between application and bootloader verifications.
+ * The application must set the OTA bootloader offset before running any verification functions for the OTA bootloader partition.
+ *
+ * @return ota Bootloader offset. UINT32_MAX - not set.
+ */
+uint32_t esp_image_bootloader_offset_get(void);
+
+/**
+ * @brief Set the ota bootloader offset
+ *
+ * The esp_image_verify functions use the offset to distinguish between application and bootloader verifications.
+ * The application must set the OTA bootloader offset before running any verification functions for the OTA bootloader partition.
+ *
+ * @param offset ota Bootloader offset
+ */
+void esp_image_bootloader_offset_set(const uint32_t offset);
 
 typedef struct {
     uint32_t drom_addr;

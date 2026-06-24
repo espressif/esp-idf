@@ -11,12 +11,17 @@ Introduction
 Application Examples
 --------------------
 
-The :example:`openthread` directory of ESP-IDF examples contains the following applications:
+- :example:`openthread/ot_br` demonstrates how to set up a Thread border router on {IDF_TARGET_NAME}, enabling functionalities such as bidirectional IPv6 connectivity, service discovery, etc.
 
-- The OpenThread interactive shell :example:`openthread/ot_cli`
-- The Thread Border Router :example:`openthread/ot_br`
-- The Thread Radio Co-Processor :example:`openthread/ot_rcp`
+- :example:`openthread/ot_cli` demonstrates how to use the OpenThread Command Line Interface with additional features such as TCP, UDP, and Iperf. This requires a board equipped with an IEEE 802.15.4 module. This example provides instructions on how to set up a network using at least two 802.15.4 boards.
 
+- :example:`openthread/ot_rcp` demonstrates how to work with a Host Processor to perform as a Thread border router and function as a Thread sniffer, using a board with an IEEE 802.15.4 module.
+
+- :example:`openthread/ot_trel` demonstrates Thread Radio Encapsulation Link (TREL) function. This requires a board equipped with a Wi-Fi module.
+
+- :example:`openthread/ot_sleepy_device/deep_sleep` demonstrates Thread Deep-sleep function.
+
+- :example:`openthread/ot_sleepy_device/light_sleep` demonstrates Thread Light-sleep function.
 
 API Reference
 -------------

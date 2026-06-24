@@ -1,26 +1,23 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import logging
 import os
 import threading
 import time
-from types import TracebackType
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import websocket
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 OPCODE_TEXT = 0x1
 OPCODE_BIN = 0x2
 OPCODE_PING = 0x9
-OPCODE_PONG = 0xa
+OPCODE_PONG = 0xA
 CORRECT_ASYNC_DATA = 'Hello client'
 
 
@@ -28,22 +25,22 @@ class WsClient:
     def __init__(self, ip, port, ca_file):  # type: (str, int, str) -> None
         self.port = port
         self.ip = ip
-        sslopt = {'ca_certs':ca_file, 'check_hostname': False}
+        sslopt = {'ca_certs': ca_file, 'check_hostname': False}
         self.ws = websocket.WebSocket(sslopt=sslopt)
-        # Set timeout to 10 seconds to avoid conection failure at the time of handshake
+        # Set timeout to 10 seconds to avoid connection failure at the time of handshake
         self.ws.settimeout(10)
 
     def __enter__(self):  # type: ignore
-        self.ws.connect('wss://{}:{}/ws'.format(self.ip, self.port))
+        self.ws.connect(f'wss://{self.ip}:{self.port}/ws')
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):  # type: (type, RuntimeError, TracebackType) -> None
+    def __exit__(self, exc_type, exc_value, traceback):  # type: ignore
         self.ws.close()
 
-    def read(self):  # type: () -> Any
+    def read(self) -> Any:
         return self.ws.recv_data(control_frame=True)
 
-    def write(self, data, opcode=OPCODE_TEXT):  # type: (str, int) -> Any
+    def write(self, data: str, opcode: int = OPCODE_TEXT) -> Any:
         if opcode == OPCODE_PING:
             return self.ws.ping(data)
         if opcode == OPCODE_PONG:
@@ -62,7 +59,7 @@ class wss_client_thread(threading.Thread):
         self.data = 'Espressif'
         self.async_response = False
 
-    def run(self):  # type: () -> None
+    def run(self) -> None:
         with WsClient(self.ip, self.port, self.ca_file) as ws:
             while True:
                 try:
@@ -74,7 +71,7 @@ class wss_client_thread(threading.Thread):
                     if opcode == OPCODE_TEXT:
                         if data == CORRECT_ASYNC_DATA:
                             self.async_response = True
-                            logging.info('Thread {} obtained correct async message'.format(self.name))
+                            logging.info(f'Thread {self.name} obtained correct async message')
                     # Keep sending pong to update the keepalive in the server
                     if (time.time() - self.start_time) > 20:
                         break
@@ -84,7 +81,7 @@ class wss_client_thread(threading.Thread):
         if self.async_response is not True:
             self.exc = RuntimeError('Failed to obtain correct async data')  # type: ignore
 
-    def join(self, timeout=0):  # type:(Optional[float]) -> None
+    def join(self, timeout: float | None = 0) -> None:
         threading.Thread.join(self)
         if self.exc:
             raise self.exc
@@ -106,14 +103,13 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
         t.join()
 
 
-@pytest.mark.esp32
 @pytest.mark.wifi_router
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_wss_server(dut: Dut) -> None:
-
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'wss_server.bin')
     bin_size = os.path.getsize(binary_file)
-    logging.info('https_wss_server_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info(f'https_wss_server_bin_size : {bin_size // 1024}KB')
 
     logging.info('Starting wss_server test app')
 
@@ -126,10 +122,10 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
         dut.write(f'{ap_ssid} {ap_password}')
     # Parse IP address of STA
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
 
-    logging.info('Got IP   : {}'.format(got_ip))
-    logging.info('Got Port : {}'.format(got_port))
+    logging.info(f'Got IP   : {got_ip}')
+    logging.info(f'Got Port : {got_port}')
 
     ca_file = os.path.join(os.path.dirname(__file__), 'main', 'certs', 'servercert.pem')
     # Start ws server test
@@ -139,11 +135,11 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
         dut.expect('performing session handshake')
         client_fd = int(dut.expect(r'New client connected (\d+)', timeout=30)[1].decode())
         ws.write(data=DATA, opcode=OPCODE_TEXT)
-        dut.expect(r'Received packet with message: {}'.format(DATA))
+        dut.expect(rf'Received packet with message: {DATA}')
         opcode, data = ws.read()
         data = data.decode('UTF-8')
         if data != DATA:
-            raise RuntimeError(f'Failed to receive the correct echo response.')
+            raise RuntimeError('Failed to receive the correct echo response.')
         logging.info('Correct echo response obtained from the wss server')
 
         # Test for PING
@@ -172,11 +168,14 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
                 logging.info('Failed the test for keep alive,\nthe client got abruptly disconnected')
                 raise
 
-        # keepalive timeout is 10 seconds so do not respond for (10 + 1) senconds
-        logging.info('Testing if client is disconnected if it does not respond for 10s i.e. keep_alive timeout (approx time = 11s)')
+        # keepalive timeout is 10 seconds so do not respond for (10 + 1) seconds
+        logging.info(
+            'Testing if client is disconnected if it does not respond for 10s '
+            'i.e. keep_alive timeout (approx time = 11s)'
+        )
         try:
-            dut.expect('Client not alive, closing fd {}'.format(client_fd), timeout=20)
-            dut.expect('Client disconnected {}'.format(client_fd))
+            dut.expect(f'Client not alive, closing fd {client_fd}', timeout=20)
+            dut.expect(f'Client disconnected {client_fd}')
         except Exception:
             logging.info('ENV_ERROR:Failed the test for keep alive,\nthe connection was not closed after timeout')
 

@@ -1,7 +1,9 @@
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
 set(BOOTLOADER_OFFSET ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH})
 
 # Do not generate flash file when building bootloader
-if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
+if(BOOTLOADER_BUILD OR esp_tee_build OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 
@@ -30,12 +32,6 @@ idf_build_get_property(project_dir PROJECT_DIR)
 if(CONFIG_SECURE_SIGNED_APPS)
     add_custom_target(gen_secure_boot_keys)
 
-    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
-        set(secure_apps_signing_version "1")
-    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
-        set(secure_apps_signing_version "2")
-    endif()
-
     if(CONFIG_SECURE_BOOT_V1_ENABLED)
         # Check that the configuration is sane
         if((CONFIG_SECURE_BOOTLOADER_REFLASHABLE AND CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH) OR
@@ -47,7 +43,6 @@ if(CONFIG_SECURE_SIGNED_APPS)
             set(bootloader_binary_files
                 ${bootloader_binary_files}
                 "${BOOTLOADER_BUILD_DIR}/bootloader-reflash-digest.bin"
-                "${BOOTLOADER_BUILD_DIR}/secure-bootloader-key-192.bin"
                 "${BOOTLOADER_BUILD_DIR}/secure-bootloader-key-256.bin"
                 )
         endif()
@@ -65,21 +60,19 @@ if(CONFIG_SECURE_SIGNED_APPS)
             # If the signing key is not found, create a phony gen_secure_boot_signing_key target that
             # fails the build. fail_at_build_time causes a cmake run next time
             # (to pick up a new signing key if one exists, etc.)
-            if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+            if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
-                    "\tespsecure.py generate_signing_key --version ${secure_apps_signing_version} \
-                    ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+                    "\tidf.py secure-generate-signing-key ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
             else()
-                if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS)
-                    set(scheme "ecdsa192")
-                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
+                if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS)
                     set(scheme "ecdsa256")
+                elseif(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS)
+                    set(scheme "ecdsa384")
                 endif()
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
-                    "\tespsecure.py generate_signing_key --version ${secure_apps_signing_version} \
-                    --scheme ${scheme} ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+                    "\tidf.py secure-generate-signing-key --scheme ${scheme} ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
             endif()
         else()
             add_custom_target(gen_secure_boot_signing_key)
@@ -124,8 +117,12 @@ idf_build_get_property(sdkconfig SDKCONFIG)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
-# We cannot pass lists are a parameter to the external project without modifying the ';' spearator
+# BOOTLOADER_EXTRA_COMPONENT_DIRS may have been set by the `main` component, do not overwrite it
+idf_build_get_property(bootloader_extra_component_dirs BOOTLOADER_EXTRA_COMPONENT_DIRS)
+
+# We cannot pass lists as a parameter to the external project without modifying the ';' separator
 string(REPLACE ";" "|" BOOTLOADER_IGNORE_EXTRA_COMPONENT "${BOOTLOADER_IGNORE_EXTRA_COMPONENT}")
+string(REPLACE ";" "|" bootloader_extra_component_dirs "${bootloader_extra_component_dirs}")
 
 externalproject_add(bootloader
     SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
@@ -135,9 +132,10 @@ externalproject_add(bootloader
     LIST_SEPARATOR |
     CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
                 -DPYTHON_DEPS_CHECKED=1 -DPYTHON=${python}
-                -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
+                -DEXTRA_COMPONENT_DIRS=${bootloader_extra_component_dirs}
                 -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
                 -DIGNORE_EXTRA_COMPONENT=${BOOTLOADER_IGNORE_EXTRA_COMPONENT}
+                -DIDF_BUILD_V2=${IDF_BUILD_V2}
                 ${sign_key_arg} ${ver_key_arg}
                 ${extra_cmake_args}
     INSTALL_COMMAND ""

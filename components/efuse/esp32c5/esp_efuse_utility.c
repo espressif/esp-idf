@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "soc/efuse_periph.h"
 #include "hal/efuse_hal.h"
 
-static const char *TAG = "efuse";
+ESP_LOG_ATTR_TAG(TAG, "efuse");
 
 #ifdef CONFIG_EFUSE_VIRTUAL
 extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
@@ -20,7 +20,7 @@ extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 
 /*Range addresses to read blocks*/
 const esp_efuse_range_addr_t range_read_addr_blocks[] = {
-    {EFUSE_RD_WR_DIS0_REG,       EFUSE_RD_REPEAT_DATA4_REG},      // range address of EFUSE_BLK0  REPEAT
+    {EFUSE_RD_WR_DIS_REG,       EFUSE_RD_REPEAT_DATA4_REG},      // range address of EFUSE_BLK0  REPEAT
     {EFUSE_RD_MAC_SYS0_REG,     EFUSE_RD_MAC_SYS5_REG},      // range address of EFUSE_BLK1  MAC_SPI_8M
     {EFUSE_RD_SYS_PART1_DATA0_REG,    EFUSE_RD_SYS_PART1_DATA7_REG},         // range address of EFUSE_BLK2  SYS_DATA
     {EFUSE_RD_USR_DATA0_REG,    EFUSE_RD_USR_DATA7_REG},         // range address of EFUSE_BLK3  USR_DATA
@@ -71,12 +71,6 @@ void esp_efuse_utility_clear_program_registers(void)
 esp_err_t esp_efuse_utility_check_errors(void)
 {
     return ESP_OK;
-}
-
-// Burn values written to the efuse write registers
-esp_err_t esp_efuse_utility_burn_chip(void)
-{
-    return esp_efuse_utility_burn_chip_opt(false, true);
 }
 
 esp_err_t esp_efuse_utility_burn_chip_opt(bool ignore_coding_errors, bool verify_written_data)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "xtensa/xtruntime.h"
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
-#include "xtensa/config/specreg.h"
+#include "xtensa/config/xt_specreg.h"
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
 #include "esp_macros.h"
@@ -95,6 +95,13 @@ typedef spinlock_t                          portMUX_TYPE;               /**< Spi
 
 BaseType_t xPortCheckIfInISR(void);
 
+/**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortCheckIfInISR() internally
+ */
+void vPortAssertIfInISR(void);
+
 // ------------------ Critical Sections --------------------
 
 UBaseType_t uxPortEnterCriticalFromISR( void );
@@ -136,9 +143,6 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 
@@ -161,12 +165,20 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portSET_INTERRUPT_MASK_FROM_ISR()   portSET_INTERRUPT_MASK()
 #define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK()
 
+/**
+ * @brief Assert if in ISR context
+ *
+ * TODO: Enable once ISR safe version of vTaskEnter/ExitCritical() is implemented
+ * for single-core SMP FreeRTOS Kernel. (IDF-10540)
+ */
+// #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
+
 /*
 Note: XTOS_RESTORE_INTLEVEL() will overwrite entire PS register on XEA2. So we need to set the value of the INTLEVEL field ourselves
 */
 #define portCLEAR_INTERRUPT_MASK(x)         ({ \
     unsigned int ps_reg; \
-    RSR(PS, ps_reg); \
+    RSR(XT_REG_PS, ps_reg); \
     ps_reg = (ps_reg & ~XCHAL_PS_INTLEVEL_MASK); \
     ps_reg |= ((x << XCHAL_PS_INTLEVEL_SHIFT) & XCHAL_PS_INTLEVEL_MASK); \
     XTOS_RESTORE_INTLEVEL(ps_reg); \
@@ -227,10 +239,9 @@ extern void vTaskExitCriticalFromISR( UBaseType_t uxSavedInterruptStatus );
 
 //Timers are already configured, so nothing to do for configuration of run time stats timer
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-//We define get run time counter value regardless because the rest of ESP-IDF uses it
-#define portGET_RUN_TIME_COUNTER_VALUE()            xthal_get_ccount()
-#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x)       ({x = (uint32_t)esp_timer_get_time();})
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()        xPortGetRunTimeCounterValue()
 #endif
 
 // --------------------- TCB Cleanup -----------------------
@@ -310,6 +321,24 @@ static inline void __attribute__((always_inline)) vPortCPUReleaseMutex(portMUX_T
 
 // ------------------ Critical Sections --------------------
 
+/**
+ * @brief Claim thread-safe region start
+ *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeClaim(void);
+
+/**
+ * @brief Claim thread-safe region end
+ *        Restores normal port critical behavior
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeDisclaim(void);
+
+extern volatile bool port_xThreadSafeClaimed;
+
 BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout);
 
 static inline void __attribute__((always_inline)) vPortEnterCriticalIDF(portMUX_TYPE *lock)
@@ -340,12 +369,12 @@ void vPortExitCritical(portMUX_TYPE *lock);
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+static inline bool xPortCanYield(void)
 {
     uint32_t ps_reg = 0;
 
     //Get the current value of PS (processor status) register
-    RSR(PS, ps_reg);
+    RSR(XT_REG_PS, ps_reg);
 
     /*
      * intlevel = (ps_reg & 0xf);
@@ -410,7 +439,7 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile BaseType_t xPortSwitchFlag;
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
 #else
@@ -438,11 +467,6 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include <limits.h>
 #include <xtensa/config/system.h>
 #include <xtensa_api.h>
-
-/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
-#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#include "esp_timer.h"
-#endif
 
 #ifdef __cplusplus
 }

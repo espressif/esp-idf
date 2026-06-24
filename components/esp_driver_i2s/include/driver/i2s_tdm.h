@@ -122,6 +122,7 @@ extern "C" {
 #define I2S_TDM_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
+    .ext_clk_freq_hz = 0, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .bclk_div = 8, \
 }
@@ -195,6 +196,8 @@ typedef struct {
  * @brief Initialize I2S channel to TDM mode
  * @note  Only allowed to be called when the channel state is REGISTERED, (i.e., channel has been allocated, but not initialized)
  *        and the state will be updated to READY if initialization success, otherwise the state will return to REGISTERED.
+ * @note  When initialize the TDM mode with a same configuration as another channel on a same port,
+ *        these two channels can constitude as full-duplex mode automatically
  *
  * @param[in]   handle      I2S channel handler
  * @param[in]   tdm_cfg     Configurations for TDM mode, including clock, slot and GPIO

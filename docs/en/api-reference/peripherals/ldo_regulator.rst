@@ -3,12 +3,10 @@ Low Dropout Voltage Regulator (LDO)
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_LDO_CHANNELS:default="unknown", esp32p4="4"}
-
 Introduction
 ------------
 
-The {IDF_TARGET_NAME} chip internally integrates {IDF_TARGET_LDO_CHANNELS} channels of low-dropout voltage regulators (LDOs). Each channel's voltage is programmable. In our hardware reference designs, some of these LDO outputs are typically used to power the internal Flash and PSRAM, while the remaining LDOs can be used to supply external devices.
+The {IDF_TARGET_NAME} chip internally integrates {IDF_TARGET_SOC_GP_LDO_NUM_UNITS} channels of low-dropout voltage regulators (LDOs). Each channel's voltage is programmable. In our hardware reference designs, some of these LDO outputs are typically used to power the internal Flash and PSRAM, while the remaining LDOs can be used to supply external devices.
 
 .. note::
 

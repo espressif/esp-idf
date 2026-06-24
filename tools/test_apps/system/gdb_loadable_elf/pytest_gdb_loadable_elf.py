@@ -1,19 +1,16 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.parametrize('offset', [
-    pytest.param('0x40007d54', marks=[pytest.mark.esp32]),
-    # pytest.param('0x4000f6e2', marks=[pytest.mark.esp32s2]),
-    # pytest.param('0x40047654', marks=[pytest.mark.esp32c3]),
-])
-@pytest.mark.parametrize('embedded_services, skip_autoflash, erase_all', [
-    ('esp,idf,jtag', 'y', 'y'),
-], indirect=True)
 @pytest.mark.jtag
+@idf_parametrize('embedded_services', ['esp,idf,jtag'], indirect=['embedded_services'])
+@idf_parametrize('erase_all', ['y'], indirect=['erase_all'])
+@idf_parametrize('offset', ['0x40007d54'])
+@idf_parametrize('skip_autoflash', ['y'], indirect=['skip_autoflash'])
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_loadable_elf(dut: IdfDut, offset: str) -> None:
     dut.gdb.write('mon reset halt')
     dut.gdb.write(f'thb *{offset}')

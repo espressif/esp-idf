@@ -17,7 +17,7 @@ extern "C" {
 #if (BLUFI_INCLUDED == TRUE)
 
 #define BTC_BLUFI_GREAT_VER   0x01  //Version + Subversion
-#define BTC_BLUFI_SUB_VER     0x03  //Version + Subversion
+#define BTC_BLUFI_SUB_VER     0x04  //Version + Subversion
 #define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
 
 typedef UINT8 tGATT_IF;
@@ -36,12 +36,15 @@ typedef struct {
     UINT32                  trans_id;
     UINT8                   congest;
     UINT16                  frag_size;
+// Deprecated: This macro will be removed in the future
 #define BLUFI_PREPAIR_BUF_MAX_SIZE 1024
+#define BLUFI_PREPARE_BUF_MAX_SIZE 1024
     uint8_t                 *prepare_buf;
     int                     prepare_len;
     /* Control reference */
     esp_blufi_callbacks_t   *cbs;
     BOOLEAN                 enabled;
+    BOOLEAN                 notify_enabled;
     uint8_t                 send_seq;
     uint8_t                 recv_seq;
     uint8_t                 sec_mode;

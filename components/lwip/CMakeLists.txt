@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+set(srcs "")
 
 if(CONFIG_LWIP_ENABLE)
     if(NOT ${target} STREQUAL "linux")
@@ -9,7 +10,6 @@ if(CONFIG_LWIP_ENABLE)
     set(include_dirs
         include
         include/apps
-        include/apps/sntp
         lwip/src/include
         port/include
         port/freertos/include/
@@ -100,7 +100,8 @@ if(CONFIG_LWIP_ENABLE)
         "port/hooks/lwip_default_hooks.c"
         "port/debug/lwip_debug.c"
         "port/sockets_ext.c"
-        "port/freertos/sys_arch.c")
+        "port/freertos/sys_arch.c"
+        "port/if_index.c")
 
     if(CONFIG_LWIP_PPP_SUPPORT)
         list(APPEND srcs
@@ -128,32 +129,42 @@ if(CONFIG_LWIP_ENABLE)
             "lwip/src/netif/ppp/pppos.c"
             "lwip/src/netif/ppp/upap.c"
             "lwip/src/netif/ppp/utils.c"
-            "lwip/src/netif/ppp/vj.c"
-            "lwip/src/netif/ppp/polarssl/arc4.c"
-            "lwip/src/netif/ppp/polarssl/des.c"
-            "lwip/src/netif/ppp/polarssl/md4.c"
-            "lwip/src/netif/ppp/polarssl/md5.c"
-            "lwip/src/netif/ppp/polarssl/sha1.c")
+            "lwip/src/netif/ppp/vj.c")
     endif()
 
+    if(CONFIG_LWIP_DHCP_DOES_ARP_CHECK)
+        list(APPEND srcs "port/acd_dhcp_check.c")
+    elseif(CONFIG_LWIP_DHCP_DOES_ACD_CHECK)
+        list(APPEND srcs "lwip/src/core/ipv4/acd.c")
+    endif()
+
+    if(CONFIG_LWIP_USE_ESP_GETADDRINFO)
+        list(APPEND srcs "apps/netdb/esp_netdb.c")
+    endif()
+
+
     if(NOT ${target} STREQUAL "linux")
-        # Support for vfs and linker fragments only for target builds
         set(linker_fragments linker.lf)
-        if(CONFIG_VFS_SUPPORT_IO)
-            list(APPEND srcs "port/${target}/vfs_lwip.c")
-        else()
-            list(APPEND srcs "port/${target}/no_vfs_syscalls.c")
-        endif()
+    endif()
+
+    if(CONFIG_VFS_SUPPORT_IO)
+        list(APPEND srcs "port/vfs_lwip.c")
     else()
-        # This wraps some posix IO functions to conditionally pass control to lwip
-        list(APPEND srcs "port/${target}/vfs_lwip.c")
+        list(APPEND srcs "port/${target}/no_vfs_syscalls.c")
     endif()
 
     if(CONFIG_LWIP_ICMP)
         list(APPEND srcs
-            "apps/ping/esp_ping.c"
-            "apps/ping/ping.c"
             "apps/ping/ping_sock.c")
+    endif()
+
+    if(NOT CONFIG_LWIP_USE_EXTERNAL_MBEDTLS)
+        list(APPEND srcs
+                "lwip/src/netif/ppp/polarssl/arc4.c"
+                "lwip/src/netif/ppp/polarssl/des.c"
+                "lwip/src/netif/ppp/polarssl/md4.c"
+                "lwip/src/netif/ppp/polarssl/md5.c"
+                "lwip/src/netif/ppp/polarssl/sha1.c")
     endif()
 
     if(CONFIG_LWIP_DHCPS)
@@ -165,9 +176,7 @@ if(CONFIG_LWIP_ENABLE)
     endif()
 endif() # CONFIG_LWIP_ENABLE
 
-if(NOT ${target} STREQUAL "linux")
-    set(priv_requires vfs)
-endif()
+set(priv_requires vfs)
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS  ${include_dirs}
@@ -199,30 +208,29 @@ if(CONFIG_LWIP_ENABLE)
         -Wno-array-parameter
     )
 
-    if(CONFIG_OPENTHREAD_ENABLED)
-        idf_component_optional_requires(PRIVATE openthread)
+    if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
+        set_source_files_properties(
+            lwip/src/core/ipv4/ip4_addr.c
+            PROPERTIES COMPILE_FLAGS
+            -Wno-analyzer-use-of-uninitialized-value
+        )
     endif()
 
-    if(CONFIG_ETH_ENABLED)
-        idf_component_optional_requires(PRIVATE esp_eth)
+    if(CONFIG_OPENTHREAD_ENABLED)
+        idf_component_optional_requires(PRIVATE openthread)
     endif()
 
     if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
         idf_component_optional_requires(PRIVATE nvs_flash)
     endif()
 
+    if(CONFIG_LWIP_USE_EXTERNAL_MBEDTLS)
+        idf_component_optional_requires(PRIVATE mbedtls)
+    endif()
+
     if(${target} STREQUAL "linux")
         set(THREADS_PREFER_PTHREAD_FLAG ON)
         find_package(Threads REQUIRED)
         target_link_libraries(${COMPONENT_LIB} PRIVATE Threads::Threads)
-        set(WRAP_FUNCTIONS      select
-                                read
-                                fcntl
-                                write
-                                close)
-        foreach(wrap ${WRAP_FUNCTIONS})
-                    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
-                    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __wrap_${wrap}")
-        endforeach()
     endif()
 endif()

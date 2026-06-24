@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -12,7 +12,7 @@
 #endif
 
 #include "esp_bit_defs.h"
-#include "reg_base.h"
+#include "soc/reg_base.h"
 
 #define PRO_CPU_NUM (0)
 
@@ -20,12 +20,10 @@
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x1000)        // UART0 and UART1
 #define REG_UART_AHB_BASE(i)                    (0x60000000 + (i) * 0x10000)
 #define UART_FIFO_AHB_REG(i)                    (REG_UART_AHB_BASE(i) + 0x0)
-#define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                        // only one I2S on C6
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE + (i) * 0x1000)        // SPIMEM0 and SPIMEM1
 #define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))    // only one GPSPI on C6
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_EXT_BASE)                    // only one I2C on C6
-#define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE)                      // only one MCPWM on C6
 #define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)       // TWAI0 and TWAI1
 
 //Registers Operation {{
@@ -136,14 +134,8 @@
 //}}
 
 //Periheral Clock {{
-#define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
-#define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
 #define  APB_CLK_FREQ                                ( 40*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
-#define  REF_CLK_FREQ                                ( 1000000 )
-#define  XTAL_CLK_FREQ                               (40*1000000)
-#define  GPIO_MATRIX_DELAY_NS                        0
 //}}
 
 /* Overall memory map */

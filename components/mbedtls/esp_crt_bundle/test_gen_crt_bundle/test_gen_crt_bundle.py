@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import os
 import sys
 import unittest
@@ -70,8 +69,9 @@ class GenCrtBundleTests(Py23TestCase):
         with self.assertRaisesRegex(gen_crt_bundle.InputError, 'Invalid certificate'):
             bundle.add_from_file(test_crts_path  + invalid_test_file)
 
-        with self.assertRaisesRegex(gen_crt_bundle.InputError, 'No certificate found'):
-            bundle.add_from_pem('')
+        bundle_prev_len = len(bundle.certificates)
+        bundle.add_from_pem('')
+        self.assertEqual(len(bundle.certificates), bundle_prev_len)
 
     def test_non_ascii_crt_input(self):
         bundle = gen_crt_bundle.CertificateBundle()

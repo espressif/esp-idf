@@ -12,7 +12,7 @@
  *
  * However, usages of above components are different.
  * Therefore, we put the common used parts into `esp_hw_support`, including:
- * - adc power maintainance
+ * - adc power maintenance
  * - adc hw calibration settings
  * - adc locks, to prevent concurrently using adc hw
  */
@@ -21,6 +21,7 @@
 #include "esp_err.h"
 #include "hal/adc_types.h"
 #include "soc/soc_caps.h"
+#include "esp_private/periph_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {

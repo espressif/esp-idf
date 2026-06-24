@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,10 @@ extern "C" {
 
 #define ESP_AVRC_TRANS_LABEL_MAX        15       /*!< max transaction label */
 
+#define ESP_AVRC_CA_IMAGE_HANDLE_LEN    7        /*!< The image handle length is fixed to 7, specified by Basic Image Profile */
+#define ESP_AVRC_CA_MTU_MIN             255      /*!< Minimal MTU can be used in Cover Art OBEX connection */
+#define ESP_AVRC_CA_MTU_MAX             1691     /*!< Maximum MTU can be used in Cover Art OBEX connection */
+
 /// AVRC feature bit mask
 typedef enum {
     ESP_AVRC_FEAT_RCTG = 0x0001,                 /*!< remote control target */
@@ -30,14 +34,18 @@ typedef enum {
 
 /// AVRC supported features flag retrieved in SDP record
 typedef enum {
+    /* CT and TG common features flag */
     ESP_AVRC_FEAT_FLAG_CAT1 = 0x0001,                             /*!< category 1 */
     ESP_AVRC_FEAT_FLAG_CAT2 = 0x0002,                             /*!< category 2 */
     ESP_AVRC_FEAT_FLAG_CAT3 = 0x0004,                             /*!< category 3 */
     ESP_AVRC_FEAT_FLAG_CAT4 = 0x0008,                             /*!< category 4 */
     ESP_AVRC_FEAT_FLAG_BROWSING = 0x0040,                         /*!< browsing */
-    ESP_AVRC_FEAT_FLAG_COVER_ART_GET_IMAGE_PROP = 0x0080,         /*!< Cover Art GetImageProperties */
-    ESP_AVRC_FEAT_FLAG_COVER_ART_GET_IMAGE = 0x0100,              /*!< Cover Art GetImage */
-    ESP_AVRC_FEAT_FLAG_COVER_ART_GET_LINKED_THUMBNAIL = 0x0200,   /*!< Cover Art GetLinkedThumbnail */
+    /* CT only features flag */
+    ESP_AVRC_FEAT_FLAG_COVER_ART_GET_IMAGE_PROP = 0x0080,         /*!< CT support Cover Art GetImageProperties */
+    ESP_AVRC_FEAT_FLAG_COVER_ART_GET_IMAGE = 0x0100,              /*!< CT support Cover Art GetImage */
+    ESP_AVRC_FEAT_FLAG_COVER_ART_GET_LINKED_THUMBNAIL = 0x0200,   /*!< CT support Cover Art GetLinkedThumbnail */
+    /* TG only features flag */
+    ESP_AVRC_FEAT_FLAG_TG_COVER_ART = 0x0100,                     /*!< TG support Cover Art */
 } esp_avrc_feature_flag_t;
 
 /// AVRC passthrough command code
@@ -105,7 +113,7 @@ typedef enum {
 typedef enum {
     ESP_AVRC_PSTH_FILTER_ALLOWED_CMD = 0,       /*!< all of the PASSTHROUGH commands that can possibly be used, immutable */
     ESP_AVRC_PSTH_FILTER_SUPPORTED_CMD = 1,     /*!< PASSTHROUGH commands selectively supported according to the current configuration */
-    ESP_AVRC_PSTH_FILTER_SUPPORT_MAX,
+    ESP_AVRC_PSTH_FILTER_SUPPORT_MAX,           /*!< Maximum value for PASSTHROUGH command filter */
 } esp_avrc_psth_filter_t;
 
 /// AVRC passthrough command bit mask
@@ -113,6 +121,7 @@ typedef struct {
     uint16_t bits[8];                           /*!< bit mask representation of PASSTHROUGH commands */
 } esp_avrc_psth_bit_mask_t;
 
+/// AVRC operation code bit mask
 typedef enum {
     ESP_AVRC_BIT_MASK_OP_TEST = 0,      /*!< operation code to test a specific bit */
     ESP_AVRC_BIT_MASK_OP_SET = 1,       /*!< operation code to set a specific bit  */
@@ -133,8 +142,11 @@ typedef enum {
     ESP_AVRC_CT_PLAY_STATUS_RSP_EVT = 3,         /*!< play status response event */
     ESP_AVRC_CT_CHANGE_NOTIFY_EVT = 4,           /*!< notification event */
     ESP_AVRC_CT_REMOTE_FEATURES_EVT = 5,         /*!< feature of remote device indication event */
-    ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT = 6,     /*!< supported notification events capability of peer device */
+    ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT = 6, /*!< supported notification events capability of peer device */
     ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT = 7, /*!< set absolute volume response event */
+    ESP_AVRC_CT_COVER_ART_STATE_EVT = 8,         /*!< cover art client connection state changed event */
+    ESP_AVRC_CT_COVER_ART_DATA_EVT = 9,          /*!< cover art client data event */
+    ESP_AVRC_CT_PROF_STATE_EVT = 10,             /*!< Indicate AVRCP controller init or deinit complete */
 } esp_avrc_ct_cb_event_t;
 
 /// AVRC Target callback events
@@ -145,6 +157,7 @@ typedef enum {
     ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT = 3,   /*!< set absolute volume command from remote device */
     ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT = 4,     /*!< register notification event */
     ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT = 5,      /*!< set application attribute value, attribute refer to esp_avrc_ps_attr_ids_t */
+    ESP_AVRC_TG_PROF_STATE_EVT = 6,                /*!< Indicate AVRCP target init or deinit complete */
 } esp_avrc_tg_cb_event_t;
 
 /// AVRC metadata attribute mask
@@ -155,7 +168,8 @@ typedef enum {
     ESP_AVRC_MD_ATTR_TRACK_NUM = 0x8,             /*!< track position on the album */
     ESP_AVRC_MD_ATTR_NUM_TRACKS = 0x10,           /*!< number of tracks on the album */
     ESP_AVRC_MD_ATTR_GENRE = 0x20,                /*!< track genre */
-    ESP_AVRC_MD_ATTR_PLAYING_TIME = 0x40          /*!< total album playing time in miliseconds */
+    ESP_AVRC_MD_ATTR_PLAYING_TIME = 0x40,         /*!< total album playing time in milliseconds */
+    ESP_AVRC_MD_ATTR_COVER_ART = 0x80             /*!< cover art image handle */
 } esp_avrc_md_attr_mask_t;
 
 /// AVRC event notification ids
@@ -173,14 +187,14 @@ typedef enum {
     ESP_AVRC_RN_ADDRESSED_PLAYER_CHANGE = 0x0b,   /*!< the addressed player changed */
     ESP_AVRC_RN_UIDS_CHANGE = 0x0c,               /*!< UIDs changed */
     ESP_AVRC_RN_VOLUME_CHANGE = 0x0d,             /*!< volume changed locally on TG */
-    ESP_AVRC_RN_MAX_EVT
+    ESP_AVRC_RN_MAX_EVT                           /*!< maximum value for notification event */
 } esp_avrc_rn_event_ids_t;
 
 /// AVRC target notification event notification capability
 typedef enum {
     ESP_AVRC_RN_CAP_ALLOWED_EVT = 0,              /*!< all of the notification events that can possibly be supported, immutable */
     ESP_AVRC_RN_CAP_SUPPORTED_EVT = 1,            /*!< notification events selectively supported according to the current configuration */
-    ESP_AVRC_RN_CAP_MAX,
+    ESP_AVRC_RN_CAP_MAX,                          /*!< maximum value for the notification event capability */
 } esp_avrc_rn_evt_cap_t;
 
 /// AVRC target notification event capability bit mask
@@ -200,7 +214,7 @@ typedef enum {
     ESP_AVRC_PS_REPEAT_MODE = 0x02,               /*!< repeat mode */
     ESP_AVRC_PS_SHUFFLE_MODE = 0x03,              /*!< shuffle mode */
     ESP_AVRC_PS_SCAN_MODE = 0x04,                 /*!< scan mode on or off */
-    ESP_AVRC_PS_MAX_ATTR
+    ESP_AVRC_PS_MAX_ATTR                          /*!< Maximum value for player setting attribute ids*/
 } esp_avrc_ps_attr_ids_t;
 
 /// AVRC equalizer modes
@@ -219,9 +233,9 @@ typedef enum {
 
 /// AVRC shuffle modes
 typedef enum {
-    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,                /*<! shuffle off */
-    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*<! shuffle all tracks */
-    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3               /*<! group shuffle */
+    ESP_AVRC_PS_SHUFFLE_OFF = 0x1,                /*!< shuffle off */
+    ESP_AVRC_PS_SHUFFLE_ALL = 0x2,                /*!< shuffle all tracks */
+    ESP_AVRC_PS_SHUFFLE_GROUP = 0x3               /*!< group shuffle */
 } esp_avrc_ps_shf_value_ids_t;
 
 /// AVRC scan modes
@@ -261,6 +275,12 @@ typedef enum {
     ESP_AVRC_PLAYBACK_ERROR = 0xFF,               /*!< error */
 } esp_avrc_playback_stat_t;
 
+/// AVRC Cover Art connection error code
+typedef enum {
+    ESP_AVRC_COVER_ART_DISCONNECTED,              /*!< Cover Art connection disconnected or connection failed */
+    ESP_AVRC_COVER_ART_CONNECTED,                 /*!< Cover Art connection established */
+} esp_avrc_cover_art_conn_state_t;
+
 /// AVRCP notification parameters
 typedef union
 {
@@ -276,6 +296,27 @@ typedef struct {
     uint8_t   attr_id;                       /*!< player application attribute id */
     uint8_t   attr_val;                      /*!< player application attribute value */
 } esp_avrc_set_app_value_param_t;
+
+/**
+ * @brief AVRCP profile status parameters
+ */
+typedef struct {
+    bool avrc_ct_inited;                   /*!< AVRCP CT initialization */
+    bool avrc_tg_inited;                   /*!< AVRCP TG initialization */
+    uint8_t ct_cover_art_conn_num;         /*!< Number of cover art client connections */
+} esp_avrc_profile_status_t;
+
+/**
+ * @brief Bluetooth AVRCP Initiation states
+ */
+typedef enum {
+    ESP_AVRC_INIT_SUCCESS = 0,                /*!< Indicate init successful */
+    ESP_AVRC_INIT_ALREADY,                    /*!< Indicate init repeated */
+    ESP_AVRC_INIT_FAIL,                       /*!< Indicate init fail */
+    ESP_AVRC_DEINIT_SUCCESS,                  /*!< Indicate deinit successful */
+    ESP_AVRC_DEINIT_ALREADY,                  /*!< Indicate deinit repeated */
+    ESP_AVRC_DEINIT_FAIL,                     /*!< Indicate deinit fail */
+} esp_avrc_init_state_t;
 
 /// AVRC controller callback parameters
 typedef union {
@@ -305,6 +346,15 @@ typedef union {
         uint8_t *attr_text;                      /*!< attribute itself */
         int attr_length;                         /*!< attribute character length */
     } meta_rsp;                                  /*!< metadata attributes response */
+
+    /**
+     * @brief ESP_AVRC_CT_PLAY_STATUS_RSP_EVT
+     */
+    struct avrc_ct_get_play_status_rsp_param {
+        uint32_t song_length;                    /*!< total length of the playing song in milliseconds */
+        uint32_t song_position;                  /*!< current position of the playing song in milliseconds elapsed */
+        esp_avrc_playback_stat_t play_status;    /*!< current status of playing */
+    } play_status_rsp;                           /*!< get play status command response */
 
     /**
      * @brief ESP_AVRC_CT_CHANGE_NOTIFY_EVT
@@ -337,6 +387,32 @@ typedef union {
     struct avrc_ct_set_volume_rsp_param {
         uint8_t volume;                          /*!< the volume which has actually been set, range is 0 to 0x7f, means 0% to 100% */
     } set_volume_rsp;                            /*!< set absolute volume response event */
+
+    /**
+     * @brief ESP_AVRC_CT_COVER_ART_STATE_EVT
+     */
+    struct avrc_ct_cover_art_state_param {
+        esp_avrc_cover_art_conn_state_t state;   /*!< indicate the Cover Art connection status */
+        esp_bt_status_t reason;                  /*!< the disconnect reason of Cover Art connection */
+    } cover_art_state;                           /*!< AVRC Cover Art connection state change event */
+
+    /**
+     * @brief ESP_AVRC_CT_COVER_ART_DATA_EVT
+     */
+    struct avrc_ct_cover_art_data_param {
+        esp_bt_status_t status;                 /*!< indicate whether the get operation is success, p_data is valid only when status is ESP_BT_STATUS_SUCCESS */
+        bool final;                             /*!< indicate whether this data event is the final one, true if we have received the entire object */
+        uint16_t data_len;                      /*!< the data length of this data event, in bytes */
+        uint8_t *p_data;                        /*!< pointer to data, should copy to other buff before event callback return */
+    } cover_art_data;                           /*!< AVRC Cover Art data event */
+
+    /**
+     * @brief ESP_AVRC_CT_PROF_STATE_EVT
+     */
+    struct avrc_ct_init_stat_param {
+        esp_avrc_init_state_t state;            /*!< avrc ct initialization param */
+    } avrc_ct_init_stat;                        /*!< status to indicate avrcp ct init or deinit */
+
 } esp_avrc_ct_cb_param_t;
 
 /// AVRC target callback parameters
@@ -389,6 +465,13 @@ typedef union {
         esp_avrc_set_app_value_param_t *p_vals; /*!< point to the id and value of player application attribute */
     } set_app_value;                            /*!< set player application value */
 
+    /**
+     * @brief ESP_AVRC_TG_PROF_STATE_EVT
+     */
+    struct avrc_tg_init_stat_param {
+        esp_avrc_init_state_t state;            /*!< avrc tg initialization param */
+    } avrc_tg_init_stat;                        /*!< status to indicate avrcp tg init or deinit */
+
 } esp_avrc_tg_cb_param_t;
 
 /**
@@ -429,6 +512,7 @@ esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback);
  * @brief           Initialize the bluetooth AVRCP controller module, This function should be called
  *                  after esp_bluedroid_enable() completes successfully. Note: AVRC cannot work independently,
  *                  AVRC should be used along with A2DP and AVRC should be initialized before A2DP.
+ *                  `ESP_AVRC_CT_PROF_STATE_EVT` with `ESP_AVRC_INIT_SUCCESS` will be reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -441,8 +525,9 @@ esp_err_t esp_avrc_ct_init(void);
 /**
  *
  * @brief           De-initialize AVRCP controller module. This function should be called after
- *                  after esp_bluedroid_enable() completes successfully. Note: AVRC cannot work independently,
+ *                  `esp_bluedroid_enable()` completes successfully. Note: AVRC cannot work independently,
  *                  AVRC should be used along with A2DP and AVRC should be deinitialized before A2DP.
+ *                  `ESP_AVRC_CT_PROF_STATE_EVT` with `ESP_AVRC_DEINIT_SUCCESS` will be reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -551,6 +636,18 @@ esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask);
  */
 esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state);
 
+/**
+ * @brief           Send get play status command to AVRCP target. This function should be called after
+ *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
+ *
+ * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_avrc_ct_send_get_play_status_cmd(uint8_t tl);
 
 /**
  * @brief           Register application callbacks to AVRCP target module. This function should be
@@ -571,6 +668,7 @@ esp_err_t esp_avrc_tg_register_callback(esp_avrc_tg_cb_t callback);
  * @brief           Initialize the bluetooth AVRCP target module, This function should be called
  *                  after esp_bluedroid_enable() completes successfully. Note: AVRC cannot work independently,
  *                  AVRC should be used along with A2DP and AVRC should be initialized before A2DP.
+ *                  ESP_AVRC_TG_PROF_STATE_EVT with ESP_AVRC_INIT_SUCCESS will reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -585,6 +683,7 @@ esp_err_t esp_avrc_tg_init(void);
  * @brief           De-initialize AVRCP target module. This function should be called after
  *                  after esp_bluedroid_enable() completes successfully. Note: AVRC cannot work independently,
  *                  AVRC should be used along with A2DP and AVRC should be deinitialized before A2DP.
+ *                  ESP_AVRC_TG_PROF_STATE_EVT with ESP_AVRC_DEINIT_SUCCESS will reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -603,6 +702,10 @@ esp_err_t esp_avrc_tg_deinit(void);
  *                  For filter type ESP_AVRC_PSTH_FILTER_SUPPORT_COMMANDS, the retrieved command set covers the
  *                  passthrough commands selected to be supported according to current configuration. The
  *                  configuration can be changed using esp_avrc_tg_set_psth_cmd_filter().
+ *
+ * @param[in]       filter : The type of filter to retrieve.
+ * @param[out]      cmd_set : A pointer to a bit mask that will be populated with the passthrough commands according to the filter type.
+ *                            Each bit in the mask corresponds to a specific passthrough command. This parameter should not be NULL.
  *
  * @return
  *                  - ESP_OK: success
@@ -626,6 +729,9 @@ esp_err_t esp_avrc_tg_get_psth_cmd_filter(esp_avrc_psth_filter_t filter, esp_avr
  *                  with filter type "ESP_AVRC_PSTH_FILTER_ALLOWED_CMD".
  *
  *                  Filter type "ESP_AVRC_PSTH_FILTER_ALLOWED_CMD" does not apply to this function.
+ *
+ * @param[in]       filter : The type of filter to set.
+ * @param[in]       cmd_set : A pointer to the bit mask of passthrough commands to support.
  *
  * @return
  *                  - ESP_OK: success
@@ -656,16 +762,20 @@ bool esp_avrc_psth_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_psth_b
 
 /**
  *
- * @brief           Get the requested event notification capabilies on local AVRC target. The capability is returned
+ * @brief           Get the requested event notification capabilities on local AVRC target. The capability is returned
  *                  in a bit mask representation in evt_set. This function should be called after esp_avrc_tg_init().
  *
  *                  For capability type "ESP_AVRC_RN_CAP_ALLOWED_EVT, the retrieved event set is constant and
- *                  it covers all of the notifcation events that can possibly be supported with current
+ *                  it covers all of the notification events that can possibly be supported with current
  *                  implementation.
  *
  *                  For capability type ESP_AVRC_RN_CAP_SUPPORTED_EVT, the event set covers the notification
  *                  events selected to be supported under current configuration, The configuration can be
  *                  changed using esp_avrc_tg_set_rn_evt_cap().
+ *
+ * @param[in]       cap : The type of capability to retrieve
+ * @param[out]      evt_set : A pointer to a bit mask that will store the event notification capabilities.
+ *                            Each bit in the mask corresponds to a specific event. This parameter should not be NULL.
  *
  * @return
  *                  - ESP_OK: success
@@ -680,6 +790,9 @@ esp_err_t esp_avrc_tg_get_rn_evt_cap(esp_avrc_rn_evt_cap_t cap, esp_avrc_rn_evt_
  * @brief           Set the event notification capabilities on local AVRCP target. The capability is given in a
  *                  bit mask representation in evt_set and must be a subset of allowed event IDs with current
  *                  implementation. This function should be called after esp_avrc_tg_init().
+ *
+ * @param[in]       evt_set : A pointer to a bit mask representing the event notification capabilities to be set.
+ *                            Each bit in the mask corresponds to a specific event. This parameter cannot be NULL.
  *
  * @return
  *                  - ESP_OK: success
@@ -728,6 +841,102 @@ bool esp_avrc_rn_evt_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_rn_e
  */
 esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_rsp_t rsp,
                                   esp_avrc_rn_param_t *param);
+
+/**
+ *
+ * @brief           Start the process to establish OBEX connection used in Cover Art Client. Once the operation done,
+ *                  ESP_AVRC_CT_COVER_ART_STATE_EVT will come, operation result can be found in event param. This API
+ *                  can be used only when AVRC Cover Art feature is enabled.
+ *
+ * @param[in]       mtu: MTU used in lower level connection, should not smaller than ESP_AVRC_CA_MTU_MIN or larger than
+ *                  ESP_AVRC_CA_MTU_MAX, if value is not valid, will be reset to ESP_AVRC_CA_MTU_MAX. This can limit
+ *                  the max data length in cover_art_data event.
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC CT is not initialized
+ *                  - ESP_ERR_NOT_SUPPORTED: if peer device does not support Cover Art function
+ *
+ */
+esp_err_t esp_avrc_ct_cover_art_connect(uint16_t mtu);
+
+/**
+ *
+ * @brief           Start the process to release the OBEX connection used in Cover Art Client.Once the operation done,
+ *                  ESP_AVRC_CT_COVER_ART_STATE_EVT will come, operation result can be found in event param. This API
+ *                  can be used only when AVRC Cover Art feature is enabled.
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC CT is not initialized
+ *                  - ESP_ERR_NOT_SUPPORTED: if peer device does not support Cover Art function
+ *
+ */
+esp_err_t esp_avrc_ct_cover_art_disconnect(void);
+
+/**
+ *
+ * @brief           Start the process to get image properties from Cover Art server. This API can be used only when AVRC
+ *                  Cover Art feature is enabled.
+ *
+ * @param[in]       image_handle: pointer to image handle with a length of ESP_AVRC_CA_IMAGE_HANDLE_LEN bytes, can be freed
+ *                  after this function return
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC CT is not initialized
+ *                  - ESP_ERR_NOT_SUPPORTED: if peer device does not support Cover Art function
+ *
+ */
+esp_err_t esp_avrc_ct_cover_art_get_image_properties(uint8_t *image_handle);
+
+/**
+ *
+ * @brief           Start the process to get image from Cover Art server. This API can be used only when AVRC Cover Art
+ *                  feature is enabled.
+ *
+ * @param[in]       image_handle: pointer to image handle with a length of ESP_AVRC_CA_IMAGE_HANDLE_LEN bytes, can be freed
+ *                  after this function return
+ *
+ * @param[in]       image_descriptor: pointer to image descriptor, will be cache internally by bluetooth stack, can be freed
+ *                  once this api return
+ *
+ * @param[in]       image_descriptor_len: the length of image descriptor
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC CT is not initialized
+ *                  - ESP_ERR_NOT_SUPPORTED: if peer device does not support Cover Art function
+ *
+ */
+esp_err_t esp_avrc_ct_cover_art_get_image(uint8_t *image_handle, uint8_t *image_descriptor, uint16_t image_descriptor_len);
+
+/**
+ *
+ * @brief           Start the process to get linked thumbnail from Cover Art server. This API can be used only when AVRC
+ *                  Cover Art feature is enabled.
+ *
+ * @param[in]       image_handle: pointer to image handle with a length of ESP_AVRC_CA_IMAGE_HANDLE_LEN bytes, can be freed
+ *                  after this function return
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled or AVRC CT is not initialized
+ *                  - ESP_ERR_NOT_SUPPORTED: if peer device does not support Cover Art function
+ *
+ */
+esp_err_t esp_avrc_ct_cover_art_get_linked_thumbnail(uint8_t *image_handle);
+
+/**
+ * @brief       This function is used to get the status of AVRCP
+ *
+ * @param[out]  profile_status - AVRCP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_avrc_get_profile_status(esp_avrc_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

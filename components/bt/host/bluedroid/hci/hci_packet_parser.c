@@ -155,6 +155,26 @@ static void parse_ble_read_buffer_size_response(
     osi_free(response);
 }
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+static void parse_ble_read_buffer_size_response_v2 (
+    BT_HDR *response,
+    uint16_t *data_size_ptr,
+    uint8_t *acl_buffer_count_ptr,
+    uint16_t *iso_pkt_len_ptr,
+    uint8_t *iso_pkt_num_ptr)
+{
+
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_BUFFER_SZIE_V2, 6 /* bytes after: 2+1+2+1 */);
+    assert(stream != NULL);
+    STREAM_TO_UINT16(*data_size_ptr, stream);
+    STREAM_TO_UINT8(*acl_buffer_count_ptr, stream);
+    STREAM_TO_UINT16(*iso_pkt_len_ptr, stream);
+    STREAM_TO_UINT8(*iso_pkt_num_ptr, stream);
+
+    osi_free(response);
+}
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
 static void parse_ble_read_supported_states_response(
     BT_HDR *response,
     uint8_t *supported_states,
@@ -186,7 +206,9 @@ static void parse_ble_read_resolving_list_size_response(
 {
 
     uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_RESOLVING_LIST_SIZE, 1 /* bytes after */);
-    STREAM_TO_UINT8(*resolving_list_size_ptr, stream);
+    if (stream) {
+        STREAM_TO_UINT8(*resolving_list_size_ptr, stream);
+    }
 
     osi_free(response);
 }
@@ -197,23 +219,44 @@ static void parse_ble_read_suggested_default_data_length_response(
     uint16_t *ble_default_packet_txtime_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_DEFAULT_DATA_LENGTH, 2 /* bytes after */);
-    STREAM_TO_UINT16(*ble_default_packet_length_ptr, stream);
-    STREAM_TO_UINT16(*ble_default_packet_txtime_ptr, stream);
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_DEFAULT_DATA_LENGTH, 4 /* bytes after: 2+2 */);
+    if (stream) {
+        STREAM_TO_UINT16(*ble_default_packet_length_ptr, stream);
+        STREAM_TO_UINT16(*ble_default_packet_txtime_ptr, stream);
+    }
+
     osi_free(response);
 }
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 static void parse_ble_read_adv_max_len_response(
     BT_HDR *response,
     uint16_t *adv_max_len_ptr)
 {
 
-    uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_MAX_ADV_DATA_LEN, 1 /* bytes after */);
-    // Size: 2 Octets ; Value: 0x001F – 0x0672 ; Maximum supported advertising data length
-    STREAM_TO_UINT16(*adv_max_len_ptr, stream);
-
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_MAX_ADV_DATA_LEN, 2 /* bytes after */);
+    if (stream) {
+        // Size: 2 Octets ; Value: 0x001F – 0x0672 ; Maximum supported advertising data length
+        STREAM_TO_UINT16(*adv_max_len_ptr, stream);
+    }
     osi_free(response);
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+static void parse_ble_read_periodic_adv_list_size_response(
+    BT_HDR *response,
+    uint8_t *periodic_adv_list_size_ptr)
+{
+
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_PERIOD_ADV_LIST_SIZE, 1 /* bytes after */);
+    if (stream) {
+        // Size: 1 Octets ; Value: 0x01 to 0xFF ; Total number of Periodic Advertiser list entries that can be stored in the Controller
+        STREAM_TO_UINT8(*periodic_adv_list_size_ptr, stream);
+    }
+    osi_free(response);
+}
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 
@@ -254,6 +297,7 @@ static uint8_t *read_command_complete_header(
     STREAM_TO_UINT8(status, stream);
 
     if (status != HCI_SUCCESS) {
+        HCI_TRACE_ERROR("%s failed: opcode 0x%04x, status 0x%02x", __func__, opcode, status);
         return NULL;
     }
 
@@ -270,11 +314,19 @@ static const hci_packet_parser_t interface = {
     parse_read_local_extended_features_response,
     parse_ble_read_white_list_size_response,
     parse_ble_read_buffer_size_response,
+#if (BLE_FEAT_ISO_EN == TRUE)
+    parse_ble_read_buffer_size_response_v2,
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     parse_ble_read_supported_states_response,
     parse_ble_read_local_supported_features_response,
     parse_ble_read_resolving_list_size_response,
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     parse_ble_read_adv_max_len_response,
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    parse_ble_read_periodic_adv_list_size_response,
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     parse_ble_read_suggested_default_data_length_response
 };

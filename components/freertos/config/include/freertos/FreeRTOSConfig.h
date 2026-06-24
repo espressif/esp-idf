@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,8 +34,8 @@
     #define STACK_OVERHEAD_OPTIMIZATION    0
 #endif
 
-/* apptrace mdule increases minimum stack usage */
-#if CONFIG_APPTRACE_ENABLE
+/* apptrace module increases minimum stack usage */
+#if CONFIG_ESP_TRACE_TRANSPORT_APPTRACE
     #define STACK_OVERHEAD_APPTRACE    1280
 #else
     #define STACK_OVERHEAD_APPTRACE    0
@@ -136,7 +136,11 @@
 #define configSUPPORT_STATIC_ALLOCATION              1
 #define configSUPPORT_DYNAMIC_ALLOCATION             1
 #define configAPPLICATION_ALLOCATED_HEAP             1
-#define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
+#if CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    1
+#else
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP    0
+#endif
 
 /* ------------------------ Hooks -------------------------- */
 
@@ -168,13 +172,11 @@
     #define configUSE_STATS_FORMATTING_FUNCTIONS    1       /* Used by vTaskList() */
 #endif /* CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS */
 
-#if !CONFIG_FREERTOS_SMP
-    #if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
-        #define configRUN_TIME_COUNTER_TYPE    uint32_t
-    #elif CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64
-        #define configRUN_TIME_COUNTER_TYPE    uint64_t
-    #endif /* CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64 */
-#endif /* !CONFIG_FREERTOS_SMP */
+#if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+    #define configRUN_TIME_COUNTER_TYPE    uint32_t
+#elif CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+    #define configRUN_TIME_COUNTER_TYPE    uint64_t
+#endif /* CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64 */
 
 /* -------------------- Co-routines  ----------------------- */
 
@@ -183,12 +185,17 @@
 
 /* ------------------- Software Timer ---------------------- */
 
-#define configUSE_TIMERS                          1
-#define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
-#define configTIMER_SERVICE_TASK_NAME             CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
-#define configTIMER_SERVICE_TASK_CORE_AFFINITY    CONFIG_FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+#if CONFIG_FREERTOS_USE_TIMERS
+    #define configUSE_TIMERS                          1
+    #define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+    #define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+    #define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
+    #define configTIMER_SERVICE_TASK_NAME             CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+    #define configTIMER_SERVICE_TASK_CORE_AFFINITY    CONFIG_FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+#else
+    #define configUSE_TIMERS                          0
+#endif
+
 
 /* ------------------------ List --------------------------- */
 
@@ -214,7 +221,11 @@
 #define INCLUDE_uxTaskGetStackHighWaterMark        1
 #define INCLUDE_eTaskGetState                      1
 #define INCLUDE_xTaskResumeFromISR                 1
-#define INCLUDE_xTimerPendFunctionCall             1
+#if CONFIG_FREERTOS_USE_TIMERS
+  #define INCLUDE_xTimerPendFunctionCall           1
+#else
+  #define INCLUDE_xTimerPendFunctionCall           0
+#endif
 #define INCLUDE_xTaskGetSchedulerState             1
 #define INCLUDE_xTaskGetCurrentTaskHandle          1
 
@@ -225,10 +236,9 @@
  * Note: Include trace macros here and not above as trace macros are dependent on some of the FreeRTOS configs
  */
 #ifndef __ASSEMBLER__
-    #if CONFIG_SYSVIEW_ENABLE
-        #include "SEGGER_SYSVIEW_FreeRTOS.h"
-        #undef INLINE /* to avoid redefinition */
-    #endif /* CONFIG_SYSVIEW_ENABLE */
+    #if CONFIG_ESP_TRACE_ENABLE
+        #include "esp_trace_freertos.h"
+    #endif
 
     #if CONFIG_FREERTOS_SMP
 
@@ -283,9 +293,6 @@
     #ifdef CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
         #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS    1
     #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
-    #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
-        #define configCHECK_MUTEX_GIVEN_BY_OWNER               1
-    #endif /* CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER */
 #endif /* !CONFIG_FREERTOS_SMP */
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------

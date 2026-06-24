@@ -1,11 +1,13 @@
-| Supported Targets | ESP32-C6 | ESP32-H2 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S31 |
+| ----------------- | -------- | -------- | -------- | --------- | -------- | -------- | --------- |
 
 # Parallel IO TX Example: Simple RGB LED Matrix
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 The common used LED Matrix board has a so-called HUB75 interface, which is a 16-bit parallel interface. This example shows how to use the Parallel IO TX unit to drive a RGB LED Matrix board. We take use of the Parallel IO TX unit to send the RGB data and control signals to the LED Matrix board, and use the fast GPIO bundle to control the line address.
+
+In the other [advanced RGB LED Matrix](../advanced_rgb_led_matrix) example, we let the hardware automatically refresh the entire screen content continuously, without CPU intervention. In this basic example, we use the CPU to continuously send refresh transactions for each row
 
 The example uses the [LVGL](https://lvgl.io/) library to draw some simple UI elements on the LED Matrix board.
 

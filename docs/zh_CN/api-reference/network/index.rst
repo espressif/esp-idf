@@ -56,13 +56,14 @@ ESP-NETIF
 
    esp_netif
 
+.. toctree::
+    :hidden:
+
+    esp_netif_programming
+    esp_netif_driver
+
 IP 网络层协议
 ================
-
-.. toctree::
-   :hidden:
-
-   esp_netif_driver
 
 TCP/IP 套接字 API 的示例代码存放在 ESP-IDF 示例项目的 :example:`protocols/sockets` 目录下。
 

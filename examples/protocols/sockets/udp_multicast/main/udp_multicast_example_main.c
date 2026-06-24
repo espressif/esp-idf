@@ -132,7 +132,7 @@ static int create_multicast_ipv4_socket(void)
 
     // Assign multicast TTL (set separately from normal interface TTL)
     uint8_t ttl = MULTICAST_TTL;
-    setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(uint8_t));
+    err = setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(uint8_t));
     if (err < 0) {
         ESP_LOGE(V4TAG, "Failed to set IP_MULTICAST_TTL. Error %d", errno);
         goto err;
@@ -193,7 +193,7 @@ static int create_multicast_ipv6_socket(void)
         goto err;
     }
 
-    // Selct the interface to use as multicast source for this socket.
+    // Select the interface to use as multicast source for this socket.
 #if LISTEN_ALL_IF
     bzero(&if_inaddr.un, sizeof(if_inaddr.un));
 #else

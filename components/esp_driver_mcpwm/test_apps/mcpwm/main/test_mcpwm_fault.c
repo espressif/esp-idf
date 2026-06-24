@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "hal/mcpwm_ll.h"
 #include "driver/mcpwm_fault.h"
 #include "driver/mcpwm_oper.h"
 #include "driver/gpio.h"
@@ -17,12 +18,12 @@ TEST_CASE("mcpwm_fault_install_uninstall", "[mcpwm]")
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .gpio_num = TEST_FAULT_GPIO,
     };
-    int total_gpio_faults = SOC_MCPWM_GPIO_FAULTS_PER_GROUP * SOC_MCPWM_GROUPS;
+    int total_gpio_faults = MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP) * MCPWM_LL_GET(GROUP_NUM);
     mcpwm_fault_handle_t gpio_faults[total_gpio_faults];
     int fault_itor = 0;
-    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+    for (int i = 0; i < MCPWM_LL_GET(GROUP_NUM); i++) {
         gpio_fault_config.group_id = i;
-        for (int j = 0; j < SOC_MCPWM_GPIO_FAULTS_PER_GROUP; j++) {
+        for (int j = 0; j < MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP); j++) {
             TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_faults[fault_itor++]));
         }
         TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_gpio_fault(&gpio_fault_config, &gpio_faults[0]));
@@ -58,15 +59,20 @@ static bool IRAM_ATTR test_fault_exit_callback(mcpwm_fault_handle_t detector, co
 
 TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
 {
-    printf("create gpio fault\r\n");
+    printf("init a gpio to simulate the fault signal\r\n");
     const int fault_gpio = TEST_FAULT_GPIO;
+    gpio_config_t fault_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT(fault_gpio),
+    };
+    TEST_ESP_OK(gpio_config(&fault_gpio_conf));
+
+    printf("create gpio fault\r\n");
     mcpwm_fault_handle_t fault = NULL;
     mcpwm_gpio_fault_config_t gpio_fault_config = {
         .group_id = 0,
         .gpio_num = fault_gpio,
         .flags.active_level = true, // active on high level
-        .flags.pull_down = true,
-        .flags.io_loop_back = true, // for debug, so that we can use gpio_set_level to mimic a fault source
     };
     TEST_ESP_OK(mcpwm_new_gpio_fault(&gpio_fault_config, &fault));
 
@@ -80,7 +86,7 @@ TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
     };
     TaskHandle_t task_to_notify = xTaskGetCurrentTaskHandle();
     TEST_ESP_OK(mcpwm_fault_register_event_callbacks(fault, &cbs, task_to_notify));
-    TEST_ASSERT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(100)));
 
     printf("trigget a fault event\r\n");
     gpio_set_level(fault_gpio, 1);
@@ -91,4 +97,5 @@ TEST_CASE("mcpwm_gpio_fault_event_callbacks", "[mcpwm]")
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(10)));
 
     TEST_ESP_OK(mcpwm_del_fault(fault));
+    TEST_ESP_OK(gpio_reset_pin(fault_gpio));
 }

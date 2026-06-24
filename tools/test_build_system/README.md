@@ -9,7 +9,7 @@ This directory contains tests for the build system and build-related tools. Thes
 
 ## Running the tests locally
 
-1. Install pytest using `install.{sh,bat,ps1,fish} --enable-pytest`.
+1. Install pytest using `install.{sh,bat,ps1,fish} --enable-ci`.
 1. Activate the IDF shell environment using `export.{sh,bat,ps1,fish}`.
 1. To run all the tests, go to `$IDF_PATH/tools/test_build_system` directory, then run:
     ```
@@ -56,7 +56,8 @@ def test_something(test_app_copy):
     # the current working directory now contains the copy of the test app
 ```
 
-If the test case doesn't use the `test_app_copy` argument, pylint will typically warn about an unused argument, even if the fixture is actually used. To avoid the warning, use the following pattern:
+If the test case doesn't use the `test_app_copy` argument, ruff will typically warn about an unused argument, even if the fixture is actually used. To avoid the warning, use the following pattern:
+
 ```python
 @pytest.mark.usefixtures('test_app_copy')
 def test_something(idf_py):
@@ -114,6 +115,8 @@ Note, `default_idf_env` sets up the environment based on the `IDF_PATH` environm
 
 Copies IDF from `IDF_PATH` into a new temporary directory. `@pytest.mark.idf_copy('name prefix')` can be used to specify the name prefix of the temporary directory.
 
+The marker `@pytest.mark.idf_copy_with_space` can be used in combination with `idf_copy` fixture to create a temporary directory with a space in the name.
+
 For the duration of the test, `IDF_PATH` environment variable is set to the newly created copy.
 
 ```python
@@ -128,6 +131,38 @@ def test_idf_copy(idf_copy):
     run_idf_py('build', env=env)
 ```
 
+### `buildv2_skip` marker
+
+This marker enables the skipping of tests that, for any reason, cannot be
+executed with the IDF build system version 2. It accepts an optional string
+argument that explains why the test cannot be run with version 2. If no
+explanation is provided, a default message is used. This marker is used in
+the `pytest_collection_modifyitems` hook to skip tests marked with it when the
+`--buildv2` pytest command line option is used. For implementation details,
+please refer to `conftest.py`.
+
+```python
+@pytest.mark.buildv2_skip
+def test_target_guessing()
+
+@pytest.mark.buildv2_skip('This functionality has not been implemented in cmakev2 yet.')
+def test_target_guessing()
+```
+
+### `pytest.mark.revert_later` Marker
+
+This marker reverts all files to their original state after the test is finished. should pass a list of file paths (absolute or relative to `IDF_PATH`) to the marker. The files will be reverted even if the test fails.
+
+```python
+@pytest.mark.revert_later(['tools/idf_extra_components.yml'])
+def test_modify_file(idf_copy):
+    path = os.path.join(os.getenv('IDF_PATH'), 'tools', 'idf_extra_components.yml')
+    with open(path, 'a') as f:
+        f.write('# some changes\n')
+    # The changes to idf_extra_components.yml will be reverted after the test
+```
+
+
 ### Build snapshots
 
 `get_snapshot(list_of_globs)` function takes a list of glob expressions, finds the files matching these expressions, and returns a `Snapshot` instance. `Snapshot` instances record file names and their modification timestamps. Two `Snapshot` instances can be compared using `assert_same` and `assert_different` methods:
@@ -136,7 +171,7 @@ def test_idf_copy(idf_copy):
 @pytest.mark.usefixtures('test_app_copy')
 def test_build_jsons_updated_by_reconfigure(idf_py):
     globs = ['build/*.json']
-    
+
     idf_py('reconfigure')
     snapshot_1 = get_snapshot(globs)
     snapshot_2 = get_snapshot(globs)

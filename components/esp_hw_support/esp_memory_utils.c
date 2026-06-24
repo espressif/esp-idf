@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,9 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_memory_utils.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
 #endif
 
@@ -22,11 +23,29 @@ bool esp_ptr_dma_ext_capable(const void *p)
 #if !SOC_PSRAM_DMA_CAPABLE
     return false;
 #endif  //!SOC_PSRAM_DMA_CAPABLE
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     return esp_psram_check_ptr_addr(p);
 #else
     return false;
 #endif  //CONFIG_SPIRAM
+}
+
+bool esp_ptr_executable(const void *p)
+{
+    intptr_t ip = (intptr_t) p;
+    return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
+        || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
+        || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
+#if !BOOTLOADER_BUILD && SOC_SPIRAM_SUPPORTED && CONFIG_SPIRAM
+        || esp_ptr_external_ram(p)
+#endif
+#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
+        || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
+#endif
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH)
+#endif
+    ;
 }
 
 bool esp_ptr_byte_accessible(const void *p)
@@ -34,13 +53,16 @@ bool esp_ptr_byte_accessible(const void *p)
     intptr_t ip = (intptr_t) p;
     bool r;
     r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
+#if SOC_MEM_SPM_SUPPORTED
+    r |= esp_ptr_in_spm(p);
+#endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* For ESP32 case, RTC fast memory is accessible to PRO cpu only and hence
      * for single core configuration (where it gets added to system heap) following
      * additional check is required */
     r |= (ip >= SOC_RTC_DRAM_LOW && ip < SOC_RTC_DRAM_HIGH);
 #endif
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     r |= esp_psram_check_ptr_addr(p);
 #endif
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
@@ -60,17 +82,23 @@ bool esp_ptr_external_ram(const void *p)
 #if !SOC_SPIRAM_SUPPORTED
     return false;
 #endif  //!SOC_SPIRAM_SUPPORTED
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     return esp_psram_check_ptr_addr(p);
 #else
     return false;
 #endif  //CONFIG_SPIRAM
 }
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if !BOOTLOADER_BUILD && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 bool esp_stack_ptr_in_extram(uint32_t sp)
 {
     //Check if stack ptr is on PSRAM, and 16 byte aligned.
     return (esp_psram_check_ptr_addr((void *)sp) && ((sp & 0xF) == 0));
+}
+
+bool IRAM_ATTR esp_task_stack_is_sane_cache_disabled(void)
+{
+    const void *sp = (const void *)esp_cpu_get_sp();
+    return !esp_stack_ptr_in_extram((uint32_t)sp);
 }
 #endif

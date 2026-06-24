@@ -1,0 +1,18 @@
+menu "Time Sync Configuration"
+
+    config TIME_SYNC_NTP_SERVER
+        string "NTP Server"
+        default "pool.ntp.org"
+        help
+            Configure the NTP server for time synchronization.
+            The default is set to "pool.ntp.org".
+
+    config TIME_SYNC_NTP_UPDATE_PERIOD
+        int "NTP Time Update Interval (in hours)"
+        default 24
+        range 1 24
+        help
+            The time interval in hours for updating the system time using the NTP server.
+            For example, if set to 12, the system will update the time from the NTP server every 12 hours.
+
+endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,9 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/platform.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
+
+#include "mbedtls/esp_mbedtls_dynamic.h"
 
 #define TRACE_CHECK(_fn, _state) \
 ({ \
@@ -47,8 +50,9 @@
 })
 
 typedef enum {
-    ESP_MBEDTLS_SSL_BUF_CACHED,
+    ESP_MBEDTLS_SSL_BUF_CACHED = 0,
     ESP_MBEDTLS_SSL_BUF_NO_CACHED,
+    ESP_MBEDTLS_SSL_BUF_STATIC,
 } esp_mbedtls_ssl_buf_states;
 
 struct esp_mbedtls_ssl_buf {
@@ -84,8 +88,6 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl);
 size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num);
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl);
-
 void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl);
 
 void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl);

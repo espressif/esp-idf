@@ -1,0 +1,10 @@
+menu "Test configuration"
+    config SPI_WL_TEST_ERASE_PARTITION
+        bool "Erase partition"
+        default y if IDF_TARGET_LINUX
+        help
+            Erase the partition before each format operation.
+            This will destroy the flash fairly quickly in CI, but is necessary to
+            ensure that the test is not affected by previous test runs.
+            Run with caution.
+endmenu

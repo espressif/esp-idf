@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
  *
  * However, usages of above components are different.
  * Therefore, we put the common used parts into `esp_hw_support`, including:
- * - adc power maintainance
+ * - adc power maintenance
  * - adc hw calibration settings
  * - adc locks, to prevent concurrently using adc hw
  */
@@ -29,6 +29,7 @@
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/critical_section.h"
 #include "soc/periph_defs.h"
 //For calibration
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -38,7 +39,7 @@
 #endif
 
 
-static const char *TAG = "adc_share_hw_ctrl";
+ESP_LOG_ATTR_TAG(TAG, "adc_share_hw_ctrl");
 extern portMUX_TYPE rtc_spinlock;
 
 
@@ -79,11 +80,11 @@ void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
     else {
         ESP_EARLY_LOGD(TAG, "Calibration eFuse is not configured, use self-calibration for ICode");
         sar_periph_ctrl_adc_oneshot_power_acquire();
-        portENTER_CRITICAL(&rtc_spinlock);
+        esp_os_enter_critical(&rtc_spinlock);
         adc_ll_pwdet_set_cct(ADC_LL_PWDET_CCT_DEFAULT);
         const bool internal_gnd = true;
         init_code = adc_hal_self_calibration(adc_n, atten, internal_gnd);
-        portEXIT_CRITICAL(&rtc_spinlock);
+        esp_os_exit_critical(&rtc_spinlock);
         sar_periph_ctrl_adc_oneshot_power_release();
     }
 #else
@@ -102,7 +103,7 @@ void IRAM_ATTR adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 }
 
 #if SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
-static int s_adc_cali_chan_compens[SOC_ADC_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
+static int s_adc_cali_chan_compens[ADC_LL_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
 void adc_load_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
 {
     int version = esp_efuse_rtc_calib_get_ver();
@@ -193,7 +194,7 @@ esp_err_t adc2_wifi_release(void)
     return ESP_OK;
 }
 
-static portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE __attribute__((unused)) s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 /*------------------------------------------------------------------------------
 * For those who use APB_SARADC periph
@@ -202,29 +203,37 @@ static int s_adc_digi_ctrlr_cnt;
 
 void adc_apb_periph_claim(void)
 {
-    portENTER_CRITICAL(&s_spinlock);
+    esp_os_enter_critical(&s_spinlock);
     s_adc_digi_ctrlr_cnt++;
     if (s_adc_digi_ctrlr_cnt == 1) {
-        //enable ADC digital part
-        periph_module_enable(PERIPH_SARADC_MODULE);
-        //reset ADC digital part
-        periph_module_reset(PERIPH_SARADC_MODULE);
+        PERIPH_RCC_ATOMIC() {
+            adc_ll_enable_bus_clock(true);
+#if SOC_RCC_IS_INDEPENDENT
+            adc_ll_enable_func_clock(true);
+#endif
+            sar_periph_ctrl_adc_reset();
+        }
     }
 
-    portEXIT_CRITICAL(&s_spinlock);
+    esp_os_exit_critical(&s_spinlock);
 }
 
 void adc_apb_periph_free(void)
 {
-    portENTER_CRITICAL(&s_spinlock);
+    esp_os_enter_critical(&s_spinlock);
     s_adc_digi_ctrlr_cnt--;
     if (s_adc_digi_ctrlr_cnt == 0) {
-        periph_module_disable(PERIPH_SARADC_MODULE);
+        PERIPH_RCC_ATOMIC() {
+            adc_ll_enable_bus_clock(false);
+#if SOC_RCC_IS_INDEPENDENT
+            adc_ll_enable_func_clock(false);
+#endif
+        }
     } else if (s_adc_digi_ctrlr_cnt < 0) {
-        portEXIT_CRITICAL(&s_spinlock);
+        esp_os_exit_critical(&s_spinlock);
         ESP_LOGE(TAG, "%s called, but `s_adc_digi_ctrlr_cnt == 0`", __func__);
         abort();
     }
 
-    portEXIT_CRITICAL(&s_spinlock);
+    esp_os_exit_critical(&s_spinlock);
 }

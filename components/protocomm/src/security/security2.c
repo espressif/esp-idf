@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,8 @@
 #include <esp_check.h>
 #include <inttypes.h>
 
-#include <mbedtls/gcm.h>
 #include <mbedtls/error.h>
-#include <esp_random.h>
+#include "psa/crypto.h"
 
 #include <protocomm_security.h>
 #include <protocomm_security2.h>
@@ -24,6 +23,7 @@
 #include "constants.pb-c.h"
 
 #include "esp_srp.h"
+#include "endian.h"
 
 static const char *TAG = "security2";
 
@@ -33,12 +33,20 @@ ESP_EVENT_DEFINE_BASE(PROTOCOMM_SECURITY_SESSION_EVENT);
 #define PUBLIC_KEY_LEN              (384)
 #define CLIENT_PROOF_LEN            (64)
 #define AES_GCM_KEY_LEN             (256)
-#define AES_GCM_IV_SIZE             (16)
+#define AES_GCM_IV_SIZE             (12)
 #define AES_GCM_TAG_LEN             (16)
+#define SESSION_ID_LEN              (8)
 
 #define SESSION_STATE_CMD0  0 /* Session is not setup: Initial State*/
 #define SESSION_STATE_CMD1  1 /* Session is not setup: Cmd0 done */
 #define SESSION_STATE_DONE  2 /* Session setup successful */
+
+typedef struct aes_gcm_iv {
+    uint8_t session_id[SESSION_ID_LEN];
+    uint32_t counter;
+} aes_gcm_iv_t;
+
+static_assert(sizeof(aes_gcm_iv_t) == AES_GCM_IV_SIZE, "Invalid size of AES GCM IV");
 
 typedef struct session {
     /* Session data */
@@ -54,8 +62,8 @@ typedef struct session {
     char *session_key;
     uint16_t session_key_len;
     uint8_t iv[AES_GCM_IV_SIZE];
-    /* mbedtls context data for AES-GCM */
-    mbedtls_gcm_context ctx_gcm;
+    /* PSA key for AES-GCM */
+    psa_key_id_t key_id;
     esp_srp_handle_t *srp_hd;
 } session_t;
 
@@ -63,6 +71,12 @@ static void hexdump(const char *msg, char *buf, int len)
 {
     ESP_LOGD(TAG, "%s ->", msg);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_DEBUG);
+}
+
+static inline void sec2_gcm_iv_counter_increment(uint8_t *iv_buf)
+{
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) iv_buf;
+    iv->counter = htobe32(be32toh(iv->counter) + 1);
 }
 
 static esp_err_t sec2_new_session(protocomm_security_handle_t handle, uint32_t session_id);
@@ -74,6 +88,11 @@ static esp_err_t handle_session_command0(session_t *cur_session,
 {
     ESP_LOGD(TAG, "Request to handle setup0_command");
     Sec2Payload *in = (Sec2Payload *) req->sec2;
+
+    if (in->payload_case != SEC2_PAYLOAD__PAYLOAD_SC0 || !in->sc0) {
+        ESP_LOGE(TAG, "Missing or mismatched sc0 payload in session command0");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (cur_session->state != SESSION_STATE_CMD0) {
         ESP_LOGW(TAG, "Invalid state of session %d (expected %d). Restarting session.",
@@ -89,8 +108,8 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (in->sc0->client_username.len <= 0) {
-        ESP_LOGE(TAG, "Invalid username");
+    if (in->sc0->client_username.len == 0 || in->sc0->client_username.len > UINT16_MAX) {
+        ESP_LOGE(TAG, "Invalid username length (%zu)", in->sc0->client_username.len);
         if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
         }
@@ -129,11 +148,13 @@ static esp_err_t handle_session_command0(session_t *cur_session,
                 cur_session->salt_len, cur_session->verifier, cur_session->verifier_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set salt and verifier!");
             esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
             return ESP_FAIL;
         }
         if (esp_srp_srv_pubkey_from_salt_verifier(cur_session->srp_hd, &device_pubkey, &device_pubkey_len) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to device public key!");
             esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
             return ESP_FAIL;
         }
     }
@@ -143,6 +164,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
                                 &cur_session->session_key, &cur_session->session_key_len) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate device session key!");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         return ESP_FAIL;
     }
     hexdump("Session Key", cur_session->session_key, cur_session->session_key_len);
@@ -152,6 +174,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     if (!out || !out_resp) {
         ESP_LOGE(TAG, "Error allocating memory for response0");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
         free(out);
         free(out_resp);
         return ESP_ERR_NO_MEM;
@@ -172,18 +195,21 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     out->payload_case = SEC2_PAYLOAD__PAYLOAD_SR0;
     out->sr0 = out_resp;
 
-    resp->sec_ver = SEC_SCHEME_VERSION__SecScheme2;
-    resp->proto_case = SESSION_DATA__PROTO_SEC2;
-    resp->sec2 = out;
-
     cur_session->username_len = in->sc0->client_username.len;
     cur_session->username = malloc(cur_session->username_len);
     if (!cur_session->username) {
         ESP_LOGE(TAG, "Failed to allocate memory!");
         esp_srp_free(cur_session->srp_hd);
+        cur_session->srp_hd = NULL;
+        free(out);
+        free(out_resp);
         return ESP_ERR_NO_MEM;
     }
-    memcpy(cur_session->username, in->sc0->client_username.data, in->sc0->client_username.len);
+    memcpy(cur_session->username, in->sc0->client_username.data, cur_session->username_len);
+
+    resp->sec_ver = SEC_SCHEME_VERSION__SecScheme2;
+    resp->proto_case = SESSION_DATA__PROTO_SEC2;
+    resp->sec2 = out;
 
     cur_session->state = SESSION_STATE_CMD1;
 
@@ -197,7 +223,11 @@ static esp_err_t handle_session_command1(session_t *cur_session,
 {
     ESP_LOGD(TAG, "Request to handle setup1_command");
     Sec2Payload *in = (Sec2Payload *) req->sec2;
-    int mbed_err = -0x0001;
+
+    if (in->payload_case != SEC2_PAYLOAD__PAYLOAD_SC1 || !in->sc1) {
+        ESP_LOGE(TAG, "Missing or mismatched sc1 payload in session command1");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (cur_session->state != SESSION_STATE_CMD1) {
         ESP_LOGE(TAG, "Invalid state of session %d (expected %d)", SESSION_STATE_CMD1, cur_session->state);
@@ -224,22 +254,41 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     }
     hexdump("Device proof", device_proof, CLIENT_PROOF_LEN);
 
-    /* Initialize crypto context */
-    mbedtls_gcm_init(&cur_session->ctx_gcm);
-
-    /* Considering the protocomm component is only used after RF ( Wifi/Bluetooth ) is enabled.
-     * Hence, we can be sure that the RNG generates true random numbers */
-    esp_fill_random(&cur_session->iv, AES_GCM_IV_SIZE);
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
+    psa_status_t status;
+    status = psa_generate_random(iv->session_id, SESSION_ID_LEN);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_generate_random failed with status=%d", status);
+        free(device_proof);
+        return ESP_FAIL;
+    }
+    /* Initialize counter value to 1 */
+    iv->counter = htobe32(0x1);
 
     hexdump("Initialization vector", (char *)cur_session->iv, AES_GCM_IV_SIZE);
 
-    mbed_err = mbedtls_gcm_setkey(&cur_session->ctx_gcm, MBEDTLS_CIPHER_ID_AES, (unsigned char *)cur_session->session_key, AES_GCM_KEY_LEN);
-    if (mbed_err != 0) {
-        ESP_LOGE(TAG, "Failure at mbedtls_gcm_setkey_enc with error code : -0x%x", -mbed_err);
+    /* Initialize AES-GCM key */
+    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&key_attributes, AES_GCM_KEY_LEN);
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&key_attributes, alg);
+    /* Use first 32 bytes (256 bits) of the session key for AES-GCM */
+    size_t aes_key_bytes = AES_GCM_KEY_LEN / 8;
+    if (cur_session->session_key_len < aes_key_bytes) {
+        ESP_LOGE(TAG, "Session key too short: %d bytes (need at least %zu bytes)", cur_session->session_key_len, aes_key_bytes);
         free(device_proof);
-        mbedtls_gcm_free(&cur_session->ctx_gcm);
         return ESP_FAIL;
     }
+    status = psa_import_key(&key_attributes, (uint8_t *)cur_session->session_key, aes_key_bytes, &key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_import_key failed with status=%d", status);
+        free(device_proof);
+        return ESP_FAIL;
+    }
+    cur_session->key_id = key_id;
 
     Sec2Payload *out = (Sec2Payload *) malloc(sizeof(Sec2Payload));
     S2SessionResp1 *out_resp = (S2SessionResp1 *) malloc(sizeof(S2SessionResp1));
@@ -248,7 +297,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         free(device_proof);
         free(out);
         free(out_resp);
-        mbedtls_gcm_free(&cur_session->ctx_gcm);
+        psa_destroy_key(key_id);
         return ESP_ERR_NO_MEM;
     }
 
@@ -352,8 +401,9 @@ static esp_err_t sec2_close_session(protocomm_security_handle_t handle, uint32_t
     }
 
     if (cur_session->state == SESSION_STATE_DONE) {
-        /* Free GCM context data */
-        mbedtls_gcm_free(&cur_session->ctx_gcm);
+        /* Destroy the AES-GCM key */
+        psa_destroy_key(cur_session->key_id);
+        cur_session->key_id = 0;
     }
 
     free(cur_session->username);
@@ -377,7 +427,7 @@ static esp_err_t sec2_new_session(protocomm_security_handle_t handle, uint32_t s
     if (cur_session->id != -1) {
         /* Only one session is allowed at a time */
         ESP_LOGE(TAG, "Closing old session with id %" PRIu32, cur_session->id);
-        sec2_close_session(cur_session, session_id);
+        sec2_close_session(cur_session, cur_session->id);
     }
 
     cur_session->id = session_id;
@@ -429,22 +479,45 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
         return ESP_ERR_INVALID_STATE;
     }
 
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
+    if (be32toh(iv->counter) == 0) {
+        ESP_LOGE(TAG, "Invalid counter value, restart session");
+        return ESP_ERR_INVALID_STATE;
+    }
+    hexdump("Encrypt IV", (char *)cur_session->iv, AES_GCM_IV_SIZE);
+
     *outlen = inlen + AES_GCM_TAG_LEN;
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
         ESP_LOGE(TAG, "Failed to allocate encrypt buf len %d", *outlen);
         return ESP_ERR_NO_MEM;
     }
-    uint8_t gcm_tag[AES_GCM_TAG_LEN];
 
-    int ret = mbedtls_gcm_crypt_and_tag(&cur_session->ctx_gcm, MBEDTLS_GCM_ENCRYPT, inlen, cur_session->iv,
-                                        AES_GCM_IV_SIZE, NULL, 0, inbuf,
-                                        *outbuf, AES_GCM_TAG_LEN, gcm_tag);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed at mbedtls_gcm_crypt_and_tag with error code : %d", ret);
+    psa_status_t status;
+    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
+    size_t out_len = 0;
+
+    status = psa_aead_encrypt(cur_session->key_id, alg,
+                             cur_session->iv, AES_GCM_IV_SIZE,
+                             NULL, 0,  /* No additional data */
+                             inbuf, inlen,
+                             *outbuf, *outlen, &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_aead_encrypt failed with status=%d", status);
+        free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
-    memcpy(*outbuf + inlen, gcm_tag, AES_GCM_TAG_LEN);
+
+    if (out_len != *outlen) {
+        ESP_LOGE(TAG, "psa_aead_encrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
+        free(*outbuf);
+        *outbuf = NULL;
+        return ESP_FAIL;
+    }
+
+    /* Increment counter value for next operation */
+    sec2_gcm_iv_counter_increment(cur_session->iv);
 
     return ESP_OK;
 }
@@ -469,6 +542,13 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
         return ESP_ERR_INVALID_STATE;
     }
 
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
+    if (be32toh(iv->counter) == 0) {
+        ESP_LOGE(TAG, "Invalid counter value, restart session");
+        return ESP_ERR_INVALID_STATE;
+    }
+    hexdump("Decrypt IV", (char *)cur_session->iv, AES_GCM_IV_SIZE);
+
     *outlen = inlen - AES_GCM_TAG_LEN;
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
@@ -476,12 +556,32 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
         return ESP_ERR_NO_MEM;
     }
 
-    int ret = mbedtls_gcm_auth_decrypt(&cur_session->ctx_gcm, inlen - AES_GCM_TAG_LEN, cur_session->iv,
-                                       AES_GCM_IV_SIZE, NULL, 0, inbuf + (inlen - AES_GCM_TAG_LEN), AES_GCM_TAG_LEN, inbuf, *outbuf);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed at mbedtls_gcm_auth_decrypt : %d", ret);
+    psa_status_t status;
+    psa_algorithm_t alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, AES_GCM_TAG_LEN);
+    size_t out_len = 0;
+
+    status = psa_aead_decrypt(cur_session->key_id, alg,
+                             cur_session->iv, AES_GCM_IV_SIZE,
+                             NULL, 0,  /* No additional data */
+                             inbuf, inlen,
+                             *outbuf, *outlen, &out_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "psa_aead_decrypt failed with status=%d", status);
+        free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
+
+    if (out_len != *outlen) {
+        ESP_LOGE(TAG, "psa_aead_decrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
+        free(*outbuf);
+        *outbuf = NULL;
+        return ESP_FAIL;
+    }
+
+    /* Increment counter value for next operation */
+    sec2_gcm_iv_counter_increment(cur_session->iv);
+
     return ESP_OK;
 }
 
@@ -517,6 +617,11 @@ static esp_err_t sec2_req_handler(protocomm_security_handle_t handle,
         session_data__free_unpacked(req, NULL);
         return ESP_ERR_INVALID_ARG;
     }
+    if (req->proto_case != SESSION_DATA__PROTO_SEC2) {
+        ESP_LOGE(TAG, "Security scheme mismatch. Closing connection");
+        session_data__free_unpacked(req, NULL);
+        return ESP_ERR_INVALID_ARG;
+    }
 
     session_data__init(&resp);
     ret = sec2_session_setup(cur_session, session_id, req, &resp, (protocomm_security2_params_t *) sec_params);
@@ -543,6 +648,7 @@ static esp_err_t sec2_req_handler(protocomm_security_handle_t handle,
 
 const protocomm_security_t protocomm_security2 = {
     .ver = 2,
+    .patch_ver = 1,
     .init = sec2_init,
     .cleanup = sec2_cleanup,
     .new_transport_session = sec2_new_session,

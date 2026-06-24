@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,17 +21,24 @@ static uint16_t hb_sub_dst = BLE_MESH_ADDR_UNASSIGNED;
 
 void bt_mesh_set_hb_sub_dst(uint16_t addr)
 {
+    BT_DBG("SetHbSubDst 0x%04x", addr);
+
     hb_sub_dst = addr;
 }
 
 uint16_t bt_mesh_get_hb_sub_dst(void)
 {
+    BT_DBG("GetHbSubDst 0x%04x", hb_sub_dst);
+
     return hb_sub_dst;
 }
 
 void bt_mesh_heartbeat_recv(uint16_t src, uint16_t dst, uint8_t hops, uint16_t feat)
 {
     struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
+
+    BT_DBG("HeartbeatRecv");
+    BT_DBG("Src 0x%04x Dst 0x%04x Hops %u Feat 0x%04x", src, dst, hops, feat);
 
     if (cfg == NULL) {
         BT_WARN("No configuration server context available");
@@ -55,9 +62,8 @@ void bt_mesh_heartbeat_recv(uint16_t src, uint16_t dst, uint8_t hops, uint16_t f
         cfg->hb_sub.count++;
     }
 
-    BT_DBG("src 0x%04x dst 0x%04x hops %u min %u max %u count %u", src,
-           dst, hops, cfg->hb_sub.min_hops, cfg->hb_sub.max_hops,
-           cfg->hb_sub.count);
+    BT_DBG("MinHops %u MaxHops %u Count %u",
+           cfg->hb_sub.min_hops, cfg->hb_sub.max_hops, cfg->hb_sub.count);
 
     if (cfg->hb_sub.func) {
         cfg->hb_sub.func(hops, feat);
@@ -67,29 +73,53 @@ void bt_mesh_heartbeat_recv(uint16_t src, uint16_t dst, uint8_t hops, uint16_t f
 void bt_mesh_heartbeat_send(void)
 {
     struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
-    uint16_t feat = 0U;
     struct __attribute__((packed)) {
         uint8_t  init_ttl;
         uint16_t feat;
     } hb;
-    struct bt_mesh_msg_ctx ctx = {
-        .net_idx   = cfg->hb_pub.net_idx,
-        .app_idx   = BLE_MESH_KEY_UNUSED,
-        .addr      = cfg->hb_pub.dst,
-        .send_ttl  = cfg->hb_pub.ttl,
-        .send_cred = BLE_MESH_FLOODING_CRED,
-    };
-    struct bt_mesh_net_tx tx = {
-        .sub  = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
-        .ctx  = &ctx,
-        .src  = bt_mesh_model_elem(cfg->model)->addr,
-        .xmit = bt_mesh_net_transmit_get(),
-    };
+    struct bt_mesh_msg_ctx ctx = {0};
+    struct bt_mesh_net_tx tx = {0};
+    struct bt_mesh_elem *elem = NULL;
+    uint16_t feat = 0U;
+
+    if (cfg == NULL) {
+        BT_WARN("No configuration server context available");
+        return;
+    }
+
+    if (cfg->model == NULL) {
+        BT_ERR("Configuration server model is NULL");
+        return;
+    }
 
     /* Do nothing if heartbeat publication is not enabled */
     if (cfg->hb_pub.dst == BLE_MESH_ADDR_UNASSIGNED) {
         return;
     }
+
+    elem = bt_mesh_model_elem(cfg->model);
+    if (elem == NULL) {
+        BT_ERR("Failed to get element for heartbeat");
+        return;
+    }
+
+    ctx.net_idx = cfg->hb_pub.net_idx;
+    ctx.app_idx = BLE_MESH_KEY_UNUSED;
+    ctx.addr = cfg->hb_pub.dst;
+    ctx.send_ttl = cfg->hb_pub.ttl;
+    ctx.send_cred = BLE_MESH_FLOODING_CRED;
+
+    tx.sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
+    if (tx.sub == NULL) {
+        BT_ERR("No subnet found for heartbeat publication (net_idx 0x%04x)", cfg->hb_pub.net_idx);
+        return;
+    }
+
+    tx.ctx = &ctx;
+    tx.src = elem->addr;
+    tx.xmit = bt_mesh_net_transmit_get();
+
+    BT_DBG("HeartbeatSend, Dst 0x%04x", cfg->hb_pub.dst);
 
     hb.init_ttl = cfg->hb_pub.ttl;
 
@@ -111,7 +141,7 @@ void bt_mesh_heartbeat_send(void)
 
     hb.feat = sys_cpu_to_be16(feat);
 
-    BT_INFO("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
+    BT_INFO("InitTTL %u Feat 0x%04x", cfg->hb_pub.ttl, feat);
 
     bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
                      NULL, NULL);
@@ -149,6 +179,8 @@ int bt_mesh_pvnr_register_hb_recv_cb(bt_mesh_pvnr_hb_recv_cb_t cb)
 
 int bt_mesh_pvnr_set_hb_recv_filter_type(uint8_t type)
 {
+    BT_DBG("PvnrSetHbRecvFilterType");
+
     if (type > HEARTBEAT_FILTER_REJECTLIST) {
         BT_ERR("Invalid heartbeat filter type 0x%02x", type);
         return -EINVAL;
@@ -158,6 +190,8 @@ int bt_mesh_pvnr_set_hb_recv_filter_type(uint8_t type)
      * clear the existing filter entries.
      */
     if (hb_rx.type != type) {
+        BT_DBG("OldType %u NewType %u", hb_rx.type, type);
+
         memset(&hb_rx, 0, offsetof(struct heartbeat_recv, cb));
         hb_rx.type = type;
     }
@@ -168,6 +202,8 @@ int bt_mesh_pvnr_set_hb_recv_filter_type(uint8_t type)
 static int hb_filter_alloc(uint16_t src, uint16_t dst)
 {
     int i;
+
+    BT_DBG("HbFilterAlloc, Src 0x%04x Dst 0x%04x", src, dst);
 
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
@@ -180,13 +216,15 @@ static int hb_filter_alloc(uint16_t src, uint16_t dst)
         }
     }
 
-    BT_ERR("Heartbeat filter is full!");
+    BT_ERR("HbFilterFull");
     return -ENOMEM;
 }
 
 static int hb_filter_add(uint16_t src, uint16_t dst)
 {
     int i;
+
+    BT_DBG("HbFilterAdd, Src 0x%04x Dst 0x%04x", src, dst);
 
     if (!(BLE_MESH_ADDR_IS_UNICAST(src) &&
         (BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)))) {
@@ -199,7 +237,7 @@ static int hb_filter_add(uint16_t src, uint16_t dst)
         struct heartbeat_filter *filter = &hb_rx.filter[i];
 
         if (filter->src == src && filter->dst == dst) {
-            BT_WARN("Filter already exists, src 0x%04x dst 0x%04x", filter->src, filter->dst);
+            BT_DBG("FilterIndex %u", i);
             return 0;
         }
     }
@@ -211,6 +249,8 @@ static int hb_filter_remove(uint16_t src, uint16_t dst)
 {
     int i;
 
+    BT_DBG("HbFilterRemove, Src 0x%04x Dst 0x%04x", src, dst);
+
     if (!(BLE_MESH_ADDR_IS_UNICAST(src) &&
         (BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)))) {
         BT_ERR("Invalid filter address, src 0x%04x, dst 0x%04x", src, dst);
@@ -221,6 +261,7 @@ static int hb_filter_remove(uint16_t src, uint16_t dst)
         struct heartbeat_filter *filter = &hb_rx.filter[i];
 
         if (filter->src == src && filter->dst == dst) {
+            BT_DBG("FilterIndex %u", i);
             memset(filter, 0, sizeof(struct heartbeat_filter));
         }
     }
@@ -236,7 +277,7 @@ int bt_mesh_pvnr_set_hb_recv_filter_info(uint8_t op, uint16_t src, uint16_t dst)
     case HEARTBEAT_FILTER_REMOVE:
         return hb_filter_remove(src, dst);
     default:
-        BT_ERR("Invalid heartbeat filter opcode 0x%02x", op);
+        BT_ERR("Invalid HbFilterOpCode 0x%02x", op);
         return -EINVAL;
     }
 }
@@ -248,6 +289,7 @@ static bool filter_with_rejectlist(uint16_t hb_src, uint16_t hb_dst)
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
         if (hb_src == filter->src && hb_dst == filter->dst) {
+            BT_DBG("InRejectList, Src 0x%04x Dst 0x%04x", hb_src, hb_dst);
             return true;
         }
     }
@@ -262,6 +304,7 @@ static bool filter_with_acceptlist(uint16_t hb_src, uint16_t hb_dst)
     for (i = 0; i < ARRAY_SIZE(hb_rx.filter); i++) {
         struct heartbeat_filter *filter = &hb_rx.filter[i];
         if (hb_src == filter->src && hb_dst == filter->dst) {
+            BT_DBG("InAcceptList, Src 0x%04x Dst 0x%04x", hb_src, hb_dst);
             return false;
         }
     }
@@ -273,6 +316,8 @@ void bt_mesh_pvnr_heartbeat_recv(uint16_t hb_src, uint16_t hb_dst,
                                  uint8_t init_ttl, uint8_t rx_ttl,
                                  uint8_t hops, uint16_t feat, int8_t rssi)
 {
+    BT_DBG("PvnrHeartbeatRecv");
+
     if (hb_rx.cb == NULL) {
         BT_DBG("Receiving heartbeat is not enabled");
         return;
@@ -280,15 +325,16 @@ void bt_mesh_pvnr_heartbeat_recv(uint16_t hb_src, uint16_t hb_dst,
 
     if (hb_rx.type == HEARTBEAT_FILTER_REJECTLIST) {
         if (filter_with_rejectlist(hb_src, hb_dst)) {
-            BT_INFO("Filtered by rejectlist, src 0x%04x, dst 0x%04x", hb_src, hb_dst);
             return;
         }
     } else {
         if (filter_with_acceptlist(hb_src, hb_dst)) {
-            BT_INFO("Filtered by acceptlist, src 0x%04x, dst 0x%04x", hb_src, hb_dst);
             return;
         }
     }
+
+    BT_DBG("Src 0x%04x Dst 0x%04x InitTTL %u RxTTL %u Hops %u Feat 0x%04x Rssi %d",
+           hb_src, hb_dst, init_ttl, rx_ttl, hops, feat, rssi);
 
     if (hb_rx.cb) {
         hb_rx.cb(hb_src, hb_dst, init_ttl, rx_ttl, hops, feat, rssi);

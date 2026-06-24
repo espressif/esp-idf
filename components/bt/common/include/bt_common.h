@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,7 @@
 #define OSI_INITIAL_TRACE_LEVEL             UC_BT_LOG_OSI_TRACE_LEVEL
 #define BLUFI_INITIAL_TRACE_LEVEL           UC_BT_LOG_BLUFI_TRACE_LEVEL
 
+// MEMORY
 #if UC_BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  TRUE
 #define BTC_DYNAMIC_MEMORY         TRUE
@@ -60,8 +61,76 @@
 #define HEAP_MEMORY_DEBUG   FALSE
 #endif
 
+#if UC_BT_BLUEDROID_MEM_STATS
+#define HEAP_MEMORY_STATS   TRUE
+#else
+#define HEAP_MEMORY_STATS   FALSE
+#endif
+
+#if UC_BT_BLUEDROID_THREAD_DEBUG
+#define OSI_THREAD_DEBUG    TRUE
+#else
+#define OSI_THREAD_DEBUG    FALSE
+#endif
+
+#define OSI_THREAD_BLOCK_TIME UC_BT_BLUEDROID_THREAD_BLOCK_TIME
+
+#define OSI_THREAD_BLOCK_MSG UC_BT_BLUEDROID_THREAD_BLOCK_MSG
+
 #ifndef BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
+#endif
+
+#if UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST
+#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST TRUE
+#else
+#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST FALSE
+#endif
+
+#if UC_BT_ABORT_WHEN_ALLOCATION_FAILS
+#define HEAP_ALLOCATION_FAILS_ABORT TRUE
+#else
+#define HEAP_ALLOCATION_FAILS_ABORT FALSE
+#endif
+
+// HCI LOG
+#if UC_BT_HCI_LOG_DEBUG_EN
+#define BT_HCI_LOG_INCLUDED  UC_BT_HCI_LOG_DEBUG_EN
+#else
+#define BT_HCI_LOG_INCLUDED  FALSE
+#endif
+
+// HCI INSIGHTS LOG
+#if UC_BT_HCI_LOG_INSIGHTS_ENABLE
+#define BT_HCI_INSIGHTS_INCLUDED  UC_BT_HCI_LOG_INSIGHTS_ENABLE
+#else
+#define BT_HCI_INSIGHTS_INCLUDED  FALSE
+#endif
+
+// HCI LOG TO SPI
+#if UC_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#define BT_BLE_LOG_SPI_OUT_HCI_ENABLED  UC_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#else
+#define BT_BLE_LOG_SPI_OUT_HCI_ENABLED  FALSE
+#endif
+
+// BLURDROID LOG TO SPI
+#if UC_BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+#define BT_BLE_LOG_SPI_OUT_HOST_ENABLED  UC_BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+#else
+#define BT_BLE_LOG_SPI_OUT_HOST_ENABLED  FALSE
+#endif
+
+#if UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#define HCI_LOG_DATA_BUFFER_SIZE  UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#else
+#define HCI_LOG_DATA_BUFFER_SIZE  (5)
+#endif
+
+#if UC_BT_HCI_LOG_ADV_BUFFER_SIZE
+#define HCI_LOG_ADV_BUFFER_SIZE  UC_BT_HCI_LOG_ADV_BUFFER_SIZE
+#else
+#define HCI_LOG_ADV_BUFFER_SIZE  (5)
 #endif
 
 /* OS Configuration from User config (eg: sdkconfig) */
@@ -95,7 +164,9 @@
 #define LOG_LOCAL_LEVEL_MAPPING LOG_LOCAL_LEVEL
 #endif
 
+#ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
 #define BT_LOG_LEVEL_CHECK(LAYER, LEVEL) (MAX(LAYER##_INITIAL_TRACE_LEVEL, LOG_LOCAL_LEVEL_MAPPING) >= BT_TRACE_LEVEL_##LEVEL)
 
@@ -192,6 +263,7 @@ typedef uint64_t UINT64;
 typedef bool BOOLEAN;
 /* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
 #define MAX_UUID_SIZE              16
+#define MAX_UUID_NUM               32
 
 typedef struct {
 #define LEN_UUID_16     2
@@ -211,5 +283,9 @@ typedef struct {
 /* Common Bluetooth field definitions */
 #define BD_ADDR_LEN     6                   /* Device address length */
 typedef UINT8 BD_ADDR[BD_ADDR_LEN];         /* Device address */
+
+#if (BT_HCI_LOG_INCLUDED == TRUE) && BT_HCI_INSIGHTS_INCLUDED
+void bt_hci_log_record_insights(uint8_t data_type, const uint8_t *data, uint16_t data_len);
+#endif
 
 #endif /* _BT_COMMON_H_ */

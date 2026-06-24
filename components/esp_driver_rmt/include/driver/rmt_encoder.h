@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,9 @@
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "hal/rmt_types.h"
 #include "driver/rmt_types.h"
 
@@ -26,6 +28,7 @@ typedef enum {
     RMT_ENCODING_RESET = 0,           /*!< The encoding session is in reset state */
     RMT_ENCODING_COMPLETE = (1 << 0), /*!< The encoding session is finished, the caller can continue with subsequent encoding */
     RMT_ENCODING_MEM_FULL = (1 << 1), /*!< The encoding artifact memory is full, the caller should return from current encoding session */
+    RMT_ENCODING_WITH_EOF = (1 << 2), /*!< The encoding session has inserted the EOF marker to the symbol stream */
 } rmt_encode_state_t;
 
 /**
@@ -68,6 +71,53 @@ struct rmt_encoder_t {
     esp_err_t (*del)(rmt_encoder_t *encoder);
 };
 
+#if CONFIG_RMT_ENCODER_FUNC_IN_IRAM
+#define RMT_ENCODER_FUNC_ATTR IRAM_ATTR
+#else
+#define RMT_ENCODER_FUNC_ATTR
+#endif
+
+/**
+ * @brief Callback for simple callback encoder
+ *
+ * This will get called to encode the data stream of given length (as passed to
+ * rmt_transmit by the user) into symbols to be sent by the hardware.
+ *
+ * The callback will be initially called with symbol_pos=0. If the callback
+ * encodes N symbols and finishes, the next callback will always be with
+ * symbols_written=N. If the callback then encodes M symbols, the next callback
+ * will always be with symbol_pos=N+M, etc. The only exception is when the
+ * encoder is reset (e.g. to begin a new transaction) in which case
+ * symbol_pos will always restart at 0.
+ *
+ * If the amount of free space in the symbol buffer (as indicated by
+ * symbols_free) is too low, the function can return 0 as result and
+ * the RMT will call the function again once there is more space available.
+ * Note that the callback should eventually return non-0 if called with
+ * free space of rmt_simple_encoder_config_t::min_chunk_size or more. It
+ * is acceptable to return 0 for a given free space N, then on the next
+ * call (possibly with a larger free buffer space) return less or more
+ * than N symbols.
+ *
+ * When the transaction is done (all data_size data is encoded), the callback
+ * can indicate this by setting *done to true. This can either happen on the
+ * last callback call that returns an amount of symbols encoded, or on a
+ * callback that returns zero. In either case, the callback will not be
+ * called again for this transaction.
+ *
+ * @param[in] data Data pointer, as passed to rmt_transmit()
+ * @param[in] data_size Size of the data, as passed to rmt_transmit()
+ * @param[in] symbols_written Current position in encoded stream, in symbols
+ * @param[in] symbols_free The maximum amount of symbols that can be written into the `symbols` buffer
+ * @param[out] symbols Symbols to be sent to the RMT hardware. This may be a hardware buffer and can't be used with 'memcpy'
+ * @param[out] done Setting this to true marks this transaction as finished
+ * @param arg Opaque argument
+ * @return Amount of symbols encoded in this callback round. 0 if more space is needed.
+ */
+typedef size_t (*rmt_encode_simple_cb_t)(const void *data, size_t data_size,
+                                         size_t symbols_written, size_t symbols_free,
+                                         rmt_symbol_word_t *symbols, bool *done, void *arg);
+
 /**
  * @brief Bytes encoder configuration
  */
@@ -84,6 +134,25 @@ typedef struct {
  */
 typedef struct {
 } rmt_copy_encoder_config_t;
+
+/**
+ * @brief BitScrambler encoder configuration
+ */
+typedef struct {
+    const void *program_bin; /*!< BitScrambler program */
+} rmt_bs_encoder_config_t;
+
+/**
+ * @brief Simple callback encoder configuration
+ */
+typedef struct {
+    rmt_encode_simple_cb_t callback;  /*!< Callback to call for encoding data into RMT items */
+    void *arg;                        /*!< Opaque user-supplied argument for callback */
+    size_t min_chunk_size;            /*!< Minimum amount of free space, in RMT symbols, the
+                                           encoder needs in order to guarantee it always
+                                           returns non-zero. Defaults
+                                           to 64 if zero / not given. */
+} rmt_simple_encoder_config_t;
 
 /**
  * @brief Create RMT bytes encoder, which can encode byte stream into RMT symbols
@@ -116,6 +185,8 @@ esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, co
 /**
  * @brief Create RMT copy encoder, which copies the given RMT symbols into RMT memory
  *
+ * @note When transmitting using a copy encoder, ensure that the input data is already formatted as `rmt_symbol_word_t`.
+ *
  * @param[in] config Copy encoder configuration
  * @param[out] ret_encoder Returned encoder handle
  * @return
@@ -125,6 +196,36 @@ esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, co
  *      - ESP_FAIL: Create RMT copy encoder failed because of other error
  */
 esp_err_t rmt_new_copy_encoder(const rmt_copy_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+/**
+ * @brief Create RMT BitScrambler encoder
+ *
+ * @note The BitScrambler encoder is used to encode the user data into RMT symbols by providing the BitScrambler assembly program.
+ *       The BitScrambler program is a binary blob, it should take control of the whole encoding stuffs, including inserting the EOF marker.
+ *
+ * @param[in] config BitScrambler encoder configuration
+ * @param[out] ret_encoder Returned encoder handle
+ * @return
+ *      - ESP_OK: Create RMT BitScrambler encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Create RMT BitScrambler encoder failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create RMT BitScrambler encoder failed because out of memory
+ *      - ESP_FAIL: Create RMT BitScrambler encoder failed because of other error
+ */
+esp_err_t rmt_new_bitscrambler_encoder(const rmt_bs_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+/**
+ * @brief Create RMT simple callback encoder, which uses a callback to convert incoming
+ *        data into RMT symbols.
+ *
+ * @param[in] config Simple callback encoder configuration
+ * @param[out] ret_encoder Returned encoder handle
+ * @return
+ *      - ESP_OK: Create RMT simple callback encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Create RMT simple callback encoder failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create RMT simple callback encoder failed because out of memory
+ *      - ESP_FAIL: Create RMT simple callback encoder failed because of other error
+ */
+esp_err_t rmt_new_simple_encoder(const rmt_simple_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
 
 /**
  * @brief Delete RMT encoder

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,11 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     ssize_t outlen;
 
     int cur_sock_session_id = httpd_req_to_sockfd(req);
-    int cur_cookie_session_id = 0;
+    if (cur_sock_session_id < 0) {
+        ESP_LOGE(TAG, "Post failed, incorrect file descriptor %d", cur_sock_session_id);
+        return ESP_FAIL;
+    }
+    uint32_t cur_cookie_session_id = 0;
     char cookie_buf[20] = {0};
     bool same_session = false;
 
@@ -91,11 +95,11 @@ static esp_err_t common_post_handler(httpd_req_t *req)
         }
         /* Initialize new security session. A random number will be assigned to the session */
         cur_cookie_session_id = esp_random();
-        ESP_LOGD(TAG, "Creating new session: %u", cur_cookie_session_id);
+        ESP_LOGD(TAG, "Creating new session: %" PRIu32, cur_cookie_session_id);
         if (pc_httpd->sec && pc_httpd->sec->new_transport_session) {
             ret = pc_httpd->sec->new_transport_session(pc_httpd->sec_inst, cur_cookie_session_id);
             if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to launch new session with ID: %u", cur_cookie_session_id);
+                ESP_LOGE(TAG, "Failed to launch new session with ID: %" PRIu32, cur_cookie_session_id);
                 ret = ESP_FAIL;
                 goto out;
             }

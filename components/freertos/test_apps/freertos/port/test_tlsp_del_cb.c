@@ -67,7 +67,7 @@ TEST_CASE("Test TLSP deletion callbacks", "[freertos]")
         TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(tlsp_task, "tlsp_tsk", configMINIMAL_STACK_SIZE * 2, (void *)&tlsps[i], UNITY_FREERTOS_PRIORITY - 1, &tasks[i], i));
     }
     // Significant delay to let tasks run and delete themselves
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(100);
 
     // Check the values of the TLSPs to see if the del cb have ran
     for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {

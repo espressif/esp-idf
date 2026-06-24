@@ -16,12 +16,6 @@
 extern "C" {
 #endif
 
-//TODO: IDF-7512
-/**
- * @brief get chip version
- */
-uint32_t efuse_hal_get_chip_revision(void);
-
 /**
  * @brief set eFuse timings
  *

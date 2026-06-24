@@ -48,17 +48,28 @@
 ******************************************************************************/
 static BT_HDR   *avrc_vendor_msg(tAVRC_MSG_VENDOR *p_msg)
 {
-    BT_HDR  *p_cmd;
+    BT_HDR  *p_cmd = NULL;
     UINT8   *p_data;
 
-    assert(p_msg != NULL);
+/*
+  A vendor dependent command consists of at least of:
+  - A BT_HDR, plus
+  - AVCT_MSG_OFFSET, plus
+  - 3 bytes for ctype, subunit_type and op_vendor, plus
+  - 3 bytes for company_id
+*/
+#define AVRC_MIN_VENDOR_CMD_LEN (BT_HDR_SIZE + AVCT_MSG_OFFSET + AVRC_VENDOR_HDR_SIZE)
+
+    if (!p_msg) {
+        return NULL;
+    }
 
 #if AVRC_METADATA_INCLUDED == TRUE
-    assert(AVRC_META_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
-    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_META_CMD_BUF_SIZE)) != NULL)
+    if ((AVRC_META_CMD_BUF_SIZE >= AVRC_MIN_VENDOR_CMD_LEN + p_msg->vendor_len) &&
+        ((p_cmd = (BT_HDR *) osi_malloc(AVRC_META_CMD_BUF_SIZE)) != NULL))
 #else
-    assert(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
-    if ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL)
+    if ((AVRC_CMD_BUF_SIZE >= (AVRC_MIN_VENDOR_CMD_LEN + p_msg->vendor_len)) &&
+        ((p_cmd = (BT_HDR *) osi_malloc(AVRC_CMD_BUF_SIZE)) != NULL))
 #endif
     {
         p_cmd->offset   = AVCT_MSG_OFFSET;
@@ -69,6 +80,9 @@ static BT_HDR   *avrc_vendor_msg(tAVRC_MSG_VENDOR *p_msg)
         AVRC_CO_ID_TO_BE_STREAM(p_data, p_msg->company_id);
         if (p_msg->vendor_len && p_msg->p_vendor_data) {
             memcpy(p_data, p_msg->p_vendor_data, p_msg->vendor_len);
+        } else if (p_msg->vendor_len && p_msg->p_vendor_data == NULL) {
+            osi_free(p_cmd);
+            return NULL;
         }
         p_cmd->len  = (UINT16) (p_data + p_msg->vendor_len - (UINT8 *)(p_cmd + 1) - p_cmd->offset);
         p_cmd->layer_specific   = AVCT_DATA_CTRL;

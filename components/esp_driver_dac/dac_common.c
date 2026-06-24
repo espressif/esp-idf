@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,10 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_caps.h"
-#include "soc/dac_periph.h"
+#include "hal/dac_periph.h"
 #include "hal/dac_types.h"
 #include "hal/dac_ll.h"
-#include "driver/rtc_io.h"
+#include "esp_private/gpio.h"
 #include "esp_check.h"
 #include "dac_priv_common.h"
 
@@ -28,8 +28,6 @@ static dac_channel_info_t s_dac_chan[SOC_DAC_CHAN_NUM] = {
         .mode = NULL,
     }
 };
-/* Global dac spin lock for the whole DAC driver */
-portMUX_TYPE dac_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "dac_common";
 
@@ -70,10 +68,7 @@ esp_err_t dac_priv_enable_channel(dac_channel_t chan_id)
     ESP_RETURN_ON_FALSE(s_dac_chan[chan_id].in_use, ESP_ERR_INVALID_STATE, TAG, "the channel is not registered");
 
     gpio_num_t gpio_num = (gpio_num_t)dac_periph_signal.dac_channel_io_num[chan_id];
-    rtc_gpio_init(gpio_num);
-    rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pullup_dis(gpio_num);
-    rtc_gpio_pulldown_dis(gpio_num);
+    gpio_config_as_analog(gpio_num);
     DAC_RTC_ENTER_CRITICAL();
     dac_ll_power_on(chan_id);
     dac_ll_rtc_sync_by_adc(false);
@@ -87,8 +82,6 @@ esp_err_t dac_priv_disable_channel(dac_channel_t chan_id)
     ESP_RETURN_ON_FALSE(chan_id < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "channel id is invalid");
     ESP_RETURN_ON_FALSE(s_dac_chan[chan_id].in_use, ESP_ERR_INVALID_STATE, TAG, "the channel is not registered");
 
-    gpio_num_t gpio_num = (gpio_num_t)dac_periph_signal.dac_channel_io_num[chan_id];
-    rtc_gpio_deinit(gpio_num);
     DAC_RTC_ENTER_CRITICAL();
     dac_ll_power_down(chan_id);
     DAC_RTC_EXIT_CRITICAL();

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,19 +7,14 @@
 #include "lp_core_i2c.h"
 #include "esp_check.h"
 #include "hal/i2c_hal.h"
+#include "hal/i2c_ll.h"
 #include "driver/rtc_io.h"
-#include "soc/rtc_io_channel.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *LPI2C_TAG = "lp_core_i2c";
 
-#if !SOC_LP_GPIO_MATRIX_SUPPORTED
-#include "soc/lp_io_struct.h"
-
-/* Use the register structure to access LP_IO module registers */
-lp_io_dev_t *lp_io_dev = &LP_IO;
-#else
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/lp_io.h"
 #include "soc/lp_gpio_sig_map.h"
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
@@ -37,13 +32,13 @@ static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_
 
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
     /* Verify that the SDA and SCL line belong to the LP IO Mux I2C function group */
-    if (sda_io_num != RTCIO_GPIO6_CHANNEL) {
-        ESP_LOGE(LPI2C_TAG, "SDA pin can only be configured as GPIO#6");
+    if (sda_io_num != LP_I2C_SDA_IOMUX_PAD) {
+        ESP_LOGE(LPI2C_TAG, LP_I2C_SDA_PIN_ERR_LOG);
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (scl_io_num != RTCIO_GPIO7_CHANNEL) {
-        ESP_LOGE(LPI2C_TAG, "SCL pin can only be configured as GPIO#7");
+    if (scl_io_num != LP_I2C_SCL_IOMUX_PAD) {
+        ESP_LOGE(LPI2C_TAG, LP_I2C_SCL_PIN_ERR_LOG);
         return ESP_ERR_INVALID_ARG;
     }
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
@@ -53,9 +48,10 @@ static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_
 
 static esp_err_t lp_i2c_configure_io(gpio_num_t io_num, bool pullup_en)
 {
+    /* Set the IO pin to high to avoid them from toggling from Low to High state during initialization. This can register a spurious I2C start condition. */
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_level(io_num, 1), LPI2C_TAG, "LP GPIO failed to set level to high for %d", io_num);
     /* Initialize IO Pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), LPI2C_TAG, "LP GPIO Init failed for GPIO %d", io_num);
-
     /* Set direction to input+output open-drain mode */
     ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD), LPI2C_TAG, "LP GPIO Set direction failed for %d", io_num);
     /* Disable pulldown on the io pin */
@@ -82,26 +78,29 @@ static esp_err_t lp_i2c_set_pin(const lp_core_i2c_cfg_t *cfg)
     /* Verify that the LP I2C GPIOs are valid */
     ESP_RETURN_ON_ERROR(lp_i2c_gpio_is_cfg_valid(sda_io_num, scl_io_num), LPI2C_TAG, "LP I2C GPIO config invalid");
 
-    /* Initialize SDA Pin */
-    ESP_RETURN_ON_ERROR(lp_i2c_configure_io(sda_io_num, sda_pullup_en), LPI2C_TAG, "LP I2C SDA pin config failed");
+    // NOTE: We always initialize the SCL pin first, then the SDA pin.
+    // This order of initialization is important to avoid any spurious
+    // I2C start conditions on the bus.
 
     /* Initialize SCL Pin */
     ESP_RETURN_ON_ERROR(lp_i2c_configure_io(scl_io_num, scl_pullup_en), LPI2C_TAG, "LP I2C SCL pin config failed");
 
+    /* Initialize SDA Pin */
+    ESP_RETURN_ON_ERROR(lp_i2c_configure_io(sda_io_num, sda_pullup_en), LPI2C_TAG, "LP I2C SDA pin config failed");
+
 #if !SOC_LP_GPIO_MATRIX_SUPPORTED
-    /* Select LP I2C function for the SDA Pin */
-    lp_io_dev->gpio[sda_io_num].mcu_sel = 1;
-
-    /* Select LP I2C function for the SCL Pin */
-    lp_io_dev->gpio[scl_io_num].mcu_sel = 1;
+    /* On targets that do not support the LP IO Matrix: assign SDA and SCL to the LP I2C
+     * RTC IOMUX function. lp_i2c_configure_io() already initialized the pads and open-drain direction. */
+    const i2c_signal_conn_t *p_i2c_pin = &i2c_periph_signal[LP_I2C_NUM_0];
+    ret = rtc_gpio_iomux_output(sda_io_num, p_i2c_pin->iomux_func);
+    ret = rtc_gpio_iomux_output(scl_io_num, p_i2c_pin->iomux_func);
 #else
-    /* Connect the SDA pin of the LP_I2C peripheral to the LP_IO Matrix */
-    ret = lp_gpio_connect_out_signal(sda_io_num, LP_I2C_SDA_PAD_OUT_IDX, 0, 0);
-    ret = lp_gpio_connect_in_signal(sda_io_num, LP_I2C_SDA_PAD_IN_IDX, 0);
+    /* On targets with the LP IO Matrix: route SDA and SCL to the LP I2C pad signals. */
+    ret = lp_gpio_matrix_output(sda_io_num, LP_I2C_SDA_PAD_OUT_IDX, false, false);
+    ret = lp_gpio_matrix_input(sda_io_num, LP_I2C_SDA_PAD_IN_IDX, false);
 
-    /* Connect the SCL pin of the LP_I2C peripheral to the LP_IO Matrix */
-    ret = lp_gpio_connect_out_signal(scl_io_num, LP_I2C_SCL_PAD_OUT_IDX, 0, 0);
-    ret = lp_gpio_connect_in_signal(scl_io_num, LP_I2C_SCL_PAD_IN_IDX, 0);
+    ret = lp_gpio_matrix_output(scl_io_num, LP_I2C_SCL_PAD_OUT_IDX, false, false);
+    ret = lp_gpio_matrix_input(scl_io_num, LP_I2C_SCL_PAD_IN_IDX, false);
 #endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
 
     return ret;
@@ -123,7 +122,7 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
         }
     }
 
-    /* Fetch the clock source fequency */
+    /* Fetch the clock source frequency */
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(source_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq), LPI2C_TAG, "Invalid LP I2C source clock selected");
 
     /* Verify that the I2C_SCLK operates at a frequency 20 times larger than the requested SCL bus frequency */
@@ -161,6 +160,9 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
         /* Initialize LP I2C HAL */
         i2c_hal_init(&i2c_hal, lp_i2c_num);
     }
+
+    /* Clear any pending interrupts */
+    i2c_ll_clear_intr_mask(i2c_hal.dev, UINT32_MAX);
 
     /* Initialize LP I2C Master mode */
     i2c_hal_master_init(&i2c_hal);

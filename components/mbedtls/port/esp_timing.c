@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * mbedtls_timing_get_timer()m mbedtls_timing_set_delay() and
@@ -27,7 +27,7 @@ struct _hr_time
     struct timeval start;
 };
 
-unsigned long mbedtls_timing_get_timer( struct mbedtls_timing_hr_time *val, int reset )
+unsigned long long mbedtls_timing_get_timer( struct mbedtls_timing_hr_time *val, int reset )
 {
     struct _hr_time *t = (struct _hr_time *) val;
 

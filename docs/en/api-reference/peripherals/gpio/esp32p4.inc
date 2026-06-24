@@ -268,38 +268,38 @@ The table below provides more information on pin usage, and please note the comm
       -
 
     * - GPIO49
-      - ADC1_CH8
+      - ADC2_CH0
       -
       -
 
     * - GPIO50
-      - ADC1_CH9
+      - ADC2_CH1
       -
       -
 
     * - GPIO51
-      - ADC1_CH10, ANA_CMPR_CH0 reference voltage
+      - ADC2_CH2, ANA_CMPR_CH0 reference voltage
       -
       -
 
     * - GPIO52
-      - ADC1_CH11, ANA_CMPR_CH0 input (non-inverting)
+      - ADC2_CH3, ANA_CMPR_CH0 input (non-inverting)
       -
       -
 
     * - GPIO53
-      - ADC1_CH12, ANA_CMPR_CH1 reference voltage
+      - ADC2_CH4, ANA_CMPR_CH1 reference voltage
       -
       -
 
     * - GPIO54
-      - ADC1_CH13, ANA_CMPR_CH1 input (non-inverting)
+      - ADC2_CH5, ANA_CMPR_CH1 input (non-inverting)
       -
       -
 
 .. note::
 
     - Strapping pin: GPIO34, GPIO35, GPIO36, GPIO37, and GPIO38 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
-	  - USB-JTAG: GPIO 24 and 25 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
+	  - USB-JTAG: GPIO24 and GPIO25 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---

@@ -1,0 +1,5 @@
+# CI config: Bluedroid log fully disabled.
+# Verify build succeeds with BT_STACK_NO_LOG (no BT debug logs).
+CONFIG_EXAMPLE_CI_ID=11
+CONFIG_EXAMPLE_CI_PIPELINE_ID=${CI_PIPELINE_ID}
+CONFIG_BT_STACK_NO_LOG=y

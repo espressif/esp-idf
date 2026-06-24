@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/interrupts.h"
@@ -29,7 +29,7 @@ const char *const esp_isr_names[] = {
     [ETS_LP_SYSREG_INTR_SOURCE]          = "LP_SYSREG",
     [ETS_LP_HUK_INTR_SOURCE]             = "LP_HUK",
     [ETS_SYS_ICM_INTR_SOURCE]            = "SYS_ICM",
-    [ETS_USB_DEVICE_INTR_SOURCE]         = "USB_DEVICE",
+    [ETS_USB_SERIAL_JTAG_INTR_SOURCE]    = "USB_SERIAL_JTAG",
     [ETS_SDIO_HOST_INTR_SOURCE]          = "SDIO_HOST",
     [ETS_DW_GDMA_INTR_SOURCE]            = "DW_GDMA",
     [ETS_SPI2_INTR_SOURCE]               = "SPI2",
@@ -135,4 +135,7 @@ const char *const esp_isr_names[] = {
     [ETS_H264_DMA2D_IN_CH5_INTR_SOURCE]  = "H264_DMA2D_IN_CH5",
     [ETS_H264_REG_INTR_SOURCE]           = "H264_REG",
     [ETS_ASSIST_DEBUG_INTR_SOURCE]       = "ASSIST_DEBUG",
+    [ETS_DMA2D_IN_CH2_INTR_SOURCE]       = "DMA2D_IN_CH2",     /* This interrupt source only exists on chip ver. >= 3.0 */
+    [ETS_DMA2D_OUT_CH3_INTR_SOURCE]      = "DMA2D_OUT_CH3",    /* This interrupt source only exists on chip ver. >= 3.0 */
+    [ETS_AXI_PERF_MON_INTR_SOURCE]       = "AXI_PERF_MON",     /* This interrupt source only exists on chip ver. >= 3.0 */
 };

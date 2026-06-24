@@ -1,23 +1,22 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 from time import sleep
 
 import pytest
-import serial
 import serial.tools.list_ports
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c6     # usb_serial_jtag is very similar, test C6 is enough.
 @pytest.mark.usj_device
-def test_usb_device_serial_example(dut: Dut) -> None:
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
+def test_usb_device_serial_echo_example(dut: Dut) -> None:
     dut.expect_exact('USB_SERIAL_JTAG init done')
     sleep(2)
 
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
-        if (p.device == '/dev/ttyACM0'):      # Get the usb_serial_jtag port
+        if p.device == '/dev/ttyACM0':  # Get the usb_serial_jtag port
             with serial.Serial(p.device) as s:
                 s.write(b'hi, espressif\n')
                 sleep(1)

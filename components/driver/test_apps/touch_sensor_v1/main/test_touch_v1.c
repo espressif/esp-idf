@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,20 +10,19 @@
 #include "sdkconfig.h"
 
 #include "esp_system.h"
-#include "driver/touch_pad.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_cntl_struct.h"
+#include "soc/soc_caps.h"
 #include "soc/sens_reg.h"
 #include "soc/sens_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
+#include "driver/touch_sensor.h"
 #include "esp_rom_sys.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
@@ -302,6 +301,11 @@ static bool s_pad_activated[TOUCH_PAD_MAX];
 static void test_touch_intr_cb(void *arg)
 {
     uint32_t pad_intr = touch_pad_get_status();
+    uint16_t touch_value;
+    // Should be able to read touch value in ISR
+    touch_pad_read_filtered(touch_list[0], &touch_value);
+    touch_pad_read_raw_data(touch_list[0], &touch_value);
+
     //clear interrupt
     touch_pad_clear_status();
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {

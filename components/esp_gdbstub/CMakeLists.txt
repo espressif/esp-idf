@@ -18,7 +18,8 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND priv_includes "src/port/xtensa/include")
 elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND srcs "src/port/riscv/gdbstub_riscv.c"
-                     "src/port/riscv/rv_decode.c")
+                     "src/port/riscv/rv_decode.c"
+                     "src/port/riscv/target_xml.c")
     list(APPEND priv_includes "src/port/riscv/include")
 endif()
 
@@ -27,4 +28,9 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_includes}
                        LDFRAGMENTS "linker.lf"
                        REQUIRES "freertos"
-                       PRIV_REQUIRES "soc" "esp_rom" "esp_system")
+                       PRIV_REQUIRES esp_hal_wdt esp_hal_uart esp_system)
+
+if(CONFIG_ESP_SYSTEM_PANIC_GDBSTUB)
+    # Make sure the panic event registration in gdbstub.c is considered by the linker
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_gdbstub_panic_handler")
+endif()

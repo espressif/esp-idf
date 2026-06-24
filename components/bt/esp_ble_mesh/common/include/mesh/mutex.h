@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,11 @@ void bt_mesh_r_mutex_free(bt_mesh_mutex_t *mutex);
 void bt_mesh_r_mutex_lock(bt_mesh_mutex_t *mutex);
 void bt_mesh_r_mutex_unlock(bt_mesh_mutex_t *mutex);
 
+void bt_mesh_c_semaphore_create(bt_mesh_mutex_t *mutex, int max, int init);
+void bt_mesh_c_semaphore_free(bt_mesh_mutex_t *mutex);
+void bt_mesh_c_semaphore_give(bt_mesh_mutex_t *mutex);
+void bt_mesh_c_semaphore_take(bt_mesh_mutex_t *mutex, uint32_t timeout);
+
 void bt_mesh_alarm_lock(void);
 void bt_mesh_alarm_unlock(void);
 
@@ -45,7 +50,9 @@ void bt_mesh_atomic_lock(void);
 void bt_mesh_atomic_unlock(void);
 
 void bt_mesh_mutex_init(void);
+#if CONFIG_BLE_MESH_DEINIT
 void bt_mesh_mutex_deinit(void);
+#endif /* CONFIG_BLE_MESH_DEINIT */
 
 #ifdef __cplusplus
 }

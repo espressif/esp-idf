@@ -17,7 +17,7 @@ ESP-IDF provides ``console`` component, which includes building blocks needed to
 
 .. note::
 
-  When using a console application on a chip that supports a hardware USB serial interface, we suggest to disable the secondary serial console output. The secondary output will be output-only and consequently does not make sense in an interactive application.
+  When using a console application on a chip that supports a hardware USB serial interface, we suggest disabling the secondary serial console output. The secondary output will be output-only and consequently does not make sense in an interactive application.
 
 Line Editing
 ------------
@@ -51,6 +51,13 @@ Linenoise library does not need explicit initialization. However, some configura
 
   Set maximum length of the line for linenoise library. Default length is 4096 bytes. The default value can be updated to optimize RAM memory usage.
 
+- :cpp:func:`linenoiseSetReadFunction`
+
+  Set the read function to be used by linenoise.
+
+- :cpp:func:`linenoiseSetReadCharacteristics`
+
+  Set the characteristics of the read file descriptor (e.g., blocking or non-blocking mode). The function has a weak definition in ``linenoise.c`` that can be overridden by providing a strong definition of the function.
 
 Main Loop
 ^^^^^^^^^
@@ -178,21 +185,17 @@ Initialize Console REPL Environment
 
 To establish a basic REPL environment, ``console`` component provides several useful APIs, combining those functions described above.
 
-In a typical application, you only need to call :cpp:func:`esp_console_new_repl_uart` to initialize the REPL environment based on UART device, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g., `help`).
+In a typical application, you only need to call :cpp:func:`esp_console_new_repl_stdio` to initialize the REPL environment, including driver install, basic console configuration, spawning a thread to do REPL task and register several useful commands (e.g., `help`).
 
-After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in init state until you call :cpp:func:`esp_console_start_repl`.
+After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in initialized state until you call :cpp:func:`esp_console_start_repl`.
 
-.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
-    Likewise, if your REPL environment is based on USB_SERIAL_JTAG device, you only need to call :cpp:func:`esp_console_new_repl_usb_serial_jtag` at first step. Then call other functions as usual.
+Application Examples
+--------------------
 
-Application Example
--------------------
+- :example:`system/console/basic` demonstrates how to use the REPL (Read-Eval-Print Loop) APIs of the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial interface, supporting UART and USB interfaces, and can serve as a basis for applications requiring a command-line interface.
 
-Example application illustrating usage of the ``console`` component is available in :example:`system/console` directory. This example shows how to initialize UART and VFS functions, set up linenoise library, read and handle commands from UART, and store command history in Flash. See README.md in the example directory for more details.
-
-Besides that, ESP-IDF contains several useful examples which are based on the ``console`` component and can be treated as "tools" when developing applications. For example, :example:`peripherals/i2c/i2c_tools`, :example:`wifi/iperf`.
-
+- :example:`system/console/advanced` demonstrates how to use the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial interface, supporting UART and USB interfaces, providing a basis for applications that require a command-line interface.
 
 API Reference
 -------------

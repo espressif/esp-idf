@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,42 +7,14 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
+#include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "hal/wdt_hal.h"
-#include "hal/systimer_hal.h"
 
 static bool fn_in_rom(void *fn)
 {
     const int fnaddr = (int)fn;
     return (fnaddr >= SOC_IROM_MASK_LOW && fnaddr < SOC_IROM_MASK_HIGH);
 }
-
-#if CONFIG_HAL_WDT_USE_ROM_IMPL
-TEST_CASE("Test that WDT implementation from ROM is used", "[rom-impl-components]")
-{
-    TEST_ASSERT_TRUE(fn_in_rom(wdt_hal_feed));
-}
-
-#else
-TEST_CASE("Test that WDT implementation from ROM is NOT used", "[rom-impl-components]")
-{
-    TEST_ASSERT_FALSE(fn_in_rom(wdt_hal_feed));
-}
-#endif // CONFIG_HAL_WDT_USE_ROM_IMPL
-
-
-#if CONFIG_HAL_SYSTIMER_USE_ROM_IMPL
-TEST_CASE("Test that systimer implementation from ROM is used", "[rom-impl-components]")
-{
-    TEST_ASSERT_TRUE(fn_in_rom(systimer_hal_get_counter_value));
-}
-
-#else
-TEST_CASE("Test that systimer implementation from ROM is NOT used", "[rom-impl-components]")
-{
-    TEST_ASSERT_FALSE(fn_in_rom(systimer_hal_get_counter_value));
-}
-#endif // CONFIG_HAL_SYSTIMER_USE_ROM_IMPL
 
 extern uint32_t tlsf_create;
 #if CONFIG_HEAP_TLSF_USE_ROM_IMPL

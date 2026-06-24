@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- |
 
 # ESP Local Control using HTTPS server
 
@@ -13,7 +13,7 @@ Note, that this example in not supported for IPv6-only configuration.
 
 ## Client Side Implementation
 
-A python test script `scripts/esp_local_ctrl.py` has been provided for as a client side application for controlling the device over the same Wi-Fi network. The script relies on a pre-generated `main/certs/rootCA.pem` to verify the server certificate. The server side private key and certificate can also be found under `main/certs`, namely `prvtkey.pem` and `cacert.pem`.
+A python test script `scripts/esp_local_ctrl.py` has been provided for as a client side application for controlling the device over the same Wi-Fi network. The script relies on a pre-generated `main/certs/rootCA.pem` to verify the server certificate. The server side private key and certificate can also be found under `main/certs`, namely `prvtkey.pem` and `servercert.pem`.
 
 After configuring the Wi-Fi, flashing and booting the device, run the following command to test the device name
 resolution through mDNS:
@@ -91,7 +91,7 @@ You can generate a new server certificate using the OpenSSL command line tool.
 For the purpose of this example, lets generate a rootCA, which we will use to sign the server certificates and which the client will use to verify the server certificate during SSL handshake. You will need to set a password for encrypting the generated `rootkey.pem`.
 
 ```
-openssl req -new -x509 -subj "/CN=root" -days 3650 -sha256 -out rootCA.pem -keyout rootkey.pem
+openssl req -new -x509 -subj "/CN=root" -days 3650 -sha256 -out rootCA.pem -keyout rootkey.pem -addext "keyUsage=critical,digitalSignature,keyCertSign"
 ```
 
 Now generate a certificate signing request for the server, along with its private key `prvtkey.pem`.
@@ -100,13 +100,13 @@ Now generate a certificate signing request for the server, along with its privat
 openssl req -newkey rsa:2048 -nodes -keyout prvtkey.pem -days 3650 -out server.csr -subj "/CN=my_esp_ctrl_device.local"
 ```
 
-Now use the previously generated rootCA to process the server's certificate signing request, and generate a signed certificate `cacert.pem`. The password set for encrypting `rootkey.pem` earlier, has to be entered during this step.
+Now use the previously generated rootCA to process the server's certificate signing request, and generate a signed certificate `servercert.pem`. The password set for encrypting `rootkey.pem` earlier, has to be entered during this step.
 
 ```
-openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootkey.pem -CAcreateserial -out cacert.pem -days 500 -sha256
+openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootkey.pem -CAcreateserial -out servercert.pem -days 500 -sha256
 ```
 
-Now that we have `rootCA.pem`, `cacert.pem` and `prvtkey.pem`, copy these into main/certs. Note that only the server related files (`cacert.pem` and `prvtkey.pem`) are embedded into the firmware.
+Now that we have `rootCA.pem`, `servercert.pem` and `prvtkey.pem`, copy these into main/certs. Note that only the server related files (`servercert.pem` and `prvtkey.pem`) are embedded into the firmware.
 
 Expiry time and metadata fields can be adjusted in the invocation.
 

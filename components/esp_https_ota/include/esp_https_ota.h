@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <esp_http_client.h>
 #include <bootloader_common.h>
 #include "esp_app_desc.h"
+#include "esp_bootloader_desc.h"
 #include <sdkconfig.h>
 
 #include "esp_event.h"
@@ -26,8 +27,9 @@ ESP_EVENT_DECLARE_BASE(ESP_HTTPS_OTA_EVENT);
 typedef enum {
     ESP_HTTPS_OTA_START,                    /*!< OTA started */
     ESP_HTTPS_OTA_CONNECTED,                /*!< Connected to server */
-    ESP_HTTPS_OTA_GET_IMG_DESC,             /*!< Read app description from image header */
+    ESP_HTTPS_OTA_GET_IMG_DESC,             /*!< Read app/bootloader description from image header */
     ESP_HTTPS_OTA_VERIFY_CHIP_ID,           /*!< Verify chip id of new image */
+    ESP_HTTPS_OTA_VERIFY_CHIP_REVISION,     /*!< Verify chip revision of new image */
     ESP_HTTPS_OTA_DECRYPT_CB,               /*!< Callback to decrypt function */
     ESP_HTTPS_OTA_WRITE_FLASH,              /*!< Flash write operation */
     ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION,    /*!< Boot partition update after successful ota update */
@@ -39,7 +41,10 @@ typedef enum {
 typedef void *esp_https_ota_handle_t;
 typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
 
-#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
+/**
+ * @brief ESP HTTPS OTA decrypt callback args
+ */
 typedef struct {
     const char *data_in;    /*!< Pointer to data to be decrypted */
     size_t data_in_len;     /*!< Input data length */
@@ -48,7 +53,7 @@ typedef struct {
 } decrypt_cb_arg_t;
 
 typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args, void *user_ctx);
-#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
 
 /**
  * @brief ESP HTTPS OTA configuration
@@ -57,14 +62,23 @@ typedef struct {
     const esp_http_client_config_t *http_config;   /*!< ESP HTTP client configuration */
     http_client_init_cb_t http_client_init_cb;     /*!< Callback after ESP HTTP client is initialised */
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
+#if CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD || __DOXYGEN__
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
+#endif
     uint32_t buffer_caps;                          /*!< The memory capability to use when allocating the buffer for OTA update. Default capability is MALLOC_CAP_DEFAULT */
-#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    bool ota_resumption;                           /*!< Enable resumption in downloading of OTA image between reboots */
+    size_t ota_image_bytes_written;                /*!< Number of OTA image bytes written to flash so far, updated by the application when OTA data is written successfully in the target OTA partition. */
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
     uint16_t enc_img_header_size;                  /*!< Header size of pre-encrypted ota image header */
 #endif
+    struct {                                        /*!< Details of staging and final partitions for OTA update */
+        const esp_partition_t *staging;             /*!< New image will be downloaded in this staging partition. If NULL then a free app partition (passive app partition) is selected as the staging partition. */
+        const esp_partition_t *final;               /*!< Final destination partition. Its type/subtype will be used for verification. If set to NULL, staging partition shall be set as the final partition. */
+        bool finalize_with_copy;                    /*!< Flag to copy the staging image to the final partition at the end of OTA update */
+    } partition;                                    /*!< Struct containing details about the staging and final partitions for OTA update. */
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)
@@ -94,6 +108,7 @@ typedef struct {
  *    - ESP_ERR_OTA_VALIDATE_FAILED: Invalid app image
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_HTTP_NOT_MODIFIED: OTA image is not modified on server side
  *    - For other return codes, refer OTA documentation in esp-idf's app_update component.
  */
 esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
@@ -120,6 +135,7 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
  *    - ESP_OK: HTTPS OTA Firmware upgrade context initialised and HTTPS connection established
  *    - ESP_FAIL: For generic failure.
  *    - ESP_ERR_INVALID_ARG: Invalid argument (missing/incorrect config, certificate, etc.)
+ *    - ESP_ERR_HTTP_NOT_MODIFIED: OTA image is not modified on server side
  *    - For other return codes, refer documentation in app_update component and esp_http_client
  *      component in esp-idf.
  */
@@ -220,6 +236,23 @@ esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle);
  */
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info);
 
+/**
+ * @brief   Reads bootloader description from image header. The bootloader description provides information
+ *          like the "Bootloader version" of the image.
+ *
+ * @note    This API can be called only after esp_https_ota_begin() and before esp_https_ota_perform().
+ *          Calling this API is not mandatory.
+ *
+ * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure
+ * @param[out]  new_img_info       pointer to an allocated esp_bootloader_desc_t structure
+ *
+ * @return
+ *    - ESP_ERR_INVALID_ARG: Invalid arguments
+ *    - ESP_ERR_INVALID_STATE: Invalid state to call this API. esp_https_ota_begin() not called yet.
+ *    - ESP_FAIL: Failed to read image descriptor
+ *    - ESP_OK: Successfully read image descriptor
+ */
+esp_err_t esp_https_ota_get_bootloader_img_desc(esp_https_ota_handle_t https_ota_handle, esp_bootloader_desc_t *new_img_info);
 
 /**
 * @brief  This function returns OTA image data read so far.
@@ -234,6 +267,21 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 *    - total bytes read so far
 */
 int esp_https_ota_get_image_len_read(esp_https_ota_handle_t https_ota_handle);
+
+
+/**
+ * @brief  This function returns the HTTP status code of the last HTTP response.
+ *
+ * @note   This API should be called only after esp_https_ota_begin() has been called.
+ *         This can be used to check the HTTP status code of the OTA download process.
+ *
+ * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure
+ *
+ * @return
+ *    - -1    On failure
+ *    - HTTP status code
+ */
+int esp_https_ota_get_status_code(esp_https_ota_handle_t https_ota_handle);
 
 
 /**

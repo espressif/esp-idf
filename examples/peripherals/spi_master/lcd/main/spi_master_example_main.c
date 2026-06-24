@@ -100,7 +100,7 @@ DRAM_ATTR static const lcd_init_cmd_t st_init_cmds[] = {
 };
 
 DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
-    /* Power contorl B, power control = 0, DC_ENA = 1 */
+    /* Power control B, power control = 0, DC_ENA = 1 */
     {0xCF, {0x00, 0x83, 0X30}, 3},
     /* Power on sequence control,
      * cp1 keeps 1 frame, 1st frame enable
@@ -128,7 +128,7 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[] = {
     {0xC5, {0x35, 0x3E}, 2},
     /* VCOM control 2, VCOMH=VMH-2, VCOML=VML-2 */
     {0xC7, {0xBE}, 1},
-    /* Memory access contorl, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
+    /* Memory access control, MX=MY=0, MV=1, ML=0, BGR=1, MH=0 */
     {0x36, {0x28}, 1},
     /* Pixel format, 16bits/pixel for RGB/MCU interface */
     {0x3A, {0x55}, 1},
@@ -244,7 +244,7 @@ void lcd_init(spi_device_handle_t spi)
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = ((1ULL << PIN_NUM_DC) | (1ULL << PIN_NUM_RST) | (1ULL << PIN_NUM_BCKL));
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pull_up_en = true;
+    io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
 
     //Reset the display
@@ -343,7 +343,11 @@ static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata)
     trans[4].tx_data[0] = 0x2C;         //memory write
     trans[5].tx_buffer = linedata;      //finally send the line data
     trans[5].length = 320 * 2 * 8 * PARALLEL_LINES;  //Data length, in bits
+#if CONFIG_LCD_BUFFER_IN_PSRAM
+    trans[5].flags = SPI_TRANS_DMA_USE_PSRAM; //using PSRAM
+#else
     trans[5].flags = 0; //undo SPI_TRANS_USE_TXDATA flag
+#endif
 
     //Queue all transactions.
     for (x = 0; x < 6; x++) {
@@ -375,9 +379,17 @@ static void send_line_finish(spi_device_handle_t spi)
 static void display_pretty_colors(spi_device_handle_t spi)
 {
     uint16_t *lines[2];
+#if CONFIG_LCD_BUFFER_IN_PSRAM
+    uint32_t mem_cap = MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA;
+    printf("Get LCD buffer from PSRAM\n");
+#else
+    uint32_t mem_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+    printf("Get LCD buffer from internal\n");
+#endif
+
     //Allocate memory for the pixel buffers
     for (int i = 0; i < 2; i++) {
-        lines[i] = heap_caps_malloc(320 * PARALLEL_LINES * sizeof(uint16_t), MALLOC_CAP_DMA);
+        lines[i] = spi_bus_dma_memory_alloc(LCD_HOST, 320 * PARALLEL_LINES * sizeof(uint16_t), mem_cap);
         assert(lines[i] != NULL);
     }
     int frame = 0;

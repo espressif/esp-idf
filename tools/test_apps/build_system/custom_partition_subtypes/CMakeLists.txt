@@ -1,6 +1,6 @@
 # The following lines of boilerplate have to be in your project's
 # CMakeLists in this exact order for cmake to work correctly
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 set(COMPONENTS main partition_table custom)
@@ -25,6 +25,7 @@ add_custom_target(blank_bin ALL DEPENDS ${blank_file})
 idf_build_get_property(target IDF_TARGET)
 
 if(NOT ${target} STREQUAL "linux")
-    add_dependencies(flash blank_bin)
-    esptool_py_flash_to_partition(flash "${partition}" "${blank_file}")
+    esp_partition_register_target("${partition}" "${blank_file}"
+        DEPENDS blank_bin
+        FLASH_IN_PROJECT)
 endif()

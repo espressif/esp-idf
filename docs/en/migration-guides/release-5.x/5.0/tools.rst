@@ -51,4 +51,4 @@ The ``CONFIG_ESPTOOLPY_FLASHSIZE_DETECT`` option has been renamed to :ref:`CONFI
 Windows Environment
 --------------------
 
-The Msys/Mingw-based Windows environment support got deprecated in ESP-IDF v4.0 and was entirely removed in v5.0. Please use :ref:`get-started-windows-tools-installer` to set up a compatible environment. The options include Windows Command Line, Power Shell and the graphical user interface based on Eclipse IDE. In addition, a VS Code-based environment can be set up with the supported plugin: https://github.com/espressif/vscode-esp-idf-extension.
+The Msys/Mingw-based Windows environment support got deprecated in ESP-IDF v4.0 and was entirely removed in v5.0. Please use the Windows Tools Installer (deprecated in ESP-IDF v6.0) to set up a compatible environment. The options include Windows Command Line, Power Shell and the graphical user interface based on Eclipse IDE. In addition, a VS Code-based environment can be set up with the supported plugin: https://github.com/espressif/vscode-esp-idf-extension.

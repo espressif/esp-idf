@@ -25,6 +25,7 @@ Description of the PCNT functionality is divided into the following sections:
     - :ref:`pcnt-resource-allocation` - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
     - :ref:`pcnt-setup-channel-actions` - covers how to configure the PCNT channel to behave on different signal edges and levels.
     - :ref:`pcnt-watch-points` - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: - :ref:`pcnt-step-notify` - describes how to configure PCNT watch step (i.e., tell PCNT unit to trigger an event when the count increment reaches a certain value).
     - :ref:`pcnt-register-event-callbacks` - describes how to hook your specific code to the watch point event callback function.
     - :ref:`pcnt-set-glitch-filter` - describes how to enable and set the timing parameters for the internal glitch filter.
     :SOC_PCNT_SUPPORT_CLEAR_SIGNAL: - :ref:`pcnt-set-clear-signal` - describes how to set the parameters for the external clear signal.
@@ -47,15 +48,23 @@ Install PCNT Unit
 
 To install a PCNT unit, there is a configuration structure that needs to be given in advance: :cpp:type:`pcnt_unit_config_t`:
 
--  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
--  :cpp:member:`pcnt_unit_config_t::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16 bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
--  :cpp:member:`pcnt_unit_config_t::intr_priority` sets the priority of the interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
+.. list::
+
+    -  :cpp:member:`pcnt_unit_config_t::group_id` specifies which PCNT peripheral group (hardware instance) to allocate the unit from. Must be a valid group index in range ``[0, PCNT_LL_INST_NUM)``. When you have multiple independent PCNT groups on a chip (e.g., ESP32-S31), this field allows you to pin a unit to a specific group.
+    -  :cpp:member:`pcnt_unit_config_t::clk_src` selects the clock source for the PCNT unit.
+    -  :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit` specify the range for the internal hardware counter. The counter will reset to zero automatically when it crosses either the high or low limit.
+    -  :cpp:member:`pcnt_unit_config_t::intr_priority` sets the interrupt priority. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
+    -  :cpp:member:`pcnt_unit_config_t::flags::accum_count` sets whether to create an internal accumulator for the counter. This is helpful when you want to extend the counter's width, which by default is 16 bit at most, defined in the hardware. See also :ref:`pcnt-compensate-overflow-loss` for how to use this feature to compensate the overflow loss.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_up` Configure whether to enable watch step to count in the positive direction.
+    :SOC_PCNT_SUPPORT_STEP_NOTIFY: -  :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_down` Configure whether to enable watch step to count in the negative direction.
 
 .. note::
 
-    Since all PCNT units share the same interrupt source, when installing multiple PCNT units make sure that the interrupt priority :cpp:member:`pcnt_unit_config_t::intr_priority` is the same for each unit.
+    All units within the **same PCNT group** share the same hardware interrupt source and the same peripheral clock. Therefore, when installing multiple PCNT units in the same group, the following constraints apply:
 
-Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e., unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT units is recorded by :c:macro:`SOC_PCNT_UNITS_PER_GROUP` for reference.
+    - Both :cpp:member:`pcnt_unit_config_t::intr_priority` and :cpp:member:`pcnt_unit_config_t::clk_src` must be the same for all units within the same group. If there is a mismatch, :cpp:func:`pcnt_new_unit` will return :c:macro:`ESP_ERR_INVALID_ARG`.
+
+Unit allocation and initialization is done by calling a function :cpp:func:`pcnt_new_unit` with :cpp:type:`pcnt_unit_config_t` as an input parameter. The function will return a PCNT unit handle only when it runs correctly. Specifically, when there are no more free PCNT units in the pool (i.e., unit resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error.
 
 If a previously created PCNT unit is no longer needed, it is recommended to recycle the resource by calling :cpp:func:`pcnt_del_unit`. Which in return allows the underlying unit hardware to be used for other purposes. Before deleting a PCNT unit, one should ensure the following prerequisites:
 
@@ -80,11 +89,10 @@ Install PCNT Channel
 To install a PCNT channel, you must initialize a :cpp:type:`pcnt_chan_config_t` structure in advance, and then call :cpp:func:`pcnt_new_channel`. The configuration fields of the :cpp:type:`pcnt_chan_config_t` structure are described below:
 
 - :cpp:member:`pcnt_chan_config_t::edge_gpio_num` and :cpp:member:`pcnt_chan_config_t::level_gpio_num` specify the GPIO numbers used by **edge** type signal and **level** type signal. Please note, either of them can be assigned to ``-1`` if it is not actually used, and thus it will become a **virtual IO**. For some simple pulse counting applications where one of the level/edge signals is fixed (i.e., never changes), you can reclaim a GPIO by setting the signal as a virtual IO on channel allocation. Setting the level/edge signal as a virtual IO causes that signal to be internally routed to a fixed High/Low logic level, thus allowing you to save a GPIO for other purposes.
-- :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` and :cpp:member:`pcnt_chan_config_t::virt_level_io_level` specify the virtual IO level for **edge** and **level** input signal, to ensure a deterministic state for such control signal. Please note, they are only valid when either :cpp:member:`pcnt_chan_config_t::edge_gpio_num` or :cpp:member:`pcnt_chan_config_t::level_gpio_num` is assigned to ``-1``.
-- :cpp:member:`pcnt_chan_config_t::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
-- :cpp:member:`pcnt_chan_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
+- :cpp:member:`pcnt_chan_config_t::flags::virt_edge_io_level` and :cpp:member:`pcnt_chan_config_t::flags::virt_level_io_level` specify the virtual IO level for **edge** and **level** input signal, to ensure a deterministic state for such control signal. Please note, they are only valid when either :cpp:member:`pcnt_chan_config_t::edge_gpio_num` or :cpp:member:`pcnt_chan_config_t::level_gpio_num` is assigned to ``-1``.
+- :cpp:member:`pcnt_chan_config_t::flags::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::flags::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
 
-Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` as an input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e., channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. The total number of available PCNT channels within the unit is recorded by :c:macro:`SOC_PCNT_CHANNELS_PER_UNIT` for reference. Note that, when install a PCNT channel for a specific unit, one should ensure the unit is in the init state, otherwise this function will return :c:macro:`ESP_ERR_INVALID_STATE` error.
+Channel allocating and initialization is done by calling a function :cpp:func:`pcnt_new_channel` with the above :cpp:type:`pcnt_chan_config_t` as an input parameter plus a PCNT unit handle returned from :cpp:func:`pcnt_new_unit`. This function will return a PCNT channel handle if it runs correctly. Specifically, when there are no more free PCNT channel within the unit (i.e., channel resources have been used up), then this function will return :c:macro:`ESP_ERR_NOT_FOUND` error. Note that, when install a PCNT channel for a specific unit, one should ensure the unit is in the init state, otherwise this function will return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 If a previously created PCNT channel is no longer needed, it is recommended to recycle the resources by calling :cpp:func:`pcnt_del_channel`. Which in return allows the underlying channel hardware to be used for other purposes.
 
@@ -99,6 +107,10 @@ If a previously created PCNT channel is no longer needed, it is recommended to r
     };
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
+
+.. note::
+
+    In PCNT, the GPIOs involved can be reconfigured for pull-up or pull-down after initializing PCNT using functions such as :cpp:func:`gpio_pullup_en` and :cpp:func:`gpio_pullup_dis`.
 
 .. _pcnt-setup-channel-actions:
 
@@ -141,7 +153,41 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
 
         Due to the hardware limitation, after adding a watch point, you should call :cpp:func:`pcnt_unit_clear_count` to make it take effect.
 
-.. _pcnt-register-event-callbacks:
+.. only:: SOC_PCNT_SUPPORT_STEP_NOTIFY
+
+    .. _pcnt-step-notify:
+
+    Watch Step
+    ^^^^^^^^^^^
+
+    PCNT unit can be configured to watch a specific value increment (can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::flags::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
+
+    The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. The parameter ``step_interval`` can be positive(step forward, e.g., [N]->[N+1]->[N+2]->...) or negative(step backward, e.g., [N]->[N-1]->[N-2]->...). The same direction can only add one watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`.
+
+    .. note::
+
+        Due to hardware limitations, some chips may only support adding one direction of watch step. Please check the return value of :cpp:func:`pcnt_unit_add_watch_step` for more details.
+
+    It is recommended to remove the unused watch step by :cpp:func:`pcnt_unit_remove_watch_step` to recycle the watch step resources.
+
+    .. note::
+
+        When a watch step and a watch point are triggered at the same time (i.e. at the same absolute point), the callback function only gets called by once.
+
+        The step increment will be reset to 0 when the count reaches the high/low limit value. Please do not rely too much on the exact step interval.
+
+    .. code:: c
+
+        // add positive direction watch step with 100 step intervals
+        ESP_ERROR_CHECK(pcnt_unit_add_watch_step(pcnt_unit, 100));
+
+    .. _pcnt-register-event-callbacks:
+
+.. only:: not SOC_PCNT_SUPPORT_STEP_NOTIFY
+
+    .. _pcnt-register-event-callbacks:
+
+
 
 Register Event Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -152,10 +198,10 @@ When PCNT unit reaches any enabled watch point, specific event will be generated
 
 You can save their own context to :cpp:func:`pcnt_unit_register_event_callbacks` as well, via the parameter ``user_ctx``. This user data will be directly passed to the callback functions.
 
-In the callback function, the driver will fill in the event data of specific event. For example, the watch point event data is declared as :cpp:type:`pcnt_watch_event_data_t`:
+In the callback function, the driver will fill in the event data of specific event. For example, the watch point event or watch step event data is declared as :cpp:type:`pcnt_watch_event_data_t`:
 
-- :cpp:member:`pcnt_watch_event_data_t::watch_point_value` saves the watch point value that triggers the event.
-- :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` saves how the PCNT unit crosses the zero point in the latest time. The possible zero cross modes are listed in the :cpp:type:`pcnt_unit_zero_cross_mode_t`. Usually different zero cross mode means different **counting direction** and **counting step size**.
+-  :cpp:member:`pcnt_watch_event_data_t::watch_point_value` saves the count value when the event triggered.
+-  :cpp:member:`pcnt_watch_event_data_t::zero_cross_mode` saves how the PCNT unit crosses the zero point in the latest time. The possible zero cross modes are listed in the :cpp:type:`pcnt_unit_zero_cross_mode_t`. Usually different zero cross mode means different **counting direction** and **counting step size**.
 
 Registering callback function results in lazy installation of interrupt service, thus this function should only be called before the unit is enabled by :cpp:func:`pcnt_unit_enable`. Otherwise, it can return :c:macro:`ESP_ERR_INVALID_STATE` error.
 
@@ -192,7 +238,7 @@ This function should be called when the unit is in the init state. Otherwise, it
 
 .. note::
 
-    The glitch filter is clocked from APB. For the counter not to miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (usually 12.5 ns if APB equals 80 MHz). As the APB frequency would be changed after DFS (Dynamic Frequency Scaling) enabled, which means the filter does not work as expect in that case. So the driver installs a PM lock for PCNT unit during the first time you enable the glitch filter. For more information related to power management strategy used in PCNT driver, please see :ref:`pcnt-power-management`.
+    The glitch filter operates using the APB clock. To ensure the counter does not miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (typically 12.5 ns if APB is 80 MHz). Since the APB frequency can change with Dynamic Frequency Scaling (DFS), the filter may not function as expected in such cases. Therefore, the driver installs a power management lock for each PCNT unit. For more details on the power management strategy used in the PCNT driver, please refer to :ref:`pcnt-power-management`.
 
 .. code:: c
 
@@ -211,8 +257,7 @@ This function should be called when the unit is in the init state. Otherwise, it
     The PCNT unit can receive a clear signal from the GPIO. The parameters that can be configured for the clear signal are listed in :cpp:type:`pcnt_clear_signal_config_t`:
 
         -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` specify the GPIO numbers used by **clear** signal. The default active level is high, and the input mode is pull-down enabled.
-        -  :cpp:member:`pcnt_clear_signal_config_t::invert_clear_signal` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is inverted.
-        -  :cpp:member:`pcnt_clear_signal_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the clear signal by function :cpp:func:`gpio_set_level` for the same GPIO.
+        -  :cpp:member:`pcnt_clear_signal_config_t::flags::invert_clear_signal` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is inverted.
 
     This signal acts in the same way as calling :cpp:func:`pcnt_unit_clear_count`, but is not subject to software latency, and is suitable for use in situations with low latency requirements. Also please note, the flip frequency of this signal can not be too high.
 
@@ -236,7 +281,7 @@ Before doing IO control to the PCNT unit, you need to enable it first, by callin
 
 * switches the PCNT driver state from **init** to **enable**.
 * enables the interrupt service if it has been lazy installed in :cpp:func:`pcnt_unit_register_event_callbacks`.
-* acquires a proper power management lock if it has been lazy installed in :cpp:func:`pcnt_unit_set_glitch_filter`. See also :ref:`pcnt-power-management` for more information.
+* acquires a proper power management lock if it has been installed. See also :ref:`pcnt-power-management` for more information.
 
 On the contrary, calling :cpp:func:`pcnt_unit_disable` will do the opposite, that is, put the PCNT driver back to the **init** state, disable the interrupts service and release the power management lock.
 
@@ -278,7 +323,9 @@ Compensate Overflow Loss
 
 The internal hardware counter will be cleared to zero automatically when it reaches high or low limit. If you want to compensate for that count loss and extend the counter's bit-width, you can:
 
-    1. Enable :cpp:member:`pcnt_unit_config_t::accum_count` when installing the PCNT unit.
+.. list::
+
+    1. Enable :cpp:member:`pcnt_unit_config_t::flags::accum_count` when installing the PCNT unit.
     2. Add the high/low limit as the :ref:`pcnt-watch-points`.
     3. Now, the returned count value from the :cpp:func:`pcnt_unit_get_count` function not only reflects the hardware's count value, but also accumulates the high/low overflow loss to it.
 
@@ -286,14 +333,18 @@ The internal hardware counter will be cleared to zero automatically when it reac
 
     :cpp:func:`pcnt_unit_clear_count` resets the accumulated count value as well.
 
+.. note::
+
+    When enabling the count overflow compensation, it is recommended to use as large a high/low count limit as possible, as it can avoid frequent interrupt triggering, improve system performance, and avoid compensation failure due to multiple overflows.
+
 .. _pcnt-power-management:
 
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the behavior of PCNT glitch filter and leading to valid signal being treated as noise.
+When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system adjusts the APB frequency before entering light sleep, which can cause the PCNT glitch filter to misinterpret valid signals as noise.
 
-However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever you enable the glitch filter by :cpp:func:`pcnt_unit_set_glitch_filter`, the driver guarantees that the power management lock is acquired after the PCNT unit is enabled by :cpp:func:`pcnt_unit_enable`. Likewise, the driver releases the lock after :cpp:func:`pcnt_unit_disable` is called.
+To prevent this, the driver can acquire a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`, ensuring the APB frequency remains constant. This lock is acquired when the PCNT unit is enabled via :cpp:func:`pcnt_unit_enable` and released when the unit is disabled via :cpp:func:`pcnt_unit_disable`.
 
 .. _pcnt-iram-safe:
 
@@ -345,7 +396,7 @@ Kconfig Options
 Application Examples
 --------------------
 
-* Decode the quadrature signals from rotary encoder: :example:`peripherals/pcnt/rotary_encoder`.
+* :example:`peripherals/pcnt/rotary_encoder` demonstrates how to use the PCNT peripheral to decode the differential signals generated from a common rotary encoder, EC11, and how to configure the rotary encoder to wake the system from light-sleep.
 
 
 API Reference

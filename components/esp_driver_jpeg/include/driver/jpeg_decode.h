@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "jpeg_types.h"
+#include "hal/jpeg_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,7 @@ extern "C" {
  */
 typedef struct {
     jpeg_dec_output_format_t output_format;   /*!< JPEG decoder output format */
-    jpeg_dec_rgb_element_order_t rgb_order; /*!< JPEG decoder output order */
+    jpeg_dec_rgb_element_order_t rgb_order;   /*!< JPEG decoder output order */
     jpeg_yuv_rgb_conv_std_t conv_std;         /*!< JPEG decoder yuv->rgb standard */
 } jpeg_decode_cfg_t;
 
@@ -28,7 +29,12 @@ typedef struct {
  */
 typedef struct {
     int intr_priority;                    /*!< JPEG interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
-    int timeout_ms;                  /*!< JPEG timeout threshold for handling a picture, should larger than valid decode time in ms. For example, for 30fps decode, this value must larger than 34. -1 means wait forever */
+    int timeout_ms;                       /*!< JPEG timeout threshold for handling a picture, should larger than valid decode time in ms. For example, for 30fps decode, this value must larger than 34. -1 means wait forever */
+    struct {
+        uint32_t allow_pd:               1;   /*!< If set, the driver will backup/restore the JPEG registers before/after entering/exist sleep mode.
+                                                   By this approach, the system can power off JPEG's power domain.
+                                                   This can save power, but at the expense of more RAM being consumed */
+    } flags;                              /*!< JPEG engine configuration flags */
 } jpeg_decode_engine_cfg_t;
 
 /**
@@ -37,6 +43,7 @@ typedef struct {
 typedef struct {
     uint32_t width;          /*!< Number of pixels in the horizontal direction */
     uint32_t height;         /*!< Number of pixels in the vertical direction */
+    jpeg_down_sampling_type_t sample_method;     /*!< compressed JPEG picture sampling method */
 } jpeg_decode_picture_info_t;
 
 /**

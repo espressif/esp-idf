@@ -1,0 +1,13 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 0,
+    "lut_size_words": 3,
+    "lut_width_bits": 1,
+    "lut": [
+        2147483648,
+        4294934527,
+        1
+    ]
+}

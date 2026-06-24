@@ -1,17 +1,23 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include "host/ble_hs.h"
-#include "host/ble_uuid.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
-#include "multi_adv.h"
+
+static uint8_t gatt_svr_chr_val = 0x01;  /* Example characteristic value */
+#define GATT_SVR_UUID16_1 (0xCDAB)
+#define GATT_SVR_UUID16_2 (0x1118)
+
+static const uint16_t gatt_svr_adv_uuids16[] = {
+    GATT_SVR_UUID16_1,
+    GATT_SVR_UUID16_2,
+};
+static const ble_uuid16_t gatt_svr_svc16_uuid_1 = BLE_UUID16_INIT(GATT_SVR_UUID16_1);
+static const ble_uuid16_t gatt_svr_svc16_uuid_2 = BLE_UUID16_INIT(GATT_SVR_UUID16_2);
 
 static const ble_uuid128_t gatt_svr_svc_uuid =
     BLE_UUID128_INIT(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
@@ -35,6 +41,14 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 void *arg);
 
 static const struct ble_gatt_svc_def gatt_svr_svcs[] = {
+    {
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = &gatt_svr_svc16_uuid_1.u,
+    },
+    {
+        .type = BLE_GATT_SVC_TYPE_PRIMARY,
+        .uuid = &gatt_svr_svc16_uuid_2.u,
+    },
     {
         /*** Service ***/
         .type = BLE_GATT_SVC_TYPE_PRIMARY,
@@ -81,24 +95,39 @@ static int
 gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                 struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
+    int rc = 0;
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
         MODLOG_DFLT(INFO, "Characteristic read; conn_handle=%d attr_handle=%d\n",
                     conn_handle, attr_handle);
-        return 0;
+        rc = os_mbuf_append(ctxt->om,
+                            &gatt_svr_chr_val,
+                            sizeof(gatt_svr_chr_val));
+        return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        break;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
         MODLOG_DFLT(INFO, "Characteristic write; conn_handle=%d attr_handle=%d",
                     conn_handle, attr_handle);
-        return 0;
+        rc = os_mbuf_copydata(ctxt->om,
+                              0,
+                              sizeof(gatt_svr_chr_val),
+                              &gatt_svr_chr_val);
+        return rc == 0 ? 0 : BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        break;
 
     case BLE_GATT_ACCESS_OP_READ_DSC:
         MODLOG_DFLT(INFO, "Descriptor read; conn_handle=%d attr_handle=%d\n",
                     conn_handle, attr_handle);
-        return 0;
+        rc = os_mbuf_append(ctxt->om,
+                            &gatt_svr_dsc_val,
+                            sizeof(gatt_svr_dsc_val));
+        return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+        break;
 
     case BLE_GATT_ACCESS_OP_WRITE_DSC:
         goto unknown;
+        break;
 
     default:
         goto unknown;
@@ -149,8 +178,12 @@ gatt_svr_init(void)
 {
     int rc;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
 
     rc = ble_gatts_count_cfg(gatt_svr_svcs);
     if (rc != 0) {
@@ -166,4 +199,20 @@ gatt_svr_init(void)
     gatt_svr_dsc_val = 0x99;
 
     return 0;
+}
+
+const uint8_t *
+gatt_svr_service_uuid128(void)
+{
+    return gatt_svr_svc_uuid.value;
+}
+
+const uint16_t *
+gatt_svr_service_uuids16(size_t *count)
+{
+    if (count) {
+        *count = sizeof(gatt_svr_adv_uuids16) / sizeof(gatt_svr_adv_uuids16[0]);
+    }
+
+    return gatt_svr_adv_uuids16;
 }

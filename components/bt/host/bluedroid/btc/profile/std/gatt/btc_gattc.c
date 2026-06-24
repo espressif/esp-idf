@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
 
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -24,6 +24,7 @@ static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t
     esp_gattc_cb_t btc_gattc_cb = (esp_gattc_cb_t )btc_profile_cb_get(BTC_PID_GATTC);
     if (btc_gattc_cb) {
 	btc_gattc_cb(event, gattc_if, param);
+    BTC_TRACE_DEBUG("btc_gattc_cb_to_app, gattc_if %d, event=%d", gattc_if, event);
     }
 }
 
@@ -39,6 +40,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->write_char.value, src->write_char.value, src->write_char.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->write_char.value_len = 0;
         }
         break;
     }
@@ -48,6 +50,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->write_descr.value, src->write_descr.value, src->write_descr.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->write_descr.value_len = 0;
         }
         break;
     }
@@ -57,6 +60,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->prep_write.value, src->prep_write.value, src->prep_write.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->prep_write.value_len = 0;
         }
         break;
     }
@@ -66,6 +70,7 @@ void btc_gattc_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->prep_write_descr.value, src->prep_write_descr.value, src->prep_write_descr.value_len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
+            dst->prep_write_descr.value_len = 0;
         }
         break;
     }
@@ -198,7 +203,7 @@ static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 
 static void btc_gattc_app_register(btc_ble_gattc_args_t *arg)
 {
-    tBT_UUID app_uuid;
+    tBT_UUID app_uuid = {0};
     app_uuid.len = 2;
     app_uuid.uu.uuid16 = arg->app_reg.app_id;
     BTA_GATTC_AppRegister(&app_uuid, btc_gattc_cback);
@@ -212,15 +217,32 @@ static void btc_gattc_app_unregister(btc_ble_gattc_args_t *arg)
 static void btc_gattc_open(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_TRANSPORT transport = BTA_GATT_TRANSPORT_LE;
-    BTA_GATTC_Open(arg->open.gattc_if, arg->open.remote_bda,
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    BTA_GATTC_Enh_Open(arg->open.gattc_if, arg->open.remote_bda,
+                    arg->open.remote_addr_type, arg->open.is_direct,
+                    transport, arg->open.is_aux, arg->open.own_addr_type,
+                    arg->open.is_pawr_synced, arg->open.adv_handle, arg->open.subevent,
+                    arg->open.phy_mask, (void *)&arg->open.phy_1m_conn_params,
+                    (void *)&arg->open.phy_2m_conn_params, (void *)&arg->open.phy_coded_conn_params);
+#else
+    BTA_GATTC_Enh_Open(arg->open.gattc_if, arg->open.remote_bda,
                    arg->open.remote_addr_type, arg->open.is_direct,
-                   transport, arg->open.is_aux);
+                   transport, arg->open.is_aux, arg->open.own_addr_type,
+                   false, 0xff, 0xff,
+                   arg->open.phy_mask, (void *)&arg->open.phy_1m_conn_params,
+                   (void *)&arg->open.phy_2m_conn_params, (void *)&arg->open.phy_coded_conn_params);
+#endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
 }
 
 static void btc_gattc_close(btc_ble_gattc_args_t *arg)
 {
-    // TODO; Review this call of BTA_API, check the usage of BTA_GATTC_CancelOpen
     BTA_GATTC_Close(arg->close.conn_id);
+}
+
+static void btc_gattc_cancel_open(btc_ble_gattc_args_t *arg)
+{
+    /* ESP API path: always cancel as direct connection */
+    BTA_GATTC_CancelOpen(arg->cancel_open.gattc_if, arg->cancel_open.remote_bda, TRUE);
 }
 
 static void btc_gattc_cfg_mtu(btc_ble_gattc_args_t *arg)
@@ -319,6 +341,11 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
     tBT_UUID *bta_uuid = NULL;
     if (svc_uuid) {
         bta_uuid = osi_malloc(sizeof(tBT_UUID));
+        if (bta_uuid == NULL) {
+            *count = 0;
+            return ESP_GATT_NO_RESOURCES;
+        }
+
         btc_to_bta_uuid(bta_uuid, svc_uuid);
     }
 
@@ -603,16 +630,16 @@ static void btc_gattc_read_char(btc_ble_gattc_args_t *arg)
 static void btc_gattc_read_multiple_char(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_MULTI bta_multi;
-    bta_multi.num_attr = arg->read_multiple.num_attr;
-    memcpy(bta_multi.handles, arg->read_multiple.handles, BTA_GATTC_MULTI_MAX);
+    bta_multi.num_attr = (arg->read_multiple.num_attr > BTA_GATTC_MULTI_MAX) ? BTA_GATTC_MULTI_MAX : arg->read_multiple.num_attr;
+    memcpy(bta_multi.handles, arg->read_multiple.handles, sizeof(uint16_t) * bta_multi.num_attr);
     BTA_GATTC_ReadMultiple(arg->read_multiple.conn_id, &bta_multi, arg->read_multiple.auth_req);
 }
 
 static void btc_gattc_read_multiple_variable_char(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATTC_MULTI bta_multi;
-    bta_multi.num_attr = arg->read_multiple.num_attr;
-    memcpy(bta_multi.handles, arg->read_multiple.handles, BTA_GATTC_MULTI_MAX);
+    bta_multi.num_attr = (arg->read_multiple.num_attr > BTA_GATTC_MULTI_MAX) ? BTA_GATTC_MULTI_MAX : arg->read_multiple.num_attr;
+    memcpy(bta_multi.handles, arg->read_multiple.handles, sizeof(uint16_t) * bta_multi.num_attr);
     BTA_GATTC_ReadMultipleVariable(arg->read_multiple.conn_id, &bta_multi, arg->read_multiple.auth_req);
 }
 
@@ -663,7 +690,11 @@ static void btc_gattc_prepare_write(btc_ble_gattc_args_t *arg)
 static void btc_gattc_prepare_write_char_descr(btc_ble_gattc_args_t *arg)
 {
     tBTA_GATT_UNFMT descr_val;
-
+    /*
+    According to the Bluetooth Core Specification, a Prepare Write Request can have a zero-length value.
+    The underlying BTA layer function BTA_GATTC_PrepareWriteCharDescr is implemented to handle zero-length data correctly by skipping the memory copy
+    but still sending the message to the stack.
+    */
     descr_val.len = arg->prep_write_descr.value_len;
     descr_val.p_value = arg->prep_write_descr.value;
     BTA_GATTC_PrepareWriteCharDescr(arg->prep_write_descr.conn_id,
@@ -711,6 +742,9 @@ static void btc_gattc_unreg_for_notify(btc_ble_gattc_args_t *arg)
 void btc_gattc_call_handler(btc_msg_t *msg)
 {
     btc_ble_gattc_args_t *arg = (btc_ble_gattc_args_t *)(msg->arg);
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_GATTC_ACT_APP_REGISTER:
         btc_gattc_app_register(arg);
@@ -726,6 +760,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
         break;
     case BTC_GATTC_ACT_CLOSE:
         btc_gattc_close(arg);
+        break;
+    case BTC_GATTC_ACT_CANCEL_OPEN:
+        btc_gattc_cancel_open(arg);
         break;
     case BTC_GATTC_ACT_CFG_MTU:
         btc_gattc_cfg_mtu(arg);
@@ -799,6 +836,8 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     esp_ble_gattc_cb_param_t param = {0};
 
     memset(&param, 0, sizeof(esp_ble_gattc_cb_param_t));
+
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
     switch (msg->act) {
     case BTA_GATTC_REG_EVT: {
@@ -952,8 +991,6 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     case BTA_GATTC_CLOSE_EVT: {
         tBTA_GATTC_CLOSE *close = &arg->close;
 
-        // Free gattc clcb in BTC task to avoid race condition
-        bta_gattc_clcb_dealloc_by_conn_id(close->conn_id);
         gattc_if = close->client_if;
         param.close.status = close->status;
         param.close.conn_id = BTC_GATT_GET_CONN_ID(close->conn_id);
@@ -988,7 +1025,12 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         break;
     }
     case BTA_GATTC_CANCEL_OPEN_EVT: {
-        /* Currently, this event will never happen */
+        tBTA_GATTC_CANCEL_OPEN *cancel = &arg->cancel_open;
+
+        gattc_if = cancel->client_if;
+        param.cancel_open.status = cancel->status;
+        memcpy(param.cancel_open.remote_bda, cancel->remote_bda, sizeof(esp_bd_addr_t));
+        btc_gattc_cb_to_app(ESP_GATTC_CANCEL_OPEN_EVT, gattc_if, &param);
         break;
     }
     case BTA_GATTC_CONGEST_EVT: {

@@ -8,16 +8,12 @@ ESP x509 证书包
 
 ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义 x509 根证书用于 TLS 服务器验证。
 
-.. note::
-
-    目前在使用 WolfSSL 时该证书包不可用。
-
 该证书包中包括 Mozilla NSS 根证书存储区的完整根证书列表。使用 gen_crt_bundle.py python 程序，可将证书的主题名称和公钥存储在文件中，并嵌入 {IDF_TARGET_NAME} 二进制文件。
 
 生成证书包时，你需选择：
 
-* 来自 Mozilla 的完整根证书包，包含超过 130 份证书。目前提供的证书包更新于 2024 年 3 月 11 日，星期一，15:25:27 (GMT)。
-* 一组预先筛选的常用根证书。其中仅包含约 41 份证书，但根据 SSL 证书颁发机构统计数据，其绝对使用率约达到 90%，市场覆盖率约达 99%。
+* 来自 Mozilla 的完整根证书包，包含超过 130 份证书。目前提供的证书包更新于 2026 年 5 月 14 日，星期四, 03:12:02 (GMT)。
+* 一组预先筛选的常用根证书。其中仅包含约 35 份证书，但根据 SSL 证书颁发机构统计数据，其绝对使用率约达到 94%，市场覆盖率约达 99%。
 
 此外，还可指定证书文件的路径或包含证书的目录，将其他证书添加到生成的证书包中。
 
@@ -67,7 +63,7 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 
 常用证书包是通过筛选出市场份额超过 1% 的授权机构来决定的，筛选数据来自 w3tech 的 `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate>`_。
 
-根据这些授权机构，从 Mozilla 提供的 `列表 <https://ccadb-public.secure.force.com/mozilla/IncludedCACertificateReportPEMCSV>`_ 的 ``cmn_crt_authorities.csv`` 中筛选证书名称。
+根据这些授权机构，从 Mozilla 提供的 `Included CA Certificate List <https://ccadb.my.salesforce-sites.com/mozilla/IncludedRootCertificateReportCSVFormat>`_ 中筛选 ``cmn_crt_authorities.csv`` 所需的证书名称。
 
 
 更新证书包
@@ -81,14 +77,45 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 
 证书包会与 Mozilla 的 NSS 根证书商店定期同步。在 ESP-IDF 的次要版本或补丁版本中，为了保证兼容性，会将上游证书包中已弃用的证书添加到弃用列表。如有需要，可以通过 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST` 将弃用证书加入默认证书包。这些弃用证书将在下一个 ESP-IDF 主要版本中移除。
 
+交叉签名证书支持
+----------------
+
+概述
+^^^^
+
+启用配置选项 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 时，ESP x509 证书包 API 将支持验证包含交叉签名根证书的证书链。
+
+即使证书链中包含交叉签名根证书，验证过程中也能从证书包中智能匹配候选的证书颁发机构 (CA)，从而提高与各类服务器证书的互操作性。
+
+启用该功能后，证书验证逻辑与默认的 mbedTLS 行为一致，能够确保与交叉签名证书链兼容，且验证过程稳健可靠。
+
+.. note::
+
+    启用交叉签名证书支持功能后，运行时的堆内存使用量将增加约 700 字节，但由于证书包体积减小，flash 占用会降低。
+
+关键点：
+
+- 证书包可作为动态 CA 存储，在握手过程中提供候选的根证书；
+- 验证回调函数会使用证书链中的颁发者信息，从证书包中定位并提供匹配的根证书；
+- 该功能在交叉签名较为常见的场景中能够提供帮助，例如根 CA 切换期间。
+
+使用方法
+^^^^^^^^
+
+除了在项目配置中启用 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 外，应用无需额外更改。握手过程中，证书包会自动提供候选的 CA。
+
+.. note::
+
+    如果启用了 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY`，其内部会使用 ``MBEDTLS_X509_TRUSTED_CERT_CALLBACK``。在此情况下，用户 **不应** 自行提供受信任证书回调函数，因为证书包会自动处理。
+
 应用示例
 ---------
 
-使用 ESP-TLS 创建安全套接字连接的简单 HTTPS 示例：:example:`protocols/https_x509_bundle`，该示例使用了证书包并添加了两个自定义证书用于验证。
+:example:`protocols/https_x509_bundle` 演示了如何使用 ESP-TLS 创建安全套接字连接的简单 HTTPS 示例，该示例使用了证书包并添加了两个自定义证书用于验证。
 
-使用 ESP-TLS 和默认证书包的 HTTPS 示例：:example:`protocols/https_request`。
+:example:`protocols/https_request` 演示了如何使用 ESP-TLS 和默认证书包的 HTTPS 示例。
 
-使用 mbedTLS 和默认证书包的 HTTPS 示例：:example:`protocols/https_mbedtls`。
+:example:`protocols/https_mbedtls` 演示了如何使用 Mbed TLS 和默认证书包的 HTTPS 示例。
 
 API 参考
 ----------

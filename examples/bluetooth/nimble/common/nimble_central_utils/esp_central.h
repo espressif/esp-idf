@@ -15,6 +15,7 @@ extern "C" {
 #define PEER_ADDR_VAL_SIZE                                  6
 
 /** Misc. */
+int peer_addr_parse(const char *addr_str, uint8_t addr[PEER_ADDR_VAL_SIZE]);
 void print_bytes(const uint8_t *bytes, int len);
 void print_mbuf(const struct os_mbuf *om);
 void print_mbuf_data(const struct os_mbuf *om);
@@ -38,14 +39,24 @@ struct peer_chr {
     struct peer_dsc_list dscs;
 };
 SLIST_HEAD(peer_chr_list, peer_chr);
+SLIST_HEAD(peer_svc_list, peer_svc);
+
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+struct peer_incl_svc {
+    SLIST_ENTRY(peer_incl_svc) next;
+    struct ble_gatt_incl_svc svc;
+};
+SLIST_HEAD(peer_incl_svc_list, peer_incl_svc);
+#endif
 
 struct peer_svc {
     SLIST_ENTRY(peer_svc) next;
     struct ble_gatt_svc svc;
-
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    struct peer_incl_svc_list incl_svc;
+#endif
     struct peer_chr_list chrs;
 };
-SLIST_HEAD(peer_svc_list, peer_svc);
 
 struct peer;
 typedef void peer_disc_fn(const struct peer *peer, int status, void *arg);
@@ -95,7 +106,11 @@ const struct peer_svc *
 peer_svc_find_uuid(const struct peer *peer, const ble_uuid_t *uuid);
 int peer_delete(uint16_t conn_handle);
 int peer_add(uint16_t conn_handle);
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+int peer_init(int max_peers, int max_svcs, int max_incl_svcs, int max_chrs, int max_dscs);
+#else
 int peer_init(int max_peers, int max_svcs, int max_chrs, int max_dscs);
+#endif
 struct peer *
 peer_find(uint16_t conn_handle);
 #if MYNEWT_VAL(ENC_ADV_DATA)

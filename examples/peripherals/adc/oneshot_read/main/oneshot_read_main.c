@@ -38,14 +38,14 @@ const static char *TAG = "EXAMPLE";
 
 #if EXAMPLE_USE_ADC2
 //ADC2 Channels
-#if CONFIG_IDF_TARGET_ESP32
 #define EXAMPLE_ADC2_CHAN0          ADC_CHANNEL_0
-#else
-#define EXAMPLE_ADC2_CHAN0          ADC_CHANNEL_0
-#endif
 #endif  //#if EXAMPLE_USE_ADC2
 
+#if SOC_ADC_ATTEN_NUM <= 1
+#define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_0
+#else
 #define EXAMPLE_ADC_ATTEN           ADC_ATTEN_DB_12
+#endif
 
 static int adc_raw[2][10];
 static int voltage[2][10];
@@ -63,8 +63,8 @@ void app_main(void)
 
     //-------------ADC1 Config---------------//
     adc_oneshot_chan_cfg_t config = {
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
         .atten = EXAMPLE_ADC_ATTEN,
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN0, &config));
     ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, EXAMPLE_ADC1_CHAN1, &config));

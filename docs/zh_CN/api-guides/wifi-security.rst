@@ -40,29 +40,76 @@ API 及用法
     为最大限度地利用 PMF 的额外安全性优势，已弃用 ``pmf_cfg`` 中的 ``capable`` 标志，并在内部设置为 ``true``。
 
 企业级 Wi-Fi
----------------------------------
+----------------------
 
 简介
-++++++++++++
+++++++++
 
-企业级安全是企业无线网的安全认证机制，采用 RADIUS 服务器在设备接入到接入点 (AP) 前认证网络用户。该机制基于 802.1X 标准完成认证，并采用多种扩展认证协议 (EAP) 方法，如 TLS、TTLS、PEAP 和 EAP-FAST。RADIUS 服务器根据用户凭证（用户名和密码）、数字证书或两者的组合进行用户认证。
+企业级 Wi-Fi (Wi-Fi Enterprise) 为企业无线网络提供安全认证机制。该机制基于 IEEE 802.1X 标准运作，并依赖 RADIUS 服务器在设备连接到接入点 (AP) 之前进行用户身份验证。根据所使用的可扩展认证协议 (EAP) 方法，认证可以基于用户凭证（用户名和密码）、数字证书，或两者结合。
+
+当 {IDF_TARGET_NAME} 以 station 模式连接企业级 AP 时，会发起认证请求。AP 会将该请求转发给配置的 RADIUS 服务器，由其根据所选 EAP 方法和参数对设备进行验证。
 
 .. note::
 
   {IDF_TARGET_NAME} 仅在 station 模式下支持企业级 Wi-Fi。
 
-{IDF_TARGET_NAME} 支持 **企业级 WPA2** 和 **企业级 WPA3**。企业级 WPA3 构建在企业级 WPA2 的基础之上，并额外要求在所有 WPA3 连接中使用受保护的管理帧 (PMF) 和服务器证书验证。此外，**企业级 WPA3 还提供了一种更安全的模式，使用 192 位最低强度的安全协议和加密工具，更好地保护敏感数据**。企业级 WPA3 的 192 位模式可以确保用户正确使用密码工具组合，并在 WPA3 网络中设立了一致的安全基准。需要注意的是，只有支持 :c:macro:`SOC_WIFI_GCMP_SUPPORT` 的模组才支持企业级 WPA3 的 192 位模式。如需使用该模式，请启用 :ref:`CONFIG_ESP_WIFI_SUITE_B_192` 标志。
+企业级 WPA2 和企业级 WPA3
+++++++++++++++++++++++++++++++
 
-{IDF_TARGET_NAME} 支持以下 EAP 方法：
-  - EAP-TLS：该认证方法基于证书实现，仅需提供 SSID 和 EAP-IDF。
-  - PEAP：该认证方法为受保护的 EAP 方法，必须提供用户名和密码。
-  - EAP-TTLS：该认证方法基于凭证实现，必须提供服务器证书，用户证书为可选项。该方法支持多种第二阶段方法，如：
-     - PAP：密码认证协议
-     - CHAP：挑战握手认证协议
-     - MSCHAP 和 MSCHAP-V2
-  - EAP-FAST：该认证方法基于受保护访问凭证 (PAC) 实现，同时也使用身份和密码。目前，需禁用 :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` 标志以使用此功能。
+{IDF_TARGET_NAME} 支持 **企业级 WPA2 (WPA2-Enterprise)** 和 **企业级 WPA3 (WPA3-Enterprise)**。
 
-示例 :example:`wifi/wifi_enterprise` 展示了除 EAP-FAST 之外的所有支持的企业级 Wi-Fi 方法。有关 ESP-FAST 的示例，请参阅 :example:`wifi/wifi_eap_fast`。可以在 ``idf.py menuconfig`` 的示例配置菜单中选择 EAP 方法。请参阅 :idf_file:`examples/wifi/wifi_enterprise/README.md` 了解如何生成证书及如何运行示例。
+**企业级 WPA2** 使用 802.1X/EAP 进行身份验证，并依赖安全的凭证或证书。为建立安全连接，AP 与 station 会协商并选定适当的加密套件。{IDF_TARGET_NAME} 支持以下内容：
+
+- 802.1X/EAP（WPA）AKM 方法
+- AES-CCM cipher suite
+- 启用 `USE_MBEDTLS_CRYPTO` 后可使用 mbedtls 支持的其他 cipher suite
+
+**企业级 WPA3** 在企业级 WPA2 的基础上加强了安全性，并对所有 WPA3 连接增加两项强制要求：必须启用受保护管理帧 (PMF)，并强制执行服务器证书验证。
+
+此外，企业级 WPA3 还支持 **192 位最低强度安全模式 (Suite B)**，提供更高的加密强度。
+
+- 企业级 WPA3 的 192 位模式仅适用于支持 :c:macro:`SOC_WIFI_GCMP_SUPPORT` 的芯片。
+- 若需启用该模式，请配置 :ref:`CONFIG_ESP_WIFI_SUITE_B_192`。
+
+支持的 EAP 方法
++++++++++++++++++++++
+
+{IDF_TARGET_NAME} 支持多种企业级认证的 EAP 方法。不同方法可能需要不同的配置参数，如 SSID、身份标识、用户名/密码、CA 证书或客户端证书等。
+
+支持以下 EAP 方法：
+
+- **EAP-TLS**
+
+  基于证书的认证方式，需要提供 SSID 和 EAP 身份；通过客户端证书进行设备认证。
+
+- **PEAP**
+
+  一种受保护的 EAP 方法，需要提供用户名和密码。
+
+- **EAP-TTLS**
+
+  一种基于凭证的认证方式。服务器认证为必选；用户认证取决于 Phase 2 方法。通常需要提供用户名和密码。支持的 Phase 2 方法包括：
+
+  - PAP：密码认证协议
+  - CHAP：挑战握手认证协议
+  - MSCHAP
+  - MSCHAP-V2
+
+- **EAP-FAST**
+
+  基于受保护访问凭证 (PAC) 的认证方法，需要身份标识和密码。使用 EAP-FAST 时需要 **禁用** :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT`。
+
+示例
+++++++++
+
+- :example:`wifi/wifi_eap_fast`
+
+  演示如何使用 EAP-FAST 将 {IDF_TARGET_NAME} 连接到企业级 Wi-Fi，包括 CA 证书安装、凭证配置、启用企业级模式以及连接 AP。
+
+- :example:`wifi/wifi_enterprise`
+
+  演示使用 EAP-TLS、EAP-PEAP 和 EAP-TTLS 连接企业级 Wi-Fi。有关使用 OpenSSL 生成证书及运行示例的说明，请参考 :example_file:`wifi/wifi_enterprise/README.md`。
+
 
 个人级 WPA3
 -------------
@@ -116,4 +163,41 @@ API 及用法
 在 {IDF_TARGET_NAME} 上设置 OWE
 ++++++++++++++++++++++++++++++++++++++
 
+station 模式：
+
 配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` 和 :cpp:type:`wifi_sta_config_t` 中的配置参数 :cpp:type:`owe_enabled` 可以为 station 模式启用 OWE 支持。除上述配置外，请将 :cpp:type:`wifi_scan_threshold_t` 中的 `authmode` 设置为 ``WIFI_AUTH_OPEN`` 以使用 OWE 过渡模式。
+
+
+SoftAP 模式：
+
+需通过 menuconfig 启用配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP`，并将 :cpp:type:`wifi_ap_config_t` 中的配置参数 `authmode` 设置为 ``WIFI_AUTH_OWE``。SoftAP 不支持 OWE 过渡模式，请仅配置 ``WIFI_AUTH_OWE``。
+
+Wi-Fi 隐私增强
+--------------------------
+
+MAC 地址用于设备连接 Wi-Fi 网络。由于 MAC 地址具有唯一且静态的特点，并且在传输时未加密，因此可能会被捕获和追踪。{IDF_TARGET_NAME} 支持 Wi-Fi 隐私增强功能，包括 MAC 地址随机化、序列号随机化、GAS 对话令牌多样化和厂商自定义序列号管理。这些功能通过增强隐私保护，避免设备在扫描或连接网络时被持续追踪。
+
+要使用此功能，请在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`。
+
+{IDF_TARGET_NAME} 还会在未连接网络时，定期自动重置随机 MAC 地址。重置周期通过 menuconfig 中的 :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 选项配置（有效范围：1 至 24 小时，默认值为 12 小时）。
+
+.. note::
+
+   仅当 station 未连接到任何 AP 时，:ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 才会生成并设置新的随机 MAC 地址。如果 station 已连接到 AP，则不会中断连接，并会继续使用相同的随机 MAC 地址。如果定期自动重置定时器在 station 处于连接状态时超时，定时器将在下一次断开连接时被重新装载或触发。
+
+   在启用 Wi-Fi Mesh 或 ESP-NOW 时，不支持且无法使用 Wi-Fi 隐私增强功能。
+
+
+{IDF_TARGET_NAME} 在满足以下条件时支持扫描过程中的隐私增强：
+
+  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
+  - 扫描类型为 :cpp:enumerator:`WIFI_SCAN_TYPE_ACTIVE`
+  - station 未连接到任何 AP
+
+{IDF_TARGET_NAME} 在满足以下条件时支持连接过程中的隐私增强：
+
+  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
+  - 使用 :cpp:func:`esp_wifi_set_config` 设置新的 Wi-Fi 配置
+
+
+要获取 MAC 地址，请使用 API :cpp:func:`esp_wifi_get_mac`。

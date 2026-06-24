@@ -19,9 +19,9 @@
  ******************************************************************************/
 /************************************************************************************
  *
- *  Filename:      btc_hd.c
+ *  Filename:      btc_hh.c
  *
- *  Description:   HID Device Profile Bluetooth Interface
+ *  Description:   HID Host Profile Bluetooth Interface
  *
  *
  ***********************************************************************************/
@@ -64,11 +64,13 @@ static bdstr_t bdstr;
 #define is_hidh_init() (btc_hh_cb.status > BTC_HH_DISABLED)
 #define BTC_TIMEOUT_VUP_MS (3 * 1000)
 
+static void btc_hh_cb_arg_deep_free(btc_msg_t *msg);
+
 static inline void btc_hh_cb_to_app(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
 {
-    esp_hh_cb_t btc_hh_cb = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
-    if (btc_hh_cb) {
-        btc_hh_cb(event, param);
+    esp_hh_cb_t btc_hh_cbk = (esp_hh_cb_t)btc_profile_cb_get(BTC_PID_HH);
+    if (btc_hh_cbk) {
+        btc_hh_cbk(event, param);
     }
 }
 
@@ -189,7 +191,7 @@ static btc_hh_device_t *btc_hh_find_connected_dev_by_bda(BD_ADDR bd_addr)
  *
  * Function         btc_hh_stop_vup_timer
  *
- * Description      stop vitual unplug timer
+ * Description      stop virtual unplug timer
  *
  * Returns          void
  ******************************************************************************/
@@ -316,7 +318,7 @@ void btc_hh_remove_device(BD_ADDR bd_addr)
 
     for (i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
         p_added_dev = &btc_hh_cb.added_devices[i];
-        if (p_added_dev->bd_addr == bd_addr) {
+        if (memcmp(p_added_dev->bd_addr, bd_addr, BD_ADDR_LEN) == 0) {
             BTA_HhRemoveDev(p_added_dev->dev_handle);
             btc_storage_remove_hid_info((bt_bdaddr_t *)p_added_dev->bd_addr);
             memset(p_added_dev->bd_addr, 0, 6);
@@ -362,6 +364,23 @@ static void bte_hh_arg_deep_copy(btc_msg_t *msg, void *p_dst, void *p_src)
                 break;
             }
             memcpy(p_dst_data->hs_data.rsp_data.p_rpt_data, src_hdr, sizeof(BT_HDR) + src_hdr->offset + src_hdr->len);
+        }
+        break;
+    }
+    case BTA_HH_DATA_IND_EVT: {
+        BT_HDR *src_hdr = p_src_data->int_data.p_data;
+        p_dst_data->int_data.p_data = NULL;
+        if (src_hdr) {
+            p_dst_data->int_data.p_data = osi_malloc(sizeof(BT_HDR) + src_hdr->len);
+            if (p_dst_data->int_data.p_data == NULL) {
+                BTC_TRACE_ERROR("%s malloc int_data.p_data failed!", __func__);
+                p_dst_data->int_data.status = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
+            BT_HDR *dst_hdr = p_dst_data->int_data.p_data;
+            memcpy(dst_hdr, src_hdr, sizeof(BT_HDR));
+            memcpy(dst_hdr->data, src_hdr->data + src_hdr->offset, src_hdr->len);
+            dst_hdr->offset = 0;
         }
         break;
     }
@@ -422,6 +441,9 @@ static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH *p_data)
         break;
     case BTA_HH_DATA_EVT:
         param_len = sizeof(tBTA_HH_API_SENDDATA);
+        break;
+    case BTA_HH_DATA_IND_EVT:
+        param_len = sizeof(tBTA_HH_INTDATA);
         break;
     case BTA_HH_API_ERR_EVT:
         param_len = 0;
@@ -544,6 +566,11 @@ static void btc_hh_connect(btc_hidh_args_t *arg)
             BTC_TRACE_ERROR("%s exceeded the maximum supported HID device number %d!", __func__, BTC_HH_MAX_HID);
             ret = ESP_HIDH_ERR_NO_RES;
             break;
+        } else if (dev && dev->dev_status == ESP_HIDH_CONN_STATE_CONNECTED) {
+            BTC_TRACE_WARNING("%s Device[%s] already connected", __func__,
+                              bdaddr_to_string((const bt_bdaddr_t *)arg->connect.bd_addr, bdstr, sizeof(bdstr)));
+            param.open.conn_status = ESP_HIDH_CONN_STATE_CONNECTED;
+            break;
         }
 
         for (int i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
@@ -662,7 +689,7 @@ static void btc_hh_virtual_unplug(btc_hidh_args_t *arg)
             param.unplug.conn_status = ESP_HIDH_CONN_STATE_DISCONNECTING;
             param.unplug.handle = p_dev->dev_handle;
         } else if ((p_dev != NULL) && (p_dev->dev_status == ESP_HIDH_CONN_STATE_CONNECTED)) {
-            BTC_TRACE_WARNING("%s: Virtual unplug not suported, disconnecting device", __func__);
+            BTC_TRACE_WARNING("%s: Virtual unplug not supported, disconnecting device", __func__);
             /* start the timer */
             btc_hh_start_vup_timer(arg->unplug.bd_addr);
             p_dev->local_vup = true;
@@ -705,6 +732,11 @@ static void btc_hh_set_info(btc_hidh_args_t *arg)
     esp_hidh_cb_param_t param;
     tBTA_HH_DEV_DSCP_INFO dscp_info;
 
+    if (!arg->set_info.hid_info) {
+        ret = ESP_HIDH_ERR;
+        goto _error;
+    }
+
     BTC_TRACE_DEBUG("%s: sub_class = 0x%02x, app_id = %d, vendor_id = 0x%04x, "
                     "product_id = 0x%04x, version= 0x%04x",
                     __func__, arg->set_info.hid_info->sub_class, arg->set_info.hid_info->app_id,
@@ -744,6 +776,7 @@ static void btc_hh_set_info(btc_hidh_args_t *arg)
     } while(0);
     utl_freebuf((void **)&dscp_info.descriptor.dsc_list);
 
+_error:
     if (ret != ESP_HIDH_OK) {
         param.set_info.status = ret;
         param.set_info.handle = BTA_HH_INVALID_HANDLE;
@@ -1092,7 +1125,7 @@ static void btc_hh_set_idle_time(btc_hidh_args_t *arg)
     }
 }
 
-static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
+void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)msg->arg;
 
@@ -1114,6 +1147,8 @@ static void btc_hh_call_arg_deep_free(btc_msg_t *msg)
 void btc_hh_call_handler(btc_msg_t *msg)
 {
     btc_hidh_args_t *arg = (btc_hidh_args_t *)(msg->arg);
+    BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
+
     switch (msg->act) {
     case BTC_HH_INIT_EVT:
         btc_hh_init();
@@ -1161,7 +1196,7 @@ void btc_hh_call_handler(btc_msg_t *msg)
     btc_hh_call_arg_deep_free(msg);
 }
 
-void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
+static void btc_hh_cb_arg_deep_free(btc_msg_t *msg)
 {
     tBTA_HH *arg = (tBTA_HH *)msg->arg;
 
@@ -1222,6 +1257,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
     btc_hh_device_t *p_dev = NULL;
     int len, i;
     BTC_TRACE_DEBUG("%s: event=%s dereg = %d", __func__, dump_hh_event(msg->act), btc_hh_cb.service_dereg_active);
+
     switch (msg->act) {
     case BTA_HH_ENABLE_EVT:
         if (p_data->status == BTA_HH_OK) {
@@ -1245,7 +1281,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         }
         if (p_data->status == BTA_HH_OK) {
             // Clear the control block
-            for (uint8_t i = 0; i < BTC_HH_MAX_HID; i++) {
+            for (i = 0; i < BTC_HH_MAX_HID; i++) {
                 if (btc_hh_cb.devices[i].vup_timer) {
                     osi_alarm_free(btc_hh_cb.devices[i].vup_timer);
                 }
@@ -1367,7 +1403,10 @@ void btc_hh_cb_handler(btc_msg_t *msg)
              */
             if (p_dev->local_vup) {
                 p_dev->local_vup = false;
+#if BTC_HID_REMOVE_DEVICE_BONDING
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
+#endif
+                btc_hh_remove_device(p_dev->bd_addr);
             }
 
             btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
@@ -1401,8 +1440,9 @@ void btc_hh_cb_handler(btc_msg_t *msg)
             // [boblane]
             if (p_dev->local_vup) {
                 p_dev->local_vup = false;
+#if BTC_HID_REMOVE_DEVICE_BONDING
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
-            } else {
+#endif
                 btc_hh_remove_device(p_dev->bd_addr);
             }
             param.unplug.status = p_data->dev_status.status;
@@ -1477,11 +1517,11 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_status.status, p_data->dev_status.handle);
         param.set_idle.handle = p_data->dev_status.handle;
         param.set_idle.status = p_data->dev_status.status;
-        btc_hh_cb_to_app(BTA_HH_SET_IDLE_EVT, &param);
+        btc_hh_cb_to_app(ESP_HIDH_SET_IDLE_EVT, &param);
         break;
     case BTA_HH_ADD_DEV_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_info.status, p_data->dev_info.handle);
-        for (uint8_t i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
+        for (i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
             if (memcmp(btc_hh_cb.added_devices[i].bd_addr, p_data->dev_info.bda, BD_ADDR_LEN) == 0) {
                 if (p_data->dev_info.status == BTA_HH_OK) {
                     btc_hh_cb.added_devices[i].dev_handle = p_data->dev_info.handle;
@@ -1506,8 +1546,8 @@ void btc_hh_cb_handler(btc_msg_t *msg)
         break;
     case BTA_HH_RMV_DEV_EVT:
         BTC_TRACE_DEBUG("status = %d, handle = %d", p_data->dev_info.status, p_data->dev_info.handle);
-        param.rmv_dev.handle = p_data->dev_info.status;
-        param.rmv_dev.status = p_data->dev_info.handle;
+        param.rmv_dev.handle = p_data->dev_info.handle;
+        param.rmv_dev.status = p_data->dev_info.status;
         memcpy(param.rmv_dev.bd_addr, p_data->dev_info.bda, BD_ADDR_LEN);
         btc_hh_cb_to_app(ESP_HIDH_RMV_DEV_EVT, &param);
         break;
@@ -1563,6 +1603,23 @@ void btc_hh_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     default:
         break;
+    }
+}
+
+void btc_hh_get_profile_status(esp_hidh_profile_status_t *param)
+{
+    if (is_hidh_init()) {
+        param->hidh_inited = true;
+        if (btc_hh_cb.status == BTC_HH_DEV_CONNECTED) {
+            param->conn_num++;
+        }
+        for (int i = 0; i < BTC_HH_MAX_ADDED_DEV; i++) {
+            if (memcmp(btc_hh_cb.added_devices[i].bd_addr, bd_addr_null, BD_ADDR_LEN) != 0) {
+                param->plug_vc_dev_num++;
+            }
+        }
+    } else {
+        param->hidh_inited = false;
     }
 }
 

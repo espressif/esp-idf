@@ -116,35 +116,109 @@ if (find_device_1 && find_device_2 && find_device_3 && stop_scan == false {
 The scan stop triggers an ``ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT`` event which is used to open a connection to the first remote device. The second and third devices get connected once the client searches for services, gets characteristics and registers for notifications on the first device. This workflow is designed to test that the communication between each remote device is working correctly before trying to connect to the next device or in case of error, skip to the next device.  
 
 ```c
-case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
-    if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS){
-        ESP_LOGE(GATTC_TAG, "Scan stop failed");
-        break;
-    }
-    ESP_LOGI(GATTC_TAG, "Stop scan successfully");
-    if (!stop_scan){
-        ESP_LOGE(GATTC_TAG, "Did not find all devices");
-    }
-    if (find_device_1){
-        esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, true);
-    }
-    break;
-```
-
-* The connection is opened with the ``esp_ble_gattc_open()`` function which takes the GATT interface, the remote device address and a boolean value set to true for direct connection or false for background auto connection. To disconnect the physical connection, the GAP API function ``esp_ble_gap_disconnect()`` is used.
-	
-	When connecting to the first device, an ``ESP_GATTC_CONNECT_EVT`` event is generated which is forwarded to all profiles. It also triggers an ``ESP_GATTC_OPEN_EVT`` event that is forwarded to the Profile A event handler only, or ``gattc_profile_a_event_handler()`` function. The event checks that the connection is opened successfully, if not, the device is ignored and the client tries to open a connection to the second device:
-  
-  ```c
-  case ESP_GATTC_OPEN_EVT:
-        if (p_data->open.status != ESP_GATT_OK){
-            //open failed, ignore the first device, connect the second device
-            ESP_LOGE(GATTC_TAG, "connect device failed, status %d", p_data->open.status);
-            if (find_device_2){
-                esp_ble_gattc_open(gl_profile_tab[PROFILE_B_APP_ID].gattc_if, gl_profile_tab[PROFILE_B_APP_ID].remote_bda, true);
-            }
+    case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
+        if (param->scan_stop_cmpl.status != ESP_BT_STATUS_SUCCESS){
+            ESP_LOGE(GATTC_TAG, "Scan stop failed");
             break;
         }
+        ESP_LOGI(GATTC_TAG, "Stop scan successfully");
+
+        break;
+```
+
+* The connection is opened with the ``esp_ble_gattc_enh_open()`` function which takes the GATT interface, the remote device address and a boolean value set to true for direct connection or false for background auto connection. To disconnect the physical connection, the GAP API function ``esp_ble_gap_disconnect()`` is used.
+	
+	When connecting to the first device, an ``ESP_GATTC_CONNECT_EVT`` event is generated which is forwarded to all profiles. It also triggers an ``ESP_GATTC_OPEN_EVT`` event that is forwarded to the Profile A event handler only, or ``gattc_profile_a_event_handler()`` function. The event checks that the connection is opened successfully, if not, the device is ignored and the client tries to open a connection to the second device.
+  
+  ```c
+    case ESP_GAP_BLE_SCAN_RESULT_EVT: {
+        esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
+        switch (scan_result->scan_rst.search_evt) {
+        case ESP_GAP_SEARCH_INQ_RES_EVT:
+            ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
+            ESP_LOGI(GATTC_TAG, "Searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
+            adv_name = esp_ble_resolve_adv_data_by_type(scan_result->scan_rst.ble_adv,
+                                                scan_result->scan_rst.adv_data_len + scan_result->scan_rst.scan_rsp_len,
+                                                ESP_BLE_AD_TYPE_NAME_CMPL,
+                                                &adv_name_len);
+            ESP_LOGI(GATTC_TAG, "Searched Device Name Len %d", adv_name_len);
+            ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
+            ESP_LOGI(GATTC_TAG, " ");
+            if (Isconnecting){
+                break;
+            }
+            if (conn_device_a && conn_device_b && conn_device_c && !stop_scan_done){
+                stop_scan_done = true;
+                esp_ble_gap_stop_scanning();
+                ESP_LOGI(GATTC_TAG, "all devices are connected");
+                break;
+            }
+            if (adv_name != NULL) {
+
+                if (strlen(remote_device_name[0]) == adv_name_len && strncmp((char *)adv_name, remote_device_name[0], adv_name_len) == 0) {
+                    if (conn_device_a == false) {
+                        conn_device_a = true;
+                        ESP_LOGI(GATTC_TAG, "Searched device %s", remote_device_name[0]);
+                        esp_ble_gap_stop_scanning();
+                        esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+                        memcpy(&creat_conn_params.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        creat_conn_params.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        creat_conn_params.is_direct = true;
+                        creat_conn_params.is_aux = false;
+                        creat_conn_params.phy_mask = 0x0;
+                        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                            &creat_conn_params);
+                        Isconnecting = true;
+                    }
+                    break;
+                }
+                else if (strlen(remote_device_name[1]) == adv_name_len && strncmp((char *)adv_name, remote_device_name[1], adv_name_len) == 0) {
+                    if (conn_device_b == false) {
+                        conn_device_b = true;
+                        ESP_LOGI(GATTC_TAG, "Searched device %s", remote_device_name[1]);
+                        esp_ble_gap_stop_scanning();
+                        esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+                        memcpy(&creat_conn_params.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        creat_conn_params.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        creat_conn_params.is_direct = true;
+                        creat_conn_params.is_aux = false;
+                        creat_conn_params.phy_mask = 0x0;
+                        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                            &creat_conn_params);
+                        Isconnecting = true;
+
+                    }
+                }
+                else if (strlen(remote_device_name[2]) == adv_name_len && strncmp((char *)adv_name, remote_device_name[2], adv_name_len) == 0) {
+                    if (conn_device_c == false) {
+                        conn_device_c = true;
+                        ESP_LOGI(GATTC_TAG, "Searched device %s", remote_device_name[2]);
+                        esp_ble_gap_stop_scanning();
+                        esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+                        memcpy(&creat_conn_params.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        creat_conn_params.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        creat_conn_params.is_direct = true;
+                        creat_conn_params.is_aux = false;
+                        creat_conn_params.phy_mask = 0x0;
+                        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                            &creat_conn_params);
+                        Isconnecting = true;
+                    }
+                    break;
+                }
+
+            }
+            break;
+        case ESP_GAP_SEARCH_INQ_CMPL_EVT:
+            break;
+        default:
+            break;
+        }
+        break;
+    }
   ```
 	If the connection is successful the client saves the connection ID, prints the remote device information and configures the MTU size to 200 bytes.
 	
@@ -152,7 +226,7 @@ case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
 	gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->open.conn_id;
 	ESP_LOGI(GATTC_TAG, "ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d", p_data->open.conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
 	ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-	esp_log_buffer_hex(GATTC_TAG, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
+	ESP_LOG_BUFFER_HEX(GATTC_TAG, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
 	esp_err_t mtu_ret = esp_ble_gattc_config_mtu (gattc_if, p_data->open.conn_id, 200);
 	if (mtu_ret){
 	ESP_LOGE(GATTC_TAG, "config MTU error, error code = %x", mtu_ret);
@@ -180,41 +254,65 @@ case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
    ```
    If the service is found, an ``ESP_GATTC_SEARCH_RES_EVT`` event is triggered which allows to set the ``get_service_1 flag`` to true. This flag is used to print information and later get the characteristic that the client is interested in. 
 
-* Once the search for all services is completed, an ``ESP_GATTC_SEARCH_CMPL_EVT`` event is generated which is used to get the characteristics of the service just discovered. This is done with the ``esp_ble_gattc_get_characteristic()`` function:
-	
+* After the search for all services is completed, an ESP_GATTC_SEARCH_CMPL_EVT event is triggered. This event can be utilized to obtain characteristics or other information. For example, you can retrieve a characteristic by UUID using the esp_ble_gattc_get_char_by_uuid() function:
 	```c
- 	case ESP_GATTC_SEARCH_CMPL_EVT:
+    case ESP_GATTC_SEARCH_CMPL_EVT:
         if (p_data->search_cmpl.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "search service failed, error status = %x", p_data->search_cmpl.status);
             break;
         }
-        if (get_service_1){
-            esp_ble_gattc_get_characteristic(gattc_if, p_data->search_cmpl.conn_id, &remote_service_id, NULL);
+        if (get_service_c){
+            uint16_t count = 0;
+            esp_gatt_status_t status = esp_ble_gattc_get_attr_count( gattc_if,
+                                                                     p_data->search_cmpl.conn_id,
+                                                                     ESP_GATT_DB_CHARACTERISTIC,
+                                                                     gl_profile_tab[PROFILE_C_APP_ID].service_start_handle,
+                                                                     gl_profile_tab[PROFILE_C_APP_ID].service_end_handle,
+                                                                     INVALID_HANDLE,
+                                                                     &count);
+            if (status != ESP_GATT_OK){
+                ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_attr_count error");
+            }
+
+            if (count > 0){
+                char_elem_result_c = (esp_gattc_char_elem_t *)malloc(sizeof(esp_gattc_char_elem_t) * count);
+                if (!char_elem_result_c){
+                    ESP_LOGE(GATTC_TAG, "gattc no mem");
+                    break;
+                }else{
+                    status = esp_ble_gattc_get_char_by_uuid( gattc_if,
+                                                             p_data->search_cmpl.conn_id,
+                                                             gl_profile_tab[PROFILE_C_APP_ID].service_start_handle,
+                                                             gl_profile_tab[PROFILE_C_APP_ID].service_end_handle,
+                                                             remote_filter_char_uuid,
+                                                             char_elem_result_c,
+                                                             &count);
+                    if (status != ESP_GATT_OK){
+                        ESP_LOGE(GATTC_TAG, "esp_ble_gattc_get_char_by_uuid error");
+                        free(char_elem_result_c);
+                        char_elem_result_c = NULL;
+                        break;
+                    }
+
+                    /*  Every service have only one char in our 'ESP_GATTS_DEMO' demo, so we used first 'char_elem_result' */
+                    if (count > 0 && (char_elem_result_c[0].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY)){
+                        gl_profile_tab[PROFILE_C_APP_ID].char_handle = char_elem_result_c[0].char_handle;
+                        esp_ble_gattc_register_for_notify (gattc_if, gl_profile_tab[PROFILE_C_APP_ID].remote_bda, char_elem_result_c[0].char_handle);
+                    }
+                }
+                /* free char_elem_result */
+                free(char_elem_result_c);
+                char_elem_result_c = NULL;
+            }else{
+                ESP_LOGE(GATTC_TAG, "no char found");
+            }
         }
         break;
    ```
-   	The ``esp_ble_gattc_get_characteristic()`` function takes the GATT interface, the connection ID and the remote service ID as parameters. In addition, a NULL value is passed to indicate that we want all the characteristics starting from the first one. If the client is interested in a specific characteristic it could pass the characteristic ID in this field to specify that.
-   	An ``ESP_GATTC_GET_CHAR_EVT`` event is triggered when a characteristic is discovered. This event is used to print information about the characteristic.
 
-* If the characteristic ID is the same as the one defined by ``REMOTE_NOTIFY_CHAR_UUID``, the client registers for notifications on that characteristic value.
-* Finally, the next characteristic is requested using the same ``esp_ble_gattc_get_characteristic()`` function, this time, the last parameter is set to the current characteristic. This triggers another ``ESP_GATTC_GET_CHAR_EVT`` and the process is repeated until all characteristics are obtained.
+* The API esp_ble_gattc_get_attr_count retrieves the number of attributes of a specified type based on esp_gatt_db_attr_type_t.
 
-	```c
-	case ESP_GATTC_GET_CHAR_EVT:
-        if (p_data->get_char.status != ESP_GATT_OK) {
-            break;
-        }
-        ESP_LOGI(GATTC_TAG, "GET CHAR: conn_id = %x, status %d", p_data->get_char.conn_id, p_data->get_char.status);
-        ESP_LOGI(GATTC_TAG, "GET CHAR: srvc_id = %04x, char_id = %04x", p_data->get_char.srvc_id.id.uuid.uuid.uuid16, p_data->get_char.char_id.uuid.uuid.uuid16);
-
-        if (p_data->get_char.char_id.uuid.uuid.uuid16 == REMOTE_NOTIFY_CHAR_UUID) {
-            ESP_LOGI(GATTC_TAG, "register notify");
-            esp_ble_gattc_register_for_notify(gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, &remote_service_id, &p_data->get_char.char_id);
-        }
-
-        esp_ble_gattc_get_characteristic(gattc_if, p_data->get_char.conn_id, &remote_service_id, &p_data->get_char.char_id);
-        break;
-   ```
+* The API esp_ble_gattc_register_for_notify is used to register for notifications sent from the server and will trigger the ESP_GATTC_REG_FOR_NOTIFY_EVT event.
 
 At this point the client has acquired all characteristics from the remote device and has subscribed for notifications on the characteristics of interest. Every time a client registers for notifications, an ``ESP_GATTC_REG_FOR_NOTIFY_EVT`` event is triggered. In this example, this event is set to write to the remote device Client Configuration Characteristic (CCC) using the ``esp_ble_gattc_write_char_descr()`` function. In turn, this function is used to write to characteristic descriptors. There are many characteristic descriptors defined by the Bluetooth specification, however, for this example, the descriptor of interest is the one that deals with enabling notifications, that is the Client Configuration descriptor. 
 
@@ -268,7 +366,7 @@ At this point the client has acquired all characteristics from the remote device
 	```c
 	case ESP_GATTC_NOTIFY_EVT:
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_NOTIFY_EVT, Receive notify value:");
-        esp_log_buffer_hex(GATTC_TAG, p_data->notify.value, p_data->notify.value_len);
+        ESP_LOG_BUFFER_HEX(GATTC_TAG, p_data->notify.value, p_data->notify.value_len);
         //write  back
         esp_ble_gattc_write_char(gattc_if,
                                 gl_profile_tab[PROFILE_A_APP_ID].conn_id,
@@ -281,35 +379,29 @@ At this point the client has acquired all characteristics from the remote device
         break;
     ```
       
-* If the writing procedure is acknowledged then the remote device has connected successfully and communication is established without error. Immediately, the write procedure generates an ``ESP_GATTC_WRITE_CHAR_EVT`` event which in this example is used to print information and connect to the second remote device:
+* If the writing procedure is acknowledged then the remote device has connected successfully and communication is established without error. Immediately, the write procedure generates an ``ESP_GATTC_WRITE_CHAR_EVT`` event which in this example is used to print information and start scan again to connect to the second remote device:
 
 	```c
-	case ESP_GATTC_WRITE_CHAR_EVT:
+    case ESP_GATTC_WRITE_CHAR_EVT:
         if (p_data->write.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "write char failed, error status = %x", p_data->write.status);
         }else{
             ESP_LOGI(GATTC_TAG, "write char success");
         }
-        //connect the second device
-        if (find_device_2){
-            esp_ble_gattc_open(gl_profile_tab[PROFILE_B_APP_ID].gattc_if, gl_profile_tab[PROFILE_B_APP_ID].remote_bda, true);
-        }
+        start_scan();
         break;
    ```
    
 * This triggers an open event which is handled by the Profile B event handler. This handler follows the same steps to search for services, get characteristics, register for notifications and write to the characteristic as the first device. The sequence for the second device also ends with an ``ESP_GATTC_WRITE_CHAR_EVT`` event which in turn is used to connect to the third device:
 
 	```c
- 	case ESP_GATTC_WRITE_CHAR_EVT:
+    case ESP_GATTC_WRITE_CHAR_EVT:
         if (p_data->write.status != ESP_GATT_OK){
-            ESP_LOGE(GATTC_TAG, "Write char failed, error status = %x", p_data->write.status);
+            ESP_LOGE(GATTC_TAG, "write char failed, error status = %x", p_data->write.status);
         }else{
-            ESP_LOGI(GATTC_TAG, "Write char success");
+            ESP_LOGI(GATTC_TAG, "write char success");
         }
-        //connect the third device
-        if (find_device_3){
-            esp_ble_gattc_open(gl_profile_tab[PROFILE_C_APP_ID].gattc_if, gl_profile_tab[PROFILE_C_APP_ID].remote_bda, true);
-        }
+        start_scan();
         break;
    ```
 

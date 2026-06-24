@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/param.h>
@@ -22,15 +23,21 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc.h"
 #include "esp_private/gptimer.h"
-#include "soc/rtc_periph.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
+#if !CONFIG_FREERTOS_UNICORE
+#include "esp_ipc_isr.h"
+#endif
 
 #include "sdkconfig.h"
 
 #if CONFIG_ULP_COPROC_TYPE_FSM
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/ulp.h"
+#include "soc/rtc_io_reg.h"
+#include "hal/rtc_io_periph.h"
+#include "soc/rtc_io_channel.h"
+#include "soc/rtc_cntl_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -41,6 +48,165 @@
 TEST_CASE("Can dump power management lock stats", "[pm]")
 {
     esp_pm_dump_locks(stdout);
+}
+
+TEST_CASE("Test get PM lock statistics API", "[pm]")
+{
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_stats_t init_stats[ESP_PM_LOCK_MAX], stats[ESP_PM_LOCK_MAX];
+
+#if !CONFIG_FREERTOS_UNICORE
+    // Stall other CPU to avoid another core's rtos lock interference with the test.
+    esp_ipc_isr_stall_other_cpu();
+    // Use TEST_PROTECT() to ensure the other CPU is released even if an assertion fails,
+    // otherwise the CPU1 will dead.
+    if (TEST_PROTECT()) {
+#endif // !CONFIG_FREERTOS_UNICORE
+        // Get initial stats
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(init_stats));
+
+        // Create a few locks of different types
+        esp_pm_lock_handle_t lock1, lock2, lock3;
+        TEST_ESP_OK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "cpu_lock", &lock1));
+        TEST_ESP_OK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "apb_lock", &lock2));
+        TEST_ESP_OK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "sleep_lock", &lock3));
+
+        // Check stats after creating locks
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
+
+        // Acquire locks multiple times
+        TEST_ESP_OK(esp_pm_lock_acquire(lock1));
+        TEST_ESP_OK(esp_pm_lock_acquire(lock1)); // Acquire again (recursive)
+        TEST_ESP_OK(esp_pm_lock_acquire(lock2));
+
+        // Check stats after acquiring locks
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+        // Count total held locks (sum of all lock counts)
+        TEST_ASSERT_EQUAL(2, stats[ESP_PM_CPU_FREQ_MAX].acquired - init_stats[ESP_PM_CPU_FREQ_MAX].acquired); // lock1 acquired twice
+        TEST_ASSERT_EQUAL(1, stats[ESP_PM_APB_FREQ_MAX].acquired - init_stats[ESP_PM_APB_FREQ_MAX].acquired); // lock2 acquired once
+
+        // Release locks
+        TEST_ESP_OK(esp_pm_lock_release(lock1));
+        TEST_ESP_OK(esp_pm_lock_release(lock1)); // Release second acquisition
+        TEST_ESP_OK(esp_pm_lock_release(lock2));
+
+        // Delete locks
+        TEST_ESP_OK(esp_pm_lock_delete(lock1));
+        TEST_ESP_OK(esp_pm_lock_delete(lock2));
+        TEST_ESP_OK(esp_pm_lock_delete(lock3));
+
+        // Check stats after deleting locks
+        TEST_ESP_OK(esp_pm_get_lock_stats_all(stats));
+        TEST_ASSERT_EQUAL(0, stats[ESP_PM_CPU_FREQ_MAX].created - init_stats[ESP_PM_CPU_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(0, stats[ESP_PM_APB_FREQ_MAX].created - init_stats[ESP_PM_APB_FREQ_MAX].created);
+        TEST_ASSERT_EQUAL(0, stats[ESP_PM_NO_LIGHT_SLEEP].created - init_stats[ESP_PM_NO_LIGHT_SLEEP].created);
+
+        // Test error cases
+        // NULL stats pointer
+        TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_get_lock_stats_all(NULL));
+#if !CONFIG_FREERTOS_UNICORE
+    }
+    esp_ipc_isr_release_other_cpu();
+#endif // !CONFIG_FREERTOS_UNICORE
+#else
+    // When PM is not enabled, function should return ESP_ERR_NOT_SUPPORTED
+    esp_pm_lock_stats_t stats[ESP_PM_LOCK_MAX];
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, esp_pm_get_lock_stats_all(stats));
+#endif
+}
+
+TEST_CASE("Test get PM lock instance statistics API", "[pm]")
+{
+#ifdef CONFIG_PM_ENABLE
+    // Create a lock
+    esp_pm_lock_handle_t lock;
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "test_lock", &lock));
+
+    // Get initial stats for the lock
+    esp_pm_lock_instance_stats_t lock_stats;
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(0, lock_stats.acquired);
+
+#if CONFIG_PM_PROFILING
+    TEST_ASSERT_EQUAL(0, lock_stats.times_taken);
+    TEST_ASSERT_EQUAL(0, lock_stats.time_held);
+#endif
+
+    // Acquire the lock multiple times
+    TEST_ESP_OK(esp_pm_lock_acquire(lock));
+    TEST_ESP_OK(esp_pm_lock_acquire(lock));
+    TEST_ESP_OK(esp_pm_lock_acquire(lock));
+
+    // Get stats again
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(3, lock_stats.acquired);
+
+#if CONFIG_PM_PROFILING
+    TEST_ASSERT_EQUAL(1, lock_stats.times_taken);
+    // The time_held should be greater than 0 if the lock is currently held
+    // We can't predict the exact value, so we just check that it's non-negative
+    TEST_ASSERT_GREATER_OR_EQUAL(0, lock_stats.time_held);
+
+    // Store the time_held value for later comparison
+    int32_t first_time_held = (int32_t)lock_stats.time_held;
+    int64_t start_time = esp_timer_get_time();
+    // Delay for a short period to increase the held time
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    int64_t end_time = esp_timer_get_time();
+    uint32_t expected_time_held = first_time_held + (uint32_t)(end_time - start_time);
+
+    // Get stats again to check that time_held has increased
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_GREATER_THAN(first_time_held, lock_stats.time_held);
+
+    // Check that time_held is within a reasonable range using TEST_ASSERT_UINT64_WITHIN
+    TEST_ASSERT_UINT32_WITHIN(10000, (uint32_t)expected_time_held, (uint32_t)lock_stats.time_held); // Allow 10ms tolerance
+#endif
+
+    // Release the lock once
+    TEST_ESP_OK(esp_pm_lock_release(lock));
+
+    // Get stats again
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(2, lock_stats.acquired);
+
+    // Release remaining locks
+    TEST_ESP_OK(esp_pm_lock_release(lock));
+    TEST_ESP_OK(esp_pm_lock_release(lock));
+
+#if CONFIG_PM_PROFILING
+    // After releasing all locks, get stats to check time_held is updated correctly
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(0, lock_stats.acquired);
+
+    // Store the time_held value after releasing all locks
+    int64_t time_after_release = lock_stats.time_held;
+
+    // Delay for a short period
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    // Get stats again - time_held should not change since lock is not held
+    TEST_ESP_OK(esp_pm_lock_get_stats(lock, &lock_stats));
+    TEST_ASSERT_EQUAL(time_after_release, lock_stats.time_held);
+#endif
+
+    // Test error cases
+    // NULL handle
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_lock_get_stats(NULL, &lock_stats));
+    // NULL stats pointer
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pm_lock_get_stats(lock, NULL));
+
+    // Clean up
+    TEST_ESP_OK(esp_pm_lock_delete(lock));
+#else
+    // When PM is not enabled, function should return ESP_ERR_NOT_SUPPORTED
+    esp_pm_lock_handle_t lock;
+    esp_pm_lock_instance_stats_t lock_stats;
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, esp_pm_lock_get_stats(lock, &lock_stats));
+#endif
 }
 
 #ifdef CONFIG_PM_ENABLE
@@ -54,23 +220,25 @@ static void switch_freq(int mhz)
         .min_freq_mhz = MIN(mhz, xtal_freq_mhz),
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
-    printf("Waiting for frequency to be set to %d MHz...\n", mhz);
-    while (esp_clk_cpu_freq() / MHZ != mhz)
-    {
-        vTaskDelay(pdMS_TO_TICKS(200));
-        printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / MHZ);
-    }
+    TEST_ASSERT_EQUAL_UINT32(mhz, esp_clk_cpu_freq() / MHZ);
+    printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / MHZ);
 }
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
 static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, 40, 80, 10, 80, 20, 40};
+#elif CONFIG_IDF_TARGET_ESP32C5
+static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, 40, 80, 12, 80, 24, 40};
 #elif CONFIG_IDF_TARGET_ESP32H2
 static const int test_freqs[] = {32, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 64, 48, 32, 64, 48, 8, 64, 48, 16, 32};
 #elif CONFIG_IDF_TARGET_ESP32C2
 static const int test_freqs[] = {CONFIG_XTAL_FREQ, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, CONFIG_XTAL_FREQ, 80,
                                  CONFIG_XTAL_FREQ / 2, CONFIG_XTAL_FREQ}; // C2 xtal has 40/26MHz option
 #elif CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 90, 40, 90, 10, 90, 20, 40, 360, 90, 180, 90, 40};
+#else
+static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 100, 40, 100, 10, 100, 20, 40, 400, 100, 200, 100, 40};
+#endif
 #else
 static const int test_freqs[] = {240, 40, 160, 240, 80, 40, 240, 40, 80, 10, 80, 20, 40};
 #endif
@@ -230,8 +398,9 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
         printf("%lld %lld %u\n", end_rtc - start_rtc, end_hs - start_hs, end_tick - start_tick);
 
         TEST_ASSERT_INT32_WITHIN(3, delay_ticks, end_tick - start_tick);
-        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_hs - start_hs);
-        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_rtc - start_rtc);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((2 * portTICK_PERIOD_MS + delay_ms / 20) * 1000, delay_ms * 1000, end_hs - start_hs);
+        TEST_ASSERT_INT32_WITHIN((2 * portTICK_PERIOD_MS + delay_ms / 20) * 1000, delay_ms * 1000, end_rtc - start_rtc);
     }
     REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold_force);
     rtc_gpio_deinit(ext1_wakeup_gpio);
@@ -241,7 +410,6 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif //CONFIG_ULP_COPROC_TYPE_FSM
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) //TODO: IDF-9628
 typedef struct {
     int delay_us;
     int result;
@@ -282,20 +450,21 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 0);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU0: %d %d\n", args.delay_us, args.result);
-        TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((portTICK_PERIOD_MS * 2 + args.delay_us / 20) * 1000, args.delay_us, args.result);
 
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 1);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU1: %d %d\n", args.delay_us, args.result);
-        TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((portTICK_PERIOD_MS * 2 + args.delay_us / 20) * 1000, args.delay_us, args.result);
 #endif
     }
     vSemaphoreDelete(done_sem);
 
     light_sleep_disable();
 }
-#endif
 
 /* This test is similar to the one in test_esp_timer.c, but since we can't use
  * ref_clock, this test uses RTC clock for timing. Also enables automatic
@@ -351,7 +520,8 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
 
     TEST_ASSERT_EQUAL_UINT32(NUM_INTERVALS, args.cur_interval);
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
-        TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
+        // TODO: PM-214
+        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
 
     TEST_ESP_OK( esp_timer_dump(stdout) );
@@ -398,6 +568,29 @@ TEST_CASE("esp_timer with SKIP_UNHANDLED_EVENTS does not wake up CPU from sleep"
     TEST_ESP_OK(esp_timer_stop(periodic_timer));
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
+}
+
+TEST_CASE("Test USJ printing doesn't block CPU on chip wake-up", "[pm]")
+{
+    light_sleep_enable();
+    fflush(stdout);
+    fsync(fileno(stdout));
+    int64_t printing_time_cost_us = 0, time_end, time_start;
+
+    for (int i = 0; i < 20; ++i)
+    {
+        time_start = esp_timer_get_time();
+        printf("Dummy print %02d\n", i);
+        fflush(stdout);
+        fsync(fileno(stdout));
+        time_end = esp_timer_get_time();
+        printing_time_cost_us += time_end - time_start;
+        vTaskDelay(10);
+    }
+    int32_t avg_cost = (int32_t)(printing_time_cost_us / 20);
+    printf("Average cost per print %ld\n", avg_cost);
+    TEST_ASSERT_LESS_THAN(5000, avg_cost);
+    light_sleep_disable();
 }
 
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE

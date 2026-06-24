@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -37,8 +37,8 @@
 
 #define SPP_TAG "SPP_ACCEPTOR_DEMO"
 #define SPP_SERVER_NAME "SPP_SERVER"
-#define EXAMPLE_DEVICE_NAME "ESP_SPP_ACCEPTOR"
 
+static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
 static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
@@ -79,7 +79,7 @@ static void spp_read_handle(void * param)
             vTaskDelay(500 / portTICK_PERIOD_MS);
         } else {
             ESP_LOGI(SPP_TAG, "fd = %d data_len = %d", fd, size);
-            esp_log_buffer_hex(SPP_TAG, spp_data, size);
+            ESP_LOG_BUFFER_HEX(SPP_TAG, spp_data, size);
             /* To avoid task watchdog */
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
@@ -121,7 +121,7 @@ static void esp_spp_cb(uint16_t e, void *p)
         if (param->start.status == ESP_SPP_SUCCESS) {
             ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT handle:%"PRIu32" sec_id:%d scn:%d", param->start.handle, param->start.sec_id,
                      param->start.scn);
-            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(local_device_name);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_START_EVT status:%d", param->start.status);
@@ -153,7 +153,7 @@ static void esp_spp_cb(uint16_t e, void *p)
 static void esp_spp_stack_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
     /* To avoid stucking Bluetooth stack, we dispatch the SPP callback event to the other lower priority task */
-    spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL);
+    spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL, NULL);
 }
 
 void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
@@ -162,7 +162,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_AUTH_CMPL_EVT:{
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(SPP_TAG, "authentication success: %s", param->auth_cmpl.device_name);
-            esp_log_buffer_hex(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            ESP_LOG_BUFFER_HEX(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
             ESP_LOGE(SPP_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
         }
@@ -188,11 +188,11 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 
 #if (CONFIG_EXAMPLE_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %"PRIu32, param->cfm_req.num_val);
+        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06"PRIu32, param->cfm_req.num_val);
         esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%"PRIu32, param->key_notif.passkey);
+        ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%06"PRIu32, param->key_notif.passkey);
         break;
     case ESP_BT_GAP_KEY_REQ_EVT:
         ESP_LOGI(SPP_TAG, "ESP_BT_GAP_KEY_REQ_EVT Please enter passkey!");

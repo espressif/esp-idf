@@ -37,11 +37,21 @@ Windows
 
 2.  Wait until USB ports of |devkit-name| are recognized by Windows and drives are installed. If they do not install automatically, then download them from https://ftdichip.com/drivers/d2xx-drivers/ and install manually.
 
-3.  Download Zadig tool (Zadig_X.X.exe) from https://zadig.akeo.ie/ and run it.
+3. Download |devkit-name| driver from https://github.com/espressif/esp-win-usb-drivers/releases. Extract the driver files and `install the driver <https://learn.microsoft.com/en-us/windows-hardware/drivers/ifs/using-an-inf-file-to-install-a-file-system-filter-driver#right-click-install>`_. This should change the driver for Dual RS232-HS (Interface 0).
 
-4.  In Zadig tool go to "Options" and check "List All Devices".
+4. Now |devkit-name|'s JTAG interface should be available to the OpenOCD. To carry on with the debugging environment setup, proceed to section :ref:`jtag-debugging-run-openocd`.
 
-5.  Check the list of devices that should contain two |devkit-name| specific USB entries: "Dual RS232-HS (Interface 0)" and "Dual RS232-HS (Interface 1)". The driver name would be "FTDIBUS (vxxxx)" and USB ID: 0403 6010.
+.. note::
+    If the driver installation fails or OpenOCD is not working try the following manual driver change. Otherwise, this can be skipped.
+
+Windows - manual driver change
+""""""""""""""""""""""""""""""
+
+1.  Download Zadig tool (Zadig_X.X.exe) from https://zadig.akeo.ie/ and run it.
+
+2.  In Zadig tool go to `Options` and check `List All Devices`.
+
+3.  Check the list of devices that should contain two |devkit-name| specific USB entries: `Dual RS232-HS (Interface 0)` and `Dual RS232-HS (Interface 1)`. The driver name would be `FTDIBUS (vxxxx)` and USB ID: 0403 6010.
 
     .. figure:: ../../../_static/jtag-usb-configuration-zadig.jpg
         :align: center
@@ -50,13 +60,11 @@ Windows
 
         Configuration of JTAG USB driver in Zadig tool
 
-6.  The first device (Dual RS232-HS (Interface 0)) is connected to the JTAG port of the {IDF_TARGET_NAME}. Original "FTDIBUS (vxxxx)" driver of this device should be replaced with "WinUSB (v6xxxxx)". To do so, select "Dual RS232-HS (Interface 0) and reinstall attached driver to the "WinUSB (v6xxxxx)", see picture above.
+4.  The first device (Dual RS232-HS (Interface 0)) is connected to the JTAG port of the {IDF_TARGET_NAME}. Original `FTDIBUS (vxxxx)` driver of this device should be replaced with `WinUSB (v6xxxxx)`. To do so, select "Dual RS232-HS (Interface 0) and reinstall attached driver to the "WinUSB (v6xxxxx)", see picture above.
 
 .. note::
 
-    Do not change the second device "Dual RS232-HS (Interface 1)". It is routed to {IDF_TARGET_NAME}'s serial port (UART) used for upload of application to {IDF_TARGET_NAME}'s flash.
-
-Now |devkit-name|'s JTAG interface should be available to the OpenOCD. To carry on with debugging environment setup, proceed to section :ref:`jtag-debugging-run-openocd`.
+    Do not change the second device `Dual RS232-HS (Interface 1)`. It is routed to {IDF_TARGET_NAME}'s serial port (UART) used for upload of application to {IDF_TARGET_NAME}'s flash.
 
 
 Linux
@@ -104,7 +112,7 @@ On macOS, using FT2232 for JTAG and serial port at the same time needs some addi
 Manually unloading the driver
 .............................
 
-1. Install FTDI driver from https://ftdichip.com/drivers/vcp-drivers/
+1. Install FTDI driver from `FTDI official website <https://ftdichip.com/drivers/vcp-drivers/>`_.
 
 2. Connect USB cable to the |devkit-name|.
 

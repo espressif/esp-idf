@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,15 @@
 
 #include "esp_err.h"
 #include "esp_image_format.h"
+#include "soc/reset_reasons.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**@{*/
 /**
- * @brief labels from bootloader linker script: bootloader.ld
+ * @brief labels from bootloader linker script: bootloader.sections.common.ld.in
  *
  */
 extern int _bss_start;
@@ -33,6 +38,10 @@ extern esp_image_header_t bootloader_image_hdr;
 esp_err_t bootloader_read_bootloader_header(void);
 esp_err_t bootloader_check_bootloader_validity(void);
 void bootloader_clear_bss_section(void);
+bool bootloader_check_if_wdt_reset(int cpu, soc_reset_reason_t reset_reason);
+void bootloader_dump_wdt_reset_info(int cpu);
+void bootloader_enable_cpu_reset_info(void);
+void bootloader_check_reset(void);
 void bootloader_config_wdt(void);
 void bootloader_enable_random(void);
 void bootloader_print_banner(void);
@@ -47,5 +56,15 @@ void bootloader_print_banner(void);
 
  *  @return ESP_OK   - If the setting is successful.
  *          ESP_FAIL - If the setting is not successful.
+ *          ESP_ERR_NOT_SUPPORTED - If selected secure boot scheme is not supported.
  */
 esp_err_t bootloader_init(void);
+
+/**
+ * @brief Initialize cache and mmu
+ */
+void bootloader_init_ext_mem(void);
+
+#ifdef __cplusplus
+}
+#endif

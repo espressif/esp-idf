@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
-#include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
 #include "hal/gpio_ll.h"
@@ -27,7 +27,7 @@
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 
-static const char* TAG = "boot_comm";
+ESP_LOG_ATTR_TAG(TAG, "boot_comm");
 
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec)
 {
@@ -37,8 +37,8 @@ esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, ui
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio_level(uint32_t num_pin, uint32_t delay_sec, bool level)
 {
     esp_rom_gpio_pad_select_gpio(num_pin);
-    if (GPIO_PIN_MUX_REG[num_pin]) {
-        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[num_pin]);
+    if (((1ULL << num_pin) & SOC_GPIO_VALID_GPIO_MASK) != 0) {
+        gpio_ll_input_enable(&GPIO, num_pin);
     }
     esp_rom_gpio_pad_pullup_only(num_pin);
     uint32_t tm_start = esp_log_early_timestamp();
@@ -140,13 +140,13 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
     return ret;
 }
 
-esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t size, int type, uint8_t *out_sha_256)
+esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256)
 {
     if (out_sha_256 == NULL || size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (type == PART_TYPE_APP) {
+    if (type == PART_TYPE_APP || type == PART_TYPE_BOOTLOADER) {
         const esp_partition_pos_t partition_pos = {
             .offset = address,
             .size = size,

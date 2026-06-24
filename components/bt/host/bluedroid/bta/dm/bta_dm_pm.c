@@ -32,6 +32,8 @@
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_DM_CONNECTED_SRVCS  bta_dm_conn_srvcs;
 #else
@@ -75,7 +77,7 @@ void bta_dm_init_pm(void)
 {
     memset(&bta_dm_conn_srvcs, 0x00, sizeof(bta_dm_conn_srvcs));
 
-    /* if there are no power manger entries, so not register */
+    /* if there are no power manager entries, so not register */
     if (p_bta_dm_pm_cfg[0].app_id != 0) {
         bta_sys_pm_register((tBTA_SYS_CONN_CBACK *)bta_dm_pm_cback);
 
@@ -431,10 +433,10 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
                 ((NULL != (p = BTM_ReadRemoteFeatures (peer_addr))) && HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
                 (index == BTA_DM_PM_SSR0)) {
             if (status == BTA_SYS_SCO_OPEN) {
-                APPL_TRACE_DEBUG("%s: SCO inactive, reset SSR to zero", __func__);
+                APPL_TRACE_DEBUG("%s: SCO active, reset SSR to zero", __func__);
                 BTM_SetSsrParams (peer_addr, 0, 0, 0 );
             } else if (status == BTA_SYS_SCO_CLOSE) {
-                APPL_TRACE_DEBUG("%s: SCO active, back to old SSR", __func__);
+                APPL_TRACE_DEBUG("%s: SCO inactive, back to old SSR", __func__);
                 bta_dm_pm_ssr(peer_addr);
             }
         }
@@ -518,6 +520,10 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
                             (p_bta_dm_pm_cfg[j].app_id == p_srvcs->app_id))) {
                     break;
                 }
+            }
+
+            if (j > p_bta_dm_pm_cfg[0].app_id) {
+                continue;
             }
 
             p_pm_cfg = &p_bta_dm_pm_cfg[j];
@@ -615,8 +621,8 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
         }
         return;
     }
-    /* if pending power mode timer expires, and currecnt link is in a
-       lower power mode than current profile requirement, igonre it */
+    /* if pending power mode timer expires, and current link is in a
+       lower power mode than current profile requirement, ignore it */
     if (pm_req == BTA_DM_PM_EXECUTE && pm_request < pm_action) {
         APPL_TRACE_ERROR("Ignore the power mode request: %d", pm_request)
         return;
@@ -638,7 +644,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
 }
 /*******************************************************************************
 **
-** Function         bta_ag_pm_park
+** Function         bta_dm_pm_park
 **
 ** Description      Switch to park mode.
 **
@@ -663,7 +669,7 @@ static BOOLEAN bta_dm_pm_park(BD_ADDR peer_addr)
 
 /*******************************************************************************
 **
-** Function         bta_ag_pm_sniff
+** Function         bta_dm_pm_sniff
 **
 ** Description      Switch to sniff mode.
 **
@@ -694,9 +700,9 @@ static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index)
 #endif
     {
 #if (BTM_SSR_INCLUDED == TRUE)
-        /* Dont initiate Sniff if controller has alreay accepted
+        /* Dont initiate Sniff if controller has already accepted
          * remote sniff params. This avoid sniff loop issue with
-         * some agrresive headsets who use sniff latencies more than
+         * some aggressive headsets who use sniff latencies more than
          * DUT supported range of Sniff intervals.*/
         if ((mode == BTM_PM_MD_SNIFF) && (p_peer_dev->info & BTA_DM_DI_ACP_SNIFF)) {
             APPL_TRACE_DEBUG("%s: already in remote initiate sniff", __func__);
@@ -753,6 +759,10 @@ static void bta_dm_pm_ssr(BD_ADDR peer_addr)
                                        bta_dm_conn_srvcs.conn_srvc[i].id, bta_dm_conn_srvcs.conn_srvc[i].app_id);
                     break;
                 }
+            }
+
+            if (j > p_bta_dm_pm_cfg[0].app_id) {
+                continue;
             }
 
             /* find the ssr index with the smallest max latency. */
@@ -917,7 +927,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
         } else {
 #if (BTM_SSR_INCLUDED == TRUE)
             if (p_dev->prev_low) {
-                /* need to send the SSR paramaters to controller again */
+                /* need to send the SSR parameters to controller again */
                 bta_dm_pm_ssr(p_dev->peer_bdaddr);
             }
             p_dev->prev_low = BTM_PM_STS_ACTIVE;
@@ -980,6 +990,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
             ) {
             tBTA_DM_SEC conn;
             conn.mode_chg.mode = p_data->pm_status.status;
+            conn.mode_chg.interval = p_data->pm_status.value;
             bdcpy(conn.mode_chg.bd_addr, p_data->pm_status.bd_addr);
             bta_dm_cb.p_sec_cback(BTA_DM_PM_MODE_CHG_EVT, (tBTA_DM_SEC *)&conn);
         }
@@ -1170,3 +1181,5 @@ tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void)
 }
 
 #endif
+
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)

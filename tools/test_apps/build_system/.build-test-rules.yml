@@ -1,0 +1,31 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/build_system/bootloader:
+  disable:
+    - if: IDF_TARGET == "linux" or IDF_TARGET in ["esp32s31"]
+      reason: the test should run on all targets except linux and esp32s31 encryption build cannot pass IDF-14629
+
+tools/test_apps/build_system/custom_partition_subtypes:
+  enable:
+    - if: IDF_TARGET in ["esp32", "linux"]
+      reason: the test should be run on ESP32 and linux
+
+tools/test_apps/build_system/embed_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      temporary: false
+      reason: Hardware independent feature, no need to test on all targets
+
+tools/test_apps/build_system/err_codes_check:
+  enable:
+    - if: IDF_TARGET in ["esp32", "linux"]
+
+tools/test_apps/build_system/external_project:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      temporary: false
+      reason: Verifies toolchain preserves CMAKE_*_FLAGS in ExternalProject_Add context
+
+tools/test_apps/build_system/ld_non_contiguous_memory:
+  disable:
+    - if: SOC_MEM_NON_CONTIGUOUS_SRAM != 1  # TODO: IDF-13411, since P4 REV2, the SRAM is contiguous

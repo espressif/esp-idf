@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@ static bool prov_bearers_valid(esp_ble_mesh_prov_bearer_t bearers)
 
 esp_err_t esp_ble_mesh_node_prov_enable(esp_ble_mesh_prov_bearer_t bearers)
 {
-    btc_ble_mesh_prov_args_t arg = {0};
+    btc_ble_mesh_prov_args_t arg;
     btc_msg_t msg = {0};
 
     if (prov_bearers_valid(bearers) == false) {
@@ -200,7 +200,7 @@ esp_err_t esp_ble_mesh_provisioner_input_string(const char *string, uint8_t link
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!string || strlen(string) > ESP_BLE_MESH_PROV_OUTPUT_OOB_MAX_LEN ||
+    if (!string || strlen(string) > ESP_BLE_MESH_PROV_INPUT_OOB_MAX_LEN ||
         link_idx >= MAX_PROV_LINK_IDX) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -482,7 +482,10 @@ esp_err_t esp_ble_mesh_set_fast_prov_info(esp_ble_mesh_fast_prov_info_t *fast_pr
     btc_msg_t msg = {0};
 
     if (fast_prov_info == NULL || (fast_prov_info->offset +
-        fast_prov_info->match_len > ESP_BLE_MESH_OCTET16_LEN)) {
+        fast_prov_info->match_len > ESP_BLE_MESH_OCTET16_LEN) ||
+        !ESP_BLE_MESH_ADDR_IS_UNICAST(fast_prov_info->unicast_min) ||
+        !ESP_BLE_MESH_ADDR_IS_UNICAST(fast_prov_info->unicast_max) ||
+        fast_prov_info->unicast_min > fast_prov_info->unicast_max) {
         return ESP_ERR_INVALID_ARG;
     }
 

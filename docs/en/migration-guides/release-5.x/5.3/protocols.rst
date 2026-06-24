@@ -4,7 +4,7 @@ Protocols
 :link_to_translation:`zh_CN:[中文]`
 
 ESP HTTPS OTA
---------------
+-------------
 
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

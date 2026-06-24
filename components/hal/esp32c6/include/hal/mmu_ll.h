@@ -14,10 +14,12 @@
 #include "hal/mmu_types.h"
 #include "hal/efuse_ll.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MMU_LL_END_DROM_ENTRY_VADDR         (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
+#define MMU_LL_END_DROM_ENTRY_ID            (SOC_MMU_ENTRY_NUM - 1)
 
 /**
  * Convert MMU virtual address to linear address
@@ -68,10 +70,10 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 {
     (void)mmu_id;
     uint32_t page_size_code = REG_GET_FIELD(SPI_MEM_MMU_POWER_CTRL_REG(0), SPI_MEM_MMU_PAGE_SIZE);
-    return  (page_size_code == 0) ? MMU_PAGE_64KB : \
-            (page_size_code == 1) ? MMU_PAGE_32KB : \
-            (page_size_code == 2) ? MMU_PAGE_16KB : \
-            MMU_PAGE_8KB;
+    return (page_size_code == 0) ? MMU_PAGE_64KB : \
+           (page_size_code == 1) ? MMU_PAGE_32KB : \
+           (page_size_code == 2) ? MMU_PAGE_16KB : \
+           MMU_PAGE_8KB;
 }
 
 /**
@@ -143,20 +145,20 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     return ((vaddr & SOC_MMU_VADDR_MASK) >> shift_code);
 }
@@ -179,20 +181,20 @@ static inline uint32_t mmu_ll_format_paddr(uint32_t mmu_id, uint32_t paddr, mmu_
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     return paddr >> shift_code;
 }
@@ -275,7 +277,7 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
  * @param mmu_id   MMU ID
  * @param entry_id MMU entry ID
  *
- * @return         Ture for MMU entry is valid; False for invalid
+ * @return         True for MMU entry is valid; False for invalid
  */
 static inline bool mmu_ll_check_entry_valid(uint32_t mmu_id, uint32_t entry_id)
 {
@@ -316,20 +318,20 @@ static inline uint32_t mmu_ll_entry_id_to_paddr_base(uint32_t mmu_id, uint32_t e
     mmu_page_size_t page_size = mmu_ll_get_page_size(mmu_id);
     uint32_t shift_code = 0;
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
 
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
@@ -378,20 +380,20 @@ static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t e
     uint32_t shift_code = 0;
 
     switch (page_size) {
-        case MMU_PAGE_64KB:
-            shift_code = 16;
-            break;
-        case MMU_PAGE_32KB:
-            shift_code = 15;
-            break;
-        case MMU_PAGE_16KB:
-            shift_code = 14;
-            break;
-        case MMU_PAGE_8KB:
-            shift_code = 13;
-            break;
-        default:
-            HAL_ASSERT(shift_code);
+    case MMU_PAGE_64KB:
+        shift_code = 16;
+        break;
+    case MMU_PAGE_32KB:
+        shift_code = 15;
+        break;
+    case MMU_PAGE_16KB:
+        shift_code = 14;
+        break;
+    case MMU_PAGE_8KB:
+        shift_code = 13;
+        break;
+    default:
+        HAL_ASSERT(shift_code);
     }
     uint32_t laddr = entry_id << shift_code;
 

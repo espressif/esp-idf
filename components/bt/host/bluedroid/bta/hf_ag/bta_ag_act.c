@@ -91,6 +91,9 @@ const tBTA_AG_ATCMD_CBACK bta_ag_at_cback_tbl[BTA_AG_NUM_IDX] =
 static void bta_ag_cback_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data, tBTA_AG_STATUS status)
 {
     tBTA_AG_OPEN    open;
+    if (p_scb->conn_service >= BTA_AG_NUM_IDX) {
+        return;
+    }
     /* call app callback with open event */
     open.hdr.handle = bta_ag_scb_to_idx(p_scb);
     open.hdr.app_id = p_scb->app_id;
@@ -102,7 +105,9 @@ static void bta_ag_cback_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data, tBTA_AG_
     } else {
         bdcpy(open.bd_addr, p_scb->peer_addr);
     }
-    (*bta_ag_cb.p_cback)(BTA_AG_OPEN_EVT, (tBTA_AG *) &open);
+    if (bta_ag_cb.p_cback) {
+        (*bta_ag_cb.p_cback)(BTA_AG_OPEN_EVT, (tBTA_AG *) &open);
+    }
 }
 
 /*******************************************************************************
@@ -132,7 +137,9 @@ void bta_ag_register(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     reg.hdr.handle = bta_ag_scb_to_idx(p_scb);
     reg.hdr.app_id = p_scb->app_id;
     reg.hdr.status = BTA_AG_SUCCESS;
-    (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, (tBTA_AG *) &reg);
+    if (bta_ag_cb.p_cback) {
+        (*bta_ag_cb.p_cback)(BTA_AG_REGISTER_EVT, (tBTA_AG *) &reg);
+    }
 }
 
 /*******************************************************************************
@@ -188,7 +195,7 @@ void bta_ag_start_dereg(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
-    BD_ADDR pending_bd_addr;
+    BD_ADDR pending_bd_addr = {0};
     /* store parameters */
     if (p_data) {
         bdcpy(p_scb->peer_addr, p_data->api_open.bd_addr);
@@ -199,7 +206,7 @@ void bta_ag_start_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     if (PORT_IsOpening (pending_bd_addr)) {
         /* Let the incoming connection goes through.                        */
         /* Issue collision for this scb for now.                            */
-        /* We will decide what to do when we find incoming connetion later. */
+        /* We will decide what to do when we find incoming connection later. */
         bta_ag_collision_cback (0, BTA_ID_AG, 0, p_scb->peer_addr);
         return;
     }
@@ -398,7 +405,9 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     bta_sys_conn_close(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* call close cback */
-    (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG *) &close);
+    if (bta_ag_cb.p_cback) {
+        (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG *) &close);
+    }
 
     /* if not deregistering (deallocating) reopen registered servers */
     if (p_scb->dealloc == FALSE) {
@@ -444,6 +453,9 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
+    if (p_scb->conn_service >= BTA_AG_NUM_IDX) {
+        return;
+    }
     /* initialize AT feature variables */
     p_scb->clip_enabled = FALSE;
     p_scb->ccwa_enabled = FALSE;
@@ -670,7 +682,7 @@ void bta_ag_post_sco_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
         case BTA_AG_POST_SCO_CALL_END_INCALL:
         {
             bta_ag_send_call_inds(p_scb, BTA_AG_END_CALL_RES);
-            /* Sending callsetup IND and Ring were defered to after SCO close. */
+            /* Sending callsetup IND and Ring were deferred to after SCO close. */
             bta_ag_send_call_inds(p_scb, BTA_AG_IN_CALL_RES);
 
             if (bta_ag_inband_enabled(p_scb) && !(p_scb->features & BTA_AG_FEAT_NOSCO)) {
@@ -722,7 +734,9 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
             (p_scb->callsetup_ind != BTA_AG_CALLSETUP_NONE)) {
             bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
         }
-        (*bta_ag_cb.p_cback)(BTA_AG_CONN_EVT, (tBTA_AG *) &evt);
+        if (bta_ag_cb.p_cback) {
+            (*bta_ag_cb.p_cback)(BTA_AG_CONN_EVT, (tBTA_AG *) &evt);
+        }
     }
 }
 
@@ -794,7 +808,9 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
        (codec_type != BTA_AG_CODEC_MSBC)) {
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
         APPL_TRACE_ERROR("%s error: unsupported codec type %d", __func__, codec_type);
-        (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
+        if (bta_ag_cb.p_cback) {
+            (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
+        }
         return;
     }
 
@@ -809,7 +825,9 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
         APPL_TRACE_ERROR("%s error: unsupported codec type %d",__func__, codec_type);
     }
-    (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
+    if (bta_ag_cb.p_cback) {
+        (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
+    }
 #endif
 }
 

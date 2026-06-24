@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,17 +31,17 @@
 #include "esp_eap_client.h"
 #include "esp_common_i.h"
 #include "esp_owe_i.h"
+#include "esp_roaming.h"
 
 #include "esp_wps.h"
+#include "esp_wps_i.h"
 #include "eap_server/eap.h"
 #include "eapol_auth/eapol_auth_sm.h"
 #include "ap/ieee802_1x.h"
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-#include "esp_roaming.h"
-#endif
+#include "rsn_supp/pmksa_cache.h"
 
 #ifdef CONFIG_DPP
 #include "common/dpp.h"
@@ -51,6 +51,7 @@
 bool g_wpa_pmk_caching_disabled = 0;
 const wifi_osi_funcs_t *wifi_funcs;
 struct wpa_funcs *wpa_cb;
+bool g_wpa_config_changed;
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
@@ -113,8 +114,8 @@ int wpa_config_bss(uint8_t *bssid)
     u8 mac[6];
 
     esp_wifi_get_macaddr_internal(0, mac);
-    ret = wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
-                (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
+    ret = wpa_set_bss(mac, bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
+                      (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
     return ret;
 }
 
@@ -136,14 +137,17 @@ bool  wpa_attach(void)
 {
     bool ret = true;
     ret = wpa_sm_init();
-    if(ret) {
+    if (ret) {
         ret = (esp_wifi_register_eapol_txdonecb_internal(eapol_txcb) == ESP_OK);
     }
     esp_set_scan_ie();
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_init_app();
+#endif
     return ret;
 }
 
-uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
+uint8_t  *wpa_ap_get_wpa_ie(size_t *ie_len)
 {
     struct hostapd_data *hapd = (struct hostapd_data *)esp_wifi_get_hostap_private_internal();
 
@@ -167,8 +171,8 @@ bool wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
     int wps_type = esp_wifi_get_wps_type_internal();
 
     if ((wps_type == WPS_TYPE_PBC) ||
-	(wps_type == WPS_TYPE_PIN)) {
-	ieee802_1x_receive(hapd, sta->addr, data, data_len);
+            (wps_type == WPS_TYPE_PIN)) {
+        ieee802_1x_receive(hapd, sta->addr, data, data_len);
         return true;
     }
 #endif
@@ -179,19 +183,22 @@ bool wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 
 void wpa_ap_get_peer_spp_msg(void *sm_data, bool *spp_cap, bool *spp_req)
 {
-    struct wpa_state_machine *sm = (struct wpa_state_machine *)sm_data;
+    struct sta_info *sta = sm_data;
 
-    if (!sm) {
+    if (!sta || !sta->wpa_sm) {
         return;
     }
 
-    *spp_cap = sm->spp_sup.capable;
-    *spp_req = sm->spp_sup.require;
+    *spp_cap = sta->wpa_sm->spp_sup.capable;
+    *spp_req = sta->wpa_sm->spp_sup.require;
 }
 
 bool wpa_deattach(void)
 {
     struct wpa_sm *sm = &gWpaSm;
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_deinit_app();
+#endif
     esp_wpa3_free_sae_data();
 #ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (sm->wpa_sm_eap_disable) {
@@ -213,7 +220,7 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
     int res = 0;
     if (!pdr_done) {
         if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
-            esp_dpp_post_evt(SIG_DPP_START_NET_INTRO, (u32)bssid);
+            res = esp_dpp_start_net_intro_protocol(bssid);
         }
     } else {
         res = wpa_config_bss(bssid);
@@ -227,11 +234,22 @@ int dpp_connect(uint8_t *bssid, bool pdr_done)
 }
 #endif
 
+static void wpa_config_reload(void)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    wpa_sm_pmksa_cache_flush(sm, NULL);
+}
+
 int wpa_sta_connect(uint8_t *bssid)
 {
     /* use this API to set AP specific IEs during connection */
     int ret = 0;
     ret = wpa_config_profile(bssid);
+
+    if (g_wpa_config_changed) {
+        wpa_config_reload();
+        g_wpa_config_changed = false;
+    }
     if (ret == 0) {
         ret = wpa_config_bss(bssid);
         if (ret) {
@@ -284,37 +302,57 @@ static void wpa_sta_connected_cb(uint8_t *bssid)
 
 static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
+    struct wpa_sm *sm = &gWpaSm;
+
     switch (reason_code) {
-        case WIFI_REASON_AUTH_EXPIRE:
-        case WIFI_REASON_NOT_AUTHED:
-        case WIFI_REASON_NOT_ASSOCED:
-        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        case WIFI_REASON_INVALID_PMKID:
-        case WIFI_REASON_AUTH_FAIL:
-        case WIFI_REASON_ASSOC_FAIL:
-        case WIFI_REASON_CONNECTION_FAIL:
-        case WIFI_REASON_HANDSHAKE_TIMEOUT:
-            esp_wpa3_free_sae_data();
+    case WIFI_REASON_AUTH_EXPIRE:
+    case WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA:
+    case WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA:
+    case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_INVALID_PMKID:
+    case WIFI_REASON_AUTH_FAIL:
+    case WIFI_REASON_ASSOC_FAIL:
+    case WIFI_REASON_CONNECTION_FAIL:
+    case WIFI_REASON_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_INVALID_MDE:
+    case WIFI_REASON_INVALID_FTE:
+        wpa_sta_clear_curr_pmksa();
+        wpa_sm_notify_disassoc(sm);
+#if defined(CONFIG_IEEE80211R)
+        /* clear all ft auth related IEs so that next will be open auth */
+        wpa_sta_clear_ft_auth_ie();
+#endif
+        break;
+    default:
+        if (g_wpa_pmk_caching_disabled) {
             wpa_sta_clear_curr_pmksa();
-            wpa_sm_notify_disassoc(&gWpaSm);
-            break;
-        default:
-            if (g_wpa_pmk_caching_disabled) {
-                wpa_sta_clear_curr_pmksa();
-            }
-            break;
+        }
+        break;
+    }
+
+    sm->rx_replay_counter_set = 0;  //init state not intall replay counter value
+    memset(sm->rx_replay_counter, 0, WPA_REPLAY_COUNTER_LEN);
+    sm->wpa_ptk_rekey = 0;
+    pmksa_cache_clear_current(sm);
+    sm->sae_pk = false;
+    sm->eapol1_count = 0;
+
+    struct wps_sm_funcs *wps_sm_cb = wps_get_wps_sm_cb();
+    if (wps_sm_cb && wps_sm_cb->wps_sm_notify_deauth) {
+        wps_sm_cb->wps_sm_notify_deauth();
     }
 #ifdef CONFIG_OWE_STA
     owe_deinit();
 #endif /* CONFIG_OWE_STA */
 
+    esp_wpa3_free_sae_data();
     supplicant_sta_disconn_handler(reason_code);
 }
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
 #ifdef CONFIG_WPS_REGISTRAR
-static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, u8 *ies, u8 ies_len, bool *pmf_enable, int subtype)
+static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, const u8 *ies, u8 ies_len, bool *pmf_enable, int subtype)
 {
     struct wpabuf *wps_ie = ieee802_11_vendor_ie_concat(ies, ies_len, WPS_DEV_OUI_WFA);
     int wps_type = esp_wifi_get_wps_type_internal();
@@ -332,6 +370,11 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
     }
 
     sta_info->wps_ie = wps_ie;
+
+    if (sta_info->eapol_sm) {
+        ieee802_1x_free_station(hapd, sta_info);
+    }
+
     sta_info->eapol_sm = ieee802_1x_alloc_eapol_sm(hapd, sta_info);
 
     if (sta_info->eapol_sm) {
@@ -346,10 +389,28 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 *rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype)
+static bool hostap_sta_join(wpa_station_join_param_t *join)
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
+    uint8_t reason = WLAN_REASON_PREV_AUTH_NOT_VALID;
+
+    if (!join) {
+        return false;
+    }
+
+    void **sta = join->sm;
+    u8 *bssid = join->bssid;
+    u8 *wpa_ie = join->wpa_ie;
+    u8 *rsnxe = join->rsnxe;
+    bool *pmf_enable = join->pmf_enable;
+    uint8_t *pairwise_cipher = join->pairwise_cipher;
+    uint8_t *rsn_selection_ie = join->rsn_selection_ie;
+    uint8_t *owe_dhie = join->owe_dhie;
+    int subtype = join->subtype;
+    u16 rsnxe_len = join->rsnxe_len;
+    u8 wpa_ie_len = join->wpa_ie_len;
+    u8 owe_dh_len = join->owe_dh_len;
 
     if (!hapd) {
         goto fail;
@@ -365,9 +426,13 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
             }
             return false;
         }
+#endif /* CONFIG_SAE */
         if (!esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
             ap_free_sta(hapd, old_sta);
-        } else if (old_sta && old_sta->lock) {
+            *sta = NULL;
+        }
+#ifdef CONFIG_SAE
+        else if (old_sta && old_sta->lock) {
             sta_info = old_sta;
             goto process_old_sta;
         }
@@ -376,7 +441,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
 
     sta_info = ap_get_sta(hapd, bssid);
     if (!sta_info) {
-        sta_info = ap_sta_add(hapd,bssid);
+        sta_info = ap_sta_add(hapd, bssid);
         if (!sta_info) {
             wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
             goto fail;
@@ -390,9 +455,9 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
         }
         return false;
     }
-#endif /* CONFIG_SAE */
 
 process_old_sta:
+#endif /* CONFIG_SAE */
 
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {
@@ -403,7 +468,19 @@ process_old_sta:
         goto fail;
     }
 #endif
-    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype)) {
+
+    struct hostap_assoc_sta_req assoc_req = {
+        .wpa_ie = wpa_ie,
+        .wpa_ie_len = wpa_ie_len,
+        .rsnxe = rsnxe,
+        .rsnxe_len = rsnxe_len,
+        .subtype = subtype,
+        .rsn_selection_ie = rsn_selection_ie,
+        .owe_dh = owe_dhie,
+        .owe_ie_len = owe_dh_len,
+    };
+    if (hostap_new_assoc_sta(sta_info, bssid, &assoc_req, pmf_enable,
+                             pairwise_cipher, &reason)) {
         goto done;
     } else {
         goto fail;
@@ -424,7 +501,7 @@ fail:
         os_semphr_give(sta_info->lock);
     }
 #endif /* CONFIG_SAE */
-    esp_wifi_ap_deauth_internal(bssid, WLAN_REASON_PREV_AUTH_NOT_VALID);
+    esp_wifi_ap_deauth_internal(bssid, reason);
     return false;
 }
 #endif
@@ -465,17 +542,24 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
-    wpa_cb->wpa_sta_set_ap_rsnxe = wpa_sm_set_ap_rsnxe;
+    wpa_cb->wpa_sta_clear_curr_pmksa = wpa_sta_clear_curr_pmksa;
+    wpa_cb->wpa_config_reload = wpa_config_reload;
 
     esp_wifi_register_wpa3_ap_cb(wpa_cb);
     esp_wifi_register_wpa3_cb(wpa_cb);
 #ifdef CONFIG_OWE_STA
     esp_wifi_register_owe_cb(wpa_cb);
 #endif /* CONFIG_OWE_STA */
+
     eloop_init();
     ret = esp_supplicant_common_init(wpa_cb);
 
     if (ret != 0) {
+        /* esp_wifi_init() propagates this error to wifi_deinit_internal() which calls
+         * esp_supplicant_deinit(); that path runs eloop_destroy() for eloop cleanup.
+         */
+        os_free(wpa_cb);
+        wpa_cb = NULL;
         return ret;
     }
 
@@ -483,10 +567,6 @@ int esp_supplicant_init(void)
 
 #if CONFIG_ESP_WIFI_WAPI_PSK
     ret =  esp_wifi_internal_wapi_init();
-#endif
-
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    init_roaming_app();
 #endif
 
     return ret;
@@ -497,7 +577,11 @@ int esp_supplicant_deinit(void)
     esp_supplicant_common_deinit();
     esp_supplicant_unset_all_appie();
     eloop_destroy();
+    /* wpa_cb is freed by esp_wifi_unregister_wpa_cb_internal() */
     wpa_cb = NULL;
+#if CONFIG_ESP_WIFI_WAPI_PSK
+    esp_wifi_internal_wapi_deinit();
+#endif
     return esp_wifi_unregister_wpa_cb_internal();
 }
 

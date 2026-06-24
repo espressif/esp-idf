@@ -47,7 +47,7 @@ Although an SMP system allows threads to switch cores, there are scenarios where
 SMP on an ESP Target
 ^^^^^^^^^^^^^^^^^^^^
 
-ESP targets such as ESP32, ESP32-S3, and ESP32-P4 are dual-core SMP SoCs. These targets have the following hardware features that make them SMP-capable:
+ESP targets such as ESP32, ESP32-S3, ESP32-P4 and ESP32-H4 are dual-core SMP SoCs. These targets have the following hardware features that make them SMP-capable:
 
 - Two identical cores are known as Core 0 and Core 1. This means that the execution of a piece of code is identical regardless of which core it runs on.
 - Symmetric memory (with some small exceptions).
@@ -382,6 +382,19 @@ In IDF FreeRTOS, the process of a particular core entering and exiting a critica
   #. The core releases the spinlock by clearing the spinlock's owner value.
   #. The core re-enables interrupts or interrupt nesting.
 
+Thread-Safe Port Critical Bypass
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``xPortThreadSafeClaim()`` and ``xPortThreadSafeDisclaim()`` (``portmacro.h``) skip port-layer critical enter/exit on the current core. **Thread safety between Claim and Disclaim must be guaranteed by the caller.**
+
+.. warning::
+
+    - Caller guarantees thread safety for the Claim–Disclaim window (all cores).
+    - Claim only with interrupts disabled on the current core; one active claim system-wide; pair with Disclaim on every path.
+    - ``pdPASS`` from ``xPortEnterCriticalTimeout()`` does not mean ``mux`` was taken.
+
+Not a substitute for ``taskENTER_CRITICAL(&spinlock)``.
+
 Restrictions and Considerations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -430,6 +443,41 @@ Misc
     .. note::
 
         ESP targets that contain an FPU do not support hardware acceleration for double precision floating point arithmetic (``double``). Instead, ``double`` is implemented via software, hence the behavioral restrictions regarding the ``float`` type do not apply to ``double``. Note that due to the lack of hardware acceleration, ``double`` operations may consume significantly more CPU time in comparison to ``float``.
+
+
+.. only:: SOC_CPU_HAS_PIE
+
+    PIE/AI Coprocessor Usage
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Like the Floating Point Unit (FPU), IDF FreeRTOS implements **Lazy Context Switching** for the PIE coprocessor. On a context switch, PIE registers remain untouched until a task executes a PIE instruction. Once a task uses the PIE coprocessor, it is **pinned to the current core**.
+
+    .. only:: esp32s31
+
+        .. note::
+
+            On ESP32-S31, the PIE coprocessor is available **only on Core 1**. If a task executes a PIE instruction while running on Core 0, IDF FreeRTOS migrates the task to Core 1 and pins it there. This migration **overrides** any existing core affinity.
+
+            Because of this migration, tasks must **not** use the PIE coprocessor within a critical section or ISR, as doing so will cause a runtime abort.
+
+
+.. only:: SOC_CPU_HAS_HWLOOP
+
+    Hardware Loop (HWLP) Usage
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    In IDF FreeRTOS, the Hardware Loop (HWLP) unit is handled differently from other coprocessors: it does **not** use Lazy Context Switching.
+
+    When a task uses the HWLP and a context switch occurs, the HWLP registers are saved immediately during the interrupt entry path. Later, if the same task is switched back in, all HWLP registers are restored immediately.
+
+    In practice, this means that any task that has ever used the HWLP will always have an additional overhead on both context switch out and switch in.
+
+.. only:: SOC_CPU_HAS_DSP
+
+    DSP Coprocessor Usage
+    ^^^^^^^^^^^^^^^^^^^^^
+
+    On targets that feature the DSP coprocessor, context switching follows the same lazy scheme as the FPU: the coprocessor state is not saved until another task on the same core uses it or the task is switched to another core. When a task uses the DSP coprocessor, IDF FreeRTOS will automatically **pin the task to the current core** it is running on. The DSP coprocessor must not be used from within an interrupt context.
 
 
 .. -------------------------------------------------- Single Core  -----------------------------------------------------

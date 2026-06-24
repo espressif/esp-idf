@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* ROM version variables for esp32c6lite
+/* ROM version variables for esp32c61
  *
  * These addresses should be compatible with any ROM version for this chip.
  *

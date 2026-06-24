@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@master
         with:
-          python-version: v3.8
+          python-version: "3.10"
       - name: Install python packages
         run: |
           pip install pre-commit
@@ -40,3 +40,5 @@ jobs:
             echo ""
             exit 1
           fi
+          # Run pre-commit for PowerShell scripts check
+          pre-commit run --hook-stage manual check-powershell-scripts --from-ref base_ref --to-ref pr_ref --show-diff-on-failure

@@ -1,0 +1,64 @@
+menu "Format"
+
+    config BOOTLOADER_LOG_COLORS
+        bool "Color"
+        default n
+        select BOOTLOADER_LOG_COLORS_SUPPORT if BOOTLOADER_LOG_VERSION_2
+        help
+            Enable ANSI terminal color codes. Logs (info, errors, warnings) will contain color codes.
+            In order to view these, your terminal program must support ANSI color codes.
+
+    config BOOTLOADER_LOG_COLORS_SUPPORT
+        bool "Allow enabling color output at run time"
+        depends on BOOTLOADER_LOG_VERSION_2
+        default n
+        help
+            Enables support for color codes in the esp_log() function. If CONFIG_LOG_COLORS is enabled, this option
+            is always active. If CONFIG_LOG_COLORS is disabled, this option allows you to still handle color codes
+            in specific files by defining ESP_LOG_COLOR_DISABLED as 0 before including esp_log.h.
+
+            Note that enabling this option may slightly increase RAM/FLASH usage due to additional color handling
+            functionality. It provides flexibility to manage color output even when CONFIG_LOG_COLORS is turned off.
+
+    choice BOOTLOADER_LOG_TIMESTAMP_SOURCE
+        prompt "Timestamp"
+        default BOOTLOADER_LOG_TIMESTAMP_SOURCE_CPU_TICKS
+        help
+            Choose what sort of timestamp is displayed in the log output:
+
+            - "None" - The log will only contain the actual log messages themselves
+              without any time-related information. Avoiding timestamps can help conserve
+              processing power and memory. It might useful when you
+              perform log analysis or debugging, sometimes it's more straightforward
+              to work with logs that lack timestamps, especially if the time of occurrence
+              is not critical for understanding the issues.
+              "I log_test: info message"
+
+            - "Milliseconds since boot" is calculated from the RTOS tick count multiplied
+              by the tick period. This time will reset after a software reboot.
+              "I (112500) log_test: info message"
+
+        config BOOTLOADER_LOG_TIMESTAMP_SOURCE_NONE
+            bool "None"
+            depends on BOOTLOADER_LOG_VERSION_2
+
+        config BOOTLOADER_LOG_TIMESTAMP_SOURCE_CPU_TICKS
+            bool "Milliseconds Since Boot"
+            select BOOTLOADER_LOG_TIMESTAMP_SUPPORT if BOOTLOADER_LOG_VERSION_2
+
+    endchoice # BOOTLOADER_LOG_TIMESTAMP_SOURCE
+
+    config BOOTLOADER_LOG_TIMESTAMP_SUPPORT
+        bool "Allow enabling timestamp output at run time"
+        depends on BOOTLOADER_LOG_VERSION_2
+        default y
+        help
+            Enables support for timestamp in the esp_log() function.
+            If CONFIG_LOG_TIMESTAMP_SOURCE_NONE, this option allows you to still handle timestamp
+            in specific files by defining ESP_LOG_TIMESTAMP_DISABLED as 0 before including esp_log.h.
+
+            Note that enabling this option may slightly increase RAM/FLASH usage due to additional timestamp handling
+            functionality. It provides flexibility to manage timestamp output even when
+            CONFIG_LOG_TIMESTAMP_SOURCE_NONE.
+
+endmenu

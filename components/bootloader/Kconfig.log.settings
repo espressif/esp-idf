@@ -1,0 +1,40 @@
+menu "Settings"
+
+    config BOOTLOADER_LOG_MODE_TEXT_EN
+        bool
+
+    config BOOTLOADER_LOG_MODE_BINARY_EN
+        bool
+
+    choice BOOTLOADER_LOG_MODE
+        prompt "Log Mode"
+        default BOOTLOADER_LOG_MODE_TEXT
+
+        config BOOTLOADER_LOG_MODE_TEXT
+            bool "Text Log Mode"
+            select BOOTLOADER_LOG_MODE_TEXT_EN
+            help
+                Enables text-based logging, where log messages are stored in a human-readable format.
+                This mode is useful for development and debugging, as it allows logs to be easily
+                read and interpreted without additional processing.
+
+        config BOOTLOADER_LOG_MODE_BINARY
+            bool "Binary Log Mode"
+            select BOOTLOADER_LOG_MODE_BINARY_EN
+            depends on BOOTLOADER_LOG_VERSION_2
+            help
+                Enables binary logging with host-side format string expansion. In this mode, the
+                format argument of ESP_LOGx, ESP_EARLY_LOG, and ESP_DRAM_LOG macros is stored in a
+                NOLOAD section, not included in the final binary file. This reduces flash usage by
+                approximately 10% - 35%. The esp_log() function uses the binary log handler to output
+                messages. Instead of sending the full log string, the chip transmits only the
+                addresses of these strings (if present in the ELF file). If the format string
+                cannot be found in the ELF file, the chip sends the entire string. The host-side
+                monitor tool, which has access to the ELF file, reconstructs the log message using
+                the format string.
+                This reduces firmware size by eliminating format strings from
+                flash memory and removing the usage of printf-like functions, potentially freeing up
+                a few kilobytes of space. To further reduce firmware size, wrap string data with ESP_LOG_ATTR_STR.
+
+    endchoice
+endmenu

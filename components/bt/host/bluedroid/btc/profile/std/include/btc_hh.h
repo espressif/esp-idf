@@ -181,9 +181,10 @@ void btc_hh_call_handler(btc_msg_t *msg);
 void btc_hh_cb_handler(btc_msg_t *msg);
 
 void btc_hh_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
-
-void btc_hh_cb_arg_deep_free(btc_msg_t *msg);
+void btc_hh_call_arg_deep_free(btc_msg_t *msg);
 
 bool btc_hh_add_added_dev(BD_ADDR bd_addr, uint16_t attr_mask);
+
+void btc_hh_get_profile_status(esp_hidh_profile_status_t *param);
 
 #endif /* BTC_HH_H */

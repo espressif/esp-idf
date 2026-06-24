@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 int esp_efuse_rtc_calib_get_ver(void)
 {
     uint32_t blk_ver_major = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count); // IDF-5366
+    esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count);
 
     uint32_t cali_version = (blk_ver_major == 1) ? ESP_EFUSE_ADC_CALIB_VER : 0;
     if (!cali_version) {
@@ -80,26 +80,5 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
 
     *out_digi = 2000 + ((cal_vol & BIT(9))? -(cal_vol & ~BIT9): cal_vol);
     *out_vol_mv = calib_vol_expected_mv;
-    return ESP_OK;
-}
-
-esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal)
-{
-    uint32_t version = esp_efuse_rtc_calib_get_ver();
-    if (version != 1) {
-        *tsens_cal = 0.0;
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    const esp_efuse_desc_t** cal_temp_efuse;
-    cal_temp_efuse = ESP_EFUSE_TEMP_CALIB;
-    int cal_temp_size = esp_efuse_get_field_size(cal_temp_efuse);
-    assert(cal_temp_size == 9);
-
-    uint32_t cal_temp = 0;
-    esp_err_t err = esp_efuse_read_field_blob(cal_temp_efuse, &cal_temp, cal_temp_size);
-    assert(err == ESP_OK);
-    (void)err;
-    // BIT(8) stands for sign: 1: negtive, 0: positive
-    *tsens_cal = ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
     return ESP_OK;
 }

@@ -65,42 +65,12 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         default 4 if HAL_LOG_LEVEL_DEBUG
         default 5 if HAL_LOG_LEVEL_VERBOSE
 
-    config HAL_SYSTIMER_USE_ROM_IMPL
-        bool "Use ROM implementation of SysTimer HAL driver"
-        depends on ESP_ROM_HAS_HAL_SYSTIMER
-        default y
-        help
-            Enable this flag to use HAL functions from ROM instead of ESP-IDF.
+    orsource "../esp_hal_wdt/Kconfig.hal_wdt"
 
-            If keeping this as "n" in your project, you will have less free IRAM.
-            If making this as "y" in your project, you will increase free IRAM,
-            but you will lose the possibility to debug this module, and some new
-            features will be added and bugs will be fixed in the IDF source
-            but cannot be synced to ROM.
+    orsource "../esp_hal_systimer/Kconfig.hal_systimer"
 
-    config HAL_WDT_USE_ROM_IMPL
-        bool "Use ROM implementation of WDT HAL driver"
-        depends on ESP_ROM_HAS_HAL_WDT
-        default y
-        help
-            Enable this flag to use HAL functions from ROM instead of ESP-IDF.
+    orsource "../esp_hal_gpio/Kconfig.hal_gpio"
 
-            If keeping this as "n" in your project, you will have less free IRAM.
-            If making this as "y" in your project, you will increase free IRAM,
-            but you will lose the possibility to debug this module, and some new
-            features will be added and bugs will be fixed in the IDF source
-            but cannot be synced to ROM.
-
-    config HAL_SPI_MASTER_FUNC_IN_IRAM
-        bool
-        depends on SPI_MASTER_ISR_IN_IRAM
-        help
-            Enable this option to place SPI master hal layer functions into IRAM.
-
-    config HAL_SPI_SLAVE_FUNC_IN_IRAM
-        bool
-        depends on SPI_SLAVE_ISR_IN_IRAM
-        help
-            Enable this option to place SPI slave hal layer functions into IRAM.
+    orsource "../esp_hal_security/Kconfig.hal_security"
 
 endmenu

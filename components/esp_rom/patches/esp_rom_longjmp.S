@@ -33,10 +33,13 @@
 
 /* void longjmp (jmp_buf env, int val) */
 
-    .align  4
     .literal_position
+#if CONFIG_SPIRAM_CACHE_LIBJMP_IN_IRAM
+    .section .iram1,"ax"
+#endif
     .global __wrap_longjmp
     .type   __wrap_longjmp, @function
+    .align  4
 __wrap_longjmp:
     entry   sp, 16
 
@@ -63,7 +66,7 @@ __wrap_longjmp:
     /*
         If not on S3, replacement of only the first instructions,
         then jump back to original longjmp implementation.
-        The jump target is the instrucion
+        The jump target is the instruction
     	    l32i	a0, a2, 64
         of the original code. Hence, the original code's entry instruction and windowstart modification are left
         out.

@@ -1,0 +1,5 @@
+# Decreasing Bootloader log verbosity
+CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
+
+# Disabling ATTESTATION
+CONFIG_SECURE_TEE_ATTESTATION=n

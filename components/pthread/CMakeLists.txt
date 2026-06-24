@@ -1,7 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
-    # Make pthread component an empty interface lib referencing host pthread for Linux target
-    idf_component_register()
+    set(sources "port/linux/pthread.c")
+    idf_component_register(
+        SRCS ${sources}
+        INCLUDE_DIRS include)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
     target_link_libraries(${COMPONENT_LIB} INTERFACE Threads::Threads)

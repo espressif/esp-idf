@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -26,9 +26,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
-#include "freertos/FreeRTOS.h"
 #include "sd_pwr_ctrl.h"
-#include "esp_dma_utils.h"
+#include "hal/sd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,14 +75,14 @@ typedef struct {
  * Note: When new member is added, update reserved bits accordingly
  */
 typedef struct {
-    uint32_t alloc_unit_kb: 16;     /*!< Allocation unit of the card, in multiples of kB (1024 bytes) */
+    uint32_t alloc_unit_kb: 20;     /*!< Allocation unit of the card, in multiples of kB (1024 bytes) */
     uint32_t erase_size_au: 16;     /*!< Erase size for the purpose of timeout calculation, in multiples of allocation unit */
     uint32_t cur_bus_width: 2;      /*!< SD current bus width */
     uint32_t discard_support: 1;    /*!< SD discard feature support */
     uint32_t fule_support: 1;       /*!< SD FILE (Full User Area Logical Erase) feature support */
     uint32_t erase_timeout: 6;      /*!< Timeout (in seconds) for erase of a single allocation unit */
     uint32_t erase_offset: 2;       /*!< Constant timeout offset (in seconds) for any erase operation */
-    uint32_t reserved: 20;          /*!< reserved for future expansion */
+    uint32_t reserved: 16;          /*!< reserved for future expansion */
 } sdmmc_ssr_t;
 
 /**
@@ -149,20 +148,29 @@ typedef struct {
     /** @endcond */
     esp_err_t error;            /*!< error returned from transfer */
     uint32_t timeout_ms;        /*!< response timeout, in milliseconds */
+    esp_err_t (*volt_switch_cb)(void*, int); /*!< callback to be called during CMD11 to switch voltage */
+    void* volt_switch_cb_arg;   /*!< argument to be passed to the CMD11 callback */
 } sdmmc_command_t;
 
 /**
- * SD/MMC Host clock timing delay phases
- *
- * This will only take effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M.
- * Driver will print out how long the delay is, in picosecond (ps).
+ * @brief SD/MMC Driver Strength
  */
 typedef enum {
-    SDMMC_DELAY_PHASE_0,            /*!< Delay phase 0 */
-    SDMMC_DELAY_PHASE_1,            /*!< Delay phase 1 */
-    SDMMC_DELAY_PHASE_2,            /*!< Delay phase 2 */
-    SDMMC_DELAY_PHASE_3,            /*!< Delay phase 3 */
-} sdmmc_delay_phase_t;
+    SDMMC_DRIVER_STRENGTH_B,         /*!< Type B */
+    SDMMC_DRIVER_STRENGTH_A,         /*!< Type A */
+    SDMMC_DRIVER_STRENGTH_C,         /*!< Type C */
+    SDMMC_DRIVER_STRENGTH_D,         /*!< Type D */
+} sdmmc_driver_strength_t;
+
+/**
+ * @brief SD/MMC Current Limit
+ */
+typedef enum {
+    SDMMC_CURRENT_LIMIT_200MA,       /*!< 200 mA */
+    SDMMC_CURRENT_LIMIT_400MA,       /*!< 400 mA */
+    SDMMC_CURRENT_LIMIT_600MA,       /*!< 600 mA */
+    SDMMC_CURRENT_LIMIT_800MA,       /*!< 800 mA */
+} sdmmc_current_limit_t;
 
 /**
  * SD/MMC Host description
@@ -183,6 +191,9 @@ typedef struct {
                                                  Currently this is only used by the SDIO driver. Set this flag when
                                                  using SDIO CMD53 byte mode, with user buffer that is behind the cache
                                                  or not aligned to 4 byte boundary. */
+#define SDMMC_HOST_FLAG_SPI_IGNORE_DATA_CRC \
+                                BIT(7)      /*!< SPI mode only: Do not enable CRC verification (skip CMD59).
+                                                 Not recommended as it disables data integrity checking. */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
@@ -190,7 +201,12 @@ typedef struct {
 #define SDMMC_FREQ_PROBING      400         /*!< SD/MMC probing speed */
 #define SDMMC_FREQ_52M          52000       /*!< MMC 52MHz speed */
 #define SDMMC_FREQ_26M          26000       /*!< MMC 26MHz speed */
+#define SDMMC_FREQ_DDR50        50000       /*!< MMC 50MHz speed */
+#define SDMMC_FREQ_SDR50        100000      /*!< MMC 100MHz speed */
+#define SDMMC_FREQ_SDR104       200000      /*!< MMC 200MHz speed */
     float io_voltage;           /*!< I/O voltage used by the controller (voltage switching is not supported) */
+    sdmmc_driver_strength_t driver_strength; /*!< Driver Strength */
+    sdmmc_current_limit_t current_limit;     /*!< Current Limit */
     esp_err_t (*init)(void);    /*!< Host function to initialize the driver */
     esp_err_t (*set_bus_width)(int slot, size_t width);    /*!< host function to set bus width */
     size_t (*get_bus_width)(int slot); /*!< host function to get bus width */
@@ -203,14 +219,36 @@ typedef struct {
         esp_err_t (*deinit_p)(int slot);  /*!< host function to deinitialize the driver, called with the `slot` */
     };
     esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
-    esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
+    esp_err_t (*io_int_wait)(int slot, uint32_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */
     esp_err_t (*get_real_freq)(int slot, int* real_freq); /*!< Host function to provide real working freq, based on SDMMC controller setup */
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
-    void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
+    esp_err_t (*set_input_delayline)(int slot, sdmmc_delay_line_t delay_line); /*!< set input delay line */
+    /**
+     * @brief Maximum number of blocks to read/write at once when using an unaligned buffer.
+     *
+     * When a multi-block read/write is requested with an unaligned buffer, the driver
+     * splits the transfer into chunks of this many blocks. Set to 0 to use the default
+     * value of 1 (single-block transfers). Higher values improve throughput but require
+     * a larger DMA-capable temporary buffer.
+     */
+    size_t unaligned_multi_block_rw_max_chunk_size;
+    /**
+     * @brief Cache aligned buffer for multi-block RW and IO commands
+     *
+     * Use cases:
+     *  - Temporary buffer for multi-block read/write transactions to/from unaligned buffers.
+     *    Allocate with DMA capable memory, size should be an integer multiple of your card's sector size.
+     *    The number of blocks transferred per chunk is controlled by
+     *    `unaligned_multi_block_rw_max_chunk_size`.
+     *  - Cache aligned buffer for IO commands in SDIO mode.
+     *    If you allocate manually, make sure it is at least SDMMC_IO_BLOCK_SIZE bytes large.
+     */
+    void* dma_aligned_buffer;
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
-    esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/
+    bool (*check_buffer_alignment)(int slot, const void *buf, size_t size); /*!< Check if buffer meets alignment requirements */
+    esp_err_t (*is_slot_set_to_uhs1)(int slot, bool *is_uhs1); /*!< host slot is set to uhs1 or not*/
 } sdmmc_host_t;
 
 /**
@@ -229,7 +267,7 @@ typedef struct {
     sdmmc_ssr_t ssr;            /*!< decoded SSR (SD Status Register) value */
     sdmmc_ext_csd_t ext_csd;    /*!< decoded EXT_CSD (Extended Card Specific Data) register value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
-    uint16_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
+    uint32_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
     int real_freq_khz;          /*!< Real working frequency, in kHz, configured on the host controller */
     uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
     uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
@@ -237,7 +275,8 @@ typedef struct {
     uint32_t num_io_functions : 3;  /*!< If is_sdio is 1, contains the number of IO functions on the card */
     uint32_t log_bus_width : 2; /*!< log2(bus width supported by card) */
     uint32_t is_ddr : 1;        /*!< Card supports DDR mode */
-    uint32_t reserved : 23;     /*!< Reserved for future expansion */
+    uint32_t is_uhs1 : 1;       /*!< Card supports UHS-1 mode */
+    uint32_t reserved : 22;     /*!< Reserved for future expansion */
 } sdmmc_card_t;
 
 /**

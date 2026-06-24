@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include "sdkconfig.h"
 #include "esp_cpu.h"
 #include "esp_system.h"
-#include "spi_flash_mmap.h"
 
 
 TEST_GROUP(wear_levelling);
@@ -65,7 +64,7 @@ TEST(wear_levelling, wl_mount_checks_partition_params)
     esp_partition_erase_range(test_partition, 0, test_partition->size);
     // test small partition: result should be error
     for (int i = 0; i < 5; i++) {
-        fake_partition.size = SPI_FLASH_SEC_SIZE * (i);
+        fake_partition.size = test_partition->erase_size * (i);
         size_before = esp_get_free_heap_size();
         TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_mount(&fake_partition, &handle));
         // test that we didn't leak any memory
@@ -74,7 +73,7 @@ TEST(wear_levelling, wl_mount_checks_partition_params)
     }
 
     // test minimum size partition: result should be OK
-    fake_partition.size = SPI_FLASH_SEC_SIZE * 5;
+    fake_partition.size = test_partition->erase_size * 5;
     size_before = esp_get_free_heap_size();
     TEST_ESP_OK(wl_mount(&fake_partition, &handle));
     wl_unmount(handle);
@@ -217,7 +216,7 @@ TEST(wear_levelling, write_doesnt_touch_other_sectors)
     esp_partition_t fake_partition;
     memcpy(&fake_partition, partition, sizeof(fake_partition));
 
-    fake_partition.size = SPI_FLASH_SEC_SIZE * (4 + TEST_SECTORS_COUNT);
+    fake_partition.size = partition->erase_size * (4 + TEST_SECTORS_COUNT);
 
     wl_handle_t handle;
     TEST_ESP_OK(wl_mount(&fake_partition, &handle));
@@ -320,12 +319,214 @@ TEST(wear_levelling, version_update)
 }
 #endif // CONFIG_WL_SECTOR_SIZE_4096
 
+TEST(wear_levelling, test_bdl_read_write_erase)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    TEST_ASSERT(wl_blockdev->geometry.disk_size > 0);
+    TEST_ASSERT(wl_blockdev->geometry.erase_size > 0);
+
+    const size_t data_size = 256;
+    uint8_t test_data[data_size];
+    uint8_t data_buffer[data_size];
+    const off_t target_addr = 3 * 4 * 1024;
+
+    TEST_ESP_OK(wl_blockdev->ops->erase(wl_blockdev, target_addr, wl_blockdev->geometry.erase_size));
+    memset((void*)test_data, 0xFF, data_size);
+    TEST_ESP_OK(wl_blockdev->ops->read(wl_blockdev, data_buffer, data_size, target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
+
+    memset((void*)test_data, 'P', data_size);
+    TEST_ESP_OK(wl_blockdev->ops->write(wl_blockdev, test_data, target_addr, data_size));
+    TEST_ESP_OK(wl_blockdev->ops->read(wl_blockdev, data_buffer, data_size, target_addr, data_size));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, data_buffer, data_size));
+
+    TEST_ESP_OK(wl_blockdev->ops->sync(wl_blockdev));
+
+    // Release WL BDL (internally unmounts WL)
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_error_paths)
+{
+    esp_blockdev_handle_t out = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_get_blockdev(ESP_BLOCKDEV_HANDLE_INVALID, &out));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_get_blockdev(ESP_BLOCKDEV_HANDLE_INVALID, NULL));
+
+    const esp_partition_t *partition = get_test_data_partition();
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, wl_get_blockdev(part_blockdev, NULL));
+
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_geometry_and_flags)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    TEST_ASSERT(wl_blockdev->geometry.disk_size > 0);
+    TEST_ASSERT(wl_blockdev->geometry.disk_size < part_blockdev->geometry.disk_size);
+    TEST_ASSERT(wl_blockdev->geometry.erase_size > 0);
+    TEST_ASSERT_EQUAL(part_blockdev->geometry.read_size, wl_blockdev->geometry.read_size);
+    TEST_ASSERT_EQUAL(part_blockdev->geometry.write_size, wl_blockdev->geometry.write_size);
+    TEST_ASSERT_EQUAL(part_blockdev->geometry.recommended_read_size, wl_blockdev->geometry.recommended_read_size);
+    TEST_ASSERT_EQUAL(part_blockdev->geometry.recommended_write_size, wl_blockdev->geometry.recommended_write_size);
+
+    TEST_ASSERT_EQUAL(part_blockdev->device_flags.val, wl_blockdev->device_flags.val);
+
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops);
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops->read);
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops->write);
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops->erase);
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops->sync);
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops->ioctl);
+    TEST_ASSERT_NOT_NULL(wl_blockdev->ops->release);
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_sync)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    size_t erase_size = wl_blockdev->geometry.erase_size;
+    TEST_ESP_OK(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size));
+
+    uint8_t test_data[64];
+    memset(test_data, 'S', sizeof(test_data));
+    TEST_ESP_OK(wl_blockdev->ops->write(wl_blockdev, test_data, 0, sizeof(test_data)));
+    TEST_ESP_OK(wl_blockdev->ops->sync(wl_blockdev));
+
+    uint8_t read_data[64];
+    TEST_ESP_OK(wl_blockdev->ops->read(wl_blockdev, read_data, sizeof(read_data), 0, sizeof(read_data)));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, read_data, sizeof(test_data)));
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_ioctl)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED,
+                      wl_blockdev->ops->ioctl(wl_blockdev, ESP_BLOCKDEV_CMD_MARK_DELETED, NULL));
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_erase_alignment)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    size_t erase_size = wl_blockdev->geometry.erase_size;
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, wl_blockdev->ops->erase(wl_blockdev, 1, erase_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, wl_blockdev->ops->erase(wl_blockdev, 0, erase_size - 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, wl_blockdev->ops->erase(wl_blockdev, 1, erase_size + 1));
+    TEST_ESP_OK(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size));
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_read_buffer_check)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    uint8_t buf[64];
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, wl_blockdev->ops->read(wl_blockdev, buf, 32, 0, 64));
+    TEST_ESP_OK(wl_blockdev->ops->read(wl_blockdev, buf, sizeof(buf), 0, sizeof(buf)));
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
+TEST(wear_levelling, test_bdl_release_and_reconnect)
+{
+    const esp_partition_t *partition = get_test_data_partition();
+
+    esp_blockdev_handle_t part_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(esp_partition_ptr_get_blockdev(partition, &part_blockdev));
+
+    esp_blockdev_handle_t wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    size_t erase_size = wl_blockdev->geometry.erase_size;
+    TEST_ESP_OK(wl_blockdev->ops->erase(wl_blockdev, 0, erase_size));
+    uint8_t test_data[64];
+    memset(test_data, 'R', sizeof(test_data));
+    TEST_ESP_OK(wl_blockdev->ops->write(wl_blockdev, test_data, 0, sizeof(test_data)));
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+
+    wl_blockdev = ESP_BLOCKDEV_HANDLE_INVALID;
+    TEST_ESP_OK(wl_get_blockdev(part_blockdev, &wl_blockdev));
+
+    uint8_t read_data[64];
+    TEST_ESP_OK(wl_blockdev->ops->read(wl_blockdev, read_data, sizeof(read_data), 0, sizeof(read_data)));
+    TEST_ASSERT_EQUAL(0, memcmp(test_data, read_data, sizeof(test_data)));
+
+    TEST_ESP_OK(wl_blockdev->ops->release(wl_blockdev));
+    TEST_ESP_OK(part_blockdev->ops->release(part_blockdev));
+}
+
 TEST_GROUP_RUNNER(wear_levelling)
 {
     RUN_TEST_CASE(wear_levelling, wl_unmount_doesnt_leak_memory)
     RUN_TEST_CASE(wear_levelling, wl_mount_checks_partition_params)
     RUN_TEST_CASE(wear_levelling, multiple_tasks_single_handle)
     RUN_TEST_CASE(wear_levelling, write_doesnt_touch_other_sectors)
+    RUN_TEST_CASE(wear_levelling, test_bdl_read_write_erase)
+    RUN_TEST_CASE(wear_levelling, test_bdl_error_paths)
+    RUN_TEST_CASE(wear_levelling, test_bdl_geometry_and_flags)
+    RUN_TEST_CASE(wear_levelling, test_bdl_sync)
+    RUN_TEST_CASE(wear_levelling, test_bdl_ioctl)
+    RUN_TEST_CASE(wear_levelling, test_bdl_erase_alignment)
+    RUN_TEST_CASE(wear_levelling, test_bdl_read_buffer_check)
+    RUN_TEST_CASE(wear_levelling, test_bdl_release_and_reconnect)
 
 #if CONFIG_WL_SECTOR_SIZE_4096
     RUN_TEST_CASE(wear_levelling, version_update)

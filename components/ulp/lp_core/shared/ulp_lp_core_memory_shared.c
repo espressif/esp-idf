@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,10 @@
 
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#include "esp_rom_caps.h"
 #include "esp_assert.h"
+
+#define ALIGN_DOWN(SIZE, AL)   (SIZE & ~(AL - 1))
 
 /* The last CONFIG_ULP_SHARED_MEM bytes of the reserved memory are reserved for a shared cfg struct
    The main cpu app and the ulp binary can share variables automatically through the linkerscript generated from
@@ -15,13 +18,26 @@
 
    For those special cases, e.g. config settings. We can use this shared area.
     */
-#define LP_CORE_SHARED_MEM_ADDR (SOC_RTC_DRAM_LOW + CONFIG_ULP_COPROC_RESERVE_MEM  - CONFIG_ULP_SHARED_MEM)
 
-static ulp_lp_core_memory_shared_cfg_t *const s_shared_mem = (ulp_lp_core_memory_shared_cfg_t *)LP_CORE_SHARED_MEM_ADDR;
-
+#if IS_ULP_COCPU
+static ulp_lp_core_memory_shared_cfg_t __attribute__((section(".shared_mem"))) s_shared_mem = {};
 ESP_STATIC_ASSERT(CONFIG_ULP_SHARED_MEM == sizeof(ulp_lp_core_memory_shared_cfg_t));
+#endif
 
 ulp_lp_core_memory_shared_cfg_t* ulp_lp_core_memory_shared_cfg_get(void)
 {
-    return s_shared_mem;
+#if IS_ULP_COCPU
+    return &s_shared_mem;
+#else
+#if ESP_ROM_HAS_LP_ROM
+    extern uint32_t _rtc_ulp_memory_start;
+    uint32_t ulp_base_addr = (uint32_t)&_rtc_ulp_memory_start;
+#else
+    uint32_t ulp_base_addr = SOC_RTC_DRAM_LOW;
+#endif
+    /* Ensure the end where the shared memory starts is aligned to 8 bytes
+    if updating this also update the same in ulp_lp_core_riscv.ld
+    */
+    return (ulp_lp_core_memory_shared_cfg_t *)(ulp_base_addr + ALIGN_DOWN(CONFIG_ULP_COPROC_RESERVE_MEM, 0x8)  - CONFIG_ULP_SHARED_MEM);
+#endif
 }

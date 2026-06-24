@@ -1,0 +1,59 @@
+# Bluetooth Audio - Media control configuration options
+
+#
+# SPDX-FileCopyrightText: 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# TODO: Decide, and add, top-level namespace prefix (currently none) to symbols.
+# Dependent upon where the module will be placed.
+
+config BT_MCTL
+    bool "Support for media player control"
+    help
+        Enables support for control of local and remote media players
+        To enable support for control of a local media player, support for
+        local media player must be enabled
+
+if BT_MCTL
+
+    config BT_MCTL_LOCAL_PLAYER_CONTROL
+        bool "Support for control of local media player"
+        help
+            This option enables support for control of a local media player
+
+    config BT_MCTL_LOCAL_PLAYER_LOCAL_CONTROL
+        bool "Support for local control of local media player"
+        default y
+        depends on BT_MCTL_LOCAL_PLAYER_CONTROL
+        help
+            This option enables support for local application control of local
+            media players
+
+    config BT_MCTL_LOCAL_PLAYER_REMOTE_CONTROL
+        bool "Support for remote control of local media players"
+        depends on BT_MCTL_LOCAL_PLAYER_CONTROL
+        help
+            This option enables support for remote control of local media
+            players.
+
+    config BT_MCTL_REMOTE_PLAYER_CONTROL
+        bool "Support for control of remote media player"
+        default y
+    # TODO: Remove dependency on BT_MCC once MCC has been reworked
+        depends on BT_MCC
+        help
+            This options enables support for control of a remote media player.
+
+    config BT_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
+        bool "Support for accessing objects on remote player"
+        depends on BT_MCTL_REMOTE_PLAYER_CONTROL
+        default y
+    # TODO: Remove dependency on BT_MCC_OTS once MCC has been reworked
+        depends on BT_MCC_OTS
+        help
+            This options enables support for accessing objects (tracks, groups,
+            search results, ...) on a remote media player
+
+endif # BT_MCTL

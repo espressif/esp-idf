@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # Bootloader override
 
@@ -57,9 +57,11 @@ In case you only want to override the bootloader under a certain condition (targ
 
 For example, if the custom bootloader shall not be compiled for ESP32-C3 targets, which should use the default ESP-IDF one, the `CMakeLists.txt` file in this current example must look like this:
 ```
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# "Trim" the build. Include the minimal set of components, main, and anything it depends on.
+idf_build_set_property(MINIMAL_BUILD ON)
 
 if(${IDF_TARGET} STREQUAL "esp32c3")
     set(BOOTLOADER_IGNORE_EXTRA_COMPONENT "main")

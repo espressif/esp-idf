@@ -2,7 +2,6 @@
 #
 # (Not all hardware may support this configuration.)
 CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
-CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
 
 # These two settings mean that no logs are printed
 # during startup, but it's possible to use esp_log_level_set("*", ESP_LOG_INFO)

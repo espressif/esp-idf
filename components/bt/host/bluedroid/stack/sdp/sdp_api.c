@@ -46,6 +46,7 @@
 ** Function         SDP_InitDiscoveryDb
 **
 ** Description      This function is called to initialize a discovery database.
+**                  It will no longer use p_attr_list and p_uuid_list after calling it.
 **
 ** Parameters:      p_db        - (input) address of an area of memory where the
 **                                        discovery database is managed.
@@ -63,7 +64,7 @@
 **
 *******************************************************************************/
 BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uuid,
-                             tSDP_UUID *p_uuid_list, UINT16 num_attr, UINT16 *p_attr_list)
+                             const tSDP_UUID *p_uuid_list, UINT16 num_attr, const UINT16 *p_attr_list)
 {
 #if SDP_CLIENT_ENABLED == TRUE
     UINT16  xx;
@@ -71,8 +72,8 @@ BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uui
     /* verify the parameters */
     if (p_db == NULL || (sizeof (tSDP_DISCOVERY_DB) > len) ||
             num_attr > SDP_MAX_ATTR_FILTERS || num_uuid > SDP_MAX_UUID_FILTERS) {
-        SDP_TRACE_ERROR("SDP_InitDiscoveryDb Illegal param: p_db 0x%x, len %d, num_uuid %d, num_attr %d",
-                        (UINT32)p_db, len, num_uuid, num_attr);
+        SDP_TRACE_ERROR("SDP_InitDiscoveryDb Illegal param: p_db %p, len %d, num_uuid %d, num_attr %d",
+                        p_db, len, num_uuid, num_attr);
 
         return (FALSE);
     }
@@ -98,8 +99,9 @@ BOOLEAN SDP_InitDiscoveryDb (tSDP_DISCOVERY_DB *p_db, UINT32 len, UINT16 num_uui
     sdpu_sort_attr_list( num_attr, p_db );
 
     p_db->num_attr_filters = num_attr;
-#endif
     return (TRUE);
+#endif
+    return (FALSE);
 }
 
 
@@ -123,8 +125,9 @@ BOOLEAN SDP_CancelServiceSearch (tSDP_DISCOVERY_DB *p_db)
 
     sdp_disconnect (p_ccb, SDP_CANCEL);
     p_ccb->disc_state = SDP_DISC_WAIT_CANCEL;
-#endif
     return (TRUE);
+#endif
+    return (FALSE);
 }
 
 
@@ -372,7 +375,7 @@ BOOLEAN SDP_FindServiceUUIDInRec(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
                     if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
                         /* Look through data element sequence until no more UUIDs */
                         for (p_extra_sattr = p_sattr->attr_value.v.p_sub_attr; p_extra_sattr; p_extra_sattr = p_extra_sattr->p_next_attr) {
-                            /* Increment past this to see if the next attribut is UUID */
+                            /* Increment past this to see if the next attribute is UUID */
                             if ((SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) == UUID_DESC_TYPE)
                                     /* only support 16 bits UUID for now */
                                     && (SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2)) {
@@ -428,7 +431,7 @@ BOOLEAN SDP_FindServiceUUIDInRec_128bit(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid)
             for (p_sattr = p_attr->attr_value.v.p_sub_attr; p_sattr; p_sattr = p_sattr->p_next_attr) {
                 if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == UUID_DESC_TYPE) {
                     /* only support 128 bits UUID for now */
-                    if (SDP_DISC_ATTR_LEN(p_sattr->attr_len_type) == 16) {
+                    if (SDP_DISC_ATTR_LEN(p_sattr->attr_len_type) == LEN_UUID_128) {
                         p_uuid->len = LEN_UUID_128;
                         for (uint8_t i = 0; i != LEN_UUID_128; ++i) {
                             p_uuid->uu.uuid128[i] = p_sattr->attr_value.v.array[LEN_UUID_128 - i - 1];
@@ -522,7 +525,7 @@ tSDP_DISC_REC *SDP_FindServiceInDb (tSDP_DISCOVERY_DB *p_db, UINT16 service_uuid
                         if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE) {
                             /* Look through data element sequence until no more UUIDs */
                             for (p_extra_sattr = p_sattr->attr_value.v.p_sub_attr; p_extra_sattr; p_extra_sattr = p_extra_sattr->p_next_attr) {
-                                /* Increment past this to see if the next attribut is UUID */
+                                /* Increment past this to see if the next attribute is UUID */
                                 if ((SDP_DISC_ATTR_TYPE(p_extra_sattr->attr_len_type) == UUID_DESC_TYPE)
                                         && (SDP_DISC_ATTR_LEN(p_extra_sattr->attr_len_type) == 2)
                                         /* for a specific uuid, or any one */
@@ -768,6 +771,28 @@ BOOLEAN SDP_FindProtocolListElemInRec (tSDP_DISC_REC *p_rec, UINT16 layer_uuid, 
     return (FALSE);
 }
 
+/*******************************************************************************
+**
+** Function         SDP_FindProtocolListElem
+**
+** Description      This function looks at the protocol list for a specific protocol
+**                  list element.
+**
+** Returns          TRUE if found, FALSE if not
+**                  If found, the passed protocol list element is filled in.
+**
+*******************************************************************************/
+BOOLEAN SDP_FindProtocolListElem (tSDP_DISC_ATTR *p_protocol_list, UINT16 layer_uuid, tSDP_PROTOCOL_ELEM *p_elem)
+{
+#if SDP_CLIENT_ENABLED == TRUE
+    /* don't check the input protocol descriptor list id, this api may be use in additional protocol descriptor list */
+    if ((SDP_DISC_ATTR_TYPE(p_protocol_list->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE)) {
+        return sdp_fill_proto_elem(p_protocol_list, layer_uuid, p_elem);
+    }
+#endif
+    /* If here, no match found */
+    return (FALSE);
+}
 
 /*******************************************************************************
 **

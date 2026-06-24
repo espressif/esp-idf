@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -264,7 +264,7 @@ static void parse_rmc(esp_gps_t *esp_gps)
         }
         break;
     case 7: /* Process ground speed in unit m/s */
-        esp_gps->parent.speed = strtof(esp_gps->item_str, NULL) * 1.852;
+        esp_gps->parent.speed = strtof(esp_gps->item_str, NULL) * 0.514444;
         break;
     case 8: /* Process true course over ground */
         esp_gps->parent.cog = strtof(esp_gps->item_str, NULL);
@@ -338,7 +338,7 @@ static void parse_vtg(esp_gps_t *esp_gps)
         esp_gps->parent.variation = strtof(esp_gps->item_str, NULL);
         break;
     case 5:/* Process ground speed in unit m/s */
-        esp_gps->parent.speed = strtof(esp_gps->item_str, NULL) * 1.852;//knots to m/s
+        esp_gps->parent.speed = strtof(esp_gps->item_str, NULL) * 0.514444;//knots to m/s
         break;
     case 7:/* Process ground speed in unit m/s */
         esp_gps->parent.speed = strtof(esp_gps->item_str, NULL) / 3.6;//km/h to m/s
@@ -702,7 +702,7 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config)
         .task_name = NULL
     };
     if (esp_event_loop_create(&loop_args, &esp_gps->event_loop_hdl) != ESP_OK) {
-        ESP_LOGE(GPS_TAG, "create event loop faild");
+        ESP_LOGE(GPS_TAG, "create event loop failed");
         goto err_eloop;
     }
     /* Create NMEA Parser task */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,24 +16,24 @@
 #include "phy_prph.h"
 
 static uint8_t ext_adv_pattern_1M[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0xAB, 0xF2,
-    0x0e, 0X09, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', '1', 'M',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', '1', 'M',
 };
 
 static uint8_t ext_adv_pattern_2M[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0xAB, 0xF2,
-    0x0e, 0X09, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', '2', 'M',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', '2', 'M',
 };
 
 static uint8_t ext_adv_pattern_coded[] = {
-    0x02, 0x01, 0x06,
-    0x03, 0x03, 0xab, 0xcd,
-    0x03, 0x03, 0xAB, 0xF2,
-    0x11, 0X09, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', 'c', 'o', 'd', 'e',
+    0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x11, BLE_HS_ADV_TYPE_COMP_NAME, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', 'c', 'o', 'd', 'e',
     'd',
 };
 
@@ -104,7 +104,7 @@ ext_bleprph_advertise(void)
 {
     struct ble_gap_ext_adv_params params;
     struct os_mbuf *data = NULL;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     int rc;
 
     /* use defaults for non-set params */
@@ -118,8 +118,8 @@ ext_bleprph_advertise(void)
     /*enable connectable advertising for all Phy*/
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using the inferred address type */
+    params.own_addr_type = own_addr_type;
 
     /* Set current phy; get mbuf for scan rsp data; fill mbuf with scan rsp data */
     switch (s_current_phy) {
@@ -145,8 +145,13 @@ ext_bleprph_advertise(void)
         break;
     }
 
-    params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
-    params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    if (s_current_phy == BLE_HCI_LE_PHY_CODED_PREF_MASK) {
+        params.itvl_min = BLE_GAP_ADV_ITVL_MS(20);
+        params.itvl_max = BLE_GAP_ADV_ITVL_MS(20);
+    }else{
+        params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+        params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
+    }
 
     /* configure instance 0 */
     rc = ble_gap_ext_adv_configure(instance, &params, NULL,
@@ -342,8 +347,10 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init_le_phy();
     assert(rc == 0);
+#endif
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("bleprph-phy");

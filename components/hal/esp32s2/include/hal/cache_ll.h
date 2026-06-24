@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,6 @@
 extern "C" {
 #endif
 
-
 #define CACHE_LL_DEFAULT_IBUS_MASK    CACHE_BUS_IBUS0
 #define CACHE_LL_DEFAULT_DBUS_MASK    CACHE_BUS_IBUS2
 
@@ -30,6 +29,24 @@ extern "C" {
 #define CACHE_LL_LEVEL_NUMS                              1   //Number of cache levels
 #define CACHE_LL_L1_ICACHE_AUTOLOAD                      (1<<0)
 #define CACHE_LL_L1_DCACHE_AUTOLOAD                      (1<<0)
+
+/**
+ * @brief Preload strategy
+ */
+typedef enum {
+    CACHE_LL_PRELOAD_UNTIL_FETCH_DONE = 0,
+    CACHE_LL_PRELOAD_AFTER_FETCH = 1,
+    CACHE_LL_PRELOAD_ARBITRARY = 2,
+} cache_ll_preload_strategy_t;
+
+/**
+ * @brief Initialize the cache clock
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clk_init(void)
+{
+    //for compatibility
+}
 
 /**
  * @brief Check if ICache auto preload is enabled or not
@@ -75,8 +92,7 @@ static inline bool cache_ll_is_cache_autoload_enabled(uint32_t cache_level, cach
 {
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     bool enabled = false;
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_INSTRUCTION:
         enabled = cache_ll_l1_is_icache_autoload_enabled();
         break;
@@ -88,6 +104,75 @@ static inline bool cache_ll_is_cache_autoload_enabled(uint32_t cache_level, cach
         break;
     }
     return enabled;
+}
+
+/**
+ * @brief Set the preload strategy (no-op)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_set_strategy(uint32_t cache_level, cache_type_t type, uint32_t cache_id, cache_ll_preload_strategy_t strategy)
+{
+    (void)cache_level;
+    (void)type;
+    (void)cache_id;
+    (void)strategy;
+}
+
+/**
+ * @brief Preload cache
+ *
+ * @param cache_level  level of the cache (must be CACHE_LL_LEVEL_EXT_MEM)
+ * @param type         see `cache_type_t` (INSTRUCTION, DATA, or ALL)
+ * @param cache_id     id of the cache (unused on S2; pass 0 or CACHE_LL_ID_ALL)
+ * @param vaddr        start virtual address of the preload region
+ * @param size         size of the preload region in bytes
+ * @param order        preload order, see `cache_preload_order_t`
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size, cache_preload_order_t order)
+{
+    (void)cache_id;
+    HAL_ASSERT(cache_level == CACHE_LL_LEVEL_EXT_MEM);
+    switch (type) {
+    case CACHE_TYPE_INSTRUCTION:
+        Cache_Start_ICache_Preload(vaddr, size, order);
+        break;
+    case CACHE_TYPE_DATA:
+        Cache_Start_DCache_Preload(vaddr, size, order);
+        break;
+    case CACHE_TYPE_ALL:
+    default:
+        Cache_Start_ICache_Preload(vaddr, size, order);
+        Cache_Start_DCache_Preload(vaddr, size, order);
+        break;
+    }
+}
+
+/**
+ * @brief Wait until cache preload is done (L1 only)
+ */
+__attribute__((always_inline))
+static inline void cache_ll_preload_wait_done(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    (void)cache_id;
+    HAL_ASSERT(cache_level == CACHE_LL_LEVEL_EXT_MEM);
+    switch (type) {
+    case CACHE_TYPE_INSTRUCTION:
+        while (Cache_ICache_Preload_Done() == 0) {
+        }
+        break;
+    case CACHE_TYPE_DATA:
+        while (Cache_DCache_Preload_Done() == 0) {
+        }
+        break;
+    case CACHE_TYPE_ALL:
+    default:
+        while (Cache_ICache_Preload_Done() == 0) {
+        }
+        while (Cache_DCache_Preload_Done() == 0) {
+        }
+        break;
+    }
 }
 
 /**
@@ -118,8 +203,7 @@ static inline void cache_ll_l1_disable_dcache(void)
 __attribute__((always_inline))
 static inline void cache_ll_disable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_INSTRUCTION:
         cache_ll_l1_disable_icache();
         break;
@@ -167,8 +251,7 @@ static inline void cache_ll_l1_enable_dcache(bool data_autoload_en)
 __attribute__((always_inline))
 static inline void cache_ll_enable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_INSTRUCTION:
         cache_ll_l1_enable_icache(inst_autoload_en);
         break;
@@ -210,8 +293,7 @@ static inline void cache_ll_l1_suspend_dcache(void)
 __attribute__((always_inline))
 static inline void cache_ll_suspend_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_INSTRUCTION:
         cache_ll_l1_suspend_icache();
         break;
@@ -259,8 +341,7 @@ static inline void cache_ll_l1_resume_dcache(bool data_autoload_en)
 __attribute__((always_inline))
 static inline void cache_ll_resume_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_INSTRUCTION:
         cache_ll_l1_resume_icache(inst_autoload_en);
         break;
@@ -282,7 +363,8 @@ static inline void cache_ll_resume_cache(uint32_t cache_level, cache_type_t type
  * @return  true: enabled; false: disabled
  */
 __attribute__((always_inline))
-static inline bool cache_ll_l1_is_icache_enabled(uint32_t cache_id){
+static inline bool cache_ll_l1_is_icache_enabled(uint32_t cache_id)
+{
     HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
 
     bool enabled;
@@ -318,8 +400,7 @@ __attribute__((always_inline))
 static inline bool cache_ll_is_cache_enabled(cache_type_t type)
 {
     bool enabled = false;
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_DATA:
         enabled = cache_ll_l1_is_dcache_enabled(0);
         break;
@@ -348,6 +429,30 @@ __attribute__((always_inline))
 static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size)
 {
     Cache_Invalidate_Addr(vaddr, size);
+}
+
+/**
+ * @brief Invalidate all
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_all(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    switch (type) {
+    case CACHE_TYPE_DATA:
+        Cache_Invalidate_DCache_All();
+        break;
+    case CACHE_TYPE_INSTRUCTION:
+        Cache_Invalidate_ICache_All();
+        break;
+    default: //CACHE_TYPE_ALL
+        Cache_Invalidate_ICache_All();
+        Cache_Invalidate_DCache_All();
+        break;
+    }
 }
 
 /**
@@ -406,8 +511,7 @@ __attribute__((always_inline))
 static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     uint32_t size = 0;
-    switch (type)
-    {
+    switch (type) {
     case CACHE_TYPE_INSTRUCTION:
         size = cache_ll_l1_icache_get_line_size();
         break;
@@ -436,8 +540,6 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    (void)cache_id;
-
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
     uint32_t vaddr_end = vaddr_start + len - 1;
     if (vaddr_start >= SOC_IRAM1_ADDRESS_LOW) {
@@ -477,15 +579,15 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
 /**
  * Enable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be enabled
  */
 #if !BOOTLOADER_BUILD
 __attribute__((always_inline))
 #endif
-static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_enable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    (void)cache_id;
+    (void)bus_id;
 
     uint32_t ibus_mask = 0;
     ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_PRO_ICACHE_MASK_IRAM0 : 0);
@@ -503,13 +605,13 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 /**
  * Disable the Cache Buses
  *
- * @param cache_id    cache ID (when l1 cache is per core)
+ * @param bus_id      bus ID
  * @param mask        To know which buses should be disabled
  */
 __attribute__((always_inline))
-static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
+static inline void cache_ll_l1_disable_bus(uint32_t bus_id, cache_bus_mask_t mask)
 {
-    (void)cache_id;
+    (void)bus_id;
 
     uint32_t ibus_mask = 0;
     ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? EXTMEM_PRO_ICACHE_MASK_IRAM0 : 0);
@@ -549,6 +651,26 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     }
 
     return valid;
+}
+
+/**
+ * @brief Get cache debug status 0
+ *
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_dbg_status0(void)
+{
+    return REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG);
+}
+
+/**
+ * @brief Get cache debug status 1
+ *
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_dbg_status1(void)
+{
+    return REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG);
 }
 
 #ifdef __cplusplus

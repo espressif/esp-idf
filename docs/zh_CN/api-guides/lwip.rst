@@ -27,23 +27,36 @@ ESP-IDF 间接支持以下常见的 lwIP 应用程序 API：
 - 动态主机设置协议 (DHCP) 服务器和客户端，由 :doc:`/api-reference/network/esp_netif` 功能间接支持。
 - 域名系统 (DNS)；获取 DHCP 地址时，可以自动分配 DNS 服务器，也可以通过 :doc:`/api-reference/network/esp_netif` API 手动配置。
 
+  关于 DNS over HTTPS，请参阅示例 :example:`protocols/dns_over_https`。
+
 .. note::
 
     lwIP 中的 DNS 服务器配置为全局配置，而非针对特定接口的配置。如需同时使用不同 DNS 服务器的多个网络接口，在从一个接口获取 DHCP 租约时，请注意避免意外覆盖另一个接口的 DNS 设置。
 
-- 简单网络时间协议 (SNTP)，由 :doc:`/api-reference/network/esp_netif` 功能间接支持，或通过 :component_file:`lwip/include/apps/esp_sntp.h` 中的函数直接支持。该函数还为 :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` 函数提供了线程安全的 API，请参阅 :ref:`system-time-sntp-sync`。
+- 简单网络时间协议 (SNTP)，由 :doc:`/api-reference/network/esp_netif` 功能间接支持，或通过 :component_file:`lwip/include/apps/esp_sntp.h` 中的函数直接支持。该函数还为 :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` 函数提供了线程安全的 API，请参阅 :ref:`system-time-sntp-sync`。有关详细信息，请见 :example:`protocols/sntp`。该示例演示了如何使用 LwIP SNTP 模块从互联网服务器获取时间、配置同步方法与时间间隔，并使用 SNTP-over-DHCP 模块检索时间。
 - ICMP Ping，由 lwIP ping API 的变体支持，请参阅 :doc:`/api-reference/protocols/icmp_echo`。
-- ICMPv6 Ping，由 lwIP 的 ICMPv6 Echo API 支持，用于测试 IPv6 网络连接情况。有关详细信息，请参阅 :example:`protocols/sockets/icmpv6_ping`。
+- ICMPv6 Ping，由 lwIP 的 ICMPv6 Echo API 支持，用于测试 IPv6 网络连接情况。有关详细信息，请参阅 :example:`protocols/sockets/icmpv6_ping`。该示例演示了如何使用网络接口发现 IPv6 地址，创建原始 ICMPv6 套接字，向目标 IPv6 地址发送 ICMPv6 Echo 请求，并等待目标返回 Echo 回复。
 - NetBIOS 查找，由标准的 lwIP API 支持，:example:`protocols/http_server/restful_server` 示例中提供了使用 NetBIOS 在局域网中查找主机的选项。
 - mDNS 与 lwIP 的默认 mDNS 使用不同实现方式，请参阅 :doc:`/api-reference/protocols/mdns`。但启用 :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` 设置项后，lwIP 可以使用 ``gethostbyname()`` 等标准 API 和 ``hostname.local`` 约定查找 mDNS 主机。
 - lwIP 中的 PPP 实现可用于在 ESP-IDF 中创建 PPPoS（串行 PPP）接口。请参阅 :doc:`/api-reference/network/esp_netif` 组件文档，使用 :component_file:`esp_netif/include/esp_netif_defaults.h` 中定义的 ``ESP_NETIF_DEFAULT_PPP()`` 宏创建并配置 PPP 网络接口。:component_file:`esp_netif/include/esp_netif_ppp.h` 中提供了其他的运行时设置。PPPoS 接口通常用于与 NBIoT/GSM/LTE 调制解调器交互。`esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ 仓库还支持更多应用层友好的 API，该仓库内部使用了上述 PPP lwIP 模块。
+
+DHCP 地址冲突检测
+-------------------------------
+
+通常情况下，DHCP 服务器在提供选定的 IPv4 地址前，会验证该地址在网络上的唯一性。然而，有些服务器（包括 ESP-IDF 中的 DHCP 服务器）为了简化操作并加快地址分配速度，默认情况下不会进行这种验证。
+
+为避免潜在的 IP 地址冲突与连接问题，ESP-IDF 的 DHCP 客户端提供了多种选项，可在绑定 IPv4 地址前对服务器分配的地址进行验证（参见 :ref:`CONFIG_LWIP_DHCP_CHECKS_OFFERED_ADDRESS`）：
+
+- **简单 ARP 检测，默认选项** (``CONFIG_LWIP_DHCP_DOES_ARP_CHECK``)：发送两个 ARP 探测，只有当分配的 IP 的回复来自与接口 MAC 不同的 MAC 地址时才拒绝该分配。这种方式速度快约 1-2 秒，可避免 AP 在 ARP 回复中回显客户端 MAC 的网络中出现误判冲突。**如果遇到 DHCP DECLINE 循环，即分配 IP 的 ARP 回复显示接口自身的 MAC 时，请使用此选项。**
+- **地址冲突检测 (ACD)** (``CONFIG_LWIP_DHCP_DOES_ACD_CHECK``)：使用上游 lwIP ACD （符合 RFC 5227 标准）来探测或宣告地址。某些接入点会使用客户端自身的 MAC 地址来响应 ARP 探测；上游行为会将探测期间收到的任何匹配发送方 IP 视为冲突，这可能导致在此类网络上反复出现 DHCP DECLINE。**只有在需要完全符合 RFC 5227 标准，并了解某些接入点的潜在问题时，才使用此选项。**
+- **无冲突检测** (``CONFIG_LWIP_DHCP_DOES_NOT_CHECK_OFFERED_IP``)：不进行额外检查直接绑定地址。**当不需要冲突检测时，使用此选项可获得最大兼容性。**
 
 BSD 套接字 API
 -----------------
 
 BSD 套接字 API 是一种常见的跨平台 TCP/IP 套接字 API，最初源于 UNIX 操作系统的伯克利标准发行版，现已标准化为 POSIX 规范的一部分。BSD 套接字有时也称 POSIX 套接字，或伯克利套接字。
 
-在 ESP-IDF 中，lwIP 支持 BSD 套接字 API 的所有常见用法。
+在 ESP-IDF 中，lwIP 支持 BSD 套接字 API 的所有常见用法。然而，并非所有操作都完全线程安全，因此多个线程同时进行读写可能需要额外的同步机制。详情请参见 :ref:`lwip-limitations`。
 
 参考
 ^^^^^^^^^^
@@ -58,12 +71,29 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 
 以下为 ESP-IDF 中使用 BSD 套接字 API 的部分示例：
 
-- :example:`protocols/sockets/tcp_server`
-- :example:`protocols/sockets/tcp_client`
-- :example:`protocols/sockets/udp_server`
-- :example:`protocols/sockets/udp_client`
-- :example:`protocols/sockets/udp_multicast`
-- :example:`protocols/http_request`：此简化示例使用 TCP 套接字发送 HTTP 请求，但更推荐使用 :doc:`/api-reference/protocols/esp_http_client` 发送 HTTP 请求
+- :example:`protocols/sockets/non_blocking` 演示了如何配置和运行一个支持 IPv4 和 IPv6 协议的非阻塞 TCP 客户端和服务器。
+
+- :example:`protocols/sockets/tcp_server` 演示了如何创建一个 TCP 服务器，该服务器可以接受客户端的连接请求并接收数据。
+
+- :example:`protocols/sockets/tcp_client` 演示了如何创建一个 TCP 客户端，该客户端使用预定义的 IP 地址和端口连接到服务器。
+
+- :example:`protocols/sockets/tcp_transport_client` 演示了如何使用 ``tcp_transport`` 组件创建 TCP 客户端，并支持可选 SOCKS 代理。
+
+- :example:`protocols/http_request` 演示了如何基于 BSD 套接字 API，通过纯 TCP 套接字发起最小化的 HTTP 请求。
+
+- :example:`protocols/sockets/tcp_client_multi_net` 演示了如何同时使用以太网和 Wi-Fi 接口连接，在每个接口上创建一个 TCP 客户端，并发送一个简单的 HTTP 请求和响应。
+
+- :example:`protocols/sockets/udp_server` 演示了如何创建一个 UDP 服务器，该服务器可以接收客户端的连接请求和数据。
+
+- :example:`protocols/sockets/udp_client` 演示了如何创建一个 UDP 客户端，该客户端使用预定义的 IP 地址和端口连接到服务器。
+
+- :example:`protocols/sockets/udp_multicast` 演示了如何通过 BSD 风格的套接字接口使用 IPV4 和 IPV6 的 UDP 组播功能。
+
+:doc:`以太网驱动 </api-reference/network/esp_eth>` 通过 EMAC 连接的接口，提供了相同的 BSD 套接字和 TCP/IP 路径。请参考以下应用示例：
+
+- :example:`ethernet/basic`，用于驱动上电、``esp_netif``、DHCP 以及基本 IP 连通性。
+- :example:`ethernet/iperf`，用于在以太网上测量 TCP/UDP 吞吐量。
+- :example:`ethernet/ptp`，用于以太网上的 IEEE 1588/PTP 时间同步。
 
 支持的函数
 ^^^^^^^^^^^^^^^^^^^
@@ -166,7 +196,7 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 套接字错误原因代码
 ++++++++++++++++++++++++
 
-以下是常见错误代码列表。有关标准 POSIX/C 错误代码的详细列表，请参阅 `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ 和特定平台扩展 :component_file:`newlib/platform_include/errno.h`。
+以下是常见错误代码列表。获取标准 POSIX/C 错误代码的详细列表，请参阅 `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ 和特定平台扩展 :component_file:`esp_libc/platform_include/sys/errno.h`。
 
 .. list-table::
     :header-rows: 1
@@ -427,6 +457,52 @@ NAPT 和端口转发
 - 要在两个接口之间使用 NAPT 转发数据包，必须在连接到目标网络的接口上启用 NAPT。例如，为了通过 Wi-Fi 接口为以太网流量启用互联网访问，必须在以太网接口上启用 NAPT。
 - NAPT 的使用示例可参考 :example:`network/vlan_support`。
 
+默认 lwIP 钩子
+++++++++++++++++++
+
+IDF 移植层提供了默认的钩子文件，lwIP 构建过程中会包含此文件。此文件位于 :component_file:`lwip/port/include/lwip_default_hooks.h`，并定义了多个钩子，用于实现 lwIP 协议栈的默认 ESP-IDF 行为。这些钩子可以通过以下选项进行进一步修改：
+
+- *None*：不声明任何钩子。
+- *Default*：提供默认的 IDF 实现（多数情况下被声明为可被覆盖的弱实现）。
+- *Custom*：仅提供钩子声明，应用程序必须自行实现钩子。
+
+**DHCP 额外选项钩子**
+
+ESP-IDF 允许应用程序通过定义钩子来处理额外的 DHCP 选项，可以帮助实现基于 DHCP 的自定义行为（例如获取特定的供应商选项）。若想启用此功能，可以将 :ref:`CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION` 配置为 **Default** （提供弱实现，可替换为自定义实现）或 **Custom** （需要自行实现该钩子，并定义其对 lwIP 的链接依赖）。
+
+**示例用法**
+
+应用程序可以定义以下函数来处理特定的 DHCP 选项（例如强制门户 URI）：
+
+.. code-block::
+
+    #include "esp_netif.h"
+    #include "lwip/dhcp.h"
+
+    void lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state,
+                                   uint8_t option, uint8_t len,
+                                   struct pbuf* p, uint16_t offset)
+    {
+        if (option == ESP_NETIF_CAPTIVEPORTAL_URI) {
+            char *uri = (char *)p->payload + offset;
+            ESP_LOGI(TAG, "Captive Portal URI: %s", uri);
+        }
+    }
+
+**其他默认钩子**
+
+ESP-IDF 提供了其他可覆盖的 lwIP 钩子，例如：
+
+- TCP ISN 钩子 (:ref:`CONFIG_LWIP_HOOK_TCP_ISN`)：允许自定义 TCP 初始序列号 (ISN) 的随机化逻辑。ESP-IDF 提供的实现是默认选项，设置为 *Custom* 可使用自定义实现，设置为 *None* 可使用 lwIP 实现。
+- IPv6 路由钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_ROUTE`)：支持自定义 IPv6 数据包的路由选择。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 获取网关钩子 (:ref:`CONFIG_LWIP_HOOK_ND6_GET_GW`)：支持自定义网关选择逻辑。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 源地址选择钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR`)：允许自定义源地址的选择逻辑。默认无钩子，可使用 Default 或 Custom 进行覆盖
+- Netconn 外部解析钩子 (:ref:`CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE`)：允许覆盖网络连接的 DNS 解析逻辑默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- DNS 外部解析钩子 (:ref:`CONFIG_LWIP_HOOK_DNS_EXTERNAL_RESOLVE`)：提供用于自定义 DNS 解析逻辑的回调钩子。默认无钩子，但外部组件可以选择优先使用自定义选项；可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 数据包输入钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_INPUT`)：能够过滤或修改传入的 IPv6 数据包。ESP-IDF 提供的弱实现是默认选项；可使用 *Custom* 或强定义来覆盖 *Default* 选项，或选择 *None* 以禁用 IPv6 数据包输入过滤。
+
+这些钩子均可在 menuconfig 中进行配置，可选择默认实现、自定义实现或不启用。
+
 .. _lwip-custom-hooks:
 
 自定义 lwIP 钩子
@@ -454,10 +530,26 @@ NAPT 和端口转发
 
 另一种方法是在头文件中定义函数式宏，该头文件将预先包含在 lwIP 钩子文件中，请参考 :ref:`lwip-custom-hooks`。
 
+网络接口回调
+-----------------
+
+- 状态回调 (:ref:`CONFIG_LWIP_NETIF_STATUS_CALLBACK`)：启用 `netif_set_status_callback()`，在接口上下线以及 IPv4/IPv6 地址发生变化时通知。
+- 链路回调 (:ref:`CONFIG_LWIP_NETIF_LINK_CALLBACK`)：启用 `netif_set_link_callback()`，在物理链路上下线时通知。该回调由驱动或虚拟接口调用 `netif_set_link_up()` / `netif_set_link_down()` 触发。可与 `LWIP_NETIF_EXT_STATUS_CALLBACK` 配合使用，以获取更丰富的事件通知。
+
+.. _lwip-limitations:
+
 限制
 ^^^^^^^^^^^
 
+在 ESP-IDF 中，lwIP 在某些场景下线程安全，但存在一定的限制。在 lwIP 中，可以在同一套接字上由多个线程同时分别执行读、写和关闭操作，但不支持在同一套接字上由多个线程同时执行多个读操作或多个写操作。如果应用程序需要在多个线程中同时对同一套接字进行读、写操作，就需要额外的同步机制来确保线程安全。例如，在套接字操作周围加锁。
+
 如 :ref:`lwip-dns-limitation` 所述，ESP-IDF 中的 lwIP 扩展功能仍然受到全局 DNS 限制的影响。为了在应用程序代码中解决这一限制，可以使用 ``FALLBACK_DNS_SERVER_ADDRESS()`` 宏定义所有接口能够访问的全局 DNS 备用服务器，或者单独维护每个接口的 DNS 服务器，并在默认接口更改时重新配置。
+
+通过网络数据库 API 返回的 IP 地址数量受限：``getaddrinfo()`` 和 ``gethostbyname()`` 受到宏 ``DNS_MAX_HOST_IP`` 的限制，宏的默认值为 1。
+
+在调用 ``getaddrinfo()`` 函数时，不会返回规范名称。因此，第一个返回的 ``addrinfo`` 结构中的 ``ai_canonname`` 字段仅包含 ``nodename`` 参数或相同内容的字符串。
+
+ESP-IDF 中 lwIP 的 ``getaddrinfo()`` 系统调用在使用 ``AF_UNSPEC`` 时存在限制：双栈模式下默认只返回 IPv4 地址，因此在仅支持 IPv6 的网络中可能会出现问题。为了解决这个问题，可以通过以下方法进行处理：分别调用两次 ``getaddrinfo()``，第一次使用 ``AF_INET`` 查询 IPv4 地址，第二次使用 ``AF_INET6`` 查询 IPv6 地址。为了进一步优化，lwIP 移植层中新增了自定义函数 ``esp_getaddrinfo()``，该函数在使用 ``AF_UNSPEC`` 时能够同时处理 IPv4 和 IPv6 地址。同时启用 IPv4 和 IPv6 后，可通过 :ref:`CONFIG_LWIP_USE_ESP_GETADDRINFO` 选项选择使用自定义的 ``esp_getaddrinfo()`` 或默认的 ``getaddrinfo()`` 实现。``esp_getaddrinfo()`` 默认处于禁用状态。
 
 在 UDP 套接字上重复调用 ``send()`` 或 ``sendto()`` 最终可能会导致错误。此时 ``errno`` 报错为 ``ENOMEM``，错误原因是底层网络接口驱动程序中的 buffer 大小有限。当所有驱动程序的传输 buffer 已满时，UDP 传输事务失败。如果应用程序需要发送大量 UDP 数据报，且不希望发送方丢弃数据报，建议检查错误代码，采用短延迟的重传机制。
 
@@ -479,7 +571,7 @@ NAPT 和端口转发
 最大吞吐量
 ^^^^^^^^^^^^^^^^^^
 
-乐鑫使用 iperf 测试应用程序 https://iperf.fr/ 测试了 ESP-IDF 的 TCP/IP 吞吐量。关于实际测试和优化配置的更多信息，请参考 :ref:`improve-network-speed`。
+乐鑫使用 iperf 测试应用程序 https://iperf.fr/ 测试了 ESP-IDF 的 TCP/IP 吞吐量。关于实际测试和优化配置的更多信息，请参考 :ref:`improve-network-speed`。可参考的 iperf 示例工程 :example:`wifi/iperf` 和 :example:`ethernet/iperf`。
 
 .. important::
 

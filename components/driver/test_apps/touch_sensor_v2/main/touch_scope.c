@@ -7,7 +7,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "driver/uart.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #define ROM_UART_DRIVER_ENABLE 0
 

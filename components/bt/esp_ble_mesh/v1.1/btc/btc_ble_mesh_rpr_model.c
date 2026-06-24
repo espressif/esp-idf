@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,17 +47,26 @@ void btc_ble_mesh_rpr_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_RPR_CLIENT_SEND:
+        dst->rpr_send.params = NULL;
+        dst->rpr_send.msg = NULL;
+
         dst->rpr_send.params = bt_mesh_calloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->rpr_send.msg = src->rpr_send.msg ? bt_mesh_calloc(sizeof(esp_ble_mesh_rpr_client_msg_t)) : NULL;
-        if (dst->rpr_send.params) {
-            memcpy(dst->rpr_send.params, src->rpr_send.params,
-                   sizeof(esp_ble_mesh_client_common_param_t));
-            if (dst->rpr_send.msg) {
-                memcpy(dst->rpr_send.msg, src->rpr_send.msg,
-                   sizeof(esp_ble_mesh_rpr_client_msg_t));
-            }
-        } else {
+        if (!dst->rpr_send.params) {
             BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+            break;
+        }
+        memcpy(dst->rpr_send.params, src->rpr_send.params, sizeof(esp_ble_mesh_client_common_param_t));
+
+        if (src->rpr_send.msg) {
+            dst->rpr_send.msg = bt_mesh_calloc(sizeof(esp_ble_mesh_rpr_client_msg_t));
+            if (!dst->rpr_send.msg) {
+                BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                /* Free the previously allocated resources */
+                bt_mesh_free(dst->rpr_send.params);
+                dst->rpr_send.params = NULL;
+                break;
+            }
+            memcpy(dst->rpr_send.msg, src->rpr_send.msg, sizeof(esp_ble_mesh_rpr_client_msg_t));
         }
         break;
     case BTC_BLE_MESH_ACT_RPR_CLIENT_ACT:
@@ -90,6 +99,9 @@ void btc_ble_mesh_rpr_client_arg_deep_free(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_RPR_CLIENT_SEND:
         if (arg->rpr_send.params) {
             bt_mesh_free(arg->rpr_send.params);
+        }
+        if (arg->rpr_send.msg) {
+            bt_mesh_free(arg->rpr_send.msg);
         }
         break;
     case BTC_BLE_MESH_ACT_RPR_CLIENT_ACT:
@@ -142,12 +154,15 @@ static void btc_ble_mesh_rpr_client_copy_req_data(btc_msg_t *msg, void *p_dest, 
              * publish event.
              */
             if (msg->act == ESP_BLE_MESH_RPR_CLIENT_RECV_PUB_EVT &&
-                p_src_data->recv.params->opcode == ESP_BLE_MESH_MODEL_OP_RPR_EXT_SCAN_REPORT) {
+                    p_src_data->recv.params->opcode == ESP_BLE_MESH_MODEL_OP_RPR_EXT_SCAN_REPORT) {
                 if (p_src_data->recv.val.ext_scan_report.adv_structures) {
                     length = p_src_data->recv.val.ext_scan_report.adv_structures->len;
                     p_dest_data->recv.val.ext_scan_report.adv_structures = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->recv.val.ext_scan_report.adv_structures) {
                         BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                        /* Free the previously allocated resources */
+                        bt_mesh_free(p_dest_data->recv.params);
+                        p_dest_data->recv.params = NULL;
                         return;
                     }
 
@@ -186,8 +201,8 @@ static void btc_ble_mesh_rpr_client_free_req_data(btc_msg_t *msg)
     case ESP_BLE_MESH_RPR_CLIENT_RECV_RSP_EVT:
     case ESP_BLE_MESH_RPR_CLIENT_RECV_PUB_EVT:
         if (arg->recv.params &&
-            msg->act == ESP_BLE_MESH_RPR_CLIENT_RECV_PUB_EVT &&
-            arg->recv.params->opcode == ESP_BLE_MESH_MODEL_OP_RPR_EXT_SCAN_REPORT) {
+                msg->act == ESP_BLE_MESH_RPR_CLIENT_RECV_PUB_EVT &&
+                arg->recv.params->opcode == ESP_BLE_MESH_MODEL_OP_RPR_EXT_SCAN_REPORT) {
             bt_mesh_free_buf(arg->recv.val.ext_scan_report.adv_structures);
         }
         if (arg->recv.params) {
@@ -227,9 +242,9 @@ void bt_mesh_rpr_client_cb_evt_to_btc(uint32_t opcode, uint8_t event,
     uint8_t act = 0;
 
     if (model == NULL || ctx == NULL ||
-        ((event == BTC_BLE_MESH_EVT_RPR_CLIENT_RECV_RSP ||
-          event == BTC_BLE_MESH_EVT_RPR_CLIENT_RECV_PUB) &&
-         (len > sizeof(cb_params.recv.val)))) {
+            ((event == BTC_BLE_MESH_EVT_RPR_CLIENT_RECV_RSP ||
+              event == BTC_BLE_MESH_EVT_RPR_CLIENT_RECV_PUB) &&
+             (len > sizeof(cb_params.recv.val)))) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -415,9 +430,10 @@ void btc_ble_mesh_rpr_client_call_handler(btc_msg_t *msg)
         btc_ble_mesh_rpr_client_cb(&cb, ESP_BLE_MESH_RPR_CLIENT_SEND_COMP_EVT);
         break;
     case BTC_BLE_MESH_ACT_RPR_CLIENT_ACT:
-        btc_ble_mesh_rpr_client_act(arg->rpr_act.type,
-                                    arg->rpr_act.param, &cb);
-        btc_ble_mesh_rpr_client_cb(&cb, ESP_BLE_MESH_RPR_CLIENT_ACT_COMP_EVT);
+        if (btc_ble_mesh_rpr_client_act(arg->rpr_act.type,
+                                        arg->rpr_act.param, &cb) == 0) {
+            btc_ble_mesh_rpr_client_cb(&cb, ESP_BLE_MESH_RPR_CLIENT_ACT_COMP_EVT);
+        }
         break;
     default:
         break;
@@ -451,6 +467,60 @@ void btc_ble_mesh_rpr_client_cb_handler(btc_msg_t *msg)
 #if CONFIG_BLE_MESH_RPR_SRV
 
 /* Remote Provisioning Server model related functions */
+extern int bt_mesh_rpr_srv_scan_set_dev_uuid_match(uint8_t offset, uint8_t length, const uint8_t *match);
+
+void btc_ble_mesh_rpr_server_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    btc_ble_mesh_rpr_server_args_t *dst = p_dest;
+    btc_ble_mesh_rpr_server_args_t *src = p_src;
+
+    if (!msg || !dst || !src) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    switch (msg->act) {
+    case BTC_BLE_MESH_ACT_RPR_SRV_SET_UUID_MATCH:
+        dst->set_uuid_match.match_val = bt_mesh_calloc(src->set_uuid_match.match_len);
+        if (dst->set_uuid_match.match_val) {
+            memcpy(dst->set_uuid_match.match_val, src->set_uuid_match.match_val, src->set_uuid_match.match_len);
+            dst->set_uuid_match.match_len = src->set_uuid_match.match_len;
+            dst->set_uuid_match.offset = src->set_uuid_match.offset;
+        } else {
+            BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+        }
+        break;
+    default:
+        BT_DBG("%s, Unknown act %d", __func__, msg->act);
+        break;
+    }
+
+    return;
+}
+
+void btc_ble_mesh_rpr_server_arg_deep_free(btc_msg_t *msg)
+{
+    btc_ble_mesh_rpr_server_args_t *arg = NULL;
+
+    if (!msg) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    arg = (btc_ble_mesh_rpr_server_args_t *)msg->arg;
+
+    switch (msg->act) {
+    case BTC_BLE_MESH_ACT_RPR_SRV_SET_UUID_MATCH:
+        if (arg->set_uuid_match.match_val) {
+            bt_mesh_free(arg->set_uuid_match.match_val);
+        }
+        break;
+    default:
+        break;
+    }
+
+    return;
+}
 
 static inline void btc_ble_mesh_rpr_server_cb_to_app(esp_ble_mesh_rpr_server_cb_event_t event,
                                                      esp_ble_mesh_rpr_server_cb_param_t *param)
@@ -520,6 +590,33 @@ void bt_mesh_rpr_server_cb_evt_to_btc(uint8_t event, const void *val, size_t len
     }
 
     btc_ble_mesh_rpr_server_cb(&cb_params, act);
+}
+
+void btc_ble_mesh_rpr_server_call_handler(btc_msg_t *msg)
+{
+    esp_ble_mesh_rpr_server_cb_param_t cb = {0};
+    btc_ble_mesh_rpr_server_args_t *arg = NULL;
+
+    if (!msg) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    arg = (btc_ble_mesh_rpr_server_args_t *)msg->arg;
+
+    switch (msg->act) {
+    case BTC_BLE_MESH_ACT_RPR_SRV_SET_UUID_MATCH:
+        cb.set_uuid_match_comp.err_code = bt_mesh_rpr_srv_scan_set_dev_uuid_match(arg->set_uuid_match.offset,
+                                                                                  arg->set_uuid_match.match_len,
+                                                                                  arg->set_uuid_match.match_val);
+
+        btc_ble_mesh_rpr_server_cb(&cb, ESP_BLE_MESH_RPR_SERVER_SET_UUID_MATCH_COMP_EVT);
+        break;
+    default:
+        break;
+    }
+
+    btc_ble_mesh_rpr_server_arg_deep_free(msg);
 }
 
 void btc_ble_mesh_rpr_server_cb_handler(btc_msg_t *msg)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "soc/soc.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
@@ -27,7 +28,21 @@ extern "C" {
  */
 __attribute__((always_inline))
 inline static bool esp_dram_match_iram(void) {
-    return (SOC_DRAM_LOW == SOC_IRAM_LOW && SOC_DRAM_HIGH == SOC_IRAM_HIGH);
+    return ((SOC_DRAM_LOW == SOC_IRAM_LOW) && (SOC_DRAM_HIGH == SOC_IRAM_HIGH));
+}
+
+/**
+ * @brief Check if the RTC IRAM and RTC DRAM are separate or using the same memory space
+ *
+ * @return true if the RTC DRAM and RTC IRAM are sharing the same memory space, false otherwise
+ */
+__attribute__((always_inline))
+inline static bool esp_rtc_dram_match_rtc_iram(void) {
+#if SOC_RTC_FAST_MEM_SUPPORTED
+    return ((SOC_RTC_IRAM_LOW == SOC_RTC_DRAM_LOW) && (SOC_RTC_IRAM_HIGH == SOC_RTC_DRAM_HIGH));
+#else
+    return false;
+#endif
 }
 
 /**
@@ -81,6 +96,7 @@ __attribute__((always_inline))
 inline static bool esp_ptr_in_diram_iram(const void *p) {
 // TODO: IDF-5980 esp32c6 D/I RAM share the same address
 #if SOC_DIRAM_IRAM_LOW == SOC_DIRAM_DRAM_LOW
+    (void)p;
     return false;
 #else
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
@@ -99,6 +115,7 @@ inline static bool esp_ptr_in_rtc_iram_fast(const void *p) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
 #else
+    (void)p;
     return false;
 #endif
 }
@@ -115,6 +132,7 @@ inline static bool esp_ptr_in_rtc_dram_fast(const void *p) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
 #else
+    (void)p;
     return false;
 #endif
 }
@@ -150,6 +168,21 @@ inline static void * esp_ptr_diram_dram_to_iram(const void *p) {
 #endif
 }
 
+/* Convert a RTC DRAM pointer to equivalent word address in RTC IRAM
+
+   - Address must be word aligned
+   - Address must pass esp_ptr_in_rtc_dram_fast() test, or result will be invalid pointer
+*/
+__attribute__((always_inline))
+inline static void * esp_ptr_rtc_dram_to_iram(const void *p) {
+    intptr_t ptr = (intptr_t)p;
+#if SOC_RTC_FAST_MEM_SUPPORTED && (SOC_RTC_IRAM_LOW != SOC_RTC_DRAM_LOW)
+    return (void *) ( SOC_RTC_IRAM_LOW + (ptr - SOC_RTC_DRAM_LOW) );
+#else
+    return (void *) ptr;
+#endif
+}
+
 /* Convert a D/IRAM IRAM pointer to equivalent word address in DRAM
 
    - Address must be word aligned
@@ -164,21 +197,58 @@ inline static void * esp_ptr_diram_iram_to_dram(const void *p) {
 #endif
 }
 
-#if SOC_MEM_TCM_SUPPORTED
+#if SOC_MEM_SPM_SUPPORTED
 /**
- * @brief Check if the pointer is in TCM
+ * @brief Check if the pointer is in TCM (SPM)
  *
  * @param p pointer
  *
- * @return true: is in TCM; false: not in TCM
+ * @return true: is in TCM (SPM); false: not in TCM (SPM)
  */
-__attribute__((always_inline))
+ __attribute__((always_inline, deprecated("esp_ptr_in_tcm is deprecated, please use esp_ptr_in_spm instead")))
 inline static bool esp_ptr_in_tcm(const void *p) {
-    return ((intptr_t)p >= SOC_TCM_LOW && (intptr_t)p < SOC_TCM_HIGH);
+    return ((intptr_t)p >= SOC_SPM_LOW && (intptr_t)p < SOC_SPM_HIGH);
 }
-#endif  //#if SOC_MEM_TCM_SUPPORTED
+
+/**
+ * @brief Check if the pointer is in SPM
+ *
+ * @param p pointer
+ *
+ * @return true: is in SPM; false: not in SPM
+ */
+ __attribute__((always_inline))
+ inline static bool esp_ptr_in_spm(const void *p) {
+     return ((intptr_t)p >= SOC_SPM_LOW && (intptr_t)p < SOC_SPM_HIGH);
+ }
+#endif  //#if SOC_MEM_SPM_SUPPORTED
 
 /** End of the common section that has to be in sync with esp_memory_utils.h **/
+
+/**
+ * @brief Check if the pointer is in PSRAM vaddr space
+ *
+ * @note This function is only used when in bootloader, where the PSRAM isn't initialised.
+ *       This function simply check if the pointer is the in the PSRAM vaddr space.
+ *       The PSRAM vaddr space is not always the same as the actual PSRAM vaddr range used in APP
+ *
+ * @param p pointer
+ *
+ * @return true: is in PSRAM; false: not in PSRAM
+ */
+__attribute__((always_inline))
+inline static bool esp_ptr_in_extram(const void *p) {
+    bool valid = false;
+#if SOC_IRAM_PSRAM_ADDRESS_LOW
+    valid |= ((intptr_t)p >= SOC_IRAM_PSRAM_ADDRESS_LOW && (intptr_t)p < SOC_IRAM_PSRAM_ADDRESS_HIGH);
+#endif
+
+#if SOC_DRAM_PSRAM_ADDRESS_LOW
+    valid |= ((intptr_t)p >= SOC_DRAM_PSRAM_ADDRESS_LOW && (intptr_t)p < SOC_DRAM_PSRAM_ADDRESS_HIGH);
+#endif
+    return valid;
+}
+
 /** Don't add new functions below **/
 
 #ifdef __cplusplus

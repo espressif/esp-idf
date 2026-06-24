@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,18 +11,18 @@
 #include "unity.h"
 #include "esp_log.h"
 #include <string.h>
+#include "hal/efuse_ll.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
 #include "esp_timer.h"
-#include "bootloader_random.h"
+#include "esp_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
-#include "bootloader_common.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define MAC_FACTORY_HAS_CRC 1
@@ -30,11 +30,12 @@
 
 #define TASK_PRIORITY (5)
 
-__attribute__((unused)) static const char* TAG = "efuse_test";
+ESP_LOG_ATTR_TAG(TAG, "efuse_test");
 
 
 static void test_read_blob(void)
 {
+    esp_efuse_utility_erase_virt_blocks();
     esp_efuse_utility_update_virt_blocks();
     esp_efuse_utility_debug_dump_blocks();
 
@@ -75,6 +76,7 @@ TEST_CASE("efuse test read_field_blob", "[efuse]")
 
 static void test_read_cnt(void)
 {
+    esp_efuse_utility_erase_virt_blocks();
     esp_efuse_utility_update_virt_blocks();
     esp_efuse_utility_debug_dump_blocks();
 
@@ -403,9 +405,7 @@ void test_cnt_part(const esp_efuse_desc_t* field[], uint8_t *arr_r, int arr_size
     while(field_size > num_bits_summ_r) {
         num_bits_w = 0;
         while(num_bits_w == 0 || (num_bits_summ_r + num_bits_w) > field_size) {
-            bootloader_random_enable();
-            bootloader_fill_random(&num_bits_w, 1);
-            bootloader_random_disable();
+            esp_fill_random(&num_bits_w, 1);
             num_bits_w = num_bits_w * field_size / 255;
             if (num_bits_w != 0 && (num_bits_summ_r + num_bits_w) <= field_size) {
                 break;
@@ -438,16 +438,12 @@ void test_blob_part(const esp_efuse_desc_t* field[], uint8_t *arr_w, uint8_t *ar
     int num_bits_summ_r = 0;
     int num_bits_w = 0;
     memset(arr_w, 0, arr_size);
-    bootloader_random_enable();
-    bootloader_fill_random(arr_w, arr_size);
-    bootloader_random_disable();
+    esp_fill_random(arr_w, arr_size);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, arr_w, arr_size, ESP_LOG_INFO);
     while(field_size > num_bits_summ_r) {
         num_bits_w = 0;
         while(num_bits_w == 0 || (num_bits_summ_r + num_bits_w) > field_size) {
-            bootloader_random_enable();
-            bootloader_fill_random(&num_bits_w, 1);
-            bootloader_random_disable();
+            esp_fill_random(&num_bits_w, 1);
             num_bits_w = num_bits_w * field_size / 255;
             if (num_bits_w != 0 && (num_bits_summ_r + num_bits_w) <= field_size) {
                 break;
@@ -491,16 +487,17 @@ void check_efuse_table_test(int cycle)
         size_t field_size = esp_efuse_get_field_size(field);
         int arr_size = esp_efuse_utility_get_number_of_items(field_size, 8);
         uint8_t *arr_w = (uint8_t *) malloc(arr_size);
+        TEST_ASSERT_NOT_NULL(arr_w);
         uint8_t *arr_r = (uint8_t *) malloc(arr_size);
+        TEST_ASSERT_NOT_NULL(arr_r);
         uint8_t *arr_temp = (uint8_t *) malloc(arr_size);
+        TEST_ASSERT_NOT_NULL(arr_temp);
         ESP_LOGI(TAG, "Test#%d", num_test);
         for (int c = 1; c <= cycle; ++c) {
             ESP_LOGI(TAG, "Cycle#%d/%d", c, cycle);
 
             memset(arr_w, 0, arr_size);
-            bootloader_random_enable();
-            bootloader_fill_random(arr_w, arr_size);
-            bootloader_random_disable();
+            esp_fill_random(arr_w, arr_size);
             cut_tail_arr(arr_w, 0, field_size);
 
             esp_efuse_utility_erase_virt_blocks();
@@ -523,6 +520,8 @@ void check_efuse_table_test(int cycle)
 
 TEST_CASE("efuse esp_efuse_table_test", "[efuse]")
 {
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
         check_efuse_table_test(2);
@@ -534,6 +533,8 @@ TEST_CASE("efuse esp_efuse_table_test", "[efuse]")
 
 TEST_CASE("Test esp_efuse_read_block esp_efuse_write_block functions", "[efuse]")
 {
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
     int count_useful_reg = 0;
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
@@ -730,6 +731,7 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
 #endif // #ifndef CONFIG_FREERTOS_UNICORE
 
 
+#if !CONFIG_IDF_TARGET_LINUX
 static volatile bool cmd_stop_reset_task1;
 static void efuse_burn_task(void* arg)
 {
@@ -737,7 +739,7 @@ static void efuse_burn_task(void* arg)
     ESP_LOGI(TAG, "Start burn task");
     size_t test3_len_6 = 2;
     while (!cmd_stop_reset_task1) {
-        esp_efuse_utility_update_virt_blocks();
+        esp_efuse_utility_erase_virt_blocks();
         esp_efuse_utility_reset();
         TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
     }
@@ -787,6 +789,7 @@ TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs and read and burn ar
     vSemaphoreDelete(sema[0]);
     vSemaphoreDelete(sema[1]);
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL
 
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -864,5 +867,125 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
 TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
 {
     esp_efuse_utility_update_virt_blocks();
-    TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), bootloader_common_get_chip_ver_pkg());
+    TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), efuse_ll_get_chip_ver_pkg());
+}
+
+TEST_CASE("Test deferred WR_DIS programming", "[efuse]")
+{
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_update_virt_blocks();
+
+    esp_efuse_batch_write_begin();
+    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK_KEY0));
+    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK_KEY0));
+    esp_efuse_batch_write_commit();
+
+    TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(EFUSE_BLK_KEY0));
+    TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(EFUSE_BLK_KEY0));
+}
+
+TEST_CASE("Test token dump", "[efuse]")
+{
+#ifdef CONFIG_IDF_TARGET_ESP32
+    const char *valid_token = "EFSW:esp32:300:AAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:oKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr8:::x8WPiQ";
+#elif CONFIG_IDF_TARGET_ESP32C2
+    const char *valid_token = "EFSW:esp32c2:000:gAAAAAEEAAA::AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:v769vLu6ubi3trW0s7KxsK-urayrqqmop6alpKOioaA::4d9CPw";
+#elif CONFIG_IDF_TARGET_ESP32C3
+    const char *valid_token = "EFSW:esp32c3:004:AAGAAAEAAAAAAAAEAAAAAAAAAAAAAAAA::AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA::v769vLu6ubi3trW0s7KxsK-urayrqqmop6alpKOioaA::::::::n9AtsQ";
+#elif CONFIG_IDF_TARGET_LINUX
+    const char *valid_token = "EFSW:linux:000:AAGAAAEAAAAAAAAEAAAAAAAAAAAAAAAA::AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA::v769vLu6ubi3trW0s7KxsK-urayrqqmop6alpKOioaA::::::::dq_wIQ";
+#else
+    const char *valid_token = NULL;
+    return;
+#endif
+
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+
+    esp_rom_printf("Initial read token:\n");
+    esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_READ, NULL, 0);
+
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(NULL, true));
+
+    char test_token[256];
+
+    printf(" - Test bad header\n");
+    strcpy(test_token, valid_token);
+    test_token[0] = 'X';
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test not allowed token type\n");
+    strcpy(test_token, valid_token);
+    test_token[3] = 'R';
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, false));
+
+    printf(" - Test bad chip name\n");
+    strcpy(test_token, valid_token);
+    char *chip_name_start = strchr(test_token, ':') + 1;
+    chip_name_start[0] = 'X';
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test chip name prefix only\n");
+    strcpy(test_token, valid_token);
+    chip_name_start = strchr(test_token, ':') + 1;
+    char *chip_name_end = strchr(chip_name_start, ':');
+    memmove(chip_name_end + 2, chip_name_end, strlen(chip_name_end) + 1);
+    memcpy(chip_name_end, "X9", 2);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test bad version\n");
+    strcpy(test_token, valid_token);
+    chip_name_start = strchr(test_token, ':') + 1;
+    char *version_start = strchr(chip_name_start, ':') + 1;
+    memcpy(version_start, "999", 3);
+    TEST_ESP_ERR(ESP_ERR_INVALID_VERSION, esp_efuse_token_burn(test_token, false));
+    TEST_ESP_ERR(ESP_ERR_INVALID_CRC, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test missing version\n");
+    memcpy(version_start, ":", 1);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test short version\n");
+    memcpy(version_start, "99:", 3);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test non-numeric version\n");
+    memcpy(version_start, "0A0", 3);
+    TEST_ESP_ERR(ESP_ERR_INVALID_CRC, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test 4-digit version\n");
+    memcpy(version_start, "1000", 4);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test bad CRC\n");
+    strcpy(test_token, valid_token);
+    test_token[strlen(test_token) - 3] = 'X';
+    TEST_ESP_ERR(ESP_ERR_INVALID_CRC, esp_efuse_token_burn(test_token, true));
+
+    printf(" - Test corrupted first data block\n");
+    strcpy(test_token, valid_token);
+    char *first_block_start = strchr(version_start, ':') + 1;
+    first_block_start = strchr(first_block_start, ':') + 1;
+    first_block_start = strchr(first_block_start, ':') + 1;
+    char *first_block_end = strchr(first_block_start, ':');
+    memset(first_block_start, ':', first_block_end - first_block_start);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_efuse_token_burn(test_token, false));
+
+    printf(" - Test valid token burn\n");
+    esp_rom_printf("BURN token:\n%s\n", valid_token);
+    TEST_ESP_OK(esp_efuse_token_burn(valid_token, true)); // ignore chip version
+    esp_rom_printf("Staged token:\n");
+    esp_rom_printf(" - from console:\n");
+    TEST_ESP_OK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, NULL, 0));
+    esp_rom_printf(" - from buffer:\n");
+    char token_ready_burn[256];
+    TEST_ESP_OK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, token_ready_burn, sizeof(token_ready_burn)));
+    esp_rom_printf("%s\n", token_ready_burn);
+    // cut off crc part and starting part to exclude chip version from comparison
+    const int b64_crc_len = 6;
+    TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(&valid_token[16], &token_ready_burn[16], strlen(&valid_token[16]) - b64_crc_len, "Tokens mismatch");
+
+    TEST_ESP_OK(esp_efuse_batch_write_cancel());
 }

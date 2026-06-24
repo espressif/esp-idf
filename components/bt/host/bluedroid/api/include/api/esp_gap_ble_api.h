@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,7 @@ typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit 
 #define ESP_BLE_APPEARANCE_CYCLING_CADENCE         0x0483 /*!< relate to BTM_BLE_APPEARANCE_CYCLING_CADENCE in stack/btm_ble_api.h */
 #define ESP_BLE_APPEARANCE_CYCLING_POWER           0x0484 /*!< relate to BTM_BLE_APPEARANCE_CYCLING_POWER in stack/btm_ble_api.h */
 #define ESP_BLE_APPEARANCE_CYCLING_SPEED_CADENCE   0x0485 /*!< relate to BTM_BLE_APPEARANCE_CYCLING_SPEED_CADENCE in stack/btm_ble_api.h */
+#define ESP_BLE_APPEARANCE_STANDALONE_SPEAKER      0x0841 /*!< relate to BTM_BLE_APPEARANCE_STANDALONE_SPEAKER in stack/btm_ble_api.h */
 #define ESP_BLE_APPEARANCE_GENERIC_PULSE_OXIMETER  0x0C40 /*!< relate to BTM_BLE_APPEARANCE_GENERIC_PULSE_OXIMETER in stack/btm_ble_api.h */
 #define ESP_BLE_APPEARANCE_PULSE_OXIMETER_FINGERTIP 0x0C41 /*!< relate to BTM_BLE_APPEARANCE_PULSE_OXIMETER_FINGERTIP in stack/btm_ble_api.h */
 #define ESP_BLE_APPEARANCE_PULSE_OXIMETER_WRIST    0x0C42 /*!< relate to BTM_BLE_APPEARANCE_PULSE_OXIMETER_WRIST in stack/btm_ble_api.h */
@@ -156,7 +157,7 @@ typedef enum {
     ESP_GAP_BLE_PASSKEY_REQ_EVT,                            /*!< passkey request event */
     ESP_GAP_BLE_OOB_REQ_EVT,                                /*!< OOB request event */
     ESP_GAP_BLE_LOCAL_IR_EVT,                               /*!< BLE local IR (identity Root 128-bit random static value used to generate Long Term Key) event */
-    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root vakue used to genrate identity resolving key) event */
+    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root value used to generate identity resolving key) event */
     ESP_GAP_BLE_NC_REQ_EVT,                                 /*!< Numeric Comparison request event */
     //BLE_42_FEATURE_SUPPORT
     ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
@@ -224,6 +225,54 @@ typedef enum {
     ESP_GAP_BLE_DTM_TEST_UPDATE_EVT,                             /*!< when direct test mode state changes, the event comes */
     // BLE_INCLUDED
     ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT,                          /*!< When clear advertising complete, the event comes */
+    ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT,                    /*!< When set the Resolvable Private Address (RPA) timeout completes, the event comes */
+    ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT,          /*!< when add a device to the resolving list completes, the event comes*/
+    ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                         /*!< When vendor hci command complete, the event comes */
+    ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT,                   /*!< When set privacy mode complete, the event comes */
+    ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT,                    /*!< When set CSA support complete, the event comes */
+    ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT,                /*!< When set vendor event mask complete, the event comes */
+    ESP_GAP_BLE_VENDOR_HCI_EVT,                                  /*!< When BLE vendor HCI event received, the event comes */
+    // BLE power control
+    ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT,                    /*!< When reading the current and maximum transmit power levels of the local Controller complete, the event comes */
+    ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT,                 /*!< When reading the transmit power level used by the remote Controller on the ACL connection complete, the event comes */
+    ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT,                 /*!< when set the path loss threshold reporting parameters complete, the event comes */
+    ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT,                 /*!< when enable or disable path loss reporting complete, the event comes */
+    ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT,                 /*!< when enable or disable the reporting to the local Host of transmit power level changes complete, the event comes */
+    ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT,                         /*!< when receive a path loss threshold crossing, the event comes */
+    ESP_GAP_BLE_TRANS_PWR_RPTING_EVT,                            /*!< when receive a transmit power level report, the event comes */
+    // BLE connection subrating
+    ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT,                /*!< when set default subrate complete, the event comes */
+    ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT,                    /*!< when subrate request command complete, the event comes */
+    ESP_GAP_BLE_SUBRATE_CHANGE_EVT,                              /*!< when Connection Subrate Update procedure has completed and some parameters of the specified connection have changed, the event comes */
+    ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT,                       /*!< When host feature set complete, the event comes */
+    ESP_GAP_BLE_READ_CHANNEL_MAP_COMPLETE_EVT,                   /*!< When BLE channel map result is received, the event comes */
+    ESP_GAP_BLE_SET_COMMON_FACTOR_CMPL_EVT,                      /*!< When set the common factor complete, the event comes */
+    ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT,                            /*!< When set the scheduling length complete, the event comes */
+    ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT,                      /*!< When set the channel map for scanning complete, the event comes */
+    ESP_GAP_BLE_SET_PERIODIC_ADV_SUBEVT_DATA_EVT,                /*!< When BLE update periodic adv subevent data complete, the event comes */
+    ESP_GAP_BLE_SET_PERIODIC_ADV_RESPONSE_DATA_EVT,              /*!< When BLE update periodic adv response data complete, the event comes */
+    ESP_GAP_BLE_SET_PERIODIC_SYNC_SUBEVT_EVT,                    /*!< When BLE update periodic sync subevent complete, the event comes */
+    ESP_GAP_BLE_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT,            /*!< When Controller is ready to transmit one or more subevents and is requesting the advertising data for these subevents, the event comes*/
+    ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT,                /*!< When one or more devices have responded to a periodic advertising subevent during a PAwR train, the event comes */
+    ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT,                     /*!< When CS read local supported capabilities complete, the event comes */
+    ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT,            /*!< When CS write cached remote supported capabilities complete, the event comes */
+    ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT,                     /*!< When CS set default settings complete, the event comes */
+    ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT,            /*!< When CS write cached remote FAE table complete, the event comes */
+    ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT,               /*!< When CS read remote supported capabilities complete, the event comes */
+    ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT,                   /*!< When CS set channel classification complete, the event comes */
+    ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT,                     /*!< When CS set procedure parameters complete, the event comes */
+    ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT,                         /*!< When CS procedure enable complete, the event comes */
+    ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT,               /*!< When CS read remote FAE table complete, the event comes */
+    ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT,                     /*!< When CS security enable complete, the event comes */
+    ESP_GAP_BLE_CS_CONFIG_CMPL_EVT,                              /*!< When CS has completed the Channel Sounding Configuration procedure, the event comes */
+    ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT,                          /*!< When CS has results to report for a CS subevent during the CS procedure, the event comes */
+    ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT,                 /*!< When CS has completed a new CS subevent measurement, the event comes */
+    ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT,                          /*!< When LE monitor advertisement report (RSSI threshold etc), the event comes */
+    ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT,                    /*!< When add monitor advertiser complete, the event comes */
+    ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When remove monitor advertiser complete, the event comes */
+    ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT,                  /*!< When clear monitor advertiser list complete, the event comes */
+    ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT,         /*!< When read monitor advertiser list size complete, the event comes */
+    ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When enable/disable monitor advertising complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -237,6 +286,29 @@ typedef uint8_t esp_gap_ble_channels[ESP_GAP_BLE_CHANNELS_LEN];
 #define ESP_BLE_ADV_DATA_LEN_MAX               31
 /// Scan response data maximum length
 #define ESP_BLE_SCAN_RSP_DATA_LEN_MAX          31
+
+#define VENDOR_HCI_CMD_MASK                    (0x3F << 10) /**!< 0xFC00 */
+
+/**
+ * @brief BLE time interval conversion macros
+ *
+ * These macros convert time values in milliseconds to BLE interval units.
+ *
+ * - Advertising interval: unit is 0.625ms (range: 20ms to 10240ms)
+ * - Connection interval: unit is 1.25ms (range: 7.5ms to 4000ms)
+ * - Scan interval/window: unit is 0.625ms
+ * - Periodic advertising interval: unit is 1.25ms
+ * - Supervision timeout: unit is 10ms (range: 100ms to 32000ms)
+ *
+ * @note If the input value is not an exact multiple of the unit, the result will be rounded to the nearest value.
+ *       For example, ESP_BLE_GAP_ADV_ITVL_MS(25) = 40 (25ms / 0.625ms = 40), but ESP_BLE_GAP_ADV_ITVL_MS(25.5) = 40 (rounded).
+ */
+#define ESP_BLE_GAP_ADV_ITVL_MS(t)             ((uint16_t)((t) * 1000 / 625))      /*!< Convert advertising interval from ms to 0.625ms units. If input is not a multiple of 0.625ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_SCAN_ITVL_MS(t)             ((uint16_t)((t) * 1000 / 625))      /*!< Convert scan interval from ms to 0.625ms units. If input is not a multiple of 0.625ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_SCAN_WIN_MS(t)              ((uint16_t)((t) * 1000 / 625))      /*!< Convert scan window from ms to 0.625ms units. If input is not a multiple of 0.625ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_CONN_ITVL_MS(t)             ((uint16_t)((t) * 1000 / 1250))     /*!< Convert connection interval from ms to 1.25ms units. If input is not a multiple of 1.25ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_PERIODIC_ADV_ITVL_MS(t)     ((uint16_t)((t) * 1000 / 1250))     /*!< Convert periodic advertising interval from ms to 1.25ms units. If input is not a multiple of 1.25ms, it will be rounded to the nearest value. */
+#define ESP_BLE_GAP_SUPERVISION_TIMEOUT_MS(t)   ((uint16_t)((t) / 10))              /*!< Convert supervision timeout from ms to 10ms units. If input is not a multiple of 10ms, it will be rounded to the nearest value. */
 
 /* relate to BTM_BLE_AD_TYPE_xxx in stack/btm_ble_api.h */
 /// The type of advertising data(not adv_type)
@@ -363,6 +435,15 @@ typedef enum {
     ///DTM test end event
     DTM_TEST_STOP_EVT,
 } esp_ble_dtm_update_evt_t;
+
+/**
+ * @brief Vendor HCI command parameters
+ */
+typedef struct {
+    uint16_t opcode;                /*!< vendor hci command opcode */
+    uint8_t param_len;              /*!< the length of parameter */
+    uint8_t *p_param_buf;           /*!< the point of parameter buffer */
+} esp_ble_vendor_cmd_params_t;
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
@@ -615,6 +696,7 @@ typedef struct
 {
     esp_bd_addr_t  bd_addr;               /*!< peer address */
     esp_ble_bond_key_info_t bond_key;     /*!< the bond key information */
+    esp_ble_addr_type_t bd_addr_type;     /*!< peer address type */
 } esp_ble_bond_dev_t;                     /*!< the ble bond device type */
 
 
@@ -646,20 +728,54 @@ typedef struct {
 } esp_ble_local_oob_data_t;
 
 /**
+* @brief Definition of the authentication failed reason
+*/
+typedef enum {
+    // Failure reason defined in Bluetooth Core Spec 5.0 Vol3, Part H, 3.5.5
+    ESP_AUTH_SMP_PASSKEY_FAIL = 78,         /*!< The user input of passkey failed */
+    ESP_AUTH_SMP_OOB_FAIL,                  /*!< The OOB data is not available */
+    ESP_AUTH_SMP_PAIR_AUTH_FAIL,            /*!< The authentication requirements cannot be met */
+    ESP_AUTH_SMP_CONFIRM_VALUE_FAIL,        /*!< The confirm value does not match the calculated comparison value */
+    ESP_AUTH_SMP_PAIR_NOT_SUPPORT,          /*!< Pairing is not supported by the device */
+    ESP_AUTH_SMP_ENC_KEY_SIZE,              /*!< The resultant encryption key size is not long enough */
+    ESP_AUTH_SMP_INVALID_CMD,               /*!< The SMP command received is not supported by this device */
+    ESP_AUTH_SMP_UNKNOWN_ERR,               /*!< Pairing failed due to an unspecified reason */
+    ESP_AUTH_SMP_REPEATED_ATTEMPT,          /*!< Pairing or authentication procedure is disallowed */
+    ESP_AUTH_SMP_INVALID_PARAMETERS,        /*!< The command length is invalid or that a parameter is outside the specified range */
+    ESP_AUTH_SMP_DHKEY_CHK_FAIL,            /*!< The DHKey Check value received doesn’t match the one calculated by the local device */
+    ESP_AUTH_SMP_NUM_COMP_FAIL,             /*!< The confirm values in the numeric comparison protocol do not match */
+    ESP_AUTH_SMP_BR_PARING_IN_PROGR,        /*!< Pairing Request sent over the BR/EDR transport is in progress */
+    ESP_AUTH_SMP_XTRANS_DERIVE_NOT_ALLOW,   /*!< The BR/EDR Link Key or BLE LTK cannot be used to derive */
+
+    // Failure reason defined in Bluedroid Host
+    ESP_AUTH_SMP_INTERNAL_ERR,              /*!< Internal error in pairing procedure */
+    ESP_AUTH_SMP_UNKNOWN_IO,                /*!< Unknown IO capability, unable to decide association model */
+    ESP_AUTH_SMP_INIT_FAIL,                 /*!< SMP pairing initiation failed */
+    ESP_AUTH_SMP_CONFIRM_FAIL,              /*!< The confirm value does not match */
+    ESP_AUTH_SMP_BUSY,                      /*!< Pending security request on going */
+    ESP_AUTH_SMP_ENC_FAIL,                  /*!< The Controller failed to start encryption */
+    ESP_AUTH_SMP_STARTED,                   /*!< SMP pairing process started */
+    ESP_AUTH_SMP_RSP_TIMEOUT,               /*!< Security Manager timeout due to no SMP command being received */
+    ESP_AUTH_SMP_DIV_NOT_AVAIL,             /*!< Encrypted Diversifier value not available */
+    ESP_AUTH_SMP_UNSPEC_ERR,                /*!< Unspecified failed reason */
+    ESP_AUTH_SMP_CONN_TOUT,                 /*!< Pairing process failed due to connection timeout */
+} esp_ble_auth_fail_rsn_t;
+
+/**
   * @brief Structure associated with ESP_AUTH_CMPL_EVT
   */
 typedef struct
 {
-    esp_bd_addr_t         bd_addr;               /*!< BD address peer device. */
-    bool                  key_present;           /*!< Valid link key value in key element */
-    esp_link_key          key;                   /*!< Link key associated with peer device. */
-    uint8_t               key_type;              /*!< The type of Link Key */
-    bool                  success;               /*!< TRUE of authentication succeeded, FALSE if failed. */
-    uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
-    esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
-    esp_bt_dev_type_t     dev_type;              /*!< Device type */
-    esp_ble_auth_req_t    auth_mode;             /*!< authentication mode */
-} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complete cb type */
+    esp_bd_addr_t             bd_addr;               /*!< BD address of peer device */
+    bool                      key_present;           /*!< True if the link key value is valid; false otherwise */
+    esp_link_key              key;                   /*!< Link key associated with peer device */
+    uint8_t                   key_type;              /*!< The type of link key */
+    bool                      success;               /*!< True if authentication succeeded; false otherwise */
+    esp_ble_auth_fail_rsn_t   fail_reason;           /*!< The HCI reason/error code for failure when success is false */
+    esp_ble_addr_type_t       addr_type;             /*!< Peer device address type */
+    esp_bt_dev_type_t         dev_type;              /*!< Device type */
+    esp_ble_auth_req_t        auth_mode;             /*!< Authentication mode */
+} esp_ble_auth_cmpl_t;                               /*!< The ble authentication complete cb type */
 
 /**
   * @brief union associated with ble security
@@ -734,9 +850,10 @@ typedef enum {
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST                   = 0xFFFF,                 /*!< duplicate scan exceptional all list */
 } esp_duplicate_scan_exceptional_list_type_t;
 
+#endif //#if (BLE_42_FEATURE_SUPPORT == TRUE)
+
 typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
 
-#endif //#if (BLE_42_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_NONCONN_NONSCANNABLE_UNDIRECTED      (0 << 0) /*!< Non-Connectable and Non-Scannable Undirected advertising */
@@ -786,9 +903,15 @@ typedef uint8_t esp_ble_gap_all_phys_t;
 #define ESP_BLE_GAP_PRI_PHY_CODED  ESP_BLE_GAP_PHY_CODED  /*!< Primary Phy is LE CODED */
 typedef uint8_t esp_ble_gap_pri_phy_t; // primary phy
 
-#define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or reciever PHY */
-#define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or reciever PHY */
-#define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or reciever PHY */
+#define ESP_BLE_GAP_RPT_PHY_1M     1     /*!< Advertiser PHY is LE 1M */
+#define ESP_BLE_GAP_RPT_PHY_2M     2     /*!< Advertiser PHY is LE 2M */
+#define ESP_BLE_GAP_RPT_PHY_S8     3     /*!< If the Advertising Coding Selection feature bit is set: Advertising PHY is LE 125K Otherwise: Advertiser PHY is LE Coded */
+#define ESP_BLE_GAP_RPT_PHY_S2     4     /*!< If the Advertising Coding Selection feature bit is set: Advertising PHY is LE 500K Otherwise: Reserved for future use */
+typedef uint8_t esp_ble_gap_rpt_phy_t; // extended Advertising report phy
+
+#define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or receiver PHY */
+#define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or receiver PHY */
+#define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or receiver PHY */
 typedef uint8_t esp_ble_gap_phy_mask_t;
 
 #define ESP_BLE_GAP_PHY_OPTIONS_NO_PREF                  0 /*!< The Host has no preferred coding when transmitting on the LE Coded PHY */
@@ -830,6 +953,25 @@ typedef uint8_t esp_ble_gap_adv_type_t;
 /// Extend advertising tx power, range: [-127, +126] dBm
 #define EXT_ADV_TX_PWR_NO_PREFERENCE                      (127) /*!< host has no preference for tx power */
 
+
+/// max number of advertising sets to enable or disable
+#define EXT_ADV_NUM_SETS_MAX                              (10) /*!< max evt instance num */
+
+#if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
+// The Host has no preferred or required coding when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_NO_PREFER_CODED     (0x00)
+// The Host prefers that S=2 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_PREFER_CODED_S2     (0x01)
+// The Host prefers that S=8 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_PREFER_CODED_S8     (0x02)
+// The Host requires that S=2 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_REQUIRE_CODED_S2    (0x03)
+// The Host requires that S=8 coding be used when transmitting on the LE Coded PHY
+#define ESP_BLE_ADV_PHY_OPTIONS_REQUIRE_CODED_S8    (0x04)
+
+typedef uint8_t esp_ble_gap_adv_phy_options_t;
+#endif //(CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
+
 /**
 * @brief ext adv parameters
 */
@@ -842,12 +984,31 @@ typedef struct {
     esp_ble_addr_type_t peer_addr_type; /*!< ext adv peer address type */
     esp_bd_addr_t peer_addr;            /*!< ext adv peer address */
     esp_ble_adv_filter_t filter_policy; /*!< ext adv filter policy */
-    int8_t tx_power;                    /*!< ext adv tx power */
+    int8_t tx_power;                    /*!< ext adv tx power.
+                                             For this advertising set, priority is higher than
+                                             `esp_ble_tx_power_set()`, `esp_ble_tx_power_set_enhanced()`,
+                                             and menuconfig default TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`).
+                                             The actual applied TX power may be different from the requested value,
+                                             depending on the Controller TX power granularity/level mechanism.
+                                             (for example ESP32-C3/ESP32-S3 with 3 dBm step), the actual
+                                             applied TX power may be rounded down and be 0 to 2 dBm lower
+                                             than the requested value.) */
     esp_ble_gap_pri_phy_t primary_phy;  /*!< ext adv primary phy */
     uint8_t max_skip;                   /*!< ext adv maximum skip */
-    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
+    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy.
+                                             Note: If the advertiser sends connectable advertising packets on the LE Coded
+                                             PHY, the peer may then establish the ACL connection on the LE Coded PHY, which
+                                             will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+                                             scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer
+                                             than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M PHY)
+                                             first, and only use the LE Coded PHY when the long-range capability is really
+                                             required. */
     uint8_t sid;                        /*!< ext adv sid */
     bool scan_req_notif;                /*!< ext adv scan request event notify */
+#if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
+    esp_ble_gap_adv_phy_options_t primary_adv_phy_options;   /*!< The Host's preference or requirement concerning coding scheme */
+    esp_ble_gap_adv_phy_options_t secondary_adv_phy_options; /*!< The Host's preference or requirement concerning coding scheme(including for periodic advertising) */
+#endif // CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION
 } esp_ble_gap_ext_adv_params_t;
 
 /**
@@ -900,7 +1061,25 @@ typedef struct {
 typedef struct {
     uint16_t interval_min;     /*!< periodic advertising minimum interval */
     uint16_t interval_max;     /*!< periodic advertising maximum interval */
-    uint8_t  properties;       /*!< periodic advertising properties */
+    uint16_t  properties;       /*!< periodic advertising properties */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+    uint8_t num_subevents;     /*!< Number of subevents in the PAwR. Range: 0x00 to 0x80
+                                    0x00: Periodic Advertising without responses */
+    uint8_t subevent_interval; /*!< Interval between subevents.
+                                    Range: 0x06 to 0xFF.
+                                    Time = N × 1.25 ms.
+                                    Time Range: 7.5 ms to 318.75 ms. */
+    uint8_t rsp_slot_delay;    /*!< Time between the advertising packet in a subevent and the first response slot.
+                                    Range: 0x01 to 0xFE.
+                                    Time = N × 1.25 ms.
+                                    Time Range: 1.25 ms to 317.5 ms. */
+    uint8_t rsp_slot_spacing;  /*!< Time between response slots.
+                                    Range: 0x02 to 0xFF.
+                                    Time = N × 0.125 ms.
+                                    Time Range: 0.25 ms to 31.875 ms */
+    uint8_t num_rsp_slots;     /*!< Number of subevent response slots
+                                    Range: 0x01 to 0xFF. */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
 } esp_ble_gap_periodic_adv_params_t;
 
 /**
@@ -910,19 +1089,27 @@ typedef struct {
     esp_ble_gap_sync_t filter_policy;       /*!< Configures the filter policy for periodic advertising sync:
                                                  0: Use Advertising SID, Advertiser Address Type, and Advertiser Address parameters to determine the advertiser to listen to.
                                                  1: Use the Periodic Advertiser List to determine the advertiser to listen to. */
-    #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+#if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
     esp_ble_gap_sync_t reports_disabled;    /*!< Supported only by esp32c2, esp32c6, and esp32h2; can be set by menuconfig:
                                                  0: Reporting initially enabled.
                                                  1: Reporting initially disabled. */
     esp_ble_gap_sync_t filter_duplicates;   /*!< Supported only by esp32c2, esp32c6, and esp32h2; can be set by menuconfig:
                                                  0: Duplicate filtering initially disabled.
                                                  1: Duplicate filtering initially enabled. */
-    #endif
+#endif // (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
     uint8_t sid;                            /*!< SID of the periodic advertising */
     esp_ble_addr_type_t addr_type;          /*!< Address type of the periodic advertising */
     esp_bd_addr_t addr;                     /*!< Address of the periodic advertising */
     uint16_t skip;                          /*!< Maximum number of periodic advertising events that can be skipped */
     uint16_t sync_timeout;                  /*!< Synchronization timeout */
+#if (CONFIG_BT_BLE_FEAT_CTE_EN)
+    uint8_t sync_cte_type;                  /*!< Whether to only synchronize to periodic advertising with certain types of CTE (Constant Tone Extension)
+                                                bit 0: Do not sync to packets with an AoA CTE
+                                                bit 1: Do not sync to packets with an AoD CTE with 1 μs slots
+                                                bit 2: Do not sync to packets with an AoD CTE with 2 μs slots
+                                                bit 3: Do not sync to packets with a type 3 CTE (currently reserved for future use)
+                                                bit 4: Do not sync to packets without a CTE */
+#endif // BT_BLE_FEAT_CTE_EN
 } esp_ble_gap_periodic_adv_sync_params_t;
 
 /**
@@ -934,8 +1121,28 @@ typedef struct {
     esp_ble_gap_adv_type_t event_type;              /*!< extend advertising type */
     uint8_t addr_type;                              /*!< extend advertising address type */
     esp_bd_addr_t addr;                             /*!< extend advertising address */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+    esp_ble_gap_rpt_phy_t primary_phy;              /*!< extend advertising primary phy
+                                                    0x01: Advertiser PHY is LE 1M
+                                                    0x03: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=8 data coding
+                                                        Otherwise: Advertiser PHY is LE Coded
+                                                    0x04: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=2 data coding
+                                                        Otherwise: Reserved for future use
+                                                    */
+
+    esp_ble_gap_rpt_phy_t secondary_phy;            /*!< extend advertising secondary phy
+                                                    0x00: No packets on the secondary advertising physical channel
+                                                    0x01: Advertiser PHY is LE 1M
+                                                    0x02: Advertiser PHY is LE 2M
+                                                    0x03: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=8 data coding
+                                                        Otherwise: Advertiser PHY is LE Coded
+                                                    0x04: If the Advertising Coding Selection (Host Support) feature bit is set: Advertising PHY is LE Coded with S=2 data coding
+                                                        Otherwise: Reserved for future use
+                                                    */
+#else
     esp_ble_gap_pri_phy_t primary_phy;              /*!< extend advertising primary phy */
     esp_ble_gap_phy_t secondly_phy;                 /*!< extend advertising secondary phy */
+#endif
     uint8_t sid;                                    /*!< extend advertising sid */
     uint8_t tx_power;                               /*!< extend advertising tx power */
     int8_t rssi;                                    /*!< extend advertising rssi */
@@ -954,13 +1161,24 @@ typedef struct {
     uint16_t sync_handle;                          /*!< periodic advertising train handle */
     uint8_t tx_power;                              /*!< periodic advertising tx power*/
     int8_t rssi;                                   /*!< periodic advertising rssi */
+#if (CONFIG_BT_BLE_FEAT_CTE_EN) // #if (BLE_FEAT_CTE_EN == TRUE)
+    uint8_t cte_type;                              /*!< The type of Constant Tone Extension
+                                                    0x00: AoA Constant Tone Extension
+                                                    0x01: AoD Constant Tone Extension with 1 μs slots
+                                                    0x02: AoD Constant Tone Extension with 2 μs slots
+                                                    0xFF: No Constant Tone Extension */
+#endif // BT_BLE_FEAT_CTE_EN
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+    uint16_t periodic_evt_counter;   /*!< The value of paEventCounter for the reported periodic advertising packet */
+    uint8_t subevt;                  /*!< The subevent number */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
     esp_ble_gap_ext_adv_data_status_t data_status; /*!< periodic advertising data type*/
     uint8_t data_length;                           /*!< periodic advertising data length */
     uint8_t data[251];                             /*!< periodic advertising data */
 } esp_ble_gap_periodic_adv_report_t;
 
 /**
-* @brief perodic adv sync establish parameters
+* @brief periodic adv sync establish parameters
 */
 typedef struct {
     uint8_t status;                               /*!< periodic advertising sync status */
@@ -1014,6 +1232,554 @@ typedef struct {
     uint8_t cte_type;                   /*!< periodic advertising sync transfer CET type */
 } esp_ble_gap_past_params_t;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+/**
+ * @brief Parameters for adding a device to the LE Monitor Advertisers list
+ */
+typedef struct {
+    esp_ble_addr_type_t addr_type;  /*!< Address type of the advertiser */
+    esp_bd_addr_t addr;             /*!< Device address of the advertiser to monitor */
+    int8_t rssi_low;                /*!< Low threshold of RSSI (dBm). Report when RSSI goes at or below this value */
+    int8_t rssi_high;               /*!< High threshold of RSSI (dBm). Report when RSSI goes at or above this value */
+    uint8_t timeout;                /*!< Monitor timeout: 0 = no timeout; 1–0xFF = timeout in seconds */
+} esp_ble_gap_add_monitor_adv_params_t;
+
+/**
+ * @brief Parameters for removing a device from the LE Monitor Advertisers list
+ */
+typedef struct {
+    esp_ble_addr_type_t addr_type;  /*!< Address type of the advertiser */
+    esp_bd_addr_t addr;             /*!< Device address of the advertiser to remove from the monitor list */
+} esp_ble_gap_remove_monitor_adv_params_t;
+#endif // (BLE_FEAT_ADV_MONITOR == TRUE)
+
+typedef enum {
+    ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
+    ESP_BLE_DEVICE_PRIVACY_MODE     = 0X01,    /*!< Device Privacy Mode for peer device */
+} esp_ble_privacy_mode_t;
+
+#define ESP_BLE_VENDOR_SCAN_REQ_RECV_EVT_MASK   BIT(0)  /*!< Vendor BLE legacy SCAN_REQ received event mask */
+#define ESP_BLE_VENDOR_CHMAP_UPDATE_EVT_MASK    BIT(1)  /*!< Vendor BLE channel map update event mask */
+#define ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT_MASK    BIT(3)  /*!< Vendor BLE sleep wakeup event mask */
+#define ESP_BLE_VENDOR_CONN_REQ_RECV_EVT_MASK   BIT(4)  /*!< Vendor BLE CONNECT_IND and AUX_CONNECT_REQ received event mask */
+#define ESP_BLE_VENDOR_CONN_RSP_RECV_EVT_MASK   BIT(5)  /*!< Vendor BLE AUX_CONNECT_RSP received event mask */
+typedef uint32_t esp_ble_vendor_evt_mask_t;
+
+#define ESP_BLE_VENDOR_PDU_RECV_EVT         (0)     /*!< Vendor BLE specify PDU received event */
+#define ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT  (1)     /*!< Vendor BLE channel map update complete event */
+#define ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT     (2)     /*!< Vendor BLE sleep wakeup event */
+typedef uint8_t esp_ble_vendor_evt_t;
+
+typedef enum {
+    ESP_BLE_VENDOR_PDU_SCAN_REQ = 0,                /*!< SCAN_REQ PDU type */
+    ESP_BLE_VENDOR_PDU_CONN_REQ,                    /*!< CONNECT_IND and AUX_CONNECT_REQ PDU type */
+    ESP_BLE_VENDOR_PDU_CONN_RSP,                    /*!< AUX_CONNECT_RSP PDU type */
+} esp_ble_vendor_pdu_t;
+
+/**
+ * @brief BLE vendor event parameters union
+ */
+typedef union {
+    /**
+     * @brief ESP_BLE_VENDOR_PDU_RECV_EVT
+     */
+    struct ble_pdu_recv_evt_param {
+        esp_ble_vendor_pdu_t type;                  /*!< The type of LE PDU */
+        uint8_t handle;                             /*!< The handle of advertising set */
+        esp_ble_addr_type_t addr_type;              /*!< The address type of peer device */
+        esp_bd_addr_t peer_addr;                    /*!< The address of peer device */
+    } pdu_recv;                                     /*!< Event parameter of ESP_BLE_VENDOR_PDU_RECV_EVT */
+    /**
+     * @brief ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT
+     */
+    struct ble_chan_map_update_evt_param {
+        uint8_t status;                             /*!< Indicate the channel map update status (HCI error code) */
+        uint16_t conn_handle;                       /*!< The connection handle */
+        esp_gap_ble_channels ch_map;                /*!< The channel map after updated */
+    } chan_map_update;                              /*!< Event parameter of ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT */
+    /**
+     * @brief ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT
+     */
+    struct ble_sleep_wakeup_evt_param {
+        // No parameters
+    } sleep_wakeup;                                 /*!< Event parameter of ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT */
+} esp_ble_vendor_evt_param_t;
+
+/**
+* @brief path loss report parameters
+*/
+typedef struct {
+    uint16_t conn_handle;    /*!< Connection_Handle */
+	uint8_t high_threshold;  /*!< High threshold for the path loss (dB) */
+	uint8_t high_hysteresis; /*!< Hysteresis value for the high threshold (dB) */
+	uint8_t low_threshold;   /*!< Low threshold for the path loss (dB) */
+	uint8_t low_hysteresis;  /*!< Hysteresis value for the low threshold (dB) */
+	uint16_t min_time_spent; /*!< Minimum time in number of connection events to be observed
+                             once the path loss crosses the threshold before an event is generated */
+} esp_ble_path_loss_rpt_params_t;
+
+typedef enum {
+	/*!< No PHY is set, should not be used */
+	ESP_BLE_CONN_TX_POWER_PHY_NONE = 0,
+	/*!< LE 1M PHY */
+	ESP_BLE_CONN_TX_POWER_PHY_1M = 0x01,
+	/*!< LE 2M PHY */
+	ESP_BLE_CONN_TX_POWER_PHY_2M = 0x02,
+	/*!< LE Coded PHY using S=8 coding */
+	ESP_BLE_CONN_TX_POWER_PHY_CODED_S8 = 0x03,
+	/*!< LE Coded PHY using S=2 coding */
+	ESP_BLE_CONN_TX_POWER_PHY_CODED_S2 = 0x04,
+} esp_ble_tx_power_phy_t;
+
+typedef enum {
+	/*!< Low zone entered */
+	ESP_BLE_CONN_PATH_LOSS_ZONE_ENTERED_LOW = 0x00,
+	/*!< Middle zone entered */
+	ESP_BLE_CONN_PATH_LOSS_ZONE_ENTERED_MIDDLE = 0x01,
+	/*!< High zone entered */
+	ESP_BLE_CONN_PATH_LOSS_ZONE_ENTERED_HIGH = 0x02,
+} esp_ble_path_loss_zone_t;
+
+/**
+* @brief Connection subrating default parameters
+*/
+typedef struct {
+    uint16_t subrate_min;         /*!< Minimum subrate factor allowed in requests by a Peripheral. Range: 0x0001 to 0x01F4, default: 0x0001 */
+    uint16_t subrate_max;         /*!< Maximum subrate factor allowed in requests by a Peripheral. Range: 0x0001 to 0x01F4, default: 0x0001. subrate_max × (max_latency + 1) should not be greater than 500 */
+    uint16_t max_latency;         /*!< Maximum Peripheral latency allowed in requests by a Peripheral, in units of subrated connection intervals.
+                                    Range: 0x0000 to 0x01F3, default: 0x0000 */
+    uint16_t continuation_number; /*!< Minimum number of underlying connection events to remain active after a packet containing a Link Layer
+                                    PDU with a non-zero Length field is sent or received in requests by a Peripheral. Range: 0x0000 to 0x01F3,
+                                    default: 0x0000. continuation_number should not greater than or equal to subrate_max */
+    uint16_t supervision_timeout; /*!< Maximum supervision timeout allowed in requests by a Peripheral (N * 10 ms). Range: 0x000A to 0x0C80,
+                                    Time Range: 100 ms to 32 s, default: 0x0C80 (32 s) */
+} esp_ble_default_subrate_param_t;
+
+/**
+* @brief Connection subrating request parameters
+*/
+typedef struct {
+    uint16_t conn_handle;         /*!< Connection handle of the ACL */
+    uint16_t subrate_min;         /*!< Minimum subrate factor to be applied to the underlying connection interval. Range: 0x0001 to 0x01F4 */
+    uint16_t subrate_max;         /*!< Maximum subrate factor to be applied to the underlying connection interval. Range: 0x0001 to 0x01F4 */
+    uint16_t max_latency;         /*!< Maximum Peripheral latency for the connection in units of subrated connection intervals. Range: 0x0000 to 0x01F3 */
+    uint16_t continuation_number; /*!< Minimum number of underlying connection events to remain active after a packet containing
+                                    a Link Layer PDU with a non-zero Length field is sent or received. Range: 0x0000 to 0x01F3 */
+    uint16_t supervision_timeout; /*!< Supervision timeout for this connection (N * 10 ms). Range: 0x000A to 0x0C80, Time Range: 100 ms to 32 s
+                                    The supervision_timeout, in milliseconds, shall be greater than 2 × current connection interval × subrate_max × (max_latency + 1) */
+} esp_ble_subrate_req_param_t;
+
+/**
+* @brief Periodic adv subevent parameters
+*/
+typedef struct {
+	uint8_t subevent;              /*!< The subevent index of the data contained in this command. Range: 0x00 to 0x7F */
+	uint8_t response_slot_start;   /*!< The first response slots to be used in this subevent */
+	uint8_t response_slot_count;   /*!< The number of response slots to be used */
+    uint8_t subevent_data_len;     /*!< The number of octets in the Subevent_Data parameter. Range: 0 to 251 */
+	uint8_t *subevent_data;        /*!< The advertising data to be transmitted in the subevent of the advertising set */
+} esp_ble_subevent_params;
+
+/**
+* @brief Periodic adv subevent data parameters
+*/
+typedef struct {
+    uint8_t adv_handle;               /*!< Used to identify a periodic advertising train */
+    uint8_t num_subevents_with_data;  /*!< Number of subevent data in the command. Range: 0x0001 to 0x0F */
+    esp_ble_subevent_params *subevent_params;  /*!< Periodic adv subevent parameters */
+} esp_ble_per_adv_subevent_data_params;
+
+/**
+* @brief Periodic adv response data parameters
+*/
+typedef struct {
+    uint16_t sync_handle;      /*!< Sync_Handle identifying the PAwR train */
+    uint16_t request_event;    /*!< The value of eventCounter for the periodic advertising packet that the Host is responding to */
+    uint8_t request_subevent;  /*!< The subevent for the periodic advertising packet that the Host is responding to */
+    uint8_t response_subevent; /*!< Used to identify the subevent of the PAwR train. Range: 0x00 to 0x7F */
+    uint8_t response_slot;     /*!< Used to identify the response slot of the PAwR train. Range: 0x00 to 0xFF */
+    uint8_t response_data_len; /*!< The number of octets in the Response_Data parameter. Range: 0 to 251 */
+    uint8_t *response_data;    /*!< Response data */
+} esp_ble_per_adv_response_data_params;
+
+/**
+* @brief Periodic sync subevent parameters
+*/
+typedef struct {
+    uint16_t sync_handle;              /*!< Sync_Handle identifying the PAwR train */
+    uint16_t periodic_adv_properties;  /*!< Include TxPower in the advertising PDU */
+    uint8_t num_subevents_to_sync;     /*!< Number of subevents. Range: 0x01 to 0x80 */
+    uint8_t *subevent;                 /*!< The subevent to synchronize with. Range 0x00 to 0x7F */
+} esp_ble_per_sync_subevent_params;
+
+/**
+* @brief Periodic response information
+*/
+typedef struct {
+    int8_t tx_power;      /*!< Range: -127 to +20, Units: dBm
+                                0x7F: Tx Power information not available*/
+    int8_t rssi;          /*!< Range: -127 to +20. Units: dBm
+                                0x7F: RSSI is not available */
+    uint8_t cte_type;     /*!< cte type
+                            0x00: AoA Constant Tone Extension
+                            0x01: AoD Constant Tone Extension with 1 µs slots
+                            0x02: AoD Constant Tone Extension with 2 µs slots
+                            0xFF: No Constant Tone Extension*/
+    uint8_t rsp_slot;     /*!< The response slot the data was received in. */
+    uint8_t data_status;  /*!< Data status
+                            0x00: Data complete
+                            0x01: Data incomplete, more data to come
+                            0xFF: Failed to receive or listen for an AUX_SYNC_SUBEVENT_RSP PDU*/
+    uint8_t data_len;     /*!< Length of the Data field */
+    uint8_t *data;        /*!< Periodic advertising response data formatted as defined in [Vol 3] Part C, Section 11*/
+} esp_ble_pa_rsp_info;
+
+/** Initiator role that are supported by the remote Controller */
+#define ESP_BLE_CS_INITIATOR_ROLE_SUPPORTED  (1 << 0)
+/** Reflector role that are supported by the remote Controller */
+#define ESP_BLE_CS_REFLECTOR_ROLE_SUPPORTED  (1 << 1)
+
+/** The RTT_AA_Only_N field refers to the 150 ns time-of-flight precision requirement */
+#define ESP_BLE_CS_RTT_CAPABILITY_RTT_AA_ONLY_N_150NS        (0 << 0)
+/** The RTT_AA_Only_N field refers to the 10 ns time-of-flight precision requirement */
+#define ESP_BLE_CS_RTT_CAPABILITY_RTT_AA_ONLY_N_10NS         (1 << 0)
+/** The RTT_Sounding_N field refers to the 150 ns time-of-flight precision requirement */
+#define ESP_BLE_CS_RTT_CAPABILITY_RTT_SOUNDING_N_150NS        (0 << 1)
+/** The RTT_Sounding_N field refers to the 10 ns time-of-flight precision requirement */
+#define ESP_BLE_CS_RTT_CAPABILITY_RTT_SOUNDING_N_10NS        (1 << 1)
+/** The RTT_Random_Payload_N field refers to the 150 ns time-of-flight precision requirement */
+#define ESP_BLE_CS_RTT_CAPABILITY_RTT_RANDOM_PAYLOAD_N_150NS  (0 << 2)
+/** The RTT_Random_Payload_N field refers to the 10 ns time-of-flight precision requirement */
+#define ESP_BLE_CS_RTT_CAPABILITY_RTT_RANDOM_PAYLOAD_N_10NS  (1 << 2)
+typedef uint8_t esp_ble_cs_rtt_caps_opt_t;
+
+/** CS_SYNC 2M phy supported */
+#define ESP_BLE_CS_SYNC_PHYS_2M_SUPPORTED       (1 << 1)
+/** CS_SYNC 2M 2BT phy supported */
+#define ESP_BLE_CS_SYNC_PHYS_2M_2BT_SUPPORTED   (1 << 2)
+
+/**The length of Channel Sounding channel map */
+#define ESP_BLE_CS_CHAN_MAP_LEN 10
+
+/**
+* @brief CS write cached remote supported capabilities parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    uint8_t num_config_supported;      /*!< The number of CS configurations that are supported by the remote Controller. Range: 0x01 to 0x04 */
+    uint16_t max_consecutive_proc_supported;/*!< 0x0000: Support for both a fixed number of consecutive CS procedures and for an indefinite number of CS procedures until termination
+                                                 0x0001 to 0xFFFF: The Maximum number of consecutive CS procedures supported */
+    uint8_t num_ant_supported;         /*!< Number of antennas supported. Range: 0x01 to 0x04 */
+    uint8_t max_ant_paths_supported;   /*!< Maximum number of antenna paths supported. Range: 0x01 to 0x04 */
+    bool initiator_role_supported;     /*!< Initiator role that are supported by the remote Controller */
+    bool reflector_role_supported;     /*!< Reflector role that are supported by the remote Controller */
+    uint8_t modes_supported;           /*!< The optional CS modes that are supported by the remote Controller
+                                            bit 0: Mode-3 */
+    esp_ble_cs_rtt_caps_opt_t rtt_capability; /*!<  time-of-flight precision requirement */
+    uint8_t rtt_aa_only_n;             /*!<  0x00: RTT AA-only not supported.
+                                             0x01 to 0xff: Number of CS_SYNC exchanges needed to satisfy the precision requirements */
+    uint8_t rtt_sounding_n;            /*!<  0x00: RTT Sounding not supported
+                                             0x01 to 0xFF: Number of CS_SYNC exchanges needed to satisfy the precision requirements */
+    uint8_t rtt_random_payload_n;      /*!<  0x00: RTT Random Payload not supported
+                                             0x01 to 0xff: Number of CS_SYNC exchanges needed to satisfy the time-of-flight precision requirements */
+    uint16_t NADM_sounding_capability;  /*!<  Support for Phase-based Normalized Attack Detector Metric when a CS_SYNC with sounding sequence is received */
+    uint16_t NADM_random_capability;    /*!<  Support for Phase-based Normalized Attack Detector Metric when a CS_SYNC with random sequence is received */
+    bool cs_sync_2m_phy_supported;      /*!< CS_SYNC 2M phy supported */
+    bool cs_sync_2m_2bt_phy_supported;  /*!< CS_SYNC 2M 2BT phy supported */
+    uint16_t subfeatures_supported;     /*!<  bit 1: CS with a Frequency Actuation Error of zero relative to mode-0 transmissions in the reflector role
+                                              bit 2: CS Channel Selection Algorithm #3c
+                                              bit 3: CS phase-based ranging from an RTT sounding sequence */
+    uint16_t T_IP1_times_supported;     /*!<  bit 0: 10 μs supported
+                                              bit 1: 20 μs supported
+                                              bit 2: 30 μs supported
+                                              bit 3: 40 μs supported
+                                              bit 4: 50 μs supported
+                                              bit 5: 60 μs supported
+                                              bit 6: 80 μs supported
+                                        */
+    uint16_t T_IP2_times_supported;     /*!<  bit 0: 10 μs supported
+                                              bit 1: 20 μs supported
+                                              bit 2: 30 μs supported
+                                              bit 3: 40 μs supported
+                                              bit 4: 50 μs supported
+                                              bit 5: 60 μs supported
+                                              bit 6: 80 μs supported
+                                        */
+    uint16_t T_FCS_times_supported;     /*!<  bit 0: 15 μs supported
+                                              bit 1: 20 μs supported
+                                              bit 2: 30 μs supported
+                                              bit 3: 40 μs supported
+                                              bit 4: 50 μs supported
+                                              bit 5: 60 μs supported
+                                              bit 6: 80 μs supported
+                                              bit 7: 100 μs supported
+                                              bit 8: 120 μs supported
+                                        */
+    uint16_t T_PM_times_supported;     /*!<   bit 0: 10 μs supported
+                                              bit 1: 20 μs supported
+                                        */
+    uint8_t T_SW_times_supported;     /*!<   Time in microseconds for the antenna switch period of the CS tones. Range: 0x00 to 0x04 or 0x0A */
+    uint8_t TX_SNR_capability;        /*!<  bit 0: 18 dB supported
+                                            bit 1: 21 dB supported
+                                            bit 2: 24 dB supported
+                                            bit 3: 27 dB supported
+                                            bit 4: 30 dB supported
+                                      */
+} esp_ble_cs_write_cached_remote_supp_caps_params;
+
+/**
+* @brief CS sync antenna selection options
+*/
+typedef enum {
+	/** Use antenna identifier 1 for CS_SYNC packets by the local Controller */
+	ESP_BLE_CS_ANT_SELECTION_OPT_ONE               = 0x01,
+	/** Use antenna identifier 2 for CS_SYNC packets by the local Controller */
+	ESP_BLE_CS_ANT_SELECTION_OPT_TWO               = 0x02,
+	/** Use antenna identifier 3 for CS_SYNC packets by the local Controller */
+	ESP_BLE_CS_ANT_SELECTION_OPT_THREE             = 0x03,
+	/** Use antenna identifier 4 for CS_SYNC packets by the local Controller */
+	ESP_BLE_CS_ANT_SELECTION_OPT_FOUR              = 0x04,
+	/** Use antennas in repetitive order from 1 to 4 for CS_SYNC packets by the local Controller */
+	ESP_BLE_CS_ANT_SELECTION_OPT_REPETITIVE        = 0xFE,
+	/** No recommendation for local controller antenna selection by the local Controller */
+	ESP_BLE_CS_ANT_SELECTION_OPT_NO_RECOMMENDATION = 0xFF,
+} esp_ble_cs_sync_ant_selection_opt_t;
+
+/** Initiator role is enabled */
+#define ESP_BLE_CS_INITIATOR_ROLE_ENABLED  (1 << 0)
+/** Reflector role is enabled */
+#define ESP_BLE_CS_REFLECTOR_ROLE_ENABLED  (1 << 1)
+
+/**
+* @brief CS set default settings parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    bool initiator_role_enable;        /*!< Initiator role is enabled */
+    bool reflector_role_enable;        /*!< Reflector role is enabled */
+    esp_ble_cs_sync_ant_selection_opt_t cs_sync_ant_selection;     /*!< 0x01 to 0x04: Antenna identifier to be used for CS_SYNC packets by the local Controller
+                                            0xFE: Antennas to be used, in repetitive order from 0x01 to 0x04, for CS_SYNC packets by the local Controller
+                                            0xFF: Host does not have a recommendation
+                                        */
+    int8_t max_tx_power;               /*!< The maximum transmit power level to be used for all CS transmissions. Range: -127 to 20. Units: dBm */
+} esp_ble_cs_set_default_settings_params;
+
+/**
+* @brief CS write cached remote Frequency Actuation Error table parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    uint8_t remote_fae_table[72];      /*!< Per-channel mode-0 Frequency Actuation Error table of the local Controller */
+} esp_ble_cs_write_cached_remote_fae_table_params;
+
+#define ESP_BLE_CS_SYNC_PHY_1M           (0x01)
+#define ESP_BLE_CS_SYNC_PHY_2M           (0x02)
+#define ESP_BLE_CS_SYNC_PHY_2M_2BT       (0x03)
+typedef uint8_t esp_ble_cs_sync_phy_opt_t;
+
+#define ESP_BLE_CS_RTT_TYPE_RTT_AA_ONLY                       (0X00)
+#define ESP_BLE_CS_RTT_TYPE_RTT_WITH_32BIT_SOUNDING_SEQUENCE  (0X01)
+#define ESP_BLE_CS_RTT_TYPE_RTT_WITH_96BIT_SOUNDING_SEQUENCE  (0X02)
+#define ESP_BLE_CS_RTT_TYPE_RTT_WITH_32BIT_RANDOM_SEQUENCE    (0X03)
+#define ESP_BLE_CS_RTT_TYPE_RTT_WITH_64BIT_RANDOM_SEQUENCE    (0X04)
+#define ESP_BLE_CS_RTT_TYPE_RTT_WITH_96BIT_RANDOM_SEQUENCE    (0X05)
+#define ESP_BLE_CS_RTT_TYPE_RTT_WITH_128BIT_RANDOM_SEQUENCE   (0X06)
+typedef uint8_t esp_ble_cs_rtt_type_opt_t;
+
+#define ESP_BLE_CS_ROLE_INITIATOR  (0x00)
+#define ESP_BLE_CS_ROLE_REFLECTOR  (0x01)
+typedef uint8_t esp_ble_cs_role_opt_t;
+
+#define ESP_BLE_CS_MAIN_MODE_TYPE_MODE_1   (0x01)
+#define ESP_BLE_CS_MAIN_MODE_TYPE_MODE_2   (0x02)
+#define ESP_BLE_CS_MAIN_MODE_TYPE_MODE_3   (0x03)
+typedef uint8_t esp_ble_cs_main_mode_opt_t;
+
+#define ESP_BLE_CS_SUB_MODE_TYPE_MODE_1   (0x01)
+#define ESP_BLE_CS_SUB_MODE_TYPE_MODE_2   (0x02)
+#define ESP_BLE_CS_SUB_MODE_TYPE_MODE_3   (0x03)
+#define ESP_BLE_CS_SUB_MODE_TYPE_UNUSED   (0xFF)
+typedef uint8_t esp_ble_cs_sub_mode_opt_t;
+
+#define ESP_BLE_CS_CREAT_CONTEXT_IN_LOCAL_CONTROLLER             (0x00)
+#define ESP_BLE_CS_CREAT_CONTEXT_IN_LOCAL_AND_REMOTE_CONTROLLER  (0x01)
+typedef uint8_t esp_ble_cs_create_context_opt_t;
+
+#define ESP_BLE_CS_CAHNNEL_SELECT_TYPE_ALGORITHM_3b        (0x00)
+#define ESP_BLE_CS_CAHNNEL_SELECT_TYPE_ALGORITHM_3C        (0x01)
+typedef uint8_t esp_ble_cs_channel_select_type_opt_t;
+
+#define ESP_BLE_CS_CH3C_USE_HAT_SHAPE        (0x00)
+#define ESP_BLE_CS_CH3C_USE_X_SHAPE          (0x01)
+typedef uint8_t esp_ble_cs_ch3c_shape_opt_t;
+
+/**
+* @brief CS create configuration parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    uint8_t config_id;                 /*!< CS configuration identifier. Range: 0 to 3 */
+    esp_ble_cs_create_context_opt_t create_context; /*!< 0x00: Write CS configuration in local Controller only
+                                                         0x01: Write CS configuration in both local and remote Controller using Channel Sounding Configuration procedure
+                                                    */
+    esp_ble_cs_main_mode_opt_t main_mode_type; /*!< 0x01: Mode-1
+                                                    0x02: Mode-2
+                                                    0x03: Mode-3
+                                               */
+    esp_ble_cs_sub_mode_opt_t sub_mode_type;   /*!< 0x01: Mode-1
+                                                    0x02: Mode-2
+                                                    0x03: Mode-3
+                                                    0xFF: Unused
+                                                */
+    uint8_t min_main_mode_steps;       /*!< Minimum number of CS main mode steps to be executed before a submode step is executed. Range: 0x02 to 0xFF */
+    uint8_t max_main_mode_steps;       /*!< Maximum number of CS main mode steps to be executed before a submode step is executed. Range: 0x02 to 0xFF */
+    uint8_t main_mode_repetition;      /*!< The number of main mode steps taken from the end of the last CS subevent to be repeated at the beginning of
+                                            the current CS subevent directly after the last mode-0 step of that event. Range: 0x00 to 0x03 */
+    uint8_t mode_0_steps;              /*!< Number of CS mode-0 steps to be included at the beginning of each CS subevent. Range: 0x01 to 0x03 */
+    esp_ble_cs_role_opt_t role;        /*!< 0x00: Initiator
+                                            0x01: Reflector
+                                        */
+    esp_ble_cs_rtt_type_opt_t rtt_type; /*!< 0x00: RTT AA-only
+                                             0x01: RTT with 32-bit sounding sequence
+                                             0x02: RTT with 96-bit sounding sequence
+                                             0x03: RTT with 32-bit random sequence
+                                             0x04: RTT with 64-bit random sequence
+                                             0x05: RTT with 96-bit random sequence
+                                             0x06: RTT with 128-bit random sequence
+                                        */
+    esp_ble_cs_sync_phy_opt_t cs_sync_phy;  /*!< 0x01: LE 1M PHY
+                                                 0x02: LE 2M PHY
+                                                 0x03: LE 2M 2BT PHY
+                                             */
+    uint8_t channel_map[ESP_BLE_CS_CHAN_MAP_LEN]; /*!< This parameter contains 80 1-bit fields.
+                                                    The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
+                                                    Channel n is enabled for CS procedure = 1
+                                                    Channel n is disabled for CS procedure = 0
+                                                    Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be ignored and shall be set to zero. At least 15 channels shall be enabled.
+                                                    The most significant bit (bit 79) is reserved for future use
+                                                  */
+    uint8_t channel_map_repetition;    /*!< The number of times the map represented by the Channel_Map field is to be cycled through for non-mode-0 steps within a CS procedure. Range: 0x01 to 0xFF */
+    esp_ble_cs_channel_select_type_opt_t channel_selection_type;/*!< 0x00: Use Channel Selection Algorithm #3b for non-mode-0 CS steps
+                                                                    0x01: Use Channel Selection Algorithm #3c for non-mode-0 CS steps
+                                                                */
+    esp_ble_cs_ch3c_shape_opt_t ch3c_shape; /*!< 0x00: Use Hat shape for user-specified channel sequence
+                                                 0x01: Use X shape for user-specified channel sequence
+                                            */
+    uint8_t ch3c_jump;                 /*!< Number of channels skipped in each rising and falling sequence. Range: 0x02 to 0x08 */
+    uint8_t reserved;                  /*!< Reserved, shall be set to 0x00 */
+} esp_ble_cs_create_config_params;
+
+/**
+* @brief CS remove configuration parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    uint8_t config_id;                 /*!< CS configuration identifier. Range: 0 to 3 */
+} esp_ble_cs_remove_config_params;
+
+/**
+* @brief CS set channel class parameters
+*/
+typedef struct {
+    uint8_t channel_class[10];  /*!< This parameter contains 80 1-bit fields.
+                                    The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
+                                    Channel n is enabled for CS procedure = 1
+                                    Channel n is disabled for CS procedure = 0
+                                    Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be reserved for future use and shall be set to zero. At least 15 channels shall be enabled.
+                                    The most significant bit (bit 79) is reserved for future use.
+                                 */
+} esp_ble_cs_set_channel_class_params;
+
+#define ESP_BLE_CS_PHY_1M          (0x01)
+#define ESP_BLE_CS_PHY_2M          (0x02)
+#define ESP_BLE_CS_PHY_S8          (0x03)
+#define ESP_BLE_CS_PHY_S2          (0x04)
+typedef uint8_t esp_ble_cs_phy_opt_t;
+
+#define ESP_BLE_CS_PREFERRED_FIRST_ORDER_ANT           (1 << 0)
+#define ESP_BLE_CS_PREFERRED_SECOND_ORDER_ANT          (1 << 1)
+#define ESP_BLE_CS_PREFERRED_THIRD_ORDER_ANT           (1 << 2)
+#define ESP_BLE_CS_PREFERRED_FOURTH_ORDER_ANT          (1 << 3)
+typedef uint8_t esp_ble_cs_preferred_peer_ant_t;
+
+#define ESP_BLE_CS_SNR_CONTROL_ADIJUSTMENT_18DB        (0x00)
+#define ESP_BLE_CS_SNR_CONTROL_ADIJUSTMENT_21DB        (0x01)
+#define ESP_BLE_CS_SNR_CONTROL_ADIJUSTMENT_24DB        (0x02)
+#define ESP_BLE_CS_SNR_CONTROL_ADIJUSTMENT_27DB        (0x03)
+#define ESP_BLE_CS_SNR_CONTROL_ADIJUSTMENT_30DB        (0x04)
+#define ESP_BLE_CS_SNR_CONTROL_NOT_APPLIED             (0xFF)
+typedef uint8_t esp_ble_cs_snr_control_adjustment_t;
+
+/**
+* @brief CS set procedure parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    uint8_t config_id;                 /*!< CS configuration identifier. Range: 0 to 3 */
+    uint16_t max_procedure_len;        /*!< Maximum duration for each CS procedure. Range: 0x0001 to 0xFFFF. Time = N × 0.625 ms */
+    uint16_t min_procedure_interval;   /*!< Minimum number of connection events between consecutive CS procedures. Range: 0x0001 to 0xFFFF */
+    uint16_t max_procedure_interval;   /*!< Maximum number of connection events between consecutive CS procedures. Range: 0x0001 to 0xFFFF */
+    uint16_t max_procedure_count;      /*!< 0x0000:CS procedures to continue until disabled
+                                            0xxxxx: Maximum number of CS procedures to be scheduled
+                                        */
+    uint32_t min_subevent_len;         /*!< Minimum suggested duration for each CS subevent in microseconds. Range: 1250 μs to 4 s */
+    uint32_t max_subevent_len;         /*!< Maximum suggested duration for each CS subevent in microseconds. Range: 1250 μs to 4 s */
+    uint8_t tone_ant_config_selection; /*!< Antenna Configuration Index. Range: 0x00 to 0x07 */
+    esp_ble_cs_phy_opt_t phy;          /*!< 0x01: LE 1M PHY
+                                            0x02: LE 2M PHY
+                                            0x03: LE Coded PHY with S=8 data coding
+                                            0x04: LE Coded PHY with S=2 data coding
+                                        */
+    uint8_t tx_power_delta;            /*!< 0xxx: Transmit power delta, in signed dB, to indicate the recommended difference between the remote device’s power level
+                                                    for the CS tones and RTT packets and the existing power level for the PHY indicated by the PHY parameter
+                                            0x80: Host does not have a recommendation for transmit power delta
+                                        */
+    esp_ble_cs_preferred_peer_ant_t preferred_peer_antenna;    /*!< bit 0: Use first ordered antenna element
+                                                                    bit 1: Use second ordered antenna element
+                                                                    bit 2: Use third ordered antenna element
+                                                                    bit 3: Use fourth ordered antenna element
+                                                                */
+    esp_ble_cs_snr_control_adjustment_t SNR_control_initiator;  /*!< 0x00: SNR control adjustment of 18 dB.
+                                                                     0x01: SNR control adjustment of 21 dB.
+                                                                     0x02: SNR control adjustment of 24 dB.
+                                                                     0x03: SNR control adjustment of 27 dB.
+                                                                     0x04: SNR control adjustment of 30 dB.
+                                                                     0xFF: SNR control is not to be applied
+                                                                */
+    esp_ble_cs_snr_control_adjustment_t SNR_control_reflector;  /*!< 0x00: SNR control adjustment of 18 dB.
+                                                                     0x01: SNR control adjustment of 21 dB.
+                                                                     0x02: SNR control adjustment of 24 dB.
+                                                                     0x03: SNR control adjustment of 27 dB.
+                                                                     0x04: SNR control adjustment of 30 dB.
+                                                                     0xFF: SNR control is not to be applied.
+                                                                */
+} esp_ble_cs_set_proc_params;
+
+#define ESP_BLE_CS_PROCEDURES_DISABLE    (0x00)
+#define ESP_BLE_CS_PROCEDURES_ENABLE     (0x01)
+typedef uint8_t esp_ble_cs_procedures_action_t;
+
+/**
+* @brief CS procedure enable parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle */
+    uint8_t config_id;                 /*!< CS configuration identifier. Range: 0 to 3 */
+    esp_ble_cs_procedures_action_t enable;  /*!< 0x00: CS procedures are to be disabled
+                                                 0x01: CS procedures are to be enabled
+                                            */
+} esp_ble_cs_procedure_enable_params;
+
+/**
+* @brief CS step information
+*/
+typedef struct {
+    uint8_t step_mode;      /*!< 0x00 to 0x03: Mode type */
+    uint8_t step_channel;   /*!< 0x00 to 0x4E: CS channel index */
+    uint8_t step_data_len;  /*!< 0x00 to 0xFF: Length of mode- and role-specific information being reported */
+    uint8_t *data;          /*!< Mode- and role-specific information being reported as Mode_Role_Specific_Info object */
+} esp_ble_cs_step_info;
 
 /**
  * @brief Gap callback parameters union
@@ -1101,12 +1867,6 @@ typedef union {
     struct ble_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate adv stop operation success status */
     } adv_stop_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT */
-    /**
-     * @brief ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT
-     */
-    struct ble_adv_clear_cmpl_evt_param {
-        esp_bt_status_t status;                     /*!< Indicate adv clear operation success status */
-    } adv_clear_cmpl;                                /*!< Event parameter of ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT */
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
      * @brief ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT
@@ -1120,13 +1880,13 @@ typedef union {
     struct ble_update_conn_params_evt_param {
         esp_bt_status_t status;                    /*!< Indicate update connection parameters success status */
         esp_bd_addr_t bda;                         /*!< Bluetooth device address */
-        uint16_t min_int;                          /*!< Min connection interval */
-        uint16_t max_int;                          /*!< Max connection interval */
+        uint16_t min_int;                          /*!< Minimum connection interval. If the master initiates the connection parameter update, this value is not applicable for the slave and will be set to zero. */
+        uint16_t max_int;                          /*!< Maximum connection interval. If the master initiates the connection parameter update, this value is not applicable for the slave and will be set to zero. */
         uint16_t latency;                          /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
-        uint16_t conn_int;                         /*!< Current connection interval */
+        uint16_t conn_int;                         /*!< Current connection interval in milliseconds, calculated as N × 1.25 ms */
         uint16_t timeout;                          /*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
-                                                     Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec */
-    } update_conn_params;                          /*!< Event parameter of ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
+                                                    This value is calculated as N × 10 ms */
+    } update_conn_params;                          /*!< Event parameter for ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
     /**
      * @brief ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT
      */
@@ -1140,6 +1900,19 @@ typedef union {
     struct ble_local_privacy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set local privacy operation success status */
     } local_privacy_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT
+     */
+    struct ble_rpa_timeout_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the set RPA timeout operation success status */
+    } set_rpa_timeout_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT
+     */
+    struct ble_add_dev_to_resolving_list_cmpl_evt_param {
+        esp_bt_status_t status;         /*!< Indicates the success status of adding a device to the resolving list */
+    } add_dev_to_resolving_list_cmpl;  /*!< Event parameter of ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT */
+
     /**
      * @brief ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT
      */
@@ -1171,13 +1944,20 @@ typedef union {
         esp_bd_addr_t remote_addr;                  /*!< The remote device address */
     } read_rssi_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT */
     /**
+     * @brief ESP_GAP_BLE_READ_CHANNEL_MAP_COMPLETE_EVT
+     */
+    struct ble_read_ble_channel_map_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Status of the read channel map operation */
+        uint8_t channel_map[ESP_GAP_BLE_CHANNELS_LEN]; /*!< The BLE channel map, represented as a 5-byte array */
+        esp_bd_addr_t remote_addr;                  /*!< The remote device address */
+    } read_ble_channel_map_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_READ_CHANNEL_MAP_COMPLETE_EVT */
+    /**
      * @brief ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT
      */
     struct ble_update_whitelist_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
         esp_ble_wl_operation_t wl_operation;        /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
     } update_whitelist_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT */
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
      * @brief ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT
      */
@@ -1187,7 +1967,6 @@ typedef union {
         uint16_t         length;                     /*!< The length of device_info */
         esp_duplicate_info_t device_info;           /*!< device information, when subcode is ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_CLEAN, the value is invalid */
     } update_duplicate_exceptional_list_cmpl;       /*!< Event parameter of ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT */
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
      * @brief ESP_GAP_BLE_SET_CHANNELS_EVT
       */
@@ -1217,77 +1996,93 @@ typedef union {
     struct ble_set_perf_phy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate perf phy set status */
     } set_perf_phy;                                 /*!< Event parameter of ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT */
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT
      */
     struct ble_ext_adv_set_rand_addr_cmpl_evt_param {
         esp_bt_status_t status;                      /*!< Indicate extend advertising random address set status */
+        uint8_t instance;                            /*!< extend advertising handle */
     } ext_adv_set_rand_addr;                         /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT
      */
     struct ble_ext_adv_set_params_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate extend advertising parameters set status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_set_params;                           /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT
      */
      struct ble_ext_adv_data_set_cmpl_evt_param {
         esp_bt_status_t status;                      /*!< Indicate extend advertising data set status */
+        uint8_t instance;                            /*!< extend advertising handle */
     } ext_adv_data_set;                              /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT
      */
     struct ble_ext_adv_scan_rsp_set_cmpl_evt_param {
         esp_bt_status_t status;                      /*!< Indicate extend advertising scan response data set status */
+        uint8_t instance;                            /*!< extend advertising handle */
     } scan_rsp_set;                                  /*!< Event parameter of ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT
      */
     struct ble_ext_adv_start_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising start operation success status */
+        uint8_t instance_num;                       /*!< extend advertising handle numble*/
+        uint8_t instance[EXT_ADV_NUM_SETS_MAX];                       /*!< extend advertising handle list*/
     } ext_adv_start;                                /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT
      */
     struct ble_ext_adv_stop_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
+        uint8_t instance_num;                       /*!< extend advertising handle numble*/
+        uint8_t instance[EXT_ADV_NUM_SETS_MAX];                       /*!< extend advertising handle list*/
     } ext_adv_stop;                                 /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_STOP_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_REMOVE_COMPLETE_EVT
      */
     struct ble_ext_adv_set_remove_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_remove;                               /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_REMOVE_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_CLEAR_COMPLETE_EVT
      */
     struct ble_ext_adv_set_clear_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_clear;                                /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_CLEAR_COMPLETE_EVT */
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT
      */
     struct ble_periodic_adv_set_params_cmpl_param {
         esp_bt_status_t status;                    /*!< Indicate periodic advertisingparameters set status */
+        uint8_t instance;                          /*!< extend advertising handle */
     } peroid_adv_set_params;                       /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT
      */
     struct ble_periodic_adv_data_set_cmpl_param {
         esp_bt_status_t status;                    /*!< Indicate periodic advertising data set status */
+        uint8_t instance;                           /*!< extend advertising handle */
     } period_adv_data_set;                         /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT
      */
     struct ble_periodic_adv_start_cmpl_param {
         esp_bt_status_t status;                   /*!< Indicate periodic advertising start status */
+        uint8_t instance;                         /*!< extend advertising handle */
     } period_adv_start;                           /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_START_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_STOP_COMPLETE_EVT
      */
     struct ble_periodic_adv_stop_cmpl_param {
         esp_bt_status_t status;                  /*!< Indicate periodic advertising stop status */
+        uint8_t instance;                        /*!< extend advertising handle */
     } period_adv_stop;                           /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_STOP_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT
@@ -1371,6 +2166,47 @@ typedef union {
         esp_ble_addr_type_t scan_addr_type;  /*!< scanner address type */
         esp_bd_addr_t scan_addr;             /*!< scanner address */
     } scan_req_received;                     /*!< Event parameter of ESP_GAP_BLE_SCAN_REQ_RECEIVED_EVT */
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT
+     */
+    struct ble_monitor_adv_report_param {
+        esp_ble_addr_type_t addr_type;       /*!< address type */
+        esp_bd_addr_t addr;                  /*!< advertiser address */
+        uint8_t condition;                   /*!< RSSI threshold condition (e.g. entered/left range) */
+    } monitor_adv_report;                    /*!< Event parameter of ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_add_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate add monitor advertiser operation success status */
+    } add_monitor_adv;                       /*!< Event parameter of ESP_GAP_BLE_ADD_MONITOR_ADV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_remove_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate remove monitor advertiser operation success status */
+    } remove_monitor_adv;                    /*!< Event parameter of ESP_GAP_BLE_REMOVE_MONITOR_ADV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_clear_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate clear monitor advertiser list operation success status */
+    } clear_monitor_adv;                     /*!< Event parameter of ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT
+     */
+    struct ble_read_monitor_adv_list_size_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read monitor advertiser list size operation success status */
+        uint8_t list_size;                   /*!< Monitor advertiser list capacity */
+    } read_monitor_adv_list_size;            /*!< Event parameter of ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT
+     */
+    struct ble_enable_monitor_adv_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate enable/disable monitor advertising operation success status */
+    } enable_monitor_adv;                    /*!< Event parameter of ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT */
+#endif
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -1388,7 +2224,7 @@ typedef union {
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT
      */
     struct ble_periodic_adv_sync_estab_param {
-        uint8_t status;                      /*!< periodic advertising sync status */
+        esp_bt_status_t status;              /*!< periodic advertising sync status */
         uint16_t sync_handle;                /*!< periodic advertising sync handle */
         uint8_t sid;                         /*!< periodic advertising sid */
         esp_ble_addr_type_t adv_addr_type;   /*!< periodic advertising address type */
@@ -1396,6 +2232,12 @@ typedef union {
         esp_ble_gap_phy_t adv_phy;           /*!< periodic advertising phy type */
         uint16_t period_adv_interval;        /*!< periodic advertising interval */
         uint8_t adv_clk_accuracy;            /*!< periodic advertising clock accuracy */
+#if (CONFIG_BT_BLE_FEAT_PAWR_EN)
+        uint8_t num_subevt;                  /*!< Number of subevents, Range: 0x00 to 0x80 */
+        uint8_t subevt_interval;             /*!< Subevent interval, Time = N × 1.25 ms */
+        uint8_t rsp_slot_delay;              /*!< Response slot delay, Time = N × 1.25 ms */
+        uint8_t rsp_slot_spacing;            /*!< Response slot spacing, Time = N × 0.125 ms */
+#endif // (CONFIG_BT_BLE_FEAT_PAWR_EN)
     } periodic_adv_sync_estab;               /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT */
     /**
      * @brief ESP_GAP_BLE_PHY_UPDATE_COMPLETE_EVT
@@ -1471,6 +2313,588 @@ typedef union {
         esp_ble_dtm_update_evt_t update_evt;        /*!< DTM state change event, 0x00: DTM TX start, 0x01: DTM RX start, 0x02:DTM end */
         uint16_t num_of_pkt;                        /*!< number of packets received, only valid if update_evt is DTM_TEST_STOP_EVT and shall be reported as 0 for a transmitter */
     } dtm_state_update;                             /*!< Event parameter of ESP_GAP_BLE_DTM_TEST_UPDATE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT
+     */
+    struct ble_set_privacy_mode_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
+    } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
+#if (BLE_VENDOR_HCI_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT
+     */
+    struct ble_adv_clear_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate adv clear operation success status */
+    } adv_clear_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT
+     */
+    struct vendor_cmd_cmpl_evt_param {
+        uint16_t        opcode;                     /*!< vendor hci command opcode */
+        uint16_t        param_len;                  /*!< The length of parameter buffer */
+        uint8_t         *p_param_buf;               /*!< The point of parameter buffer */
+    } vendor_cmd_cmpl;                              /*!< Event parameter of ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT
+     */
+    struct ble_set_csa_support_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate CSA support set operation success status */
+    } set_csa_support_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT
+     */
+    struct ble_set_vendor_evt_mask_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate set vendor event mask operation success status */
+    } set_vendor_evt_mask_cmpl;                     /*!< Event parameter of ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_VENDOR_HCI_EVT
+     */
+    struct ble_vendor_hci_event_evt_param {
+        esp_ble_vendor_evt_t subevt_code;           /*!< Subevent code for BLE vendor HCI event */
+        esp_ble_vendor_evt_param_t param;           /*!< Event parameter of BLE vendor HCI subevent */
+        uint8_t param_len;                          /*!< The length of the event parameter buffer (for internal use only) */
+        uint8_t *param_buf;                         /*!< The pointer of the event parameter buffer (for internal use only) */
+    } vendor_hci_evt;                               /*!< Event parameter of ESP_GAP_BLE_VENDOR_HCI_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_COMMON_FACTOR_CMPL_EVT
+     */
+    struct ble_set_common_factor_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate common factor set operation success status */
+    } set_common_factor_cmpl;                       /*!< Event parameter of ESP_GAP_BLE_SET_COMMON_FACTOR_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT
+     */
+    struct ble_set_sch_len_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate scheduling length set operation success status */
+    } set_sch_len_cmpl;                             /*!< Event parameter of ESP_GAP_BLE_SET_SCH_LEN_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT
+     */
+    struct ble_set_scan_chan_map_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate channel map for scanning set operation success status */
+    } set_scan_chan_map_cmpl;                       /*!< Event parameter of ESP_GAP_BLE_SET_SCAN_CHAN_MAP_CMPL_EVT */
+#endif // #if (BLE_VENDOR_HCI_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT
+     */
+    struct ble_enh_read_trans_pwr_level_param {
+        esp_bt_status_t status;               /*!< Indicate enhance reading transmit power level complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;                 /*!< Connection_Handle */
+        uint8_t phy;                          /*!< 1M, 2M, Coded S2 or Coded S8 phy
+                                                   0x01: LE 1M PHY
+                                                   0x02: LE 2M PHY
+                                                   0x03: LE Coded PHY with S=8 data coding
+                                                   0x04: LE Coded PHY with S=2 data coding
+                                                */
+        int8_t cur_tx_pwr_level;              /*!< Current transmit power level, Range: -127 to 20, Units: dBm */
+        int8_t max_tx_pwr_level;              /*!< Maximum transmit power level, Range: -127 to 20, Units: dBm */
+    } enh_trans_pwr_level_cmpl;               /*!< Event parameter of ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT
+     */
+    struct ble_read_remote_trans_pwr_level_param {
+        esp_bt_status_t status;              /*!< Indicate reading remote transmit power level complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+    } read_remote_trans_pwr_level_cmpl;      /*!< Event parameter of ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT
+     */
+    struct ble_set_path_loss_rpting_param {
+        esp_bt_status_t status;            /*!< Indicate setting path loss reporting paramwters complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;              /*!< The ACL connection identifier */
+    } set_path_loss_rpting_params;         /*!< Event parameter of ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT
+     */
+    struct ble_set_path_loss_rpting_enable {
+        esp_bt_status_t status;           /*!< Indicate setting path loss reporting enable complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;             /*!< The ACL connection identifier */
+    } set_path_loss_rpting_enable;       /*!< Event parameter of ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT
+     */
+    struct ble_set_trans_pwr_rpting_enable {
+        esp_bt_status_t status;        /*!< Indicate setting transmit power reporting enable complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;          /*!< The ACL connection identifier */
+    } set_trans_pwr_rpting_enable;     /*!< Event parameter of ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT
+     */
+    struct ble_path_loss_thres_evt {
+        uint16_t conn_handle;         /*!< The ACL connection identifier */
+        uint8_t cur_path_loss;        /*!< Current path loss (always zero or positive), Units: dB */
+        esp_ble_path_loss_zone_t zone_entered; /*!< which zone was entered. If cur_path_loss is set to 0xFF then zone_entered shall be ignored */
+    } path_loss_thres_evt;            /*!< Event parameter of ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT */
+    /**
+     * @brief ESP_GAP_BLE_TRANS_PWR_RPTING_EVT
+     */
+    struct ble_trans_power_report_evt {
+        esp_bt_status_t status;      /*!< Indicate esp_ble_gap_read_remote_transmit_power_level() command success, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;        /*!< The ACL connection identifier */
+        uint8_t reason;              /*!< indicate why the event was sent and the device whose transmit power level is being reported
+                                          0x00: Local transmit power changed
+                                          0x01: Remote transmit power changed
+                                          0x02: esp_ble_gap_read_remote_transmit_power_level() command completed,
+                                          In this case, the phy, tx_power_level, tx_power_level_flag and delta parameters shall refer to the remote device */
+        esp_ble_tx_power_phy_t phy; /*!< 1M, 2M, Coded S2 or Coded S8 phy
+                                          0x01: LE 1M PHY
+                                          0x02: LE 2M PHY
+                                          0x03: LE Coded PHY with S=8 data coding
+                                          0x04: LE Coded PHY with S=2 data coding */
+        int8_t tx_power_level;      /*!< Transmit power level, range: -127 to 20, units: dBm
+                                          0x7E: Remote device is not managing power levels on this PHY
+                                          0x7F: Transmit power level is not available */
+        uint8_t tx_power_level_flag; /*!< whether the transmit power level that is being reported has reached its minimum and/or maximum level */
+        int8_t delta;                /*!< Change in transmit power level (positive indicates increased power, negative indicates decreased power, zero indicates unchanged) Units: dB.
+                                          0x7F: Change is not available or is out of range */
+    } trans_power_report_evt;        /*!< Event parameter of ESP_GAP_BLE_TRANS_PWR_RPTING_EVT */
+
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT
+     */
+    struct ble_default_subrate_evt {
+        esp_bt_status_t status;       /*!< Indicate setting default subrate command success, status = (controller error code | 0x100) if status is not equal to 0 */
+    } set_default_subrate_evt;        /*!< Event parameter of ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT
+     */
+    struct ble_subrate_request_evt {
+        esp_bt_status_t status;              /*!< Indicate subrate request command success, status = (controller error code | 0x100) if status is not equal to 0 */
+    } subrate_req_cmpl_evt;          /*!< Event parameter of ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SUBRATE_CHANGE_EVT
+     */
+    struct ble_subrate_change_evt {
+        esp_bt_status_t status;       /*!< command succeeded or this event was generated following a request from the peer device. status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;         /*!< connection handle */
+        uint16_t subrate_factor;      /*!< New subrate factor applied to the specified underlying connection interval, range 0x0001 to 0x01F4 */
+        uint16_t peripheral_latency;  /*!< New Peripheral latency for the connection in number of subrated connection events, range: 0x0000 to 0x01F3 */
+        uint16_t continuation_number; /*!< Number of underlying connection events to remain active after a packet containing a Link Layer PDU with a non-zero Length field is sent or received, range: 0x0000 to 0x01F3 */
+        uint16_t supervision_timeout; /*!< New supervision timeout for this connection(Time = N × 10 ms). Range: 0x000A to 0x0C80, Time Range: 100 ms to 32 s */
+    } subrate_change_evt;             /*!< Event parameter of ESP_GAP_BLE_SUBRATE_CHANGE_EVT */
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT
+     */
+    struct ble_set_host_feature_evt_param {
+        esp_bt_status_t status; /*!< Indicate host feature update success status */
+    } host_feature;     /*!< Event parameter of ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT */
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
+     */
+    struct ble_pa_subevt_data_evt {
+        esp_bt_status_t status; /*!< Indicate periodic adv subevent data update success status */
+        uint8_t adv_handle;     /*!< Used to identify a periodic advertising train */
+    } pa_subevt_data_evt;        /*!< Event parameter of ESP_GAP_BLE_SET_PERIODIC_ADV_SUBEVT_DATA_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PERIODIC_ADV_RESPONSE_DATA_EVT
+     */
+    struct ble_pa_rsp_data_evt {
+        esp_bt_status_t status; /*!< Indicate periodic adv response data update success status */
+        uint16_t sync_handle;   /*!< identifying the periodic advertising train */
+    } pa_rsp_data_evt;          /*!< Event parameter of ESP_GAP_BLE_SET_PERIODIC_ADV_RESPONSE_DATA_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PERIODIC_SYNC_SUBEVT_EVT
+     */
+    struct ble_pa_sync_subevt_evt {
+        esp_bt_status_t status;  /*!< Indicate periodic sync subevent update success status */
+        uint16_t sync_handle;    /*!< identifying the periodic advertising train */
+    } pa_sync_subevt_evt;        /*!< Event parameter of ESP_GAP_BLE_SET_PERIODIC_SYNC_SUBEVT_EVT */
+    /**
+     * @brief ESP_GAP_BLE_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT
+     */
+    struct ble_pa_subevt_data_req_evt {
+        uint8_t adv_handle;        /*!< Used to identify a periodic advertising train */
+        uint8_t subevt_start;      /*!< The first subevent that data is requested for.*/
+        uint8_t subevt_data_count; /*!< The number of subevents that data is requested for.*/
+    } pa_subevt_data_req_evt;      /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT */
+    /**
+     * @brief ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT
+     */
+    struct ble_pa_rsp_rpt_evt {
+        uint8_t adv_handle; /*!< Used to identify a periodic advertising train */
+        uint8_t subevt;     /*!< The subevent number */
+        uint8_t tx_status;  /*!<
+                                0x00 AUX_SYNC_SUBEVENT_IND packet was transmitted.
+                                0x01 AUX_SYNC_SUBEVENT_IND packet was not transmitted.*/
+        uint8_t num_rsp;    /*!< Number of responses in event */
+        esp_ble_pa_rsp_info *pa_rsp_info; /*!< response information */
+    } pa_rsp_rpt_evt;       /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_RESPONSE_REPORT_EVT */
+#endif // #if (CONFIG_BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT
+     */
+    struct ble_cs_read_local_supp_caps_evt {
+        esp_bt_status_t status;                  /*!< Indicate channel sounding read local supported capabilities command successfully completed */
+        uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
+        uint16_t max_consecutive_proc_supported; /*!< 0x0000: Support for both a fixed number of consecutive CS procedures and for an indefinite number of CS procedures until termination
+                                                    0x0001 to 0xFFFF: Maximum number of consecutive CS procedures supported */
+        uint8_t num_ant_supported;               /*!< Number of antennas supported */
+        uint8_t max_ant_paths_supported;         /*!< Maximum number of antenna paths supported */
+        uint8_t roles_supported;                 /*!< bit 0: Initiator
+                                                      bit 1: Reflector
+                                                    */
+        uint8_t modes_supported;                 /*!< bit 0: Mode-3*/
+        uint8_t rtt_capability;                  /*!< time-of-flight precision requirement */
+        uint8_t rtt_aa_only_n;                   /*!< 0x00: RTT AA Only not supported
+                                                      0x01 to 0xFF: Number of CS steps of single packet exchanges needed to satisfy the precision requirements */
+        uint8_t rtt_sounding_n;                  /*!< 0x00: RTT Sounding not supported
+                                                      0x01 to 0xFF: Number of CS steps of single packet exchanges needed to satisfy the precision requirements */
+        uint8_t rtt_random_payload_n;            /*!< 0x00: RTT Random Payload not supported
+                                                      0x01 to 0xFF: Number of CS steps of single packet exchanges needed to satisfy the precision requirements */
+        uint16_t NADM_sounding_capability;       /*!< bit 0: Support for Phase-based Normalized Attack Detector Metric when a CS_SYNC with sounding sequence is received */
+        uint16_t NADM_random_capability;         /*!< bit 0: Support for Phase-based Normalized Attack Detector Metric when a CS_SYNC with random sequence is received */
+        uint8_t  cs_sync_phys_supported;         /*!< bit 1: LE 2M PHY
+                                                      bit 2: LE 2M 2BT PHY
+                                                    */
+        uint16_t subfeatures_supported;          /*!< bit 1: CS with no transmitter Frequency Actuation Error
+                                                      bit 2: CS Channel Selection Algorithm #3c
+                                                      bit 3: CS phase-based ranging from RTT sounding sequence
+                                                    */
+        uint16_t T_IP1_times_supported;          /*!< bit 0: 10 μs supported
+                                                      bit 1: 20 μs supported
+                                                      bit 2: 30 μs supported
+                                                      bit 3: 40 μs supported
+                                                      bit 4: 50 μs supported
+                                                      bit 5: 60 μs supported
+                                                      bit 6: 80 μs supported
+                                                    */
+        uint16_t T_IP2_times_supported;          /*!< bit 0: 10 μs supported
+                                                      bit 1: 20 μs supported
+                                                      bit 2: 30 μs supported
+                                                      bit 3: 40 μs supported
+                                                      bit 4: 50 μs supported
+                                                      bit 5: 60 μs supported
+                                                      bit 6: 80 μs supported
+                                                    */
+        uint16_t T_FCS_times_supported;          /*!< bit 0: 15 μs supported
+                                                      bit 1: 20 μs supported
+                                                      bit 2: 30 μs supported
+                                                      bit 3: 40 μs supported
+                                                      bit 4: 50 μs supported
+                                                      bit 5: 60 μs supported
+                                                      bit 6: 80 μs supported
+                                                      bit 7: 100 μs supported
+                                                      bit 8: 120 μs supported */
+        uint16_t T_PM_times_supported;           /*!< bit 0: 10 μs supported
+                                                      bit 1: 20 μs supported
+                                                    */
+        uint8_t T_SW_times_supported;            /*!< 0x00, 0x01, 0x02, 0x04, or 0x0A: Time in microseconds for the antenna switch period of the CS tones */
+        uint8_t TX_SNR_capability;               /*!< bit 0: 18 dB supported
+                                                      bit 1: 21 dB supported
+                                                      bit 2: 24 dB supported
+                                                      bit 3: 27 dB supported
+                                                      bit 4: 30 dB supported
+                                                    */
+    } cs_read_local_supp_caps; /*!< Event parameter of ESP_GAP_BLE_CS_READ_LOCAL_SUPP_CAPS_EVT */
+     /**
+     * @brief ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT
+     */
+    struct ble_cs_read_remote_supp_caps {
+        esp_bt_status_t status;                  /*!< 0x00: Channel sounding read remote supported capabilities command successfully completed
+                                                      other: Channel sounding read remote supported capabilities command failed */
+        uint16_t conn_handle;                    /*!< Connection Handle */
+        uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
+        uint16_t max_consecutive_proc_supported; /*!< Maximum number of consecutive CS procedures supported */
+        uint8_t num_ant_supported;               /*!< Number of antennas supported */
+        uint8_t max_ant_paths_supported;         /*!< Maximum number of antenna paths supported */
+        uint8_t roles_supported;                 /*!< bit 0: Initiator
+                                                      bit 1: Reflector */
+        uint8_t modes_supported;                 /*!< bit 0: Mode-3 */
+        uint8_t rtt_capability;                  /*!< Time-of-flight precision requirement */
+        uint8_t rtt_aa_only_n;                   /*!< Number of CS steps of single packet exchanges needed to satisfy the precision requirements */
+        uint8_t rtt_sounding_n;                  /*!< Number of CS steps of single packet exchanges needed to satisfy the precision requirements */
+        uint8_t rtt_random_payload_n;            /*!< Number of CS steps of single packet exchanges needed to satisfy the precision requirements */
+        uint16_t NADM_sounding_capability;       /*!< bit 0: Support for Phase-based Normalized Attack Detector Metric when a CS_SYNC with sounding sequence is received */
+        uint16_t NADM_random_capability;         /*!< bit 0: Support for Phase-based Normalized Attack Detector Metric when a CS_SYNC with random sequence is received*/
+        uint8_t  cs_sync_phys_supported;         /*!< bit 1: LE 2M PHY
+                                                      bit 2: LE 2M 2BT PHY */
+        uint16_t subfeatures_supported;          /*!< bit 1: CS with no transmitter Frequency Actuation Error
+                                                      bit 2: CS Channel Selection Algorithm #3c
+                                                      bit 3: CS phase-based ranging from RTT sounding sequence
+                                                    */
+        uint16_t T_IP1_times_supported;          /*!< bit 0: 10 μs supported
+                                                      bit 1: 20 μs supported
+                                                      bit 2: 30 μs supported
+                                                      bit 3: 40 μs supported
+                                                      bit 4: 50 μs supported
+                                                      bit 5: 60 μs supported
+                                                      bit 6: 80 μs supported
+                                                    */
+        uint16_t T_IP2_times_supported;          /*!< bit 0: 10 μs supported
+                                                      bit 1: 20 μs supported
+                                                      bit 2: 30 μs supported
+                                                      bit 3: 40 μs supported
+                                                      bit 4: 50 μs supported
+                                                      bit 5: 60 μs supported
+                                                      bit 6: 80 μs supported
+                                                    */
+        uint16_t T_FCS_times_supported;          /*!< bit 0: 15 μs supported
+                                                      bit 1: 20 μs supported
+                                                      bit 2: 30 μs supported
+                                                      bit 3: 40 μs supported
+                                                      bit 4: 50 μs supported
+                                                      bit 5: 60 μs supported
+                                                      bit 6: 80 μs supported
+                                                      bit 7: 100 μs supported
+                                                      bit 8: 120 μs supported
+                                                    */
+        uint16_t T_PM_times_supported;           /*!< bit 0: 10 μs supported
+                                                      bit 1: 20 μs supported
+                                                    */
+        uint8_t T_SW_times_supported;            /*!< 0x00, 0x01, 0x02, 0x04, or 0x0A: Time in microseconds for the antenna switch period of the CS tones */
+        uint8_t TX_SNR_capability;               /*!< bit 0: 18 dB supported
+                                                      bit 1: 21 dB supported
+                                                      bit 2: 24 dB supported
+                                                      bit 3: 27 dB supported
+                                                      bit 4: 30 dB supported
+                                                    */
+    } cs_read_remote_supp_caps; /*!< Event parameter of ESP_GAP_BLE_CS_READ_REMOTE_SUPP_CAPS_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT
+     */
+    struct ble_cs_write_cached_remote_supp_caps {
+        esp_bt_status_t status; /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
+                                     0x01: Channel sounding write cached remote FAE table command failed */
+        uint16_t conn_handle;   /*!< Connection Handle */
+    } cs_write_cached_remote_supp_caps; /*!< Event parameter of ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_SUPP_CAPS_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT
+     */
+    struct ble_cs_security_enable {
+        esp_bt_status_t status; /*!< 0x00: Channel sounding security parameters successfully exchanged
+                                               other: Channel sounding CS security parameter exchange failed */
+        uint16_t conn_handle;   /*!< Connection Handle */
+    } cs_security_enable; /*!< Event parameter of ESP_GAP_BLE_CS_SECURITY_ENABLE_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT
+     */
+    struct ble_cs_set_default_settings {
+        esp_bt_status_t status;         /*!< 0x00: Channel sounding set default settings command successfully completed
+                                               other: Channel sounding set default settings command failed*/
+        uint16_t conn_handle;           /*!< Connection Handle */
+    } cs_set_default_settings; /*!< Event parameter of ESP_GAP_BLE_CS_SET_DEFAULT_SETTINGS_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT
+     */
+    struct ble_cs_read_remote_fae_tab {
+        esp_bt_status_t status;           /*!< 0x00: Channel sounding read remote FAE Table command successfully completed
+                                               other: Channel sounding read remote FAE Table command failed*/
+        uint16_t conn_handle;             /*!< Connection Handle */
+        uint8_t remote_fae_table[72];     /*!< Per-channel mode-0 Frequency Actuation Error table of the remote Controller */
+    } cs_read_remote_fae_tab; /*!< Event parameter of ESP_GAP_BLE_CS_READ_REMOTE_FAE_TABLE_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT
+     */
+    struct ble_cs_write_cached_remote_fae_tab {
+        esp_bt_status_t status;          /*!< 0x00: Channel sounding write cached remote FAE table command succeeded
+                                              other: Channel sounding write cached remote FAE table command failed */
+        uint16_t conn_handle;            /*!< Connection Handle */
+    } cs_write_cached_remote_fae_tab; /*!< Event parameter of ESP_GAP_BLE_CS_WRITE_CACHED_REMOTE_FAE_TABLE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_CONFIG_CMPL_EVT
+     */
+    struct ble_cs_config_udpate {
+        esp_bt_status_t status;       /*!< 0x00: Channel Sounding Configuration procedure succeeded
+                                         other: Channel Sounding Configuration procedure failed */
+        uint16_t conn_handle;         /*!< Connection Handle */
+        uint8_t config_id;            /*!< CS configuration identifier */
+        uint8_t action;               /*!< 0x00: CS configuration is removed
+                                           0x01: CS configuration is created */
+        uint8_t main_mode_type;       /*!< 0x01: Mode-1
+                                           0x02: Mode-2
+                                           0x03: Mode-3
+                                        */
+        uint8_t sub_mode_type;        /*!< 0x01: Mode-1
+                                           0x02: Mode-2
+                                           0x03: Mode-3
+                                           0xFF: Unused
+                                        */
+        uint8_t min_main_mode_steps;  /*!< Minimum number of CS main mode steps to be executed before a submode step is executed */
+        uint8_t max_main_mode_steps;  /*!< Maximum number of CS main mode steps to be executed before a submode step is executed */
+        uint8_t main_mode_repetition; /*!< Number of main mode steps taken from the end of the last CS subevent to be repeated at
+                                           the beginning of the current CS subevent directly after the last mode-0 step of that event
+                                        */
+        uint8_t mode_0_steps;         /*!< Number of CS mode-0 steps to be included at the beginning of each CS subevent */
+        uint8_t role;                 /*!< 0x00: Initiator
+                                           0x01: Reflector
+                                        */
+        uint8_t rtt_type;             /*!< 0x00: RTT AA Only
+                                           0x01: RTT with 32-bit sounding sequence
+                                           0x02: RTT with 96-bit sounding sequence
+                                           0x03: RTT with 32-bit random sequence
+                                           0x04: RTT with 64-bit random sequence
+                                           0x05: RTT with 96-bit random sequence
+                                           0x06: RTT with 128-bit random sequence
+                                        */
+        uint8_t cs_sync_phy;          /*!< 0x01: LE 1M PHY
+                                           0x02: LE 2M PHY
+                                           0x03: LE 2M 2BT PHY
+                                        */
+        uint8_t channel_map[ESP_BLE_CS_CHAN_MAP_LEN];  /*!< This parameter contains 80 1-bit fields.
+                                                            The nth such field (in the range 0 to 78) contains the value for the CS channel index n.
+                                                            Channel n is enabled for CS procedure = 1
+                                                            Channel n is disabled for CS procedure = 0
+                                                            Channels n = 0, 1, 23, 24, 25, 77, and 78 shall be ignored and shall be set to zero. At least 15 channels shall be enabled.
+                                                            The most significant bit (bit 79) is reserved for future use.
+                                                        */
+        uint8_t channel_map_repetition; /*!< The number of times the Channel_Map field will be cycled through for non-mode-0 steps within a CS procedure*/
+        uint8_t channel_selection_type; /*!< 0x00: Use Channel Selection Algorithm #3b for non-mode-0 CS steps
+                                             0x01: Use Channel Selection Algorithm #3c for non-mode-0 CS steps
+                                            */
+        uint8_t ch3c_shape;             /*!< 0x00: Use Hat shape for user-specified channel sequence
+                                             0x01: Use X shape for user-specified channel sequence
+                                            */
+        uint8_t ch3c_jump;              /*!< Number of channels skipped in each rising and falling sequence */
+        uint8_t reserved;               /*!< Reserved, shall be set to 0x00 */
+        uint8_t t_ip1_time;             /*!< 0x0A, 0x14, 0x1E, 0x28, 0x32, 0x3C, 0x50, or 0x91: Interlude time in microseconds between the RTT packets */
+        uint8_t t_ip2_time;             /*!< 0x0A, 0x14, 0x1E, 0x28, 0x32, 0x3C, 0x50, or 0x91: nterlude time in microseconds between the CS tones */
+        uint8_t t_fcs_time;             /*!< 0x0F, 0x14, 0x1E, 0x28, 0x32, 0x3C, 0x50, 0x64, 0x78, or 0x96: Time in microseconds for frequency changes */
+        uint8_t t_pm_time;              /*!< 0x0A, 0x14, or 0x28: Time in microseconds for the phase measurement period of the CS tones */
+    } cs_config_update; /*!< Event parameter of ESP_GAP_BLE_CS_CONFIG_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT
+     */
+    struct ble_cs_set_proc_params {
+        esp_bt_status_t status; /*!< 0x00: Channel sounding set procedure_Parameters command successful
+                                     other: Channel sounding set procedure_Parameters command failed */
+        uint16_t conn_handle;   /*!< Connection Handle */
+    } cs_set_proc_params; /*!< Event parameter of ESP_GAP_BLE_CS_SET_PROC_PARAMS_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT
+     */
+    struct ble_cs_set_channel_class {
+        esp_bt_status_t status; /*!< 0x00: Channel sounding set channel classification command successful
+                                    other: Channel sounding set channel classification command failed */
+    } cs_set_channel_class; /*!< Event parameter of ESP_GAP_BLE_CS_SET_CHANNEL_CLASS_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT
+     */
+    struct ble_cs_proc_enable {
+        esp_bt_status_t status;         /*!< 0x00: Channel sounding procedure enable command successful
+                                            other: Channel sounding procedure enable command failed */
+        uint16_t conn_handle;           /*!< Connection Handle */
+        uint8_t config_id;              /*!< CS configuration identifier */
+        uint8_t state;                  /*!< 0x00: CS procedures are disabled
+                                             0x01: CS procedures are enabled
+                                          */
+        uint8_t tone_ant_config_select; /*!< Antenna Configuration Index. Range:0x00 to 0x07*/
+        int8_t select_tx_power;         /*!< Transmit power level used for CS procedure. Range: -127 to 20. Units: dBm */
+        uint32_t subevent_Len;          /*!< Duration for each CS subevent in microseconds. Range: 1250 μs to 4 s */
+        uint8_t subevents_per_event;    /*!< Number of CS subevents anchored off the same ACL connection event. Range: 0x01 to 0x20 */
+        uint16_t subevent_interval;     /*!< Time between consecutive CS subevents anchored off the same ACL connection event. Units: 0.625 ms */
+        uint16_t event_interval;        /*!< Number of ACL connection events between consecutive CS event anchor points */
+        uint16_t procedure_interval;    /*!< Number of ACL connection events between consecutive CS procedure anchor points */
+        uint16_t procedure_count;       /*!< 0x0000: CS procedures to continue until disabled
+                                             other: Number of CS procedures to be scheduled */
+        uint16_t max_procedure_len;     /*!< Maximum duration for each CS procedure. Range: 0x0001 to 0xFFFF. Time = N × 0.625 ms. Time range: 0.625 ms to 40.959375 s */
+    } cs_proc_enable; /*!< Event parameter of ESP_GAP_BLE_CS_PROC_ENABLE_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT
+     */
+    struct ble_cs_subevt_result {
+        uint16_t conn_handle;                  /*!< 0x0000 to 0x0EFF: Connection Handle
+                                                    0x0FFF: CS test
+                                                 */
+        uint8_t config_id;                     /*!< CS configuration identifier. Range: 0 to 3 */
+        uint16_t start_acl_conn_event_counter; /*!< Starting ACL connection event counter for the results reported in the event */
+        uint16_t procedure_counter;            /*!< CS procedure count since completion of the Channel Sounding Security Start procedure. Range: 0x0000 to 0xFFFF */
+        int16_t frequency_compensation;        /*!< 0xC000: Frequency compensation value is not available, or the role is not initiator
+                                                    other: Frequency compensation value in units of 0.01 ppm (15-bit signed integer). Range: -100 ppm (0x58F0) to +100 ppm (0x2710). Units: 0.01 ppm */
+        int8_t reference_power_level;          /*!< 0x7F: Reference power level is not applicable
+                                                    other: Reference power level. Range: -127 to 20. Units: dBm */
+        uint8_t procedure_done_status;         /*!< bit 0 to 3:
+                                                        0x0 = All results complete for the CS procedure
+                                                        0x1 = Partial results with more to follow for the CS procedure
+                                                        0xF = All subsequent CS procedures aborted
+                                                        All other values = Reserved for future use
+                                                    bit 4 to 7:
+                                                        Reserved for future use
+                                                  */
+        uint8_t subevent_done_status;          /*!< bit 0 to 3:
+                                                        0x0 = All results complete for the CS subevent
+                                                        0x1 = Partial results with more to follow for the CS subevent
+                                                        0xF = Current CS subevent aborted
+                                                        All other values = Reserved for future use
+                                                    bit 4 to 7:
+                                                        Reserved for future use
+                                                  */
+        uint8_t abort_reason;                  /*!< bit 0 to 3:
+                                                        Indicates the abort reason when Procedure_Done_Status is set to 0xF, otherwise the default value is set to zero.
+                                                        0x0 = Report with no abort
+                                                        0x1 = Abort because of local Host or remote request
+                                                        0x2 = Abort because filtered channel map has less than 15 channels
+                                                        0x3 = Abort because the channel map update instant has passed
+                                                        0xF = Abort because of unspecified reasons
+                                                        All other values = Reserved for future use
+                                                    bit 4 to 7:
+                                                        Indicates the abort reason when Subevent_Done_Status is set to 0xF, otherwise the default value is set to zero.
+                                                        0x0 = Report with no abort
+                                                        0x1 = Abort because of local Host or remote request
+                                                        0x2 = Abort because no CS_SYNC (mode-0) received
+                                                        0x3 = Abort because of scheduling conflicts or limited resources
+                                                        0xF = Abort because of unspecified reasons
+                                                        All other values = Reserved for future use
+                                                */
+        uint8_t num_ant_paths;                 /*!< 0x00: Ignored because phase measurement does not occur during the CS step
+                                                    0x01 to 0x04: Number of antenna paths used during the phase measurement stage of the CS step */
+        uint8_t num_steps_reported;            /*!< 0x00 to 0xA0: Number of steps in the CS subevent for which results are reported */
+        esp_ble_cs_step_info *step_info;       /*!< steps information in the CS subevent */
+    } cs_subevt_result; /*!< Event parameter of ESP_GAP_BLE_CS_SUBEVENT_RESULT_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT
+     */
+    struct ble_cs_subevt_result_continue {
+        uint16_t conn_handle;            /*!< 0x0000 to 0x0EFF: Connection Handle
+                                              0x0FFF: CS test
+                                            */
+        uint8_t config_id;               /*!< CS configuration identifier. Range: 0 to 3 */
+        uint8_t proc_done_status;        /*!< bit 0 to 3:
+                                                0x0 = All results complete for the CS procedure
+                                                0x1 = Partial results with more to follow for the CS procedure
+                                                0xF = All subsequent CS procedures aborted
+                                                All other values = Reserved for future use
+                                              bit 4 to 7:
+                                                Reserved for future use
+                                            */
+        uint8_t subevt_done_status;      /*!< bit 0 to 3:
+                                                0x0 = All results complete for the CS subevent
+                                                0x1 = Partial results with more to follow for the CS subevent
+                                                0xF = Current CS subevent aborted
+                                                All other values = Reserved for future use
+                                            bit 4 to 7:
+                                                Reserved for future use
+                                            */
+        uint8_t abort_reason;            /*!< bit 0 to 3:
+                                                Indicates the abort reason when Procedure_Done_Status is set to 0xF, otherwise the default value is set to zero.
+                                                0x0 = Report with no abort
+                                                0x1 = Abort because of local Host or remote request
+                                                0x2 = Abort because filtered channel map has less than 15 channels
+                                                0x3 = Abort because the channel map update instant has passed
+                                                0xF = Abort because of unspecified reasons
+                                                All other values = Reserved for future use
+                                              bit 4 to 7:
+                                                Indicates the abort reason when Subevent_Done_Status is set to 0xF, otherwise the default value is set to zero.
+                                                0x0 = Report with no abort
+                                                0x1 = Abort because of local Host or remote request
+                                                0x2 = Abort because no CS_SYNC (mode-0) received
+                                                0x3 = Abort because of scheduling conflicts or limited resources
+                                                0xF = Abort because of unspecified reasons
+                                                All other values = Reserved for future use
+                                            */
+        uint8_t num_ant_paths;           /*!< 0x00: Ignored because phase measurement does not occur during the CS step
+                                              0x01 to 0x04: Number of antenna paths used during the phase measurement stage of the CS step
+                                            */
+        uint8_t num_steps_reported;      /*!< Number of steps in the CS subevent for which results are reported, Range: 0x00 to 0xA0 */
+        esp_ble_cs_step_info *step_info; /*!< steps information in the CS subevent */
+    } cs_subevt_result_continue; /*!< Event parameter of ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT */
+#endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -1484,6 +2908,12 @@ typedef void (* esp_gap_ble_cb_t)(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
  * @brief           This function is called to occur gap event, such as scan result
  *
  * @param[in]       callback: callback function
+ *
+ * @note            Do NOT perform time-consuming operations in the callback. Time-consuming operations
+ *                  include: taking semaphores that may block for a long time (e.g. xSemaphoreTake with
+ *                  long timeout or portMAX_DELAY), blocking delays (e.g. vTaskDelay), and flash
+ *                  read/write/erase. Such operations may block the Bluetooth stack and lead to
+ *                  instability or deadlock. Defer heavy work to a separate task if needed.
  *
  * @return
  *                  - ESP_OK : success
@@ -1535,7 +2965,8 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params);
 /**
  * @brief           This procedure keep the device scanning the peer device which advertising on the air
  *
- * @param[in]       duration: Keeping the scanning time, the unit is second.
+ * @param[in]       duration: The scanning duration in seconds.
+ *                            Set to 0 for continuous scanning until explicitly stopped.
  *
  * @return
  *                  - ESP_OK : success
@@ -1608,13 +3039,13 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  * @param[in]       rand_addr: The address to be configured. Refer to the table below for possible address subtypes:
  *
- *               | address [47:46] | Address Type             |
- *               |-----------------|--------------------------|
- *               |      0b00       | Non-Resolvable Private   |
- *               |                 | Address                  |
- *               |-----------------|--------------------------|
- *               |      0b11       | Static Random Address    |
- *               |-----------------|--------------------------|
+ *               | address [47:46] | Address Type                | Corresponding API                      |
+ *               |-----------------|-----------------------------|----------------------------------------|
+ *               |      0b00       | Non-Resolvable Private      | esp_ble_gap_addr_create_nrpa           |
+ *               |                 | Address (NRPA)              |                                        |
+ *               |-----------------|-----------------------------|----------------------------------------|
+ *               |      0b11       | Static Random Address       | esp_ble_gap_addr_create_static         |
+ *               |-----------------|-----------------------------|----------------------------------------|
  *
  * @return
  *                  - ESP_OK : success
@@ -1624,7 +3055,67 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
 
 /**
+ * @brief           Create a static device address
+ * @param[out]      rand_addr: Pointer to the buffer where the static device address will be stored.
+ * @return          - ESP_OK : Success
+ *                  - Other  : Failed
+ */
+esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           Create a non-resolvable private address (NRPA)
+ * @param[out]      rand_addr: Pointer to the buffer where the NRPA will be stored.
+ * @return          - ESP_OK : Success
+ *                  - Other  : Failed
+ */
+esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           This function sets the length of time the Controller uses a Resolvable Private Address
+ *                  before generating and starting to use a new resolvable private address.
+ *
+ * @note            Note: This function is currently not supported on the ESP32 but will be enabled in a future update.
+ *
+ * @param[in]       rpa_timeout: The timeout duration in seconds for how long a Resolvable Private Address
+ *                  is used before a new one is generated. The value must be within the range specified by
+ *                  the Bluetooth specification (0x0001 to 0x0E10), which corresponds to a time range of
+ *                  1 second to 1 hour. The default value is 0x0384 (900 seconds or 15 minutes).
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeout);
+
+
+/**
+ * @brief           This function adds a device to the resolving list used to generate and resolve Resolvable Private Addresses
+ *                  in the Controller.
+ *
+ * @note            Note: This function shall not be used when address resolution is enabled in the Controller and:
+ *                      - Advertising (other than periodic advertising) is enabled,
+ *                      - Scanning is enabled, or
+ *                      - an HCI_LE_Create_Connection, HCI_LE_Extended_Create_Connection, or HCI_LE_Periodic_Advertising_Create_Sync command is pending.
+ *                  This command may be used at any time when address resolution is disabled in the Controller.
+ *                  The added device shall be set to Network Privacy mode.
+ *
+ * @param[in]       peer_addr: The peer identity address of the device to be added to the resolving list.
+ * @param[in]       addr_type: The address type of the peer identity address (BLE_ADDR_TYPE_PUBLIC or BLE_ADDR_TYPE_RANDOM).
+ * @param[in]       peer_irk: The Identity Resolving Key (IRK) of the device.
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint8_t addr_type, uint8_t *peer_irk);
+
+/**
  * @brief           This function clears the random address for the application
+ *
+ * @note            This function shall not be used when:
+ *                  - Advertising is enabled,
+ *                  - Scanning is enabled, or
+ *                  - any LE connection exists / a create connection command is pending.
  *
  * @return
  *                  - ESP_OK : success
@@ -1632,8 +3123,6 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
  *
  */
 esp_err_t esp_ble_gap_clear_rand_addr(void);
-
-
 
 /**
  * @brief           Enable/disable privacy (including address resolution) on the local device
@@ -1648,15 +3137,19 @@ esp_err_t esp_ble_gap_clear_rand_addr(void);
 esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
 
 /**
- * @brief           set local gap appearance icon
+ * @brief           Set the local GAP appearance icon.
  *
+ * @note            This API does not restrict the input icon value.
+ *                  If an undefined or incorrect icon value is used, the device icon may not display properly.
  *
- * @param[in]       icon   - External appearance value, these values are defined by the Bluetooth SIG, please refer to
+ *                  For a complete list of valid appearance values, please refer to "2.6.2 Appearance Category ranges" at:
  *                  https://www.bluetooth.com/specifications/assigned-numbers/
  *
+ * @param[in]       icon   - External appearance value (16-bit), as defined by the Bluetooth SIG.
+ *
  * @return
- *                  - ESP_OK : success
- *                  - other  : failed
+ *                  - ESP_OK   : Success
+ *                  - ESP_FAIL : Internal failure
  *
  */
 esp_err_t esp_ble_gap_config_local_icon (uint16_t icon);
@@ -1686,6 +3179,7 @@ esp_err_t esp_ble_gap_clear_whitelist(void);
 
 /**
 * @brief            Get the whitelist size in the controller
+*                   Note: This API returns a constant value indicating the maximum number of whitelists supported by the controller
 *
 * @param[out]       length: the white list length.
 * @return
@@ -1726,7 +3220,7 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gap_set_device_name(const char *name) __attribute__((deprecated("Please use esp_bt_dev_set_device_name")));
+esp_err_t esp_ble_gap_set_device_name(const char *name);
 
 /**
  * @brief           Get device name of the local device
@@ -1736,7 +3230,26 @@ esp_err_t esp_ble_gap_set_device_name(const char *name) __attribute__((deprecate
  *                  - other  : failed
  *
  */
-esp_err_t esp_ble_gap_get_device_name(void) __attribute__((deprecated("Please use esp_bt_dev_get_device_name")));
+esp_err_t esp_ble_gap_get_device_name(void);
+
+#if defined(CONFIG_BT_GATTS_KEY_MATERIAL_CHAR) && CONFIG_BT_GATTS_KEY_MATERIAL_CHAR
+/**
+ * @brief          Set the Encrypted Data Key Material in GAP service
+ *
+ *                 This function sets the session key and IV that will be exposed
+ *                 through the Key Material characteristic (UUID 0x2B88) in the GAP service.
+ *                 The Key Material allows central devices to decrypt encrypted advertising data.
+ *
+ * @param[in]      session_key - 16-byte (128-bit) session key for AES-CCM encryption
+ * @param[in]      iv          - 8-byte (64-bit) initialization vector
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_key_material(const uint8_t session_key[16], const uint8_t iv[8]);
+#endif // CONFIG_BT_GATTS_KEY_MATERIAL_CHAR
 
 /**
  * @brief          This function is called to get local used address and address type.
@@ -1750,17 +3263,41 @@ esp_err_t esp_ble_gap_get_device_name(void) __attribute__((deprecated("Please us
  *
  */
 esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t * addr_type);
+
 /**
  * @brief          This function is called to get ADV data for a specific type.
  *
- * @param[in]       adv_data - pointer of ADV data which to be resolved
- * @param[in]       type   - finding ADV data type
- * @param[out]      length - return the length of ADV data not including type
+ * @note           This is the recommended function to use for resolving ADV data by type.
+ *                 It improves upon the deprecated `esp_ble_resolve_adv_data` function by
+ *                 including an additional parameter to specify the length of the ADV data,
+ *                 thereby offering better safety and reliability.
  *
- * @return          pointer of ADV data
+ * @param[in]      adv_data - pointer of ADV data which to be resolved
+ * @param[in]      adv_data_len - the length of ADV data which to be resolved.
+ * @param[in]      type   - finding ADV data type
+ * @param[out]     length - return the length of ADV data not including type
+ *
+ * @return         pointer of ADV data
+ *
+ */
+uint8_t *esp_ble_resolve_adv_data_by_type( uint8_t *adv_data, uint16_t adv_data_len, esp_ble_adv_data_type type, uint8_t *length);
+
+/**
+ * @brief          This function is called to get ADV data for a specific type.
+ *
+ * @note           This function has been deprecated and will be removed in a future release.
+ *                 Please use `esp_ble_resolve_adv_data_by_type` instead, which provides
+ *                 better parameter validation and supports more accurate data resolution.
+ *
+ * @param[in]      adv_data - pointer of ADV data which to be resolved
+ * @param[in]      type   - finding ADV data type
+ * @param[out]     length - return the length of ADV data not including type
+ *
+ * @return         pointer of ADV data
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to set raw advertising data. User need to fill
@@ -1802,6 +3339,7 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to add a device info into the duplicate scan exceptional list.
@@ -1949,7 +3487,6 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
 */
 int esp_ble_get_bond_device_num(void);
 
-
 /**
 * @brief           Get the device from the security database list of peer device.
 *                  It will return the device bonded information immediately.
@@ -2002,6 +3539,28 @@ esp_err_t esp_ble_sc_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t p_c[16], uint8
 *
 */
 esp_err_t esp_ble_create_sc_oob_data(void);
+
+/**
+ * @brief           Get the local Identity Resolving Key (IRK).
+ *
+ * @note            This API retrieves the local IRK stored in the device's security database.
+ *                  The IRK is used by the controller to generate and resolve Resolvable Private Addresses (RPA).
+ *                  The IRK length is always 16 bytes (ESP_BT_OCTET16_LEN).
+ *
+ * @note            Usage Restrictions: Do NOT call this API during a disconnection event or while
+ *                  a BLE disconnection is in progress. Calling this API during disconnection may lead
+ *                  to undefined behavior or accessing invalid information.
+ *
+ * @param[out]      local_irk: Buffer to hold the 16-byte IRK. The array notation [16] explicitly
+ *                             indicates the required buffer size (ESP_BT_OCTET16_LEN).
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - ESP_ERR_INVALID_ARG : local_irk is NULL
+ *                  - ESP_ERR_INVALID_STATE : BLE stack not initialized or IRK not available
+ */
+esp_err_t esp_ble_gap_get_local_irk(uint8_t local_irk[16]);
+
 #endif /* #if (SMP_INCLUDED == TRUE) */
 
 /**
@@ -2051,6 +3610,18 @@ esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_pa
 esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels);
 
 /**
+* @brief           This function is used to read the current channel map
+*                  for the connection identified by remote address.
+*
+* @param[in]       bd_addr : BD address of the peer device
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_channel_map(esp_bd_addr_t bd_addr);
+
+/**
 * @brief           This function is called to authorized a link after Authentication(MITM protection)
 *
 * @param[in]       bd_addr: BD address of the peer device.
@@ -2084,6 +3655,12 @@ esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr);
 * @param[in]       tx_phy_mask : indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : indicates the receiver PHYs that the Host prefers the Controller to use
 *
+* @note            Including the LE Coded PHY in tx_phy_mask / rx_phy_mask may cause subsequent ACL connections to run on
+*                  the LE Coded PHY, which will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+*                  scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer than 1M/2M PHY packets.
+*                  It is recommended to use the LE 2M PHY (or LE 1M PHY) first, and only include the LE Coded PHY when the
+*                  long-range capability is really required.
+*
 * @return            - ESP_OK : success
 *                    - other  : failed
 *
@@ -2099,6 +3676,11 @@ esp_err_t esp_ble_gap_set_preferred_default_phy(esp_ble_gap_phy_mask_t tx_phy_ma
 * @param[in]       tx_phy_mask : a bit field that indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : a bit field that indicates the receiver PHYs that the Host prefers the Controller to use
 * @param[in]       phy_options : a bit field that allows the Host to specify options for PHYs
+*
+* @note            Switching an existing ACL connection to the LE Coded PHY via tx_phy_mask / rx_phy_mask will significantly
+*                  degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence scenarios, because Coded PHY (S=2/S=8) packets
+*                  occupy the radio for much longer than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M
+*                  PHY) first, and only switch to the LE Coded PHY when the long-range capability is really required.
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
@@ -2298,15 +3880,17 @@ esp_err_t esp_ble_gap_periodic_adv_stop(uint8_t instance);
 esp_err_t esp_ble_gap_set_ext_scan_params(const esp_ble_ext_scan_params_t *params);
 
 /**
-* @brief           This function is used to enable scanning.
+* @brief           Enables extended scanning.
 *
-* @param[in]       duration  Scan duration time, where Time = N * 10 ms. Range: 0x0001 to 0xFFFF.
-* @param[in]       period    Time interval from when the Controller started its last Scan Duration until it begins the subsequent Scan Duration.
-*                            Time = N * 1.28 sec. Range: 0x0001 to 0xFFFF.
+* @param[in]       duration  Scan duration in units of 10 ms.
+*                            - Range: 0x0001 to 0xFFFF (Time = N * 10 ms).
+*                            - 0x0000: Scan continuously until explicitly disabled.
 *
+* @param[in]       period    Time interval between the start of consecutive scan durations, in units of 1.28 seconds.
+*                            - Range: 0x0001 to 0xFFFF (Time = N * 1.28 sec).
+*                            - 0x0000: Scan continuously.
 * @return            - ESP_OK : success
 *                    - other  : failed
-*
 */
 esp_err_t esp_ble_gap_start_ext_scan(uint32_t duration, uint16_t period);
 
@@ -2391,6 +3975,17 @@ esp_err_t esp_ble_gap_periodic_adv_remove_dev_from_list(esp_ble_addr_type_t addr
 esp_err_t esp_ble_gap_periodic_adv_clear_dev(void);
 
 /**
+ * @brief            Retrieve the capacity of the periodic advertiser list in the controller.
+ *
+ * @param[out]       size: Pointer to a variable where the capacity of the periodic advertiser list will be stored.
+ *
+ * @return
+ *                     - ESP_OK : Success
+ *                     - Others : Failure
+ */
+esp_err_t esp_ble_gap_get_periodic_list_size(uint8_t *size);
+
+/**
 * @brief           This function is used to set aux connection parameters
 *
 * @param[in]       addr : device address
@@ -2398,6 +3993,12 @@ esp_err_t esp_ble_gap_periodic_adv_clear_dev(void);
 * @param[in]       phy_1m_conn_params : Scan connectable advertisements on the LE 1M PHY. Connection parameters for the LE 1M PHY are provided.
 * @param[in]       phy_2m_conn_params : Connection parameters for the LE 2M PHY are provided.
 * @param[in]       phy_coded_conn_params : Scan connectable advertisements on the LE Coded PHY. Connection parameters for the LE Coded PHY are provided.
+*
+* @note            Using the LE Coded PHY for the ACL connection will significantly degrade Wi-Fi performance, because
+*                  the on-air transmission time of a Coded PHY packet (S=2 or S=8) is much longer than that of a 1M/2M PHY
+*                  packet, so the Bluetooth controller occupies the radio for a longer time and leaves less airtime for Wi-Fi.
+*                  In Bluetooth/Wi-Fi coexistence scenarios, it is recommended to use the LE 2M PHY or LE 1M PHY first, and
+*                  only fall back to the LE Coded PHY when the long-range capability is really required.
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
@@ -2409,6 +4010,64 @@ esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
                                                     const esp_ble_gap_conn_params_t *phy_2m_conn_params,
                                                     const esp_ble_gap_conn_params_t *phy_coded_conn_params);
 
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+/**
+* @brief           This function is used to add a single device to the list of Monitored Advertisers in the Controller.
+*                  When the Controller receives advertising that matches the address and meets the RSSI threshold condition,
+*                  it will send an LE Monitor Advertising Report event (ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT).
+*
+* @param[in]       params : Pointer to parameters (addr_type, addr, rssi_low, rssi_high, timeout). Reserved fields allow future extension.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_add_monitor_adv_list(const esp_ble_gap_add_monitor_adv_params_t *params);
+
+/**
+* @brief           This function is used to remove one device from the list of Monitored Advertisers in the Controller.
+*                  Removals take effect immediately.
+*
+* @param[in]       params : Pointer to parameters (addr_type, addr). Reserved fields allow future extension.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_remove_monitor_adv_list(const esp_ble_gap_remove_monitor_adv_params_t *params);
+
+/**
+* @brief           This function is used to remove all devices from the list of Monitored Advertisers in the Controller.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_clear_monitor_adv_list(void);
+
+/**
+* @brief           This function is used to read the capacity of the list of Monitored Advertisers in the Controller.
+*                  The HCI command is sent asynchronously; the list size is reported via command complete if needed.
+*
+* @return            - ESP_OK : success (command sent)
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_monitor_adv_list_size(void);
+
+/**
+* @brief           This function is used to enable or disable the reporting of LE Monitor Advertising Report events.
+*                  When enabled, the Controller will generate ESP_GAP_BLE_MONITOR_ADV_REPORT_EVT when advertising
+*                  from devices in the monitor list meets the configured RSSI threshold condition.
+*
+* @param[in]       enable : true to enable monitor advertising reports, false to disable
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_enable_monitor_adv(bool enable);
+#endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -2539,6 +4198,452 @@ esp_err_t esp_ble_dtm_stop(void);
 *
 */
 esp_err_t esp_ble_gap_clear_advertising(void);
+
+/**
+ * @brief           This function is called to send vendor hci command.
+ *
+ *
+ *
+ * @param[in]       vendor_cmd_param: vendor hci command parameters
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_vendor_command_send(esp_ble_vendor_cmd_params_t *vendor_cmd_param);
+
+/**
+ * @brief           This function set the privacy mode of the device in resolving list.
+ *
+ * @note            This feature is not supported on ESP32.
+ *
+ * @param[in]       addr_type: The address type of the peer identity address (BLE_ADDR_TYPE_PUBLIC or BLE_ADDR_TYPE_RANDOM).
+ * @param[in]       addr: The peer identity address of the device.
+ * @param[in]       mode: The privacy mode of the device.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_privacy_mode(esp_ble_addr_type_t addr_type, esp_bd_addr_t addr, esp_ble_privacy_mode_t mode);
+
+/**
+ * @brief           This function is used to set which channel selection algorithm(CSA) is supported.
+ *
+ * @note            - This function should only be used when there are BLE compatibility issues about channel hopping after connected.
+ *                    For example, if the peer device only supports CSA#1, this function can be called to make the Controller use CSA#1.
+ *                  - This function is not supported on ESP32.
+ *
+ * @param[in]       csa_select: 0: Channel Selection Algorighm will be selected by Controller
+ *                              1: Select the LE Channel Selection Algorighm #1
+ *                              2: Select the LE Channel Selection Algorighm #2
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_csa_support(uint8_t csa_select);
+
+/**
+ * @brief           This function is used to control which vendor events are generated by the HCI for the Host.
+ *
+ * @param[in]       event_mask: The BLE vendor HCI event mask
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_vendor_event_mask(esp_ble_vendor_evt_mask_t event_mask);
+
+/**
+ * @brief           This function is used to set a common connection interval factor for multiple central-role connections.
+ *                  When multiple BLE connections in the central role exist, it is recommended that
+ *                  each connection interval be configured to either the same value or an integer
+ *                  multiple of the others. And use this function to set the common factor of all
+ *                  connection intervalsin the controller. The controller will then arrange the scheduling
+ *                  of each connection based on this factor to minimize or avoid connection conflicts.
+ *
+ * @note            - This function is used in multi-connection scenarios.
+ *                  - This function takes effect only when the connection role is central.
+ *                  - This function only needs to be called once and before establishing the connection.
+ *
+ * @param[in]       common_factor: The common connection interval factor (in units of 625us)
+ *                                 used for scheduling across all central-role connections.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_common_factor(uint32_t common_factor);
+
+/**
+ * @brief           This function is used to Set the scheduling protection time for specific LE role.
+ *                  It can be used to configures the minimum protection time to be reserved for a
+ *                  connection's TX/RX operations, ensuring that a complete transmission and
+ *                  reception cycle is not interrupted. It helps prevent disconnect in scenarios
+ *                  with multiple connections competing for time slots.
+ *
+ * @note            - This function is used in multi-connection scenarios.
+ *                  - This function must be called before establishing the connection.
+ *
+ * @param[in]       role: 0: Central 1: Peripheral
+ * @param[in]       len: The protection time length of the corresponding role (in units of us)
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_sch_len(uint8_t role, uint32_t len);
+
+/**
+ * @brief           This function is used to Set the channel map for LE scanning or initiating state.
+ *
+ * @note            - This function must be called before starting scanning or initiating.
+ *                  - At least one channel should be marked as used.
+ *
+ * @param[in]       state: The LE state for which the channel map is applied.
+ *                         - 0 : Scanning state
+ *                         - 1 : Initiating state
+ * @param[in]       chan_map: A 5-byte array representing the channel usage bit mask.
+ *                            Each bit corresponds to one channel from channel 0 to channel 39.
+ *                            The least significant bit of chan_map[0] corresponds to channel 0.
+ *                            The most significant bit of chan_map[4] corresponds to channel 39.
+ *                            - Bit = 1 : channel is used
+ *                            - Bit = 0 : channel is not used
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_scan_chan_map(uint8_t state, uint8_t chan_map[5]);
+
+/**
+ * @brief           This function is used to read the current and maximum transmit power levels of the local Controller.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identified.
+ * @param[in]       phy: 1M, 2M, Coded S2 or Coded S8.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_enhanced_read_transmit_power_level(uint16_t conn_handle, esp_ble_tx_power_phy_t phy);
+
+/**
+ * @brief           This function is used to read the transmit power level used by the remote Controller on the ACL connection.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identifier.
+ * @param[in]       phy: 1M, 2M, Coded S2 or Coded S8.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_read_remote_transmit_power_level(uint16_t conn_handle, esp_ble_tx_power_phy_t phy);
+
+/**
+ * @brief           This function is used to set the path loss threshold reporting parameters.
+ *
+ *
+ * @param[in]       path_loss_rpt_params: The path loss threshold reporting parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_path_loss_reporting_params(esp_ble_path_loss_rpt_params_t *path_loss_rpt_params);
+
+/**
+ * @brief           This function is used to enable or disable path loss reporting.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identifier.
+ * @param[in]       enable: Reporting disabled or enabled.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_path_loss_reporting_enable(uint16_t conn_handle, bool enable);
+
+/**
+ * @brief           This function is used to enable or disable the reporting to the local Host of transmit power level changes in the local and remote Controllers.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identifier.
+ * @param[in]       local_enable: Disable or enable local transmit power reports.
+ * @param[in]       remote_enable: Disable or enable remote transmit power reports.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_transmit_power_reporting_enable(uint16_t conn_handle, bool local_enable, bool remote_enable);
+
+/**
+ * @brief           This function is used to set the initial values for the acceptable parameters for subrating requests,
+ *                  for all future ACL connections where the Controller is the Central. This command does not affect any
+ *                  existing connection.
+ *
+ *
+ * @param[in]       default_subrate_params: The default subrate parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *default_subrate_params);
+
+/**
+ * @brief           This function is used by a Central or a Peripheral to request a change to the subrating factor and/or other parameters
+ *                  applied to an existing connection.
+ *
+ *                  If this API is issued on the Central, the following rules shall apply when the Controller initiates the Connection Subrate Update procedure:
+ *                    1. The Peripheral latency shall be less than or equal to max_latency.
+ *                    2. The subrate factor shall be between subrate_min and subrate_max.
+ *                    3. The continuation number shall be equal to the lesser of continuation_number and (subrate factor - 1).
+ *                    4. The connection supervision timeout shall be equal to supervision_timeout.
+ *
+ *                 If this API is issued on the Peripheral, the following rules shall apply when the Controller initiates the Connection Subrate Request procedure:
+ *                    1. The Peripheral latency shall be less than or equal to max_latency.
+ *                    2. The minimum and maximum subrate factors shall be between subrate_min and subrate_max.
+ *                    3. The continuation number shall be equal to the lesser of continuation_number and (maximum subrate factor - 1).
+ *                    4.The connection supervision timeout shall be equal to supervision_timeout.
+ *
+ *
+ * @param[in]       subrate_req_params: The subrate request parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_params);
+
+/**
+ * @brief           This function is called to set host feature.
+ *
+ * @param[in]       bit_num: the bit position in the FeatureSet.
+ * @param[in]       bit_val: the feature is enabled or disabled
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_host_feature(uint16_t bit_num, uint8_t bit_val);
+
+/**
+ * @brief           This function is used to set the data for one or more subevents of PAwR in reply to a PA subevent data request event.
+ *                  The data for a subevent shall be transmitted only once.
+ *
+ *
+ * @param[in]       subevent_data_params: Periodic adv subevent data parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_periodic_adv_subevent_data(esp_ble_per_adv_subevent_data_params *subevent_data_params);
+
+/**
+ * @brief           This function is used to set the data for a response slot in a specific subevent of the PAwR identified.
+ *                  The data for a response slot shall be transmitted only once.
+ *
+ *
+ * @param[in]       rsp_data_params: Periodic adv response data parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_periodic_adv_response_data(esp_ble_per_adv_response_data_params *rsp_data_params);
+
+/**
+ * @brief           This function is used to instruct the Controller to synchronize with a subset of the subevents within a PAwR train,
+ *                  listen for packets sent by the peer device and pass any received data up to the Host.
+ *
+ *
+ * @param[in]       sync_subevent_params: Periodic sync subevent parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_periodic_sync_subevent(esp_ble_per_sync_subevent_params *sync_subevent_params);
+
+/**
+ * @brief           This function is used to read the CS capabilities that are supported by the local Controller
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_read_local_supported_capabilities(void);
+
+/**
+ * @brief           This function is used to query the CS capabilities that are supported by the remote Controller
+ *
+ *
+ *
+ * @param[in]       conn_handle: connection handle.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_read_remote_supported_capabilities(uint16_t conn_handle);
+
+/**
+ * @brief           This function is used to write the cached copy of the CS capabilities that are supported by the remote Controller
+ *
+ *
+ *
+ * @param[in]       cached_remote_supp_caps_params: CS write cached remote supported capabilities parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_write_cached_remote_supported_capabilities(esp_ble_cs_write_cached_remote_supp_caps_params *cached_remote_supp_caps_params);
+
+/**
+ * @brief           This function is used to start or restart the Channel Sounding Security Start procedure in the local Controller
+ *
+ *
+ *
+ * @param[in]       conn_handle: the ACL connection identified
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_security_enable(uint16_t conn_handle);
+
+/**
+ * @brief           This function is used to set default CS settings in the local Controller
+ *
+ *
+ *
+ * @param[in]       default_setting_params: CS set default settings parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_set_default_settings(esp_ble_cs_set_default_settings_params *default_setting_params);
+
+/**
+ * @brief           This function is used to read the per-channel mode-0 Frequency Actuation Error table of the remote Controller
+ *
+ *
+ *
+ * @param[in]       conn_handle: the ACL connection identified
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_read_remote_fae_table(uint16_t conn_handle);
+
+/**
+ * @brief           This function is used to write a cached copy of the per-channel mode-0 Frequency Actuation Error table of the remote device in the local Controller
+ *
+ *
+ *
+ * @param[in]       write_cached_remote_fae_tab_params: CS write cached remote FAE table parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_write_cached_remote_fae_table(esp_ble_cs_write_cached_remote_fae_table_params *write_cached_remote_fae_tab_params);
+
+/**
+ * @brief           This function is used to create a new CS configuration or update an existing CS configuration in the local and/or the remote Controller
+ *
+ *
+ *
+ * @param[in]       create_config_params: CS create config parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_create_config(esp_ble_cs_create_config_params *create_config_params);
+
+/**
+ * @brief           This function is used to remove a CS configuration from the local Controller
+ *
+ *
+ *
+ * @param[in]       remove_config_params: CS remove config parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_remove_config(esp_ble_cs_remove_config_params *remove_config_params);
+
+/**
+ * @brief           This function is used to update the channel classification based on its local information
+ *
+ *
+ *
+ * @param[in]       channel_class_params: CS set channel classification parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_set_channel_classification(esp_ble_cs_set_channel_class_params *channel_class_params);
+
+/**
+ * @brief           This function is used to set the parameters for the scheduling of one or more CS procedures by the local Controller
+ *
+ *
+ *
+ * @param[in]       procedure_params: CS set channel procedure parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_set_procedure_params(esp_ble_cs_set_proc_params *procedure_params);
+
+/**
+ * @brief           This function is used to enable or disable the scheduling of CS procedures by the local Controller
+ *
+ *
+ *
+ * @param[in]       procedure_enable_params: CS procedure enable parameters
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_cs_procedure_enable(esp_ble_cs_procedure_enable_params *procedure_enable_params);
 
 #ifdef __cplusplus
 }

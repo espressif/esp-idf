@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <esp_types.h>
+#include "soc/soc_caps.h"
 #include "hal/mmu_types.h"
 
 #ifdef __cplusplus
@@ -14,9 +15,26 @@ extern "C" {
 #endif
 
 /**
- * MMU Hal layer initialisation
+ * @brief MMU hal config
  */
-void mmu_hal_init(void);
+typedef struct {
+    uint8_t core_nums;         ///< CPU core numbers
+    uint32_t mmu_page_size;    ///< MMU page size
+} mmu_hal_config_t;
+
+/**
+ * MMU Hal layer initialisation
+ *
+ * @param config  MMU hal config
+ */
+void mmu_hal_init(const mmu_hal_config_t *config);
+
+/**
+ * MMU Hal layer context initialisation
+ *
+ * @param config  MMU hal config
+ */
+void mmu_hal_ctx_init(const mmu_hal_config_t *config);
 
 /**
  * Unmap all the MMU table. After this all external memory vaddr are not available
@@ -63,6 +81,19 @@ uint32_t mmu_hal_bytes_to_pages(uint32_t mmu_id, uint32_t bytes);
  */
 void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len);
 
+#if SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
+/**
+ * Map a PSRAM physical range to virtual memory without setting the encryption
+ * SENSITIVE bit on each MMU entry. Used only for the explicitly carved-out
+ * unencrypted PSRAM region (see CONFIG_SPIRAM_ENC_EXEMPT).
+ *
+ * @param vaddr        start virtual address (MMU-page-aligned)
+ * @param paddr        start physical address (MMU-page-aligned)
+ * @param len          length in bytes
+ */
+void mmu_hal_map_region_no_enc(uint32_t vaddr, uint32_t paddr, uint32_t len);
+#endif
+
 /**
  * To unmap a virtual address block that is mapped to a physical memory block previously
  *
@@ -104,7 +135,6 @@ bool mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr
  */
 bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr);
 
-
 /**
  * Check if the vaddr region is valid
  *
@@ -117,6 +147,28 @@ bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target
  *         True for valid
  */
 bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type);
+
+#if SOC_MMU_PER_EXT_MEM_TARGET
+/**
+ * Get MMU ID from MMU target
+ *
+ * @param target      MMU target
+ *
+ * @return
+ *        MMU ID
+ */
+uint32_t mmu_hal_get_id_from_target(mmu_target_t target);
+
+/**
+ * Get MMU ID from vaddr
+ *
+ * @param vaddr       Virtual address
+ *
+ * @return
+ *        MMU ID
+ */
+uint32_t mmu_hal_get_id_from_vaddr(uint32_t vaddr);
+#endif
 
 #ifdef __cplusplus
 }

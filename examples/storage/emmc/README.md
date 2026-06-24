@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-S3 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-P4 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # eMMC chip example (with SDMMC Host)
 
@@ -22,34 +22,34 @@ This example supports eMMC chips.
 
 ## Hardware
 
-This example requires an ESP32-S3 development board and an eMMC chip. Default connections can be found in next chapter. The standard ESP32S3 devkits do not have an eMMC integrated. Considering the signal integrity issues, we suggesting you make your custom PCB board with ESP32-S3 module and an eMMC chip. The signal integrity issues will be more important, when the bus is working under higher speeds. This includes but not limited to increasing the frequency, switching to DDR mode. We will talk a bit more about signal integrity issues in a following chapter.
+This example requires an ESP32-S3 or ESP32-P4 development board and an eMMC chip. Default connections can be found in next chapter. Standard devkits do not have an eMMC integrated. Considering the signal integrity issues, we suggesting you make your custom PCB board with an ESP module and an eMMC chip. The signal integrity issues will be more important, when the bus is working under higher speeds. This includes but not limited to increasing the frequency, switching to DDR mode. We will talk a bit more about signal integrity issues in a following chapter.
 
 It is possible to connect an eMMC breakout adapter, but note that cable connections will decrease the signal integrity, leading communication timing violations. When in this condition, you may need to use a lower clock frequency, or switch to SDR mode.
 
-Pull-up resistors is needed. As the SD specification and the eMMC datasheet clarify, minimum 10k pull-up resistors are required for the bus IOs to protect the IOs against bus floating issue. Note these pull-up resistors are needed, even if the pin is not used (For example, you use 1-line-mode, the pull-up resistor is still required for the D1 pin).
+Pull-up resistors are needed. As specified in the SD specification and the eMMC datasheet, a minimum of 10k pull-up resistors are required on the bus I/Os to protect against bus floating issues. Note that these pull-up resistors are necessary even if a pin is not used. For example, if you are using 1-line mode, a pull-up resistor is still required on the D1 pin.
 
 
-### Pin assignments for ESP32-S3
+### Pin assignments
 
-On ESP32-S3, SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
+On ESP32-S3 and ESP32-P4, SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
 
 1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open "eMMC Example Configuration" menu.
 2. In the source code: See the initialization of ``sdmmc_slot_config_t slot_config`` structure in the example code.
 
 The table below lists the default pin assignments.
 
-ESP32-S3 pin  |  eMMC pin   | Notes
---------------|-------------|------------
-GPIO34        | CLK         | 10k pullup
-GPIO33        | CMD         | 10k pullup
-GPIO37        | D0          | 10k pullup
-GPIO38        | D1          | not used in 1-line mode; but card's D1 pin must have a 10k pullup
-GPIO39        | D2          | not used in 1-line mode; but card's D2 pin must have a 10k pullup
-GPIO36        | D3          | not used in 1-line mode, but card's D3 pin must have a 10k pullup
-GPIO35        | D4          | not used in 1/4-line mode, but card's D4 pin must have a 10k pullup
-GPIO40        | D5          | not used in 1/4-line mode, but card's D5 pin must have a 10k pullup
-GPIO42        | D6          | not used in 1/4-line mode, but card's D6 pin must have a 10k pullup
-GPIO41        | D7          | not used in 1/4-line mode, but card's D7 pin must have a 10k pullup
+ESP32-S3 pin  |  ESP32-P4 pin  |  eMMC pin   | Notes
+--------------|----------------|-------------|-------
+GPIO34        | GPIO43         | CLK         | 10k pullup
+GPIO33        | GPIO44         | CMD         | 10k pullup
+GPIO37        | GPIO39         | D0          | 10k pullup
+GPIO38        | GPIO40         | D1          | not used in 1-line mode; but card's D1 pin must have a 10k pullup
+GPIO39        | GPIO41         | D2          | not used in 1-line mode; but card's D2 pin must have a 10k pullup
+GPIO36        | GPIO42         | D3          | not used in 1-line mode, but card's D3 pin must have a 10k pullup
+GPIO35        | GPIO45         | D4          | not used in 1/4-line mode, but card's D4 pin must have a 10k pullup
+GPIO40        | GPIO46         | D5          | not used in 1/4-line mode, but card's D5 pin must have a 10k pullup
+GPIO42        | GPIO47         | D6          | not used in 1/4-line mode, but card's D6 pin must have a 10k pullup
+GPIO41        | GPIO48         | D7          | not used in 1/4-line mode, but card's D7 pin must have a 10k pullup
 
 
 ### Line modes

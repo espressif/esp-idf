@@ -8,6 +8,8 @@
 */
 
 #include <stdio.h>
+#include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -15,9 +17,14 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_custom_table.h"
+
+#if CONFIG_SECURE_BOOT || CONFIG_IDF_TARGET_ESP32C2
 #include "esp_secure_boot.h"
+#endif
+
+#if CONFIG_SECURE_FLASH_ENC_ENABLED || CONFIG_IDF_TARGET_ESP32C2
 #include "esp_flash_encrypt.h"
-#include "sdkconfig.h"
+#endif
 
 static const char* TAG = "example";
 
@@ -28,9 +35,12 @@ typedef struct {
     uint8_t setting_1;             /*!< Setting 1: length 6 bits */
     uint8_t setting_2;             /*!< Setting 2: length 5 bits */
     size_t custom_secure_version;  /*!< Custom secure version: length 16 bits */
-    uint16_t reserv;               /*!< Reserv */
+    uint16_t reserve;               /*!< Reserve */
 } device_desc_t;
 
+static char token[1024];
+// Option, used only to demonstrate how to read custom eFuse table
+static const char *add_custom_efuse_table = "--extend-efuse-table main/esp_efuse_custom_table.csv";
 
 static void print_device_desc(device_desc_t *desc)
 {
@@ -46,7 +56,7 @@ static void print_device_desc(device_desc_t *desc)
     }
     ESP_LOGI(TAG, "setting_1 = %d", desc->setting_1);
     ESP_LOGI(TAG, "setting_2 = %d", desc->setting_2);
-    ESP_LOGI(TAG, "custom_secure_version = %d", desc->custom_secure_version);
+    ESP_LOGI(TAG, "custom_secure_version = %u", (unsigned)desc->custom_secure_version);
 }
 
 
@@ -71,7 +81,7 @@ static void read_efuse_fields(device_desc_t *desc)
 
     size_t secure_version = 0;
     ESP_ERROR_CHECK(esp_efuse_read_field_cnt(ESP_EFUSE_SECURE_VERSION, &secure_version));
-    ESP_LOGI(TAG, "2. read secure_version: %d", secure_version);
+    ESP_LOGI(TAG, "2. read secure_version: %u", (unsigned)secure_version);
 
     ESP_LOGI(TAG, "3. read custom fields");
     read_device_desc_efuse_fields(desc);
@@ -101,7 +111,18 @@ static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t co
     ESP_ERROR_CHECK(esp_efuse_write_field_cnt(ESP_EFUSE_CUSTOM_SECURE_VERSION, desc->custom_secure_version));
 
     if (coding_scheme == coding_scheme_for_batch_mode) {
-        ESP_ERROR_CHECK(esp_efuse_batch_write_commit());
+        ESP_LOGI(TAG, "Token dump of staged eFuse writes:");
+        ESP_LOGW(TAG, "STAGED token dump can expose sensitive data, as it includes pending writes that are not yet burned and not yet read-protected.");
+        ESP_ERROR_CHECK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_STAGED, token, sizeof(token)));
+        ESP_LOGI(TAG, "%s %s %s", ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_SUMMARY, token, add_custom_efuse_table);
+        memset(token, 0, sizeof(token));
+
+        if (esp_efuse_batch_write_commit() != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to commit staged eFuses. Run the following command in console to see the state of eFuses:");
+            ESP_ERROR_CHECK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_READ, token, sizeof(token)));
+            ESP_LOGI(TAG, "%s %s", ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_DUMP, token);
+            memset(token, 0, sizeof(token));
+        }
     }
 }
 #endif // defined(CONFIG_EFUSE_VIRTUAL) || defined(CONFIG_EXAMPLE_TEST_RUN_USING_QEMU)
@@ -109,9 +130,9 @@ static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t co
 
 static esp_efuse_coding_scheme_t get_coding_scheme(void)
 {
-    // The coding scheme is used for EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3.
-    // We use EFUSE_BLK3 (custom block) to verify it.
-    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK3);
+    // The coding scheme is used for EFUSE_BLK1, EFUSE_BLK2, and EFUSE_BLK3, etc.
+    // We use efuse block number of ESP_EFUSE_MODULE_VERSION (custom field) to verify it.
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(ESP_EFUSE_MODULE_VERSION[0]->efuse_block);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
         ESP_LOGI(TAG, "Coding Scheme NONE");
 #if CONFIG_IDF_TARGET_ESP32
@@ -132,6 +153,15 @@ static esp_efuse_coding_scheme_t get_coding_scheme(void)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Start eFuse example");
+
+    ESP_LOGI(TAG, "Initial token dump to log");
+    ESP_LOGW(TAG, "The token dump from the READ includes only the final, permanently programmed values that are read-protected.");
+    ESP_LOGW(TAG, "But it still should be handled securely, as it can include sensitive data such as unique identifiers, secure version numbers, etc.");
+    ESP_LOGW(TAG, "Clear the token after dumping");
+    ESP_LOGW(TAG, "Share this token only with trusted parties and keep it secure");
+    ESP_ERROR_CHECK(esp_efuse_token_dump(ESP_EFUSE_TOKEN_FROM_READ, token, sizeof(token)));
+    ESP_LOGI(TAG, "%s %s %s", ESP_EFUSE_MONITOR_EXECUTE_ESPEFUSE_SUMMARY, token, add_custom_efuse_table);
+    memset(token, 0, sizeof(token));
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     if (esp_flash_encryption_cfg_verify_release_mode()) {
@@ -160,7 +190,7 @@ void app_main(void)
 
 
 #if CONFIG_IDF_TARGET_ESP32C2
-    if (esp_secure_boot_enabled() || esp_flash_encryption_enabled()) {
+    if (esp_secure_boot_enabled() || esp_efuse_is_flash_encryption_enabled()) {
         ESP_LOGW(TAG, "BLOCK3 is used for secure boot or/and flash encryption");
         ESP_LOGW(TAG, "eFuses from the custom eFuse table can not be used as they are placed in BLOCK3");
         ESP_LOGI(TAG, "Done");

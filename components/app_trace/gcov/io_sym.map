@@ -1,8 +1,0 @@
-fopen          gcov_rtio_fopen
-fclose         gcov_rtio_fclose
-fwrite         gcov_rtio_fwrite
-fread          gcov_rtio_fread
-fseek          gcov_rtio_fseek
-ftell          gcov_rtio_ftell
-setbuf         gcov_rtio_setbuf
-feof           gcov_rtio_feof

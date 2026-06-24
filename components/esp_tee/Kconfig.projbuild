@@ -1,0 +1,223 @@
+menu "ESP-TEE (Trusted Execution Environment)"
+    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C61
+
+    config SECURE_ENABLE_TEE
+        bool "Enable the ESP-TEE framework"
+        help
+            This configuration enables the Trusted Execution Environment (TEE) feature.
+
+    menu "Memory Configuration"
+        depends on SECURE_ENABLE_TEE
+
+        config SECURE_TEE_IRAM_SIZE
+            hex "IRAM region size"
+            default 0x8000
+            range 0x5000 0xF000
+            help
+                This configuration sets the IRAM size for the TEE module.
+                This should be 256-byte (0x100) aligned.
+
+        config SECURE_TEE_DRAM_SIZE
+            hex "DRAM region size"
+            default 0x5000
+            range 0x3000 0x7000
+            help
+                This configuration sets the DRAM size for the TEE module.
+                This should be 256-byte (0x100) aligned.
+
+        config SECURE_TEE_STACK_SIZE
+            hex "Stack size"
+            default 0x1000 if SECURE_BOOT
+            default 0xc00
+            range 0x800 0x1000
+            help
+                This configuration sets the stack size for the TEE module.
+                The TEE stack will be allocated from the TEE DRAM region.
+                This should be 16-byte (0x10) aligned.
+
+        config SECURE_TEE_INTR_STACK_SIZE
+            hex "Interrupt Stack size"
+            default 0x400
+            range 0x400 0x800
+            help
+                This configuration sets the interrupt stack size for the TEE module.
+                The TEE interrupt stack will be allocated from the TEE DRAM region.
+                This should be 16-byte (0x10) aligned.
+
+        config SECURE_TEE_IROM_SIZE
+            hex
+            default 0x20000
+            help
+                This should be a multiple of MMU_PAGE_SIZE.
+
+        config SECURE_TEE_DROM_SIZE
+            hex
+            default 0x10000
+            help
+                This should be a multiple of MMU_PAGE_SIZE.
+
+    endmenu
+
+    menu "Secure Services"
+        depends on SECURE_ENABLE_TEE
+
+        choice SECURE_TEE_SEC_STG_MODE
+            prompt "Secure Storage: Mode"
+            depends on SECURE_ENABLE_TEE
+            default SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
+            help
+                Select the TEE secure storage mode
+
+            config SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
+                bool "Development"
+                help
+                    Secure storage will be encrypted by a constant key embedded in the TEE firmware
+
+            config SECURE_TEE_SEC_STG_MODE_RELEASE
+                bool "Release"
+                help
+                    Secure storage will be encrypted by the data stored in eFuse block
+                    configured through the SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID option
+
+        endchoice
+
+        config SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID
+            int "Secure Storage: eFuse HMAC key ID for storage encryption keys"
+            depends on SECURE_TEE_SEC_STG_MODE_RELEASE
+            range -1 5
+            default -1
+            help
+                eFuse block key ID storing the HMAC key for deriving the TEE secure storage encryption keys
+
+        config SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID
+            int "Secure Storage: eFuse HMAC key ID for PBKDF2 key derivation"
+            depends on SOC_HMAC_SUPPORTED
+            range -1 5
+            default -1
+            help
+                eFuse block key ID storing the HMAC key for deriving PBKDF2-based ECDSA keys
+
+        menu "Secure Storage: Additional supported curves for ECDSA signing"
+
+            config SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
+                bool "SECP384R1"
+                depends on SOC_ECDSA_SUPPORT_CURVE_P384
+                help
+                    Enable ECDSA signing with the SECP384R1 curve using TEE secure storage
+
+        endmenu
+
+        config SECURE_TEE_ATTESTATION
+            bool "Enable Attestation"
+            default y
+            help
+                This configuration enables the support for the Attestation service.
+
+
+        config SECURE_TEE_ATT_KEY_STR_ID
+            depends on SECURE_TEE_ATTESTATION
+            string "Attestation: Secure Storage key ID for EAT signing"
+            default "tee_att_key0"
+            help
+                This configuration sets the key ID from the TEE secure storage
+                storing the ECDSA keypair for executing sign/verify operations
+                from the TEE side for attestation.
+
+        config SECURE_TEE_ATT_PSA_CERT_REF
+            depends on SECURE_TEE_ATTESTATION
+            string
+            default "0632793520245-10010" if IDF_TARGET_ESP32C6
+            default "0632793520351-10100" if IDF_TARGET_ESP32H2
+            default "XXXXXXXXXXXXX-XXXXX"
+            help
+                PSA certification ID string for the attestation token
+
+    endmenu
+
+    config SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
+        bool "Memprot: Isolate TEE flash regions over SPI1"
+        depends on SECURE_ENABLE_TEE
+        default n
+        help
+            This configuration restricts access to TEE-reserved regions in external flash
+            by making them inaccessible to the REE via the SPI1 interface (physical addresses).
+
+            With this enabled, all SPI flash read, write, or erase operations over SPI1 will
+            be routed through service calls to the TEE, introducing additional performance
+            overhead.
+
+            When Flash Encryption (SECURE_FLASH_ENC_ENABLED) is enabled, the REE can still
+            access TEE-related flash partitions over SPI1, but read operations will return
+            encrypted data contents. This prevents attackers from inferring the TEE contents
+            with direct reads.
+
+            Additionally, with Secure Boot enabled (SECURE_BOOT_V2_ENABLED), any unauthorized
+            modifications to the TEE firmware will be detected during boot, causing signature
+            verification to fail. Thus, these options provide a level of protection suitable for
+            most applications. However, while the TEE firmware integrity is protected, other TEE
+            partitions (Secure Storage, TEE OTA data) can be manipulated through direct writes.
+
+            Enable this option only when complete isolation of all TEE flash regions is required,
+            even with the associated performance tradeoffs.
+
+            Note: All accesses to the TEE partitions over SPI0 (i.e. the MMU) are blocked
+            unconditionally.
+
+    choice SECURE_TEE_LIBC
+        prompt "LibC to build the TEE application with"
+        depends on SECURE_ENABLE_TEE
+        default SECURE_TEE_LIBC_NEWLIB if IDF_TOOLCHAIN_CLANG
+        default SECURE_TEE_LIBC_PICOLIBC
+
+        config SECURE_TEE_LIBC_PICOLIBC
+            bool "Picolibc"
+            depends on !IDF_TOOLCHAIN_CLANG
+        config SECURE_TEE_LIBC_NEWLIB
+            bool "NewLib"
+
+    endchoice
+
+    config SECURE_TEE_DEBUG_MODE
+        bool "Enable Debug Mode"
+        default y
+        depends on SECURE_ENABLE_TEE
+        help
+            This configuration enables the logging from the TEE module.
+
+    choice SECURE_TEE_LOG_LEVEL
+        bool "Log verbosity"
+        default SECURE_TEE_LOG_LEVEL_WARN
+        depends on SECURE_TEE_DEBUG_MODE
+        help
+            Specify how much output to see in TEE logs.
+
+        config SECURE_TEE_LOG_LEVEL_NONE
+            bool "No output"
+        config SECURE_TEE_LOG_LEVEL_ERROR
+            bool "Error"
+        config SECURE_TEE_LOG_LEVEL_WARN
+            bool "Warning"
+        config SECURE_TEE_LOG_LEVEL_INFO
+            bool "Info"
+        config SECURE_TEE_LOG_LEVEL_DEBUG
+            bool "Debug"
+        config SECURE_TEE_LOG_LEVEL_VERBOSE
+            bool "Verbose"
+    endchoice
+
+    config SECURE_TEE_LOG_LEVEL
+        int
+        default 0 if SECURE_TEE_LOG_LEVEL_NONE || !SECURE_TEE_DEBUG_MODE
+        default 1 if SECURE_TEE_LOG_LEVEL_ERROR
+        default 2 if SECURE_TEE_LOG_LEVEL_WARN
+        default 3 if SECURE_TEE_LOG_LEVEL_INFO
+        default 4 if SECURE_TEE_LOG_LEVEL_DEBUG
+        default 5 if SECURE_TEE_LOG_LEVEL_VERBOSE
+
+    config SECURE_TEE_TEST_MODE
+        bool "Enable Test Mode"
+        depends on SECURE_ENABLE_TEE
+        help
+            This configuration sets up the TEE framework as required for executing the test suite.
+
+endmenu

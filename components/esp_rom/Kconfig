@@ -1,0 +1,7 @@
+menu "ESP-ROM"
+
+    config ESP_ROM_PRINT_IN_IRAM
+        bool "Place print functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
+endmenu

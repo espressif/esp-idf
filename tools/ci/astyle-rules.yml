@@ -15,15 +15,14 @@ submodules:
     - "/components/bt/controller/lib_esp32h2/esp32h2-bt-lib/"
     - "/components/bt/host/nimble/nimble/"
     - "/components/bt/esp_ble_mesh/lib/lib/"
+    - "/components/bt/esp_ble_audio/lib/lib/"
     - "/components/cmock/CMock/"
     - "/components/esp_coex/lib/"
     - "/components/esp_phy/lib/"
     - "/components/esp_wifi/lib/"
     - "/components/heap/tlsf/"
-    - "/components/json/cJSON/"
     - "/components/lwip/lwip/"
     - "/components/mbedtls/mbedtls/"
-    - "/components/mqtt/esp-mqtt/"
     - "/components/openthread/lib/"
     - "/components/openthread/openthread/"
     - "/components/protobuf-c/protobuf-c/"
@@ -43,13 +42,11 @@ components_not_formatted_temporary:
   # 2. If no, move it to 'components_not_formatted_permanent' section below.
   check: false
   include:
-    - "/components/app_trace/"
     - "/components/app_update/"
     - "/components/bootloader_support/"
     - "/components/bootloader/"
     - "/components/bt/"
     - "/components/cmock/"
-    - "/components/console/"
     - "/components/efuse/"
     - "/components/esp_coex/"
     - "/components/esp_eth/"
@@ -65,18 +62,14 @@ components_not_formatted_temporary:
     - "/components/esp_phy/"
     - "/components/esp_pm/"
     - "/components/esp_rom/"
-    - "/components/esp_wifi/"
     - "/components/esp-tls/"
     - "/components/esptool_py/"
     - "/components/fatfs/"
-    - "/components/hal/"
     - "/components/heap/"
     - "/components/idf_test/"
     - "/components/ieee802154/"
-    - "/components/json/"
     - "/components/lwip/"
     - "/components/mbedtls/"
-    - "/components/mqtt/"
     - "/components/nvs_flash/"
     - "/components/nvs_sec_provider/"
     - "/components/openthread/"
@@ -86,16 +79,12 @@ components_not_formatted_temporary:
     - "/components/protocomm/"
     - "/components/riscv/"
     - "/components/sdmmc/"
-    - "/components/soc/"
     - "/components/spi_flash/"
     - "/components/spiffs/"
     - "/components/tcp_transport/"
-    - "/components/touch_element/"
     - "/components/unity/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
-    - "/components/wifi_provisioning/"
-    - "/components/wpa_supplicant/"
     - "/components/xtensa/"
     - "/examples/bluetooth/"
     - "/examples/build_system/"
@@ -117,7 +106,6 @@ components_not_formatted_temporary:
     - "/tools/esp_app_trace/test/"
     - "/tools/mocks/"
     - "/tools/test_apps/"
-    - "/tools/unit-test-app/"
 
 components_not_formatted_permanent:
   # Files which are not supposed to be formatted.
@@ -133,14 +121,14 @@ components_not_formatted_permanent:
     - "/components/xtensa/include/xtensa/"
     # FAT FS (upstream source code)
     - "/components/fatfs/src/"
+    # wpa_supplicant upstream code
+    - "/components/wpa_supplicant/src/"
     # Nginx HTTP parser (upstream source code)
     - "/components/http_parser/"
     # Argtable (upstream source code)
     - "/components/console/argtable3/"
     # Linenoise (upstream source code)
     - "/components/console/linenoise/"
-    # Catch (upstream source code)
-    - "/tools/catch/catch.hpp"
     # FreeRTOS kernel files (upstream source code)
     - "/components/freertos/FreeRTOS-Kernel/"
     - "/components/freertos/FreeRTOS-Kernel-SMP/"
@@ -153,13 +141,22 @@ components_not_formatted_permanent:
     - "/components/app_trace/sys_view/Config/"
     - "/components/app_trace/sys_view/Sample/"
     - "/components/app_trace/sys_view/SEGGER/"
+    # FreeRTOS-Plux-POSIX files (upstream source code)
+    - "/components/rt/"
     # SoC header files (generated)
-    - "/components/soc/*/include/soc/"
+    - "/components/soc/*/register/soc/"
+    - "/components/soc/*/register/hw_ver*/soc/"
     # Example resource files (generated)
     - "/examples/peripherals/lcd/i80_controller/main/images/"
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"
     # Coredump (generated)
     - /components/espcoredump/include_core_dump/elf.h
+    # OpenOCD stub binaries (generated)
+    - /components/esp_system/openocd_stub_bins/*.inc
+    - /components/esp_system/openocd_stub_bins/esp32c6/*.inc
+    - /components/esp_system/openocd_stub_bins/esp32h2/*.inc
+    # TEE ASM helper macros — .inc file, not C include files
+    - /components/esp_tee/subproject/main/arch/riscv/*.inc
 
 docs:
   # Docs directory contains some .inc files, which are not C include files

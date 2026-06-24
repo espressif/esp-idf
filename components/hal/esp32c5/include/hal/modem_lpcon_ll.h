@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,23 +10,25 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8845 remove
 #include "soc/soc.h"
 #include "hal/assert.h"
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #include "modem/modem_lpcon_struct.h"
 #include "hal/modem_clock_types.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_test_clk(modem_lpcon_dev_t *hw, bool en)
 {
     hw->test_conf.clk_en = en;
+}
+
+__attribute__((always_inline))
+static inline bool modem_lpcon_ll_test_clk_is_enabled(modem_lpcon_dev_t *hw)
+{
+    return hw->test_conf.clk_en;
 }
 
 __attribute__((always_inline))
@@ -138,13 +140,19 @@ static inline uint32_t modem_lpcon_ll_get_wifi_lpclk_divisor_value(modem_lpcon_d
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_160m_clock(modem_lpcon_dev_t *hw, bool en)
+static inline void modem_lpcon_ll_set_modem_pwr_clk_src_fo(modem_lpcon_dev_t *hw, bool value)
 {
-    hw->i2c_mst_clk_conf.clk_i2c_mst_sel_160m = en;
+    hw->modem_src_clk_conf.modem_pwr_clk_src_fo = value;
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_select_modem_32k_clock_source(modem_lpcon_dev_t *hw, uint32_t src)
+static inline void modem_lpcon_ll_set_clk_modem_aon_force(modem_lpcon_dev_t *hw, uint32_t value)
+{
+    hw->modem_src_clk_conf.clk_modem_aon_force = value;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_select_modem_32k_clock_source(modem_lpcon_dev_t *hw, modem_clock_32k_clk_src_t src)
 {
     hw->modem_32k_clk_conf.clk_modem_32k_sel = src;
 }
@@ -162,9 +170,9 @@ static inline void modem_lpcon_ll_enable_coex_clock(modem_lpcon_dev_t *hw, bool 
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_clock(modem_lpcon_dev_t *hw, bool en)
+static inline bool modem_lpcon_ll_coex_clock_is_enabled(modem_lpcon_dev_t *hw)
 {
-    hw->clk_conf.clk_i2c_mst_en = en;
+    return hw->clk_conf.clk_coex_en;
 }
 
 __attribute__((always_inline))
@@ -183,12 +191,6 @@ __attribute__((always_inline))
 static inline void modem_lpcon_ll_enable_coex_force_clock(modem_lpcon_dev_t *hw, bool en)
 {
     hw->clk_conf_force_on.clk_coex_fo = en;
-}
-
-__attribute__((always_inline))
-static inline void modem_lpcon_ll_enable_i2c_master_force_clock(modem_lpcon_dev_t *hw, bool en)
-{
-    hw->clk_conf_force_on.clk_i2c_mst_fo = en;
 }
 
 __attribute__((always_inline))
@@ -260,13 +262,6 @@ static inline void modem_lpcon_ll_reset_coex(modem_lpcon_dev_t *hw)
 }
 
 __attribute__((always_inline))
-static inline void modem_lpcon_ll_reset_i2c_master(modem_lpcon_dev_t *hw)
-{
-    hw->rst_conf.rst_i2c_mst = 1;
-    hw->rst_conf.rst_i2c_mst = 0;
-}
-
-__attribute__((always_inline))
 static inline void modem_lpcon_ll_reset_ble_rtc_timer(modem_lpcon_dev_t *hw)
 {
     hw->rst_conf.rst_lp_timer = 1;
@@ -287,12 +282,22 @@ static inline void modem_lpcon_ll_set_pwr_tick_target(modem_lpcon_dev_t *hw, uin
 }
 
 __attribute__((always_inline))
-static inline uint32_t modem_lpcon_ll_get_date(modem_lpcon_dev_t *hw)
+static inline void modem_lpcon_ll_enable_chan_freq_mem(modem_lpcon_dev_t *hw, bool en)
 {
-    return hw->date.val;
+    hw->apb_mem_sel.chan_freq_mem_en = en;
 }
 
-#endif
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_enable_pbus_mem(modem_lpcon_dev_t *hw, bool en)
+{
+    hw->apb_mem_sel.pbus_mem_en = en;
+}
+
+__attribute__((always_inline))
+static inline void modem_lpcon_ll_enable_agc_mem(modem_lpcon_dev_t *hw, bool en)
+{
+    hw->apb_mem_sel.agc_mem_en = en;
+}
 
 #ifdef __cplusplus
 }

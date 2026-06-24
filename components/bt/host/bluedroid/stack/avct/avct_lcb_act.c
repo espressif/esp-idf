@@ -63,6 +63,11 @@ static BT_HDR *avct_lcb_msg_asmbl(tAVCT_LCB *p_lcb, BT_HDR *p_buf)
     p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     AVCT_PRS_PKT_TYPE(p, pkt_type);
 
+    if (pkt_type > AVCT_PKT_TYPE_END) {
+        osi_free(p_buf);
+        return NULL;
+    }
+
     /* quick sanity check on length */
     if (p_buf->len < avct_lcb_pkt_type_len[pkt_type]) {
         osi_free(p_buf);
@@ -86,6 +91,11 @@ static BT_HDR *avct_lcb_msg_asmbl(tAVCT_LCB *p_lcb, BT_HDR *p_buf)
             AVCT_TRACE_WARNING("Got start during reassembly");
         }
         osi_free(p_lcb->p_rx_msg);
+        p_lcb->p_rx_msg = NULL;
+        if (sizeof(BT_HDR) + p_buf->offset + p_buf->len > BT_DEFAULT_BUFFER_SIZE) {
+            osi_free(p_buf);
+            return NULL;
+        }
         /* Allocate bigger buffer for reassembly. As lower layers are
          * not aware of possible packet size after reassembly they
          * would have allocated smaller buffer.
@@ -109,6 +119,11 @@ static BT_HDR *avct_lcb_msg_asmbl(tAVCT_LCB *p_lcb, BT_HDR *p_buf)
             /* set offset to point to where to copy next */
             p_lcb->p_rx_msg->offset += p_lcb->p_rx_msg->len;
 
+            if (p_lcb->p_rx_msg->len < 1) {
+                osi_free(p_lcb->p_rx_msg);
+                p_lcb->p_rx_msg = NULL;
+                return NULL;
+            }
             /* adjust length for packet header */
             p_lcb->p_rx_msg->len -= 1;
         }
@@ -137,6 +152,11 @@ static BT_HDR *avct_lcb_msg_asmbl(tAVCT_LCB *p_lcb, BT_HDR *p_buf)
             if ((p_lcb->p_rx_msg->offset + p_buf->len) > buf_len) {
                 /* won't fit; free everything */
                 AVCT_TRACE_WARNING("%s: Fragmented message too big!", __func__);
+                osi_free(p_lcb->p_rx_msg);
+                p_lcb->p_rx_msg = NULL;
+                osi_free(p_buf);
+                p_ret = NULL;
+            } else if ((UINT32)p_lcb->p_rx_msg->len + p_buf->len > 0xFFFF) {
                 osi_free(p_lcb->p_rx_msg);
                 p_lcb->p_rx_msg = NULL;
                 osi_free(p_buf);
@@ -536,6 +556,7 @@ void avct_lcb_send_msg(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                 /* whoops; free original msg buf and bail */
                 AVCT_TRACE_ERROR ("avct_lcb_send_msg cannot alloc buffer!!");
                 osi_free(p_data->ul_msg.p_buf);
+                p_data->ul_msg.p_buf = NULL;
                 break;
             }
 
@@ -550,6 +571,7 @@ void avct_lcb_send_msg(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
             p_data->ul_msg.p_buf->len -= p_buf->len;
         } else {
             p_buf = p_data->ul_msg.p_buf;
+            p_data->ul_msg.p_buf = NULL;
         }
 
         curr_msg_len -= p_buf->len;

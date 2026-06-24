@@ -39,7 +39,6 @@ typedef struct per_device_ctb {
     UINT16         attr_mask; /* 0x01- virtual_cable; 0x02- normally_connectable; 0x03- reconn_initiate;
                                  0x04- sdp_disable; */
     UINT8          state;  /* Device state if in HOST-KNOWN mode */
-    UINT8          conn_substate;
     UINT8          conn_tries; /* Remembers to the number of connection attempts while CONNECTING */
 
     tHID_CONN      conn; /* L2CAP channel info */
@@ -66,6 +65,7 @@ extern tHID_STATUS hidh_conn_reg (void);
 extern void hidh_conn_dereg( void );
 extern tHID_STATUS hidh_conn_disconnect (UINT8 dhandle);
 extern tHID_STATUS hidh_conn_initiate (UINT8 dhandle);
+extern BOOLEAN hidh_conn_is_orig(UINT8 dhandle);
 extern void hidh_proc_repage_timeout (TIMER_LIST_ENT *p_tle);
 #ifdef __cplusplus
 extern "C" {

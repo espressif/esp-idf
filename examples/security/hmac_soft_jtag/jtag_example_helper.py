@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import argparse
 import binascii
@@ -8,13 +8,24 @@ import os
 import subprocess
 
 
-def generate_token_data(hmac_key_file: str) -> None:
+def generate_token_data(hmac_key_file: str, output_file: str | None = None) -> None:
     with open(hmac_key_file, 'rb') as file:
         key_data = file.read()
         data = bytes([0] * 32)
         token_data = hmac.HMAC(key_data, data, hashlib.sha256).digest()
         token_hex = binascii.hexlify(token_data).decode('utf-8')
-        print(token_hex)
+
+        if output_file:
+            if output_file.endswith('.bin'):
+                with open(output_file, 'wb') as out_file:
+                    out_file.write(token_data)
+            elif output_file.endswith('.hex'):
+                with open(output_file, 'w', encoding='utf-8') as out_file:
+                    out_file.write(token_hex)
+            else:
+                print(f'Unsupported file format for output file: {output_file}')
+        else:
+            print(token_hex)
 
 
 def generate_hmac_key(hmac_key_file: str) -> None:
@@ -28,10 +39,12 @@ def check_jtag_status() -> None:
     if not esp_port:
         raise RuntimeError('ESPPORT not specified')
 
-    output = subprocess.check_output(['espefuse.py', 'summary']).decode('utf-8')
+    output = subprocess.check_output(['espefuse', 'summary']).decode('utf-8')
 
     # check if JTAG is permenently/hard disabled
-    if ('DIS_PAD_JTAG' in output and 'JTAG = True' in output) or ('HARD_DIS_JTAG' in output and 'JTAG = True' in output):
+    if ('DIS_PAD_JTAG' in output and 'JTAG = True' in output) or (
+        'HARD_DIS_JTAG' in output and 'JTAG = True' in output
+    ):
         print('JTAG functionality is permanently disabled')
     else:
         print('JTAG functionality is not permanently disabled')
@@ -55,7 +68,10 @@ def check_jtag_status() -> None:
     else:
         print('SOFT_DIS_JTAG value not found in the output')
 
-    print('If JTAG is permenently disabled, it cannot be re-enabled.\nThis example re-enables only software disabled JTAG access')
+    print(
+        'If JTAG is permenently disabled, it cannot be re-enabled.\n'
+        'This example re-enables only software disabled JTAG access'
+    )
 
 
 def main() -> None:
@@ -69,6 +85,7 @@ def main() -> None:
 
     token_generator_parser = subparsers.add_parser('generate_token')
     token_generator_parser.add_argument('hmac_key_file', help='File containing the HMAC key')
+    token_generator_parser.add_argument('output_file', nargs='?', help='File to store the generated token (optional)')
 
     args = parser.parse_args()
 
@@ -77,7 +94,7 @@ def main() -> None:
     elif args.command == 'generate_hmac_key':
         generate_hmac_key(args.hmac_key_file)
     elif args.command == 'generate_token':
-        generate_token_data(args.hmac_key_file)
+        generate_token_data(args.hmac_key_file, args.output_file)
     else:
         parser.print_help()
 

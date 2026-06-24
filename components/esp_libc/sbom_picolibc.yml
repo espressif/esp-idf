@@ -1,0 +1,6 @@
+if: 'LIBC_PICOLIBC'
+name: 'picolib'
+version: '1.8.10'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: keithp.com/picolibc'
+description: C Libraries for Smaller Embedded Systems

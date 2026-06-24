@@ -2,7 +2,7 @@
 #
 # The FreeRTOS component mainly contains
 # - Different FreeRTOS kernel implementations (namely IDF FreeRTOS and Amazon SMP FreeRTOS).
-# - Different ports of each architecture for each kernel implementaiton.
+# - Different ports of each architecture for each kernel implementation.
 # - IDF additions to FreeRTOS (e.g., features and API) to augment FreeRTOS
 #
 # The FreeRTOS component organizes its files as follows
@@ -12,7 +12,7 @@
 # - `./esp_additions`
 #       - Additional features added by ESP-IDF to augment FreeRTOS, and not part of the original kernel
 # - `./FreeRTOS-Kernel-...`
-#       - Different FreeRTOS kernel implementations. Each implementaiton is kept in its own directory.
+#       - Different FreeRTOS kernel implementations. Each implementation is kept in its own directory.
 #       - Ports for the implementation are kept in `FreeRTOS-Kernel-.../portable/xxx/`\
 # - `./test_apps`
 #       - Contains all unit tests/test apps for the FreeRTOS component.
@@ -20,7 +20,9 @@
 #       - Files common across all kernel implementations and all ports
 
 # Bootloader builds only needs FreeRTOS for config, not for anything else
-if(BOOTLOADER_BUILD)
+idf_build_get_property(non_os_build NON_OS_BUILD)
+
+if(non_os_build)
     idf_component_register()
     return()
 endif()
@@ -47,6 +49,10 @@ set(include_dirs "")
 set(private_include_dirs "")
 set(private_requirements "")
 set(ldfragments "")
+
+# ---------------------------------------------------- Set Private Requirements ----------------------------------------
+
+list(APPEND private_requirements esp_hal_systimer)
 
 # ---------------------------------------------------- Set Sources -----------------------------------------------------
 
@@ -76,7 +82,8 @@ list(APPEND srcs
 
 if(arch STREQUAL "linux")
     list(APPEND srcs
-        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c")
+        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c"
+        "${kernel_impl}/portable/${arch}/utils/linux_port_coop_syscalls.c")
     if(kernel_impl STREQUAL "FreeRTOS-Kernel")
         list(APPEND srcs
             "${kernel_impl}/portable/${arch}/port_idf.c")
@@ -94,19 +101,8 @@ endif()
 
 # Add ESP-additions source files
 list(APPEND srcs
-    "esp_additions/freertos_compatibility.c"
+    "esp_additions/idf_additions_event_groups.c"
     "esp_additions/idf_additions.c")
-
-if(arch STREQUAL "linux")
-    # Check if we need to address the FreeRTOS EINTR coexistence with linux system calls if we're building without
-    # lwIP enabled, we need to use linux system select which will receive EINTR event on every FreeRTOS interrupt, we
-    # workaround this problem by wrapping select() to bypass and silence the EINTR events
-    set(BYPASS_EINTR_ISSUE 0)
-    if(NOT CONFIG_LWIP_ENABLE)
-        set(BYPASS_EINTR_ISSUE 1)
-        list(APPEND srcs "esp_additions/FreeRTOSSimulator_wrappers.c")
-    endif()
-endif()
 
 # ------------------------------------------------ Set Public Includes -------------------------------------------------
 
@@ -180,9 +176,9 @@ idf_component_register(SRCS ${srcs}
 if(arch STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
     target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)
-    if(BYPASS_EINTR_ISSUE)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
-    endif()
+    # dl is needed for dlsym(RTLD_NEXT, ...) used by the cooperative syscall
+    # interposition layer (linux_port_coop_syscalls.c)
+    target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
 
     # Disable strict prototype warnings in upstream code
     # (struct event * event_create() is missing 'void')
@@ -191,6 +187,11 @@ if(arch STREQUAL "linux")
         PROPERTIES COMPILE_OPTIONS
         "-Wno-strict-prototypes"
         )
+    if(APPLE)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _app_main")
+    else()
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
+    endif()
 else()
     idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 
@@ -218,13 +219,8 @@ else()
     # linker to not drop this symbol.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
 
-    if(CONFIG_APPTRACE_SV_ENABLE)
-        # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
-        idf_component_optional_requires(PUBLIC app_trace)
-    elseif(CONFIG_APPTRACE_ENABLE)
-        # [refactor-todo]: app_startup.c esp_startup_start_app_other_cores() has a dependency on esp_apptrace_init()
-        # (called on CPU1). This should be resolved when link-time registration of startup functions is added.
-        idf_component_optional_requires(PRIVATE app_trace)
+    if(CONFIG_ESP_TRACE_ENABLE)
+        idf_component_optional_requires(PUBLIC esp_trace)
     endif()
 
     if(CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME)
@@ -248,4 +244,12 @@ else()
         idf_component_optional_requires(PRIVATE esp_pm)
     endif()
 
+    if(NOT CONFIG_FREERTOS_SMP AND
+       CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")  # suppress false-positive warning
+        set_source_files_properties(
+            "${kernel_impl}/queue.c"
+            PROPERTIES COMPILE_OPTIONS
+            "-Wno-analyzer-null-argument"
+            )
+    endif()
 endif()

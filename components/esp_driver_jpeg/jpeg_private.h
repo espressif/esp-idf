@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,9 @@ extern "C" {
 
 #define JPEG_ALIGN_UP(num, align)         (((num) + ((align) - 1)) & ~((align) - 1))
 
+// Use retention link only when the target supports sleep retention and PM is enabled
+#define JPEG_USE_RETENTION_LINK  (CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 typedef struct jpeg_decoder_t jpeg_decoder_t;
 typedef struct jpeg_encoder_t jpeg_encoder_t;
 typedef struct jpeg_codec_t jpeg_codec_t;
@@ -52,16 +55,19 @@ struct jpeg_codec_t {
     intr_handle_t intr_handle;        // jpeg codec interrupt handler
     int intr_priority;                // jpeg codec interrupt priority
     SLIST_HEAD(jpeg_isr_handler_list_, jpeg_isr_handler_) jpeg_isr_handler_list; // List for jpeg interrupt.
+#if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // power manage lock
+#endif
+    bool retention_link_created;     // mark if the retention link is created.
 };
 
 typedef enum {
-    // TODO: Support DR and YUV444 on decoder.
-    //JPEG_DEC_DR_HB = 0,          /*!< Direct output */
-    //JPEG_DEC_YUV444_HB = 1,      /*!< output YUV444 format */
+    JPEG_DEC_DIRECT_OUTPUT_HB = 0, /*!< Direct output */
+    JPEG_DEC_YUV444_HB = 1,        /*!< output YUV444 format */
     JPEG_DEC_RGB888_HB = 2,        /*!< output RGB888 format */
     JPEG_DEC_RGB565_HB = 3,        /*!< output RGB565 format */
     JPEG_DEC_GRAY_HB = 4,          /*!< output the gray picture */
+    JPEG_DEC_YUV420_HB = 5,        /*!< output YUV420 format */
     JPEG_DEC_BEST_HB_MAX,          /*!< Max value of output formats */
 } jpeg_dec_format_hb_t;
 
@@ -76,6 +82,7 @@ typedef struct {
     uint8_t mcux;                                               // the best value of minimum coding unit horizontal unit
     uint8_t mcuy;                                               // minimum coding unit vertical unit
     uint8_t qt_tbl_num;                                         // quantization table number
+    uint8_t qt_tbl_seen_mask;                                   // bit i set => qt_tbl[i] populated by a DQT entry
     uint32_t qt_tbl[JPEG_COMPONENT_NUMBER_MAX][JPEG_QUANTIZATION_TABLE_LEN];            // quantization table content [id]
     uint8_t nf;                                                 // number of frames
     uint8_t ci[JPEG_COMPONENT_NUMBER_MAX];                      // Component identifier.
@@ -87,8 +94,8 @@ typedef struct {
     uint8_t huffbits[2][2][JPEG_HUFFMAN_BITS_LEN_TABLE_LEN];    // Huffman bit distribution tables [id][dcac]
     uint8_t huffcode[2][2][JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];    // Huffman decoded data tables [id][dcac]
     uint32_t tmp_huff[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];         // temp buffer to store huffman code
-    bool dri_marker;                                            // If we have dri marker in table
-    uint8_t ri;                                                 // Restart interval
+    bool dht_marker;                                            // If we have Huffman table present in header
+    uint16_t ri;                                                // Restart interval
 } jpeg_dec_header_info_t;
 
 struct jpeg_decoder_t {
@@ -96,9 +103,10 @@ struct jpeg_decoder_t {
     jpeg_dec_header_info_t *header_info;         // Pointer to current picture information
     jpeg_down_sampling_type_t sample_method;     // method of sampling the JPEG picture.
     jpeg_dec_output_format_t output_format;      // picture output format.
-    jpeg_dec_rgb_element_order_t rgb_order;        // RGB pixel order
+    jpeg_dec_rgb_element_order_t rgb_order;      // RGB pixel order
     jpeg_yuv_rgb_conv_std_t conv_std;            // YUV RGB conversion standard
-    uint8_t pixel;                               // size per pixel
+    bool no_color_conversion;                    // No color conversion, directly output based on compressed format
+    uint8_t bit_per_pixel;                       // bit size per pixel
     QueueHandle_t evt_queue;                     // jpeg event from 2DDMA and JPEG engine
     uint8_t *decoded_buf;                        // pointer to the rx buffer.
     uint32_t total_size;                         // jpeg picture origin size (in bytes)
@@ -118,6 +126,7 @@ typedef enum {
     JPEG_DMA2D_RX_EOF = BIT(0),     // DMA2D rx eof event
     JPEG_DMA2D_RX_DONE = BIT(1),    // DMA2D rx done event
     JPEG_DMA2D_TX_DONE = BIT(2),    // DMA2D tx done event
+    JPEG_DMA2D_RX_DESC_EMPTY = BIT(3),    // DMA2D rx empty event
 } jpeg_dma2d_evt_enum_t;
 
 typedef struct {
@@ -127,10 +136,11 @@ typedef struct {
 
 typedef enum {
     JPEG_ENC_SRC_RGB888_HB = 0,      // Input RGB888 format
-    // TODO: Support encoder source format for yuv422
-    // JPEG_ENC_SRC_YUV422_HB = 1,   // Input YUV422 format
+    JPEG_ENC_SRC_YUV422_HB = 1,       // Input YUV422 format
     JPEG_ENC_SRC_RGB565_HB = 2,      // Input RGB565 format
     JPEG_ENC_SRC_GRAY_HB = 3,        // Input GRAY format
+    JPEG_ENC_SRC_YUV444_HB = 4,      // Input YUV444 format
+    JPEG_ENC_SRC_YUV420_HB = 5,      // Input YUV420 format
     JPEG_ENC_BEST_HB_MAX,
 } jpeg_enc_format_hb_t;
 
@@ -240,6 +250,13 @@ esp_err_t jpeg_isr_deregister(jpeg_codec_handle_t jpeg_codec, jpeg_isr_handler_t
  * @return esp_err_t Returns ESP_OK if the interrupt priority meets the requirements, or an error code on failure
  */
 esp_err_t jpeg_check_intr_priority(jpeg_codec_handle_t jpeg_codec, int intr_priority);
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param jpeg_codec JPEG handle
+ */
+void jpeg_create_retention_module(jpeg_codec_handle_t jpeg_codec);
 
 #ifdef __cplusplus
 }

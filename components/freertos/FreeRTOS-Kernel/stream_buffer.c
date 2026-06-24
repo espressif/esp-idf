@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -455,6 +455,7 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
              * message buffer structure. */
             volatile size_t xSize = sizeof( StaticStreamBuffer_t );
             configASSERT( xSize == sizeof( StreamBuffer_t ) );
+            ( void ) xSize; /* Prevent unused variable warning when configASSERT() is not used. */
         } /*lint !e529 xSize is referenced is configASSERT() is defined. */
         #endif /* configASSERT_DEFINED */
 
@@ -773,7 +774,18 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
 
             traceBLOCKING_ON_STREAM_BUFFER_SEND( xStreamBuffer );
             ( void ) xTaskNotifyWait( ( uint32_t ) 0, ( uint32_t ) 0, NULL, xTicksToWait );
-            pxStreamBuffer->xTaskWaitingToSend = NULL;
+            /* In SMP mode, the task may have been woken and scheduled on
+             * another core. Hence, we must clear the xTaskWaitingToSend
+             * handle in a critical section. */
+            #if ( configNUMBER_OF_CORES > 1 )
+                taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
+            #endif /* configNUMBER_OF_CORES > 1 */
+            {
+                pxStreamBuffer->xTaskWaitingToSend = NULL;
+            }
+            #if ( configNUMBER_OF_CORES > 1 )
+                taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
+            #endif /* configNUMBER_OF_CORES > 1 */
         } while( xTaskCheckForTimeOut( &xTimeOut, &xTicksToWait ) == pdFALSE );
     }
     else
@@ -976,7 +988,19 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
             /* Wait for data to be available. */
             traceBLOCKING_ON_STREAM_BUFFER_RECEIVE( xStreamBuffer );
             ( void ) xTaskNotifyWait( ( uint32_t ) 0, ( uint32_t ) 0, NULL, xTicksToWait );
-            pxStreamBuffer->xTaskWaitingToReceive = NULL;
+
+            /* In SMP mode, the task may have been woken and scheduled on
+             * another core. Hence, we must clear the xTaskWaitingToReceive
+             * handle in a critical section. */
+            #if ( configNUMBER_OF_CORES > 1 )
+                taskENTER_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
+            #endif /* configNUMBER_OF_CORES > 1 */
+            {
+                pxStreamBuffer->xTaskWaitingToReceive = NULL;
+            }
+            #if ( configNUMBER_OF_CORES > 1 )
+                taskEXIT_CRITICAL( &( pxStreamBuffer->xStreamBufferLock ) );
+            #endif /* configNUMBER_OF_CORES > 1 */
 
             /* Recheck the data available after blocking. */
             xBytesAvailable = prvBytesInBuffer( pxStreamBuffer );
@@ -1420,6 +1444,7 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
          * result in confusion as to what is actually being observed. */
         const BaseType_t xWriteValue = 0x55;
         configASSERT( memset( pucBuffer, ( int ) xWriteValue, xBufferSizeBytes ) == pucBuffer );
+        ( void ) xWriteValue;
     } /*lint !e529 !e438 xWriteValue is only used if configASSERT() is defined. */
     #endif
 

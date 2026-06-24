@@ -10,7 +10,7 @@ import pytest
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 
-sys.path.append(os.path.expandvars(os.path.join('$IDF_PATH', 'tools', 'test_apps', 'system', 'panic')))
+sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'panic', 'panic_base')))
 from test_panic_util import PanicTestDut  # noqa: E402
 
 

@@ -1,0 +1,97 @@
+#include "sdkconfig.h"
+#include "ld.common"
+
+  .iram0.text :
+  {
+    _iram_start = ABSOLUTE(.);
+
+#if CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS
+    /* Do not move this block! OpenOCD expects this to be at the beginning of IRAM. */
+    KEEP(*(.ocd_stub.code));
+    KEEP(*(.ocd_stub.tramp));
+    . = ALIGN(0x800);
+    KEEP(*(.ocd_stub.data));
+    KEEP(*(.ocd_stub.bss));
+    KEEP(*(.ocd_stub.stack));
+    KEEP(*(.ocd_stub.params));
+    . = ALIGN(0x1000);
+    KEEP(*(.ocd_stub.scratchmem));
+    ASSERT(ABSOLUTE(.) == _iram_start + 0x2000, "openocd stub memory must be ended at _iram_start + 0x2000");
+#endif
+
+    /* Vectors go to start of IRAM */
+    ASSERT(ABSOLUTE(.) % ALIGN_VECTOR_TABLE == 0, "vector address must be ALIGN_VECTOR_TABLE byte aligned");
+    _vector_table_start = ABSOLUTE(.);
+    KEEP(*(.exception_vectors_table.text));
+    KEEP(*(.exception_vectors.text));
+
+#if CONFIG_SECURE_ENABLE_TEE
+    /* esp_tee_config_t structure: used to share information between the TEE and REE
+     * (e.g. interrupt handler addresses, REE flash text-rodata boundaries, etc.)
+     */
+    ALIGNED_SYMBOL(0x10, _esp_tee_app_cfg)
+    ASSERT(ABSOLUTE(.) == _vector_table_start + OFFSET_TEE, "esp_tee_app_cfg must be at an offset OFFSET_TEE from the vector table start");
+    *libesp_tee.a:(.esp_tee_app_cfg);
+#endif
+
+    /* Code marked as running out of IRAM */
+    _iram_text_start = ABSOLUTE(.);
+
+    SECTION_MAPPINGS_WITH_PADDING(iram0_text)
+  } > iram_text_seg
+
+  /* Marks the end of IRAM code segment */
+  .iram0.text_end (NOLOAD) :
+  {
+    /* Padding for possible CPU prefetch + alignment for PMS split lines */
+    . += _esp_memprot_prefetch_pad_size;
+    . = ALIGN(_esp_memprot_align_size);
+
+    /* Align the end of code region as per PMP region granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
+    /* iram_end_test section exists for use by memprot unit tests only */
+    *(.iram_end_test)
+
+    ALIGNED_SYMBOL(4, _iram_text_end)
+  } > iram_text_seg
+
+ .iram0.data :
+  {
+    ALIGNED_SYMBOL(16, _iram_data_start)
+
+    SECTION_MAPPINGS(iram0_data)
+
+    _iram_data_end = ABSOLUTE(.);
+  } > iram_text_seg
+
+  .iram0.bss (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(16, _iram_bss_start)
+
+    SECTION_MAPPINGS_WITH_PADDING(iram0_bss)
+
+    _iram_bss_end = ABSOLUTE(.);
+  } > iram_text_seg
+
+#if CONFIG_BT_LE_RELEASE_IRAM_SUPPORTED
+  /**
+   * This section needs to be placed at the end of the IRAM0, which will be
+   * released along with dram0_bt_data and dram0_bt_bss when Bluetooth is no
+   * longer in use.
+   */
+  .iram0.bt.text :
+  {
+    ALIGNED_SYMBOL(16, _iram_bt_text_start)
+
+    SECTION_MAPPINGS(iram0_bt_text)
+  } > iram_text_seg
+#endif
+
+  .iram0.end (NOLOAD) :
+  {
+    ALIGNED_SYMBOL(16, _iram_end)
+  } > iram_text_seg
+
+ASSERT(((_iram_end - ORIGIN(iram_text_seg)) <= LENGTH(iram_text_seg)),
+          "IRAM0 segment data does not fit.")

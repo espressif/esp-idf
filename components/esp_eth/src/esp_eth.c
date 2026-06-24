@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,7 @@ typedef struct {
     SemaphoreHandle_t transmit_mutex;
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
     esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv);
+    esp_err_t (*stack_input_info)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv, void *info);
     esp_err_t (*on_lowlevel_init_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*customized_read_phy_reg)(esp_eth_handle_t eth_handle, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value);
@@ -102,9 +103,28 @@ static esp_err_t eth_stack_input(esp_eth_mediator_t *eth, uint8_t *buffer, uint3
     esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
     if (eth_driver->stack_input) {
         return eth_driver->stack_input((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv);
+    // try to pass traffic using extended `stack_input_info`. It's for compatibility reasons since older MAC drivers may
+    // still use `stack_input` but higher level API registered extended version.
+    } else if (eth_driver->stack_input_info) {
+        return eth_driver->stack_input_info((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv, NULL);
     }
     // No stack input path has been installed, just drop the incoming packets
-    free(buffer);
+    free(buffer); // IDF-11444
+    return ESP_OK;
+}
+
+static esp_err_t eth_stack_input_info(esp_eth_mediator_t *eth, uint8_t *buffer, uint32_t length, void *info)
+{
+    esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
+    if (eth_driver->stack_input_info) {
+        return eth_driver->stack_input_info((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv, info);
+    // try using simple `stack_input`. It's for compatibility reasons since higher level API may still register original `stack_input`.
+    // Additional frame info is silently lost of course.
+    } else if (eth_driver->stack_input) {
+        return eth_driver->stack_input((esp_eth_handle_t)eth_driver, buffer, length, eth_driver->priv);
+    }
+    // No stack input path has been installed, just drop the incoming packets
+    free(buffer); // IDF-11444
     return ESP_OK;
 }
 
@@ -209,6 +229,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->duplex = ETH_DUPLEX_HALF;
     eth_driver->speed = ETH_SPEED_10M;
     eth_driver->stack_input = config->stack_input;
+    eth_driver->stack_input_info = config->stack_input_info;
     eth_driver->on_lowlevel_init_done = config->on_lowlevel_init_done;
     eth_driver->on_lowlevel_deinit_done = config->on_lowlevel_deinit_done;
     eth_driver->check_link_period_ms = config->check_link_period_ms;
@@ -217,6 +238,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->mediator.phy_reg_read = eth_phy_reg_read;
     eth_driver->mediator.phy_reg_write = eth_phy_reg_write;
     eth_driver->mediator.stack_input = eth_stack_input;
+    eth_driver->mediator.stack_input_info = eth_stack_input_info;
     eth_driver->mediator.on_state_changed = eth_on_state_changed;
     // set mediator for both mac and phy object, so that mac and phy are connected to each other via mediator
     mac->set_mediator(mac, &eth_driver->mediator);
@@ -331,7 +353,23 @@ esp_err_t esp_eth_update_input_path(
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     eth_driver->priv = priv;
+    eth_driver->stack_input_info = NULL;
     eth_driver->stack_input = stack_input;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_update_input_path_info(
+    esp_eth_handle_t hdl,
+    esp_err_t (*stack_input_info)(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv, void *info),
+    void *priv)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
+    eth_driver->priv = priv;
+    eth_driver->stack_input = NULL;
+    eth_driver->stack_input_info = stack_input_info;
 err:
     return ret;
 }
@@ -365,7 +403,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
+esp_err_t esp_eth_transmit_ctrl_vargs(esp_eth_handle_t hdl, void *ctrl, uint32_t argc, ...)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
@@ -376,15 +414,15 @@ esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
         goto err;
     }
 
-    va_list args;
     esp_eth_mac_t *mac = eth_driver->mac;
 #if CONFIG_ETH_TRANSMIT_MUTEX
     if (xSemaphoreTake(eth_driver->transmit_mutex, pdMS_TO_TICKS(ESP_ETH_TX_TIMEOUT_MS)) == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
+    va_list args = {0};
     va_start(args, argc);
-    ret = mac->transmit_vargs(mac, argc, args);
+    ret = mac->transmit_ctrl_vargs(mac, ctrl, argc, args);
 #if CONFIG_ETH_TRANSMIT_MUTEX
     xSemaphoreGive(eth_driver->transmit_mutex);
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
@@ -445,6 +483,11 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set promiscuous to null");
         ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, *(bool *)data), err, TAG, "set promiscuous mode failed");
         break;
+    case ETH_CMD_S_ALL_MULTICAST:
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set all multicast to null");
+        ESP_GOTO_ON_FALSE(mac->set_all_multicast != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "set receive all multicast not supported");
+        ESP_GOTO_ON_ERROR(mac->set_all_multicast(mac, *(bool *)data), err, TAG, "set all multicast mode failed");
+        break;
     case ETH_CMD_S_FLOW_CTRL:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set flow ctrl to null");
         ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, *(bool *)data), err, TAG, "enable mac flow control failed");
@@ -485,6 +528,18 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
                           phy_addr, phy_w_data->reg_addr, *(phy_w_data->reg_value_p)), err, TAG, "failed to write PHY register");
         }
         break;
+    case ETH_CMD_ADD_MAC_FILTER: {
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
+        ESP_GOTO_ON_FALSE(mac->add_mac_filter != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "add mac address to filter not supported");
+        ESP_GOTO_ON_ERROR(mac->add_mac_filter(mac, (uint8_t *)data), err, TAG, "add mac address to filter failed");
+        }
+        break;
+    case ETH_CMD_DEL_MAC_FILTER: {
+        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
+        ESP_GOTO_ON_FALSE(mac->rm_mac_filter != NULL, ESP_ERR_NOT_SUPPORTED, err, TAG, "remove mac address from filter not supported");
+        ESP_GOTO_ON_ERROR(mac->rm_mac_filter(mac, (uint8_t *)data), err, TAG, "remove mac address from filter failed");
+        }
+        break;
     default:
         if (phy->custom_ioctl != NULL && cmd >= ETH_CMD_CUSTOM_PHY_CMDS) {
             ret = phy->custom_ioctl(phy, cmd, data);
@@ -497,6 +552,24 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
     }
 err:
     return ret;
+}
+
+esp_err_t esp_eth_get_phy_instance(esp_eth_handle_t hdl, esp_eth_phy_t **phy)
+{
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ESP_RETURN_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, TAG, "ethernet driver handle can't be null");
+    ESP_RETURN_ON_FALSE(phy != NULL, ESP_ERR_INVALID_ARG, TAG, "can't store PHY instance to null");
+    *phy = eth_driver->phy;
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_get_mac_instance(esp_eth_handle_t hdl, esp_eth_mac_t **mac)
+{
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ESP_RETURN_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, TAG, "ethernet driver handle can't be null");
+    ESP_RETURN_ON_FALSE(mac != NULL, ESP_ERR_INVALID_ARG, TAG, "can't store MAC instance to null");
+    *mac = eth_driver->mac;
+    return ESP_OK;
 }
 
 esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl)

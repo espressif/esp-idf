@@ -1,5 +1,5 @@
 set(srcs "test_app_main.c"
-         "test_i2c_lcd_panel.c")
+         "test_i2c_lcd_panel.cpp")
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE

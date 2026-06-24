@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,8 +21,8 @@
 #include "soc/soc_memory_layout.h"
 #include "hal/i2c_hal.h"
 #include "hal/gpio_hal.h"
-#include "soc/i2c_periph.h"
-#include "driver/i2c.h"
+#include "hal/i2c_periph.h"
+#include "driver/i2c_types_legacy.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
@@ -36,9 +36,7 @@
 #if SOC_I2C_SUPPORT_APB || SOC_I2C_SUPPORT_XTAL
 #include "esp_private/esp_clk.h"
 #endif
-#if SOC_I2C_SUPPORT_RTC
-#include "clk_ctrl_os.h"
-#endif
+#include "esp_private/esp_clk_tree_common.h"
 
 static const char *I2C_TAG = "i2c";
 
@@ -68,6 +66,7 @@ static const char *I2C_TAG = "i2c";
 #define I2C_CMD_USER_ALLOC_ERR_STR     "i2c command link allocation error: the buffer provided is too small."
 #define I2C_TRANS_MODE_ERR_STR         "i2c trans mode error"
 #define I2C_MODE_ERR_STR               "i2c mode error"
+#define I2C_CLEAR_BUS_ERR_STR          "clear bus error"
 #define I2C_SDA_IO_ERR_STR             "sda gpio number error"
 #define I2C_SCL_IO_ERR_STR             "scl gpio number error"
 #define I2C_SCL_SDA_EQUAL_ERR_STR      "scl and sda gpio numbers are the same"
@@ -114,28 +113,18 @@ static const char *I2C_TAG = "i2c";
 #endif
 #define I2C_MEM_ALLOC_CAPS_DEFAULT      MALLOC_CAP_DEFAULT
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_RCC_ATOMIC()
-#endif
+#define I2C_CLR_BUS_TIMEOUT_MS        (50)  // 50ms is sufficient for clearing the bus
 
 /**
  * I2C bus are defined in the header files, let's check that the values are correct
  */
-#if SOC_I2C_NUM >= 2
+#if SOC_HP_I2C_NUM >= 2
 _Static_assert(I2C_NUM_1 == 1, "I2C_NUM_1 must be equal to 1");
-#endif // SOC_I2C_NUM >= 2
+#endif // SOC_HP_I2C_NUM >= 2
 #if SOC_LP_I2C_SUPPORTED
-_Static_assert(I2C_NUM_MAX == (SOC_I2C_NUM + SOC_LP_I2C_NUM), "I2C_NUM_MAX must be equal to SOC_I2C_NUM + SOC_LP_I2C_NUM");
+_Static_assert(I2C_NUM_MAX == (SOC_HP_I2C_NUM + SOC_LP_I2C_NUM), "I2C_NUM_MAX must be equal to SOC_HP_I2C_NUM + SOC_LP_I2C_NUM");
 #else
-_Static_assert(I2C_NUM_MAX == SOC_I2C_NUM, "I2C_NUM_MAX must be equal to SOC_I2C_NUM");
+_Static_assert(I2C_NUM_MAX == SOC_HP_I2C_NUM, "I2C_NUM_MAX must be equal to SOC_HP_I2C_NUM");
 #endif /* SOC_LP_I2C_SUPPORTED */
 
 typedef struct {
@@ -186,7 +175,7 @@ typedef struct {
     int cmd_idx;                     /*!< record current command index, for master mode */
     int status;                      /*!< record current command status, for master mode */
     int rx_cnt;                      /*!< record current read index, for master mode */
-    uint8_t data_buf[SOC_I2C_FIFO_LEN ];  /*!< a buffer to store i2c fifo data */
+    uint8_t data_buf[I2C_LL_GET(FIFO_LEN)];  /*!< a buffer to store i2c fifo data */
 
     i2c_cmd_desc_t cmd_link;         /*!< I2C command link */
     QueueHandle_t cmd_evt_queue;     /*!< I2C command event queue */
@@ -211,7 +200,7 @@ typedef struct {
     i2c_hal_context_t hal;      /*!< I2C hal context */
     portMUX_TYPE spinlock;
     bool hw_enabled;
-#if !SOC_I2C_SUPPORT_HW_CLR_BUS
+#if !I2C_LL_SUPPORT_HW_CLR_BUS
     int scl_io_num;
     int sda_io_num;
 #endif
@@ -225,7 +214,7 @@ static i2c_context_t i2c_context[I2C_NUM_MAX] = {
     I2C_CONTEX_INIT_DEF(I2C_NUM_0),
     /* Now that I2C_NUM_MAX is part of an enum (i2c_port_t), we cannot use
      * it anomore in the preprocessor! */
-#if SOC_I2C_NUM > 1
+#if SOC_HP_I2C_NUM > 1
     I2C_CONTEX_INIT_DEF(I2C_NUM_1),
 #endif
 };
@@ -251,11 +240,22 @@ static void i2c_isr_handler_default(void *arg);
 static void i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t* HPTaskAwoken);
 static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num);
 
+// Forward declarations for functions used before their definitions
+esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode);
+i2c_cmd_handle_t i2c_cmd_link_create_static(uint8_t* buffer, uint32_t size);
+void i2c_cmd_link_delete_static(i2c_cmd_handle_t cmd_handle);
+esp_err_t i2c_master_start(i2c_cmd_handle_t cmd_handle);
+esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle);
+esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, size_t data_len, bool ack_en);
+esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool ack_en);
+esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t data_len, i2c_ack_type_t ack);
+esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait);
+
 static void i2c_hw_disable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != false) {
-        I2C_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_enable_bus_clock(i2c_num, false);
         }
         i2c_context[i2c_num].hw_enabled = false;
@@ -267,7 +267,7 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != true) {
-        I2C_RCC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_enable_bus_clock(i2c_num, true);
             i2c_ll_reset_register(i2c_num);
         }
@@ -276,11 +276,11 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
 }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
 static esp_err_t i2c_sleep_retention_init(void *arg)
 {
     i2c_port_t i2c_num = *(i2c_port_t *)arg;
-    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_I2C, i2c_regs_retention[i2c_num].module_id);
     ESP_RETURN_ON_ERROR(ret, I2C_TAG, "failed to allocate mem for sleep retention");
     return ret;
 }
@@ -406,7 +406,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         return ESP_FAIL;
     }
     i2c_hw_enable(i2c_num);
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
     }
     //Disable I2C interrupt.
@@ -424,13 +424,13 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     }
 #endif // SOC_I2C_SUPPORT_SLAVE
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = i2c_sleep_retention_init, .arg = &i2c_num } }
     };
-    ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(i2c_num), &init_param);
+    ret = sleep_retention_module_init(i2c_regs_retention[i2c_num].module_id, &init_param);
     if (ret == ESP_OK) {
-        sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+        sleep_retention_module_allocate(i2c_regs_retention[i2c_num].module_id);
     }
 #endif
     return ESP_OK;
@@ -485,10 +485,10 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     esp_intr_free(p_i2c->intr_handle);
     p_i2c->intr_handle = NULL;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
-    esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+    esp_err_t err = sleep_retention_module_free(i2c_regs_retention[i2c_num].module_id);
     if (err == ESP_OK) {
-        err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+        err = sleep_retention_module_deinit(i2c_regs_retention[i2c_num].module_id);
     }
 #endif
 
@@ -528,7 +528,7 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     }
 #endif
 
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_deinit(&i2c_context[i2c_num].hal);
     }
     free(p_i2c_obj[i2c_num]);
@@ -657,7 +657,8 @@ esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode,
  **/
 static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
 {
-#if !SOC_I2C_SUPPORT_HW_CLR_BUS
+    esp_err_t ret = ESP_OK;
+#if !I2C_LL_SUPPORT_HW_CLR_BUS
     const int scl_half_period = I2C_CLR_BUS_HALF_PERIOD_US; // use standard 100kHz data rate
     int i = 0;
     int scl_io = i2c_context[i2c_num].scl_io_num;
@@ -684,9 +685,23 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
 #else
-    i2c_ll_master_clr_bus(i2c_context[i2c_num].hal.dev, I2C_CLR_BUS_SCL_NUM);
+    i2c_ll_master_clr_bus(i2c_context[i2c_num].hal.dev, I2C_CLR_BUS_SCL_NUM, true);
+    // If the i2c master clear bus state machine got disturbed when working, it would go into error state.
+    // The solution here is to use freertos tick counter to set a timeout threshold. If it doesn't return on time,
+    // return invalid state and turn off the state machine as its always wrong.
+    TickType_t start_tick = xTaskGetTickCount();
+    const TickType_t timeout_ticks = pdMS_TO_TICKS(I2C_CLR_BUS_TIMEOUT_MS);
+    while (i2c_ll_master_is_bus_clear_done(i2c_context[i2c_num].hal.dev)) {
+        if ((xTaskGetTickCount() - start_tick) > timeout_ticks) {
+            ESP_LOGE(I2C_TAG, I2C_CLEAR_BUS_ERR_STR);
+            i2c_ll_master_clr_bus(i2c_context[i2c_num].hal.dev, 0, false);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+    }
+    i2c_ll_update(i2c_context[i2c_num].hal.dev);
 #endif
-    return ESP_OK;
+    return ret;
 }
 
 /**if the power and SDA/SCL wires are in proper condition, everything works find with reading the slave.
@@ -697,7 +712,7 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 {
 // A workaround for avoiding cause timeout issue when using
 // hardware reset.
-#if !SOC_I2C_SUPPORT_HW_FSM_RST
+#if !I2C_LL_SUPPORT_HW_FSM_RST
     i2c_hal_timing_config_t timing_config;
     uint8_t filter_cfg;
 
@@ -723,34 +738,8 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 
 static uint32_t s_get_src_clk_freq(i2c_clock_source_t clk_src)
 {
-    // TODO: replace the following switch table by clk_tree API
     uint32_t periph_src_clk_hz = 0;
-    switch (clk_src) {
-#if SOC_I2C_SUPPORT_APB
-    case I2C_CLK_SRC_APB:
-        periph_src_clk_hz = esp_clk_apb_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_XTAL
-    case I2C_CLK_SRC_XTAL:
-        periph_src_clk_hz = esp_clk_xtal_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_RTC
-    case I2C_CLK_SRC_RC_FAST:
-        periph_rtc_dig_clk8m_enable();
-        periph_src_clk_hz = periph_rtc_dig_clk8m_get_freq();
-        break;
-#endif
-#if SOC_I2C_SUPPORT_REF_TICK
-    case RMT_CLK_SRC_REF_TICK:
-        periph_src_clk_hz = REF_CLK_FREQ;
-        break;
-#endif
-    default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, I2C_TAG, "clock source %d is not supported", clk_src);
-        break;
-    }
+    esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz);
 
     return periph_src_clk_hz;
 }
@@ -798,7 +787,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         return ret;
     }
     i2c_hw_enable(i2c_num);
-    I2C_CLOCK_SRC_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
     }
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -807,8 +796,8 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 #if SOC_I2C_SUPPORT_SLAVE
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         i2c_hal_slave_init(&(i2c_context[i2c_num].hal));
-        i2c_ll_slave_tx_auto_start_en(i2c_context[i2c_num].hal.dev, true);
-        I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_slave_enable_auto_start(i2c_context[i2c_num].hal.dev, true);
+        PERIPH_RCC_ATOMIC() {
             i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
         }
         i2c_ll_set_slave_addr(i2c_context[i2c_num].hal.dev, i2c_conf->slave.slave_addr, i2c_conf->slave.addr_10bit_en);
@@ -822,9 +811,12 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 #endif // SOC_I2C_SUPPORT_SLAVE
     {
         i2c_hal_master_init(&(i2c_context[i2c_num].hal));
+        PERIPH_RCC_ATOMIC() {
+            i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
+        }
         //Default, we enable hardware filter
         i2c_ll_master_set_filter(i2c_context[i2c_num].hal.dev, I2C_FILTER_CYC_NUM_DEF);
-        I2C_CLOCK_SRC_ATOMIC() {
+        PERIPH_RCC_ATOMIC() {
             i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk, s_get_src_clk_freq(src_clk));
         }
     }
@@ -960,7 +952,7 @@ esp_err_t i2c_get_timeout(i2c_port_t i2c_num, int *timeout)
     return ESP_OK;
 }
 
-esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode)
+esp_err_t i2c_set_pin(i2c_port_t i2c_num, gpio_num_t sda_io_num, gpio_num_t scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode)
 {
     ESP_RETURN_ON_FALSE((i2c_num < I2C_NUM_MAX), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(((sda_io_num < 0) || ((GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)))), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SDA_IO_ERR_STR);
@@ -1014,7 +1006,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
             gpio_set_pull_mode(scl_io_num, GPIO_FLOATING);
         }
     }
-#if !SOC_I2C_SUPPORT_HW_CLR_BUS
+#if !I2C_LL_SUPPORT_HW_CLR_BUS
     i2c_context[i2c_num].scl_io_num = scl_io_num;
     i2c_context[i2c_num].sda_io_num = sda_io_num;
 #endif
@@ -1452,7 +1444,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t
 
             //TODO: to reduce interrupt number
             if (!i2c_cmd_is_single_byte(cmd)) {
-                fifo_fill = MIN(remaining_bytes, SOC_I2C_FIFO_LEN);
+                fifo_fill = MIN(remaining_bytes, I2C_LL_FIFO_LEN);
                 /* cmd->data shall not be altered!
                  * Else it would not be possible to reuse the commands list. */
                 write_pr = cmd->data + cmd->bytes_used;
@@ -1482,7 +1474,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t
             break;
         } else if (cmd->hw_cmd.op_code == I2C_LL_CMD_READ) {
             //TODO: to reduce interrupt number
-            fifo_fill = MIN(remaining_bytes, SOC_I2C_FIFO_LEN);
+            fifo_fill = MIN(remaining_bytes, I2C_LL_FIFO_LEN);
             p_i2c->rx_cnt = fifo_fill;
             hw_cmd.byte_num = fifo_fill;
             i2c_ll_master_write_cmd_reg(i2c_context[i2c_num].hal.dev, hw_cmd, p_i2c->cmd_idx);
@@ -1495,13 +1487,13 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t
         }
         p_i2c->cmd_idx++;
         p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
-        if (p_i2c->cmd_link.head == NULL || p_i2c->cmd_idx >= (SOC_I2C_CMD_REG_NUM - 1)) {
+        if (p_i2c->cmd_link.head == NULL || p_i2c->cmd_idx >= (I2C_LL_GET(CMD_REG_NUM) - 1)) {
             p_i2c->cmd_idx = 0;
             break;
         }
     }
     i2c_ll_update(i2c_context[i2c_num].hal.dev);
-    i2c_ll_master_trans_start(i2c_context[i2c_num].hal.dev);
+    i2c_ll_start_trans(i2c_context[i2c_num].hal.dev);
     return;
 }
 
@@ -1702,6 +1694,7 @@ int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t *data, size_t max_size, Ti
 }
 #endif
 
+#if !CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy i2c driver is not running along with the new I2C driver
  */
@@ -1717,3 +1710,4 @@ static void check_i2c_driver_conflict(void)
     }
     ESP_EARLY_LOGW(I2C_TAG, "This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`");
 }
+#endif //CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK

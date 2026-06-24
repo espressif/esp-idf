@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "esp32/rom/rtc.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
@@ -26,7 +26,7 @@
 static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
 extern void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
-static const char* TAG = "rtc_clk_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk_init");
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
@@ -81,7 +81,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
             /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
             xtal_freq = rtc_clk_xtal_freq_estimate();
             if (xtal_freq == SOC_XTAL_FREQ_AUTO) {
-                ESP_HW_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
+                ESP_HW_LOGW(TAG, "Can't estimate XTAL freq, assuming 26MHz");
                 xtal_freq = SOC_XTAL_FREQ_26M;
             }
         }
@@ -93,7 +93,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
         soc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
         if (est_xtal_freq != configured_xtal_freq) {
-            ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
+            ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_XTAL_FREQ setting (%dMHz). Detected %dMHz.",
                     configured_xtal_freq, est_xtal_freq);
         }
     }
@@ -108,7 +108,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
     if (!res) {
-        ESP_HW_LOGE(TAG, "invalid CPU frequency value");
+        ESP_HW_LOGE(TAG, "invalid CPU freq value");
         abort();
     }
     rtc_clk_cpu_freq_set_config(&new_config);
@@ -150,7 +150,7 @@ static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
         rtc_clk_8m_enable(true, true);
     }
 
-    uint64_t cal_val = rtc_clk_cal_ratio(RTC_CAL_8MD256, XTAL_FREQ_EST_CYCLES);
+    uint64_t cal_val = rtc_clk_cal_ratio(CLK_CAL_RC_FAST_D256, XTAL_FREQ_EST_CYCLES);
     /* cal_val contains period of 8M/256 clock in XTAL clock cycles
      * (shifted by RTC_CLK_CAL_FRACT bits).
      * Xtal frequency will be (cal_val * 8M / 256) / 2^19
@@ -163,18 +163,18 @@ static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
         xtal_freq = SOC_XTAL_FREQ_26M;
         break;
     case 32 ... 33:
-        ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %"PRIu32" MHz, guessing 26 MHz", freq_mhz);
+        ESP_HW_LOGW(TAG, "Potential bogus XTAL freq: %"PRIu32"MHz, guessing 26MHz", freq_mhz);
         xtal_freq = SOC_XTAL_FREQ_26M;
         break;
     case 34 ... 35:
-        ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %"PRIu32" MHz, guessing 40 MHz", freq_mhz);
+        ESP_HW_LOGW(TAG, "Potential bogus XTAL freq: %"PRIu32"MHz, guessing 40MHz", freq_mhz);
         xtal_freq = SOC_XTAL_FREQ_40M;
         break;
     case 36 ... 45:
         xtal_freq = SOC_XTAL_FREQ_40M;
         break;
     default:
-        ESP_HW_LOGW(TAG, "Bogus XTAL frequency: %"PRIu32" MHz", freq_mhz);
+        ESP_HW_LOGW(TAG, "Bogus XTAL freq: %"PRIu32"MHz", freq_mhz);
         xtal_freq = SOC_XTAL_FREQ_AUTO;
         break;
     }

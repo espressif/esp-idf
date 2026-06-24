@@ -1,7 +1,0 @@
-# This file was generated using idf.py save-defconfig. It can be edited manually.
-# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
-#
-CONFIG_IDF_TARGET="esp32c2"
-CONFIG_BT_ENABLED=y
-CONFIG_FREERTOS_IDLE_TASK_STACKSIZE=2304
-# CONFIG_NEWLIB_NANO_FORMAT is not set

@@ -1,12 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <sys/param.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "hal/assert.h"
@@ -16,7 +15,6 @@
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "soc/soc_caps.h"
-#include "rom/cache.h"
 
 /*------------------------------------------------------------------------------
  * Unified Cache Control
@@ -38,14 +36,12 @@ typedef struct {
 #endif
 } cache_hal_state_t;
 
-
 typedef struct {
     cache_hal_state_t l1;
     cache_hal_state_t l2;
 } cache_hal_context_t;
 
 static cache_hal_context_t ctx;
-
 
 void s_cache_hal_init_ctx(void)
 {
@@ -55,9 +51,35 @@ void s_cache_hal_init_ctx(void)
     ctx.l2.i_autoload_en = cache_ll_is_cache_autoload_enabled(2, CACHE_TYPE_INSTRUCTION, CACHE_LL_ID_ALL);
 }
 
-void cache_hal_init(void)
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+void cache_hal_init_l2_cache(const cache_hal_config_t *config)
+{
+    cache_size_t cache_size;
+    cache_line_size_t cache_line_size;
+    if (config->l2_cache_size == 0x20000) {
+        cache_size = CACHE_SIZE_128K;
+    } else if (config->l2_cache_size == 0x40000) {
+        cache_size = CACHE_SIZE_256K;
+    } else {
+        cache_size = CACHE_SIZE_512K;
+    }
+
+    if (config->l2_cache_line_size == 64) {
+        cache_line_size = CACHE_LINE_SIZE_64B;
+    } else {
+        cache_line_size = CACHE_LINE_SIZE_128B;
+    }
+
+    Cache_Set_L2_Cache_Mode(cache_size, 8, cache_line_size);
+    Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+}
+#endif
+
+void cache_hal_init(const cache_hal_config_t *config)
 {
     s_cache_hal_init_ctx();
+
+    cache_ll_clk_init();
 
     if (CACHE_LL_LEVEL_EXT_MEM == 1) {
         cache_ll_enable_cache(1, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, ctx.l1.i_autoload_en, ctx.l1.d_autoload_en);
@@ -65,12 +87,10 @@ void cache_hal_init(void)
         cache_ll_enable_cache(2, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, ctx.l2.i_autoload_en, ctx.l2.d_autoload_en);
     }
 
-    cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_DBUS_MASK);
-    cache_ll_l1_enable_bus(0, CACHE_LL_DEFAULT_IBUS_MASK);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_DBUS_MASK);
-    cache_ll_l1_enable_bus(1, CACHE_LL_DEFAULT_IBUS_MASK);
-#endif
+    for (int i = 0; i < config->core_nums; i++) {
+        cache_ll_l1_enable_bus(i, CACHE_LL_DEFAULT_DBUS_MASK);
+        cache_ll_l1_enable_bus(i, CACHE_LL_DEFAULT_IBUS_MASK);
+    }
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
     ctx.l1.i_cache_enabled = 1;
@@ -78,6 +98,12 @@ void cache_hal_init(void)
     ctx.l2.i_cache_enabled = 1;
     ctx.l2.d_cache_enabled = 1;
 #endif
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    cache_hal_init_l2_cache(config);
+#endif
+    //CACHE_LL_PRELOAD_ARBITRARY will have better performance for preload
+    cache_ll_preload_set_strategy(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL, CACHE_LL_PRELOAD_ARBITRARY);
 }
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
@@ -298,4 +324,14 @@ uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type)
 #endif
 
     return line_size;
+}
+
+void cache_hal_preload(uint32_t cache_level, cache_type_t type, uint32_t vaddr, uint32_t size, cache_preload_order_t order)
+{
+    cache_ll_preload(cache_level, type, CACHE_LL_ID_ALL, vaddr, size, order);
+}
+
+void cache_hal_preload_wait_done(uint32_t cache_level, cache_type_t type)
+{
+    cache_ll_preload_wait_done(cache_level, type, CACHE_LL_ID_ALL);
 }

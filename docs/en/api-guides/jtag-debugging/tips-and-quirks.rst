@@ -10,8 +10,13 @@ This section provides collection of all tips and quirks referred to from various
 Breakpoints and Watchpoints Available
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} debugger supports {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} hardware implemented breakpoints and 64 software ones. Hardware breakpoints are implemented by {IDF_TARGET_NAME} chip's logic and can be set anywhere in the code: either in flash or IRAM program's regions. Additionally there are 2 types of software breakpoints implemented by OpenOCD: flash (up to 32) and IRAM (up to 32) breakpoints. Currently GDB can not set software breakpoints in flash. So until this limitation is removed those breakpoints have to be emulated by OpenOCD as hardware ones (see :ref:`below <jtag-debugging-tip-where-breakpoints>` for details). {IDF_TARGET_NAME} also supports {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} watchpoints, so {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the last watchpoint and will not provide expected results, if you also try to use it within OpenOCD/GDB. See menuconfig's help for detailed description.
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
+    {IDF_TARGET_NAME} debugger supports {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} hardware implemented breakpoints and 64 software ones. Hardware breakpoints are implemented by {IDF_TARGET_NAME} chip's logic and can be set anywhere in the code: either in flash or IRAM program's regions. Additionally there are 2 types of software breakpoints implemented by OpenOCD: flash (up to 32) and IRAM (up to 32) breakpoints. Currently GDB can not set software breakpoints in flash. So until this limitation is removed those breakpoints have to be emulated by OpenOCD as hardware ones (see :ref:`below <jtag-debugging-tip-where-breakpoints>` for details). {IDF_TARGET_NAME} also supports {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} watchpoints, so {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the last watchpoint and will not provide expected results, if you also try to use it within OpenOCD/GDB. See menuconfig's help for detailed description.
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    {IDF_TARGET_NAME} debugger supports {IDF_TARGET_SOC_CPU_BREAKPOINTS_NUM} hardware implemented breakpoints and an unlimited number of software ones. Hardware breakpoints are implemented by {IDF_TARGET_NAME} chip's logic and can be set anywhere in the code: either in flash or IRAM program's regions. Additionally there are 2 types of software breakpoints implemented by OpenOCD: flash (up to 32) and IRAM (unlimited) breakpoints. Currently GDB can not set software breakpoints in flash. So until this limitation is removed those breakpoints have to be emulated by OpenOCD as hardware ones (see :ref:`below <jtag-debugging-tip-where-breakpoints>` for details). {IDF_TARGET_NAME} also supports {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} watchpoints, so {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} variables can be watched for change or read by the GDB command ``watch myVariable``. Note that menuconfig option :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` uses the last watchpoint and will not provide expected results, if you also try to use it within OpenOCD/GDB. See menuconfig's help for detailed description.
 
 .. _jtag-debugging-tip-where-breakpoints:
 
@@ -63,7 +68,7 @@ ESP-IDF has some support options for OpenOCD debugging which can be set at compi
 
 * :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` (disabled by default) sets watchpoint index 1 (the second of two) at the end of any task stack. This is the most accurate way to debug task stack overflows. Click the link for more details.
 
-Please see the :ref:`project configuration menu <get-started-configure>` menu for more details on setting compile-time options.
+Please see the :ref:`project configuration menu for Windows <get-started-configure>`, :ref:`Linux, or macOS <get-started-configure-linux-macos>`  menu for more details on setting compile-time options.
 
 .. _jtag-debugging-tip-freertos-support:
 
@@ -83,7 +88,7 @@ GDB has a Python extension for FreeRTOS support. ESP-IDF automatically loads thi
 
     The MTDI pin of ESP32, being among four pins used for JTAG communication, is also one of ESP32's bootstrapping pins. On power up ESP32 is sampling binary level on MTDI to set it's internal voltage regulator used to supply power to external SPI flash chip. If binary level on MDTI pin on power up is low, the voltage regulator is set to deliver 3.3 V, if it is high, then the voltage is set to 1.8 V. The MTDI pin should have a pull-up or may rely on internal weak pull down resistor (see `ESP32 Series Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ for details), depending on the type of SPI chip used. Once JTAG is connected, it overrides the pull-up or pull-down resistor that is supposed to do the bootstrapping.
 
-    To handle this issue OpenOCD's board configuration file (e.g. ``board\esp32-wrover-kit-3.3v.cfg`` for ESP-WROVER-KIT board) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad bootup of application due to incorrect flash voltage.
+    To handle this issue OpenOCD's board configuration file (e.g. ``board\esp32-wrover-kit-3.3v.cfg`` for ESP-WROVER-KIT board) provides ``ESP32_FLASH_VOLTAGE`` parameter to set the idle state of the ``TDO`` line to a specified binary level, therefore reducing the chance of a bad boot-up of application due to incorrect flash voltage.
 
     Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash. WROVER earlier than ESP32-WROVER-B use 1.8 V flash, while ESP32-WROVER-B and -E modules use 3.3 V flash.
 
@@ -103,8 +108,20 @@ In order to achieve higher data rates and minimize number of dropped packets it 
 3.  In particular reduce frequency, if you get DSR/DIR errors (and they do not relate to OpenOCD trying to read from a memory range without physical memory being present there).
 4.  ESP-WROVER-KIT operates stable at 20 MHz or 26 MHz.
 
+.. only:: SOC_DEBUG_HAVE_OCD_STUB_BINS
 
-.. _jtag-debugging-tip-debugger-startup-commands:
+    .. _jtag-debugging-tip-improve-debugging-speed:
+
+    Improve Debugging Speed
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+    Enabling :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` allocates 8 KB of RAM and embeds pre-built stub binaries into RAM. This improves the overall debugging speed by eliminating the need to load the stub binaries at runtime. It is particularly beneficial when using flash breakpoints, as it reduces the latency of add/remove breakpoints. However, keep in mind that the increased RAM usage may reduce memory availability for other tasks.
+
+    .. _jtag-debugging-tip-debugger-startup-commands:
+
+.. only:: not SOC_DEBUG_HAVE_OCD_STUB_BINS
+
+    .. _jtag-debugging-tip-debugger-startup-commands:
 
 What Is the Meaning of Debugger's Startup Commands?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,7 +129,7 @@ What Is the Meaning of Debugger's Startup Commands?
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient/appropriate line and start debugging.
 
 * ``set remote hardware-watchpoint-limit {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM}`` — Restrict GDB to using available hardware watchpoints supported by the chip, {IDF_TARGET_SOC_CPU_WATCHPOINTS_NUM} for {IDF_TARGET_NAME}. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
-* ``mon reset halt`` — reset the chip and keep the CPUs halted
+* ``mon reset halt`` — reset the chip and keep the CPUs halted. Target has to be reset to disable memory protection, which is required to enable flash support. If reset is not desirable, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line to disable flash support, see :ref:`jtag-debugging-tip-openocd-config-vars`. Alternatively, disable memory protection using the config option :ref:`CONFIG_ESP_SYSTEM_MEMPROT`.
 * ``maintenance flush register-cache`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``maintenance flush register-cache`` is a way to force GDB to get new state from the target.
 * ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
 * ``c`` — resume the program. It will then stop at breakpoint inserted at ``app_main``.
@@ -175,9 +192,11 @@ It is important to set the variable before including the ESP-specific configurat
     * - ``ESP_RTOS``
       - Set to ``none`` to disable RTOS support. In this case, thread list will not be available in GDB. Can be useful when debugging FreeRTOS itself, and stepping through the scheduler code.
     * - ``ESP_FLASH_SIZE``
-      - Set to ``0`` to disable Flash breakpoints support.
+      - Set to ``0`` to disable flash breakpoints support. If set to ``0``, target will not be reset when GDB connects.
     * - ``ESP_SEMIHOST_BASEDIR``
       - Set to the path (on the host) which will be the default directory for semihosting functions.
+    * - ``ESP_ONLYCPU``
+      - For multi-core targets, can be set to ``1`` to only enable single core debugging.
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: openocd-target-specific-config-vars
@@ -238,10 +257,7 @@ By default, enabling Flash Encryption and/or Secure Boot will disable JTAG debug
 
 The project configuration option :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` will keep JTAG enabled at this time, removing all physical security but allowing debugging. (Although the name suggests Secure Boot, this option can be applied even when only Flash Encryption is enabled).
 
-However, OpenOCD may attempt to automatically read and write the flash in order to set :ref:`software breakpoints <jtag-debugging-tip-where-breakpoints>`. This has two problems:
-
-- Software breakpoints are incompatible with Flash Encryption, OpenOCD currently has no support for encrypting or decrypting flash contents.
-- If Secure Boot is enabled, setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if a software breakpoint is set and then a reset occurs, the signature verification will fail on boot.
+However, OpenOCD may attempt to automatically read and write the flash in order to set :ref:`software breakpoints <jtag-debugging-tip-where-breakpoints>`. Setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if Secure Boot is enabled, a software breakpoint is set, and then a reset occurs, the signature verification will fail on boot.
 
 To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line, see :ref:`jtag-debugging-tip-openocd-config-vars`.
 

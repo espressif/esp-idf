@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <sys/random.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include "esp_log.h"
 #include "esp_transport.h"
@@ -18,7 +17,6 @@
 #include "esp_transport_internal.h"
 #include "errno.h"
 #include "esp_tls_crypto.h"
-#include <arpa/inet.h>
 
 static const char *TAG = "transport_ws";
 
@@ -37,9 +35,17 @@ static const char *TAG = "transport_ws";
 #define WS_SIZE16                   126
 #define WS_SIZE64                   127
 #define MAX_WEBSOCKET_HEADER_SIZE   16
-#define WS_RESPONSE_OK              101
 #define WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN 125
 
+// HTTP status codes for redirection as described in RFC 9110.
+#define WS_HTTP_CODE_MOVED_PERMANENTLY      301
+#define WS_HTTP_CODE_FOUND                  302
+#define WS_HTTP_CODE_SEE_OTHER              303
+#define WS_HTTP_CODE_TEMPORARY_REDIRECT     307
+#define WS_HTTP_CODE_PERMANENT_REDIRECT     308
+// Grouped HTTP status codes for redirection types.
+#define WS_HTTP_PERMANENT_REDIRECT(code) ((code == WS_HTTP_CODE_MOVED_PERMANENTLY) || (code == WS_HTTP_CODE_PERMANENT_REDIRECT))
+#define WS_HTTP_TEMPORARY_REDIRECT(code) ((code == WS_HTTP_CODE_FOUND) || (code == WS_HTTP_CODE_SEE_OTHER) || (code == WS_HTTP_CODE_TEMPORARY_REDIRECT))
 
 typedef struct {
     uint8_t opcode;
@@ -52,15 +58,21 @@ typedef struct {
 
 typedef struct {
     char *path;
-    char *buffer;
     char *sub_protocol;
     char *user_agent;
     char *headers;
+    ws_header_hook_t header_hook;
+    void * header_user_context;
     char *auth;
+    char *buffer;             /*!< Initial HTTP connection buffer, which may include data beyond the handshake headers, such as the next WebSocket packet*/
+    size_t buffer_len;        /*!< The buffer length */
     int http_status_code;
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
+    char *redir_host;
+    char *response_header;
+    size_t response_header_len;
 } transport_ws_t;
 
 /**
@@ -101,29 +113,35 @@ static esp_transport_handle_t ws_get_payload_transport_handle(esp_transport_hand
     return ws->parent;
 }
 
-static char *trimwhitespace(const char *str)
+static int esp_transport_read_internal(transport_ws_t *ws, char *buffer, int len, int timeout_ms)
 {
-    char *end;
+    ESP_STATIC_ANALYZER_CHECK(buffer == NULL, 0);
 
-    // Trim leading space
-    while (isspace((unsigned char)*str)) {
-        str++;
+    // No buffered data to read from, directly attempt to read from the transport.
+    if (ws->buffer_len == 0) {
+        return esp_transport_read(ws->parent, buffer, len, timeout_ms);
     }
 
-    if (*str == 0) {
-        return (char *)str;
+    // At this point, buffer_len is guaranteed to be > 0.
+    int to_read = (ws->buffer_len >= len) ? len : ws->buffer_len;
+
+    // Copy the available or requested data to the buffer.
+    memcpy(buffer, ws->buffer, to_read);
+
+    if (to_read < ws->buffer_len) {
+        // Shift remaining data if not all was read.
+        memmove(ws->buffer, ws->buffer + to_read, ws->buffer_len - to_read);
+        ws->buffer_len -= to_read;
+    } else {
+        // All buffer data was consumed.
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+        free(ws->buffer);
+        ws->buffer = NULL;
+#endif
+        ws->buffer_len = 0;
     }
 
-    // Trim trailing space
-    end = (char *)(str + strlen(str) - 1);
-    while (end > str && isspace((unsigned char)*end)) {
-        end--;
-    }
-
-    // Write new null terminator
-    *(end + 1) = 0;
-
-    return (char *)str;
+    return to_read;
 }
 
 static int get_http_status_code(const char *buffer)
@@ -132,11 +150,11 @@ static int get_http_status_code(const char *buffer)
     const char *found = strcasestr(buffer, http);
     char status_code[4];
     if (found) {
-        found += sizeof(http)/sizeof(http[0]) - 1;
+        found += sizeof(http) - 1;
         found = strchr(found, ' ');
         if (found) {
             found++;
-            strncpy(status_code, found, 4);
+            strncpy(status_code, found, 3);
             status_code[3] = '\0';
             int code = atoi(status_code);
             ESP_LOGD(TAG, "HTTP status code is %d", code);
@@ -146,24 +164,14 @@ static int get_http_status_code(const char *buffer)
     return -1;
 }
 
-static char *get_http_header(const char *buffer, const char *key)
-{
-    char *found = strcasestr(buffer, key);
-    if (found) {
-        found += strlen(key);
-        char *found_end = strstr(found, "\r\n");
-        if (found_end) {
-            found_end[0] = 0;//terminal string
-
-            return trimwhitespace(found);
-        }
-    }
-    return NULL;
-}
-
 static int ws_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+    const char delimiter[] = "\r\n\r\n";
+
+    free(ws->redir_host);
+    ws->redir_host = NULL;
+
     if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connecting to host %s:%d", host, port);
         return -1;
@@ -251,22 +259,108 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     }
     int header_len = 0;
     do {
-        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - header_len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
+        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - 1 - header_len, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read response for Upgrade header");
             return -1;
         }
         header_len += len;
-        ws->buffer[header_len] = '\0';
+        ws->buffer_len = header_len;
+        ws->buffer[header_len] = '\0'; // We will mark the end of the header to ensure that strstr operations for parsing the headers don't fail.
         ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
-    } while (NULL == strstr(ws->buffer, "\r\n\r\n") && header_len < WS_BUFFER_SIZE);
+    } while (NULL == strstr(ws->buffer, delimiter) && header_len < WS_BUFFER_SIZE - 1);
+
+    if (header_len > WS_BUFFER_SIZE - 1) {
+        ESP_LOGE(TAG, "Header size exceeded buffer size (need=%d, max=%d)", header_len + 1, WS_BUFFER_SIZE);
+        return -1;
+    }
+
+    if(ws->response_header) {
+        int copy_len = header_len;
+        if(ws->response_header_len - 1 < header_len) {
+            ESP_LOGW(TAG, "Received header length exceedes the allocated buffer size (need=%d, allocated=%d), truncating to allocated size", header_len, ws->response_header_len);
+            copy_len = ws->response_header_len - 1;
+        }
+        // Copy response header to the static array
+        strncpy(ws->response_header, ws->buffer, copy_len);
+        ws->response_header[copy_len] = '\0';
+    }
+
+    char* delim_ptr = strstr(ws->buffer, delimiter);
+    if (!delim_ptr) {
+        ESP_LOGE(TAG, "Header size exceeded buffer size or delimiter not found");
+        return -1;
+    }
 
     ws->http_status_code = get_http_status_code(ws->buffer);
-    if (ws->http_status_code == -1) {
+    if (ws->http_status_code == -1)  {
         ESP_LOGE(TAG, "HTTP upgrade failed");
         return -1;
     }
 
-    char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
+    const char *location = NULL;
+    int location_len = 0;
+
+    const char *server_key = NULL;
+    int server_key_len = 0;
+    const char * header_cursor = strnstr(ws->buffer, "\r\n", header_len);
+    if (!header_cursor){
+        ESP_LOGE(TAG, "HTTP Header locate failed");
+        return -1;
+    }
+    header_cursor += strlen("\r\n");
+
+    while(header_cursor < delim_ptr){
+        const char * end_of_line = strnstr(header_cursor, "\r\n", header_len - (header_cursor - ws->buffer));
+        if(!end_of_line){
+            ESP_LOGE(TAG, "HTTP Header walk failed");
+            return -1;
+        }
+        else if(end_of_line == header_cursor){
+            ESP_LOGD(TAG, "HTTP Header walk found end");
+            break;
+        }
+        int line_len = end_of_line - header_cursor;
+        ESP_LOGD(TAG, "HTTP Header walk line:%.*s", line_len, header_cursor);
+
+        // Check for Sec-WebSocket-Accept header
+        const char * header_sec_websocket_accept = "Sec-WebSocket-Accept: ";
+        size_t header_sec_websocket_accept_len = strlen(header_sec_websocket_accept);
+        if (line_len >= header_sec_websocket_accept_len && !strncasecmp(header_cursor, header_sec_websocket_accept, header_sec_websocket_accept_len)) {
+            ESP_LOGD(TAG, "found server-key");
+            if(server_key || server_key_len){
+                // RFC6455: The |Sec-WebSocket-Accept| header MUST NOT appear more than once in an HTTP response.
+                ESP_LOGE(TAG, "Multiple Sec-WebSocket-Accept headers");
+                return -1;
+            }
+            server_key = header_cursor + header_sec_websocket_accept_len;
+            server_key_len = line_len - header_sec_websocket_accept_len;
+        }
+        else if (ws->header_hook) {
+            ws->header_hook(ws->header_user_context, header_cursor, line_len);
+        }
+
+        // Check for Location: header
+        const char * header_location = "Location: ";
+        size_t header_location_len = strlen(header_location);
+        if (line_len >= header_location_len && !strncasecmp(header_cursor, header_location, header_location_len)) {
+            location = header_cursor + header_location_len;
+            location_len = line_len - header_location_len;
+        }
+
+        // Adjust cursor to the start of the next line
+        header_cursor += line_len;
+        header_cursor += strlen("\r\n");
+    }
+
+    if (WS_HTTP_TEMPORARY_REDIRECT(ws->http_status_code) || WS_HTTP_PERMANENT_REDIRECT(ws->http_status_code)) {
+        if (location == NULL || location_len <= 0) {
+            ESP_LOGE(TAG, "Location header not found");
+            return -1;
+        }
+        ws->redir_host = strndup(location, location_len);
+        return ws->http_status_code;
+    }
+
     if (server_key == NULL) {
         ESP_LOGE(TAG, "Sec-WebSocket-Accept not found");
         return -1;
@@ -287,14 +381,26 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     esp_crypto_base64_encode(expected_server_key, sizeof(expected_server_key),  &outlen, expected_server_sha1, sizeof(expected_server_sha1));
     expected_server_key[ (outlen < sizeof(expected_server_key)) ? outlen : (sizeof(expected_server_key) - 1) ] = 0;
     ESP_LOGD(TAG, "server key=%s, send_key=%s, expected_server_key=%s", (char *)server_key, (char *)client_key, expected_server_key);
-    if (strcmp((char *)expected_server_key, (char *)server_key) != 0) {
+    if (strncmp((char *)expected_server_key, (char *)server_key, server_key_len) != 0) {
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
+
+    if (delim_ptr != NULL) {
+        size_t delim_pos = delim_ptr - ws->buffer + sizeof(delimiter) - 1;
+        size_t remaining_len = ws->buffer_len - delim_pos;
+        if (remaining_len > 0) {
+            memmove(ws->buffer, ws->buffer + delim_pos, remaining_len);
+            ws->buffer_len = remaining_len;
+        } else {
 #ifdef CONFIG_WS_DYNAMIC_BUFFER
-    free(ws->buffer);
-    ws->buffer = NULL;
+            free(ws->buffer);
+            ws->buffer = NULL;
 #endif
+            ws->buffer_len = 0;
+        }
+    }
+
     return 0;
 }
 
@@ -308,7 +414,7 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
 
     int poll_write;
     if ((poll_write = esp_transport_poll_write(ws->parent, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error transport_poll_write");
+        ESP_LOGE(TAG, "Error transport_poll_write(%d)", poll_write);
         return poll_write;
     }
     ws_header[header_len++] = opcode;
@@ -406,8 +512,10 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
     }
 
     // Receive and process payload
-    if (bytes_to_read != 0 && (rlen = esp_transport_read(ws->parent, buffer, bytes_to_read, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data");
+    if (bytes_to_read != 0 && (rlen = esp_transport_read_internal(ws, buffer, bytes_to_read, timeout_ms)) <= 0) {
+        if (rlen < 0) {
+            ESP_LOGE(TAG, "Error read data(%d)", rlen);
+        }
         return rlen;
     }
     ws->frame_state.bytes_remaining -= rlen;
@@ -418,8 +526,37 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
     return rlen;
 }
 
+static int esp_transport_read_exact_size(transport_ws_t *ws, char *buffer, int requested_len, int timeout_ms)
+{
+    int total_read = 0;
+    int len = requested_len;
+
+    while (len > 0) {
+        int bytes_read = esp_transport_read_internal(ws, buffer, len, timeout_ms);
+
+        if (bytes_read < 0) {
+            return bytes_read; // Return error from the underlying read
+        }
+
+        if (bytes_read == 0) {
+            // If we read 0 bytes, we return an error, since reading exact number of bytes resulted in a timeout operation
+            ESP_LOGW(TAG, "Requested to read %d, actually read %d bytes", requested_len, total_read);
+            return -1;
+        }
+
+        // Update buffer and remaining length
+        buffer += bytes_read;
+        len -= bytes_read;
+        total_read += bytes_read;
+
+        ESP_LOGV(TAG, "Read fragment of %d bytes", bytes_read);
+    }
+    return total_read;
+}
+
 
 /* Read and parse the WS header, determine length of payload */
+
 static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
@@ -428,54 +565,96 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
     char *data_ptr = ws_header, mask;
     int rlen;
-    int poll_read;
     ws->frame_state.header_received = false;
-    if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
-        return poll_read;
+    if (ws->buffer_len == 0) {
+        int poll_read = esp_transport_poll_read(ws->parent, timeout_ms);
+        if (poll_read <= 0) {
+            return poll_read;
+        }
     }
 
     // Receive and process header first (based on header size)
     int header = 2;
     int mask_len = 4;
-    if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data");
+    if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
+        ESP_LOGE(TAG, "Error read data(%d)", rlen);
         return rlen;
     }
     ws->frame_state.header_received = true;
     ws->frame_state.fin = (*data_ptr & 0x80) != 0;
     ws->frame_state.opcode = (*data_ptr & 0x0F);
+    uint8_t rsv = (*data_ptr & 0x70);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d", ws->frame_state.opcode, mask, payload_len);
+    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d, rsv: 0x%02X", ws->frame_state.opcode, mask, payload_len, rsv);
+
+    // RFC 6455 Section 5.2: RSV bits MUST be 0 unless an extension is negotiated
+    if (rsv != 0) {
+        ESP_LOGE(TAG, "Non-zero RSV bits detected (rsv=0x%02X) - protocol violation, no extensions negotiated", rsv);
+        return -1;
+    }
+
+    // RFC 6455 Section 5.2: Validate opcode (only 0x0-0x2 for data, 0x8-0xA for control are defined)
+    if ((ws->frame_state.opcode >= 0x3 && ws->frame_state.opcode <= 0x7) ||
+        (ws->frame_state.opcode >= 0xB && ws->frame_state.opcode <= 0xF)) {
+        ESP_LOGE(TAG, "Reserved opcode detected (opcode=0x%02X) - protocol violation", ws->frame_state.opcode);
+        return -1;
+    }
+
+    // RFC 6455 Section 5.5: Control frames MUST NOT be fragmented
+    if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && !ws->frame_state.fin) {
+        ESP_LOGE(TAG, "Fragmented control frame detected (opcode=0x%02X, fin=%d) - protocol violation",
+                ws->frame_state.opcode, ws->frame_state.fin);
+        return -1;
+    }
+
     if (payload_len == 126) {
         // headerLen += 2;
-        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+        if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read data(%d)", rlen);
             return rlen;
         }
-        payload_len = data_ptr[0] << 8 | data_ptr[1];
+        payload_len = (uint8_t)data_ptr[0] << 8 | (uint8_t)data_ptr[1];
     } else if (payload_len == 127) {
         // headerLen += 8;
         header = 8;
-        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+        if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read data(%d)", rlen);
             return rlen;
         }
 
-        if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0) {
-            // really too big!
-            payload_len = 0xFFFFFFFF;
-        } else {
-            payload_len = data_ptr[4] << 24 | data_ptr[5] << 16 | data_ptr[6] << 8 | data_ptr[7];
+        if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0 ||
+            ((uint8_t)data_ptr[4] & 0x80)) {
+            ESP_LOGE(TAG, "Payload length out of range");
+            return -1;
         }
+        payload_len = (int)((uint32_t)(uint8_t)data_ptr[4] << 24 |
+                            (uint32_t)(uint8_t)data_ptr[5] << 16 |
+                            (uint32_t)(uint8_t)data_ptr[6] << 8 |
+                            (uint32_t)(uint8_t)data_ptr[7]);
     }
-
+    // RFC 6455 Section 5.5: Control frames MUST have payload length of 125 bytes or less
+    if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && payload_len > 125) {
+        ESP_LOGE(TAG, "Control frame with excessive payload detected (opcode=0x%02X, payload_len=%d) - protocol violation",
+                 ws->frame_state.opcode, payload_len);
+        // Consume the payload bytes from the TCP stream to keep it in sync before returning error
+        int remaining = payload_len;
+        while (remaining > 0 && len > 0) {
+            int to_read = remaining < len ? remaining : len;
+            int bytes_read = esp_transport_read_internal(ws, buffer, to_read, timeout_ms);
+            if (bytes_read <= 0) {
+                break;
+            }
+            remaining -= bytes_read;
+        }
+        return -1;
+    }
     if (mask) {
         // Read and store mask
-        if (payload_len != 0 && (rlen = esp_transport_read(ws->parent, buffer, mask_len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
+        if (payload_len != 0 && (rlen = esp_transport_read_exact_size(ws, buffer, mask_len, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read data(%d)", rlen);
             return rlen;
         }
         memcpy(ws->frame_state.mask_key, buffer, mask_len);
@@ -506,7 +685,7 @@ static int ws_handle_control_frame_internal(esp_transport_handle_t t, int timeou
 
     if (payload_len > WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN) {
         ESP_LOGE(TAG, "Not enough room for reading control frames (need=%d, max_allowed=%d)",
-                 ws->frame_state.payload_len, WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN);
+                ws->frame_state.payload_len, WS_TRANSPORT_MAX_CONTROL_FRAME_BUFFER_LEN);
         return -1;
     }
 
@@ -526,7 +705,7 @@ static int ws_handle_control_frame_internal(esp_transport_handle_t t, int timeou
     int actual_len = ws_read_payload(t, control_frame_buffer, control_frame_buffer_len, timeout_ms);
     if (actual_len != payload_len) {
         ESP_LOGE(TAG, "Control frame (opcode=%d) payload read failed (payload_len=%d, read_len=%d)",
-                 ws->frame_state.opcode, payload_len, actual_len);
+                ws->frame_state.opcode, payload_len, actual_len);
         ret = -1;
         goto free_payload_buffer;
     }
@@ -562,6 +741,24 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
             return ws_handle_control_frame_internal(t, timeout_ms);
         }
 
+        // Read the full control frame payload into the caller's buffer in one shot.
+        // This prevents the client from receiving the payload in chunks and
+        // incorrectly echoing only the last chunk as a PONG response.
+        if ((ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) && ws->frame_state.payload_len > 0) {
+            int payload_len = ws->frame_state.payload_len;
+            if (payload_len > len) {
+                ESP_LOGE(TAG, "Control frame payload (%d) exceeds caller buffer (%d)", payload_len, len);
+                return -1;
+            }
+            int bytes_read = esp_transport_read_exact_size(ws, buffer, payload_len, timeout_ms);
+            if (bytes_read != payload_len) {
+                ESP_LOGE(TAG, "Control frame payload read failed (expected=%d, got=%d)", payload_len, bytes_read);
+                return -1;
+            }
+            ws->frame_state.bytes_remaining = 0;
+            return payload_len;
+        }
+
         if (rlen == 0) {
             ws->frame_state.bytes_remaining = 0;
             return 0; // timeout
@@ -570,8 +767,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 
     if (ws->frame_state.payload_len) {
         if ( (rlen = ws_read_payload(t, buffer, len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error reading payload data");
-            ws->frame_state.bytes_remaining = 0;
+            if (rlen < 0) {
+                ESP_LOGE(TAG, "Error reading payload data(%d)", rlen);
+                ws->frame_state.bytes_remaining = 0;
+            }
             return rlen;
         }
     }
@@ -583,6 +782,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->buffer_len > 0) {
+        ESP_LOGD(TAG, "ws_poll_read: buffered data available (%zu bytes)", ws->buffer_len);
+        return 1;
+    }
     return esp_transport_poll_read(ws->parent, timeout_ms);
 }
 
@@ -602,6 +805,7 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     free(ws->buffer);
+    free(ws->redir_host);
     free(ws->path);
     free(ws->sub_protocol);
     free(ws->user_agent);
@@ -641,9 +845,9 @@ void esp_transport_ws_set_path(esp_transport_handle_t t, const char *path)
 static int ws_get_socket(esp_transport_handle_t t)
 {
     if (t) {
-        transport_ws_t *ws = t->data;
-        if (ws && ws->parent && ws->parent->_get_socket) {
-            return ws->parent->_get_socket(ws->parent);
+        transport_ws_t *ws = esp_transport_get_context_data(t);
+        if (ws) {
+            return esp_transport_get_socket(ws->parent);
         }
     }
     return -1;
@@ -651,9 +855,9 @@ static int ws_get_socket(esp_transport_handle_t t)
 
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
-    if (parent_handle == NULL || parent_handle->foundation == NULL) {
-      ESP_LOGE(TAG, "Invalid parent ptotocol");
-      return NULL;
+    if (parent_handle == NULL) {
+    ESP_LOGE(TAG, "Invalid parent ptotocol");
+    return NULL;
     }
     esp_transport_handle_t t = esp_transport_init();
     if (t == NULL) {
@@ -751,6 +955,23 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
     return ESP_OK;
 }
 
+esp_err_t esp_transport_ws_set_header_hook(esp_transport_handle_t t, ws_header_hook_t hook, void * user_context)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (hook == NULL) {
+        ESP_LOGE(TAG, "Header hook is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGV(TAG, "User has context: %s", user_context != NULL ? "true" : "false");
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    ws->header_hook = hook;
+    ws->header_user_context = user_context;
+    return ESP_OK;
+}
+
 esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
 {
     if (t == NULL) {
@@ -768,6 +989,28 @@ esp_err_t esp_transport_ws_set_auth(esp_transport_handle_t t, const char *auth)
     if (ws->auth == NULL) {
         return ESP_ERR_NO_MEM;
     }
+    return ESP_OK;
+}
+
+esp_err_t esp_transport_ws_set_response_headers(esp_transport_handle_t t, char *response_header, size_t response_header_len)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (response_header != NULL && response_header_len == 0) {
+        ESP_LOGE(TAG, "Invalid response header length");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+
+    if (ws == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ws->response_header = response_header;
+    ws->response_header_len = response_header_len;
     return ESP_OK;
 }
 
@@ -794,10 +1037,19 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
         err = esp_transport_ws_set_headers(t, config->headers);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
+    if (config->header_hook || config->header_user_context) {
+        err = esp_transport_ws_set_header_hook(t, config->header_hook, config->header_user_context);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
     if (config->auth) {
         err = esp_transport_ws_set_auth(t, config->auth);
         ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
     }
+    if(config->response_headers) {
+        err = esp_transport_ws_set_response_headers(t, config->response_headers, config->response_headers_len);
+        ESP_TRANSPORT_ERR_OK_CHECK(TAG, err, return err;)
+    }
+
     ws->propagate_control_frames = config->propagate_control_frames;
 
     return err;
@@ -805,14 +1057,30 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
 
 bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t)
 {
-  transport_ws_t *ws = esp_transport_get_context_data(t);
-  return ws->frame_state.fin;
+transport_ws_t *ws = esp_transport_get_context_data(t);
+return ws->frame_state.fin;
 }
 
 int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     return ws->http_status_code;
+}
+
+char* esp_transport_ws_get_redir_uri(esp_transport_handle_t t)
+{
+    if (!t) {
+        ESP_LOGE(TAG, "Invalid Transport handle (null)");
+        return NULL;
+    }
+
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (!ws) {
+        ESP_LOGE(TAG, "Invalid ws context data (null)");
+        return NULL;
+    }
+
+    return ws->redir_host;
 }
 
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)
@@ -854,7 +1122,7 @@ static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char
     if (ws->frame_state.opcode == WS_OPCODE_PING) {
         // handle PING frames internally: just send a PONG with the same payload
         actual_len = _ws_write(t, WS_OPCODE_PONG | WS_FIN, WS_MASK, buffer,
-                               payload_len, timeout_ms);
+                            payload_len, timeout_ms);
         if (actual_len != payload_len) {
             ESP_LOGE(TAG, "PONG send failed (payload_len=%d, written_len=%d)", payload_len, actual_len);
             return -1;
@@ -883,7 +1151,7 @@ static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char
 
         // control frame handled correctly, reset the flag indicating new header received
         ws->frame_state.header_received = false;
-        int ret = esp_transport_ws_poll_connection_closed(t, timeout_ms);
+        int ret = esp_transport_poll_connection_closed(ws->parent, timeout_ms);
         if (ret == 0) {
             ESP_LOGW(TAG, "Connection cannot be terminated gracefully within timeout=%d", timeout_ms);
             return -1;
@@ -906,38 +1174,6 @@ static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char
 
 int esp_transport_ws_poll_connection_closed(esp_transport_handle_t t, int timeout_ms)
 {
-    struct timeval timeout;
-    int sock = esp_transport_get_socket(t);
-    fd_set readset;
-    fd_set errset;
-    FD_ZERO(&readset);
-    FD_ZERO(&errset);
-    FD_SET(sock, &readset);
-    FD_SET(sock, &errset);
-
-    int ret = select(sock + 1, &readset, NULL, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
-    if (ret > 0) {
-        if (FD_ISSET(sock, &readset)) {
-            uint8_t buffer;
-            if (recv(sock, &buffer, 1, MSG_PEEK) <= 0) {
-                // socket is readable, but reads zero bytes -- connection cleanly closed by FIN flag
-                return 1;
-            }
-            ESP_LOGW(TAG, "esp_transport_ws_poll_connection_closed: unexpected data readable on socket=%d", sock);
-        } else if (FD_ISSET(sock, &errset)) {
-            int sock_errno = 0;
-            uint32_t optlen = sizeof(sock_errno);
-            getsockopt(sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
-            ESP_LOGD(TAG, "esp_transport_ws_poll_connection_closed select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), sock);
-            if (sock_errno == ENOTCONN || sock_errno == ECONNRESET || sock_errno == ECONNABORTED) {
-                // the three err codes above might be caused by connection termination by RTS flag
-                // which we still assume as expected closing sequence of ws-transport connection
-                return 1;
-            }
-            ESP_LOGE(TAG, "esp_transport_ws_poll_connection_closed: unexpected errno=%d on socket=%d", sock_errno, sock);
-        }
-        return -1; // indicates error: socket unexpectedly reads an actual data, or unexpected errno code
-    }
-    return ret;
-
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return esp_transport_poll_connection_closed(ws->parent, timeout_ms);
 }

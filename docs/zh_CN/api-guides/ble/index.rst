@@ -1,0 +1,49 @@
+#####################
+低功耗蓝牙\ :sup:`®`
+#####################
+
+:link_to_translation:`en:[English]`
+
+*****
+概览
+*****
+.. toctree::
+   :maxdepth: 1
+
+   overview
+   ble-feature-support-status
+   ble-qualification
+   低功耗模式介绍 <../low-power-mode/low-power-mode-ble>
+   ble-multiconnection-guide
+
+**********
+快速入门
+**********
+
+.. toctree::
+   :maxdepth: 1
+
+   get-started/ble-introduction
+   get-started/ble-device-discovery
+   get-started/ble-connection
+   get-started/ble-data-exchange
+
+***************
+安全
+***************
+
+.. toctree::
+   :maxdepth: 2
+
+   smp
+
+**********
+蓝牙规范
+**********
+
+.. toctree::
+   :maxdepth: 2
+
+   :SOC_BLE_MESH_SUPPORTED: ../esp-ble-mesh/ble-mesh-index
+   :SOC_BLUFI_SUPPORTED: blufi
+   :SOC_BLE_AUDIO_SUPPORTED: ../esp-ble-audio/ble-audio-index

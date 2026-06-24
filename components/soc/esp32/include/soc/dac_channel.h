@@ -1,11 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
-
 
 #define DAC_GPIO25_CHANNEL      DAC_CHAN_0
 #define DAC_CHAN0_GPIO_NUM      25

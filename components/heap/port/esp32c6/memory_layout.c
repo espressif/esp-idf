@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,12 @@
 #include "soc/soc.h"
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_caps.h"
+
+#if CONFIG_SECURE_ENABLE_TEE
+#define SRAM_DIRAM_TEE_ORG               (SOC_DIRAM_IRAM_LOW)
+#define SRAM_DIRAM_TEE_END               (SRAM_DIRAM_TEE_ORG + CONFIG_SECURE_TEE_IRAM_SIZE + CONFIG_SECURE_TEE_DRAM_SIZE)
+#endif
 
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.
@@ -33,7 +39,7 @@ enum {
 };
 
 /* COMMON_CAPS is the set of attributes common to all types of memory on this chip */
-#ifdef CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT
 #define ESP32C6_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 #else
 #define ESP32C6_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_EXEC)
@@ -42,11 +48,11 @@ enum {
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    /*                           Mem Type Name   High Priority Matching                      Medium Priorty Matching    Low Priority Matching */
+    /*                           Mem Type Name   High Priority Matching                      Medium Priority Matching    Low Priority Matching */
     [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C6_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
     [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                        ESP32C6_MEM_COMMON_CAPS,   0 }},
 };
@@ -66,6 +72,17 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  */
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
+#if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+#define ESP_SECURE_BOOT_DIGEST_LEN 48
+#else /* !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define ESP_SECURE_BOOT_DIGEST_LEN 32
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define APP_USABLE_RTC_MEM_END              (SOC_RTC_DATA_HIGH - ESP_SECURE_BOOT_DIGEST_LEN)
+#else
+#define APP_USABLE_RTC_MEM_END              (SOC_RTC_DATA_HIGH)
+#endif
+
 const soc_memory_region_t soc_memory_regions[] = {
     { 0x40800000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40800000,             false}, //D/IRAM level0, can be used as trace memory
     { 0x40820000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40820000,             false}, //D/IRAM level1, can be used as trace memory
@@ -73,7 +90,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x40860000,           (APP_USABLE_DRAM_END-0x40860000),          SOC_MEMORY_TYPE_RAM, 0x40860000,             false}, //D/IRAM level3, can be used as trace memory
     { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_RAM, APP_USABLE_DRAM_END,    true},  //D/IRAM level3, can be used as trace memory (ROM reserved area)
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000,           0x4000,                                    SOC_MEMORY_TYPE_RTCRAM,  0,                      false}, //LPRAM
+    { 0x50000000,           (APP_USABLE_RTC_MEM_END - SOC_RTC_DATA_LOW), SOC_MEMORY_TYPE_RTCRAM,  0,                      false}, //LPRAM
 #endif
 };
 
@@ -95,8 +112,21 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
 
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+extern uint32_t _ulp_hp_mem_resv_start;
+extern uint32_t _ulp_hp_mem_resv_end;
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_ulp_hp_mem_resv_start, (intptr_t)&_ulp_hp_mem_resv_end, ulp_hp_mem);
+#endif
+
+/* NOTE: When ESP-TEE is enabled, the start of the internal SRAM
+ * is used by the TEE and is protected from any REE access using
+ * memory protection mechanisms employed by ESP-TEE.
+ */
+#if CONFIG_SECURE_ENABLE_TEE
+SOC_RESERVE_MEMORY_REGION((intptr_t)SRAM_DIRAM_TEE_ORG, (intptr_t)(SRAM_DIRAM_TEE_END), tee_diram);
+#endif
+
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-// TODO: IDF-6019 check reserved lp mem region
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
 

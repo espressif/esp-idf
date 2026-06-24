@@ -6,7 +6,6 @@ Migration from 5.1 to 5.2
 .. toctree::
     :maxdepth: 1
 
-    bluetooth-classic
     gcc
     :SOC_IEEE802154_SUPPORTED: ieee802154
     peripherals
@@ -14,3 +13,4 @@ Migration from 5.1 to 5.2
     storage
     system
     :SOC_WIFI_SUPPORTED: wifi
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic

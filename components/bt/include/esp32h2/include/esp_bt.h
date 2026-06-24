@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 
 #include "nimble/nimble_npl.h"
 #include "../../../../controller/esp32h2/esp_bt_cfg.h"
+#include "esp_private/esp_modem_clock.h"
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
@@ -109,20 +110,20 @@ typedef enum {
 } esp_ble_enhanced_power_type_t;
 
 /**
- * @brief Address type and address value.
- */
-typedef struct {
-    uint8_t type;     /*!< Type of the Bluetooth address (public, random, etc.) */
-    uint8_t val[6];   /*!< Array containing the 6-byte Bluetooth address value */
-} esp_ble_addr_t;
-
-/**
  * @brief Select buffers
 */
 typedef enum {
     ESP_BLE_LOG_BUF_HCI         = 0x02,
     ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
 } esp_ble_log_buf_t;
+
+/**
+ * @brief Address type and address value.
+ */
+typedef struct {
+    uint8_t type;     /*!< Type of the Bluetooth address (public, random, etc.) */
+    uint8_t val[6];   /*!< Array containing the 6-byte Bluetooth address value */
+} esp_ble_addr_t;
 
 /**
  * @brief  Set BLE TX power
@@ -160,7 +161,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20231124
+#define CONFIG_VERSION  0x20260123
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -201,13 +202,6 @@ typedef struct {
     uint8_t controller_run_cpu;                  /*!< CPU number on which the Bluetooth controller task runs */
     uint8_t enable_qa_test;                      /*!< Enable for QA test */
     uint8_t enable_bqb_test;                     /*!< Enable for BQB test */
-    uint8_t enable_uart_hci;                     /*!< Enable UART for HCI (Host Controller Interface) */
-    uint8_t ble_hci_uart_port;                   /*!< Port of UART for HCI */
-    uint32_t ble_hci_uart_baud;                  /*!< Baudrate of UART for HCI */
-    uint8_t ble_hci_uart_data_bits;              /*!< Data bits of UART for HCI */
-    uint8_t ble_hci_uart_stop_bits;              /*!< Stop bits of UART for HCI */
-    uint8_t ble_hci_uart_flow_ctrl;              /*!< Flow control of UART for HCI */
-    uint8_t ble_hci_uart_uart_parity;            /*!< UART parity */
     uint8_t enable_tx_cca;                       /*!< Enable Clear Channel Assessment (CCA) when transmitting */
     uint8_t cca_rssi_thresh;                     /*!< RSSI threshold for CCA */
     uint8_t sleep_en;                            /*!< Enable sleep functionality */
@@ -220,8 +214,35 @@ typedef struct {
     uint8_t cpu_freq_mhz;                        /*!< CPU frequency in megahertz */
     uint8_t ignore_wl_for_direct_adv;            /*!< Ignore the white list for directed advertising */
     uint8_t enable_pcl;                          /*!< Enable power control */
-    uint8_t csa2_select;                             /*!< Select CSA#2*/
-    uint32_t config_magic;                       /*!< Configuration magic value */
+    uint8_t csa2_select;                         /*!< Select CSA#2*/
+    uint8_t enable_csr;                          /*!< Enable CSR */
+    uint8_t ble_aa_check;                        /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
+    uint8_t ble_llcp_disc_flag;                     /*!< Flag indicating whether the Controller disconnects after Instant Passed (0x28) error occurs. Configurable in menuconfig.
+                                                        - The Controller does not disconnect after Instant Passed (0x28) by default. */
+    uint16_t scan_backoff_upperlimitmax;            /*!< The value of upperlimitmax is 2^n, The maximum value is 256 */
+    uint8_t ble_chan_ass_en;                        /*!< Enable / disable BLE channel assessment. Configurable in menuconfig.
+                                                        - 0 - Disable
+                                                        - 1 - Enable (default) */
+    uint8_t ble_data_lenth_zero_aux;                /*!< Enable / disable auxiliary packets when the extended ADV data length is zero. Configurable in menuconfig.
+                                                        - 0 - Disable (default)
+                                                        - 1 - Enable */
+    uint8_t vhci_enabled;                           /*!< VHCI is enabled */
+    uint8_t ptr_check_enabled;                      /*!< Enable boundary check for internal memory. */
+    uint8_t ble_adv_tx_options;                     /*!< The options for Extended advertising sending. */
+    uint8_t skip_unnecessary_checks_en;             /*!< The option to skip non-fatal state checks and perform extra handling for fatal checks. */
+    uint8_t fast_conn_data_tx_en;                   /*!< The option for fast transmission of connection data
+                                                        - 0 - Disable
+                                                        - 1 - Enable (default) */
+    int8_t ch39_txpwr;                              /*!< BLE transmit power (in dBm) used for BLE advertising on channel 39. */
+    uint8_t adv_rsv_cnt;                            /*!< BLE adv state machine reserve count number */
+    uint8_t conn_rsv_cnt;                           /*!< BLE conn state machine reserve count number */
+    uint8_t priority_level_cfg;                     /*!< The option for priority level configuration */
+    uint8_t slv_fst_rx_lat_en;                      /*!< The option for enabling slave fast PDU reception during latency. */
+    uint8_t dl_itvl_phy_sync_en;                    /*!< The option for automatically initiate the data length update when phy update or connect interval update. */
+    uint8_t scan_allow_adi_filter;                  /*!< The option for ext scan to allow PDU with specific adi. */
+    uint8_t enhanced_mem_resv;                      /*!< The option masks the BLE events with all reserved memory. */
+    uint8_t rxbuf_reserved;                          /*!< The option reserve all Rxbuffer memory at initialization. */
+    uint32_t config_magic;                          /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
 
@@ -258,13 +279,6 @@ typedef struct {
     .controller_run_cpu         = 0,                                                    \
     .enable_qa_test             = RUN_QA_TEST,                                          \
     .enable_bqb_test            = RUN_BQB_TEST,                                         \
-    .enable_uart_hci            = HCI_UART_EN,                                          \
-    .ble_hci_uart_port          = DEFAULT_BT_LE_HCI_UART_PORT,                          \
-    .ble_hci_uart_baud          = DEFAULT_BT_LE_HCI_UART_BAUD,                          \
-    .ble_hci_uart_data_bits     = DEFAULT_BT_LE_HCI_UART_DATA_BITS,                     \
-    .ble_hci_uart_stop_bits     = DEFAULT_BT_LE_HCI_UART_STOP_BITS,                     \
-    .ble_hci_uart_flow_ctrl     = DEFAULT_BT_LE_HCI_UART_FLOW_CTRL,                     \
-    .ble_hci_uart_uart_parity   = DEFAULT_BT_LE_HCI_UART_PARITY,                        \
     .enable_tx_cca              = DEFAULT_BT_LE_TX_CCA_ENABLED,                         \
     .cca_rssi_thresh            = 256 - DEFAULT_BT_LE_CCA_RSSI_THRESH,                  \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
@@ -274,8 +288,28 @@ typedef struct {
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .cpu_freq_mhz               = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,                      \
     .ignore_wl_for_direct_adv   = 0,                                                    \
-    .enable_pcl                 = 0,                                                    \
-    .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                      \
+    .enable_pcl                 = DEFAULT_BT_LE_POWER_CONTROL_ENABLED,                  \
+    .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
+    .enable_csr                 = DEFAULT_BT_LE_SUBRATE_ENABLED,                        \
+    .ble_aa_check               = DEFAULT_BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS,  \
+    .ble_llcp_disc_flag         = BT_LE_CTRL_LLCP_DISC_FLAG,                            \
+    .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,                   \
+    .ble_chan_ass_en            = DEFAULT_BT_LE_CTRL_CHAN_ASS_EN,                       \
+    .ble_data_lenth_zero_aux    = DEFAULT_BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX,          \
+    .vhci_enabled               = DEFAULT_BT_LE_VHCI_ENABLED,                           \
+    .ptr_check_enabled          = DEFAULT_BT_LE_PTR_CHECK_ENABLED,                      \
+    .ble_adv_tx_options         = DEFAULT_BT_LE_ADV_TX_OPTIONS,                         \
+    .skip_unnecessary_checks_en = 0,                                                    \
+    .fast_conn_data_tx_en       = DEFAULT_BT_LE_CTRL_FAST_CONN_DATA_TX_EN,              \
+    .ch39_txpwr                 = BLE_CH39_TX_PWR_DBM_N,                                \
+    .adv_rsv_cnt                = BLE_LL_ADV_SM_RESERVE_CNT_N,                          \
+    .conn_rsv_cnt               = BLE_LL_CONN_SM_RESERVE_CNT_N,                         \
+    .priority_level_cfg         = BT_LL_CTRL_PRIO_LVL_CFG,                              \
+    .slv_fst_rx_lat_en          = DEFAULT_BT_LE_CTRL_SLV_FAST_RX_CONN_DATA_EN,          \
+    .dl_itvl_phy_sync_en        = DEFAULT_BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN,               \
+    .scan_allow_adi_filter      = DEFAULT_BT_SCAN_ALLOW_ENH_ADI_FILTER,                 \
+    .enhanced_mem_resv          = DEFAULT_BT_LE_CTRL_ENH_MEM_RESV_ADV,                  \
+    .rxbuf_reserved             = DEFAULT_BT_LE_CTRL_RXBUF_MEM_RESV,                    \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
@@ -431,6 +465,18 @@ extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
  */
 void esp_ble_controller_log_dump_all(bool output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+
+modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void);
+
+void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src);
+
+uint32_t esp_bt_get_lpclk_freq(void);
+
+void esp_bt_set_lpclk_freq(uint32_t clk_freq);
+
+#if CONFIG_BT_LE_MEM_CHECK_ENABLED
+void ble_memory_count_limit_set(uint16_t count_limit);
+#endif // CONFIG_BT_LE_MEM_CHECK_ENABLED
 
 #ifdef __cplusplus
 }

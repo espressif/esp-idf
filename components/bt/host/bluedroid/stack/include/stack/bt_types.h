@@ -33,6 +33,8 @@ typedef int32_t INT32;
 
 #define BCM_STRCPY_S(x1,x2)      strcpy((x1),(x2))
 #define BCM_STRNCPY_S(x1,x2,x3)  strncpy((x1),(x2),(x3))
+#define BCM_STRCMP_S(x1,x2)      strcmp((x1),(x2))
+#define BCM_STRNCMP_S(x1,x2,x3)  strncmp((x1),(x2),(x3))
 
 /* READ WELL !!
 **
@@ -258,6 +260,7 @@ typedef struct {
 
 #define STREAM_SKIP_UINT8(p)  do { (p) += 1; } while (0)
 #define STREAM_SKIP_UINT16(p) do { (p) += 2; } while (0)
+#define STREAM_SKIP_UINT24(p) do { (p) += 3; } while (0)
 
 /********************************************************************************
 ** Macros to get and put bytes to and from a field (Little Endian format).
@@ -484,6 +487,7 @@ typedef struct {
 #define BLE_ADDR_RANDOM_ID      0x03
 #define BLE_ADDR_TYPE_MAX       BLE_ADDR_RANDOM_ID
 #define BLE_ADDR_UNKNOWN_TYPE   0XFF
+#define BLE_ADDR_ANONYMOUS      0xFF
 typedef UINT8 tBLE_ADDR_TYPE;
 #define BLE_ADDR_TYPE_MASK      (BLE_ADDR_RANDOM | BLE_ADDR_PUBLIC)
 
@@ -676,6 +680,11 @@ typedef void (BT_LOG_FUNC) (int trace_type, const char *fmt_str, ...);
 typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 #endif
 
+/* peer irk */
+#ifndef PEER_IRK_LEN
+#define PEER_IRK_LEN     16
+typedef uint8_t PEER_IRK[PEER_IRK_LEN];
+#endif
 // From bd.c
 
 /*****************************************************************************

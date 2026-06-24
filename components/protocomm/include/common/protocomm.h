@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -259,6 +259,21 @@ esp_err_t protocomm_set_version(protocomm_t *pc, const char *ep_name,
  *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
  */
 esp_err_t protocomm_unset_version(protocomm_t *pc, const char *ep_name);
+
+/**
+ * @brief   Get the security version of the protocomm instance
+ *
+ * This API will return the security version of the protocomm instance.
+ *
+ * @param[in] pc        Pointer to the protocomm instance
+ * @param[out] sec_ver  Pointer to the security version
+ * @param[out] sec_patch_ver  Pointer to the security patch version
+ *
+ * @return
+ *  - ESP_OK : Success
+ *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
+ */
+esp_err_t protocomm_get_sec_version(protocomm_t *pc, int *sec_ver, uint8_t *sec_patch_ver);
 
 #ifdef __cplusplus
 }

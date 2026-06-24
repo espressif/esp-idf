@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -62,8 +62,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 		{
 			ESP_LOGI(TAG, "WIFI_EVENT_AP_STADISCONNECTED");
 			wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
-			ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
-					MAC2STR(event->mac), event->aid);
+			ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d, reason=%d",
+					MAC2STR(event->mac), event->aid, event->reason);
 		}
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:

@@ -1,12 +1,22 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(non_os_build NON_OS_BUILD)
+
 set(priv_req)
 if(NOT ${target} STREQUAL "linux")
     list(APPEND priv_req esptool_py)
 endif()
 
+if(NOT DEFINED BOOTLOADER_OFFSET)  # For Linux target
+    if(DEFINED CONFIG_BOOTLOADER_OFFSET_IN_FLASH)
+        set(BOOTLOADER_OFFSET ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH})
+    else()
+        set(BOOTLOADER_OFFSET 0)
+    endif()
+endif()
+
 idf_component_register(PRIV_REQUIRES ${priv_req})
 
-if(BOOTLOADER_BUILD)
+if(non_os_build)
     return()
 endif()
 
@@ -20,6 +30,10 @@ else()
     set(unsigned_partition_bin "partition-table.bin")
     set(final_partition_bin "partition-table.bin")
     set(final_partition_target "build_partition_table")
+endif()
+
+if(CONFIG_BOOTLOADER_RECOVERY_OFFSET)
+    set(recovery_bootloader_option --recovery-bootloader-offset ${CONFIG_BOOTLOADER_RECOVERY_OFFSET})
 endif()
 
 if(NOT CONFIG_PARTITION_TABLE_MD5)
@@ -53,8 +67,13 @@ idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(extra_subtypes EXTRA_PARTITION_SUBTYPES)
 
-set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" "-q"
-                        "--offset" "${PARTITION_TABLE_OFFSET}" "${md5_opt}" "${flashsize_opt}"
+set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
+                        "-q"
+                        "--offset" "${PARTITION_TABLE_OFFSET}"
+                        "--primary-bootloader-offset" "${BOOTLOADER_OFFSET}"
+                        "${recovery_bootloader_option}"
+                        "${md5_opt}"
+                        "${flashsize_opt}"
                         "${partition_secure_opt}" ${extra_partition_subtypes} "--")
 
 set(partition_table_display
@@ -115,28 +134,34 @@ if(${target} STREQUAL "linux" AND EXISTS ${partition_csv})
     # target. This is a hack, since that target name is an implementation detail
     # of the build system.
 
-    add_dependencies(__idf_build_target partition-table)
+    if(IDF_BUILD_V2)
+        # Build system v2 does not support __idf_build_target target, so add to ALL target.
+        add_custom_target(partition-table-linux-build ALL DEPENDS partition-table)
+    else()
+        add_dependencies(__idf_build_target partition-table)
+    endif()
 endif()
 
 # Add signing steps
 if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+    idf_component_get_property(espsecure_py_cmd esptool_py ESPSECUREPY_CMD)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
         add_custom_target(gen_unsigned_partition_bin ALL DEPENDS
                         "${build_dir}/partition_table/${unsigned_partition_bin}")
 
         add_custom_command(OUTPUT "${build_dir}/partition_table/${final_partition_bin}"
-            COMMAND ${ESPSECUREPY} sign_data --version 1 --keyfile "${SECURE_BOOT_SIGNING_KEY}"
+            COMMAND ${espsecure_py_cmd} sign-data --version 1 --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             -o "${build_dir}/partition_table/${final_partition_bin}"
             "${build_dir}/partition_table/${unsigned_partition_bin}"
             DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
             VERBATIM)
     else()
-        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
+        string(REPLACE ";" " " espsecurepy "${espsecure_py_cmd}")
         add_custom_command(TARGET partition-table POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo
                 "Partition table built but not signed. Sign partition data before flashing:"
             COMMAND ${CMAKE_COMMAND} -E echo
-                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
+                "\t${espsecurepy} sign-data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
             VERBATIM)
     endif()
 elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
@@ -154,5 +179,16 @@ if(CONFIG_APP_BUILD_GENERATE_BINARIES AND CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
                                         "${build_dir}/partition_table/${final_partition_bin}")
     esptool_py_flash_target_image(flash partition-table "${PARTITION_TABLE_OFFSET}"
                                         "${build_dir}/partition_table/${final_partition_bin}")
+
+    # Add partition table as a dependency to the partition-table-flash target
+    add_dependencies(partition-table-flash partition-table)
+    # Add partition table as a dependency to the flash target
+    add_dependencies(flash partition_table_bin)
+
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        # Also add partition table as a dependency to the encrypted-flash target
+        add_dependencies(encrypted-flash partition_table_bin)
+    endif()
+
     add_deprecated_target_alias(partition_table-flash partition-table-flash)
 endif()

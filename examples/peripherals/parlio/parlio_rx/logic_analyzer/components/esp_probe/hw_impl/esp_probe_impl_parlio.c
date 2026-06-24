@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "driver/parlio_rx.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "esp_clk_tree.h"
 #include "esp_heap_caps.h"
 #include "esp_check.h"
@@ -43,7 +45,11 @@ esp_err_t esp_probe_priv_init_hardware(esp_probe_handle_t handle, esp_probe_conf
     esp_err_t ret = ESP_OK;
     s_ephi = calloc(1, sizeof(esp_probe_impl_pralio_t));
     ESP_RETURN_ON_FALSE(s_ephi, ESP_ERR_NO_MEM, TAG, "no memory for the esp probe hardware implementation");
-    s_ephi->payload = heap_caps_calloc(1, ESP_PROBE_DEFAULT_MAX_RECV_SIZE, ESP_PROBE_ALLOC_CAPS);
+
+    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    alignment = alignment < 4 ? 4 : alignment;
+    size_t payload_aligned_size = ESP_PROBE_DEFAULT_MAX_RECV_SIZE & ~(alignment - 1);
+    s_ephi->payload = heap_caps_aligned_calloc(alignment, 1, payload_aligned_size, ESP_PROBE_DMA_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(s_ephi->payload, ESP_ERR_NO_MEM, err, TAG, "no memory for payload");
 
     // Get the channel number, the channel number can only be the power of 2
@@ -76,8 +82,6 @@ esp_err_t esp_probe_priv_init_hardware(esp_probe_handle_t handle, esp_probe_conf
         .valid_gpio_num = GPIO_NUM_NC,      // Does not need valid gpio, all data gpio are used as sampling channel
         .flags = {
             .clk_gate_en = false,
-            .io_loop_back = true,
-            .io_no_init = true,
         }
     };
     memcpy(parlio_rx_cfg.data_gpio_nums, config->probe_gpio, PARLIO_RX_UNIT_MAX_DATA_WIDTH * sizeof(gpio_num_t));

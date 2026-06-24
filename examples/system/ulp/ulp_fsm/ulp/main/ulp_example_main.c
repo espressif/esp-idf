@@ -42,8 +42,8 @@ void app_main(void)
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-    if (cause != ESP_SLEEP_WAKEUP_ULP) {
+    uint32_t causes = esp_sleep_get_wakeup_causes();
+    if (!(causes & BIT(ESP_SLEEP_WAKEUP_ULP))) {
         printf("Not ULP wakeup, initializing ULP\n");
         init_ulp_program();
     } else {

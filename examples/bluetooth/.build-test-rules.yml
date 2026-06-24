@@ -18,100 +18,242 @@ examples/bluetooth:
 examples/bluetooth/bluedroid/ble:
   <<: *bt_default_depends
   disable:
-    - if: SOC_BT_SUPPORTED != 1
-
-
-examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
-  disable:
-    - if: SOC_BT_SUPPORTED != 1
-  depends_components:
-    - esp_driver_gpio
-
-examples/bluetooth/bluedroid/ble_50:
-  disable:
-    - if: SOC_BLE_50_SUPPORTED != 1
-
-examples/bluetooth/bluedroid/classic_bt:
-  disable:
-    - if: SOC_BT_CLASSIC_SUPPORTED != 1
-  depends_components:
-    - bt
-    - esp_phy
-    - nvs_flash
-    - esp_log
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_components+:
     - esp_console
-    - vfs
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
   depends_filepatterns:
-    - components/driver/dac/**/*
+    - examples/bluetooth/bluedroid/ble/pytest_ble_test.py
+
+examples/bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_cent:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+
+examples/bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_prph:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+
+examples/bluetooth/bluedroid/ble/ble_hid_device_demo:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_components+:
+    - esp_driver_gpio
+
+examples/bluetooth/bluedroid/ble/ble_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_components+:
+    - esp_console
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble_throughput_test.py
+
+examples/bluetooth/bluedroid/ble_50:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_50_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_components+:
+    - esp_console
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/ble_50/pytest_ble50_test.py
+
+examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_central:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_conn_subrating_peripheral:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUBRATE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_connection_central_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_connection_peripheral_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_advertiser_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_pawr_synchronizer:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_periodic_adv_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_periodic_sync_with_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_power_control_central:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/ble_50/ble_power_control_peripheral:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_POWER_CONTROL_SUPPORTED == 1
+
+examples/bluetooth/bluedroid/classic_bt:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BT_CLASSIC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: temporarily lack of runners
+  depends_components+:
+    - esp_lcd
+    - esp_console
+    - esp_driver_gpio
+    - esp_driver_i2s
+    - esp_driver_uart
+    - esp_driver_dac
+  depends_components-:
+    - mbedtls
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/esp_hid_host/**/*
+    - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_cover_art/pytest_classic_bt_cover_art_test.py
+    - examples/bluetooth/bluedroid/classic_bt/avrcp_ct_metadata/pytest_classic_bt_metadata_test.py
+    - examples/bluetooth/bluedroid/classic_bt/bt_discovery/pytest_classic_bt_discovery_test.py
 
 examples/bluetooth/bluedroid/coex/a2dp_gatts_coex:
   <<: *bt_default_depends
   disable:
-    - if: IDF_TARGET != "esp32"
+    - if: SOC_BT_CLASSIC_SUPPORTED != 1
+    - if: SOC_BLE_SUPPORTED != 1
       temporary: true
       reason: the other targets are not tested yet
-  depends_components:
+  depends_components+:
     - esp_driver_i2s
-  depends_filepatterns:
-    - components/driver/dac/**/*
+    - esp_driver_dac
 
 examples/bluetooth/blufi:
+  <<: *bt_default_depends
   disable:
-    - if: SOC_BT_SUPPORTED != 1
-    - if: SOC_WIFI_SUPPORTED != 1
-  depends_components:
-    - bt
-    - esp_phy
-    - nvs_flash
-    - esp_log
+    - if: SOC_BLUFI_SUPPORTED != 1
+  depends_components+:
     - esp_console
-    - vfs
     - esp_wifi
-    - esp_event
-    - mbedtls
+
+examples/bluetooth/esp_ble_audio:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_AUDIO_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/esp_ble_audio/common_components/**/*
+
+examples/bluetooth/esp_ble_iso:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_ISO_SUPPORTED != 1
+  depends_filepatterns:
+    - examples/bluetooth/esp_ble_iso/common_components/**/*
 
 examples/bluetooth/esp_ble_mesh:
+  <<: *bt_default_depends
   disable:
     - if: SOC_BLE_MESH_SUPPORTED != 1
     # limit build configs
     - if: CI_COMMIT_REF_NAME == "master" and (NIGHTLY_RUN == 0 and CONFIG_NAME not in ["default", "bluedroid", "nimble"])
-  depends_components:
-    - bt
-    - esp_phy
+  depends_components+:
     - esp_console
-    - vfs
-    - mbedtls
-    - touch_element
     - esp_driver_gpio
+  depends_components-:
+    - esp_coex
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
 
 examples/bluetooth/esp_ble_mesh/wifi_coexist:
+  <<: *bt_default_depends
   disable:
     - if: SOC_BLE_MESH_SUPPORTED != 1
     - if: SOC_WIFI_SUPPORTED != 1
-  depends_components:
-    - bt
-    - esp_phy
+  depends_components+:
     - esp_console
-    - vfs
-    - mbedtls
-    - esp_coex
     - esp_wifi
     - esp_netif
     - esp_driver_gpio
   depends_filepatterns:
     - examples/bluetooth/esp_ble_mesh/common_components/**/*
 
-examples/bluetooth/hci:
+examples/bluetooth/esp_hid_device:
   <<: *bt_default_depends
-  enable:
-    - if: IDF_TARGET == "esp32"
+  disable:
+    - if: SOC_BT_SUPPORTED != 1
+  depends_components+:
+    - esp_hid
+
+examples/bluetooth/esp_hid_host:
+  <<: *bt_default_depends
+  disable_test:
+    - if: IDF_TARGET != "esp32"
       temporary: true
-      reason: the other targets are not tested yet
+      reason: temporarily test esp32
+  disable:
+    - if: SOC_BT_SUPPORTED != 1
+  depends_components+:
+    - esp_hid
+  depends_filepatterns:
+    - examples/bluetooth/bluedroid/classic_bt/pytest_classic_bt_test.py
+
+examples/bluetooth/hci/ble_adv_scan_combined:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_components+:
+    - esp_driver_uart
   depends_filepatterns:
     - examples/bluetooth/hci/hci_common_component/**/*
 
@@ -119,29 +261,72 @@ examples/bluetooth/hci/controller_hci_uart_esp32:
   <<: *bt_default_depends
   enable:
     - if: IDF_TARGET == "esp32"
-  depends_components:
+  depends_components+:
     - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/hci/hci_common_component/**/*
 
 examples/bluetooth/hci/controller_hci_uart_esp32c3_and_esp32s3:
   <<: *bt_default_depends
   enable:
     - if: IDF_TARGET in ["esp32c3", "esp32s3"]
-  depends_components:
+  depends_components+:
     - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/hci/hci_common_component/**/*
 
-
-# config BT_NIMBLE_ENABLED does not depends on any soc cap
-examples/bluetooth/nimble:
+examples/bluetooth/hci/controller_vhci_ble_adv:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
+  depends_components+:
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/hci/hci_common_component/**/*
+
+
+# config BT_NIMBLE_ENABLED does not depends on any soc cap
+examples/bluetooth/nimble/ble_ancs:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1
+      temporary: true
+      reason: the other targets are not tested yet
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
+examples/bluetooth/nimble/ble_chan_sound_initiator:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_initiator/**/*
+    - examples/bluetooth/nimble/common/**/*
+
+examples/bluetooth/nimble/ble_chan_sound_reflector:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET == "esp32c6"
+      temporary: true
+      reason: Channel Sounding example only supported on ESP32-C6
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_chan_sound_reflector/**/*
+    - examples/bluetooth/nimble/common/**/*
+examples/bluetooth/nimble/ble_cte:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_BLE_CTE_SUPPORTED == 1
+  depends_filepatterns:
+    - examples/bluetooth/nimble/ble_cte/common_components/*
+
 examples/bluetooth/nimble/ble_enc_adv_data:
   <<: *bt_default_depends
-  disable:
-    - if: SOC_ESP_NIMBLE_CONTROLLER != 1
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
+      temporary: true
+      reason: BLE5.0 not supported on esp32
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
@@ -162,6 +347,16 @@ examples/bluetooth/nimble/ble_multi_conn:
       reason: the other targets are not tested yet
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
+
+examples/bluetooth/nimble/ble_pawr_adv:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
+
+examples/bluetooth/nimble/ble_pawr_adv_conn:
+  <<: *bt_default_depends
+  enable:
+    - if: SOC_ESP_NIMBLE_CONTROLLER == 1 and IDF_TARGET != "esp32c2"
 
 examples/bluetooth/nimble/ble_periodic_adv:
   <<: *bt_default_depends
@@ -194,10 +389,14 @@ examples/bluetooth/nimble/blecent:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
-  depends_components:
-    - bt
-    - esp_phy
-    - esp_event
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_components+:
     - esp_coex
     - esp_pm
   depends_filepatterns:
@@ -216,17 +415,14 @@ examples/bluetooth/nimble/blemesh:
     - examples/bluetooth/nimble/common/**/*
 
 examples/bluetooth/nimble/bleprph_wifi_coex:
+  <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
     - if: SOC_WIFI_SUPPORTED != 1
-  depends_components:
-    - bt
-    - esp_phy
-    - esp_event
+  depends_components+:
     - esp_hid
     - esp_wifi
     - esp_coex
-    - nvs_flash
     - lwip
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
@@ -242,10 +438,14 @@ examples/bluetooth/nimble/power_save:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
-  depends_components:
-    - bt
-    - esp_phy
-    - esp_event
+  disable_test:
+    - if: IDF_TARGET == "esp32s31"
+      temporary: true
+      reason: lack of runners, and light sleep not supported yet
+    - if: IDF_TARGET == "esp32h4" # TODO: IDFCI-11112
+      temporary: true
+      reason: lack of runner
+  depends_components+:
     - esp_coex
     - esp_pm
   depends_filepatterns:
@@ -258,7 +458,18 @@ examples/bluetooth/nimble/throughput_app:
   <<: *bt_default_depends
   disable:
     - if: SOC_BLE_SUPPORTED != 1
-  depends_components:
+  depends_components+:
+    - esp_driver_gpio
+    - esp_driver_uart
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/throughput_app/blecent_throughput/components/**/*
+
+examples/bluetooth/nimble/throughput_app/blecent_throughput:
+  <<: *bt_default_depends
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_components+:
     - esp_driver_gpio
     - esp_driver_uart
   depends_filepatterns:

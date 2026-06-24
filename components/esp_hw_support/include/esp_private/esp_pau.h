@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,18 @@ void pau_regdma_trigger_modem_link_backup(void);
  * @brief Software trigger regdma to perform modem link restore
  */
 void pau_regdma_trigger_modem_link_restore(void);
+
+#if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
+/**
+ * @brief Software trigger REGDMA backup on WiFi MAC SEL link
+ */
+void pau_regdma_trigger_wifimac_link_backup(void);
+
+/**
+ * @brief Software trigger REGDMA restore on WiFi MAC SEL link
+ */
+void pau_regdma_trigger_wifimac_link_restore(void);
+#endif
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
@@ -76,6 +88,18 @@ void pau_regdma_trigger_extra_link_backup(void);
  * @brief Software trigger regdma to perform extra link restore
  */
 void pau_regdma_trigger_extra_link_restore(void);
+
+#if SOC_PAU_IN_TOP_DOMAIN
+/**
+ * @brief Rentention link entry selection, enable or disable the retention
+ *        link entry configuration in always-on domain
+ *
+ * @param enable Set true to use always-on domain link configuration instead
+ *
+ * @return The origin aon link bypass enable status
+ */
+bool pau_regdma_enable_aon_link_entry(bool enable);
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,25 +40,35 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
 
     /* device not in bond list and exceed the maximum number of bonded devices, delete the inactive bonded device */
-    if (btc_storage_get_num_all_bond_devices() >= BTM_SEC_MAX_DEVICE_RECORDS && !btc_config_has_section(bdstr)) {
+    if (btc_storage_get_num_all_bond_devices() >= BTM_SEC_MAX_BONDS && !btc_config_has_section(bdstr)) {
         const btc_config_section_iter_t *iter = btc_config_section_begin();
-        const btc_config_section_iter_t *remove_iter = iter;
-        /* find the first device(the last node) */
+        const btc_config_section_iter_t *remove_iter = NULL;
+        /* find the last bdaddr-formatted device section */
         while (iter != btc_config_section_end()) {
-            remove_iter = iter;
+            const char *name = btc_config_section_name(iter);
+            if (name && string_is_bdaddr(name)) {
+                remove_iter = iter;
+            }
             iter = btc_config_section_next(iter);
         }
-        const char *remove_section = btc_config_section_name(remove_iter);
 
-        // delete device info
-        string_to_bdaddr(remove_section, &bd_addr);
-        BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
-        BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
+        if (remove_iter != NULL) {
+            const char *remove_section = btc_config_section_name(remove_iter);
+            if (string_to_bdaddr(remove_section, &bd_addr)) {
+                // delete device info
+                BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
+                BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
 
-        // delete config info
-        if (btc_config_remove_section(remove_section)) {
-            BTC_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the first device info : %02x:%02x:%02x:%02x:%02x:%02x",
-                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
+                // delete config info
+                if (btc_config_remove_section(remove_section)) {
+                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the first device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                        bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
+                }
+            } else {
+                BTC_TRACE_ERROR("Failed to convert section name to bdaddr: %s", remove_section);
+            }
+        } else {
+            BTC_TRACE_WARNING("No bdaddr-formatted section found to remove");
         }
     }
 
@@ -141,8 +151,8 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
             continue;
         }
         dev_cnt ++;
-        /* if the number of device stored in nvs not exceed to BTM_SEC_MAX_DEVICE_RECORDS, load it */
-        if (dev_cnt <= BTM_SEC_MAX_DEVICE_RECORDS) {
+        /* if the number of device stored in nvs not exceed to BTM_SEC_MAX_BONDS, load it */
+        if (dev_cnt <= BTM_SEC_MAX_BONDS) {
             if (btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) && btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
                 btc_config_exist(name, BTC_STORAGE_SC_SUPPORT) && btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
                 /* load bt device */

@@ -123,6 +123,10 @@ The following functions were modified to accommodate SMP behavior:
   - In SMP, the function now disables interrupts to ensure that the calling task does not switch cores while checking its own copy of `uxSchedulerSuspended`.
 - `prvAddCurrentTaskToDelayedList()`
   - Added extra check to see if current blocking task has already been deleted by the other core.
+- `xStreamBufferReceive()`
+  - Added a critical section for setting `xTaskWaitingToReceive` to `NULL` so that the write is SMP safe.
+- `xStreamBufferSend()`
+  - Added a critical section for setting `xTaskWaitingToSend` to `NULL` so that the write is SMP safe.
 
 ### Critical Section Changes
 
@@ -138,6 +142,10 @@ The following functions were modified to accommodate SMP behavior:
 - Queues no longer use queue locks (see `queueUSE_LOCKS`)
   - Queues now just use critical sections and skips queue locking
   - Queue functions can now execute within a single critical section block
+- New `xPortThreadSafeClaim()` / `xPortThreadSafeDisclaim()`
+  - While claimed, port-layer vPortEnterCritical/vPortExitCritical on the current core are no-ops
+  - Claim only with interrupts disabled on the current core; one active claim system-wide; must pair with Disclaim
+  - Documented in `portmacro.h` and `docs/en/api-reference/system/freertos_idf.rst`
 
 ## Single Core Differences
 
@@ -199,6 +207,7 @@ List of changes made to Vanilla FreeRTOS V10.5.1 header files to allow for build
 ### tasks.c
 
 - Backported a change where the IDLE tasks are created with the core ID as a suffix in the task name.
+- Backported a change where the IDLE task name copy operation is decorated by a Coverity suppression comment for out-of-bounds copy errors.
 
 ### timers.c
 

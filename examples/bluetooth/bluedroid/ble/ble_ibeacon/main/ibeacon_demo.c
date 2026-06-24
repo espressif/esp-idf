@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -43,15 +43,15 @@ static esp_ble_scan_params_t ble_scan_params = {
     .scan_type              = BLE_SCAN_TYPE_ACTIVE,
     .own_addr_type          = BLE_ADDR_TYPE_PUBLIC,
     .scan_filter_policy     = BLE_SCAN_FILTER_ALLOW_ALL,
-    .scan_interval          = 0x50,
-    .scan_window            = 0x30,
+    .scan_interval          = ESP_BLE_GAP_SCAN_ITVL_MS(50),
+    .scan_window            = ESP_BLE_GAP_SCAN_WIN_MS(30),
     .scan_duplicate         = BLE_SCAN_DUPLICATE_DISABLE
 };
 
 #elif (IBEACON_MODE == IBEACON_SENDER)
 static esp_ble_adv_params_t ble_adv_params = {
-    .adv_int_min        = 0x20,
-    .adv_int_max        = 0x40,
+    .adv_int_min        = ESP_BLE_GAP_ADV_ITVL_MS(20),
+    .adv_int_max        = ESP_BLE_GAP_ADV_ITVL_MS(40),
     .adv_type           = ADV_TYPE_NONCONN_IND,
     .own_addr_type      = BLE_ADDR_TYPE_PUBLIC,
     .channel_map        = ADV_CHNL_ALL,
@@ -73,7 +73,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     }
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
 #if (IBEACON_MODE == IBEACON_RECEIVER)
-        //the unit of the duration is second, 0 means scan permanently
+        // the unit of the duration is second, 0 means scan permanently
         uint32_t duration = 0;
         esp_ble_gap_start_scanning(duration);
 #endif
@@ -82,13 +82,17 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
         //scan start complete event to indicate scan start successfully or failed
         if ((err = param->scan_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(DEMO_TAG, "Scan start failed: %s", esp_err_to_name(err));
+            ESP_LOGE(DEMO_TAG, "Scanning start failed, error %s", esp_err_to_name(err));
+        } else {
+            ESP_LOGI(DEMO_TAG, "Scanning start successfully");
         }
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         //adv start complete event to indicate adv start successfully or failed
         if ((err = param->adv_start_cmpl.status) != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(DEMO_TAG, "Adv start failed: %s", esp_err_to_name(err));
+            ESP_LOGE(DEMO_TAG, "Advertising start failed, error %s", esp_err_to_name(err));
+        } else {
+            ESP_LOGI(DEMO_TAG, "Advertising start successfully");
         }
         break;
     case ESP_GAP_BLE_SCAN_RESULT_EVT: {
@@ -99,15 +103,15 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             if (esp_ble_is_ibeacon_packet(scan_result->scan_rst.ble_adv, scan_result->scan_rst.adv_data_len)){
                 esp_ble_ibeacon_t *ibeacon_data = (esp_ble_ibeacon_t*)(scan_result->scan_rst.ble_adv);
                 ESP_LOGI(DEMO_TAG, "----------iBeacon Found----------");
-                esp_log_buffer_hex("IBEACON_DEMO: Device address:", scan_result->scan_rst.bda, ESP_BD_ADDR_LEN );
-                esp_log_buffer_hex("IBEACON_DEMO: Proximity UUID:", ibeacon_data->ibeacon_vendor.proximity_uuid, ESP_UUID_LEN_128);
+                ESP_LOGI(DEMO_TAG, "Device address: "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(scan_result->scan_rst.bda));
+                ESP_LOG_BUFFER_HEX("IBEACON_DEMO: Proximity UUID", ibeacon_data->ibeacon_vendor.proximity_uuid, ESP_UUID_LEN_128);
 
                 uint16_t major = ENDIAN_CHANGE_U16(ibeacon_data->ibeacon_vendor.major);
                 uint16_t minor = ENDIAN_CHANGE_U16(ibeacon_data->ibeacon_vendor.minor);
                 ESP_LOGI(DEMO_TAG, "Major: 0x%04x (%d)", major, major);
                 ESP_LOGI(DEMO_TAG, "Minor: 0x%04x (%d)", minor, minor);
-                ESP_LOGI(DEMO_TAG, "Measured power (RSSI at a 1m distance):%d dbm", ibeacon_data->ibeacon_vendor.measured_power);
-                ESP_LOGI(DEMO_TAG, "RSSI of packet:%d dbm", scan_result->scan_rst.rssi);
+                ESP_LOGI(DEMO_TAG, "Measured power (RSSI at a 1m distance): %d dBm", ibeacon_data->ibeacon_vendor.measured_power);
+                ESP_LOGI(DEMO_TAG, "RSSI of packet: %d dbm", scan_result->scan_rst.rssi);
             }
             break;
         default:
@@ -118,19 +122,19 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 
     case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
         if ((err = param->scan_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS){
-            ESP_LOGE(DEMO_TAG, "Scan stop failed: %s", esp_err_to_name(err));
+            ESP_LOGE(DEMO_TAG, "Scanning stop failed, error %s", esp_err_to_name(err));
         }
         else {
-            ESP_LOGI(DEMO_TAG, "Stop scan successfully");
+            ESP_LOGI(DEMO_TAG, "Scanning stop successfully");
         }
         break;
 
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         if ((err = param->adv_stop_cmpl.status) != ESP_BT_STATUS_SUCCESS){
-            ESP_LOGE(DEMO_TAG, "Adv stop failed: %s", esp_err_to_name(err));
+            ESP_LOGE(DEMO_TAG, "Advertising stop failed, error %s", esp_err_to_name(err));
         }
         else {
-            ESP_LOGI(DEMO_TAG, "Stop adv successfully");
+            ESP_LOGI(DEMO_TAG, "Advertising stop successfully");
         }
         break;
 
@@ -156,8 +160,8 @@ void ble_ibeacon_appRegister(void)
 
 void ble_ibeacon_init(void)
 {
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+    esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
+    esp_bluedroid_init_with_cfg(&cfg);
     esp_bluedroid_enable();
     ble_ibeacon_appRegister();
 }

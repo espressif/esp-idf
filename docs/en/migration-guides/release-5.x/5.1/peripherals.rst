@@ -5,10 +5,12 @@ Peripherals
 
 .. only:: SOC_DAC_SUPPORTED
 
+    .. _deprecate_dac_legacy_driver:
+
     DAC
     ---
 
-    DAC driver has been redesigned (see :doc:`DAC API Reference <../../../api-reference/peripherals/dac>`), which aims to unify the interface and extend the usage of DAC peripheral. Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/dac.h``. However, by default, including ``driver/dac.h`` will bring a build warning like ``The legacy DAC driver is deprecated, please use 'driver/dac_oneshot.h', 'driver/dac_cosine.h' or 'driver/dac_continuous.h' instead``. The warning can be suppressed by the Kconfig option :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN`.
+    DAC driver has been redesigned (see :doc:`DAC API Reference <../../../api-reference/peripherals/dac>`), which aims to unify the interface and extend the usage of DAC peripheral. Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/dac.h``. However, by default, including ``driver/dac.h`` will bring a build warning like ``The legacy DAC driver is deprecated, please use 'driver/dac_oneshot.h', 'driver/dac_cosine.h' or 'driver/dac_continuous.h' instead``. The warning can be suppressed by the Kconfig option ``CONFIG_DAC_SUPPRESS_DEPRECATE_WARN``.
 
     The major breaking changes in concept and usage are listed as follows:
 

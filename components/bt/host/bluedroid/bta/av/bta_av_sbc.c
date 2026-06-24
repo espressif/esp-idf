@@ -119,7 +119,9 @@ int bta_av_sbc_up_sample (void *p_src, void *p_dst,
         dst = dst_samples / bta_av_sbc_ups_cb.div;
         return (*bta_av_sbc_ups_cb.p_act)(p_src, p_dst, src, dst, p_ret);
     } else {
-        *p_ret = 0;
+        if (p_ret) {
+            *p_ret = 0;
+        }
         return 0;
     }
 }
@@ -212,7 +214,7 @@ int bta_av_sbc_up_sample_16m (void *p_src, void *p_dst,
     UINT32  src_sps = bta_av_sbc_ups_cb.src_sps;
     UINT32  dst_sps = bta_av_sbc_ups_cb.dst_sps;
 
-    while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples) {
+    while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples >= 2) {
         *p_dst_tmp++ = *p_worker;
         *p_dst_tmp++ = *p_worker;
 
@@ -224,7 +226,7 @@ int bta_av_sbc_up_sample_16m (void *p_src, void *p_dst,
 
     bta_av_sbc_ups_cb.cur_pos = dst_sps;
 
-    while (src_samples-- && dst_samples) {
+    while (src_samples-- && dst_samples >= 2) {
         *p_worker = *p_src_tmp++;
 
         do {
@@ -235,7 +237,7 @@ int bta_av_sbc_up_sample_16m (void *p_src, void *p_dst,
             dst_samples--;
             dst_samples--;
 
-        } while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples);
+        } while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples >= 2);
 
         bta_av_sbc_ups_cb.cur_pos += dst_sps;
     }
@@ -276,7 +278,7 @@ int bta_av_sbc_up_sample_8s (void *p_src, void *p_dst,
     UINT32  src_sps = bta_av_sbc_ups_cb.src_sps;
     UINT32  dst_sps = bta_av_sbc_ups_cb.dst_sps;
 
-    while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples) {
+    while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples >= 2) {
         *p_dst_tmp++    = *p_worker1;
         *p_dst_tmp++    = *p_worker2;
 
@@ -287,7 +289,7 @@ int bta_av_sbc_up_sample_8s (void *p_src, void *p_dst,
 
     bta_av_sbc_ups_cb.cur_pos = dst_sps;
 
-    while (src_samples -- && dst_samples) {
+    while (src_samples -- && dst_samples >= 2) {
         *p_worker1 = *(UINT8 *)p_src_tmp++;
         *p_worker1 -= 0x80;
         *p_worker1 <<= 8;
@@ -302,7 +304,7 @@ int bta_av_sbc_up_sample_8s (void *p_src, void *p_dst,
             bta_av_sbc_ups_cb.cur_pos -= src_sps;
             dst_samples--;
             dst_samples--;
-        } while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples);
+        } while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples >= 2);
 
         bta_av_sbc_ups_cb.cur_pos += dst_sps;
     }
@@ -342,7 +344,7 @@ int bta_av_sbc_up_sample_8m (void *p_src, void *p_dst,
     UINT32  src_sps = bta_av_sbc_ups_cb.src_sps;
     UINT32  dst_sps = bta_av_sbc_ups_cb.dst_sps;
 
-    while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples) {
+    while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples >= 4) {
         *p_dst_tmp++ = *p_worker;
         *p_dst_tmp++ = *p_worker;
 
@@ -353,7 +355,7 @@ int bta_av_sbc_up_sample_8m (void *p_src, void *p_dst,
 
     bta_av_sbc_ups_cb.cur_pos = dst_sps;
 
-    while (src_samples-- && dst_samples) {
+    while (src_samples-- && dst_samples >= 4) {
         *p_worker = *(UINT8 *)p_src_tmp++;
         *p_worker -= 0x80;
         *p_worker <<= 8;
@@ -365,7 +367,7 @@ int bta_av_sbc_up_sample_8m (void *p_src, void *p_dst,
             bta_av_sbc_ups_cb.cur_pos -= src_sps;
             dst_samples -= 4;
 
-        } while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples);
+        } while (bta_av_sbc_ups_cb.cur_pos > 0 && dst_samples >= 4);
 
         bta_av_sbc_ups_cb.cur_pos += dst_sps;
     }
@@ -453,6 +455,11 @@ UINT8 bta_av_sbc_cfg_for_cap(UINT8 *p_peer, tA2D_SBC_CIE *p_cap, tA2D_SBC_CIE *p
     /* min bitpool */
     if (p_pref->min_bitpool != 0 && p_pref->min_bitpool > peer_cie.min_bitpool) {
         peer_cie.min_bitpool = p_pref->min_bitpool;
+    }
+
+    if (peer_cie.min_bitpool > peer_cie.max_bitpool) {
+        APPL_TRACE_ERROR("bta_av_sbc_cfg_for_cap: min_bp > max_bp");
+        return A2D_FAIL;
     }
 
     if (status == A2D_SUCCESS) {
@@ -578,6 +585,64 @@ UINT8 bta_av_sbc_cfg_in_cap(UINT8 *p_cfg, tA2D_SBC_CIE *p_cap)
         status = A2D_NS_MIN_BITPOOL;
     }
 
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_sbc_cfg_in_external_codec_cap
+**
+** Description      This function checks whether an SBC codec configuration
+**                  is allowable for the given external codec capabilities.
+**
+** Returns          0 if ok, nonzero if error.
+**
+*******************************************************************************/
+UINT8 bta_av_sbc_cfg_in_external_codec_cap(UINT8 *p_cfg, UINT8 *p_cap)
+{
+    UINT8           status = 0;
+    tA2D_SBC_CIE    cfg_cie;
+    tA2D_SBC_CIE    cap_cie;
+
+    /* parse configuration */
+    if ((status = A2D_ParsSbcInfo(&cfg_cie, p_cfg, FALSE)) != 0) {
+        return status;
+    }
+    /* parse capability */
+    if ((status = A2D_ParsSbcInfo(&cap_cie, p_cap, TRUE)) != 0) {
+        return status;
+    }
+
+    /* verify that each parameter is in range */
+
+    /* sampling frequency */
+    if ((cfg_cie.samp_freq & cap_cie.samp_freq) == 0) {
+        status = A2D_NS_SAMP_FREQ;
+    }
+    /* channel mode */
+    else if ((cfg_cie.ch_mode & cap_cie.ch_mode) == 0) {
+        status = A2D_NS_CH_MODE;
+    }
+    /* block length */
+    else if ((cfg_cie.block_len & cap_cie.block_len) == 0) {
+        status = A2D_BAD_BLOCK_LEN;
+    }
+    /* subbands */
+    else if ((cfg_cie.num_subbands & cap_cie.num_subbands) == 0) {
+        status = A2D_NS_SUBBANDS;
+    }
+    /* allocation method */
+    else if ((cfg_cie.alloc_mthd & cap_cie.alloc_mthd) == 0) {
+        status = A2D_NS_ALLOC_MTHD;
+    }
+    /* max bitpool */
+    else if (cfg_cie.max_bitpool > cap_cie.max_bitpool) {
+        status = A2D_NS_MAX_BITPOOL;
+    }
+    /* min bitpool */
+    else if (cfg_cie.min_bitpool < cap_cie.min_bitpool) {
+        status = A2D_NS_MIN_BITPOOL;
+    }
     return status;
 }
 

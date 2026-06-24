@@ -1,0 +1,205 @@
+# SPDX-FileCopyrightText: 2016 Intel Corporation
+# SPDX-FileCopyrightText: 2021 Nordic Semiconductor ASA
+# SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_ISO
+    bool
+    select BT_NIMBLE_ISO if BT_NIMBLE_ENABLED
+    select BT_BLE_FEAT_ISO_EN if BT_BLUEDROID_ENABLED
+
+config BT_ISO_TX
+    bool
+
+config BT_ISO_RX
+    bool
+
+config BT_ISO_UNICAST
+    bool
+    select BT_ISO
+    select BT_ISO_TX
+    select BT_ISO_RX
+    help
+        This option enables support for Bluetooth Unicast
+        Isochronous channels.
+
+config BT_ISO_PERIPHERAL
+    bool "Bluetooth Isochronous Channel Unicast Peripheral Support"
+    select BT_ISO_UNICAST
+    help
+        This option enables support for Bluetooth Unicast
+        Isochronous channels for the peripheral role.
+
+config BT_ISO_CENTRAL
+    bool "Bluetooth Isochronous Channel Unicast Central Support"
+    select BT_ISO_UNICAST
+    help
+        This option enables support for Bluetooth Broadcast
+        Isochronous channels for the central role.
+
+config BT_ISO_BROADCAST
+    bool
+    select BT_ISO
+
+config BT_ISO_BROADCASTER
+    bool "Bluetooth Isochronous Broadcaster Support"
+    select BT_ISO_BROADCAST
+    select BT_ISO_TX
+    help
+        This option enables support for the Bluetooth Isochronous Broadcaster.
+
+config BT_ISO_SYNC_RECEIVER
+    bool "Bluetooth Isochronous Synchronized Receiver Support"
+    select BT_ISO_BROADCAST
+    select BT_ISO_RX
+    help
+        This option enables support for the Bluetooth Isochronous
+        Synchronized Receiver.
+
+if BT_ISO
+
+    config BT_ISO_MAX_CHAN
+        int "Maximum number of simultaneous ISO channels"
+        default 1
+        range 1 64
+        help
+            Maximum number of simultaneous Bluetooth isochronous channels
+            supported.
+
+    config BT_ISO_TEST_PARAMS
+        bool "ISO test parameters support"
+        default y if BT_BLUEDROID_ENABLED
+        default BT_NIMBLE_ISO_TEST if BT_NIMBLE_ENABLED
+        help
+            Enabling advanced ISO parameters will allow the use of the ISO test
+            parameters for creating a CIG or a BIG. These test parameters were
+            intended for testing, but can be used to allow the host to set more
+            settings that are otherwise usually controlled by the controller.
+
+    if BT_ISO_UNICAST
+
+        config BT_ISO_MAX_CIG
+            int "Maximum number of Connected Isochronous Groups (CIGs) to support"
+            range 1 1 if BT_BLUEDROID_ENABLED
+            range 1 BT_NIMBLE_ISO_CIG if BT_NIMBLE_ENABLED
+            default 1 if BT_BLUEDROID_ENABLED
+            default BT_NIMBLE_ISO_CIG if BT_NIMBLE_ENABLED
+            help
+                Maximum number of CIGs that are supported by the host. A CIG can be
+                used for either transmitting or receiving.
+
+    endif # BT_ISO_UNICAST
+
+    if BT_ISO_BROADCAST
+
+        config BT_ISO_MAX_BIG
+            int "Maximum number of Broadcast Isochronous Groups (BIGs) to support"
+            range 1 1 if BT_BLUEDROID_ENABLED
+            range 1 BT_NIMBLE_ISO_BIG if BT_NIMBLE_ENABLED
+            default 1 if BT_BLUEDROID_ENABLED
+            default BT_NIMBLE_ISO_BIG if BT_NIMBLE_ENABLED
+            help
+                Maximum number of BIGs that are supported by the host. A BIG can be
+                used for either transmitting or receiving, but not at the same time.
+
+    endif # BT_ISO_BROADCAST
+
+    config BT_ISO_DISPATCH_MONITOR
+        bool "Monitor ISO task callback dispatch latency"
+        depends on !BT_ISO_NO_LOG
+        default n
+        help
+            Time every callback dispatched by the ISO task and keep per-event-
+            type stats (count / max / slow-count), logged periodically and at
+            deinit. Used to find callbacks that run long enough to delay the
+            latency-critical ISO data path.
+
+            Off by default: it adds per-dispatch timing overhead, and the
+            measurement is wall-clock, so callbacks that log over UART read as
+            "slow". Enable only while profiling.
+
+    config BT_ISO_DISPATCH_THRESHOLD_US
+        int "ISO dispatch threshold (in microseconds)"
+        depends on BT_ISO_DISPATCH_MONITOR
+        range 100 100000
+        default 2000
+        help
+            A callback dispatched by the ISO task that runs longer than this
+            many microseconds is counted as slow in the stats. Default 2000 is
+            ~1/4 of a 7.5-10ms SDU interval, well above any healthy callback.
+
+    config BT_ISO_DISPATCH_DUMP_PERIOD_S
+        int "ISO dispatch stats dump period (in seconds)"
+        depends on BT_ISO_DISPATCH_MONITOR
+        range 1 600
+        default 10
+        help
+            The ISO task logs the per-type timing table (count / max / slow-
+            count) every this many seconds while running, in addition to the
+            dump at deinit.
+
+    config BT_ISO_NO_LOG
+        bool "Disable BLE ISO Debug Log"
+        default n
+        help
+            Select this to save rodata code size by disabling the debug
+            log emitted by the BLE ISO IDF source files (printed with
+            "ISO_*" tags).
+
+            Note: this option also gates logs from the BLE Audio IDF
+            source files (esp_ble_audio component, with "LEA_*" tags)
+            because they share the same log header. Logs from the BLE
+            Audio prebuilt library are gated separately by
+            BT_AUDIO_NO_LOG.
+
+    menu "BLE ISO Debug Log Level"
+        depends on !BT_ISO_NO_LOG
+
+        choice BT_ISO_LOG_LEVEL
+            prompt "BLE_ISO_LOG_LEVEL"
+            default BT_ISO_LOG_LEVEL_WARNING
+            depends on !BT_ISO_NO_LOG
+            help
+                Define the trace level of the BLE ISO IDF source files
+                (logs printed with "ISO_*" tags).
+
+                Note: this level also applies to the BLE Audio IDF
+                source files (esp_ble_audio component, "LEA_*" tags)
+                because they share the same log header. The trace
+                level of the BLE Audio prebuilt library is configured
+                separately by BT_AUDIO_LOG_LEVEL.
+
+            config BT_ISO_LOG_LEVEL_NONE
+                bool "NONE"
+            config BT_ISO_LOG_LEVEL_ERROR
+                bool "ERROR"
+            config BT_ISO_LOG_LEVEL_WARNING
+                bool "WARNING"
+            config BT_ISO_LOG_LEVEL_INFO
+                bool "INFO"
+            config BT_ISO_LOG_LEVEL_DEBUG
+                bool "DEBUG"
+            config BT_ISO_LOG_LEVEL_VERBOSE
+                bool "VERBOSE"
+        endchoice
+
+        config BT_ISO_LOG_LEVEL
+            int
+            default 0 if BT_ISO_LOG_LEVEL_NONE
+            default 1 if BT_ISO_LOG_LEVEL_ERROR
+            default 2 if BT_ISO_LOG_LEVEL_WARNING
+            default 3 if BT_ISO_LOG_LEVEL_INFO
+            default 4 if BT_ISO_LOG_LEVEL_DEBUG
+            default 5 if BT_ISO_LOG_LEVEL_VERBOSE
+            default 2
+    endmenu
+
+    config BT_DEBUG_ISO_DATA
+        bool # hidden
+        depends on !BT_ISO_NO_LOG
+        help
+            Use this option to enable ISO channels data debug logs for the
+            Bluetooth Audio functionality. This will enable debug logs for
+            all ISO data received and sent.
+
+endif # BT_ISO

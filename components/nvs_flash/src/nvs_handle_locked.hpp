@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef NVS_HANDLE_LOCKED_HPP_
-#define NVS_HANDLE_LOCKED_HPP_
+#pragma once
 
 #include "nvs_handle_simple.hpp"
 
@@ -47,6 +46,8 @@ public:
 
     esp_err_t erase_all() override;
 
+    esp_err_t purge_all() override;
+
     esp_err_t commit() override;
 
     esp_err_t get_used_entry_count(size_t& usedEntries) override;
@@ -61,5 +62,3 @@ private:
 };
 
 } // namespace nvs
-
-#endif // NVS_HANDLE_LOCKED_HPP_

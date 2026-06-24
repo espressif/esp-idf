@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # SD Card example (SDSPI)
 
@@ -41,12 +41,12 @@ This example doesn't utilize card detect (CD) and write protect (WP) signals fro
 
 The table below shows the default pin assignments.
 
-SD card pin | SPI pin | ESP32 pin     | ESP32-S2, ESP32-S3 | ESP32-H2 | ESP32-C3 and other chips  |  Notes
-------------|---------|---------------|--------------------|----------|---------------------------|-------------
- D0         | MISO    | GPIO2         | GPIO37             | GPIO0    | GPIO6                     |
- D3         | CS      | GPIO13 (MTCK) | GPIO34             | GPIO1    | GPIO1                     |
- CLK        | SCK     | GPIO14 (MTMS) | GPIO36             | GPIO4    | GPIO5                     |
- CMD        | MOSI    | GPIO15 (MTDO) | GPIO35             | GPIO5    | GPIO4                     |  10k pullup
+SD card pin | SPI pin | ESP32 pin     | ESP32-S2, ESP32-S3 | ESP32-P4 | ESP32-H2 | ESP32-C3 and other chips |  Notes
+------------|---------|---------------|--------------------|----------|----------|--------------------------|------------
+ D0         | MISO    | GPIO2         | GPIO37             | GPIO13   | GPIO0    | GPIO6                    |
+ D3         | CS      | GPIO13 (MTCK) | GPIO34             | GPIO10   | GPIO1    | GPIO1                    |
+ CLK        | SCK     | GPIO14 (MTMS) | GPIO36             | GPIO12   | GPIO4    | GPIO5                    |
+ CMD        | MOSI    | GPIO15 (MTDO) | GPIO35             | GPIO11   | GPIO5    | GPIO4                    | 10k pullup
 
 
 #### ESP32 related notes
@@ -62,6 +62,28 @@ Some boards require specific manipulation to enable UART Download mode (GPIO2 lo
 With the default pin assignments, this example is compatible ESP32-S2-USB-OTG and ESP32-S3-USB-OTG development boards.
 
 For other development boards, adjust the pin assignments as explained above.
+
+#### ESP32-P4 related notes
+
+On ESP32-P4, Slot 1 of the SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
+
+1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open `SD SPI Example Configuration` menu.
+2. In the source code: See the initialization of `sdmmc_slot_config_t slot_config` structure in the example code.
+
+Default pins for SDSPI are listed in the table above [Pin assignments](#1-pin-assignments) and using them doesn't require any additional settings.
+
+However on some development boards the SD card slot can be wired to default dedicated pins for SDMMC, which are listed in the table below.
+
+SD card pin | ESP32-P4 pin
+------------|--------------
+D0  (MISO)  | GPIO39
+D3  (CS)    | GPIO42
+CLK (SCK)   | GPIO43
+CMD (MOSI)  | GPIO44
+
+These pins are able to connect to an ultra high-speed SD card (UHS-I) which requires 1.8V switching (instead of the regular 3.3V). This means the user has to provide an external LDO power supply to use them, or to enable and configure an internal LDO via `idf.py menuconfig` -> `SD/MMC Example Configuration` -> `SD power supply comes from internal LDO IO`.
+
+When using different GPIO pins this is not required and `SD power supply comes from internal LDO IO` setting can be disabled.
 
 #### Notes for ESP32-C3 and other chips
 
@@ -138,7 +160,7 @@ Check you board documentation/schematics for appropriate procedure.
 
 An attempt to download a new firmware under this conditions may also result in the board's serial port disappearing from your PC device list - rebooting your computer should fix the issue. After your device is back, use
 
-`esptool --port PORT --before no_reset --baud 115200 --chip esp32 erase_flash`
+`esptool --port PORT --before no-reset --baud 115200 --chip esp32 erase-flash`
 
 to erase your board's flash, then flash the firmware again.
 
@@ -214,3 +236,15 @@ In the absence of connected pullups and having the weak pullups enabled, you can
 It will also provide the voltage levels at the corresponding SD pins. By default, this information is provided for ESP32 chip only, and for other chipsets, verify the availability of ADC pins for the respective GPIO using [this](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html#gpio-summary) and configure ADC mapped pins using menuconfig. Then test the voltage levels accordingly.
 
 You can monitor the voltage levels of individual pins using `PIN voltage levels` and `PIN voltage levels with weak pullup`. However, if one pin being pulled low and experiencing interference with another pin, you can detect it through `PIN cross-talk` and `PIN cross-talk with weak pullup`. In the absence of pullups, voltage levels at each pin should range from 0 to 0.3V. With 10k pullups connected, the voltage will be between 3.1V to 3.3V, contingent on the connection between ADC pins and SD pins, and with weak pullups connected, it can fluctuate between 0.8V to 1.2V, depending on pullup strength.
+
+### Slow performance / low throughput (no or incorrect pull-up resistor on MISO line)
+
+The current driver implementation waits for the MISO line to be high before sending the next transaction. This is the correct behavior and fixes certain issues especially when there are more SPI devices connected to same SPI bus. However this can slow down SD throughput on boards lacking a sufficiently strong pull-up resistor on the MISO line.
+
+If you experience this slowdown, you can try adding the following line. Modifying this value can cause problems in certain scenarios (e.g. SD card and another device like TFT screen sharing the same SPI bus resulting in failed communication with SD card), so please use it with caution.
+
+```c
+    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT()
+    slot_config.wait_for_miso = -1; // <--- Add this line
+    // If this causes problems, try to set the value higher (-1: no waiting (0ms); 0: default value (40ms); 1-127: timeout in ms; else: invalid value, default will be used)
+```

@@ -77,8 +77,10 @@ typedef unsigned long TickType_t;
 /*-----------------------------------------------------------*/
 
 /* Scheduler utilities. */
-extern void vPortYield( void );
+extern void vPortYieldWithinApi( void );
+#define portYIELD_WITHIN_API() vPortYieldWithinApi()
 
+extern void vPortYield( void );
 #define portYIELD() vPortYield()
 
 #define portEND_SWITCHING_ISR( xSwitchRequired ) if( (xSwitchRequired) != pdFALSE ) vPortYield()
@@ -94,8 +96,8 @@ extern void vPortEnableInterrupts( void );
 extern BaseType_t xPortSetInterruptMask( void );
 extern void vPortClearInterruptMask( BaseType_t xMask );
 
-extern void vPortEnterCritical( void );
-extern void vPortExitCritical( void );
+void vPortEnterCritical( void );
+void vPortExitCritical( void );
 #define portSET_INTERRUPT_MASK_FROM_ISR()       xPortSetInterruptMask()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)    vPortClearInterruptMask(x)
 #define portDISABLE_INTERRUPTS()                portSET_INTERRUPT_MASK()
@@ -106,6 +108,12 @@ extern void vPortExitCritical( void );
 #define portEXIT_CRITICAL_SAFE(mux)             {(void)mux;  vPortExitCritical();}
 #define portENTER_CRITICAL_ISR(mux)             portENTER_CRITICAL(mux)
 #define portEXIT_CRITICAL_ISR(mux)              portEXIT_CRITICAL(mux)
+
+#define prvENTER_CRITICAL_SMP_ONLY( pxLock )         portENTER_CRITICAL( pxLock )
+#define prvEXIT_CRITICAL_SMP_ONLY( pxLock )          portEXIT_CRITICAL( pxLock )
+
+extern void vPortSuspendScheduler(void);
+#define portSOFTWARE_BARRIER() vPortSuspendScheduler()
 
 /*-----------------------------------------------------------*/
 
@@ -124,7 +132,7 @@ extern void vPortCancelThread( void *pxTaskToDelete );
  * are always a full memory barrier. ISRs are emulated as signals
  * which also imply a full memory barrier.
  *
- * Thus, only a compilier barrier is needed to prevent the compiler
+ * Thus, only a compiler barrier is needed to prevent the compiler
  * reordering.
  */
 #define portMEMORY_BARRIER() __asm volatile( "" ::: "memory" )
@@ -139,5 +147,7 @@ extern unsigned long ulPortGetRunTime( void );
 
 // We need additional definitions for ESP-IDF code
 #include "portmacro_idf.h"
+
+void vPortSetStackWatchpoint(void *pxStackStart);
 
 #endif /* PORTMACRO_H */

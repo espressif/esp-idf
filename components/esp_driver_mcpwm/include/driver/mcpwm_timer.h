@@ -34,12 +34,16 @@ typedef struct {
     uint32_t resolution_hz;              /*!< Counter resolution in Hz
                                               The step size of each count tick equals to (1 / resolution_hz) seconds */
     mcpwm_timer_count_mode_t count_mode; /*!< Count mode */
-    uint32_t period_ticks;               /*!< Number of count ticks within a period */
+    uint32_t period_ticks;               /*!< Number of count ticks within a period. For up-down mode, the timer peak value is half of the period_ticks */
     int intr_priority;                   /*!< MCPWM timer interrupt priority,
                                               if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
-    struct {
+    /// Extra configuration flags for MCPWM timer
+    struct extra_mcpwm_timer_flags {
         uint32_t update_period_on_empty: 1; /*!< Whether to update period when timer counts to zero */
         uint32_t update_period_on_sync: 1;  /*!< Whether to update period on sync event */
+        uint32_t allow_pd: 1;               /*!< Set to allow power down. When this flag set, the driver will backup/restore the MCPWM registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off MCPWM's power domain.
+                                              This can save power, but at the expense of more RAM being consumed. */
     } flags;                                /*!< Extra configuration flags for timer */
 } mcpwm_timer_config_t;
 

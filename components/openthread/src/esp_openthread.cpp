@@ -1,23 +1,30 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_openthread.h"
 #include "esp_check.h"
+#include "esp_heap_caps.h"
 #include "esp_openthread_border_router.h"
 #include "esp_openthread_common_macro.h"
+#include "esp_openthread_cli.h"
 #include "esp_openthread_dns64.h"
 #include "esp_openthread_lock.h"
+#include "esp_openthread_ncp.h"
+#include "esp_openthread_netif_glue.h"
 #include "esp_openthread_platform.h"
 #include "esp_openthread_sleep.h"
 #include "esp_openthread_state.h"
+#include "esp_openthread_debug.h"
 #include "esp_openthread_task_queue.h"
 #include "esp_openthread_types.h"
 #include "freertos/FreeRTOS.h"
 #include "lwip/dns.h"
 #include "openthread/instance.h"
+#include "openthread/logging.h"
 #include "openthread/netdata.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
@@ -25,6 +32,10 @@
 #if CONFIG_OPENTHREAD_FTD
 #include "openthread/dataset_ftd.h"
 #endif
+
+static bool s_ot_mainloop_running = false;
+static SemaphoreHandle_t s_ot_syn_semaphore = NULL;
+static TaskHandle_t s_ot_task_handle = NULL;
 
 static int hex_digit_to_int(char hex)
 {
@@ -69,19 +80,20 @@ esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *config)
     ESP_RETURN_ON_ERROR(esp_openthread_platform_init(config), OT_PLAT_LOG_TAG,
                         "Failed to initialize OpenThread platform driver");
     esp_openthread_lock_acquire(portMAX_DELAY);
-    ESP_RETURN_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread instance");
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE(otInstanceInitSingle() != NULL, ESP_FAIL, exit, OT_PLAT_LOG_TAG,
+                      "Failed to initialize OpenThread instance");
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
-    ESP_RETURN_ON_ERROR(esp_openthread_dns64_client_init(), OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread dns64 client");
+    ESP_GOTO_ON_ERROR(esp_openthread_dns64_client_init(), exit, OT_PLAT_LOG_TAG,
+                      "Failed to initialize OpenThread dns64 client");
 #endif
 #if !CONFIG_OPENTHREAD_RADIO
-    ESP_RETURN_ON_ERROR(esp_openthread_state_event_init(esp_openthread_get_instance()), OT_PLAT_LOG_TAG,
-                        "Failed to initialize OpenThread state event");
+    ESP_GOTO_ON_ERROR(esp_openthread_state_event_init(esp_openthread_get_instance()), exit, OT_PLAT_LOG_TAG,
+                      "Failed to initialize OpenThread state event");
 #endif
+exit:
     esp_openthread_lock_release();
-
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
@@ -129,7 +141,7 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
             memcpy(dataset.mMeshLocalPrefix.m8, prefix.mPrefix.mFields.m8, sizeof(dataset.mMeshLocalPrefix.m8));
             dataset.mComponents.mIsMeshLocalPrefixPresent = true;
         } else {
-            ESP_LOGE("Falied to parse mesh local prefix", CONFIG_OPENTHREAD_MESH_LOCAL_PREFIX);
+            ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to parse mesh local prefix: %s", CONFIG_OPENTHREAD_MESH_LOCAL_PREFIX);
         }
 
         // Network Key
@@ -158,13 +170,29 @@ esp_err_t esp_openthread_auto_start(otOperationalDatasetTlvs *datasetTlvs)
     return ESP_OK;
 }
 
+static void mainloop_safe_exit(void *ctx)
+{
+    s_ot_mainloop_running = false;
+}
+
+esp_err_t esp_openthread_mainloop_exit(void)
+{
+    return esp_openthread_task_queue_post(mainloop_safe_exit, NULL);
+}
+
 esp_err_t esp_openthread_launch_mainloop(void)
 {
+    ESP_LOGI(OT_PLAT_LOG_TAG, "OpenThread enter mainloop");
     esp_openthread_mainloop_context_t mainloop;
     otInstance *instance = esp_openthread_get_instance();
     esp_err_t error = ESP_OK;
+    s_ot_mainloop_running = true;
 
-    while (true) {
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+    ESP_ERROR_CHECK(esp_openthread_task_block_monitor_create());
+#endif
+
+    while (s_ot_mainloop_running) {
         FD_ZERO(&mainloop.read_fds);
         FD_ZERO(&mainloop.write_fds);
         FD_ZERO(&mainloop.error_fds);
@@ -184,12 +212,15 @@ esp_err_t esp_openthread_launch_mainloop(void)
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
         esp_openthread_lock_release();
 
-        if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
-                   &mainloop.timeout) >= 0) {
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+        esp_openthread_task_block_monitor_set(false);
+#endif
+        int result = select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds, &mainloop.timeout);
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+        esp_openthread_task_block_monitor_set(true);
+#endif
+        if (result >= 0) {
             esp_openthread_lock_acquire(portMAX_DELAY);
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE
-            esp_openthread_wakeup_process();
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
             error = esp_openthread_platform_process(instance, &mainloop);
             while (otTaskletsArePending(instance)) {
                 otTaskletsProcess(instance);
@@ -205,6 +236,9 @@ esp_err_t esp_openthread_launch_mainloop(void)
             break;
         }
     }
+#if CONFIG_OPENTHREAD_TASK_BLOCK_MONITOR
+    ESP_ERROR_CHECK(esp_openthread_task_block_monitor_delete());
+#endif
     return error;
 }
 
@@ -214,12 +248,82 @@ esp_err_t esp_openthread_deinit(void)
     return esp_openthread_platform_deinit();
 }
 
-static void stub_task(void *context)
+static void ot_task_worker(void *aContext)
 {
-    // this is a empty function used for ot-task signal pending
+    const esp_openthread_config_t* config = *(esp_openthread_config_t **)aContext;
+    // Initialize the OpenThread stack
+    ESP_ERROR_CHECK(esp_openthread_init(&(config->platform_config)));
+
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
+    esp_netif_t *openthread_netif = esp_netif_new(&(config->netif_config));
+    assert(openthread_netif != NULL);
+    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&(config->platform_config))));
+#endif
+
+#if CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
+    // The OpenThread log level directly matches ESP log level
+    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
+#endif // CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
+
+#if CONFIG_OPENTHREAD_CLI
+    esp_openthread_cli_init();
+    esp_openthread_cli_console_command_register();
+#endif // CONFIG_OPENTHREAD_CLI
+
+#if CONFIG_OPENTHREAD_RADIO
+    otAppNcpInit(esp_openthread_get_instance());
+#endif
+    xSemaphoreGive(s_ot_syn_semaphore);
+
+    // Run the main loop
+    esp_openthread_launch_mainloop();
+
+#if CONFIG_OPENTHREAD_RADIO
+    ESP_LOGE(OT_PLAT_LOG_TAG, "RCP deinitialization is not supported for now");
+    assert(false);
+#endif
+#if CONFIG_OPENTHREAD_CLI
+    esp_openthread_cli_console_command_unregister();
+#endif // CONFIG_OPENTHREAD_CLI
+
+#if CONFIG_OPENTHREAD_PLATFORM_NETIF
+    // Clean up
+    esp_openthread_netif_glue_deinit();
+    esp_netif_destroy(openthread_netif);
+#endif
+
+    ESP_ERROR_CHECK(esp_openthread_deinit());
+
+    xSemaphoreGive(s_ot_syn_semaphore);
+    vTaskDelay(portMAX_DELAY);
 }
 
-void otTaskletsSignalPending(otInstance *aInstance)
+esp_err_t esp_openthread_start(const esp_openthread_config_t *config)
 {
-    esp_openthread_task_queue_post(stub_task, NULL);
+    assert(config);
+    ESP_RETURN_ON_FALSE(s_ot_syn_semaphore == NULL, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "OpenThread has been initialized");
+    s_ot_syn_semaphore = xSemaphoreCreateBinary();
+    ESP_RETURN_ON_FALSE(s_ot_syn_semaphore != NULL, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Failed to create s_ot_syn_semaphore");
+    assert(xTaskCreate(ot_task_worker, CONFIG_OPENTHREAD_TASK_NAME, CONFIG_OPENTHREAD_TASK_SIZE, &config, CONFIG_OPENTHREAD_TASK_PRIORITY, &s_ot_task_handle) == pdPASS);
+    xSemaphoreTake(s_ot_syn_semaphore, portMAX_DELAY);
+    return ESP_OK;
+}
+
+esp_err_t esp_openthread_stop(void)
+{
+    ESP_RETURN_ON_FALSE(s_ot_syn_semaphore != NULL, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "OpenThread is not initialized");
+#if (CONFIG_OPENTHREAD_FTD || CONFIG_OPENTHREAD_MTD)
+    esp_openthread_lock_acquire(portMAX_DELAY);
+    otInstance *instance = esp_openthread_get_instance();
+    bool is_thread_not_active = (otThreadGetDeviceRole(instance) == OT_DEVICE_ROLE_DISABLED && otIp6IsEnabled(instance) == false);
+    esp_openthread_lock_release();
+    ESP_RETURN_ON_FALSE(is_thread_not_active, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG, "Thread interface is still active");
+#endif
+    esp_openthread_mainloop_exit();
+    xSemaphoreTake(s_ot_syn_semaphore, portMAX_DELAY);
+    vTaskDelete(s_ot_task_handle);
+    vSemaphoreDelete(s_ot_syn_semaphore);
+    s_ot_task_handle = NULL;
+    s_ot_syn_semaphore = NULL;
+    return ESP_OK;
 }

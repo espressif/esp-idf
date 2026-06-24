@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,9 @@
 #include "prov_pvnr.h"
 #include "pvnr_mgmt.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #if CONFIG_BLE_MESH_PROVISIONER
 
@@ -220,22 +222,28 @@ bool bt_mesh_provisioner_check_is_addr_dup(uint16_t addr, uint8_t elem_num, bool
         }
     }
 
+    bt_mesh_provisioner_lock();
+
     for (comp_addr = addr; comp_addr < addr + elem_num; comp_addr++) {
         for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
             node = mesh_nodes[i];
             if (node && comp_addr >= node->unicast_addr &&
                     comp_addr < node->unicast_addr + node->element_num) {
                 BT_ERR("Duplicate with node address 0x%04x", comp_addr);
+                bt_mesh_provisioner_unlock();
                 return true;
             }
 
             if (comp_with_own && comp_addr >= primary_addr &&
                     comp_addr < primary_addr + comp->elem_count) {
                 BT_ERR("Duplicate with Provisioner address 0x%04x", comp_addr);
+                bt_mesh_provisioner_unlock();
                 return true;
             }
         }
     }
+
+    bt_mesh_provisioner_unlock();
 
     return false;
 }
@@ -370,11 +378,7 @@ static int provisioner_remove_node(uint16_t index, bool erase)
     /* Reset corresponding transport info when removing the node */
     for (i = 0; i < node->element_num; i++) {
         bt_mesh_rx_reset_single(node->unicast_addr + i);
-    }
-    for (i = 0; i < node->element_num; i++) {
         bt_mesh_tx_reset_single(node->unicast_addr + i);
-    }
-    for (i = 0; i < node->element_num; i++) {
         bt_mesh_rpl_reset_single(node->unicast_addr + i, erase);
     }
 
@@ -536,12 +540,22 @@ int bt_mesh_provisioner_delete_node_with_dev_addr(const bt_mesh_addr_t *addr)
 {
     int i;
 
+    if (addr == NULL) {
+        BT_ERR("Invalid device address");
+        return -EINVAL;
+    }
+
+    bt_mesh_provisioner_lock();
+
     for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
         if (mesh_nodes[i] && mesh_nodes[i]->addr_type == addr->type &&
             !memcmp(mesh_nodes[i]->addr, addr->val, BLE_MESH_ADDR_LEN)) {
+            bt_mesh_provisioner_unlock();
             return provisioner_remove_node(i, true);
         }
     }
+
+    bt_mesh_provisioner_unlock();
 
     BT_WARN("Node not exist, device address %s", bt_hex(addr->val, BLE_MESH_ADDR_LEN));
     return -ENODEV;
@@ -684,9 +698,19 @@ static int store_node_comp_data(uint16_t addr, const uint8_t *data, uint16_t len
         return -ENODEV;
     }
 
+    bt_mesh_provisioner_lock();
+
+    /* Free old composition data of the node */
+    if (node->comp_data) {
+        bt_mesh_free(node->comp_data);
+        node->comp_data = NULL;
+        node->comp_length = 0;
+    }
+
     node->comp_data = bt_mesh_calloc(length);
     if (node->comp_data == NULL) {
         BT_ERR("%s, Out of memory", __func__);
+        bt_mesh_provisioner_unlock();
         return -ENOMEM;
     }
 
@@ -697,6 +721,7 @@ static int store_node_comp_data(uint16_t addr, const uint8_t *data, uint16_t len
         bt_mesh_store_node_comp_data(node);
     }
 
+    bt_mesh_provisioner_unlock();
     return 0;
 }
 
@@ -740,14 +765,18 @@ bool bt_mesh_provisioner_check_msg_dst(uint16_t dst)
         return true;
     }
 
+    bt_mesh_provisioner_lock();
+
     for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
         node = mesh_nodes[i];
         if (node && dst >= node->unicast_addr &&
                 dst < node->unicast_addr + node->element_num) {
+            bt_mesh_provisioner_unlock();
             return true;
         }
     }
 
+    bt_mesh_provisioner_unlock();
     return false;
 }
 
@@ -1172,39 +1201,48 @@ int bt_mesh_provisioner_local_net_key_add(const uint8_t net_key[16], uint16_t *n
     struct bt_mesh_subnet *sub = NULL;
     uint8_t p_key[16] = {0};
     int add = -1;
+    int err = 0;
+
+    bt_mesh_provisioner_lock();
 
     if (bt_mesh.p_net_idx_next >= 0x1000) {
         BT_ERR("No NetKeyIndex available");
-        return -EIO;
+        err = -EIO;
+        goto end;
     }
 
     if (!net_idx || (*net_idx != 0xFFFF && *net_idx >= 0x1000)) {
         BT_ERR("%s, Invalid parameter", __func__);
-        return -EINVAL;
+        err = -EINVAL;
+        goto end;
     }
 
     /* Check if the same network key already exists */
     if (provisioner_check_net_key(net_key, net_idx)) {
         BT_WARN("NetKey exists, NetKeyIndex updated");
-        return 0;
+        err = 0;
+        goto end;
     }
 
     /* Check if the same net_idx already exists */
     if (provisioner_check_net_idx(*net_idx, true)) {
         BT_ERR("Invalid NetKeyIndex 0x%04x", *net_idx);
-        return -EEXIST;
+        err = -EEXIST;
+        goto end;
     }
 
     add = provisioner_check_net_key_full();
     if (add < 0) {
         BT_ERR("NetKey is full!");
-        return -ENOMEM;
+        err = -ENOMEM;
+        goto end;
     }
 
     if (!net_key) {
         if (bt_mesh_rand(p_key, 16)) {
             BT_ERR("Failed to generate NetKey");
-            return -EIO;
+            err = -EIO;
+            goto end;
         }
     } else {
         memcpy(p_key, net_key, 16);
@@ -1213,13 +1251,15 @@ int bt_mesh_provisioner_local_net_key_add(const uint8_t net_key[16], uint16_t *n
     sub = bt_mesh_calloc(sizeof(struct bt_mesh_subnet));
     if (!sub) {
         BT_ERR("%s, Out of memory", __func__);
-        return -ENOMEM;
+        err = -ENOMEM;
+        goto end;
     }
 
     if (bt_mesh_net_keys_create(&sub->keys[0], p_key)) {
         BT_ERR("Failed to generate NID");
         bt_mesh_free(sub);
-        return -EIO;
+        err = -EIO;
+        goto end;
     }
 
     if (*net_idx != 0xFFFF) {
@@ -1232,7 +1272,8 @@ int bt_mesh_provisioner_local_net_key_add(const uint8_t net_key[16], uint16_t *n
                 if (sub->net_idx >= 0x1000) {
                     BT_ERR("No NetKeyIndex available");
                     bt_mesh_free(sub);
-                    return -EIO;
+                    err = -EIO;
+                    goto end;
                 }
             } else {
                 break;
@@ -1256,7 +1297,9 @@ int bt_mesh_provisioner_local_net_key_add(const uint8_t net_key[16], uint16_t *n
         bt_mesh_store_p_subnet(sub);
     }
 
-    return 0;
+end:
+    bt_mesh_provisioner_unlock();
+    return err;
 }
 
 int bt_mesh_provisioner_local_net_key_update(const uint8_t net_key[16], uint16_t net_idx)

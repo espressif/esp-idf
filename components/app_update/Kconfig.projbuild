@@ -1,0 +1,9 @@
+menu "App Update config"
+    config SECURE_SIGNED_DATA_PARTITION
+        default n
+        bool "Require signed Data partition images"
+        depends on SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT || SECURE_SIGNED_APPS
+        help
+            If set, the Data partition images will be verified during OTA updates.
+            Only partitions with subtype ESP_PARTITION_SUBTYPE_DATA_UNDEFINED will be verified.
+endmenu  # App Update config

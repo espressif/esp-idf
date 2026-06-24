@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,21 +19,16 @@
 #include "driver/i2c_slave.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_pm.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#ifdef CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM
+#define I2C_MASTER_ISR_ATTR IRAM_ATTR
 #else
-#define I2C_CLOCK_SRC_ATOMIC()
-#endif
-
-#if !SOC_RCC_IS_INDEPENDENT
-#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define I2C_RCC_ATOMIC()
+#define I2C_MASTER_ISR_ATTR
 #endif
 
 #if CONFIG_I2C_ISR_IRAM_SAFE
@@ -49,13 +44,12 @@ extern "C" {
 #define I2C_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #endif
 
+// Use retention link only when the target supports sleep retention and PM is enabled
+#define I2C_USE_RETENTION_LINK  (SOC_I2C_SUPPORT_SLEEP_RETENTION && CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 #define I2C_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define I2C_PM_LOCK_NAME_LEN_MAX 16
-#define I2C_STATIC_OPERATION_ARRAY_MAX 6
-
-#define ACK_VAL 0
-#define NACK_VAL 1
+#define I2C_STATIC_OPERATION_ARRAY_MAX I2C_LL_GET(CMD_REG_NUM)
 
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
 #define I2C_TRANS_WRITE_COMMAND(ack_check)   {.ack_en = (ack_check), .op_code = I2C_LL_CMD_WRITE}
@@ -67,11 +61,6 @@ typedef struct i2c_master_bus_t i2c_master_bus_t;
 typedef struct i2c_bus_t *i2c_bus_handle_t;
 typedef struct i2c_master_dev_t i2c_master_dev_t;
 typedef struct i2c_slave_dev_t i2c_slave_dev_t;
-
-typedef enum {
-    I2C_BUS_MODE_MASTER = 0,
-    I2C_BUS_MODE_SLAVE = 1,
-} i2c_bus_mode_t;
 
 typedef enum {
     I2C_SLAVE_FIFO = 0,
@@ -100,19 +89,22 @@ typedef struct {
 
 struct i2c_bus_t {
     i2c_port_num_t port_num; // Port(Bus) ID, index from 0
+    bool is_lp_i2c;        // true if current port is lp_i2c. false is hp_i2c
     portMUX_TYPE spinlock; // To protect pre-group register level concurrency access
     i2c_hal_context_t hal; // Hal layer for each port(bus)
-    i2c_clock_source_t clk_src; // Record the port clock source
+    soc_module_clk_t clk_src; // Record the port clock source
     uint32_t clk_src_freq_hz; // Record the clock source frequency
     int sda_num; // SDA pin number
     int scl_num; // SCL pin number
     bool pull_up_enable; // Enable pull-ups
     intr_handle_t intr_handle; // I2C interrupt handle
-    esp_pm_lock_handle_t pm_lock; // power manage lock
 #if CONFIG_PM_ENABLE
-    char pm_lock_name[I2C_PM_LOCK_NAME_LEN_MAX]; // pm lock name
+    esp_pm_lock_handle_t pm_lock; // power manage lock
 #endif
     i2c_bus_mode_t bus_mode; // I2C bus mode
+#if SOC_I2C_SUPPORT_SLEEP_RETENTION
+    bool retention_link_created;     // mark if the retention link is created.
+#endif
 };
 
 typedef struct i2c_master_device_list {
@@ -139,7 +131,8 @@ struct i2c_master_bus_t {
     bool trans_over_buffer;                                          // Data length is more than hardware fifo length, needs interrupt.
     bool async_trans;                                                // asynchronous transaction, true after callback is installed.
     bool ack_check_disable;                                          // Disable ACK check
-    volatile bool trans_done;                                                 // transaction command finish
+    volatile bool trans_done;                                        // transaction command finish
+    bool bypass_nack_log;                                             // Bypass the error log. Sometimes the error is expected.
     SLIST_HEAD(i2c_master_device_list_head, i2c_master_device_list) device_list;      // I2C device (instance) list
     // async trans members
     bool async_break;                                                // break transaction loop flag.
@@ -184,20 +177,15 @@ typedef struct {
 } i2c_slave_receive_t;
 
 struct i2c_slave_dev_t {
-    i2c_bus_t *base;                            // bus base class
-    SemaphoreHandle_t slv_rx_mux;               // Mutex for slave rx direction
-    SemaphoreHandle_t slv_tx_mux;               // Mutex for slave tx direction
-    RingbufHandle_t rx_ring_buf;                // Handle for rx ringbuffer
-    RingbufHandle_t tx_ring_buf;                // Handle for tx ringbuffer
-    uint8_t data_buf[SOC_I2C_FIFO_LEN];         // Data buffer for slave
-    uint32_t trans_data_length;                 // Send data length
-    i2c_slave_event_callbacks_t callbacks;      // I2C slave callbacks
-    void *user_ctx;                             // Callback user context
-    i2c_slave_fifo_mode_t fifo_mode;            // Slave fifo mode.
-    QueueHandle_t slv_evt_queue;                // Event Queue used in slave nonfifo mode.
-    i2c_slave_evt_t slave_evt;                  // Slave event structure.
-    i2c_slave_receive_t receive_desc;           // Slave receive descriptor
-    uint32_t already_receive_len;               // Data length already received in ISR.
+    i2c_bus_t *base;                                  // bus base class
+    SemaphoreHandle_t operation_mux;                  // Mux for i2c slave operation
+    i2c_slave_request_callback_t request_callback;    // i2c slave request callback
+    i2c_slave_received_callback_t receive_callback;   // i2c_slave receive callback
+    void *user_ctx;                                   // Callback user context
+    RingbufHandle_t rx_ring_buf;                      // receive ringbuffer
+    RingbufHandle_t tx_ring_buf;                      // transmit ringbuffer
+    uint32_t rx_data_count;                           // receive data count
+    i2c_slave_receive_t receive_desc;                 // slave receive descriptor
 };
 
 /**
@@ -232,7 +220,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus);
  *      - ESP_ERR_INVALID_STATE: Set clock source failed because the clk_src is different from other I2C controller
  *      - ESP_FAIL: Set clock source failed because of other error
  */
-esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t clk_src);
+esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_src);
 
 /**
  * @brief Set I2C SCL/SDA pins
@@ -244,6 +232,32 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t cl
  *      - Otherwise: Set SCL/SDA IOs error.
  */
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
+
+/**
+ * @brief Deinit I2C SCL/SDA pins
+ *
+ * @param handle I2C bus handle
+ * @return
+ *      - ESP_OK: I2C set SCL/SDA pins successfully.
+ *      - ESP_ERR_INVALID_ARG: Argument error.
+ *      - Otherwise: Set SCL/SDA IOs error.
+ */
+esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle);
+
+/**
+ * @brief Check whether bus is acquired
+ *
+ * @param port_num number of port
+ * @return true if the bus is occupied, false if the bus is not occupied.
+*/
+bool i2c_bus_occupied(i2c_port_num_t port_num);
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param handle I2C bus handle
+ */
+void i2c_create_retention_module(i2c_bus_handle_t handle);
 
 #ifdef __cplusplus
 }

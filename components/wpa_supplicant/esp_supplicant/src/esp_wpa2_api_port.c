@@ -71,7 +71,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_cert_key(const unsigned char *client_cert, i
                                              const unsigned char *private_key_passwd, int private_key_passwd_len)
 {
     return esp_eap_client_set_certificate_and_key(client_cert, client_cert_len,
-                    private_key, private_key_len, private_key_passwd, private_key_passwd_len);
+                                                  private_key, private_key_len, private_key_passwd, private_key_passwd_len);
 }
 
 void esp_wifi_sta_wpa2_ent_clear_cert_key(void)

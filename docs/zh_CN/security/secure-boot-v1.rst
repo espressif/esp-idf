@@ -17,6 +17,9 @@
 
     启用安全启动将限制进一步更新 {IDF_TARGET_NAME}。请仔细阅读本文档，了解启用安全启动的影响。
 
+.. note::
+
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
 
 背景信息
 ----------
@@ -27,11 +30,11 @@
 
 - 为理解安全启动过程，请熟悉标准 :doc:`../api-guides/startup`。
 
-- 安全启动过程会验证启动过程的两个阶段，包括初始软件引导加载程序和随后的分区与应用加载，形成一条信任链。
+- 安全启动过程会验证启动过程的两个阶段，包括二级引导加载程序的加载和随后的分区与应用加载，形成一条信任链。
 
 
 安全启动过程概述
-----------------------------
+---------------------
 
 以下是对安全启动过程的宏观概述，操作指南请参阅 :ref:`secure-boot-how-to`，进一步的技术细节请参阅 :ref:`secure-boot-technical-details`：
 
@@ -39,18 +42,18 @@
 
 2. 安全启动默认在构建过程中签名镜像和分区表数据。配置项 ``Secure boot private signing key`` 是指向 PEM 格式文件中 ECDSA 公钥/私钥对的文件路径。
 
-3. 启用安全启动支持的 ESP-IDF 负责构建软件引导加载程序镜像，签名验证所需公钥已集成到引导加载程序镜像中。此软件引导加载程序镜像将刷写到 0x1000 偏移地址。
+3. 启用安全启动支持的 ESP-IDF 负责构建二级引导加载程序镜像，签名验证所需公钥已集成到该镜像中。此二级引导加载程序镜像将烧写到 0x1000 偏移地址。
 
-4. 初次启动时，软件引导加载程序按以下方式启用安全启动：
+4. 初次启动时，二级引导加载程序按以下方式启用安全启动：
 
-   - 硬件安全启动支持生成设备安全引导加载程序密钥以及安全摘要。密钥借助硬件随机数生成，随后存储在 eFuse 中，受读写保护。硬件安全启动还支持生成安全摘要，摘要源自密钥、初始向量 (IV) 和引导加载程序镜像内容。
+   - 硬件安全启动支持生成设备安全引导加载程序密钥以及安全摘要。密钥借助硬件随机数生成，随后存储在 eFuse 中，受读写保护。硬件安全启动还支持生成安全摘要，摘要源自密钥、初始向量 (IV) 和该引导加载程序镜像的内容。
    - 安全摘要将刷写到 flash 中的 0x0 偏移地址。
    - 根据安全启动配置，烧录 eFuse 以禁用 JTAG 和 ROM 基本解释器。**强烈建议** 禁用 JTAG 和 ROM 基本解释器。
-   - 烧录 ABS_DONE_0 eFuse 后，引导加载程序将始终启用安全启动，软件引导加载程序也随之受到保护。此后，芯片只有在摘要匹配时才会启动引导加载程序镜像。
+   - 烧录 ABS_DONE_0 eFuse 后，该二级引导加载程序将始终启用安全启动，并随之受到保护。此后，芯片只有在摘要匹配时才会启动引导加载程序镜像。
 
-5. 在后续启动过程中，ROM 引导加载程序检测到安全启动 eFuse 已烧录，读取 0x0 处保存的摘要，然后使用硬件安全启动支持来将其与新计算的摘要进行对比。如果摘要不匹配，启动过程终止。摘要读取和对比完全由硬件完成，软件无法读取计算的摘要。更多技术详情，请参阅 :ref:`secure-boot-hardware-support`。
+5. 在后续启动过程中，一级 (ROM) 引导加载程序检测到安全启动 eFuse 已烧录，读取 0x0 处保存的摘要，然后使用硬件安全启动支持来将其与新计算的摘要进行对比。如果摘要不匹配，启动过程终止。摘要读取和对比完全由硬件完成，软件无法读取计算的摘要。更多技术详情，请参阅 :ref:`secure-boot-hardware-support`。
 
-6. 在安全启动模式下运行时，软件引导加载程序使用安全启动签名密钥，该密钥的公钥已嵌入引导加载程序本身，并作为引导加载程序的一部分进行验证，以在启动前验证附加到所有后续分区表和应用程序镜像的签名。
+6. 在安全启动模式下运行时，二级引导加载程序使用安全启动签名密钥，该密钥的公钥已嵌入该引导加载程序本身，并作为该引导加载程序的一部分进行验证，以在启动前验证附加到所有后续分区表和应用程序镜像的签名。
 
 
 密钥
@@ -58,7 +61,7 @@
 
 安全启动过程中使用以下密钥：
 
-- 安全引导加载程序密钥是一个 256 位 AES 密钥，存储在 eFuse 块 2 中。引导加载程序可以使用内部硬件随机数生成器自行生成该密钥，无需手动提供。也可以选择提供该密钥，请参阅 :ref:`secure-boot-reflashable`。在启用安全启动之前，存储该密钥的 eFuse 受到读取和写入保护，防止软件访问。
+- 安全引导加载程序密钥是一个 256 位 AES 密钥，存储在 eFuse 块 2 中。安全引导加载程序可以使用内部硬件随机数生成器自行生成该密钥，无需手动提供。也可以选择提供该密钥，请参阅 :ref:`secure-boot-reflashable`。在启用安全启动之前，存储该密钥的 eFuse 受到读取和写入保护，防止软件访问。
 
   - eFuse 块 2 默认编码方案为 ``None``，块中存储了一个 256 位密钥。在某些版本的 {IDF_TARGET_NAME} 上，编码方案设置为 ``3/4 Encoding``，CODING_SCHEME eFuse 值为 1，且块中必须存储一个 192 位密钥。
 
@@ -70,9 +73,9 @@
 
 - ``secure boot signing key`` 是标准的 ECDSA 公钥/私钥对，以 PEM 格式存储，请参阅 :ref:`secure-boot-image-signing-algorithm`。
 
-  - 该密钥对的公钥用于验证签名，但不用于创建签名。它编译到软件引导加载程序中，并在启动继续前验证启动过程的第二阶段，包括分区表和应用程序镜像。该公钥可以自由分发，无需保密。
+  - 该密钥对的公钥仅用于验证签名，但不用于创建签名。它编译到二级引导加载程序中，并在启动继续前验证启动过程的第二阶段，包括分区表和应用程序镜像。该公钥可以自由分发，无需保密。
 
-  - 该密钥对的私钥必须严格保密。一旦持有该私钥，即可用它对配置了安全启动和匹配公钥的引导加载程序进行身份验证。
+  - 该密钥对的私钥必须严格保密。一旦持有该私钥，即可用它对任何配置了安全启动和匹配公钥的引导加载程序进行身份验证。
 
 
 引导加载程序大小
@@ -92,7 +95,7 @@
 
 3. 根据需要设置其他 menuconfig 选项。需注意，``Bootloader Config`` 选项对应的引导加载程序仅支持烧录一次。随后，退出 menuconfig 并保存配置。
 
-4. 初次运行 ``idf.py build`` 时，如果找不到签名密钥，将打印错误信息，并提供一个通过 ``espsecure.py generate_signing_key`` 生成签名密钥的命令。
+4. 初次运行 ``idf.py build`` 时，如果找不到签名密钥，将打印错误信息，并提供一个通过 ``idf.py secure-generate-signing-key`` 生成签名密钥的命令。
 
 .. important::
 
@@ -102,7 +105,7 @@
 
    在生产环境下，建议使用 OpenSSL 或其他行业标准的加密程序生成密钥对，详情请参阅 :ref:`secure-boot-generate-key`。
 
-5. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中包含一个使用 ``esptool.py write_flash`` 烧录命令的提示。
+5. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中包含一个使用 ``esptool write-flash`` 烧录命令的提示。
 
 .. _secure-boot-resume-normal-flashing:
 
@@ -114,7 +117,7 @@
 
   如果启用了安全启动，``idf.py flash`` 不会烧录引导加载程序。
 
-8. 重置 {IDF_TARGET_NAME} 以启动烧录的软件引导加载程序。该软件引导加载程序会在芯片上启用安全启动，验证应用程序镜像签名，并启动应用程序。请查看 {IDF_TARGET_NAME} 的串行控制器输出，确保已启用安全启动，且没有因构建配置发生错误。
+8. 重置 {IDF_TARGET_NAME} 以启动烧录的二级引导加载程序。该二级引导加载程序会在芯片上启用安全启动，验证应用程序镜像签名，并启动应用程序。请查看 {IDF_TARGET_NAME} 的串行控制器输出，确保已启用安全启动，且没有因构建配置发生错误。
 
 .. note::
 
@@ -124,12 +127,12 @@
 
   如果在初次启动过程中重置或关闭了 {IDF_TARGET_NAME}，它会在下次启动时重新开始上述步骤。
 
-9. 在后续启动过程中，安全启动硬件将使用安全引导加载程序密钥验证软件引导加载程序是否更改，随后，软件引导加载程序将使用安全启动签名密钥的公钥部分来验证已签名的分区表和应用程序镜像。
+9. 在后续启动过程中，安全启动硬件将使用安全引导加载程序密钥验证二级引导加载程序是否更改，随后，二级引导加载程序将使用安全启动签名密钥的公钥部分来验证已签名的分区表和应用程序镜像。
 
 
 .. _secure-boot-reflashable:
 
-可重复烧录的软件引导加载程序
+可重复烧录的二级引导加载程序
 -------------------------------
 
 对于生产设备，推荐使用 ``Secure Boot: One-Time Flash`` 配置。该模式下，每个设备都对应拥有始终存储在设备内部的唯一密钥。
@@ -146,11 +149,11 @@
 
 1. 在 :ref:`project-configuration-menu` 中，选择 ``Bootloader Config`` > :ref:`CONFIG_SECURE_BOOT` > ``CONFIG_SECURE_BOOT_V1_ENABLED`` > :ref:`CONFIG_SECURE_BOOTLOADER_MODE` > ``Reflashable``。
 
-2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool.py`` 连接到芯片时显示在 ``Features`` 行中，或在 ``espefuse.py summary`` 输出中显示。
+2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool`` 连接到芯片时显示在 ``Features`` 行中，或在 ``idf.py efuse-summary`` 输出中显示。
 
 3. 请按 :ref:`secure-boot-generate-key` 中的步骤生成签名密钥。生成的密钥文件路径必须在 ``Secure Boot Configuration`` 菜单中指定。
 
-4. 运行 ``idf.py bootloader`` 将创建一个二进制密钥文件，该文件派生自用于签名的私钥。同时将打印两组烧录步骤。第一组步骤包括一个 ``espefuse.py burn_key secure_boot_v1 path_to/secure-bootloader-key-xxx.bin`` 命令，用于将引导加载程序密钥写入 eFuse，此密钥仅可烧录一次。第二组步骤可使用预计算的摘要重新烧录引导加载程序，该摘要在构建过程中生成。
+4. 运行 ``idf.py bootloader`` 将创建一个二进制密钥文件，该文件派生自用于签名的私钥。同时将打印两组烧录步骤。第一组步骤包括一个 ``idf.py efuse-burn-key secure_boot_v1 path_to/secure-bootloader-key-xxx.bin`` 命令，用于将引导加载程序密钥写入 eFuse，此密钥仅可烧录一次。第二组步骤可使用预计算的摘要重新烧录引导加载程序，该摘要在构建过程中生成。
 
 5. 从 :ref:`一次性烧录步骤 6 <secure-boot-resume-normal-flashing>` 继续，烧录引导加载程序并启用安全启动。请密切监视控制器日志输出，确保安全启动配置正确无误。
 
@@ -160,7 +163,7 @@
 生成安全启动签名密钥
 ----------------------------------
 
-构建系统将提供一个命令，用于通过 ``espsecure.py generate_signing_key`` 生成新的签名密钥。这个命令使用 python-ecdsa 库，而该库则使用 Python 的 ``os.urandom()`` 作为随机数源。
+构建系统将提供一个命令，用于通过 ``idf.py secure-generate-signing-key`` 生成新的签名密钥。这个命令使用 python-ecdsa 库，而该库则使用 Python 的 ``os.urandom()`` 作为随机数源。
 
 签名密钥的强度取决于系统的随机数源和所用算法的正确性。对于生产设备，建议从具有高质量熵源的系统生成签名密钥，并使用最佳的可用 EC 密钥生成工具。
 
@@ -178,7 +181,7 @@
 远程镜像签名
 ------------------------
 
-生产构建中，建议使用远程签名服务器，而非将签名密钥存储在构建机器上，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure.py`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
+生产构建中，建议使用远程签名服务器，而非将签名密钥存储在构建机器上，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
 
 使用远程签名时，请禁用选项 ``Sign binaries during build``。此时，签名私钥无需存在于构建系统，但签名公钥必须存在，它会编译到引导加载程序中，并在 OTA 更新期间验证镜像签名。
 
@@ -186,21 +189,21 @@
 
 .. code-block::
 
-  espsecure.py extract_public_key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
+  espsecure extract-public-key --keyfile PRIVATE_SIGNING_KEY PUBLIC_VERIFICATION_KEY
 
 请在 ``Secure boot public signature verification key`` 下的 menuconfig 中指定公共签名验证密钥的路径，构建安全引导加载程序。
 
-构建完应用程序镜像和分区表后，构建系统会使用 ``espsecure.py`` 打印签名步骤：
+构建完应用程序镜像和分区表后，构建系统会使用 ``idf.py`` 打印签名步骤：
 
 .. code-block::
 
-  espsecure.py sign_data --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
+  idf.py secure-sign-data --version 1 --keyfile PRIVATE_SIGNING_KEY BINARY_FILE
 
 上述命令将镜像签名附加到现有的二进制文件中，可以使用 `--output` 参数将签名后的二进制文件写入单独的文件：
 
 .. code-block::
 
-  espsecure.py sign_data --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
+  idf.py secure-sign-data --version 1 --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
 
 使用安全启动的建议
@@ -208,7 +211,7 @@
 
 * 在具备高质量熵源的系统上生成签名密钥。
 * 时刻对签名密钥保密，泄漏此密钥将危及安全启动系统。
-* 不允许第三方查看 ``espsecure.py`` 进行密钥生成或签名过程的任何细节，因为这样容易受到定时或其他侧信道攻击的威胁。
+* 不允许第三方使用 ``espsecure`` 命令或 ``idf.py secure-`` 子命令来观察密钥生成或是签名过程的任何细节，这两个过程都容易受到定时攻击或其他侧信道攻击的威胁。
 * 在安全启动配置中启用所有安全启动选项，包括 flash 加密、禁用 JTAG、禁用 BASIC ROM 解释器和禁用 UART 引导加载程序的加密 flash 访问。
 * 结合 :doc:`flash-encryption` 使用安全启动，防止本地读取 flash 内容。
 
@@ -226,7 +229,7 @@
 安全启动硬件支持
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-安全启动验证的第一阶段为检查软件引导加载程序，该检查通过硬件完成。{IDF_TARGET_NAME} 的安全启动支持硬件提供以下三种基本操作：
+安全启动验证的第一阶段为检查二级引导加载程序，该检查通过硬件完成。{IDF_TARGET_NAME} 的安全启动支持硬件提供以下三种基本操作：
 
 1. 通过硬件随机数生成器生成一系列随机字节。
 
@@ -242,7 +245,7 @@
 
 输入二进制数据镜像，该算法会生成并输出摘要 (digest)，此摘要在硬件文档中有时也称摘要 (abstract)。
 
-请前往 :component:`/esptool_py` 目录，查看 ``espsecure.py`` 工具，了解算法使用的 Python 版本。具体而言，请查看 ``digest_secure_bootloader`` 命令。
+请前往 :component:`/esptool_py` 目录，查看 ``espsecure`` 工具，了解算法使用的 Python 版本。具体而言，请查看 ``digest-secure-bootloader`` 命令。
 
 以下带有 (^) 标记的项目用于满足硬件限制，而非密码学限制。
 
@@ -284,13 +287,13 @@
 
 安全启动已集成到 ESP-IDF 构建系统中，因此若启用了安全启动，``idf.py build`` 将自动签名应用程序镜像。如果 menuconfig 配置了相应选项，``idf.py bootloader`` 将生成引导加载程序摘要。
 
-然而，也可以使用 ``espsecure.py`` 工具生成独立的签名和摘要。
+但也可以通过 ``idf.py secure-`` 子命令生成独立的签名和摘要。
 
 可以使用以下命令进行二进制镜像签名：
 
 .. code-block::
 
-  espsecure.py sign_data --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
+  idf.py secure-sign-data --version 1 --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
 
 keyfile 是包含 ECDSA 签名私钥的 PEM 文件。
 
@@ -298,15 +301,15 @@ keyfile 是包含 ECDSA 签名私钥的 PEM 文件。
 
 .. code-block::
 
-  espsecure.py digest_secure_bootloader --keyfile ./securebootkey.bin --output ./bootloader-digest.bin build/bootloader/bootloader.bin
+  idf.py secure-digest-secure-bootloader --keyfile ./securebootkey.bin --output ./bootloader-digest.bin bootloader/bootloader.bin
 
 keyfile 是设备的 32 字节原始安全启动密钥。
 
-``espsecure.py digest_secure_bootloader`` 命令的输出是一个包含摘要和附加的引导加载程序的独立文件。可以使用以下命令将合并的摘要和引导加载程序烧录到设备上：
+使用 ``idf.py secure-digest-secure-bootloader`` 命令会输出一个包含摘要及附加引导加载程序的独立文件。可以使用以下命令，将合并的摘要及引导加载程序烧录到设备上：
 
 .. code-block::
 
-  esptool.py write_flash 0x0 bootloader-digest.bin
+  esptool write-flash 0x0 bootloader-digest.bin
 
 
 .. _secure-boot-and-flash-encr:

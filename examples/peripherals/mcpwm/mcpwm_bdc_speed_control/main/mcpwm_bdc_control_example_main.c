@@ -17,7 +17,7 @@
 
 static const char *TAG = "example";
 
-// Enable this config,  we will print debug formated string, which in return can be captured and parsed by Serial-Studio
+// Enable this config,  we will print debug formatted string, which in return can be captured and parsed by Serial-Studio
 #define SERIAL_STUDIO_DEBUG           CONFIG_SERIAL_STUDIO_DEBUG
 
 #define BDC_MCPWM_TIMER_RESOLUTION_HZ 10000000 // 10MHz, 1 tick = 0.1us
@@ -37,7 +37,7 @@ static const char *TAG = "example";
 typedef struct {
     bdc_motor_handle_t motor;
     pcnt_unit_handle_t pcnt_encoder;
-    pid_ctrl_block_handle_t pid_ctrl;
+    pid_ctrl_block_handle_f_t pid_ctrl;
     int report_pulses;
 } motor_control_context_t;
 
@@ -46,7 +46,7 @@ static void pid_loop_cb(void *args)
     static int last_pulse_count = 0;
     motor_control_context_t *ctx = (motor_control_context_t *)args;
     pcnt_unit_handle_t pcnt_unit = ctx->pcnt_encoder;
-    pid_ctrl_block_handle_t pid_ctrl = ctx->pid_ctrl;
+    pid_ctrl_block_handle_f_t pid_ctrl = ctx->pid_ctrl;
     bdc_motor_handle_t motor = ctx->motor;
 
     // get the result from rotary encoder
@@ -121,7 +121,7 @@ void app_main(void)
     motor_ctrl_ctx.pcnt_encoder = pcnt_unit;
 
     ESP_LOGI(TAG, "Create PID control block");
-    pid_ctrl_parameter_t pid_runtime_param = {
+    pid_ctrl_parameter_f_t pid_runtime_param = {
         .kp = 0.6,
         .ki = 0.4,
         .kd = 0.2,
@@ -131,8 +131,8 @@ void app_main(void)
         .max_integral = 1000,
         .min_integral = -1000,
     };
-    pid_ctrl_block_handle_t pid_ctrl = NULL;
-    pid_ctrl_config_t pid_config = {
+    pid_ctrl_block_handle_f_t pid_ctrl = NULL;
+    pid_ctrl_config_f_t pid_config = {
         .init_param = pid_runtime_param,
     };
     ESP_ERROR_CHECK(pid_new_control_block(&pid_config, &pid_ctrl));

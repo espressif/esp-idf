@@ -1,0 +1,14 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_security/test_apps/crypto_drivers:
+  enable:
+    - if: ((SOC_HMAC_SUPPORTED == 1) or (SOC_DIG_SIGN_SUPPORTED == 1)) or (SOC_KEY_MANAGER_SUPPORTED == 1)
+  depends_components:
+    - esp_security
+    - esp_hal_security
+
+components/esp_security/test_apps/fault_assert_opt_check:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]  # one Xtensa + one RISC-V
+  depends_components:
+    - esp_common

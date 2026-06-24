@@ -64,6 +64,9 @@ static void bte_main_enable(void);
 bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
 extern void osi_mem_dbg_init(void);
+#if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
+extern void free_controller_param(void);
+#endif
 /******************************************************************************
 **
 ** Function         bte_main_boot_entry
@@ -83,9 +86,12 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 
     bluedroid_init_done_cb = cb;
 
-    osi_init();
+    if (osi_init() != 0) {
+        APPL_TRACE_ERROR("%s failed to initialize OS layer.\n", __func__);
+        return -1;
+    }
 
-    //Enbale HCI
+    //Enable HCI
     bte_main_enable();
 
     return 0;
@@ -102,9 +108,11 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 ******************************************************************************/
 void bte_main_shutdown(void)
 {
-#if (BLE_INCLUDED == TRUE)
-    BTA_VendorCleanup();
+
+#if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
+    free_controller_param();
 #endif
+
     bte_main_disable();
 
     osi_deinit();
@@ -230,6 +238,11 @@ void bte_main_lpm_wake_bt_device(void)
 ******************************************************************************/
 void bte_main_hci_send (BT_HDR *p_msg, UINT16 event)
 {
+    if (!p_msg) {
+        APPL_TRACE_ERROR("%s null message\n", __func__);
+        return;
+    }
+
     UINT16 sub_event = event & BT_SUB_EVT_MASK;  /* local controller ID */
 
     p_msg->event = event;

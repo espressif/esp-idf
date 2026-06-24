@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,9 @@
     .global pxCurrentTCBs
     .global vTaskSwitchContext
     .global xPortSwitchFlag
+#if ( configNUM_CORES > 1 )
+    .global port_uxCoreStartupDone
+#endif
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     .global xIsrStack
     .global port_offset_pxStack
@@ -66,7 +69,7 @@ rtos_int_enter:
     /* esp_hw_stack_guard_set_bounds(xIsrStack, xIsrStackTop); */
     la      a0, xIsrStack
     mv      a1, sp
-    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2 a0 a1
     /* esp_hw_stack_guard_monitor_start(); */
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
@@ -137,13 +140,23 @@ no_switch:
     lw t0, pxCurrentTCBs
     lw sp, 0x0(t0)
 
+#if ( configNUM_CORES > 1 )
+    /* Indicate that this CPU has completed startup */
+    la      t1, port_uxCoreStartupDone      /* t1 = &port_uxCoreStartupDone */
+    csrr    a1, mhartid                     /* a1 = coreID */
+    slli    a1, a1, 2                       /* a1 = coreID * 4 */
+    add     t1, t1, a1                      /* t1 = &port_uxCoreStartupDone[coreID] // a1 contains coreID * 4 */
+    li      a1, 1                           /* a1 = 1 */
+    sw      a1, 0(t1)                       /* port_uxCoreStartupDone[coreID] = 1 */
+#endif /* ( configNUM_CORES > 1 ) */
+
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* esp_hw_stack_guard_set_bounds(pxCurrentTCBs[0]->pxStack,
      *                               pxCurrentTCBs[0]->pxEndOfStack);
      */
     lw      a0, PORT_OFFSET_PX_STACK(t0)
     lw      a1, PORT_OFFSET_PX_END_OF_STACK(t0)
-    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2
+    ESP_HW_STACK_GUARD_SET_BOUNDS_CUR_CORE a2 a0 a1
     /* esp_hw_stack_guard_monitor_start(); */
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */

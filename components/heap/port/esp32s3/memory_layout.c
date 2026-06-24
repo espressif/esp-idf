@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,27 +41,31 @@ enum {
 #define ESP32S3_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_32BIT | MALLOC_CAP_8BIT)
 
 
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT
 #define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL
+#define MALLOC_IRAM_BASE_CAPS       0
 #else
 #define MALLOC_DIRAM_BASE_CAPS      ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_RETENTION | MALLOC_CAP_EXEC
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC
+#define MALLOC_IRAM_BASE_CAPS       MALLOC_CAP_EXEC
 #endif
+
+// The memory used for SIMD instructions requires the bus of its memory regions be able to transfer the data in 128-bit
 
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-/*                           Mem Type Name | High Priority Matching  | Medium Priorty Matching                                        | Low Priority Matching */
-    [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS,   0,                                                               0 }},
-    [SOC_MEMORY_TYPE_DRAM]   = { "DRAM",   { 0,                        ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA,  0 }},
-    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_CAP_EXEC,          MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                          0 }},
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,        ESP32S3_MEM_COMMON_CAPS,                                         0 }},
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM,        0,                                                               MALLOC_RTCRAM_BASE_CAPS }},
+/*                           Mem Type Name | High Priority Matching                    | Medium Priority Matching                                                         | Low Priority Matching */
+    [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS | MALLOC_CAP_SIMD,   0,                                                                                 0 }},
+    [SOC_MEMORY_TYPE_DRAM]   = { "DRAM",   { 0,                                          ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_SIMD,  0 }},
+    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_IRAM_BASE_CAPS,                      MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                                            0 }},
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,                          0,                                                                                 ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
+    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM,                          0,                                                                                 MALLOC_RTCRAM_BASE_CAPS }},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -80,7 +84,7 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
-#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB && !defined(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
+#if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB && !defined(CONFIG_ESP_SYSTEM_MEMPROT)
     { 0x40374000,           0x4000,                                     SOC_MEMORY_TYPE_IRAM,   0,                                      false}, //Level 1, IRAM
 #endif
     { 0x3FC88000,           0x8000,                                     SOC_MEMORY_TYPE_DIRAM,  0x40378000,                             false}, //Level 2, IDRAM, can be used as trace memory

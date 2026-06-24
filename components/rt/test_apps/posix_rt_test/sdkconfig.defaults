@@ -1,0 +1,2 @@
+# This "default" configuration is appended to all other configurations
+CONFIG_ESP_TASK_WDT_INIT=n

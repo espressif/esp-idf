@@ -32,6 +32,8 @@ The following APIs of :doc:`esp_http_server` should not be used with :doc:`esp_h
 
 Everything else can be used without limitations.
 
+.. note:: APIs in the HTTPS server are not thread-safe. If thread safety is required, it is the responsibility of the application layer to ensure proper synchronization between multiple tasks.
+
 Usage
 -----
 
@@ -49,11 +51,11 @@ The initial session setup can take about two seconds, or more with slower clock 
 Event Handling
 --------------
 
-ESP HTTPS Server has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTPS Server.
+ESP HTTPS Server has various events for which a handler can be triggered by the :doc:`../system/esp_event` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTPS Server.
 
 :cpp:enum:`esp_https_server_event_id_t` has all the events which can happen for ESP HTTPS server.
 
-Expected data type for different ESP HTTP server events in event loop:
+Expected data type for different ESP HTTPS server events in event loop:
 
     - HTTPS_SERVER_EVENT_ERROR          :   ``esp_https_server_last_error_t``
     - HTTPS_SERVER_EVENT_START          :   ``NULL``
@@ -62,6 +64,35 @@ Expected data type for different ESP HTTP server events in event loop:
     - HTTPS_SERVER_EVENT_SENT_DATA      :   ``NULL``
     - HTTPS_SERVER_EVENT_DISCONNECTED   :   ``NULL``
     - HTTPS_SERVER_EVENT_STOP           :   ``NULL``
+
+Application Examples
+--------------------
+
+- :example:`protocols/https_server/simple` demonstrates how to create an HTTPS server that returns a simple HTML page when visited.
+
+- :example:`protocols/https_server/wss_server` demonstrates how to create an SSL server with a simple WebSocket request handler that supports handling multiple clients, PING-PONG mechanism, and sending asynchronous messages to all clients.
+
+HTTPS Server Cert Selection Hook
+--------------------------------
+
+The ESP HTTPS Server component provides an option to set the server certification selection hook. This feature allows you to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI.
+
+To enable this feature, please enable :ref:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK` in the ESP HTTPS Server menuconfig. Please note that the ESP-TLS option is only available when Mbedtls is used as the TLS stack for ESP-TLS (default behaviour).
+
+When enabled, you can set the certificate selection callback using the :cpp:member:`httpd_ssl_config::cert_select_cb` member of the :cpp:type:`httpd_ssl_config_t` structure.
+
+.. code-block:: c
+
+  int cert_selection_callback(mbedtls_ssl_context *ssl)
+    {
+        /* Code that the callback should execute */
+        return 0;
+    }
+
+    httpd_ssl_config_t cfg = {
+        cert_select_cb = cert_section_callback,
+    };
+
 
 API Reference
 -------------

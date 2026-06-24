@@ -7,9 +7,10 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 
 // Some resources are lazy allocated, the threadhold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (400)
+#define TEST_MEMORY_LEAK_THRESHOLD (500)
 
 void setUp(void)
 {

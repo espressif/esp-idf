@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,26 +14,25 @@
 #include "esp_flash.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
-#include "memspi_host_driver.h"
-#include "spi_flash_mmap.h"
+#include "esp_private/memspi_host_driver.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 #include "test_utils.h"
 #include "unity.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "soc/io_mux_reg.h"
+#include "hal/spi_ll.h"
 #include "sdkconfig.h"
 
+#include "esp_spi_flash_counters.h"
 #include "esp_partition.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "test_esp_flash_def.h"
-#include "spi_flash_mmap.h"
 #include "esp_private/spi_flash_os.h"
 #include "ccomp_timer.h"
-
-#define FUNC_SPI    1
 
 static uint8_t sector_buf[4096];
 
@@ -66,28 +65,28 @@ static void setup_bus(spi_host_device_t host_id)
         esp_rom_gpio_connect_out_signal(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...", host_id + 1);
-        spi_bus_config_t hspi_bus_cfg = {
-            .mosi_io_num = HSPI_PIN_NUM_MOSI,
-            .miso_io_num = HSPI_PIN_NUM_MISO,
-            .sclk_io_num = HSPI_PIN_NUM_CLK,
-            .quadhd_io_num = HSPI_PIN_NUM_HD,
-            .quadwp_io_num = HSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi2_bus_cfg = {
+            .mosi_io_num = SPI2_PIN_NUM_MOSI,
+            .miso_io_num = SPI2_PIN_NUM_MISO,
+            .sclk_io_num = SPI2_PIN_NUM_CLK,
+            .quadhd_io_num = SPI2_PIN_NUM_HD,
+            .quadwp_io_num = SPI2_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi2_bus_cfg, 0);
         TEST_ESP_OK(ret);
     } else if (host_id == SPI3_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (VSPI) CS0...", host_id + 1);
-        spi_bus_config_t vspi_bus_cfg = {
-            .mosi_io_num = VSPI_PIN_NUM_MOSI,
-            .miso_io_num = VSPI_PIN_NUM_MISO,
-            .sclk_io_num = VSPI_PIN_NUM_CLK,
-            .quadhd_io_num = VSPI_PIN_NUM_HD,
-            .quadwp_io_num = VSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi3_bus_cfg = {
+            .mosi_io_num = SPI3_PIN_NUM_MOSI,
+            .miso_io_num = SPI3_PIN_NUM_MISO,
+            .sclk_io_num = SPI3_PIN_NUM_CLK,
+            .quadhd_io_num = SPI3_PIN_NUM_HD,
+            .quadwp_io_num = SPI3_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &vspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi3_bus_cfg, 0);
         TEST_ESP_OK(ret);
     } else {
         ESP_LOGE(TAG, "invalid bus");
@@ -102,45 +101,45 @@ static void setup_bus(spi_host_device_t host_id)
         //Initialize the WP and HD pins, which are not automatically initialized on ESP32-S2.
         int wp_pin = spi_periph_signal[host_id].spiwp_iomux_pin;
         int hd_pin = spi_periph_signal[host_id].spihd_iomux_pin;
-        gpio_iomux_in(wp_pin, spi_periph_signal[host_id].spiwp_in);
-        gpio_iomux_out(wp_pin, spi_periph_signal[host_id].func, false);
-        gpio_iomux_in(hd_pin, spi_periph_signal[host_id].spihd_in);
-        gpio_iomux_out(hd_pin, spi_periph_signal[host_id].func, false);
+        gpio_iomux_input(wp_pin, spi_periph_signal[host_id].func, spi_periph_signal[host_id].spiwp_in);
+        gpio_iomux_output(wp_pin, spi_periph_signal[host_id].func);
+        gpio_iomux_input(hd_pin, spi_periph_signal[host_id].func, spi_periph_signal[host_id].spihd_in);
+        gpio_iomux_output(hd_pin, spi_periph_signal[host_id].func);
 #endif //CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (FSPI) CS0...", host_id + 1);
-        spi_bus_config_t fspi_bus_cfg = {
-            .mosi_io_num = FSPI_PIN_NUM_MOSI,
-            .miso_io_num = FSPI_PIN_NUM_MISO,
-            .sclk_io_num = FSPI_PIN_NUM_CLK,
-            .quadhd_io_num = FSPI_PIN_NUM_HD,
-            .quadwp_io_num = FSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi2_bus_cfg = {
+            .mosi_io_num = SPI2_PIN_NUM_MOSI,
+            .miso_io_num = SPI2_PIN_NUM_MISO,
+            .sclk_io_num = SPI2_PIN_NUM_CLK,
+            .quadhd_io_num = SPI2_PIN_NUM_HD,
+            .quadwp_io_num = SPI2_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &fspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi2_bus_cfg, 0);
         TEST_ESP_OK(ret);
     }
 #if SOC_SPI_PERIPH_NUM > 2
     else if (host_id == SPI3_HOST) {
-        ESP_LOGI(TAG, "setup flash on SPI%u (HSPI) CS0...", host_id + 1);
-        spi_bus_config_t hspi_bus_cfg = {
-            .mosi_io_num = HSPI_PIN_NUM_MOSI,
-            .miso_io_num = HSPI_PIN_NUM_MISO,
-            .sclk_io_num = HSPI_PIN_NUM_CLK,
-            .quadhd_io_num = HSPI_PIN_NUM_HD,
-            .quadwp_io_num = HSPI_PIN_NUM_WP,
+        ESP_LOGI(TAG, "setup flash on SPI%u CS0...", host_id + 1);
+        spi_bus_config_t spi2_bus_cfg = {
+            .mosi_io_num = SPI2_PIN_NUM_MOSI,
+            .miso_io_num = SPI2_PIN_NUM_MISO,
+            .sclk_io_num = SPI2_PIN_NUM_CLK,
+            .quadhd_io_num = SPI2_PIN_NUM_HD,
+            .quadwp_io_num = SPI2_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-        esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
+        esp_err_t ret = spi_bus_initialize(host_id, &spi2_bus_cfg, 0);
         TEST_ESP_OK(ret);
 
-        // HSPI have no multiline mode, use GPIO to pull those pins up
-        gpio_set_direction(HSPI_PIN_NUM_HD, GPIO_MODE_OUTPUT);
-        gpio_set_level(HSPI_PIN_NUM_HD, 1);
+        // SPI2 have no multiline mode, use GPIO to pull those pins up
+        gpio_set_direction(SPI2_PIN_NUM_HD, GPIO_MODE_OUTPUT);
+        gpio_set_level(SPI2_PIN_NUM_HD, 1);
 
-        gpio_set_direction(HSPI_PIN_NUM_WP, GPIO_MODE_OUTPUT);
-        gpio_set_level(HSPI_PIN_NUM_WP, 1);
+        gpio_set_direction(SPI2_PIN_NUM_WP, GPIO_MODE_OUTPUT);
+        gpio_set_level(SPI2_PIN_NUM_WP, 1);
     }
 #endif
     else {
@@ -598,7 +597,13 @@ TEST_CASE_MULTI_FLASH_IGNORE("Test esp_flash_write can toggle QE bit", test_togg
 #endif //CONFIG_ESPTOOLPY_OCT_FLASH
 
 // This table could be chip specific in the future.
-uint8_t flash_frequency_table[6] = {5, 10, 20, 26, 40, 80};
+#if CONFIG_IDF_TARGET_ESP32C2
+uint8_t flash_frequency_table[] = {5, 10, 20, 40};
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
+uint8_t flash_frequency_table[] = {8, 16, 24, 48};
+#else
+uint8_t flash_frequency_table[] = {5, 10, 20, 26, 40, 80};
+#endif
 #define TEST_FLASH_SPEED_MIN 5
 void test_permutations_part(const flashtest_config_t* config, esp_partition_t* part, void* source_buf, size_t length)
 {
@@ -610,8 +615,7 @@ void test_permutations_part(const flashtest_config_t* config, esp_partition_t* p
             //the io mode will switch frequently.
             esp_flash_io_mode_t io_mode = SPI_FLASH_READ_MODE_MIN;
             while (io_mode != SPI_FLASH_QIO + 1) {
-                if (io_mode > SPI_FLASH_FASTRD &&
-                    !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(config->host_id)) {
+                if (io_mode > SPI_FLASH_FASTRD && (SPI_LL_PERIPH_BITWIDTH(config->host_id) < 2)) {
                     io_mode++;
                     continue;
                 }
@@ -658,7 +662,7 @@ void test_permutations_chip(const flashtest_config_t* config)
     // Get test partition, and locate temporary partitions according to the default one
     const esp_partition_t* test_part = get_test_data_partition();
     const int length = sizeof(large_const_buffer);
-    TEST_ASSERT(test_part->size > length + 2 + SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT(test_part->size > length + 2 + test_part->erase_size);
 
     esp_partition_t part[2] = {};
     part[0] = *test_part;
@@ -740,7 +744,7 @@ static void write_large_buffer(const esp_partition_t *part, const uint8_t *sourc
     esp_flash_t* chip = part->flash_chip;
 
     printf("Writing chip %p %p, %u bytes from source %p\n", chip, (void*)part->address, length, source);
-    ESP_ERROR_CHECK( esp_flash_erase_region(chip, part->address, (length + SPI_FLASH_SEC_SIZE) & ~(SPI_FLASH_SEC_SIZE - 1)) );
+    ESP_ERROR_CHECK( esp_flash_erase_region(chip, part->address, (length + part->erase_size) & ~(part->erase_size - 1)) );
 
     // note writing to unaligned address
     ESP_ERROR_CHECK( esp_flash_write(chip, source, part->address + 1, length) );
@@ -773,11 +777,46 @@ static void read_and_check(const esp_partition_t *part, const uint8_t *source, s
 
 static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *source, size_t length)
 {
-    TEST_ASSERT(part->size > length + 2 + SPI_FLASH_SEC_SIZE);
+    TEST_ASSERT(part->size > length + 2 + part->erase_size);
 
     write_large_buffer(part, source, length);
     read_and_check(part, source, length);
 }
+
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+static void test_write_over_boundary(const esp_partition_t* part)
+{
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t flash_size;
+    esp_err_t err = esp_flash_get_size(chip, &flash_size);
+    TEST_ESP_OK(err);
+    const uint32_t SECTOR_SIZE = 4096;
+    uint8_t buf[0];
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 0, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, SECTOR_SIZE, flash_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2, flash_size/2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2 + SECTOR_SIZE, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, 2 * SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 2 * SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, UINT32_MAX - SECTOR_SIZE + 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, UINT32_MAX - SECTOR_SIZE + 1, flash_size - SECTOR_SIZE));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, 0, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, SECTOR_SIZE, flash_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size/2, flash_size/2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size/2 + SECTOR_SIZE, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size - SECTOR_SIZE, 2 * SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, 2 * SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size - SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size - SECTOR_SIZE, UINT32_MAX - SECTOR_SIZE + 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, UINT32_MAX - SECTOR_SIZE + 1, flash_size - SECTOR_SIZE));
+}
+
+TEST_CASE_FLASH("Test flash write over boundary", test_write_over_boundary);
+TEST_CASE_MULTI_FLASH("Test flash write over boundary", test_write_over_boundary);
+#endif //CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
 
 #if !CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
 
@@ -806,7 +845,7 @@ static uint32_t time_measure_end(time_meas_ctx_t* ctx)
 
 static uint32_t measure_erase(const esp_partition_t* part)
 {
-    const int total_len = SPI_FLASH_SEC_SIZE * TEST_SECTORS;
+    const int total_len = part->erase_size * TEST_SECTORS;
     time_meas_ctx_t time_ctx = {.name = "erase", .len = total_len};
 
     time_measure_start(&time_ctx);
@@ -818,7 +857,7 @@ static uint32_t measure_erase(const esp_partition_t* part)
 // should called after measure_erase
 static uint32_t measure_write(const char* name, const esp_partition_t* part, const uint8_t* data_to_write, int seg_len)
 {
-    const int total_len = SPI_FLASH_SEC_SIZE;
+    const int total_len = part->erase_size;
     time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
 
     time_measure_start(&time_ctx);
@@ -841,7 +880,7 @@ static uint32_t measure_write(const char* name, const esp_partition_t* part, con
 
 static uint32_t measure_read(const char* name, const esp_partition_t* part, uint8_t* data_read, int seg_len)
 {
-    const int total_len = SPI_FLASH_SEC_SIZE;
+    const int total_len = part->erase_size;
     time_meas_ctx_t time_ctx = {.name = name, .len = total_len * TEST_TIMES};
 
     time_measure_start(&time_ctx);
@@ -898,7 +937,7 @@ static const char* get_chip_vendor(uint32_t id)
 static void test_flash_read_write_performance(const esp_partition_t *part)
 {
     esp_flash_t* chip = part->flash_chip;
-    const int total_len = SPI_FLASH_SEC_SIZE;
+    const int total_len = part->erase_size;
     uint8_t *data_to_write = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     uint8_t *data_read = heap_caps_malloc(total_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
@@ -1074,6 +1113,7 @@ void test_flash_counter(const esp_partition_t* part)
     // check for resset_counter after used
     TEST_ASSERT_EACH_EQUAL_HEX8(0, &flash_counter, sizeof(esp_flash_counters_t));
 
+#if SOC_FLASH_ENC_SUPPORTED
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_write_encrypted(chip, offs, write_buf, TEST_CNT_RW_LEN) );
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read_encrypted(chip, offs, read_buf, TEST_CNT_RW_LEN) );
 
@@ -1088,7 +1128,21 @@ void test_flash_counter(const esp_partition_t* part)
     TEST_ASSERT_EQUAL_UINT32(1 * TEST_CNT_RW_LEN, flash_counter.read.bytes);
     TEST_ASSERT_EQUAL_UINT32(1 * TEST_CNT_RW_LEN, flash_counter.write.bytes);
     TEST_ASSERT_EQUAL_UINT32(0, flash_counter.erase.bytes);
+#endif //SOC_FLASH_ENC_SUPPORTED
 }
 
 TEST_CASE_FLASH("SPI flash counter test", test_flash_counter);
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
+TEST_CASE("test writes to dangerous regions like bootloader", "[esp_flash]")
+{
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, 4*4096));
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_PARTITION_TABLE_OFFSET, 4096));
+    char buffer[32] = {0xa5};
+    // Encrypted writes to bootloader region not allowed
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_write(NULL, buffer, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, sizeof(buffer)));
+    // Encrypted writes to partition table region not allowed
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_write(NULL, buffer, CONFIG_PARTITION_TABLE_OFFSET, sizeof(buffer)));
+}
+#endif //!CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS

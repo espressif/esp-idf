@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,10 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "soc/soc.h"
+#include <chrono>
+#include <shared_mutex>
+#include <thread>
+#include "esp_timer.h"
 
 extern "C" void setUp()
 {
@@ -105,18 +109,16 @@ TEST_CASE("static initialization guards work as expected", "[misc]")
     TEST_ASSERT_NOT_NULL(s_slow_init_sem);
     int task_count = 0;
     // four tasks competing for static initialization of one object
-    task_count += start_slow_init_task<1>(0, PRO_CPU_NUM);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    task_count += start_slow_init_task<1>(1, APP_CPU_NUM);
-#endif
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
+        task_count += start_slow_init_task<1>(i, i);
+    }
     task_count += start_slow_init_task<1>(2, PRO_CPU_NUM);
     task_count += start_slow_init_task<1>(3, tskNO_AFFINITY);
 
     // four tasks competing for static initialization of another object
-    task_count += start_slow_init_task<2>(0, PRO_CPU_NUM);
-#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
-    task_count += start_slow_init_task<2>(1, APP_CPU_NUM);
-#endif
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
+        task_count += start_slow_init_task<2>(i, i);
+    }
     task_count += start_slow_init_task<2>(2, PRO_CPU_NUM);
     task_count += start_slow_init_task<2>(3, tskNO_AFFINITY);
 
@@ -197,7 +199,7 @@ struct PriorityInitTest {
 
 int PriorityInitTest::order = 0;
 
-// init_priority objects are initialized from the lowest to the heighest priority number
+// init_priority objects are initialized from the lowest to the highest priority number
 // Default init_priority is always the lowest (highest priority number)
 PriorityInitTest g_static_init_priority_test2;
 PriorityInitTest g_static_init_priority_test1 __attribute__((init_priority(1000)));
@@ -241,6 +243,36 @@ TEST_CASE("can use std::vector", "[misc]")
     std::vector<int> v(10, 1);
     v[0] = 42;
     TEST_ASSERT_EQUAL(51, std::accumulate(std::begin(v), std::end(v), 0));
+}
+
+static volatile bool is_tls_class_destructor_called;
+struct TestTLS {
+    TestTLS() { }
+    ~TestTLS()
+    {
+        is_tls_class_destructor_called = true;
+    }
+    void foo() { }
+};
+
+thread_local TestTLS s_testTLS;
+
+void test_thread_local_destructors(void * arg)
+{
+    s_testTLS.foo();
+    xSemaphoreGive(s_slow_init_sem);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("call destructors for thread_local classes CXX", "[misc]")
+{
+    is_tls_class_destructor_called = false;
+    s_slow_init_sem = xSemaphoreCreateCounting(1, 0);
+    xTaskCreate(test_thread_local_destructors, "test_thread_local_destructors", 2048, NULL, 10, NULL);
+    vTaskDelay(10); /* Triggers IDLE task to call prvCheckTasksWaitingTermination() which cleans task-specific data */
+    TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(s_slow_init_sem);
+    TEST_ASSERT_TRUE(is_tls_class_destructor_called);
 }
 
 /* These test cases pull a lot of code from libstdc++ and are disabled for now
@@ -289,8 +321,51 @@ TEST_CASE("stack smashing protection CXX", "[stack_smash]")
     recur_and_smash_cxx();
 }
 
+TEST_CASE("test std::this_thread::sleep_for basic functionality", "[misc]")
+{
+    const int us_per_tick = portTICK_PERIOD_MS * 1000;
+
+    // Test sub-tick sleep
+    const auto short_sleep = std::chrono::microseconds(us_per_tick / 4);
+    int64_t start = esp_timer_get_time();
+    std::this_thread::sleep_for(short_sleep);
+    int64_t end = esp_timer_get_time();
+    int64_t elapsed_us = end - start;
+    printf("short sleep: %lld us\n", elapsed_us);
+    TEST_ASSERT_GREATER_OR_EQUAL(short_sleep.count(), elapsed_us);
+
+    // Test multi-tick sleep
+    const auto long_sleep = std::chrono::microseconds(us_per_tick * 2);
+    start = esp_timer_get_time();
+    std::this_thread::sleep_for(long_sleep);
+    end = esp_timer_get_time();
+    elapsed_us = end - start;
+    printf("long sleep: %lld us\n", elapsed_us);
+    TEST_ASSERT_GREATER_OR_EQUAL(long_sleep.count(), elapsed_us);
+}
+
+TEST_CASE("test std::shared_mutex memory leaks", "[misc]")
+{
+    /* TODO IDF-14862:
+     * check if PTHREAD_RWLOCK_INITIALIZER is still defined to not break user's code
+     */
+    pthread_rwlock_t m = PTHREAD_RWLOCK_INITIALIZER;
+    TEST_ASSERT_NOT_EQUAL_UINT(NULL, m);
+
+    std::shared_mutex* mutex_not_initialized = new std::shared_mutex();
+    delete mutex_not_initialized;
+
+    /* A locked mutex can't be destroyed, don't test it here */
+
+    std::shared_mutex* mutex_unlocked = new std::shared_mutex();
+    mutex_unlocked->lock();
+    mutex_unlocked->unlock();
+    delete mutex_unlocked;
+}
+
 extern "C" void app_main(void)
 {
+    s_testTLS.foo(); /* allocates memory that will be reused */
     printf("CXX GENERAL TEST\n");
     unity_run_menu();
 }

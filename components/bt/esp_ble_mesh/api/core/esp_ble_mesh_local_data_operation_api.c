@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,8 +131,10 @@ esp_err_t esp_ble_mesh_model_unsubscribe_group_addr(uint16_t element_addr, uint1
 esp_err_t esp_ble_mesh_enable_directed_forwarding(uint16_t net_idx, bool directed_forwarding,
                                                   bool directed_forwarding_relay)
 {
-    return btc_ble_mesh_enable_directed_forwarding(net_idx, directed_forwarding,
-                                                   directed_forwarding_relay);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    return (btc_ble_mesh_enable_directed_forwarding(net_idx, directed_forwarding,
+                                                    directed_forwarding_relay) == 0 ? ESP_OK : ESP_FAIL);
 }
 #endif /* CONFIG_BLE_MESH_DF_SRV */
 

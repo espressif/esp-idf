@@ -1,0 +1,98 @@
+menu "Example Configuration"
+
+    config EXAMPLE_LCD_PARLIO_COLOR_IN_PSRAM
+        bool "Allocate color data from PSRAM"
+        depends on SOC_PSRAM_DMA_CAPABLE
+        default n
+        help
+            Enable this option if you want to allocate the LVGL draw buffer from PSRAM.
+
+    choice EXAMPLE_LCD_PARLIO_SIMULATE_INTERFACE
+        prompt "LCD interface"
+        default EXAMPLE_LCD_PARLIO_SIMULATE_I80 if SOC_PARLIO_SUPPORT_I80_LCD
+        default EXAMPLE_LCD_PARLIO_SIMULATE_SPI
+        help
+            Select LCD controller model
+
+        config EXAMPLE_LCD_PARLIO_SIMULATE_SPI
+            bool "SPI"
+
+        config EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            depends on SOC_PARLIO_SUPPORT_I80_LCD
+            bool "I80"
+
+    endchoice
+
+    config EXAMPLE_LCD_PIXEL_CLOCK_HZ
+        int "Pixel clock frequency (Hz)"
+        default 10000000
+        help
+            Set the pixel clock frequency in Hz.
+
+    config EXAMPLE_LCD_PARLIO_DATA_WIDTH
+        int
+        default 8 if EXAMPLE_LCD_PARLIO_SIMULATE_I80
+        default 1
+
+    menu "LCD GPIO Configuration"
+        config EXAMPLE_PIN_NUM_PCLK
+            int "PCLK Pin"
+            default 5
+
+        config EXAMPLE_PIN_NUM_CS
+            int "CS Pin"
+            default 3
+
+        config EXAMPLE_PIN_NUM_DC
+            int "DC Pin"
+            default 4
+
+        config EXAMPLE_PIN_NUM_RST
+            int "RST Pin"
+            default 2
+
+        config EXAMPLE_PIN_NUM_BK_LIGHT
+            int "Backlight Pin"
+            default 1
+
+        config EXAMPLE_PIN_NUM_DATA0
+            int "Data Pin 0(MOSI)"
+            default 6
+
+        config EXAMPLE_PIN_NUM_DATA1
+            int "Data Pin 1"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 25
+
+        config EXAMPLE_PIN_NUM_DATA2
+            int "Data Pin 2"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 26
+
+        config EXAMPLE_PIN_NUM_DATA3
+            int "Data Pin 3"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 27
+
+        config EXAMPLE_PIN_NUM_DATA4
+            int "Data Pin 4"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 28
+
+        config EXAMPLE_PIN_NUM_DATA5
+            int "Data Pin 5"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 29
+
+        config EXAMPLE_PIN_NUM_DATA6
+            int "Data Pin 6"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 30
+
+        config EXAMPLE_PIN_NUM_DATA7
+            int "Data Pin 7"
+            depends on EXAMPLE_LCD_PARLIO_SIMULATE_I80
+            default 31
+
+    endmenu
+endmenu

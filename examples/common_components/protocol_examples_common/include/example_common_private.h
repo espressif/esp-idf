@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-/*  Private Funtions of protocol example common */
+/*  Private Functions of protocol example common */
 
 #pragma once
 
@@ -45,6 +45,8 @@ void example_wifi_shutdown(void);
 esp_err_t example_wifi_connect(void);
 void example_ethernet_shutdown(void);
 esp_err_t example_ethernet_connect(void);
+void example_thread_shutdown(void);
+esp_err_t example_thread_connect(void);
 esp_err_t example_ppp_connect(void);
 void example_ppp_start(void);
 void example_ppp_shutdown(void);

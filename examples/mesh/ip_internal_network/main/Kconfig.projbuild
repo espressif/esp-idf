@@ -64,6 +64,12 @@ menu "Example Configuration"
         help
             The number of non-mesh stations allowed to connect in.
 
+    config MESH_IE_ENCRYPTED
+        bool "Mesh IE encrypted"
+        default y
+        help
+            The mesh IE is encrypted by default.
+
     config MESH_MAX_LAYER
         int "Mesh Max Layer"
         range 1 25

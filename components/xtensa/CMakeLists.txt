@@ -13,7 +13,7 @@
 # The porting layer sources files are OS agnostic, thus are common across multiple Xtensa RTOS ports (e.g., FreeRTOS,
 # ThreadX). The Xtensa RTOS Porting Layer...
 #   - interfaces with an RTOS port via the "xtensa_rtos.h" header provided by the RTOS port
-#   - expected `#include <...h>` as the incldue path to the porting layer's headers
+#   - expected `#include <...h>` as the include path to the porting layer's headers
 
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
@@ -50,7 +50,13 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "xtensa_loadstore_handler.S")
     endif()
 
-    if(NOT CONFIG_FREERTOS_PORT)
+    # xtensa_rtos.h is provided by freertos when it is in the build closure.
+    # Under build system v2 every component's Kconfig is processed, so
+    # CONFIG_FREERTOS_PORT is set even when an app (e.g. g0_components)
+    # removes freertos from __COMPONENT_REQUIRES_COMMON. Inspect the
+    # common-requires list directly to detect the actual closure.
+    idf_build_get_property(__common_reqs __COMPONENT_REQUIRES_COMMON)
+    if(NOT "freertos" IN_LIST __common_reqs)
         # No RTOS provided. Use default bare metal stubs (to pass G0 build test)
         list(APPEND srcs
              "baremetal/xtensa_rtos_bm.S")
@@ -63,4 +69,6 @@ idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include_dirs}
                     LDFRAGMENTS linker.lf)
 
-target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a")
+add_prebuilt_library(xtensa_xt_hal "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libxt_hal.a"
+                                REQUIRES ${COMPONENT_NAME})
+target_link_libraries(${COMPONENT_LIB} PUBLIC xtensa_xt_hal)

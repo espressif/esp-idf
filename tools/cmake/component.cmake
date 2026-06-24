@@ -44,7 +44,7 @@ function(__component_get_target var name_or_alias)
 
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
 
-    # Assume first that the paramters is an alias.
+    # Assume first that the parameters is an alias.
     string(REPLACE "::" "_" name_or_alias "${name_or_alias}")
     set(component_target ___${name_or_alias})
 
@@ -97,9 +97,9 @@ endmacro()
 #
 function(__component_dir_quick_check var component_dir)
     set(res 1)
-    get_filename_component(abs_dir ${component_dir} ABSOLUTE)
+    get_filename_component(abs_dir "${component_dir}" ABSOLUTE)
 
-    get_filename_component(base_dir ${abs_dir} NAME)
+    get_filename_component(base_dir "${abs_dir}" NAME)
     string(SUBSTRING "${base_dir}" 0 1 first_char)
 
     # Check the component directory contains a CMakeLists.txt file
@@ -122,6 +122,7 @@ endfunction()
 # keeps a list of all its properties.
 #
 function(__component_write_properties output_file)
+    set(component_properties_text "")
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
     foreach(component_target ${component_targets})
         __component_get_property(component_properties ${component_target} __COMPONENT_PROPERTIES)
@@ -130,15 +131,15 @@ function(__component_write_properties output_file)
             set(component_properties_text
                 "${component_properties_text}\nset(__component_${component_target}_${property} \"${val}\")")
         endforeach()
-        file(WRITE ${output_file} "${component_properties_text}")
     endforeach()
+    file(WRITE ${output_file} "${component_properties_text}")
 endfunction()
 
 #
 # Add a component to process in the build. The components are keeped tracked of in property
 # __COMPONENT_TARGETS in component target form.
 #
-function(__component_add component_dir prefix)
+function(__component_add component_dir prefix component_source)
     # For each component, two entities are created: a component target and a component library. The
     # component library is created during component registration (the actual static/interface library).
     # On the other hand, component targets are created early in the build
@@ -148,8 +149,8 @@ function(__component_add component_dir prefix)
     # so later in the build, these component targets actually contain the properties meant for the
     # corresponding component library.
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
-    get_filename_component(abs_dir ${component_dir} ABSOLUTE)
-    get_filename_component(base_dir ${abs_dir} NAME)
+    get_filename_component(abs_dir "${component_dir}" ABSOLUTE)
+    get_filename_component(base_dir "${abs_dir}" NAME)
 
     if(NOT EXISTS "${abs_dir}/CMakeLists.txt")
         message(FATAL_ERROR "Directory '${component_dir}' does not contain a component.")
@@ -166,6 +167,8 @@ function(__component_add component_dir prefix)
     if(NOT component_target IN_LIST component_targets)
         if(NOT TARGET ${component_target})
             add_library(${component_target} STATIC IMPORTED)
+            # Set the IMPORTED_LOCATION property to avoid errors on IDE codemodel queries with CMake >=4.2
+            set_property(TARGET ${component_target} PROPERTY IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dummy.a")
         endif()
         idf_build_set_property(__COMPONENT_TARGETS ${component_target} APPEND)
     else()
@@ -186,6 +189,9 @@ function(__component_add component_dir prefix)
     __component_set_property(${component_target} COMPONENT_NAME ${component_name})
     __component_set_property(${component_target} COMPONENT_DIR ${component_dir})
     __component_set_property(${component_target} COMPONENT_ALIAS ${component_alias})
+    if(component_source)
+        __component_set_property(${component_target} COMPONENT_SOURCE ${component_source})
+    endif()
 
     __component_set_property(${component_target} __PREFIX ${prefix})
 
@@ -201,7 +207,7 @@ endfunction()
 # Given a component directory, get the requirements by expanding it early. The expansion is performed
 # using a separate CMake script (the expansion is performed in a separate instance of CMake in scripting mode).
 #
-function(__component_get_requirements)
+function(__component_get_requirements use_sdk_json)
     idf_build_get_property(idf_path IDF_PATH)
 
     idf_build_get_property(build_dir BUILD_DIR)
@@ -240,6 +246,7 @@ function(__component_get_requirements)
             "--project_dir=${project_dir}"
             "--lock_path=${DEPENDENCIES_LOCK}"
             "--interface_version=${component_manager_interface_version}"
+            "--use_sdk_json=${use_sdk_json}"
             "inject_requirements"
             "--idf_path=${idf_path}"
             "--build_dir=${build_dir}"
@@ -270,15 +277,15 @@ macro(__component_add_sources sources)
             message(WARNING "SRCS and SRC_DIRS are both specified; ignoring SRC_DIRS.")
         endif()
         foreach(src ${__SRCS})
-            get_filename_component(src "${src}" ABSOLUTE BASE_DIR ${COMPONENT_DIR})
-            list(APPEND sources ${src})
+            get_filename_component(src "${src}" ABSOLUTE BASE_DIR "${COMPONENT_DIR}")
+            list(APPEND sources "${src}")
         endforeach()
     else()
         if(__SRC_DIRS)
             foreach(dir ${__SRC_DIRS})
-                get_filename_component(abs_dir ${dir} ABSOLUTE BASE_DIR ${COMPONENT_DIR})
+                get_filename_component(abs_dir "${dir}" ABSOLUTE BASE_DIR "${COMPONENT_DIR}")
 
-                if(NOT IS_DIRECTORY ${abs_dir})
+                if(NOT IS_DIRECTORY "${abs_dir}")
                     message(FATAL_ERROR "SRC_DIRS entry '${dir}' does not exist.")
                 endif()
 
@@ -287,7 +294,7 @@ macro(__component_add_sources sources)
 
                 if(dir_sources)
                     foreach(src ${dir_sources})
-                        get_filename_component(src "${src}" ABSOLUTE BASE_DIR ${COMPONENT_DIR})
+                        get_filename_component(src "${src}" ABSOLUTE BASE_DIR "${COMPONENT_DIR}")
                         list(APPEND sources "${src}")
                     endforeach()
                 else()
@@ -309,11 +316,11 @@ endmacro()
 
 macro(__component_add_include_dirs lib dirs type)
     foreach(dir ${dirs})
-        get_filename_component(_dir ${dir} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
-        if(NOT IS_DIRECTORY ${_dir})
+        get_filename_component(_dir "${dir}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+        if(NOT IS_DIRECTORY "${_dir}")
             message(FATAL_ERROR "Include directory '${_dir}' is not a directory.")
         endif()
-        target_include_directories(${lib} ${type} ${_dir})
+        target_include_directories(${lib} ${type} "${_dir}")
     endforeach()
 endmacro()
 
@@ -376,10 +383,14 @@ endmacro()
 function(idf_component_get_property var component property)
     cmake_parse_arguments(_ "GENERATOR_EXPRESSION" "" "" ${ARGN})
     __component_get_target(component_target ${component})
-    if(__GENERATOR_EXPRESSION)
-        set(val "$<TARGET_PROPERTY:${component_target},${property}>")
+    if("${component_target}" STREQUAL "")
+        message(FATAL_ERROR "Failed to resolve component '${component}'")
     else()
-        __component_get_property(val ${component_target} ${property})
+        if(__GENERATOR_EXPRESSION)
+            set(val "$<TARGET_PROPERTY:${component_target},${property}>")
+        else()
+            __component_get_property(val ${component_target} ${property})
+        endif()
     endif()
     set(${var} "${val}" PARENT_SCOPE)
 endfunction()
@@ -398,6 +409,9 @@ endfunction()
 function(idf_component_set_property component property val)
     cmake_parse_arguments(_ "APPEND" "" "" ${ARGN})
     __component_get_target(component_target ${component})
+    if(NOT component_target)
+        message(FATAL_ERROR "Failed to resolve component '${component}'")
+    endif()
 
     if(__APPEND)
         __component_set_property(${component_target} ${property} "${val}" APPEND)
@@ -483,7 +497,6 @@ function(idf_component_register)
         __component_add_include_dirs(${component_lib} "${__PRIV_INCLUDE_DIRS}" PRIVATE)
         __component_add_include_dirs(${component_lib} "${config_dir}" PUBLIC)
         set_target_properties(${component_lib} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME} LINKER_LANGUAGE C)
-        __ldgen_add_component(${component_lib})
     else()
         add_library(${component_lib} INTERFACE)
         __component_set_property(${component_target} COMPONENT_TYPE CONFIG_ONLY)
@@ -531,10 +544,11 @@ endfunction()
 #                           to be passed here, too.
 # @param[in, optional] MOCK_HEADER_FILES (multivalue) list of header files from which the mocks shall be generated.
 # @param[in, optional] REQUIRES (multivalue) any other components required by the mock component.
+# @param[in, optional] MOCK_SUBDIR (singlevalue) tells cmake where are the CMock generated c files.
 #
 function(idf_component_mock)
     set(options)
-    set(single_value)
+    set(single_value MOCK_SUBDIR)
     set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
@@ -550,8 +564,13 @@ function(idf_component_mock)
 
     foreach(header_file ${__MOCK_HEADER_FILES})
         get_filename_component(file_without_dir ${header_file} NAME_WE)
-        list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
-        list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+        if("${__MOCK_SUBDIR}" STREQUAL "")
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/Mock${file_without_dir}.c")
+        else()
+            list(APPEND MOCK_GENERATED_HEADERS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.h")
+            list(APPEND MOCK_GENERATED_SRCS "${MOCK_GEN_DIR}/mocks/${__MOCK_SUBDIR}/Mock${file_without_dir}.c")
+        endif()
     endforeach()
 
     file(MAKE_DIRECTORY "${MOCK_GEN_DIR}/mocks")

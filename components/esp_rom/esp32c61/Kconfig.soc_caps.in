@@ -21,7 +21,7 @@ config ESP_ROM_UART_CLK_IS_XTAL
 
 config ESP_ROM_USB_SERIAL_DEVICE_NUM
     int
-    default 3
+    default 4
 
 config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool
@@ -51,6 +51,10 @@ config ESP_ROM_TLSF_CHECK_PATCH
     bool
     default y
 
+config ESP_ROM_MULTI_HEAP_WALK_PATCH
+    bool
+    default y
+
 config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
@@ -59,11 +63,19 @@ config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
 
+config ESP_ROM_HAS_SPI_FLASH_MMAP
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB
     bool
     default y
 
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG
     bool
     default y
 
@@ -86,3 +98,27 @@ config ESP_ROM_HAS_SW_FLOAT
 config ESP_ROM_USB_OTG_NUM
     int
     default -1
+
+config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+    bool
+    default y
+
+config ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+    bool
+    default y
+
+config ESP_ROM_ECDSA_VERIFY_PATCH
+    bool
+    default y
+
+config ESP_ROM_DELAY_US_PATCH
+    bool
+    default y
+
+config ESP_ROM_BOOTLOADER_OFFSET_FLASH
+    hex
+    default 0x0
+
+config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP
+    bool
+    default y

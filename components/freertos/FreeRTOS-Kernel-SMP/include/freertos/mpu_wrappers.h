@@ -1,6 +1,6 @@
 /*
- * FreeRTOS Kernel V11.0.1
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
@@ -231,15 +231,8 @@
             #define xStreamBufferReceiveFromISR             MPU_xStreamBufferReceiveFromISR
             #define xStreamBufferSendCompletedFromISR       MPU_xStreamBufferSendCompletedFromISR
             #define xStreamBufferReceiveCompletedFromISR    MPU_xStreamBufferReceiveCompletedFromISR
+            #define xStreamBufferResetFromISR               MPU_xStreamBufferResetFromISR
         #endif /* #if ( configUSE_MPU_WRAPPERS_V1 == 0 ) */
-
-/* Remove the privileged function macro, but keep the PRIVILEGED_DATA
- * macro so applications can place data in privileged access sections
- * (useful when using statically allocated objects). */
-        #define PRIVILEGED_FUNCTION
-        #define PRIVILEGED_DATA    __attribute__( ( section( "privileged_data" ) ) )
-        #define FREERTOS_SYSTEM_CALL
-
 
         #if ( ( configUSE_MPU_WRAPPERS_V1 == 0 ) && ( configENABLE_ACCESS_CONTROL_LIST == 1 ) )
 
@@ -269,14 +262,11 @@
 
         #endif /* #if ( ( configUSE_MPU_WRAPPERS_V1 == 0 ) && ( configENABLE_ACCESS_CONTROL_LIST == 1 ) ) */
 
-    #else /* MPU_WRAPPERS_INCLUDED_FROM_API_FILE */
-
-/* Ensure API functions go in the privileged execution section. */
-        #define PRIVILEGED_FUNCTION     __attribute__( ( section( "privileged_functions" ) ) )
-        #define PRIVILEGED_DATA         __attribute__( ( section( "privileged_data" ) ) )
-        #define FREERTOS_SYSTEM_CALL    __attribute__( ( section( "freertos_system_calls" ) ) )
-
     #endif /* MPU_WRAPPERS_INCLUDED_FROM_API_FILE */
+
+    #define PRIVILEGED_FUNCTION     __attribute__( ( section( "privileged_functions" ) ) )
+    #define PRIVILEGED_DATA         __attribute__( ( section( "privileged_data" ) ) )
+    #define FREERTOS_SYSTEM_CALL    __attribute__( ( section( "freertos_system_calls" ) ) )
 
 #else /* portUSING_MPU_WRAPPERS */
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,7 @@ typedef struct {
     adc_digi_pattern_config_t *adc_pattern; ///< List of configs for each ADC channel that will be used
     uint32_t sample_freq_hz;                /*!< The expected ADC sampling frequency in Hz. Please refer to `soc/soc_caps.h` to know available sampling frequency range*/
     adc_digi_convert_mode_t conv_mode;      ///< ADC DMA conversion mode, see `adc_digi_convert_mode_t`.
-    adc_digi_output_format_t format;        ///< ADC DMA conversion output format, see `adc_digi_output_format_t`.
+    adc_digi_output_format_t format __attribute__((deprecated));        ///< ADC DMA conversion output format, see `adc_digi_output_format_t`.
 } adc_continuous_config_t;
 
 /**
@@ -161,6 +161,14 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle);
 /**
  * @brief Read bytes from ADC under continuous mode.
  *
+ * @note Raw ADC codes are intended for further processing. To obtain a voltage in mV, it is recommended to use
+ *       :cpp:func:`adc_cali_raw_to_voltage` instead of interpreting the raw value directly.
+ *
+ * @note On targets with :c:macro:`SOC_ADC_DIFF_SUPPORTED`, N-side channels can be used in single-ended mode,
+ *       but their raw data polarity is inverted. For an input range of -2 V to 2 V, the N-side raw code is
+ *       4393 to 0. Use the ADC calibration APIs to convert the raw result to voltage instead of interpreting the raw
+ *       code directly.
+ *
  * @param[in]  handle              ADC continuous mode driver handle
  * @param[out] buf                 Conversion result buffer to read from ADC. Suggest convert to `adc_digi_output_data_t` for `ADC Conversion Results`.
  *                                 See the subsection `Driver Backgrounds` in this header file to learn about this concept.
@@ -237,6 +245,66 @@ esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t * const unit_id, a
  *       - ESP_ERR_INVALID_ARG: Invalid argument
  */
 esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num);
+
+/**
+ * @brief Parsed ADC continuous mode data structure
+ */
+typedef struct {
+    adc_unit_t unit;        ///< ADC unit (ADC_UNIT_1 or ADC_UNIT_2)
+    adc_channel_t channel;  ///< ADC channel number (0-9)
+    uint32_t raw_data;      ///< ADC raw data value.
+    bool valid;             ///< Whether the data is valid
+} adc_continuous_data_t;
+
+/**
+ * @brief Parse ADC continuous mode raw data
+ *
+ * @param[in] handle        ADC continuous mode driver handle
+ * @param[in] raw_data      Raw data buffer obtained from adc_continuous_read()
+ * @param[in] raw_data_size Size of raw data buffer in bytes
+ * @param[out] parsed_data  Parsed data array
+ * @param[out] num_parsed_samples Number of samples actually parsed and stored in parsed_data
+ *
+ * @note The function will parse all available samples from raw_data. User should ensure
+ *       parsed_data array is large enough to hold raw_data_size/SOC_ADC_DIGI_RESULT_BYTES samples.
+ *       The function includes comprehensive bounds checking to prevent buffer overflow and integer overflow.
+ *
+ * @return
+ *         - ESP_OK: Success
+ *         - ESP_ERR_INVALID_ARG: Invalid arguments
+ *         - ESP_ERR_INVALID_SIZE: raw_data_size is not aligned to SOC_ADC_DIGI_RESULT_BYTES,
+ *                                 integer overflow detected, or buffer overflow detected
+ */
+esp_err_t adc_continuous_parse_data(adc_continuous_handle_t handle,
+                                    const uint8_t *raw_data,
+                                    uint32_t raw_data_size,
+                                    adc_continuous_data_t *parsed_data,
+                                    uint32_t *num_parsed_samples);
+
+/**
+ * @brief Read and parse ADC continuous mode data in one call
+ *
+ * @param[in] handle        ADC continuous mode driver handle
+ * @param[out] parsed_data  Parsed data array
+ * @param[in] max_samples   Maximum number of samples that can be stored in parsed_data array
+ * @param[out] num_samples  Number of samples actually parsed and stored in parsed_data
+ * @param[in] timeout_ms    Timeout in milliseconds
+ *
+ * @note This function automatically handles raw data buffer allocation and cleanup.
+ *       User only needs to provide parsed_data array and specify max_samples.
+ *
+ * @return
+ *         - ESP_OK: Success
+ *         - ESP_ERR_INVALID_ARG: Invalid arguments
+ *         - ESP_ERR_INVALID_SIZE: Buffer size issues or overflow detected
+ *         - ESP_ERR_TIMEOUT: Operation timed out
+ *         - ESP_ERR_NO_MEM: Memory allocation failed
+ */
+esp_err_t adc_continuous_read_parse(adc_continuous_handle_t handle,
+                                    adc_continuous_data_t *parsed_data,
+                                    uint32_t max_samples,
+                                    uint32_t *num_samples,
+                                    uint32_t timeout_ms);
 
 #ifdef __cplusplus
 }

@@ -1,19 +1,3 @@
-.all_targets: &all_targets
-  - esp32
-  - esp32s2
-  - esp32s3
-  - esp32c3
-  - esp32c2
-  - esp32c6
-  - esp32c5
-  - esp32h2
-  - esp32p4
-
-.target_test: &target_test
-  - example_test
-  - custom_test
-  - component_ut
-
 ##############
 # Build Jobs #
 ##############
@@ -25,7 +9,6 @@
     - build_system
     - downloadable-tools
   included_in:
-    - build:target_test
     - build:check
 
 # -------------------
@@ -43,13 +26,13 @@
 
 "build:macos":
   labels:
-    - build
+#    - build
     - macos
     - macos_test  # for backward compatibility
-  patterns:
-    - build_system
-    - build_macos
-    - downloadable-tools
+#  patterns:
+#    - build_system
+#    - build_macos
+#    - downloadable-tools
 
 # ---------------------------
 # Add patterns to build rules
@@ -57,8 +40,6 @@
 "patterns:template-app":
   patterns:
     - build_template-app
-  included_in:
-    - build:target_test
 
 "patterns:build-check":
   patterns:
@@ -71,6 +52,24 @@
     - host_test
   patterns:
     - host_test
+
+"test:host_test_ldgen":
+  labels:
+    - host_test
+  patterns:
+    - host_test_ldgen
+
+"test:host_test_cli_installer":
+  labels:
+    - host_test
+  patterns:
+    - host_test_cli_installer
+
+"test:host_test_tools":
+  labels:
+    - host_test
+  patterns:
+    - host_test_tools
 
 "test:submodule":
   labels:
@@ -90,3 +89,9 @@
     - windows
   specific_rules:
     - if-schedule-test-build-system-windows
+  patterns:
+    - build_system_win
+
+"labels:buildv2":
+  labels:
+    - buildv2

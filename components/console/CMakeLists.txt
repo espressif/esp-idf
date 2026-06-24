@@ -1,14 +1,22 @@
 idf_build_get_property(target IDF_TARGET)
 
+# Note: Almost all source files in this component include console_stdio_private.h.
+# This header only affects LIBC_PICOLIBC builds, not LIBC_NEWLIB builds.
+# It enables thread-local stdio streams, which are required for console functionality in some cases.
 set(srcs "commands.c"
          "esp_console_common.c"
          "split_argv.c"
          "linenoise/linenoise.c")
 
+set(requires vfs esp_stdio)
+
 if(${target} STREQUAL "linux")
-    list(APPEND srcs "esp_console_repl_linux.c")
+    list(APPEND srcs "esp_console_repl_internal.c")
 else()
     list(APPEND srcs "esp_console_repl_chip.c")
+    if(CONFIG_VFS_SUPPORT_SELECT)
+        list(APPEND srcs "esp_console_repl_internal.c")
+    endif()
 endif()
 
 set(argtable_srcs argtable3/arg_cmd.c
@@ -26,12 +34,24 @@ set(argtable_srcs argtable3/arg_cmd.c
                   argtable3/arg_utils.c
                   argtable3/argtable3.c)
 
+# TODO IDF-14810: Remove io_requires dependency
+if(NOT ${target} STREQUAL "linux")
+    set(io_requires esp_driver_uart esp_driver_usb_serial_jtag esp_usb_cdc_rom_console)
+endif()
 
-idf_component_register(SRCS ${srcs}
-                            ${argtable_srcs}
+idf_component_register(SRCS ${srcs} ${argtable_srcs}
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                     PRIV_INCLUDE_DIRS private_include
-                    REQUIRES vfs esp_vfs_console
-                    PRIV_REQUIRES esp_driver_uart
-                                  esp_driver_usb_serial_jtag
-                    )
+                    REQUIRES ${requires} ${io_requires})
+
+if(CONFIG_LIBC_PICOLIBC)
+    list(APPEND srcs_include_stdio_private ${srcs})
+    list(APPEND srcs_include_stdio_private ${argtable_srcs})
+    list(REMOVE_ITEM srcs_include_stdio_private "esp_console_repl_chip.c" "esp_console_repl_linux.c")
+    set_source_files_properties(${srcs_include_stdio_private}
+                                PROPERTIES COMPILE_FLAGS "--include=console_stdio_private.h")
+endif()
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10085
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+endif()

@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
+
+/*
+ * @brief BitScrambler attachment targets
+ * Note that these are the values written to HP_SYSTEM_BITSCRAMBLER_PERI_SEL_REG.
+ */
+
+#define SOC_BITSCRAMBLER_ATTACH_NONE    -1
+#define SOC_BITSCRAMBLER_ATTACH_LCD_CAM 0
+#define SOC_BITSCRAMBLER_ATTACH_GPSPI2  1
+#define SOC_BITSCRAMBLER_ATTACH_GPSPI3  2
+#define SOC_BITSCRAMBLER_ATTACH_PARL_IO 3
+#define SOC_BITSCRAMBLER_ATTACH_AES     4
+#define SOC_BITSCRAMBLER_ATTACH_SHA     5
+#define SOC_BITSCRAMBLER_ATTACH_ADC     6
+#define SOC_BITSCRAMBLER_ATTACH_I2S0    7
+#define SOC_BITSCRAMBLER_ATTACH_I2S1    8
+#define SOC_BITSCRAMBLER_ATTACH_I2S2    9
+#define SOC_BITSCRAMBLER_ATTACH_I3C_MST 10
+#define SOC_BITSCRAMBLER_ATTACH_UHCI    11
+#define SOC_BITSCRAMBLER_ATTACH_RMT     12
+
+#define SOC_BITSCRAMBLER_ATTACH_MAX     12

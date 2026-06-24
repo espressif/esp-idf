@@ -1,6 +1,8 @@
 Heap Memory Allocation
 ======================
 
+{IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT: default="16", esp32s3="16", esp32p4="16"}
+
 :link_to_translation:`zh_CN:[中文]`
 
 Stack and Heap
@@ -35,10 +37,19 @@ All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MAL
 
 .. only:: esp32
 
-    If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
+    If users run out of ``MALLOC_CAP_8BIT``, they can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY``.
 
+    .. note::
+
+        This option is available only on single-core ESP32 configuration (``CONFIG_FREERTOS_UNICORE=y``). The ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`` option has a significant disadvantage compared to regular memory: every byte, half-word, and arbitrary unaligned access to ``MALLOC_CAP_IRAM_8BIT`` memory triggers a ``LoadStore`` or ``Alignment`` exception. Although these exceptions are handled in software to ensure correct values are read or written, each access incurs approximately 167 CPU cycles of overhead and can cause significant performance degradation if accessed frequently. Therefore, it should be avoided in performance-critical sections of code such as ISRs or tight loops. Consider refactoring the code to use 32-bit aligned (``uint32_t``) accesses.
 
 When calling ``malloc()``, the ESP-IDF ``malloc()`` internally calls ``heap_caps_malloc_default(size)``. This will allocate memory with the capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
+
+``MALLOC_CAP_DEFAULT`` describes the memory capability, not the exact allocation policy. In particular, ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` is not required to follow the same placement strategy as ``malloc()``.
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    For example, when :doc:`external RAM </api-guides/external-ram>` is added to the capability allocator, ``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` may return external RAM, while ``malloc()`` may still prefer or require internal RAM depending on the configuration.
 
 Because ``malloc()`` uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling the standard ``free()`` function.
 
@@ -105,9 +116,10 @@ DMA-Capable Memory
 
 Use the ``MALLOC_CAP_DMA`` flag to allocate memory which is suitable for use with hardware DMA engines (for example SPI and I2S). This capability flag excludes any external PSRAM.
 
-.. only SOC_SPIRAM_SUPPORTED and not esp32::
+.. only:: SOC_SPIRAM_SUPPORTED and not esp32
 
-    The EDMA hardware feature allows DMA buffers to be placed in external PSRAM, but there may be additional alignment constraints. Consult the {IDF_TARGET_NAME} Technical Reference Manual for details. To allocate a DMA-capable external memory buffer, use the ``MALLOC_CAP_SPIRAM`` capabilities flag together with :cpp:func:`heap_caps_aligned_alloc` with the necessary alignment specified.
+    The EDMA hardware feature allows DMA buffers to be placed in external PSRAM, but there may be additional alignment constraints. Consult the {IDF_TARGET_NAME} Technical Reference Manual for details. To allocate a DMA-capable external memory buffer, use the ``MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA`` capabilities flags; the heap allocator will take care of alignment requirements imposed by the cache and DMA subsystems. If a peripheral has additional alignment requirements, you can use :cpp:func:`heap_caps_aligned_alloc` with the necessary alignment specified.
+
 
 .. _32-bit accessible memory:
 
@@ -132,6 +144,13 @@ Memory allocated with ``MALLOC_CAP_32BIT`` can **only** be accessed via 32-bit r
     .. only:: esp32
 
         On ESP32 only external SPI RAM under 4 MiB in size can be allocated this way. To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
+
+.. only:: SOC_SIMD_INSTRUCTION_SUPPORTED
+
+    SIMD-Instruction-Capable Memory
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ``MALLOC_CAP_SIMD`` flag can be used to allocate memory which is accessible by SIMD (Single Instruction Multiple Data) instructions. The use of this flag also aligns the memory to a SIMD preferred data alignment size ({IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT}-byte) for a better performance.
 
 Thread Safety
 -------------

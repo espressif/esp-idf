@@ -1,6 +1,8 @@
 堆内存分配
 ======================
 
+{IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT: default="16", esp32s3="16", esp32p4="16"}
+
 :link_to_translation:`en:[English]`
 
 栈 (stack) 和堆 (heap) 的区别
@@ -37,8 +39,17 @@ ESP-IDF 应用程序使用常见的计算机架构模式：由程序控制流动
 
     如果占用了所有的 ``MALLOC_CAP_8BIT`` 堆空间，则可以用 ``MALLOC_CAP_IRAM_8BIT`` 代替。此时，若只以 32 位对齐的方式访问 IRAM 内存，或者启用了 ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY``，则仍然可以将 IRAM 用作内部内存的“储备池”。
 
+    .. note::
+
+        此选项仅在单核 ESP32 配置（``CONFIG_FREERTOS_UNICORE=y``）下可用。与普通内存相比，``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`` 选项有一个显著的缺点：对 ``MALLOC_CAP_IRAM_8BIT`` 内存的每次字节、半字或任意非对齐访问都会触发 ``LoadStore`` 或 ``Alignment`` 异常。虽然这些异常会通过软件处理以确保读写值的正确性，但每次访问都会产生约 167 个 CPU 周期的开销，如果频繁访问，可能导致严重的性能下降。因此，应避免在注重性能的代码段（如 ISR 例程或紧凑循环）中使用此类内存。建议重构代码，改用 32 位对齐（``uint32_t``）的访问方式。
 
 调用 ``malloc()`` 时，ESP-IDF ``malloc()`` 内部调用 ``heap_caps_malloc_default(size)``，使用属性 ``MALLOC_CAP_DEFAULT`` 分配内存。该属性可实现字节寻址功能，即存储空间的最小编址单位为字节。
+
+``MALLOC_CAP_DEFAULT`` 描述的是内存能力，而不是精确的分配策略。特别是，``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` 不一定遵循与 ``malloc()`` 相同的放置策略。
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    例如，当 :doc:`片外 RAM </api-guides/external-ram>` 被添加到基于能力的堆分配器后，``heap_caps_malloc(size, MALLOC_CAP_DEFAULT)`` 可能返回片外 RAM，而 ``malloc()`` 是否优先或仅使用内部 RAM 则取决于具体配置。
 
 ``malloc()`` 使用基于属性的分配系统，所以使用 :cpp:func:`heap_caps_malloc` 分配的内存可以通过调用标准的 ``free()`` 函数释放。
 
@@ -50,7 +61,7 @@ ESP-IDF 应用程序使用常见的计算机架构模式：由程序控制流动
 DRAM
 ^^^^
 
-启动时，DRAM 堆包含应用程序未静态分配的所有数据内存，减少静态分配的缓冲区将增加可用的空闲堆空间。
+启动时，DRAM 堆包含应用程序未静态分配的所有数据内存，减少静态分配的 buffer 将增加可用的空闲堆空间。
 
 调用命令 :ref:`idf.py size <idf.py-size>` 可查找静态分配内存大小。
 
@@ -105,9 +116,10 @@ DMA 存储器
 
 使用 ``MALLOC_CAP_DMA`` 标志分配适合与硬件 DMA 引擎（如 SPI 和 I2S）配合使用的内存，此属性标志不包括外部 PSRAM。
 
-.. only SOC_SPIRAM_SUPPORTED and not esp32::
+.. only:: SOC_SPIRAM_SUPPORTED and not esp32
 
-    EDMA 硬件功能允许将 DMA 缓冲区放置在外部 PSRAM，但可能存在其他对齐限制，详情请参阅 {IDF_TARGET_NAME} 技术参考手册。要分配一个可用 DMA 的外部内存缓冲区，请使用 ``MALLOC_CAP_SPIRAM`` 属性标志 和 :cpp:func:`heap_caps_aligned_alloc`，并指定必要的对齐方式。
+    EDMA 硬件功能可以将 DMA buffer 放置在外部 PSRAM，但可能存在一定的对齐限制，详情请参阅 {IDF_TARGET_NAME} 技术参考手册。若要分配一个可用 DMA 的外部 buffer，请使用 ``MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA`` 属性标志，堆分配器将处理 cache 及 DMA 子系统的对齐要求。如果某个外设有额外的对齐要求，可以调用 :cpp:func:heap_caps_aligned_alloc 并指定必要的对齐方式。
+
 
 .. _32-bit accessible memory:
 
@@ -133,12 +145,19 @@ DMA 存储器
 
         在 ESP32 上，只有不超过 4 MiB 的外部 SPI RAM 可以通过上述方式分配。要使用超过 4 MiB 限制的区域，可以使用 :doc:`himem API</api-reference/system/himem>`。
 
+.. only:: SOC_SIMD_INSTRUCTION_SUPPORTED
+
+    SIMD 指令可访问内存
+    ^^^^^^^^^^^^^^^^^^^
+
+    ``MALLOC_CAP_SIMD`` 标志用于分配可被 SIMD（单指令多数据）指令访问的内存。使用该标志时，分配的内存会自动对齐到 SIMD 最佳数据对齐大小（{IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT}-byte），从而提升性能。
+
 线程安全性
 -------------
 
 堆函数是线程安全的，因此可不受限制，在不同任务中同时调用多个堆函数。
 
-从中断处理程序 (ISR) 上下文中调用 ``malloc``、 ``free`` 和相关函数虽然在技术层面可行（请参阅 :ref:`calling-heap-related-functions-from-isr`），但不建议使用此种方法，因为调用堆函数可能会延迟其他中断。建议重构应用程序，将 ISR 使用的任何缓冲区预先分配到 ISR 之外。之后可能会删除从 ISR 调用堆函数的功能。
+从中断处理程序 (ISR) 上下文中调用 ``malloc``、 ``free`` 和相关函数虽然在技术层面可行（请参阅 :ref:`calling-heap-related-functions-from-isr`），但不建议使用此种方法，因为调用堆函数可能会延迟其他中断。建议重构应用程序，将 ISR 使用的任何 buffer 预先分配到 ISR 之外。之后可能会删除从 ISR 调用堆函数的功能。
 
 .. _calling-heap-related-functions-from-isr:
 

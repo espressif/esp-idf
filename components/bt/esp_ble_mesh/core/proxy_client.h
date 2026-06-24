@@ -11,7 +11,9 @@
 #include "mesh/adapter.h"
 #include "prov_common.h"
 
+#if CONFIG_BLE_MESH_V11_SUPPORT
 #include "mesh_v1.1/utils.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,6 +103,8 @@ int bt_mesh_proxy_client_connect(const uint8_t addr[6], uint8_t addr_type, uint1
 int bt_mesh_proxy_client_disconnect(uint8_t conn_handle);
 
 bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub, bool private);
+
+uint16_t bt_mesh_proxy_client_get_conn_count(void);
 
 bool bt_mesh_proxy_client_relay(struct net_buf_simple *buf, uint16_t dst);
 

@@ -4,12 +4,12 @@
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_BASE_MAC_BLOCK: default="BLK1", esp32="BLK0"}
-{IDF_TARGET_CPU_RESET_DES: default="CPU 复位", esp32="两个 CPU 均复位", esp32s3="两个 CPU 均复位", esp32p4="两个 CPU 均复位"}
+{IDF_TARGET_CPU_RESET_DES: default="CPU 复位", esp32="两个 CPU 均复位", esp32s3="两个 CPU 均复位", esp32p4="两个 CPU 均复位", esp32h4="两个 CPU 均复位"}
 
 软件复位
 ------------
 
-函数 :cpp:func:`esp_restart` 用于执行芯片的软件复位。调用此函数时，程序停止执行，{IDF_TARGET_CPU_RESET_DES}，应用程序由 bootloader 加载并重启。
+函数 :cpp:func:`esp_restart` 用于执行芯片的软件复位。调用此函数时，程序停止执行，{IDF_TARGET_CPU_RESET_DES}，应用程序由引导加载程序加载并重启。
 
 函数 :cpp:func:`esp_register_shutdown_handler` 用于注册复位前会自动调用的例程（复位过程由 :cpp:func:`esp_restart` 函数触发），这与 ``atexit`` POSIX 函数的功能类似。
 
@@ -39,7 +39,22 @@ MAC 地址
 
 在 ESP-IDF 中，各个网络接口的 MAC 地址是根据单个 **基准 MAC 地址 (Base MAC address)** 计算出来的。默认情况下使用乐鑫指定的基准 MAC 地址，该基准地址在产品生产过程中已预烧录至 {IDF_TARGET_NAME} eFuse。
 
-.. only:: not esp32s2
+.. only:: esp32p4
+
+    .. list-table::
+        :widths: 20 80
+        :header-rows: 1
+
+        * - 接口
+          - MAC 地址（一个默认的通用管理地址）
+        * - 以太网
+          - base_mac
+
+    .. note::
+
+        在 ESP32-P4 上，:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为单个通用管理型 MAC 地址。
+
+.. only:: (not esp32s2) and (not esp32p4)
 
     .. list-table::
         :widths: 20 40 40
@@ -213,6 +228,18 @@ SDK 版本
       #endif
 
 
+调试辅助功能
+-----------------
+
+``esp_debug_helpers.h`` 中的调试辅助 API 提供了运行时调试和堆栈回溯输出相关功能。
+
+- :cpp:func:`esp_backtrace_print` 用于打印当前堆栈回溯。
+- :cpp:func:`esp_backtrace_print_all_tasks` 用于打印所有任务的堆栈回溯。
+- :cpp:func:`esp_backtrace_get_start` 和 :cpp:func:`esp_backtrace_get_next_frame` 用于手动遍历回溯帧。
+
+这些 API 适用于诊断崩溃、看门狗超时或异常控制流等问题。
+
+
 .. _app-version:
 
 应用程序版本
@@ -224,6 +251,11 @@ SDK 版本
 
 如果设置了 :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` 选项，则将使用 :ref:`CONFIG_APP_PROJECT_VER` 的值。否则，如果在项目中未设置 ``PROJECT_VER`` 变量，则该变量将从 ``$(PROJECT_PATH)/version.txt`` 文件（若有）中检索，或使用 git 命令 ``git describe`` 检索。如果两者都不可用，则 ``PROJECT_VER`` 将被设置为 “1”。应用程序可通过调用 :cpp:func:`esp_app_get_description` 或 :cpp:func:`esp_ota_get_partition_description` 函数来获取应用程序的版本信息。
 
+应用示例
+--------------
+
+- :example:`system/base_mac_address` 演示了如何从非易失性存储器中检索、设置和派生 {IDF_TARGET_NAME} 上每个网络接口的基准 MAC 地址，可以使用 eFuse 或外部存储。
+
 API 参考
 -------------
 
@@ -232,4 +264,5 @@ API 参考
 .. include-build-file:: inc/esp_mac.inc
 .. include-build-file:: inc/esp_chip_info.inc
 .. include-build-file:: inc/esp_cpu.inc
+.. include-build-file:: inc/esp_debug_helpers.inc
 .. include-build-file:: inc/esp_app_desc.inc

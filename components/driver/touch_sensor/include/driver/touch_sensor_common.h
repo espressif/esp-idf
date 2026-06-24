@@ -8,7 +8,7 @@
 
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,7 @@ esp_err_t touch_pad_deinit(void);
 esp_err_t touch_pad_io_init(touch_pad_t touch_num);
 
 /**
- * @brief Set touch sensor high voltage threshold of chanrge.
+ * @brief Set touch sensor high voltage threshold of charge.
  *        The touch sensor measures the channel capacitance value by charging and discharging the channel.
  *        So the high threshold should be less than the supply voltage.
  * @param refh the value of DREFH

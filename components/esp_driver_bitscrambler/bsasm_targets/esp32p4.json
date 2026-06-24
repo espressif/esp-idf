@@ -1,0 +1,5 @@
+{
+	"chipname": "esp32p4",
+	"extra_instruction_groups": [
+	]
+}

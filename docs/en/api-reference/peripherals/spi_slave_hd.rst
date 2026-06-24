@@ -13,7 +13,7 @@ When conducting an SPI transaction, transactions can be classified into several 
 Protocol
 ^^^^^^^^
 
-About the details of how master should communicate with the SPI Slave, see :doc:`/api-reference/protocols/esp_spi_slave_protocol`.
+About the details of how master should communicate with the SPI Slave, see `ESP SPI Slave HD Protocol <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/spi_slave_hd_protocol.html#spi-slave-hd-half-duplex-protocol>`_.
 
 Through these different transactions, the slave provides these services to the master:
 
@@ -48,6 +48,13 @@ Call :cpp:func:`spi_slave_hd_init` to initialize the SPI bus as well as the peri
 
 The :cpp:type:`spi_bus_config_t` specifies how the bus should be initialized, while :cpp:type:`spi_slave_hd_slot_config_t` specifies how the SPI Slave driver should work.
 
+To use 3-wire mode, also known as single I/O (SIO) mode, set :c:macro:`SPI_SLAVE_HD_3WIRE_MODE` in :cpp:member:`spi_slave_hd_slot_config_t::flags`. In this mode, MOSI is used for both input and output data, so :cpp:member:`spi_bus_config_t::mosi_io_num` must be set to an output-capable GPIO. The MISO line is not used and :cpp:member:`spi_bus_config_t::miso_io_num` can be set to ``-1``. The master should use the 1-bit SPI Slave HD commands in this mode. Commands with DIO/QIO masks will select 2-line or 4-line data phases in hardware and are not compatible with 3-wire mode, resulting in data errors.
+
+Enable/Disable Driver (Optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Slave driver supports disabling / enabling driver after it is initialized by calling to :cpp:func:`spi_slave_hd_disable` / :cpp:func:`spi_slave_hd_enable`, to be able to change clock or power config or sleep to save power. By default, the driver state is `enabled` after initialized.
+
 Deinitialization (Optional)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -57,6 +64,12 @@ Send/Receive Data by DMA Channels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To send data to the master through the sending DMA channel, the application should properly wrap the data in an :cpp:type:`spi_slave_hd_data_t` descriptor structure before calling :cpp:func:`spi_slave_hd_queue_trans` with the data descriptor and the channel argument of :cpp:enumerator:`SPI_SLAVE_CHAN_TX`. The pointers to descriptors are stored in the queue, and the data is sent to the master in the same order they are enqueued using :cpp:func:`spi_slave_hd_queue_trans`, upon receiving the master's ``Rd_DMA`` command.
+
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    The driver supports using PSRAM for DMA transfer. Directly passing a PSRAM address as :cpp:member:`spi_slave_hd_data_t::data` is supported. For the DMA receive channel, its memory address and transfer length have alignment requirements, using :cpp:func:`heap_caps_malloc` to allocate memory can automatically handle the alignment requirements. For the buffers that you can not control, you can also use the :c:macro:`SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO` flag to enable driver to automatically align the buffer from PSRAM.
+
+    Note that this feature shares the MSPI bus bandwidth (bus frequency * bus width), so the transmission bandwidth of the host to this device should be less than the PSRAM bandwidth, otherwise **data may be lost**, and then getting the transmission result will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
 The application should check the result of data sending by calling :cpp:func:`spi_slave_hd_get_trans_res` with the channel set as :cpp:enumerator:`SPI_SLAVE_CHAN_TX`. This function blocks until the transaction with the command ``Rd_DMA`` from the master successfully completes (or timeout). The ``out_trans`` argument of the function outputs the pointer of the data descriptor which is just finished, providing information about the sending.
 
@@ -121,11 +134,27 @@ Receiving General Purpose Interrupts from the Master
 
 When the master sends ``CMD8``, ``CMD9`` or ``CMDA``, the slave corresponding is triggered. Currently the ``CMD8`` is permanently used to indicate the termination of ``Rd_DMA`` segments. To receive general-purpose interrupts, register callbacks for ``CMD9`` and ``CMDA`` when the slave is initialized, see :ref:`spi_slave_hd_callbacks`.
 
+.. only:: SOC_SPI_SUPPORT_SLEEP_RETENTION
 
-Application Example
--------------------
+    Sleep Retention
+    ^^^^^^^^^^^^^^^
 
-The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave_hd` directory of ESP-IDF examples.
+    {IDF_TARGET_NAME} supports to retain the SPI register context before entering **light sleep** and restore them after waking up. This means you don't have to re-init the SPI driver after the light sleep.
+
+    This feature can be enabled by setting the flag :c:macro:`SPICOMMON_BUSFLAG_SLP_ALLOW_PD`. It will allow the system to power down the SPI in light sleep, meanwhile save the register context. It can help to save more power consumption with some extra cost of the memory.
+
+    Notice that when GPSPI is working as a slave, it is **not** support to enter sleep when any transaction (including TX and RX) is not finished.
+
+.. only:: not esp32
+
+  Application Examples
+  --------------------
+
+  The code example for Device/Host communication can be found in the :example:`peripherals/spi_slave_hd` directory of ESP-IDF examples.
+
+  - :example: `peripherals/spi_slave_hd/append_mode` demonstrates how to use the SPI Slave HD driver and ESSL driver to communicate (ESSL driver is an encapsulated layer based on SPI Master driver to communicate with halfduplex mode SPI Slave).
+
+  - :example: `peripherals/spi_slave_hd/segment_mode` demonstrate two ways to use the SPI Slave Halfduplex Segment Mode: Using the SPI Slave Halfduplex driver with two tasks repeating transactions with the SPI Master, and using the ESP Serial Slave Link APIs for multiple exchanges with the slave.
 
 
 API Reference

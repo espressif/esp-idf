@@ -352,6 +352,10 @@ BT_HDR *l2c_fcr_clone_buf (BT_HDR *p_buf, UINT16 new_offset, UINT16 no_of_bytes)
     buf_size += sizeof(uint32_t);
 #endif
     BT_HDR *p_buf2 = (BT_HDR *)osi_malloc(buf_size);
+    if (!p_buf2) {
+        L2CAP_TRACE_ERROR ("l2c_fcr_clone_buf() malloc failed");
+        return NULL;
+    }
 
     p_buf2->offset = new_offset;
     p_buf2->len = no_of_bytes;
@@ -888,7 +892,7 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
         /* If anything still waiting for ack, restart the timer if it was stopped */
         if (!fixed_queue_is_empty(p_fcrb->waiting_for_ack_q)) {
             l2c_fcr_start_timer(p_ccb);
-		}
+        }
 
         return (TRUE);
     }
@@ -989,7 +993,7 @@ static void process_s_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word)
 #endif
 
     if (ctrl_word & L2CAP_FCR_P_BIT) {
-        p_fcrb->rej_sent   = FALSE;             /* After checkpoint, we can send anoher REJ */
+        p_fcrb->rej_sent   = FALSE;             /* After checkpoint, we can send another REJ */
         p_fcrb->send_f_rsp = TRUE;              /* Set a flag in case an I-frame is pending */
     }
 
@@ -1160,7 +1164,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
         return;
     }
 
-    /* Seq number is the next expected. Clear possible reject exception in case it occured */
+    /* Seq number is the next expected. Clear possible reject exception in case it occurred */
     p_fcrb->rej_sent = p_fcrb->srej_sent = FALSE;
 
     /* Adjust the next_seq, so that if the upper layer sends more data in the callback
@@ -1338,7 +1342,7 @@ static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_wo
             p_buf->len    -= 2;
 
             if (p_fcrb->rx_sdu_len > p_ccb->max_rx_mtu) {
-                L2CAP_TRACE_WARNING ("SAR - SDU len: %u  larger than MTU: %u", p_fcrb->rx_sdu_len, p_fcrb->rx_sdu_len);
+                L2CAP_TRACE_WARNING ("SAR - SDU len: %u  larger than MTU: %u", p_fcrb->rx_sdu_len, p_ccb->max_rx_mtu);
                 packet_ok = FALSE;
             } else if ((p_fcrb->p_rx_sdu = (BT_HDR *)osi_malloc(L2CAP_MAX_BUF_SIZE)) == NULL) {
                 L2CAP_TRACE_ERROR ("SAR - no buffer for SDU start user_rx_buf_size:%d", p_ccb->ertm_info.user_rx_buf_size);
@@ -1447,7 +1451,7 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
 
                 if (tx_seq == buf_seq) {
                     break;
-				}
+                }
             }
         }
 
@@ -1462,24 +1466,24 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
         // the transmit data queue that satisfy the layer and event conditions.
         for (const list_node_t *node = list_begin(p_ccb->p_lcb->link_xmit_data_q);
                 node != list_end(p_ccb->p_lcb->link_xmit_data_q);) {
-            BT_HDR *p_buf = (BT_HDR *)list_node(node);
+            BT_HDR *p_node_buf = (BT_HDR *)list_node(node);
             node = list_next(node);
 
             /* Do not flush other CIDs or partial segments */
-            if ((p_buf->layer_specific == 0) && (p_buf->event == p_ccb->local_cid)) {
-                list_remove(p_ccb->p_lcb->link_xmit_data_q, p_buf);
-                osi_free(p_buf);
+            if ((p_node_buf->layer_specific == 0) && (p_node_buf->event == p_ccb->local_cid)) {
+                list_remove(p_ccb->p_lcb->link_xmit_data_q, p_node_buf);
+                osi_free(p_node_buf);
             }
         }
 
         /* Also flush our retransmission queue */
         while (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
             osi_free(fixed_queue_dequeue(p_ccb->fcrb.retrans_q, 0));
-		}
+        }
 
         if (list_ack != NULL) {
             node_ack = list_begin(list_ack);
-		}
+        }
     }
 
     if (list_ack != NULL) {
@@ -1498,7 +1502,7 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
 
             if ( (tx_seq != L2C_FCR_RETX_ALL_PKTS) || (p_buf2 == NULL) ) {
                 break;
-			}
+            }
         }
     }
 
@@ -1839,7 +1843,7 @@ void l2c_fcr_adj_monitor_retran_timeout (tL2C_CCB *p_ccb)
     /* adjust our monitor/retran timeout */
     if (p_ccb->out_cfg_fcr_present) {
         /*
-        ** if we requestd ERTM or accepted ERTM
+        ** if we requested ERTM or accepted ERTM
         ** We may accept ERTM even if we didn't request ERTM, in case of requesting STREAM
         */
         if ((p_ccb->our_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)
@@ -1860,7 +1864,7 @@ void l2c_fcr_adj_monitor_retran_timeout (tL2C_CCB *p_ccb)
 **
 ** Function         l2c_fcr_adj_our_rsp_options
 **
-** Description      Overrides any neccesary FCR options passed in from
+** Description      Overrides any necessary FCR options passed in from
 **                  L2CA_ConfigRsp based on our FCR options.
 **                  Only makes adjustments if channel is in ERTM mode.
 **
@@ -1937,7 +1941,7 @@ BOOLEAN l2c_fcr_renegotiate_chan(tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 
             /* Try another supported mode if available based on our last attempted channel */
             switch (p_ccb->our_cfg.fcr.mode) {
-            /* Our Streaming mode request was unnacceptable; try ERTM or Basic */
+            /* Our Streaming mode request was unacceptable; try ERTM or Basic */
             case L2CAP_FCR_STREAM_MODE:
                 /* Peer wants ERTM and we support it */
                 if ( (peer_mode == L2CAP_FCR_ERTM_MODE) && (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM) ) {
@@ -2146,11 +2150,11 @@ static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked)
 
     if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) > p_ccb->fcrb.ack_q_count_max[index]) {
         p_ccb->fcrb.ack_q_count_max[index] = fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
-	}
+    }
 
     if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) < p_ccb->fcrb.ack_q_count_min[index]) {
         p_ccb->fcrb.ack_q_count_min[index] = fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
-	}
+    }
 
     /* update sum, max and min of round trip delay of acking */
     list_t *list = NULL;
@@ -2182,7 +2186,7 @@ static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked)
                 if ( delay < p_ccb->fcrb.ack_delay_min[index] ) {
                     p_ccb->fcrb.ack_delay_min[index] = delay;
                 }
-			}
+            }
         }
     }
 

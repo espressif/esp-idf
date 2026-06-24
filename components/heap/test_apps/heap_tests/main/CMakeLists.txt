@@ -1,5 +1,6 @@
 set(src_test "test_heap_main.c"
              "test_aligned_alloc_caps.c"
+             "test_heap_align_hw.c"
              "test_allocator_timings.c"
              "test_corruption_check.c"
              "test_diram.c"
@@ -13,5 +14,5 @@ set(src_test "test_heap_main.c"
 
 idf_component_register(SRCS ${src_test}
                        INCLUDE_DIRS "."
-                       REQUIRES unity esp_psram spi_flash
+                       REQUIRES unity esp_psram spi_flash esp_mm
                        WHOLE_ARCHIVE)

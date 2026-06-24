@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 set(COMPONENTS main)
@@ -41,4 +41,4 @@ add_custom_target(partition-table-8M
                     ${partition_table_display}
                     VERBATIM)
 
-add_dependencies(partition_api_test.elf partition-table partition-table-8M)
+add_dependencies(${project_elf} partition-table partition-table-8M)

@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef NVS_INTERNAL_H
-#define NVS_INTERNAL_H
+#pragma once
 
 #if CONFIG_NVS_ASSERT_ERROR_CHECK
 #define NVS_ASSERT_OR_RETURN(condition, retcode) assert(condition);
@@ -14,5 +13,3 @@
         return retcode;                          \
     }
 #endif // CONFIG_NVS_ASSERT_ERROR_CHECK
-
-#endif // NVS_INTERNAL_H

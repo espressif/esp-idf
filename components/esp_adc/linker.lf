@@ -4,8 +4,14 @@ entries:
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         adc_oneshot: adc_oneshot_read_isr (noflash)
 
+[mapping:esp_hw_support_adc]
+archive: libesp_hw_support.a
+entries:
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        esp_clk_tree: esp_clk_tree_enable_src (noflash)
+
 [mapping:adc_hal]
-archive: libhal.a
+archive: libesp_hal_ana_conv.a
 entries:
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         adc_oneshot_hal (noflash)
@@ -17,5 +23,5 @@ entries:
         if SOC_ADC_CALIBRATION_V1_SUPPORTED = y:
             adc_hal_common: adc_hal_set_calibration_param (noflash)
             adc_hal_common: adc_hal_calibration_init (noflash)
-    if ADC_CONTINUOUS_ISR_IRAM_SAFE = y || GDMA_ISR_IRAM_SAFE = y:
+    if ADC_CONTINUOUS_ISR_IRAM_SAFE = y:
         adc_hal: adc_hal_get_reading_result (noflash)

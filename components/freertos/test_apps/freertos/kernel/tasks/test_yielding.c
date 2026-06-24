@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,9 @@ static volatile uint32_t count;
 // Lock variable to create a blocked task scenario
 static volatile SemaphoreHandle_t task_mutex;
 
+// Semaphore to synchronize yield test tasks
+static SemaphoreHandle_t yield_sync_sem;
+
 // This helper macro is used to store the task id atomically
 #define STORE_TASK_ID(task_id)  ({ \
         portENTER_CRITICAL(&idx_lock); \
@@ -56,10 +59,11 @@ static void yield_task1(void *arg)
     /* Store task_id in the sequence array */
     STORE_TASK_ID(task_id);
 
-    /* Notify the yield_task2 to run */
-    task_sequence_ready = true;
+    /* Give semaphore to unblock yield_task2, making it READY (not just setting a flag).
+     * This ensures task2 is in the ready queue when we yield. */
+    xSemaphoreGive(yield_sync_sem);
 
-    /* Yield */
+    /* Yield - now task2 is guaranteed to be READY and should run next */
     taskYIELD();
 
     /* Increment task count to notify unity task */
@@ -73,10 +77,9 @@ static void yield_task2(void *arg)
 {
     uint32_t task_id = (uint32_t)arg;
 
-    /* Wait for the other task to run for the test to begin */
-    while (!task_sequence_ready) {
-        vTaskDelay(10);
-    };
+    /* Block on semaphore - this ensures task1 runs first and we don't poll.
+     * When task1 gives the semaphore, we transition directly to READY state. */
+    xSemaphoreTake(yield_sync_sem, portMAX_DELAY);
 
     /* Store task_id in the sequence array */
     STORE_TASK_ID(task_id);
@@ -108,9 +111,16 @@ TEST_CASE("Task yield must run the next ready task of the same priority", "[free
     /* Reset task sequence flag */
     task_sequence_ready = false;
 
-    /* Create test tasks */
-    xTaskCreatePinnedToCore(yield_task1, "yield_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
+    /* Create semaphore for synchronization - start empty so task2 blocks */
+    yield_sync_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(yield_sync_sem);
+
+    /* Create test tasks - order matters!
+     * Task2 is created first and will immediately block on the semaphore.
+     * Task1 is created second and will run first since task2 is blocked. */
     xTaskCreatePinnedToCore(yield_task2, "yield_task2", 2048, (void *)2, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
+    vTaskDelay(1); /* Ensure task2 has blocked on semaphore before creating task1 */
+    xTaskCreatePinnedToCore(yield_task1, "yield_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
 
     /* Wait for the tasks to finish up */
     while (count != 2) {
@@ -122,6 +132,9 @@ TEST_CASE("Task yield must run the next ready task of the same priority", "[free
     /* Verify that the yield is successful and the next ready task is run */
     TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
     TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
+
+    /* Clean up semaphore */
+    vSemaphoreDelete(yield_sync_sem);
 }
 
 /*

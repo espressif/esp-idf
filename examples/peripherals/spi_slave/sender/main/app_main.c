@@ -40,11 +40,7 @@ task waits for this semaphore to be given before queueing a transmission.
 #define GPIO_SCLK           15
 #define GPIO_CS             14
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define SENDER_HOST HSPI_HOST
-#else
 #define SENDER_HOST SPI2_HOST
-#endif
 
 //The semaphore indicating the slave is ready to receive stuff.
 static QueueHandle_t rdySem;
@@ -54,7 +50,7 @@ This ISR is called when the handshake line goes high.
 */
 static void IRAM_ATTR gpio_handshake_isr_handler(void* arg)
 {
-    //Sometimes due to interference or ringing or something, we get two irqs after eachother. This is solved by
+    //Sometimes due to interference or ringing or something, we get two irqs after each other. This is solved by
     //looking at the time between interrupts and refusing any interrupt too close to another one.
     static uint32_t lasthandshaketime_us;
     uint32_t currtime_us = esp_timer_get_time();
@@ -104,7 +100,7 @@ void app_main(void)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_POSEDGE,
         .mode = GPIO_MODE_INPUT,
-        .pull_up_en = 1,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
         .pin_bit_mask = BIT64(GPIO_HANDSHAKE),
     };
 

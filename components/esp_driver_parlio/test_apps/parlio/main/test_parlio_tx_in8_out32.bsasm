@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+cfg prefetch false    # disable data prefetch
+cfg eof_on upstream # set EOF on upstream
+cfg trailing_bytes 9
+cfg lut_width_bits 32
+
+# Define contents that stored in the lookup table
+lut 0x00011111  # index 0
+lut 0x00022222  # index 1
+lut 0x00033333  # index 2
+lut 0x00000000  # index 3
+
+set 16..18 L    # init the LUT index: 0 (0b000)
+
+loop:
+	read 8,
+	set 31..0 L31..L0,
+	write 32,
+	jmp loop

@@ -1,0 +1,22 @@
+menu "HFP Example Configuration"
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "ESP_HFP_AG"
+        help
+            Use this option to set local device name.
+
+    config EXAMPLE_ENABLE_CONSOLE_REPL
+        bool "Enable UART interactive console (REPL)"
+        default y
+        help
+            Enable UART interactive console (REPL)
+
+    config EXAMPLE_HFP_PCM_GPIO_SUPPORTED
+        bool
+        default y if IDF_TARGET_ESP32
+        default n
+        help
+            HFP PCM GPIO signal routing is only available on ESP32.
+            ESP32-S31 currently supports HCI SCO data path only.
+
+endmenu

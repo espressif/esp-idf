@@ -14,14 +14,18 @@
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
+#include "driver/gpio.h"
 #include "sd_test_io.h"
+#if SOC_SDMMC_IO_POWER_EXTERNAL || SOC_SDMMC_IO_UHS_POWER_EXTERNAL
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#endif
 
 #define EXAMPLE_MAX_CHAR_SIZE    64
 
 static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
+#define EXAMPLE_IS_UHS1    (CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50 || CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50 || CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR104)
 
 #ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
 const char* names[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
@@ -95,6 +99,38 @@ static esp_err_t s_example_read_file(const char *path)
     return ESP_OK;
 }
 
+#if CONFIG_EXAMPLE_PIN_CARD_POWER_RESET
+static esp_err_t s_example_reset_card_power(void)
+{
+    esp_err_t ret = ESP_FAIL;
+    gpio_config_t io_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = (1ULL<<CONFIG_EXAMPLE_PIN_CARD_POWER_RESET),
+    };
+    ret = gpio_config(&io_conf);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to config GPIO");
+        return ret;
+    }
+
+    ret = gpio_set_level(CONFIG_EXAMPLE_PIN_CARD_POWER_RESET, 1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set GPIO level");
+        return ret;
+    }
+
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    ret = gpio_set_level(CONFIG_EXAMPLE_PIN_CARD_POWER_RESET, 0);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set GPIO level");
+        return ret;
+    }
+
+    return ESP_OK;
+}
+#endif // CONFIG_EXAMPLE_PIN_CARD_POWER_RESET
+
 void app_main(void)
 {
     esp_err_t ret;
@@ -126,27 +162,54 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+    host.unaligned_multi_block_rw_max_chunk_size = 8;
+#if CONFIG_EXAMPLE_SDMMC_SPEED_HS
+    host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+#elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50
+    host.slot = SDMMC_HOST_SLOT_0;
+    host.max_freq_khz = SDMMC_FREQ_SDR50;
+    host.flags &= ~SDMMC_HOST_FLAG_DDR;
+#elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50
+    host.slot = SDMMC_HOST_SLOT_0;
+    host.max_freq_khz = SDMMC_FREQ_DDR50;
+#elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR104
+    host.slot = SDMMC_HOST_SLOT_0;
+    host.max_freq_khz = SDMMC_FREQ_SDR104;
+    host.flags &= ~SDMMC_HOST_FLAG_DDR;
+#endif
 
-    /**
-     * On these chips, the SDMMC IO power is supplied externally
-     */
-#if CONFIG_EXAMPLE_SDMMC_IO_POWER_INTERNAL_LDO
+#if SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+    //for uhs-i power
+    host.io_voltage = 1.8f;
+#endif
+
+    // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
+    // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
+    // and the internal LDO power supply, we need to initialize the power supply first.
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
     sd_pwr_ctrl_ldo_config_t ldo_config = {
-        .ldo_chan_id = 4, // `LDO_VO4` is used as the SDMMC IO power
+        .ldo_chan_id = CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_IO_ID,
     };
     sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
 
     ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to new an on-chip ldo power control driver");
+        ESP_LOGE(TAG, "Failed to create a new on-chip LDO power control driver");
         return;
     }
     host.pwr_ctrl_handle = pwr_ctrl_handle;
 #endif
 
+#if CONFIG_EXAMPLE_PIN_CARD_POWER_RESET
+    ESP_ERROR_CHECK(s_example_reset_card_power());
+#endif
+
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+#if EXAMPLE_IS_UHS1
+    slot_config.flags |= SDMMC_SLOT_FLAG_UHS1;
+#endif
 
     // Set bus width to use:
 #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
@@ -237,7 +300,7 @@ void app_main(void)
         ESP_LOGI(TAG, "file still exists");
         return;
     } else {
-        ESP_LOGI(TAG, "file doesnt exist, format done");
+        ESP_LOGI(TAG, "file doesn't exist, formatting done");
     }
 #endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
 
@@ -257,14 +320,14 @@ void app_main(void)
 
     // All done, unmount partition and disable SDMMC peripheral
     esp_vfs_fat_sdcard_unmount(mount_point, card);
+    ESP_LOGI(TAG, "Card unmounted");
 
-#if SOC_SDMMC_IO_POWER_EXTERNAL
+    // Deinitialize the power control driver if it was used
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
     ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to delete on-chip ldo power control driver");
+        ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
         return;
     }
 #endif
-
-    ESP_LOGI(TAG, "Card unmounted");
 }

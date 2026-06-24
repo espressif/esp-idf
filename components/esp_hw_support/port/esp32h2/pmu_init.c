@@ -17,8 +17,9 @@
 #include "soc/regi2c_pmu.h"
 #include "soc/regi2c_bias.h"
 #include "regi2c_ctrl.h"
+#include "esp_hw_log.h"
 
-static __attribute__((unused)) const char *TAG = "pmu_init";
+ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -136,23 +137,23 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     };
 
     for (uint8_t idx = 0; idx < (sizeof(pmu_hp_domains) / sizeof(pmu_hp_power_domain_t)); idx++) {
-        pmu_ll_hp_set_power_force_reset     (ctx->hal->dev, pmu_hp_domains[idx], false);
-        pmu_ll_hp_set_power_force_isolate   (ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_power_up  (ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_no_reset  (ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_no_isolate(ctx->hal->dev, pmu_hp_domains[idx], false);
         pmu_ll_hp_set_power_force_power_down(ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_isolate   (ctx->hal->dev, pmu_hp_domains[idx], false);
+        pmu_ll_hp_set_power_force_reset     (ctx->hal->dev, pmu_hp_domains[idx], false);
     }
 
     /* Isolate all memory banks while sleeping, avoid memory leakage current */
     pmu_ll_hp_set_memory_no_isolate     (ctx->hal->dev, 0);
 
-    pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
-    pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_power_up  (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_no_reset  (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_no_isolate(ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_power_down(ctx->hal->dev, false);
+    pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
+    pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
 }
 
 static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system_param_t *param)

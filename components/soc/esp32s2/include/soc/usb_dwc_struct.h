@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -14,7 +14,6 @@ extern "C" {
 
 /*
 Registers and fields were generated based on a set of configuration options.
-See the ESP32-S2 "usb_dwc_cfg.h" for more details.
 */
 
 /* ---------------------------- Register Types ------------------------------ */
@@ -33,7 +32,7 @@ typedef union {
         uint32_t hnpreq: 1;
         uint32_t hstsethnpen: 1;
         uint32_t devhnpen: 1;
-        uint32_t ehen: 1;
+        uint32_t ehen: 1;       // codespell:ignore ehen
         uint32_t reserved_13: 2;
         uint32_t dbncefltrbypass: 1;
         uint32_t conidsts: 1;
@@ -67,7 +66,7 @@ typedef union {
 } usb_dwc_gotgint_reg_t;
 
 typedef union {
-        struct {
+    struct {
         uint32_t glbllntrmsk: 1;
         uint32_t hbstlen: 4;
         uint32_t dmaen: 1;
@@ -88,7 +87,7 @@ typedef union {
     struct {
         uint32_t toutcal: 3;
         uint32_t phyif: 1;
-        uint32_t reserved_4: 1;
+        uint32_t ulpiutmisel: 1;
         uint32_t fsintf: 1;
         uint32_t physel: 1;
         uint32_t reserved_7: 1;

@@ -1,40 +1,58 @@
-menu "LCD and Touch Panel"
-    comment "LCD Touch Drivers are maintained in the IDF Component Registry"
+menu "ESP-Driver:LCD Controller Configurations"
 
-    menu "LCD Peripheral Configuration"
-        config LCD_PANEL_IO_FORMAT_BUF_SIZE
-            depends on SOC_LCD_I80_SUPPORTED
-            int "LCD panel io format buffer size"
-            default 32
-            help
-                LCD driver allocates an internal buffer to transform the data into a proper format, because of
-                the endian order mismatch. This option is to set the size of the buffer, in bytes.
-
-        config LCD_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
+    if SOC_LCD_RGB_SUPPORTED
+        config LCD_RGB_ISR_IRAM_SAFE
+            bool "RGB LCD ISR IRAM-Safe"
+            select GDMA_ISR_HANDLER_IN_IRAM # bounce buffer mode relies on GDMA EOF interrupt
+            select ESP_PERIPH_CTRL_FUNC_IN_IRAM
             default n
             help
-                whether to enable the debug log message for LCD driver.
-                Note that, this option only controls the LCD driver log, won't affect other drivers.
+                Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+                If you want the LCD driver to keep flushing the screen even when cache ops disabled,
+                you can enable this option. Note, this will also increase the IRAM usage.
 
-        if SOC_LCD_RGB_SUPPORTED
-            config LCD_RGB_ISR_IRAM_SAFE
-                bool "RGB LCD ISR IRAM-Safe"
-                default n
-                help
-                    Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
-                    executable when the cache is disabled (e.g. SPI Flash write).
-                    If you want the LCD driver to keep flushing the screen even when cache ops disabled,
-                    you can enable this option. Note, this will also increase the IRAM usage.
+        config LCD_RGB_RESTART_IN_VSYNC
+            bool "Always restart RGB LCD transmission in VSYNC"
+            default n
+            help
+                Reset the GDMA channel every VBlank to stop permanent desyncs from happening.
+                Only need to enable it when in your application, the DMA can't deliver data
+                as fast as the LCD consumes it.
+    endif # SOC_LCD_RGB_SUPPORTED
 
-            config LCD_RGB_RESTART_IN_VSYNC
-                bool "Restart transmission in VSYNC"
-                default n
-                select GDMA_CTRL_FUNC_IN_IRAM # need to restart GDMA in the LCD ISR
-                help
-                    Reset the GDMA channel every VBlank to stop permanent desyncs from happening.
-                    Only need to enable it when in your application, the DMA can't deliver data
-                    as fast as the LCD consumes it.
-        endif # SOC_LCD_RGB_SUPPORTED
-    endmenu
+    if SOC_MIPI_DSI_SUPPORTED
+        config LCD_DSI_ISR_HANDLER_IN_IRAM
+            bool "Place DSI ISR handler in IRAM to reduce latency"
+            default y
+            select LCD_DSI_OBJ_FORCE_INTERNAL
+            help
+                Place DSI ISR handler in IRAM to reduce latency caused by cache miss.
+
+        config LCD_DSI_ISR_CACHE_SAFE
+            bool "Allow DSI ISR to execute when cache is disabled" if !SPI_FLASH_AUTO_SUSPEND
+            select LCD_DSI_ISR_HANDLER_IN_IRAM
+            select DW_GDMA_ISR_IRAM_SAFE # relies on DW_GDMA Full trans done interrupt
+            default n
+            help
+                Enable this option to allow the DSI Interrupt Service Routine (ISR)
+                to execute even when the cache is disabled. This can be useful in scenarios where the cache
+                might be turned off, but the DSI functionality is still required to operate correctly.
+
+        config LCD_DSI_OBJ_FORCE_INTERNAL
+            bool
+            default n
+            help
+                This will ensure the DSI driver object will always be allocated in internal RAM.
+    endif # SOC_MIPI_DSI_SUPPORTED
+
+    config LCD_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, LCD driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
 endmenu

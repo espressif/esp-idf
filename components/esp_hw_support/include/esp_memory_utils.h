@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,21 @@ extern "C" {
  */
 __attribute__((always_inline))
 inline static bool esp_dram_match_iram(void) {
-    return (SOC_DRAM_LOW == SOC_IRAM_LOW && SOC_DRAM_HIGH == SOC_IRAM_HIGH);
+    return ((SOC_DRAM_LOW == SOC_IRAM_LOW) && (SOC_DRAM_HIGH == SOC_IRAM_HIGH));
+}
+
+/**
+ * @brief Check if the RTC IRAM and RTC DRAM are separate or using the same memory space
+ *
+ * @return true if the RTC DRAM and RTC IRAM are sharing the same memory space, false otherwise
+ */
+__attribute__((always_inline))
+inline static bool esp_rtc_dram_match_rtc_iram(void) {
+#if SOC_RTC_FAST_MEM_SUPPORTED
+    return ((SOC_RTC_IRAM_LOW == SOC_RTC_DRAM_LOW) && (SOC_RTC_IRAM_HIGH == SOC_RTC_DRAM_HIGH));
+#else
+    return false;
+#endif
 }
 
 /**
@@ -81,6 +95,7 @@ __attribute__((always_inline))
 inline static bool esp_ptr_in_diram_iram(const void *p) {
 // TODO: IDF-5980 esp32c6 D/I RAM share the same address
 #if SOC_DIRAM_IRAM_LOW == SOC_DIRAM_DRAM_LOW
+    (void)p;
     return false;
 #else
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
@@ -99,6 +114,7 @@ inline static bool esp_ptr_in_rtc_iram_fast(const void *p) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
 #else
+    (void)p;
     return false;
 #endif
 }
@@ -115,6 +131,7 @@ inline static bool esp_ptr_in_rtc_dram_fast(const void *p) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
 #else
+    (void)p;
     return false;
 #endif
 }
@@ -150,6 +167,21 @@ inline static void * esp_ptr_diram_dram_to_iram(const void *p) {
 #endif
 }
 
+/* Convert a RTC DRAM pointer to equivalent word address in RTC IRAM
+
+   - Address must be word aligned
+   - Address must pass esp_ptr_in_rtc_dram_fast() test, or result will be invalid pointer
+*/
+__attribute__((always_inline))
+inline static void * esp_ptr_rtc_dram_to_iram(const void *p) {
+    intptr_t ptr = (intptr_t)p;
+#if SOC_RTC_FAST_MEM_SUPPORTED && (SOC_RTC_IRAM_LOW != SOC_RTC_DRAM_LOW)
+    return (void *) ( SOC_RTC_IRAM_LOW + (ptr - SOC_RTC_DRAM_LOW) );
+#else
+    return (void *) ptr;
+#endif
+}
+
 /* Convert a D/IRAM IRAM pointer to equivalent word address in DRAM
 
    - Address must be word aligned
@@ -164,19 +196,31 @@ inline static void * esp_ptr_diram_iram_to_dram(const void *p) {
 #endif
 }
 
-#if SOC_MEM_TCM_SUPPORTED
+#if SOC_MEM_SPM_SUPPORTED
 /**
- * @brief Check if the pointer is in TCM
+ * @brief Check if the pointer is in TCM (SPM)
  *
  * @param p pointer
  *
- * @return true: is in TCM; false: not in TCM
+ * @return true: is in TCM (SPM); false: not in TCM (SPM)
  */
-__attribute__((always_inline))
+ __attribute__((always_inline, deprecated("esp_ptr_in_tcm is deprecated, please use esp_ptr_in_spm instead")))
 inline static bool esp_ptr_in_tcm(const void *p) {
-    return ((intptr_t)p >= SOC_TCM_LOW && (intptr_t)p < SOC_TCM_HIGH);
+    return ((intptr_t)p >= SOC_SPM_LOW && (intptr_t)p < SOC_SPM_HIGH);
 }
-#endif  //#if SOC_MEM_TCM_SUPPORTED
+
+/**
+ * @brief Check if the pointer is in SPM
+ *
+ * @param p pointer
+ *
+ * @return true: is in SPM; false: not in SPM
+ */
+ __attribute__((always_inline))
+ inline static bool esp_ptr_in_spm(const void *p) {
+     return ((intptr_t)p >= SOC_SPM_LOW && (intptr_t)p < SOC_SPM_HIGH);
+ }
+#endif  //#if SOC_MEM_SPM_SUPPORTED
 
 /** End of common functions to be kept in sync with bootloader_memory_utils.h **/
 /** Add app-specific functions below **/
@@ -223,21 +267,7 @@ inline static bool esp_ptr_word_aligned(const void *p)
  *
  * @return true: is executable; false: not executable
  */
-__attribute__((always_inline))
-inline static bool esp_ptr_executable(const void *p)
-{
-    intptr_t ip = (intptr_t) p;
-    return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
-        || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
-        || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
-#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
-        || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
-#endif
-#if SOC_RTC_FAST_MEM_SUPPORTED
-        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH)
-#endif
-    ;
-}
+bool esp_ptr_executable(const void *p);
 
 /**
  * @brief Check if the pointer is byte accessible
@@ -259,6 +289,10 @@ __attribute__((always_inline))
 inline static bool esp_ptr_internal(const void *p) {
     bool r;
     r = ((intptr_t)p >= SOC_MEM_INTERNAL_LOW && (intptr_t)p < SOC_MEM_INTERNAL_HIGH);
+
+#if SOC_MEM_SPM_SUPPORTED
+    r |= esp_ptr_in_spm(p);
+#endif
 
 #if SOC_RTC_SLOW_MEM_SUPPORTED
     r |= ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
@@ -307,12 +341,35 @@ inline static bool esp_ptr_in_drom(const void *p) {
     /* For ESP32-S3, when the DCACHE size is set to 16 kB, the unused 48 kB is
      * added to the heap in 2 blocks of 32 kB (from 0x3FCF0000) and 16 kB
      * (from 0x3C000000 (SOC_DROM_LOW) - 0x3C004000).
-     * The drom_start_addr has to be moved by 0x4000 (16kB) to accomodate
+     * The drom_start_addr has to be moved by 0x4000 (16kB) to accommodate
      * this addition. */
     drom_start_addr += 0x4000;
 #endif
 
     return ((intptr_t)p >= drom_start_addr && (intptr_t)p < SOC_DROM_HIGH);
+}
+
+
+/**
+ * @brief Check if the given pointer is in ROM
+ *
+ * @param ptr Pointer to check
+ *
+ * @return true if `ptr` points to ROM, false else
+ */
+__attribute__((always_inline))
+inline static bool esp_ptr_in_rom(const void *p)
+{
+    intptr_t ip = (intptr_t) p;
+    return
+    /**
+     * The following DROM macros are only defined on RISC-V targets, moreover, to prevent
+     * the compiler from generating a `logical-op` warning, make sure the macros are
+     * distinct. */
+#if CONFIG_IDF_TARGET_ARCH_RISCV && SOC_DROM_MASK_LOW != SOC_IROM_MASK_LOW
+        (ip >= SOC_DROM_MASK_LOW && ip < SOC_DROM_MASK_HIGH) ||
+#endif
+        (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH);
 }
 
 /**
@@ -329,7 +386,7 @@ inline static bool esp_stack_ptr_in_dram(uint32_t sp)
     return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }
 
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 /**
  * @brief Check if the stack pointer is in external ram
  *
@@ -338,6 +395,15 @@ inline static bool esp_stack_ptr_in_dram(uint32_t sp)
  * @return true: is in external ram; false: not in external ram
  */
 bool esp_stack_ptr_in_extram(uint32_t sp);
+
+/**
+ * @brief Check if the current task's stack is in internal memory (DRAM or RTC fast memory = not in PSRAM)
+ *
+ * This function verifies that the current task's stack is located in internal memory,
+ *
+ * @return true if the stack is in non-cacheable memory, false otherwise
+ */
+bool esp_task_stack_is_sane_cache_disabled(void);
 #endif
 
 /**
@@ -351,7 +417,7 @@ __attribute__((always_inline))
 inline static bool esp_stack_ptr_is_sane(uint32_t sp)
 {
     return esp_stack_ptr_in_dram(sp)
-#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
         || esp_stack_ptr_in_extram(sp)
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP

@@ -14,7 +14,7 @@
 
     * 将关键代码存放到 RAM 中以提高性能；
     * 将可执行代码存放到 IRAM 中，以便在缓存被禁用时运行这些代码；
-    :SOC_RTC_MEM_SUPPORTED: * 将代码存放到 RTC 存储器中，以便在 wake stub 中使用；
+    :ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB: * 将代码存放到 RTC 存储器中，以便在 wake stub 中使用；
     :SOC_ULP_SUPPORTED: * 将代码存放到 RTC 内存中，以便 ULP 协处理器使用。
 
 链接器脚本生成机制可以让用户指定代码和数据在 ESP-IDF 组件中的存放区域。组件包含如何存放符号、目标或完整库的信息。在构建应用程序时，组件中的这些信息会被收集、解析并处理；生成的存放规则用于链接应用程序。
@@ -629,10 +629,4 @@
 
     这是根据默认协议条目 ``iram -> iram0_text`` 生成的规则。默认协议指定了 ``iram -> iram0_text`` 条目，因此生成的规则同样也放在被 ``iram0_text`` 标记的地方。由于该规则是根据默认协议生成的，因此在同一目标下收集的所有规则下排在第一位。
 
-.. only:: not esp32c5
-
     目前使用的链接器脚本模板是 :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`，生成的脚本存放在构建目录下。
-
-.. only:: esp32c5
-
-    目前使用的链接器脚本模板是 :component_file:`esp_system/ld/esp32c5/beta3/sections.ld.in`，生成的脚本存放在构建目录下。

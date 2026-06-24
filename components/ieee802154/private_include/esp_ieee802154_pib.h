@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "hal/ieee802154_ll.h"
 #include "esp_ieee802154_frame.h"
+#include "esp_ieee802154_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,11 +27,11 @@ typedef struct {
     bool promiscuous;                                                               /*!< A flag indicates promiscuous mode is enabled or not */
     bool coordinator;                                                               /*!< A flag indicates the device is coordinator or not*/
     bool rx_when_idle;                                                              /*!< A flag indicates the device is rx on when idle or not */
-    int8_t txpower;                                                                 /*!< Tx power configuration */
+    esp_ieee802154_txpower_table_t power_table;                                     /*!< The power table configuration */
     uint8_t channel;                                                                /*!< Channel configuration  */
-    ieee802154_ll_pending_mode_t pending_mode;                                         /*!< Pending mode configuration  */
+    ieee802154_ll_pending_mode_t pending_mode[CONFIG_IEEE802154_INTERFACE_NUM];     /*!< Pending mode configuration  */
     int8_t cca_threshold;                                                           /*!< CCA threshold */
-    ieee802154_ll_cca_mode_t cca_mode;                                                 /*!< CCA mode */
+    ieee802154_ll_cca_mode_t cca_mode;                                              /*!< CCA mode */
 } ieee802154_pib_t;
 
 /**
@@ -69,7 +71,7 @@ void ieee802154_pib_set_channel(uint8_t channel);
 uint8_t ieee802154_pib_get_channel(void);
 
 /**
- * @brief  Set a specific transmission power to the PIB.
+ * @brief  Set a specific transmission power for current channel to the PIB.
  *
  * @param[in]  power  The power.
  *
@@ -77,12 +79,57 @@ uint8_t ieee802154_pib_get_channel(void);
 void ieee802154_pib_set_power(int8_t power);
 
 /**
- * @brief  Get the transmission power from the PIB.
+ * @brief  Get the transmission power of current channel from the PIB.
  *
  * @return
  *        - The transmission power has been set in the PIB.
  */
 int8_t ieee802154_pib_get_power(void);
+
+/**
+ * @brief  Set a specific transmission power table to the PIB.
+ *
+ * @param[in]  power_table  The power table.
+ *
+ * @return
+ *        - ESP_OK   Set the transmission power table to the PIB successfully.
+ */
+esp_err_t ieee802154_pib_set_power_table(esp_ieee802154_txpower_table_t power_table);
+
+/**
+ * @brief  Get the transmission power table from the PIB.
+ *
+ * @param[out]  out_power_table  The power table.
+ *
+ * @return
+ *        - ESP_OK   Get the transmission power table from the PIB successfully.
+ *
+ */
+esp_err_t ieee802154_pib_get_power_table(esp_ieee802154_txpower_table_t *out_power_table);
+
+/**
+ * @brief  Set a specific transmission power for a specific channel to the PIB.
+ *
+ * @param[in]  channel  The channel.
+ * @param[in]  power    The power.
+ *
+ * @return
+ *        - ESP_OK                  Set the transmission power of a specific channel from the PIB successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid channel.
+ */
+esp_err_t ieee802154_pib_set_power_with_channel(uint8_t channel, int8_t power);
+
+/**
+ * @brief  Get the transmission power of a specific channel from the PIB.
+ *
+ * @param[in]  channel    The channel.
+ * @param[out] out_power  The power.
+ *
+ * @return
+ *        - ESP_OK                  Get the transmission power of a specific channel from the PIB successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid channel.
+ */
+esp_err_t ieee802154_pib_get_power_with_channel(uint8_t channel, int8_t *out_power);
 
 /**
  * @brief  Set the promiscuous mode to the PIB.
@@ -114,7 +161,7 @@ void ieee802154_pib_set_cca_threshold(int8_t cca_threshold);
  * @return
  *        - The CCA threshold has been set in the PIB.
  */
- int8_t ieee802154_pib_get_cca_threshold(void);
+int8_t ieee802154_pib_get_cca_threshold(void);
 
 /**
  * @brief  Set the CCA mode to the PIB.
@@ -202,7 +249,7 @@ bool ieee802154_pib_get_coordinator(void);
  * @param[in]  pending_mode  The pending mode.
  *
  */
-void ieee802154_pib_set_pending_mode(ieee802154_ll_pending_mode_t pending_mode);
+void ieee802154_pib_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, ieee802154_ll_pending_mode_t pending_mode);
 
 /**
  * @brief  Get the pending mode from the PIB.
@@ -210,21 +257,21 @@ void ieee802154_pib_set_pending_mode(ieee802154_ll_pending_mode_t pending_mode);
  * @return
  *        - The pending mode has been set in the PIB.
  */
-ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(void);
+ieee802154_ll_pending_mode_t ieee802154_pib_get_pending_mode(esp_ieee802154_multipan_index_t inf_index);
 
 /**
  * @brief  Configure the radio mode when the radio is going to enter idle to the PIB.
  *
- * @param[in]  enable  True for continuing to receive when the radio is going to enter ilde, otherwise false.
+ * @param[in]  enable  True for continuing to receive when the radio is going to enter idle, otherwise false.
  *
  */
 void ieee802154_pib_set_rx_when_idle(bool enable);
 
 /**
- * @brief  Get the radio mode when the radio is going to enter ilde to the PIB.
+ * @brief  Get the radio mode when the radio is going to enter idle to the PIB.
  *
  * @return
- *        - True for continuing to receive when the radio is going to enter ilde, otherwise false.
+ *        - True for continuing to receive when the radio is going to enter idle, otherwise false.
  *
  */
 bool ieee802154_pib_get_rx_when_idle(void);

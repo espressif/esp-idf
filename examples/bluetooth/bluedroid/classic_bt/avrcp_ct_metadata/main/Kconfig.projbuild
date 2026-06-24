@@ -1,0 +1,23 @@
+menu "AVRCP Example Configuration"
+    config EXAMPLE_LOCAL_DEVICE_NAME
+        string "Local Device Name"
+        default "ESP_SPEAKER"
+        help
+            Use this option to set local device name.
+
+    config EXAMPLE_A2DP_SINK_STREAM_ENABLE
+        bool "Enable A2DP Sink Stream"
+        default y
+        help
+            This enables the A2DP sink stream. If disable this option,
+            audio data will not be transmitted
+
+    config EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+        bool "Use External Codec Instead of Internal"
+        depends on EXAMPLE_A2DP_SINK_STREAM_ENABLE
+        default n
+        select BT_A2DP_USE_EXTERNAL_CODEC
+        help
+            If enable, Bluedroid stack will not decode A2DP audio data, user need to decode it in application layer.
+
+endmenu

@@ -38,9 +38,6 @@
 #define BTA_HH_KB_CAPS_LOCK      0x39           /* caps lock */
 #define BTA_HH_KB_NUM_LOCK       0x53           /* num lock */
 
-
-#define BTA_HH_MAX_RPT_CHARS    8
-
 static const UINT8 bta_hh_mod_key_mask[BTA_HH_MOD_MAX_KEY] = {
     BTA_HH_KB_CTRL_MASK,
     BTA_HH_KB_SHIFT_MASK,
@@ -118,6 +115,10 @@ UINT8  bta_hh_find_cb(BD_ADDR bda)
 void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB *p_cb)
 {
     UINT8 index;
+
+    if (!p_cb) {
+        return;
+    }
 
     if (p_cb->hid_handle != BTA_HH_INVALID_HANDLE ) {
 #if BTA_HH_LE_INCLUDED == TRUE
@@ -263,6 +264,18 @@ void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT *p_kb_data, UINT8 *p_report,
     UINT16       xx, yy, key_idx = 0;
     UINT8        this_report[BTA_HH_MAX_RPT_CHARS];
 
+    /* Validate report length before processing */
+    if (report_len > BTA_HH_MAX_RPT_CHARS) {
+        APPL_TRACE_ERROR("HID report length exceeds maximum: %u > %u",
+                        report_len, BTA_HH_MAX_RPT_CHARS);
+        return;
+    }
+
+    if (report_len == 0 || p_report == NULL) {
+        APPL_TRACE_ERROR("Invalid HID report data");
+        return;
+    }
+
 #if BTA_HH_DEBUG
     APPL_TRACE_DEBUG("bta_hh_parse_keybd_rpt:  (report=%p, report_len=%d) called",
                      p_report, report_len);
@@ -274,10 +287,6 @@ void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT *p_kb_data, UINT8 *p_report,
 
     ctl_shift = *p_report++;
     report_len--;
-
-    if (report_len > BTA_HH_MAX_RPT_CHARS) {
-        report_len = BTA_HH_MAX_RPT_CHARS;
-    }
 
     memset (this_report, 0, BTA_HH_MAX_RPT_CHARS);
     memset (p_data, 0, sizeof(tBTA_HH_KEYBD_RPT));
@@ -320,7 +329,7 @@ void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT *p_kb_data, UINT8 *p_report,
             p_kb->caps_lock = p_kb->caps_lock ? FALSE : TRUE;
         } else if (this_report[xx] == BTA_HH_KB_NUM_LOCK) {
             p_kb->num_lock = p_kb->num_lock ? FALSE : TRUE;
-        } else {
+        } else if (key_idx < BTA_HH_KB_VKEY_LEN) {
             p_data->this_char[key_idx ++] = this_char;
         }
 
@@ -357,7 +366,7 @@ void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT *p_mice_data, UINT8 *p_report,
                 report_len=%d) called", p_report, report_len);
 #endif
 
-    if (report_len < 3) {
+    if ((report_len < 3) || (p_report == NULL)) {
         return;
     }
 
@@ -405,6 +414,7 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(BD_ADDR bd_addr, UINT16 *p_max_ssr_lat, UIN
     tBTA_HH_CB  *p_cb = &bta_hh_cb;
     UINT8       i;
     UINT16      ssr_max_latency;
+
     for (i = 0; i < BTA_HH_MAX_KNOWN; i ++) {
         if (memcmp(p_cb->kdev[i].addr, bd_addr, BD_ADDR_LEN) == 0) {
 
@@ -422,19 +432,26 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(BD_ADDR bd_addr, UINT16 *p_max_ssr_lat, UIN
                     ssr_max_latency = BTA_HH_SSR_MAX_LATENCY_DEF;
                 }
 
-                * p_max_ssr_lat  = ssr_max_latency;
+                if (p_max_ssr_lat) {
+                    *p_max_ssr_lat  = ssr_max_latency;
+                }
             } else {
-                * p_max_ssr_lat  = p_cb->kdev[i].dscp_info.ssr_max_latency;
+                if (p_max_ssr_lat) {
+                    *p_max_ssr_lat  = p_cb->kdev[i].dscp_info.ssr_max_latency;
+                }
             }
 
             if (p_cb->kdev[i].dscp_info.ssr_min_tout == HID_SSR_PARAM_INVALID) {
-                * p_min_ssr_tout = BTA_HH_SSR_MIN_TOUT_DEF;
+                if (p_min_ssr_tout) {
+                    *p_min_ssr_tout = BTA_HH_SSR_MIN_TOUT_DEF;
+                }
             } else {
-                * p_min_ssr_tout = p_cb->kdev[i].dscp_info.ssr_min_tout;
+                if (p_min_ssr_tout) {
+                    *p_min_ssr_tout = p_cb->kdev[i].dscp_info.ssr_min_tout;
+                }
             }
 
-            status           = BTA_HH_OK;
-
+            status = BTA_HH_OK;
             break;
         }
     }
@@ -463,7 +480,7 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status)
 
     if (bta_hh_cb.p_cback) {
         (*bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, (tBTA_HH*)&status);
-        /* all connections are down, no waiting for diconnect */
+        /* all connections are down, no waiting for disconnect */
         memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
     }
 }
@@ -528,4 +545,4 @@ void bta_hh_trace_dev_db(void)
     APPL_TRACE_DEBUG("*********************************************************");
 }
 #endif
-#endif /* HL_INCLUDED */
+#endif /* BTA_HH_INCLUDED */

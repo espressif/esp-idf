@@ -46,6 +46,8 @@ typedef struct {
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
+    int (* _debug_matrix_init)(int event, int signal, bool rev);
+    int (* _xtal_freq_get)(void);
     int32_t _magic;
 } coex_adapter_funcs_t;
 

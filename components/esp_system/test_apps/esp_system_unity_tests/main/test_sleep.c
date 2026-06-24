@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,30 +8,40 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "esp_sleep.h"
-#include "driver/rtc_io.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "soc/gpio_periph.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "driver/uart.h"
+#include "driver/rtc_io.h"
+#include "driver/gpio.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
+#include "soc/soc_caps.h"
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
-#include "esp_private/uart_share_hw_ctrl.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 
-#if SOC_DEEP_SLEEP_SUPPORTED
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_cpu.h"
+#endif
+
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #else
@@ -42,68 +52,15 @@
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
-static void check_sleep_reset(void)
+/////////////////////////// Light Sleep Test Cases ////////////////////////////////////
+#if SOC_LIGHT_SLEEP_SUPPORTED
+TEST_CASE("wake up from light sleep using timer", "[lightsleep]")
 {
-    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
-}
-
-#ifndef CONFIG_FREERTOS_UNICORE
-static void deep_sleep_task(void *arg)
-{
-    esp_deep_sleep_start();
-}
-
-static void do_deep_sleep_from_app_cpu(void)
-{
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sleep_enable_timer_wakeup(UINT64_MAX));
+    uint64_t lp_timer_max_allowed_time_in_us = ((BIT64(SOC_LP_TIMER_BIT_WIDTH_LO + SOC_LP_TIMER_BIT_WIDTH_HI) - 1) / esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX)) * MHZ;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sleep_enable_timer_wakeup(lp_timer_max_allowed_time_in_us));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sleep_enable_timer_wakeup(lp_timer_max_allowed_time_in_us + 1));
     esp_sleep_enable_timer_wakeup(2000000);
-
-    xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
-
-#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
-    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
-    vTaskPreemptionDisable(NULL);
-#else
-    // keep running some non-IRAM code
-    vTaskSuspendAll();
-#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
-
-    while (true) {
-        ;
-    }
-}
-
-TEST_CASE_MULTIPLE_STAGES("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
-                          do_deep_sleep_from_app_cpu,
-                          check_sleep_reset)
-
-#endif
-
-#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
-static void do_deep_sleep_timer(void)
-{
-    esp_sleep_enable_timer_wakeup(2000000);
-    esp_deep_sleep_start();
-}
-
-TEST_CASE_MULTIPLE_STAGES("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
-                          do_deep_sleep_timer,
-                          check_sleep_reset)
-
-static void do_light_sleep_deep_sleep_timer(void)
-{
-    esp_sleep_enable_timer_wakeup(1000000);
-    esp_light_sleep_start();
-    esp_deep_sleep_start();
-}
-
-TEST_CASE_MULTIPLE_STAGES("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]",
-                          do_light_sleep_deep_sleep_timer,
-                          check_sleep_reset)
-
-TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
-{
-    esp_sleep_enable_timer_wakeup(2000000);
-    struct timeval tv_start, tv_stop;
     gettimeofday(&tv_start, NULL);
     esp_light_sleep_start();
     gettimeofday(&tv_stop, NULL);
@@ -111,7 +68,6 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
-#endif
 
 //NOTE: Explained in IDF-1445 | MR !14996
 #if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
@@ -128,7 +84,7 @@ static void test_light_sleep(void* arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("light sleep stress test", "[deepsleep]")
+TEST_CASE("light sleep stress test", "[lightsleep]")
 {
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
     esp_sleep_enable_timer_wakeup(1000);
@@ -140,6 +96,7 @@ TEST_CASE("light sleep stress test", "[deepsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);  // Give some time for the test task to suspend itself
     vSemaphoreDelete(done);
 }
 
@@ -148,7 +105,7 @@ static void timer_func(void* arg)
     esp_rom_delay_us(50);
 }
 
-TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
+TEST_CASE("light sleep stress test with periodic esp_timer", "[lightsleep]")
 {
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
     esp_sleep_enable_timer_wakeup(1000);
@@ -166,6 +123,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     xSemaphoreTake(done, portMAX_DELAY);
 #endif
+    vTaskDelay(10 / portTICK_PERIOD_MS);  // Give some time for the test task to suspend itself
     vSemaphoreDelete(done);
     esp_timer_stop(timer);
     esp_timer_delete(timer);
@@ -178,7 +136,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 #define MAX_SLEEP_TIME_ERROR_US 100
 #endif
 
-TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
+TEST_CASE("light sleep duration is correct", "[lightsleep][ignore]")
 {
     // don't power down XTAL — powering it up takes different time on
     // different boards
@@ -217,7 +175,7 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
     }
 }
 
-TEST_CASE("light sleep and frequency switching", "[deepsleep]")
+TEST_CASE("light sleep and frequency switching", "[lightsleep]")
 {
 #ifndef CONFIG_PM_ENABLE
     uart_sclk_t clk_source = UART_SCLK_DEFAULT;
@@ -226,12 +184,13 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 #elif SOC_UART_SUPPORT_XTAL_CLK
     clk_source = UART_SCLK_XTAL;
 #endif
-    HP_UART_SRC_CLK_ATOMIC() {
+    esp_clk_tree_enable_src((soc_module_clk_t)clk_source, true);
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
     uint32_t sclk_freq;
     TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
-    HP_UART_SRC_CLK_ATOMIC() {
+    PERIPH_RCC_ATOMIC() {
         uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
     }
 #endif
@@ -253,141 +212,7 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     }
 }
 
-#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
-static void do_deep_sleep(void)
-{
-    esp_sleep_enable_timer_wakeup(100000);
-    esp_deep_sleep_start();
-}
-
-static void check_sleep_reset_and_sleep(void)
-{
-    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
-    esp_sleep_enable_timer_wakeup(100000);
-    esp_deep_sleep_start();
-}
-
-TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=DEEPSLEEP_RESET,DEEPSLEEP_RESET,DEEPSLEEP_RESET]",
-                          do_deep_sleep,
-                          check_sleep_reset_and_sleep,
-                          check_sleep_reset_and_sleep,
-                          check_sleep_reset);
-
-static void do_abort(void)
-{
-    abort();
-}
-
-static void check_abort_reset_and_sleep(void)
-{
-    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
-    esp_sleep_enable_timer_wakeup(100000);
-    esp_deep_sleep_start();
-}
-
-TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abort,SW_CPU_RESET,DEEPSLEEP_RESET]",
-                          do_abort,
-                          check_abort_reset_and_sleep,
-                          check_sleep_reset);
-#endif
-
-#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
-static RTC_DATA_ATTR uint32_t s_wake_stub_var;
-
-static RTC_IRAM_ATTR void wake_stub(void)
-{
-    esp_default_wake_deep_sleep();
-    s_wake_stub_var = (uint32_t) &wake_stub;
-}
-
-static void prepare_wake_stub(void)
-{
-    esp_set_deep_sleep_wake_stub(&wake_stub);
-    esp_sleep_enable_timer_wakeup(100000);
-    esp_deep_sleep_start();
-}
-
-static void check_wake_stub(void)
-{
-    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
-    TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
-#if !CONFIG_IDF_TARGET_ESP32S3 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
-    /* ROM code clears wake stub entry address */
-    TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
-#endif
-}
-
-TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
-                          prepare_wake_stub,
-                          check_wake_stub);
-
-#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-
-/* Version of prepare_wake_stub() that sets up the deep sleep call while running
-   from RTC memory as stack, with a high frequency timer also writing RTC FAST
-   memory.
-
-   This is important because the ROM code (ESP32 & ESP32-S2) requires software
-   trigger a CRC calculation (done in hardware) for the entire RTC FAST memory
-   before going to deep sleep and if it's invalid then the stub is not
-   run. Also, while the CRC is being calculated the RTC FAST memory is not
-   accesible by the CPU (reads all zeros).
-*/
-
-static void increment_rtc_memory_cb(void *arg)
-{
-    static volatile RTC_FAST_ATTR unsigned counter;
-    counter++;
-}
-
-static void prepare_wake_stub_from_rtc(void)
-{
-    /* RTC memory can be used as heap, however there is no API call that returns this as
-       a memory capability (as it's an implementation detail). So to test this we need to allocate
-       the stack statically.
-    */
-#define STACK_SIZE 1500
-#if CONFIG_IDF_TARGET_ESP32S3
-    uint8_t *sleep_stack = (uint8_t *)heap_caps_malloc(STACK_SIZE, MALLOC_CAP_RTCRAM);
-    TEST_ASSERT((uint32_t)sleep_stack >= SOC_RTC_DRAM_LOW && (uint32_t)sleep_stack < SOC_RTC_DRAM_HIGH);
-#else
-    static RTC_FAST_ATTR uint8_t sleep_stack[STACK_SIZE];
-#endif
-    static RTC_FAST_ATTR StaticTask_t sleep_task;
-
-    /* normally BSS like sleep_stack will be cleared on reset, but RTC memory is not cleared on
-     * wake from deep sleep. So to ensure unused stack is different if test is re-run without a full reset,
-     * fill with some random bytes
-     */
-    esp_fill_random(sleep_stack, STACK_SIZE);
-
-    /* to make things extra sure, start a periodic timer to write to RTC FAST RAM at high frequency */
-    const esp_timer_create_args_t timer_args = {
-        .callback = increment_rtc_memory_cb,
-        .arg = NULL,
-        .dispatch_method = ESP_TIMER_TASK,
-        .name = "Write RTC MEM"
-    };
-    esp_timer_handle_t timer;
-    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 200));
-
-    printf("Creating test task with stack %p\n", sleep_stack);
-    TEST_ASSERT_NOT_NULL(xTaskCreateStatic((void *)prepare_wake_stub, "sleep", STACK_SIZE, NULL,
-                                           UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_FAIL_MESSAGE("Should be asleep by now");
-}
-
-TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[deepsleep][reset=DEEPSLEEP_RESET]",
-                          prepare_wake_stub_from_rtc,
-                          check_wake_stub);
-
-#endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-#endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
-
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-
 __attribute__((unused)) static float get_time_ms(void)
 {
     gettimeofday(&tv_stop, NULL);
@@ -411,7 +236,7 @@ __attribute__((unused)) static uint32_t get_cause(void)
 // Fails on S2 IDF-2903
 
 // This test case verifies deactivation of trigger for wake up sources
-TEST_CASE("disable source trigger behavior", "[deepsleep]")
+TEST_CASE("disable source trigger behavior", "[lightsleep]")
 {
     float dt = 0;
 
@@ -483,15 +308,260 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
 }
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
-
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+#if CONFIG_SPIRAM
+static void test_psram_accessible_after_lightsleep(void)
+{
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    TEST_ESP_OK(sleep_cpu_configure(true));
+#endif
+
+    // Verify PSRAM was not corrupted after light sleep
+    uint8_t *psram_data = (uint8_t *)heap_caps_malloc(1024 * 1024, MALLOC_CAP_SPIRAM);
+    uint8_t test_pattern = 0x5a;
+    for (int i = 0; i < 5; i++) {
+        memset(psram_data, test_pattern, 1024 * 1024);
+        esp_sleep_enable_timer_wakeup(100 * 1000);
+        esp_light_sleep_start();
+        for (int j = 0; j < (1024 * 1024); j++) {
+            TEST_ASSERT_EQUAL(test_pattern, psram_data[j]);
+        }
+        test_pattern = ~test_pattern;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
+    }
+    free(psram_data);
+
+    // Verify that all addresses in PSRAM are accessible after light sleep
+    esp_sleep_enable_timer_wakeup(100 * 1000);
+    esp_light_sleep_start();
+    TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+
+    TEST_ASSERT_EQUAL(true, esp_psram_extram_test());
+
+    esp_sleep_set_sleep_context(NULL);
+    esp_restart();
+}
+
+static void restart_for_reinit_psram(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    printf("PSRAM survives after lightsleep test - OK\n");
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test PSRAM survives after lightsleep", "[lightsleep]",
+                          test_psram_accessible_after_lightsleep,
+                          restart_for_reinit_psram);
+#endif
+
+#endif // SOC_LIGHT_SLEEP_SUPPORTED
+
+/////////////////////////// Deep Sleep Test Cases ////////////////////////////////////
+#if SOC_DEEP_SLEEP_SUPPORTED
+static void check_sleep_reset(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+}
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static void deep_sleep_task(void *arg)
+{
+    esp_deep_sleep_start();
+}
+
+static void do_deep_sleep_from_app_cpu(void)
+{
+    esp_sleep_enable_timer_wakeup(2000000);
+
+    xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
+
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
+    // keep running some non-IRAM code
+    vTaskSuspendAll();
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
+
+    while (true) {
+        ;
+    }
+}
+
+TEST_CASE_MULTIPLE_STAGES("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          do_deep_sleep_from_app_cpu,
+                          check_sleep_reset)
+
+#endif
+
+static void do_deep_sleep_timer(void)
+{
+    esp_sleep_enable_timer_wakeup(2000000);
+    esp_deep_sleep_start();
+}
+
+TEST_CASE_MULTIPLE_STAGES("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          do_deep_sleep_timer,
+                          check_sleep_reset)
+
+static void do_light_sleep_deep_sleep_timer(void)
+{
+    esp_sleep_enable_timer_wakeup(1000000);
+    esp_light_sleep_start();
+    esp_deep_sleep_start();
+}
+
+TEST_CASE_MULTIPLE_STAGES("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          do_light_sleep_deep_sleep_timer,
+                          check_sleep_reset)
+
+static void do_deep_sleep(void)
+{
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+static void check_sleep_reset_and_sleep(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=DEEPSLEEP_RESET,DEEPSLEEP_RESET,DEEPSLEEP_RESET]",
+                          do_deep_sleep,
+                          check_sleep_reset_and_sleep,
+                          check_sleep_reset_and_sleep,
+                          check_sleep_reset);
+
+static void do_abort(void)
+{
+    abort();
+}
+
+static void check_abort_reset_and_sleep(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abort,SW_CPU_RESET,DEEPSLEEP_RESET]",
+                          do_abort,
+                          check_abort_reset_and_sleep,
+                          check_sleep_reset);
+
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+static RTC_DATA_ATTR uint32_t s_wake_stub_var;
+
+static RTC_IRAM_ATTR void wake_stub(void)
+{
+    esp_default_wake_deep_sleep();
+    s_wake_stub_var = (uint32_t) &wake_stub;
+}
+
+static void prepare_wake_stub(void)
+{
+    esp_set_deep_sleep_wake_stub(&wake_stub);
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+static void check_wake_stub(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+    TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
+#if !CONFIG_IDF_TARGET_ESP32S3 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+    /* ROM code clears wake stub entry address */
+    TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
+#endif
+}
+
+TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          prepare_wake_stub,
+                          check_wake_stub);
+
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+
+/* Version of prepare_wake_stub() that sets up the deep sleep call while running
+   from RTC memory as stack, with a high frequency timer also writing RTC FAST
+   memory.
+
+   This is important because the ROM code (ESP32 & ESP32-S2) requires software
+   trigger a CRC calculation (done in hardware) for the entire RTC FAST memory
+   before going to deep sleep and if it's invalid then the stub is not
+   run. Also, while the CRC is being calculated the RTC FAST memory is not
+   accessible by the CPU (reads all zeros).
+*/
+
+static void increment_rtc_memory_cb(void *arg)
+{
+    static volatile RTC_FAST_ATTR unsigned counter;
+    counter++;
+}
+
+static void prepare_wake_stub_from_rtc(void)
+{
+    /* RTC memory can be used as heap, however there is no API call that returns this as
+       a memory capability (as it's an implementation detail). So to test this we need to allocate
+       the stack statically.
+    */
+#define STACK_SIZE 1500
+#if CONFIG_IDF_TARGET_ESP32S3
+    uint8_t *sleep_stack = (uint8_t *)heap_caps_malloc(STACK_SIZE, MALLOC_CAP_RTCRAM);
+    TEST_ASSERT((uint32_t)sleep_stack >= SOC_RTC_DRAM_LOW && (uint32_t)sleep_stack < SOC_RTC_DRAM_HIGH);
+#else
+    static RTC_FAST_ATTR uint8_t sleep_stack[STACK_SIZE];
+#endif
+    static RTC_FAST_ATTR StaticTask_t sleep_task;
+
+    /* normally BSS like sleep_stack will be cleared on reset, but RTC memory is not cleared on
+     * wake from deep sleep. So to ensure unused stack is different if test is re-run without a full reset,
+     * fill with some random bytes
+     */
+    esp_fill_random(sleep_stack, STACK_SIZE);
+
+    /* to make things extra sure, start a periodic timer to write to RTC FAST RAM at high frequency */
+    const esp_timer_create_args_t timer_args = {
+        .callback = increment_rtc_memory_cb,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "Write RTC MEM"
+    };
+    esp_timer_handle_t timer;
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 200));
+
+    printf("Creating test task with stack %p\n", sleep_stack);
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic((void *)prepare_wake_stub, "sleep", STACK_SIZE, NULL,
+                                           UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    TEST_FAIL_MESSAGE("Should be asleep by now");
+}
+
+TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[deepsleep][reset=DEEPSLEEP_RESET]",
+                          prepare_wake_stub_from_rtc,
+                          check_wake_stub);
+
+#endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+#endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
 static void trigger_deepsleep(void)
 {
     struct timeval start;
 
     // Use NVS instead of RTC mem to store the start time of deep sleep
-    // Beacuse not all esp chips support RTC mem(such as esp32c2)
+    // Because not all esp chips support RTC mem(such as esp32c2)
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

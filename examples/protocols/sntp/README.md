@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-H2 |
+| ----------------- | ----- | -------- |
 
 # Example: using LwIP SNTP module and time functions
 
@@ -9,7 +9,7 @@ This example demonstrates the use of LwIP SNTP module to obtain time from Intern
 
 Open the project configuration menu (`idf.py menuconfig`):
 
-* Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+* Configure Wi-Fi or Ethernet or Thread under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet or Thread Connection" section in [examples/protocols/README.md](../README.md) for more details.
 
 * Select one method to synchronize time out of the three available in `CONFIG_SNTP_TIME_SYNC_METHOD` (default `update time immediately when received`).
 
@@ -27,7 +27,7 @@ or to prefer local servers and reduce traffic to the outer world.
 See following menuconfig options:
  * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers`
  * `Component config-->LWIP-->SNTP-->Request NTP servers from DHCP`
- * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers aquired via DHCP`
+ * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers acquired via DHCP`
  * `Component config-->LWIP-->Enable LWIP Debug-->Enable SNTP debug messages`
 
 Please note, that `dhcp_set_ntp_servers()` does not only set NTP servers provided by DHCP, but also resets all other NTP server configured before. If you want to keep both manually configured and DHCP obtained NTP servers, please use the API in this order:
@@ -82,6 +82,15 @@ This example can use 3 time synchronization method:
 - `sntp_set_time_sync_notification_cb()` - use this function to set a callback function to notify about the time synchronization process.
 - `sntp_get_sync_status()` and `sntp_set_sync_status()` - get/set time synchronization status.
 - `sntp_get_sync_mode()` and `sntp_set_sync_mode()` - get/set the sync mode. Allowable two mode: `SNTP_SYNC_MODE_IMMED` and `SNTP_SYNC_MODE_SMOOTH`.
+
+## Events
+
+The esp-netif SNTP wrapper emits an event when the system time is synchronized:
+
+- Event base: `NETIF_SNTP_EVENT`
+- Event ID: `NETIF_SNTP_TIME_SYNC`
+
+Register a handler after creating the default event loop (the event data is a pointer to `esp_netif_sntp_time_sync_t` containing the synchronized `timeval`). You can convert the timeval to human-readable local time or UTC if desired using `localtime_r()`/`gmtime_r()`.
 
 ## Mode of update time
 

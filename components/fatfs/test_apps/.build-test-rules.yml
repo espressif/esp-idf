@@ -1,5 +1,23 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/fatfs/test_apps/bdl:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+  depends_components:
+    - esp_blockdev
+    - esp_partition
+    - fatfs
+    - vfs
+
+components/fatfs/test_apps/dyn_buffers:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target required
+
+  depends_components:
+    - fatfs
+
 components/fatfs/test_apps/flash_ro:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
@@ -7,26 +25,24 @@ components/fatfs/test_apps/flash_ro:
 
   depends_components:
     - esp_partition
-    - spi_flash
     - fatfs
     - vfs
 
 components/fatfs/test_apps/flash_wl:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "linux"]
       reason: only one target per arch needed
   depends_components:
     - esp_partition
-    - spi_flash
     - fatfs
     - vfs
     - wear_leveling
 
 components/fatfs/test_apps/sdcard:
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: SOC_GPSPI_SUPPORTED != 1
       temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7501
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true

@@ -12,8 +12,8 @@ extern "C" {
 #define TEST_LCD_H_RES          128
 #define TEST_LCD_V_RES          64
 
-#define TEST_I2C_SDA_GPIO       0
-#define TEST_I2C_SCL_GPIO       2
+#define TEST_I2C_SDA_GPIO       GPIO_NUM_0
+#define TEST_I2C_SCL_GPIO       GPIO_NUM_2
 
 #define TEST_I2C_HOST_ID        0
 

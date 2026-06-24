@@ -2,7 +2,7 @@
 # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html
 # The following five lines of boilerplate have to be in your project's
 # CMakeLists in this exact order for cmake to work correctly
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
@@ -16,7 +16,17 @@ else()
 endif()
 
 # Force this project to use only G0 components
-set(all_g0_components esp_rom soc hal esp_common main)  # also <arch>, i.e. xtensa or riscv, will be added below
+# also <arch>, i.e. xtensa or riscv, will be added below
+set(all_g0_components esp_rom soc hal esp_common main)
+# more esp_hal_* components
+file(GLOB esp_hal_component_dirs "${idf_path}/components/esp_hal_*")
+foreach(hal_dir ${esp_hal_component_dirs})
+    if(IS_DIRECTORY ${hal_dir} AND EXISTS "${hal_dir}/CMakeLists.txt")
+        get_filename_component(hal_name ${hal_dir} NAME)
+        list(APPEND all_g0_components ${hal_name})
+    endif()
+endforeach()
+
 set(COMPONENTS ${all_g0_components})
 
 # By default, common components include some G1+ components. Override common components to only have G0 ones
@@ -26,9 +36,21 @@ idf_build_set_property(__BUILD_COMPONENT_DEPGRAPH_ENABLED 1)
 
 project(g0_components)
 
-if(CONFIG_IDF_TARGET_ESP32C2)
-    # clk_tree hal-driver needs CONFIG_XTAL_FREQ
-    idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_XTAL_FREQ=26" APPEND)
+# CONFIG_ESP_REV_MIN_FULL and CONFIG_XTAL_FREQ live in esp_common's Kconfig,
+# which is outside the G0 closure. When that Kconfig is not loaded the
+# symbols are absent from sdkconfig.h and the G0 sources need them on the
+# command line. When every component's Kconfig is processed (IDF_BUILD_V2)
+# the symbols are already defined via their Kconfig defaults; injecting
+# them again would conflict, so skip the injection.
+if(NOT IDF_BUILD_V2)
+    if(CONFIG_IDF_TARGET_ESP32P4)
+        idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_ESP_REV_MIN_FULL=300" APPEND)
+    endif()
+
+    if(CONFIG_IDF_TARGET_ESP32C2)
+        # clk_tree hal-driver needs CONFIG_XTAL_FREQ
+        idf_build_set_property(C_COMPILE_OPTIONS "-DCONFIG_XTAL_FREQ=26" APPEND)
+    endif()
 endif()
 
 # Currently, only support a single core on Xtensa targets.

@@ -1,0 +1,120 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+// The HAL layer for RTC IO (common part)
+
+#include "hal/rtc_io_hal.h"
+#include "soc/soc_caps.h"
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+void rtcio_hal_set_direction(int rtcio_num, rtc_gpio_mode_t mode)
+{
+    switch (mode) {
+    case RTC_GPIO_MODE_INPUT_ONLY:
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
+        rtcio_ll_output_disable(rtcio_num);
+        rtcio_ll_input_enable(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_OUTPUT_ONLY:
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
+        rtcio_ll_output_enable(rtcio_num);
+        rtcio_ll_input_disable(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_INPUT_OUTPUT:
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
+        rtcio_ll_output_enable(rtcio_num);
+        rtcio_ll_input_enable(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_DISABLED:
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_NORMAL);
+        rtcio_ll_output_disable(rtcio_num);
+        rtcio_ll_input_disable(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_OUTPUT_OD:
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_OD);
+        rtcio_ll_output_enable(rtcio_num);
+        rtcio_ll_input_disable(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_INPUT_OUTPUT_OD:
+        rtcio_ll_output_mode_set(rtcio_num, RTCIO_LL_OUTPUT_OD);
+        rtcio_ll_output_enable(rtcio_num);
+        rtcio_ll_input_enable(rtcio_num);
+        break;
+    default:
+        break;
+    }
+}
+
+void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode)
+{
+    switch (mode) {
+    case RTC_GPIO_MODE_INPUT_ONLY:
+        rtcio_ll_enable_input_in_sleep(rtcio_num);
+        rtcio_ll_disable_output_in_sleep(rtcio_num);
+        rtcio_ll_enable_sleep_setting(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_OUTPUT_ONLY:
+        rtcio_ll_enable_output_in_sleep(rtcio_num);
+        rtcio_ll_disable_input_in_sleep(rtcio_num);
+        rtcio_ll_enable_sleep_setting(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_INPUT_OUTPUT:
+        rtcio_ll_enable_input_in_sleep(rtcio_num);
+        rtcio_ll_enable_output_in_sleep(rtcio_num);
+        rtcio_ll_enable_sleep_setting(rtcio_num);
+        break;
+    case RTC_GPIO_MODE_DISABLED:
+        rtcio_ll_disable_input_in_sleep(rtcio_num);
+        rtcio_ll_disable_output_in_sleep(rtcio_num);
+        rtcio_ll_disable_sleep_setting(rtcio_num);
+        break;
+    default:
+        break;
+    }
+}
+
+void rtcio_hal_isolate(int rtcio_num)
+{
+    rtcio_ll_pullup_disable(rtcio_num);
+    rtcio_ll_pulldown_disable(rtcio_num);
+    rtcio_ll_output_disable(rtcio_num);
+    rtcio_ll_input_disable(rtcio_num);
+}
+
+void rtcio_hal_iomux_input(int rtcio_num, int func, uint32_t signal_idx)
+{
+    rtcio_ll_input_enable(rtcio_num);
+    rtcio_ll_iomux_func_sel(rtcio_num, func);
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+    rtcio_ll_set_input_signal_from(signal_idx, false);
+#endif
+}
+
+void rtcio_hal_iomux_output(int rtcio_num, int func)
+{
+    rtcio_ll_iomux_func_sel(rtcio_num, func);
+    // as long as the func sel is not RTC IO, the oe can only be controlled by the peripheral
+}
+
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+void rtcio_hal_matrix_in(int rtcio_num, uint32_t signal_idx, bool inv)
+{
+    if (rtcio_num < SOC_RTCIO_PIN_COUNT) {
+        rtcio_ll_input_enable(rtcio_num);
+    }
+    rtcio_ll_set_input_signal_matrix_source(rtcio_num, signal_idx, inv);
+}
+
+void rtcio_hal_matrix_out(int rtcio_num, uint32_t signal_idx, bool out_inv, bool oen_inv)
+{
+    rtcio_ll_iomux_func_sel(rtcio_num, RTCIO_LL_PIN_FUNC);
+    rtcio_ll_set_output_signal_matrix_source(rtcio_num, signal_idx, out_inv);
+    rtcio_ll_set_output_enable_ctrl(rtcio_num, true, oen_inv); // output is enabled at the end to avoid undesired level change
+}
+#endif // SOC_LP_GPIO_MATRIX_SUPPORTED
+
+#endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

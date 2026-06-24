@@ -9,7 +9,7 @@
 应用示例
 -------------------
 
-:example:`storage/wear_levelling` 中提供了一款磨损均衡驱动与 FatFs 库结合使用的示例。该示例初始化磨损均衡驱动，挂载 FAT 文件系统分区，并使用 POSIX（可移植操作系统接口）和 C 库 API 从中写入和读取数据。如需了解更多信息，请参考 :example_file:`storage/wear_levelling/README.md`。
+:example:`storage/wear_levelling` 演示了如何使用磨损均衡库和 FatFS 库在分区中存储文件，并使用 POSIX 和 C 库 API 从中写入和读取数据。
 
 高级 API 参考
 ------------------------

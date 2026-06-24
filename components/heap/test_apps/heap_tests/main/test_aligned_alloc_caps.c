@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <inttypes.h>
 
-TEST_CASE("Capabilities aligned allocator test", "[heap]")
+TEST_CASE("Capabilities aligned allocator test", "[heap][psram]")
 {
     uint32_t alignments = 0;
 
@@ -29,7 +29,7 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
         uint8_t *buf = (uint8_t *)memalign(alignments, (alignments + 137));
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", alignments);
         } else {
             TEST_ASSERT( buf != NULL );
             printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
@@ -45,10 +45,6 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
         }
     }
 
-    //Alloc from a non permitted area:
-    uint32_t *not_permitted_buf = (uint32_t *)heap_caps_aligned_alloc(alignments, (alignments + 137), MALLOC_CAP_EXEC | MALLOC_CAP_32BIT);
-    TEST_ASSERT( not_permitted_buf == NULL );
-
 #if CONFIG_SPIRAM
     alignments = 0;
     printf("[ALIGNED_ALLOC] Allocating from external memory: \n");
@@ -58,7 +54,7 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
         uint8_t *buf = (uint8_t *)heap_caps_aligned_alloc(alignments, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", alignments);
         } else {
             TEST_ASSERT( buf != NULL );
             printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
@@ -86,7 +82,7 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
         uint8_t *buf = (uint8_t *)heap_caps_aligned_calloc(alignments, 1, (alignments + 137), MALLOC_CAP_DEFAULT);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", alignments);
         } else {
             TEST_ASSERT( buf != NULL );
             printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);
@@ -126,7 +122,7 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
         uint8_t *buf = (uint8_t *)(uint8_t *)heap_caps_aligned_calloc(alignments, 1, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
             TEST_ASSERT( buf == NULL );
-            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", aligments);
+            //printf("[ALIGNED_ALLOC] alignment: %"PRIu32" is not a power of two, don't allow allocation \n", alignments);
         } else {
             TEST_ASSERT( buf != NULL );
             printf("[ALIGNED_ALLOC] alignment required: %"PRIu32" \n", alignments);

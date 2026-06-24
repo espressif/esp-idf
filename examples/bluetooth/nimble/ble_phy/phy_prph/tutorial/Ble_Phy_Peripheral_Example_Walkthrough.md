@@ -78,8 +78,10 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist = 1;
 #endif
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init_le_phy();
     assert(rc == 0);
+#endif
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("bleprph-phy");
@@ -166,8 +168,8 @@ esp_err_t esp_nimble_init(void)
 The host is configured by setting up the callbacks on Stack-reset, Stack-sync, registration of each GATT resource, and storage status.
 
 ```c
- ble_hs_cfg.reset_cb = blecent_on_reset;
- ble_hs_cfg.sync_cb = blecent_on_sync;
+ ble_hs_cfg.reset_cb = bleprph_on_reset;
+ ble_hs_cfg.sync_cb = bleprph_on_sync;
  ble_hs_cfg.gatts_register_cb = gatt_svr_register_cb;
  ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 ```
@@ -221,10 +223,10 @@ nimble_port_freertos_init(bleprph_host_task);
 
 
 ## Intializaion of LE PHY to Default 1M PHY.
- 1M PHY is the default PHY for BLE devices which enables it to provide a data rate of 1 Mbps. It is used while establishing the connection between devices and maintains backward compatibility with all those devices that don't have BLE5.0 support.`set_default_le_phy_before_conn()` function set default LE PHY before establishing a connection.
+ 1M PHY is the default PHY for BLE devices which enables it to provide a data rate of 1 Mbps. It is used while establishing the connection between devices and maintains backward compatibility with all those devices that don't have BLE5.0 support.`set_default_le_phy()` function set default LE PHY before establishing a connection.
 
 ```c
-void set_default_le_phy_before_conn(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
+void set_default_le_phy(uint8_t tx_phys_mask, uint8_t rx_phys_mask)
  {
     int rc = ble_gap_set_prefered_default_le_phy(tx_phys_mask, rx_phys_mask);
      if (rc == 0) 
@@ -252,15 +254,14 @@ As the phy_cent disconnects the connection link with the peripheral, `BLE_GAP_EV
 
         /* Connection terminated; resume advertising. */
 
-#if CONFIG_EXAMPLE_EXTENDED_ADV
         switch (s_current_phy) {
         case BLE_HCI_LE_PHY_1M_PREF_MASK:
-            /* Setting current phy to create a connection on 2M PHY */
+            /* Setting current phy to create connection on 2M PHY */
             s_current_phy = BLE_HCI_LE_PHY_2M_PREF_MASK;
             break;
 
         case BLE_HCI_LE_PHY_2M_PREF_MASK:
-            /* Setting current phy to create a connection on CODED PHY */
+            /* Setting current phy to create connection on CODED PHY */
             s_current_phy = BLE_HCI_LE_PHY_CODED_PREF_MASK;
             break;
 
@@ -270,11 +271,8 @@ As the phy_cent disconnects the connection link with the peripheral, `BLE_GAP_EV
         default:
             return 0;
         }
-        set_default_le_phy_before_conn(s_current_phy, s_current_phy);
+
         ext_bleprph_advertise();
-#else
-        bleprph_advertise();
-#endif
 ```
 
 
@@ -291,19 +289,22 @@ ext_bleprph_advertise(void)
 {
     struct ble_gap_ext_adv_params params;
     struct os_mbuf *data = NULL;
-    uint8_t instance = 1;
+    uint8_t instance = 0;
     int rc;
 
     /* use defaults for non-set params */
     memset (&params, 0, sizeof(params));
 
-    /* enable connectable advertising */
-    params.connectable = 1;
-    params.scannable = 1;
-    params.legacy_pdu = 1;
+    if (s_current_phy == BLE_HCI_LE_PHY_1M_PREF_MASK) {
+         params.scannable = 1;
+         params.legacy_pdu = 1;
+    }
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /*enable connectable advertising for all Phy*/
+    params.connectable = 1;
+
+    /* advertise using the inferred address type */
+    params.own_addr_type = own_addr_type;
 
     /* Set current phy; get mbuf for scan rsp data; fill mbuf with scan rsp data */
     switch (s_current_phy) {
@@ -311,23 +312,23 @@ ext_bleprph_advertise(void)
         params.primary_phy = BLE_HCI_LE_PHY_1M;
         params.secondary_phy = BLE_HCI_LE_PHY_1M;
         data = ext_get_data(ext_adv_pattern_1M, sizeof(ext_adv_pattern_1M));
+        params.sid = 0;
         break;
 
     case BLE_HCI_LE_PHY_2M_PREF_MASK:
         params.primary_phy = BLE_HCI_LE_PHY_1M;
         params.secondary_phy = BLE_HCI_LE_PHY_2M;
         data = ext_get_data(ext_adv_pattern_2M, sizeof(ext_adv_pattern_2M));
+        params.sid = 1;
         break;
 
     case BLE_HCI_LE_PHY_CODED_PREF_MASK:
         params.primary_phy = BLE_HCI_LE_PHY_CODED;
         params.secondary_phy = BLE_HCI_LE_PHY_CODED;
         data = ext_get_data(ext_adv_pattern_coded, sizeof(ext_adv_pattern_coded));
+        params.sid = 2;
         break;
     }
-
-    //params.tx_power = 127;
-    params.sid = 1;
 
     params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
     params.itvl_max = BLE_GAP_ADV_FAST_INTERVAL1_MIN;

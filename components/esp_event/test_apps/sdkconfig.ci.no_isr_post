@@ -1,0 +1,2 @@
+# This configuration checks the event loop if posting from ISR is disabled
+CONFIG_ESP_EVENT_POST_FROM_ISR=n

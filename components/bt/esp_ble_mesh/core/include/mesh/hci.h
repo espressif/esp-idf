@@ -112,7 +112,11 @@ struct bt_mesh_hci_cp_set_adv_param {
 #define BLE_MESH_HCI_OP_SET_ADV_DATA        BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0008)
 struct bt_mesh_hci_cp_set_adv_data {
     uint8_t len;
+#if CONFIG_BLE_MESH_LONG_PACKET
+    uint8_t data[2 + CONFIG_BLE_MESH_LONG_PACKET_ADV_LEN];
+#else
     uint8_t data[31];
+#endif
 } __attribute__((packed));
 
 #define BLE_MESH_HCI_OP_SET_SCAN_RSP_DATA   BLE_MESH_OP(BLE_MESH_OGF_LE, 0x0009)

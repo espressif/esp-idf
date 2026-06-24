@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #pragma once
@@ -68,5 +68,5 @@
 #define I2C_DIG_REG_XPD_DIG_REG_LSB 3
 
 #define I2C_DIG_REG_SCK_DCAP        14
-#define I2C_DIG_REG_SCK_DCAP_MSB	7
-#define I2C_DIG_REG_SCK_DCAP_LSB	0
+#define I2C_DIG_REG_SCK_DCAP_MSB    7
+#define I2C_DIG_REG_SCK_DCAP_LSB    0

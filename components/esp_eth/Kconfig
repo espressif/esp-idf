@@ -13,87 +13,19 @@ menu "Ethernet"
             ESP32 integrates a 10/100M Ethernet MAC controller.
 
     if ETH_USE_ESP32_EMAC
-        choice ETH_PHY_INTERFACE
-            prompt "PHY interface"
-            default ETH_PHY_INTERFACE_RMII
-            help
-                Select the communication interface between MAC and PHY chip.
-
-            config ETH_PHY_INTERFACE_RMII
-                bool "Reduced Media Independent Interface (RMII)"
-        endchoice
-
-        if ETH_PHY_INTERFACE_RMII
-            choice ETH_RMII_CLK_MODE
-                depends on IDF_TARGET_ESP32
-                prompt "RMII clock mode"
-                default ETH_RMII_CLK_INPUT
-                help
-                    Select external or internal RMII clock.
-
-                config ETH_RMII_CLK_INPUT
-                    bool "Input RMII clock from external"
-                    help
-                        MAC will get RMII clock from outside.
-                        Note that ESP32 only supports GPIO0 to input the RMII clock.
-
-                config ETH_RMII_CLK_OUTPUT
-                    bool "Output RMII clock from internal"
-                    help
-                        ESP32 can generate RMII clock by internal APLL.
-                        This clock can be routed to the external PHY device.
-                        ESP32 supports to route the RMII clock to GPIO0/16/17.
-            endchoice
-        endif # ETH_PHY_INTERFACE_RMII
-
-        if ETH_RMII_CLK_INPUT
-            config ETH_RMII_CLK_IN_GPIO
-                depends on IDF_TARGET_ESP32
-                int
-                range 0 0
-                default 0
-                help
-                    ESP32 only supports GPIO0 to input the RMII clock.
-        endif # ETH_RMII_CLK_INPUT
-
-        if ETH_RMII_CLK_OUTPUT
-            config ETH_RMII_CLK_OUTPUT_GPIO0
-                depends on IDF_TARGET_ESP32
-                bool "Output RMII clock from GPIO0 (Experimental!)"
-                default n
-                help
-                    GPIO0 can be set to output a pre-divided PLL clock (test only!).
-                    Enabling this option will configure GPIO0 to output a 50MHz clock.
-                    In fact this clock doesn't have directly relationship with EMAC peripheral.
-                    Sometimes this clock won't work well with your PHY chip. You might need to
-                    add some extra devices after GPIO0 (e.g. inverter).
-                    Note that outputting RMII clock on GPIO0 is an experimental practice.
-                    If you want the Ethernet to work with WiFi, don't select GPIO0 output mode for stability.
-
-            if !ETH_RMII_CLK_OUTPUT_GPIO0
-                config ETH_RMII_CLK_OUT_GPIO
-                    depends on IDF_TARGET_ESP32
-                    int "RMII clock GPIO number"
-                    range 16 17
-                    default 17
-                    help
-                        Set the GPIO number to output RMII Clock.
-            endif # !ETH_RMII_CLK_OUTPUT_GPIO0
-        endif # ETH_RMII_CLK_OUTPUT
-
         config ETH_DMA_BUFFER_SIZE
             int "Ethernet DMA buffer size (Byte)"
             range 256 1600
             default 512
             help
                 Set the size of each buffer used by Ethernet MAC DMA.
-                !! Important !! Make sure it is 64B aligned for ESP32P4!
+                !! Important !! Make sure it is 64B aligned for ESP32P4/S31!
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
             range 3 30
-            default 10 if IDF_TARGET_ESP32
-            default 20 if IDF_TARGET_ESP32P4 #ESP32P4 has smaller internal Rx FIFO
+            default 10 if IDF_TARGET_ESP32 #ESP32 has bigger internal Rx FIFO
+            default 20
             help
                 Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.
@@ -124,39 +56,95 @@ menu "Ethernet"
                 If enabled, functions related to RX/TX are placed into IRAM. It can improve Ethernet throughput.
                 If disabled, all functions are placed into FLASH.
 
-    endif # ETH_USE_ESP32_EMAC
+        menu "Ethernet Time"
+            depends on SOC_EMAC_IEEE1588V2_SUPPORTED
 
+            config ETH_CLOCK_ADJTIME_PERIOD_MS
+                int "Period over which adjtime() applies corrections (ms)"
+                default 1000
+                range 100 10000
+                help
+                    The time period over which a clock_adjtime() correction is applied
+                    by adjusting the hardware clock rate. The PTP clock's tick rate (ppb)
+                    is computed as: ppb = delta_ns * 1000 / ETH_CLOCK_ADJTIME_PERIOD_MS.
+
+            config ETH_CLOCK_ADJTIME_SLEWLIMIT_PPB
+                int "Maximum clock slew rate (ppb)"
+                default 500000
+                range 1000 5000000
+                help
+                    Drift estimates exceeding this limit (in ppb) are rejected as
+                    out of range. Typical crystal oscillators drift less than 50 ppm
+                    (50000 ppb).
+        endmenu
+
+        menu "Ethernet Clock"
+            choice ETH_EMAC_PHY_REF_CLK_SRC
+                prompt "PHY reference clock source"
+                depends on !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+                default ETH_EMAC_PHY_REF_CLK_SRC_AUTO
+                help
+                    Select the PLL clock source used to drive the PHY reference clock output
+                    (PLL_F50M). This applies to two scenarios: RMII mode with EMAC_CLK_OUT when
+                    the output clock is looped back externally, and RGMII mode when an optional
+                    50 MHz PHY_REF_CLK output is enabled (clock_phy_ref_gpio != -1).
+
+                config ETH_EMAC_PHY_REF_CLK_SRC_AUTO
+                    bool "Auto"
+                    help
+                        Let the driver select the clock source automatically based on the
+                        hardware abstraction layer defaults.
+                config ETH_EMAC_PHY_REF_CLK_SRC_MPLL
+                    bool "MPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use MPLL as the PHY reference clock source.
+                config ETH_EMAC_PHY_REF_CLK_SRC_CPLL
+                    bool "CPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use CPLL as the PHY reference clock source.
+            endchoice
+
+            choice ETH_EMAC_RGMII_TX_CLK_SRC
+                prompt "RGMII Tx clock source"
+                depends on SOC_EMAC_SUPPORT_1000M
+                default ETH_EMAC_RGMII_TX_CLK_SRC_AUTO
+                help
+                    Select the PLL clock source used to generate the EMAC RGMII Tx clock output.
+
+                config ETH_EMAC_RGMII_TX_CLK_SRC_AUTO
+                    bool "Auto"
+                    help
+                        Let the driver select the clock source automatically based on the
+                        hardware abstraction layer defaults.
+                config ETH_EMAC_RGMII_TX_CLK_SRC_MPLL
+                    bool "MPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use MPLL as the RGMII Tx clock source.
+                config ETH_EMAC_RGMII_TX_CLK_SRC_CPLL
+                    bool "CPLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use CPLL as the RGMII Tx clock source.
+                config ETH_EMAC_RGMII_TX_CLK_SRC_APLL
+                    bool "APLL"
+                    depends on IDF_TARGET_ESP32S31
+                    help
+                        Use Audio PLL (APLL) as the RGMII Tx clock source.
+            endchoice
+
+        endmenu
+
+    endif # ETH_USE_ESP32_EMAC
     menuconfig ETH_USE_SPI_ETHERNET
         bool "Support SPI to Ethernet Module"
         default y
         select ETH_ENABLED
         help
-            ESP-IDF can also support some SPI-Ethernet modules.
-
-    if ETH_USE_SPI_ETHERNET
-        config ETH_SPI_ETHERNET_DM9051
-            bool "Use DM9051"
-            help
-                DM9051 is a fast Ethernet controller with an SPI interface.
-                It's also integrated with a 10/100M PHY and MAC.
-                Select this to enable DM9051 driver.
-
-        config ETH_SPI_ETHERNET_W5500
-            bool "Use W5500 (MAC RAW)"
-            help
-                W5500 is a HW TCP/IP embedded Ethernet controller.
-                TCP/IP stack, 10/100 Ethernet MAC and PHY are embedded in a single chip.
-                However the driver in ESP-IDF only enables the RAW MAC mode,
-                making it compatible with the software TCP/IP stack.
-                Say yes to enable W5500 driver.
-
-        config ETH_SPI_ETHERNET_KSZ8851SNL
-            bool "Use KSZ8851SNL"
-            help
-                The KSZ8851SNL is a single-chip Fast Ethernet controller consisting of
-                a 10/100 physical layer transceiver (PHY), a MAC, and a Serial Peripheral Interface (SPI).
-                Select this to enable KSZ8851SNL driver.
-    endif # ETH_USE_SPI_ETHERNET
+            ESP-IDF can also support SPI-Ethernet. Actual chip drivers are available as components in
+            Component Registry.
 
     menuconfig ETH_USE_OPENETH
         bool "Support OpenCores Ethernet MAC (for use with QEMU)"

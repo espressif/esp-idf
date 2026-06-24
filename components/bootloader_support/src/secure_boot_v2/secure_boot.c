@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,12 @@
 
 #ifdef CONFIG_SECURE_BOOT_V2_ENABLED
 
+#if CONFIG_SECURE_ENABLE_TEE
+extern esp_image_metadata_t tee_data;
+#endif
+
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-static const char *TAG = "secure_boot_v2";
+ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block, int block_num, const uint8_t *image_digest)
@@ -65,16 +69,21 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
 */
 static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uint32_t flash_size, esp_image_sig_public_key_digests_t *public_key_digests)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_FAIL;
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
-    uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
+    uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = {0};
     size_t sig_block_addr = flash_offset + ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
 
     ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%" PRIx32 " (sig block offset 0x%x)", flash_offset, sig_block_addr);
 
     bzero(public_key_digests, sizeof(esp_image_sig_public_key_digests_t));
 
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    ret = bootloader_sha384_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
+#else
     ret = bootloader_sha256_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
+#endif
+
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "error generating image digest, %d", ret);
         return ret;
@@ -125,7 +134,7 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
         }
         ESP_LOGD(TAG, "Signature block (%d) is verified", i);
         /* Copy the key digest to the buffer provided by the caller */
-        memcpy((void *)public_key_digests->key_digests[i], key_digest, ESP_SECURE_BOOT_DIGEST_LEN);
+        memcpy((void *)public_key_digests->key_digests[i], key_digest, ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN);
         public_key_digests->num_digests++;
     }
 
@@ -268,6 +277,28 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?", app_key_digests.num_digests, boot_key_digests.num_digests);
     }
 
+#if CONFIG_SECURE_ENABLE_TEE
+    /* Generate the TEE public key digests */
+    bool tee_match = false;
+    esp_image_sig_public_key_digests_t tee_key_digests = {0};
+
+    ret = s_calculate_image_public_key_digests(tee_data.start_addr, tee_data.image_len - SIG_BLOCK_PADDING, &tee_key_digests);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "TEE signature block is invalid.");
+        return ret;
+    }
+
+    if (tee_key_digests.num_digests == 0) {
+        ESP_LOGE(TAG, "No valid TEE signature blocks found.");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "%d signature block(s) found appended to the tee.", tee_key_digests.num_digests);
+    if (tee_key_digests.num_digests > boot_key_digests.num_digests) {
+        ESP_LOGW(TAG, "TEE has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?", tee_key_digests.num_digests, boot_key_digests.num_digests);
+    }
+#endif
+
     /* Confirm if at least one public key from the application matches a public key in the bootloader
         (Also, ensure if that public revoke bit is not set for the matched key) */
     bool match = false;
@@ -285,6 +316,18 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
                 match = true;
             }
         }
+#if CONFIG_SECURE_ENABLE_TEE
+        if (!match) {
+             continue;
+        }
+
+        for (unsigned j = 0; j < tee_key_digests.num_digests; j++) {
+            if (!memcmp(boot_key_digests.key_digests[i], tee_key_digests.key_digests[j], ESP_SECURE_BOOT_KEY_DIGEST_LEN)) {
+                ESP_LOGI(TAG, "TEE key(%d) matches with bootloader key(%d).", j, i);
+                tee_match = true;
+            }
+        }
+#endif
     }
 
     if (match == false) {
@@ -292,13 +335,24 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         return ESP_FAIL;
     }
 
+#if CONFIG_SECURE_ENABLE_TEE
+    if (tee_match == false) {
+        ESP_LOGE(TAG, "No TEE key digest matches the bootloader key digest.");
+        return ESP_FAIL;
+    }
+#endif
+
 #if SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
     /* Revoke the empty signature blocks */
     if (boot_key_digests.num_digests < SECURE_BOOT_NUM_BLOCKS) {
         /* The revocation index can be 0, 1, 2. Bootloader count can be 1,2,3. */
         for (unsigned i = boot_key_digests.num_digests; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+#ifndef CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             ESP_LOGI(TAG, "Revoking empty key digest slot (%d)...", i);
             esp_efuse_set_digest_revoke(i);
+#else
+            ESP_LOGW(TAG, "Unused key digest slot (%d) left un-revoked due to the config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS", i);
+#endif
         }
     }
 #endif // SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
@@ -313,6 +367,12 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         ESP_LOGI(TAG, "secure boot v2 is already enabled, continuing..");
         return ESP_OK;
     }
+#if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
+    else {
+        ESP_LOGE(TAG, "secure boot is not enabled, and SECURE_BOOT_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+    }
+#endif // CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
 
     esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */
 

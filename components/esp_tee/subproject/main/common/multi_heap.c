@@ -1,0 +1,244 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <assert.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include "rom_patch_tlsf.h"
+#include "esp_rom_sys.h"
+#include "tlsf_block_functions.h"
+#include "multi_heap.h"
+
+/* Handle to a registered TEE heap */
+static multi_heap_handle_t tee_heap;
+
+inline static void multi_heap_assert(bool condition, const char *format, int line, intptr_t address)
+{
+    /* Can't use libc assert() here as it calls printf() which can cause another malloc() for a newlib lock.
+       Also, it's useful to be able to print the memory address where corruption was detected.
+    */
+    if (!condition) {
+        esp_rom_printf(format, line, address);
+        abort();
+    }
+}
+
+#define MULTI_HEAP_ASSERT(CONDITION, ADDRESS) \
+    multi_heap_assert((CONDITION), "CORRUPT HEAP: multi_heap.c:%d detected at 0x%08x\n", \
+                        __LINE__, (intptr_t)(ADDRESS))
+
+/* Check a block is valid for this heap. Used to verify parameters. */
+static void assert_valid_block(const heap_t *heap, const block_header_t *block)
+{
+    pool_t pool = tlsf_get_pool(heap->heap_data);
+    void *ptr = block_to_ptr(block);
+
+    MULTI_HEAP_ASSERT((ptr >= pool) &&
+                      (ptr < pool + heap->pool_size),
+                      (uintptr_t)ptr);
+}
+
+esp_err_t esp_tee_heap_init(void *start_ptr, size_t size)
+{
+    assert(start_ptr);
+
+    heap_t *result = (heap_t *)start_ptr;
+    size_t usable_size = size - sizeof(heap_t);
+
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    bool too_small = (usable_size < tlsf_size() + tlsf_block_size_min());
+#else
+    bool too_small = (size < sizeof(heap_t));
+#endif
+
+    if (too_small) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    void *heap = tlsf_create_with_pool(start_ptr + sizeof(heap_t), usable_size);
+    size_t overhead = tlsf_size();
+#else
+    size_t max_bytes = 0;
+    void *heap = tlsf_create_with_pool(start_ptr + sizeof(heap_t), usable_size, max_bytes);
+    size_t overhead = tlsf_size(heap);
+#endif
+
+    if (heap == NULL) {
+        return ESP_FAIL;
+    }
+
+    result->heap_data = heap;
+    result->lock = NULL;
+    result->free_bytes = usable_size - overhead;
+    result->pool_size = usable_size;
+    result->minimum_free_bytes = result->free_bytes;
+
+    tee_heap = (multi_heap_handle_t)result;
+
+    return ESP_OK;
+}
+
+void *esp_tee_heap_malloc(size_t size)
+{
+    if (tee_heap == NULL || size == 0) {
+        return NULL;
+    }
+
+    void *result = tlsf_malloc(tee_heap->heap_data, size);
+    if (result) {
+        tee_heap->free_bytes -= tlsf_block_size(result);
+        tee_heap->free_bytes -= tlsf_alloc_overhead();
+        if (tee_heap->free_bytes < tee_heap->minimum_free_bytes) {
+            tee_heap->minimum_free_bytes = tee_heap->free_bytes;
+        }
+    }
+
+    return result;
+}
+
+void *esp_tee_heap_calloc(size_t n, size_t size)
+{
+    size_t reg_size = n * size;
+    void *ptr = esp_tee_heap_malloc(reg_size);
+    if (ptr != NULL) {
+        memset(ptr, 0x00, reg_size);
+    }
+    return ptr;
+}
+
+void *esp_tee_heap_aligned_alloc(size_t size, size_t alignment)
+{
+    if (tee_heap == NULL || size == 0) {
+        return NULL;
+    }
+
+    // Alignment must be a power of two
+    if (((alignment & (alignment - 1)) != 0) || (!alignment)) {
+        return NULL;
+    }
+
+    void *result = tlsf_memalign_offs(tee_heap->heap_data, alignment, size, 0x00);
+    if (result) {
+        tee_heap->free_bytes -= tlsf_block_size(result);
+        tee_heap->free_bytes -= tlsf_alloc_overhead();
+        if (tee_heap->free_bytes < tee_heap->minimum_free_bytes) {
+            tee_heap->minimum_free_bytes = tee_heap->free_bytes;
+        }
+    }
+
+    return result;
+}
+
+void esp_tee_heap_free(void *p)
+{
+    if (tee_heap == NULL || p == NULL) {
+        return;
+    }
+
+    assert_valid_block(tee_heap, block_from_ptr(p));
+
+    tee_heap->free_bytes += tlsf_block_size(p);
+    tee_heap->free_bytes += tlsf_alloc_overhead();
+    tlsf_free(tee_heap->heap_data, p);
+}
+
+void *malloc(size_t size)
+{
+    return esp_tee_heap_malloc(size);
+}
+
+void *calloc(size_t n, size_t size)
+{
+    return esp_tee_heap_calloc(n, size);
+}
+
+void *realloc(void* ptr, size_t size)
+{
+    if (tee_heap == NULL) {
+        return NULL;
+    }
+
+    if (ptr == NULL) {
+        return esp_tee_heap_malloc(size);
+    }
+
+    size_t previous_block_size = tlsf_block_size(ptr);
+    void *result = tlsf_realloc(tee_heap->heap_data, ptr, size);
+    if (result) {
+        /* No need to subtract the tlsf_alloc_overhead() as it has already
+         * been subtracted when allocating the block at first with malloc */
+        tee_heap->free_bytes += previous_block_size;
+        tee_heap->free_bytes -= tlsf_block_size(result);
+        if (tee_heap->free_bytes < tee_heap->minimum_free_bytes) {
+            tee_heap->minimum_free_bytes = tee_heap->free_bytes;
+        }
+    }
+
+    return result;
+}
+
+void free(void *ptr)
+{
+    esp_tee_heap_free(ptr);
+}
+
+size_t esp_tee_heap_get_free_size(void)
+{
+    return tee_heap->free_bytes;
+}
+
+size_t esp_tee_heap_get_min_free_size(void)
+{
+    return tee_heap->minimum_free_bytes;
+}
+
+static void heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+{
+    (void)user;
+    esp_rom_printf("Block %p data, size: %d bytes, Free: %s\n",
+                   (void *)ptr,
+                   size,
+                   used ? "No" : "Yes");
+}
+
+void esp_tee_heap_dump_info(void)
+{
+    esp_rom_printf("Showing data for TEE heap: %p (%uB)\n", (void *)tee_heap, tee_heap->pool_size);
+    tlsf_walk_pool(tlsf_get_pool(tee_heap->heap_data), heap_dump_tlsf, NULL);
+}
+
+/* Definitions for functions from the heap component, used in files shared with ESP-IDF */
+
+void *heap_caps_malloc(size_t alignment, size_t size, uint32_t caps)
+{
+    (void) caps;
+    return esp_tee_heap_malloc(size);
+}
+
+void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps)
+{
+    (void) caps;
+    return esp_tee_heap_aligned_alloc(size, alignment);
+}
+
+void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps)
+{
+    (void) caps;
+    uint32_t reg_size = n * size;
+
+    void *ptr = esp_tee_heap_aligned_alloc(reg_size, alignment);
+    if (ptr != NULL) {
+        memset(ptr, 0x00, reg_size);
+    }
+    return ptr;
+}
+
+/* No-op function, used to force linking this file,
+   instead of the heap implementation from libc.
+ */
+void esp_tee_include_heap_impl(void)
+{
+}

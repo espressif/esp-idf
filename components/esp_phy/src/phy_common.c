@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "esp_private/esp_gpio_reserve.h"
@@ -17,10 +18,23 @@
 #include "esp_phy.h"
 #include "esp_attr.h"
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+#include "hal/temperature_sensor_ll.h"
+#endif
+
+/* Per-target ANT_SELn_IDX indices are not always consecutive; do not use ANT_SEL0_IDX + n. */
+static const uint32_t s_phy_ant_sel_sig_idx[4] = {
+    ANT_SEL0_IDX,
+    ANT_SEL1_IDX,
+    ANT_SEL2_IDX,
+    ANT_SEL3_IDX,
+};
+
 static const char* TAG = "phy_comm";
 
 static volatile uint16_t s_phy_modem_flag = 0;
 
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
 extern void phy_param_track_tot(bool en_wifi, bool en_ble_154);
 static esp_timer_handle_t phy_track_pll_timer;
 #if CONFIG_ESP_WIFI_ENABLED
@@ -29,8 +43,9 @@ static volatile int64_t s_wifi_prev_timestamp;
 #if CONFIG_IEEE802154_ENABLED || CONFIG_BT_ENABLED
 static volatile int64_t s_bt_154_prev_timestamp;
 #endif
-#define PHY_TRACK_PLL_PERIOD_IN_US 1000000
+#define PHY_TRACK_PLL_PERIOD_IN_US (CONFIG_ESP_PHY_PLL_TRACK_PERIOD_MS * 1000)
 static void phy_track_pll_internal(void);
+#endif
 
 static esp_phy_ant_gpio_config_t s_phy_ant_gpio_config = { 0 };
 static esp_phy_ant_config_t s_phy_ant_config = { 0 };
@@ -42,6 +57,7 @@ bool phy_enabled_modem_contains(esp_phy_modem_t modem)
 }
 #endif
 
+#if !CONFIG_ESP_PHY_DISABLE_PLL_TRACK
 void phy_track_pll(void)
 {
     // Light sleep scenario: enabling and disabling PHY frequently, the timer will not get triggered.
@@ -116,6 +132,17 @@ void phy_track_pll_deinit(void)
     ESP_ERROR_CHECK(esp_timer_stop(phy_track_pll_timer));
     ESP_ERROR_CHECK(esp_timer_delete(phy_track_pll_timer));
 }
+#endif
+
+static const char *phy_get_modem_str(esp_phy_modem_t modem)
+{
+    switch (modem) {
+        case PHY_MODEM_WIFI: return "Wi-Fi";
+        case PHY_MODEM_BT: return "Bluetooth";
+        case PHY_MODEM_IEEE802154: return "IEEE 802.15.4";
+        default: return "";
+    }
+}
 
 void phy_set_modem_flag(esp_phy_modem_t modem)
 {
@@ -124,6 +151,9 @@ void phy_set_modem_flag(esp_phy_modem_t modem)
 
 void phy_clr_modem_flag(esp_phy_modem_t modem)
 {
+    if ((s_phy_modem_flag & modem) == 0) {
+        ESP_LOGW(TAG, "Clear the flag of %s before it's set", phy_get_modem_str(modem));
+    }
     s_phy_modem_flag &= ~modem;
 }
 
@@ -150,8 +180,8 @@ static void phy_ant_set_gpio_output(uint32_t io_num)
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (1ULL << io_num);
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
 }
 
@@ -174,7 +204,7 @@ esp_err_t esp_phy_set_ant_gpio(esp_phy_ant_gpio_config_t *config)
     for (int i = 0; i < 4; i++) {
         if (config->gpio_cfg[i].gpio_select == 1) {
             phy_ant_set_gpio_output(config->gpio_cfg[i].gpio_num);
-            esp_rom_gpio_connect_out_signal(config->gpio_cfg[i].gpio_num, ANT_SEL0_IDX + i, 0, 0);
+            esp_rom_gpio_connect_out_signal(config->gpio_cfg[i].gpio_num, s_phy_ant_sel_sig_idx[i], 0, 0);
         }
     }
 
@@ -293,4 +323,71 @@ esp_err_t esp_phy_get_ant(esp_phy_ant_config_t *config)
     }
     memcpy(config, &s_phy_ant_config, sizeof(esp_phy_ant_config_t));
     return ESP_OK;
+}
+
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+typedef enum {
+    PHY_I2C_MST_CMD_TYPE_RF_OFF = 0,
+    PHY_I2C_MST_CMD_TYPE_RF_ON,
+    PHY_I2C_MST_CMD_TYPE_BBPLL_CFG,
+    PHY_I2C_MST_CMD_TYPE_MAX
+} phy_i2c_master_command_type_t;
+
+static uint32_t phy_ana_i2c_master_burst_config(phy_i2c_master_command_attribute_t *attr, int size, phy_i2c_master_command_type_t type)
+{
+    #define I2C1_BURST_VAL(en, start, end) (((en) << 31) | ((end) << 22) | ((start) << 16))
+    #define I2C0_BURST_VAL(en, start, end) (((en) << 15) | ((end) <<  6) | ((start) <<  0))
+
+    uint32_t brust = 0;
+    for (int i = 0; i < size; i++) {
+        if (attr[i].config.start == 0xff || attr[i].config.end == 0xff) /* ignore invalid configure */
+            continue;
+
+        if (attr[i].cmd_type == type) {
+            if (attr[i].config.host_id) {
+                brust |= I2C1_BURST_VAL(1, attr[i].config.start, attr[i].config.end);
+            } else {
+                brust |= I2C0_BURST_VAL(1, attr[i].config.start, attr[i].config.end);
+            }
+        }
+    }
+    return brust;
+}
+
+uint32_t phy_ana_i2c_master_burst_bbpll_config(void)
+{
+    /* PHY supports 2 I2C masters, and the maximum number of configurations
+     * supported by the I2C master command memory is the command type
+     * (PHY_I2C_MST_CMD_TYPE_MAX) multiplied by 2 */
+    phy_i2c_master_command_attribute_t cmd[2 * PHY_I2C_MST_CMD_TYPE_MAX];
+    int size = sizeof(cmd) / sizeof(cmd[0]);
+    phy_i2c_master_command_mem_cfg(cmd, &size);
+
+    return phy_ana_i2c_master_burst_config(cmd, size, PHY_I2C_MST_CMD_TYPE_BBPLL_CFG);
+}
+
+uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on)
+{
+    /* PHY supports 2 I2C masters, and the maximum number of configurations
+     * supported by the I2C master command memory is the command type
+     * (PHY_I2C_MST_CMD_TYPE_MAX) multiplied by 2 */
+    phy_i2c_master_command_attribute_t cmd[2 * PHY_I2C_MST_CMD_TYPE_MAX];
+    int size = sizeof(cmd) / sizeof(cmd[0]);
+    phy_i2c_master_command_mem_cfg(cmd, &size);
+
+    return phy_ana_i2c_master_burst_config(cmd, size, on ? PHY_I2C_MST_CMD_TYPE_RF_ON : PHY_I2C_MST_CMD_TYPE_RF_OFF);
+}
+
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+void phy_wakeup_from_modem_state_extra_init(void)
+{
+    temperature_sensor_ll_enable(true);
+}
+#endif
+#endif
+
+__attribute__((weak)) void phy_wait_freq_hw_hop_done(void)
+{
+    ESP_LOGD(TAG, "phy_wait_freq_hw_hop_done is not implemented");
+    return;
 }

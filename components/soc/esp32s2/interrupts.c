@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include "soc/interrupts.h"
@@ -43,7 +43,7 @@ const char * const esp_isr_names[ETS_MAX_INTR_SOURCE] = {
     [33] = "SPI2",
     [34] = "SPI3",
     [35] = "I2S0",
-    [36] = "I2S1",
+    [36] = "RESERVED",
     [37] = "UART0",
     [38] = "UART1",
     [39] = "UART2",

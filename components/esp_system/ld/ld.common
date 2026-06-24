@@ -1,13 +1,34 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 
+#define ALIGN_UP(SIZE, AL)   (((SIZE) + (AL - 1)) & ~(AL - 1))
+
 /* CPU instruction prefetch padding size for flash mmap scenario */
 #define _esp_flash_mmap_prefetch_pad_size 16
+
+/* Copy from esp_secure_boot.h */
+#ifdef CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+#define ESP_SECURE_BOOT_DIGEST_LEN 48
+#else /* !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define ESP_SECURE_BOOT_DIGEST_LEN 32
+#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+
+/*
+ * PMP region granularity size
+ * Software may determine the PMP granularity by writing zero to pmp0cfg, then writing all ones
+ * to pmpaddr0, then reading back pmpaddr0. If G is the index of the least-significant bit set,
+ * the PMP granularity is 2^G+2 bytes.
+ */
+#ifdef CONFIG_SOC_CPU_PMP_REGION_GRANULARITY
+#define _esp_pmp_align_size CONFIG_SOC_CPU_PMP_REGION_GRANULARITY
+#else
+#define _esp_pmp_align_size 0
+#endif
 
 /* CPU instruction prefetch padding size for memory protection scenario */
 #ifdef CONFIG_SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
@@ -29,12 +50,18 @@
 #define _esp_mmu_page_size CONFIG_MMU_PAGE_SIZE
 #endif
 
+#define ALIGN_UP(SIZE, AL)   (((SIZE) + (AL - 1)) & ~(AL - 1))
+
 #if CONFIG_SOC_RTC_MEM_SUPPORTED
     #if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
+        /**
+         * The ESP_BOOTLOADER_RESERVE_RTC size must have the same alignment of RTC_TIMER_RESERVE_RTC, else
+         * the segment will overflow at link time because not enough bytes are allocated for the RTC segment.
+         */
         #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-            #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+            #define ESP_BOOTLOADER_RESERVE_RTC ALIGN_UP(CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE, 8)
         #else
-            #define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+            #define ESP_BOOTLOADER_RESERVE_RTC ALIGN_UP(CONFIG_BOOTLOADER_RESERVE_RTC_SIZE, 8)
         #endif // not CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
     #else
         #define ESP_BOOTLOADER_RESERVE_RTC 0
@@ -45,9 +72,23 @@
 
     #if CONFIG_IDF_TARGET_ESP32
         #define RESERVE_RTC_MEM (RTC_TIMER_RESERVE_RTC)
+    #elif CONFIG_ESP_ROM_HAS_LP_ROM && CONFIG_ULP_COPROC_ENABLED
+	/* RTC Reserved is placed before ULP memory, expand it to make sure the ULP start address
+	   has the required alignment */
+	    #define ULP_ALIGNMENT_REQ_BYTES 256
+        #define RESERVE_RTC_MEM ALIGN_UP(ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC, ULP_ALIGNMENT_REQ_BYTES)
+    #elif CONFIG_SECURE_BOOT && CONFIG_ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+        #define RESERVE_RTC_MEM (ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC + ESP_SECURE_BOOT_DIGEST_LEN)
     #else
         #define RESERVE_RTC_MEM (ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC)
     #endif
+
+    #if CONFIG_P4_REV3_MSPI_CRASH_AFTER_POWER_UP_WORKAROUND
+        #define MSPI_WORKAROUND_SIZE   CONFIG_P4_REV3_MSPI_WORKAROUND_SIZE
+    #else
+        #define MSPI_WORKAROUND_SIZE   0x0
+    #endif
+
 #endif // SOC_RTC_MEM_SUPPORTED
 
 #define QUOTED_STRING(STRING) #STRING
@@ -58,3 +99,58 @@ ASSERT((ADDR(NEXT_SECTION) == ADDR(PREV_SECTION) + SIZEOF(PREV_SECTION)), \
 #define ALIGNED_SYMBOL(X, SYMBOL)   \
 \n    . = ALIGN(X);                 \
 \n    SYMBOL = ABSOLUTE(.);
+
+#if CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#define EH_FRAME_LINKING_ENABLED 1
+#endif
+
+#if EH_FRAME_LINKING_ENABLED
+#if CONFIG_IDF_TARGET_ARCH_RISCV
+#define SECTION_AFTER_FLASH_RODATA .eh_frame_hdr
+#endif
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+#define SECTION_AFTER_FLASH_RODATA .eh_frame
+#endif
+#else
+#define SECTION_AFTER_FLASH_RODATA .flash.tdata
+#endif
+
+/*
+ * APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING
+ *
+ * Aligns the current location (.) to CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING.
+ * If more than half of the alignment block is already consumed,
+ * extra padding is applied to skip to the next boundary.
+ * For example, if the current location (.) is 0x1900 and the padding is 4 KB,
+ * the location will be moved to 0x3000 instead of 0x2000 because less than
+ * half of the current 4 KB block remains (0x2000 - 0x1900 < 2 KB).
+ */
+#if CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES
+#define APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING() \
+  . = ALIGN((. + ( \
+    (CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING - (ALIGN(CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING) - .)) + \
+    (CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING / 2) \
+  )), CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING);
+#else
+#define APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING()
+#endif
+
+#if CONFIG_LIBC_PICOLIBC
+# if CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY
+#  define PICOLIBC_REENT_STUB 16
+# else
+#  define PICOLIBC_REENT_STUB 4
+# endif
+#define ASSERT_PICOLIBC_REENT_STUB() ASSERT((_picolibc_reent_stub_end - _picolibc_reent_stub_start) == PICOLIBC_REENT_STUB, "Newlib _reent stub have wrong size")
+#else
+#define ASSERT_PICOLIBC_REENT_STUB()
+#endif
+
+#define SECTION_MAPPINGS(SECTION_NAME)              \
+\n    arrays[SECTION_NAME]                          \
+\n    mapping[SECTION_NAME]                         \
+\n    mutable[SECTION_NAME]
+
+#define SECTION_MAPPINGS_WITH_PADDING(SECTION_NAME) \
+\n  SECTION_MAPPINGS(SECTION_NAME) \
+\n  APP_BUILD_MINIMIZE_BINARY_CHANGES_PADDING()

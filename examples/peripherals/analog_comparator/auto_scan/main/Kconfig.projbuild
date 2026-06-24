@@ -1,0 +1,45 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_MONITOR_IO_FROM
+        prompt "Monitor IO signal comes from"
+        default EXAMPLE_MONITOR_IO_FROM_ETM if SOC_ANA_CMPR_SUPPORT_ETM && SOC_GPIO_SUPPORT_ETM
+        default EXAMPLE_MONITOR_IO_FROM_INTR
+
+        config EXAMPLE_MONITOR_IO_FROM_INTR
+            bool "Analog Comparator Interrupt"
+            help
+                Enable to set the monitor GPIO via interrupt callback
+
+        config EXAMPLE_MONITOR_IO_FROM_ETM
+            depends on SOC_ANA_CMPR_SUPPORT_ETM && SOC_GPIO_SUPPORT_ETM
+            bool "Analog Comparator Event-Task-Matrix"
+            help
+                Enable to set the monitor GPIO via Event Task Matrix
+    endchoice
+
+    choice EXAMPLE_REF_FROM
+        prompt "Analog Comparator reference voltage comes from"
+        default EXAMPLE_REF_FROM_INTERNAL
+        help
+            Decide the reference voltage comes from internal or external
+
+        config EXAMPLE_REF_FROM_INTERNAL
+            bool "Internal"
+            help
+                The source signal will refer to an internal voltage, which is divided from VDD.
+
+        config EXAMPLE_REF_FROM_EXTERNAL
+            bool "External pin"
+            help
+                The source signal will refer to the external signal on a specific GPIO.
+    endchoice
+
+    config EXAMPLE_HYSTERESIS_COMPARATOR
+        depends on EXAMPLE_REF_FROM_INTERNAL && EXAMPLE_MONITOR_IO_FROM_INTR
+        bool "Enable hysteresis comparator"
+        default n
+        help
+            The internal reference voltage will be set to 30% VDD and 70% VDD alternately
+            every time the interrupt triggered.
+
+endmenu

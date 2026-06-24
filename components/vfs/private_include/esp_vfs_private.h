@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 #include "esp_vfs.h"
-#include "esp_vfs_common.h"
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,13 +18,38 @@ extern "C" {
 #define VFS_MALLOC_FLAGS MALLOC_CAP_DEFAULT
 #endif
 
+#ifdef CONFIG_IDF_TARGET_LINUX
+typedef uint16_t local_fd_t;
+#else
+typedef uint8_t local_fd_t;
+#endif
+
+typedef int8_t vfs_index_t;
+
 typedef struct vfs_entry_ {
-    esp_vfs_t vfs;          // contains pointers to VFS functions
-    char path_prefix[ESP_VFS_PATH_MAX]; // path prefix mapped to this VFS
-    size_t path_prefix_len; // micro-optimization to avoid doing extra strlen
-    void* ctx;              // optional pointer which can be passed to VFS
-    int offset;             // index of this structure in s_vfs array
+    int flags;                   /*!< ESP_VFS_FLAG_CONTEXT_PTR and/or ESP_VFS_FLAG_READONLY_FS or ESP_VFS_FLAG_DEFAULT */
+    const esp_vfs_fs_ops_t *vfs; /*!< contains pointers to VFS functions */
+    void *ctx;                   /*!< optional pointer which can be passed to VFS */
+    int offset;                  /*!< index of this structure in s_vfs array */
+    size_t path_prefix_len;      /*!< micro-optimization to avoid doing extra strlen, contains length of the string, not the size of path_prefix array */
+    const char path_prefix[]; /*!< path prefix mapped to this VFS */
 } vfs_entry_t;
+
+typedef struct {
+    bool permanent :1;
+    bool has_pending_close :1;
+    bool has_pending_select :1;
+    uint8_t _reserved :5;
+    vfs_index_t vfs_index;
+    local_fd_t local_fd;
+} fd_table_t;
+
+typedef struct {
+    bool isset; // none or at least one bit is set in the following 3 fd sets
+    fd_set readfds;
+    fd_set writefds;
+    fd_set errorfds;
+} fds_triple_t;
 
 /**
  * Register a virtual filesystem.
@@ -52,25 +77,50 @@ typedef struct vfs_entry_ {
  *          ESP_ERR_NO_MEM if too many VFSes are registered.
  *          ESP_ERR_INVALID_ARG if given an invalid parameter.
  */
-esp_err_t esp_vfs_register_common(const char *base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index);
+esp_err_t esp_vfs_register_common(const char *base_path, size_t len, const esp_vfs_t *vfs, void *ctx, int *vfs_index);
 
 /**
- * Get vfs fd with given path.
+ * Resolve which registered VFS should handle the given absolute path.
  *
- * @param path file path prefix associated with the filesystem.
+ * @param path Zero-terminated absolute path. Must not be NULL when calling
+ *             `strlen` internally; callers should reject NULL paths first
+ *             (typically with `EINVAL`) before invoking this helper.
  *
- * @return Pointer to the `vfs_entry_t` corresponding to the given path, which cannot be NULL.
+ * @return Matching `vfs_entry_t`, or NULL if @p path is NULL or no VFS matches.
  */
 const vfs_entry_t *get_vfs_for_path(const char *path);
 
 /**
- * Get vfs fd with given vfs index.
+ * Get VFS entry for a given VFS table index.
  *
- * @param index VFS index.
+ * @param index VFS index (as stored on FDs / DIR handles).
  *
- * @return Pointer to the `vfs_entry_t` corresponding to the given path, which cannot be NULL.
+ * @return Pointer to the `vfs_entry_t` for @p index, or NULL if invalid / unused.
  */
 const vfs_entry_t *get_vfs_for_index(int index);
+
+const char* translate_path(const vfs_entry_t* vfs, const char* src_path);
+
+const vfs_entry_t *get_vfs_for_fd(int fd);
+
+int register_fd(int vfs_index, int local_fd, bool permanent);
+
+void unregister_fd(int fd);
+
+int get_local_fd(const vfs_entry_t *vfs, int fd);
+
+const fd_table_t *get_fd_entry(int fd);
+
+size_t get_vfs_upper_bound(void);
+
+void close_pending(int nfds);
+
+static inline bool esp_vfs_safe_fd_isset(int fd, const fd_set *fds)
+{
+    return fds && FD_ISSET(fd, fds);
+}
+
+fd_table_t start_select(int fd, fd_set *errorfds);
 
 #ifdef __cplusplus
 }

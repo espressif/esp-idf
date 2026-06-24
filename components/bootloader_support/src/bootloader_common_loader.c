@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,23 +12,57 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_gpio.h"
 #include "esp_flash_partitions.h"
+#if CONFIG_SECURE_BOOT
+#include "esp_secure_boot.h"
+#endif
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
-#include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
-#include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
 #include "sys/param.h"
 #include "bootloader_flash_priv.h"
+#include "esp_rom_caps.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
-#define IS_MAX_REV_SET(max_chip_rev_full) (((max_chip_rev_full) != 65535) && ((max_chip_rev_full) != 0))
+#define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
-static const char* TAG = "boot_comm";
+ESP_LOG_ATTR_TAG(TAG, "boot_comm");
+
+bool bootloader_common_check_chip_revision_validity(const esp_image_header_t *img_hdr, bool check_max_revision)
+{
+    if (!img_hdr) {
+        return false;
+    }
+
+    unsigned revision = efuse_hal_chip_revision();
+    unsigned min_rev = img_hdr->min_chip_rev_full;
+
+    bool is_min_rev_invalid = !ESP_CHIP_REV_ABOVE(revision, min_rev);
+    if (is_min_rev_invalid) {
+        ESP_LOGE(TAG, "chip revision check failed. Required >= v%d.%d, found v%d.%d.",
+            min_rev / 100, min_rev % 100,
+            revision / 100, revision % 100);
+        return false;
+    }
+
+    if (check_max_revision) {
+        unsigned int max_rev = img_hdr->max_chip_rev_full;
+        bool is_max_rev_invalid = IS_FIELD_SET(max_rev) && revision > max_rev && !efuse_hal_get_disable_wafer_version_major();
+        if (is_max_rev_invalid) {
+            ESP_LOGE(TAG, "chip revision check failed. Required <= v%d.%d, found v%d.%d.",
+                max_rev / 100, max_rev % 100,
+                revision / 100, revision % 100);
+            return false;
+        }
+    }
+
+    return true;
+}
 
 uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s)
 {
@@ -56,6 +90,31 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
     return bootloader_common_select_otadata(two_otadata, valid_two_otadata, true);
 }
 
+#if !CONFIG_IDF_TARGET_ESP32
+esp_err_t bootloader_common_check_efuse_blk_validity(uint32_t min_rev_full, uint32_t max_rev_full)
+{
+    esp_err_t err = ESP_OK;
+#ifndef CONFIG_IDF_ENV_FPGA
+    // Check whether the efuse block version satisfy the requirements of current image.
+    uint32_t revision = efuse_hal_blk_version();
+    uint32_t major_rev = revision / 100;
+    uint32_t minor_rev = revision % 100;
+    if (IS_FIELD_SET(min_rev_full) && !ESP_EFUSE_BLK_REV_ABOVE(revision, min_rev_full)) {
+        ESP_LOGE(TAG, "Image requires efuse blk rev >= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
+                    min_rev_full / 100, min_rev_full % 100, major_rev, minor_rev);
+        err = ESP_FAIL;
+    }
+    // If burnt `disable_blk_version_major` bit, skip the max version check
+    if ((IS_FIELD_SET(max_rev_full) && (revision > max_rev_full) && !efuse_hal_get_disable_blk_version_major())) {
+        ESP_LOGE(TAG, "Image requires efuse blk rev <= v%"PRIu32".%"PRIu32", but chip is v%"PRIu32".%"PRIu32,
+                    max_rev_full / 100, max_rev_full % 100, major_rev, minor_rev);
+        err = ESP_FAIL;
+    }
+#endif
+    return err;
+}
+#endif  // !CONFIG_IDF_TARGET_ESP32
+
 esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type)
 {
     esp_err_t err = ESP_OK;
@@ -65,24 +124,15 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         err = ESP_FAIL;
     } else {
 #ifndef CONFIG_IDF_ENV_FPGA
-        unsigned revision = efuse_hal_chip_revision();
-        unsigned int major_rev = revision / 100;
-        unsigned int minor_rev = revision % 100;
-        unsigned min_rev = img_hdr->min_chip_rev_full;
-        if (type == ESP_IMAGE_BOOTLOADER || type == ESP_IMAGE_APPLICATION) {
-            if (!ESP_CHIP_REV_ABOVE(revision, min_rev)) {
-                ESP_LOGE(TAG, "Image requires chip rev >= v%d.%d, but chip is v%d.%d",
-                         min_rev / 100, min_rev % 100,
-                         major_rev, minor_rev);
+        if (type == ESP_IMAGE_APPLICATION) {
+            if (!bootloader_common_check_chip_revision_validity(img_hdr, true)) {
                 err = ESP_FAIL;
             }
         }
-        if (type == ESP_IMAGE_APPLICATION) {
-            unsigned max_rev = img_hdr->max_chip_rev_full;
-            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
-                ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
-                         max_rev / 100, max_rev % 100,
-                         major_rev, minor_rev);
+
+        // Maximum revision check is skipped for bootloader images
+        if (type == ESP_IMAGE_BOOTLOADER) {
+            if (!bootloader_common_check_chip_revision_validity(img_hdr, false)) {
                 err = ESP_FAIL;
             }
         }
@@ -212,13 +262,31 @@ void bootloader_common_update_rtc_retain_mem(esp_partition_pos_t* partition, boo
 rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 {
 #ifdef BOOTLOADER_BUILD
-    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
+
+#if ESP_ROM_HAS_LP_ROM
+#if CONFIG_IDF_TARGET_ESP32P4
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_LOW + CONFIG_P4_REV3_MSPI_WORKAROUND_SIZE)
+#else
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_LOW)
+#endif
+#else
+    /* Since the structure containing the retain_mem_t is aligned on 8 by the linker, make sure we align this
+     * structure size here too */
+    #define RETAIN_MEM_SIZE     ALIGN_UP(sizeof(rtc_retain_mem_t), 8)
+    #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - RETAIN_MEM_SIZE)
+#endif //ESP_ROM_HAS_LP_ROM
+
+#if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR - ESP_SECURE_BOOT_DIGEST_LEN;
+#else
     static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
+#endif
     return s_bootloader_retain_mem;
 #else
     static __attribute__((section(".bootloader_data_rtc_mem"))) rtc_retain_mem_t s_bootloader_retain_mem;
     return &s_bootloader_retain_mem;
 #endif // !BOOTLOADER_BUILD
 }
+
 
 #endif // CONFIG_BOOTLOADER_RESERVE_RTC_MEM

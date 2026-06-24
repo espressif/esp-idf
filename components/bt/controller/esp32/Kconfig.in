@@ -23,6 +23,14 @@ config BTDM_CTRL_BLE_MAX_CONN
         BLE maximum connections of bluetooth controller.
         Each connection uses 1KB static DRAM whenever the BT controller is enabled.
 
+config BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT
+    int "BR/EDR default minimum size of encryption key"
+    depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 7
+    range 7 16
+    help
+        BR/EDR default minimum size of encryption key when start encryption.
+
 config BTDM_CTRL_BR_EDR_MAX_ACL_CONN
     int "BR/EDR ACL Max Connections"
     depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
@@ -67,7 +75,7 @@ config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF
     default 0
 
 menuconfig BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
-    bool "PCM Signal Config (Role and Polar)"
+    bool "PCM Signal Configurations: Role, Polar and Channel Mode(Stereo/Mono)"
     depends on BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
     default y
 
@@ -95,6 +103,37 @@ choice BTDM_CTRL_PCM_POLAR
         bool "Rising Edge"
 endchoice
 
+choice BTDM_CTRL_PCM_FSYNCSHP
+    prompt "Channel Mode(Stereo/Mono)"
+    depends on BTDM_CTRL_PCM_ROLE_EDGE_CONFIG
+    default BTDM_CTRL_PCM_FSYNCSHP_STEREO_MODE
+    help
+        PCM frame synchronization signal shape can be configured as Stereo Mode or Mono Mode.
+        (There are detailed instructions under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/README.md)
+
+    config BTDM_CTRL_PCM_FSYNCSHP_STEREO_MODE
+        bool "Stereo Mode"
+        help
+            Stereo Mode(Dual channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK.
+            The FSYNC signal continues until the end of the current channel-data transmission.
+            (There is a waveform graph under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/image)
+
+    config BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_LF
+        bool "Mono Mode 1"
+        help
+            Mono Mode 1(Single channel): FSYNC signal starts to change a CLK clock cycle earlier than the DOUT signal.
+            The FSYNC signal continues for one extra CLK clock cycle.
+            (There is a waveform graph under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/image)
+
+    config BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_FF
+        bool "Mono Mode 2"
+        help
+            Mono Mode 2(Single channel): FSYNC and DOUT signals both change simultaneously on the edge of CLK.
+            The FSYNC signal continues for one extra CLK clock cycle.
+            (There is a waveform graph under the path examples/bluetooth/bluedroid/classic_bt/hfp_ag/image)
+
+endchoice
+
 config BTDM_CTRL_PCM_ROLE_EFF
     int
     default 0 if BTDM_CTRL_PCM_ROLE_MASTER
@@ -105,6 +144,13 @@ config BTDM_CTRL_PCM_POLAR_EFF
     int
     default 0 if BTDM_CTRL_PCM_POLAR_FALLING_EDGE
     default 1 if BTDM_CTRL_PCM_POLAR_RISING_EDGE
+    default 0
+
+config BTDM_CTRL_PCM_FSYNCSHP_EFF
+    int
+    default 0 if BTDM_CTRL_PCM_FSYNCSHP_STEREO_MODE
+    default 1 if BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_LF
+    default 2 if BTDM_CTRL_PCM_FSYNCSHP_MONO_MODE_FF
     default 0
 
 config BTDM_CTRL_AUTO_LATENCY
@@ -139,14 +185,14 @@ config BTDM_CTRL_BLE_MAX_CONN_EFF
     default BTDM_CTRL_BLE_MAX_CONN if BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
     default 0
 
+config BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT_EFF
+    int
+    default BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+    default 0
+
 config BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF
     int
     default BTDM_CTRL_BR_EDR_MAX_ACL_CONN if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
-    default 0
-
-config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF
-    int
-    default BTDM_CTRL_BR_EDR_MAX_SYNC_CONN if BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
     default 0
 
 choice BTDM_CTRL_PINNED_TO_CORE_CHOICE
@@ -172,7 +218,7 @@ config BTDM_CTRL_PINNED_TO_CORE
 choice BTDM_CTRL_HCI_MODE_CHOICE
     prompt "HCI mode"
     help
-        Speicify HCI mode as VHCI or UART(H4)
+        Specify HCI mode as VHCI or UART(H4)
 
     config BTDM_CTRL_HCI_MODE_VHCI
         bool "VHCI"
@@ -262,10 +308,10 @@ menu "MODEM SLEEP Options"
                 the bluetooth low power clock source.
 
         config BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
-            bool "External 32kHz crystal"
-            depends on RTC_CLK_SRC_EXT_CRYS
+            bool "External 32kHz crystal/oscillator"
+            depends on RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC
             help
-                External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency
+                External 32kHz crystal/oscillator has a nominal frequency of 32.768kHz and provides good frequency
                 stability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth
                 modem sleep to be used with both DFS and light sleep.
     endchoice
@@ -282,7 +328,7 @@ choice BTDM_BLE_SLEEP_CLOCK_ACCURACY
         needs a larger RX window to synchronize with master in each anchor point, thus resulting in an
         increase of power consumption but a higher level of robustness in keeping connected. According
         to the requirements of Bluetooth Core specification 4.2, the worst-case accuracy of Classic
-        Bluetooth low power oscialltor(LPO) is +/-250ppm in STANDBY and in low power modes such as
+        Bluetooth Low Power Oscillator (LPO) is +/-250ppm in STANDBY and in low power modes such as
         sniff. For BLE the worst-case SCA is +/-500ppm.
 
         - "151ppm to 250ppm" option is the default value for Bluetooth Dual mode
@@ -398,6 +444,24 @@ config BTDM_CTRL_FULL_SCAN_SUPPORTED
         The full scan function is mainly used to provide BLE scan performance.
         This is required for scenes with high scan performance requirements, such as BLE Mesh scenes.
 
+config BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+    bool "Disable active scan backoff"
+    default n
+    help
+        Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
+        minimize collision of scan request PDUs from multiple scanners. If scan backoff is disabled, in active
+        scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
+
+config BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
+
+
 config BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
     depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
@@ -432,6 +496,48 @@ config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
         If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
         may cause adv packets lost more.
 
+menu "BLE disconnects when Instant Passed (0x28) occurs"
+    config BTDM_BLE_LLCP_CONN_UPDATE
+        bool "BLE ACL connection update procedure"
+        depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs during connection update procedure.
+
+    config BTDM_BLE_LLCP_CHAN_MAP_UPDATE
+        bool "BLE ACL channel map update procedure"
+        depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in channel map update procedure.
+endmenu
+
+config BTDM_BLE_CHAN_ASS_EN
+    bool "Enable channel assessment"
+    depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
+    default y
+    help
+        If this option is enabled, The Controller will records the communication quality
+        for each channel and then start a timer to check and update the channel map every 4 seconds.
+
+config BTDM_BLE_PING_EN
+    bool "Enable LE Ping procedure"
+    depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    default y
+    help
+        If this option is disabled, The Controller will not start the LE authenticated payload timer.
+        This option is used for some compatibility problems related to LE ping procedure.
+
+config BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
+    bool "Enable Bluetooth controller debugging mode 1 (for internal use only)"
+    default n
+    depends on BT_ENABLED
+    help
+        Enables specific debugging features for the Bluetooth controller.
+        This option is strictly for internal debugging purposes and should not be enabled in production environments,
+        as it may impact performance and stability.
 
 config BTDM_RESERVE_DRAM
     hex

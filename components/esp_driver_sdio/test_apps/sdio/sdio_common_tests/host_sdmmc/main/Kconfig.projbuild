@@ -1,0 +1,13 @@
+menu "SDIO Slave Test Host Configuration"
+    choice TEST_SDIO_SLAVE_TARGET
+        prompt "SDIO Slave Chip"
+        default TEST_SDIO_SLAVE_TARGET_ESP32
+        help
+            default test board conditions targets: ESP32, ESP32C6, ESP32C61
+
+        config TEST_SDIO_SLAVE_TARGET_ESP32
+            bool "SDIO Slave ESP32"
+        config TEST_SDIO_SLAVE_TARGET_ESP32C5
+            bool "SDIO Slave ESP32C5"
+    endchoice
+endmenu

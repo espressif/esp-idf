@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -49,10 +49,13 @@
 #define CORE_ID_SIZE        4
 #endif
 
+/* Align the value up to the nearest multiple of 4 */
+#define PORT_ALIGN_UP_TO_4(value) (((value) + 3) & ~3)
+
 #define PORT_OFFSET_PX_END_OF_STACK ( \
     PORT_OFFSET_PX_STACK \
     + 4                                 /* void * pxDummy6 */ \
-    + CONFIG_FREERTOS_MAX_TASK_NAME_LEN /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ \
+    + PORT_ALIGN_UP_TO_4(configMAX_TASK_NAME_LEN) /* uint8_t ucDummy7[ configMAX_TASK_NAME_LEN ] */ \
     + CORE_ID_SIZE                      /* BaseType_t xDummyCoreID */ \
 )
 
@@ -71,14 +74,7 @@
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 #include "esp_newlib.h"
-
-/* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
-
-/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
-#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#include "esp_timer.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,7 +142,7 @@ typedef uint32_t TickType_t;
 UBaseType_t xPortSetInterruptMaskFromISR(void);
 
 /**
- * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ * @brief Re-enable interrupts in a nested manner (meant to be called from ISRs)
  *
  * @warning Only applies to current CPU.
  * @param prev_int_level Previous interrupt level
@@ -165,6 +161,13 @@ void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level);
  *  - pdFALSE otherwise
  */
 BaseType_t xPortInIsrContext(void);
+
+/**
+ * @brief Assert if in ISR context
+ *
+ * - Asserts on xPortInIsrContext() internally
+ */
+void vPortAssertIfInISR(void);
 
 /**
  * @brief Check if in ISR context from High priority ISRs
@@ -226,6 +229,22 @@ void vPortEnterCritical(void);
  * - Can be nested
  */
 void vPortExitCritical(void);
+
+/**
+ * @brief Claim thread-safe region start
+ *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeClaim(void);
+
+/**
+ * @brief Claim thread-safe region end
+ *        Restores normal port critical behavior
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeDisclaim(void);
 
 #if (configNUM_CORES > 1)
 /**
@@ -407,11 +426,11 @@ void vApplicationSleep(TickType_t xExpectedIdleTime);
 /**
  * @brief Get the tick rate per second
  *
- * @note [refactor-todo] make this inline
- * @note [refactor-todo] Check if this function should be renamed (due to uint return type)
+ * @deprecated This function will be removed in IDF 7.0. Use CONFIG_FREERTOS_HZ directly instead.
+ * @note [refactor-todo] Remove this function in IDF 7.0 (IDF-14115)
  * @return uint32_t Tick rate in Hz
  */
-uint32_t xPortGetTickRateHz(void);
+uint32_t xPortGetTickRateHz(void) __attribute__((deprecated("This function will be removed in IDF 7.0. Use CONFIG_FREERTOS_HZ directly instead.")));
 
 /**
  * @brief Set a watchpoint to watch the last 32 bytes of the stack
@@ -443,9 +462,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
  * The portCLEAN_UP_TCB() macro is called in prvDeleteTCB() right before a
  * deleted task's memory is freed. We map that macro to this internal function
  * so that IDF FreeRTOS ports can inject some task pre-deletion operations.
- *
- * @note We can't use vPortCleanUpTCB() due to API compatibility issues. See
- * CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP. Todo: IDF-8097
  */
 void vPortTCBPreDeleteHook( void *pxTCB );
 
@@ -479,6 +495,11 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
 
 /**
+ * @brief Assert if in ISR context
+ */
+#define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
+
+/**
  * @brief Used by FreeRTOS functions to call the correct version of critical section API
  */
 #if ( configNUM_CORES > 1 )
@@ -510,7 +531,7 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portENTER_CRITICAL_ISR(mux)                 vPortEnterCriticalMultiCore(mux)
 #define portEXIT_CRITICAL_ISR(mux)                  vPortExitCriticalMultiCore(mux)
 
-#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux)
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux, timeout)
 #define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe(mux)
 #define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe(mux)
 #else
@@ -544,7 +565,12 @@ void vPortTCBPreDeleteHook( void *pxTCB );
         portEXIT_CRITICAL(mux);             \
     }                                       \
 })
-#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   portENTER_CRITICAL_SAFE(mux, timeout)
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   ({  \
+    (void)timeout;                                      \
+    portENTER_CRITICAL_SAFE(mux);                       \
+    BaseType_t ret = pdPASS;                            \
+    ret;                                                \
+})
 
 #endif /* (configNUM_CORES > 1) */
 
@@ -589,10 +615,9 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 // ------------------- Run Time Stats ----------------------
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#define portGET_RUN_TIME_COUNTER_VALUE() 0
-#ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-/* Coarse resolution time (us) */
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x)    do {x = (uint32_t)esp_timer_get_time();} while(0)
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()        xPortGetRunTimeCounterValue()
 #endif
 
 // --------------------- TCB Cleanup -----------------------
@@ -663,27 +688,10 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 // ---------------------- Yielding -------------------------
 
-// TODO: [ESP32C61] IDF-9280, changed in verify code, pls check
-#if CONFIG_IDF_TARGET_ESP32C61
-FORCE_INLINE_ATTR bool xPortCanYield(void)
-{
-#if SOC_INT_CLIC_SUPPORTED
-    uint32_t threshold1 = (RV_READ_CSR(MINTTHRESH)) >> (8 - NLBITS);
-    uint32_t threshold2 = (RV_READ_CSR(MINTSTATUS)) >> (24 + (8 - NLBITS));
-    return (threshold1 == 0) && (threshold2 == 0) ;
-#else
-    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
-    return (threshold <= 1);
-#endif /* SOC_INT_CLIC_SUPPORTED */
-}
-#else
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
 
 #if SOC_INT_CLIC_SUPPORTED
-// TODO: [ESP32C5] IDF-8655 simplify the code for c5 mp
-#if !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* When CLIC is supported:
      *  - The lowest interrupt threshold level is 0. Therefore, an interrupt threshold level above 0 would mean that we
      *    are in a critical section.
@@ -692,18 +700,9 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
      *    level, we read the machine-mode interrupt level (mil) field from the mintstatus CSR. A non-zero value indicates
      *    that we are in an interrupt context.
      */
+    uint32_t threshold = rv_utils_get_interrupt_threshold();
     uint32_t intr_level = rv_utils_get_interrupt_level();
-    threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
-
     return ((intr_level == 0) && (threshold == 0));
-#else
-    #define MINTSTATUS         0xfb1
-    #define MINTTHRESH         0x347
-    uint32_t threshold1 = (RV_READ_CSR(MINTTHRESH)) >> (8 - NLBITS);
-    uint32_t threshold2 = (RV_READ_CSR(MINTSTATUS)) >> (24 + (8 - NLBITS));
-    return (threshold1 == 0) && (threshold2 == 0) ;
-#endif
-
 #else/* !SOC_INT_CLIC_SUPPORTED */
     uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
@@ -713,7 +712,6 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     return (threshold <= 1);
 #endif
 }
-#endif
 
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  * - Miscellaneous porting macros
@@ -761,11 +759,26 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 // --------------------- App-Trace -------------------------
 
-#if CONFIG_APPTRACE_SV_ENABLE
+#if CONFIG_ESP_TRACE_ENABLE
 extern volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag[_cpu_])
 #else
 #define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
+// -------------- FPU softerware retention ------------------
+#if (SOC_CPU_COPROC_NUM > 0) && SOC_CPU_HAS_FPU && SOC_PM_FPU_RETENTION_BY_SW
+/**
+ * @brief Whether the FPU context is dirty on the given core.
+ *
+ * Returns non-zero if any task has used the FPU, such context should be
+ *                  saved during sleep retention.
+ *
+ * @param core_id Core id
+ * @return pdTRUE  FPU context is dirty
+ * @return pdFALSE FPU was not used
+ */
+BaseType_t xPortFPUContextIsDirty(BaseType_t core_id);
 #endif
 
 #ifdef __cplusplus

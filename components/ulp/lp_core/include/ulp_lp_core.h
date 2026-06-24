@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@ extern "C" {
 #define ULP_LP_CORE_WAKEUP_SOURCE_LP_IO     BIT(2) // Enable wake-up by LP IO interrupt
 #define ULP_LP_CORE_WAKEUP_SOURCE_ETM       BIT(3) // Enable wake-up by ETM event
 #define ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER  BIT(4) // Enable wake-up by LP timer
+#define ULP_LP_CORE_WAKEUP_SOURCE_LP_VAD    BIT(5) // Enable wake-up by LP VAD
 
 /**
  * @brief ULP LP core init parameters
@@ -31,9 +32,9 @@ typedef struct {
     uint32_t wakeup_source;                  /*!< Wakeup source flags */
     uint32_t lp_timer_sleep_duration_us;     /*!< Sleep duration when ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER is specified. Measurement unit: us */
 #if ESP_ROM_HAS_LP_ROM
-    bool    skip_lp_rom_boot;               /* !< Skips the LP rom code and boots directly into the app code placed in LP RAM,
-                                                  this gives faster boot time for time sensitive use-cases at the cost of skipping
-                                                  setup e.g. of UART */
+    bool    skip_lp_rom_boot;               /*!< Skips the LP rom code and boots directly into the app code placed in LP RAM,
+                                                 this gives faster boot time for time sensitive use-cases at the cost of skipping
+                                                 setup e.g. of UART */
 #endif //ESP_ROM_HAS_LP_ROM
 } ulp_lp_core_cfg_t;
 
@@ -62,6 +63,46 @@ esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_
  *        wake up trigger.
  */
 void ulp_lp_core_stop(void);
+
+/**
+ * @brief Enable or disable the software interrupts requested by the LP CPU via the PMU
+ */
+void ulp_lp_core_sw_intr_from_lp_enable(bool enable);
+
+/**
+ * @brief Clear the software interrupt requested by the LP CPU via the PMU
+ */
+void ulp_lp_core_sw_intr_from_lp_clear(void);
+
+/**
+ * @brief Trigger a software interrupt to the LP CPU from the PMU
+ *
+ * @note This is the same SW trigger that is used to wake up the LP CPU
+ *
+ */
+void ulp_lp_core_sw_intr_to_lp_trigger(void);
+
+/**
+ * @brief Trigger a software interrupt to the LP CPU from the PMU
+ *
+ * @note This function is an alias for `ulp_lp_core_sw_intr_to_lp_trigger`
+ *
+ */
+static inline void ulp_lp_core_sw_intr_trigger(void)
+{
+    ulp_lp_core_sw_intr_to_lp_trigger();
+}
+
+/**
+ * @brief Trigger a software interrupt on the HP core from the PMU
+ *
+ * @note This function generates the same software interrupt that the LP core would normally
+ *       use to notify the HP core. It can be called directly by the HP core itself in order
+ *       to simulate or re-issue such a notification. This is particularly useful if the HP
+ *       core missed a previous interrupt from the LP core and needs to retrigger the
+ *       notification sequence.
+ */
+void ulp_lp_core_sw_intr_trigger_self(void);
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,65 @@
+<svg width="600" height="240" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="12" text-anchor="middle">
+  <style>
+    .wave { stroke: black; stroke-width: 2; fill: none; }
+  </style>
+
+  <!-- 主波形 -->
+  <text x="100" y="55">TX/RX</text>
+  <polyline class="wave" points="90,30 190,30"/>
+  <polyline class="wave" points="190,30 190,60 220,60"/>
+  <polyline class="wave" points="220,60 220,30 250,30"/>
+  <polyline class="wave" points="250,30 250,60 280,60"/>
+  <polyline class="wave" points="280,60 280,30 310,30"/>
+  <polyline class="wave" points="310,30 310,60 340,60"/>
+  <polyline class="wave" points="340,60 370,60"/>
+  <polyline class="wave" points="370,60 370,30 400,30"/>
+  <polyline class="wave" points="400,30 430,30"/>
+  <polyline class="wave" points="430,30 430,60 460,60"/>
+  <polyline class="wave" points="460,60 460,30 580,30"/>
+
+  <line x1="280" y1="60" x2="80" y2="110" stroke="black" stroke-dasharray="5,5"/>
+  <line x1="310" y1="60" x2="590" y2="110" stroke="black" stroke-dasharray="5,5"/>
+
+  <!-- 放大视图 -->
+  <rect x="80" y="110" width="500" height="30" fill="#f0f0f0" stroke="black"/>
+  <text x="330" y="130">one bit in time quanta</text>
+
+  <rect x="80" y="140" width="60" height="30" fill="#cccccc" stroke="black"/>
+  <text x="110" y="160">sync_seg</text>
+
+  <rect x="140" y="140" width="146.67" height="30" fill="#8ecae6" stroke="black"/>
+  <text x="213" y="160">prop_seg</text>
+
+  <rect x="286.67" y="140" width="146.67" height="30" fill="#219ebc" stroke="black"/>
+  <text x="360" y="160" fill="white">tseg1</text>
+
+  <rect x="433.34" y="140" width="146.67" height="30" fill="#023047" stroke="black"/>
+  <text x="506" y="160" fill="white">tseg2</text>
+
+  <!-- 虚线框 -->
+  <rect x="220" y="180" width="60" height="30" fill="none" stroke="black" stroke-dasharray="5,5" />
+  <text x="250" y="200">sync_seg</text>
+
+  <!-- 虚线向右延伸 -->
+  <line x1="280" y1="180" x2="530" y2="180" stroke="black" stroke-dasharray="5,5"/>
+  <line x1="280" y1="210" x2="530" y2="210" stroke="black" stroke-dasharray="5,5"/>
+
+  <!-- sjw 横向箭头 -->
+  <line x1="80" y1="195" x2="220" y2="195" stroke="black" marker-start="url(#arrow-left)" marker-end="url(#arrow-right)" stroke-width="2"/>
+  <text x="150" y="188"  fill="black">sjw</text>
+
+  <line x1="433" y1="225" x2="433" y2="180" stroke="black" marker-end="url(#arrow-up)" stroke-width="2"/>
+  <text x="433" y="235">sample_point</text>
+
+  <defs>
+    <marker id="arrow-up" markerWidth="6" markerHeight="6" refX="5" refY="5" orient="0" markerUnits="strokeWidth">
+      <path d="M5,0 L10,10 L0,10 Z" fill="black"/>
+    </marker>
+    <marker id="arrow-right" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="black"/>
+    </marker>
+    <marker id="arrow-left" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M6,0 L0,3 L6,6 Z" fill="black"/>
+    </marker>
+  </defs>
+</svg>

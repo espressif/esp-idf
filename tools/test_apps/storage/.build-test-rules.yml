@@ -1,0 +1,52 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/storage/fatfsgen:
+  depends_components:
+    - *common_components
+    - fatfs
+    - vfs
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+
+tools/test_apps/storage/partition_table_readonly:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: these chips should be sufficient for test coverage (Xtensa and RISC-V, single and dual core)
+  disable:
+    - if: CONFIG_NAME == "encrypted"
+      temporary: true
+      reason: there are potential bugs with pytest when using flash encryption and NVS partition with nvs_create_partition_image #TODO: IDF-8300
+  depends_components:
+    - *common_components
+    - partition_table
+    - spi_flash
+    - esp_partition
+    - nvs_flash
+    - vfs
+    - fatfs
+    - spiffs
+
+tools/test_apps/storage/sdmmc_console:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3", "esp32c61", "esp32h2"]
+      temporary: true
+      reason: No runners for other targets yet
+  depends_components:
+    - *common_components
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdspi
+
+tools/test_apps/storage/std_filesystem:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      reason: one Xtensa and one RISC-V chip should be enough
+  disable:
+    - if: IDF_TOOLCHAIN == "clang"
+      reason: Issue with C++ exceptions on Xtensa, issue with getrandom linking on RISC-V
+  depends_components:
+    - *common_components
+    - vfs
+    - esp_libc
+    - fatfs

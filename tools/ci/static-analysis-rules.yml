@@ -8,7 +8,6 @@ ignore:
 
 skip:
   # submodules and third-party code
-  - "components/asio/asio"
   - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
   - "components/bt/controller/lib_esp32"
   - "components/bt/controller/lib_esp32c3_family"
@@ -18,10 +17,8 @@ skip:
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esp_wifi/lib_esp32"
-  - "components/json/cJSON"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
-  - "components/mqtt/esp-mqtt"
   - "components/openthread/lib"
   - "components/openthread/openthread"
   - "components/protobuf-c/protobuf-c"
@@ -38,4 +35,3 @@ skip:
   - "components/bt/host/bluedroid/stack/gatt/att_protocol.c"
   - "components/bt/host/bluedroid/stack/gatt/gatt_db.c"
   - "components/bt/host/bluedroid/stack/l2cap/l2c_utils.c"
-  - "components/wifi_provisioning/src/scheme_ble.c"

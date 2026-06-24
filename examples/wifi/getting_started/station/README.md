@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 | ESP32-S31 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 # Wi-Fi Station Example
 
@@ -46,7 +46,7 @@ I (599) system_api: Base MAC address is not set, read default base MAC address f
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (629) wifi: wifi firmware version: 2d94f02
 I (629) wifi: config NVS flash: enabled
-I (629) wifi: config nano formating: disabled
+I (629) wifi: config nano formatting: disabled
 I (629) wifi: Init dynamic tx buffer num: 32
 I (629) wifi: Init data frame dynamic rx buffer num: 32
 I (639) wifi: Init management frame dynamic rx buffer num: 32
@@ -79,7 +79,7 @@ I (599) system_api: Base MAC address is not set, read default base MAC address f
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (629) wifi: wifi firmware version: 2d94f02
 I (629) wifi: config NVS flash: enabled
-I (629) wifi: config nano formating: disabled
+I (629) wifi: config nano formatting: disabled
 I (629) wifi: Init dynamic tx buffer num: 32
 I (629) wifi: Init data frame dynamic rx buffer num: 32
 I (639) wifi: Init management frame dynamic rx buffer num: 32
@@ -115,6 +115,10 @@ I (8249) wifi station: connect to the AP fail
 I (10299) wifi station: connect to the AP fail
 I (10299) wifi station: Failed to connect to SSID:myssid, password:mypassword
 ```
+
+## Running the example on ESP Chips without Wi-Fi
+
+This example can run on ESP Chips without Wi-Fi using ESP-Hosted. See the [Two-Chip Solution](../../README.md#wi-fi-examples-with-two-chip-solution) section in the upper level `README.md` for information.
 
 ## Troubleshooting
 

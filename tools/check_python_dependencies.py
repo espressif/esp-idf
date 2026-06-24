@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -11,68 +11,113 @@ try:
     from packaging.requirements import Requirement
     from packaging.version import Version
 except ImportError:
-    print('packaging cannot be imported. '
-          'If you\'ve installed a custom Python then this package is provided separately and have to be installed as well. '
-          'Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required packages.')
+    print(
+        'packaging cannot be imported. '
+        "If you've installed a custom Python then this package is provided separately and have to be installed as "
+        'well. Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required '
+        'packages.'
+    )
     sys.exit(1)
 
-try:
-    from importlib.metadata import requires
-    from importlib.metadata import version as get_version
-except ImportError:
-    # compatibility for python <=3.7
-    from importlib_metadata import requires  # type: ignore
-    from importlib_metadata import version as get_version  # type: ignore
-
-try:
-    from typing import Set
-except ImportError:
-    # This is a script run during the early phase of setting up the environment. So try to avoid failure caused by
-    # Python version incompatibility. The supported Python version is checked elsewhere.
-    pass
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import requires as _requires
+from importlib.metadata import version as _version
 
 PYTHON_PACKAGE_RE = re.compile(r'[^<>=~]+')
 
+
+def validate_requirement_list(file_path: str) -> str:
+    """Validate that a requirement file exists and is readable."""
+    if not os.path.isfile(file_path):
+        raise argparse.ArgumentTypeError(
+            f'Requirement file {file_path} not found\n'
+            'Please make sure the file path is correct.\n'
+            'In case the file was removed, please run the export script again, to update the environment.'
+        )
+    try:
+        open(file_path, encoding='utf-8').close()
+    except OSError as e:
+        raise argparse.ArgumentTypeError(f'Cannot read requirement file {file_path}: {e}')
+    return file_path
+
+
+# The version and requires function from importlib.metadata in python prior
+# 3.10 does perform distribution name normalization before searching for
+# package distribution. This might cause problems for package with dot in its
+# name as the wheel build backend(e.g. setuptools >= 75.8.1), may perform
+# distribution name normalization. If the package name is not found, try again
+# with normalized name.
+# https://packaging.python.org/en/latest/specifications/binary-distribution-format/#escaping-and-unicode
+def normalize_name(name: str) -> str:
+    return re.sub(r'[-_.]+', '-', name).lower().replace('-', '_')
+
+
+def get_version(name: str) -> str:
+    try:
+        version = _version(name)
+    except PackageNotFoundError:
+        version = _version(normalize_name(name))
+    return version
+
+
+def get_requires(name: str) -> list | None:
+    try:
+        requires = _requires(name)
+    except PackageNotFoundError:
+        requires = _requires(normalize_name(name))
+    return requires
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ESP-IDF Python package dependency checker')
-    parser.add_argument('--requirements', '-r',
-                        help='Path to a requirements file (can be used multiple times)',
-                        action='append', default=[])
-    parser.add_argument('--constraints', '-c', default=[],
-                        help='Path to a constraints file (can be used multiple times)',
-                        action='append')
+    parser.add_argument(
+        '--requirements',
+        '-r',
+        help='Path to a requirements file (can be used multiple times)',
+        action='append',
+        default=[],
+        type=validate_requirement_list,
+    )
+    parser.add_argument(
+        '--constraints',
+        '-c',
+        default=[],
+        help='Path to a constraints file (can be used multiple times)',
+        action='append',
+    )
     args = parser.parse_args()
 
     required_set = set()
     for req_path in args.requirements:
-        with open(req_path) as f:
+        with open(req_path, encoding='utf-8') as f:
             required_set |= set(i for i in map(str.strip, f.readlines()) if len(i) > 0 and not i.startswith('#'))
 
     constr_dict = {}  # for example package_name -> package_name==1.0
     for const_path in args.constraints:
-        with open(const_path) as f:
+        with open(const_path, encoding='utf-8') as f:
             for con in [i for i in map(str.strip, f.readlines()) if len(i) > 0 and not i.startswith('#')]:
                 if con.startswith('file://'):
                     con = os.path.basename(con)
                 elif con.startswith('--only-binary'):
                     continue
-                elif con.startswith('-e') and '#egg=' in con:  # version control URLs, take the egg= part at the end only
+                # version control URLs, take the egg= part at the end only
+                elif con.startswith('-e') and '#egg=' in con:
                     con_m = re.search(r'#egg=([^\s]+)', con)
                     if not con_m:
-                        print('Malformed input. Cannot find name in {}'.format(con))
+                        print(f'Malformed input. Cannot find name in {con}')
                         sys.exit(1)
                     con = con_m[1]
 
                 name_m = PYTHON_PACKAGE_RE.search(con)
                 if not name_m:
-                    print('Malformed input. Cannot find name in {}'.format(con))
+                    print(f'Malformed input. Cannot find name in {con}')
                     sys.exit(1)
                 constr_dict[name_m[0]] = con.partition(' #')[0]  # remove comments
 
     not_satisfied = []  # in string form which will be printed
 
     # already_checked set is used in order to avoid circular checks which would cause looping.
-    already_checked = set()  # type: Set[Requirement]
+    already_checked: set[Requirement] = set()
 
     # required_set contains package names in string form without version constraints. If the package has a constraint
     # specification (package name + version requirement) then use that instead. new_req_list is used to store
@@ -94,7 +139,10 @@ if __name__ == '__main__':
             except Exception as e:
                 # Catch general exception, because get_version may return None (https://github.com/python/cpython/issues/91216)
                 # log package name alongside the error message for easier debugging
-                not_satisfied.append(f"Error while checking requirement '{req}'. Package was not found and is required by the application: {e}")
+                not_satisfied.append(
+                    f"Error while checking requirement '{req}'. Package was not found and is required by the "
+                    f'application: {e}'
+                )
                 new_req_list.remove(req)
         else:
             new_req_list.remove(req)
@@ -107,8 +155,8 @@ if __name__ == '__main__':
             try:
                 dependency_requirements = set()
                 extras = list(requirement.extras) or ['']
-                # `requires` returns all sub-requirements including all extras - we need to filter out just required ones
-                for name in requires(requirement.name) or []:
+                # `requires` returns all sub-requirements including all extras; we need to filter out just required ones
+                for name in get_requires(requirement.name) or []:
                     sub_req = Requirement(name)
                     # check extras e.g. esptool[hsm]
                     for extra in extras:
@@ -124,7 +172,10 @@ if __name__ == '__main__':
             except Exception as e:
                 # Catch general exception, because get_version may return None (https://github.com/python/cpython/issues/91216)
                 # log package name alongside the error message for easier debugging
-                not_satisfied.append(f"Error while checking requirement '{req}'. Package was not found and is required by the application: {e}")
+                not_satisfied.append(
+                    f"Error while checking requirement '{req}'. Package was not found and is required by the "
+                    f'application: {e}'
+                )
 
     if len(not_satisfied) > 0:
         print('The following Python requirements are not satisfied:')
@@ -133,15 +184,17 @@ if __name__ == '__main__':
             # We are running inside a private virtual environment under IDF_TOOLS_PATH,
             # ask the user to run install.bat again.
             install_script = 'install.bat' if sys.platform == 'win32' else 'install.sh'
-            print('To install the missing packages, please run "{}"'.format(install_script))
+            print(f'To install the missing packages, please run "{install_script}"')
         else:
-            print('Please follow the instructions found in the "Set up the tools" section of '
-                  'ESP-IDF Getting Started Guide.')
+            print(
+                'Please follow the instructions found in the "Set up the tools" section of '
+                'ESP-IDF Getting Started Guide.'
+            )
 
         print('Diagnostic information:')
         idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
         print('    IDF_PYTHON_ENV_PATH: {}'.format(idf_python_env_path or '(not set)'))
-        print('    Python interpreter used: {}'.format(sys.executable))
+        print(f'    Python interpreter used: {sys.executable}')
         if not idf_python_env_path or idf_python_env_path not in sys.executable:
             print('    Warning: python interpreter not running from IDF_PYTHON_ENV_PATH')
             print('    PATH: {}'.format(os.getenv('PATH')))

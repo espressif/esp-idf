@@ -9,7 +9,7 @@ This section covers the steps to configure and run a debugger using various meth
 * :ref:`jtag-debugging-using-debugger-command-line`
 * :ref:`jtag-debugging-with-idf-py`
 
-For how to run a debugger from VS Code, see `Configuration for Visual Studio Code Debug <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__.
+For how to run a debugger from VS Code, see `Configuration for Visual Studio Code Debug <https://docs.espressif.com/projects/vscode-esp-idf-extension/en/latest/debugproject.html>`__.
 
 
 .. _jtag-debugging-using-debugger-eclipse:
@@ -23,19 +23,20 @@ Eclipse
 
 Eclipse is an integrated development environment (IDE) that provides a powerful set of tools for developing and debugging software applications. For ESP-IDF applications, `IDF Eclipse plugin <https://github.com/espressif/idf-eclipse-plugin>`_ provides two ways of debugging:
 
-1. `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
-2. GDB Hardware Debugging
+1.  `ESP-IDF GDB OpenOCD Debugging <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_
+2.  GDB Hardware Debugging
 
 By default, Eclipse supports OpenOCD Debugging via the GDB Hardware Debugging plugin, which requires starting the OpenOCD server from the command line and configuring the GDB client from Eclipse to start with the debugging. This approach can be time-consuming and error-prone.
 
 To make the debugging process easier, the IDF Eclipse plugin has a customized ESP-IDF GDB OpenOCD Debugging functionality. This functionality supports configuring the OpenOCD server and GDB client from within Eclipse. All the required configuration parameters will be pre-filled by the plugin, and you can start debugging with just a click of a button.
 
-Therefore, it is recommended to use the `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ via the IDF Eclipse plugin.
+Therefore, it is recommended to use the `ESP-IDF GDB OpenOCD Debugging <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_ via the IDF Eclipse plugin.
 
 **GDB Hardware Debugging**
 
 .. note::
-    This approach is recommended only if you are unable to debug using `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ for some reason.
+
+    This approach is recommended only if you are unable to debug using `ESP-IDF GDB OpenOCD Debugging <https://docs.espressif.com/projects/espressif-ide/en/latest/openocddebugging.html>`_ for some reason.
 
 To install the ``GDB Hardware Debugging`` plugin, open Eclipse and select ``Help`` > ``Install`` New Software.
 
@@ -75,14 +76,17 @@ After installation is complete, follow these steps to configure the debugging se
 
 8.  The last tab that requires changing the default configuration is ``Startup``. Under ``Initialization Commands`` uncheck ``Reset and Delay (seconds)`` and ``Halt``. Then, in the entry field below, enter the following lines:
 
-    ::
+    .. code-block:: none
 
         mon reset halt
         maintenance flush register-cache
         set remote hardware-watchpoint-limit 2
 
     .. note::
-        To automatically update the image in the flash before starting a new debug session, add the following command lines to the beginning of the ``Initialization Commands`` textbox::
+
+        To automatically update the image in the flash before starting a new debug session, add the following command lines to the beginning of the ``Initialization Commands`` textbox:
+
+        .. code-block:: none
 
             mon reset halt
             mon program_esp ${workspace_loc:blink/build/blink.bin} 0x10000 verify
@@ -108,16 +112,16 @@ After installation is complete, follow these steps to configure the debugging se
 
 12. If you have completed the :ref:`jtag-debugging-configuring-target` steps described above, so the target is running and ready to talk to debugger, go right to debugging by pressing ``Debug`` button. Otherwise press ``Apply`` to save changes, go back to :ref:`jtag-debugging-configuring-target` and return here to start debugging.
 
-Once all configuration steps 1-12 are satisfied, the new Eclipse perspective called "Debug" will open, as shown in the example picture below.
+    Once all configuration steps 1-12 are satisfied, the new Eclipse perspective called "Debug" will open, as shown in the example picture below.
 
-.. figure:: ../../../_static/debug-perspective.jpg
-    :align: center
-    :alt: Debug Perspective in Eclipse
-    :figclass: align-center
+    .. figure:: ../../../_static/debug-perspective.jpg
+        :align: center
+        :alt: Debug Perspective in Eclipse
+        :figclass: align-center
 
-    Debug Perspective in Eclipse
+        Debug Perspective in Eclipse
 
-If you are not quite sure how to use GDB, check :ref:`jtag-debugging-examples-eclipse` example debugging session in section :ref:`jtag-debugging-examples`.
+    If you are not quite sure how to use GDB, check :ref:`jtag-debugging-examples-eclipse` example debugging session in section :ref:`jtag-debugging-examples`.
 
 
 .. _jtag-debugging-using-debugger-command-line:
@@ -131,88 +135,70 @@ Command Line
 
 2.  Open a new terminal session and go to the directory that contains the project for debugging, e.g.,
 
-    ::
+    .. code-block:: none
 
         cd ~/esp/blink
 
 .. highlight:: none
 
-3.  When launching a debugger, you will need to provide a couple of configuration parameters and commands. Instead of entering them one by one in the command line, create a configuration file and name it ``gdbinit``:
+3.  When launching a debugger, you will need to provide a couple of configuration parameters and commands. The build system generates several ``.gdbinit`` files to facilitate efficient debugging. Paths to these files can be found in the ``build/project_description.json``, under the ``gdbinit_files`` section. The paths to these files are defined as follows:
 
-    ::
+    .. code-block:: json
 
-        target remote :3333
-        set remote hardware-watchpoint-limit 2
-        mon reset halt
-        maintenance flush register-cache
-        thb app_main
-        c
+        "gdbinit_files": {
+            "01_symbols": "application_path/build/gdbinit/symbols",
+            "02_prefix_map": "application_path/build/gdbinit/prefix_map",
+            "03_py_extensions": "application_path/build/gdbinit/py_extensions",
+            "04_connect": "application_path/build/gdbinit/connect"
+        }
 
-    Save this file in the current directory.
+    The ``XX_`` prefix in the JSON keys is included to have ability to sort them. Sorted fields indicate the recommended order in which to provide the data to GDB.
 
-    For more details on what is inside ``gdbinit`` file, see :ref:`jtag-debugging-tip-debugger-startup-commands`
+    Descriptions of the generated ``.gdbinit`` files:
+
+    * ``symbols`` - contains symbol sources for debugging.
+    * ``prefix_map`` - configures the prefix map to modify source paths in GDB. For more details, see :ref:`reproducible-builds-and-debugging`.
+    * ``py_extensions`` - initializes Python extensions in GDB. This requires Python built with ``libpython`` and a version supported by GDB. To verify compatibility, run ``{IDF_TARGET_TOOLCHAIN_PREFIX}-gdb --batch-silent --ex "python import os"``, which should complete without errors.
+    * ``connect`` - contains commands necessary for establishing a connection to the target device.
+
+    To enhance your debugging experience, you can also create custom ``.gdbinit`` files, used either alongside or in place of the generated configurations.
 
 .. highlight:: bash
 
-4.  Now you are ready to launch GDB. Type the following in terminal:
+4.  Now you are ready to launch GDB. Use the following example command to load symbols and connect to the target (``-q`` option added to minimize startup output):
 
-    ::
+    .. code-block:: none
 
-        {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -x gdbinit build/blink.elf
+        {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -q -x build/gdbinit/symbols -x build/gdbinit/prefix_map -x build/gdbinit/connect build/blink.elf
 
 .. highlight:: none
 
 5.  If the previous steps have been done correctly, you will see a similar log concluded with the ``(gdb)`` prompt:
 
-    ::
+    .. code-block:: none
 
-        user-name@computer-name:~/esp/blink$ {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -x gdbinit build/blink.elf
-        GNU gdb (crosstool-NG crosstool-ng-1.22.0-61-gab8375a) 7.10
-        Copyright (C) 2015 Free Software Foundation, Inc.
-        License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-        This is free software: you are free to change and redistribute it.
-        There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-        and "show warranty" for details.
-        This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target={IDF_TARGET_TOOLCHAIN_PREFIX}".
-        Type "show configuration" for configuration details.
-        For bug reporting instructions, please see:
-        <http://www.gnu.org/software/gdb/bugs/>.
-        Find the GDB manual and other documentation resources online at:
-        <http://www.gnu.org/software/gdb/documentation/>.
-        For help, type "help".
-        Type "apropos word" to search for commands related to "word"...
-        Reading symbols from build/blink.elf...done.
-        0x400d10d8 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./freertos_hooks.c:52
-        52          asm("waiti 0");
-        JTAG tap: {IDF_TARGET_PATH_NAME}.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-        JTAG tap: {IDF_TARGET_PATH_NAME}.slave tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-        {IDF_TARGET_PATH_NAME}: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-        {IDF_TARGET_PATH_NAME}: Core was reset (pwrstat=0x5F, after clear 0x0F).
-        Target halted. PRO_CPU: PC=0x5000004B (active)    APP_CPU: PC=0x00000000
-        {IDF_TARGET_PATH_NAME}: target state: halted
-        {IDF_TARGET_PATH_NAME}: Core was reset (pwrstat=0x1F, after clear 0x0F).
-        Target halted. PRO_CPU: PC=0x40000400 (active)    APP_CPU: PC=0x40000400
-        {IDF_TARGET_PATH_NAME}: target state: halted
-        Hardware assisted breakpoint 1 at 0x400db717: file /home/user-name/esp/blink/main/./blink.c, line 43.
-        0x0:    0x00000000
-        Target halted. PRO_CPU: PC=0x400DB717 (active)    APP_CPU: PC=0x400D10D8
-        [New Thread 1073428656]
-        [New Thread 1073413708]
-        [New Thread 1073431316]
-        [New Thread 1073410672]
-        [New Thread 1073408876]
-        [New Thread 1073432196]
-        [New Thread 1073411552]
-        [Switching to Thread 1073411996]
+        {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -q -x build/gdbinit/symbols -x build/gdbinit/prefix_map -x build/gdbinit/connect build/blink.elf
 
-        Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
-        43      xTaskCreate(&blink_task, "blink_task", 512, NULL, 5, NULL);
+        user-name@computer-name:~/esp-idf/examples/get-started/blink$ {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -q -x build/gdbinit/symbols -x build/gdbinit/connect build/blink.elf
+        Reading symbols from build/blink.elf...
+        add symbol table from file "/home/user-name/esp-idf/examples/get-started/blink/build/bootloader/bootloader.elf"
+        [Switching to Thread 1070141764]
+        app_main () at /home/user-name/esp-idf/examples/get-started/blink/main/blink_example_main.c:95
+        95          configure_led();
+        add symbol table from file "/home/alex/.espressif/tools/esp-rom-elfs/20241011/{IDF_TARGET_PATH_NAME}_rev0_rom.elf"
+        JTAG tap: {IDF_TARGET_PATH_NAME}.tap0 tap/device found: 0x00005c25 (mfg: 0x612 (Espressif Systems), part: 0x0005, ver: 0x0)
+        [{IDF_TARGET_PATH_NAME}] Reset cause (3) - (Software core reset)
+        Hardware assisted breakpoint 1 at 0x42009436: file /home/user-name/esp-idf/examples/get-started/blink/main/blink_example_main.c, line 92.
+        [Switching to Thread 1070139884]
+
+        Thread 2 "main" hit Temporary breakpoint 1, app_main () at /home/user-name/esp-idf/examples/get-started/blink/main/blink_example_main.c:92
+        92      {
         (gdb)
 
 
-Note the third-to-last line, which shows debugger halting at breakpoint established in ``gdbinit`` file at function ``app_main()``. Since the processor is halted, the LED should not be blinking. If this is what you see as well, you are ready to start debugging.
+    Note that the third-to-last line indicates the debugger has halted at a breakpoint established in ``build/gdbinit/connect`` file at function ``app_main()``. Since the processor is halted, the LED should not be blinking. If this matches what you observe, you are ready to start debugging.
 
-If you are not sure how to use GDB, check :ref:`jtag-debugging-examples-command-line` example debugging session in section :ref:`jtag-debugging-examples`.
+    If you are not sure how to use GDB, check :ref:`jtag-debugging-examples-command-line` example debugging session in section :ref:`jtag-debugging-examples`.
 
 
 .. _jtag-debugging-with-idf-py:
@@ -236,22 +222,24 @@ It is also possible to execute the described debugging tools conveniently from `
 
 2.  ``idf.py gdb``
 
-    Starts the GDB the same way as the :ref:`jtag-debugging-using-debugger-command-line`, but generates the initial GDB scripts referring to the current project elf file.
+    Starts GDB in the same way as the :ref:`jtag-debugging-using-debugger-command-line`, using generated GDB scripts referring to the current project's ELF file. For more details, see :ref:`jtag-debugging-using-debugger-command-line`.
 
 
-3.  ``idf.py gdbtui``
+3. ``idf.py gdbtui``
 
     The same as `2`, but starts the gdb with ``tui`` argument, allowing for a simple source code view.
 
 
 4.  ``idf.py gdbgui``
 
-    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend enabling out-of-the-box debugging in a browser window. To enable this option, run the install script with the "--enable-gdbgui" argument, e.g., ``install.sh --enable-gdbgui``.
+    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend, which enables out-of-the-box debugging in a browser window. To enable this option, follow the `installation instructions <https://www.gdbgui.com/installation/>`_ to set up the tool using the ``pipx`` method. For system dependencies, restrictions, and other limitations, please refer to the installation page and the `issue tracker <https://github.com/cs01/gdbgui/issues>`_.
 
 
     You can combine these debugging actions on a single command line, allowing for convenient setup of blocking and non-blocking actions in one step. ``idf.py`` implements a simple logic to move the background actions (such as openocd) to the beginning and the interactive ones (such as gdb, monitor) to the end of the action list.
 
-    An example of a very useful combination is::
+    An example of a very useful combination is:
+
+    .. code-block:: none
 
         idf.py openocd gdbgui monitor
 

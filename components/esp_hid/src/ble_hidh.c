@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -302,6 +302,21 @@ static void attach_report_listeners(esp_gatt_if_t gattc_if, esp_hidh_dev_t *dev)
 
     //subscribe to battery notifications
     if (dev->ble.battery_handle) {
+        uint8_t *rdata = NULL;
+        uint16_t rlen = 0;
+
+        if (event_loop_handle &&
+                read_char(gattc_if, dev->ble.conn_id, dev->ble.battery_handle,
+                          ESP_GATT_AUTH_REQ_NO_MITM, &rdata, &rlen) == ESP_GATT_OK &&
+                rlen >= 1 && rdata != NULL) {
+            esp_hidh_event_data_t p = {0};
+            p.battery.dev = dev;
+            p.battery.level = rdata[0];
+            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_BATTERY_EVENT,
+                              &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+        }
+        free(rdata);
+
         register_for_notify(gattc_if, dev->addr.bda, dev->ble.battery_handle);
         if (dev->ble.battery_ccc_handle) {
             //Write CCC descr to enable notifications
@@ -672,10 +687,18 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
     dev->ble.address_type = address_type;
     dev->ble.appearance = ESP_HID_APPEARANCE_GENERIC;
 
-    ret = esp_ble_gattc_open(hid_gattc_if, dev->addr.bda, dev->ble.address_type, true);
+    esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+    memcpy(&creat_conn_params.remote_bda, dev->addr.bda, ESP_BD_ADDR_LEN);
+    creat_conn_params.remote_addr_type = dev->ble.address_type;
+    creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+    creat_conn_params.is_direct = true;
+    creat_conn_params.is_aux = false;
+    creat_conn_params.phy_mask = 0x0;
+    ret = esp_ble_gattc_enh_open(hid_gattc_if,
+                                 &creat_conn_params);
     if (ret) {
         esp_hidh_dev_free_inner(dev);
-        ESP_LOGE(TAG, "esp_ble_gattc_open failed: %d", ret);
+        ESP_LOGE(TAG, "esp_ble_gattc_enh_open failed: %d", ret);
         return NULL;
     }
     WAIT_CB();
