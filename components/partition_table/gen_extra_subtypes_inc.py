@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
+import rich_click as click
+from esp_pylib.logger import log
 
 
 def gen_header_file(path: str, subtypes: str) -> None:
@@ -22,15 +23,27 @@ def gen_header_file(path: str, subtypes: str) -> None:
                 fields[0] = fields[0].strip()
                 fields[1] = fields[1].strip()
                 fields[2] = fields[2].strip()
-                f.write('ESP_PARTITION_SUBTYPE_%s_%s = %s,\n' % (fields[0].upper(), fields[1].upper(), fields[2]))
+                f.write(f'ESP_PARTITION_SUBTYPE_{fields[0].upper()}_{fields[1].upper()} = {fields[2]},\n')
             except ValueError as err:
-                raise ValueError('Error parsing custom subtypes: %s' % err)
+                log.die(f'Error parsing custom subtypes: {err}')
+
+
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help='ESP32 extra partitions utility',
+)
+@click.argument('config_dir', type=click.Path())
+@click.argument('extra_partition_subtypes', nargs=-1)
+def cli(config_dir, extra_partition_subtypes):  # type: ignore[no-untyped-def]
+    gen_header_file(config_dir, extra_partition_subtypes)
+
+
+def main() -> None:
+    cli()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='ESP32 extra partitions utility')
-    parser.add_argument('config_dir', help='Path to config directory')
-    parser.add_argument('extra_partition_subtypes', help='Extra partition subtype entries', nargs='*')
-    args = parser.parse_args()
+    from esp_pylib.excepthook import install_exception_reporting
 
-    gen_header_file(args.config_dir, args.extra_partition_subtypes)
+    install_exception_reporting()
+    main()

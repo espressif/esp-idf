@@ -7,9 +7,9 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-import argparse
+# ruff: noqa: UP031, UP008
 import binascii
 import codecs
 import errno
@@ -18,6 +18,10 @@ import os
 import re
 import struct
 import sys
+
+import rich_click as click
+from esp_pylib.cli_types import AnyIntType
+from esp_pylib.logger import log
 
 MAX_PARTITION_LENGTH = 0xC00  # 3K for partition data (96 entries) leaves 1K in a 4K sector for signature
 MD5_PARTITION_BEGIN = b'\xeb\xeb' + b'\xff' * 14  # The first 2 bytes are like magic numbers for MD5 sum
@@ -167,7 +171,8 @@ recovery_bootloader_offset = None
 def status(msg):
     """Print status message to stderr"""
     if not quiet:
-        critical(msg)
+        sys.stderr.write(msg)
+        sys.stderr.write('\n')
 
 
 def critical(msg):
@@ -420,7 +425,7 @@ class PartitionTable(list):
         return '\n'.join(rows) + '\n'
 
 
-class PartitionDefinition(object):
+class PartitionDefinition:
     MAGIC_BYTES = b'\xaa\x50'
 
     # dictionary maps flag name (as used in CSV flags list, property name)
@@ -689,82 +694,54 @@ def parse_int(v, keywords={}):
             raise InputError("Value '%s' is not valid. Known keywords: %s" % (v, ', '.join(keywords)))
 
 
-def main():
+def run_gen(
+    input_file,
+    output='-',
+    flash_size=None,
+    disable_md5sum=False,
+    no_verify=False,
+    quiet_flag=False,
+    offset=0x8000,
+    primary_bootloader_offset_arg=None,
+    recovery_bootloader_offset_arg=None,
+    secure_arg=None,
+    extra_partition_subtypes=None,
+):
     global quiet
     global md5sum
     global offset_part_table
     global secure
     global primary_bootloader_offset
     global recovery_bootloader_offset
-    parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
-    parser.add_argument(
-        '--flash-size',
-        help='Optional flash size limit, checks partition table fits in flash',
-        nargs='?',
-        choices=['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB'],
-    )
-    parser.add_argument(
-        '--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true'
-    )
-    parser.add_argument('--no-verify', help="Don't verify partition table fields", action='store_true')
-    parser.add_argument(
-        '--verify',
-        '-v',
-        help='Verify partition table fields (deprecated, this behaviour is '
-        'enabled by default and this flag does nothing.',
-        action='store_true',
-    )
-    parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
-    parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
-    parser.add_argument('--primary-bootloader-offset', help='Set primary bootloader offset', default=None)
-    parser.add_argument('--recovery-bootloader-offset', help='Set recovery bootloader offset', default=None)
-    parser.add_argument(
-        '--secure',
-        help='Require app partitions to be suitable for secure boot',
-        nargs='?',
-        const=SECURE_V1,
-        choices=[SECURE_V1, SECURE_V2],
-    )
-    parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
-    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
-    parser.add_argument(
-        'output',
-        help='Path to output converted binary or CSV file. Will use stdout if omitted.',
-        nargs='?',
-        default='-',
-    )
-
-    args = parser.parse_args()
-
-    quiet = args.quiet
-    md5sum = not args.disable_md5sum
-    secure = args.secure
-    offset_part_table = int(args.offset, 0)
-    if args.primary_bootloader_offset is not None:
-        primary_bootloader_offset = int(args.primary_bootloader_offset, 0)
+    quiet = quiet_flag
+    md5sum = not disable_md5sum
+    secure = secure_arg
+    offset_part_table = offset
+    if primary_bootloader_offset_arg is not None:
+        primary_bootloader_offset = primary_bootloader_offset_arg
         if primary_bootloader_offset >= offset_part_table:
             raise InputError(
                 f'Unsupported configuration. Primary bootloader must be below partition table. '
                 f'Check --primary-bootloader-offset={primary_bootloader_offset:#x} and --offset={offset_part_table:#x}'
             )
-    if args.recovery_bootloader_offset is not None:
-        recovery_bootloader_offset = int(args.recovery_bootloader_offset, 0)
-    if args.extra_partition_subtypes:
-        add_extra_subtypes(args.extra_partition_subtypes)
+    if recovery_bootloader_offset_arg is not None:
+        recovery_bootloader_offset = recovery_bootloader_offset_arg
+    if extra_partition_subtypes:
+        add_extra_subtypes(extra_partition_subtypes)
 
-    table, input_is_binary = PartitionTable.from_file(args.input)
+    table, input_is_binary = PartitionTable.from_file(input_file)
 
-    if not args.no_verify:
+    if not no_verify:
         status('Verifying table...')
         table.verify()
 
-    if args.flash_size:
-        size_mb = int(args.flash_size.replace('MB', ''))
+    if flash_size:
+        size_mb = int(flash_size.replace('MB', ''))
         table.verify_size_fits(size_mb * 1024 * 1024)
 
     # Make sure that the output directory is created
-    output_dir = os.path.abspath(os.path.dirname(args.output))
+    output_dir = os.path.abspath(os.path.dirname(output))
 
     if not os.path.exists(output_dir):
         try:
@@ -774,17 +751,82 @@ def main():
                 raise
 
     if input_is_binary:
-        output = table.to_csv()
-        with sys.stdout if args.output == '-' else open(args.output, 'w', encoding='utf-8') as f:
-            f.write(output)
+        output_data = table.to_csv()
+        with sys.stdout if output == '-' else open(output, 'w', encoding='utf-8') as f:
+            f.write(output_data)
     else:
-        output = table.to_binary()
+        output_data = table.to_binary()
         try:
             stdout_binary = sys.stdout.buffer  # Python 3
         except AttributeError:
             stdout_binary = sys.stdout
-        with stdout_binary if args.output == '-' else open(args.output, 'wb') as f:
-            f.write(output)
+        with stdout_binary if output == '-' else open(output, 'wb') as f:
+            f.write(output_data)
+
+
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help='ESP32 partition table utility',
+)
+@click.option(
+    '--flash-size',
+    type=click.Choice(['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']),
+    help='Optional flash size limit, checks partition table fits in flash',
+)
+@click.option('--disable-md5sum', is_flag=True, help='Disable md5 checksum for the partition table')
+@click.option('--no-verify', is_flag=True, help="Don't verify partition table fields")
+@click.option(
+    '--verify',
+    '-v',
+    is_flag=True,
+    help='Verify partition table fields (deprecated, this behaviour is enabled by default and this flag does nothing).',
+)
+@click.option('--quiet', '-q', is_flag=True, help="Don't print non-critical status messages to stderr")
+@click.option('--offset', '-o', type=AnyIntType(), default=0x8000, show_default=True, help='Set offset partition table')
+@click.option('--primary-bootloader-offset', type=AnyIntType(), default=None, help='Set primary bootloader offset')
+@click.option('--recovery-bootloader-offset', type=AnyIntType(), default=None, help='Set recovery bootloader offset')
+@click.option(
+    '--secure',
+    is_flag=False,
+    flag_value=SECURE_V1,
+    type=click.Choice([SECURE_V1, SECURE_V2], case_sensitive=False),
+    default=None,
+    help='Require app partitions to be suitable for secure boot',
+)
+@click.option('--extra-partition-subtypes', multiple=True, help='Extra partition subtype entries')
+@click.argument('input_file', type=click.File('rb'), metavar='INPUT')
+@click.argument('output', type=click.Path(), required=False, default='-')
+def cli(
+    input_file,
+    output,
+    flash_size,
+    disable_md5sum,
+    no_verify,
+    verify,
+    quiet,
+    offset,
+    primary_bootloader_offset,
+    recovery_bootloader_offset,
+    secure,
+    extra_partition_subtypes,
+):
+    run_gen(
+        input_file=input_file,
+        output=output,
+        flash_size=flash_size,
+        disable_md5sum=disable_md5sum,
+        no_verify=no_verify,
+        quiet_flag=quiet,
+        offset=offset,
+        primary_bootloader_offset_arg=primary_bootloader_offset,
+        recovery_bootloader_offset_arg=recovery_bootloader_offset,
+        secure_arg=secure,
+        extra_partition_subtypes=extra_partition_subtypes or None,
+    )
+
+
+def main():
+    cli()
 
 
 class InputError(RuntimeError):
@@ -798,8 +840,12 @@ class ValidationError(InputError):
 
 
 if __name__ == '__main__':
+    from esp_pylib.excepthook import install_exception_reporting
+
+    install_exception_reporting()
     try:
         main()
     except InputError as e:
-        print(e, file=sys.stderr)
+        # soft_wrap avoids Rich line-breaking long errors (build-system tests grep substrings).
+        log.print(str(e), file=sys.stderr, soft_wrap=True, markup=False)
         sys.exit(2)
