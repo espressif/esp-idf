@@ -420,15 +420,19 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
     // There's auto alignment for AHB GDMA version 1, so we don't need to do anything here
     // While, for AHB GDMA version 2 and AXI GDMA, we need to ensure the alignment by software
 #if (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH) && SOC_AHB_GDMA_VERSION != 1
-    // if MSPI encryption is enabled, and DMA wants to read/write external memory
-    if (esp_efuse_is_flash_encryption_enabled() && config->access_ext_mem) {
-        uint32_t enc_mem_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
-        // when DMA access the encrypted external memory, extra alignment is needed for external memory
-        ext_mem_alignment = MAX(ext_mem_alignment, enc_mem_alignment);
-        if (max_data_burst_size < enc_mem_alignment) {
-            ESP_LOGW(TAG, "GDMA channel access encrypted external memory, adjust burst size to %d", enc_mem_alignment);
+    bool ext_mem_needs_mspi_alignment = esp_efuse_is_flash_encryption_enabled();
+#if CONFIG_SPIRAM_ECC_ENABLE
+    ext_mem_needs_mspi_alignment = true;
+#endif
+    // When MSPI encryption or PSRAM ECC address conversion is enabled, DMA accesses to
+    // external memory need to follow the MSPI encryption alignment restriction.
+    if (ext_mem_needs_mspi_alignment && config->access_ext_mem) {
+        uint32_t mspi_mem_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
+        ext_mem_alignment = MAX(ext_mem_alignment, mspi_mem_alignment);
+        if (max_data_burst_size < mspi_mem_alignment) {
+            ESP_LOGW(TAG, "GDMA channel access encrypted/ECC external memory, adjust burst size to %d", mspi_mem_alignment);
             en_data_burst = true;
-            max_data_burst_size = enc_mem_alignment;
+            max_data_burst_size = mspi_mem_alignment;
         }
     }
 #endif // SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
