@@ -401,6 +401,102 @@ Limitations
 #. OpenOCD flash support is disabled. It does not matter for LP core application because it is run completely from RAM and GDB can use SW breakpoints for it. But if you want to set a breakpoint on function from flash used by the code running on HP core (e.g., `app_main`), you should request to set HW breakpoint explicitly via ``hb`` and ``thb`` GDB commands.
 #. Since the main and ULP programs are linked as separate binaries, it is possible for them to have global symbols (such as functions or variables) with the same name. If you set a breakpoint using the function name, GDB will apply it to all instances of that function. This can cause issues if one of the functions is located in the flash, as OpenOCD currently doesn't support flash when debugging the LP core. In such cases, you can set breakpoints using the source line or the function's memory address instead.
 
+Using a Custom Linker Script
+----------------------------
+
+The default LP core linker script is assembled from three parts — a **base** part, a **layout** part, and a **checks** part — that are concatenated and run through the C preprocessor at build time. The split defines a stable interface between ESP-IDF and the LP Core application: ESP-IDF owns the boot-critical invariants, the LP Core application owns the memory map and section placement, and the two evolve independently.
+
+- **base** part — defines ``ENTRY``, the interrupt vector table, the HP/LP shared-memory section, the default stack top (``__stack_top``), the usable window bounds and the section-boundary macros below. This part is never replaced.
+- **layout** part — declares the memory regions and section placement within the window. It composes the macros so it never re-implements boot code. This is the part the LP Core application replaces.
+- **checks** part — provides the default ``__stack_size`` (computed as the free space between ``_lp_data_end`` and ``__stack_top``, once the layout has marked ``_lp_data_end``) and the link-time ``ASSERT`` statements that verify reset vectoring, that the image fits the reserved memory and that the stack stays within its bounds, failing the build with a clear message rather than an obscure linker error.
+
+A custom layout uses only the following:
+
+- ``LP_CORE_USER_MEMORY_REGION_START`` / ``LP_CORE_USER_MEMORY_REGION_END`` — the bounds of the free LP-RAM window. Declare regions and place sections only within it.
+- ``LP_CORE_TEXT_START(region)`` — composed first, into a region that starts at ``LP_CORE_USER_MEMORY_REGION_START``. Places the reset vector and early handlers at the boot offset.
+- ``LP_CORE_TEXT_END()`` — composed after the last executable section.
+- ``LP_CORE_DATA_START()`` / ``LP_CORE_DATA_END()`` — composed around the writable data. ``LP_CORE_DATA_END()`` marks the end of writable data (``_lp_data_end``), which the base uses to size and bounds-check the stack, so a layout must compose it (or assign ``_lp_data_end`` itself).
+
+The macros carry any config-dependent handling for the layout, so a layout composes them the same way regardless of the active configuration. The vector table and the HP/LP shared-memory section are provided by the base part; a custom layout does not declare or place them. The stack window is provided for the layout as well: ``__stack_top`` defaults (in the base part) to the top of the window, and ``__stack_size`` (in the checks part, once ``_lp_data_end`` is known) to all the free space between ``_lp_data_end`` and ``__stack_top``. Both are weak defaults, so a layout that needs to reserve space at the top of the window — a stack guard band, for example — can override either.
+
+To replace the layout with the LP Core application's own, pass the ``LINKER_LAYOUT`` option to ``ulp_embed_binary`` (or ``ulp_add_project``):
+
+.. code-block:: cmake
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}"
+                     LINKER_LAYOUT "${CMAKE_CURRENT_LIST_DIR}/ulp/custom_layout.ld")
+
+A minimal custom layout declares one region over the window and composes the section-boundary macros:
+
+.. code-block:: none
+
+    PROVIDE(_my_marker = 0xCAFEBABE);
+
+    MEMORY
+    {
+        lp_ram(RWX) : ORIGIN = LP_CORE_USER_MEMORY_REGION_START, LENGTH = LP_CORE_USER_MEMORY_REGION_END - LP_CORE_USER_MEMORY_REGION_START
+    }
+
+    SECTIONS
+    {
+        LP_CORE_TEXT_START(lp_ram)                    /* LP core reset vector at the boot offset */
+        .text   ALIGN(4) : { *(.text) *(.text*) } > lp_ram
+        .rodata ALIGN(4) : { *(.rodata) *(.rodata*) } > lp_ram
+        LP_CORE_TEXT_END()
+        LP_CORE_DATA_START()
+        .data   ALIGN(4) : { *(.data) *(.data*) *(.sdata) *(.sdata*) } > lp_ram
+        .bss    ALIGN(4) : { *(.bss) *(.bss*) *(.sbss) *(.sbss*) } > lp_ram
+        LP_CORE_DATA_END()
+    }
+
+Shared memory and the stack window come from the base part, so the layout does not declare them; it only marks the end of its data with ``LP_CORE_DATA_END()``.
+
+For full control — to repartition LP RAM into several regions, for example with code or data pinned at fixed addresses — the LP Core application declares its own region map, deriving every address from the two window symbols and still composing the section-boundary macros. In outline:
+
+.. code-block:: none
+
+    PROVIDE(_my_marker = 0xCAFEBABE);
+    _fixed_addr = LP_CORE_USER_MEMORY_REGION_START + 0x1780;
+
+    MEMORY
+    {
+        text(RWX) :         ORIGIN = LP_CORE_USER_MEMORY_REGION_START, LENGTH = _fixed_addr - LP_CORE_USER_MEMORY_REGION_START
+        fixed_region(RWX) : ORIGIN = _fixed_addr, LENGTH = 0x100
+        data(RW) :          ORIGIN = _fixed_addr + 0x100, LENGTH = LP_CORE_USER_MEMORY_REGION_END - (_fixed_addr + 0x100)
+    }
+
+    SECTIONS
+    {
+        LP_CORE_TEXT_START(text)                     /* LP core reset vector, placed in the application's text region */
+
+        .text   ALIGN(4) : { *(.text) *(.text*) } > text
+        .rodata ALIGN(4) : { *(.rodata) *(.rodata*) } > text
+        LP_CORE_TEXT_END()
+
+        . = ORIGIN(fixed_region);                    /* jump to a non-contiguous fixed address */
+        .fixed_region ALIGN(4) : { KEEP(*(.fixed_region .fixed_region.*)) } > fixed_region
+
+        . = ORIGIN(data);
+        LP_CORE_DATA_START()
+        .data ALIGN(4) : { *(.data) *(.data*) *(.sdata) *(.sdata*) } > data
+        .bss  ALIGN(4) : { *(.bss) *(.bss*) *(.sbss) *(.sbss*) } > data
+        LP_CORE_DATA_END()
+    }
+
+A layout can also take ownership of the stack — for instance to keep a stack-overflow guard band out of the loadable image — by ending its data with the marker and setting the stack window explicitly:
+
+.. code-block:: none
+
+    .stack_guard (NOLOAD) : { . += 0x8; _guard = .; . += 0x4; } > lp_ram
+    LP_CORE_DATA_END()                               /* marks _lp_data_end */
+    __stack_top  = ORIGIN(lp_ram) + LENGTH(lp_ram);  /* stack starts at the top of the region ... */
+    __stack_size = __stack_top - _lp_data_end;       /* ... and grows down over the remaining space */
+
+The checks then confirm the stack neither reaches into the data below nor overruns the shared region above.
+
+The link-time checks turn a malformed layout into a build failure with an explicit message (for example, a misplaced reset vector, an image that exceeds the reserved memory or a stack that overlaps the data), and a non-existent ``LINKER_LAYOUT`` path is rejected at configuration time. The ``LINKER_LAYOUT`` option is supported for the LP-core ULP type only; it is rejected for the FSM and classic RISC-V ULP types.
+
+
 Application Examples
 --------------------
 
