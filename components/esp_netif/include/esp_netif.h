@@ -862,6 +862,43 @@ int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
  */
 int esp_netif_get_all_preferred_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
 
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+/**
+ * @brief  Add or update a static (permanent) IPv6 neighbor cache entry
+ *
+ * Installs a fixed IPv6 -> link-layer address mapping that bypasses Neighbor
+ * Discovery: no Neighbor Solicitation/Advertisement is exchanged for this
+ * address, the entry never ages out and is never overwritten by incoming
+ * advertisements. Calling again with the same address updates the mapping.
+ *
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @param[in] addr      Neighbor's IPv6 address
+ * @param[in] mac       Neighbor's link-layer address (interface hwaddr_len bytes)
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS on invalid arguments
+ *      - ESP_FAIL if the entry could not be installed (e.g. neighbor cache full)
+ */
+esp_err_t esp_netif_add_static_neighbor(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr, const uint8_t *mac);
+
+/**
+ * @brief  Remove a static IPv6 neighbor cache entry
+ *
+ * Removes an entry previously added with esp_netif_add_static_neighbor().
+ * Dynamic (non-static) entries are left untouched.
+ *
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @param[in] addr      Neighbor's IPv6 address
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS on invalid arguments
+ *      - ESP_FAIL if no matching static entry exists
+ */
+esp_err_t esp_netif_remove_static_neighbor(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
+#endif /* CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES */
+
 /**
  * @brief  Cause the TCP/IP stack to add an IPv6 address to the interface
  *
