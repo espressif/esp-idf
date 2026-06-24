@@ -331,27 +331,30 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
     - :cpp:func:`i2s_channel_get_sync_count`: Read the TX synchronization counters through :cpp:type:`i2s_sync_count_t`.
       When TX FIFO synchronization is supported, ``diff_count`` is also returned as ``I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT``.
     - :cpp:func:`i2s_channel_config_tx_fifo_sync`: Configure the expected count, automatic supplement threshold,
-      manual supplement threshold, and hardware supplement mode.
+      manual supplement threshold, and hardware supplement mode. It can be called while the TX channel is running,
+      but TX FIFO synchronization must be disabled.
     - :cpp:func:`i2s_channel_enable_tx_fifo_sync`: Enable or disable TX FIFO synchronization. When enabled,
       both automatic hardware data supplementation and manual interrupt are activated simultaneously.
-      When disabled, both are deactivated. This API must be called after
-      :cpp:func:`i2s_channel_config_tx_fifo_sync`.
+      When disabled, both are deactivated. Enabling TX FIFO synchronization resets the TX FIFO/BCLK synchronization
+      counters. This API must be called after :cpp:func:`i2s_channel_config_tx_fifo_sync`.
     - :cpp:func:`i2s_channel_register_event_callback`: Register the manual supplement threshold interrupt callback. When
       ``diff_count`` exceeds the manual supplement threshold, the driver calls this callback in the ISR and provides
-      ``diff_count`` through :cpp:type:`i2s_sync_event_data_t`.
+      ``diff_count`` through :cpp:type:`i2s_sync_event_data_t`. Registering the callback only updates the handler;
+      the TX sync interrupt's enable/disable is controlled by :cpp:func:`i2s_channel_enable_tx_fifo_sync`.
 
     The typical usage steps are:
 
     1. Create and initialize an I2S TX channel.
     2. Call :cpp:func:`i2s_channel_config_tx_fifo_sync` to configure :cpp:type:`i2s_tx_fifo_sync_config_t`. ``ideal_cnt``
-       is the expected number of transmitted data units at each ETM synchronization check. ``auto_suppl_thresh`` is
+       is the expected number of transmitted data units at each ETM synchronization check. This step can be performed while the TX channel is running, but TX FIFO synchronization must be disabled before reconfiguration. ``auto_suppl_thresh`` is
        the automatic hardware supplement threshold and must be smaller than ``manual_suppl_thresh``.
        ``manual_suppl_thresh`` is the threshold for triggering the callback for manual handling. If the difference
        exceeds the automatic supplement threshold but has not reached the manual supplement threshold, hardware
        automatically supplements or deletes the corresponding amount of data to synchronize with ``ideal_cnt``.
     3. To handle severe out-of-sync conditions, call :cpp:func:`i2s_channel_register_event_callback` to register a callback.
     4. Call :cpp:func:`i2s_channel_enable_tx_fifo_sync` with ``enable`` set to ``true`` to activate both automatic
-       hardware supplementation and manual interrupt simultaneously.
+       hardware supplementation and manual interrupt simultaneously. This call resets the TX FIFO/BCLK synchronization
+       counters, so the first ETM synchronization check uses a new count window.
     5. Call :cpp:func:`i2s_new_etm_task` to create the ``I2S_ETM_TASK_SYNC_FIFO`` task, and connect an external ETM event to this task.
     6. Enable the ETM channel and I2S TX channel, so that ETM events periodically trigger synchronization checks.
 
@@ -409,6 +412,9 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
     .. note::
 
         After ``I2S_ETM_TASK_SYNC_FIFO`` is triggered, hardware automatically clears the TX FIFO/BCLK synchronization counters.
+        To avoid a synchronization check using partially updated configuration, call :cpp:func:`i2s_channel_enable_tx_fifo_sync`
+        with ``enable`` set to ``false`` before reconfiguring TX FIFO synchronization. If an ETM event source may still
+        trigger during reconfiguration, disable the ETM channel or pause the event source as needed.
 
 .. _i2s-iram-safe:
 

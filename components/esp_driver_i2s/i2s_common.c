@@ -438,20 +438,26 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
     I2S_NULL_POINTER_CHECK(TAG, callbacks);
-    esp_err_t ret = ESP_OK;
+
+    /* DMA event callbacks are dispatched from the DMA ISR, only available on the DMA memory data path */
+    bool dma_cb_supported = I2S_CHANNEL_USES_DMA(handle);
     bool has_dma_event_cb = callbacks->on_recv || callbacks->on_recv_q_ovf ||
                             callbacks->on_sent || callbacks->on_send_q_ovf;
-    bool update_dma_cb = I2S_CHANNEL_USES_DMA(handle);
-#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-    i2s_tx_fifo_sync_callback_t sync_cb = callbacks->on_tx_sync_evt;
-    bool update_sync_cb = sync_cb || (handle->dir == I2S_DIR_TX && handle->on_tx_sync);
-#endif
-    ESP_RETURN_ON_FALSE(!has_dma_event_cb || update_dma_cb,
-                        ESP_ERR_NOT_SUPPORTED, TAG,
+    ESP_RETURN_ON_FALSE(!has_dma_event_cb || dma_cb_supported, ESP_ERR_NOT_SUPPORTED, TAG,
                         "DMA event callbacks require the DMA memory data path on this channel");
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-    ESP_RETURN_ON_FALSE(!update_sync_cb || handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "channel is not TX");
+    /* TX FIFO sync callback is dispatched from the I2S peripheral ISR, available on any TX channel regardless of the data path */
+    bool sync_cb_supported = (handle->dir == I2S_DIR_TX);
+    ESP_RETURN_ON_FALSE(!callbacks->on_tx_sync_evt || sync_cb_supported, ESP_ERR_NOT_SUPPORTED, TAG,
+                        "TX FIFO sync callback requires a TX channel");
+    bool sync_only_update = sync_cb_supported && !has_dma_event_cb;
+    bool cb_supported = dma_cb_supported || sync_cb_supported;
+#else
+    bool sync_only_update = false;
+    bool cb_supported = dma_cb_supported;
 #endif
+    ESP_RETURN_ON_FALSE(cb_supported, ESP_ERR_NOT_SUPPORTED, TAG,
+                        "event callbacks are not supported on this channel");
 #if CONFIG_I2S_ISR_IRAM_SAFE
     if (callbacks->on_recv) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_recv), ESP_ERR_INVALID_ARG, TAG, "on_recv callback not in IRAM");
@@ -466,8 +472,8 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_send_q_ovf), ESP_ERR_INVALID_ARG, TAG, "on_send_q_ovf callback not in IRAM");
     }
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-    if (sync_cb) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(sync_cb), ESP_ERR_INVALID_ARG, TAG, "sync callback not in IRAM");
+    if (callbacks->on_tx_sync_evt) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_tx_sync_evt), ESP_ERR_INVALID_ARG, TAG, "sync callback not in IRAM");
     }
 #endif
     if (user_data) {
@@ -476,9 +482,13 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
 
 #endif
 
+    esp_err_t ret = ESP_OK;
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S has enabled");
-    if (update_dma_cb) {
+    bool update_dma_cbs = dma_cb_supported && !(sync_only_update && handle->state == I2S_CHAN_STATE_RUNNING);
+    ESP_GOTO_ON_FALSE(!update_dma_cbs || handle->state < I2S_CHAN_STATE_RUNNING,
+                      ESP_ERR_INVALID_STATE, err, TAG,
+                      "DMA event callbacks can't be changed while the channel is running");
+    if (update_dma_cbs) {
         handle->callbacks.on_recv = callbacks->on_recv;
         handle->callbacks.on_recv_q_ovf = callbacks->on_recv_q_ovf;
         handle->callbacks.on_sent = callbacks->on_sent;
@@ -486,8 +496,8 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
         handle->user_data = user_data;
     }
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
-    if (update_sync_cb) {
-        s_i2s_channel_update_tx_sync_callback(handle, sync_cb, user_data);
+    if (sync_cb_supported) {
+        s_i2s_channel_update_tx_sync_callback(handle, callbacks->on_tx_sync_evt, user_data);
     }
 #endif
 err:
@@ -1196,7 +1206,12 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
 
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
     if (handle->i2s_intr) {
+        portENTER_CRITICAL(&g_i2s.spinlock);
+        i2s_ll_tx_enable_hw_fifo_sync(handle->controller->hal.dev, false);
         i2s_ll_enable_interrupt(handle->controller->hal.dev, I2S_LL_TX_SYNC_INT_EVENT, false);
+        i2s_ll_tx_update(handle->controller->hal.dev);
+        handle->tx_fifo_sync_enabled = false;
+        portEXIT_CRITICAL(&g_i2s.spinlock);
         esp_intr_disable(handle->i2s_intr);
         esp_intr_free(handle->i2s_intr);
         handle->i2s_intr = NULL;
@@ -1740,16 +1755,11 @@ static void s_i2s_channel_update_tx_sync_callback(i2s_chan_handle_t tx_handle,
                                                   i2s_tx_fifo_sync_callback_t cb,
                                                   void *user_data)
 {
-    i2s_dev_t *hw = tx_handle->controller->hal.dev;
-
     portENTER_CRITICAL(&g_i2s.spinlock);
     if (cb) {
         tx_handle->on_tx_sync = cb;
         tx_handle->sync_user_data = user_data;
-        i2s_ll_clear_interrupt_status(hw, I2S_LL_TX_SYNC_INT_EVENT);
-        i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, true);
     } else {
-        i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, false);
         tx_handle->on_tx_sync = NULL;
         tx_handle->sync_user_data = NULL;
     }
@@ -1784,11 +1794,6 @@ esp_err_t i2s_init_i2s_intr(i2s_chan_handle_t handle)
         handle->i2s_intr = NULL;
         return ret;
     }
-    if (handle->on_tx_sync) {
-        i2s_ll_clear_interrupt_status(hw, I2S_LL_TX_SYNC_INT_EVENT);
-        i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, true);
-    }
-
     return ESP_OK;
 }
 
@@ -1803,8 +1808,13 @@ esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s
 
     i2s_dev_t *hw = tx_handle->controller->hal.dev;
     xSemaphoreTake(tx_handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(tx_handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, err, TAG,
-                      "invalid state, I2S has enabled");
+    portENTER_CRITICAL(&g_i2s.spinlock);
+    if (tx_handle->tx_fifo_sync_enabled) {
+        portEXIT_CRITICAL(&g_i2s.spinlock);
+        ESP_LOGE(TAG, "TX FIFO sync is enabled");
+        ret = ESP_ERR_INVALID_STATE;
+        goto err;
+    }
     i2s_ll_tx_set_etm_sync_ideal_cnt(hw, config->ideal_cnt);
     i2s_ll_tx_set_fifo_sync_diff_counter_manual_threshold(hw, config->manual_suppl_thresh);
     i2s_ll_tx_set_fifo_sync_diff_counter_auto_threshold(hw, config->auto_suppl_thresh);
@@ -1814,6 +1824,8 @@ esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s
     }
     i2s_ll_tx_enable_hw_fifo_sync(hw, false);
     i2s_ll_tx_update(hw);
+    tx_handle->tx_fifo_sync_configured = true;
+    portEXIT_CRITICAL(&g_i2s.spinlock);
 err:
     xSemaphoreGive(tx_handle->mutex);
     return ret;
@@ -1822,18 +1834,23 @@ err:
 esp_err_t i2s_channel_enable_tx_fifo_sync(i2s_chan_handle_t tx_handle, bool enable)
 {
     ESP_RETURN_ON_ERROR(i2s_check_tx_handle(tx_handle), TAG, "invalid TX handle");
-    ESP_RETURN_ON_FALSE(tx_handle->i2s_intr, ESP_ERR_INVALID_STATE, TAG, "TX FIFO sync not configured");
+    ESP_RETURN_ON_FALSE(tx_handle->tx_fifo_sync_configured, ESP_ERR_INVALID_STATE, TAG, "TX FIFO sync not configured");
+    ESP_RETURN_ON_FALSE(tx_handle->i2s_intr, ESP_ERR_INVALID_STATE, TAG, "TX FIFO sync interrupt not initialized");
 
     i2s_dev_t *hw = tx_handle->controller->hal.dev;
     portENTER_CRITICAL(&g_i2s.spinlock);
     i2s_ll_tx_enable_hw_fifo_sync(hw, enable);
-    if (enable && tx_handle->on_tx_sync) {
+    if (enable) {
+        i2s_ll_tx_reset_fifo_sync_counter(hw);
+        i2s_ll_tx_reset_bclk_sync_counter(hw);
+        i2s_ll_tx_reset_fifo_sync_diff_counter(hw);
         i2s_ll_clear_interrupt_status(hw, I2S_LL_TX_SYNC_INT_EVENT);
         i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, true);
     } else {
         i2s_ll_enable_interrupt(hw, I2S_LL_TX_SYNC_INT_EVENT, false);
     }
     i2s_ll_tx_update(hw);
+    tx_handle->tx_fifo_sync_enabled = enable;
     portEXIT_CRITICAL(&g_i2s.spinlock);
     return ESP_OK;
 }
