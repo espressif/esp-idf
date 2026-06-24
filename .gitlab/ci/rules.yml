@@ -48,6 +48,19 @@
 
   - "tools/ldgen/**/*"
 
+.patterns-host_test_ulp_linker: &patterns-host_test_ulp_linker
+  - ".gitlab/ci/host-test.yml"
+
+  - "components/ulp/ld/**/*"
+  - "components/ulp/cmake/**/*"
+  - "components/ulp/CMakeLists*.txt"
+  - "components/ulp/component_ulp_common.cmake"
+  - "components/ulp/project_include.cmake"
+  - "components/ulp/lp_core/**/*"
+  - "components/ulp/test_apps/lp_core/host_tests/**/*"
+  # Shared linker-script preprocessing used by the buildv2 ULP path.
+  - "tools/cmakev2/utilities.cmake"
+
 .patterns-build_system_win: &patterns-build_system_win
   - "tools/test_build_system/**/*"
 
@@ -394,6 +407,17 @@
     - <<: *if-label-host_test
     - <<: *if-dev-push
       changes: *patterns-host_test_tools
+
+.rules:test:host_test_ulp_linker:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected-check
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-host_test
+    - <<: *if-dev-push
+      changes: *patterns-host_test_ulp_linker
 
 .rules:test:submodule:
   rules:

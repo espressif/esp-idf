@@ -1,5 +1,17 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/ulp/test_apps/lp_core/host_tests/lp_core_custom_linker:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+components/ulp/test_apps/lp_core/host_tests/lp_core_custom_linker_v2:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 components/ulp/test_apps/lp_core/lp_core_basic_tests:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
