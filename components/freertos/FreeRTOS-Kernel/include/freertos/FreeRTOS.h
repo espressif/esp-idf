@@ -62,6 +62,10 @@
 /* Application specific configuration options. */
 #include "FreeRTOSConfig.h"
 
+#ifdef CONFIG_PERCEPIO_TRACERECORDER_ENABLED
+	#include <trcRecorder.h>
+#endif
+
 /* Basic FreeRTOS definitions. */
 #include "projdefs.h"
 
