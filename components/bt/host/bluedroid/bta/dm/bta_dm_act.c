@@ -6072,6 +6072,17 @@ void bta_dm_ble_gap_read_min_supp_conn_interval(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+void bta_dm_ble_gap_enable_utp_ota_mode(tBTA_DM_MSG *p_data)
+{
+    BTM_BleEnableUtpOtaMode(p_data->ble_enable_utp_ota_mode.enable);
+}
+
+void bta_dm_ble_gap_utp_send(tBTA_DM_MSG *p_data)
+{
+    BTM_BleUtpSend(p_data->ble_utp_send.data_len, p_data->ble_utp_send.data);
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)

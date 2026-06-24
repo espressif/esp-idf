@@ -1626,6 +1626,11 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT  BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define BTA_DM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT          BTM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT                     BTM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_UTP_RECEIVE_EVT                           BTM_BLE_5_GAP_UTP_RECEIVE_EVT
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #define BTA_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT               BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
@@ -3114,6 +3119,10 @@ extern void BTA_DmBleGapSetDefaultRateParameters(UINT16 conn_interval_min, UINT1
 extern void BTA_DmBleGapReadMinSuppConnInterval(void);
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+extern void BTA_DmBleGapEnableUtpOtaMode(UINT8 enable);
+extern void BTA_DmBleGapUtpSend(UINT8 data_len, const UINT8 *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
