@@ -407,11 +407,6 @@ int esp_nan_construct_nira(uint8_t *frm)
 #define NAN_PASN_KEY_LIFETIME_NIK_BIT   BIT(3)
 /* NAN_PAIRING_DEFAULT_NIK_LIFETIME_SEC is defined at file scope above. */
 #define NAN_ATTR_ID_SHARED_KEY_DESC     0x24
-#define GSP_SUBATTR_TRANSPORT_PORT      0x00
-#define GSP_SUBATTR_INSTANCE_NAME       0x03
-#define NAN_PAIRING_SRV_PORT            3333
-#define NAN_PAIRING_SRV_HOSTNAME        "ESP-SRV-1234"
-#define NAN_PAIRING_SSI_BUF_LEN         64
 #define NAN_PAIRING_NIK_FUP_TIMEOUT_SEC 2
 
 struct nan_pairing_fup_ctx {
@@ -518,50 +513,17 @@ static int nan_pairing_add_ssi_gsp_attr(uint8_t *buf)
 }
 
 /**
- * Append a single GSP sub-attribute (TLV: ID(1) | Length(2 LE) | Value).
- * Ported from esp-nsd @c add_gsp_subattr (wa_sd.c).
+ * Build a GSP SSI (WFA OUI + proto=Generic header only).
  */
-static int nan_pairing_add_gsp_subattr(uint8_t *buf, uint8_t sub_attr_id,
-                                       const void *payload, uint16_t len)
+static size_t nan_pairing_build_srv_ssi(uint8_t *buf, size_t buf_len)
 {
     uint8_t *p = buf;
 
-    *p++ = sub_attr_id;
-    *((uint16_t *)p) = len;
-    p += sizeof(uint16_t);
-    memcpy(p, payload, len);
-
-    return 1 + 2 + len;
-}
-
-/**
- * Build a GSP SSI carrying the SRV record (Transport Port + Instance Name).
- * Ported from esp-nsd @c get_ssi_for_srv_record (wa_sd.c) with a stack
- * buffer and a fixed (hostname, port) instead of dynamic allocation.
- */
-static size_t nan_pairing_build_srv_ssi(uint8_t *buf, size_t buf_len,
-                                        const char *hostname, uint16_t port)
-{
-    uint8_t *p = buf;
-    size_t hostname_len;
-    size_t need;
-
-    if (!buf || !hostname) {
-        return 0;
-    }
-    hostname_len = strlen(hostname);
-    need = sizeof(wifi_nan_wfa_ssi_t)
-           + (1 + 2 + sizeof(port))
-           + (1 + 2 + hostname_len);
-    if (buf_len < need) {
+    if (!buf || buf_len < sizeof(wifi_nan_wfa_ssi_t)) {
         return 0;
     }
 
     p += nan_pairing_add_ssi_gsp_attr(p);
-    p += nan_pairing_add_gsp_subattr(p, GSP_SUBATTR_TRANSPORT_PORT,
-                                     &port, sizeof(port));
-    p += nan_pairing_add_gsp_subattr(p, GSP_SUBATTR_INSTANCE_NAME,
-                                     hostname, hostname_len);
 
     return (size_t)(p - buf);
 }
@@ -632,7 +594,7 @@ static esp_err_t nan_app_send_pairing_followup(uint8_t svc_id, uint8_t peer_svc_
     uint8_t key_desc[sizeof(struct wpa_eapol_key)] = {0};
     uint8_t shared_key_wrapped[sizeof(struct wpa_eapol_key) + sizeof(wrapped)] = {0};
     uint8_t nira_attr[NAN_NIRA_ATTR_LEN] = {0};
-    uint8_t srv_ssi[NAN_PAIRING_SSI_BUF_LEN] = {0};
+    wifi_nan_wfa_ssi_t srv_ssi = {0};
     uint8_t nik[NAN_PASN_NIK_LEN];
     size_t plain_len;
     size_t wrapped_len;
@@ -701,20 +663,17 @@ static esp_err_t nan_app_send_pairing_followup(uint8_t svc_id, uint8_t peer_svc_
     memcpy(w, wrapped, wrapped_len);
     w += wrapped_len;
 
-    /* SSI: GSP (WFA OUI + proto=Generic) carrying an SRV record so iPhone
-     * has Transport Port + Instance Name to associate with this pairing. */
-    srv_ssi_len = nan_pairing_build_srv_ssi(srv_ssi, sizeof(srv_ssi),
-                                            NAN_PAIRING_SRV_HOSTNAME,
-                                            NAN_PAIRING_SRV_PORT);
+    /* SSI: GSP (WFA OUI + proto=Generic). */
+    srv_ssi_len = nan_pairing_build_srv_ssi((uint8_t *)&srv_ssi, sizeof(srv_ssi));
     if (srv_ssi_len == 0) {
-        ESP_LOGW(TAG, "Pairing follow-up: failed to build SRV SSI");
+        ESP_LOGW(TAG, "Pairing follow-up: failed to build GSP SSI");
         return ESP_FAIL;
     }
 
     fup.inst_id = svc_id;
     fup.peer_inst_id = peer_svc_id;
     MACADDR_COPY(fup.peer_mac, peer_mac);
-    fup.ssi = srv_ssi;
+    fup.ssi = (uint8_t *)&srv_ssi;
     fup.ssi_len = (uint16_t)srv_ssi_len;
 
     sk_attr_len = (size_t)(w - shared_key_wrapped);
