@@ -5,8 +5,10 @@ import os
 from datetime import datetime
 from typing import TextIO
 
+from esp_pylib.logger import log
 from reg_parse import DBParser
 from reg_parse import Regdomain
+from rich.markup import escape
 
 # Not a valid ISO 3166-1 alpha-2 code; marks end of regdomain_table for linear scans (matches wifi_regdomain_t.cn[2]).
 REGDOMAIN_TABLE_SENTINEL_CC = '##'
@@ -95,7 +97,7 @@ def main() -> None:
         mtime = os.path.getmtime(file_path)
         copyright_year = datetime.fromtimestamp(mtime).year
     except FileNotFoundError:
-        raise Exception(f'File {file_path} not found')
+        log.die(f'File {file_path} not found')
 
     reg.simplify_countries(regdomains)
     reg.simplify_countries_2g(regdomains)
@@ -111,11 +113,11 @@ def main() -> None:
     max_rules_count = max_rules_country[1]
     max_rules_countries = [cc for cc, count in country_rules_count.items() if count == max_rules_count]
 
-    print('\n=== Regulatory Statistics ===')
-    print(f'Total supported countries: {total_countries}')
-    print(f'Country(ies) with most rules: {", ".join(max_rules_countries)}')
-    print(f'Maximum number of rules: {max_rules_count}')
-    print('=' * 30 + '\n')
+    log.print('\n=== Regulatory Statistics ===')
+    log.print(f'Total supported countries: {total_countries}')
+    log.print(f'Country(ies) with most rules: {", ".join(max_rules_countries)}')
+    log.print(f'Maximum number of rules: {max_rules_count}')
+    log.print('=' * 30 + '\n')
 
     type_list = list(reg.typical_regulatory.keys())
     perm_list = list(reg.typical_regulatory.values())
@@ -124,8 +126,9 @@ def main() -> None:
     perm_list_2g = list(reg.typical_regulatory_2g.values())
 
     output_file = 'esp_wifi_regulatory.c'
+    output_file_path = os.path.join(directory, output_file)
 
-    with open(output_file, 'w') as cfile:
+    with open(output_file_path, 'w') as cfile:
         cfile.write('/*\n')
         cfile.write(f' * SPDX-FileCopyrightText: 2025-{copyright_year} Espressif Systems (Shanghai) CO LTD\n')
         cfile.write(' *\n')
@@ -143,8 +146,11 @@ def main() -> None:
         write_regulatory_data(cfile, reg, type_list_2g, perm_list_2g, filter_5g=False)
         cfile.write('#endif // CONFIG_SOC_WIFI_SUPPORT_5G\n')
 
-    print(f'{output_file} generated successfully.')
+    log.print(f'{escape(output_file)} generated successfully.')
 
 
 if __name__ == '__main__':
+    from esp_pylib.excepthook import install_exception_reporting
+
+    install_exception_reporting()
     main()
