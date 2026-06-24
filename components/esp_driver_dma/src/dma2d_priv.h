@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <sys/queue.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_intr_alloc.h"
@@ -45,6 +46,7 @@ struct dma2d_trans_s {
     TAILQ_ENTRY(dma2d_trans_s) entry;     // Link entry
     const dma2d_trans_config_t *desc;     // Pointer to the structure containing all configuration items of a transaction
     dma2d_channel_handle_t rx_chan;       // Pointer to the RX channel handle that will be used to do the transaction
+    _Atomic bool started;                 // False after the transaction's channels are picked (ownership published) until its `on_job_picked` (which configures/starts the hardware) has returned, then true. `dma2d_force_end` must wait for this to become true before tearing the channels down, otherwise it would race the in-progress start.
 };
 
 struct dma2d_group_t {
