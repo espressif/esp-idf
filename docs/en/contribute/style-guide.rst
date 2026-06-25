@@ -12,7 +12,7 @@ Style guide is a set of rules which are aimed to help create readable, maintaina
 
 We try to keep rules simple enough, which means that they can not cover all potential cases. In some cases one has to bend these simple rules to achieve readability, maintainability, or robustness.
 
-When doing modifications to third-party code used in ESP-IDF, follow the way that particular project is written. That will help propose useful changes for merging into upstream project.
+When modifying third-party code used in ESP-IDF, follow the coding style that particular project is written. That will help propose useful changes for merging into upstream project.
 
 C Code Formatting
 -----------------
@@ -202,7 +202,7 @@ If you accidentally have some commits in your branch that add LF endings, you ca
 
 Note that this line rebases on master, change the branch name at the end to rebase on another branch.
 
-For updating a single commit, it is possible to run ``dos2unix FILENAME`` and then run ``git commit --amend``.
+For updating a single commit, you can run ``dos2unix FILENAME`` first, then run ``git commit --amend``.
 
 Formatting Your Code
 ^^^^^^^^^^^^^^^^^^^^
@@ -497,7 +497,7 @@ Most of ESP-IDF's tooling — ``idf.py`` and its actions, the build system helpe
 Linting and Formatting
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Python code is linted and formatted by `Ruff <https://docs.astral.sh/ruff/>`_ and type-checked by `mypy <https://www.mypy-lang.org/>`_, configured in :project_file:`ruff.toml` and :project_file:`.mypy.ini`. You do not need to memorize the individual rules: install the :doc:`pre-commit hook <install-pre-commit-hook>` before committing, and these tools run automatically on every commit, keeping your changes consistent with the rest of the codebase.
+Python code is linted and formatted by `Ruff <https://docs.astral.sh/ruff/>`_ and type-checked by `mypy <https://www.mypy-lang.org/>`_, configured in :project_file:`ruff.toml` and :project_file:`.mypy.ini`. You do not need to memorize the individual rules: install the :doc:`pre-commit hook <install-pre-commit-hook>` once before your first commit, and these tools run automatically on every subsequent commit, keeping your changes consistent with the rest of the codebase.
 
 Dependencies
 ^^^^^^^^^^^^
@@ -508,6 +508,7 @@ Reusing Shared Code (esp-pylib)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ESP-IDF ships `esp-pylib <https://github.com/espressif/esp-pylib>`_ as a core requirement. It collects utilities that are shared across Espressif's Python tools so that they behave consistently. When adding or modifying Python tooling, prefer these helpers over rolling your own — for example, emit output through its shared logger instead of calling ``print()`` yourself, and reuse its common error-handling and command-line building blocks rather than re-implementing them. Refer to the `esp-pylib README <https://github.com/espressif/esp-pylib>`_ for what is available and how to use it.
+
 
 Configuring the Code Style for a Project Using EditorConfig
 -----------------------------------------------------------
