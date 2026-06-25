@@ -26,7 +26,7 @@
 # Fail if the MR branch has more than one auto-translation bot commit.
 # Runs on every MR pipeline (including bot commits); does not require auto-translate labels.
 check_auto_translate_commit_history:
-  stage: auto_translate
+  stage: pre_check
   image: python:3.11
   tags: [fast_run, shiny]
   rules:
@@ -94,14 +94,8 @@ translate:
     - *auto_translate_setup
     - git checkout $CI_COMMIT_REF_NAME
     - |
-      if [ -n "$TRANS_FILE" ]; then
-        echo "TRANS_FILE override: incremental translate only for listed paths"
-        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
-          --mode incremental-only --trans-file "$TRANS_FILE" --guard-labels auto-translate::full
-      else
-        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
-          --mode all --guard-labels auto-translate::full
-      fi
+      python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
+        --mode all --guard-labels auto-translate::full
 
 # Label: auto-translate::incremental — line check + incremental translate only (no entire/full bucket).
 translate_incremental:
@@ -124,11 +118,5 @@ translate_incremental:
     - *auto_translate_setup
     - git checkout $CI_COMMIT_REF_NAME
     - |
-      if [ -n "$TRANS_FILE" ]; then
-        echo "TRANS_FILE override: incremental translate only for listed paths"
-        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
-          --mode incremental-only --trans-file "$TRANS_FILE" --guard-labels auto-translate::incremental
-      else
-        python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
-          --mode incremental-only --guard-labels auto-translate::incremental
-      fi
+      python3 tools/ci/doc_auto_translate.py run --repo-root "$CI_PROJECT_DIR" \
+        --mode incremental-only --guard-labels auto-translate::incremental
