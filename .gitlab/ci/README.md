@@ -44,6 +44,8 @@
 
 ### Supported MR Labels
 
+- `auto-translate::full`, classifies MR doc changes (incremental vs include-only full); runs commit history check, `check_line_num`, then `translate`; see [.gitlab/ci/README_auto_translate.md](./README_auto_translate.md)
+- `auto-translate::incremental`, commit history check + line check + incremental doc translation only (no full translation; see [.gitlab/ci/README_auto_translate.md](./README_auto_translate.md))
 - `build`
 - `build_docs`
 - `component_ut[_esp32/esp32s2/...]`

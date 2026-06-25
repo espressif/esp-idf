@@ -3,6 +3,7 @@
 #####################
 stages:
   - manual_gate
+  - auto_translate
   - upload_cache
   - pre_check
   - build
