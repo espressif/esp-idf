@@ -33,6 +33,7 @@ You can install the EIM using one of the following methods:
 - `Download the EIM`_
 - `Debian-Based Linux Installation via APT`_
 - `RPM-Based Linux Installation via DNF`_
+- `Linux Installation via Homebrew`_
 
 Installing via APT or DNF allows you to easily keep EIM up to date with a single command.
 
@@ -101,6 +102,43 @@ Then, install the EIM Command Line Interface (CLI) alone, or together with Graph
     .. code-block:: bash
 
         sudo dnf install eim-cli
+
+
+Linux Installation via Homebrew
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+EIM can also be installed on Linux using `Homebrew <https://brew.sh/>`_. This method works on most Linux distributions and is a good alternative if you prefer Homebrew over system package managers.
+
+First, install Homebrew if you have not already:
+
+.. code-block:: bash
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+Then add the Espressif tap and install EIM:
+
+.. code-block:: bash
+
+    # Add the Espressif tap
+    brew tap espressif/eim
+
+    # Install CLI only
+    brew install eim
+
+    # Or install GUI (includes CLI)
+    brew install --cask eim-gui
+
+To update EIM later:
+
+.. code-block:: bash
+
+    brew upgrade eim
+    # or
+    brew upgrade --cask eim-gui
+
+.. note::
+
+    The GUI version requires a graphical environment and may have additional dependencies depending on your Linux distribution.
 
 
 Step 3: Install ESP-IDF Using EIM

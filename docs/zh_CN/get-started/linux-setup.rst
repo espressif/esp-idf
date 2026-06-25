@@ -33,6 +33,7 @@
 - `下载 EIM`_
 - `通过 APT 安装（Debian 发行版）`_
 - `通过 DNF 安装（RPM 发行版）`_
+- `通过 Homebrew 安装`_
 
 通过 APT 或 DNF 安装 EIM 便于后续升级更新。
 
@@ -101,6 +102,43 @@
     .. code-block:: bash
 
         sudo dnf install eim-cli
+
+
+通过 Homebrew 安装
+~~~~~~~~~~~~~~~~~~~~~~~
+
+也可以使用 `Homebrew <https://brew.sh/>`_ 在 Linux 上安装 EIM，此方法适用于大多数 Linux 发行版。如果不想使用系统包管理器，Homebrew 也是一个不错的选择。
+
+首先，如果尚未安装 Homebrew，请先安装：
+
+.. code-block:: bash
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+然后添加 Espressif tap 并安装 EIM：
+
+.. code-block:: bash
+
+    # 添加 Espressif tap
+    brew tap espressif/eim
+
+    # 仅安装 CLI
+    brew install eim
+
+    # 或安装 GUI（含 CLI）
+    brew install --cask eim-gui
+
+后续更新 EIM：
+
+.. code-block:: bash
+
+    brew upgrade eim
+    # 或
+    brew upgrade --cask eim-gui
+
+.. note::
+
+    GUI 版本需要图形环境，不同的 Linux 发行版可能有不同的额外依赖。
 
 
 第三步：使用 EIM 安装 ESP-IDF
