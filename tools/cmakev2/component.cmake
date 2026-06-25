@@ -1011,6 +1011,43 @@ function(idf_component_include name)
     list(APPEND components_included "${component_name}")
     idf_build_set_property(COMPONENTS_INCLUDED "${components_included}")
 
+    # Compile-time LTO (CONFIG_COMPILER_LTO_COMPILETIME): record which components
+    # must NOT be compiled with LTO. Linker fragments place object code by
+    # archive / object-file name, which LTO renames and merges, so any component
+    # that participates in fragment placement must be excluded. The decision is
+    # recorded in the NO_LTO component property and consumed later, when the
+    # component's static library is created, via a generator expression. Because
+    # the generator expression is evaluated only after every component has been
+    # processed, it does not matter that a component may be placed by a fragment
+    # belonging to a component that is included after it.
+    # A subproject that must not use LTO (for example the bootloader) opts out by
+    # setting the SET_COMPILER_LTO build property to NO, the same way it uses
+    # SET_COMPILER_OPTIMIZATION; an unset property means LTO is allowed. The
+    # result is reused by the apply block further below.
+    idf_build_get_property(set_compiler_lto SET_COMPILER_LTO)
+    if(NOT DEFINED set_compiler_lto OR set_compiler_lto STREQUAL "")
+        set(set_compiler_lto YES)
+    endif()
+    if(CONFIG_COMPILER_LTO_COMPILETIME AND set_compiler_lto)
+        # A component with its own linker fragments relies on object-file-name
+        # placement and must not be compiled with LTO.
+        idf_component_get_property(component_ldfragments "${component_name}" LDFRAGMENTS)
+        if(component_ldfragments)
+            idf_component_set_property("${component_name}" NO_LTO 1)
+        endif()
+        # A component may also place the object code of *other* components by
+        # naming their archive ("archive: libNAME.a") in its own fragments; mark
+        # those too. Names that do not resolve to a build component (for example
+        # toolchain archives such as libc.a) are skipped.
+        __lto_collect_fragment_placed_components(lto_placed_components "${component_name}")
+        foreach(placed_component IN LISTS lto_placed_components)
+            __get_component_interface(COMPONENT "${placed_component}" OUTPUT placed_interface)
+            if(NOT "${placed_interface}" STREQUAL "NOTFOUND")
+                idf_component_set_property("${placed_component}" NO_LTO 1)
+            endif()
+        endforeach()
+    endif()
+
     idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
     if(DEFINED ARG_INTERFACE)
         set(${ARG_INTERFACE} ${component_interface} PARENT_SCOPE)
@@ -1063,6 +1100,19 @@ function(idf_component_include name)
             endif()
         else()
             target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
+        endif()
+
+        # Compile-time LTO (CONFIG_COMPILER_LTO_COMPILETIME): compile this static
+        # library with -flto=auto unless it was marked NO_LTO during inclusion
+        # (because it, or another component, places its object code via a linker
+        # fragment, or it opted out explicitly). NO_LTO is read as a generator
+        # expression so that vetoes recorded by components processed after this
+        # one are still taken into account. set_compiler_lto was resolved during
+        # inclusion above (NO when a subproject opts out via SET_COMPILER_LTO).
+        if(CONFIG_COMPILER_LTO_COMPILETIME AND set_compiler_lto)
+            idf_component_get_property(no_lto_genex "${component_name}" NO_LTO GENERATOR_EXPRESSION)
+            target_compile_options("${component_real_target}" PRIVATE
+                "$<$<NOT:$<BOOL:${no_lto_genex}>>:-flto=auto>")
         endif()
     else()
         idf_die("Unsupported target type '${component_real_target_type}' in component '${component_name}'")

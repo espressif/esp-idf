@@ -41,6 +41,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/depgraph.cmake)
 # which generates per-component error code tables placed in a link-time array.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/err_codes.cmake)
 
+# The lto.cmake file from cmakev1 provides __lto_collect_fragment_placed_components(),
+# used to decide which components must be excluded from link-time optimization.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/lto.cmake)
+
 include(component)
 include(build)
 include(kconfig)

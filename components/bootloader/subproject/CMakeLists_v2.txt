@@ -92,6 +92,10 @@ idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
 # (CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_*) set below, not the app-level
 # CONFIG_COMPILER_OPTIMIZATION_* defaults.
 idf_build_set_property(SET_COMPILER_OPTIMIZATION NO)
+# The bootloader relies on linker-script section placement matched by object
+# file name, which LTO does not preserve, so it must never be compiled or linked
+# with LTO regardless of the application's CONFIG_COMPILER_LTO_* options.
+idf_build_set_property(SET_COMPILER_LTO NO)
 
 # Perform internal IDF project initialisation
 idf_project_init()
