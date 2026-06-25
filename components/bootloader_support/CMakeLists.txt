@@ -239,3 +239,7 @@ if(BOOTLOADER_BUILD)
     # linker will ignore this structure as it has no other files depending on it.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_bootloader_desc")
 endif()
+
+# Disable LTO for bootloader_support: it relies on linker script placements that
+# depend on object file names, which LTO does not preserve.
+idf_component_set_property(${COMPONENT_NAME} NO_LTO 1)
