@@ -19,6 +19,13 @@ extern "C" {
 
 #define btdm_external_bb_get_tx_pwr_table       BTDM_EXTERNAL_WR_FUNC(btdm_external_bb_get_tx_pwr_table)
 
+enum {
+    TX_PWR_TABLE_MODEM_CFG_BLE = 0,
+    TX_PWR_TABLE_MODEM_CFG_802154,
+    TX_PWR_TABLE_MODEM_CFG_BREDR,
+    TX_PWR_TABLE_MODEM_CFG_MAX,
+};
+
 /*
  * Function declarations for BTDM EXTERNAL
  */
