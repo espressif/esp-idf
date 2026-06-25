@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #endif
 
 #define ESP_OPENTHREAD_UART_BUFFER_SIZE CONFIG_OPENTHREAD_UART_BUFFER_SIZE
+#define ESP_OPENTHREAD_TRANSPORT_BUFFER_SIZE CONFIG_OPENTHREAD_TRANSPORT_BUFFER_SIZE
 
 #if CONFIG_OPENTHREAD_DEBUG
 

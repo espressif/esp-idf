@@ -50,14 +50,23 @@ if(CONFIG_OPENTHREAD_RADIO_NATIVE)
         "src/port/esp_openthread_radio_spinel.cpp"
         "src/port/esp_spi_spinel_interface.cpp"
         "src/spinel/esp_radio_spinel.cpp"
-        "src/spinel/esp_radio_spinel_uart_interface.cpp")
-elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+        "src/spinel/esp_radio_spinel_uart_interface.cpp"
+        "src/spinel/esp_radio_spinel_custom.cpp")
+elseif(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR
+        CONFIG_OPENTHREAD_RADIO_SPINEL_SPI OR
+        CONFIG_OPENTHREAD_RADIO_SPINEL_CUSTOM)
     list(APPEND exclude_srcs
         "src/port/esp_openthread_radio.c"
         "src/port/esp_openthread_sleep.c"
         "src/spinel/esp_radio_spinel.cpp")
-    if(CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+    if(CONFIG_OPENTHREAD_RADIO_SPINEL_SPI OR CONFIG_OPENTHREAD_RADIO_SPINEL_CUSTOM)
         list(APPEND exclude_srcs "src/spinel/esp_radio_spinel_uart_interface.cpp")
+    endif()
+    if(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_CUSTOM)
+        list(APPEND exclude_srcs "src/port/esp_spi_spinel_interface.cpp")
+    endif()
+    if(CONFIG_OPENTHREAD_RADIO_SPINEL_UART OR CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+        list(APPEND exclude_srcs "src/spinel/esp_radio_spinel_custom.cpp")
     endif()
 elseif(CONFIG_OPENTHREAD_RADIO_154_NONE)
     list(APPEND exclude_srcs
@@ -65,6 +74,7 @@ elseif(CONFIG_OPENTHREAD_RADIO_154_NONE)
         "src/port/esp_spi_spinel_interface.cpp"
         "src/spinel/esp_radio_spinel.cpp"
         "src/spinel/esp_radio_spinel_uart_interface.cpp"
+        "src/spinel/esp_radio_spinel_custom.cpp"
         "src/port/esp_openthread_radio.c"
         "src/port/esp_openthread_sleep.c")
 endif()
@@ -92,7 +102,7 @@ endif()
 if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
     list(APPEND src_dirs
         "src/ncp")
-    if(CONFIG_OPENTHREAD_RCP_UART OR CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
+    if(CONFIG_OPENTHREAD_RCP_UART OR CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG OR CONFIG_OPENTHREAD_RCP_CUSTOM)
         list(APPEND exclude_srcs
             "src/ncp/esp_openthread_ncp_spi.cpp")
     elseif(CONFIG_OPENTHREAD_RCP_SPI)

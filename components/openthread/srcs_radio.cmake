@@ -90,6 +90,13 @@ elseif(CONFIG_OPENTHREAD_RCP_SPI)
     if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
         list(APPEND rcp_srcs src/ncp/esp_openthread_ncp_spi.cpp)
     endif()
+elseif(CONFIG_OPENTHREAD_RCP_CUSTOM)
+    list(APPEND rcp_srcs
+        openthread/src/ncp/ncp_hdlc.cpp
+        src/port/esp_openthread_transport_rcp.c)
+    if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK)
+        list(APPEND rcp_srcs src/ncp/esp_openthread_ncp_hdlc.cpp)
+    endif()
 endif()
 
 if(CONFIG_OPENTHREAD_NCP_VENDOR_HOOK AND CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE)

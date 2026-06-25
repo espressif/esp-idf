@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <sys/select.h>
@@ -130,6 +131,28 @@ typedef struct {
 } esp_openthread_spi_slave_config_t;
 
 /**
+ * @brief The Transport config for OpenThread.
+ *
+ * @note An external transport implements the callback functions that OpenThread will call when it has data to send or receive. The data to be transported are HDLC frames, not raw Spinel Packets.
+ *
+ * - transport_tx: Send exactly @p len bytes from @p buf. Should complete synchronously before returning ESP_OK.
+ *
+ * - transport_rx: Non-blocking read of up to @p buf_size bytes into @p buf. On ESP_OK, set @p out_len to the number
+ *   of bytes written (1 .. buf_size). Return ESP_ERR_TIMEOUT or another non-OK code when no data is available now.
+ *
+ * When RX data becomes available from another context (ISR or task), the external transport calls
+ * - `esp_openthread_transport_notify_rcp_rx()` (on RCP) or
+ * - `esp_openthread_transport_notify_host_rx()` (on Host)
+ * so the OpenThread task wakes promptly from select().
+ *
+ */
+typedef struct {
+    esp_err_t (*transport_tx)(const void *buf, size_t len); /*!< Transmit */
+    esp_err_t (*transport_rx)(void *buf, size_t buf_size, size_t *out_len); /*!< Non-blocking receive */
+    uint32_t bus_speed; /*!< Transport speed */
+} esp_openthread_transport_config_t;
+
+/**
  * @brief The radio mode of OpenThread.
  *
  */
@@ -138,6 +161,7 @@ typedef enum {
     RADIO_MODE_UART_RCP,       /*!< UART connection to a 15.4 capable radio co-processor (RCP) */
     RADIO_MODE_SPI_RCP,        /*!< SPI connection to a 15.4 capable radio co-processor (RCP) */
     RADIO_MODE_TREL,           /*!< Use the Thread Radio Encapsulation Link (TREL) */
+    RADIO_MODE_TRANSPORT,      /*!< Use the custom transport to connect to a 15.4 capable radio co-processor (RCP) */
     RADIO_MODE_MAX,            /*!< Using for parameter check */
 } esp_openthread_radio_mode_t;
 
@@ -151,7 +175,8 @@ typedef enum {
     HOST_CONNECTION_MODE_CLI_USB,        /*!< CLI USB connection to the host */
     HOST_CONNECTION_MODE_RCP_UART,       /*!< RCP UART connection to the host */
     HOST_CONNECTION_MODE_RCP_SPI,        /*!< RCP SPI connection to the host */
-    HOST_CONNECTION_MODE_RCP_USB,       /*!<  RCP USB Serial JTAG connection to the host */
+    HOST_CONNECTION_MODE_RCP_USB,        /*!< RCP USB Serial JTAG connection to the host */
+    HOST_CONNECTION_MODE_RCP_TRANSPORT,  /*!< RCP Custom Transport to connect to the host */
     HOST_CONNECTION_MODE_MAX,            /*!< Using for parameter check */
 } esp_openthread_host_connection_mode_t;
 
@@ -164,7 +189,8 @@ typedef struct {
     union {
         esp_openthread_uart_config_t     radio_uart_config; /*!< The uart configuration to RCP */
         esp_openthread_spi_host_config_t radio_spi_config;  /*!< The spi configuration to RCP */
-    };
+        esp_openthread_transport_config_t radio_transport_config; /*!< The custom transport configuration to RCP */
+   };
 } esp_openthread_radio_config_t;
 
 /**
@@ -177,6 +203,7 @@ typedef struct {
         esp_openthread_uart_config_t      host_uart_config; /*!< The uart configuration to host */
         usb_serial_jtag_driver_config_t   host_usb_config;  /*!< The usb configuration to host */
         esp_openthread_spi_slave_config_t spi_slave_config; /*!< The spi configuration to host */
+        esp_openthread_transport_config_t host_transport_config; /*!< The custom transport configuration to the host */
     };
 } esp_openthread_host_connection_config_t;
 

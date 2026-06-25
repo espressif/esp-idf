@@ -201,6 +201,11 @@ menu "OpenThread"
                     help
                         Select this to connect to a Radio Co-Processor via SPI.
 
+                config OPENTHREAD_RADIO_SPINEL_CUSTOM
+                    bool "Connect via Custom Transport"
+                    help
+                        Select this to connect to a Radio Co-Processor via a provided Custom Transport.
+
                 config OPENTHREAD_RADIO_154_NONE
                     bool "Disable the Thread radio based on 15.4 link"
                     help
@@ -232,6 +237,11 @@ menu "OpenThread"
                     bool "USB RCP"
                     help
                         Select this to enable connection to host over USB JTAG serial.
+
+                config OPENTHREAD_RCP_CUSTOM
+                    bool "Custom Transport RCP"
+                    help
+                        Select this to enable a custom transport connection to host
             endchoice
 
             config OPENTHREAD_NCP_VENDOR_HOOK
@@ -499,6 +509,13 @@ menu "OpenThread"
                 default 2048
                 help
                     Set the OpenThread UART buffer size.
+
+            config OPENTHREAD_TRANSPORT_BUFFER_SIZE
+                depends on OPENTHREAD_RCP_CUSTOM || OPENTHREAD_RADIO_SPINEL_CUSTOM
+                int "The custom transport received buffer size of openthread"
+                default 2048
+                help
+                    Set the OpenThread Custom transport buffer size.
 
             config OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
                 int "Maximum backoffs times before declaring a channel access failure."
