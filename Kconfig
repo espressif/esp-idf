@@ -787,6 +787,47 @@ mainmenu "Espressif IoT Development Framework Configuration"
             default "gcc" if COMPILER_RT_LIB_GCCLIB
             default "" if COMPILER_RT_LIB_HOST
 
+        config COMPILER_LTO_LINKTIME
+            bool "Enable LTO at link time"
+            default n
+            # LTO for host builds is probably not needed at all
+            # LTO with Clang needs LLD (IDF-8286)
+            # LTO works with APP_REPRODUCIBLE_BUILD (see top-level CMakeLists.txt)
+            depends on !IDF_TARGET_LINUX && !IDF_TOOLCHAIN_CLANG
+            help
+                If enabled, ESP-IDF build system will tell the linker to use LTO
+                (Link Time Optimization). This option may increase linking time but
+                will also produce smaller binaries.
+                Note that to see some code size reduction, you should also enable LTO
+                at compile time for some components.
+
+                You can do this either selectively for specific components, or use
+                the option CONFIG_COMPILER_LTO_COMPILETIME below to enable
+                it for most of the components by default.
+
+                Note that LTO can also increase task stack usage, because inlining
+                across translation units produces fewer but larger stack frames. After
+                enabling LTO, check the stack high water mark of your tasks and raise the
+                stack sizes of the affected tasks if necessary.
+
+        config COMPILER_LTO_COMPILETIME
+            bool "Enable LTO by default at compile time"
+            depends on COMPILER_LTO_LINKTIME
+            default n
+            help
+                If enabled, ESP-IDF build system will compile most of the components with
+                LTO (link time optimizations) enabled.
+
+                Components which have link-time sections placement requirements will not
+                have LTO enabled. This includes components which specify linker fragment
+                files, as well as components whose object code is placed by a linker
+                fragment of another component.
+
+                Note that enabling LTO for all components does not always reduce the
+                binary size, and in some cases can increase it. For a more predictable
+                result, consider enabling LTO selectively for specific components by
+                adding the -flto=auto compile option to them.
+
         choice COMPILER_ORPHAN_SECTIONS
             prompt "Orphan sections handling"
             default COMPILER_ORPHAN_SECTIONS_ERROR
