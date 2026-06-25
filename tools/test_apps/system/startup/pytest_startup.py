@@ -14,6 +14,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         ('no_vfs_partial', 'supported_targets'),
         ('opt_o0', 'supported_targets'),
         ('opt_o2', 'supported_targets'),
+        ('opt_os_lto', 'supported_targets'),
         ('stack_check_verbose_log', 'supported_targets'),
         ('sram1_iram', 'esp32'),
         ('main_task_cpu1', 'esp32'),
