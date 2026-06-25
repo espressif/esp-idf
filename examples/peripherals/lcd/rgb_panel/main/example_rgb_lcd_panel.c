@@ -4,46 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "example_rgb_panel_init.h"
-#include "driver/gpio.h"
 #include "esp_check.h"
-#include "esp_lcd_panel_rgb.h"
+#include "driver/gpio.h"
+#include "esp_lcd_panel_ops.h"
+#include "example_rgb_lcd_panel.h"
 
-static const char *TAG = "rgb_panel_init";
+static const char *TAG = "example";
 
-static void s_fill_data_gpio_nums(gpio_num_t data_gpio_nums[ESP_LCD_RGB_BUS_WIDTH_MAX])
-{
-    data_gpio_nums[0] = EXAMPLE_PIN_NUM_DATA0;
-    data_gpio_nums[1] = EXAMPLE_PIN_NUM_DATA1;
-    data_gpio_nums[2] = EXAMPLE_PIN_NUM_DATA2;
-    data_gpio_nums[3] = EXAMPLE_PIN_NUM_DATA3;
-    data_gpio_nums[4] = EXAMPLE_PIN_NUM_DATA4;
-    data_gpio_nums[5] = EXAMPLE_PIN_NUM_DATA5;
-    data_gpio_nums[6] = EXAMPLE_PIN_NUM_DATA6;
-    data_gpio_nums[7] = EXAMPLE_PIN_NUM_DATA7;
-    data_gpio_nums[8] = EXAMPLE_PIN_NUM_DATA8;
-    data_gpio_nums[9] = EXAMPLE_PIN_NUM_DATA9;
-    data_gpio_nums[10] = EXAMPLE_PIN_NUM_DATA10;
-    data_gpio_nums[11] = EXAMPLE_PIN_NUM_DATA11;
-    data_gpio_nums[12] = EXAMPLE_PIN_NUM_DATA12;
-    data_gpio_nums[13] = EXAMPLE_PIN_NUM_DATA13;
-    data_gpio_nums[14] = EXAMPLE_PIN_NUM_DATA14;
-    data_gpio_nums[15] = EXAMPLE_PIN_NUM_DATA15;
-#if CONFIG_EXAMPLE_LCD_DATA_LINES > 16
-    data_gpio_nums[16] = EXAMPLE_PIN_NUM_DATA16;
-    data_gpio_nums[17] = EXAMPLE_PIN_NUM_DATA17;
-    data_gpio_nums[18] = EXAMPLE_PIN_NUM_DATA18;
-    data_gpio_nums[19] = EXAMPLE_PIN_NUM_DATA19;
-    data_gpio_nums[20] = EXAMPLE_PIN_NUM_DATA20;
-    data_gpio_nums[21] = EXAMPLE_PIN_NUM_DATA21;
-    data_gpio_nums[22] = EXAMPLE_PIN_NUM_DATA22;
-    data_gpio_nums[23] = EXAMPLE_PIN_NUM_DATA23;
-#endif
-}
-
-esp_err_t example_rgb_panel_init_backlight(void)
+esp_err_t example_rgb_lcd_backlight_init(void)
 {
 #if EXAMPLE_PIN_NUM_BK_LIGHT >= 0
+    // The RGB panel data interface usually does not control the backlight itself,
+    // so drive the dedicated backlight GPIO separately when the board provides one.
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_BK_LIGHT,
@@ -54,7 +26,7 @@ esp_err_t example_rgb_panel_init_backlight(void)
     return ESP_OK;
 }
 
-void example_rgb_panel_set_backlight(bool on)
+void example_rgb_lcd_backlight_set(bool on)
 {
     if (EXAMPLE_PIN_NUM_BK_LIGHT < 0) {
         return;
@@ -63,10 +35,11 @@ void example_rgb_panel_set_backlight(bool on)
     gpio_set_level(EXAMPLE_PIN_NUM_BK_LIGHT, on ? EXAMPLE_LCD_BK_LIGHT_ON_LEVEL : EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL);
 }
 
-esp_err_t example_rgb_panel_new(esp_lcd_panel_handle_t *panel_handle)
+esp_err_t example_rgb_lcd_panel_new(esp_lcd_panel_handle_t *panel_handle)
 {
     ESP_RETURN_ON_FALSE(panel_handle, ESP_ERR_INVALID_ARG, TAG, "panel handle is null");
 
+    // Fill one esp_lcd_rgb_panel_config_t in one place: bus width, GPIO routing, timing, and frame buffers.
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = CONFIG_EXAMPLE_LCD_DATA_LINES,
         .dma_burst_size = 64,
@@ -80,6 +53,34 @@ esp_err_t example_rgb_panel_new(esp_lcd_panel_handle_t *panel_handle)
         .vsync_gpio_num = EXAMPLE_PIN_NUM_VSYNC,
         .hsync_gpio_num = EXAMPLE_PIN_NUM_HSYNC,
         .de_gpio_num = EXAMPLE_PIN_NUM_DE,
+        .data_gpio_nums = {
+            EXAMPLE_PIN_NUM_DATA0,
+            EXAMPLE_PIN_NUM_DATA1,
+            EXAMPLE_PIN_NUM_DATA2,
+            EXAMPLE_PIN_NUM_DATA3,
+            EXAMPLE_PIN_NUM_DATA4,
+            EXAMPLE_PIN_NUM_DATA5,
+            EXAMPLE_PIN_NUM_DATA6,
+            EXAMPLE_PIN_NUM_DATA7,
+            EXAMPLE_PIN_NUM_DATA8,
+            EXAMPLE_PIN_NUM_DATA9,
+            EXAMPLE_PIN_NUM_DATA10,
+            EXAMPLE_PIN_NUM_DATA11,
+            EXAMPLE_PIN_NUM_DATA12,
+            EXAMPLE_PIN_NUM_DATA13,
+            EXAMPLE_PIN_NUM_DATA14,
+            EXAMPLE_PIN_NUM_DATA15,
+#if CONFIG_EXAMPLE_LCD_DATA_LINES > 16
+            EXAMPLE_PIN_NUM_DATA16,
+            EXAMPLE_PIN_NUM_DATA17,
+            EXAMPLE_PIN_NUM_DATA18,
+            EXAMPLE_PIN_NUM_DATA19,
+            EXAMPLE_PIN_NUM_DATA20,
+            EXAMPLE_PIN_NUM_DATA21,
+            EXAMPLE_PIN_NUM_DATA22,
+            EXAMPLE_PIN_NUM_DATA23,
+#endif
+        },
         .timings = {
             .pclk_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
             .h_res = EXAMPLE_LCD_H_RES,
@@ -96,20 +97,14 @@ esp_err_t example_rgb_panel_new(esp_lcd_panel_handle_t *panel_handle)
         },
         .flags.fb_in_psram = true,
     };
-    s_fill_data_gpio_nums(panel_config.data_gpio_nums);
     return esp_lcd_new_rgb_panel(&panel_config, panel_handle);
 }
 
-esp_err_t example_rgb_panel_init(esp_lcd_panel_handle_t panel_handle)
+esp_err_t example_rgb_lcd_panel_init(esp_lcd_panel_handle_t panel_handle)
 {
     ESP_RETURN_ON_FALSE(panel_handle, ESP_ERR_INVALID_ARG, TAG, "panel handle is null");
+    // reset() applies the panel reset sequence, while init() starts the RGB output engine.
     ESP_RETURN_ON_ERROR(esp_lcd_panel_reset(panel_handle), TAG, "reset RGB panel failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_init(panel_handle), TAG, "init RGB panel failed");
     return ESP_OK;
-}
-
-esp_err_t example_rgb_panel_deinit(esp_lcd_panel_handle_t panel_handle)
-{
-    ESP_RETURN_ON_FALSE(panel_handle, ESP_ERR_INVALID_ARG, TAG, "panel handle is null");
-    return esp_lcd_panel_del(panel_handle);
 }
