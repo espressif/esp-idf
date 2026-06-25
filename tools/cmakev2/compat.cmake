@@ -700,7 +700,10 @@ function(idf_component_register)
             target_include_directories("${COMPONENT_TARGET}" PRIVATE "${include_dir}")
         endforeach()
 
-        set_target_properties(${COMPONENT_TARGET} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME} LINKER_LANGUAGE C)
+        __idf_component_get_linker_language(component_linker_language)
+        set_target_properties(${COMPONENT_TARGET} PROPERTIES
+                              OUTPUT_NAME ${COMPONENT_NAME}
+                              LINKER_LANGUAGE ${component_linker_language})
 
         set(component_type LIBRARY)
 

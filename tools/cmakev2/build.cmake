@@ -625,21 +625,43 @@ function(idf_build_executable executable)
         set(ARG_SUFFIX ".elf")
     endif()
 
+    get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(C IN_LIST enabled_languages)
+        set(stub_language C)
+        set(stub_extension c)
+    elseif(CXX IN_LIST enabled_languages)
+        set(stub_language CXX)
+        set(stub_extension c)
+    elseif(ASM IN_LIST enabled_languages)
+        set(stub_language ASM)
+        set(stub_extension S)
+    else()
+        message(FATAL_ERROR "idf_build_executable() requires C, CXX, or ASM to be enabled.")
+    endif()
+
     idf_build_get_property(build_dir BUILD_DIR)
 
     set(library "library_${executable}")
     idf_build_library(${library} COMPONENTS "${ARG_COMPONENTS}")
 
-    set(executable_src ${CMAKE_BINARY_DIR}/executable_${executable}.c)
+    set(executable_src ${CMAKE_BINARY_DIR}/executable_${executable}.${stub_extension})
     if(NOT EXISTS "${executable_src}")
         file(TOUCH "${executable_src}")
     endif()
+    if(stub_language STREQUAL "CXX")
+        set_source_files_properties("${executable_src}" PROPERTIES LANGUAGE CXX)
+    endif()
+
     add_executable(${executable} "${executable_src}")
 
     set_target_properties(${executable} PROPERTIES OUTPUT_NAME ${ARG_NAME})
 
     if(ARG_SUFFIX)
         set_target_properties(${executable} PROPERTIES SUFFIX ${ARG_SUFFIX})
+    endif()
+
+    if(NOT stub_language STREQUAL "C")
+        set_target_properties(${executable} PROPERTIES LINKER_LANGUAGE ${stub_language})
     endif()
 
     target_link_libraries(${executable} PRIVATE ${library})
