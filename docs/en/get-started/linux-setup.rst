@@ -33,6 +33,7 @@ You can install the EIM using one of the following methods:
 - `Download the EIM`_
 - `Debian-Based Linux Installation via APT`_
 - `RPM-Based Linux Installation via DNF`_
+- `Linux Installation via Homebrew`_
 
 Installing via APT or DNF allows you to easily keep EIM up to date with a single command.
 
