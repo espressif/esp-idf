@@ -7,9 +7,9 @@
 #pragma once
 
 #include <stdbool.h>
-#include "esp_err.h"
-#include "esp_lcd_panel_ops.h"
 #include "sdkconfig.h"
+#include "esp_err.h"
+#include "esp_lcd_panel_rgb.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +18,8 @@ extern "C" {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Refresh Rate = 18000000/(1+40+20+800)/(1+10+5+480) = 42Hz
+// Example timing:
+// Refresh rate = 18 MHz / (HSYNC + HBP + H_RES + HFP) / (VSYNC + VBP + V_RES + VFP) = about 42 Hz
 #define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (18 * 1000 * 1000)
 #define EXAMPLE_LCD_H_RES              800
 #define EXAMPLE_LCD_V_RES              480
@@ -31,6 +32,7 @@ extern "C" {
 
 #define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL                   1
 #define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL                  !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
+// Set these two GPIOs to -1 when the panel backlight or display-enable pin is fixed on the board.
 #define EXAMPLE_PIN_NUM_BK_LIGHT                        -1
 #define EXAMPLE_PIN_NUM_DISP_EN                         -1
 
@@ -72,17 +74,17 @@ extern "C" {
 #define EXAMPLE_RGB_PANEL_NUM_FBS                       1
 #endif
 
+// One RGB565 pixel uses 2 bytes, one RGB888 pixel uses 3 bytes.
 #if CONFIG_EXAMPLE_LCD_DATA_LINES_16
-#define EXAMPLE_PIXEL_SIZE             2
+#define EXAMPLE_PIXEL_SIZE                              2
 #elif CONFIG_EXAMPLE_LCD_DATA_LINES_24
-#define EXAMPLE_PIXEL_SIZE             3
+#define EXAMPLE_PIXEL_SIZE                              3
 #endif
 
-esp_err_t example_rgb_panel_init_backlight(void);
-void example_rgb_panel_set_backlight(bool on);
-esp_err_t example_rgb_panel_new(esp_lcd_panel_handle_t *panel_handle);
-esp_err_t example_rgb_panel_init(esp_lcd_panel_handle_t panel_handle);
-esp_err_t example_rgb_panel_deinit(esp_lcd_panel_handle_t panel_handle);
+esp_err_t example_rgb_lcd_backlight_init(void);
+void example_rgb_lcd_backlight_set(bool on);
+esp_err_t example_rgb_lcd_panel_new(esp_lcd_panel_handle_t *panel_handle);
+esp_err_t example_rgb_lcd_panel_init(esp_lcd_panel_handle_t panel_handle);
 
 #ifdef __cplusplus
 }

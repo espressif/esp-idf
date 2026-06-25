@@ -17,8 +17,9 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_rgb_lcd_lvgl_esp32s3(dut: Dut) -> None:
+    dut.expect_exact('example: Initialize LCD backlight')
     dut.expect_exact('example: Turn off LCD backlight')
-    dut.expect_exact('example: Install RGB LCD panel driver')
+    dut.expect_exact('example: Create RGB LCD panel')
     dut.expect_exact('example: Initialize RGB LCD panel')
     dut.expect_exact('example: Turn on LCD backlight')
     dut.expect_exact('example: Initialize LVGL library')
@@ -39,8 +40,9 @@ def test_rgb_lcd_lvgl_esp32s3(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32p4', 'esp32s31'], indirect=['target'])
 def test_rgb_lcd_lvgl(dut: Dut) -> None:
+    dut.expect_exact('example: Initialize LCD backlight')
     dut.expect_exact('example: Turn off LCD backlight')
-    dut.expect_exact('example: Install RGB LCD panel driver')
+    dut.expect_exact('example: Create RGB LCD panel')
     dut.expect_exact('example: Initialize RGB LCD panel')
     dut.expect_exact('example: Turn on LCD backlight')
     dut.expect_exact('example: Initialize LVGL library')
