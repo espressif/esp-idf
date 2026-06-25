@@ -695,6 +695,23 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode);
  */
 esp_err_t esp_bt_controller_disable(void);
 
+#if (UC_BT_CTRL_BR_EDR_IS_ENABLE)
+/**
+ * @brief  Get the BR/EDR TX power range (in dBm) actually supported by this chip.
+ *
+ * The TX power range configurable in menuconfig represents the maximum possible range.
+ * The values that can actually be applied depend on the chip and are reported by this function.
+ *
+ * @param[out] min_power : pointer to store the minimum supported TX power in dBm
+ * @param[out] max_power : pointer to store the maximum supported TX power in dBm
+ * @return
+ *      - ESP_OK: success
+ *      - ESP_ERR_INVALID_ARG: invalid argument
+ *      - ESP_ERR_NOT_SUPPORTED: not supported
+ */
+esp_err_t esp_bredr_tx_power_range_get(int8_t *min_power, int8_t *max_power);
+#endif // (UC_BT_CTRL_BR_EDR_IS_ENABLE)
+
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do
  */
