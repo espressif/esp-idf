@@ -123,6 +123,8 @@ extern int bredr_ctrl_feat_dtm_en(void);
 extern int bredr_ctrl_feat_test_en(void);
 extern int bredr_ctrl_feat_lk_store_en(void);
 extern int bredr_ctrl_feat_coex_en(void);
+extern int bredr_ctrl_feat_sam_en(void);
+extern int bredr_ctrl_feat_mws_en(void);
 
 extern const char *co_orca_get_git_version_str(void);
 extern void r_orca_log_set_printf(bredr_log_printf_fn printf_fn);
@@ -681,6 +683,22 @@ static int bredr_ctrl_setup_callback(void)
             break;
         }
 #endif /* UC_BR_EDR_DTM_EN */
+
+#if UC_BR_EDR_SAM_EN
+        ret = bredr_ctrl_feat_sam_en();
+        if (ret != 0) {
+            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_feat_sam_en failed, ret:%d", ret);
+            break;
+        }
+#endif /* UC_BR_EDR_SAM_EN */
+
+#if UC_BR_EDR_MWS_EN
+        ret = bredr_ctrl_feat_mws_en();
+        if (ret != 0) {
+            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_feat_mws_en failed, ret:%d", ret);
+            break;
+        }
+#endif /* UC_BR_EDR_MWS_EN */
 
 #if CONFIG_SW_COEXIST_ENABLE
         ret = bredr_ctrl_feat_coex_en();
