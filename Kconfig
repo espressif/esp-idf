@@ -848,6 +848,83 @@ mainmenu "Espressif IoT Development Framework Configuration"
                     Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
         endchoice
 
+        config COMPILER_KASAN
+            bool "Enable Kernel Address Sanitizer (KASAN)"
+            depends on IDF_EXPERIMENTAL_FEATURES && IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            select HEAP_USE_HOOKS
+            default n
+            help
+                Enables Kernel Address Sanitizer instrumentation (-fsanitize=kernel-address).
+                GCC instruments every memory load and store with calls to __asan_load<N>_noabort /
+                __asan_store<N>_noabort.  These stubs check a shadow memory region and panic if
+                poisoned (freed / out-of-bounds) memory is accessed.
+
+                KASAN is useful for detecting:
+                - Heap buffer overflows and underflows (with redzones)
+                - Use-after-free bugs (when heap hooks are enabled)
+                - Out-of-bounds accesses in global and stack variables (optional)
+
+                Enabling this option increases code size by 1.5-3x for instrumented components
+                and reserves shadow memory in DRAM (~42-64 KiB depending on target).
+
+                NOT compatible with bootloader builds or ROM code.  Components in the
+                hal, soc, esp_rom, and bootloader_support families are automatically
+                excluded from instrumentation.
+
+        menu "Kernel Address Sanitizer (KASAN)"
+            depends on COMPILER_KASAN
+
+            config KASAN_STACK
+                bool "Instrument stack variables (higher overhead)"
+                depends on COMPILER_KASAN
+                default n
+                help
+                    Pass --param asan-stack=1 to enable KASAN instrumentation of
+                    stack (local) variables.  This detects stack buffer overflows but
+                    significantly increases stack usage for every instrumented function.
+                    Leave disabled unless you specifically need stack-overflow detection.
+
+            config KASAN_HEAP_REDZONE_SIZE
+                int "Heap allocation redzone size in bytes (0 to disable)"
+                depends on COMPILER_KASAN
+                default 8
+                range 0 64
+                help
+                    Number of bytes of poisoned redzone added on each side of every heap
+                    allocation.  Redzones catch heap buffer overflows and underflows.
+                    This value must be a multiple of 4; the build enforces that with
+                    a static assertion in the heap KASAN runtime.  Set to 0 to disable
+                    redzones (reduces per-allocation overhead at the cost of reduced
+                    detection coverage).
+
+            config KASAN_QUARANTINE_SIZE
+                int "Freed-block quarantine queue size in bytes (0 to disable)"
+                depends on COMPILER_KASAN
+                default 8192
+                range 0 65536
+                help
+                    When non-zero, freed heap blocks are held in a FIFO quarantine for this
+                    many bytes total before being returned to the allocator.  Quarantined
+                    blocks remain poisoned, allowing KASAN to catch use-after-free accesses
+                    for some time after the block is freed.  Increases peak memory usage by
+                    the configured amount.  Set to 0 to disable (frees memory immediately).
+
+            config KASAN_NO_HALT
+                bool "Continue execution after KASAN error (no abort)"
+                depends on COMPILER_KASAN
+                default n
+                help
+                    When enabled, KASAN prints the error report but does not call
+                    esp_system_abort().  Execution continues after each violation.
+
+                    This is useful for test applications that need to verify multiple
+                    KASAN detections in a single boot cycle.
+
+                    Not recommended for production or debugging real bugs, as continued
+                    execution after a memory safety violation may cause undefined behaviour.
+
+        endmenu # Kernel Address Sanitizer (KASAN)
+
     endmenu # Compiler Options
 
     menu "Component config"
@@ -890,3 +967,4 @@ mainmenu "Espressif IoT Development Framework Configuration"
             - CONFIG_ESP_WIFI_NAN_SECURITY
             - CONFIG_USB_HOST_EXT_PORT_RESET_ATTEMPTS
             - CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+            - CONFIG_COMPILER_KASAN

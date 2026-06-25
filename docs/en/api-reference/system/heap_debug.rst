@@ -6,7 +6,7 @@ Heap Memory Debugging
 Overview
 --------
 
-ESP-IDF integrates tools for requesting :ref:`heap information <heap-information>`, :ref:`heap corruption detection <heap-corruption>`, and :ref:`heap tracing <heap-tracing>`. These can help track down memory-related bugs.
+ESP-IDF integrates tools for requesting :ref:`heap information <heap-information>`, :ref:`heap corruption detection <heap-corruption>`, :ref:`kernel address sanitizer (KASAN) <heap-kasan>`, and :ref:`heap tracing <heap-tracing>`. These can help track down memory-related bugs.
 
 For general information about the heap memory allocator, see :doc:`Heap Memory Allocation </api-reference/system/mem_alloc>`.
 
@@ -193,6 +193,32 @@ Calls to :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_int
 
 - For free heap blocks, the checker expects to find all bytes set to ``0xFE``. Any other values indicate a use-after-free bug where free memory has been incorrectly overwritten.
 - For allocated heap blocks, the behavior is the same as for the Light Impact mode. The canary bytes ``0xABBA1234`` and ``0xBAAD5678`` are checked at the head and tail of each allocated buffer, and any variation indicates a buffer overrun or underrun.
+
+
+.. _heap-kasan:
+
+Kernel Address Sanitizer (KASAN)
+--------------------------------
+
+KASAN is a compiler-assisted heap and DRAM memory safety checker. When enabled, GCC instruments memory loads and stores with runtime checks against a shadow memory region. Violations (buffer overflows, underflows, use-after-free, etc.) are reported at the point of access.
+
+Enable it under ``Component config`` > ``Compiler options`` > ``Enable Kernel Address Sanitizer (KASAN)`` (see :ref:`CONFIG_COMPILER_KASAN`). The option is currently marked experimental: turn on ``Make experimental features visible`` (see :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`) first.
+
+KASAN is most useful during development and debugging:
+
+- Detects out-of-bounds heap accesses via configurable allocation redzones (see :ref:`CONFIG_KASAN_HEAP_REDZONE_SIZE`)
+- Can catch use-after-free when the freed-block quarantine is enabled (see :ref:`CONFIG_KASAN_QUARANTINE_SIZE`)
+- Instruments most application and component code; low-level HAL/ROM/bootloader code is excluded automatically
+
+Trade-offs to keep in mind:
+
+- Code size for instrumented components typically grows by 1.5–3x
+- Shadow memory reserves roughly 42–64 KiB of internal DRAM (target-dependent)
+- Runtime overhead is significant; do not enable in production firmware
+
+KASAN uses its own heap hooks and redzone scheme. Do not enable heap poisoning at the same time — leave :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` at ``Basic (no poisoning)`` (the default).
+
+For deliberate fault injection and regression testing, see the ``kasan_test`` application under ``tools/test_apps/system/kasan_test``.
 
 
 .. _heap-task-tracking:

@@ -207,6 +207,20 @@ elseif(CONFIG_COMPILER_STACK_CHECK_MODE_ALL)
     list(APPEND compile_options "-fstack-protector-all")
 endif()
 
+if(CONFIG_COMPILER_KASAN)
+    # Only instrument the app build; the bootloader runs before kasan_init_shadow()
+    # is called and does not have the KASAN runtime.
+    if(NOT BOOTLOADER_BUILD)
+        list(APPEND c_compile_options "-fsanitize=kernel-address")
+        list(APPEND cxx_compile_options "-fsanitize=kernel-address")
+        if(NOT CONFIG_KASAN_STACK)
+            list(APPEND c_compile_options "--param" "asan-stack=0")
+            list(APPEND cxx_compile_options "--param" "asan-stack=0")
+        endif()
+        list(APPEND link_options "-fsanitize=kernel-address")
+    endif()
+endif()
+
 if(CONFIG_COMPILER_DUMP_RTL_FILES)
     list(APPEND compile_options "-fdump-rtl-expand")
 endif()
@@ -376,4 +390,56 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 if(NOT bootloader_build AND NOT esp_tee_build)
     include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/component_validation.cmake")
     __component_validation_run_checks()
+endif()
+
+# KASAN: exclude low-level / hardware-access components from instrumentation.
+# Apply the exclusion after add_subdirectory() so every target already exists.
+#
+# Rationale per bucket:
+#   - hal / soc / esp_rom + every esp_hal_* peripheral HAL: perform volatile
+#     MMIO accesses (outside the shadow window, so each check is a no-op but
+#     still pays the indirect call into __asan_load* / __asan_store*).
+#   - spi_flash: runs with the flash cache disabled.
+#   - esp_hw_support: RTC/PMU register access, runs with MSPI bus held.
+#   - bootloader_support: runs before kasan_init_shadow().
+#   - freertos: scheduler / ISR plumbing is too hot to instrument.
+#   - heap: walks its own TLSF metadata living inside the (poisoned) pool;
+#     instrumented metadata walks would self-trigger.  Shadow updates are
+#     handled explicitly via heap_kasan.c / heap_kasan_hooks.c, which are
+#     individually compiled with -fno-sanitize via set_source_files_properties.
+if(CONFIG_COMPILER_KASAN AND NOT BOOTLOADER_BUILD)
+    # Match every esp_hal_* peripheral HAL component dynamically (instead of
+    # listing them one by one) so newly added HAL components stay excluded
+    # without revisiting this file.
+    idf_build_get_property(__kasan_all_components BUILD_COMPONENTS)
+    set(__kasan_excluded_components "")
+    foreach(__kasan_c ${__kasan_all_components})
+        if(__kasan_c MATCHES "^esp_hal_")
+            list(APPEND __kasan_excluded_components ${__kasan_c})
+        endif()
+    endforeach()
+
+    list(APPEND __kasan_excluded_components
+        hal soc esp_rom
+        spi_flash
+        esp_hw_support
+        bootloader_support
+        freertos
+        heap
+    )
+
+    foreach(__kasan_comp ${__kasan_excluded_components})
+        set(__kasan_lib "__idf_${__kasan_comp}")
+        if(TARGET ${__kasan_lib})
+            get_target_property(__kasan_type ${__kasan_lib} TYPE)
+            if(NOT __kasan_type STREQUAL "INTERFACE_LIBRARY")
+                # Only apply to real (non-INTERFACE) libraries that have source
+                # files. INTERFACE libraries have no sources so there is nothing
+                # to de-instrument, and adding an INTERFACE compile option would
+                # propagate -fno-sanitize to all downstream consumers (including
+                # the application under test).
+                target_compile_options(${__kasan_lib} PRIVATE "-fno-sanitize=kernel-address")
+            endif()
+        endif()
+    endforeach()
 endif()

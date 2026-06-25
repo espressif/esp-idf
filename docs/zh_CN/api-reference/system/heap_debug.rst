@@ -6,7 +6,7 @@
 概述
 --------
 
-ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`堆内存损坏检测 <heap-corruption>` 和 :ref:`堆内存跟踪 <heap-tracing>` 的工具，有助于跟踪内存相关错误。
+ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`堆内存损坏检测 <heap-corruption>`、:ref:`内核地址消毒器 (KASAN) <heap-kasan>` 和 :ref:`堆内存跟踪 <heap-tracing>` 的工具，有助于跟踪内存相关错误。
 
 有关堆内存分配器的基本信息，请参阅 :doc:`堆内存分配 </api-reference/system/mem_alloc>`。
 
@@ -193,6 +193,32 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 - 对于已释放的堆内存块，检测器会检查是否所有字节都设置为 ``0xFE``，检测到任何其他值都表示错误写入了已释放内存。
 - 对于已分配的堆内存块，检测器的检查模式与轻量级模式相同，即在每个分配的缓冲区头部和尾部检查 canary 字节 ``0xABBA1234`` 和 ``0xBAAD5678``，检测到任何其他字节都表示缓冲区越界或下溢。
+
+
+.. _heap-kasan:
+
+内核地址消毒器 (KASAN)
+----------------------
+
+KASAN 是一种由编译器辅助的堆内存和 DRAM 内存安全检查工具。启用后，GCC 会为内存加载和存储操作插入运行时检查，对照影子内存区域进行校验。一旦发生违规访问（缓冲区溢出、下溢、释放后使用等），会在访问发生处立即报告。
+
+可在 ``Component config`` > ``Compiler options`` > ``Enable Kernel Address Sanitizer (KASAN)`` 中启用该功能（参见 :ref:`CONFIG_COMPILER_KASAN`）。该选项目前标记为实验性功能，需先开启 ``Make experimental features visible``\ （参见 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`）。
+
+KASAN 在开发和调试阶段最为有用：
+
+- 通过可配置的分配红区检测堆内存越界访问（参见 :ref:`CONFIG_KASAN_HEAP_REDZONE_SIZE`）
+- 启用已释放内存块隔离队列后，可捕获释放后使用问题（参见 :ref:`CONFIG_KASAN_QUARANTINE_SIZE`）
+- 会为大多数应用程序和组件代码插桩；底层 HAL/ROM/bootloader 代码会被自动排除
+
+需要权衡的方面：
+
+- 插桩组件的代码大小通常会增加 1.5–3 倍
+- 影子内存会占用约 42–64 KiB 的内部 DRAM（取决于目标芯片）
+- 运行时开销较大，请勿在量产固件中启用
+
+KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内存毒化功能，应将 :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` 保持为 ``Basic (no poisoning)``\ （默认值）。
+
+如需进行人为故障注入和回归测试，请参阅 ``tools/test_apps/system/kasan_test`` 下的 ``kasan_test`` 应用程序。
 
 
 .. _heap-task-tracking:

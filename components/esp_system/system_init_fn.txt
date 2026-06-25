@@ -24,6 +24,10 @@ CORE:  10: init_show_cpu_freq in components/esp_system/startup_funcs.c on BIT(0)
 CORE:  20: init_show_app_info in components/esp_app_format/esp_app_desc.c on BIT(0)
 CORE:  21: init_efuse_show_app_info in components/efuse/src/esp_efuse_startup.c on BIT(0)
 
+# When KASAN is enabled, initialise the KASAN shadow region before the heap allocator.
+# The shadow offset must be set up before the first heap_caps_init hook fires.
+CORE:  98: init_kasan_shadow in components/heap/heap_kasan.c on BIT(0)
+
 # Set the standard stream to non blocking and register the default vfs
 CORE:  99: init_vfs_linux_coop in components/vfs/vfs_linux_default_coop.c on BIT(0)
 
