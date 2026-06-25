@@ -1650,7 +1650,6 @@ static bool nan_check_paired_service_hash(uint8_t service_hash[6])
 uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 {
     int pub_id = 0;
-    uint8_t service_id[6] = {0};
 
     if (publish_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Publish function with USD Discovery "
@@ -1711,6 +1710,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
 
 #ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     wifi_nan_publish_cfg_t *cfg = NULL;
+    uint8_t service_id[6] = {0};
 
     NAN_DATA_LOCK();
     if (!(s_nan_ctx.state & NAN_STARTED_BIT)) {
@@ -1840,7 +1840,6 @@ fail:
 uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe_cfg)
 {
     int sub_id = 0;
-    uint8_t service_id[6] = {0};
 
     if (subscribe_cfg->usd_discovery_flag && !s_usd_in_progress) {
         ESP_LOGE(TAG, "Can not start Subscribe function with USD Discovery "
@@ -1895,6 +1894,8 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
 #ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
+    uint8_t service_id[6] = {0};
+
     if (subscribe_cfg->security_reqd) {
 #ifndef CONFIG_ESP_WIFI_NAN_SECURITY
         ESP_LOGE(TAG, "Encrypted datapath not enabled (CONFIG_ESP_WIFI_NAN_SECURITY)");
