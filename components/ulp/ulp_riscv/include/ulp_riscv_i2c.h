@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,63 @@ typedef struct {
 } ulp_riscv_i2c_cfg_t;
 
 /* Default RTC I2C GPIO settings */
+#ifdef __cplusplus
+#define ULP_RISCV_I2C_DEFAULT_GPIO_CONFIG() (__extension__({ \
+    ulp_riscv_i2c_pin_cfg_t __ulp_riscv_i2c_pin_cfg; \
+    __ulp_riscv_i2c_pin_cfg.sda_io_num = GPIO_NUM_3; \
+    __ulp_riscv_i2c_pin_cfg.scl_io_num = GPIO_NUM_2; \
+    __ulp_riscv_i2c_pin_cfg.sda_pullup_en = true; \
+    __ulp_riscv_i2c_pin_cfg.scl_pullup_en = true; \
+    __ulp_riscv_i2c_pin_cfg; \
+}))
+
+#if CONFIG_IDF_TARGET_ESP32S3
+/* Nominal I2C bus timing parameters for I2C fast mode. Max SCL freq of 400 KHz. */
+#define ULP_RISCV_I2C_FAST_MODE_CONFIG() (__extension__({ \
+    ulp_riscv_i2c_timing_cfg_t __ulp_riscv_i2c_timing_cfg; \
+    __ulp_riscv_i2c_timing_cfg.scl_low_period = 1.4; \
+    __ulp_riscv_i2c_timing_cfg.scl_high_period = 0.3; \
+    __ulp_riscv_i2c_timing_cfg.sda_duty_period = 1; \
+    __ulp_riscv_i2c_timing_cfg.scl_start_period = 2; \
+    __ulp_riscv_i2c_timing_cfg.scl_stop_period = 1.3; \
+    __ulp_riscv_i2c_timing_cfg.i2c_trans_timeout = 20; \
+    __ulp_riscv_i2c_timing_cfg; \
+}))
+#elif CONFIG_IDF_TARGET_ESP32S2
+/* Nominal I2C bus timing parameters for I2C fast mode. Max SCL freq on S2 is about 233 KHz due to timing constraints. */
+#define ULP_RISCV_I2C_FAST_MODE_CONFIG() (__extension__({ \
+    ulp_riscv_i2c_timing_cfg_t __ulp_riscv_i2c_timing_cfg; \
+    __ulp_riscv_i2c_timing_cfg.scl_low_period = 2; \
+    __ulp_riscv_i2c_timing_cfg.scl_high_period = 0.7; \
+    __ulp_riscv_i2c_timing_cfg.sda_duty_period = 1.7; \
+    __ulp_riscv_i2c_timing_cfg.scl_start_period = 2.4; \
+    __ulp_riscv_i2c_timing_cfg.scl_stop_period = 1.3; \
+    __ulp_riscv_i2c_timing_cfg.i2c_trans_timeout = 20; \
+    __ulp_riscv_i2c_timing_cfg; \
+}))
+#endif
+
+/* Nominal I2C bus timing parameters for I2C standard mode. Max SCL freq of 100 KHz. */
+#define ULP_RISCV_I2C_STANDARD_MODE_CONFIG() (__extension__({ \
+    ulp_riscv_i2c_timing_cfg_t __ulp_riscv_i2c_timing_cfg; \
+    __ulp_riscv_i2c_timing_cfg.scl_low_period = 5; \
+    __ulp_riscv_i2c_timing_cfg.scl_high_period = 5; \
+    __ulp_riscv_i2c_timing_cfg.sda_duty_period = 2; \
+    __ulp_riscv_i2c_timing_cfg.scl_start_period = 3; \
+    __ulp_riscv_i2c_timing_cfg.scl_stop_period = 6; \
+    __ulp_riscv_i2c_timing_cfg.i2c_trans_timeout = 20; \
+    __ulp_riscv_i2c_timing_cfg; \
+}))
+
+/* Default RTC I2C configuration settings. Uses I2C fast mode. */
+//TODO: Move to smaller units of time in the future like nano seconds to avoid floating point operations.
+#define ULP_RISCV_I2C_DEFAULT_CONFIG() (__extension__({ \
+    ulp_riscv_i2c_cfg_t __ulp_riscv_i2c_cfg; \
+    __ulp_riscv_i2c_cfg.i2c_pin_cfg = ULP_RISCV_I2C_DEFAULT_GPIO_CONFIG(); \
+    __ulp_riscv_i2c_cfg.i2c_timing_cfg = ULP_RISCV_I2C_FAST_MODE_CONFIG(); \
+    __ulp_riscv_i2c_cfg; \
+}))
+#else
 #define ULP_RISCV_I2C_DEFAULT_GPIO_CONFIG()     \
         .i2c_pin_cfg.sda_io_num = GPIO_NUM_3,   \
         .i2c_pin_cfg.scl_io_num = GPIO_NUM_2,   \
@@ -88,6 +145,7 @@ typedef struct {
         ULP_RISCV_I2C_DEFAULT_GPIO_CONFIG()     \
         ULP_RISCV_I2C_FAST_MODE_CONFIG()        \
     }
+#endif /* __cplusplus */
 
 /**
  * @brief Set the I2C slave device address
