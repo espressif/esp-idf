@@ -24,12 +24,19 @@ ble_uart_install(&cfg);   // NimBLE host + BLE UART GATT service
 ble_uart_open();          // start advertising + auto-encrypt
 ```
 
-…and two matching tear-down calls if your app ever needs to power
-BLE off at runtime:
+If your app powers BLE off at runtime, use **one** of the release paths
+in [PORTING.md §5.3](../common/ble_uart/PORTING.md#53-lifecycle--bring-up-and-release)
+(this example uses Path A from `app_main`):
+
+| Path | When | Calls |
+| --- | --- | --- |
+| **A — sync** (default) | Shutdown from a normal task (button, Wi-Fi, `app_main`) | `ble_uart_close()` → `ble_uart_uninstall()` |
+| **B — async** | Shutdown triggered inside `on_event` / `on_rx` | `close_async()` in callback → `CLOSED` sets flag → **`uninstall()` on a separate app task** (not inside `CLOSED`) |
 
 ```c
-ble_uart_close();         // stop advertising / disconnect / halt host
-ble_uart_uninstall();     // free the NimBLE port + reset state
+/* Path A — this example style */
+ble_uart_close();
+ble_uart_uninstall();
 ```
 
 When a central connects, the firmware automatically initiates LE Secure
@@ -47,47 +54,133 @@ back with `ble_uart_tx()`.
 | TX (out) | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | Notify (auto-CCCD)        | encrypted, authenticated  |
 
 The `_ENC | _AUTHEN` flags are turned on only when `cfg.encrypted = true`
-(the default in this example).
+(the default in this example). The two flags can be controlled
+independently via `cfg.security.mitm` (drops `_AUTHEN`) and the
+combined `cfg.security.{sc,bonding,mitm}` set (all OFF drops `_ENC`
+too) — see PORTING.md §5.6.
 
 ## Files
 
 | File | Lines | Role |
 | --- | ---: | --- |
-| `main/main.c`            | ~70  | NVS init, MAC-derived device name, install + open, RX echo handler. Identical for both backends. |
+| `main/main.c`            | ~200  | NVS init, install + open with `<prefix>-XXXX` device name (Kconfig prefix + BT MAC suffix), RX echo handler, lifecycle/link-state event sink, bonded-peer dump on boot. Identical for both backends. |
+| `main/Kconfig.projbuild` | ~50  | Example-local `EXAMPLE_CUSTOM_ADV_DATA` switch — toggles the `ble_uart_config_t::adv_data` demo path in `main.c`. |
 | `CMakeLists.txt` (root) | ~15 | `list(APPEND EXTRA_COMPONENT_DIRS .../common/ble_uart)` before `project()` so `main` can `REQUIRES ble_uart`. |
-| `../common/ble_uart/ble_uart.h`        | ~155 | Stack-agnostic public API: 3-field config + 4 lifecycle functions + TX/status + UUID + `BLE_UART_E*` return codes. No NimBLE / Bluedroid types leak through. |
-| `../common/ble_uart/ble_uart_nimble.c`     | ~650 | NimBLE backend: host bring-up, BLE UART GATT service via `ble_gatts_add_svcs`, advertising, pairing, install/open/close/uninstall. Active when `CONFIG_BT_NIMBLE_ENABLED=y`. |
-| `../common/ble_uart/ble_uart_bluedroid.c`  | ~1020 | Bluedroid backend: controller + host enable, BLE UART GATT service via `esp_ble_gatts_create_attr_tab` (service-table API), advertising, pairing, full PREP/EXEC long-write reassembly, install/open/close/uninstall. Active when `CONFIG_BT_BLUEDROID_ENABLED=y`. |
-| `../common/ble_uart/Kconfig` | ~30 | Device-name prefix + RX scratch size (`menuconfig → Component configuration → ESP-BLE-UART library`). |
-| `../common/ble_uart/PORTING.md` | ~724 | Porting and API guide (integration, CMake, sdkconfig, thread safety). |
+| `../common/ble_uart/ble_uart.h`        | ~640 | Stack-agnostic public API: configuration struct (preset + per-feature security overrides + custom adv payload + RX/event callbacks) + lifecycle (install/open/close/close_async/uninstall) + TX + pairing replies + bond-management + status + UUID + `BLE_UART_E*` return codes. No NimBLE / Bluedroid types leak through. |
+| `../common/ble_uart/ble_uart_nimble.c`     | ~1290 | NimBLE backend: host bring-up, BLE UART GATT service via `ble_gatts_add_svcs`, advertising (default + raw), pairing (incl. Passkey Entry / Numeric Comparison), bond store, async close, install/open/close/uninstall. Active when `CONFIG_BT_NIMBLE_ENABLED=y`. |
+| `../common/ble_uart/ble_uart_bluedroid.c`  | ~1660 | Bluedroid backend: controller + host enable, BLE UART GATT service via `esp_ble_gatts_create_attr_tab` (service-table API), advertising (default + raw), pairing (incl. Passkey Entry / Numeric Comparison), bond store, async close, full PREP/EXEC long-write reassembly, install/open/close/uninstall. Active when `CONFIG_BT_BLUEDROID_ENABLED=y`. |
+| `../common/ble_uart/Kconfig` | ~30 | Device name prefix + RX scratch size (`menuconfig → Component configuration → ESP-BLE-UART library`). |
+| `../common/ble_uart/PORTING.md` | ~1300 | Porting and API guide (integration, CMake, sdkconfig, security model, custom advertising, bond management, thread safety). |
 | `sdkconfig.defaults`         | —    | Default: NimBLE backend, MTU 512, SC + bonding + persistent NVS. |
 | `sdkconfig.bluedroid`     | —    | Overlay: switch to Bluedroid backend (used via `-D SDKCONFIG_DEFAULTS=...`, see "Choosing the host stack" below). |
 
 ## Public API
 
 ```c
-typedef void (*ble_uart_rx_cb_t)(const uint8_t *data, size_t len);
+typedef void (*ble_uart_rx_cb_t) (const uint8_t *data, size_t len);
+typedef void (*ble_uart_evt_cb_t)(const ble_uart_evt_t *evt);
 
 typedef struct {
-    bool encrypted;                 /* SC + Bonding + MITM in one knob */
-    const char *device_name;
-    ble_uart_rx_cb_t ble_uart_on_rx;
+    ble_uart_sec_t    sc;       /* AUTO / OFF / ON */
+    ble_uart_sec_t    bonding;
+    ble_uart_sec_t    mitm;
+    ble_uart_io_cap_t io_cap;   /* AUTO / NO_INPUT_OUTPUT / DISPLAY_ONLY /
+                                   KEYBOARD_ONLY / DISPLAY_YES_NO /
+                                   KEYBOARD_DISPLAY */
+} ble_uart_security_t;
+
+typedef struct {
+    bool encrypted;                 /* preset: SC + Bonding + MITM + DisplayOnly */
+    ble_uart_security_t security;   /* per-feature overrides; see PORTING.md §5.6 */
+
+    const char *device_name;        /* ≤ BLE_UART_DEVICE_NAME_MAX (26) */
+    /* Optional: raw advertising / scan-response bytes (NULL → defaults).
+     * Limits: adv_data_len ≤ BLE_UART_ADV_DATA_MAX (28),
+     *         scan_rsp_data_len ≤ BLE_UART_SCAN_RSP_DATA_MAX (31).
+     * The 3-byte Flags AD element is prepended automatically — don't
+     * include it in adv_data. See PORTING.md §5.9 for examples. */
+    const uint8_t *adv_data;
+    size_t         adv_data_len;
+    const uint8_t *scan_rsp_data;
+    size_t         scan_rsp_data_len;
+    ble_uart_rx_cb_t  ble_uart_on_rx;
+    ble_uart_evt_cb_t on_event;     /* lifecycle / link-state events; NULL drops */
 } ble_uart_config_t;
 
+typedef struct {
+    uint8_t bytes[6];   /* big-endian: bytes[0] is the MSB (AA:BB:CC:DD:EE:FF) */
+    uint8_t type;       /* BLE_UART_ADDR_TYPE_PUBLIC | _RANDOM */
+} ble_uart_addr_t;
+
 /* Lifecycle */
-int  ble_uart_install(const ble_uart_config_t *cfg);  /* NimBLE host + GATT */
+int  ble_uart_install(const ble_uart_config_t *cfg);  /* host + GATT */
 int  ble_uart_open(void);                             /* host task + advertising */
 int  ble_uart_close(void);                            /* stop adv / disconnect / halt host */
-int  ble_uart_uninstall(void);                        /* free NimBLE port + reset state */
+int  ble_uart_close_async(void);                      /* same, fire-and-forget; safe from inside on_event/on_rx */
+int  ble_uart_uninstall(void);                        /* free port + reset state */
 
 /* Data path */
 int  ble_uart_tx(const uint8_t *data, size_t len);
+
+/* Pairing replies (call from on_event for input-capable IO caps) */
+int  ble_uart_passkey_reply(uint32_t passkey);   /* answer PASSKEY_REQUEST */
+int  ble_uart_compare_reply(bool match);         /* answer NUMERIC_COMPARE */
 
 /* Status (best-effort snapshot) */
 bool ble_uart_is_connected(void);
 bool ble_uart_is_subscribed(void);
 
+/* Bond management (works after install()) */
+int  ble_uart_get_bond_count(size_t *out_count);
+int  ble_uart_get_bonded_peers(ble_uart_addr_t *out, size_t cap, size_t *out_count);
+int  ble_uart_remove_peer(const ble_uart_addr_t *peer);
+int  ble_uart_clear_bonds(void);
+
 extern const ble_uart_uuid128_t ble_uart_service_uuid;
+```
+
+### Event callback
+
+`on_event` is invoked on the BLE host task (same context as `ble_uart_on_rx`)
+with a tagged `ble_uart_evt_t`. Use `LINK_SECURE` — not `is_connected()` —
+to gate any application logic that requires the channel to be encrypted /
+authenticated:
+
+| `evt->id`                       | Payload                                                 | Fires when |
+| ------------------------------- | ------------------------------------------------------- | ---------- |
+| `BLE_UART_EVT_CONNECTED`        | `connected.peer`                                        | Physical link up |
+| `BLE_UART_EVT_DISCONNECTED`     | `disconnected.reason` (int, stack-specific)           | Physical link down — Bluedroid: `esp_gatt_conn_reason_t`; NimBLE: BLE host return code (`BLE_HS_HCI_ERR()` for HCI) |
+| `BLE_UART_EVT_SUBSCRIBED`       | `subscribed.subscribed`                                 | Central writes CCCD on TX (edge-triggered) |
+| `BLE_UART_EVT_LINK_SECURE`      | `link_secure.{encrypted,authenticated,bonded,key_size}` | Pairing or bonded reconnect succeeds |
+| `BLE_UART_EVT_PASSKEY_DISPLAY`  | `passkey.passkey` (0..999999)                           | SM asks the device to show a passkey |
+| `BLE_UART_EVT_PASSKEY_REQUEST`  | —                                                       | SM asks the user to enter a passkey shown by the central — answer with `ble_uart_passkey_reply()` |
+| `BLE_UART_EVT_NUMERIC_COMPARE`  | `numeric_compare.passkey` (0..999999)                   | SM asks the user to confirm both sides display the same value — answer with `ble_uart_compare_reply()` |
+| `BLE_UART_EVT_PAIRING_FAILED`   | `pairing_failed.reason` (stack-specific)                | Pairing rejected or timed out |
+| `BLE_UART_EVT_CLOSED`           | `closed.status` (`BLE_UART_*`)                          | `ble_uart_close_async()` worker has finished; `BLE_UART_OK` means tear-down succeeded |
+
+The default passkey UART banner still prints; the callback is additive so
+log-scraping tests stay compatible. Don't block in the callback.
+
+**Callback rules:**
+
+- Do **not** call `ble_uart_close()` or `ble_uart_uninstall()` from
+  `on_event` / `on_rx` (host task — deadlocks).
+- To start teardown from a callback, call `ble_uart_close_async()` only.
+- Call `ble_uart_uninstall()` from a **normal app task** after
+  `BLE_UART_EVT_CLOSED` with `closed.status == BLE_UART_OK` (see
+  [PORTING.md §5.3.2](../common/ble_uart/PORTING.md#532-path-b--release-after-a-ble-event-close_async)).
+
+Path B sketch (full code in PORTING.md):
+
+```c
+case BLE_UART_EVT_PAIRING_FAILED:
+    ble_uart_close_async();
+    break;
+case BLE_UART_EVT_CLOSED:
+    if (e->closed.status == BLE_UART_OK) {
+        s_ble_closed_ok = true;   /* app task calls uninstall */
+    }
+    break;
 ```
 
 ## Choosing the host stack
@@ -134,14 +227,37 @@ When neither is enabled the build fails up-front with a clear error.
 idf.py set-target esp32c3      # or esp32, esp32s3, esp32c6, esp32h2 ...
 idf.py menuconfig              # optional
 #   Component configuration -> ESP-BLE-UART library
-#     - BLE device name prefix    (default: BleUart)
+#     - BLE device name prefix      (default: BleUart; example appends -XXXX from BT MAC)
 #     - RX scratch buffer size      (default: 1024 bytes)
+#   BLE UART service example
+#     - Use custom advertising data (default: off)
 ```
 
 Those `BLE_UART_*` options are defined in **`../common/ble_uart/Kconfig`**
 (the `ble_uart` component); they appear whenever `ble_uart` is part of the
 build (this example pulls it in via `EXTRA_COMPONENT_DIRS` in the root
 `CMakeLists.txt`).
+
+`EXAMPLE_CUSTOM_ADV_DATA` is example-local (`main/Kconfig.projbuild`)
+and demonstrates `ble_uart_config_t::adv_data` — the field that lets
+the application fully control the over-the-air advertising payload
+instead of using the library default.
+
+When the option is on, `app_main` hands a static byte array
+(`example_adv_payload[]`, top of `main.c`) to `ble_uart_install()`.
+The array is just a sequence of `[length][AD type][value]` triplets;
+edit it directly to advertise whatever you want — a different Local
+Name, Manufacturer Specific Data, custom Service Data, additional
+Service UUIDs, etc. The only hard rule is total length ≤
+`BLE_UART_ADV_DATA_MAX` (28); the 3-byte Flags AD is added by the
+library and does not count against that budget.
+
+The GAP-service Device Name (set via `device_name` in the same
+config struct) is independent and is what connected centrals read
+post-pair, regardless of `adv_data`.
+
+With the option off the library default is used (Complete Local Name
+in the primary packet, 128-bit Service UUID in the scan response).
 
 The two security knobs are set in `sdkconfig.defaults`:
 
@@ -153,6 +269,17 @@ CONFIG_BT_NIMBLE_NVS_PERSIST=y   # Bond keys persist across reboots
 Disable `cfg.encrypted` in `main.c` (set it to `false`) for plaintext
 operation in the lab — the GATT characteristics drop their `_ENC`
 flags accordingly. Production firmware should keep encryption on.
+
+For finer control without going all-or-nothing — e.g. a displayless
+gateway that wants encryption + bonding but no passkey UI, or a
+device with a keypad that wants Passkey Entry / Numeric Comparison —
+keep `cfg.encrypted = true` and override individual bits via
+`cfg.security.{sc,bonding,mitm,io_cap}`. The input-capable IO caps
+(`KEYBOARD_ONLY`, `DISPLAY_YES_NO`, `KEYBOARD_DISPLAY`) require an
+`on_event` handler that wires `BLE_UART_EVT_PASSKEY_REQUEST` /
+`NUMERIC_COMPARE` to `ble_uart_passkey_reply()` /
+`ble_uart_compare_reply()`. See PORTING.md §5.6 for the full matrix
+and worked examples.
 
 ### Build & flash
 
@@ -170,7 +297,7 @@ I (xxx) ble_uart: registered chr 6e400002-... def=15 val=16
 I (xxx) ble_uart: registered chr 6e400003-... def=17 val=18
 I (xxx) ble_uart: addr=80:7d:3a:11:22:33
 I (xxx) ble_uart: BLE host task started
-I (xxx) ble_uart: advertising as 'BleUart-XXXX'
+I (xxx) ble_uart: advertising as 'BleUart-2233'
 ```
 
 Expected boot log (Bluedroid backend):
@@ -186,8 +313,10 @@ I (xxx) ble_uart: advertising started
 1. On a phone, install **a BLE GATT client app** that supports scanning,
    pairing, characteristic write, and notify/CCCD (many mobile “BLE tools”
    or serial-over-BLE utilities qualify).
-2. Scan, tap **Connect** on `BleUart-XXXX`. The phone prompts for a
-   6-digit code.
+2. Scan, tap **Connect** on `BleUart-XXXX` (prefix from
+   `CONFIG_BLE_UART_DEVICE_NAME_PREFIX`, `XXXX` = last two BT MAC
+   bytes). The phone prompts for a 6-digit
+   code.
 3. The device prints a fresh code in a banner on UART:
 
    ```
@@ -204,8 +333,13 @@ I (xxx) ble_uart: advertising started
 6. Disconnect and reconnect: no passkey prompt — the bond resumes
    automatically.
 
-To wipe the bond and force a fresh passkey, run `idf.py erase-flash`
-and re-flash.
+To wipe the bond and force a fresh passkey there are three options:
+
+- Call `ble_uart_clear_bonds()` from your app (preserves the rest of NVS)
+- Call `ble_uart_remove_peer(&addr)` to drop one peer (use the address
+  reported in `BLE_UART_EVT_CONNECTED`, or any address you happen to
+  have stored — Bluedroid matches by address only, NimBLE by identity)
+- Run `idf.py erase-flash` and re-flash (also wipes WiFi creds, NVS, etc.)
 
 ## Adapting to your application
 
