@@ -983,6 +983,20 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
+#if BLE_INCLUDED == TRUE
+    /* Capture the disconnecting device's address before btm_acl_disconnected()
+     * clears the matched connection handle. The record itself is re-looked-up
+     * afterwards (by address) because callbacks fired during disconnection may
+     * have already freed it. */
+    BD_ADDR  disc_bda;
+    BOOLEAN  have_disc_bda = FALSE;
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev_by_handle(handle);
+    if (p_dev_rec) {
+        memcpy(disc_bda, p_dev_rec->bd_addr, BD_ADDR_LEN);
+        have_disc_bda = TRUE;
+    }
+#endif
+
     dev_find = btm_acl_disconnected(handle, reason);
 
 #if (BLE_FEAT_ISO_CIG_EN == TRUE)
@@ -995,6 +1009,48 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
     HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x dev_find %d", handle, reason, dev_find);
 
     UNUSED(dev_find);
+
+#if BLE_INCLUDED == TRUE
+    /* Delete unpaired device records to free memory (~356B per device).
+     *
+     * Re-find the record by address: callbacks invoked during
+     * btm_acl_disconnected() may already have freed it, so the pointer captured
+     * before the call cannot be trusted.
+     *
+     * Only delete when the device is fully idle and unpaired:
+     * 1. No active BR/EDR connection (hci_handle invalid)
+     * 2. No active LE connection (ble_hci_handle invalid) - protects the still
+     *    connected transport of a dual-mode device when the other one drops
+     * 3. No BLE security keys (unpaired) - when SMP is enabled
+     *
+     * BT_TRANSPORT_LE is used so that any retained BR/EDR link key keeps a
+     * BR/EDR-bonded record alive; an LE-unpaired record that has no BR/EDR key
+     * collapses to BTM_SEC_IN_USE only and is removed from the list.
+     *
+     * Skip deletion on HCI_ERR_CONN_FAILED_ESTABLISHMENT when connect
+     * retry is enabled.
+     */
+    if (have_disc_bda
+#if (GATTC_CONNECT_RETRY_EN == TRUE)
+        && reason != HCI_ERR_CONN_FAILED_ESTABLISHMENT
+#endif
+    ) {
+        p_dev_rec = btm_find_dev(disc_bda);
+        if (p_dev_rec
+            && p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE      /* No active BR/EDR connection */
+            && p_dev_rec->ble_hci_handle == BTM_SEC_INVALID_HANDLE  /* No active LE connection */
+#if SMP_INCLUDED == TRUE
+            && !p_dev_rec->ble.key_type                            /* No BLE security keys */
+#endif
+        ) {
+            BTM_TRACE_WARNING(
+                "Deleting unpaired device %02X:%02X:%02X:%02X:%02X:%02X",
+                p_dev_rec->bd_addr[0], p_dev_rec->bd_addr[1], p_dev_rec->bd_addr[2],
+                p_dev_rec->bd_addr[3], p_dev_rec->bd_addr[4], p_dev_rec->bd_addr[5]);
+            btm_sec_free_dev(p_dev_rec, BT_TRANSPORT_LE);
+        }
+    }
+#endif // BLE_INCLUDED == TRUE
 }
 
 /*******************************************************************************
