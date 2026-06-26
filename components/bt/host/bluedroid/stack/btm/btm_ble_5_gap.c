@@ -16,6 +16,15 @@ tBTM_BLE_EXTENDED_CB extend_adv_cb;
 
 tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+static UINT8 btm_ble_local_supp_le_features[BLE_LL_EXT_FEAT_DATA_LEN];
+static UINT8 btm_ble_remote_supp_le_features[BLE_LL_EXT_FEAT_DATA_LEN];
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+static tBTM_BLE_MIN_CONN_INTERVAL_GROUP btm_ble_min_conn_interval_groups[BTM_BLE_MAX_CONN_INTERVAL_GROUPS];
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
 #define INVALID_VALUE_8BIT    0XFF
 #define INVALID_VALUE_16BIT   0XFFFF
 #define INVALID_VALUE_32BIT   0XFFFFFFFF
@@ -1331,6 +1340,47 @@ tBTM_STATUS BTM_BleEnableMonitorAdv(UINT8 enable)
     return status;
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+tBTM_STATUS BTM_BleSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                   UINT8 data_len, const UINT8 *p_data)
+{
+    tHCI_STATUS err;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_decision_data(adv_handle, decision_type_flags, data_len, p_data)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE SetDecisionData: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT, &cb_params);
+    return status;
+}
+
+tBTM_STATUS BTM_BleSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                           const UINT8 *test_fields, const UINT8 *test_params)
+{
+    tHCI_STATUS err;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_decision_instructions(num_tests, test_flags, test_fields,
+                                                        test_params)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE SetDecisionInstructions: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT, &cb_params);
+    return status;
+}
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
 
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params)

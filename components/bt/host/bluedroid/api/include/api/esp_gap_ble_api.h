@@ -273,6 +273,8 @@ typedef enum {
     ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT,                  /*!< When clear monitor advertiser list complete, the event comes */
     ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT,         /*!< When read monitor advertiser list size complete, the event comes */
     ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When enable/disable monitor advertising complete, the event comes */
+    ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT,                  /*!< When set decision data complete, the event comes */
+    ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT,          /*!< When set decision instructions complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -296,6 +298,7 @@ typedef uint8_t esp_gap_ble_channels[ESP_GAP_BLE_CHANNELS_LEN];
  *
  * - Advertising interval: unit is 0.625ms (range: 20ms to 10240ms)
  * - Connection interval: unit is 1.25ms (range: 7.5ms to 4000ms)
+ * - Connection rate interval (Core 6.2 SCI): unit is 125us (range: 375us), see ESP_BLE_GAP_CONN_RATE_*
  * - Scan interval/window: unit is 0.625ms
  * - Periodic advertising interval: unit is 1.25ms
  * - Supervision timeout: unit is 10ms (range: 100ms to 32000ms)
@@ -1246,6 +1249,42 @@ typedef struct {
 } esp_ble_gap_remove_monitor_adv_params_t;
 #endif // (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+#define ESP_BLE_GAP_DECISION_DATA_MAX_LEN               248
+#define ESP_BLE_GAP_DECISION_MAX_TESTS                  8
+#define ESP_BLE_GAP_DECISION_TEST_PARAM_LEN             16
+#define ESP_BLE_GAP_DECISION_TEST_PARAMS_MAX_LEN        (ESP_BLE_GAP_DECISION_MAX_TESTS * ESP_BLE_GAP_DECISION_TEST_PARAM_LEN)
+#define ESP_BLE_GAP_DECISION_TYPE_FLAG_RESOLVABLE_TAG   (1 << 0)
+
+#define ESP_BLE_GAP_DECISION_SCAN_FILTER_NO_DECISIONS   0x00
+#define ESP_BLE_GAP_DECISION_SCAN_FILTER_ALL_PDUS       0x04
+#define ESP_BLE_GAP_DECISION_SCAN_FILTER_DECISIONS_ONLY 0x0C
+
+/**
+ * @brief Parameters for setting decision data for an advertising set (DBAF)
+ */
+typedef struct {
+    uint8_t adv_handle;              /*!< Advertising set handle */
+    uint8_t decision_type_flags;     /*!< Decision type flags (e.g. ESP_BLE_GAP_DECISION_TYPE_FLAG_RESOLVABLE_TAG) */
+    uint8_t data_len;                /*!< Length of decision data, max: ESP_BLE_GAP_DECISION_DATA_MAX_LEN */
+    const uint8_t *data;             /*!< Pointer to decision data */
+} esp_ble_gap_set_decision_data_params_t;
+
+/**
+ * @brief Parameters for setting decision instructions for decision-based advertising filtering (DBAF)
+ */
+typedef struct {
+    uint8_t num_tests;               /*!< Number of decision tests, max: ESP_BLE_GAP_DECISION_MAX_TESTS */
+    const uint8_t *test_flags;       /*!< Pointer to test flags array (num_tests octets) */
+    const uint8_t *test_fields;      /*!< Pointer to test fields array (num_tests octets) */
+    const uint8_t *test_params;      /*!< Pointer to test parameters (num_tests * ESP_BLE_GAP_DECISION_TEST_PARAM_LEN octets) */
+} esp_ble_gap_set_decision_instructions_params_t;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
+
 typedef enum {
     ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
     ESP_BLE_DEVICE_PRIVACY_MODE     = 0X01,    /*!< Device Privacy Mode for peer device */
@@ -1542,6 +1581,7 @@ typedef enum {
 #define ESP_BLE_CS_INITIATOR_ROLE_ENABLED  (1 << 0)
 /** Reflector role is enabled */
 #define ESP_BLE_CS_REFLECTOR_ROLE_ENABLED  (1 << 1)
+
 
 /**
 * @brief CS set default settings parameters
@@ -2199,6 +2239,20 @@ typedef union {
         esp_bt_status_t status;              /*!< Indicate enable/disable monitor advertising operation success status */
     } enable_monitor_adv;                    /*!< Event parameter of ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT */
 #endif
+#if (BLE_FEAT_DBAF == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT
+     */
+    struct ble_set_decision_data_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate set decision data operation success status */
+    } set_decision_data;                     /*!< Event parameter of ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT
+     */
+    struct ble_set_decision_instructions_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate set decision instructions operation success status */
+    } set_decision_instructions;             /*!< Event parameter of ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_DBAF == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -4052,6 +4106,34 @@ esp_err_t esp_ble_gap_read_monitor_adv_list_size(void);
 */
 esp_err_t esp_ble_gap_enable_monitor_adv(bool enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+/**
+* @brief           Set decision data for an advertising set (DBAF).
+*
+* @param[in]       params : Pointer to decision data parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_set_decision_data(const esp_ble_gap_set_decision_data_params_t *params);
+
+/**
+* @brief           Set decision instructions for decision-based advertising filtering (DBAF).
+*
+* @param[in]       params : Pointer to decision instructions parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_set_decision_instructions(const esp_ble_gap_set_decision_instructions_params_t *params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -4409,11 +4491,17 @@ esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *defau
  */
 esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_params);
 
+/** Host Feature Set bit position: Channel Sounding Host Support (Bluetooth Core, bit 47) */
+#define ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT    47
+
 /**
  * @brief           This function is called to set host feature.
  *
- * @param[in]       bit_num: the bit position in the FeatureSet.
- * @param[in]       bit_val: the feature is enabled or disabled
+ * @param[in]       bit_num: the bit position in the FeatureSet (e.g. ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT).
+ * @param[in]       bit_val: 0x00 to disable, 0x01 to enable Host support for the feature
+ *
+ * @note            Channel Sounding Host APIs require CS Host Support enabled first:
+ *                  esp_ble_gap_set_host_feature(ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT, 1).
  *
  * @return
  *                  - ESP_OK : success
@@ -4516,6 +4604,7 @@ esp_err_t esp_ble_cs_write_cached_remote_supported_capabilities(esp_ble_cs_write
  *                  - other  : failed
  */
 esp_err_t esp_ble_cs_security_enable(uint16_t conn_handle);
+
 
 /**
  * @brief           This function is used to set default CS settings in the local Controller

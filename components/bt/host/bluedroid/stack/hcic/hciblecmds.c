@@ -3054,6 +3054,79 @@ UINT8 btsnd_hcic_ble_enable_monitor_adv(UINT8 enable)
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+UINT8 btsnd_hcic_ble_set_decision_data(UINT8 adv_handle, UINT8 decision_type_flags,
+                                       UINT8 data_len, const UINT8 *p_data)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+    UINT8 param_len;
+
+    if (data_len > BLE_DECISION_DATA_MAX_LEN) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+    if (data_len > 0 && p_data == NULL) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    param_len = HCIC_PARAM_SIZE_SET_DECISION_DATA_HDR + data_len;
+    if (param_len > HCIC_PARAM_SIZE_SET_DECISION_DATA_MAX) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, param_len);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_DECISION_DATA);
+    UINT8_TO_STREAM(pp, param_len);
+    UINT8_TO_STREAM(pp, adv_handle);
+    UINT8_TO_STREAM(pp, decision_type_flags);
+    UINT8_TO_STREAM(pp, data_len);
+    if (data_len > 0) {
+        ARRAY_TO_STREAM(pp, p_data, data_len);
+    }
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_set_decision_instructions(UINT8 num_tests, const UINT8 *test_flags,
+                                               const UINT8 *test_fields, const UINT8 *test_params)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+    UINT8 param_len;
+
+    if (num_tests == 0 || num_tests > BLE_DECISION_MAX_TESTS) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+    if (test_flags == NULL || test_fields == NULL || test_params == NULL) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    param_len = HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS(num_tests);
+    if (param_len > HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS_MAX) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, param_len);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_DECISION_INSTRUCTIONS);
+    UINT8_TO_STREAM(pp, param_len);
+    UINT8_TO_STREAM(pp, num_tests);
+    for (UINT8 i = 0; i < num_tests; i++) {
+        UINT8_TO_STREAM(pp, test_flags[i]);
+        UINT8_TO_STREAM(pp, test_fields[i]);
+        ARRAY_TO_STREAM(pp, test_params + i * BLE_DECISION_TEST_PARAM_LEN,
+                        BLE_DECISION_TEST_PARAM_LEN);
+    }
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
+
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_subevents_with_data, ble_subevent_params *subevent_params)
 {
