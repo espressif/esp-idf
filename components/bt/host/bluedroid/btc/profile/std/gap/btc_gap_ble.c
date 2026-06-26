@@ -1326,6 +1326,53 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+        case BTA_DM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT;
+            param.connection_rate_req_cmpl.status = btc_btm_status_to_esp_status(params->conn_rate_request.status);
+            param.connection_rate_req_cmpl.conn_handle = params->conn_rate_request.conn_handle;
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_CONN_RATE_CHANGE_EVT: {
+            msg.act = ESP_GAP_BLE_CONN_RATE_CHANGE_EVT;
+            param.conn_rate_change_evt.status = btc_btm_status_to_esp_status(params->conn_rate_change.status);
+            param.conn_rate_change_evt.conn_handle = params->conn_rate_change.conn_handle;
+            param.conn_rate_change_evt.conn_interval = params->conn_rate_change.conn_interval;
+            param.conn_rate_change_evt.subrate_factor = params->conn_rate_change.subrate_factor;
+            param.conn_rate_change_evt.peripheral_latency = params->conn_rate_change.peripheral_latency;
+            param.conn_rate_change_evt.continuation_number = params->conn_rate_change.continuation_number;
+            param.conn_rate_change_evt.supervision_timeout = params->conn_rate_change.supervision_timeout;
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT;
+            param.set_default_rate_parameters_cmpl.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT;
+            param.read_min_supp_conn_interval.status =
+                btc_btm_status_to_esp_status(params->read_min_supp_conn_interval.status);
+            param.read_min_supp_conn_interval.min_supported_conn_interval =
+                params->read_min_supp_conn_interval.min_supported_conn_interval;
+            param.read_min_supp_conn_interval.num_groups =
+                params->read_min_supp_conn_interval.num_groups;
+            if (params->read_min_supp_conn_interval.groups != NULL) {
+                for (uint8_t i = 0; i < params->read_min_supp_conn_interval.num_groups; i++) {
+                    param.read_min_supp_conn_interval.groups[i].min_125us =
+                        params->read_min_supp_conn_interval.groups[i].min_125us;
+                    param.read_min_supp_conn_interval.groups[i].max_125us =
+                        params->read_min_supp_conn_interval.groups[i].max_125us;
+                    param.read_min_supp_conn_interval.groups[i].stride_125us =
+                        params->read_min_supp_conn_interval.groups[i].stride_125us;
+                }
+            } else {
+                memset(param.read_min_supp_conn_interval.groups, 0,
+                       sizeof(param.read_min_supp_conn_interval.groups));
+            }
+            break;
+        }
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT: {
             param.adv_terminate.status = params->adv_term.status;
@@ -3499,6 +3546,34 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                          arg_5->read_all_remote_feat.page_requested);
         break;
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case BTC_GAP_BLE_CONNECTION_RATE_REQUEST:
+        BTA_DmBleGapConnectionRateRequest(arg_5->connection_rate_request.conn_handle,
+                                          arg_5->connection_rate_request.conn_interval_min,
+                                          arg_5->connection_rate_request.conn_interval_max,
+                                          arg_5->connection_rate_request.subrate_min,
+                                          arg_5->connection_rate_request.subrate_max,
+                                          arg_5->connection_rate_request.max_latency,
+                                          arg_5->connection_rate_request.continuation_number,
+                                          arg_5->connection_rate_request.supervision_timeout,
+                                          arg_5->connection_rate_request.min_ce_len,
+                                          arg_5->connection_rate_request.max_ce_len);
+        break;
+    case BTC_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS:
+        BTA_DmBleGapSetDefaultRateParameters(arg_5->set_default_rate_parameters.conn_interval_min,
+                                             arg_5->set_default_rate_parameters.conn_interval_max,
+                                             arg_5->set_default_rate_parameters.subrate_min,
+                                             arg_5->set_default_rate_parameters.subrate_max,
+                                             arg_5->set_default_rate_parameters.max_latency,
+                                             arg_5->set_default_rate_parameters.continuation_number,
+                                             arg_5->set_default_rate_parameters.supervision_timeout,
+                                             arg_5->set_default_rate_parameters.min_ce_len,
+                                             arg_5->set_default_rate_parameters.max_ce_len);
+        break;
+    case BTC_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        BTA_DmBleGapReadMinSuppConnInterval();
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case BTC_GAP_BLE_SET_PA_SUBEVT_DATA:
         BTA_DmBleGapSetPASubevtData(arg_5->per_adv_subevent_data_params.adv_handle, arg_5->per_adv_subevent_data_params.num_subevents_with_data, (uint8_t *)(arg_5->per_adv_subevent_data_params.subevent_params));

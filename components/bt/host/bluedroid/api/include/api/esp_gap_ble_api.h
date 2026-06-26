@@ -278,6 +278,10 @@ typedef enum {
     ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT,                 /*!< When frame space update complete, the event comes */
     ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT,           /*!< When read all local supported LE features complete, the event comes */
     ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT,             /*!< When read all remote LE features complete, the event comes */
+    ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT,            /*!< When connection rate request command complete, the event comes */
+    ESP_GAP_BLE_CONN_RATE_CHANGE_EVT,                            /*!< When connection rate change event is received, the event comes */
+    ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT,        /*!< When set default rate parameters complete, the event comes */
+    ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT,        /*!< When read minimum supported connection interval complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1334,6 +1338,70 @@ typedef struct {
 } esp_ble_gap_read_all_remote_feat_params_t;
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US          125
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_MIN              3
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_MAX              0x7D00
+#define ESP_BLE_GAP_CONN_RATE_SUBRATE_MIN               0x0001
+#define ESP_BLE_GAP_CONN_RATE_SUBRATE_MAX               0x01F4
+#define ESP_BLE_GAP_CONN_RATE_MAX_LATENCY_MAX           0x01F3
+#define ESP_BLE_GAP_CONN_RATE_SUBRATE_LATENCY_PRODUCT_MAX 500
+#define ESP_BLE_GAP_CONN_RATE_CONTINUATION_NUMBER_MAX   0x01F3
+#define ESP_BLE_GAP_CONN_RATE_SUPERVISION_TIMEOUT_MIN   0x000A
+#define ESP_BLE_GAP_CONN_RATE_SUPERVISION_TIMEOUT_MAX   0x0C80
+#define ESP_BLE_GAP_CONN_RATE_SUPERVISION_TIMEOUT_FACTOR 40
+
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_US(units) \
+    ((uint32_t)(units) * ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US)
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_US(us) \
+    ((uint16_t)(((us) + (ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US - 1U)) / ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US))
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_MS(ms) \
+    ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_US((uint32_t)(ms) * 1000U)
+#define ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US(interval, subrate) \
+    (ESP_BLE_GAP_CONN_RATE_INTERVAL_US(interval) * (uint32_t)(subrate))
+
+/**
+ * @brief Parameters for requesting a connection rate update (Shorter Connection Intervals)
+ */
+typedef struct {
+    uint16_t conn_handle;             /*!< Connection handle */
+    uint16_t conn_interval_min;       /*!< Minimum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t conn_interval_max;       /*!< Maximum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t subrate_min;             /*!< Minimum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t subrate_max;             /*!< Maximum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t max_latency;             /*!< Maximum Peripheral latency in subrated connection intervals. Range: 0x0000 to 0x01F3 */
+    uint16_t continuation_number;     /*!< Continuation number. Range: 0x0000 to 0x01F3 */
+    uint16_t supervision_timeout;     /*!< Supervision timeout in 10 ms units. Range: 0x000A to 0x0C80 */
+    uint16_t min_ce_len;              /*!< Minimum connection event length in 125 us units */
+    uint16_t max_ce_len;              /*!< Maximum connection event length in 125 us units */
+} esp_ble_gap_connection_rate_request_params_t;
+
+/**
+ * @brief Default connection rate parameters for future Central connections
+ */
+typedef struct {
+    uint16_t conn_interval_min;       /*!< Minimum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t conn_interval_max;       /*!< Maximum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t subrate_min;             /*!< Minimum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t subrate_max;             /*!< Maximum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t max_latency;             /*!< Maximum Peripheral latency in subrated connection intervals. Range: 0x0000 to 0x01F3 */
+    uint16_t continuation_number;     /*!< Continuation number. Range: 0x0000 to 0x01F3 */
+    uint16_t supervision_timeout;     /*!< Supervision timeout in 10 ms units. Range: 0x000A to 0x0C80 */
+    uint16_t min_ce_len;              /*!< Minimum connection event length in 125 us units */
+    uint16_t max_ce_len;              /*!< Maximum connection event length in 125 us units */
+} esp_ble_gap_default_rate_param_t;
+
+#define ESP_BLE_GAP_CONN_RATE_MAX_INTERVAL_GROUPS       41
+
+/**
+ * @brief Supported connection interval group returned by read minimum supported connection interval
+ */
+typedef struct {
+    uint16_t min_125us;               /*!< Lower bound of supported interval group in 125 us units */
+    uint16_t max_125us;               /*!< Upper bound of supported interval group in 125 us units */
+    uint16_t stride_125us;            /*!< Stride between supported intervals in 125 us units */
+} esp_ble_gap_min_conn_interval_group_t;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 typedef enum {
@@ -2337,6 +2405,45 @@ typedef union {
         uint8_t le_features[ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN]; /*!< Remote LE features data */
     } read_all_remote_feat;                  /*!< Event parameter of ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT */
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT
+     *
+     * Reported when the HCI Connection Rate Request command is accepted or rejected by the controller,
+     * or when the host fails to send the command locally.
+     */
+    struct ble_connection_rate_request_cmpl_param {
+        esp_bt_status_t status;              /*!< Command success status, or host/controller error code */
+        uint16_t conn_handle;                /*!< Connection handle */
+    } connection_rate_req_cmpl;                /*!< Event parameter of ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CONN_RATE_CHANGE_EVT
+     */
+    struct ble_conn_rate_change_evt {
+        esp_bt_status_t status;              /*!< Indicate connection rate change status */
+        uint16_t conn_handle;                /*!< Connection handle */
+        uint16_t conn_interval;              /*!< Underlying connection interval in 125 us units */
+        uint16_t subrate_factor;             /*!< Subrate factor applied to the connection interval */
+        uint16_t peripheral_latency;         /*!< Peripheral latency in subrated connection intervals */
+        uint16_t continuation_number;        /*!< Continuation number */
+        uint16_t supervision_timeout;        /*!< Supervision timeout in 10 ms units */
+    } conn_rate_change_evt;                    /*!< Event parameter of ESP_GAP_BLE_CONN_RATE_CHANGE_EVT. Effective interval (us) = ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US(conn_interval, subrate_factor) */
+    /**
+     * @brief ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT
+     */
+    struct ble_set_default_rate_parameters_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate set default rate parameters operation success status */
+    } set_default_rate_parameters_cmpl;        /*!< Event parameter of ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT
+     */
+    struct ble_read_min_supp_conn_interval_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read minimum supported connection interval operation success status */
+        uint8_t min_supported_conn_interval; /*!< Minimum supported connection interval in 125 us units */
+        uint8_t num_groups;                  /*!< Number of supported interval groups; 0 if only RCV is supported */
+        esp_ble_gap_min_conn_interval_group_t groups[ESP_BLE_GAP_CONN_RATE_MAX_INTERVAL_GROUPS];
+    } read_min_supp_conn_interval;             /*!< Event parameter of ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -4250,6 +4357,61 @@ esp_err_t esp_ble_gap_read_all_local_supp_features(void);
 esp_err_t esp_ble_gap_read_all_remote_features(const esp_ble_gap_read_all_remote_feat_params_t *params);
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+/**
+* @brief           Request a connection rate update (Shorter Connection Intervals, Core 6.2).
+*
+*                  This API may be used by a Central or a Peripheral to request a change to the
+*                  connection interval, subrate factor, and/or other connection parameters.
+*                  `conn_interval_min/max` use 125 us units (minimum 375 us = 3).
+*                  Use ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_MS() or ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_US()
+*                  to convert from common time units.
+*
+*                  When the controller accepts or rejects the HCI command, `ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT`
+*                  is reported with `status` and `conn_handle`. On command acceptance, `ESP_GAP_BLE_CONN_RATE_CHANGE_EVT`
+*                  subsequently reports the applied parameters. The effective connection interval in microseconds is:
+*                  ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US(conn_interval, subrate_factor).
+*
+* @param[in]       params : Pointer to connection rate request parameters.
+*
+* @return            - ESP_OK : success (command sent)
+*                    - ESP_ERR_INVALID_ARG : invalid parameters
+*                    - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+*                    - ESP_FAIL : other failures
+*
+*/
+esp_err_t esp_ble_gap_connection_rate_request(const esp_ble_gap_connection_rate_request_params_t *params);
+
+/**
+* @brief           Set default connection rate parameters for future Central connections (Core 6.2).
+*
+*                  Preconfigures the default connection rate parameters that may be requested by a
+*                  Peripheral on new ACL connections where the local device is Central.
+*
+* @param[in]       params : Pointer to default rate parameters.
+*
+* @return            - ESP_OK : success
+*                    - ESP_ERR_INVALID_ARG : invalid parameters
+*                    - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+*                    - ESP_FAIL : other failures
+*
+*/
+esp_err_t esp_ble_gap_set_default_rate_parameters(const esp_ble_gap_default_rate_param_t *params);
+
+/**
+* @brief           Read the Controller minimum supported connection interval and interval groups.
+*
+*                  On success, `ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT` returns the
+*                  minimum supported interval and optional interval groups. If `num_groups` is 0,
+*                  the Controller only supports Rounded Connection Interval Values (RCV).
+*
+* @return            - ESP_OK : success (command sent)
+*                    - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+*                    - ESP_FAIL : other failures
+*
+*/
+esp_err_t esp_ble_gap_read_min_supported_connection_interval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 

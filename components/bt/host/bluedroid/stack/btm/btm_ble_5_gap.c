@@ -1502,6 +1502,137 @@ void btm_ble_read_all_remote_features_complete_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+tBTM_STATUS BTM_BleConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                         UINT16 conn_interval_max, UINT16 subrate_min,
+                                         UINT16 subrate_max, UINT16 max_latency,
+                                         UINT16 continuation_number, UINT16 supervision_timeout,
+                                         UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    tHCI_STATUS err;
+
+    err = btsnd_hcic_ble_connection_rate_request(conn_handle, conn_interval_min, conn_interval_max,
+                                                 subrate_min, subrate_max, max_latency,
+                                                 continuation_number, supervision_timeout,
+                                                 min_ce_len, max_ce_len);
+    if (err != HCI_SUCCESS) {
+        tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+        cb_params.conn_rate_request.status = BTM_HCI_ERROR | err;
+        cb_params.conn_rate_request.conn_handle = conn_handle;
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT, &cb_params);
+        return BTM_NO_RESOURCES;
+    }
+    return BTM_CMD_STARTED;
+}
+
+void btm_conn_rate_req_cmd_status(UINT8 status, UINT16 conn_handle)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (status != HCI_SUCCESS) {
+        status = (status | BTM_HCI_ERROR);
+    }
+    cb_params.conn_rate_request.status = status;
+    cb_params.conn_rate_request.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT, &cb_params);
+}
+
+void btm_ble_conn_rate_change_evt(tBTM_BLE_CONN_RATE_CHANGE *params)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (!params) {
+        return;
+    }
+
+    /* Like btm_ble_subrate_change_evt(), notify the application only.
+     * Do not fold interval*subrate into L2CAP current_used_conn_interval:
+     * that field is UINT16 in 1.25 ms units and cannot represent SCI
+     * effective intervals; apps use ESP_GAP_BLE_CONN_RATE_CHANGE_EVT and
+     * ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US() instead. */
+    cb_params.conn_rate_change = *params;
+    if (cb_params.conn_rate_change.status != HCI_SUCCESS) {
+        cb_params.conn_rate_change.status |= BTM_HCI_ERROR;
+    }
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT, &cb_params);
+}
+
+void BTM_BleSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                     UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                     UINT16 continuation_number, UINT16 supervision_timeout,
+                                     UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_default_rate_parameters(conn_interval_min, conn_interval_max,
+                                                          subrate_min, subrate_max, max_latency,
+                                                          continuation_number, supervision_timeout,
+                                                          min_ce_len, max_ce_len)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT, &cb_params);
+}
+
+tBTM_STATUS BTM_BleReadMinSuppConnInterval(void)
+{
+    if (!btsnd_hcic_ble_read_min_supp_conn_interval()) {
+        tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+        cb_params.read_min_supp_conn_interval.status = BTM_HCI_ERROR | HCI_ERR_MEMORY_FULL;
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT, &cb_params);
+        return BTM_NO_RESOURCES;
+    }
+    return BTM_CMD_STARTED;
+}
+
+void btm_ble_read_min_supp_conn_interval_cmd_status(UINT8 status)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (status == HCI_SUCCESS) {
+        return;
+    }
+
+    cb_params.read_min_supp_conn_interval.status = status | BTM_HCI_ERROR;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT, &cb_params);
+}
+
+void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+    UINT8 num_groups;
+
+    if (!p) {
+        return;
+    }
+
+    STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.status, p);
+    if (cb_params.read_min_supp_conn_interval.status == HCI_SUCCESS) {
+        STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.min_supported_conn_interval, p);
+        STREAM_TO_UINT8(num_groups, p);
+        if (num_groups > BTM_BLE_MAX_CONN_INTERVAL_GROUPS) {
+            BTM_TRACE_WARNING("%s num_groups %u exceeds max %u", __func__, num_groups,
+                              BTM_BLE_MAX_CONN_INTERVAL_GROUPS);
+            num_groups = BTM_BLE_MAX_CONN_INTERVAL_GROUPS;
+        }
+        cb_params.read_min_supp_conn_interval.num_groups = num_groups;
+        cb_params.read_min_supp_conn_interval.groups = btm_ble_min_conn_interval_groups;
+        for (UINT8 i = 0; i < num_groups; i++) {
+            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].min_125us, p);
+            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].max_125us, p);
+            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].stride_125us, p);
+        }
+    } else {
+        cb_params.read_min_supp_conn_interval.status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT, &cb_params);
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
