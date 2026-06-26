@@ -162,7 +162,7 @@ Translation jobs push bot commits back to the MR branch. Two mechanisms prevent 
 
 ## Commit history check
 
-`check_auto_translate_commit_history` runs on **every MR pipeline** in the `auto_translate` stage (before `check_line_num` and translation). It does not require auto-translate labels and is not skipped on bot commits, so the bot-push pipeline fails if translation left more than one `auto translation ...` commit on the branch. Squash or rebase to at most one bot commit before re-running translation.
+`check_auto_translate_commit_history` runs on **every MR pipeline** (before `check_line_num` and translation). It does not require auto-translate labels and is not skipped on bot commits, so the bot-push pipeline fails if translation left more than one `auto translation ...` commit on the branch. Squash or rebase to at most one bot commit before re-running translation.
 
 ---
 
