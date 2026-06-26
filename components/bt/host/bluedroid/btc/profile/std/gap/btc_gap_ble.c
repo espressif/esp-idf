@@ -1283,6 +1283,18 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+        case BTA_DM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT;
+            param.set_decision_data.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT;
+            param.set_decision_instructions.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+#endif // #if (BLE_FEAT_DBAF == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT: {
             param.adv_terminate.status = params->adv_term.status;
@@ -2477,6 +2489,84 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    case BTC_GAP_BLE_SET_DECISION_DATA: {
+        btc_ble_5_gap_args_t *src = (btc_ble_5_gap_args_t *)p_src;
+        btc_ble_5_gap_args_t *dst = (btc_ble_5_gap_args_t *)p_dest;
+
+        dst->set_decision_data.data = NULL;
+        if (src->set_decision_data.data_len > 0 && src->set_decision_data.data) {
+            dst->set_decision_data.data = osi_malloc(src->set_decision_data.data_len);
+            if (dst->set_decision_data.data) {
+                memcpy(dst->set_decision_data.data, src->set_decision_data.data,
+                       src->set_decision_data.data_len);
+            } else {
+                BTC_TRACE_WARNING("%s no mem, decision data drop %u", __func__, src->set_decision_data.data_len);
+                dst->set_decision_data.data_len = 0;
+            }
+        }
+        break;
+    }
+    case BTC_GAP_BLE_SET_DECISION_INSTRUCTIONS: {
+        btc_ble_5_gap_args_t *src = (btc_ble_5_gap_args_t *)p_src;
+        btc_ble_5_gap_args_t *dst = (btc_ble_5_gap_args_t *)p_dest;
+        bool oom = false;
+
+        dst->set_decision_instructions.test_flags = NULL;
+        dst->set_decision_instructions.test_fields = NULL;
+        dst->set_decision_instructions.test_params = NULL;
+        if (src->set_decision_instructions.num_tests > ESP_BLE_GAP_DECISION_MAX_TESTS) {
+            BTC_TRACE_WARNING("%s invalid num_tests %u", __func__,
+                              src->set_decision_instructions.num_tests);
+            oom = true;
+        }
+        if (!oom && src->set_decision_instructions.num_tests > 0) {
+            if (src->set_decision_instructions.test_flags) {
+                dst->set_decision_instructions.test_flags = osi_malloc(src->set_decision_instructions.num_tests);
+                if (dst->set_decision_instructions.test_flags) {
+                    memcpy(dst->set_decision_instructions.test_flags, src->set_decision_instructions.test_flags,
+                           src->set_decision_instructions.num_tests);
+                } else {
+                    oom = true;
+                }
+            }
+            if (!oom && src->set_decision_instructions.test_fields) {
+                dst->set_decision_instructions.test_fields = osi_malloc(src->set_decision_instructions.num_tests);
+                if (dst->set_decision_instructions.test_fields) {
+                    memcpy(dst->set_decision_instructions.test_fields, src->set_decision_instructions.test_fields,
+                           src->set_decision_instructions.num_tests);
+                } else {
+                    oom = true;
+                }
+            }
+        }
+        if (!oom && src->set_decision_instructions.num_tests > 0 &&
+            src->set_decision_instructions.test_params) {
+            size_t test_params_len = (size_t)src->set_decision_instructions.num_tests *
+                                     ESP_BLE_GAP_DECISION_TEST_PARAM_LEN;
+            dst->set_decision_instructions.test_params = osi_malloc(test_params_len);
+            if (dst->set_decision_instructions.test_params) {
+                memcpy(dst->set_decision_instructions.test_params, src->set_decision_instructions.test_params,
+                       test_params_len);
+            } else {
+                oom = true;
+            }
+        }
+        if (oom) {
+            BTC_TRACE_WARNING("%s no mem, decision instructions drop", __func__);
+            if (dst->set_decision_instructions.test_flags) {
+                osi_free(dst->set_decision_instructions.test_flags);
+                dst->set_decision_instructions.test_flags = NULL;
+            }
+            if (dst->set_decision_instructions.test_fields) {
+                osi_free(dst->set_decision_instructions.test_fields);
+                dst->set_decision_instructions.test_fields = NULL;
+            }
+            dst->set_decision_instructions.num_tests = 0;
+        }
+        break;
+    }
+#endif // #if (BLE_FEAT_DBAF == TRUE)
     default:
         BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
         break;
@@ -2759,6 +2849,28 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
         break;
     }
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    case BTC_GAP_BLE_SET_DECISION_DATA: {
+        uint8_t *data = ((btc_ble_5_gap_args_t *)msg->arg)->set_decision_data.data;
+        if (data) {
+            osi_free(data);
+        }
+        break;
+    }
+    case BTC_GAP_BLE_SET_DECISION_INSTRUCTIONS: {
+        btc_ble_5_gap_args_t *args = (btc_ble_5_gap_args_t *)msg->arg;
+        if (args->set_decision_instructions.test_flags) {
+            osi_free(args->set_decision_instructions.test_flags);
+        }
+        if (args->set_decision_instructions.test_fields) {
+            osi_free(args->set_decision_instructions.test_fields);
+        }
+        if (args->set_decision_instructions.test_params) {
+            osi_free(args->set_decision_instructions.test_params);
+        }
+        break;
+    }
+#endif // #if (BLE_FEAT_DBAF == TRUE)
     default:
         BTC_TRACE_DEBUG("Unhandled deep free %d\n", msg->act);
         break;
@@ -3419,6 +3531,20 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapEnableMonitorAdv(arg_5->enable_monitor_adv.enable);
         break;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    case BTC_GAP_BLE_SET_DECISION_DATA:
+        BTA_DmBleGapSetDecisionData(arg_5->set_decision_data.adv_handle,
+                                    arg_5->set_decision_data.decision_type_flags,
+                                    arg_5->set_decision_data.data_len,
+                                    arg_5->set_decision_data.data);
+        break;
+    case BTC_GAP_BLE_SET_DECISION_INSTRUCTIONS:
+        BTA_DmBleGapSetDecisionInstructions(arg_5->set_decision_instructions.num_tests,
+                                            arg_5->set_decision_instructions.test_flags,
+                                            arg_5->set_decision_instructions.test_fields,
+                                            arg_5->set_decision_instructions.test_params);
+        break;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case BTC_GAP_BLE_SET_PA_SUBEVT_DATA:
         BTA_DmBleGapSetPASubevtData(arg_5->per_adv_subevent_data_params.adv_handle, arg_5->per_adv_subevent_data_params.num_subevents_with_data, (uint8_t *)(arg_5->per_adv_subevent_data_params.subevent_params));
