@@ -3145,6 +3145,46 @@ UINT8 btsnd_hcic_ble_frame_space_update(UINT16 conn_handle, UINT16 frame_space_m
 }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+BOOLEAN btsnd_hcic_ble_read_all_local_supp_features(void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(0)) == NULL) {
+        return FALSE;
+    }
+    pp = (UINT8 *)(p + 1);
+    p->len = HCIC_PREAMBLE_SIZE;
+    p->offset = 0;
+
+    UINT16_TO_STREAM(pp, HCI_BLE_READ_ALL_LOCAL_SUPP_FEATURES);
+    UINT8_TO_STREAM(pp, 0);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+
+UINT8 btsnd_hcic_ble_read_all_remote_features(UINT16 conn_handle, UINT8 page_requested)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if (page_requested > BLE_LL_EXT_FEAT_MAX_PAGE) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_READ_ALL_REMOTE_FEATURES);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_READ_ALL_REMOTE_FEATURES);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_ALL_REMOTE_FEATURES);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, page_requested);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return HCI_SUCCESS;
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 

@@ -434,6 +434,11 @@
 #endif
 
 
+#ifdef CONFIG_BT_BLE_FEAT_LL_EXT_FEAT
+#define UC_BT_BLE_FEAT_LL_EXT_FEAT            CONFIG_BT_BLE_FEAT_LL_EXT_FEAT
+#else
+#define UC_BT_BLE_FEAT_LL_EXT_FEAT            FALSE
+#endif
 
 
 
