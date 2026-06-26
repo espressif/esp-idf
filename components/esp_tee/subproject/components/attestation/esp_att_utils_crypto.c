@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -246,6 +246,11 @@ esp_err_t esp_att_utils_ecdsa_get_sign(const esp_att_ecdsa_keypair_t *keypair, c
         return ESP_ERR_INVALID_SIZE;
     }
 
+    /* Initialise the out-params up front so the error path at 'exit' can free them safely even
+     * when we bail out (e.g. signature generation fails) before they are allocated. */
+    *sign_r_hexstr = NULL;
+    *sign_s_hexstr = NULL;
+
     esp_err_t err = ESP_FAIL;
 
     unsigned char sign_r[SECP256R1_ECDSA_KEY_LEN] = {0}, sign_s[SECP256R1_ECDSA_KEY_LEN] = {0};
@@ -284,5 +289,12 @@ esp_err_t esp_att_utils_ecdsa_get_sign(const esp_att_ecdsa_keypair_t *keypair, c
     err = ESP_OK;
 
 exit:
+    if (err != ESP_OK) {
+        /* free(NULL) is a no-op, so this is safe whether or not the buffers were allocated. */
+        free(*sign_r_hexstr);
+        *sign_r_hexstr = NULL;
+        free(*sign_s_hexstr);
+        *sign_s_hexstr = NULL;
+    }
     return err;
 }
