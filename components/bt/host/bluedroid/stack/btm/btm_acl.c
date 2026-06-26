@@ -2393,7 +2393,7 @@ void btm_read_channel_map_complete(UINT8 *p)
                 memcpy(results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
             }
         } else {
-            results.status = BTM_ERR_PROCESSING;
+            results.status = BTM_HCI_ERROR | results.hci_status;
             BTM_TRACE_ERROR("BTM Channel Map Read Failed: hci status 0x%02x", results.hci_status);
         }
 
