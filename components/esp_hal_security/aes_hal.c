@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,6 +125,11 @@ void aes_hal_gcm_read_tag(uint8_t *tag, size_t tag_len)
 {
     uint8_t tag_res[TAG_BYTES];
     aes_ll_gcm_read_tag(tag_res);
+    /* The GCM tag is at most TAG_BYTES (16). Clamp the caller-supplied length so an oversized
+     * tag_len cannot over-read tag_res or over-write the caller's tag buffer (CWE-125). */
+    if (tag_len > TAG_BYTES) {
+        tag_len = TAG_BYTES;
+    }
     memcpy(tag, tag_res, tag_len);
 }
 
