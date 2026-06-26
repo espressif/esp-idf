@@ -951,7 +951,10 @@ tBTA_GATT_STATUS BTA_GATTC_RegisterForNotifications (tBTA_GATTC_IF client_if,
             return BTA_GATT_ILLEGAL_PARAMETER;
         }
     } else {
-        APPL_TRACE_WARNING("reg notif: cache not ready, skip check");
+        APPL_TRACE_WARNING("reg notif: cache not ready, skip check, client_if=%d handle=0x%04x bd_addr:%02x:%02x:%02x:%02x:%02x:%02x state=%d",
+                           client_if, handle,
+                           bda[0], bda[1], bda[2], bda[3], bda[4], bda[5],
+                           p_srcb ? p_srcb->state : 0xff);
     }
 
     if ((p_clreg = bta_gattc_cl_get_regcb(client_if)) != NULL) {
