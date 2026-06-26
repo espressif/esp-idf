@@ -1486,8 +1486,9 @@ void bta_gattc_write_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_OP_CMPL *p_data)
             ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_PREP_WRITE_EVT, (tBTA_GATTC *)&cb_data);
             return;
         }
-        /* Rsp value is one ATT chunk (<= MTU-5), not necessarily full api_write.len. */
-        {
+        /* Rsp value is one ATT chunk (<= MTU-5), not necessarily full api_write.len.
+         * Only validate echo on success; ATT Error Response has no prepare-write body. */
+        if (p_data->status == BTA_GATT_OK) {
             UINT16 rsp_len = p_data->p_cmpl->att_value.len;
             UINT16 req_len = p_clcb->p_q_cmd->api_write.len;
             tGATT_VALUE *a = &p_data->p_cmpl->att_value;
