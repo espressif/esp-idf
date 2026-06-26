@@ -493,6 +493,10 @@
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define HCI_BLE_ENABLE_UTP_OTA_MODE                (0x009F | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_UTP_SEND                           (0x00A0 | HCI_GRP_BLE_CMDS)
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #define HCI_BLE_CONNECTION_RATE_REQUEST            (0x00A1 | HCI_GRP_BLE_CMDS)
@@ -1003,6 +1007,9 @@
 #define HCI_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT    0x35
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define HCI_BLE_UTP_RECEIVE_EVT                    0x36
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #define HCI_BLE_CONN_RATE_CHANGE_EVT               0x37

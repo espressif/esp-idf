@@ -3186,6 +3186,48 @@ UINT8 btsnd_hcic_ble_read_all_remote_features(UINT16 conn_handle, UINT8 page_req
 }
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+UINT8 btsnd_hcic_ble_enable_utp_ota_mode(UINT8 enable)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if (enable > 1) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_ENABLE_UTP_OTA_MODE);
+    UINT16_TO_STREAM(pp, HCI_BLE_ENABLE_UTP_OTA_MODE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ENABLE_UTP_OTA_MODE);
+    UINT8_TO_STREAM(pp, enable);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_utp_send(UINT8 data_len, const UINT8 *p_data)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+    UINT16 param_len;
+
+    if (data_len == 0 || data_len > BLE_UTP_DATA_MAX_LEN || p_data == NULL) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    param_len = HCIC_PARAM_SIZE_UTP_SEND_HDR + data_len;
+    if (param_len > HCIC_PARAM_SIZE_UTP_SEND_MAX) {
+        return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    }
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, param_len);
+    UINT16_TO_STREAM(pp, HCI_BLE_UTP_SEND);
+    UINT8_TO_STREAM(pp, param_len);
+    UINT8_TO_STREAM(pp, data_len);
+    ARRAY_TO_STREAM(pp, p_data, data_len);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 UINT8 btsnd_hcic_ble_connection_rate_request(UINT16 conn_handle, UINT16 conn_interval_min,

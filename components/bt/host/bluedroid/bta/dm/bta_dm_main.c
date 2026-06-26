@@ -338,6 +338,10 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_default_rate_parameters,         /* BTA_DM_API_SET_DEFAULT_RATE_PARAMETERS_EVT */
     bta_dm_ble_gap_read_min_supp_conn_interval,           /* BTA_DM_API_READ_MIN_SUPP_CONN_INTERVAL_EVT */
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    bta_dm_ble_gap_enable_utp_ota_mode,                 /* BTA_DM_API_ENABLE_UTP_OTA_MODE_EVT */
+    bta_dm_ble_gap_utp_send,                            /* BTA_DM_API_UTP_SEND_EVT */
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 };
 
 

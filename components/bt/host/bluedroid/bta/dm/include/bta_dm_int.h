@@ -25,6 +25,9 @@
 #define BTA_DM_INT_H
 
 #include "common/bt_target.h"
+#if (BLE_FEAT_DBAF == TRUE) || (BLE_FEAT_LL_EXT_FEAT == TRUE) || (BLE_FEAT_LE_UTP == TRUE)
+#include "stack/hcimsgs.h"
+#endif
 #include "freertos/semphr.h"
 #include "bta/bta_sys.h"
 #if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
@@ -335,6 +338,10 @@ enum {
     BTA_DM_API_SET_DEFAULT_RATE_PARAMETERS_EVT,
     BTA_DM_API_READ_MIN_SUPP_CONN_INTERVAL_EVT,
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    BTA_DM_API_ENABLE_UTP_OTA_MODE_EVT,
+    BTA_DM_API_UTP_SEND_EVT,
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1456,6 +1463,18 @@ typedef struct {
 } tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           enable;
+} tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           data_len;
+    UINT8                           data[BLE_UTP_DATA_MAX_LEN];
+} tBTA_DM_API_BLE_UTP_SEND;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 typedef struct {
     BT_HDR                          hdr;
@@ -1906,6 +1925,10 @@ typedef union {
     tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS ble_set_default_rate_parameters;
     tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL ble_read_min_supp_conn_interval;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE   ble_enable_utp_ota_mode;
+    tBTA_DM_API_BLE_UTP_SEND              ble_utp_send;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BLE_42_DTM_TEST_EN == TRUE)
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
@@ -2602,6 +2625,10 @@ extern void bta_dm_ble_gap_set_default_rate_parameters(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_read_min_supp_conn_interval(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+extern void bta_dm_ble_gap_enable_utp_ota_mode(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_utp_send(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)

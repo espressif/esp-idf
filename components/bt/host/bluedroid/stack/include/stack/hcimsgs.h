@@ -854,6 +854,15 @@ BOOLEAN btsnd_hcic_ble_read_all_local_supp_features(void);
 UINT8 btsnd_hcic_ble_read_all_remote_features(UINT16 conn_handle, UINT8 page_requested);
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define HCIC_PARAM_SIZE_ENABLE_UTP_OTA_MODE            1
+#define HCIC_PARAM_SIZE_UTP_SEND_HDR                     1
+#define HCIC_PARAM_SIZE_UTP_SEND_MAX                     255
+#define BLE_UTP_DATA_MAX_LEN                             254
+
+UINT8 btsnd_hcic_ble_enable_utp_ota_mode(UINT8 enable);
+UINT8 btsnd_hcic_ble_utp_send(UINT8 data_len, const UINT8 *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #define HCIC_PARAM_SIZE_CONNECTION_RATE_REQUEST          20
