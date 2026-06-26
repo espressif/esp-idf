@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -11,7 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
-@pytest.mark.adc
+@pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'iram_safe',
     'release',
@@ -22,8 +21,8 @@ def test_adc(dut: Dut) -> None:
 
 
 # No PM test, as C2 doesn't support ADC continuous mode
+@pytest.mark.generic
 @pytest.mark.esp32c2
-@pytest.mark.adc
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'config, baud',
@@ -41,7 +40,7 @@ def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
-@pytest.mark.adc
+@pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'gdma_iram_safe',
 ], indirect=True)

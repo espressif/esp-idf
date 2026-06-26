@@ -42,7 +42,7 @@ extern "C" {
 
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define ADC_TEST_LOW_VAL         0
-#define ADC_TEST_LOW_THRESH      35
+#define ADC_TEST_LOW_THRESH      85
 
 #define ADC_TEST_HIGH_VAL        8191
 #define ADC_TEST_HIGH_VAL_DMA    4095
@@ -66,7 +66,7 @@ extern "C" {
 
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define ADC_TEST_LOW_VAL         0
-#define ADC_TEST_LOW_THRESH      15
+#define ADC_TEST_LOW_THRESH      30
 
 #define ADC_TEST_HIGH_VAL        3400
 #define ADC_TEST_HIGH_THRESH     200
