@@ -6406,6 +6406,18 @@ void bta_dm_api_cs_procedure_enable(tBTA_DM_MSG *p_data)
 }
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void bta_dm_api_cs_set_security_requirements(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsSetSecurityRequirements(p_data->set_security_requirements_params.conn_handle,
+                                        p_data->set_security_requirements_params.cs_security_requirements);
+}
+
+void bta_dm_api_cs_set_default_security_requirements(tBTA_DM_MSG *p_data)
+{
+    BTM_BleGapCsSetDefaultSecurityRequirements(p_data->set_default_security_requirements_params.cs_security_requirements);
+}
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
