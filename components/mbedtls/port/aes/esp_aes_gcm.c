@@ -533,6 +533,10 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     uint8_t len_block[AES_BLOCK_BYTES] = {0};
     uint8_t stream[AES_BLOCK_BYTES] = {0};
 
+    (void)output;
+    (void)output_size;
+    *output_length = 0;
+
     if ( tag_len > 16 || tag_len < 4 ) {
         return ( PSA_ERROR_INVALID_ARGUMENT );
     }
