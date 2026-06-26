@@ -2660,6 +2660,8 @@ static void btu_ble_monitor_adv_report_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+
+
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)
 {
@@ -3333,6 +3335,8 @@ static void btu_ble_subrate_change_evt(UINT8 *p)
     btm_ble_subrate_change_evt(&subrate_change_evt);
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 static void btu_ble_pa_subevt_data_request_evt(UINT8 *p)
