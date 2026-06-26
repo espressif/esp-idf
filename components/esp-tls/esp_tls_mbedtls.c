@@ -117,6 +117,7 @@ typedef struct esp_tls_pki_t {
     unsigned int privkey_pem_bytes;
     const unsigned char *privkey_password;
     unsigned int privkey_password_len;
+    psa_key_id_t psa_key_id;
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     void *esp_ds_data;
 #endif
@@ -498,11 +499,22 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
      * before calling mbedtls_pk_free(). mbedtls_pk_wrap_psa() sets the pk_info
      * to mbedtls_{rsa,ecdsa}_opaque_info, both of which have type
      * MBEDTLS_PK_OPAQUE — so a single check covers both DS and ECDSA paths.
-     * clientkey and serverkey share storage via union, so one branch suffices. */
+     * clientkey and serverkey share storage via union, so one branch suffices.
+     *
+     * Only destroy volatile keys created internally by the DS/ECDSA peripheral
+     * paths. Keys wrapped from an external clientkey_psa_id are caller-owned
+     * (typically persistent) and must not be destroyed here. */
 #if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
     if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_OPAQUE) {
         if (tls->clientkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
-            psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+            psa_key_attributes_t attrs = PSA_KEY_ATTRIBUTES_INIT;
+            if (psa_get_key_attributes(tls->clientkey.MBEDTLS_PRIVATE(priv_id),
+                                       &attrs) == PSA_SUCCESS) {
+                if (PSA_KEY_LIFETIME_IS_VOLATILE(psa_get_key_lifetime(&attrs))) {
+                    psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+                }
+                psa_reset_key_attributes(&attrs);
+            }
             tls->clientkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
     }
@@ -619,18 +631,27 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
             }
         } else
 #endif
+        if (pki->psa_key_id != PSA_KEY_ID_NULL) {
+            mbedtls_pk_init(pki->pk_key);
+            ret = mbedtls_pk_wrap_psa(pki->pk_key, pki->psa_key_id);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "Failed to wrap PSA key (id=%d): -0x%04X", (int)pki->psa_key_id, -ret);
+                mbedtls_print_error_msg(ret);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+                return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
+            }
+        } else
         if (pki->privkey_pem_buf != NULL) {
             ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
                                        pki->privkey_password, pki->privkey_password_len);
+            if (ret < 0) {
+                ESP_LOGE(TAG, "mbedtls_pk_parse_key returned -0x%04X", -ret);
+                mbedtls_print_error_msg(ret);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+                return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
+            }
         } else {
             return ESP_ERR_INVALID_ARG;
-        }
-
-        if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%04X", -ret);
-            mbedtls_print_error_msg(ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-            return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
         }
 
         ret = mbedtls_ssl_conf_own_cert(&tls->conf, pki->public_cert, pki->pk_key);
@@ -1098,6 +1119,23 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
         return ESP_FAIL;
 #endif
+    } else if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_psa_id != PSA_KEY_ID_NULL) {
+        esp_tls_pki_t pki = {
+            .public_cert = &tls->clientcert,
+            .pk_key = &tls->clientkey,
+            .publiccert_pem_buf = cfg->clientcert_buf,
+            .publiccert_pem_bytes = cfg->clientcert_bytes,
+            .privkey_pem_buf = NULL,
+            .privkey_pem_bytes = 0,
+            .privkey_password = NULL,
+            .privkey_password_len = 0,
+            .psa_key_id = cfg->clientkey_psa_id,
+        };
+        esp_err_t esp_ret = set_pki_context(tls, &pki);
+        if (esp_ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set client pki context (PSA key)");
+            return esp_ret;
+        }
     } else if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_pem_buf != NULL) {
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,

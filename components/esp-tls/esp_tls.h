@@ -167,6 +167,13 @@ typedef struct esp_tls_cfg {
     unsigned int clientkey_pem_bytes;       /*!< Size of client key legacy name */
     };
 
+    uint32_t clientkey_psa_id;              /*!< PSA key ID for the client private key.
+                                                 When non-zero, this takes precedence over
+                                                 clientkey_buf/clientkey_pem_buf and the key
+                                                 is used via mbedtls_pk_wrap_psa() without
+                                                 exposing raw key material. The key must have
+                                                 been created with PSA_KEY_USAGE_SIGN_HASH. */
+
     const unsigned char *clientkey_password;/*!< Client key decryption password string */
 
     unsigned int clientkey_password_len;    /*!< String length of the password pointed to by

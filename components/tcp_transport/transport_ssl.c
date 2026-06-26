@@ -476,6 +476,12 @@ void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const c
     ssl->cfg.clientkey_bytes = len;
 }
 
+void esp_transport_ssl_set_client_key_psa_id(esp_transport_handle_t t, uint32_t key_id)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.clientkey_psa_id = key_id;
+}
+
 #if defined(CONFIG_MBEDTLS_SSL_ALPN) || defined(CONFIG_WOLFSSL_HAVE_ALPN)
 void esp_transport_ssl_set_alpn_protocol(esp_transport_handle_t t, const char **alpn_protos)
 {

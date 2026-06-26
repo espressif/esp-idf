@@ -163,6 +163,16 @@ void esp_transport_ssl_set_client_key_password(esp_transport_handle_t t, const c
 void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const char *data, int len);
 
 /**
+ * @brief      Set SSL client key via PSA key ID for mutual authentication.
+ *             The key must have been created with PSA_KEY_USAGE_SIGN_HASH.
+ *             This avoids exposing raw key material to the application.
+ *
+ * @param      t       ssl transport
+ * @param[in]  key_id  The PSA key ID (uint32_t, cast from psa_key_id_t)
+ */
+void esp_transport_ssl_set_client_key_psa_id(esp_transport_handle_t t, uint32_t key_id);
+
+/**
  * @brief      Set the list of supported application protocols to be used with ALPN.
  *             Note that, this function stores the pointer to data, rather than making a copy.
  *             So this data must remain valid until after the connection is cleaned up
