@@ -489,11 +489,22 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
      * before calling mbedtls_pk_free(). mbedtls_pk_wrap_psa() sets the pk_info
      * to mbedtls_{rsa,ecdsa}_opaque_info, both of which have type
      * MBEDTLS_PK_OPAQUE — so a single check covers both DS and ECDSA paths.
-     * clientkey and serverkey share storage via union, so one branch suffices. */
+     * clientkey and serverkey share storage via union, so one branch suffices.
+     *
+     * Only destroy volatile keys created internally by the DS/ECDSA peripheral
+     * paths. Keys wrapped from an external clientkey_psa_id are caller-owned
+     * (typically persistent) and must not be destroyed here. */
 #if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
     if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_OPAQUE) {
         if (tls->clientkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
-            psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+            psa_key_attributes_t attrs = PSA_KEY_ATTRIBUTES_INIT;
+            if (psa_get_key_attributes(tls->clientkey.MBEDTLS_PRIVATE(priv_id),
+                                       &attrs) == PSA_SUCCESS) {
+                if (PSA_KEY_LIFETIME_IS_VOLATILE(psa_get_key_lifetime(&attrs))) {
+                    psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
+                }
+                psa_reset_key_attributes(&attrs);
+            }
             tls->clientkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
     }
