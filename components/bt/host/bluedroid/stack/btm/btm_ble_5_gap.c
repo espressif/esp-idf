@@ -1634,6 +1634,58 @@ void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+tBTM_STATUS BTM_BleEnableUtpOtaMode(UINT8 enable)
+{
+    tHCI_STATUS err;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_enable_utp_ota_mode(enable)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE EnableUtpOtaMode: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT, &cb_params);
+    return status;
+}
+
+tBTM_STATUS BTM_BleUtpSend(UINT8 data_len, const UINT8 *p_data)
+{
+    tHCI_STATUS err;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_utp_send(data_len, p_data)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("LE UtpSend: cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT, &cb_params);
+    return status;
+}
+
+void btm_ble_utp_receive_evt(UINT8 *p, UINT16 len)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+    UINT8 data_len;
+
+    if (!p || len < 1) {
+        return;
+    }
+
+    STREAM_TO_UINT8(data_len, p);
+    if (data_len == 0 || len < (UINT16)(1 + data_len)) {
+        return;
+    }
+
+    cb_params.utp_receive.len = data_len;
+    cb_params.utp_receive.data = p;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_UTP_RECEIVE_EVT, &cb_params);
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params)
