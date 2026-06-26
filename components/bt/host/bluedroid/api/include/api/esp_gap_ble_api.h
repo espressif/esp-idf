@@ -276,6 +276,8 @@ typedef enum {
     ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT,                  /*!< When set decision data complete, the event comes */
     ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT,          /*!< When set decision instructions complete, the event comes */
     ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT,                 /*!< When frame space update complete, the event comes */
+    ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT,           /*!< When read all local supported LE features complete, the event comes */
+    ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT,             /*!< When read all remote LE features complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1326,6 +1328,19 @@ typedef struct {
 } esp_ble_gap_frame_space_update_params_t;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN                248
+#define ESP_BLE_GAP_LL_EXT_FEAT_MAX_PAGE                10
+
+/**
+ * @brief Parameters for reading all remote LE features for a connection
+ */
+typedef struct {
+    uint16_t conn_handle;            /*!< Connection handle */
+    uint8_t page_requested;          /*!< The number of the highest-numbered page of features that the Host requires and the Controller shall obtain,
+                                        range: 0 to ESP_BLE_GAP_LL_EXT_FEAT_MAX_PAGE */
+} esp_ble_gap_read_all_remote_feat_params_t;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 
@@ -2310,6 +2325,26 @@ typedef union {
         uint16_t spacing_types;              /*!< Spacing types mask updated */
     } frame_space_update;                    /*!< Event parameter of ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT */
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT
+     */
+    struct ble_read_all_local_supp_feat_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read all local supported LE features operation success status */
+        uint8_t max_page;                    /*!< Maximum supported features page number */
+        uint8_t le_features[ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN]; /*!< LE features data */
+    } read_all_local_supp_feat;              /*!< Event parameter of ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT
+     */
+    struct ble_read_all_remote_feat_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read all remote LE features operation success status */
+        uint16_t conn_handle;                /*!< Connection handle */
+        uint8_t max_remote_page;             /*!< Maximum remote features page number supported by peer */
+        uint8_t max_valid_page;              /*!< Maximum valid features page number in le_features */
+        uint8_t le_features[ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN]; /*!< Remote LE features data */
+    } read_all_remote_feat;                  /*!< Event parameter of ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -4209,6 +4244,27 @@ esp_err_t esp_ble_gap_set_decision_instructions(const esp_ble_gap_set_decision_i
 esp_err_t esp_ble_gap_frame_space_update(const esp_ble_gap_frame_space_update_params_t *params);
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+/**
+* @brief           Read all local supported LE features (LL Extended Feature Set).
+*
+* @return            - ESP_OK : success (command sent)
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_all_local_supp_features(void);
+
+/**
+* @brief           Read all remote LE features for a connection (LL Extended Feature Set).
+*
+* @param[in]       params : Pointer to read remote features parameters.
+*
+* @return            - ESP_OK : success (command sent)
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_all_remote_features(const esp_ble_gap_read_all_remote_feat_params_t *params);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)

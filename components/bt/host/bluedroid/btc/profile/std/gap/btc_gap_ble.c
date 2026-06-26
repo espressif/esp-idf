@@ -1305,6 +1305,34 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+        case BTA_DM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT;
+            param.read_all_local_supp_feat.status = btc_btm_status_to_esp_status(params->read_all_local_supp_feat.status);
+            param.read_all_local_supp_feat.max_page = params->read_all_local_supp_feat.max_page;
+            if (params->read_all_local_supp_feat.le_features != NULL) {
+                memcpy(param.read_all_local_supp_feat.le_features, params->read_all_local_supp_feat.le_features,
+                       ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN);
+            } else {
+                memset(param.read_all_local_supp_feat.le_features, 0, ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN);
+            }
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT;
+            param.read_all_remote_feat.status = btc_btm_status_to_esp_status(params->read_all_remote_feat.status);
+            param.read_all_remote_feat.conn_handle = params->read_all_remote_feat.conn_handle;
+            param.read_all_remote_feat.max_remote_page = params->read_all_remote_feat.max_remote_page;
+            param.read_all_remote_feat.max_valid_page = params->read_all_remote_feat.max_valid_page;
+            if (params->read_all_remote_feat.le_features != NULL) {
+                memcpy(param.read_all_remote_feat.le_features, params->read_all_remote_feat.le_features,
+                       ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN);
+            } else {
+                memset(param.read_all_remote_feat.le_features, 0, ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN);
+            }
+            break;
+        }
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT: {
             param.adv_terminate.status = params->adv_term.status;
@@ -3564,6 +3592,15 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                      arg_5->frame_space_update.spacing_types);
         break;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    case BTC_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT:
+        BTA_DmBleGapReadAllLocalSuppFeatures();
+        break;
+    case BTC_GAP_BLE_READ_ALL_REMOTE_FEAT:
+        BTA_DmBleGapReadAllRemoteFeatures(arg_5->read_all_remote_feat.conn_handle,
+                                         arg_5->read_all_remote_feat.page_requested);
+        break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case BTC_GAP_BLE_SET_PA_SUBEVT_DATA:
         BTA_DmBleGapSetPASubevtData(arg_5->per_adv_subevent_data_params.adv_handle, arg_5->per_adv_subevent_data_params.num_subevents_with_data, (uint8_t *)(arg_5->per_adv_subevent_data_params.subevent_params));

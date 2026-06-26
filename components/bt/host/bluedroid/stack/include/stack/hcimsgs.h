@@ -845,6 +845,14 @@ UINT8 btsnd_hcic_ble_frame_space_update(UINT16 conn_handle, UINT16 frame_space_m
                                         UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define HCIC_PARAM_SIZE_READ_ALL_REMOTE_FEATURES         3
+#define BLE_LL_EXT_FEAT_DATA_LEN                         248
+#define BLE_LL_EXT_FEAT_MAX_PAGE                         10
+
+BOOLEAN btsnd_hcic_ble_read_all_local_supp_features(void);
+UINT8 btsnd_hcic_ble_read_all_remote_features(UINT16 conn_handle, UINT8 page_requested);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 

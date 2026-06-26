@@ -1507,6 +1507,79 @@ void btm_ble_frame_space_update_complete_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+tBTM_STATUS BTM_BleReadAllLocalSuppFeatures(void)
+{
+    if (!btsnd_hcic_ble_read_all_local_supp_features()) {
+        tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+        cb_params.read_all_local_supp_feat.status = BTM_HCI_ERROR | HCI_ERR_MEMORY_FULL;
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT, &cb_params);
+        return BTM_NO_RESOURCES;
+    }
+    return BTM_CMD_STARTED;
+}
+
+void btm_ble_read_all_local_supp_features_complete(UINT8 *p)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.status, p);
+    if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
+        STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.max_page, p);
+        cb_params.read_all_local_supp_feat.le_features = btm_ble_local_supp_le_features;
+        STREAM_TO_ARRAY(btm_ble_local_supp_le_features, p, BLE_LL_EXT_FEAT_DATA_LEN);
+    } else {
+        cb_params.read_all_local_supp_feat.status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT, &cb_params);
+}
+
+tBTM_STATUS BTM_BleReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested)
+{
+    tHCI_STATUS err;
+
+    err = btsnd_hcic_ble_read_all_remote_features(conn_handle, page_requested);
+    if (err != HCI_SUCCESS) {
+        tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+        cb_params.read_all_remote_feat.status = BTM_HCI_ERROR | err;
+        cb_params.read_all_remote_feat.conn_handle = conn_handle;
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT, &cb_params);
+        return BTM_NO_RESOURCES;
+    }
+    return BTM_CMD_STARTED;
+}
+
+void btm_read_all_remote_feat_cmd_status(UINT8 status)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (status == HCI_SUCCESS) {
+        return;
+    }
+
+    cb_params.read_all_remote_feat.status = status | BTM_HCI_ERROR;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT, &cb_params);
+}
+
+void btm_ble_read_all_remote_features_complete_evt(UINT8 *p)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    STREAM_TO_UINT8(cb_params.read_all_remote_feat.status, p);
+    STREAM_TO_UINT16(cb_params.read_all_remote_feat.conn_handle, p);
+    if (cb_params.read_all_remote_feat.status == HCI_SUCCESS) {
+        STREAM_TO_UINT8(cb_params.read_all_remote_feat.max_remote_page, p);
+        STREAM_TO_UINT8(cb_params.read_all_remote_feat.max_valid_page, p);
+        cb_params.read_all_remote_feat.le_features = btm_ble_remote_supp_le_features;
+        STREAM_TO_ARRAY(btm_ble_remote_supp_le_features, p, BLE_LL_EXT_FEAT_DATA_LEN);
+    } else {
+        cb_params.read_all_remote_feat.status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT, &cb_params);
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 

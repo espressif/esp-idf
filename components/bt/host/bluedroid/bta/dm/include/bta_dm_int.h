@@ -326,6 +326,10 @@ enum {
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     BTA_DM_API_FRAME_SPACE_UPDATE_EVT,
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    BTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT_EVT,
+    BTA_DM_API_READ_ALL_REMOTE_FEAT_EVT,
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1402,6 +1406,17 @@ typedef struct {
 } tBTA_DM_API_FRAME_SPACE_UPDATE;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+} tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          conn_handle;
+    UINT8                           page_requested;
+} tBTA_DM_API_READ_ALL_REMOTE_FEAT;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 
@@ -1845,6 +1860,10 @@ typedef union {
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     tBTA_DM_API_FRAME_SPACE_UPDATE      ble_frame_space_update;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT ble_read_all_local_supp_feat;
+    tBTA_DM_API_READ_ALL_REMOTE_FEAT    ble_read_all_remote_feat;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BLE_42_DTM_TEST_EN == TRUE)
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
@@ -2530,6 +2549,10 @@ extern void bta_dm_ble_gap_set_decision_instructions(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_frame_space_update(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+extern void bta_dm_ble_gap_read_all_local_supp_features(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_read_all_remote_features(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 

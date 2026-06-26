@@ -329,6 +329,10 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     bta_dm_ble_gap_frame_space_update,                /* BTA_DM_API_FRAME_SPACE_UPDATE_EVT */
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    bta_dm_ble_gap_read_all_local_supp_features,        /* BTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT_EVT */
+    bta_dm_ble_gap_read_all_remote_features,            /* BTA_DM_API_READ_ALL_REMOTE_FEAT_EVT */
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 };
 
 

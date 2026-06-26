@@ -154,6 +154,10 @@ typedef enum {
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     BTC_GAP_BLE_FRAME_SPACE_UPDATE,
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    BTC_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT,
+    BTC_GAP_BLE_READ_ALL_REMOTE_FEAT,
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -618,6 +622,12 @@ typedef union {
         uint16_t spacing_types;
     } frame_space_update;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    struct read_all_remote_feat_args {
+        uint16_t conn_handle;
+        uint8_t page_requested;
+    } read_all_remote_feat;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {
