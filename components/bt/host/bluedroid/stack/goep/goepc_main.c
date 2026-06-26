@@ -354,10 +354,6 @@ static void goepc_sm_state_opened_idle(tGOEPC_CCB *p_ccb, UINT8 event, tGOEPC_DA
         break;
     default:
         GOEPC_TRACE_ERROR("goepc_sm_state_opened_idle unexpected event: 0x%x\n", event);
-        if (p_data->pkt != NULL) {
-            osi_free(p_data->pkt);
-            p_data->pkt = NULL;
-        }
         break;
     }
 }
