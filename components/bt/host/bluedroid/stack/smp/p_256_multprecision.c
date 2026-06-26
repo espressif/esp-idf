@@ -429,7 +429,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[1] < UU);
+        U = 0 - (a[1] < UU);
         c[1] = a[1] - UU;
     } else {
         c[1] = a[1] + U;
@@ -446,7 +446,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[2] < UU);
+        U = 0 - (a[2] < UU);
         c[2] = a[2] - UU;
     } else {
         c[2] = a[2] + U;
@@ -463,7 +463,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[3] < UU);
+        U = 0 - (a[3] < UU);
         c[3] = a[3] - UU;
     } else {
         c[3] = a[3] + U;
@@ -488,7 +488,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[4] < UU);
+        U = 0 - (a[4] < UU);
         c[4] = a[4] - UU;
     } else {
         c[4] = a[4] + U;
@@ -511,7 +511,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[5] < UU);
+        U = 0 - (a[5] < UU);
         c[5] = a[5] - UU;
     } else {
         c[5] = a[5] + U;
@@ -532,7 +532,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[6] < UU);
+        U = 0 - (a[6] < UU);
         c[6] = a[6] - UU;
     } else {
         c[6] = a[6] + U;
@@ -555,7 +555,7 @@ void multiprecision_fast_mod_P256(DWORD *c, DWORD *a)
     if (U & 0x80000000) {
         DWORD UU;
         UU = 0 - U;
-        U = (a[7] < UU);
+        U = 0 - (a[7] < UU);
         c[7] = a[7] - UU;
     } else {
         c[7] = a[7] + U;

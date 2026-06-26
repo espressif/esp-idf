@@ -649,9 +649,9 @@ esp_err_t esp_hf_client_audio_data_send(esp_hf_sync_conn_hdl_t sync_conn_hdl, es
     return ESP_OK;
 }
 
-void esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels)
+esp_err_t esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels)
 {
-    BTA_DmPcmInitSamples(src_sps, bits, channels);
+    return (BTA_DmPcmInitSamples(src_sps, bits, channels) == BTA_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
 void esp_hf_client_pcm_resample_deinit(void)

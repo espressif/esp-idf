@@ -737,8 +737,10 @@ esp_err_t esp_hf_client_audio_data_send(esp_hf_sync_conn_hdl_t sync_conn_hdl, es
  * @param[in]       bits: number of bits per pcm sample (16)
  *
  * @param[in]       channels: number of channels (i.e. mono(1), stereo(2)...)
+ *
+ * @return          esp_err_t
  */
-void esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels);
+esp_err_t esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t channels);
 
 /**
  * @brief           Deinitialize the down sampling converter.
