@@ -1649,6 +1649,14 @@ config BT_BLE_FEAT_SHORTER_CONN_INTERVALS
         esp_ble_gap_set_default_rate_parameters(), esp_ble_gap_read_min_supported_connection_interval()
         and ESP_BLE_GAP_CONN_RATE_* conversion macros in esp_gap_ble_api.h.
 
+config BT_BLE_FEAT_LE_UTP
+    bool "Enable BLE Unified Test Protocol (UTP)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_LE_UTP_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LE Unified Test Protocol (Bluetooth Core 6.2).
+        Supports LE Enable UTP OTA Mode, LE UTP Send commands and LE UTP Receive event.
+
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
     depends on BT_BLE_ENABLED

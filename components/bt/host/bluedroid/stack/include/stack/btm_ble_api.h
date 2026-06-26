@@ -995,6 +995,11 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT 86
 #define    BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT 87
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define    BTM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT        83
+#define    BTM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT                   84
+#define    BTM_BLE_5_GAP_UTP_RECEIVE_EVT                         85
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #define    BTM_BLE_5_GAP_UNKNOWN_EVT                               91
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
@@ -1308,6 +1313,12 @@ typedef struct {
 } tBTM_BLE_READ_MIN_SUPP_CONN_INTERVAL;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+typedef struct {
+    UINT8 len;
+    UINT8 *data;
+} tBTM_BLE_UTP_RECEIVE;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 typedef struct {
     UINT16 sync_handle;
@@ -2032,6 +2043,9 @@ typedef union {
     tBTM_BLE_CONN_RATE_CHANGE                   conn_rate_change;
     tBTM_BLE_READ_MIN_SUPP_CONN_INTERVAL        read_min_supp_conn_interval;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    tBTM_BLE_UTP_RECEIVE                        utp_receive;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3209,6 +3223,10 @@ void BTM_BleSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_inter
 tBTM_STATUS BTM_BleReadMinSuppConnInterval(void);
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+tBTM_STATUS BTM_BleEnableUtpOtaMode(UINT8 enable);
+tBTM_STATUS BTM_BleUtpSend(UINT8 data_len, const UINT8 *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_DTM_TEST_EN == TRUE)

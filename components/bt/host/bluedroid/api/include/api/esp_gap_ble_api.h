@@ -282,6 +282,9 @@ typedef enum {
     ESP_GAP_BLE_CONN_RATE_CHANGE_EVT,                            /*!< When connection rate change event is received, the event comes */
     ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT,        /*!< When set default rate parameters complete, the event comes */
     ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT,        /*!< When read minimum supported connection interval complete, the event comes */
+    ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT,                /*!< When enable UTP OTA mode complete, the event comes */
+    ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT,                           /*!< When UTP send complete, the event comes */
+    ESP_GAP_BLE_UTP_RECEIVE_EVT,                                 /*!< When UTP data is received, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1403,6 +1406,24 @@ typedef struct {
 } esp_ble_gap_min_conn_interval_group_t;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define ESP_BLE_GAP_UTP_DATA_MAX_LEN                    254
+
+/**
+ * @brief Parameters for enabling or disabling LE Unified Test Protocol (UTP) OTA mode
+ */
+typedef struct {
+    uint8_t enable;                   /*!< 0x00: Disable UTP OTA mode, 0x01: Enable UTP OTA mode */
+} esp_ble_gap_enable_utp_ota_mode_params_t;
+
+/**
+ * @brief Parameters for sending LE Unified Test Protocol (UTP) data
+ */
+typedef struct {
+    uint8_t data_len;                 /*!< UTP data length, range: 0x01 to 0xFE */
+    const uint8_t *data;              /*!< Pointer to UTP data */
+} esp_ble_gap_utp_send_params_t;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 typedef enum {
     ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
@@ -2441,9 +2462,30 @@ typedef union {
         esp_bt_status_t status;              /*!< Indicate read minimum supported connection interval operation success status */
         uint8_t min_supported_conn_interval; /*!< Minimum supported connection interval in 125 us units */
         uint8_t num_groups;                  /*!< Number of supported interval groups; 0 if only RCV is supported */
-        esp_ble_gap_min_conn_interval_group_t groups[ESP_BLE_GAP_CONN_RATE_MAX_INTERVAL_GROUPS];
+        esp_ble_gap_min_conn_interval_group_t groups[ESP_BLE_GAP_CONN_RATE_MAX_INTERVAL_GROUPS]; /*!< Supported interval groups; valid when num_groups > 0 */
     } read_min_supp_conn_interval;             /*!< Event parameter of ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT */
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT
+     */
+    struct ble_enable_utp_ota_mode_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate enable UTP OTA mode operation success status */
+    } enable_utp_ota_mode_cmpl;                /*!< Event parameter of ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT
+     */
+    struct ble_utp_send_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate UTP send operation success status */
+    } utp_send_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_UTP_RECEIVE_EVT
+     */
+    struct ble_utp_receive_evt {
+        uint8_t len;                         /*!< UTP data length */
+        uint8_t data[ESP_BLE_GAP_UTP_DATA_MAX_LEN]; /*!< UTP data */
+    } utp_receive;                             /*!< Event parameter of ESP_GAP_BLE_UTP_RECEIVE_EVT */
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -4413,6 +4455,29 @@ esp_err_t esp_ble_gap_set_default_rate_parameters(const esp_ble_gap_default_rate
 esp_err_t esp_ble_gap_read_min_supported_connection_interval(void);
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+/**
+* @brief           Enable or disable LE Unified Test Protocol (UTP) OTA mode.
+*
+* @param[in]       params : Pointer to enable UTP OTA mode parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_enable_utp_ota_mode(const esp_ble_gap_enable_utp_ota_mode_params_t *params);
+
+/**
+* @brief           Send LE UTP data.
+*
+* @param[in]       params : Pointer to UTP send parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_utp_send(const esp_ble_gap_utp_send_params_t *params);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
