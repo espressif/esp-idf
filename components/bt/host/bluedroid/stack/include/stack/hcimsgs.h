@@ -855,6 +855,22 @@ UINT8 btsnd_hcic_ble_read_all_remote_features(UINT16 conn_handle, UINT8 page_req
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define HCIC_PARAM_SIZE_CONNECTION_RATE_REQUEST          20
+#define HCIC_PARAM_SIZE_SET_DEFAULT_RATE_PARAMETERS      18
+
+UINT8 btsnd_hcic_ble_connection_rate_request(UINT16 conn_handle, UINT16 conn_interval_min,
+                                               UINT16 conn_interval_max, UINT16 subrate_min,
+                                               UINT16 subrate_max, UINT16 max_latency,
+                                               UINT16 continuation_number, UINT16 supervision_timeout,
+                                               UINT16 min_ce_len, UINT16 max_ce_len);
+UINT8 btsnd_hcic_ble_set_default_rate_parameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                                   UINT16 subrate_min, UINT16 subrate_max,
+                                                   UINT16 max_latency, UINT16 continuation_number,
+                                                   UINT16 supervision_timeout, UINT16 min_ce_len,
+                                                   UINT16 max_ce_len);
+BOOLEAN btsnd_hcic_ble_read_min_supp_conn_interval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);

@@ -1510,6 +1510,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_read_all_local_supp_features_complete(p);
         break;
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        btm_ble_read_min_supp_conn_interval_complete(p);
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1691,6 +1696,26 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         break;
     }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    case HCI_BLE_READ_ALL_REMOTE_FEATURES:
+        btm_read_all_remote_feat_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case HCI_BLE_CONNECTION_RATE_REQUEST:
+    {
+        UINT16 conn_handle = HCI_INVALID_HANDLE;
+        if (p_cmd != NULL) {
+            p_cmd++; /* skip param length */
+            STREAM_TO_UINT16(conn_handle, p_cmd);
+        }
+        btm_conn_rate_req_cmd_status(status, conn_handle);
+        break;
+    }
+    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        btm_ble_read_min_supp_conn_interval_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     case HCI_BLE_CS_READ_REMOTE_SUPP_CAPS:
         btm_ble_cs_read_remote_supp_caps_cmd_status(status);

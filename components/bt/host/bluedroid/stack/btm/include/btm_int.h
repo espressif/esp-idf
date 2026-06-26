@@ -1203,6 +1203,15 @@ void btm_subrate_req_cmd_status(UINT8 status);
 void btm_frame_space_update_cmd_status(UINT8 status, UINT16 conn_handle);
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+void btm_read_all_remote_feat_cmd_status(UINT8 status);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void btm_conn_rate_req_cmd_status(UINT8 status, UINT16 conn_handle);
+void btm_ble_read_min_supp_conn_interval_cmd_status(UINT8 status);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 void btm_ble_cs_read_local_supp_caps_cmpl_evt(UINT8 *p);
 void btm_ble_cs_read_remote_supp_caps_cmd_status(UINT8 status);
