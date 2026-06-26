@@ -520,6 +520,18 @@ static bool filter_incoming_event(BT_HDR *packet)
         metadata = (hci_cmd_metadata_t *)(wait_entry->data);
         if (metadata->command_status_cb) {
             metadata->command_status_cb(status, &metadata->command, metadata->context);
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
+            /* No Command Complete follows a failed Command Status (Core Spec Vol 4 Part E). */
+            if (status != HCI_SUCCESS) {
+                BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
+                if (!sync_info) {
+                    HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
+                } else if (sync_info->sync_sem && sync_info->opcode == opcode) {
+                    osi_sem_give(&sync_info->sync_sem);
+                    sync_info->opcode = 0;
+                }
+            }
+#endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
         }
 
         goto intercepted;
