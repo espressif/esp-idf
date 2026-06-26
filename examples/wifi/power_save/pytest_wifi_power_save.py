@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 
@@ -61,6 +61,19 @@ def test_wifi_power_save(dut: Dut) -> None:
     indirect=True,
 )
 def test_wifi_power_save_pd_top(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.esp32c6
+@pytest.mark.wifi_ap
+@pytest.mark.parametrize(
+    'config',
+    [
+        'pd_modem',
+    ],
+    indirect=True,
+)
+def test_wifi_power_save_pd_modem(dut: Dut) -> None:
     _run_test(dut)
 
 
