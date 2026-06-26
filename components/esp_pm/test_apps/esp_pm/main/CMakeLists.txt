@@ -1,6 +1,10 @@
 set(sources "test_app_main.c"
             "test_pm.c")
 
+if(CONFIG_PM_TICKLESS_IDLE_WAITI)
+    list(APPEND sources "test_pm_tickless_idle.c")
+endif()
+
 if(CONFIG_SOC_CPU_HAS_FPU AND CONFIG_IDF_TARGET_ARCH_RISCV AND CONFIG_SOC_PM_FPU_RETENTION_BY_SW)
     list(APPEND sources "test_fpu_retention.c")
 endif()
