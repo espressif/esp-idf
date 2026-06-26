@@ -471,6 +471,14 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    /* Honor the documented contract: the output buffer must hold input_length bytes, which are
+     * written unconditionally below; without this check an undersized buffer overflows (CWE-20
+     * -> CWE-787). MBEDTLS_ERR_GCM_BAD_INPUT is #defined to PSA_ERROR_INVALID_ARGUMENT. */
+    if ( output_size < input_length ) {
+        ESP_LOGE(TAG, "Output buffer too small");
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     if ( output > input && (size_t) ( output - input ) < input_length ) {
         return ( PSA_ERROR_INVALID_ARGUMENT );
     }
@@ -595,7 +603,7 @@ static int esp_aes_gcm_crypt_and_tag_partial_hw( esp_gcm_context *ctx,
         return ( ret );
     }
 
-    if ( ( ret = esp_aes_gcm_update( ctx, input, length, output, 0, &olen ) ) != 0 ) {
+    if ( ( ret = esp_aes_gcm_update( ctx, input, length, output, length, &olen ) ) != 0 ) {
         return ( ret );
     }
 
@@ -620,6 +628,12 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
 {
     if (!ctx) {
         ESP_LOGE(TAG, "No AES context supplied");
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    /* GCM tags are 4..16 bytes. Validate here so the hardware path also rejects an invalid
+     * tag_len (the software path enforces this in esp_aes_gcm_finish()); otherwise the HAL tag
+     * read would be driven with an out-of-range length (CWE-125 / CWE-787). */
+    if ( tag_len < 4 || tag_len > 16 ) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 #if CONFIG_MBEDTLS_HARDWARE_GCM
@@ -716,6 +730,13 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
     unsigned char check_tag[16];
     size_t i;
     int diff;
+
+    /* Validate tag_len before use: a zero tag_len makes the constant-time comparison loop
+     * below run zero iterations, so diff stays 0 and any forged ciphertext is accepted as
+     * authentic (CWE-347). Enforce the same 4..16 range as esp_aes_gcm_finish(). */
+    if ( tag_len > 16 || tag_len < 4 ) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
 
     if ( ( ret = esp_aes_gcm_crypt_and_tag( ctx, ESP_AES_DECRYPT, length,
                                             iv, iv_len, aad, aad_len,
