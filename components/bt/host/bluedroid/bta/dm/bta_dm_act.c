@@ -5967,6 +5967,28 @@ void bta_dm_ble_gap_enable_monitor_adv(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+void bta_dm_ble_gap_set_decision_data(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetDecisionData(p_data->ble_set_decision_data.adv_handle,
+                           p_data->ble_set_decision_data.decision_type_flags,
+                           p_data->ble_set_decision_data.data_len,
+                           p_data->ble_set_decision_data.data);
+}
+
+void bta_dm_ble_gap_set_decision_instructions(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetDecisionInstructions(p_data->ble_set_decision_instructions.num_tests,
+                                   p_data->ble_set_decision_instructions.test_flags,
+                                   p_data->ble_set_decision_instructions.test_fields,
+                                   p_data->ble_set_decision_instructions.test_params);
+}
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
+
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 void bta_dm_ble_big_create(tBTA_DM_MSG *p_data)
@@ -6298,6 +6320,7 @@ void bta_dm_api_cs_procedure_enable(tBTA_DM_MSG *p_data)
     BTM_BleGapCsProcEnable(p_data->proc_enable_params.conn_handle, p_data->proc_enable_params.config_id, p_data->proc_enable_params.enable);
 }
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT

@@ -821,6 +821,26 @@ BOOLEAN btsnd_hcic_ble_read_monitor_adv_list_size(void);
 UINT8 btsnd_hcic_ble_enable_monitor_adv(UINT8 enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+#define HCIC_PARAM_SIZE_SET_DECISION_DATA_HDR          3
+#define HCIC_PARAM_SIZE_SET_DECISION_DATA_MAX            251
+#define HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS_HDR    1
+#define HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS_MAX    251
+#define BLE_DECISION_DATA_MAX_LEN                        248
+#define BLE_DECISION_MAX_TESTS                           8
+#define BLE_DECISION_TEST_PARAMS_MAX_LEN                229
+
+UINT8 btsnd_hcic_ble_set_decision_data(UINT8 adv_handle, UINT8 decision_type_flags,
+                                       UINT8 data_len, const UINT8 *p_data);
+UINT8 btsnd_hcic_ble_set_decision_instructions(UINT8 num_tests, const UINT8 *test_flags,
+                                               const UINT8 *test_fields, UINT8 test_params_len,
+                                               const UINT8 *test_params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
+
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);
 
@@ -1350,5 +1370,6 @@ UINT8 btsnd_hcic_ble_cs_set_procedure_params(UINT16 conn_handle, UINT8 config_id
                                 UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
 UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
 
 #endif

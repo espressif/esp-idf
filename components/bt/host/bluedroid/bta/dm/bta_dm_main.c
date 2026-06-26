@@ -322,6 +322,10 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_api_cs_set_procedure_params,               /* BTA_DM_API_CS_SET_PROCEDURE_PARAMS */
     bta_dm_api_cs_procedure_enable,                   /* BTA_DM_API_CS_PROCEDURE_ENABLE */
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    bta_dm_ble_gap_set_decision_data,                 /* BTA_DM_API_SET_DECISION_DATA_EVT */
+    bta_dm_ble_gap_set_decision_instructions,         /* BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT */
+#endif // #if (BLE_FEAT_DBAF == TRUE)
 };
 
 

@@ -2622,6 +2622,7 @@ void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t e
 
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit
@@ -3232,6 +3233,57 @@ void BTA_DmBleGapEnableMonitorAdv(UINT8 enable)
     }
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+void BTA_DmBleGapSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                 UINT8 data_len, const UINT8 *p_data)
+{
+    tBTA_DM_API_SET_DECISION_DATA *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_DECISION_DATA *) osi_malloc(sizeof(tBTA_DM_API_SET_DECISION_DATA))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_DECISION_DATA));
+        p_msg->hdr.event = BTA_DM_API_SET_DECISION_DATA_EVT;
+        p_msg->adv_handle = adv_handle;
+        p_msg->decision_type_flags = decision_type_flags;
+        p_msg->data_len = data_len;
+        if (data_len > 0 && p_data != NULL) {
+            memcpy(p_msg->data, p_data, data_len);
+        }
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                         const UINT8 *test_fields, const UINT8 *test_params)
+{
+    tBTA_DM_API_SET_DECISION_INSTRUCTIONS *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_DECISION_INSTRUCTIONS *) osi_malloc(sizeof(tBTA_DM_API_SET_DECISION_INSTRUCTIONS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_DECISION_INSTRUCTIONS));
+        p_msg->hdr.event = BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT;
+        p_msg->num_tests = num_tests;
+        if (num_tests > 0 && test_flags != NULL) {
+            memcpy(p_msg->test_flags, test_flags, num_tests);
+        }
+        if (num_tests > 0 && test_fields != NULL) {
+            memcpy(p_msg->test_fields, test_fields, num_tests);
+        }
+        if (num_tests > 0 && test_params != NULL) {
+            memcpy(p_msg->test_params, test_params, num_tests * BLE_DECISION_TEST_PARAM_LEN);
+        }
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
+
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
