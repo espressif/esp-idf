@@ -2903,26 +2903,47 @@ uint8_t btm_ble_scan_active_count(void)
     return count;
 }
 
+#if (BLE_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
+extern bool btc_config_has_section(const char *section);
+#endif
+
 uint8_t btm_ble_sec_dev_record_count(void)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
     list_node_t *p_node = NULL;
     uint8_t count = 0;
 
-    /* First look for the non-paired devices for the oldest entry */
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev_rec = list_node(p_node);
+#if (SMP_INCLUDED == TRUE)
         if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE) && (p_dev_rec->ble.key_type != BTM_LE_KEY_NONE)) {
-            BTM_TRACE_DEBUG("%s BLE security device #%d: bd_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+#else
+        if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE)) {
+#endif
+#if (SMP_INCLUDED == TRUE)
+            /* Check if device exists in NVS */
+            char bdstr[18] = {0};
+            bdaddr_to_string((bt_bdaddr_t *)p_dev_rec->bd_addr, bdstr, sizeof(bdstr));
+
+            BTM_TRACE_WARNING("%s device #%d: "MACSTR", key_type=0x%02x (PENC:%d PID:%d PCSRK:%d LENC:%d LID:%d LCSRK:%d), in_nvs=%d",
                             __func__,
                             count,
-                            p_dev_rec->bd_addr[0],
-                            p_dev_rec->bd_addr[1],
-                            p_dev_rec->bd_addr[2],
-                            p_dev_rec->bd_addr[3],
-                            p_dev_rec->bd_addr[4],
-                            p_dev_rec->bd_addr[5]);
+                            MAC2STR(p_dev_rec->bd_addr),
+                            p_dev_rec->ble.key_type,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_PENC) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_PID) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_PCSRK) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_LENC) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_LID) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_LCSRK) ? 1 : 0,
+                            btc_config_has_section(bdstr));
+#else
+            BTM_TRACE_WARNING("%s device #%d: "MACSTR,
+                            __func__,
+                            count,
+                            MAC2STR(p_dev_rec->bd_addr));
+#endif
             count++;
         }
     }
