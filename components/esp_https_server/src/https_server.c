@@ -198,6 +198,10 @@ static esp_err_t httpd_ssl_open(httpd_handle_t server, int sockfd)
         esp_https_server_last_error_t last_error = {0};
         last_error.last_error = ESP_ERR_NO_MEM;
         http_dispatch_event_to_event_loop(HTTPS_SERVER_EVENT_ERROR, &last_error, sizeof(last_error));
+        /* The TLS session (and its underlying socket fd) is already established; free it
+         * before returning so a failed connection under memory pressure does not leak the
+         * SSL context and the socket (CWE-401 / CWE-772). */
+        esp_tls_server_session_delete(tls);
         return ESP_ERR_NO_MEM;
     }
     transport_ctx->tls = tls;
