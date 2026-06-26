@@ -147,40 +147,42 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
     /* See if we have a link control block for the remote device */
     p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, BT_TRANSPORT_LE);
 
-    /* If we don't have one, create one and accept the connection. */
     if (!p_lcb || !p_acl_cb) {
         L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - unknown BD_ADDR "MACSTR"", MAC2STR(rem_bda));
-        return (FALSE);
-    }
-
-    if (p_lcb->transport != BT_TRANSPORT_LE) {
+        status = HCI_ERR_NO_CONNECTION;
+        need_cb = true;
+    } else if (p_lcb->transport != BT_TRANSPORT_LE) {
         L2CAP_TRACE_WARNING ("L2CA_UpdateBleConnParams - BD_ADDR "MACSTR" not LE", MAC2STR(rem_bda));
-        return (FALSE);
-    }
-
-    /* Check whether the request conn params is already set */
-    if ((max_int == p_lcb->current_used_conn_interval) && (latency == p_lcb->current_used_conn_latency) &&
-        (timeout == p_lcb->current_used_conn_timeout)) {
-        status = HCI_SUCCESS;
+        status = HCI_ERR_NO_CONNECTION;
         need_cb = true;
-        L2CAP_TRACE_WARNING("%s connection parameter already set", __func__);
-    }
+    } else {
+        /* Check whether the request conn params is already set */
+        if ((max_int == p_lcb->current_used_conn_interval) && (latency == p_lcb->current_used_conn_latency) &&
+            (timeout == p_lcb->current_used_conn_timeout)) {
+            status = HCI_SUCCESS;
+            need_cb = true;
+            L2CAP_TRACE_WARNING("%s connection parameter already set", __func__);
+        }
 
-    if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL){
-        status = HCI_ERR_ILLEGAL_COMMAND;
-        need_cb = true;
-        L2CAP_TRACE_ERROR("%s connection parameter update in progress, please try later", __func__);
+        if (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL){
+            status = HCI_ERR_ILLEGAL_COMMAND;
+            need_cb = true;
+            L2CAP_TRACE_ERROR("%s connection parameter update in progress, please try later", __func__);
+        }
     }
 
     if (need_cb) {
         tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
         cb_params.conn_params_update.status = status;
-        memcpy(cb_params.conn_params_update.remote_bd_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
+        memcpy(cb_params.conn_params_update.remote_bd_addr,
+               p_lcb ? p_lcb->remote_bd_addr : rem_bda, BD_ADDR_LEN);
         cb_params.conn_params_update.min_conn_int = min_int;
         cb_params.conn_params_update.max_conn_int = max_int;
-        cb_params.conn_params_update.conn_int = p_lcb->current_used_conn_interval;
-        cb_params.conn_params_update.slave_latency = p_lcb->current_used_conn_latency;
-        cb_params.conn_params_update.supervision_tout = p_lcb->current_used_conn_timeout;
+        if (p_lcb) {
+            cb_params.conn_params_update.conn_int = p_lcb->current_used_conn_interval;
+            cb_params.conn_params_update.slave_latency = p_lcb->current_used_conn_latency;
+            cb_params.conn_params_update.supervision_tout = p_lcb->current_used_conn_timeout;
+        }
 
         BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_CONNECTION_PARAMS_UPDATE_EVT, &cb_params);
 
