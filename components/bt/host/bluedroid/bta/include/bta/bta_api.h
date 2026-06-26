@@ -1610,6 +1610,9 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT    BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#define BTA_DM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT           BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
@@ -3074,10 +3077,13 @@ extern void BTA_DmBleGapEnableMonitorAdv(UINT8 enable);
 extern void BTA_DmBleGapSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
                                         UINT8 data_len, const UINT8 *p_data);
 extern void BTA_DmBleGapSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
-                                                const UINT8 *test_fields, UINT8 test_params_len,
-                                                const UINT8 *test_params);
+                                                const UINT8 *test_fields, const UINT8 *test_params);
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+extern void BTA_DmBleGapFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
+                                         UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 

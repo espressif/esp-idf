@@ -275,6 +275,7 @@ typedef enum {
     ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When enable/disable monitor advertising complete, the event comes */
     ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT,                  /*!< When set decision data complete, the event comes */
     ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT,          /*!< When set decision instructions complete, the event comes */
+    ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT,                 /*!< When frame space update complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1281,6 +1282,41 @@ typedef struct {
 } esp_ble_gap_set_decision_instructions_params_t;
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#define ESP_BLE_GAP_FRAME_SPACE_MAX_US                  10000
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_1M_MASK             (1 << 0)
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_2M_MASK             (1 << 1)
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_CODED_MASK          (1 << 2)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_CP_MASK (1 << 0)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_PC_MASK (1 << 1)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_MCES_MASK       (1 << 2)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_CIS_MASK    (1 << 3)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_MSS_CIS_MASK    (1 << 4)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_ACL_IFS_MASK    \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_CP_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_PC_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_ACL_MASK        \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_ACL_IFS_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_MCES_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_CIS_MASK        \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_CIS_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_MSS_CIS_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_MASK                \
+    (ESP_BLE_GAP_FRAME_SPACE_PHY_1M_MASK | ESP_BLE_GAP_FRAME_SPACE_PHY_2M_MASK | \
+     ESP_BLE_GAP_FRAME_SPACE_PHY_CODED_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_MASK            \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_CP_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_PC_MASK | \
+     ESP_BLE_GAP_FRAME_SPACE_SPACING_MCES_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_CIS_MASK | \
+     ESP_BLE_GAP_FRAME_SPACE_SPACING_MSS_CIS_MASK)
+
+/**
+ * @brief Parameters for requesting a Frame Space Update on a connection
+ */
+typedef struct {
+    uint16_t conn_handle;            /*!< Connection handle */
+    uint16_t frame_space_min;        /*!< Minimum frame space in microseconds, max: ESP_BLE_GAP_FRAME_SPACE_MAX_US */
+    uint16_t frame_space_max;        /*!< Maximum frame space in microseconds, max: ESP_BLE_GAP_FRAME_SPACE_MAX_US */
+    uint8_t phys;                    /*!< PHY mask (ESP_BLE_GAP_FRAME_SPACE_PHY_*_MASK) */
+    uint16_t spacing_types;          /*!< Spacing types mask (ESP_BLE_GAP_FRAME_SPACE_SPACING_*_MASK) */
+} esp_ble_gap_frame_space_update_params_t;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
@@ -2253,6 +2289,19 @@ typedef union {
         esp_bt_status_t status;              /*!< Indicate set decision instructions operation success status */
     } set_decision_instructions;             /*!< Event parameter of ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT */
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT
+     */
+    struct ble_frame_space_update_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate frame space update operation success status */
+        uint16_t conn_handle;                /*!< Connection handle */
+        uint8_t initiator;                   /*!< 0x00: Local Host initiated, 0x01: Local Controller initiated, 0x02: Peer initiated */
+        uint16_t frame_space;                /*!< Updated frame space in microseconds */
+        uint8_t phys;                        /*!< PHY mask updated */
+        uint16_t spacing_types;              /*!< Spacing types mask updated */
+    } frame_space_update;                    /*!< Event parameter of ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -4131,6 +4180,18 @@ esp_err_t esp_ble_gap_set_decision_data(const esp_ble_gap_set_decision_data_para
 esp_err_t esp_ble_gap_set_decision_instructions(const esp_ble_gap_set_decision_instructions_params_t *params);
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+/**
+* @brief           Request a Frame Space Update on a connection.
+*
+* @param[in]       params : Pointer to frame space update parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_frame_space_update(const esp_ble_gap_frame_space_update_params_t *params);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
