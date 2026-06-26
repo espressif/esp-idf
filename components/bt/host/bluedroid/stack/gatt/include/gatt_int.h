@@ -425,6 +425,7 @@ typedef struct {
     UINT8           tcb_idx;
 #if (GATTS_INCLUDED == TRUE)
     tGATT_PREPARE_WRITE_RECORD prepare_write_record;    /* prepare write packets record */
+    UINT32          exec_write_rsp_trans_id;            /* trans_id of auto-responded execute write */
 #endif // (GATTS_INCLUDED == TRUE)
 } tGATT_TCB;
 
