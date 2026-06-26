@@ -929,7 +929,9 @@ bool httpd_validate_req_ptr(httpd_req_t *r)
 /* Helper function to get a URL query tag from a query string of the type param1=val1&param2=val2 */
 esp_err_t httpd_query_key_value(const char *qry_str, const char *key, char *val, size_t val_size)
 {
-    if (qry_str == NULL || key == NULL || val == NULL) {
+    /* Reject a zero-size output buffer: val_size - 1 below would underflow to SIZE_MAX,
+     * defeating the truncation check and overflowing the caller's buffer (CWE-191/CWE-787). */
+    if (qry_str == NULL || key == NULL || val == NULL || val_size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1012,7 +1014,9 @@ size_t httpd_req_get_url_query_len(httpd_req_t *r)
 
 esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
 {
-    if (r == NULL || buf == NULL) {
+    /* Reject a zero-size output buffer: buf_len - 1 below would underflow to SIZE_MAX,
+     * defeating the truncation check and overflowing the caller's buffer (CWE-191/CWE-787). */
+    if (r == NULL || buf == NULL || buf_len == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1205,7 +1209,10 @@ esp_err_t httpd_req_get_hdr_value_str_ptr(httpd_req_t *r, const char *field, con
 /* Helper function to get a cookie value from a cookie string of the type "cookie1=val1; cookie2=val2" */
 esp_err_t static httpd_cookie_key_value(const char *cookie_str, const char *key, char *val, size_t *val_size)
 {
-    if (cookie_str == NULL || key == NULL || val == NULL) {
+    /* Reject a NULL or zero-size output buffer: *val_size - 1 below would underflow to
+     * SIZE_MAX, defeating the truncation check and overflowing the caller's buffer
+     * (CWE-191/CWE-787). val_size is also dereferenced below, so it must be non-NULL. */
+    if (cookie_str == NULL || key == NULL || val == NULL || val_size == NULL || *val_size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1329,6 +1336,10 @@ esp_err_t httpd_get_raw_req_data(httpd_req_t *req, char *buf, size_t buf_len)
         return ESP_ERR_INVALID_ARG;
     }
     struct httpd_req_aux *ra = req->aux;
-    memcpy(buf, ra->scratch, buf_len);
+    /* The caller controls buf_len; a value larger than the valid scratch data would read
+     * past the scratch allocation (CWE-125). Clamp to scratch_cur_size. Callers should query
+     * the available length with httpd_get_raw_req_data_len() before calling this. */
+    size_t copy_len = MIN(buf_len, ra->scratch_cur_size);
+    memcpy(buf, ra->scratch, copy_len);
     return ESP_OK;
 }
