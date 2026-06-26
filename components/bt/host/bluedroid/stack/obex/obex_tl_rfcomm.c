@@ -213,6 +213,10 @@ static void rfcomm_server_mgmt_callback(UINT32 code, UINT16 rfc_handle, void* da
         }
         else {
             OBEX_TL_RFCOMM_TRACE_WARNING("found duplicate rfcomm connection\n");
+            if (sr_mgmt_cb_arg != NULL) {
+                sr_mgmt_cb_arg->accept = FALSE;
+            }
+            return;
         }
 
         p_ccb->initiator = FALSE;
