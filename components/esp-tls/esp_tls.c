@@ -572,7 +572,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
  */
 esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd)
 {
-    if (sockfd == NULL || error_handle == NULL) {
+    if (sockfd == NULL || error_handle == NULL || host == NULL || hostlen < 0) {
         return ESP_ERR_INVALID_ARG;
     }
     return tcp_connect(host, hostlen, port, cfg, error_handle, sockfd);
@@ -654,6 +654,10 @@ int esp_tls_conn_http_new_sync(const char *url, const esp_tls_cfg_t *cfg, esp_tl
  */
 int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
+    if (!url || !cfg || !tls) {
+        return -1;
+    }
+
     /* Parse URI */
     struct http_parser_url u;
     http_parser_url_init(&u);
