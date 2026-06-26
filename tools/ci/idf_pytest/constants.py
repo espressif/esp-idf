@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Pytest Related Constants. Don't import third-party packages here.
@@ -97,8 +97,11 @@ ENV_MARKERS = {
     'httpbin': 'runner for tests that need to access the httpbin service',
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
-    'openthread_br': 'tests should be used for openthread border router.',
-    'openthread_bbr': 'tests should be used for openthread border router linked to Internet.',
+    'openthread_br': 'openthread BR basic and multicast cases.',
+    'openthread_br_connect': 'openthread BR attach and connectivity cases.',
+    'openthread_br_service': 'openthread BR service discovery cases.',
+    'openthread_br_nat64': 'openthread BR NAT64 cases without internet.',
+    'openthread_bbr': 'openthread BR cases with internet access.',
     'openthread_sleep': 'tests should be used for openthread sleepy device.',
     'zigbee_multi_dut': 'zigbee runner which have multiple duts.',
     'two_duts': 'tests should be run on runners which has two wifi duts connected.',
