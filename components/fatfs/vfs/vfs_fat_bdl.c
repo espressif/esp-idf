@@ -8,6 +8,7 @@
 #include <string.h>
 #include "esp_check.h"
 #include "esp_log.h"
+#include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "vfs_fat_internal.h"
 #include "diskio_impl.h"
@@ -16,8 +17,6 @@
 static const char *TAG = "vfs_fat_bdl";
 
 static vfs_fat_bdl_ctx_t *s_bdl_ctx[FF_VOLUMES] = {};
-
-extern esp_err_t esp_vfs_set_readonly_flag(const char *base_path);
 
 static bool get_ctx_id_by_bdl(esp_blockdev_handle_t bdl, uint32_t *out_id)
 {
@@ -104,6 +103,8 @@ esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
     ESP_RETURN_ON_FALSE(base_path, ESP_ERR_INVALID_ARG, TAG, "base_path is NULL");
     ESP_RETURN_ON_FALSE(bdl_handle != ESP_BLOCKDEV_HANDLE_INVALID, ESP_ERR_INVALID_ARG, TAG, "invalid BDL handle");
     ESP_RETURN_ON_FALSE(mount_config, ESP_ERR_INVALID_ARG, TAG, "mount_config is NULL");
+    ESP_RETURN_ON_FALSE(!(mount_config->read_only && mount_config->format_if_mount_failed),
+                         ESP_ERR_INVALID_ARG, TAG, "read_only and format_if_mount_failed are mutually exclusive");
 
     BYTE pdrv = 0xFF;
     if (ff_diskio_get_drive(&pdrv) != ESP_OK) {
@@ -165,7 +166,7 @@ esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
     assert(ctx_id != FF_VOLUMES);
     s_bdl_ctx[ctx_id] = ctx;
 
-    if (bdl_handle->device_flags.read_only) {
+    if (bdl_handle->device_flags.read_only || mount_config->read_only) {
         esp_vfs_set_readonly_flag(base_path);
     }
 

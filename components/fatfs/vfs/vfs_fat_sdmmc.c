@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -415,6 +415,8 @@ esp_err_t esp_vfs_fat_mount_initialized(sdmmc_card_t* card,
     if (card == NULL || base_path == NULL || mount_config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    ESP_RETURN_ON_FALSE(!(mount_config->read_only && mount_config->format_if_mount_failed),
+                         ESP_ERR_INVALID_ARG, TAG, "read_only and format_if_mount_failed are mutually exclusive");
 
     esp_err_t err;
 
@@ -435,6 +437,10 @@ esp_err_t esp_vfs_fat_mount_initialized(sdmmc_card_t* card,
 
     err = esp_vfs_fat_save_ctx(ldrv, mount_config, card, dup_path, fs, flags);
     CHECK_EXECUTE_RESULT(err, "esp_vfs_fat_save_ctx failed");
+
+    if (mount_config->read_only) {
+        esp_vfs_set_readonly_flag(base_path);
+    }
 
     return ESP_OK;
 cleanup:

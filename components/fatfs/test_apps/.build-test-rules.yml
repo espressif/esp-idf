@@ -38,6 +38,16 @@ components/fatfs/test_apps/flash_wl:
     - vfs
     - wear_leveling
 
+components/fatfs/test_apps/flash_wl_readonly:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+  depends_components:
+    - esp_partition
+    - fatfs
+    - vfs
+    - wear_leveling
+
 components/fatfs/test_apps/sdcard:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1

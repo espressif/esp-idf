@@ -512,6 +512,19 @@ void esp_vfs_dump_fds(FILE *fp);
  */
 void esp_vfs_dump_registered_paths(FILE *fp);
 
+/**
+ * @brief Set the read-only flag for a registered VFS entry
+ *
+ * After this call, all write operations (open for write, mkdir, unlink,
+ * rename, etc.) on the given path will fail with errno set to EROFS.
+ *
+ * @param base_path  Path prefix of the already-registered VFS entry
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if no VFS entry matches base_path
+ */
+esp_err_t esp_vfs_set_readonly_flag(const char *base_path);
+
 #if !defined(__DOXYGEN__)
   #pragma pop_macro("deprecated")
 #endif

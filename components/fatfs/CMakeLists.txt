@@ -15,6 +15,7 @@ set(requires "wear_levelling" "esp_blockdev")
 if(${target} STREQUAL "linux")
     list(APPEND srcs "port/linux/ffsystem.c"
                   "vfs/vfs_fat.c"
+                  "vfs/vfs_fat_spiflash.c"
                   "vfs/vfs_fat_bdl.c")
     list(APPEND include_dirs "vfs")
     list(APPEND priv_requires "vfs" "linux")
