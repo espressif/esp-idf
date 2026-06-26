@@ -6027,6 +6027,40 @@ void bta_dm_ble_gap_read_all_remote_features(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void bta_dm_ble_gap_connection_rate_request(tBTA_DM_MSG *p_data)
+{
+    BTM_BleConnectionRateRequest(p_data->ble_connection_rate_request.conn_handle,
+                                 p_data->ble_connection_rate_request.conn_interval_min,
+                                 p_data->ble_connection_rate_request.conn_interval_max,
+                                 p_data->ble_connection_rate_request.subrate_min,
+                                 p_data->ble_connection_rate_request.subrate_max,
+                                 p_data->ble_connection_rate_request.max_latency,
+                                 p_data->ble_connection_rate_request.continuation_number,
+                                 p_data->ble_connection_rate_request.supervision_timeout,
+                                 p_data->ble_connection_rate_request.min_ce_len,
+                                 p_data->ble_connection_rate_request.max_ce_len);
+}
+
+void bta_dm_ble_gap_set_default_rate_parameters(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetDefaultRateParameters(p_data->ble_set_default_rate_parameters.conn_interval_min,
+                                    p_data->ble_set_default_rate_parameters.conn_interval_max,
+                                    p_data->ble_set_default_rate_parameters.subrate_min,
+                                    p_data->ble_set_default_rate_parameters.subrate_max,
+                                    p_data->ble_set_default_rate_parameters.max_latency,
+                                    p_data->ble_set_default_rate_parameters.continuation_number,
+                                    p_data->ble_set_default_rate_parameters.supervision_timeout,
+                                    p_data->ble_set_default_rate_parameters.min_ce_len,
+                                    p_data->ble_set_default_rate_parameters.max_ce_len);
+}
+
+void bta_dm_ble_gap_read_min_supp_conn_interval(tBTA_DM_MSG *p_data)
+{
+    (void)p_data;
+    BTM_BleReadMinSuppConnInterval();
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 #if (BLE_FEAT_ISO_EN == TRUE)

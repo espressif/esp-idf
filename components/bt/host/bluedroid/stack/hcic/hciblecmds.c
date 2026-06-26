@@ -3187,6 +3187,86 @@ UINT8 btsnd_hcic_ble_read_all_remote_features(UINT16 conn_handle, UINT8 page_req
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+UINT8 btsnd_hcic_ble_connection_rate_request(UINT16 conn_handle, UINT16 conn_interval_min,
+                                             UINT16 conn_interval_max, UINT16 subrate_min,
+                                             UINT16 subrate_max, UINT16 max_latency,
+                                             UINT16 continuation_number, UINT16 supervision_timeout,
+                                             UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci conn rate req, handle %u int [%u, %u] subrate [%u, %u] latency %u cont %u timeout %u ce [%u, %u]",
+                    conn_handle, conn_interval_min, conn_interval_max, subrate_min, subrate_max,
+                    max_latency, continuation_number, supervision_timeout, min_ce_len, max_ce_len);
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_CONNECTION_RATE_REQUEST);
+    UINT16_TO_STREAM(pp, HCI_BLE_CONNECTION_RATE_REQUEST);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CONNECTION_RATE_REQUEST);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT16_TO_STREAM(pp, conn_interval_min);
+    UINT16_TO_STREAM(pp, conn_interval_max);
+    UINT16_TO_STREAM(pp, subrate_min);
+    UINT16_TO_STREAM(pp, subrate_max);
+    UINT16_TO_STREAM(pp, max_latency);
+    UINT16_TO_STREAM(pp, continuation_number);
+    UINT16_TO_STREAM(pp, supervision_timeout);
+    UINT16_TO_STREAM(pp, min_ce_len);
+    UINT16_TO_STREAM(pp, max_ce_len);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return HCI_SUCCESS;
+}
+
+UINT8 btsnd_hcic_ble_set_default_rate_parameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                                   UINT16 subrate_min, UINT16 subrate_max,
+                                                   UINT16 max_latency, UINT16 continuation_number,
+                                                   UINT16 supervision_timeout, UINT16 min_ce_len,
+                                                   UINT16 max_ce_len)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set default rate, int [%u, %u] subrate [%u, %u] latency %u cont %u timeout %u ce [%u, %u]",
+                    conn_interval_min, conn_interval_max, subrate_min, subrate_max,
+                    max_latency, continuation_number, supervision_timeout, min_ce_len, max_ce_len);
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_SET_DEFAULT_RATE_PARAMETERS);
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_DEFAULT_RATE_PARAMETERS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_DEFAULT_RATE_PARAMETERS);
+    UINT16_TO_STREAM(pp, conn_interval_min);
+    UINT16_TO_STREAM(pp, conn_interval_max);
+    UINT16_TO_STREAM(pp, subrate_min);
+    UINT16_TO_STREAM(pp, subrate_max);
+    UINT16_TO_STREAM(pp, max_latency);
+    UINT16_TO_STREAM(pp, continuation_number);
+    UINT16_TO_STREAM(pp, supervision_timeout);
+    UINT16_TO_STREAM(pp, min_ce_len);
+    UINT16_TO_STREAM(pp, max_ce_len);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+BOOLEAN btsnd_hcic_ble_read_min_supp_conn_interval(void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(0)) == NULL) {
+        return FALSE;
+    }
+    pp = (UINT8 *)(p + 1);
+    p->len = HCIC_PREAMBLE_SIZE;
+    p->offset = 0;
+
+    UINT16_TO_STREAM(pp, HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL);
+    UINT8_TO_STREAM(pp, 0);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 UINT8 btsnd_hcic_ble_set_periodic_adv_subevt_data(UINT8 adv_handle, UINT8 num_subevents_with_data, ble_subevent_params *subevent_params)
