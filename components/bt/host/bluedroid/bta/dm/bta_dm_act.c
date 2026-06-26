@@ -6023,6 +6023,19 @@ void bta_dm_ble_gap_frame_space_update(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+void bta_dm_ble_gap_read_all_local_supp_features(tBTA_DM_MSG *p_data)
+{
+    (void)p_data;
+    BTM_BleReadAllLocalSuppFeatures();
+}
+
+void bta_dm_ble_gap_read_all_remote_features(tBTA_DM_MSG *p_data)
+{
+    BTM_BleReadAllRemoteFeatures(p_data->ble_read_all_remote_feat.conn_handle,
+                                 p_data->ble_read_all_remote_feat.page_requested);
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 

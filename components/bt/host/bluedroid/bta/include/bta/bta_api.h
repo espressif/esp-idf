@@ -1614,6 +1614,10 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT           BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define BTA_DM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT     BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT         BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 
@@ -3085,6 +3089,10 @@ extern void BTA_DmBleGapFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_
                                          UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+extern void BTA_DmBleGapReadAllLocalSuppFeatures(void);
+extern void BTA_DmBleGapReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 
