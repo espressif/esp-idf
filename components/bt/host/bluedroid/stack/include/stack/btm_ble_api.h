@@ -989,6 +989,12 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT            79
 #define    BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT    80
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define    BTM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT    81
+#define    BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT                    82
+#define    BTM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT 86
+#define    BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT 87
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #define    BTM_BLE_5_GAP_UNKNOWN_EVT                               91
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
@@ -1270,6 +1276,37 @@ typedef struct {
 } tBTM_BLE_FRAME_SPACE_UPDATE;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+} tBTM_BLE_CONNECTION_RATE_REQUEST_CMPL;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+    UINT16 conn_interval;
+    UINT16 subrate_factor;
+    UINT16 peripheral_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} tBTM_BLE_CONN_RATE_CHANGE;
+
+#define BTM_BLE_MAX_CONN_INTERVAL_GROUPS    41
+
+typedef struct {
+    UINT16 min_125us;
+    UINT16 max_125us;
+    UINT16 stride_125us;
+} tBTM_BLE_MIN_CONN_INTERVAL_GROUP;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT8 min_supported_conn_interval;
+    UINT8 num_groups;
+    tBTM_BLE_MIN_CONN_INTERVAL_GROUP *groups;
+} tBTM_BLE_READ_MIN_SUPP_CONN_INTERVAL;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 typedef struct {
@@ -1989,6 +2026,11 @@ typedef union {
 #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     tBTM_BLE_FRAME_SPACE_UPDATE                 frame_space_update;
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    tBTM_BLE_CONNECTION_RATE_REQUEST_CMPL       conn_rate_request;
+    tBTM_BLE_CONN_RATE_CHANGE                   conn_rate_change;
+    tBTM_BLE_READ_MIN_SUPP_CONN_INTERVAL        read_min_supp_conn_interval;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3153,6 +3195,18 @@ tBTM_STATUS BTM_BleReadAllLocalSuppFeatures(void);
 tBTM_STATUS BTM_BleReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested);
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+tBTM_STATUS BTM_BleConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                         UINT16 conn_interval_max, UINT16 subrate_min,
+                                         UINT16 subrate_max, UINT16 max_latency,
+                                         UINT16 continuation_number, UINT16 supervision_timeout,
+                                         UINT16 min_ce_len, UINT16 max_ce_len);
+void BTM_BleSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                     UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                     UINT16 continuation_number, UINT16 supervision_timeout,
+                                     UINT16 min_ce_len, UINT16 max_ce_len);
+tBTM_STATUS BTM_BleReadMinSuppConnInterval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

@@ -1662,6 +1662,19 @@ config BT_BLE_FEAT_LL_EXT_FEAT
         Enable LL Extended Feature Set (Bluetooth Core 6.0).
         Supports LE Read All Local/Remote Supported Features HCI commands.
 
+config BT_BLE_FEAT_SHORTER_CONN_INTERVALS
+    bool "Enable BLE Shorter Connection Intervals (Core 6.2)"
+    depends on BT_BLE_FEAT_CONN_SUBRATING && (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SHORTER_CONN_INTERVALS_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Shorter Connection Intervals feature (Bluetooth Core 6.2).
+        Requires Connection Subrating (Core 5.3) per [Vol 6] Part B, Section 4.6.50.
+        Supports LE Connection Rate Request, LE Set Default Rate Parameters,
+        LE Read Minimum Supported Connection Interval commands and LE Connection Rate Change event.
+        Connection intervals use 125 us units (minimum 375 us). Use esp_ble_gap_connection_rate_request(),
+        esp_ble_gap_set_default_rate_parameters(), esp_ble_gap_read_min_supported_connection_interval()
+        and ESP_BLE_GAP_CONN_RATE_* conversion macros in esp_gap_ble_api.h.
+
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
     depends on BT_BLE_ENABLED

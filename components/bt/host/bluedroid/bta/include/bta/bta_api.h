@@ -1619,6 +1619,12 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT         BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define BTA_DM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT      BTM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_CONN_RATE_CHANGE_EVT                      BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT
+#define BTA_DM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT  BTM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT  BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
@@ -3094,6 +3100,19 @@ extern void BTA_DmBleGapReadAllLocalSuppFeatures(void);
 extern void BTA_DmBleGapReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested);
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+extern void BTA_DmBleGapConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                              UINT16 conn_interval_max, UINT16 subrate_min,
+                                              UINT16 subrate_max, UINT16 max_latency,
+                                              UINT16 continuation_number, UINT16 supervision_timeout,
+                                              UINT16 min_ce_len, UINT16 max_ce_len);
+extern void BTA_DmBleGapSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                                 UINT16 subrate_min, UINT16 subrate_max,
+                                                 UINT16 max_latency, UINT16 continuation_number,
+                                                 UINT16 supervision_timeout, UINT16 min_ce_len,
+                                                 UINT16 max_ce_len);
+extern void BTA_DmBleGapReadMinSuppConnInterval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 
 #if (BLE_FEAT_ISO_EN == TRUE)
