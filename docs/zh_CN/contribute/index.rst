@@ -8,41 +8,43 @@
 如何贡献
 --------------
 
-欢迎为 ESP-IDF 贡献内容，如修复问题、新增功能、添加文档等。你可通过 `Github Pull Requests <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`_ 提交你的贡献内容。
+欢迎为 ESP-IDF 贡献内容，如 bug 修复、新增功能、完善文档等。你可通过 `GitHub Pull Requests <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`_ 提交贡献内容。
 
 准备工作
 --------------
 
-在提交 Pull Request 前，请检查以下要点：
+在提交 Pull Request 前，请先确认以下注意事项：
 
-* 贡献内容是否完全是自己的成果，或已获得与 Apache License 2.0 兼容的开源许可？如果不是，我们不能接受该内容。了解更多信息，请见 :doc:`copyright-guide`。
+* 贡献内容是否完全由你独立创作，或已获得与 Apache License 2.0 兼容的开源许可？如不符合上述条件，我们将无法接受该贡献内容。如需了解更多信息，请参阅 :doc:`版权标头指南 <copyright-guide>`。
 
-* 要提交的代码是否符合 ESP-IDF :doc:`style-guide`？
+* 要提交的代码是否符合 :doc:`乐鑫 IoT 开发框架风格指南 <style-guide>`？
 
-* 是否安装了 ESP-IDF :doc:`pre-commit 钩子 <install-pre-commit-hook>`？
+* 如果贡献内容新增或修改了 Python 工具，是否遵循 :ref:`Python 代码风格指南 <python-code-style>`，并在适当的场景下复用了 ``esp-pylib`` 提供的公共辅助代码？
 
-* 代码文档是否符合 :doc:`documenting-code` 的要求？
+* 是否安装了 ESP-IDF 项目的 :doc:`pre-commit 钩子 <install-pre-commit-hook>`？
+
+* 代码文档是否符合 :doc:`编写代码文档 <documenting-code>` 的要求？
 
 * 代码是否注释充分，便于读者理解其结构？
 
-* 是否为贡献的代码提供文档或示例？要写出好的示例，请参考 :idf:`examples` readme。
+* 贡献代码是否附有文档或示例？关于如何编写优质示例，请参阅 :idf:`examples` 中的 readme 文件。
 
-* 注释或文档是否以英语书写并表达清晰，不存在拼写或语法错误？
+* 注释和文档是否以英语书写，且表意清晰，无拼写或语法错误？
 
-* 欢迎贡献新的代码示例。了解更多信息，请参考 :doc:`creating-examples`。
+* 欢迎贡献代码示例，具体请参阅 :doc:`创建示例项目 <creating-examples>`。
 
-* 如果需提交多个内容，是否将所有内容按照改动的类型（每个 pull request 对应一个主要改动）进行分组？是否有命名类似 “fixed typo” 的提交 `压缩到了此前的提交中 <https://eli.thegreenplace.net/2014/02/19/squashing-github-pull-requests-into-a-single-commit/>`_？
+* 若某份贡献包含多次代码提交 (commit)，是否按照改动的内容分组处理（每个 pull request 对应一项主要改动）？对于修改错字一类的次要 commit，是否已 `压缩合并到之前的 commit 中 <https://eli.thegreenplace.net/2014/02/19/squashing-github-pull-requests-into-a-single-commit/>`_？
 
-* 如不能确定上述任意内容，请提交 Pull Request，并向我们寻求反馈。
+* 如不能确定上述任意内容，请提交 Pull Request 并在评论区寻求反馈。
 
 Pull Request 提交流程
 --------------------------
 
-创建 Pull Request 后，PR 评论区中可能有一些关于该请求的讨论。
+创建 Pull Request 后，PR 评论区中可能会有一些讨论。
 
-Pull Request 准备好待合并时，首先会合并到我们的内部 git 系统中进行内部自动化测试。
+Pull Request 准备好待合并时，首先会合并到乐鑫的内部 Git 系统中进行自动化测试。
 
-测试流程通过后，你贡献的内容将合并到公共 GitHub 库。
+测试流程通过后，你的贡献内容将合并到公开 GitHub 仓库。
 
 法律规范
 ------------

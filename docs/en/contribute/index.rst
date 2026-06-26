@@ -17,7 +17,9 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Is the contribution entirely your own work, or already licensed under an Apache License 2.0 compatible Open Source License? If not then we unfortunately cannot accept it. Please check the :doc:`Copyright Header Guide <copyright-guide>` for additional information.
 
-* Does any new code conform to the ESP-IDF :doc:`Style Guide <style-guide>`?
+* Does any new code conform to the :doc:`Espressif IoT Development Framework Style Guide <style-guide>`?
+
+* If your contribution adds or changes Python tooling, does it follow the :ref:`Python Code Style <python-code-style>` and reuse shared helpers from ``esp-pylib`` where applicable?
 
 * Have you installed the :doc:`pre-commit hook <install-pre-commit-hook>` for ESP-IDF project?
 
