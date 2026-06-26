@@ -24,6 +24,8 @@ if(CONFIG_SOC_LP_VAD_SUPPORTED)
     list(APPEND app_sources "test_lp_core_vad.c")
 endif()
 
+list(APPEND app_sources "test_lp_periph_config_cpp.cpp")
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 
