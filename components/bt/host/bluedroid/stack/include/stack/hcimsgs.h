@@ -832,15 +832,22 @@ UINT8 btsnd_hcic_ble_enable_monitor_adv(UINT8 enable);
 #define HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS_MAX    251
 #define BLE_DECISION_DATA_MAX_LEN                        248
 #define BLE_DECISION_MAX_TESTS                           8
-#define BLE_DECISION_TEST_PARAMS_MAX_LEN                229
+#define BLE_DECISION_TEST_PARAM_LEN                      16
+#define BLE_DECISION_TEST_PARAMS_MAX_LEN                 (BLE_DECISION_MAX_TESTS * BLE_DECISION_TEST_PARAM_LEN)
+#define HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS(n)     (HCIC_PARAM_SIZE_SET_DECISION_INSTRUCTIONS_HDR + (n) * 18)
 
 UINT8 btsnd_hcic_ble_set_decision_data(UINT8 adv_handle, UINT8 decision_type_flags,
                                        UINT8 data_len, const UINT8 *p_data);
 UINT8 btsnd_hcic_ble_set_decision_instructions(UINT8 num_tests, const UINT8 *test_flags,
-                                               const UINT8 *test_fields, UINT8 test_params_len,
-                                               const UINT8 *test_params);
+                                               const UINT8 *test_fields, const UINT8 *test_params);
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#define HCIC_PARAM_SIZE_FRAME_SPACE_UPDATE               9
+
+UINT8 btsnd_hcic_ble_frame_space_update(UINT16 conn_handle, UINT16 frame_space_min,
+                                        UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 

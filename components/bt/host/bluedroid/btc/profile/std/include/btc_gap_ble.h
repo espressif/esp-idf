@@ -151,6 +151,9 @@ typedef enum {
     BTC_GAP_BLE_SET_DECISION_DATA,
     BTC_GAP_BLE_SET_DECISION_INSTRUCTIONS,
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    BTC_GAP_BLE_FRAME_SPACE_UPDATE,
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -606,6 +609,15 @@ typedef union {
         uint8_t *test_params;
     } set_decision_instructions;
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    struct frame_space_update_args {
+        uint16_t conn_handle;
+        uint16_t frame_space_min;
+        uint16_t frame_space_max;
+        uint8_t phys;
+        uint16_t spacing_types;
+    } frame_space_update;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {
