@@ -187,6 +187,10 @@ typedef enum {
     BTC_GAP_BLE_CS_SET_PROCEDURE_PARAMS,
     BTC_GAP_BLE_CS_PROCEDURE_ENABLE,
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    BTC_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS,
+    BTC_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS,
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
     BTC_GAP_BLE_ACT_SET_KEY_MATERIAL,
 #endif
@@ -798,6 +802,16 @@ typedef union {
         uint8_t enable;
     } cs_procedure_enable_params;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    struct cs_set_security_requirements_params_args {
+        uint16_t conn_handle;
+        uint64_t cs_security_requirements;
+    } cs_set_security_requirements_params;
+
+    struct cs_set_default_security_requirements_params_args {
+        uint64_t cs_security_requirements;
+    } cs_set_default_security_requirements_params;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
