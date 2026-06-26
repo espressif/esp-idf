@@ -956,9 +956,12 @@ INT32 SDP_ReadRecord(UINT32 handle, UINT8 *p_data, INT32 *p_data_len)
     UINT16          start = 0;
     UINT16          end = 0xffff;
     tSDP_ATTRIBUTE  *p_attr;
-    UINT16          rem_len;
+    INT32          rem_len;
     UINT8           *p_rsp;
 
+    if (p_data_len && *p_data_len <= 3) {
+        return offset;
+    }
     /* Find the record in the database */
     p_rec = sdp_db_find_record(handle);
     if (p_rec && p_data && p_data_len) {
@@ -967,12 +970,17 @@ INT32 SDP_ReadRecord(UINT32 handle, UINT8 *p_data, INT32 *p_data_len)
             /* Check if attribute fits. Assume 3-byte value type/length */
             rem_len = *p_data_len - (UINT16) (p_rsp - p_data);
 
-            if (p_attr->len > (UINT32)(rem_len - 6)) {
+            UINT16 required_len = sdpu_get_attrib_entry_len(p_attr);
+            if (rem_len < (INT32)required_len) {
                 break;
             }
 
             p_rsp = sdpu_build_attrib_entry (p_rsp, p_attr);
 
+            // Check overflow
+            if (p_attr->id == UINT16_MAX) {
+                break;
+            }
             /* next attr id */
             start = p_attr->id + 1;
         }

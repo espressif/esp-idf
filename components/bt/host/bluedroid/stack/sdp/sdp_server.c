@@ -485,6 +485,10 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
             /* If doing a range, stick with this one till no more attributes found */
             if (attr_seq.attr_entry[xx].start != attr_seq.attr_entry[xx].end) {
+                // Check overflow
+                if (p_attr->id == UINT16_MAX) {
+                    continue;
+                }
                 /* Update for next time through */
                 attr_seq.attr_entry[xx].start = p_attr->id + 1;
 
@@ -774,6 +778,10 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
 
                 /* If doing a range, stick with this one till no more attributes found */
                 if (attr_seq.attr_entry[xx].start != attr_seq.attr_entry[xx].end) {
+                    // Check overflow
+                    if (p_attr->id == UINT16_MAX) {
+                        continue;
+                    }
                     /* Update for next time through */
                     attr_seq.attr_entry[xx].start = p_attr->id + 1;
 

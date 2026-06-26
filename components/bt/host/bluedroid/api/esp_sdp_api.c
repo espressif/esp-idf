@@ -46,6 +46,12 @@ static bool esp_sdp_record_integrity_check(esp_bluetooth_sdp_record_t *record)
             }
             break;
 
+        case ESP_SDP_TYPE_OPP_SERVER:
+            if (record->ops.supported_formats_list_len <= 0 || record->ops.supported_formats_list_len > SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH) {
+                LOG_ERROR("Invalid supported_formats_list_len in record ops!\n");
+                ret = false;
+            }
+
         default:
             break;
         }
