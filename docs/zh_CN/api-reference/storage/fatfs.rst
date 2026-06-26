@@ -34,6 +34,46 @@ FatFs 组件提供了便利的封装函数，用于通过 VFS 层挂载文件系
 #. 在挂载路径下的路径上使用标准文件 API（``stdio.h`` 或 POSIX）。
 #. 关闭打开的文件，并调用相应的卸载辅助函数。
 
+.. _fatfs-read-only-mount:
+
+只读挂载
+--------
+
+通过将 ``esp_vfs_fat_mount_config_t.read_only`` 设置为 ``true``，可以将任何 FAT 文件系统以只读模式挂载。设置此标志后，VFS 层将拒绝所有写操作，例如 ``open`` （写模式）、``mkdir``、``unlink``、``rename``、``truncate`` 等，并将 ``errno`` 设置为 ``EROFS``，无论底层存储类型如何。
+
+当不需要写入访问时，此功能可用于保护文件系统完整性。例如，从带有磨损均衡功能的 SPI flash 分区读取配置或资源数据：
+
+.. code-block:: c
+
+    esp_vfs_fat_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5,
+        .read_only = true,
+    };
+    wl_handle_t wl_handle;
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl("/data", "storage",
+                                                     &mount_config, &wl_handle);
+
+    // 读取操作正常
+    FILE *f = fopen("/data/config.json", "r");  // 正常
+
+    // 所有写操作在 VFS 层被拒绝
+    FILE *w = fopen("/data/new.txt", "w");      // 返回 NULL，errno == EROFS
+    mkdir("/data/subdir", 0755);                 // 返回 -1，errno == EROFS
+
+``read_only`` 标志适用于所有挂载辅助函数：
+
+- :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl` — 带有磨损均衡功能的 SPI flash（只读但保留 WL 元数据）。
+- :cpp:func:`esp_vfs_fat_spiflash_mount_ro` — 原始只读 SPI flash。
+- :cpp:func:`esp_vfs_fat_sdmmc_mount` / :cpp:func:`esp_vfs_fat_sdspi_mount` — SD 卡。
+- :cpp:func:`esp_vfs_fat_bdl_mount` — 块设备层。
+
+.. note::
+
+    ``read_only`` 标志由 VFS 层强制执行，而非 FatFs 库本身。它阻止 POSIX/stdio 写操作到达文件系统，但不会修改磁盘上的文件系统状态或元数据。底层存储驱动（如磨损均衡）仍正常初始化。
+
+    上述通过 ``read_only`` 标志实现的只读挂载方式与 :cpp:func:`esp_vfs_fat_spiflash_mount_ro` 不同，后者完全跳过磨损均衡并直接访问原始 flash 分区。当需要磨损均衡层处于活动状态（例如确保正确解释 WL 格式的分区）但不希望应用程序修改文件系统时，请在调用 :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl` 时设置 ``read_only = true``。
+
 .. _fatfs-configuration-options:
 
 配置选项

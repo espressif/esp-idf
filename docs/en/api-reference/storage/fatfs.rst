@@ -34,6 +34,46 @@ The general mounting workflow is:
 #. Use standard file APIs (``stdio.h`` or POSIX) on paths under the mount path.
 #. Close open files and call the matching unmount helper.
 
+.. _fatfs-read-only-mount:
+
+Read-Only Mount
+---------------
+
+Any FAT filesystem can be mounted in read-only mode by setting ``esp_vfs_fat_mount_config_t.read_only`` to ``true``. When this flag is set, the VFS layer rejects all write operations (``open`` for write, ``mkdir``, ``unlink``, ``rename``, ``truncate``, etc.) with ``errno`` set to ``EROFS``, regardless of the underlying storage type.
+
+This is useful for protecting filesystem integrity when write access is not needed — for example, when reading configuration or asset data from a wear-levelled SPI flash partition:
+
+.. code-block:: c
+
+    esp_vfs_fat_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5,
+        .read_only = true,
+    };
+    wl_handle_t wl_handle;
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl("/data", "storage",
+                                                     &mount_config, &wl_handle);
+
+    // Reading works normally
+    FILE *f = fopen("/data/config.json", "r");  // OK
+
+    // All write operations are rejected at the VFS level
+    FILE *w = fopen("/data/new.txt", "w");      // Returns NULL, errno == EROFS
+    mkdir("/data/subdir", 0755);                 // Returns -1, errno == EROFS
+
+The ``read_only`` flag works with all mount helpers:
+
+- :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl` — wear-levelled SPI flash (read-only with WL metadata preserved).
+- :cpp:func:`esp_vfs_fat_spiflash_mount_ro` — raw read-only SPI flash.
+- :cpp:func:`esp_vfs_fat_sdmmc_mount` / :cpp:func:`esp_vfs_fat_sdspi_mount` — SD cards.
+- :cpp:func:`esp_vfs_fat_bdl_mount` — Block Device Layer.
+
+.. note::
+
+    The ``read_only`` flag is enforced by the VFS layer, not the FatFs library itself. It prevents POSIX/stdio write operations from reaching the filesystem, but does not modify the on-disk filesystem state or metadata. The underlying storage driver (e.g., wear leveling) remains initialized normally.
+
+    Mounting with ``read_only = true`` is distinct from :cpp:func:`esp_vfs_fat_spiflash_mount_ro`, which skips wear leveling entirely and accesses the raw flash partition directly. Use ``read_only = true`` with :cpp:func:`esp_vfs_fat_spiflash_mount_rw_wl` when you need the wear-leveling layer active (e.g., to ensure correct interpretation of a WL-formatted partition) but do not want the application to modify the filesystem.
+
 .. _fatfs-configuration-options:
 
 Configuration Options
