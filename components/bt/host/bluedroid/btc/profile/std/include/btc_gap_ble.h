@@ -163,6 +163,10 @@ typedef enum {
     BTC_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS,
     BTC_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL,
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    BTC_GAP_BLE_ENABLE_UTP_OTA_MODE,
+    BTC_GAP_BLE_UTP_SEND,
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -658,6 +662,15 @@ typedef union {
         uint16_t max_ce_len;
     } set_default_rate_parameters;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    struct enable_utp_ota_mode_args {
+        uint8_t enable;
+    } enable_utp_ota_mode;
+    struct utp_send_args {
+        uint8_t data_len;
+        uint8_t *data;
+    } utp_send;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {

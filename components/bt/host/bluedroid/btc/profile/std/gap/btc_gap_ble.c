@@ -1382,6 +1382,29 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+        case BTA_DM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT;
+            param.enable_utp_ota_mode_cmpl.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT;
+            param.utp_send_cmpl.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        }
+        case BTA_DM_BLE_5_GAP_UTP_RECEIVE_EVT: {
+            msg.act = ESP_GAP_BLE_UTP_RECEIVE_EVT;
+            param.utp_receive.len = params->utp_receive.len;
+            if (params->utp_receive.data && params->utp_receive.len > 0) {
+                if (params->utp_receive.len > ESP_BLE_GAP_UTP_DATA_MAX_LEN) {
+                    param.utp_receive.len = ESP_BLE_GAP_UTP_DATA_MAX_LEN;
+                }
+                memcpy(param.utp_receive.data, params->utp_receive.data, param.utp_receive.len);
+            }
+            break;
+        }
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT: {
             param.adv_terminate.status = params->adv_term.status;
@@ -2654,6 +2677,24 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    case BTC_GAP_BLE_UTP_SEND: {
+        btc_ble_5_gap_args_t *src = (btc_ble_5_gap_args_t *)p_src;
+        btc_ble_5_gap_args_t *dst = (btc_ble_5_gap_args_t *)p_dest;
+
+        dst->utp_send.data = NULL;
+        if (src->utp_send.data_len > 0 && src->utp_send.data) {
+            dst->utp_send.data = osi_malloc(src->utp_send.data_len);
+            if (dst->utp_send.data) {
+                memcpy(dst->utp_send.data, src->utp_send.data, src->utp_send.data_len);
+            } else {
+                BTC_TRACE_WARNING("%s no mem, utp data drop %u", __func__, src->utp_send.data_len);
+                dst->utp_send.data_len = 0;
+            }
+        }
+        break;
+    }
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     default:
         BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
         break;
@@ -2958,6 +2999,15 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
         break;
     }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    case BTC_GAP_BLE_UTP_SEND: {
+        uint8_t *data = ((btc_ble_5_gap_args_t *)msg->arg)->utp_send.data;
+        if (data) {
+            osi_free(data);
+        }
+        break;
+    }
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     default:
         BTC_TRACE_DEBUG("Unhandled deep free %d\n", msg->act);
         break;
@@ -3678,6 +3728,14 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapReadMinSuppConnInterval();
         break;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    case BTC_GAP_BLE_ENABLE_UTP_OTA_MODE:
+        BTA_DmBleGapEnableUtpOtaMode(arg_5->enable_utp_ota_mode.enable);
+        break;
+    case BTC_GAP_BLE_UTP_SEND:
+        BTA_DmBleGapUtpSend(arg_5->utp_send.data_len, arg_5->utp_send.data);
+        break;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case BTC_GAP_BLE_SET_PA_SUBEVT_DATA:
         BTA_DmBleGapSetPASubevtData(arg_5->per_adv_subevent_data_params.adv_handle, arg_5->per_adv_subevent_data_params.num_subevents_with_data, (uint8_t *)(arg_5->per_adv_subevent_data_params.subevent_params));

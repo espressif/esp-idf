@@ -3428,6 +3428,41 @@ void BTA_DmBleGapReadMinSuppConnInterval(void)
 }
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
+#if (BLE_FEAT_LE_UTP == TRUE)
+void BTA_DmBleGapEnableUtpOtaMode(UINT8 enable)
+{
+    tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE));
+        p_msg->hdr.event = BTA_DM_API_ENABLE_UTP_OTA_MODE_EVT;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapUtpSend(UINT8 data_len, const UINT8 *p_data)
+{
+    tBTA_DM_API_BLE_UTP_SEND *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if (data_len == 0 || data_len > BLE_UTP_DATA_MAX_LEN || p_data == NULL) {
+        APPL_TRACE_ERROR("%s invalid params", __func__);
+        return;
+    }
+    if ((p_msg = (tBTA_DM_API_BLE_UTP_SEND *) osi_malloc(sizeof(tBTA_DM_API_BLE_UTP_SEND))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_UTP_SEND));
+        p_msg->hdr.event = BTA_DM_API_UTP_SEND_EVT;
+        p_msg->data_len = data_len;
+        memcpy(p_msg->data, p_data, data_len);
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
