@@ -607,6 +607,14 @@ void btm_ble_cs_subevt_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT *subevt_res
 void btm_ble_cs_subevt_continue_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT *subevt_continue_result);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
+static inline tBTM_STATUS btm_ble_status_from_hci(UINT8 hci_status)
+{
+    return (hci_status == HCI_SUCCESS) ? BTM_SUCCESS : (tBTM_STATUS)(BTM_HCI_ERROR | hci_status);
+}
+
+#define BTM_BLE_TRACE_HCI_CMD_FAIL(func, hci_status) \
+    BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = 0x%x", (func), (hci_status))
+
 
 /*
 #ifdef __cplusplus
