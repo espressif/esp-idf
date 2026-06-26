@@ -1117,15 +1117,17 @@ tBTM_STATUS BTM_BleStartAdvWithParams(UINT16 adv_int_min, UINT16 adv_int_max, UI
 
     tBTM_STATUS status = BTM_SUCCESS;
     /* update adv params */
-    if (btsnd_hcic_ble_write_adv_params (adv_int_min,
+    UINT8 hci_status = btsnd_hcic_ble_write_adv_params (adv_int_min,
                                         adv_int_max,
                                         adv_type,
                                         own_bda_type,
                                         p_dir_bda->type,
                                         p_dir_bda->bda,
                                         chnl_map,
-                                        p_cb->afp) != HCI_SUCCESS) {
-        status = BTM_NO_RESOURCES;
+                                        p_cb->afp);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        status = btm_ble_status_from_hci(hci_status);
     }
 
     osi_mutex_unlock(&btm_lock);
@@ -1175,13 +1177,13 @@ tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
             (scan_mode == BTM_BLE_SCAN_MODE_ACTI || scan_mode == BTM_BLE_SCAN_MODE_PASS) &&
             (scan_duplicate_filter < BTM_BLE_SCAN_DUPLICATE_MAX) && (scan_window <= scan_interval)) {
 
-        if ((btsnd_hcic_ble_set_scan_params(scan_mode, (UINT16)scan_interval,
-                                       (UINT16)scan_window,
-                                       addr_type_own,
-                                       scan_filter_policy)) != HCI_SUCCESS) {
-            ret = BTM_ILLEGAL_VALUE;
-            BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d\n",
-                            scan_interval, scan_window);
+        UINT8 hci_status = btsnd_hcic_ble_set_scan_params(scan_mode, (UINT16)scan_interval,
+                                   (UINT16)scan_window,
+                                   addr_type_own,
+                                   scan_filter_policy);
+        if (hci_status != HCI_SUCCESS) {
+            BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+            ret = btm_ble_status_from_hci(hci_status);
         } else {
             p_cb->scan_type = scan_mode;
             p_cb->scan_interval = scan_interval;
@@ -1232,8 +1234,10 @@ tBTM_STATUS BTM_BleWriteScanRsp(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
         BTM_TRACE_WARNING("%s, Partial data write into ADV", __func__);
     }
 
-    if (btsnd_hcic_ble_set_scan_rsp_data((UINT8)(p - rsp_data), rsp_data) != HCI_SUCCESS) {
-        ret = BTM_ILLEGAL_VALUE;
+    UINT8 hci_status = btsnd_hcic_ble_set_scan_rsp_data((UINT8)(p - rsp_data), rsp_data);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        ret = btm_ble_status_from_hci(hci_status);
         btm_cb.ble_ctr_cb.inq_var.scan_rsp = FALSE;
     } else {
         ret = BTM_SUCCESS;
@@ -1265,8 +1269,10 @@ tBTM_STATUS BTM_BleWriteScanRspRaw(UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_le
     tBTM_STATUS     ret = BTM_SUCCESS;
 
     osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
-    if (btsnd_hcic_ble_set_scan_rsp_data((UINT8)raw_scan_rsp_len, p_raw_scan_rsp) != HCI_SUCCESS) {
-        ret = BTM_NO_RESOURCES;
+    UINT8 hci_status = btsnd_hcic_ble_set_scan_rsp_data((UINT8)raw_scan_rsp_len, p_raw_scan_rsp);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        ret = btm_ble_status_from_hci(hci_status);
     }
     osi_mutex_unlock(&btm_lock);
 
@@ -1377,9 +1383,11 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
 
     p_cb_data->data_mask &= ~mask;
 
-    if ((btsnd_hcic_ble_set_adv_data((UINT8)(p_cb_data->p_pad - p_cb_data->ad_data),
-                                    p_cb_data->ad_data)) != HCI_SUCCESS) {
-        ret = BTM_NO_RESOURCES;
+    UINT8 hci_status = btsnd_hcic_ble_set_adv_data((UINT8)(p_cb_data->p_pad - p_cb_data->ad_data),
+                                    p_cb_data->ad_data);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        ret = btm_ble_status_from_hci(hci_status);
     }
     osi_mutex_unlock(&btm_lock);
     return ret;
@@ -1400,8 +1408,10 @@ tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len)
 {
     tBTM_STATUS ret = BTM_SUCCESS;
     osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
-    if ((btsnd_hcic_ble_set_adv_data((UINT8)raw_adv_len, p_raw_adv)) != HCI_SUCCESS) {
-        ret = BTM_NO_RESOURCES;
+    UINT8 hci_status = btsnd_hcic_ble_set_adv_data((UINT8)raw_adv_len, p_raw_adv);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        ret = btm_ble_status_from_hci(hci_status);
     }
     osi_mutex_unlock(&btm_lock);
 
@@ -2065,15 +2075,17 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
             /* update adv params */
-            if (btsnd_hcic_ble_write_adv_params (adv_int_min,
+            UINT8 hci_status = btsnd_hcic_ble_write_adv_params (adv_int_min,
                                                   adv_int_max,
                                                   evt_type,
                                                   own_addr_type,
                                                   init_addr_type,
                                                   p_addr_ptr,
                                                   p_cb->adv_chnl_map,
-                                                  p_cb->afp) != HCI_SUCCESS) {
-                status = BTM_NO_RESOURCES;
+                                                  p_cb->afp);
+            if (hci_status != HCI_SUCCESS) {
+                BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+                status = btm_ble_status_from_hci(hci_status);
             } else {
                 p_cb->evt_type = evt_type;
                 p_cb->adv_addr_type = own_addr_type;
@@ -2163,15 +2175,17 @@ tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode)
             btm_ble_stop_adv();
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
-            if (btsnd_hcic_ble_write_adv_params (adv_int_min,
+            UINT8 hci_status = btsnd_hcic_ble_write_adv_params (adv_int_min,
                                                   adv_int_max,
                                                   evt_type,
                                                   own_addr_type,
                                                   peer_addr_type,
                                                   p_addr_ptr,
                                                   p_cb->adv_chnl_map,
-                                                  p_cb->afp) != HCI_SUCCESS) {
-                status = BTM_NO_RESOURCES;
+                                                  p_cb->afp);
+            if (hci_status != HCI_SUCCESS) {
+                BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+                status = btm_ble_status_from_hci(hci_status);
             } else {
                 p_cb->evt_type = evt_type;
                 p_cb->adv_addr_type = own_addr_type;
@@ -3241,8 +3255,10 @@ tBTM_STATUS btm_ble_start_scan(void)
         p_inq->scan_duplicate_filter = BTM_BLE_DUPLICATE_DISABLE;
     }
     /* start scan, disable duplicate filtering */
-    if ((btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter)) != HCI_SUCCESS) {
-        status = BTM_NO_RESOURCES;
+    UINT8 hci_status = btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        status = btm_ble_status_from_hci(hci_status);
     } else {
         btm_cb.ble_ctr_cb.inq_var.state |= BTM_BLE_SCANNING;
 #if (BLE_TOPOLOGY_CHECK == TRUE)
@@ -3312,8 +3328,10 @@ static tBTM_STATUS btm_ble_stop_discover(void)
         /* Clear the inquiry callback if set */
         btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
         /* stop discovery now */
-        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE) != HCI_SUCCESS) {
-            status = BTM_NO_RESOURCES;
+        UINT8 hci_status = btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+        if (hci_status != HCI_SUCCESS) {
+            BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+            status = btm_ble_status_from_hci(hci_status);
         }
 #if (BLE_TOPOLOGY_CHECK == TRUE)
         /* reset status */
@@ -3428,8 +3446,10 @@ tBTM_STATUS btm_ble_start_adv(void)
 #if (BLE_TOPOLOGY_CHECK == TRUE)
     btm_ble_adv_states_operation(btm_ble_set_topology_mask, p_cb->evt_type);
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-    if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE) != HCI_SUCCESS) {
-        rt = BTM_NO_RESOURCES;
+    UINT8 hci_status = btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE);
+    if (hci_status != HCI_SUCCESS) {
+        BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+        rt = btm_ble_status_from_hci(hci_status);
         p_cb->state = temp_state;
         p_cb->adv_mode = adv_mode;
 #if (BLE_TOPOLOGY_CHECK == TRUE)
@@ -3472,7 +3492,8 @@ tBTM_STATUS btm_ble_stop_adv(void)
         /* clear all adv states */
         btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE) != HCI_SUCCESS) {
+        UINT8 hci_status = btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE);
+        if (hci_status != HCI_SUCCESS) {
             // reset state
             p_cb->fast_adv_on = temp_fast_adv_on;
             p_cb->adv_mode = temp_adv_mode;
@@ -3481,7 +3502,8 @@ tBTM_STATUS btm_ble_stop_adv(void)
 #if (BLE_TOPOLOGY_CHECK == TRUE)
             btm_ble_set_topology_mask (temp_mask);
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-            rt = BTM_NO_RESOURCES;
+            BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
+            rt = btm_ble_status_from_hci(hci_status);
         }
         if(rt != HCI_SUCCESS) {
             p_cb->adv_mode = temp_adv_mode;
