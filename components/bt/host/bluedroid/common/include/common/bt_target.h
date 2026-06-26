@@ -425,6 +425,11 @@
 #define BLE_FEAT_FRAME_SPACE_UPDATE     FALSE
 #endif
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (UC_BT_BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define BLE_FEAT_LL_EXT_FEAT     TRUE
+#else
+#define BLE_FEAT_LL_EXT_FEAT     FALSE
+#endif
 
 
 

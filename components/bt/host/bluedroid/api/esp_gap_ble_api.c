@@ -2057,6 +2057,45 @@ esp_err_t esp_ble_gap_frame_space_update(const esp_ble_gap_frame_space_update_pa
 }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+esp_err_t esp_ble_gap_read_all_local_supp_features(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_read_all_remote_features(const esp_ble_gap_read_all_remote_feat_params_t *params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+    memset(&arg, 0, sizeof(arg));
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (params == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (params->page_requested > ESP_BLE_GAP_LL_EXT_FEAT_MAX_PAGE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_READ_ALL_REMOTE_FEAT;
+    arg.read_all_remote_feat.conn_handle = params->conn_handle;
+    arg.read_all_remote_feat.page_requested = params->page_requested;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 
