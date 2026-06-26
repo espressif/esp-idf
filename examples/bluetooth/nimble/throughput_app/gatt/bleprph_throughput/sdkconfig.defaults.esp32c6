@@ -1,0 +1,5 @@
+# === High-Performance Tuning ===
+# This config is only applied when building for the ESP32-C6 target
+# It is necessary for the C6 to reach 750+ kbps and 1.3+ Mbps throughput.
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_FREERTOS_HZ=1000
