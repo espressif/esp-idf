@@ -322,6 +322,10 @@ enum {
     BTA_DM_API_CS_SET_PROCEDURE_PARAMS,
     BTA_DM_API_CS_PROCEDURE_ENABLE,
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    BTA_DM_API_SET_DECISION_DATA_EVT,
+    BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT,
+#endif // #if (BLE_FEAT_DBAF == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1204,6 +1208,7 @@ typedef struct {
     UINT8 config_id;
     UINT8 enable;
 } tBTA_DM_API_CS_PROC_ENABLE_PARAMS;
+
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 #endif /* BLE_INCLUDED */
@@ -1376,6 +1381,28 @@ typedef struct {
     UINT8                           enable;
 } tBTA_DM_API_ENABLE_MONITOR_ADV;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           adv_handle;
+    UINT8                           decision_type_flags;
+    UINT8                           data_len;
+    UINT8                           data[BLE_DECISION_DATA_MAX_LEN];
+} tBTA_DM_API_SET_DECISION_DATA;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           num_tests;
+    UINT8                           test_flags[BLE_DECISION_MAX_TESTS];
+    UINT8                           test_fields[BLE_DECISION_MAX_TESTS];
+    UINT8                           test_params[BLE_DECISION_TEST_PARAMS_MAX_LEN];
+} tBTA_DM_API_SET_DECISION_INSTRUCTIONS;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
 
 typedef struct {
     BT_HDR                          hdr;
@@ -1813,6 +1840,10 @@ typedef union {
     tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE ble_read_monitor_adv_list_size;
     tBTA_DM_API_ENABLE_MONITOR_ADV      ble_enable_monitor_adv;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    tBTA_DM_API_SET_DECISION_DATA       ble_set_decision_data;
+    tBTA_DM_API_SET_DECISION_INSTRUCTIONS ble_set_decision_instructions;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
 #if (BLE_42_DTM_TEST_EN == TRUE)
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
@@ -2491,6 +2522,15 @@ extern void bta_dm_ble_gap_clear_monitor_adv_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_read_monitor_adv_list_size(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_enable_monitor_adv(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+extern void bta_dm_ble_gap_set_decision_data(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_set_decision_instructions(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)

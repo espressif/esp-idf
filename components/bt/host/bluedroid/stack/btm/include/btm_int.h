@@ -1201,6 +1201,7 @@ void btm_read_remote_trans_pwr_level_cmpl(UINT8 status);
 void btm_subrate_req_cmd_status(UINT8 status);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
+
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 void btm_ble_cs_read_local_supp_caps_cmpl_evt(UINT8 *p);
 void btm_ble_cs_read_remote_supp_caps_cmd_status(UINT8 status);
