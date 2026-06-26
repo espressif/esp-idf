@@ -147,6 +147,10 @@ typedef enum {
     BTC_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE,
     BTC_GAP_BLE_ENABLE_MONITOR_ADV,
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    BTC_GAP_BLE_SET_DECISION_DATA,
+    BTC_GAP_BLE_SET_DECISION_INSTRUCTIONS,
+#endif // #if (BLE_FEAT_DBAF == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -588,6 +592,20 @@ typedef union {
         uint8_t enable;
     } enable_monitor_adv;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    struct set_decision_data_args {
+        uint8_t adv_handle;
+        uint8_t decision_type_flags;
+        uint8_t data_len;
+        uint8_t *data;
+    } set_decision_data;
+    struct set_decision_instructions_args {
+        uint8_t num_tests;
+        uint8_t *test_flags;
+        uint8_t *test_fields;
+        uint8_t *test_params;
+    } set_decision_instructions;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {

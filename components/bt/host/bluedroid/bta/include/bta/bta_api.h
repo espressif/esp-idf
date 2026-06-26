@@ -1605,6 +1605,15 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+#define BTA_DM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT            BTM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT    BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
+
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #define BTA_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT               BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
 #define BTA_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT             BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT
@@ -3058,6 +3067,18 @@ extern void BTA_DmBleGapClearMonitorAdvList(void);
 extern void BTA_DmBleGapReadMonitorAdvListSize(void);
 extern void BTA_DmBleGapEnableMonitorAdv(UINT8 enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+extern void BTA_DmBleGapSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                        UINT8 data_len, const UINT8 *p_data);
+extern void BTA_DmBleGapSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                                const UINT8 *test_fields, UINT8 test_params_len,
+                                                const UINT8 *test_params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+
+
+
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
