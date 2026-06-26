@@ -1153,7 +1153,9 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     }
 
     if (p_clcb->auto_update == BTA_GATTC_DISC_WAITING) {
-        /* start discovery again */
+        /* Service change arrived during discovery; restart even if p_q_cmd is set.
+         * Mirrors bta_gattc_op_cmpl(). */
+        p_clcb->auto_update = BTA_GATTC_REQ_WAITING;
         bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
     }
     /* get any queued command to proceed */
