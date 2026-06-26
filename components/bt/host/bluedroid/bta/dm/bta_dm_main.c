@@ -326,6 +326,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_decision_data,                 /* BTA_DM_API_SET_DECISION_DATA_EVT */
     bta_dm_ble_gap_set_decision_instructions,         /* BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT */
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    bta_dm_ble_gap_frame_space_update,                /* BTA_DM_API_FRAME_SPACE_UPDATE_EVT */
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 };
 
 

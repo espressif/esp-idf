@@ -323,6 +323,9 @@ enum {
     BTA_DM_API_SET_DECISION_DATA_EVT,
     BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT,
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    BTA_DM_API_FRAME_SPACE_UPDATE_EVT,
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1388,6 +1391,16 @@ typedef struct {
 } tBTA_DM_API_SET_DECISION_INSTRUCTIONS;
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          conn_handle;
+    UINT16                          frame_space_min;
+    UINT16                          frame_space_max;
+    UINT8                           phys;
+    UINT16                          spacing_types;
+} tBTA_DM_API_FRAME_SPACE_UPDATE;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
@@ -1829,6 +1842,9 @@ typedef union {
     tBTA_DM_API_SET_DECISION_DATA       ble_set_decision_data;
     tBTA_DM_API_SET_DECISION_INSTRUCTIONS ble_set_decision_instructions;
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    tBTA_DM_API_FRAME_SPACE_UPDATE      ble_frame_space_update;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #if (BLE_42_DTM_TEST_EN == TRUE)
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
@@ -2510,6 +2526,9 @@ extern void bta_dm_ble_gap_set_decision_data(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_decision_instructions(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+extern void bta_dm_ble_gap_frame_space_update(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 

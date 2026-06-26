@@ -3280,6 +3280,26 @@ void BTA_DmBleGapSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flag
 }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+void BTA_DmBleGapFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
+                                  UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types)
+{
+    tBTA_DM_API_FRAME_SPACE_UPDATE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_FRAME_SPACE_UPDATE *) osi_malloc(sizeof(tBTA_DM_API_FRAME_SPACE_UPDATE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_FRAME_SPACE_UPDATE));
+        p_msg->hdr.event = BTA_DM_API_FRAME_SPACE_UPDATE_EVT;
+        p_msg->conn_handle = conn_handle;
+        p_msg->frame_space_min = frame_space_min;
+        p_msg->frame_space_max = frame_space_max;
+        p_msg->phys = phys;
+        p_msg->spacing_types = spacing_types;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
