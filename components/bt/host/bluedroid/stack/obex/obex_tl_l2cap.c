@@ -554,7 +554,7 @@ void obex_tl_l2cap_congestion_status_ind(UINT16 lcid, BOOLEAN is_congested)
 **                  other APIs
 **
 *******************************************************************************/
-void obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
+UINT16 obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
 {
     assert(callback != NULL);
 #if (OBEX_DYNAMIC_MEMORY)
@@ -562,7 +562,7 @@ void obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
         obex_tl_l2cap_cb_ptr = (tOBEX_TL_L2CAP_CB *)osi_malloc(sizeof(tOBEX_TL_L2CAP_CB));
         if (!obex_tl_l2cap_cb_ptr) {
             OBEX_TL_L2CAP_TRACE_ERROR("OBEX over L2CAP transport layer initialize failed, no memory\n");
-            assert(0);
+            return OBEX_TL_FAILED;
         }
     }
 #endif /* #if (OBEX_DYNAMIC_MEMORY) */
@@ -583,6 +583,7 @@ void obex_tl_l2cap_init(tOBEX_TL_CBACK *callback)
     p_reg_info->pL2CA_DataInd_Cb            = obex_tl_l2cap_buf_data_ind;
     p_reg_info->pL2CA_CongestionStatus_Cb   = obex_tl_l2cap_congestion_status_ind;
     p_reg_info->pL2CA_TxComplete_Cb         = NULL;
+    return OBEX_TL_SUCCESS;
 }
 
 /*******************************************************************************

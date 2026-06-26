@@ -67,12 +67,16 @@ UINT16 OBEX_Init(void)
     memset(&obex_cb, 0, sizeof(tOBEX_CB));
     obex_cb.tl_ops[OBEX_OVER_L2CAP] = obex_tl_l2cap_ops_get();
     if (obex_cb.tl_ops[OBEX_OVER_L2CAP] && obex_cb.tl_ops[OBEX_OVER_L2CAP]->init) {
-        obex_cb.tl_ops[OBEX_OVER_L2CAP]->init(obex_tl_l2cap_callback);
+        if (obex_cb.tl_ops[OBEX_OVER_L2CAP]->init(obex_tl_l2cap_callback) == 0) {
+            return OBEX_NO_RESOURCES;
+        }
     }
 #if (RFCOMM_INCLUDED == TRUE)
     obex_cb.tl_ops[OBEX_OVER_RFCOMM] = obex_tl_rfcomm_ops_get();
     if (obex_cb.tl_ops[OBEX_OVER_RFCOMM] && obex_cb.tl_ops[OBEX_OVER_RFCOMM]->init) {
-        obex_cb.tl_ops[OBEX_OVER_RFCOMM]->init(obex_tl_rfcomm_callback);
+        if(obex_cb.tl_ops[OBEX_OVER_RFCOMM]->init(obex_tl_rfcomm_callback) == 0) {
+            return OBEX_NO_RESOURCES;
+        }
     }
 #endif
     obex_cb.trace_level = BT_TRACE_LEVEL_ERROR;
@@ -89,16 +93,18 @@ UINT16 OBEX_Init(void)
 *******************************************************************************/
 void OBEX_Deinit(void)
 {
-    if (obex_cb.tl_ops[OBEX_OVER_L2CAP] && obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit) {
-        obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit();
-    }
-#if (RFCOMM_INCLUDED == TRUE)
-    if (obex_cb.tl_ops[OBEX_OVER_RFCOMM] && obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit) {
-        obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit();
-    }
-#endif
 #if (OBEX_DYNAMIC_MEMORY)
     if (obex_cb_ptr) {
+#endif
+        if (obex_cb.tl_ops[OBEX_OVER_L2CAP] && obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit) {
+            obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit();
+        }
+#if (RFCOMM_INCLUDED == TRUE)
+        if (obex_cb.tl_ops[OBEX_OVER_RFCOMM] && obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit) {
+            obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit();
+        }
+#endif
+#if (OBEX_DYNAMIC_MEMORY)
         osi_free(obex_cb_ptr);
         obex_cb_ptr = NULL;
     }
@@ -325,6 +331,9 @@ UINT16 OBEX_BuildRequest(tOBEX_PARSE_INFO *info, UINT16 buff_size, BT_HDR **out_
     if (buff_size < OBEX_MIN_PACKET_SIZE || info == NULL || out_pkt == NULL) {
         return OBEX_INVALID_PARAM;
     }
+    if (UINT16_MAX - buff_size < sizeof(BT_HDR) + OBEX_BT_HDR_MIN_OFFSET + OBEX_BT_HDR_RESERVE_LEN) {
+        return OBEX_NO_RESOURCES;
+    }
     buff_size += sizeof(BT_HDR) + OBEX_BT_HDR_MIN_OFFSET + OBEX_BT_HDR_RESERVE_LEN;
 
     BT_HDR *p_buf = (BT_HDR *)osi_malloc(buff_size);
@@ -385,6 +394,9 @@ UINT16 OBEX_BuildResponse(tOBEX_PARSE_INFO *info, UINT16 buff_size, BT_HDR **out
 {
     if (buff_size < OBEX_MIN_PACKET_SIZE || info == NULL || out_pkt == NULL) {
         return OBEX_INVALID_PARAM;
+    }
+    if (0xFFFF - buff_size < sizeof(BT_HDR) + OBEX_BT_HDR_MIN_OFFSET + OBEX_BT_HDR_RESERVE_LEN) {
+        return OBEX_NO_RESOURCES;
     }
     buff_size += sizeof(BT_HDR) + OBEX_BT_HDR_MIN_OFFSET + OBEX_BT_HDR_RESERVE_LEN;
 
