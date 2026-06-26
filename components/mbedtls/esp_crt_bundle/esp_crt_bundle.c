@@ -101,9 +101,11 @@ static const uint8_t* esp_crt_get_key(const cert_t cert)
     return esp_crt_get_name(cert) + esp_crt_get_name_len(cert);
 }
 
-static uint16_t esp_crt_get_len(const cert_t cert)
+static uint32_t esp_crt_get_len(const cert_t cert)
 {
-    return CRT_HEADER_SIZE + esp_crt_get_name_len(cert) + esp_crt_get_key_len(cert);
+    /* Widened to uint32_t: name_len and key_len are each uint16_t, so their sum plus the
+     * header can exceed UINT16_MAX and would otherwise wrap, under-reporting the cert size. */
+    return (uint32_t)CRT_HEADER_SIZE + (uint32_t)esp_crt_get_name_len(cert) + (uint32_t)esp_crt_get_key_len(cert);
 }
 
 static uint32_t esp_crt_get_cert_offset(const bundle_t bundle, const uint32_t index)
@@ -428,6 +430,11 @@ static bool esp_crt_check_bundle(const uint8_t* const x509_bundle, const size_t 
         return false;
     }
 
+    if (unlikely(num_certs == 0)) {
+        // No certificates: the loops below compute num_certs - 1, which would underflow.
+        return false;
+    }
+
     // Check all offsets for consistency with certificate data
     for (uint32_t i = 0; i < num_certs - 1; ++i) {
         const uint32_t off = offsets[i];
@@ -438,6 +445,17 @@ static bool esp_crt_check_bundle(const uint8_t* const x509_bundle, const size_t 
         if (unlikely(offsets[i + 1] != expected_next_offset || expected_next_offset >= bundle_size)) {
             return false;
         }
+    }
+
+    // The loop above stops at num_certs - 1, so the final certificate's extent is never
+    // validated; check it explicitly so its key data cannot run past the bundle (CWE-125).
+    const uint32_t last_off = offsets[num_certs - 1];
+    if (unlikely(last_off >= bundle_size)) {
+        return false;
+    }
+    const uint32_t last_len = esp_crt_get_len(x509_bundle + last_off);
+    if (unlikely((uint64_t)last_off + last_len > bundle_size)) {
+        return false;
     }
 
     // All checks passed.
