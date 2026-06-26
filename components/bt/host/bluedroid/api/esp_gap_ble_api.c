@@ -2945,6 +2945,58 @@ esp_err_t esp_ble_cs_security_enable(uint16_t conn_handle)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+/* Host does not validate conn_handle range or CS_Security_Requirements reserved bits; Controller checks. */
+esp_err_t esp_ble_cs_set_security_requirements(esp_ble_cs_set_security_requirements_params *params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+    memset(&arg, 0, sizeof(arg));
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!params) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS;
+
+    arg.cs_set_security_requirements_params.conn_handle = params->conn_handle;
+    arg.cs_set_security_requirements_params.cs_security_requirements = params->cs_security_requirements;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+/* Host does not validate CS_Security_Requirements reserved bits; Controller checks. */
+esp_err_t esp_ble_cs_set_default_security_requirements(esp_ble_cs_set_default_security_requirements_params *params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+    memset(&arg, 0, sizeof(arg));
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!params) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS;
+
+    arg.cs_set_default_security_requirements_params.cs_security_requirements = params->cs_security_requirements;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 esp_err_t esp_ble_cs_set_default_settings(esp_ble_cs_set_default_settings_params *default_setting_params)
 {

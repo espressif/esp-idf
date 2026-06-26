@@ -2622,6 +2622,33 @@ void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t e
 
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void BTA_DmBleGapCsSetSecurityRequirements(uint16_t conn_handle, uint64_t cs_security_requirements)
+{
+    tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS *)
+         osi_malloc(sizeof(tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_SECURITY_REQUIREMENTS;
+        p_msg->conn_handle = conn_handle;
+        p_msg->cs_security_requirements = cs_security_requirements;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetDefaultSecurityRequirements(uint64_t cs_security_requirements)
+{
+    tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS *)
+         osi_malloc(sizeof(tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS;
+        p_msg->cs_security_requirements = cs_security_requirements;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /*******************************************************************************
 **

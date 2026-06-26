@@ -1709,6 +1709,17 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.cs_security_enable.status = btc_btm_status_to_esp_status(params->cs_security_enable.status);
             param.cs_security_enable.conn_handle =  params->cs_security_enable.conn_handle;
             break;
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+        case BTA_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT;
+            param.cs_set_security_requirements.status = btc_btm_status_to_esp_status(params->cs_set_security_requirements.status);
+            param.cs_set_security_requirements.conn_handle = params->cs_set_security_requirements.conn_handle;
+            break;
+        case BTA_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT:
+            msg.act = ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT;
+            param.cs_set_default_security_requirements.status = btc_btm_status_to_esp_status(params->cs_set_default_security_requirements.status);
+            break;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
         case BTA_BLE_GAP_CS_CONFIG_CMPL_EVT:
             msg.act = ESP_GAP_BLE_CS_CONFIG_CMPL_EVT;
             param.cs_config_update.status = btc_btm_status_to_esp_status(params->cs_config_update.status);
@@ -3785,6 +3796,15 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapCsProcEnable(arg_5->cs_procedure_enable_params.conn_handle, arg_5->cs_procedure_enable_params.config_id, arg_5->cs_procedure_enable_params.enable);
         break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    case BTC_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS:
+        BTA_DmBleGapCsSetSecurityRequirements(arg_5->cs_set_security_requirements_params.conn_handle,
+                                              arg_5->cs_set_security_requirements_params.cs_security_requirements);
+        break;
+    case BTC_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS:
+        BTA_DmBleGapCsSetDefaultSecurityRequirements(arg_5->cs_set_default_security_requirements_params.cs_security_requirements);
+        break;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
     case BTC_GAP_BLE_ACT_SET_KEY_MATERIAL:
         BTA_DmBleSetKeyMaterial(arg->set_key_material.session_key, arg->set_key_material.iv);

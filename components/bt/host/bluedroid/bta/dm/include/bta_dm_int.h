@@ -322,6 +322,10 @@ enum {
     BTA_DM_API_CS_SET_PROCEDURE_PARAMS,
     BTA_DM_API_CS_PROCEDURE_ENABLE,
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    BTA_DM_API_CS_SET_SECURITY_REQUIREMENTS,
+    BTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS,
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #if (BLE_FEAT_DBAF == TRUE)
     BTA_DM_API_SET_DECISION_DATA_EVT,
     BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT,
@@ -1216,6 +1220,18 @@ typedef struct {
     UINT8 enable;
 } tBTA_DM_API_CS_PROC_ENABLE_PARAMS;
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT64 cs_security_requirements;
+} tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT64 cs_security_requirements;
+} tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 #endif /* BLE_INCLUDED */
@@ -2015,6 +2031,10 @@ typedef union {
     tBTA_DM_API_CS_SET_PROC_PARAMS set_proc_params;
     tBTA_DM_API_CS_PROC_ENABLE_PARAMS proc_enable_params;
 #endif
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS set_security_requirements_params;
+    tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS set_default_security_requirements_params;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2709,4 +2729,8 @@ void bta_dm_api_cs_set_channel_classification(tBTA_DM_MSG *p_data);
 void bta_dm_api_cs_set_procedure_params(tBTA_DM_MSG *p_data);
 void bta_dm_api_cs_procedure_enable(tBTA_DM_MSG *p_data);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void bta_dm_api_cs_set_security_requirements(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_set_default_security_requirements(tBTA_DM_MSG *p_data);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #endif /* BTA_DM_INT_H */

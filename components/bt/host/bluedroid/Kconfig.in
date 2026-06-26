@@ -1459,7 +1459,21 @@ config BT_BLE_FEAT_CHANNEL_SOUNDING
     depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CHANNEL_SOUNDING_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
-        Enable BLE channel sounding
+        Enable BLE channel sounding.
+        CS Security Requirements (Core 6.3) is configured separately via
+        BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS.
+
+config BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS
+    bool "Enable BLE CS Security Requirements (Core 6.3)"
+    depends on BT_BLE_FEAT_CHANNEL_SOUNDING && ((BT_CONTROLLER_ENABLED && SOC_BLE_CS_SECURITY_REQUIREMENTS_SUPPORTED) || BT_CONTROLLER_DISABLED) # NOERROR
+    default n
+    help
+        Enable Channel Sounding security requirements HCI commands (Bluetooth Core 6.3).
+        Supports LE CS Set Security Requirements (0x00A7) and
+        LE CS Set Default Security Requirements (0x00A8).
+        Use esp_ble_cs_set_security_requirements() and
+        esp_ble_cs_set_default_security_requirements().
+
 config BT_BLE_FEAT_ADV_MONITOR
     bool "Enable BLE Advertising Monitor (LE Monitor Advertisement)"
     depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_ADV_MONITOR_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
