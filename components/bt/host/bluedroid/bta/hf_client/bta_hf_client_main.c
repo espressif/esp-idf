@@ -300,6 +300,14 @@ void bta_hf_client_scb_disable(void)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
+    if (bta_hf_client_cb.scb.p_disc_db != NULL) {
+        (void)SDP_CancelServiceSearch(bta_hf_client_cb.scb.p_disc_db);
+        bta_hf_client_free_db(NULL);
+    }
+    bta_hf_client_cb.scb.colli_tmr_on = FALSE;
+    bta_sys_free_timer(&bta_hf_client_cb.scb.colli_timer);
+    bta_hf_client_at_reset();
+
     bta_hf_client_scb_init();
 
     if (bta_hf_client_cb.p_cback) {
