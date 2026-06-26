@@ -1619,6 +1619,14 @@ config BT_BLE_FEAT_FRAME_SPACE_UPDATE
     help
         Enable Frame Space Update feature (Bluetooth Core 6.0).
 
+config BT_BLE_FEAT_LL_EXT_FEAT
+    bool "Enable BLE LL Extended Feature Set"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_LL_EXT_FEAT_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LL Extended Feature Set (Bluetooth Core 6.0).
+        Supports LE Read All Local/Remote Supported Features HCI commands.
+
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
     depends on BT_BLE_ENABLED

@@ -3326,6 +3326,35 @@ void BTA_DmBleGapFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
 }
 #endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+void BTA_DmBleGapReadAllLocalSuppFeatures(void)
+{
+    tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT *) osi_malloc(sizeof(tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT));
+        p_msg->hdr.event = BTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested)
+{
+    tBTA_DM_API_READ_ALL_REMOTE_FEAT *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_ALL_REMOTE_FEAT *) osi_malloc(sizeof(tBTA_DM_API_READ_ALL_REMOTE_FEAT))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_ALL_REMOTE_FEAT));
+        p_msg->hdr.event = BTA_DM_API_READ_ALL_REMOTE_FEAT_EVT;
+        p_msg->conn_handle = conn_handle;
+        p_msg->page_requested = page_requested;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 
 
 

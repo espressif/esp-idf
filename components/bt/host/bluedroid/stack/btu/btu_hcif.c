@@ -1520,11 +1520,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_read_all_local_supp_features_complete(p);
         break;
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
-#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
-    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
-        btm_ble_read_min_supp_conn_interval_complete(p);
-        break;
-#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
