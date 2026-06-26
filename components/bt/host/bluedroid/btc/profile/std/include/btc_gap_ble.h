@@ -158,6 +158,11 @@ typedef enum {
     BTC_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT,
     BTC_GAP_BLE_READ_ALL_REMOTE_FEAT,
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    BTC_GAP_BLE_CONNECTION_RATE_REQUEST,
+    BTC_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS,
+    BTC_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL,
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -628,6 +633,31 @@ typedef union {
         uint8_t page_requested;
     } read_all_remote_feat;
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    struct connection_rate_request_args {
+        uint16_t conn_handle;
+        uint16_t conn_interval_min;
+        uint16_t conn_interval_max;
+        uint16_t subrate_min;
+        uint16_t subrate_max;
+        uint16_t max_latency;
+        uint16_t continuation_number;
+        uint16_t supervision_timeout;
+        uint16_t min_ce_len;
+        uint16_t max_ce_len;
+    } connection_rate_request;
+    struct set_default_rate_parameters_args {
+        uint16_t conn_interval_min;
+        uint16_t conn_interval_max;
+        uint16_t subrate_min;
+        uint16_t subrate_max;
+        uint16_t max_latency;
+        uint16_t continuation_number;
+        uint16_t supervision_timeout;
+        uint16_t min_ce_len;
+        uint16_t max_ce_len;
+    } set_default_rate_parameters;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {
