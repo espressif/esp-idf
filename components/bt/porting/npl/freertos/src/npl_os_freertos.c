@@ -787,6 +787,9 @@ IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t 
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
 #if BLE_NPL_USE_ESP_TIMER
     esp_timer_stop(callout->handle);
+    if (callout->evq) {
+        npl_freertos_eventq_remove(callout->evq, &callout->ev);
+    }
 
     return esp_err_to_npl_error(esp_timer_start_once(callout->handle, ticks*1000));
 #else
@@ -798,6 +801,9 @@ IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t 
     }
     if (in_isr()) {
         xTimerStopFromISR(callout->handle, &woken1);
+        if (callout->evq) {
+            npl_freertos_eventq_remove(callout->evq, &callout->ev);
+        }
         xTimerChangePeriodFromISR(callout->handle, ticks, &woken2);
         xTimerResetFromISR(callout->handle, &woken3);
 
@@ -806,6 +812,9 @@ IRAM_ATTR npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t 
         }
     } else {
         xTimerStop(callout->handle, portMAX_DELAY);
+        if (callout->evq) {
+            npl_freertos_eventq_remove(callout->evq, &callout->ev);
+        }
         xTimerChangePeriod(callout->handle, ticks, portMAX_DELAY);
         xTimerReset(callout->handle, portMAX_DELAY);
     }
@@ -828,6 +837,10 @@ IRAM_ATTR npl_freertos_callout_stop(struct ble_npl_callout *co)
 #else
     xTimerStop(callout->handle, portMAX_DELAY);
 #endif
+
+    if (callout->evq) {
+        npl_freertos_eventq_remove(callout->evq, &callout->ev);
+    }
 }
 
 bool
