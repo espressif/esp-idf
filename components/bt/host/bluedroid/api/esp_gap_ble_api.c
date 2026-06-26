@@ -154,7 +154,7 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     if(!params) {
         LOG_ERROR("%s,params is NULL", __func__);
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     if (ESP_BLE_IS_VALID_PARAM(params->min_int, BLE_CONN_INT_MIN_HOST_CHECK, ESP_BLE_CONN_INT_MAX) &&
@@ -187,7 +187,7 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)
     } else {
         LOG_ERROR("%s,invalid connection params:min_int = %d, max_int = %d, latency = %d, timeout = %d",\
                             __func__, params->min_int, params->max_int, params->latency, params->timeout);
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 }
 
@@ -433,7 +433,7 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
     } else {
         LOG_ERROR("%s,invalid connection params:min_int = %d, max_int = %d, latency = %d, timeout = %d",\
                             __func__, min_conn_int, max_conn_int, slave_latency, supervision_tout);
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 }
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
