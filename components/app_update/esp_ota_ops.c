@@ -258,6 +258,21 @@ esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_si
         return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
 
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    // Mirror esp_ota_begin(): refuse to resume an OTA into an app slot while the running
+    // app is still pending verification, otherwise the rollback target could be
+    // overwritten during the unconfirmed window.
+    if (partition->type == ESP_PARTITION_TYPE_APP) {
+        esp_ota_img_states_t ota_state_running_part;
+        if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
+            if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
+                ESP_LOGE(TAG, "Running app has not confirmed state (ESP_OTA_IMG_PENDING_VERIFY)");
+                return ESP_ERR_OTA_ROLLBACK_INVALID_STATE;
+            }
+        }
+    }
+#endif
+
     // Check if there's already an ongoing OTA operation on this partition
     if (esp_ota_check_partition_conflict(partition)) {
         ESP_LOGE(TAG, "OTA operation already in progress on partition %s", partition->label);
@@ -361,7 +376,10 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                     }
 
                 } else if (it->partition.final->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
-                    if (*(uint16_t*)data_bytes != (uint16_t)ESP_PARTITION_MAGIC) {
+                    /* Read the 2-byte magic word only if the caller-supplied buffer is large
+                     * enough; otherwise this would read past a short (e.g. 1-byte) first chunk.
+                     * A too-short chunk is still fully validated later by esp_partition_table_verify(). */
+                    if (size >= sizeof(uint16_t) && *(uint16_t*)data_bytes != (uint16_t)ESP_PARTITION_MAGIC) {
                         ESP_LOGE(TAG, "Partition table image has invalid magic word (expected 0x50AA, saw 0x%04x)", *(uint16_t*)data_bytes);
                         return ESP_ERR_OTA_VALIDATE_FAILED;
                     }
@@ -517,6 +535,15 @@ static esp_err_t ota_verify_data_partition_signature(const esp_partition_t *part
 {
     esp_err_t err = ESP_FAIL;
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
+
+    /* The written image must hold at least one sector of data plus the trailing
+     * signature sector. Without this check, a total_written_size below one sector makes
+     * the subtraction below underflow uint32_t (CWE-191), driving the hash/read with a
+     * wild length and offset. Reject undersized (caller-controlled) input up front. */
+    if (total_written_size < (2 * SPI_FLASH_SEC_SIZE)) {
+        ESP_LOGE(TAG, "Written size %lu too small for a signed data partition", (unsigned long)total_written_size);
+        return ESP_ERR_INVALID_SIZE;
+    }
 
     /* Calculate data length by excluding the signature sector from total written size */
     uint32_t data_length = ((total_written_size) & ~((SPI_FLASH_SEC_SIZE) - 1)) - SPI_FLASH_SEC_SIZE;
