@@ -201,6 +201,10 @@ bool BTU_StartUp(void)
         goto error_exit;
     }
 
+    if (!btu_acl_queue_init()) {
+        goto error_exit;
+    }
+
     if (btu_task_post(SIG_BTU_START_UP, NULL, OSI_THREAD_MAX_TIMEOUT) == false) {
         goto error_exit;
     }
@@ -224,10 +228,19 @@ error_exit:;
 ******************************************************************************/
 void BTU_ShutDown(void)
 {
+    btu_acl_queue_close();
+
+    btu_task_shut_down();
+
+    if (btu_thread) {
+        osi_thread_free(btu_thread);
+        btu_thread = NULL;
+    }
+
+    btu_acl_queue_deinit();
 #if BTU_DYNAMIC_MEMORY
     FREE_AND_RESET(btu_cb_ptr);
 #endif
-    btu_task_shut_down();
 
     hash_map_free(btu_general_alarm_hash_map);
     osi_mutex_free(&btu_general_alarm_lock);
@@ -237,11 +250,6 @@ void BTU_ShutDown(void)
 
     hash_map_free(btu_l2cap_alarm_hash_map);
     osi_mutex_free(&btu_l2cap_alarm_lock);
-
-    if (btu_thread) {
-        osi_thread_free(btu_thread);
-        btu_thread = NULL;
-    }
 
     btu_general_alarm_hash_map = NULL;
     btu_oneshot_alarm_hash_map = NULL;
