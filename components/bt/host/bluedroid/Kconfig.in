@@ -1534,6 +1534,13 @@ config BT_BLE_FEAT_DBAF
         Enable Decision-Based Advertising Filtering (Bluetooth Core 6.0).
         Supports LE Set Decision Data and LE Set Decision Instructions HCI commands.
 
+config BT_BLE_FEAT_FRAME_SPACE_UPDATE
+    bool "Enable BLE Frame Space Update"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_FRAME_SPACE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Frame Space Update feature (Bluetooth Core 6.0).
+
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
     depends on BT_BLE_ENABLED

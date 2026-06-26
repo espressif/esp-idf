@@ -6002,6 +6002,16 @@ void bta_dm_ble_gap_set_decision_instructions(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+void bta_dm_ble_gap_frame_space_update(tBTA_DM_MSG *p_data)
+{
+    BTM_BleFrameSpaceUpdate(p_data->ble_frame_space_update.conn_handle,
+                            p_data->ble_frame_space_update.frame_space_min,
+                            p_data->ble_frame_space_update.frame_space_max,
+                            p_data->ble_frame_space_update.phys,
+                            p_data->ble_frame_space_update.spacing_types);
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
