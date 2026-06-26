@@ -570,6 +570,7 @@ static void bta_hf_client_sco_event(UINT8 event)
                     }
                 } else {
                     osi_free(p_buf);
+                    break;
                 }
             } else {
                 osi_free(p_buf);

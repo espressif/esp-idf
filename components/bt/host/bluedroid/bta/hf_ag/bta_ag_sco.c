@@ -811,6 +811,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
                     }
                 } else {
                     osi_free(p_buf);
+                    break;
                 }
             } else {
                 osi_free(p_buf);
