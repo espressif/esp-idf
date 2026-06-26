@@ -249,6 +249,13 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         extend_adv_cb.inst[instance].legacy_pdu = false;
     }
 
+    if (params->type & (BTM_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED |
+                        BTM_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)) {
+        extend_adv_cb.inst[instance].directed = true;
+    } else {
+        extend_adv_cb.inst[instance].directed = false;
+    }
+
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
     // if own_addr_type == BLE_ADDR_PUBLIC_ID or BLE_ADDR_RANDOM_ID,
     if((params->own_addr_type == BLE_ADDR_PUBLIC_ID || params->own_addr_type == BLE_ADDR_RANDOM_ID) && BTM_GetLocalResolvablePrivateAddr(rand_addr)) {
