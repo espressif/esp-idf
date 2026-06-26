@@ -205,6 +205,8 @@ typedef struct {
 #define BTU_MAX_REG_TIMER     (2)   /* max # timer callbacks which may register */
 #define BTU_MAX_REG_EVENT     (6)   /* max # event callbacks which may register */
 #define BTU_DEFAULT_DATA_SIZE (0x2a0)
+#define BTU_ACL_QUEUE_BATCH_SIZE (12)
+#define BTU_ACL_QUEUE_HIGH_WATERMARK (100)
 
 #if (BLE_INCLUDED == TRUE)
 #define BTU_DEFAULT_BLE_DATA_SIZE   (27)
@@ -233,6 +235,9 @@ typedef struct {
 typedef struct {
     tBTU_TIMER_REG   timer_reg[BTU_MAX_REG_TIMER];
     tBTU_EVENT_REG   event_reg[BTU_MAX_REG_EVENT];
+    struct pkt_queue *acl_pkt_queue;
+    struct osi_event *acl_data_ready;
+    BOOLEAN          acl_closing;
 
     BOOLEAN     reset_complete;             /* TRUE after first ack from device received */
     UINT8       trace_level;                /* Trace level for HCI layer */
@@ -302,6 +307,10 @@ void btu_task_shut_down(void);
 UINT16 BTU_BleAclPktSize(void);
 
 bool btu_task_post(uint32_t sig, void *param, uint32_t timeout);
+bool btu_acl_queue_init(void);
+void btu_acl_queue_close(void);
+void btu_acl_queue_deinit(void);
+bool btu_hci_acl_data_post(BT_HDR *packet);
 
 int get_btu_work_queue_size(void);
 
