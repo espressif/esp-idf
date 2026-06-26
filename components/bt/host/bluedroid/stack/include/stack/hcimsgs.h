@@ -1410,5 +1410,12 @@ UINT8 btsnd_hcic_ble_cs_set_procedure_params(UINT16 conn_handle, UINT8 config_id
 UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define HCIC_PARAM_SIZE_CS_SET_SECURITY_REQUIREMENTS_LEN        10
+#define HCIC_PARAM_SIZE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_LEN 8
+
+UINT8 btsnd_hcic_ble_cs_set_security_requirements(UINT16 conn_handle, UINT64 cs_security_requirements);
+UINT8 btsnd_hcic_ble_cs_set_default_security_requirements(UINT64 cs_security_requirements);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 #endif

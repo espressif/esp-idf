@@ -285,6 +285,8 @@ typedef enum {
     ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT,                /*!< When enable UTP OTA mode complete, the event comes */
     ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT,                           /*!< When UTP send complete, the event comes */
     ESP_GAP_BLE_UTP_RECEIVE_EVT,                                 /*!< When UTP data is received, the event comes */
+    ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT,           /*!< When CS set security requirements complete, the event comes */
+    ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT,   /*!< When CS set default security requirements complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1722,6 +1724,33 @@ typedef enum {
 /** Reflector role is enabled */
 #define ESP_BLE_CS_REFLECTOR_ROLE_ENABLED  (1 << 1)
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+/** CS tone security requirement (bit 0 of CS_Security_Requirements) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_CS_TONE                      (1ULL << 0)
+/** 150 ns RTT accuracy security requirement (bit 1) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_RTT_150NS_ACCURACY           (1ULL << 1)
+/** 10 ns RTT accuracy security requirement (bit 2) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_RTT_10NS_ACCURACY            (1ULL << 2)
+/** RTT sounding sequence or random sequence security requirement (bit 3) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_RTT_SOUNDING_OR_RANDOM       (1ULL << 3)
+/** Normalized Attack Detector Metric security requirement (bit 4) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_NADM                         (1ULL << 4)
+
+/**
+* @brief CS set security requirements parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle. Host does not validate the handle range; the Controller checks it (0x0000 to 0x0EFF). */
+    uint64_t cs_security_requirements; /*!< 8-octet CS security requirements bitmask (bits 0-4). Host does not validate reserved bits 5-63; the Controller checks they are zero. */
+} esp_ble_cs_set_security_requirements_params;
+
+/**
+* @brief CS set default security requirements parameters
+*/
+typedef struct {
+    uint64_t cs_security_requirements; /*!< 8-octet CS security requirements bitmask for future connections (bits 0-4). Host does not validate reserved bits 5-63; the Controller checks they are zero. */
+} esp_ble_cs_set_default_security_requirements_params;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /**
 * @brief CS set default settings parameters
@@ -2486,6 +2515,23 @@ typedef union {
         uint8_t data[ESP_BLE_GAP_UTP_DATA_MAX_LEN]; /*!< UTP data */
     } utp_receive;                             /*!< Event parameter of ESP_GAP_BLE_UTP_RECEIVE_EVT */
 #endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT
+     */
+    struct ble_cs_set_security_requirements {
+        esp_bt_status_t status;         /*!< 0x00: CS set security requirements command succeeded
+                                               other: CS set security requirements command failed */
+        uint16_t conn_handle;           /*!< Connection Handle */
+    } cs_set_security_requirements; /*!< Event parameter of ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT
+     */
+    struct ble_cs_set_default_security_requirements {
+        esp_bt_status_t status;         /*!< 0x00: CS set default security requirements command succeeded
+                                               other: CS set default security requirements command failed */
+    } cs_set_default_security_requirements; /*!< Event parameter of ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT */
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -4949,6 +4995,49 @@ esp_err_t esp_ble_cs_write_cached_remote_supported_capabilities(esp_ble_cs_write
  */
 esp_err_t esp_ble_cs_security_enable(uint16_t conn_handle);
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+/**
+ * @brief           Set Channel Sounding security requirements for a connection (Core 6.3).
+ *
+ *                  Requires CONFIG_BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS and CS Host Support enabled
+ *                  via esp_ble_gap_set_host_feature(ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT, 1).
+ *                  Must be issued before CS procedures are enabled on the connection.
+ *
+ *                  The Host does not validate Connection_Handle range or CS_Security_Requirements
+ *                  reserved bits (5-63); the Controller performs these checks and reports errors
+ *                  via ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT.
+ *
+ * @param[in]       params: CS set security requirements parameters
+ *
+ * @return
+ *                  - ESP_OK : success (command queued)
+ *                  - ESP_ERR_INVALID_ARG : params is NULL
+ *                  - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+ *                  - ESP_FAIL : other failures
+ */
+esp_err_t esp_ble_cs_set_security_requirements(esp_ble_cs_set_security_requirements_params *params);
+
+/**
+ * @brief           Set initial Channel Sounding security requirements for future connections (Core 6.3).
+ *
+ *                  Requires CONFIG_BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS and CS Host Support enabled
+ *                  via esp_ble_gap_set_host_feature(ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT, 1).
+ *                  Does not affect existing connections.
+ *
+ *                  The Host does not validate CS_Security_Requirements reserved bits (5-63);
+ *                  the Controller performs this check and reports errors via
+ *                  ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT.
+ *
+ * @param[in]       params: CS set default security requirements parameters
+ *
+ * @return
+ *                  - ESP_OK : success (command queued)
+ *                  - ESP_ERR_INVALID_ARG : params is NULL
+ *                  - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+ *                  - ESP_FAIL : other failures
+ */
+esp_err_t esp_ble_cs_set_default_security_requirements(esp_ble_cs_set_default_security_requirements_params *params);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /**
  * @brief           This function is used to set default CS settings in the local Controller

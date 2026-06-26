@@ -1000,7 +1000,11 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT                   84
 #define    BTM_BLE_5_GAP_UTP_RECEIVE_EVT                         85
 #endif // #if (BLE_FEAT_LE_UTP == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               91
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define    BTM_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT       88
+#define    BTM_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT 89
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               90
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1543,6 +1547,16 @@ typedef struct {
     UINT16 conn_handle;
 } tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT;
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} tBTM_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 typedef struct {
     UINT8 status;
@@ -2046,6 +2060,10 @@ typedef union {
 #if (BLE_FEAT_LE_UTP == TRUE)
     tBTM_BLE_UTP_RECEIVE                        utp_receive;
 #endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    tBTM_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT cs_set_security_requirements;
+    tBTM_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT cs_set_default_security_requirements;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3372,5 +3390,9 @@ void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_p
                                 UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
 void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void BTM_BleGapCsSetSecurityRequirements(UINT16 conn_handle, UINT64 cs_security_requirements);
+void BTM_BleGapCsSetDefaultSecurityRequirements(UINT64 cs_security_requirements);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 #endif

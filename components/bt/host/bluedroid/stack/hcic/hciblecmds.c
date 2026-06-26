@@ -3741,3 +3741,42 @@ UINT8 btsnd_hcic_ble_cs_procedure_enable(UINT16 conn_handle, UINT8 config_id, UI
     return TRUE;
 }
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+UINT8 btsnd_hcic_ble_cs_set_security_requirements(UINT16 conn_handle, UINT64 cs_security_requirements)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs set security requirements conn_handle %d", conn_handle);
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_CS_SET_SECURITY_REQUIREMENTS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SET_SECURITY_REQUIREMENTS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CS_SET_SECURITY_REQUIREMENTS_LEN);
+    UINT16_TO_STREAM(pp, conn_handle);
+    ARRAY_TO_STREAM(pp, (UINT8 *)&cs_security_requirements, 8);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_cs_set_default_security_requirements(UINT64 cs_security_requirements)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("cs set default security requirements");
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_LEN);
+    ARRAY_TO_STREAM(pp, (UINT8 *)&cs_security_requirements, 8);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)

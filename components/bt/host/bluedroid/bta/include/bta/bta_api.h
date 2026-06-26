@@ -1655,6 +1655,10 @@ typedef struct {
 #define BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT                         BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT
 #define BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT                BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define BTA_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT          BTM_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT
+#define BTA_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT  BTM_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 #define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
@@ -2987,6 +2991,10 @@ void BTA_DmBleGapCsSetChannelClass(uint8_t *channel_class, uint8_t channl_len);
 void BTA_DmBleGapCsSetProcPatams(tBTA_DM_CS_SET_PROC_PARAMS *set_proc_params);
 void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void BTA_DmBleGapCsSetSecurityRequirements(uint16_t conn_handle, uint64_t cs_security_requirements);
+void BTA_DmBleGapCsSetDefaultSecurityRequirements(uint64_t cs_security_requirements);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /*******************************************************************************
 **
