@@ -558,14 +558,14 @@ INT32 Convert_16S_ToBT_NoFilter (void *pSrc, void *pDst, UINT32 dwSrcSamples, UI
 **                  bits: number of bits per pcm sample (16)
 **                  n_channels: number of channels (i.e. mono(1), stereo(2)...)
 **
-** Returns          none
+** Returns          tBTA_STATUS
 **
 *******************************************************************************/
-void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
+tBTA_STATUS BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
 {
     if ((p_bta_dm_pcm_cb = (tBTA_DM_PCM_RESAMPLE_CB *)osi_malloc(sizeof(tBTA_DM_PCM_RESAMPLE_CB))) == NULL) {
         APPL_TRACE_ERROR("%s malloc failed!", __func__);
-        return;
+        return BTA_FAILURE;
     }
     tBTA_DM_PCM_RESAMPLE_CB *p_cb = p_bta_dm_pcm_cb;
 
@@ -620,6 +620,7 @@ void BTA_DmPcmInitSamples (UINT32 src_sps, UINT32 bits, UINT32 n_channels)
         divisor %d", p_cb->can_be_filtered, p_cb->n_channels, p_cb->divisor);
 #endif
 
+    return BTA_SUCCESS;
 }
 
 /*******************************************************************************
@@ -656,6 +657,10 @@ void BTA_DmPcmDeinitSamples(void) {
 **************************************************************************************/
 INT32 BTA_DmPcmResample (void *p_src, UINT32 in_bytes, void *p_dst)
 {
+    if (p_bta_dm_pcm_cb == NULL) {
+        APPL_TRACE_WARNING("p_bta_dm_pcm_cb is NULL");
+        return 0;
+    }
     UINT32 out_sample;
 
 #if BTA_DM_SCO_DEBUG
