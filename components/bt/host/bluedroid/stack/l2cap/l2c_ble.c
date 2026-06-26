@@ -995,12 +995,14 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #if (CONTROLLER_RPA_LIST_ENABLE)
 
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
-        if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
-            own_addr_type |= BLE_ADDR_TYPE_ID_BIT;
-        }
+        if (!(peer_addr_type == BLE_ADDR_RANDOM && !BTM_BLE_IS_RESOLVE_BDA(peer_addr))) {
+            if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
+                own_addr_type |= BLE_ADDR_TYPE_ID_BIT;
+            }
 
-        //btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
-        btm_random_pseudo_to_identity_addr(peer_addr, &peer_addr_type);
+            //btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
+            btm_random_pseudo_to_identity_addr(peer_addr, &peer_addr_type);
+        }
     } else {
         btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, TRUE);
     }
