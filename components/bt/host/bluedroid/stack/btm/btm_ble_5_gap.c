@@ -1378,6 +1378,55 @@ tBTM_STATUS BTM_BleSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_fl
 }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+tBTM_STATUS BTM_BleFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
+                                    UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types)
+{
+    tHCI_STATUS err;
+
+    err = btsnd_hcic_ble_frame_space_update(conn_handle, frame_space_min, frame_space_max,
+                                            phys, spacing_types);
+    if (err != HCI_SUCCESS) {
+        tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+        cb_params.frame_space_update.status = BTM_HCI_ERROR | err;
+        cb_params.frame_space_update.conn_handle = conn_handle;
+        BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT, &cb_params);
+        return BTM_NO_RESOURCES;
+    }
+    return BTM_CMD_STARTED;
+}
+
+void btm_frame_space_update_cmd_status(UINT8 status, UINT16 conn_handle)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (status == HCI_SUCCESS) {
+        return;
+    }
+
+    cb_params.frame_space_update.status = status | BTM_HCI_ERROR;
+    cb_params.frame_space_update.conn_handle = conn_handle;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT, &cb_params);
+}
+
+void btm_ble_frame_space_update_complete_evt(UINT8 *p)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    STREAM_TO_UINT8(cb_params.frame_space_update.status, p);
+    STREAM_TO_UINT16(cb_params.frame_space_update.conn_handle, p);
+    STREAM_TO_UINT8(cb_params.frame_space_update.initiator, p);
+    STREAM_TO_UINT16(cb_params.frame_space_update.frame_space, p);
+    STREAM_TO_UINT8(cb_params.frame_space_update.phys, p);
+    STREAM_TO_UINT16(cb_params.frame_space_update.spacing_types, p);
+
+    if (cb_params.frame_space_update.status != HCI_SUCCESS) {
+        cb_params.frame_space_update.status |= BTM_HCI_ERROR;
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT, &cb_params);
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 

@@ -1295,6 +1295,18 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+        case BTA_DM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT: {
+            msg.act = ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT;
+            param.frame_space_update.status = btc_btm_status_to_esp_status(params->frame_space_update.status);
+            param.frame_space_update.conn_handle = params->frame_space_update.conn_handle;
+            param.frame_space_update.initiator = params->frame_space_update.initiator;
+            param.frame_space_update.frame_space = params->frame_space_update.frame_space;
+            param.frame_space_update.phys = params->frame_space_update.phys;
+            param.frame_space_update.spacing_types = params->frame_space_update.spacing_types;
+            break;
+        }
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT: {
             param.adv_terminate.status = params->adv_term.status;
@@ -3545,6 +3557,15 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                             arg_5->set_decision_instructions.test_params);
         break;
 #endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    case BTC_GAP_BLE_FRAME_SPACE_UPDATE:
+        BTA_DmBleGapFrameSpaceUpdate(arg_5->frame_space_update.conn_handle,
+                                     arg_5->frame_space_update.frame_space_min,
+                                     arg_5->frame_space_update.frame_space_max,
+                                     arg_5->frame_space_update.phys,
+                                     arg_5->frame_space_update.spacing_types);
+        break;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     case BTC_GAP_BLE_SET_PA_SUBEVT_DATA:
         BTA_DmBleGapSetPASubevtData(arg_5->per_adv_subevent_data_params.adv_handle, arg_5->per_adv_subevent_data_params.num_subevents_with_data, (uint8_t *)(arg_5->per_adv_subevent_data_params.subevent_params));

@@ -3123,6 +3123,27 @@ UINT8 btsnd_hcic_ble_set_decision_instructions(UINT8 num_tests, const UINT8 *tes
 }
 #endif // #if (BLE_FEAT_DBAF == TRUE)
 
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+UINT8 btsnd_hcic_ble_frame_space_update(UINT16 conn_handle, UINT16 frame_space_min,
+                                        UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCIC_BLE_CMD_CREATED_U8(p, pp, HCIC_PARAM_SIZE_FRAME_SPACE_UPDATE);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_FRAME_SPACE_UPDATE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_FRAME_SPACE_UPDATE);
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT16_TO_STREAM(pp, frame_space_min);
+    UINT16_TO_STREAM(pp, frame_space_max);
+    UINT8_TO_STREAM(pp, phys);
+    UINT16_TO_STREAM(pp, spacing_types);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return HCI_SUCCESS;
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 
 
 
