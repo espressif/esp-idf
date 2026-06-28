@@ -1336,6 +1336,7 @@ int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *f
     spi_out_log_cb_t *log_cb;
     uint8_t *str_buf;
     bool fallback = false;
+    int ret = -1;
     if (!spi_out_get_task_mapping(LOG_MODULE_TASK_MAP(host),
                                   LOG_MODULE_CB_CNT(host), &log_cb, &str_buf)) {
         // NimBLE workaround
@@ -1348,7 +1349,7 @@ int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *f
     // Copy prefix to string buffer
     int prefix_len = strlen(prefix);
     if (prefix_len >= SPI_OUT_LOG_STR_BUF_SIZE) {
-        return -1;
+        goto exit;
     }
     memcpy(str_buf, prefix, prefix_len);
 
@@ -1358,16 +1359,19 @@ int ble_log_spi_out_host_write(uint8_t source, const char *prefix, const char *f
     int total_len = spi_out_write_str(str_buf, format, args, prefix_len);
     va_end(args);
     if (total_len == 0) {
-        return -1;
+        goto exit;
     }
 
     // Write log control block buffer
     spi_out_write_hex(log_cb, source, str_buf, (uint16_t)total_len, true);
 
+    ret = 0;
+
+exit:
     if (fallback) {
         xSemaphoreGive(LOG_MODULE_MUTEX(ul));
     }
-    return 0;
+    return ret;
 }
 #endif // SPI_OUT_HOST_ENABLED
 
