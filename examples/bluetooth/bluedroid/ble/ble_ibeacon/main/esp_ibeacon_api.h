@@ -66,6 +66,6 @@ typedef struct {
 /* Constant part of iBeacon data */
 extern esp_ble_ibeacon_head_t ibeacon_common_head;
 
-bool esp_ble_is_ibeacon_packet (uint8_t *adv_data, uint8_t adv_data_len);
+bool esp_ble_is_ibeacon_packet (const uint8_t *adv_data, uint8_t adv_data_len);
 
-esp_err_t esp_ble_config_ibeacon_data (esp_ble_ibeacon_vendor_t *vendor_config, esp_ble_ibeacon_t *ibeacon_adv_data);
+esp_err_t esp_ble_config_ibeacon_data (const esp_ble_ibeacon_vendor_t *vendor_config, esp_ble_ibeacon_t *ibeacon_adv_data);
