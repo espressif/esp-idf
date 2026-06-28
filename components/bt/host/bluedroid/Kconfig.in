@@ -1376,6 +1376,20 @@ config BT_SMP_MAX_BONDS
     help
         The number of security records for peer devices.
 
+config BT_SMP_ALLOW_DEBUG_KEYS
+    bool "Allow standard Bluetooth SIG debug keys for pairing"
+    depends on BT_SMP_ENABLE
+    default n
+    help
+        If enabled, the device will accept the standard Bluetooth SIG 
+        P-256 debug keys during pairing. This is useful for debugging 
+        with a Bluetooth sniffer (like Wireshark) because it allows 
+        the sniffer to decrypt the traffic.
+        
+        WARNING: This is a security risk and should be disabled in 
+        production as it allows passive eavesdropping on the 
+        encrypted link.
+
 config BT_BLE_ACT_SCAN_REP_ADV_SCAN
     bool "Report adv data and scan response individually when BLE active scan"
     depends on BT_BLUEDROID_ENABLED && BT_BLE_ENABLED
