@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <stdatomic.h>
+#include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -25,7 +26,7 @@ const static char *TAG = "lock example";
 // when the mutex is available, FreeRTOS will reschedule this task and this task can further access the shared resource
 static void inc_num_mutex_iter(void *arg)
 {
-    int core_id = esp_cpu_get_core_id();
+    int core_id = xPortGetCoreID();
     int64_t start_time, end_time, duration = 0;
     start_time = esp_timer_get_time();
     while (s_global_num < ITERATION_NUMBER) {
@@ -46,7 +47,7 @@ static void inc_num_mutex_iter(void *arg)
 // and reschedule the task.
 static void inc_num_spinlock_iter(void *arg)
 {
-    int core_id = esp_cpu_get_core_id();
+    int core_id = xPortGetCoreID();
     int64_t start_time, end_time, duration = 0;
     start_time = esp_timer_get_time();
     while (s_global_num < ITERATION_NUMBER) {
@@ -63,7 +64,7 @@ static void inc_num_spinlock_iter(void *arg)
 
 static void inc_num_atomic_iter(void *arg)
 {
-    int core_id = esp_cpu_get_core_id();
+    int core_id = xPortGetCoreID();
     int64_t start_time, end_time, duration = 0;
     start_time = esp_timer_get_time();
     while (atomic_load(&s_atomic_global_num) < ITERATION_NUMBER) {
@@ -78,13 +79,13 @@ static void inc_num_atomic_iter(void *arg)
 
 static void inc_num_mutex(void *arg)
 {
-    int task_index = (int)arg;
+    int task_index = (intptr_t)arg;
     ESP_LOGI(TAG, "mutex task %d created", task_index);
 
     while (!timed_out) {
         xSemaphoreTake(s_mutex, portMAX_DELAY); // == pdTRUE
 
-        int core_id = esp_cpu_get_core_id();
+        int core_id = xPortGetCoreID();
         ESP_LOGI(TAG, "task%d read value = %d on core #%d", task_index, s_global_num, core_id);
         s_global_num++;
         // delay for 500 ms
@@ -122,7 +123,7 @@ and in turn accessed by multiple tasks. */
 int comp_lock_entry_func(int argc, char **argv)
 {
     s_global_num = 0;
-    int thread_id;
+    intptr_t thread_id;
     int core_id;
 
     timed_out = false;

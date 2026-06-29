@@ -73,8 +73,7 @@ static void config_console(void)
      */
     repl_config.prompt = PROMPT_STR ">";
     repl_config.max_cmdline_length = 1024;
-    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+    ESP_ERROR_CHECK(esp_console_new_repl_stdio(&repl_config, &repl));
 
     esp_console_register_help_command();
 
