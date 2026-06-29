@@ -174,7 +174,7 @@ export async function replyToOpenCodePermission(
   throw new Error("OpenCode client does not expose a permission reply API")
 }
 
-/** Runtime guard for permission decisions parsed from BLE daemon JSON. */
+/** Runtime guard for permission decisions parsed from ESP-BLE-UART Daemon JSON. */
 export function isPermissionDecision(value: unknown): value is PermissionDecision {
   return value === "once" || value === "reject"
 }

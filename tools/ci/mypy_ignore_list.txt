@@ -26,7 +26,6 @@ examples/protocols/esp_local_ctrl/scripts/transport/transport_http.py
 examples/storage/parttool/parttool_example.py
 examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
-tools/ble/ble_uart_bridge/src/console/console.py
 tools/ble/ble_uart_bridge/src/daemon/jsonl.py
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py

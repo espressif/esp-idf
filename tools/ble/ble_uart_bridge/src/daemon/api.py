@@ -34,9 +34,9 @@ def _request_json(
         detail = e.read().decode(errors='replace')
         raise RuntimeError(f'Daemon request failed with HTTP {e.code}: {detail}') from e
     except TimeoutError as e:
-        raise RuntimeError(f'Timed out waiting for BLE UART Daemon: {url}') from e
+        raise RuntimeError(f'Timed out waiting for ESP-BLE-UART Daemon: {url}') from e
     except URLError as e:
-        raise RuntimeError(f'Failed to connect to BLE UART Daemon: {e.reason}') from e
+        raise RuntimeError(f'Failed to connect to ESP-BLE-UART Daemon: {e.reason}') from e
 
     if not body:
         return {}
