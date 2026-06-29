@@ -194,9 +194,7 @@ def assert_image_matches_golden(result_image: RgbImage, golden_path: Path) -> No
     )
 
 
-@pytest.mark.generic
-@idf_parametrize('target', soc_filtered_targets('SOC_JPEG_DECODE_SUPPORTED == 1'), indirect=['target'])
-def test_jpeg_decode_example(dut: Dut) -> None:
+def run_jpeg_decode_example(dut: Dut) -> None:
     dut.expect_exact('Loading embedded JPEG from flash...')
     dut.expect(r'Embedded JPEG size: \d+ bytes')
     dut.expect(r'JPEG header parsed: width=\d+ height=\d+')
@@ -216,3 +214,26 @@ def test_jpeg_decode_example(dut: Dut) -> None:
     output_path = Path(dut.logdir) / DECODE_OUTPUT_NAME
     save_ppm_artifact(result_image, output_path)
     assert_image_matches_golden(result_image, GOLDEN_OUTPUT_PATH)
+
+
+@pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_JPEG_DECODE_SUPPORTED == 1'), indirect=['target'])
+def test_jpeg_decode_example(dut: Dut) -> None:
+    run_jpeg_decode_example(dut)
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'flash_enc',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_JPEG_DECODE_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1'),
+    indirect=['target'],
+)
+def test_jpeg_decode_example_with_flash_encryption(dut: Dut) -> None:
+    run_jpeg_decode_example(dut)

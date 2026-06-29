@@ -17,6 +17,7 @@
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/jpeg_defs.h"
+#include "hal/hal_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -287,6 +288,10 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ESP_RETURN_ON_FALSE(_check_buffer_alignment(decode_outbuf, outbuf_size, outbuf_cache_line_size), ESP_ERR_INVALID_ARG, TAG,
                         "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
+    // both the bitstream and output buffer are accessed by the 2D-DMA
+    ESP_RETURN_ON_FALSE(jpeg_check_dma2d_buffer(bit_stream) && jpeg_check_dma2d_buffer(decode_outbuf), ESP_ERR_INVALID_ARG, TAG,
+                        "jpeg decode buffer is not 16-byte aligned or not in unencrypted PSRAM, please use jpeg_alloc_decoder_mem to malloc your buffer");
+
     esp_err_t ret = ESP_OK;
 
 #if CONFIG_PM_ENABLE
@@ -435,15 +440,21 @@ void *jpeg_alloc_decoder_mem(size_t size, const jpeg_decode_memory_alloc_cfg_t *
        FOr input buffer(for decoder is PSRAM write to 2DDMA), no restriction for any align (both cache writeback and requirement from 2DDMA).
     */
     size_t cache_align = 0;
+    size_t buffer_align = 0;
     esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_align);
-    if (mem_cfg->buffer_direction == JPEG_DEC_ALLOC_OUTPUT_BUFFER) {
-        size = ESP_ALIGN_UP(size, cache_align);
-        *allocated_size = size;
-        return heap_caps_aligned_calloc(cache_align, 1, size, MALLOC_CAP_SPIRAM);
-    } else {
-        *allocated_size = size;
-        return heap_caps_calloc(1, size, MALLOC_CAP_SPIRAM);
+    buffer_align = MAX(cache_align, JPEG_DMA2D_BUFFER_ALIGN);
+    size = ESP_ALIGN_UP(size, buffer_align);
+    *allocated_size = size;
+    // To simplify the logic, we always use the LCM of cache and 2D-DMA alignment to satisfy both requirements
+    void *buffer = heap_caps_aligned_calloc(buffer_align, 1, size, JPEG_SPIRAM_ALLOC_CAPS);
+    if (buffer == NULL) {
+#if CONFIG_SPIRAM_ENC_EXEMPT
+        ESP_LOGE(TAG, "no mem for %zu bytes decode buffer in unencrypted PSRAM, please enlarge CONFIG_SPIRAM_ENC_EXEMPT_SIZE", size);
+#else
+        ESP_LOGE(TAG, "no mem for %zu bytes decode buffer", size);
+#endif
     }
+    return buffer;
 }
 
 /****************************************************************
