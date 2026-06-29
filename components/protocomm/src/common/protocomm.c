@@ -99,6 +99,9 @@ static esp_err_t protocomm_add_endpoint_internal(protocomm_t *pc, const char *ep
     ep = (protocomm_ep_t *) calloc(1, sizeof(protocomm_ep_t));
     if (!ep) {
         ESP_LOGE(TAG, "Error allocating endpoint resource");
+        if (pc->remove_endpoint) {
+            pc->remove_endpoint(ep_name);
+        }
         return ESP_ERR_NO_MEM;
     }
 
