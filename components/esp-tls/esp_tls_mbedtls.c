@@ -476,7 +476,6 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     if (!tls) {
         return;
     }
-
     if (tls->cacert_ptr != global_cacert) {
         mbedtls_x509_crt_free(tls->cacert_ptr);
     }
