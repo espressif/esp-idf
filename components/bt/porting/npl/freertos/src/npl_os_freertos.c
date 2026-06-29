@@ -26,6 +26,7 @@
 portMUX_TYPE ble_port_mutex = portMUX_INITIALIZER_UNLOCKED;
 
 static SemaphoreHandle_t npl_eventq_sync;
+static uint8_t hw_critical_state_status[portNUM_PROCESSORS];
 
 #if BLE_NPL_USE_ESP_TIMER
 static const char *TAG = "Timer";
@@ -203,25 +204,35 @@ static void
 npl_eventq_sync_init(void)
 {
     if (npl_eventq_sync == NULL) {
-        npl_eventq_sync = xSemaphoreCreateMutex();
+        npl_eventq_sync = xSemaphoreCreateRecursiveMutex();
         BLE_LL_ASSERT(npl_eventq_sync);
     }
 }
 
-static void
+static bool
 npl_eventq_lock(void)
 {
-    if (!in_isr()) {
-        BLE_LL_ASSERT(npl_eventq_sync);
-        xSemaphoreTake(npl_eventq_sync, portMAX_DELAY);
+    BaseType_t core;
+
+    if (in_isr()) {
+        return false;
     }
+
+    core = xPortGetCoreID();
+    if (core >= portNUM_PROCESSORS || hw_critical_state_status[core] != 0) {
+        return false;
+    }
+
+    BLE_LL_ASSERT(npl_eventq_sync);
+    xSemaphoreTakeRecursive(npl_eventq_sync, portMAX_DELAY);
+    return true;
 }
 
 static void
-npl_eventq_unlock(void)
+npl_eventq_unlock(bool locked)
 {
-    if (!in_isr()) {
-        xSemaphoreGive(npl_eventq_sync);
+    if (locked) {
+        xSemaphoreGiveRecursive(npl_eventq_sync);
     }
 }
 
@@ -331,7 +342,8 @@ IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo
             }
         }
     } else if (tmo == 0) {
-        npl_eventq_lock();
+        bool locked = npl_eventq_lock();
+
         portENTER_CRITICAL(&ble_port_mutex);
         ret = xQueueReceive(eventq->q, &ev, 0);
         if (ret == pdPASS && ev != NULL) {
@@ -341,7 +353,7 @@ IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo
             }
         }
         portEXIT_CRITICAL(&ble_port_mutex);
-        npl_eventq_unlock();
+        npl_eventq_unlock(locked);
     } else {
         TickType_t deadline = 0;
         TickType_t remaining;
@@ -364,7 +376,8 @@ IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo
                 return NULL;
             }
 
-            npl_eventq_lock();
+            bool locked = npl_eventq_lock();
+
             portENTER_CRITICAL(&ble_port_mutex);
             ret = xQueueReceive(eventq->q, &ev, 0);
             if (ret == pdPASS && ev != NULL) {
@@ -372,12 +385,13 @@ IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo
                 if (event) {
                     event->queued = false;
                 }
-                portEXIT_CRITICAL(&ble_port_mutex);
-                npl_eventq_unlock();
-                break;
             }
             portEXIT_CRITICAL(&ble_port_mutex);
-            npl_eventq_unlock();
+            if (ret == pdPASS && ev != NULL) {
+                npl_eventq_unlock(locked);
+                break;
+            }
+            npl_eventq_unlock(locked);
         }
     }
 
@@ -407,10 +421,10 @@ IRAM_ATTR npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_eve
         }
         return;
     } else {
-        npl_eventq_lock();
+        bool locked = npl_eventq_lock();
 
         if (npl_eventq_queued_claim(event)) {
-            npl_eventq_unlock();
+            npl_eventq_unlock(locked);
             return;
         }
 
@@ -419,7 +433,7 @@ IRAM_ATTR npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_eve
             ESP_LOGW("NimBLE", "eventq put: queue full, event dropped");
             npl_eventq_queued_set_task(event, false);
         }
-        npl_eventq_unlock();
+        npl_eventq_unlock(locked);
     }
 }
 
@@ -446,10 +460,10 @@ IRAM_ATTR npl_freertos_eventq_put_to_front(struct ble_npl_eventq *evq, struct bl
         }
         return;
     } else {
-        npl_eventq_lock();
+        bool locked = npl_eventq_lock();
 
         if (npl_eventq_queued_claim(event)) {
-            npl_eventq_unlock();
+            npl_eventq_unlock(locked);
             return;
         }
 
@@ -458,7 +472,7 @@ IRAM_ATTR npl_freertos_eventq_put_to_front(struct ble_npl_eventq *evq, struct bl
             ESP_LOGW("NimBLE", "eventq put_to_front: queue full, event dropped");
             npl_eventq_queued_set_task(event, false);
         }
-        npl_eventq_unlock();
+        npl_eventq_unlock(locked);
     }
 }
 
@@ -522,9 +536,10 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
     } else {
         removed = false;
 
-        npl_eventq_lock();
+        bool locked = npl_eventq_lock();
+
         if (!npl_eventq_queued_get_task(event)) {
-            npl_eventq_unlock();
+            npl_eventq_unlock(locked);
             return;
         }
 
@@ -548,11 +563,10 @@ IRAM_ATTR npl_freertos_eventq_remove(struct ble_npl_eventq *evq,
             }
         }
         if (removed) {
-            event->queued = 0;
+            event->queued = false;
         }
         portEXIT_CRITICAL(&ble_port_mutex);
-
-        npl_eventq_unlock();
+        npl_eventq_unlock(locked);
     }
 }
 
@@ -1231,26 +1245,40 @@ IRAM_ATTR npl_freertos_time_delay(ble_npl_time_t ticks)
 }
 
 
-uint8_t hw_critical_state_status = 0;
-
 uint32_t
 IRAM_ATTR npl_freertos_hw_enter_critical(void)
 {
-    ++hw_critical_state_status;
+    BaseType_t core;
+
     portENTER_CRITICAL(&ble_port_mutex);
+    core = xPortGetCoreID();
+    if (core < portNUM_PROCESSORS) {
+        ++hw_critical_state_status[core];
+    }
     return 0;
 }
 
 uint8_t
 IRAM_ATTR npl_freertos_hw_is_in_critical(void)
 {
-    return hw_critical_state_status;
+    BaseType_t core;
+
+    core = xPortGetCoreID();
+    if (core >= portNUM_PROCESSORS) {
+        return 0;
+    }
+    return hw_critical_state_status[core];
 }
 
 void
 IRAM_ATTR npl_freertos_hw_exit_critical(uint32_t ctx)
 {
-    --hw_critical_state_status;
+    BaseType_t core;
+
+    core = xPortGetCoreID();
+    if (core < portNUM_PROCESSORS && hw_critical_state_status[core] > 0) {
+        --hw_critical_state_status[core];
+    }
     portEXIT_CRITICAL(&ble_port_mutex);
 
 }
