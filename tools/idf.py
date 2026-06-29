@@ -156,9 +156,48 @@ def _safe_relpath(path: str, start: str | None = None) -> str:
 
 
 def init_cli(verbose_output: list | None = None) -> Any:
-    # Click is imported here to run it after check_environment()
-    import click
+    # rich-click is imported here to run it after check_environment()
+    import rich_click as click
     from click.shell_completion import CompletionItem
+    from rich_click import Context
+    from rich_click import RichHelpConfiguration
+    from rich_click.rich_click import MAX_WIDTH
+
+    # ``RichHelpFormatter`` was promoted to the top-level namespace in
+    # rich-click 1.9; the submodule path is stable across 1.8.x/1.9.x. For
+    # positional/option base classes we deliberately use plain ``click.Argument``
+    # / ``click.Option`` rather than the rich-click 1.9 ``RichArgument`` /
+    # ``RichOption`` subclasses: those subclasses are empty wrappers on 1.9.x
+    # (the only observable difference is the ``isinstance(obj, RichArgument)``
+    # gate that auto-populates an Arguments panel when ``obj.help is not None``
+    # -- idf.py never declares ``help=`` on a positional argument), and the
+    # symbols don't exist on 1.8.x at all. Using the click base classes keeps
+    # one code path for both rich-click lines.
+    from rich_click.rich_help_formatter import RichHelpFormatter
+
+    # click 8.2 made ``Parameter.make_metavar(ctx)`` mandatory. rich-click
+    # versions before 1.8.6 still call ``param.make_metavar()`` with no ctx
+    # (see ``rich_click/rich_help_rendering.py``), which crashes with
+    # ``TypeError`` on click >= 8.2. The crash hits *every* parameter rich-click
+    # iterates -- including click's built-in ``--help`` option, which is a
+    # plain ``click.Option`` instance not under our control. So patch the
+    # ``Parameter.make_metavar`` method itself to accept ctx as optional,
+    # fishing the running context from ``click.get_current_context`` when
+    # rich-click forgets to pass it. The patch is a no-op on click < 8.2
+    # (signature already takes only ``self``) and on click >= 8.2 it simply
+    # bridges the old rich-click call site.
+    if click.Parameter.make_metavar.__code__.co_argcount >= 2:
+        _orig_make_metavar = click.Parameter.make_metavar
+
+        def _make_metavar_with_optional_ctx(self: 'click.Parameter', ctx: 'Context | None' = None) -> str:
+            if ctx is None:
+                try:
+                    ctx = click.get_current_context()
+                except RuntimeError:
+                    ctx = click.Context(click.Command(self.name or '_'))
+            return _orig_make_metavar(self, ctx)  # type: ignore[no-any-return]
+
+        click.Parameter.make_metavar = _make_metavar_with_optional_ctx  # type: ignore[method-assign]
 
     class Deprecation:
         """Construct deprecation notice for help messages"""
@@ -210,7 +249,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
             text = text or ''
             return ('Deprecated! ' + text) if self.deprecated else text
 
-    def check_deprecation(ctx: click.core.Context) -> None:
+    def check_deprecation(ctx: Context) -> None:
         """Prints deprecation warnings for arguments in given context"""
         for option in ctx.command.params:
             default = () if option.multiple else option.default
@@ -240,15 +279,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
             self.action_args = action_args
             self.aliases = aliases
 
-        def __call__(
-            self, context: click.core.Context, global_args: PropertyDict, action_args: dict | None = None
-        ) -> None:
+        def __call__(self, context: Context, global_args: PropertyDict, action_args: dict | None = None) -> None:
             if action_args is None:
                 action_args = self.action_args
 
             self.callback(self.name, context, global_args, **action_args)
 
-    class Action(click.Command):
+    class Action(click.RichCommand):
         callback: Callable
 
         def __init__(
@@ -309,7 +346,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
                 self.callback: Callable = wrapped_callback
 
-        def invoke(self, ctx: click.core.Context) -> click.core.Context:
+        def invoke(self, ctx: Context) -> Context:
             if self.deprecated:
                 deprecation = Deprecation(self.deprecated)
                 message = deprecation.full_message(f'Command "{self.name}"')
@@ -324,6 +361,26 @@ def init_cli(verbose_output: list | None = None) -> Any:
             # Print warnings for options
             check_deprecation(ctx)
             return super().invoke(ctx)
+
+        def format_options(self, ctx: Context, formatter: RichHelpFormatter) -> None:
+            """
+            default_panels_first=True causes the
+            renderer to drop `post_default_panels` for options on non-Group
+            commands, which is exactly where the subcommand "Options" panel
+            lives -- `idf.py <subcmd> --help` would otherwise show only
+            Usage + description. Temporarily flip the flag to False while
+            rendering options.
+            """
+            # default_panels_first=True is introduced in rich-click 1.9.6
+            if not hasattr(formatter.config, 'default_panels_first'):
+                super().format_options(ctx, formatter)
+                return
+            prev_default_first = formatter.config.default_panels_first
+            try:
+                formatter.config.default_panels_first = False
+                super().format_options(ctx, formatter)
+            finally:
+                formatter.config.default_panels_first = prev_default_first
 
     class Argument(click.Argument):
         """
@@ -406,14 +463,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
             if self.scope.is_global:
                 self.help += ' This option can be used at most once either globally, or for one subcommand.'
 
-        def get_help_record(self, ctx: click.core.Context) -> Any:
+        def get_help_record(self, ctx: Context) -> Any:
             # Backport "hidden" parameter to click 5.0
             if self.hidden:
                 return None
 
             return super().get_help_record(ctx)
 
-    class CLI(click.Group):
+    class CLI(click.RichGroup):
         """Action list contains all actions with options available for CLI"""
 
         def __init__(
@@ -421,13 +478,26 @@ def init_cli(verbose_output: list | None = None) -> Any:
             all_actions: dict | None = None,
             verbose_output: list | None = None,
             cli_help: str | None = None,
+            command_groups: dict[str, list[dict[str, Any]]] | None = None,
         ) -> None:
+            rich_help_config_kwargs: dict[str, Any] = {
+                'max_width': MAX_WIDTH,
+                'command_groups': command_groups if command_groups is not None else {},
+            }
+            # ``default_panels_first`` was added in rich-click 1.9.6; on older
+            # versions passing it raises TypeError.
+            if hasattr(RichHelpConfiguration, 'default_panels_first'):
+                rich_help_config_kwargs['default_panels_first'] = True
             super().__init__(
+                PROG,
                 chain=True,
                 invoke_without_command=True,
                 result_callback=self.execute_tasks,
                 no_args_is_help=True,
-                context_settings={'max_content_width': 140},
+                context_settings={
+                    'help_option_names': ['-h', '--help'],
+                    'rich_help_config': RichHelpConfiguration(**rich_help_config_kwargs),
+                },
                 help=cli_help,
             )
             self._actions = {}
@@ -467,6 +537,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     options = []
 
                 self._actions[name] = Action(name=name, **action)
+                self.commands[name] = self._actions[name]
                 for alias in [name] + action.get('aliases', []):
                     self.commands_with_aliases[alias] = name
 
@@ -492,10 +563,10 @@ def init_cli(verbose_output: list | None = None) -> Any:
 
                     self._actions[name].params.append(option)
 
-        def list_commands(self, ctx: click.core.Context) -> list:
+        def list_commands(self, ctx: Context) -> list:
             return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
 
-        def get_command(self, ctx: click.core.Context, name: str) -> Action | None:
+        def get_command(self, ctx: Context, name: str) -> Action | None:
             if name in self.commands_with_aliases:
                 return self._actions.get(self.commands_with_aliases.get(name))
 
@@ -506,7 +577,7 @@ def init_cli(verbose_output: list | None = None) -> Any:
                     return Action(name=name, callback=callback.unwrapped_callback)
                 return None
 
-        def shell_complete(self, ctx: click.core.Context, incomplete: str) -> list[CompletionItem]:
+        def shell_complete(self, ctx: Context, incomplete: str) -> list[CompletionItem]:
             # Enable @-argument completion in bash only if @ is not present in
             # COMP_WORDBREAKS. When @ is included, the @-argument is not considered
             # part of the completion word, causing @-argument completion to function
@@ -799,15 +870,14 @@ def init_cli(verbose_output: list | None = None) -> Any:
         build_dir: str = args.build_dir
         return os.path.abspath(build_dir)
 
-    def _extract_relevant_path(path: str) -> str:
-        """
-        Returns part of the path starting from 'components' or 'managed_components'.
-        If neither is found, returns the full path.
-        """
-        for keyword in ('components', 'managed_components'):
-            # arg path is loaded from project_description.json, where paths are always defined with '/'
-            if keyword in path.split('/'):
-                return keyword + path.split(keyword, 1)[1]
+    def _path_relative_to_project(path: str, project_dir: str) -> str:
+        """If ``path`` is under ``project_dir``, return its path relative to the project; else ``path`` unchanged."""
+        path_abs = os.path.abspath(os.path.normpath(path))
+        project_abs = os.path.abspath(os.path.normpath(project_dir))
+        parent_prefix = project_abs.rstrip(os.sep) + os.sep
+        if path_abs == project_abs or path_abs.startswith(parent_prefix):
+            return _safe_relpath(path_abs, project_abs)
+
         return path
 
     # Mutable dict used as a cache keyed by lock path
@@ -878,6 +948,20 @@ def init_cli(verbose_output: list | None = None) -> Any:
             lock_key = comp_name.replace('__', '/', 1) if '__' in comp_name else comp_name
             return lock_key in _get_trusted_names_from_lock(lock_path)
         return False
+
+    def _build_rich_help_command_groups(
+        external_panels: list[tuple[str, list[str]]],
+    ) -> dict[str, list[dict[str, Any]]]:
+        """Build ``command_groups`` for rich-click's ``RichHelpConfiguration``.
+        ``external_panels`` is a list of ``(title, command_names)`` from ``idf_ext.py`` extension
+        modules and from Python entry-point extensions. Those panels appear on
+        the root ``idf.py --help`` after the default Commands section.
+        """
+        panels: list[dict[str, Any]] = []
+        for title, cmds in external_panels:
+            if cmds:
+                panels.append({'name': title, 'commands': cmds})
+        return {PROG: panels} if panels else {}
 
     # That's a tiny parser that parse project-dir even before constructing
     # fully featured click parser to be sure that extensions are loaded from the right place
@@ -978,31 +1062,44 @@ def init_cli(verbose_output: list | None = None) -> Any:
                 else:
                     print_warning(
                         f'WARNING: Not loading component extension from untrusted source '
-                        f'"{_extract_relevant_path(comp_dir)}". '
+                        f'"{_path_relative_to_project(comp_dir, project_dir)}". '
                         'Only extensions from trusted sources are loaded. Run '
                         '"idf.py docs -sp api-guides/tools/idf-py.html#extending-idf-py" '
                         'for the list of trusted sources. Set IDF_EXTENSION_ALLOW_UNTRUSTED=1 to load all.'
                     )
 
     # Load extensions from directories that participate in the build (components and project)
+    external_help_panels: list[tuple[str, list[str]]] = []
     for ext_dir in component_idf_ext_dirs + [project_dir]:
         extension_func = load_cli_extension_from_dir(ext_dir)
         if extension_func:
             try:
-                all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+                custom_actions = extension_func(all_actions, project_dir)
+                all_actions = merge_action_lists(all_actions, custom_actions=custom_actions)
             except Exception as e:
                 print_warning(f'WARNING: Cannot load directory extension from "{ext_dir}": {e}')
             else:
+                panel_cmds = sorted(n for n in custom_actions.get('actions') or {} if n != 'fallback')
+                if panel_cmds:
+                    panel_title = (
+                        'Project' if ext_dir == project_dir else _path_relative_to_project(ext_dir, project_dir)
+                    )
+                    external_help_panels.append((panel_title, panel_cmds))
                 if ext_dir != project_dir:
-                    print(f'INFO: Loaded component extension from "{_extract_relevant_path(ext_dir)}"')
+                    print(f'INFO: Loaded component extension from "{_path_relative_to_project(ext_dir, project_dir)}"')
 
     # Load extensions from Python entry points
     entry_point_extensions = load_cli_extensions_from_entry_points()
-    for name, extension_func in entry_point_extensions:
+    for ep_name, extension_func in entry_point_extensions:
         try:
-            all_actions = merge_action_lists(all_actions, custom_actions=extension_func(all_actions, project_dir))
+            custom_actions = extension_func(all_actions, project_dir)
+            all_actions = merge_action_lists(all_actions, custom_actions=custom_actions)
         except Exception as e:
-            print_warning(f'WARNING: Cannot load entry point extension "{name}": {e}')
+            print_warning(f'WARNING: Cannot load entry point extension "{ep_name}": {e}')
+        else:
+            panel_cmds = sorted(n for n in (custom_actions.get('actions') or {}) if n != 'fallback')
+            if panel_cmds:
+                external_help_panels.append((ep_name, panel_cmds))
 
     cli_help = (
         'ESP-IDF CLI build management tool. '
@@ -1010,7 +1107,13 @@ def init_cli(verbose_output: list | None = None) -> Any:
         f'Selected target: {get_target(project_dir)}'
     )
 
-    return CLI(cli_help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
+    help_command_groups = _build_rich_help_command_groups(external_help_panels)
+    return CLI(
+        cli_help=cli_help,
+        verbose_output=verbose_output,
+        all_actions=all_actions,
+        command_groups=help_command_groups,
+    )
 
 
 def main(argv: list[Any] | None = None) -> None:
