@@ -349,6 +349,16 @@ menu "GAP"
             Enable this option to send number-of-completed-packets event to
             controller after disconnection
 
+    config BT_NIMBLE_DEFER_CONN_EVENTS_UNTIL_CONNECT
+        bool "Defer connection GAP/ATT events until CONNECT callback"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        help
+            Queue connection-related GAP callbacks and ATT server requests until
+            BLE_GAP_EVENT_CONNECT event is delivered for that connection handle.
+            Required when the host delays CONNECT so applications never receive other
+            events before CONNECT event.
+
 endmenu #GAP
 
 menu "GATT / ATT"
