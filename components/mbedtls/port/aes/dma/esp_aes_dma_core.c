@@ -1222,6 +1222,11 @@ cleanup:
     if (ret != 0) {
         mbedtls_platform_zeroize(output, len);
     }
+    /* s_stream_in/out are static DRAM buffers that held the trailing
+     * plaintext/ciphertext block for the DMA transfer. Scrub them so the block
+     * does not linger in fixed RAM between operations. */
+    mbedtls_platform_zeroize(s_stream_in, AES_BLOCK_BYTES);
+    mbedtls_platform_zeroize(s_stream_out, AES_BLOCK_BYTES);
     free(block_desc);
     return ret;
 }
@@ -1393,6 +1398,12 @@ cleanup:
     if (ret != 0) {
         mbedtls_platform_zeroize(output, len);
     }
+    /* stream_in/stream_out held the trailing plaintext/ciphertext block and
+     * stream_in_aad the trailing AAD block for the DMA transfer. Scrub them so
+     * the data does not linger in stack RAM. */
+    mbedtls_platform_zeroize(stream_in, sizeof(stream_in));
+    mbedtls_platform_zeroize(stream_out, sizeof(stream_out));
+    mbedtls_platform_zeroize(stream_in_aad, sizeof(stream_in_aad));
     free(block_desc);
     return ret;
 }
