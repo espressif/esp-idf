@@ -111,7 +111,7 @@ int get_local_fd(const vfs_entry_t *vfs, int fd);
 
 const fd_table_t *get_fd_entry(int fd);
 
-size_t get_vfs_count(void);
+size_t get_vfs_upper_bound(void);
 
 void close_pending(int nfds);
 
