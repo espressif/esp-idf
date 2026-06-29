@@ -58,6 +58,23 @@ include(GetGitRevisionDescription)
 # should probably be included there instead.
 include(ExternalProject)
 
+#[[api
+.. cmakev2:variable:: IDF_BUILD_V2
+
+    Set to ``y`` when the project is built with the CMake-based build system
+    v2. Use it to write component code that works with both v1 and v2, for
+    example ``if(IDF_BUILD_V2)``. It is also exported as an environment variable
+    and stored as a build property.
+
+.. cmakev2:variable:: IDF_BUILD_VER
+
+    The major version number of the build system, ``2`` for v2.
+
+.. cmakev2:variable:: IDF_BUILD_VER_TAG
+
+    The build system version tag, ``v2`` for v2.
+#]]
+
 #[[
     __init_build_version()
 
@@ -556,43 +573,125 @@ function(__init_idf_target_arch)
     endif()
 endfunction()
 
-#[[
-    The idf_build_properties interface target is exclusively used to store
-    information about global build properties and is not linked or used in any
-    other way. This is created very early so that all the initialization
-    functions can use it.
+# The idf_build_properties interface target stores all global build
+# properties. It is created very early so that the initialization functions
+# can use it. Build properties are read and written with the
+# idf_build_get_property and idf_build_set_property functions.
 
-    List of build properties
+#[[api
+.. cmakev2:build_property:: IDF_PATH
 
-    IDF_PATH
-        Path to esp-idf directory.
+    Absolute path to the ESP-IDF directory.
 
-    PREFIX
-        Prefix used for component target names.
+.. cmakev2:build_property:: IDF_TARGET
 
-    COMPONENTS_DISCOVERED
-        List of component names identified by the build system. These
-        components are initialized and can have properties attached to them.
-        However, they are not necessarily included in the build through
-        add_subdirectory.
+    The target chip the project is built for, for example ``esp32``.
 
-    COMPONENT_INTERFACES
-        This is a list of component interface targets for the components in
-        ``COMPONENTS_DISCOVERED``. It is used when searching for a component,
-        such as by its name, to set or retrieve the component's properties.
+.. cmakev2:build_property:: IDF_TARGET_ARCH
 
-    COMPONENTS_INCLUDED
-        This is a list of component names that were included in the build,
-        meaning their CMakeLists.txt files were processed with an
-        add_subdirectory call. Each component is evaluated exactly once, and
-        this list serves as a record of which components have already been
-        evaluated.  Although each component can only be evaluated once, it can
-        be used in multiple idf_component_include calls. If a component is
-        requested to be included a second time, this list is checked. If the
-        component is already included, the idf_component_include function
-        simply returns, as there is nothing further to do except add a new
-        alias target if requested.
+    The architecture of the target, ``xtensa`` or ``riscv`` (empty for the Linux host build).
+
+.. cmakev2:build_property:: IDF_VER
+
+    The ESP-IDF version string.
+
+.. cmakev2:build_property:: IDF_TOOLCHAIN
+
+    The selected toolchain, ``gcc`` or ``clang``.
+
+.. cmakev2:build_property:: PROJECT_NAME
+
+    The project name. Defaults to the name passed to CMake's ``project()`` command.
+
+.. cmakev2:build_property:: PROJECT_VER
+
+    The project version.
+
+.. cmakev2:build_property:: PROJECT_DIR
+
+    Absolute path to the project directory.
+
+.. cmakev2:build_property:: BUILD_DIR
+
+    Absolute path to the build directory.
+
+.. cmakev2:build_property:: PYTHON
+
+    Path to the Python interpreter used by the build.
+
+.. cmakev2:build_property:: COMPONENTS_DISCOVERED
+
+    List of the names of all discovered components.
+
+.. cmakev2:build_property:: COMPONENT_INTERFACES
+
+    List of the interface targets of all discovered components.
+
+.. cmakev2:build_property:: COMPONENTS_INCLUDED
+
+    List of the components that have been included (evaluated) in the build.
+
+.. cmakev2:build_property:: SDKCONFIG
+
+    Path to the project ``sdkconfig`` file.
+
+.. cmakev2:build_property:: SDKCONFIG_DEFAULTS
+
+    List of ``sdkconfig.defaults`` files applied to the configuration.
+
+.. cmakev2:build_property:: SDKCONFIG_HEADER
+
+    Path to the generated ``sdkconfig.h`` with C and C++ preprocessor defines.
+
+.. cmakev2:build_property:: SDKCONFIG_CMAKE
+
+    Path to the generated ``sdkconfig.cmake`` with the ``CONFIG_*`` CMake variables.
+
+.. cmakev2:build_property:: SDKCONFIG_JSON
+
+    Path to the generated ``sdkconfig.json``.
+
+.. cmakev2:build_property:: COMPILE_OPTIONS
+
+    Compile options applied to all components, for all languages.
+
+.. cmakev2:build_property:: C_COMPILE_OPTIONS
+
+    Compile options applied to all components, for C only.
+
+.. cmakev2:build_property:: CXX_COMPILE_OPTIONS
+
+    Compile options applied to all components, for C++ only.
+
+.. cmakev2:build_property:: ASM_COMPILE_OPTIONS
+
+    Compile options applied to all components, for assembly only.
+
+.. cmakev2:build_property:: COMPILE_DEFINITIONS
+
+    Preprocessor definitions applied to all components.
+
+.. cmakev2:build_property:: LINK_OPTIONS
+
+    Link options applied when linking the application.
+
+.. cmakev2:build_property:: INCLUDE_DIRECTORIES
+
+    Include directories applied to all components.
+
+.. cmakev2:build_property:: LINKER_TYPE
+
+    The linker family, ``GNU`` or ``Darwin``.
+
+.. cmakev2:build_property:: IDF_COMPONENT_MANAGER
+
+    Whether the component manager is enabled (``1``) or disabled (``0``).
+
+.. cmakev2:build_property:: IDF_COMPONENT_OPTIONAL_REQUIRES_MODE
+
+    How :cmakev2:ref:`idf_component_optional_requires` is resolved, ``IMMEDIATE`` or ``DEFERRED``.
 #]]
+
 add_library(idf_build_properties INTERFACE)
 
 # The __idf_component_interface_cache target is used to maintain internal

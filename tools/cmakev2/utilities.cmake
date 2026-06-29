@@ -16,7 +16,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/deduplicate_flags.cmake)
 # Using these functions has a side effect: the actual origin of the message
 # appears as the first line of the backtrace.
 
-#[[
+#[[api
 .. cmakev2:function:: idf_die
 
     .. code-block:: cmake
@@ -40,7 +40,7 @@ function(idf_die)
     message(FATAL_ERROR " IDF: ${joined}")
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_warn
 
     .. code-block:: cmake
@@ -63,7 +63,7 @@ function(idf_warn)
     message(WARNING " IDF: ${joined}")
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_msg
 
     .. code-block:: cmake
@@ -86,7 +86,7 @@ function(idf_msg)
     message(STATUS " IDF: ${joined}")
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_dbg
 
     .. code-block:: cmake
@@ -634,18 +634,22 @@ function(__split)
     set(${ARG_OUTPUT} "${filtered_lines}" PARENT_SCOPE)
 endfunction()
 
-#[[
-    idf_build_get_compile_options(<variable>)
+#[[api
+.. cmakev2:function:: idf_build_get_compile_options
 
-    *variable*
+    .. code-block:: cmake
 
-        Variable name in which the list of generator expressions for C, CXX,
-        and ASM compile options will be stored.
+        idf_build_get_compile_options(<variable>)
 
-    Gather the compilation options from COMPILE_OPTIONS, C_COMPILE_OPTIONS,
-    CXX_COMPILE_OPTIONS, and ASM_COMPILE_OPTIONS build properties into a single
-    list using generator expressions. This list can then be used with the
-    target_compile_options call.
+    *variable[out]*
+
+        Variable in which the list of compile option generator expressions is
+        stored.
+
+    Gather the compile options from the ``COMPILE_OPTIONS``,
+    ``C_COMPILE_OPTIONS``, ``CXX_COMPILE_OPTIONS``, and ``ASM_COMPILE_OPTIONS``
+    build properties into a single list of generator expressions, suitable for
+    passing to ``target_compile_options``.
 #]]
 function(idf_build_get_compile_options output)
     idf_build_get_property(compile_options COMPILE_OPTIONS GENERATOR_EXPRESSION)
@@ -917,29 +921,34 @@ function(target_add_binary_data target embed_file embed_type)
     target_sources("${target}" PRIVATE "${embed_srcfile}")
 endfunction()
 
-#[[
-    add_prebuilt_library(<target> <lib>
-                         [REQUIRES <component>...])
-                         [PRIV_REQUIRES <component>...])
+#[[api
+.. cmakev2:function:: add_prebuilt_library
+
+    .. code-block:: cmake
+
+        add_prebuilt_library(<target> <lib>
+                             [REQUIRES <component>...]
+                             [PRIV_REQUIRES <component>...])
 
     *target[in]*
 
         Target name for the imported library.
 
-    *library[in]*
+    *lib[in]*
 
-        Imported library path.
+        Path to the prebuilt static library.
 
     *REQUIRES[in,opt]*
 
-        Optional dependency on other components.
+        Components this library depends on publicly.
 
     *PRIV_REQUIRES[in,opt]*
 
-        Optional private dependency on other components.
+        Components this library depends on privately.
 
-    Add prebuilt library with support for adding dependencies on ESP-IDF
-    components.
+    Import a prebuilt static library as a CMake target, optionally linking it
+    against other ESP-IDF components. The resulting target can be linked into a
+    component or executable like any other library.
 #]]
 function(add_prebuilt_library target_name lib_path)
     cmake_parse_arguments(_ "" "" "REQUIRES;PRIV_REQUIRES" ${ARGN})

@@ -810,7 +810,7 @@ endfunction()
 # KCONFIG TARGETS FUNCTIONS
 # =============================================================================
 
-#[[
+#[[api
 .. cmakev2:function:: idf_create_menuconfig
 
     .. code-block:: cmake
@@ -953,7 +953,7 @@ function(idf_create_menuconfig executable)
     endif()
 endfunction()
 
-#[[
+#[[api
 .. cmakev2:function:: idf_create_confserver
 
     .. code-block:: cmake
