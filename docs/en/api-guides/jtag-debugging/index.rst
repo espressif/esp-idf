@@ -29,6 +29,8 @@ The document is structured as follows:
     If you are not familiar with GDB, check this section for debugging examples provided from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 :ref:`jtag-debugging-building-openocd`
     Reference for OpenOCD build workflow when building from sources.
+:ref:`jtag-debugging-semihosting`
+    Introduction to semihosting feature.
 :ref:`jtag-debugging-tips-and-quirks`
     This section provides collection of tips and quirks related to JTAG debugging of {IDF_TARGET_NAME} with OpenOCD and GDB.
 
@@ -315,6 +317,18 @@ The examples in this document use the pre-built OpenOCD binary distribution desc
 
 If you need to build OpenOCD from sources for custom requirements, please refer to the `OpenOCD build workflow <https://github.com/espressif/openocd-esp32/blob/master/.github/workflows/build_openocd.yml>`_, which demonstrates how OpenOCD is built for different platforms (Windows, Linux, macOS).
 
+.. _jtag-debugging-semihosting:
+
+Semihosting
+-----------
+
+Semihosting is a mechanism that allows code running on the target {IDF_TARGET_NAME} to communicate with the host PC through the debugger connection, e.g., for printing debug messages or reading/writing files.
+
+.. toctree::
+    :maxdepth: 1
+
+    semihosting
+
 .. _jtag-debugging-tips-and-quirks:
 
 Tips and Quirks
@@ -327,7 +341,6 @@ This section provides collection of links to all tips and quirks referred to fro
 
     tips-and-quirks
 
-
 Related Documents
 -----------------
 
@@ -338,11 +351,13 @@ Related Documents
 
     using-debugger
     debugging-examples
+    semihosting
     tips-and-quirks
     ../app_trace
 
 - :doc:`using-debugger`
 - :doc:`debugging-examples`
+- :doc:`semihosting`
 - :doc:`tips-and-quirks`
 - :doc:`../app_trace`
 - `Introduction to ESP-Prog Board <https://docs.espressif.com/projects/espressif-esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html>`__
