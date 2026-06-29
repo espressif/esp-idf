@@ -1,8 +1,11 @@
 name: 'openthread'
-version: '2023-07-06'
+version: '2025-06-12'
 cpe: cpe:2.3:o:google:openthread:{}:*:*:*:*:*:*:*
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Organization: Google LLC'
 description: OpenThread released by Google is an open-source implementation of the Thread networking
 url: https://github.com/espressif/openthread
 hash: a98813b30ae58f9a95ece680b9cc46c3874de6ea
+cve-exclude-list:
+  - cve: CVE-2026-8369
+    reason: We use Espressif’s NAT64 implementation and hence this CVE from the upstream NAT64 implementation is not applicable.
