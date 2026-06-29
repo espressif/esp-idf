@@ -13,6 +13,7 @@
 #include "esp_srp_mpi.h"
 #include "esp_srp.h"
 #include "esp_check.h"
+#include "mbedtls/platform_util.h"
 
 #define SHA512_HASH_SZ      64
 
@@ -172,6 +173,7 @@ void esp_srp_free(esp_srp_handle_t *hd)
         free(hd->bytes_A);
     }
     if (hd->session_key) {
+        mbedtls_platform_zeroize(hd->session_key, SHA512_HASH_SZ);
         free(hd->session_key);
     }
     free(hd);
