@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,8 @@ struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(uint16_t net_idx)
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
         sub = &bt_mesh.sub[i];
-        if (sub->net_idx == net_idx) {
+        if (sub->net_idx != BLE_MESH_KEY_UNUSED &&
+            sub->net_idx == net_idx) {
             BT_DBG("NodeSub");
             return sub;
         }
@@ -194,17 +195,18 @@ uint8_t bt_mesh_set_fast_prov_action(uint8_t action)
     }
 
     if (action == ACTION_ENTER) {
+        /* Perform validation before state mutation */
+        if (bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr()) < 0) {
+            BT_ERR("SetPrimaryElemAddrFail");
+            return 0x01;
+        }
+
         if (bt_mesh_secure_beacon_get() == BLE_MESH_SECURE_BEACON_ENABLED) {
             bt_mesh_secure_beacon_disable();
         }
 
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_proxy_client_prov_enable();
-        }
-
-        if (bt_mesh_provisioner_set_primary_elem_addr(bt_mesh_primary_addr()) < 0) {
-            BT_ERR("SetPrimaryElemAddrFail");
-            return 0x01;
         }
         bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
         bt_mesh_provisioner_fast_prov_enable(true);

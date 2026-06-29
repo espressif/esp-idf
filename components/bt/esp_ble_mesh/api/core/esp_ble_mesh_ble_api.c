@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,13 @@ esp_err_t esp_ble_mesh_start_ble_scanning(esp_ble_mesh_ble_scan_param_t *param)
 {
     btc_ble_mesh_ble_args_t arg = {0};
     btc_msg_t msg = {0};
+
+    /* Note:
+     * Currently the function is only used to enable reporting
+     * non-mesh advertising packets to the application layer,
+     * and the input parameter will not be used for now.
+     */
+    ARG_UNUSED(param);
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,7 @@ void btc_ble_mesh_generic_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, voi
             dst->generic_client_get_state.get_state = (esp_ble_mesh_generic_client_get_state_t *)bt_mesh_calloc(sizeof(esp_ble_mesh_generic_client_get_state_t));
             if (dst->generic_client_get_state.get_state) {
                 memcpy(dst->generic_client_get_state.get_state, src->generic_client_get_state.get_state,
-                    sizeof(esp_ble_mesh_generic_client_get_state_t));
+                       sizeof(esp_ble_mesh_generic_client_get_state_t));
             } else {
                 BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                 /* Free the previously allocated resources */
@@ -146,6 +146,11 @@ void btc_ble_mesh_generic_client_arg_deep_free(btc_msg_t *msg)
     }
 
     arg = (btc_ble_mesh_generic_client_args_t *)(msg->arg);
+    /**
+     * msg->arg is guaranteed to be non-NULL by btc_transfer_context
+    */
+    ESP_ASSUME_NONNULL(arg);
+
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_GENERIC_CLIENT_GET_STATE:
@@ -334,6 +339,7 @@ static void btc_ble_mesh_generic_client_copy_req_data(btc_msg_t *msg, void *p_de
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_GENERIC_CLIENT_TIMEOUT_EVT:
         break;
     default:
@@ -393,6 +399,7 @@ static void btc_ble_mesh_generic_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_GENERIC_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
             bt_mesh_free(arg->params);
