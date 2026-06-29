@@ -484,31 +484,28 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
 
-    /* For opaque keys (DS peripheral, hardware ECDSA), mbedtls_pk_free() does
-     * not destroy the PSA key — ownership is external. Destroy it manually
-     * before calling mbedtls_pk_free(). mbedtls_pk_wrap_psa() sets the pk_info
-     * to mbedtls_{rsa,ecdsa}_opaque_info, both of which have type
-     * MBEDTLS_PK_OPAQUE — so a single check covers both DS and ECDSA paths.
-     * clientkey and serverkey share storage via union, so one branch suffices.
-     *
-     * Only destroy volatile keys created internally by the DS/ECDSA peripheral
-     * paths. Keys wrapped from an external clientkey_psa_id are caller-owned
-     * (typically persistent) and must not be destroyed here. */
-#if defined(CONFIG_ESP_TLS_USE_DS_PERIPHERAL) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN)
+    /* For opaque keys, mbedtls_pk_free() does not release the underlying PSA
+     * key — ownership is tracked separately. Dispatch on ownership, not on the
+     * key lifetime: a caller-supplied key (ESP_KEY_SOURCE_PSA, e.g. a
+     * pre-provisioned secure element) is owned externally and must never be
+     * destroyed on connection close — at most purge it to drop the cached slot
+     * (a no-op for a volatile key). A key esp-tls created itself is always
+     * volatile and is destroyed to release its slot. mbedtls_pk_wrap_psa() sets
+     * the pk_info to mbedtls_{rsa,ecdsa}_opaque_info, both of type
+     * MBEDTLS_PK_OPAQUE, so one runtime check covers every opaque path (DS
+     * peripheral, hardware ECDSA, and caller-supplied PSA keys). clientkey and
+     * serverkey share storage via union, so one branch suffices. */
     if (mbedtls_pk_get_type(&tls->clientkey) == MBEDTLS_PK_OPAQUE) {
-        if (tls->clientkey.MBEDTLS_PRIVATE(priv_id) != PSA_KEY_ID_NULL) {
-            psa_key_attributes_t attrs = PSA_KEY_ATTRIBUTES_INIT;
-            if (psa_get_key_attributes(tls->clientkey.MBEDTLS_PRIVATE(priv_id),
-                                       &attrs) == PSA_SUCCESS) {
-                if (PSA_KEY_LIFETIME_IS_VOLATILE(psa_get_key_lifetime(&attrs))) {
-                    psa_destroy_key(tls->clientkey.MBEDTLS_PRIVATE(priv_id));
-                }
-                psa_reset_key_attributes(&attrs);
+        psa_key_id_t kid = tls->clientkey.MBEDTLS_PRIVATE(priv_id);
+        if (kid != PSA_KEY_ID_NULL) {
+            if (tls->opaque_key_is_external) {
+                psa_purge_key(kid);
+            } else {
+                psa_destroy_key(kid);
             }
             tls->clientkey.MBEDTLS_PRIVATE(priv_id) = PSA_KEY_ID_NULL;
         }
     }
-#endif
 
     mbedtls_pk_free(&tls->clientkey);
     mbedtls_ssl_config_free(&tls->conf);
@@ -780,6 +777,7 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
         }
         mbedtls_svc_key_id_t key_id = cfg->server_key->psa.key_id;
         mbedtls_pk_init(&tls->serverkey);
+        tls->opaque_key_is_external = true;
         ret = mbedtls_pk_wrap_psa(&tls->serverkey, key_id);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_pk_wrap_psa returned -0x%04X", -ret);
@@ -1044,6 +1042,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         }
         mbedtls_svc_key_id_t key_id = cfg->client_key->psa.key_id;
         mbedtls_pk_init(&tls->clientkey);
+        tls->opaque_key_is_external = true;
         ret = mbedtls_pk_wrap_psa(&tls->clientkey, key_id);
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_pk_wrap_psa returned -0x%04X", -ret);
