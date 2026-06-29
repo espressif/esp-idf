@@ -159,6 +159,14 @@ do {                                                                            
 ************************************************************************************/
 static int btc_hf_idx_by_bdaddr(bt_bdaddr_t *bd_addr)
 {
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param_ptr == NULL) {
+        return BTC_HF_INVALID_IDX;
+    }
+#endif
+    if (bd_addr == NULL || !hf_local_param.initialized || hf_local_param.btc_hf_cb == NULL) {
+        return BTC_HF_INVALID_IDX;
+    }
     for (int i = 0; i < btc_max_hf_clients; ++i) {
         if (bdcmp(bd_addr->address, hf_local_param.btc_hf_cb[i].connected_bda.address) == 0) {
             return i;
@@ -169,9 +177,16 @@ static int btc_hf_idx_by_bdaddr(bt_bdaddr_t *bd_addr)
 
 static int btc_hf_find_free_idx(void)
 {
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param_ptr == NULL) {
+        return BTC_HF_INVALID_IDX;
+    }
+#endif
+    if (!hf_local_param.initialized || hf_local_param.btc_hf_cb == NULL) {
+        return BTC_HF_INVALID_IDX;
+    }
     for (int idx = 0; idx < btc_max_hf_clients; ++idx) {
-        if (hf_local_param.initialized &&
-            hf_local_param.btc_hf_cb[idx].connection_state == ESP_HF_CONNECTION_STATE_DISCONNECTED) {
+        if (hf_local_param.btc_hf_cb[idx].connection_state == ESP_HF_CONNECTION_STATE_DISCONNECTED) {
             return idx;
         }
     }
@@ -192,6 +207,14 @@ static int btc_hf_latest_connected_idx(void)
 {
     struct timespec   now, conn_time_delta;
     int latest_conn_idx = BTC_HF_INVALID_IDX;
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param_ptr == NULL) {
+        return BTC_HF_INVALID_IDX;
+    }
+#endif
+    if (!hf_local_param.initialized || hf_local_param.btc_hf_cb == NULL) {
+        return BTC_HF_INVALID_IDX;
+    }
     clock_gettime(CLOCK_MONOTONIC, &now);
     conn_time_delta.tv_sec = now.tv_sec;
 
@@ -938,7 +961,7 @@ bt_status_t btc_hf_ci_sco_data(void)
     return status;
 }
 
-bool btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len)
+bt_status_t btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len)
 {
 #if (BTM_SCO_HCI_INCLUDED == TRUE) && (BTA_HFP_EXT_CODEC == TRUE)
     /* currently, sync_conn_hdl is not used */
@@ -946,10 +969,10 @@ bool btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, ui
     CHECK_HF_SLC_CONNECTED(idx);
     if (idx != BTC_HF_INVALID_IDX) {
         BTA_AgAudioDataSend(hf_local_param.btc_hf_cb[idx].handle, p_buff_start, p_data, data_len);
-        return true;
+        return BT_STATUS_SUCCESS;
     }
 #endif
-    return false;
+    return BT_STATUS_FAIL;
 }
 
 /************************************************************************************
