@@ -309,9 +309,13 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err2, TAG, "write header info to hw failed");
     ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err2, TAG, "config dma descriptor failed");
 
+    // Validate the decoded size against the output buffer unconditionally. Computed in
+    // 64-bit to avoid uint32_t wrap-around, and not gated on out_size, otherwise a NULL
+    // out_size would skip the check and let the DMA write past decode_outbuf.
+    uint64_t real_size = (uint64_t)decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
+    ESP_GOTO_ON_FALSE((real_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size %" PRIu32 " is smaller than actual jpeg decode output size %" PRIu64, outbuf_size, real_size);
     if (out_size) {
-        *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
-        ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+        *out_size = (uint32_t)real_size;
     }
 
     dma2d_trans_config_t trans_desc = {
