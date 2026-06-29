@@ -247,6 +247,18 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     if (esp_srp_exchange_proofs(cur_session->srp_hd, cur_session->username, cur_session->username_len, (char * ) in->sc1->client_proof.data, device_proof) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to authenticate client proof!");
         free(device_proof);
+
+        if (cur_session->srp_hd) {
+            esp_srp_free(cur_session->srp_hd);
+            cur_session->srp_hd = NULL;
+        }
+        cur_session->session_key = NULL;
+        cur_session->session_key_len = 0;
+        free(cur_session->username);
+        cur_session->username = NULL;
+        cur_session->username_len = 0;
+        cur_session->state = SESSION_STATE_CMD0;
+
         if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post credential mismatch event");
         }
