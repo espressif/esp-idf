@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -77,22 +77,24 @@ static void eddystone_send_raw(const esp_eddystone_result_t *res)
         }
 
         case EDDYSTONE_FRAME_TYPE_URL: {
-            size_t url_len = strlen((char*)res->inform.url.encoded_url); //encoded url length
-            if(url_len > EDDYSTONE_URL_MAX_LEN){
-                url_len = EDDYSTONE_URL_MAX_LEN;
+            size_t url_len = strlen((char*)res->inform.url.encoded_url); // encoded url length
+            /* Eddystone: max 17 bytes encoded URL after scheme byte; also raw_adv_data[31] leaves
+             * only 20 bytes at index 11 (3 header + url_len), so url_len <= 17. */
+            if (url_len > EDDYSTONE_URL_ENCODED_MAX_LEN) {
+                url_len = EDDYSTONE_URL_ENCODED_MAX_LEN;
             }
 
-            raw_adv_data[index++] = url_len+6; //length
+            raw_adv_data[index++] = url_len + 6; // length
             raw_adv_data[index++] = ESP_BLE_AD_TYPE_SERVICE_DATA;
             raw_adv_data[index++] = 0xAA;
             raw_adv_data[index++] = 0xFE;
-            uint8_t service_data[EDDYSTONE_URL_MAX_LEN+2] = {0};
+            uint8_t service_data[EDDYSTONE_URL_ENCODED_MAX_LEN + 3] = {0};
             service_data[0] = EDDYSTONE_FRAME_TYPE_URL;
             service_data[1] = res->inform.url.tx_power;
             service_data[2] = res->inform.url.url_scheme;
             memcpy(&service_data[3], res->inform.url.encoded_url, url_len);
-            memcpy(&raw_adv_data[index], service_data, url_len+3);
-            index += url_len+3;
+            memcpy(&raw_adv_data[index], service_data, url_len + 3);
+            index += url_len + 3;
             break;
         }
 
@@ -107,7 +109,7 @@ static void eddystone_send_raw(const esp_eddystone_result_t *res)
             service_data[2] = (res->inform.tlm.battery_voltage >> 8) & 0xFF;
             service_data[3] = res->inform.tlm.battery_voltage & 0xFF;
             service_data[4] = (res->inform.tlm.temperature >> 8) & 0xFF;
-            service_data[4] = res->inform.tlm.temperature & 0xFF;
+            service_data[5] = res->inform.tlm.temperature & 0xFF;
             service_data[6] = (res->inform.tlm.adv_count >> 24) & 0xFF;
             service_data[7] = (res->inform.tlm.adv_count >> 16) & 0xFF;
             service_data[8] = (res->inform.tlm.adv_count >> 8) & 0xFF;
@@ -167,8 +169,8 @@ void esp_eddystone_appRegister(void)
 void esp_eddystone_init(void)
 {
     esp_bluedroid_config_t cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    esp_bluedroid_init_with_cfg(&cfg);
-    esp_bluedroid_enable();
+    ESP_ERROR_CHECK(esp_bluedroid_init_with_cfg(&cfg));
+    ESP_ERROR_CHECK(esp_bluedroid_enable());
     esp_eddystone_appRegister();
 }
 
@@ -177,8 +179,8 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    esp_bt_controller_init(&bt_cfg);
-    esp_bt_controller_enable(ESP_BT_MODE_BLE);
+    ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
 
     esp_eddystone_init();
     esp_eddystone_result_t eddystone_result;

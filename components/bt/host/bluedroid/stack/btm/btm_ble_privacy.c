@@ -1180,6 +1180,9 @@ void btm_ble_resolving_list_cleanup(void)
 {
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
+    p_q->q_next = 0;
+    p_q->q_pending = 0;
+
     if (p_q->resolve_q_random_pseudo) {
         osi_free(p_q->resolve_q_random_pseudo);
         p_q->resolve_q_random_pseudo = NULL;

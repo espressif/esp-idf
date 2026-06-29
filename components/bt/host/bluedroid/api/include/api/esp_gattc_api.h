@@ -519,8 +519,12 @@ esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id,
  *      2. `esp_ble_gattc_cache_refresh` can be used to discover services again.
  *
  * @return
- *      - ESP_OK: Success
- *      - ESP_FAIL: Failure
+ *      - ESP_GATT_OK: Success
+ *      - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *      - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
+ *      - ESP_GATT_NOT_FOUND: No matching service was found in the local cache
+ *      - ESP_GATT_INVALID_OFFSET: `offset` is out of range of the matched services
+ *      - ESP_GATT_NO_RESOURCES: Failed to allocate memory for the UUID lookup
  */
 esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t conn_id, esp_bt_uuid_t *svc_uuid,
                                             esp_gattc_service_elem_t *result, uint16_t *count, uint16_t offset);
@@ -538,13 +542,17 @@ esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t con
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *      - ESP_OK: Success
+ *      - ESP_GATT_OK: Success
+ *      - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *      - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *      - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *      - ESP_FAIL: Failure due to other reasons
+ *      - ESP_GATT_NOT_FOUND: No characteristic found in the given handle range
+ *      - ESP_GATT_INVALID_OFFSET: `offset` is out of range of the matched characteristics
  */
 esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
                                              uint16_t conn_id,
@@ -568,10 +576,12 @@ esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
  *      2. `char_handle` must be greater than 0.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `char_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No descriptor found under the given characteristic
+ *       - ESP_GATT_INVALID_OFFSET: `offset` is out of range of the matched descriptors
  */
 esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
                                               uint16_t conn_id,
@@ -592,13 +602,16 @@ esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No characteristic matching `char_uuid` found in the handle range
  */
 esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
                                                  uint16_t conn_id,
@@ -622,12 +635,16 @@ esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No descriptor matching the given UUIDs found in the handle range
  */
 esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
                                                   uint16_t conn_id,
@@ -653,10 +670,11 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
  *      2. `char_handle` must be greater than 0.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `char_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No descriptor matching `descr_uuid` found under `char_handle`
  */
 esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
                                                          uint16_t conn_id,
@@ -678,12 +696,16 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No included service matching `incl_uuid` found in the handle range
  */
 esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
                                                     uint16_t conn_id,
@@ -707,13 +729,15 @@ esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
  *
  * @note
  *     1. This API does not trigger any event.
- *     2. `start_handle` must be greater than 0, and smaller than `end_handle` if the `type` is not `ESP_GATT_DB_DESCRIPTOR`.
+ *     2. If the `type` is not `ESP_GATT_DB_DESCRIPTOR`, `start_handle` must not be greater than
+ *        `end_handle`, and `start_handle` and `end_handle` must not both be 0. 0 is allowed for
+ *        `start_handle` alone and matches cached attributes from the beginning of the handle range.
  *
  * @return
- *                  - ESP_OK: Success
+ *                  - ESP_GATT_OK: Success
+ *                  - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *                  - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle`, `end_handle`
  *                  - ESP_GATT_INVALID_PDU: NULL pointer to `count`
- *                  - ESP_FAIL: Failure due to other reasons
  */
 esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
                                                uint16_t conn_id,
@@ -735,13 +759,16 @@ esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
  *
  * @note
  *       1. This API does not trigger any event.
- *       2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *       2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *          `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *          cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle`, `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `db` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No GATT database element found in the given handle range
  *
  */
 esp_gatt_status_t esp_ble_gattc_get_db(esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t start_handle, uint16_t end_handle,
@@ -784,7 +811,9 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
  * @note
  *      1. This function triggers `ESP_GATTC_READ_CHAR_EVT`.
  *      2. This function should be called only after the connection has been established.
- *      3. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      3. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and is
+ *         treated as 1 on air.
  *
  * @return
  *       - ESP_OK: Success

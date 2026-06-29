@@ -50,7 +50,7 @@
 #include "stack/btu.h"
 
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
-extern void btm_ble_test_command_complete(UINT8 *p);
+extern void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 // BLE Channel Sounding parameter validation macros per BLE spec
@@ -1331,11 +1331,17 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_create_ll_conn_complete(*p);
         break;
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
-#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TEST_END:
-        btm_ble_test_command_complete(p);
+        /* Forward raw parameters + length; upper layers validate before parsing. */
+        btm_ble_test_command_complete(p, evt_len);
+        break;
+#else
+    case HCI_BLE_TRANSMITTER_TEST:
+    case HCI_BLE_RECEIVER_TEST:
+    case HCI_BLE_TEST_END:
         break;
 #endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_CREATE_CONN_CANCEL:
@@ -1397,7 +1403,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #if (BLE_50_DTM_TEST_EN == TRUE)
     case HCI_BLE_ENH_RX_TEST:
     case HCI_BLE_ENH_TX_TEST:
-        btm_ble_test_command_complete(p);
+        btm_ble_test_command_complete(p, evt_len);
         break;
 #endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 

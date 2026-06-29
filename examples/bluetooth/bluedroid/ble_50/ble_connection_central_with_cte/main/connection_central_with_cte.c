@@ -37,6 +37,7 @@
 #define REMOTE_NOTIFY_UUID    0xFF01
 #define EXT_SCAN_DURATION     0
 #define EXT_SCAN_PERIOD       0
+#define BLE_CONN_HDL_INVALID                      ((uint16_t)0xFFFF)
 
 ///Declare static functions
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -95,7 +96,7 @@ const esp_ble_conn_params_t phy_coded_conn_params = {
 
 static uint8_t antenna_ids[2] = {0x00, 0x01};
 esp_ble_cte_recv_params_params_t cte_recv_params = {
-    .conn_handle = 0xff,
+    .conn_handle = BLE_CONN_HDL_INVALID,
     .sampling_en = ESP_BLE_CTE_SAMPLING_ENABLE,
     .slot_dur = ESP_BLE_CTE_SLOT_DURATION_2US,
     .switching_pattern_len = sizeof(antenna_ids),
@@ -103,14 +104,14 @@ esp_ble_cte_recv_params_params_t cte_recv_params = {
 };
 
 static esp_ble_cte_req_en_params_t cte_conn_req_en = {
-    .conn_handle = 0xff,
+    .conn_handle = BLE_CONN_HDL_INVALID,
     .enable = ESP_BLE_CTE_SAMPLING_ENABLE,
     .cte_req_interval = 0x05,
     .req_cte_len = ESP_BLE_CTE_MAX_REQUESTED_CTE_LENGTH,
     .req_cte_Type = ESP_BLE_CTE_TYPE_AOA,
 };
 
-uint16_t cur_conn_hdl = 0xff;
+uint16_t cur_conn_hdl = BLE_CONN_HDL_INVALID;
 
 #define PROFILE_NUM 1
 #define PROFILE_A_APP_ID 0
@@ -210,6 +211,31 @@ static char *esp_auth_req_to_str(esp_ble_auth_req_t auth_req)
    return auth_str;
 }
 
+/** After a failed open or disconnect: clear connect flag and restart extended scan. */
+static void cte_resume_ext_scan(void)
+{
+    connect = false;
+    esp_err_t err = esp_ble_gap_start_ext_scan(EXT_SCAN_DURATION, EXT_SCAN_PERIOD);
+    if (err != ESP_OK) {
+        ESP_LOGE(LOG_TAG, "start ext scan failed, error = 0x%x", err);
+    }
+}
+
+/** Start CTE receive setup only after link is authenticated (see esp_gap_cb AUTH_CMPL). */
+static void cte_enable_connection_receive_after_encrypted(void)
+{
+    if (cur_conn_hdl == BLE_CONN_HDL_INVALID) {
+        ESP_LOGW(LOG_TAG, "Skip CTE receive params: no connection handle");
+        return;
+    }
+    ESP_LOGI(LOG_TAG, "Set CTE connection receive params after encryption, conn_handle %d", cur_conn_hdl);
+    cte_recv_params.conn_handle = cur_conn_hdl;
+    esp_err_t cte_ret = esp_ble_cte_set_connection_receive_params(&cte_recv_params);
+    if (cte_ret != ESP_OK) {
+        ESP_LOGE(LOG_TAG, "CTE set connection receive params failed, 0x%x", cte_ret);
+    }
+}
+
 static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
 {
     esp_ble_gattc_cb_param_t *p_data = (esp_ble_gattc_cb_param_t *)param;
@@ -227,6 +253,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_OPEN_EVT:
         if (param->open.status != ESP_GATT_OK){
             ESP_LOGE(LOG_TAG, "Open failed, status %x", p_data->open.status);
+            cte_resume_ext_scan();
             break;
         }
         ESP_LOGI(LOG_TAG, "Open successfully, MTU %d", p_data->open.mtu);
@@ -239,19 +266,14 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_CFG_MTU_EVT:
         ESP_LOGI(LOG_TAG, "MTU exchange, status %d, MTU %d, conn_id %d", param->cfg_mtu.status, param->cfg_mtu.mtu, param->cfg_mtu.conn_id);
-        if (!param->cfg_mtu.status) {
-            ESP_LOGI(LOG_TAG, "Set CTE connection receive params, conn_handle %d", cur_conn_hdl);
-            cte_recv_params.conn_handle = cur_conn_hdl;
-            esp_ble_cte_set_connection_receive_params(&cte_recv_params);
-        }
         break;
     case ESP_GATTC_DIS_SRVC_CMPL_EVT:
         if (param->dis_srvc_cmpl.status != ESP_GATT_OK){
             ESP_LOGE(LOG_TAG, "Service discover failed, status %d", param->dis_srvc_cmpl.status);
             break;
         }
-        ESP_LOGI(LOG_TAG, "Service discover complete, conn_id %d", param->dis_srvc_cmpl.conn_id);
-        esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &remote_filter_service_uuid);
+        ESP_LOGI(LOG_TAG, "Service discover complete, conn_id %d", p_data->dis_srvc_cmpl.conn_id);
+        esp_ble_gattc_search_service(gattc_if, p_data->dis_srvc_cmpl.conn_id, &remote_filter_service_uuid);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
         ESP_LOGI(LOG_TAG, "Service search result, conn_id %x, is primary service %d", p_data->search_res.conn_id, p_data->search_res.is_primary);
@@ -314,9 +336,9 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_DISCONNECT_EVT:
         ESP_LOGI(LOG_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
-        connect = false;
         get_service = false;
-        esp_ble_gap_start_ext_scan(EXT_SCAN_DURATION, EXT_SCAN_PERIOD);
+        cur_conn_hdl = BLE_CONN_HDL_INVALID;
+        cte_resume_ext_scan();
         break;
     default:
         break;
@@ -397,8 +419,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             ESP_LOGI(LOG_TAG, "Pairing failed, reason 0x%x",param->ble_security.auth_cmpl.fail_reason);
         } else {
             ESP_LOGI(LOG_TAG, "Pairing successfully, auth mode %s",esp_auth_req_to_str(param->ble_security.auth_cmpl.auth_mode));
-            // Enable CTE
-
+            cte_enable_connection_receive_after_encrypted();
         }
         break;
     }
@@ -429,7 +450,10 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             creat_conn_params.phy_1m_conn_params = &phy_1m_conn_params;
             creat_conn_params.phy_2m_conn_params = &phy_2m_conn_params;
             creat_conn_params.phy_coded_conn_params = &phy_coded_conn_params;
-            esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params);
+            if (esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params) != ESP_OK) {
+                ESP_LOGE(LOG_TAG, "Failed to open connection");
+                cte_resume_ext_scan();
+            }
         }
 
         break;
@@ -453,14 +477,17 @@ static void cte_event_handler(esp_ble_cte_cb_event_t event, esp_ble_cte_cb_param
         case ESP_BLE_CTE_SET_CONN_TRANS_PARAMS_CMPL_EVT:
             ESP_LOGI(LOG_TAG, "CTE set connection transmit params, status %d", param->conn_trans_params_cmpl.status);
             break;
-        case ESP_BLE_CTE_SET_CONN_RECV_PARAMS_CMPL_EVT:
-            ESP_LOGI(LOG_TAG, "CTE set connection receive params, status %d", param->conn_recv_params_cmpl.status);
+        case ESP_BLE_CTE_SET_CONN_RECV_PARAMS_CMPL_EVT: {
+            uint16_t recv_cmpl_conn_hdl = param->conn_recv_params_cmpl.conn_handle;
+            ESP_LOGI(LOG_TAG, "CTE set connection receive params, status %d, conn_handle %d",
+                     param->conn_recv_params_cmpl.status, recv_cmpl_conn_hdl);
             if (!param->conn_recv_params_cmpl.status) {
-                cte_conn_req_en.conn_handle = cur_conn_hdl;
-                ESP_LOGI(LOG_TAG, "Enable CTE request, conn_handle %d", cur_conn_hdl);
+                cte_conn_req_en.conn_handle = recv_cmpl_conn_hdl;
+                ESP_LOGI(LOG_TAG, "Enable CTE request, conn_handle %d", recv_cmpl_conn_hdl);
                 esp_ble_cte_connection_cte_request_enable(&cte_conn_req_en);
             }
             break;
+        }
         case ESP_BLE_CTE_SET_CONN_REQ_ENABLE_CMPL_EVT:
             ESP_LOGI(LOG_TAG, "CTE set connection request enable, status %d", param->conn_req_en_cmpl.status);
             break;
