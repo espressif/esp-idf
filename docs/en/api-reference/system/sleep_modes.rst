@@ -391,6 +391,24 @@ After waking-up from UART, you should send some extra data through the UART port
 
            In Light-sleep mode, setting Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate UART wakeup.
 
+.. only:: SOC_ULP_LP_UART_SUPPORTED
+
+    LP_UART can wake up the ULP LP core coprocessor. LP_UART supports the same wakeup modes as the HP UART described above, including active edge threshold wakeup, RX FIFO threshold wakeup, start bit detection wakeup, and character sequence detection wakeup.
+
+    To use LP_UART to wake up the ULP LP core, follow these steps:
+
+    #. Set the :c:macro:`ULP_LP_CORE_WAKEUP_SOURCE_LP_UART` flag in the ``wakeup_source`` field of the :cpp:type:`ulp_lp_core_cfg_t` structure.
+    #. Initialize the LP UART (call :cpp:func:`lp_core_uart_init`).
+    #. Configure the LP_UART wakeup mode using the :cpp:func:`lp_core_uart_wakeup_setup` function with a :cpp:type:`uart_wakeup_cfg_t` structure, using the same configuration method as HP UART.
+
+    .. only:: SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
+
+       .. note::
+
+           On chips with ``SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED``, the LP UART wakeup signal remains triggered after a wakeup event. The LP core startup flow (:cpp:func:`ulp_lp_core_update_wakeup_cause`) automatically calls :cpp:func:`ulp_lp_core_lp_uart_reset_wakeup_en` and :cpp:func:`lp_core_uart_clear_buf` to clear this state. If the standard startup flow is not used, you must handle this manually; otherwise, repeated wakeups will occur.
+
+    For example code on LP_UART wakeup, refer to :example:`system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup`.
+
 .. _disable_sleep_wakeup_source:
 
 Disable Sleep Wakeup Source
