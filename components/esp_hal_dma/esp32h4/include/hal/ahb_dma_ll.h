@@ -23,8 +23,8 @@ extern "C" {
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
-#define GDMA_LL_RX_EVENT_MASK       (0x7F)
-#define GDMA_LL_TX_EVENT_MASK       (0x3F)
+#define AHB_DMA_LL_RX_EVENT_MASK    (0x7F)
+#define AHB_DMA_LL_TX_EVENT_MASK    (0x3F)
 
 // any "dummy" peripheral ID can be used for M2M mode
 #define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFC00)

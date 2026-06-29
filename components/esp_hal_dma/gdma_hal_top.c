@@ -125,3 +125,13 @@ void gdma_hal_set_weight(gdma_hal_context_t *hal, int chan_id, gdma_channel_dire
     hal->set_weight(hal, chan_id, dir, weight);
 }
 #endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+
+void gdma_hal_request_link_switch_event(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir)
+{
+    hal->request_link_switch_event(hal, chan_id, dir);
+}
+
+bool gdma_hal_is_tx_link_switch_event_supported(gdma_hal_context_t *hal)
+{
+    return hal->is_tx_link_switch_event_supported(hal);
+}
