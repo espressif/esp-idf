@@ -25,6 +25,9 @@
 #define BTA_DM_INT_H
 
 #include "common/bt_target.h"
+#if (BLE_FEAT_DBAF == TRUE) || (BLE_FEAT_LL_EXT_FEAT == TRUE) || (BLE_FEAT_LE_UTP == TRUE)
+#include "stack/hcimsgs.h"
+#endif
 #include "freertos/semphr.h"
 #include "bta/bta_sys.h"
 #if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
@@ -319,6 +322,30 @@ enum {
     BTA_DM_API_CS_SET_PROCEDURE_PARAMS,
     BTA_DM_API_CS_PROCEDURE_ENABLE,
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    BTA_DM_API_CS_SET_SECURITY_REQUIREMENTS,
+    BTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS,
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    BTA_DM_API_SET_DECISION_DATA_EVT,
+    BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT,
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    BTA_DM_API_FRAME_SPACE_UPDATE_EVT,
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    BTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT_EVT,
+    BTA_DM_API_READ_ALL_REMOTE_FEAT_EVT,
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    BTA_DM_API_CONNECTION_RATE_REQUEST_EVT,
+    BTA_DM_API_SET_DEFAULT_RATE_PARAMETERS_EVT,
+    BTA_DM_API_READ_MIN_SUPP_CONN_INTERVAL_EVT,
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    BTA_DM_API_ENABLE_UTP_OTA_MODE_EVT,
+    BTA_DM_API_UTP_SEND_EVT,
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1192,6 +1219,19 @@ typedef struct {
     UINT8 config_id;
     UINT8 enable;
 } tBTA_DM_API_CS_PROC_ENABLE_PARAMS;
+
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT64 cs_security_requirements;
+} tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT64 cs_security_requirements;
+} tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
 #endif /* BLE_INCLUDED */
@@ -1364,6 +1404,93 @@ typedef struct {
     UINT8                           enable;
 } tBTA_DM_API_ENABLE_MONITOR_ADV;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           adv_handle;
+    UINT8                           decision_type_flags;
+    UINT8                           data_len;
+    UINT8                           data[BLE_DECISION_DATA_MAX_LEN];
+} tBTA_DM_API_SET_DECISION_DATA;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           num_tests;
+    UINT8                           test_flags[BLE_DECISION_MAX_TESTS];
+    UINT8                           test_fields[BLE_DECISION_MAX_TESTS];
+    UINT8                           test_params[BLE_DECISION_TEST_PARAMS_MAX_LEN];
+} tBTA_DM_API_SET_DECISION_INSTRUCTIONS;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          conn_handle;
+    UINT16                          frame_space_min;
+    UINT16                          frame_space_max;
+    UINT8                           phys;
+    UINT16                          spacing_types;
+} tBTA_DM_API_FRAME_SPACE_UPDATE;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+} tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          conn_handle;
+    UINT8                           page_requested;
+} tBTA_DM_API_READ_ALL_REMOTE_FEAT;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          conn_handle;
+    UINT16                          conn_interval_min;
+    UINT16                          conn_interval_max;
+    UINT16                          subrate_min;
+    UINT16                          subrate_max;
+    UINT16                          max_latency;
+    UINT16                          continuation_number;
+    UINT16                          supervision_timeout;
+    UINT16                          min_ce_len;
+    UINT16                          max_ce_len;
+} tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          conn_interval_min;
+    UINT16                          conn_interval_max;
+    UINT16                          subrate_min;
+    UINT16                          subrate_max;
+    UINT16                          max_latency;
+    UINT16                          continuation_number;
+    UINT16                          supervision_timeout;
+    UINT16                          min_ce_len;
+    UINT16                          max_ce_len;
+} tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS;
+
+typedef struct {
+    BT_HDR                          hdr;
+} tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           enable;
+} tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           data_len;
+    UINT8                           data[BLE_UTP_DATA_MAX_LEN];
+} tBTA_DM_API_BLE_UTP_SEND;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 typedef struct {
     BT_HDR                          hdr;
@@ -1798,6 +1925,26 @@ typedef union {
     tBTA_DM_API_READ_MONITOR_ADV_LIST_SIZE ble_read_monitor_adv_list_size;
     tBTA_DM_API_ENABLE_MONITOR_ADV      ble_enable_monitor_adv;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    tBTA_DM_API_SET_DECISION_DATA       ble_set_decision_data;
+    tBTA_DM_API_SET_DECISION_INSTRUCTIONS ble_set_decision_instructions;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    tBTA_DM_API_FRAME_SPACE_UPDATE      ble_frame_space_update;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT ble_read_all_local_supp_feat;
+    tBTA_DM_API_READ_ALL_REMOTE_FEAT    ble_read_all_remote_feat;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST ble_connection_rate_request;
+    tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS ble_set_default_rate_parameters;
+    tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL ble_read_min_supp_conn_interval;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE   ble_enable_utp_ota_mode;
+    tBTA_DM_API_BLE_UTP_SEND              ble_utp_send;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BLE_42_DTM_TEST_EN == TRUE)
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
@@ -1884,6 +2031,10 @@ typedef union {
     tBTA_DM_API_CS_SET_PROC_PARAMS set_proc_params;
     tBTA_DM_API_CS_PROC_ENABLE_PARAMS proc_enable_params;
 #endif
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS set_security_requirements_params;
+    tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS set_default_security_requirements_params;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2474,6 +2625,31 @@ extern void bta_dm_ble_gap_read_monitor_adv_list_size(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_enable_monitor_adv(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+extern void bta_dm_ble_gap_set_decision_data(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_set_decision_instructions(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+extern void bta_dm_ble_gap_frame_space_update(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+extern void bta_dm_ble_gap_read_all_local_supp_features(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_read_all_remote_features(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+extern void bta_dm_ble_gap_connection_rate_request(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_set_default_rate_parameters(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_read_min_supp_conn_interval(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+extern void bta_dm_ble_gap_enable_utp_ota_mode(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_utp_send(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 extern void bta_dm_ble_big_create(tBTA_DM_MSG *p_data);
@@ -2553,4 +2729,8 @@ void bta_dm_api_cs_set_channel_classification(tBTA_DM_MSG *p_data);
 void bta_dm_api_cs_set_procedure_params(tBTA_DM_MSG *p_data);
 void bta_dm_api_cs_procedure_enable(tBTA_DM_MSG *p_data);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void bta_dm_api_cs_set_security_requirements(tBTA_DM_MSG *p_data);
+void bta_dm_api_cs_set_default_security_requirements(tBTA_DM_MSG *p_data);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #endif /* BTA_DM_INT_H */

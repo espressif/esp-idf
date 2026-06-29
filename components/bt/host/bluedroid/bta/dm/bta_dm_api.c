@@ -2622,6 +2622,34 @@ void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t e
 
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void BTA_DmBleGapCsSetSecurityRequirements(uint16_t conn_handle, uint64_t cs_security_requirements)
+{
+    tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS *)
+         osi_malloc(sizeof(tBTA_DM_API_CS_SET_SECURITY_REQUIREMENTS_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_SECURITY_REQUIREMENTS;
+        p_msg->conn_handle = conn_handle;
+        p_msg->cs_security_requirements = cs_security_requirements;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapCsSetDefaultSecurityRequirements(uint64_t cs_security_requirements)
+{
+    tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS *)
+         osi_malloc(sizeof(tBTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_PARAMS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS;
+        p_msg->cs_security_requirements = cs_security_requirements;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit
@@ -3232,6 +3260,211 @@ void BTA_DmBleGapEnableMonitorAdv(UINT8 enable)
     }
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+void BTA_DmBleGapSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                 UINT8 data_len, const UINT8 *p_data)
+{
+    tBTA_DM_API_SET_DECISION_DATA *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_DECISION_DATA *) osi_malloc(sizeof(tBTA_DM_API_SET_DECISION_DATA))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_DECISION_DATA));
+        p_msg->hdr.event = BTA_DM_API_SET_DECISION_DATA_EVT;
+        p_msg->adv_handle = adv_handle;
+        p_msg->decision_type_flags = decision_type_flags;
+        p_msg->data_len = data_len;
+        if (data_len > 0 && p_data != NULL) {
+            memcpy(p_msg->data, p_data, data_len);
+        }
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                         const UINT8 *test_fields, const UINT8 *test_params)
+{
+    tBTA_DM_API_SET_DECISION_INSTRUCTIONS *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_DECISION_INSTRUCTIONS *) osi_malloc(sizeof(tBTA_DM_API_SET_DECISION_INSTRUCTIONS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_DECISION_INSTRUCTIONS));
+        p_msg->hdr.event = BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT;
+        p_msg->num_tests = num_tests;
+        if (num_tests > 0 && test_flags != NULL) {
+            memcpy(p_msg->test_flags, test_flags, num_tests);
+        }
+        if (num_tests > 0 && test_fields != NULL) {
+            memcpy(p_msg->test_fields, test_fields, num_tests);
+        }
+        if (num_tests > 0 && test_params != NULL) {
+            memcpy(p_msg->test_params, test_params, num_tests * BLE_DECISION_TEST_PARAM_LEN);
+        }
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+void BTA_DmBleGapFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
+                                  UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types)
+{
+    tBTA_DM_API_FRAME_SPACE_UPDATE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_FRAME_SPACE_UPDATE *) osi_malloc(sizeof(tBTA_DM_API_FRAME_SPACE_UPDATE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_FRAME_SPACE_UPDATE));
+        p_msg->hdr.event = BTA_DM_API_FRAME_SPACE_UPDATE_EVT;
+        p_msg->conn_handle = conn_handle;
+        p_msg->frame_space_min = frame_space_min;
+        p_msg->frame_space_max = frame_space_max;
+        p_msg->phys = phys;
+        p_msg->spacing_types = spacing_types;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+void BTA_DmBleGapReadAllLocalSuppFeatures(void)
+{
+    tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT *) osi_malloc(sizeof(tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT));
+        p_msg->hdr.event = BTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested)
+{
+    tBTA_DM_API_READ_ALL_REMOTE_FEAT *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_READ_ALL_REMOTE_FEAT *) osi_malloc(sizeof(tBTA_DM_API_READ_ALL_REMOTE_FEAT))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_READ_ALL_REMOTE_FEAT));
+        p_msg->hdr.event = BTA_DM_API_READ_ALL_REMOTE_FEAT_EVT;
+        p_msg->conn_handle = conn_handle;
+        p_msg->page_requested = page_requested;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void BTA_DmBleGapConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                       UINT16 conn_interval_max, UINT16 subrate_min,
+                                       UINT16 subrate_max, UINT16 max_latency,
+                                       UINT16 continuation_number, UINT16 supervision_timeout,
+                                       UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_CONNECTION_RATE_REQUEST));
+        p_msg->hdr.event = BTA_DM_API_CONNECTION_RATE_REQUEST_EVT;
+        p_msg->conn_handle = conn_handle;
+        p_msg->conn_interval_min = conn_interval_min;
+        p_msg->conn_interval_max = conn_interval_max;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        p_msg->min_ce_len = min_ce_len;
+        p_msg->max_ce_len = max_ce_len;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void BTA_DmBleGapSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                          UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                          UINT16 continuation_number, UINT16 supervision_timeout,
+                                          UINT16 min_ce_len, UINT16 max_ce_len)
+{
+    tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_SET_DEFAULT_RATE_PARAMETERS));
+        p_msg->hdr.event = BTA_DM_API_SET_DEFAULT_RATE_PARAMETERS_EVT;
+        p_msg->conn_interval_min = conn_interval_min;
+        p_msg->conn_interval_max = conn_interval_max;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        p_msg->min_ce_len = min_ce_len;
+        p_msg->max_ce_len = max_ce_len;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapReadMinSuppConnInterval(void)
+{
+    tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_READ_MIN_SUPP_CONN_INTERVAL));
+        p_msg->hdr.event = BTA_DM_API_READ_MIN_SUPP_CONN_INTERVAL_EVT;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+void BTA_DmBleGapEnableUtpOtaMode(UINT8 enable)
+{
+    tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE *)
+         osi_malloc(sizeof(tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ENABLE_UTP_OTA_MODE));
+        p_msg->hdr.event = BTA_DM_API_ENABLE_UTP_OTA_MODE_EVT;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleGapUtpSend(UINT8 data_len, const UINT8 *p_data)
+{
+    tBTA_DM_API_BLE_UTP_SEND *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if (data_len == 0 || data_len > BLE_UTP_DATA_MAX_LEN || p_data == NULL) {
+        APPL_TRACE_ERROR("%s invalid params", __func__);
+        return;
+    }
+    if ((p_msg = (tBTA_DM_API_BLE_UTP_SEND *) osi_malloc(sizeof(tBTA_DM_API_BLE_UTP_SEND))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_UTP_SEND));
+        p_msg->hdr.event = BTA_DM_API_UTP_SEND_EVT;
+        p_msg->data_len = data_len;
+        memcpy(p_msg->data, p_data, data_len);
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
