@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +28,6 @@
 #define TAG "EXAMPLE"
 
 #define CID_ESP 0x02E5
-
-extern struct _led_state led_state[3];
 
 static uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
@@ -119,7 +117,6 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
 {
     ESP_LOGI(TAG, "net_idx: 0x%04x, addr: 0x%04x", net_idx, addr);
     ESP_LOGI(TAG, "flags: 0x%02x, iv_index: 0x%08" PRIx32, flags, iv_index);
-    board_led_operation(LED_G, LED_OFF);
 }
 
 static void example_change_led_state(esp_ble_mesh_model_t *model,
@@ -127,24 +124,23 @@ static void example_change_led_state(esp_ble_mesh_model_t *model,
 {
     uint16_t primary_addr = esp_ble_mesh_get_primary_element_address();
     uint8_t elem_count = esp_ble_mesh_get_element_count();
-    struct _led_state *led = NULL;
     uint8_t i;
 
     if (ESP_BLE_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
         for (i = 0; i < elem_count; i++) {
             if (ctx->recv_dst == (primary_addr + i)) {
-                led = &led_state[i];
-                board_led_operation(led->pin, onoff);
+                ESP_LOGI(TAG, "Recv onoff message (unicast 0x%04x), element index %d, onoff %s",
+                         ctx->recv_dst, i, onoff ? "ON" : "OFF");
             }
         }
     } else if (ESP_BLE_MESH_ADDR_IS_GROUP(ctx->recv_dst)) {
         if (esp_ble_mesh_is_model_subscribed_to_group(model, ctx->recv_dst)) {
-            led = &led_state[model->element->element_addr - primary_addr];
-            board_led_operation(led->pin, onoff);
+            ESP_LOGI(TAG, "Recv onoff message (group 0x%04x), element index %d, onoff %s",
+                     ctx->recv_dst, (int)(model->element->element_addr - primary_addr), onoff ? "ON" : "OFF");
         }
     } else if (ctx->recv_dst == 0xFFFF) {
-        led = &led_state[model->element->element_addr - primary_addr];
-        board_led_operation(led->pin, onoff);
+        ESP_LOGI(TAG, "Recv onoff message (broadcast), element index %d, onoff %s",
+                 (int)(model->element->element_addr - primary_addr), onoff ? "ON" : "OFF");
     }
 }
 
@@ -311,8 +307,6 @@ static esp_err_t ble_mesh_init(void)
     }
 
     ESP_LOGI(TAG, "BLE Mesh Node initialized");
-
-    board_led_operation(LED_G, LED_ON);
 
     return err;
 }
