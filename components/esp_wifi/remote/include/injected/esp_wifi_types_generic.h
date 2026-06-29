@@ -1305,8 +1305,6 @@ typedef enum {
     WIFI_EVENT_DPP_URI_READY,            /**< DPP URI is ready through Bootstrapping */
     WIFI_EVENT_DPP_CFG_RECVD,            /**< DPP Configuration Response; payload is wifi_event_dpp_config_received_t */
     WIFI_EVENT_DPP_FAILED,               /**< DPP failed */
-    WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
-    WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
     WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
     WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN pairing completed after NIK follow-up exchange */
     WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< Posted when the device joins, starts, or merges into a NAN cluster */
@@ -1636,38 +1634,6 @@ typedef struct {
     uint8_t ndp_id;                             /**< NDP instance id */
     uint8_t init_ndi[6];                        /**< Initiator's NAN Data Interface MAC */
 } wifi_event_ndp_terminated_t;
-
-/**
-  * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_INDICATION event
-  *
-  * Posted when a NAN Pairing Bootstrapping Request is received from a peer.
-  * The application should respond using esp_wifi_nan_bootstrap_response().
-  */
-typedef struct {
-    uint8_t peer_svc_id;                        /**< Peer's service instance id */
-    uint8_t own_svc_id;                         /**< Own service instance id */
-    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
-    uint16_t selected_method;                   /**< Bootstrapping method selected by initiator (one WIFI_NAN_BOOTSTRAP_* bit) */
-    uint8_t is_comeback;                        /**< 1 if this is a comeback retry with cookie */
-    uint32_t cookie;                            /**< Comeback cookie from initiator (0 if none) */
-} wifi_event_nan_bootstrap_indication_t;
-
-/**
-  * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED event
-  *
-  * Posted when a NAN Pairing Bootstrapping Response is received,
-  * or when the bootstrapping handshake completes/fails.
-  */
-typedef struct {
-    uint8_t status;                             /**< 0=Accepted, 1=Rejected, 2=Comeback (wifi_nan_pairing_status_t) */
-    uint8_t peer_svc_id;                        /**< Peer's service instance id */
-    uint8_t own_svc_id;                         /**< Own service instance id */
-    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
-    uint16_t matched_method;                    /**< Matched bootstrapping method, one WIFI_NAN_BOOTSTRAP_* bit (valid if accepted) */
-    uint8_t reason_code;                        /**< Rejection reason (valid if rejected) */
-    uint16_t comeback_after;                    /**< Comeback deferral time in TUs (valid if comeback) */
-    uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
-} wifi_event_nan_bootstrap_complete_t;
 
 /**
   * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event

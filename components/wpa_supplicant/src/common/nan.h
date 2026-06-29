@@ -48,7 +48,7 @@ enum nan_attr_id {
 	NAN_ATTR_NDP_EXT = 0x29,
 	NAN_ATTR_DCEA = 0x2A, /* Device Capability Extension attribute */
 	NAN_ATTR_NIRA = 0x2B, /* NAN Identity Resolution attribute */
-	NAN_ATTR_BPBA = 0x2C, /* NAN Pairing Bootstrapping attribute */
+	NAN_ATTR_NPBA = 0x2C, /* NAN Pairing Bootstrapping attribute */
 	NAN_ATTR_S3 = 0x2D,
 	NAN_ATTR_TPEA = 0x2E, /* Transmit Power Envelope attribute */
 	NAN_ATTR_VENDOR_SPECIFIC = 0xDD,

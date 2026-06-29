@@ -5,6 +5,7 @@
  */
 
 #include <ctype.h>
+#include <stdio.h>
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 #include "esp_wifi_netif.h"
@@ -41,6 +42,18 @@ bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_at
     (void)peer_mac;
     (void)nira_attr;
     (void)nira_attr_len;
+    return false;
+}
+
+bool esp_nan_verify_nira_get_own_svc(uint8_t *peer_mac, uint8_t *nira_attr,
+                                     uint16_t nira_attr_len, uint8_t *own_inst_id)
+{
+    (void)peer_mac;
+    (void)nira_attr;
+    (void)nira_attr_len;
+    if (own_inst_id) {
+        *own_inst_id = 0;
+    }
     return false;
 }
 #endif
@@ -219,6 +232,103 @@ void nan_app_clear_paired_peers(void)
     NAN_DATA_UNLOCK();
 }
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+
+static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
+{
+    uint8_t key_rsc[8] = {0};
+    static const uint8_t zero_mac[6] = {0};
+
+    if (!peer_nmi || memcmp(peer_nmi, zero_mac, 6) == 0) {
+        return;
+    }
+
+    NAN_DATA_LOCK();
+
+    /* NM-TK is bound to peer NMI (see nan_pasn_install_nan_pairwise_tk). */
+    esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                  (uint8_t *)peer_nmi, 1, 1,
+                                  key_rsc, sizeof(key_rsc),
+                                  NULL, 0, NAN_KEY_NM_TK);
+
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    struct ndl_info *ndl = nan_find_ndl(0, (uint8_t *)peer_nmi);
+    uint8_t *key_addr = (uint8_t *)peer_nmi;
+
+    if (ndl) {
+        if (memcmp(ndl->peer_ndi, zero_mac, 6) != 0) {
+            key_addr = ndl->peer_ndi;
+        }
+
+        esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                      key_addr, 0, 1,
+                                      key_rsc, sizeof(key_rsc),
+                                      NULL, 0, NAN_KEY_ND_TK);
+
+        forced_memzero(ndl->nd_tk, sizeof(ndl->nd_tk));
+        forced_memzero(ndl->nd_kck, sizeof(ndl->nd_kck));
+        forced_memzero(ndl->nd_kek, sizeof(ndl->nd_kek));
+        ndl->ptk_set = 0;
+        ndl->tk_len = 0;
+        ndl->kck_len = 0;
+        ndl->kek_len = 0;
+    }
+
+    /* Fallback when no NDL slot tracks peer_ndi yet. */
+    esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                  (uint8_t *)peer_nmi, 0, 1,
+                                  key_rsc, sizeof(key_rsc),
+                                  NULL, 0, NAN_KEY_ND_TK);
+#endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
+
+    NAN_DATA_UNLOCK();
+}
+
+void esp_nan_app_clear_peer_tks(const uint8_t *peer_nmi, uint8_t service_id)
+{
+    if (peer_nmi) {
+        nan_app_clear_one_peer_tks(peer_nmi);
+        return;
+    }
+
+    if (service_id == 0) {
+        return;
+    }
+
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
+    uint8_t peer_nmis[NAN_MAX_PEERS_RECORD][MACADDR_LEN];
+    int peer_count = 0;
+    struct own_svc_info *p_own_svc;
+    struct peer_svc_info *temp;
+
+    NAN_DATA_LOCK();
+    p_own_svc = nan_find_own_svc(service_id);
+    if (!p_own_svc) {
+        NAN_DATA_UNLOCK();
+        return;
+    }
+    SLIST_FOREACH(temp, &(p_own_svc->peer_list), next) {
+        bool dup = false;
+
+        for (int i = 0; i < peer_count; i++) {
+            if (MACADDR_EQUAL(peer_nmis[i], temp->peer_nmi)) {
+                dup = true;
+                break;
+            }
+        }
+        if (!dup && peer_count < NAN_MAX_PEERS_RECORD) {
+            MACADDR_COPY(peer_nmis[peer_count], temp->peer_nmi);
+            peer_count++;
+        }
+    }
+    NAN_DATA_UNLOCK();
+
+    for (int i = 0; i < peer_count; i++) {
+        nan_app_clear_one_peer_tks(peer_nmis[i]);
+    }
+#else
+    (void)service_id;
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+}
 
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
@@ -496,9 +606,12 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
     if (pairing) {
         memcpy(&p_svc->pairing, pairing, sizeof(*pairing));
     }
+#else
+    (void)pairing;
 #endif
 #else
     (void)security_cfg;
+    (void)pairing;
 #endif
     return p_svc;
 }
@@ -843,6 +956,9 @@ static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *pe
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
     evt->bootstrapping_methods = nan_app_parse_npba_from_publish(npba);
+    if (peer_info->nira_verified) {
+        evt->already_paired = 1;
+    }
 #endif
 
     evt->ssi_version = ssi_ver;
@@ -869,13 +985,31 @@ static void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_inf
     }
     uint8_t sub_id = peer_info->peer_svc_id;
     uint8_t *sub_nmi = peer_info->peer_mac;
+
     uint8_t *ssi = peer_info->ssi;
     uint16_t ssi_len = peer_info->ssi_len;
     uint32_t device_caps = peer_info->device_caps;
 
     NAN_DATA_LOCK();
-    if (!nan_find_peer_svc(pub_id, sub_id, sub_nmi)) {
+    struct peer_svc_info *p_peer_svc = nan_find_peer_svc(pub_id, sub_id, sub_nmi);
+    if (!p_peer_svc) {
+        p_peer_svc = nan_find_peer_svc(pub_id, 0, sub_nmi);
+    }
+    if (!p_peer_svc) {
         nan_record_peer_svc(pub_id, sub_id, sub_nmi, device_caps);
+    } else {
+        if (p_peer_svc->svc_id != sub_id) {
+            p_peer_svc->svc_id = sub_id;
+        }
+        if (p_peer_svc->own_svc_id != pub_id) {
+            p_peer_svc->own_svc_id = pub_id;
+        }
+        if (p_peer_svc->device_caps != device_caps) {
+            p_peer_svc->device_caps = device_caps;
+        }
+        if (!MACADDR_EQUAL(p_peer_svc->peer_nmi, sub_nmi)) {
+            MACADDR_COPY(p_peer_svc->peer_nmi, sub_nmi);
+        }
     }
     NAN_DATA_UNLOCK();
 
@@ -915,8 +1049,25 @@ static void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_inf
     uint32_t device_caps = peer_info->device_caps;
 
     NAN_DATA_LOCK();
-    if (!nan_find_peer_svc(svc_id, peer_svc_id, peer_mac)) {
+    struct peer_svc_info *p_peer_svc = nan_find_peer_svc(svc_id, peer_svc_id, peer_mac);
+    if (!p_peer_svc) {
+        p_peer_svc = nan_find_peer_svc(svc_id, 0, peer_mac);
+    }
+    if (!p_peer_svc) {
         nan_record_peer_svc(svc_id, peer_svc_id, peer_mac, device_caps);
+    } else {
+        if (p_peer_svc->svc_id != peer_svc_id) {
+            p_peer_svc->svc_id = peer_svc_id;
+        }
+        if (p_peer_svc->own_svc_id != svc_id) {
+            p_peer_svc->own_svc_id = svc_id;
+        }
+        if (p_peer_svc->device_caps != device_caps) {
+            p_peer_svc->device_caps = device_caps;
+        }
+        if (!MACADDR_EQUAL(p_peer_svc->peer_nmi, peer_mac)) {
+            MACADDR_COPY(p_peer_svc->peer_nmi, peer_mac);
+        }
     }
     NAN_DATA_UNLOCK();
 
@@ -931,6 +1082,7 @@ static void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_inf
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
     if (npba) {
         nan_app_parse_npba_from_receive(svc_id, peer_svc_id, peer_mac, npba);
+        return;
     }
 #endif
 
@@ -999,8 +1151,8 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
         nan_record_peer_svc(pub_id, 0, peer_nmi, device_caps);
     }
 
-    struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
-    if (ndl && peer_ndi) {
+    struct ndl_info *ndl = nan_find_ndl(ndp_id, peer_nmi);
+    if (ndl) {
         MACADDR_COPY(ndl->peer_ndi, peer_ndi);
     }
 
@@ -1311,6 +1463,7 @@ static void nan_action_txdone_cb(uint32_t context, bool tx_status)
 
 static void esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi, uint8_t msg_type, bool tx_status)
 {
+
     NAN_DATA_LOCK();
 
     struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
@@ -1440,6 +1593,71 @@ void esp_nan_app_init(void)
     esp_nan_internal_register_secure_dp_funcs(&s_nan_secure_dp_funcs);
 }
 
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+static bool nan_peer_cred_npk_present(const wifi_nan_peer_creds_t *c)
+{
+    static const uint8_t zero_npk[ESP_WIFI_NAN_NPK_LEN] = {0};
+
+    if (!c || !c->is_valid) {
+        return false;
+    }
+    return memcmp(c->npk, zero_npk, ESP_WIFI_NAN_NPK_LEN) != 0;
+}
+#endif
+
+static bool nan_peer_nik_cached_cb(uint8_t *peer_mac)
+{
+    bool cached = false;
+    struct peer_svc_info *peer;
+
+    if (!peer_mac) {
+        return false;
+    }
+
+    NAN_DATA_LOCK();
+    peer = nan_find_peer_svc(0, 0, peer_mac);
+#if defined(CONFIG_ESP_WIFI_NAN_SECURITY)
+    if (peer) {
+        struct own_svc_info *own = nan_find_own_svc(peer->own_svc_id);
+
+        for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
+            if (!s_nan_ctx.peer_creds[i].is_valid) {
+                continue;
+            }
+            if (!nan_peer_cred_npk_present(&s_nan_ctx.peer_creds[i])) {
+                continue;
+            }
+            if (own && memcmp(s_nan_ctx.peer_creds[i].service_hash, own->svc_hash, 6) == 0) {
+                cached = true;
+                break;
+            }
+        }
+    }
+    if (!cached) {
+        uint8_t npk_slots = 0;
+
+        for (uint8_t i = 0; i < s_nan_ctx.num_peer_creds; i++) {
+            if (s_nan_ctx.peer_creds[i].is_valid &&
+                    nan_peer_cred_npk_present(&s_nan_ctx.peer_creds[i])) {
+                npk_slots++;
+            }
+        }
+        if (npk_slots == 1) {
+            cached = true;
+        }
+    }
+#else
+    if (peer && peer->has_nik) {
+        cached = true;
+    }
+#endif
+    NAN_DATA_UNLOCK();
+
+    return cached;
+}
+#endif
+
 void esp_nan_action_start(esp_netif_t *nan_netif)
 {
     nan_set_app_default_handlers();
@@ -1462,12 +1680,14 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
         .get_nira_len = esp_nan_get_nira_len,
         .construct_nira = esp_nan_construct_nira,
         .verify_nira = esp_nan_verify_nira,
+        .peer_nik_cached = nan_peer_nik_cached_cb,
         .receive_pasn = handle_auth_pasn,
 #endif
     };
     esp_nan_internal_register_callbacks(&nan_cb);
 
     ESP_LOGI(TAG, "NAN Discovery started.");
+    os_event_group_clear_bits(nan_event_group, NAN_STOPPED_BIT);
     os_event_group_set_bits(nan_event_group, NAN_STARTED_BIT);
 }
 
@@ -1494,6 +1714,7 @@ void esp_nan_action_stop(void)
 #endif
 
     esp_nan_internal_register_callbacks(NULL);
+    os_event_group_clear_bits(nan_event_group, NAN_STARTED_BIT);
     os_event_group_set_bits(nan_event_group, NAN_STOPPED_BIT);
 }
 
@@ -1516,7 +1737,6 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
         return ret;
     }
 
-
     /* XXX: For now, NAN-USD and NAN-Sync can not coexist. */
     /* NAN-Synchronization Only */
     wifi_config_t config = {0};
@@ -1536,10 +1756,16 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
     s_nan_ctx.num_peer_creds = 0;
     memset(s_nan_ctx.peer_creds, 0, sizeof(s_nan_ctx.peer_creds));
     s_nan_ctx.use_nvs_for_caching = nan_cfg->use_nvs_for_caching;
+    s_nan_ctx.nik_lifetime = 0;
 
     if (nan_cfg->reset_current_nvs_creds) {
         /* Start from a clean slate: drop every credential persisted in NVS. */
-        esp_wifi_nan_erase_all_creds();
+        ret = esp_wifi_nan_erase_all_creds();
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to erase NAN credentials from NVS");
+            NAN_DATA_UNLOCK();
+            return ret;
+        }
     } else if (esp_wifi_nan_load_saved_creds(s_nan_ctx.own_nik, &s_nan_ctx.own_nik_valid,
                                              s_nan_ctx.peer_creds, &s_nan_ctx.num_peer_creds) != ESP_OK) {
         ESP_LOGW(TAG, "Failed to load saved NAN credentials");
@@ -1557,7 +1783,12 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
         /* Persist the freshly generated NIK only when NVS caching is enabled;
          * otherwise the identity stays ephemeral for this session. */
         if (s_nan_ctx.use_nvs_for_caching) {
-            esp_wifi_nan_save_own_nik(s_nan_ctx.own_nik);
+            ret = esp_wifi_nan_save_own_nik(s_nan_ctx.own_nik);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to persist own NIK to NVS");
+                NAN_DATA_UNLOCK();
+                return ret;
+            }
         }
     }
     /* Drop the cached NIRA tag; it was derived from the previous NIK. */
@@ -1570,6 +1801,7 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
     memcpy(&config.nan, nan_cfg, sizeof(wifi_nan_sync_config_t));
     ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_NAN, &config), TAG, "Setting NAN config failed");
 
+    os_event_group_clear_bits(nan_event_group, NAN_STARTED_BIT);
     if (esp_wifi_start() != ESP_OK) {
         ESP_LOGE(TAG, "Starting wifi failed");
         NAN_DATA_LOCK();
@@ -1616,6 +1848,8 @@ esp_err_t esp_wifi_nan_sync_stop(void)
         NAN_DATA_UNLOCK();
     }
 
+    /* Wait for a fresh stop event, not a stale bit from prior run. */
+    os_event_group_clear_bits(nan_event_group, NAN_STOPPED_BIT);
     ESP_RETURN_ON_ERROR(esp_wifi_stop(), TAG, "Stopping NAN failed");
 
     EventBits_t bits = os_event_group_wait_bits(nan_event_group, NAN_STOPPED_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
@@ -1788,7 +2022,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-    if (nan_check_paired_service_hash(service_id)) {
+    if (cfg->pairing && nan_check_paired_service_hash(service_id)) {
         cfg->pairing->pairing_setup = false;
     }
 #endif
@@ -1894,6 +2128,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 
 #ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
+    wifi_nan_subscribe_cfg_t *cfg = NULL;
     uint8_t service_id[6] = {0};
 
     if (subscribe_cfg->security_reqd) {
@@ -1940,38 +2175,64 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         goto fail;
     }
 
+    cfg = os_zalloc(sizeof(*cfg));
+    if (!cfg) {
+        ESP_LOGE(TAG, "Failed to allocate subscribe config");
+        goto fail;
+    }
+    memcpy(cfg, subscribe_cfg, sizeof(*cfg));
+    cfg->pairing = NULL;
+    if (subscribe_cfg->pairing) {
+        cfg->pairing = os_malloc(sizeof(*cfg->pairing));
+        if (!cfg->pairing) {
+            ESP_LOGE(TAG, "Failed to copy pairing config");
+            goto fail;
+        }
+        memcpy(cfg->pairing, subscribe_cfg->pairing, sizeof(*cfg->pairing));
+    }
+
     /* Pre-claim host slot BEFORE the blob's subscribe call; see comment on
      * the publish path for the watchdog rationale. */
 
-    if (!nan_compute_service_id(subscribe_cfg->service_name, service_id)) {
-        ESP_LOGE(TAG, "Failed to compute Service ID for %s", subscribe_cfg->service_name);
+    if (!nan_compute_service_id(cfg->service_name, service_id)) {
+        ESP_LOGE(TAG, "Failed to compute Service ID for %s", cfg->service_name);
         goto fail;
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-    if (nan_check_paired_service_hash(service_id)) {
-        subscribe_cfg->pairing->pairing_setup = false;
+    if (cfg->pairing && nan_check_paired_service_hash(service_id)) {
+        cfg->pairing->pairing_setup = false;
     }
 #endif
 
-    if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, subscribe_cfg->service_name,
-                                subscribe_cfg->security_cfg, subscribe_cfg->pairing)) {
+    if (!nan_claim_own_svc_slot(ESP_NAN_SUBSCRIBE, cfg->service_name,
+                                cfg->security_cfg, cfg->pairing)) {
         ESP_LOGE(TAG, "No free service slot");
         goto fail;
     }
 
-    if (esp_nan_internal_subscribe_service(subscribe_cfg, (uint8_t *) &sub_id, false) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to subscribe to service '%s'", subscribe_cfg->service_name);
-        nan_abort_own_svc(subscribe_cfg->service_name);
+    if (esp_nan_internal_subscribe_service(cfg, (uint8_t *) &sub_id, false) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to subscribe to service '%s'", cfg->service_name);
+        nan_abort_own_svc(cfg->service_name);
         goto fail;
     }
 
-    ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", subscribe_cfg->service_name, sub_id);
-    nan_finalize_own_svc(subscribe_cfg->service_name, (uint8_t) sub_id, false, service_id);
+    ESP_LOGI(TAG, "Started Subscribing to %s [Service ID - %u]", cfg->service_name, sub_id);
+    nan_finalize_own_svc(cfg->service_name, (uint8_t) sub_id, false, service_id);
+    if (cfg->pairing) {
+        os_free(cfg->pairing);
+    }
+    os_free(cfg);
     NAN_DATA_UNLOCK();
 
     return sub_id;
 fail:
+    if (cfg) {
+        if (cfg->pairing) {
+            os_free(cfg->pairing);
+        }
+        os_free(cfg);
+    }
     NAN_DATA_UNLOCK();
     return 0;
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
@@ -2072,6 +2333,12 @@ esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id)
     }
 #endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
 #ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+    /* Snapshot peer NMIs before cancel; clear TKs only after a successful cancel
+     * so a failed attempt does not leave an active service without keys. */
+    uint8_t peer_nmis[NAN_MAX_PEERS_RECORD][MACADDR_LEN];
+    int peer_count = 0;
+#endif
     NAN_DATA_LOCK();
     struct own_svc_info *p_own_svc = nan_find_own_svc(service_id);
 
@@ -2079,6 +2346,27 @@ esp_err_t esp_wifi_nan_cancel_service(uint8_t service_id)
         ESP_LOGE(TAG, "Cannot find own service with id %d!", service_id);
         goto fail;
     }
+
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+    {
+        struct peer_svc_info *temp;
+
+        SLIST_FOREACH(temp, &(p_own_svc->peer_list), next) {
+            bool dup = false;
+
+            for (int i = 0; i < peer_count; i++) {
+                if (MACADDR_EQUAL(peer_nmis[i], temp->peer_nmi)) {
+                    dup = true;
+                    break;
+                }
+            }
+            if (!dup && peer_count < NAN_MAX_PEERS_RECORD) {
+                MACADDR_COPY(peer_nmis[peer_count], temp->peer_nmi);
+                peer_count++;
+            }
+        }
+    }
+#endif
 
     if (p_own_svc->type == ESP_NAN_PUBLISH) {
         if (esp_nan_internal_publish_service(NULL, &service_id, true) == ESP_OK) {
@@ -2102,11 +2390,16 @@ fail:
 
 done:
     NAN_DATA_UNLOCK();
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+    /* Cancel succeeded; now safe to wipe pairwise keys for the collected peers. */
+    for (int i = 0; i < peer_count; i++) {
+        nan_app_clear_one_peer_tks(peer_nmis[i]);
+    }
+#endif
     return ESP_OK;
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
     return ESP_FAIL;
 }
-
 
 #ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
 uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
@@ -2114,6 +2407,7 @@ uint8_t esp_wifi_nan_datapath_req(wifi_nan_datapath_req_t *req)
     uint8_t ndp_id = 0;
     uint8_t own_bssid[6];
     ip_addr_t own_ipv6 = {0};
+
     NAN_DATA_LOCK();
     struct peer_svc_info *p_peer_svc = nan_find_peer_svc(0, req->pub_id, req->peer_mac);
 
@@ -2302,6 +2596,45 @@ esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req)
 
     return ESP_OK;
 }
+
+#ifdef CONFIG_ESP_WIFI_NAN_PAIRING
+esp_err_t esp_nan_app_end_peer_datapaths(const uint8_t *peer_nmi)
+{
+    wifi_nan_datapath_end_req_t ndp_end[ESP_WIFI_NAN_DATAPATH_MAX_PEERS];
+    int count = 0;
+    esp_err_t last_err = ESP_OK;
+
+    if (!peer_nmi) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    NAN_DATA_LOCK();
+    for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+        struct ndl_info *ndl = &s_nan_ctx.ndl[i];
+
+        if (ndl->ndp_id != 0 && MACADDR_EQUAL(ndl->peer_nmi, peer_nmi)) {
+            ndp_end[count].ndp_id = ndl->ndp_id;
+            MACADDR_COPY(ndp_end[count].peer_mac, peer_nmi);
+            count++;
+        }
+    }
+    NAN_DATA_UNLOCK();
+
+    if (count == 0) {
+        return ESP_OK;
+    }
+
+    for (int i = 0; i < count; i++) {
+        esp_err_t ret = esp_wifi_nan_datapath_end(&ndp_end[i]);
+
+        if (ret != ESP_OK) {
+            last_err = ret;
+        }
+    }
+
+    return last_err;
+}
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
 esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records)
 {

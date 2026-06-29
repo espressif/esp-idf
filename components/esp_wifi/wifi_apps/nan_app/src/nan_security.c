@@ -14,6 +14,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 #include "esp_log.h"
@@ -315,30 +316,70 @@ static int nan_ndp_ptk_derive(const uint8_t *pmk, const uint8_t *i_addr, const u
     return 0;
 }
 
+static bool nan_mac_is_zero(const uint8_t mac[6])
+{
+    static const uint8_t zero[6] = {0};
+
+    return memcmp(mac, zero, 6) == 0;
+}
+
+/*
+ * Resolve IAddr/RAddr for NDP PTK derivation. When NDPE has not yet assigned
+ * an NDI, fall back to the peer NMI so both sides derive the same PTK.
+ * Returns 0 on success, -1 if our NAN MAC cannot be retrieved.
+ */
+static int nan_ndp_ptk_addrs(const struct ndl_info *ndl, bool responder,
+                             uint8_t i_addr[6], uint8_t r_addr[6])
+{
+    uint8_t our_mac[6];
+
+    if (esp_wifi_get_mac(WIFI_IF_NAN, our_mac) != ESP_OK) {
+        ESP_LOGE(TAG, "nan_ndp_ptk_addrs: get our MAC failed");
+        return -1;
+    }
+    if (responder) {
+        if (nan_mac_is_zero(ndl->peer_ndi)) {
+            memcpy(i_addr, ndl->peer_nmi, 6);
+        } else {
+            memcpy(i_addr, ndl->peer_ndi, 6);
+        }
+        memcpy(r_addr, our_mac, 6);
+    } else {
+        memcpy(i_addr, our_mac, 6);
+        if (nan_mac_is_zero(ndl->peer_ndi)) {
+            memcpy(r_addr, ndl->peer_nmi, 6);
+        } else {
+            memcpy(r_addr, ndl->peer_ndi, 6);
+        }
+    }
+    return 0;
+}
+
 /*
  * Lazy initiator PTK derivation. No-op if ndl->ptk_set is already 1.
  * Caller MUST hold NAN_DATA_LOCK. On success, ndl->nd_kck/kek/tk and
  * the corresponding *_len fields are populated and ptk_set=1.
  *
- * Spec §7.1.3.5: PTK PRF takes Data Interface addresses. Local NDI is
- * obtained via esp_wifi_get_mac(WIFI_IF_NAN); peer NDI lives in
- * ndl->peer_ndi, populated by ndp_response_indication on M2 RX.
+ * Spec §7.1.3.5: PTK PRF takes Data Interface addresses resolved via
+ * nan_ndp_ptk_addrs (peer NDI when assigned, else peer NMI).
  *
  * Returns 0 on success, -1 on failure.
  */
 static int ndl_ensure_ptk(struct ndl_info *ndl)
 {
+    uint8_t i_addr[6];
+    uint8_t r_addr[6];
+
     if (ndl->ptk_set) {
         return 0;
     }
-    uint8_t our_mac[6];
-    if (esp_wifi_get_mac(WIFI_IF_NAN, our_mac) != ESP_OK) {
-        ESP_LOGE(TAG, "ndl_ensure_ptk: get our MAC failed");
+    if (nan_ndp_ptk_addrs(ndl, false, i_addr, r_addr) != 0) {
+        ESP_LOGE(TAG, "ndl_ensure_ptk: PTK address resolution failed");
         return -1;
     }
     if (nan_ndp_ptk_derive(ndl->security_ctx.nd_pmk,
-                           our_mac,         /* IAddr = Initiator NDI (us) */
-                           ndl->peer_ndi,   /* RAddr = Responder NDI (peer) */
+                           i_addr,
+                           r_addr,
                            ndl->anonce, ndl->snonce,
                            ndl->nd_kck, ndl->nd_kek, ndl->nd_tk) != 0) {
         ESP_LOGE(TAG, "ndl_ensure_ptk: PTK derivation failed");
@@ -445,29 +486,32 @@ static bool nan_ndp_resp_resolve_pmk(struct ndl_info *ndl, const uint8_t *peer_n
         return have_peer_pmkid;
     }
 
+    bool pmk_resolved = false;
+
+    if (have_peer_pmkid) {
+        struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
+        int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
+                                                  ndl->peer_nmi, ndl->peer_ndi) : -1;
+        if (matched_idx >= 0) {
+            ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
+            ndl->security_ctx.csid_bitmap = p_svc->derived_security[matched_idx].csid_bitmap;
+            memcpy(ndl->security_ctx.nd_pmk,
+                   p_svc->derived_security[matched_idx].nd_pmk,
+                   ESP_WIFI_NAN_NDP_PMK_LEN);
+            ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from cred slot %d", matched_idx);
+            pmk_resolved = true;
+        }
+    }
+
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
-    if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
-        return have_peer_pmkid;
+    if (!pmk_resolved && need_pmk &&
+            nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
+        ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from paired-peer cache");
+        pmk_resolved = true;
     }
 #endif
 
-    if (!have_peer_pmkid) {
-        return false;
-    }
-
-    struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
-    int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
-                                              ndl->peer_nmi, ndl->peer_ndi) : -1;
-    if (matched_idx < 0) {
-        return false;
-    }
-
-    ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
-    ndl->security_ctx.csid_bitmap = p_svc->derived_security[matched_idx].csid_bitmap;
-    memcpy(ndl->security_ctx.nd_pmk,
-           p_svc->derived_security[matched_idx].nd_pmk,
-           ESP_WIFI_NAN_NDP_PMK_LEN);
-    return true;
+    return pmk_resolved;
 }
 
 uint8_t esp_nan_get_ndp_resp_num_pmkids(uint8_t ndp_id, const uint8_t *peer_nmi)
@@ -1253,15 +1297,16 @@ int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t n
         /* M2 echoes M1's replay counter unchanged (per RSNA 4-way handshake). */
         memcpy(ndl->tx_replay_counter, ndl->rx_replay_counter, NAN_REPLAY_COUNTER_LEN);
 
-        uint8_t our_mac[6];
-        if (esp_wifi_get_mac(WIFI_IF_NAN, our_mac) != ESP_OK) {
+        uint8_t i_addr[6];
+        uint8_t r_addr[6];
+        if (nan_ndp_ptk_addrs(ndl, true, i_addr, r_addr) != 0) {
             NAN_DATA_UNLOCK();
-            ESP_LOGE(TAG, "NDP Resp Key Desc: get our MAC failed");
+            ESP_LOGE(TAG, "NDP Resp Key Desc: PTK address resolution failed");
             return 0;
         }
         if (nan_ndp_ptk_derive(ndl->security_ctx.nd_pmk,
-                               ndl->peer_ndi,  /* IAddr = Initiator NDI (Wi-Fi Aware v4.0 §7.1.3.5) */
-                               our_mac,        /* RAddr = Responder NDI */
+                               i_addr,         /* IAddr = Initiator NDI (Wi-Fi Aware v4.0 §7.1.3.5) */
+                               r_addr,         /* RAddr = Responder NDI */
                                ndl->anonce, ndl->snonce,
                                ndl->nd_kck, ndl->nd_kek, ndl->nd_tk) != 0) {
             NAN_DATA_UNLOCK();
@@ -1376,6 +1421,7 @@ int esp_nan_update_ndp_security_install_mic(uint8_t *m4_body, size_t body_len, u
 
 void esp_nan_parse_ndp_csia(void *frm, size_t buf_len, wifi_nan_security_params_t *param)
 {
+
     if (!frm || !param || buf_len < 3) {
         return;
     }
@@ -1416,6 +1462,7 @@ void esp_nan_parse_ndp_csia(void *frm, size_t buf_len, wifi_nan_security_params_
 
 void esp_nan_parse_ndp_scia(void *frm, size_t buf_len, wifi_nan_security_params_t *param)
 {
+
     if (!frm || !param || buf_len < 3) {
         return;
     }
@@ -1710,6 +1757,7 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                                 const uint8_t *peer_nmi,
                                 const uint8_t *peer_ndi)
 {
+
     if (ndl && s_pending_scia.pub_id == pub_id &&
             (s_pending_scia.has_csid || s_pending_scia.has_pmkid)) {
 
@@ -1721,6 +1769,8 @@ void nan_security_apply_pending(struct ndl_info *ndl,
         if (s_pending_scia.has_pmkid) {
             memcpy(ndl->security_ctx.nd_pmkid, s_pending_scia.pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN);
             int matched_idx = nan_match_pmkid(p_own_svc, s_pending_scia.pmkid, peer_nmi, peer_ndi);
+            bool pmk_resolved = false;
+
             if (matched_idx >= 0) {
                 ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
                 ndl->security_ctx.csid_bitmap = p_own_svc->derived_security[matched_idx].csid_bitmap;
@@ -1728,13 +1778,15 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                        p_own_svc->derived_security[matched_idx].nd_pmk,
                        ESP_WIFI_NAN_NDP_PMK_LEN);
                 ESP_LOGD(TAG, "NDP Indication: PMKID validated via cred slot %d", matched_idx);
+                pmk_resolved = true;
             }
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
             else if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
                 ESP_LOGD(TAG, "NDP Indication: PMK sourced from paired-peer cache");
+                pmk_resolved = true;
             }
 #endif
-            else {
+            if (!pmk_resolved) {
                 ESP_LOGW(TAG, "NDP Indication: PMKID validation failed");
             }
         }

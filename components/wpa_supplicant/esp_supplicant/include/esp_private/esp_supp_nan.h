@@ -61,7 +61,10 @@ enum nan_role {
  * Pairing Initiator NMI || Pairing Responder NMI)).
  *
  * @param peer_nmi    Peer NMI (6 bytes).
- * @param role        enum nan_role value for the local device.
+ * @param role        @c NAN_ROLE_PAIRING_INITIATOR or @c NAN_ROLE_PAIRING_RESPONDER.
+ * @param pairing_verification 1 when PASN ran as re-pair verification (NIRA verified on
+ *                             Auth1 for responder, or @c cfg->pairing_verification on
+ *                             initiator); 0 for bootstrap auth pairing.
  * @param ndp_csid    NCS-SK CSID for paired-peer NDP (WIFI_NAN_CSID_NCS_SK_128
  *                    or _SK_256), 0 if no usable cipher mapping was available.
  * @param nd_pmk           ND-PMK bytes (32) or NULL if KDK was absent.
@@ -73,6 +76,7 @@ enum nan_role {
  */
 typedef void (*esp_nan_pairing_key_installed_cb_t)(const uint8_t *peer_nmi,
                                                    uint8_t role,
+                                                   uint8_t pairing_verification,
                                                    uint8_t ndp_csid,
                                                    const uint8_t *nd_pmk,
                                                    size_t nd_pmk_len,
@@ -134,12 +138,49 @@ int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
                                      esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb);
 
 /**
+ * @brief  Schedule NAN PASN initiator verification (re-pair with cached NIK/PMK).
+ *
+ * Same role as @ref esp_nan_supp_pasn_initiator_auth but uses PASN verify instead of auth.
+ *
+ * @param  peer_nmi  Peer NMI (6 bytes).
+ * @param  pairing_key_installed_cb Callback invoked after pairwise key installation with peer NMI.
+ * @return 0 on success, -1 on failure.
+ */
+int esp_nan_supp_pasn_initiator_verify(const uint8_t *peer_nmi,
+                                       esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb);
+
+/**
+ * @brief Default pairing key-installed callback (NAN app layer).
+ */
+esp_nan_pairing_key_installed_cb_t esp_nan_pairing_get_key_installed_cb(void);
+
+/**
  * Schedule @ref handle_auth_pasn from NAN app callback table.
  */
 void handle_auth_pasn(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
 
 const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void);
 void nan_pasn_clear_saved_keys(void);
+
+/**
+ * Clear stale pairwise keys, saved PASN material, and active NDPs before
+ * responder-side PASN verification (proactive pairing_start or passive Auth1).
+ */
+void nan_pasn_responder_verify_prepare(const uint8_t *peer_nmi);
+
+/** Look up cached NPK for pairing verification (§7.6.5). Returns 0 on success.
+ *  Lookup matches peer_cred.service_hash against active own-service hashes,
+ *  or uses a single cached slot when only one NPK is present. */
+int nan_global_peer_npk_lookup(uint8_t *npk, size_t *npk_len, int *akmp);
+
+/**
+ * Mark/clear that the current PASN session for @a peer_nmi is pairing
+ * verification (re-pair) and must not trigger NIK follow-up exchange. The
+ * marker is anchored to own service @a own_inst_id (as resolved from the
+ * verifying NIK), so it survives even when no peer_svc_info exists yet.
+ */
+void esp_nan_pairing_mark_verify_session(uint8_t own_inst_id, const uint8_t *peer_nmi);
+void esp_nan_pairing_clear_verify_session(const uint8_t *peer_nmi);
 
 /**
  * Decrypt a NAN Shared Key Descriptor attribute received in a follow-up frame.
