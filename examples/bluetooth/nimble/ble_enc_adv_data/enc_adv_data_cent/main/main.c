@@ -348,7 +348,7 @@ enc_adv_data_cent_ext_should_connect(const struct ble_gap_ext_disc_desc *disc)
 	addr_offset = (uint32_t *)&test_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         test_addr[5] = 0xC3;
-        test_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
 	if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
 	    return 0;
