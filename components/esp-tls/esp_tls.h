@@ -161,7 +161,9 @@ typedef struct esp_tls_cfg {
     const unsigned char *clientkey_pem_buf; /*!< Client key legacy name */
     };
 
-    const esp_key_config_t *client_key;     /*!< Unified key config. Must remain valid for session lifetime */
+    const esp_key_config_t *client_key;     /*!< Unified key config. Must remain valid for session lifetime.
+                                                 Any PSA key referenced here remains owned by the caller; ESP-TLS does not
+                                                 destroy it on cleanup, so the application must release it with psa_destroy_key(). */
 
     union {
     unsigned int clientkey_bytes;           /*!< Size of client key pointed to by
@@ -315,7 +317,9 @@ typedef struct esp_tls_cfg_server {
     const unsigned char *serverkey_pem_buf;     /*!< Server key legacy name */
     };
 
-    const esp_key_config_t *server_key;         /*!< Unified key config. Must remain valid for session lifetime */
+    const esp_key_config_t *server_key;         /*!< Unified key config. Must remain valid for session lifetime.
+                                                     Any PSA key referenced here remains owned by the caller; ESP-TLS does not
+                                                     destroy it on cleanup, so the application must release it with psa_destroy_key(). */
 
     union {
     unsigned int serverkey_bytes;               /*!< Size of server key pointed to by
