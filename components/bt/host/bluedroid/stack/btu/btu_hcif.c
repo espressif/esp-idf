@@ -174,6 +174,18 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len);
 #if (BLE_FEAT_ADV_MONITOR == TRUE)
 static void btu_ble_monitor_adv_report_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+static void btu_ble_read_all_remote_feat_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+static void btu_ble_frame_space_update_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+static void btu_ble_utp_receive_evt(UINT8 *p, UINT16 evt_len);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+static void btu_ble_conn_rate_change_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt);
 static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt);
@@ -560,6 +572,16 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_monitor_adv_report_evt(p);
             break;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+        case HCI_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT:
+            btu_ble_read_all_remote_feat_complete_evt(p);
+            break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+        case HCI_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT:
+            btu_ble_frame_space_update_complete_evt(p);
+            break;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
         case HCI_BLE_PERIOD_ADV_SYNC_TRANS_RECV_EVT:
             btu_ble_periodic_adv_sync_trans_recv(p);
@@ -629,6 +651,16 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_subrate_change_evt(p);
             break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+        case HCI_BLE_UTP_RECEIVE_EVT:
+            btu_ble_utp_receive_evt(p, hci_evt_len);
+            break;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+        case HCI_BLE_CONN_RATE_CHANGE_EVT:
+            btu_ble_conn_rate_change_evt(p);
+            break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
         case HCI_BLE_PA_SUBEVT_DATA_REQUEST_EVT:
             btu_ble_pa_subevt_data_request_evt(p);
@@ -1483,6 +1515,16 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_read_monitor_adv_list_size_complete(p);
         break;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    case HCI_BLE_READ_ALL_LOCAL_SUPP_FEATURES:
+        btm_ble_read_all_local_supp_features_complete(p);
+        break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        btm_ble_read_min_supp_conn_interval_complete(p);
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1652,6 +1694,38 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         btm_subrate_req_cmd_status(status);
         break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    case HCI_BLE_FRAME_SPACE_UPDATE:
+    {
+        UINT16 conn_handle = HCI_INVALID_HANDLE;
+        if (p_cmd != NULL) {
+            p_cmd++; /* skip param length */
+            STREAM_TO_UINT16(conn_handle, p_cmd);
+        }
+        btm_frame_space_update_cmd_status(status, conn_handle);
+        break;
+    }
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    case HCI_BLE_READ_ALL_REMOTE_FEATURES:
+        btm_read_all_remote_feat_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case HCI_BLE_CONNECTION_RATE_REQUEST:
+    {
+        UINT16 conn_handle = HCI_INVALID_HANDLE;
+        if (p_cmd != NULL) {
+            p_cmd++; /* skip param length */
+            STREAM_TO_UINT16(conn_handle, p_cmd);
+        }
+        btm_conn_rate_req_cmd_status(status, conn_handle);
+        break;
+    }
+    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        btm_ble_read_min_supp_conn_interval_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     case HCI_BLE_CS_READ_REMOTE_SUPP_CAPS:
         btm_ble_cs_read_remote_supp_caps_cmd_status(status);
@@ -2661,6 +2735,20 @@ static void btu_ble_monitor_adv_report_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+static void btu_ble_read_all_remote_feat_complete_evt(UINT8 *p)
+{
+    btm_ble_read_all_remote_features_complete_evt(p);
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+static void btu_ble_frame_space_update_complete_evt(UINT8 *p)
+{
+    btm_ble_frame_space_update_complete_evt(p);
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)
 {
@@ -3334,6 +3422,40 @@ static void btu_ble_subrate_change_evt(UINT8 *p)
     btm_ble_subrate_change_evt(&subrate_change_evt);
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+static void btu_ble_conn_rate_change_evt(UINT8 *p)
+{
+    tBTM_BLE_CONN_RATE_CHANGE conn_rate_change = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(conn_rate_change.status, p);
+    STREAM_TO_UINT16(conn_rate_change.conn_handle, p);
+    STREAM_TO_UINT16(conn_rate_change.conn_interval, p);
+    STREAM_TO_UINT16(conn_rate_change.subrate_factor, p);
+    STREAM_TO_UINT16(conn_rate_change.peripheral_latency, p);
+    STREAM_TO_UINT16(conn_rate_change.continuation_number, p);
+    STREAM_TO_UINT16(conn_rate_change.supervision_timeout, p);
+
+    btm_ble_conn_rate_change_evt(&conn_rate_change);
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+static void btu_ble_utp_receive_evt(UINT8 *p, UINT16 evt_len)
+{
+    if (!p || evt_len < 1) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    btm_ble_utp_receive_evt(p, evt_len);
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 static void btu_ble_pa_subevt_data_request_evt(UINT8 *p)
