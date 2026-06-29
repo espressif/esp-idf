@@ -1,12 +1,18 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(${target} STREQUAL "linux")
+# TODO(IDF-15945): potentially remove __ULP_BUILD handling from esp_common
+if(${target} STREQUAL "linux" OR __ULP_BUILD)
+    # ULP sources include esp_err.h from components/ulp public and shared headers.
     set(ldfragments)
 else()
     set(ldfragments common.lf soc.lf linker.lf)
 endif()
 
-set(srcs "src/esp_err_to_name.c")
+set(srcs)
+
+if(NOT __ULP_BUILD)
+    set(srcs "src/esp_err_to_name.c")
+endif()
 
 idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include

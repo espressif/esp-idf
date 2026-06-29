@@ -1,6 +1,16 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(non_os_build NON_OS_BUILD)
 
+# TODO(IDF-15954): potentially remove __ULP_BUILD handling from log
+if(__ULP_BUILD)
+    # LP-core UART wakeup support builds components/esp_driver_uart/src/uart_wakeup.c,
+    # which includes ESP log headers.
+    idf_component_register(INCLUDE_DIRS "include"
+                           PRIV_INCLUDE_DIRS "include/esp_private"
+                           REQUIRES esp_rom)
+    return()
+endif()
+
 if(non_os_build)
     set(system_target "noos")
 else()

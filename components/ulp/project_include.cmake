@@ -1,10 +1,16 @@
+if(IDF_BUILD_V2 AND __ULP_BUILD)
+    return()
+endif()
+
 # ulp_embed_binary
 #
 # Create ULP binary and embed into the application.
 
-function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep_srcs)
+function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name type binary_names
+                             s_sources exp_dep_srcs)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+        set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
         set(sources "")
         spaces2list(s_sources)
         foreach(source ${s_sources})
@@ -15,7 +21,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
         # In cmakev2, anchor the ULP sub-project's binary dir to the parent's
         # BUILD_DIR so it is not nested under the component that happened to
         # register it, and so that wiping the parent build dir removes the ULP
-        # artifacts together with its editable sdkconfig (see -DSDKCONFIG below).
+        # artifacts together with any child-owned sdkconfig.
         if(IDF_BUILD_V2)
             idf_build_get_property(build_dir BUILD_DIR)
             set(ulp_binary_dir "${build_dir}/subprojects/${app_name}")
@@ -49,23 +55,32 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
             list(APPEND ps_sources ${ps_output})
         endforeach()
 
-        set(ulp_artifacts_prefix ${ulp_binary_dir}/${app_name})
+        if(NOT binary_names)
+            set(binary_names "${app_name}")
+        endif()
 
-        set(ulp_artifacts ${ulp_artifacts_prefix}.bin
-                            ${ulp_artifacts_prefix}.ld
-                            ${ulp_artifacts_prefix}.h)
+        # Full ULP subprojects may emit multiple binaries. Embed each declared
+        # output in the main app so runtime code can choose which ULP program
+        # to load.
+        foreach(binary_name IN LISTS binary_names)
+            set(ulp_artifacts_prefix ${ulp_binary_dir}/${binary_name})
 
-        set(ulp_artifacts_extras ${ulp_artifacts_prefix}.map
-                            ${ulp_artifacts_prefix}.sym
-                            ${ulp_binary_dir}/esp32.ulp.ld)
+            list(APPEND ulp_artifacts
+                ${ulp_artifacts_prefix}.bin
+                ${ulp_artifacts_prefix}.ld
+                ${ulp_artifacts_prefix}.h)
+
+            list(APPEND ulp_artifacts_extras
+                ${ulp_artifacts_prefix}.map
+                ${ulp_artifacts_prefix}.sym
+                ${ulp_binary_dir}/${binary_name}.elf)
+        endforeach()
 
         # Replace the separator for the list of ULP source files that will be passed to
         # the external ULP project. This is a workaround to the bug https://public.kitware.com/Bug/view.php?id=16137.
         string(REPLACE ";" "|" ulp_s_sources "${ulp_s_sources}")
 
         idf_build_get_property(sdkconfig SDKCONFIG)
-        idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
-        idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
         idf_build_get_property(idf_path IDF_PATH)
         idf_build_get_property(idf_target IDF_TARGET)
         idf_build_get_property(python PYTHON)
@@ -80,7 +95,7 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                                         "Only FSM type is available for ULP on this target.")
                 endif()
             endif()
-            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
+            set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-${idf_target}-ulp.cmake)
             set(ULP_IS_RISCV OFF)
         elseif(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
             # If both FSM and RISC-V are enabled in sdkconfig and a TYPE was
@@ -90,95 +105,102 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
                 message(STATUS "Both RISCV and FSM are enabled, using '${type}' toolchain for ${app_name} ULP project.")
                 string(TOLOWER "${type}" type_lower)
                 if(type_lower STREQUAL "riscv")
-                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-ulp-riscv.cmake)
                 elseif(type_lower STREQUAL "fsm")
-                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-${idf_target}-ulp.cmake)
                 else()
                     message(FATAL_ERROR "Invalid ULP_TYPE '${type}'; expected 'fsm' or 'riscv'.")
                 endif()
             else()
                 if(CONFIG_ULP_COPROC_TYPE_RISCV STREQUAL "y")
-                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-ulp-riscv.cmake)
                 else()
-                    set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
+                    set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-${idf_target}-ulp.cmake)
                 endif()
             endif()
         elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
-                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-lp-core-riscv.cmake)
+                set(TOOLCHAIN_FLAG ${ulp_cmake_dir}/toolchain-lp-core-riscv.cmake)
         endif()
 
+        set(ulp_project_args)
         if(IDF_BUILD_V2)
-            externalproject_add(${app_name}
-                SOURCE_DIR ${project_path}
-                BINARY_DIR ${ulp_binary_dir}
-                INSTALL_COMMAND ""
-                CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-                            -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
-                            -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
-                            -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
-                            -DULP_APP_NAME=${app_name}
-                            -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
-                            -DULP_VAR_PREFIX=${prefix}
-                            -DULP_TYPE=${type}
-                            -DCOMPONENT_DIR=${COMPONENT_DIR}
-                            -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
-                            -DIDF_TARGET=${idf_target}
-                            -DIDF_PATH=${idf_path}
-                            -DSDKCONFIG=${ulp_binary_dir}/sdkconfig
-                            -DSDKCONFIG_DEFAULTS=${sdkconfig}
-                            -DDEPENDENCIES_LOCK=${ulp_binary_dir}/dependencies.lock
-                            -DPYTHON=${python}
-                            -DPYTHON_DEPS_CHECKED=1
-                            -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
-                            -DIDF_CUSTOM_TOOLCHAIN=1
-                            ${extra_cmake_args}
-                BUILD_COMMAND ${CMAKE_COMMAND} --build ${ulp_binary_dir} --target build
-                BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
-                                ${ulp_binary_dir}/${app_name}
-                BUILD_ALWAYS 1
-                )
-
-            externalproject_get_property(${app_name} BINARY_DIR)
-            add_custom_target(menuconfig-${app_name}
-                COMMAND ${CMAKE_COMMAND} --build ${BINARY_DIR} --target menuconfig
-                DEPENDS ${app_name}-prefix/src/${app_name}-stamp/${app_name}-configure
-                USES_TERMINAL
-            )
-            idf_register_menuconfig(NAME "ULP (${app_name})"
-                                    TARGET menuconfig-${app_name})
+            set(ulp_project_args
+                --no-warn-unused-cli
+                -DIDF_DEFAULT_PROJECT_NAME=${app_name}
+                -DIDF_BUILD_V2=y
+                # Internal marker for the ULP child project component graph.
+                -D__ULP_BUILD=1
+                -DIDF_PARENT_BUILD_DIR=${build_dir}
+                -DULP_PREFIX_APPEND_BIN_NAME=${prefix_append_bin_name}
+                -DSDKCONFIG=${sdkconfig}
+                -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
+                -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
+                -DSDKCONFIG_DEFAULTS=
+                -DGENERATE_SDKCONFIG=0
+                -DDEPENDENCIES_LOCK=${ulp_binary_dir}/dependencies.lock
+                # All ULP child builds use ULP-specific toolchain files today.
+                # LP core and ULP RISC-V are GCC-based and could eventually
+                # share more of the normal IDF app toolchain response-file
+                # setup, but keep them under IDF_CUSTOM_TOOLCHAIN for now.
+                -DIDF_CUSTOM_TOOLCHAIN=1)
+            if(s_sources)
+                list(APPEND ulp_project_args
+                    -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>)
+            endif()
+            if(DEFINED COMPONENT_TARGET AND TARGET ${COMPONENT_TARGET})
+                # Backward compatibility for existing ULP subprojects that
+                # include headers from the parent component. New full
+                # subprojects should declare their own component include
+                # directories and dependencies instead.
+                list(APPEND ulp_project_args
+                    -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
+            endif()
+            if(COMPONENT_DIR)
+                list(APPEND ulp_project_args
+                    -DCOMPONENT_DIR=${COMPONENT_DIR})
+            endif()
         else()
-            externalproject_add(${app_name}
-                SOURCE_DIR ${project_path}
-                BINARY_DIR ${ulp_binary_dir}
-                INSTALL_COMMAND ""
-                CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-                            -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
-                            -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
-                            -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
-                            -DULP_APP_NAME=${app_name}
-                            -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
-                            -DULP_VAR_PREFIX=${prefix}
-                            -DULP_TYPE=${type}
-                            -DCOMPONENT_DIR=${COMPONENT_DIR}
-                            -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
-                            -DIDF_TARGET=${idf_target}
-                            -DIDF_PATH=${idf_path}
-                            -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
-                            -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
-                            -DPYTHON=${python}
-                            -DCMAKE_MODULE_PATH=${idf_path}/components/ulp/cmake/
-                            ${extra_cmake_args}
-                BUILD_COMMAND ${CMAKE_COMMAND} --build ${ulp_binary_dir} --target build
-                BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
-                                ${ulp_binary_dir}/${app_name}
-                BUILD_ALWAYS 1
-                )
+            list(APPEND ulp_project_args
+                -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
+                -DULP_APP_NAME=${app_name}
+                -DCOMPONENT_DIR=${COMPONENT_DIR}
+                -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
+                -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
+                -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE})
         endif()
 
+        externalproject_add(${app_name}
+            SOURCE_DIR ${project_path}
+            BINARY_DIR ${ulp_binary_dir}
+            INSTALL_COMMAND ""
+            CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+                        -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                        -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
+                        -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
+                        -DULP_VAR_PREFIX=${prefix}
+                        -DULP_TYPE=${type}
+                        ${ulp_project_args}
+                        -DIDF_TARGET=${idf_target}
+                        -DIDF_PATH=${idf_path}
+                        -DPYTHON=${python}
+                        -DCMAKE_MODULE_PATH=${ulp_cmake_dir}
+                        ${extra_cmake_args}
+            BUILD_COMMAND ${CMAKE_COMMAND} --build ${ulp_binary_dir} --target build
+            BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
+                            ${ulp_binary_dir}/${app_name}
+            BUILD_ALWAYS 1
+            )
+
+        # Only the CMake v1 path reads this property when passing ULP_S_SOURCES
+        # to the child project. Leaving it set for v2 is harmless and keeps the
+        # post-ExternalProject artifact wiring common. Can be dropped when
+        # v1 support is dropped.
         set_property(TARGET ${app_name} PROPERTY ULP_SOURCES "${sources}")
 
         spaces2list(exp_dep_srcs)
-        set_source_files_properties(${exp_dep_srcs} PROPERTIES OBJECT_DEPENDS ${ulp_artifacts})
+        if(exp_dep_srcs)
+            set_source_files_properties(${exp_dep_srcs} PROPERTIES OBJECT_DEPENDS ${ulp_artifacts})
+        endif()
 
         include_directories(${ulp_binary_dir})
 
@@ -186,8 +208,10 @@ function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep
 
         add_dependencies(${COMPONENT_LIB} ${app_name}_artifacts)
 
-        target_linker_script(${COMPONENT_LIB} INTERFACE ${ulp_binary_dir}/${app_name}.ld)
-        target_add_binary_data(${COMPONENT_LIB} ${ulp_binary_dir}/${app_name}.bin BINARY)
+        foreach(binary_name IN LISTS binary_names)
+            target_linker_script(${COMPONENT_LIB} INTERFACE ${ulp_binary_dir}/${binary_name}.ld)
+            target_add_binary_data(${COMPONENT_LIB} ${ulp_binary_dir}/${binary_name}.bin BINARY)
+        endforeach()
     endif()
 endfunction()
 
@@ -212,6 +236,23 @@ function(validate_ulp_type ULP_TYPE)
     endif()
 endfunction()
 
+function(__ulp_resolve_type out_var type)
+    # CMake v2 ULP subprojects receive an explicit ULP_TYPE argument because the
+    # child project uses it to choose the component graph. CMake v1 legacy builds
+    # keep the historical empty/uppercase TYPE handling in __setup_ulp_project.
+    if(type)
+        string(TOLOWER "${type}" resolved_type)
+    elseif(CONFIG_ULP_COPROC_TYPE_RISCV)
+        set(resolved_type "riscv")
+    elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+        set(resolved_type "lp_core")
+    elseif(CONFIG_ULP_COPROC_TYPE_FSM)
+        set(resolved_type "fsm")
+    endif()
+
+    set(${out_var} "${resolved_type}" PARENT_SCOPE)
+endfunction()
+
 function(ulp_embed_binary app_name s_sources exp_dep_srcs)
     cmake_parse_arguments(ULP "" "PREFIX;TYPE" "" ${ARGN})
     if(NOT ULP_PREFIX)
@@ -219,18 +260,38 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
     endif()
 
     validate_ulp_type("${ULP_TYPE}")
+    if(IDF_BUILD_V2)
+        __ulp_resolve_type(ULP_TYPE "${ULP_TYPE}")
+    endif()
+    set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
 
-    __setup_ulp_project("${app_name}" "${idf_path}/components/ulp/cmake"
-                        "${ULP_PREFIX}" "${ULP_TYPE}" "${s_sources}" "${exp_dep_srcs}")
+    __setup_ulp_project("${app_name}" "${ulp_cmake_dir}"
+                        "${ULP_PREFIX}" FALSE "${ULP_TYPE}"
+                        "${app_name}"
+                        "${s_sources}" "${exp_dep_srcs}")
 endfunction()
 
 function(ulp_add_project app_name project_path)
-    cmake_parse_arguments(ULP "" "PREFIX;TYPE" "" ${ARGN})
+    cmake_parse_arguments(ULP "" "PREFIX;TYPE" "BINARIES" ${ARGN})
+    if(NOT ULP_BINARIES)
+        set(ULP_BINARIES "${app_name}")
+    endif()
+
+    list(LENGTH ULP_BINARIES ULP_BINARY_COUNT)
+    set(ULP_PREFIX_APPEND_BIN_NAME FALSE)
+    if(IDF_BUILD_V2 AND ULP_BINARY_COUNT GREATER 1)
+        set(ULP_PREFIX_APPEND_BIN_NAME TRUE)
+    endif()
+
     if(NOT ULP_PREFIX)
         set(ULP_PREFIX "ulp_")
     endif()
 
     validate_ulp_type("${ULP_TYPE}")
+    if(IDF_BUILD_V2)
+        __ulp_resolve_type(ULP_TYPE "${ULP_TYPE}")
+    endif()
 
-    __setup_ulp_project("${app_name}" "${project_path}" "${ULP_PREFIX}" "${ULP_TYPE}" "" "")
+    __setup_ulp_project("${app_name}" "${project_path}" "${ULP_PREFIX}"
+                        "${ULP_PREFIX_APPEND_BIN_NAME}" "${ULP_TYPE}" "${ULP_BINARIES}" "" "")
 endfunction()

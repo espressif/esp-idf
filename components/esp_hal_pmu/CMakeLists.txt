@@ -5,6 +5,19 @@ endif()
 
 set(srcs)
 set(public_include "include" "${target}/include")
+# Public PMU/RTC control HAL headers include hal/regi2c_ctrl.h on several
+# targets, so CMake v2 builds need esp_hal_regi2c explicitly.
+set(requires soc hal esp_rom esp_hal_regi2c)
+
+# TODO(IDF-15949): potentially remove __ULP_BUILD handling from esp_hal_pmu
+if(__ULP_BUILD)
+    # LP-core runtime code includes hal/pmu_ll.h from
+    # ulp/lp_core/lp_core/lp_core_utils.c. Some target brownout/VBAT headers
+    # include hal/regi2c_ctrl.h.
+    idf_component_register(INCLUDE_DIRS ${public_include}
+                           REQUIRES ${requires})
+    return()
+endif()
 
 # New chips with PMU peripheral
 if(CONFIG_SOC_PMU_SUPPORTED)
@@ -31,5 +44,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       REQUIRES soc hal esp_rom
+                       REQUIRES ${requires}
                        LDFRAGMENTS linker.lf)

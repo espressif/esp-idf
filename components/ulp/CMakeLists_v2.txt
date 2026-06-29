@@ -1,0 +1,247 @@
+set(srcs "")
+set(includes "")
+set(requires "")
+set(priv_requires "")
+
+if(__ULP_BUILD)
+    if(ULP_TYPE STREQUAL "riscv")
+        list(APPEND includes
+            ulp_riscv/shared/include
+            ulp_riscv/ulp_core/include)
+        list(APPEND srcs
+            "ulp_riscv/ulp_core/ulp_riscv_vectors.S"
+            "ulp_riscv/ulp_core/start.S"
+            "ulp_riscv/ulp_core/ulp_riscv_utils.c")
+        list(APPEND requires
+            riscv
+            soc)
+    elseif(ULP_TYPE STREQUAL "lp_core")
+        list(APPEND includes
+            lp_core/lp_core/include
+            lp_core/shared/include)
+        list(APPEND srcs
+            "lp_core/lp_core/start.S"
+            "lp_core/lp_core/vector.S"
+            "lp_core/lp_core/port/${target}/vector_table.S"
+            "lp_core/shared/ulp_lp_core_memory_shared.c"
+            "lp_core/lp_core/lp_core_startup.c"
+            "lp_core/lp_core/lp_core_pmp.c"
+            "lp_core/lp_core/lp_core_utils.c"
+            "lp_core/lp_core/lp_core_panic.c"
+            "lp_core/lp_core/lp_core_interrupt.c"
+            "lp_core/shared/ulp_lp_core_lp_uart_shared.c"
+            "lp_core/lp_core/lp_core_uart.c"
+            "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+            "lp_core/shared/ulp_lp_core_critical_section_shared.c")
+
+        list(APPEND requires
+            esp_common
+            esp_driver_uart
+            esp_hal_gpio
+            esp_hal_uart
+            esp_rom
+            hal
+            riscv
+            soc)
+        list(APPEND priv_requires
+            esp_hal_clock
+            esp_hal_i2s
+            esp_hal_rtc_timer
+            esp_hal_pmu
+            esp_hw_support)
+
+    elseif(ULP_TYPE STREQUAL "fsm")
+        list(APPEND includes
+            ulp_common/include
+            ulp_fsm/include
+            ulp_fsm/include/${target})
+        list(APPEND requires soc)
+    else()
+        message(FATAL_ERROR "__ULP_BUILD requires ULP_TYPE to be one of: riscv, lp_core, fsm.")
+    endif()
+else()
+    if(CONFIG_ULP_COPROC_ENABLED)
+        list(APPEND includes
+            ulp_common/include)
+        list(APPEND requires
+            esp_common
+            soc)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_FSM)
+        list(APPEND includes
+            ulp_fsm/include
+            ulp_fsm/include/${target})
+        list(APPEND srcs
+            "ulp_common/ulp_common.c"
+            "ulp_fsm/ulp.c"
+            "ulp_fsm/ulp_macro.c")
+        list(APPEND requires esp_hw_support)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_RISCV)
+        list(APPEND includes
+            ulp_riscv/include
+            ulp_riscv/shared/include
+            ulp_riscv/ulp_core/include)
+        list(APPEND srcs
+            "ulp_common/ulp_common.c"
+            "ulp_riscv/ulp_riscv.c")
+        list(APPEND requires
+            esp_hw_support
+            esp_hal_pmu)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+        list(APPEND includes
+            lp_core/include
+            lp_core/lp_core/include
+            lp_core/shared/include)
+        list(APPEND srcs
+            "lp_core/lp_core.c"
+            "lp_core/shared/ulp_lp_core_memory_shared.c"
+            "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+            "lp_core/shared/ulp_lp_core_critical_section_shared.c")
+        list(APPEND requires
+            esp_hw_support
+            esp_hal_clock
+            esp_hal_pmu
+            esp_hal_rtc_timer
+            esp_rom
+            hal
+            riscv
+            soc)
+    endif()
+endif()
+
+if(requires)
+    list(REMOVE_DUPLICATES requires)
+endif()
+
+if(priv_requires)
+    list(REMOVE_DUPLICATES priv_requires)
+endif()
+
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS ${includes}
+                       REQUIRES ${requires}
+                       PRIV_REQUIRES ${priv_requires})
+
+# In the parent app build, the ulp component only provides the host-side API.
+# The executable/linker setup below is for native ULP child projects.
+if(NOT __ULP_BUILD)
+    idf_define_esp_err_codes(HEADERS ulp_fsm/include/ulp_fsm_common.h)
+    return()
+endif()
+
+# Linker scripts are preprocessed by the C compiler, so this list is later
+# converted into -I arguments for resolving #include lines in the templates.
+set(ulp_linker_script_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/ld")
+
+# Select the linker template and target-specific link options used by the ULP
+# executable created in the child project.
+if(ULP_TYPE STREQUAL "riscv")
+    set(ulp_ld_template "${CMAKE_CURRENT_SOURCE_DIR}/ld/ulp_riscv.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}.peripherals.ld")
+    target_link_options(${COMPONENT_LIB} INTERFACE
+        -nostartfiles
+        -Wl,--gc-sections
+        -Wl,--no-warn-rwx-segments
+        LINKER:-u,main)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC
+        IS_ULP_COCPU
+        ULP_RISCV_REGISTER_OPS)
+elseif(ULP_TYPE STREQUAL "lp_core")
+    set(ulp_ld_template "${CMAKE_CURRENT_SOURCE_DIR}/ld/lp_core_riscv.ld")
+    # lp_core_riscv.ld includes common ESP system linker snippets and SoC
+    # headers for target memory constants.
+    idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
+    list(APPEND ulp_linker_script_include_dirs
+        "${esp_system_dir}/ld"
+        "${esp_system_dir}/ld/${target}")
+
+    idf_component_get_property(linker_dep_lib soc COMPONENT_LIB)
+    get_target_property(linker_dep_include_dirs "${linker_dep_lib}" INTERFACE_INCLUDE_DIRECTORIES)
+    if(linker_dep_include_dirs)
+        list(APPEND ulp_linker_script_include_dirs ${linker_dep_include_dirs})
+    endif()
+
+    target_link_options(${COMPONENT_LIB} INTERFACE
+        -nostartfiles
+        -Wl,--gc-sections
+        -Wl,--no-warn-rwx-segments
+        LINKER:-u,main)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC IS_ULP_COCPU)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough)
+elseif(ULP_TYPE STREQUAL "fsm")
+    set(ulp_ld_template "${CMAKE_CURRENT_SOURCE_DIR}/ld/ulp_fsm.ld")
+    target_link_options(${COMPONENT_LIB} INTERFACE "SHELL:-u entry")
+endif()
+
+# Store the selected ULP build metadata on the component. The POST_ELF callback
+# reads these properties when it attaches the generated linker script.
+idf_component_set_property(ulp ULP_LD_TEMPLATE "${ulp_ld_template}")
+idf_component_set_property(ulp ULP_LINKER_SCRIPT_INCLUDE_DIRS
+                           "${ulp_linker_script_include_dirs}")
+
+function(__ulp_configure_executable ulp_app_name)
+    set(include_arg_separator "\n")
+    macro(__ulp_add_target_include_args target)
+        foreach(property INTERFACE_INCLUDE_DIRECTORIES INCLUDE_DIRECTORIES)
+            set(include_args "$<$<BOOL:$<TARGET_PROPERTY:${target},${property}>>:-I$<JOIN:$<TARGET_PROPERTY:${target},${property}>,${include_arg_separator}-I>>")
+            list(APPEND linker_script_include_args "$<TARGET_GENEX_EVAL:${target},${include_args}>")
+        endforeach()
+    endmacro()
+
+    # Generate and attach the ULP linker script after the executable exists so
+    # library/component include directories are available.
+    set(linker_script_include_args)
+
+    # CMake v2 stores the component closure and build-wide include directories
+    # on the executable's library interface after idf_build_executable().
+    get_target_property(library_interface "${ulp_app_name}" LIBRARY_INTERFACE)
+    __ulp_add_target_include_args("${library_interface}")
+
+    idf_library_get_property(component_interfaces "${library_interface}"
+                             LIBRARY_COMPONENT_INTERFACES_LINKED)
+    foreach(component_interface IN LISTS component_interfaces)
+        __ulp_add_target_include_args("${component_interface}")
+
+        # Some component include directories live on the real library target
+        # rather than the interface target, so collect both.
+        idf_component_get_property(component_target "${component_interface}" COMPONENT_REAL_TARGET)
+        if(TARGET "${component_target}")
+            __ulp_add_target_include_args("${component_target}")
+        endif()
+    endforeach()
+
+    idf_component_get_property(linker_include_dirs ulp ULP_LINKER_SCRIPT_INCLUDE_DIRS)
+    set(linker_script_includes ${linker_include_dirs})
+    list(REMOVE_DUPLICATES linker_script_includes)
+    list(TRANSFORM linker_script_includes PREPEND "-I")
+    list(APPEND linker_script_include_args ${linker_script_includes})
+
+    idf_component_get_property(ULP_LD_TEMPLATE ulp ULP_LD_TEMPLATE)
+    get_filename_component(ld_script_name ${ULP_LD_TEMPLATE} NAME)
+    set(ld_script "${ulp_app_name}_${ld_script_name}")
+
+    # Make the generated script an explicit prerequisite of the executable and
+    # then pass it to the linker.
+    string(MAKE_C_IDENTIFIER "${ulp_app_name}_ld_script" ld_script_target)
+    __ulp_add_preprocessed_linker_script(${ulp_app_name} ${ULP_LD_TEMPLATE} ${ld_script}
+                                         ${ld_script_target} ${linker_script_include_args})
+
+    # Generate the files consumed by the parent app: .bin payload plus symbol
+    # header/linker exports produced from the ULP ELF.
+    set(binary_target_args)
+    if(DEFINED ULP_VAR_PREFIX)
+        set(ulp_var_prefix "${ULP_VAR_PREFIX}")
+        if(ULP_PREFIX_APPEND_BIN_NAME)
+            string(MAKE_C_IDENTIFIER "${ulp_var_prefix}${ulp_app_name}_" ulp_var_prefix)
+        endif()
+        list(APPEND binary_target_args PREFIX ${ulp_var_prefix})
+    endif()
+    ulp_add_build_binary_targets(${ulp_app_name} ${binary_target_args})
+endfunction()
+
+idf_component_register_build_event_callback(EVENT POST_ELF CALLBACK __ulp_configure_executable)

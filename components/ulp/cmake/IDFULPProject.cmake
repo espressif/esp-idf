@@ -1,31 +1,18 @@
-if(NOT IDF_BUILD_V2)
-    include(${SDKCONFIG_CMAKE})
+if(IDF_BUILD_V2 AND COMMAND idf_project_init)
+    include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectv2.cmake)
+    return()
 endif()
+
+# Legacy ULP child projects are plain CMake projects, so the parent-provided
+# sdkconfig.cmake has to be loaded here before the common ULP helpers inspect
+# CONFIG_* values. CMake v1 callers pass this path explicitly.
+include(${SDKCONFIG_CMAKE})
+include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectCommon.cmake)
 enable_language(C ASM)
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
-# Logic to determine ULP type and set reusable flags
-set(BUILD_RISCV OFF)
-set(BUILD_FSM OFF)
-set(BUILD_LP_CORE OFF)
-
-# If ULP_TYPE is explicitly set, use it; otherwise fall back to CONFIG checks
-if(ULP_TYPE)
-    string(TOLOWER "${ULP_TYPE}" ulp_type_lower)
-    if(ulp_type_lower STREQUAL "riscv")
-        set(BUILD_RISCV ON)
-    elseif(ulp_type_lower STREQUAL "fsm")
-        set(BUILD_FSM ON)
-    elseif(ulp_type_lower STREQUAL "lp_core")
-        set(BUILD_LP_CORE ON)
-    endif()
-elseif(CONFIG_ULP_COPROC_TYPE_RISCV)
-    set(BUILD_RISCV ON)
-elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
-    set(BUILD_LP_CORE ON)
-elseif(CONFIG_ULP_COPROC_TYPE_FSM)
-    set(BUILD_FSM ON)
-endif()
+ulp_detect_build_type()
+ulp_apply_build_type_options()
 
 # Check the supported assembler version
 if(BUILD_FSM)
@@ -49,16 +36,6 @@ function(ulp_apply_default_options ulp_app_name)
 endfunction()
 
 function(ulp_apply_default_sources ulp_app_name)
-
-    function(create_arg_file arguments output_file)
-        # Escape all spaces
-        list(TRANSFORM arguments REPLACE " " "\\\\ ")
-        # Create a single string with all args separated by space
-        list(JOIN arguments " " arguments)
-        # Write it into the response file
-        file(WRITE ${output_file} ${arguments})
-    endfunction()
-
     message(STATUS "Building ULP app ${ulp_app_name}")
 
     get_filename_component(sdkconfig_dir ${SDKCONFIG_HEADER} DIRECTORY)
@@ -88,22 +65,8 @@ function(ulp_apply_default_sources ulp_app_name)
     endif()
 
     get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
-
-    # Put all arguments to the list
-    set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPRO_ARGS} ${ULP_LD_TEMPLATE})
-    set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT}_args.txt)
-    create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
-
-    add_custom_command(OUTPUT ${ULP_LD_SCRIPT}
-                    COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                    MAIN_DEPENDENCY ${ULP_LD_TEMPLATE}
-                    DEPENDS ${SDKCONFIG_HEADER}
-                    COMMENT "Generating ${ULP_LD_SCRIPT} linker script..."
-                    VERBATIM)
-    add_custom_target(ld_script DEPENDS ${ULP_LD_SCRIPT})
-    add_dependencies(${ulp_app_name} ld_script)
-    target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT})
+    __ulp_add_preprocessed_linker_script(${ulp_app_name} ${ULP_LD_TEMPLATE} ${ULP_LD_SCRIPT}
+                                         ld_script ${ULP_PREPRO_ARGS})
 
     # To avoid warning "Manually-specified variables were not used by the project"
     set(bypassWarning "${IDF_TARGET}")
@@ -148,7 +111,7 @@ function(ulp_apply_default_sources ulp_app_name)
             set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ulp_ps_output} ${ULP_PREPRO_ARGS} ${ulp_s_source})
 
             set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}_args.txt)
-            create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+            __ulp_create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
 
             # Generate preprocessed assembly files.
             add_custom_command(OUTPUT ${ulp_ps_output}
@@ -238,60 +201,4 @@ function(ulp_apply_default_sources ulp_app_name)
         target_compile_definitions(${ulp_app_name} PRIVATE IS_ULP_COCPU)
 
     endif()
-endfunction()
-
-function(ulp_add_build_binary_targets ulp_app_name)
-    cmake_parse_arguments(ULP "" "PREFIX" "" ${ARGN})
-    if(NOT ULP_PREFIX)
-        set(ULP_PREFIX "ulp_")
-    endif()
-
-    if(ADD_PICOLIBC_SPECS)
-        target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU>:-specs=picolibc.specs>)
-        target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-specs=picolibcpp.specs>)
-    endif()
-
-    if(BUILD_LP_CORE)
-        set(ULP_BASE_ADDR "0x0")
-    else()
-        set(ULP_BASE_ADDR "0x50000000")
-    endif()
-
-    set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
-
-    # Dump the list of global symbols in a convenient format
-    add_custom_command(OUTPUT ${ULP_APP_NAME}.sym
-                    COMMAND ${CMAKE_READELF} -sW $<TARGET_FILE:${ulp_app_name}> > ${ulp_app_name}.sym
-                    DEPENDS ${ulp_app_name}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-    # Dump the binary for inclusion into the project
-    if(BUILD_LP_CORE AND CONFIG_ULP_COPROC_RUN_FROM_HP_MEM)
-        add_custom_command(OUTPUT ${ulp_app_name}.bin
-                        COMMAND ${PYTHON} -m esptool --chip ${IDF_TARGET} elf2image
-                                --output ${ulp_app_name}.bin $<TARGET_FILE:${ulp_app_name}>
-                        DEPENDS ${ulp_app_name}
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    else()
-        add_custom_command(OUTPUT ${ulp_app_name}.bin
-                        COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${ulp_app_name}> ${ulp_app_name}.bin
-                        DEPENDS ${ulp_app_name}
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    endif()
-
-    add_custom_command(OUTPUT ${ulp_app_name}.ld ${ulp_app_name}.h
-                    COMMAND ${ULP_MAP_GEN} -s ${ulp_app_name}.sym -o ${ulp_app_name}
-                            --base ${ULP_BASE_ADDR} --prefix ${ULP_PREFIX}
-                            --target ${IDF_TARGET}
-                    DEPENDS ${ulp_app_name}.sym
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-    # Building the component separately from the project should result in
-    # ULP files being built.
-    add_custom_target(build
-                    DEPENDS ${ulp_app_name} ${ulp_app_name}.bin ${ulp_app_name}.sym
-                            ${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.ld
-                            ${CMAKE_CURRENT_BINARY_DIR}/${ulp_app_name}.h
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
 endfunction()
