@@ -624,12 +624,24 @@ typedef struct {
     BOOLEAN                     directed;
     BOOLEAN                     scannable;
     BOOLEAN                     connetable;
+    /* Per-set on-air address policy, captured at BTM_BleSetExtendedAdvParams()
+     * time. For now we only consider CONTROLLER_RPA_LIST_ENABLE == TRUE;
+     * CONTROLLER_RPA_LIST_ENABLE == FALSE is out of scope temporarily. The global
+     * addr_mgnt_cb is a single slot shared across all sets, so in multi-ADV
+     * it does not necessarily reflect the policy used for a given connection. */
+    tBLE_ADDR_TYPE              own_addr_type;
+    BOOLEAN                     rand_addr_set;
+    BD_ADDR                     rand_addr;
 } tBTM_BLE_EXTENDED_INST;
 
 typedef struct {
     tBTM_BLE_EXTENDED_INST inst[MAX_BLE_ADV_INSTANCE]; /* dynamic array to store adv instance */
     UINT8  scan_duplicate;
 } tBTM_BLE_EXTENDED_CB;
+
+/* Defined in btm_ble_5_gap.c. Exposed for per-set address lookup from
+ * SMP / BTM at LE connection complete. */
+extern tBTM_BLE_EXTENDED_CB extend_adv_cb;
 
 #define BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE       (1 << 0)
 #define BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE         (1 << 1)
@@ -3051,6 +3063,20 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
 tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance);
 
 tBTM_STATUS BTM_BleExtAdvSetClear(void);
+
+/*******************************************************************************
+**
+** Function         BTM_BleGetExtAdvInstByConHandle
+**
+** Description      Map an LE connection handle to the ext-adv instance
+**                  that produced it.
+**
+** Returns          Instance index on success, 0xFF if no match (e.g.
+**                  initiator role or legacy advertising).
+**
+*******************************************************************************/
+UINT8 BTM_BleGetExtAdvInstByConHandle(UINT16 con_handle);
+
 
 tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Params *params);
 
