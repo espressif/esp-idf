@@ -1605,6 +1605,33 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_DBAF == TRUE)
+#define BTA_DM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT            BTM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT    BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#define BTA_DM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT           BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define BTA_DM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT     BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT         BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define BTA_DM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT      BTM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_CONN_RATE_CHANGE_EVT                      BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT
+#define BTA_DM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT  BTM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT  BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define BTA_DM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT          BTM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT                     BTM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT
+#define BTA_DM_BLE_5_GAP_UTP_RECEIVE_EVT                           BTM_BLE_5_GAP_UTP_RECEIVE_EVT
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #define BTA_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT               BTM_BLE_GAP_SET_PERIODIC_ADV_SUBEVT_DATA_EVT
 #define BTA_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT             BTM_BLE_GAP_SET_PERIODIC_ADV_RESPONSE_DATA_EVT
@@ -1628,6 +1655,10 @@ typedef struct {
 #define BTA_BLE_GAP_CS_SUBEVENT_RESULT_EVT                         BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT
 #define BTA_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT                BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define BTA_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT          BTM_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT
+#define BTA_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT  BTM_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 #define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
@@ -2958,6 +2989,10 @@ void BTA_DmBleGapCsSetChannelClass(uint8_t *channel_class, uint8_t channl_len);
 void BTA_DmBleGapCsSetProcPatams(tBTA_DM_CS_SET_PROC_PARAMS *set_proc_params);
 void BTA_DmBleGapCsProcEnable(uint16_t conn_handle, uint8_t config_id, uint8_t enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void BTA_DmBleGapCsSetSecurityRequirements(uint16_t conn_handle, uint64_t cs_security_requirements);
+void BTA_DmBleGapCsSetDefaultSecurityRequirements(uint64_t cs_security_requirements);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /*******************************************************************************
 **
@@ -3058,6 +3093,42 @@ extern void BTA_DmBleGapClearMonitorAdvList(void);
 extern void BTA_DmBleGapReadMonitorAdvListSize(void);
 extern void BTA_DmBleGapEnableMonitorAdv(UINT8 enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+extern void BTA_DmBleGapSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                        UINT8 data_len, const UINT8 *p_data);
+extern void BTA_DmBleGapSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                                const UINT8 *test_fields, const UINT8 *test_params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+extern void BTA_DmBleGapFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
+                                         UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+extern void BTA_DmBleGapReadAllLocalSuppFeatures(void);
+extern void BTA_DmBleGapReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+extern void BTA_DmBleGapConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                              UINT16 conn_interval_max, UINT16 subrate_min,
+                                              UINT16 subrate_max, UINT16 max_latency,
+                                              UINT16 continuation_number, UINT16 supervision_timeout,
+                                              UINT16 min_ce_len, UINT16 max_ce_len);
+extern void BTA_DmBleGapSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                                 UINT16 subrate_min, UINT16 subrate_max,
+                                                 UINT16 max_latency, UINT16 continuation_number,
+                                                 UINT16 supervision_timeout, UINT16 min_ce_len,
+                                                 UINT16 max_ce_len);
+extern void BTA_DmBleGapReadMinSuppConnInterval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+extern void BTA_DmBleGapEnableUtpOtaMode(UINT8 enable);
+extern void BTA_DmBleGapUtpSend(UINT8 data_len, const UINT8 *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
