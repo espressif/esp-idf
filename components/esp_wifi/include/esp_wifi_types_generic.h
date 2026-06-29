@@ -606,6 +606,7 @@ typedef struct {
     bool disable_random_mac;/**< Disable the MAC Randomisation in NAN */
     bool reset_current_nvs_creds; /**< Erase all NAN credentials (own NIK and cached peer NIK/NPK entries) saved in NVS before starting. */
     bool use_nvs_for_caching;     /**< Persist newly-learned peer credentials (NIK/NPK) to NVS so they survive across reboots. */
+    bool group_mgmt_prot;         /**< Device-global group management protection (IGTKSA/BIGTKSA): BIP-protect Beacons + multicast SDFs. Forces GTKSA on all secured services (CSIA caps cannot encode IGTK/BIGTK without GTKSA). */
 } wifi_nan_sync_config_t;
 
 /**

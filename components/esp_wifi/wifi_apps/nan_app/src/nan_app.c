@@ -264,13 +264,27 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
                                       key_rsc, sizeof(key_rsc),
                                       NULL, 0, NAN_KEY_ND_TK);
 
+        /* Drop the peer's RX GTK (bound to the peer NDI) and wipe local GTK
+         * state. The TX GTK keyed on the local NDI is released by the blob
+         * when the NDI/interface is torn down. */
+        esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                      key_addr, ndl->gtk_keyid, 0,
+                                      key_rsc, sizeof(key_rsc),
+                                      NULL, 0, NAN_KEY_ND_GTK);
+
         forced_memzero(ndl->nd_tk, sizeof(ndl->nd_tk));
         forced_memzero(ndl->nd_kck, sizeof(ndl->nd_kck));
         forced_memzero(ndl->nd_kek, sizeof(ndl->nd_kek));
+        forced_memzero(ndl->gtk, sizeof(ndl->gtk));
+        forced_memzero(ndl->own_gtk, sizeof(ndl->own_gtk));
         ndl->ptk_set = 0;
         ndl->tk_len = 0;
         ndl->kck_len = 0;
         ndl->kek_len = 0;
+        ndl->gtk_set = 0;
+        ndl->own_gtk_set = 0;
+        ndl->gtk_len = 0;
+        ndl->own_gtk_len = 0;
     }
 
     /* Fallback when no NDL slot tracks peer_ndi yet. */
@@ -601,6 +615,18 @@ static struct own_svc_info *nan_claim_own_svc_slot(uint8_t type, const char svc_
     forced_memzero(&p_svc->derived_security, sizeof(p_svc->derived_security));
     if (security_cfg) {
         memcpy(&p_svc->user_cfg, security_cfg, sizeof(*security_cfg));
+        /* Device-global group_mgmt_prot (IGTKSA/BIGTKSA) forces GTKSA on every
+         * secured service: the CSIA capability field has no "IGTK/BIGTK without
+         * GTKSA" encoding (§9.5.21.2 Table 122), so advertising group-management
+         * protection mandates advertising GTKSA. Warn and force it on if the app
+         * requested group_data_prot=0. Forcing support never blocks a peer that
+         * lacks protection — keys activate only after capability negotiation. */
+        if (s_nan_ctx.group_mgmt_prot && !p_svc->user_cfg.group_data_prot) {
+            ESP_LOGW(TAG, "group_data_prot forced ON for '%s': group_mgmt_prot is "
+                     "enabled device-wide; GTKSA cannot be advertised without it",
+                     svc_name);
+            p_svc->user_cfg.group_data_prot = 1;
+        }
     }
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
     if (pairing) {
@@ -681,6 +707,7 @@ static void nan_record_new_ndl(uint8_t ndp_id, uint8_t publish_id, uint8_t peer_
     if (ndl && reuse_slot) {
         ndl->ndp_id = ndp_id;
         ndl->own_role = own_role;
+        ndl->device_caps = device_caps;
         return;
     }
     if (ndl) {
@@ -1024,7 +1051,7 @@ static void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_inf
     evt->subscribe_id = sub_id;
     MACADDR_COPY(evt->sub_if_mac, sub_nmi);
 
-    ESP_LOGI(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]", MAC2STR(sub_nmi), sub_id);
+    //ESP_LOGI(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]", MAC2STR(sub_nmi), sub_id);
     if (ssi && ssi_len) {
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
@@ -1147,8 +1174,11 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
 
     nan_record_new_ndl(ndp_id, pub_id, peer_nmi, ESP_WIFI_NDP_ROLE_RESPONDER, device_caps);
 
-    if (!nan_find_peer_svc(pub_id, 0, peer_nmi)) {
+    struct peer_svc_info *p_peer_svc = nan_find_peer_svc(pub_id, 0, peer_nmi);
+    if (!p_peer_svc) {
         nan_record_peer_svc(pub_id, 0, peer_nmi, device_caps);
+    } else {
+        p_peer_svc->device_caps = device_caps;
     }
 
     struct ndl_info *ndl = nan_find_ndl(ndp_id, peer_nmi);
@@ -1160,6 +1190,17 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
     /* Apply pending CSIA/SCIA/M1 (captured before this indication) to the NDL. */
     nan_security_apply_pending(ndl, p_own_svc, pub_id, peer_nmi, peer_ndi);
 #endif
+
+    if (device_caps & NAN_CAPS_NDPE_ATTR) {
+        uint8_t own_bssid[6];
+        esp_err_t err = esp_wifi_get_mac(WIFI_IF_NAN, own_bssid);
+        if (err != ESP_OK) {
+            NAN_DATA_UNLOCK();
+            ESP_LOGE(TAG, "Cannot get own BSSID!");
+            return;
+        }
+        esp_wifi_nan_get_ipv6_linklocal_from_mac(&own_ipv6.u_addr.ip6, own_bssid);
+    }
 
     if (p_own_svc->ndp_resp_needed) {
         ESP_LOGD(TAG, "NDP Req from "MACSTR" [NDP Id: %d], Accept OR Deny using NDP command",
@@ -1359,10 +1400,6 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
         goto done;
     }
 
-#ifndef NAN_KEY_ND_TK
-#define NAN_KEY_ND_TK 0
-#endif
-
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     if (ndl->security_ctx.type == WIFI_NAN_SECURITY_ENCRYPTED) {
         uint8_t key_rsc[8] = {0};
@@ -1375,11 +1412,97 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                                                 ndl->nd_tk,
                                                 NAN_NCS_SK_128_TK_LEN,
                                                 NAN_KEY_ND_TK);
+        ESP_LOG_BUFFER_HEXDUMP("## ND-TK ", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_INFO);
+        ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                peer_nmi,
+                                                0,
+                                                1,
+                                                key_rsc,
+                                                sizeof(key_rsc),
+                                                ndl->nd_tk,
+                                                NAN_NCS_SK_128_TK_LEN,
+                                                NAN_KEY_NM_TK);
         if (ret != 0) {
             ESP_LOGE(TAG, "NDP confirm: failed to install NAN pairwise key (ndp_id=%d, ret=%d)", ndp_id, ret);
             os_free(evt);
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
+        }
+
+        /* Group keys (ND-GTK) exchanged during NDP setup (§7.1.3.2): our GTK
+         * is the TX key bound to the local NDI; the peer's GTK is the RX key
+         * bound to the peer NDI. Best-effort — a GTK install failure must not
+         * tear down the working unicast datapath. */
+        if (ndl->own_gtk_set && ndl->own_gtk_len) {
+            int gret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                     own_ndi, ndl->own_gtk_keyid, 1,
+                                                     ndl->own_gtk_rsc, NAN_KEY_RSC_LEN,
+                                                     ndl->own_gtk, ndl->own_gtk_len,
+                                                     NAN_KEY_ND_GTK);
+            if (gret != 0) {
+                ESP_LOGW(TAG, "NDP confirm: own GTK (TX) install failed (ndp_id=%d, ret=%d)", ndp_id, gret);
+            } else {
+                ESP_LOGI(TAG, "NDP confirm: own GTK (TX) installed (keyid=%d)", ndl->own_gtk_keyid);
+            }
+            ESP_LOG_BUFFER_HEXDUMP("## ND-GTK ", ndl->own_gtk, ndl->own_gtk_len, ESP_LOG_INFO);
+        }
+        if (ndl->gtk_set && ndl->gtk_len) {
+            int gret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                     peer_ndi, ndl->gtk_keyid, 0,
+                                                     ndl->gtk_rsc, NAN_KEY_RSC_LEN,
+                                                     ndl->gtk, ndl->gtk_len,
+                                                     NAN_KEY_ND_GTK);
+            if (gret != 0) {
+                ESP_LOGW(TAG, "NDP confirm: peer GTK (RX) install failed (ndp_id=%d, ret=%d)", ndp_id, gret);
+            } else {
+                ESP_LOGI(TAG, "NDP confirm: peer GTK (RX) installed (keyid=%d)", ndl->gtk_keyid);
+            }
+        }
+
+        /* Own IGTK/BIGTK (TX) are installed once at NAN start (see
+         * nan_security_install_own_group_integrity_keys); not re-installed here,
+         * to preserve the blob's monotonic BIPN/IPN across the session. Only the
+         * peer RX keys are bound at NDP confirm. §7.1.3.3/§7.1.3.4; NMI==NDI today.
+         * Peer IGTK/BIGTK install RX-only against the peer NMI. seq (IPN/BIPN)
+         * starts at 0 for now; thread the peer's KDE IPN/BIPN once the blob
+         * consumes it for the BIP replay counter. */
+        if (ndl->igtk_set && ndl->igtk_len) {
+            if (ndl->igtk_len != NAN_ND_GTK_LEN) {
+                ESP_LOGW(TAG, "NDP confirm: peer IGTK len=%d unsupported (BIP-CMAC-128 only); skipping",
+                         ndl->igtk_len);
+            } else {
+                int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
+                                                      peer_nmi, ndl->igtk_keyid, 0,
+                                                      key_rsc, 6,
+                                                      ndl->igtk, ndl->igtk_len,
+                                                      NAN_KEY_ND_IGTK);
+                if (r != 0) {
+                    ESP_LOGW(TAG, "NDP confirm: peer IGTK (RX) install failed, rc=0x%x (ndp_id=%d)", r, ndp_id);
+                } else {
+                    ESP_LOGI(TAG, "NDP confirm: peer IGTK (RX) installed (keyid=%d)", ndl->igtk_keyid);
+                }
+                /* Peer IGTK bytes for sniffer MIC cross-check vs the peer's multicast SDFs. */
+                ESP_LOG_BUFFER_HEXDUMP("## PEER ND-IGTK ", ndl->igtk, ndl->igtk_len, ESP_LOG_INFO);
+            }
+        }
+        if (ndl->bigtk_set && ndl->bigtk_len) {
+            if (ndl->bigtk_len != NAN_ND_GTK_LEN) {
+                ESP_LOGW(TAG, "NDP confirm: peer BIGTK len=%d unsupported (BIP-CMAC-128 only); skipping",
+                         ndl->bigtk_len);
+            } else {
+                int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
+                                                      peer_nmi, ndl->bigtk_keyid, 0,
+                                                      key_rsc, 6,
+                                                      ndl->bigtk, ndl->bigtk_len,
+                                                      NAN_KEY_ND_BIGTK);
+                if (r != 0) {
+                    ESP_LOGW(TAG, "NDP confirm: peer BIGTK (RX) install failed, rc=0x%x (ndp_id=%d)", r, ndp_id);
+                } else {
+                    ESP_LOGI(TAG, "NDP confirm: peer BIGTK (RX) installed (keyid=%d)", ndl->bigtk_keyid);
+                }
+                /* Peer BIGTK bytes for sniffer MIC cross-check vs the peer's protected Beacons. */
+                ESP_LOG_BUFFER_HEXDUMP("## PEER ND-BIGTK ", ndl->bigtk, ndl->bigtk_len, ESP_LOG_INFO);
+            }
         }
     }
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
@@ -1506,6 +1629,7 @@ static struct nan_secure_dp_funcs s_nan_secure_dp_funcs = {
     .ndp_security_install_get_shared_desc_len  = esp_nan_ndp_security_install_get_shared_desc_len,
     .get_ndp_resp_num_pmkids                   = esp_nan_get_ndp_resp_num_pmkids,
     .get_ndp_resp_shared_key_desc_len          = esp_nan_get_ndp_resp_shared_key_desc_len,
+    .ndp_confirm_get_shared_desc_len           = esp_nan_ndp_confirm_get_shared_desc_len,
 
     /* CSIA / SCIA construction */
     .construct_csia                            = esp_nan_construct_csia,
@@ -1685,6 +1809,24 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
 #endif
     };
     esp_nan_internal_register_callbacks(&nan_cb);
+
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Device-global group-management protection (IGTKSA/BIGTKSA), one per NMI,
+     * sourced from the NAN start config (wifi_nan_sync_config_t.group_mgmt_prot).
+     * The blob stores it at nan_start; we read it back here. Default on if the
+     * config can't be read, preserving protected-by-default behavior. */
+    {
+        wifi_config_t nan_cfg = {0};
+        s_nan_ctx.group_mgmt_prot =
+            (esp_wifi_get_config(WIFI_IF_NAN, &nan_cfg) == ESP_OK)
+                ? nan_cfg.nan.group_mgmt_prot : true;
+    }
+    /* Install the device-global IGTK/BIGTK for TX now (when enabled) so Beacons
+     * (BIGTK) and group-addressed SDFs (IGTK) are BIP-protected from the first
+     * frame, like iOS. The blob gates beacon BIP-TX on an active BIGTK index
+     * only (no NDP state), so installing here is sufficient. */
+    nan_security_install_own_group_integrity_keys();
+#endif
 
     ESP_LOGI(TAG, "NAN Discovery started.");
     os_event_group_clear_bits(nan_event_group, NAN_STOPPED_BIT);
@@ -2525,7 +2667,6 @@ esp_err_t esp_wifi_nan_datapath_resp(wifi_nan_datapath_resp_t *resp)
         ESP_LOGE(TAG, "Need NDP Indication before NDP Response can be sent");
         goto fail;
     }
-
     if (MACADDR_EQUAL(resp->peer_mac, null_mac)) {
         MACADDR_COPY(resp->peer_mac, ndl->peer_nmi);
     }
