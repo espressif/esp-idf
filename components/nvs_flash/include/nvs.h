@@ -383,7 +383,6 @@ esp_err_t nvs_set_blob(nvs_handle_t handle, const char* key, const void* value, 
  *             - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
- *             - ESP_ERR_NVS_INVALID_LENGTH if length is not sufficient to store data
  */
 esp_err_t nvs_get_i8 (nvs_handle_t handle, const char* key, int8_t* out_value);
 
