@@ -109,6 +109,8 @@ esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio_level(uint32_t num_p
 /**
  * @brief Erase the partition data that is specified in the transferred list.
  *
+ * @note This function can't be called in app.
+ *
  * @param[in] list_erase String containing a list of cleared partitions. Like this "nvs, phy". The string must be null-terminal.
  * @param[in] ota_data_erase If true then the OTA data partition will be cleared (if there is it in partition table).
  * @return    Returns true on success, false otherwise.

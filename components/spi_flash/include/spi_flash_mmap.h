@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <esp_bit_defs.h>
+#include <esp_assert.h>
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "sdkconfig.h"
 #include "esp_spi_flash_counters.h"
 
@@ -31,12 +34,40 @@ extern "C" {
 #define SPI_FLASH_MMU_PAGE_SIZE CONFIG_MMU_PAGE_SIZE /**< Flash cache MMU mapping page size */
 
 /**
- * @brief Enumeration which specifies memory space requested in an mmap call
+ * @brief Flags for spi_flash_mmap and spi_flash_mmap_pages calls
  */
 typedef enum {
-    SPI_FLASH_MMAP_DATA,    /**< map to data memory, allows byte-aligned access*/
-    SPI_FLASH_MMAP_INST,    /**< map to instruction memory, allows only 4-byte-aligned access*/
-} spi_flash_mmap_memory_t;
+    SPI_FLASH_MMAP_FLAG_DATA =       0,   /**< map to data memory, allows byte-aligned access*/
+    SPI_FLASH_MMAP_FLAG_INST =       1,   /**< map to instruction memory, allows only 4-byte-aligned access*/
+
+    SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE =  BIT(1),
+    /**< Blocks flash erasing/programming until spi_flash_munmap when necessary. Flash can't be read when there is
+     * erasing/programming in progress, even if the regions to be read from/written to don't overlap.
+     *
+     * This flag helps avoid cache disabling and its influence to system when when XIP from PSRAM
+     * (`CONFIG_SPIRAM_XIP_FROM_PSRAM`) is enabled.
+     *
+     * Call mmap with this flag unless you want to do erasing/programming between this mmap and its munmap, or want to
+     * create a mapping that will last for very long.
+     *
+     * Ignored on ESP32.
+     */
+} spi_flash_mmap_flag_t;
+
+/** @def SPI_FLASH_MMAP_DATA
+ *
+ * Data memory.
+ */
+#define SPI_FLASH_MMAP_DATA SPI_FLASH_MMAP_FLAG_DATA
+
+/** @def SPI_FLASH_MMAP_INST
+ *
+ * Instruction memory.
+ */
+#define SPI_FLASH_MMAP_INST SPI_FLASH_MMAP_FLAG_INST
+
+/** Enumeration which specifies memory space requested. SPI_FLASH_MMAP_DATA or SPI_FLASH_MMAP_INST */
+typedef spi_flash_mmap_flag_t spi_flash_mmap_memory_t;
 
 /**
  * @brief Opaque handle for memory region obtained from spi_flash_mmap.
@@ -54,18 +85,21 @@ typedef uint32_t spi_flash_mmap_handle_t;
  * may become fragmented. To troubleshoot issues with page allocation, use
  * spi_flash_mmap_dump() function.
  *
+ * Call with SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE flag when you only want to read some data from the flash without writing
+ * to it before the spi_flash_munmap. This can reduce the influence to system due to cache disabling on non-ESP32 chips.
+ *
  * @param src_addr  Physical address in flash where requested region starts.
  *                  This address *must* be aligned to 64kB boundary
  *                  (SPI_FLASH_MMU_PAGE_SIZE)
  * @param size  Size of region to be mapped. This size will be rounded
  *              up to a 64kB boundary
- * @param memory  Address space where the region should be mapped (data or instruction)
+ * @param flags  Flags of the mapping, including address space where the region should be mapped (data or instruction)
  * @param[out] out_ptr  Output, pointer to the mapped memory region
  * @param[out] out_handle  Output, handle which should be used for spi_flash_munmap call
  *
  * @return  ESP_OK on success, ESP_ERR_NO_MEM if pages can not be allocated
  */
-esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
+esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_flag_t flags,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 /**
@@ -76,12 +110,15 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
  * In this respect, it works in a similar way as spi_flash_mmap() but it allows mapping
  * a (maybe non-contiguous) set of pages into a contiguous region of memory.
  *
+ * Call with SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE flag when you only want to read some data from the flash without writing
+ * to it before the spi_flash_munmap. This can reduce the influence to system due to cache disabling on non-ESP32 chips.
+ *
  * @param pages An array of numbers indicating the 64kB pages in flash to be mapped
  *              contiguously into memory. These indicate the indexes of the 64kB pages,
  *              not the byte-size addresses as used in other functions.
  *              Array must be located in internal memory.
  * @param page_count  Number of entries in the pages array
- * @param memory  Address space where the region should be mapped (instruction or data)
+ * @param flags  Flags of the mapping, including address space where the region should be mapped (data or instruction)
  * @param[out] out_ptr  Output, pointer to the mapped memory region
  * @param[out] out_handle  Output, handle which should be used for spi_flash_munmap call
  *
@@ -91,7 +128,7 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
  *      - ESP_ERR_INVALID_ARG if pagecount is zero or pages array is not in
  *        internal memory
  */
-esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
+esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_flag_t flags,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
 
@@ -125,7 +162,7 @@ void spi_flash_mmap_dump(void);
  *
  * @param memory memory type of MMU table free page
  *
- * @return number of free pages which can be mmaped
+ * @return number of free pages which can be mapped
  */
 uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory);
 
@@ -168,3 +205,5 @@ const void *spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memor
 #ifdef __cplusplus
 }
 #endif
+
+FLAG_ATTR(spi_flash_mmap_flag_t)

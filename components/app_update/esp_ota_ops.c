@@ -97,7 +97,7 @@ static const esp_partition_t *read_otadata(esp_ota_select_entry_t *two_otadata)
 
     esp_partition_mmap_handle_t ota_data_map;
     const void *result = NULL;
-    esp_err_t err = esp_partition_mmap(otadata_partition, 0, otadata_partition->size, ESP_PARTITION_MMAP_DATA, &result, &ota_data_map);
+    esp_err_t err = esp_partition_mmap(otadata_partition, 0, otadata_partition->size, ESP_PARTITION_MMAP_DATA | ESP_PARTITION_MMAP_BLOCKS_WRITE, &result, &ota_data_map);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "mmap otadata filed. Err=0x%8x", err);
         return NULL;
@@ -563,7 +563,7 @@ static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
     } else if (ota_ops->partition.final->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
         const esp_partition_info_t *partition_table = NULL;
         esp_partition_mmap_handle_t partition_table_map;
-        ret = esp_partition_mmap(ota_ops->partition.staging, 0, ESP_PARTITION_TABLE_MAX_LEN, ESP_PARTITION_MMAP_DATA, (const void**)&partition_table, &partition_table_map);
+        ret = esp_partition_mmap(ota_ops->partition.staging, 0, ESP_PARTITION_TABLE_MAX_LEN, ESP_PARTITION_MMAP_DATA | ESP_PARTITION_MMAP_BLOCKS_WRITE, (const void**)&partition_table, &partition_table_map);
         if (ret == ESP_OK) {
             int num_partitions;
             if (esp_partition_table_verify(partition_table, true, &num_partitions) != ESP_OK) {

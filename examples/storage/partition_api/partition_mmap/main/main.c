@@ -38,7 +38,7 @@ void app_main(void)
     esp_partition_mmap_handle_t map_handle;
 
     // Map the partition to data memory
-    ESP_ERROR_CHECK(esp_partition_mmap(partition, 0, partition->size, ESP_PARTITION_MMAP_DATA, &map_ptr, &map_handle));
+    ESP_ERROR_CHECK(esp_partition_mmap(partition, 0, partition->size, ESP_PARTITION_MMAP_DATA | ESP_PARTITION_MMAP_BLOCKS_WRITE, &map_ptr, &map_handle));
     ESP_LOGI(TAG, "Mapped partition to data memory address %p", map_ptr);
 
     // Read back the written verification data using the mapped memory pointer

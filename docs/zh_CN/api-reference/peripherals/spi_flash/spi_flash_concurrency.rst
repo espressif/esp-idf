@@ -1,60 +1,90 @@
 .. _concurrency-constraints-flash:
 
-SPI1 flash 并发约束
-=========================================
+SPI0/1 上 Flash 的并发约束
+===========================================
 
-:link_to_translation:`en:[English]`
+:link_to_translation:`zh_CN:[中文]`
 
-指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，SPI1 外设上的操作会对整个系统造成显著的影响。这类操作包括调用 SPI flash API 或者 SPI1 总线上的其他驱动、任何 flash 操作（如读取、写入、擦除）或是由其他用户定义的 SPI 操作（对主 flash 或是其他 SPI 从机）。
+SPI0/1 总线在缓存和 SPI1 外设（由包括此 SPI Flash 驱动在内的驱动程序控制）之间共享。对 SPI1 的操作可能会对缓存以及整个系统造成重大影响。连接到其他 SPI 总线的 flash 芯片没有此类约束和影响，不在本文档的讨论范围中。
 
-.. only:: not (esp32c3 or SOC_SPIRAM_XIP_SUPPORTED)
+SPI0/1 总线上可能发生三种活动：
 
-    在 {IDF_TARGET_NAME} 上，flash 读取/写入/擦除时，必须禁用 cache。
+- Flash 写入操作（通过 SPI1）。例如，擦除、页面编程或状态寄存器写入命令（例如，``SE``、``PP`` 和 ``WRSR``）。在这些命令期间，flash 处于不可读状态。CPU 和缓存必须等待直到写入命令完成。以下 API 可以触发写入命令：
 
-.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+    - 调用非加密 SPI flash 写入 API（:cpp:func:`esp_flash_write`、:cpp:func:`esp_flash_erase_region` 等）
+    - 调用 :cpp:func:`esp_flash_write_encrypted`
 
-    在 {IDF_TARGET_NAME} 上，配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。该选项是可选的，依赖于特定的 SPI Flash 型号，因此默认是关闭的。请参阅 :ref:`auto-suspend`，查看详细信息。
+- 短操作（通过 SPI1，包括非写入 flash 命令）。以下 API 可以触发短操作：
 
-    禁用该选项时，在读取/写入/擦除 flash 期间，必须禁用 cache。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
+    .. list::
 
-.. only:: SOC_SPIRAM_XIP_SUPPORTED
+        - 调用非加密 SPI flash 读取 API（:cpp:func:`esp_flash_read` 等）
+        :esp32: - 或 SPI1 总线上的其他驱动程序用于用户定义的 SPI 操作（启用实验性功能 :ref:`CONFIG_SPI_FLASH_SHARE_SPI1_BUS`）
 
-    在 {IDF_TARGET_NAME} 上，启用配置选项 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` （默认禁用）后将允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`xip_from_psram`，查看详细信息。
+- 缓存读取（通过 SPI0）。以下 API 和操作可以触发缓存读取：
 
-    禁用该选项时，在读取/写入/擦除 flash 期间，必须禁用 cache。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
+    - 从 SPI Flash 或 PSRAM 执行代码
+    - 从 SPI Flash 或 PSRAM 获取 .data/.rodata/.bss 段的静态数据
+    - 通过堆或 `esp_himem` 对 PSRAM 的所有其他读/写操作
+    - 从映射到 SPI Flash 的区域读取，包括：
 
-.. _impact_disabled_cache:
+        - 类似 mmap 的函数：:cpp:func:`spi_flash_mmap`、:cpp:func:`spi_flash_mmap_pages`、:cpp:func:`esp_mmu_map`、:cpp:func:`bootloader_mmap` 和 :cpp:func:`esp_partition_mmap`。
+        - 依赖 :cpp:func:`spi_flash_mmap` 的函数：:cpp:func:`esp_partition_find`、:cpp:func:`esp_partition_register_external`。
+        - 加密 flash 读/写 API：:cpp:func:`esp_flash_read_encrypted` 和 :cpp:func:`esp_flash_write_encrypted` （在 esp32 上，或用于数据验证）。
 
-禁用 cache 时
-----------------------------
+.. only:: esp32
 
-此时，在 flash 擦写操作中，所有的 CPU 都只能执行 IRAM 中的代码，而且必须从 DRAM 中读取数据。如果使用本文档中的 API 函数，上述限制将自动生效且透明（无需额外关注），但这些限制可能会影响系统中的其他任务的性能。
+    在所有 SPI1 操作期间缓存会被禁用，因此无法访问 Flash/PSRAM，大多数任务将被禁用。有关更多详细信息，请参阅 :ref:`cache_disabled`。
 
-.. only:: esp32c3
+.. only:: not esp32
 
-    .. note::
+    所有 SPI flash API 通过驱动程序提供的某些内部互斥锁实现互斥访问。
 
-        启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 时，不会禁用 cache，其中的操作将通过硬件仲裁器来协调。
+    对于所有 SPI1 操作（读/写），默认情况下在这些操作期间缓存会被禁用，因此无法访问 Flash/PSRAM，大多数任务将被禁用。有关更多详细信息，请参阅 :ref:`cache_disabled`。
 
-.. only:: SOC_SPIRAM_XIP_SUPPORTED
 
-    .. note::
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND or SOC_SPIRAM_XIP_SUPPORTED
 
-        启用 :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` 选项后，不会禁用 cache。
+    有一些选项可以帮助减轻缓存禁用的影响。写入操作的影响在不同模式下是不同的。
+
+    .. only:: SOC_SPIRAM_XIP_SUPPORTED
+
+        - **XIP from PSRAM**：在此模式下，所有过去从 Flash 执行的段都改为从 PSRAM 加载和执行。因此，缓存能在 flash 擦除/写入期间保持启用状态，代码执行在大多数情况下不会受到写入操作的影响。有关更多详细信息，请参阅 :ref:`xip_from_psram`。
+
+    .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+
+        - **Auto Suspend**：在此模式下，当 flash 区域发生缓存未命中时，允许暂停 flash 写入以透明地从中读取，但会有一些延迟。因此，缓存保持启用状态，代码在写入操作期间影响不会很大。
+
+            这是一个可选功能，依赖于特殊的 SPI Flash 型号，因此默认禁用。有关更多详细信息，请参阅 :doc:`spi_flash_optional_feature` 和 :ref:`auto-suspend`。
+
+
+有关软件实现的详细信息，请参阅 :ref:`esp_flash_os_func` 和 :ref:`spi_bus_lock`。
+
+
+.. _cache_disabled:
+
+缓存禁用（默认）
+------------------------
+
+.. only:: esp32
+
+    在 SPI1 操作期间缓存会被禁用。所有 SPI1 操作将自动透明地禁用缓存。
+
+.. only:: not esp32
+
+    默认情况下，在 SPI1 操作期间缓存会被禁用。所有 SPI1 操作将自动透明地禁用缓存。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    为避免意外读取 flash cache，一个 CPU 在启动 flash 写入或擦除操作时，另一个 CPU 将阻塞。在 flash 操作完成前，会禁用所有在 CPU 上非 IRAM 安全的中断。
+    当禁用缓存时，所有非 IRAM 安全的中断将被禁用，所有其他任务将被暂停。另一个核心将在一个忙循环中空转。只有 IRAM 安全的中断处理程序将被执行。这些将在 Flash 操作完成时恢复。
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    为避免意外读取 flash cache，在 flash 操作完成前，所有 CPU 上，会禁用所有在 CPU 上非 IRAM 安全的中断。
+    当禁用缓存时，所有非 IRAM 安全的中断将被禁用，所有其他任务将被暂停。只有 IRAM 安全的中断处理程序将被执行。这些将在 Flash 操作完成时恢复。
 
-另请参阅 :ref:`esp_flash_os_func` 和 :ref:`spi_bus_lock`。
+有关如何在禁用缓存时防止中断处理程序被禁用的信息，请参阅 :ref:`iram-safe-interrupt-handlers`。
 
-除 SPI0/1 以外，SPI 总线上的其他 flash 芯片则不受这种限制。
-
-请参阅 :ref:`应用程序内存分布 <memory-layout>`，查看内部 RAM（如 IRAM、DRAM）和 flash cache 的区别。
+当禁用缓存时，所有 CPU 应该只从内部 RAM 执行代码和访问数据。有关内部 RAM（例如，IRAM、DRAM）和 flash 缓存之间的差异，请参阅 :ref:`应用程序内存布局 <memory-layout>` 文档。
 
 
 .. _iram-safe-interrupt-handlers:
@@ -79,10 +109,12 @@ IRAM 安全中断处理程序
 
 .. only:: SOC_DMA_CAN_ACCESS_FLASH
 
-    当 DMA 也可以访问 Flash 中的数据时
-    ----------------------------------
+    当 DMA 从 Flash 读取数据时
+    -----------------------------
 
-    当 DMA 正在从 Flash 中读取数据时，来自 SPI1 的擦/写操作优先级会更高，如果 Flash 的 auto-suspend 功能没有开启，将会导致 DMA 读到错误的数据。建议在擦写 Flash 之前先停止 DMA 对 Flash 的访问。如果 DMA 不可以停止，比如 LCD 需要持续刷新保存在 Flash 中的图像数据，建议将此类数据拷贝到 PSRAM 或者内部的 SRAM 中。
+    Flash 器件不允许在擦除/编程时读取，即使数据不在正在被擦除/编程的区域中。
+
+    当 flash 正在被擦除/编程时，DMA 读取的 Flash 数据是不可预测的。建议在擦除或写入之前停止 DMA 对 Flash 的访问。如果无法停止 DMA（例如，LCD 需要持续刷新存储在 Flash 中的图像数据），建议将此类数据复制到 PSRAM 或内部 SRAM。
 
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND

@@ -48,7 +48,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition,
     esp_partition_mmap_handle_t handle;
 
     esp_err_t err = esp_partition_mmap(partition, src_offset, size,
-                                       SPI_FLASH_MMAP_DATA, &buf, &handle);
+                                       ESP_PARTITION_MMAP_DATA | ESP_PARTITION_MMAP_BLOCKS_WRITE, &buf, &handle);
     if (err != ESP_OK) {
         return err;
     }
@@ -152,7 +152,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition,
  * mapped pointers, and a single handle for all these regions.
  */
 esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, size_t size,
-                             esp_partition_mmap_memory_t memory,
+                             esp_partition_mmap_flag_t flags,
                              const void **out_ptr, esp_partition_mmap_handle_t *out_handle)
 {
     assert(partition != NULL);
@@ -169,13 +169,18 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
     // offset within mmu page size block
     size_t region_offset = phys_addr & (CONFIG_MMU_PAGE_SIZE - 1);
     size_t mmap_addr = phys_addr & ~(CONFIG_MMU_PAGE_SIZE - 1);
-    esp_err_t rc = spi_flash_mmap(mmap_addr, size + region_offset, (spi_flash_mmap_memory_t) memory, out_ptr, (spi_flash_mmap_handle_t*) out_handle);
+    esp_err_t rc = spi_flash_mmap(mmap_addr, size + region_offset, (spi_flash_mmap_flag_t) flags, out_ptr, (spi_flash_mmap_handle_t*) out_handle);
     // adjust returned pointer to point to the correct offset
     if (rc == ESP_OK) {
         *out_ptr = (void *) (((ptrdiff_t) * out_ptr) + region_offset);
     }
     return rc;
 }
+
+ESP_STATIC_ASSERT((int)ESP_PARTITION_MMAP_DATA == (int)SPI_FLASH_MMAP_FLAG_DATA &&
+                  (int)ESP_PARTITION_MMAP_INST == (int)SPI_FLASH_MMAP_FLAG_INST &&
+                  (int)ESP_PARTITION_MMAP_BLOCKS_WRITE == (int)SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE,
+                  "esp_partition_mmap_flag_t enum not equal to spi_flash_mmap_flag_t.");
 
 void esp_partition_munmap(esp_partition_mmap_handle_t handle)
 {
