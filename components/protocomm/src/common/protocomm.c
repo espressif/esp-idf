@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -431,6 +431,10 @@ esp_err_t protocomm_get_sec_version(protocomm_t *pc, int *sec_ver, uint8_t *sec_
 {
     if (pc == NULL || sec_ver == NULL || sec_patch_ver == NULL) {
         return ESP_ERR_INVALID_ARG;
+    }
+
+    if (pc->sec == NULL) {
+        return ESP_ERR_INVALID_STATE;
     }
 
     *sec_ver = pc->sec->ver;
