@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -28,10 +28,14 @@
 #endif
 #include "app_hf_msg_set.h"
 
+#define HF_INQUIRY_LEN 30
+
 esp_bd_addr_t peer_addr = {0};
+bool hf_client_connected = false;
 static char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
 static uint8_t peer_bdname_len;
 static const char remote_device_name[] = CONFIG_EXAMPLE_PEER_DEVICE_NAME;
+static bool s_peer_device_found = false;
 
 static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
 {
@@ -85,6 +89,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
             if (param->disc_res.prop[i].type == ESP_BT_GAP_DEV_PROP_EIR
                 && get_name_from_eir(param->disc_res.prop[i].val, peer_bdname, &peer_bdname_len)){
                 if (strcmp(peer_bdname, remote_device_name) == 0) {
+                    s_peer_device_found = true;
                     memcpy(peer_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
                     ESP_LOGI(BT_HF_TAG, "Found a target device address:");
                     ESP_LOG_BUFFER_HEX(BT_HF_TAG, peer_addr, ESP_BD_ADDR_LEN);
@@ -99,6 +104,11 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     }
     case ESP_BT_GAP_DISC_STATE_CHANGED_EVT:
         ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_DISC_STATE_CHANGED_EVT");
+        if (param->disc_st_chg.state == ESP_BT_GAP_DISCOVERY_STOPPED && !s_peer_device_found && !hf_client_connected) {
+            ESP_LOGI(BT_HF_TAG, "Device discovery failed, continue to discover...");
+            esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, HF_INQUIRY_LEN, 0);
+        }
+        break;
     case ESP_BT_GAP_RMT_SRVCS_EVT:
     case ESP_BT_GAP_RMT_SRVC_REC_EVT:
         break;
@@ -276,7 +286,7 @@ static void bt_hf_client_hdl_stack_evt(uint16_t event, void *p_param)
 
         /* start device discovery */
         ESP_LOGI(BT_HF_TAG, "Starting device discovery...");
-        esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
+        esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, HF_INQUIRY_LEN, 0);
         break;
     }
     default:
