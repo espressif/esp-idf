@@ -215,7 +215,7 @@ TEST_CASE("ISP CCM basic function", "[isp]")
 
     esp_isp_ccm_config_t ccm_cfg = {
         .matrix = {
-            {16.0, 0.0, 0.0},
+            {17.0, 0.0, 0.0},
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
         },
@@ -228,7 +228,7 @@ TEST_CASE("ISP CCM basic function", "[isp]")
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_isp_ccm_configure(isp_proc, &ccm_cfg));
 
     // saturation case
-    ccm_cfg.matrix[0][0] = 5.0;
+    ccm_cfg.matrix[0][0] = 3.0;
     ccm_cfg.saturation = true;
     TEST_ESP_OK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
     TEST_ESP_OK(esp_isp_ccm_enable(isp_proc));
