@@ -1111,6 +1111,10 @@ function(idf_component_include name)
                 target_link_options("${component_interface}" INTERFACE
                     "SHELL:-Wl,-force_load $<TARGET_FILE:${component_real_target}>")
                 target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
+            elseif(linker_type STREQUAL "ULP_FSM")
+                target_link_options("${component_interface}" INTERFACE
+                    "SHELL:--whole-archive $<TARGET_FILE:${component_real_target}> --no-whole-archive")
+                target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")
             endif()
         else()
             target_link_libraries("${component_interface}" INTERFACE "${component_real_target}")

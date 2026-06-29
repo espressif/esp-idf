@@ -1,5 +1,6 @@
 idf_component_register(SRCS "ulp_fsm_riscv_combined_main.c"
-                    INCLUDE_DIRS "")
+                       INCLUDE_DIRS ""
+                       REQUIRES ulp)
 
 #
 # ULP FSM support additions to component CMakeLists.txt.

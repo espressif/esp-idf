@@ -30,8 +30,16 @@ ulp_add_build_binary_targets(${ULP_APP_NAME})
 # Therefore '-Os' can be overridden here with '-O0' for this example for convenient debugging.
 target_compile_options(${ULP_APP_NAME} PRIVATE -fsanitize=undefined -fno-sanitize=shift-base)
 
+if(IDF_PARENT_BUILD_DIR)
+    set(ulp_gdbinit_dir "${IDF_PARENT_BUILD_DIR}/gdbinit")
+else()
+    set(ulp_gdbinit_dir "$<TARGET_FILE_DIR:${ULP_APP_NAME}>/../../../gdbinit")
+endif()
+
 add_custom_command(
     TARGET ${ULP_APP_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        ${ulp_gdbinit_dir}
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${ULP_APP_NAME}>
-        $<TARGET_FILE_DIR:${ULP_APP_NAME}>/../../../gdbinit/$<TARGET_FILE_NAME:${ULP_APP_NAME}>
+        ${ulp_gdbinit_dir}/$<TARGET_FILE_NAME:${ULP_APP_NAME}>
 )

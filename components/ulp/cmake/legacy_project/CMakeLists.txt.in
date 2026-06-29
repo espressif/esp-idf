@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.22)
+
+include(${IDF_PATH}/components/ulp/cmake/ulp_project.cmake)
+if("${ULP_TYPE}" STREQUAL "fsm")
+    project(${IDF_DEFAULT_PROJECT_NAME} ASM)
+else()
+    project(${IDF_DEFAULT_PROJECT_NAME} C CXX ASM)
+endif()
+
+ulp_project_default()

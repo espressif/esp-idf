@@ -9,6 +9,13 @@
 include(${IDF_PATH}/tools/cmakev2/idf.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectCommon.cmake)
 
+if(__ULP_BUILD)
+    set(NON_OS_BUILD 1)
+    # Clearing common components below only prevents automatic app-component closure.
+    # Explicitly included ULP dependencies still read NON_OS_BUILD to select their no-OS shape.
+    idf_build_set_property(NON_OS_BUILD 1)
+endif()
+
 # Reset the compile/link state inherited from the parent app build and select
 # ULP-specific build behavior. Idempotent within a child configure.
 function(__ulp_prepare_build)

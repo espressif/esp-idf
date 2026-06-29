@@ -6,17 +6,35 @@ set(priv_requires "")
 if(__ULP_BUILD)
     if(ULP_TYPE STREQUAL "riscv")
         list(APPEND includes
+            ulp_common/include
+            ulp_riscv/include
             ulp_riscv/shared/include
             ulp_riscv/ulp_core/include)
         list(APPEND srcs
             "ulp_riscv/ulp_core/ulp_riscv_vectors.S"
             "ulp_riscv/ulp_core/start.S"
-            "ulp_riscv/ulp_core/ulp_riscv_utils.c")
+            "ulp_riscv/ulp_core/ulp_riscv_adc.c"
+            "ulp_riscv/ulp_core/ulp_riscv_lock.c"
+            "ulp_riscv/ulp_core/ulp_riscv_uart.c"
+            "ulp_riscv/ulp_core/ulp_riscv_print.c"
+            "ulp_riscv/ulp_core/ulp_riscv_i2c.c"
+            "ulp_riscv/ulp_core/ulp_riscv_utils.c"
+            "ulp_riscv/ulp_core/ulp_riscv_touch.c"
+            "ulp_riscv/ulp_core/ulp_riscv_gpio.c"
+            "ulp_riscv/ulp_core/ulp_riscv_interrupt.c")
         list(APPEND requires
+            esp_common
+            esp_hal_ana_conv
+            esp_hal_gpio
+            esp_hal_i2c
+            esp_hal_touch_sens
+            esp_hw_support
             riscv
             soc)
     elseif(ULP_TYPE STREQUAL "lp_core")
         list(APPEND includes
+            ulp_common/include
+            lp_core/include
             lp_core/lp_core/include
             lp_core/shared/include)
         list(APPEND srcs
@@ -27,16 +45,15 @@ if(__ULP_BUILD)
             "lp_core/lp_core/lp_core_startup.c"
             "lp_core/lp_core/lp_core_pmp.c"
             "lp_core/lp_core/lp_core_utils.c"
+            "lp_core/lp_core/lp_core_print.c"
             "lp_core/lp_core/lp_core_panic.c"
             "lp_core/lp_core/lp_core_interrupt.c"
-            "lp_core/shared/ulp_lp_core_lp_uart_shared.c"
-            "lp_core/lp_core/lp_core_uart.c"
-            "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+            "lp_core/lp_core/lp_core_ubsan.c"
+            "lp_core/lp_core/lp_core_mailbox.c"
             "lp_core/shared/ulp_lp_core_critical_section_shared.c")
 
         list(APPEND requires
             esp_common
-            esp_driver_uart
             esp_hal_gpio
             esp_hal_uart
             esp_rom
@@ -44,12 +61,55 @@ if(__ULP_BUILD)
             riscv
             soc)
         list(APPEND priv_requires
-            esp_hal_clock
-            esp_hal_i2s
-            esp_hal_rtc_timer
             esp_hal_pmu
             esp_hw_support)
 
+        if(CONFIG_SOC_RTC_TIMER_V2 OR CONFIG_SOC_RTC_TIMER_V3)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
+            list(APPEND priv_requires
+                esp_hal_clock
+                esp_hal_rtc_timer)
+        endif()
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
+            list(APPEND srcs "lp_core/lp_core/lp_core_i2c.c")
+            list(APPEND requires esp_hal_i2c)
+        endif()
+
+        if(CONFIG_SOC_LP_SPI_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core/lp_core_spi.c")
+            list(APPEND priv_requires esp_hal_gpspi)
+        endif()
+
+        if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+            list(APPEND srcs
+                "lp_core/shared/ulp_lp_core_lp_uart_shared.c"
+                "lp_core/lp_core/lp_core_uart.c")
+            list(APPEND requires esp_driver_uart)
+        endif()
+
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core/port/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND srcs "lp_core/lp_core/port/lp_core_mailbox_impl_sw.c")
+        endif()
+
+        if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core/lp_core_touch.c")
+            list(APPEND requires esp_hal_touch_sens)
+        endif()
+
+        if(CONFIG_SOC_LP_ADC_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_adc_shared.c")
+            list(APPEND requires
+                esp_adc
+                esp_hal_ana_conv)
+        endif()
+
+        if(CONFIG_SOC_LP_VAD_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_vad_shared.c")
+            list(APPEND requires esp_driver_i2s)
+        endif()
     elseif(ULP_TYPE STREQUAL "fsm")
         list(APPEND includes
             ulp_common/include
@@ -60,7 +120,13 @@ if(__ULP_BUILD)
         message(FATAL_ERROR "__ULP_BUILD requires ULP_TYPE to be one of: riscv, lp_core, fsm.")
     endif()
 else()
-    if(CONFIG_ULP_COPROC_ENABLED)
+    # TODO(IDF-15993): Keep esp_driver_gpio and esp_adc public for compatibility
+    # with the CMake v1 dependency graph until downstream users are fixed.
+    list(APPEND requires
+        esp_adc
+        esp_driver_gpio)
+
+    if(CONFIG_ULP_COPROC_ENABLED OR CONFIG_IDF_DOC_BUILD)
         list(APPEND includes
             ulp_common/include)
         list(APPEND requires
@@ -68,49 +134,127 @@ else()
             soc)
     endif()
 
-    if(CONFIG_ULP_COPROC_TYPE_FSM)
+    if(CONFIG_ULP_COPROC_TYPE_FSM OR (CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_ULP_FSM_SUPPORTED))
         list(APPEND includes
             ulp_fsm/include
             ulp_fsm/include/${target})
-        list(APPEND srcs
-            "ulp_common/ulp_common.c"
-            "ulp_fsm/ulp.c"
-            "ulp_fsm/ulp_macro.c")
         list(APPEND requires esp_hw_support)
     endif()
 
-    if(CONFIG_ULP_COPROC_TYPE_RISCV)
+    if(CONFIG_ULP_COPROC_TYPE_RISCV OR CONFIG_IDF_DOC_BUILD)
         list(APPEND includes
             ulp_riscv/include
             ulp_riscv/shared/include
             ulp_riscv/ulp_core/include)
+        list(APPEND requires esp_hw_support)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_LP_CORE OR CONFIG_IDF_DOC_BUILD)
+        list(APPEND includes
+             lp_core/include
+             lp_core/lp_core/include
+             lp_core/shared/include)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_FSM OR CONFIG_ULP_COPROC_TYPE_RISCV)
         list(APPEND srcs
             "ulp_common/ulp_common.c"
-            "ulp_riscv/ulp_riscv.c")
-        list(APPEND requires
-            esp_hw_support
-            esp_hal_pmu)
+            "ulp_common/ulp_adc.c")
+
+        if(CONFIG_ULP_COPROC_TYPE_FSM)
+            list(APPEND srcs
+                "ulp_fsm/ulp.c"
+                "ulp_fsm/ulp_macro.c")
+        endif()
+
+        if(CONFIG_ULP_COPROC_TYPE_RISCV)
+            list(APPEND srcs
+                "ulp_riscv/ulp_riscv.c"
+                "ulp_riscv/ulp_riscv_lock.c"
+                "ulp_riscv/ulp_riscv_i2c.c")
+            list(APPEND priv_requires esp_driver_gpio)
+            list(APPEND requires
+                # ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h
+                # includes hal/touch_sens_types.h.
+                esp_hal_touch_sens
+                esp_hal_i2c
+                hal)
+        endif()
     endif()
 
     if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
-        list(APPEND includes
-            lp_core/include
-            lp_core/lp_core/include
-            lp_core/shared/include)
         list(APPEND srcs
             "lp_core/lp_core.c"
             "lp_core/shared/ulp_lp_core_memory_shared.c"
-            "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
             "lp_core/shared/ulp_lp_core_critical_section_shared.c")
         list(APPEND requires
-            esp_hw_support
-            esp_hal_clock
+            esp_common
             esp_hal_pmu
-            esp_hal_rtc_timer
             esp_rom
             hal
             riscv
             soc)
+
+        if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+            list(APPEND srcs
+            "lp_core/lp_core_uart.c"
+            "lp_core/shared/ulp_lp_core_lp_uart_shared.c")
+            list(APPEND requires
+                esp_driver_gpio
+                esp_driver_uart)
+        endif()
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
+            list(APPEND srcs "lp_core/lp_core_i2c.c")
+            list(APPEND requires
+                esp_driver_gpio
+                esp_hal_i2c)
+        endif()
+
+        if(CONFIG_SOC_RTC_TIMER_V2 OR CONFIG_SOC_RTC_TIMER_V3)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
+            list(APPEND requires
+                esp_hal_clock
+                esp_hal_rtc_timer)
+        endif()
+
+        if(CONFIG_SOC_LP_SPI_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core_spi.c")
+            list(APPEND requires
+                esp_driver_gpio
+                esp_hal_gpspi)
+        endif()
+
+        if(CONFIG_SOC_LP_CORE_SUPPORT_ETM)
+            list(APPEND srcs "lp_core/lp_core_etm.c")
+        endif()
+
+        if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+            list(APPEND requires esp_hal_touch_sens)
+        endif()
+
+        if(CONFIG_SOC_LP_ADC_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_adc_shared.c")
+            list(APPEND priv_requires esp_hw_support)
+        endif()
+
+        if(CONFIG_SOC_LP_VAD_SUPPORTED)
+            list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_vad_shared.c")
+            list(APPEND requires esp_driver_i2s)
+        endif()
+
+        list(APPEND srcs "lp_core/lp_core_mailbox.c")
+        if(CONFIG_SOC_LP_MAILBOX_SUPPORTED)
+            list(APPEND srcs "lp_core/lp_core_mailbox_impl_hw.c")
+        else()
+            list(APPEND srcs "lp_core/lp_core_mailbox_impl_sw.c")
+        endif()
+    endif()
+
+    if(srcs)
+        list(APPEND priv_requires
+            bootloader_support
+            esp_mm)
     endif()
 endif()
 
