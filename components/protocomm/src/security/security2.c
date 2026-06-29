@@ -505,12 +505,14 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_aead_encrypt failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
         ESP_LOGE(TAG, "psa_aead_encrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
@@ -566,12 +568,14 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_aead_decrypt failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
         ESP_LOGE(TAG, "psa_aead_decrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
