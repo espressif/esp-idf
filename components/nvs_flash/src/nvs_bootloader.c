@@ -16,7 +16,7 @@
 #include <esp_rom_crc.h>
 
 #if CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER && BOOTLOADER_BUILD
-#include "mbedtls_rom_osi.h"
+void mbedtls_rom_osi_functions_init_bootloader(void);
 #endif
 
 static const char* TAG = "nvs_bootloader";

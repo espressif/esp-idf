@@ -242,6 +242,7 @@ The help text for each option has some more information for reference.
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
     Enabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from mbedTLS library inside the chip ROM.
+    This option is available only when the selected target and minimum chip revision support the ROM mbedTLS crypto library.
 
     Disabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from the ESP-IDF mbedtls component library. This will increase the binary size (flash footprint).
 
