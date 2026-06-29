@@ -12,6 +12,7 @@
 #include "include/psa_crypto_driver_esp_sha512.h"
 #include "psa/crypto.h"
 #include "psa/crypto_sizes.h"
+#include "mbedtls/platform_util.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 
@@ -229,6 +230,7 @@ psa_status_t esp_sha_hash_finish(
     if (operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA1) {
         esp_sha1_context *ctx = (esp_sha1_context *)operation->sha_ctx;
         int ret = esp_sha1_driver_finish(ctx, hash, hash_size, hash_length);
+        mbedtls_platform_zeroize(ctx, sizeof(esp_sha1_context));
         free(ctx); // Free the context after use
         operation->sha_ctx = NULL;
         return ret;
@@ -239,6 +241,7 @@ psa_status_t esp_sha_hash_finish(
         operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA224) {
         esp_sha256_context *ctx = (esp_sha256_context *)operation->sha_ctx;
         int ret = esp_sha256_driver_finish(ctx, hash, hash_size, hash_length, operation->sha_type);
+        mbedtls_platform_zeroize(ctx, sizeof(esp_sha256_context));
         free(ctx); // Free the context after use
         operation->sha_ctx = NULL;
         return ret;
@@ -249,6 +252,7 @@ psa_status_t esp_sha_hash_finish(
         operation->sha_type == ESP_SHA_OPERATION_TYPE_SHA512) {
         esp_sha512_context *ctx = (esp_sha512_context *)operation->sha_ctx;
         int ret = esp_sha512_driver_finish(ctx, hash, hash_size, hash_length, operation->sha_type);
+        mbedtls_platform_zeroize(ctx, sizeof(esp_sha512_context));
         free(ctx); // Free the context after use
         operation->sha_ctx = NULL;
         return ret;

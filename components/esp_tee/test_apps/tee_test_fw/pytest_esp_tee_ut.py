@@ -6,7 +6,7 @@ from enum import Enum
 import pytest
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
-from tee_exception_cfg import TEE_EXCEPTION_TEST_MAP
+from tee_exception_test_map import TEE_EXCEPTION_TEST_MAP
 
 # ---------------- Pytest build parameters ----------------
 
@@ -20,6 +20,12 @@ CONFIG_DEFAULT = [
 ]
 
 CONFIG_OTA = [
+    # 'config, target, markers',
+    ('tee_ota', target, (pytest.mark.generic,))
+    for target in TESTING_TARGETS
+]
+
+CONFIG_OTA_NO_AUTOFLASH = [
     # 'config, target, skip_autoflash, markers',
     ('tee_ota', target, 'y', (pytest.mark.generic,))
     for target in TESTING_TARGETS
@@ -50,8 +56,10 @@ def test_esp_tee(dut: IdfDut) -> None:
     CONFIG_ALL,
     indirect=['config', 'target'],
 )
-@pytest.mark.skipif(targets=['esp32c61'], reason='Not supported')
 def test_esp_tee_crypto_aes(dut: IdfDut) -> None:
+    if dut.target == 'esp32c61':
+        pytest.skip(f'AES not supported on {dut.target}')
+
     dut.run_all_single_board_cases(group='aes')
     dut.run_all_single_board_cases(group='aes-gcm')
 
@@ -72,8 +80,10 @@ def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
     CONFIG_ALL,
     indirect=['config', 'target'],
 )
-@pytest.mark.skipif(targets=['esp32c61'], reason='Not supported')
 def test_esp_tee_aes_perf(dut: IdfDut) -> None:
+    if dut.target == 'esp32c61':
+        pytest.skip(f'AES not supported on {dut.target}')
+
     for i in range(10):
         dut.run_all_single_board_cases(name=['mbedtls AES performance'])
 
@@ -120,6 +130,13 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
 
     for test_name, expected in cfg.items():
         run_exception_case(dut, 'Test REE-TEE isolation', test_name, expected, check_origin=True)
+
+    # ESP32-C61: MMU-spillover gracefully reboots instead of panicking
+    if dut.target == 'esp32c61':
+        dut.skip_decode_panic = True
+        dut.expect_exact('Press ENTER to see the list of tests')
+        dut.write('"Test REE-TEE isolation: MMU-spillover"')
+        dut.expect_exact('Failed MMU operation, rebooting!', timeout=10)
 
 
 @idf_parametrize(
@@ -238,8 +255,6 @@ def run_flash_access_test(dut: IdfDut, api: TeeFlashAccessApi, test_name: str) -
     # Panics are expected during these tests
     dut.skip_decode_panic = True
 
-    dut.serial.custom_flash()
-
     extra_data = dut._parse_test_menu()
     test_case = next((tc for tc in extra_data if tc.name == test_name), None)
 
@@ -250,9 +265,9 @@ def run_flash_access_test(dut: IdfDut, api: TeeFlashAccessApi, test_name: str) -
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
     run_flash_access_test(
@@ -261,9 +276,9 @@ def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
     run_flash_access_test(
@@ -272,9 +287,9 @@ def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
     run_flash_access_test(
@@ -283,18 +298,18 @@ def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_partition(dut: IdfDut) -> None:
     run_flash_access_test(dut, TeeFlashAccessApi.ESP_PARTITION, 'Test REE-TEE isolation: Flash - SPI1 (esp_partition)')
 
 
 @idf_parametrize(
-    'config, target, skip_autoflash, markers',
+    'config, target, markers',
     CONFIG_OTA,
-    indirect=['config', 'target', 'skip_autoflash'],
+    indirect=['config', 'target'],
 )
 def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
     run_flash_access_test(dut, TeeFlashAccessApi.ESP_FLASH, 'Test REE-TEE isolation: Flash - SPI1 (esp_flash)')
@@ -303,9 +318,11 @@ def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
 # ---------------- TEE Local OTA tests ----------------
 
 
-@pytest.mark.generic
-@idf_parametrize('config', ['tee_ota'], indirect=['config'])
-@idf_parametrize('target', TESTING_TARGETS, indirect=['target'])
+@idf_parametrize(
+    'config, target, markers',
+    CONFIG_OTA,
+    indirect=['config', 'target'],
+)
 def test_esp_tee_ota_negative(dut: IdfDut) -> None:
     # start test
     dut.run_all_single_board_cases(group='ota_neg_1', timeout=10)
@@ -313,7 +330,7 @@ def test_esp_tee_ota_negative(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_corrupted_img(dut: IdfDut) -> None:
@@ -347,7 +364,7 @@ def tee_ota_stage_checks(dut: IdfDut, stage: TeeOtaStage, offset: str) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
@@ -370,7 +387,7 @@ def test_esp_tee_ota_reboot_without_ota_end(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
@@ -401,7 +418,7 @@ def test_esp_tee_ota_valid_img(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
@@ -440,7 +457,7 @@ def test_esp_tee_ota_rollback(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_secure_storage(dut: IdfDut) -> None:
@@ -452,14 +469,35 @@ def test_esp_tee_secure_storage(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_secure_storage_with_host_img(dut: IdfDut) -> None:
     # Flash image and write the secure_storage partition with host-generated keys
+
+    # NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test
+    # expects the eFuse-burned HMAC key used for TEE secure storage to be available
+    # at the path "test_keys/tee_sec_stg_hmac_key.bin"
     dut.serial.custom_flash_with_host_gen_sec_stg_img()
 
     dut.run_all_single_board_cases(group='sec_storage_host_keygen')
+
+
+@idf_parametrize(
+    'config, target, skip_autoflash, markers',
+    CONFIG_OTA_NO_AUTOFLASH,
+    indirect=['config', 'target', 'skip_autoflash'],
+)
+def test_esp_tee_secure_storage_encryption(dut: IdfDut) -> None:
+    dut.serial.custom_flash_with_empty_sec_stg()
+
+    # NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test
+    # expects the eFuse-burned HMAC key used for TEE secure storage to be available
+    # at the path "test_keys/tee_sec_stg_hmac_key.bin"
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Test TEE Secure Storage - Verify data encryption"')
+
+    dut.serial.verify_tee_sec_stg_encryption(dut)
 
 
 # ---------------- TEE Attestation tests ----------------
@@ -467,7 +505,7 @@ def test_esp_tee_secure_storage_with_host_img(dut: IdfDut) -> None:
 
 @idf_parametrize(
     'config, target, skip_autoflash, markers',
-    CONFIG_OTA,
+    CONFIG_OTA_NO_AUTOFLASH,
     indirect=['config', 'target', 'skip_autoflash'],
 )
 def test_esp_tee_attestation(dut: IdfDut) -> None:

@@ -22,6 +22,7 @@
 
 #include "esp_hmac_pbkdf2.h"
 #include "psa/crypto.h"
+#include "mbedtls/platform_util.h"
 #include "mbedtls/psa_util.h"
 
 #include "esp_rom_sys.h"
@@ -193,7 +194,7 @@ static esp_err_t compute_nvs_keys_with_hmac(esp_efuse_block_t key_blk, nvs_sec_c
     psa_reset_key_attributes(&attributes);
 
     // Zero out the key buffer after import
-    memset(key_buf, 0x00, sizeof(key_buf));
+    mbedtls_platform_zeroize(key_buf, sizeof(key_buf));
 
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to import HMAC key: %d", status);
@@ -208,7 +209,7 @@ static esp_err_t compute_nvs_keys_with_hmac(esp_efuse_block_t key_blk, nvs_sec_c
                              (uint8_t *)cfg->eky, SHA256_DIGEST_SZ, &mac_length);
     if (status != PSA_SUCCESS) {
         psa_destroy_key(psa_key_id);
-        memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
+        mbedtls_platform_zeroize(cfg, sizeof(nvs_sec_cfg_t));
         return ESP_FAIL;
     }
     ESP_FAULT_ASSERT(status == PSA_SUCCESS);
@@ -221,7 +222,7 @@ static esp_err_t compute_nvs_keys_with_hmac(esp_efuse_block_t key_blk, nvs_sec_c
     psa_destroy_key(psa_key_id);
 
     if (status != PSA_SUCCESS) {
-        memset(cfg, 0x00, sizeof(nvs_sec_cfg_t));
+        mbedtls_platform_zeroize(cfg, sizeof(nvs_sec_cfg_t));
         return ESP_FAIL;
     }
     ESP_FAULT_ASSERT(status == PSA_SUCCESS);
@@ -322,20 +323,24 @@ esp_err_t esp_tee_sec_storage_clear_key(const char *key_id)
 
     esp_err_t err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
-        return err;
+        goto cleanup;
     }
 
     if (keyctx.flags & SEC_STORAGE_FLAG_WRITE_ONCE) {
         ESP_LOGE(TAG, "Key is write-once only and cannot be cleared!");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto cleanup;
     }
 
     err = nvs_erase_key(tee_nvs_hdl, key_id);
     if (err != ESP_OK) {
-        return err;
+        goto cleanup;
     }
 
     err = nvs_commit(tee_nvs_hdl);
+
+cleanup:
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
     return err;
 }
 
@@ -465,6 +470,7 @@ esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
         return ESP_ERR_INVALID_STATE;
     }
 
+    esp_err_t err;
     sec_stg_key_t keyctx = {
         .type = cfg->type,
         .flags = cfg->flags,
@@ -477,21 +483,28 @@ esp_err_t esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 #endif
         if (generate_ecdsa_key(&keyctx, cfg->type) != 0) {
             ESP_LOGE(TAG, "Failed to generate ECDSA keypair");
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto cleanup;
         }
         break;
     case ESP_SEC_STG_KEY_AES256:
         if (generate_aes256_key(&keyctx) != 0) {
             ESP_LOGE(TAG, "Failed to generate AES key");
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto cleanup;
         }
         break;
     default:
         ESP_LOGE(TAG, "Unsupported key-type!");
-        return ESP_ERR_NOT_SUPPORTED;
+        err = ESP_ERR_NOT_SUPPORTED;
+        goto cleanup;
     }
 
-    return secure_storage_write(cfg->id, (void *)&keyctx, sizeof(keyctx));
+    err = secure_storage_write(cfg->id, (void *)&keyctx, sizeof(keyctx));
+
+cleanup:
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+    return err;
 }
 
 esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
@@ -514,19 +527,21 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 
     sec_stg_key_t keyctx;
     size_t keyctx_len = sizeof(keyctx);
+    psa_key_id_t key_id = 0;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
     err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch key from storage");
-        return err;
+        goto exit;
     }
 
     if (keyctx.type != cfg->type) {
         ESP_LOGE(TAG, "Key type mismatch");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto exit;
     }
 
-    psa_key_id_t key_id = 0;
-    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
     psa_algorithm_t ecdsa_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
@@ -571,6 +586,7 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 exit:
     psa_destroy_key(key_id);
     psa_reset_key_attributes(&key_attributes);
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
 
     return err;
 }
@@ -594,12 +610,13 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
     err = secure_storage_read(cfg->id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to read key from secure storage");
-        return err;
+        goto cleanup;
     }
 
     if (keyctx.type != cfg->type) {
         ESP_LOGE(TAG, "Key type mismatch");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto cleanup;
     }
 
     /* Now determine the public key source and length based on key type */
@@ -619,13 +636,17 @@ esp_err_t esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg
 #endif
     default:
         ESP_LOGE(TAG, "Unsupported key-type");
-        return ESP_ERR_INVALID_ARG;
+        err = ESP_ERR_INVALID_ARG;
+        goto cleanup;
     }
 
     memcpy(out_pubkey->pub_x, pub_key_src, pub_key_len);
     memcpy(out_pubkey->pub_y, pub_key_src + pub_key_len, pub_key_len);
+    err = ESP_OK;
 
-    return ESP_OK;
+cleanup:
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+    return err;
 }
 
 static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t *input, size_t len, const uint8_t *aad,
@@ -648,17 +669,22 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         return err;
     }
 
+    psa_key_id_t psa_key_id = 0;
+    uint8_t *aead_buf = NULL;
+    size_t aead_buf_len = 0;
+
     sec_stg_key_t keyctx;
     size_t keyctx_len = sizeof(keyctx);
     err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch key from storage");
-        return err;
+        goto cleanup;
     }
 
     if (keyctx.type != ESP_SEC_STG_KEY_AES256) {
         ESP_LOGE(TAG, "Key type mismatch");
-        return ESP_ERR_INVALID_STATE;
+        err = ESP_ERR_INVALID_STATE;
+        goto cleanup;
     }
 
     // Setup PSA key attributes
@@ -670,70 +696,66 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
     psa_set_key_lifetime(&attributes, PSA_KEY_LIFETIME_VOLATILE);
 
     // Import the AES key
-    psa_key_id_t key_id_psa = 0;
-    psa_status_t status = psa_import_key(&attributes, keyctx.aes256.key, AES256_KEY_LEN, &key_id_psa);
+    psa_status_t status = psa_import_key(&attributes, keyctx.aes256.key, AES256_KEY_LEN, &psa_key_id);
     psa_reset_key_attributes(&attributes);
 
     if (status != PSA_SUCCESS) {
-        return ESP_FAIL;
+        err = ESP_FAIL;
+        goto cleanup;
+    }
+
+    /* PSA AEAD wants ciphertext+tag concatenated in a single buffer for both
+     * encrypt (output) and decrypt (input). */
+    aead_buf_len = len + tag_len;
+    aead_buf = malloc(aead_buf_len);
+    if (!aead_buf) {
+        err = ESP_ERR_NO_MEM;
+        goto cleanup;
     }
 
     if (is_encrypt) {
-        // PSA AEAD encrypt outputs ciphertext+tag concatenated
-        uint8_t *output_with_tag = malloc(len + tag_len);
-        if (!output_with_tag) {
-            psa_destroy_key(key_id_psa);
-            return ESP_ERR_NO_MEM;
-        }
-
         esp_fill_random(iv, iv_len);
 
         size_t output_length = 0;
-        status = psa_aead_encrypt(key_id_psa, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),
+        status = psa_aead_encrypt(psa_key_id, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),
                                   iv, iv_len, aad, aad_len, input, len,
-                                  output_with_tag, len + tag_len, &output_length);
+                                  aead_buf, aead_buf_len, &output_length);
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "Error in encrypting data: %d", status);
-            memset(output_with_tag, 0x00, len + tag_len);
-            free(output_with_tag);
-            psa_destroy_key(key_id_psa);
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto cleanup;
         }
 
         // Separate ciphertext and tag
-        memcpy(output, output_with_tag, len);
-        memcpy(tag, output_with_tag + len, tag_len);
-
-        memset(output_with_tag, 0x00, len + tag_len);
-        free(output_with_tag);
+        memcpy(output, aead_buf, len);
+        memcpy(tag, aead_buf + len, tag_len);
     } else {
-        // For decryption, PSA expects ciphertext + tag concatenated
-        uint8_t *input_with_tag = malloc(len + tag_len);
-        if (!input_with_tag) {
-            psa_destroy_key(key_id_psa);
-            return ESP_ERR_NO_MEM;
-        }
-
-        memcpy(input_with_tag, input, len);
-        memcpy(input_with_tag + len, tag, tag_len);
+        memcpy(aead_buf, input, len);
+        memcpy(aead_buf + len, tag, tag_len);
 
         size_t output_length = 0;
-        status = psa_aead_decrypt(key_id_psa, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),
-                                  iv, iv_len, aad, aad_len, input_with_tag, len + tag_len,
+        status = psa_aead_decrypt(psa_key_id, PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_GCM, tag_len),
+                                  iv, iv_len, aad, aad_len, aead_buf, aead_buf_len,
                                   output, len, &output_length);
-
-        memset(input_with_tag, 0x00, len + tag_len);
-        free(input_with_tag);
-
         if (status != PSA_SUCCESS) {
             ESP_LOGE(TAG, "Error in decrypting data: %d", status);
-            psa_destroy_key(key_id_psa);
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            goto cleanup;
         }
     }
 
-    psa_destroy_key(key_id_psa);
-    return ESP_OK;
+    err = ESP_OK;
+
+cleanup:
+    if (aead_buf) {
+        mbedtls_platform_zeroize(aead_buf, aead_buf_len);
+        free(aead_buf);
+    }
+    if (psa_key_id != 0) {
+        psa_destroy_key(psa_key_id);
+    }
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+    return err;
 }
 
 esp_err_t esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *iv, size_t iv_len, uint8_t *tag, size_t tag_len, uint8_t *output)
@@ -819,24 +841,20 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
     }
 
     // Sign the hash
-    memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
     size_t signature_length = 0;
     status = psa_sign_hash(psa_key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256),
                            hash, hlen,
                            out_sign->signature, sizeof(out_sign->signature), &signature_length);
     if (status != PSA_SUCCESS) {
-        memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_ecdsa_sign_t));
         err = ESP_FAIL;
         goto exit;
     }
 
     // Export public key
-    memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
     uint8_t public_key[PSA_EXPORT_PUBLIC_KEY_MAX_SIZE];
     size_t public_key_length = 0;
     status = psa_export_public_key(psa_key_id, public_key, sizeof(public_key), &public_key_length);
     if (status != PSA_SUCCESS) {
-        memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
         err = ESP_FAIL;
         goto exit;
     }
@@ -844,7 +862,6 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pbkdf2
     // PSA exports public key in uncompressed format: 0x04 || X || Y
     // Skip the first byte (0x04) and copy X and Y coordinates
     if (public_key_length != (1 + 2 * key_len) || public_key[0] != 0x04) {
-        memset(out_pubkey, 0x00, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t));
         err = ESP_FAIL;
         goto exit;
     }
@@ -859,7 +876,7 @@ exit:
         psa_destroy_key(psa_key_id);
     }
     if (derived_key) {
-        memset(derived_key, 0x00, key_len);
+        mbedtls_platform_zeroize(derived_key, key_len);
         free(derived_key);
     }
     return err;

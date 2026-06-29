@@ -27,6 +27,7 @@
 #include "esp_crypto_dma.h"
 #include "esp_heap_caps.h"
 #include "hal/dma_types.h"
+#include "mbedtls/platform_util.h"
 #include "soc/ext_mem_defs.h"
 #include "soc/periph_defs.h"
 
@@ -186,6 +187,10 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
         buf_copy = heap_caps_aligned_alloc(SOC_GDMA_EXT_MEM_ENC_ALIGNMENT, buf_len, heap_caps);
         if (buf_copy == NULL) {
             ESP_LOGE(TAG, "Failed to allocate aligned internal memory");
+            if (input_copy) {
+                mbedtls_platform_zeroize(input_copy, ilen);
+                free(input_copy);
+            }
             return ret;
         }
         memcpy(buf_copy, buf, buf_len);
@@ -197,10 +202,12 @@ static esp_err_t esp_sha_dma_process_ext(esp_sha_type sha_type, const void *inpu
     ret = esp_sha_dma_process(sha_type, dma_input, ilen, dma_buf, buf_len, is_first_block);
 
     if (realloc_input) {
+        mbedtls_platform_zeroize(input_copy, ilen);
         free(input_copy);
     }
 
     if (realloc_buf) {
+        mbedtls_platform_zeroize(buf_copy, buf_len);
         free(buf_copy);
     }
 
@@ -318,6 +325,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 {
     int ret = 0;
     unsigned char *dma_cap_buf = NULL;
+    uint32_t dma_cap_buf_len = 0;
 
     if (buf_len > block_length(sha_type)) {
         ESP_LOGE(TAG, "SHA DMA buf_len cannot exceed max size for a single block");
@@ -339,6 +347,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
             goto cleanup;
         }
         memcpy(dma_cap_buf, buf, buf_len);
+        dma_cap_buf_len = buf_len;
         buf = dma_cap_buf;
     }
 
@@ -375,7 +384,10 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
     }
 
 cleanup:
-    free(dma_cap_buf);
+    if (dma_cap_buf) {
+        mbedtls_platform_zeroize(dma_cap_buf, dma_cap_buf_len);
+        free(dma_cap_buf);
+    }
     return ret;
 }
 #endif /* SOC_SHA_SUPPORT_DMA */

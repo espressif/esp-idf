@@ -19,6 +19,8 @@
 #include "esp_assert.h"
 #include "soc/soc_caps.h"
 
+#include "mbedtls/platform_util.h"
+
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "esp_key_mgr.h"
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
@@ -500,6 +502,7 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_start(
 
 error:
     if (em) {
+        mbedtls_platform_zeroize(em, rsa_len_bytes);
         heap_caps_free(em);
         em = NULL;
     }
@@ -830,6 +833,7 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
         err = esp_key_mgr_activate_key(km_ri);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
+            mbedtls_platform_zeroize(em_words, sizeof(uint32_t) * data_len);
             heap_caps_free(em_words);
             esp_rsa_ds_release_ds_lock();
             return PSA_ERROR_INVALID_HANDLE;
@@ -844,6 +848,7 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
                             hmac_key_id,
                             &ds_ctx);
     if (err != ESP_OK) {
+        mbedtls_platform_zeroize(em_words, sizeof(uint32_t) * data_len);
         heap_caps_free(em_words);
 #if SOC_KEY_MANAGER_SUPPORTED
         if (is_km_key_active) {
@@ -863,6 +868,7 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
 
     if (err != ESP_OK) {
+        mbedtls_platform_zeroize(em_words, sizeof(uint32_t) * data_len);
         heap_caps_free(em_words);
         esp_rsa_ds_release_ds_lock();
         return PSA_ERROR_GENERIC_ERROR;
