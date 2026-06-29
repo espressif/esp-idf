@@ -406,6 +406,11 @@ static void log_tstamps_us(char *comment)
 {
     static UINT64 prev_us = 0;
     UINT64 now_us = time_now_us();
+#if A2D_DYNAMIC_MEMORY == TRUE
+    if (a2dp_source_local_param_ptr == NULL) {
+        return;
+    }
+#endif
     APPL_TRACE_DEBUG("[%s] ts %08llu, diff : %08llu, queue sz %d", comment, now_us, now_us - prev_us,
                      fixed_queue_length(a2dp_source_local_param.btc_aa_src_cb.TxAaQ));
     prev_us = now_us;
@@ -1525,6 +1530,11 @@ static void btc_a2dp_source_handle_timer(UNUSED_ATTR void *context)
     if (btc_a2dp_source_state != BTC_A2DP_SOURCE_STATE_ON || g_a2dp_source_ongoing_deinit){
         return;
     }
+#if A2D_DYNAMIC_MEMORY == TRUE
+    if (a2dp_source_local_param_ptr == NULL) {
+        return;
+    }
+#endif
 
     if (a2dp_source_local_param.btc_aa_src_cb.is_tx_timer == TRUE) {
         btc_a2dp_source_send_aa_frame();
