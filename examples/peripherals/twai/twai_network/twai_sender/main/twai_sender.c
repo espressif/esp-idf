@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 // Message IDs
 #define TWAI_DATA_ID            0x100
 #define TWAI_HEARTBEAT_ID       0x7FF
+#define TWAI_EMERGENCY_ID       0x080
 #define TWAI_DATA_LEN           1000
 
 static const char *TAG = "twai_sender";
@@ -107,6 +108,15 @@ void app_main(void)
                 memset(data[i].data, i, TWAI_FRAME_MAX_LEN);
                 ESP_ERROR_CHECK(twai_node_transmit(sender_node, &data[i].frame, 500));
             }
+
+            // Insert an emergency frame with high priority
+            // This frame will be transmitted before the queue remaining data frames
+            twai_frame_t emergency_frame = {
+                .header.id = TWAI_EMERGENCY_ID,
+                .tx_queue_priority = 10,
+            };
+            ESP_LOGI(TAG, "Inserting Emergency message: 0x%03X", TWAI_EMERGENCY_ID);
+            ESP_ERROR_CHECK(twai_node_transmit(sender_node, &emergency_frame, 500));
 
             // Frames mounted, wait for all frames to be transmitted
             ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(sender_node, -1));

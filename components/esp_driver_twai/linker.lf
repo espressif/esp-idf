@@ -6,10 +6,20 @@ entries:
         esp_twai_onchip: _node_isr_main (noflash)
         esp_twai_onchip: _node_start_trans (noflash)
         esp_twai_onchip: _node_parse_rx (noflash)
+        esp_twai_onchip: _node_start_tx_batch_from_isr (noflash)
+        esp_twai_onchip: _node_mark_tx_idle (noflash)
+        esp_twai_onchip: _node_is_tx_all_done (noflash)
+        twai_frame_queue: twai_frame_queue_pop_from_isr (noflash)
 
     if TWAI_IO_FUNC_IN_IRAM = y:
         esp_twai_onchip: _node_queue_tx (noflash)
         esp_twai: twai_node_transmit (noflash)
+        twai_frame_queue: twai_frame_queue_push (noflash)
+        twai_frame_queue: twai_frame_queue_push_from_isr (noflash)
+        twai_frame_queue: twai_frame_queue_push_safe (noflash)
+        twai_frame_queue: twai_frame_queue_pop (noflash)
+        twai_frame_queue: twai_frame_queue_pop_from_isr (noflash)
+        twai_frame_queue: twai_frame_queue_pop_safe (noflash)
 
 [mapping:twai_hal]
 archive: libesp_hal_twai.a
