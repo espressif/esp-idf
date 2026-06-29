@@ -297,6 +297,7 @@ typedef enum {
 #define ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE (ESP_ERR_HTTP_BASE + 10) /*!< HTTP 416 Range Not Satisfiable, requested range in header is incorrect */
 #define ESP_ERR_HTTP_READ_TIMEOUT       (ESP_ERR_HTTP_BASE + 11)    /*!< HTTP data read timeout */
 #define ESP_ERR_HTTP_INCOMPLETE_DATA    (ESP_ERR_HTTP_BASE + 12)    /*!< Incomplete data received, less than Content-Length or last chunk */
+#define ESP_ERR_HTTP_REDIRECT_DOWNGRADE (ESP_ERR_HTTP_BASE + 13)   /*!< HTTPS origin redirected to a non-HTTPS scheme (downgrade blocked) */
 
 /**
  * @brief      Start a HTTP session
