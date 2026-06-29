@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #endif
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_psram.h"
 
 static const char *TAG = "jpeg.common";
 
@@ -197,4 +198,18 @@ esp_err_t jpeg_check_intr_priority(jpeg_codec_handle_t jpeg_codec, int intr_prio
     }
     ESP_RETURN_ON_FALSE(!intr_priority_conflict, ESP_ERR_INVALID_STATE, TAG, "intr_priority conflict, already is %d but attempt to %d", jpeg_codec->intr_priority, intr_priority);
     return ret;
+}
+
+bool jpeg_check_dma2d_buffer(const void *buffer)
+{
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+    // jpeg cannot handle encrypted data.
+    if (esp_ptr_external_ram(buffer) && !esp_psram_ptr_is_no_enc(buffer)) {
+        return false;
+    }
+    if (esp_ptr_in_drom(buffer)) {
+        return false;
+    }
+#endif
+    return true;
 }
