@@ -8,6 +8,7 @@ import pexpect.fdpexpect
 import pytest
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -76,8 +77,9 @@ def test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str
 @pytest.mark.usb_serial_jtag
 @idf_parametrize(
     'target',
-    ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'],
+    soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'),
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_examples_sysview_tracing_heap_log_usj(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
     _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)
