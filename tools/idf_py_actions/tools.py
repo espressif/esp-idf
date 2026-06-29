@@ -395,6 +395,19 @@ class RunTool:
         env_copy = dict(os.environ)
         env_copy.update(self.env or {})
 
+        # Color control:
+        # 1. CLICOLOR_FORCE:
+        #   By default, GNU Make and Ninja strip away color escape sequences when they see that their stdout
+        #   is redirected. If idf.py's stdout is not redirected, the final output is a TTY, so we can tell
+        #   Make/Ninja to disable stripping of color escape sequences. (Requires Ninja v1.9.0 or later.)
+        # 2. FORCE_COLOR:
+        #   The same idea as above, but FORCE_COLOR is used by Python packages like rich.
+        # 3. NO_COLOR:
+        #   Universal kill switch; if set, we won't force colors.
+        if sys.stdout.isatty() and not env_copy.get('NO_COLOR'):
+            env_copy.setdefault('CLICOLOR_FORCE', '1')
+            env_copy.setdefault('FORCE_COLOR', '1')
+
         process: Process | subprocess.CompletedProcess[bytes]
         if self.hints:
             process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
@@ -596,13 +609,6 @@ def run_target(
 
     if args.verbose:
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
-
-    # By default, GNU Make and Ninja strip away color escape sequences when they see that their stdout is redirected.
-    # If idf.py's stdout is not redirected, the final output is a TTY, so we can tell Make/Ninja to disable stripping
-    # of color escape sequences. (Requires Ninja v1.9.0 or later.)
-    if sys.stdout.isatty():
-        if 'CLICOLOR_FORCE' not in env:
-            env['CLICOLOR_FORCE'] = '1'
 
     RunTool(
         generator_cmd[0],
