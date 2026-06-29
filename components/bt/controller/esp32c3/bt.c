@@ -1867,6 +1867,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     ESP_LOGI(BT_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
 
+#ifndef CONFIG_BT_CTRL_CHECK_CONFIG_EFF
+    ESP_LOGW(BT_LOG_TAG, "CONFIG_BT_CTRL_CHECK_CONFIG_EFF is not defined; "
+             "using compile-time default BLE controller feature options");
+#endif
+
 #if (CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
     ESP_LOGI(BT_LOG_TAG,"Put all controller code in flash");
 #endif
