@@ -988,6 +988,12 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
         l2c_link_timeout ((tL2C_LCB *)p_tle->param);
         break;
 #if (CLASSIC_BT_INCLUDED == TRUE)
+    case BTU_TTYPE_L2CAP_LINK_RETRY:
+        /* Back-off between host-driven Create_Connection retries expired:
+         * re-issue the connection attempt now. */
+        l2c_link_create_conn_retry ((tL2C_LCB *)p_tle->param);
+        break;
+
     case BTU_TTYPE_L2CAP_CHNL:
         l2c_csm_execute (((tL2C_CCB *)p_tle->param), L2CEVT_TIMEOUT, NULL);
         break;
