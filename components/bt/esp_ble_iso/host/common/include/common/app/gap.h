@@ -94,6 +94,10 @@ struct bt_le_gap_app_security_change_param {
     uint8_t sec_level;
     uint8_t bonded : 1;
     struct bt_le_addr dst;
+    /* Bonded LTK (CSIS SIRK-encryption key K), captured by the adapter; the
+     * safe handler hands it to bt_conn_le_set_ltk. Valid only if ltk_present. */
+    uint8_t ltk[16];
+    uint8_t ltk_present : 1;
 };
 
 struct bt_le_gap_app_identity_resolve_param {

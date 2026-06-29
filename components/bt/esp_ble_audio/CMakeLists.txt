@@ -112,6 +112,12 @@ if(CONFIG_BT_TMAP)
     )
 endif()
 
+if(CONFIG_BT_GMAP)
+    list(APPEND ble_audio_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/gmas.c"
+    )
+endif()
+
 if(CONFIG_BT_VCP_VOL_REND)
     list(APPEND ble_audio_srcs
         "${CMAKE_CURRENT_LIST_DIR}/${audio_adapter}/profiles/vcs.c"

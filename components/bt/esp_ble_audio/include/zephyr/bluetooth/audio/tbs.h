@@ -411,6 +411,51 @@ int bt_tbs_remote_incoming_safe(uint8_t bearer_index, const char *to,
                                 const char *from, const char *friendly_name);
 
 /**
+ * @brief Create a call directly in a given state (test setup helper).
+ *
+ * Allocates a call on the bearer and sets it to @p state without running the
+ * call state machine, bypassing the single-outgoing-call restriction and the
+ * Dialing->Alerting auto-promotion. Intended for setting up the fixed call
+ * configurations required by the Join test procedures (e.g. a stable Dialing
+ * call coexisting with an Alerting one). The call is notified once.
+ *
+ * @param[in]  bearer_index  The index of the Telephone Bearer.
+ * @param[in]  state         The initial call state (BT_TBS_CALL_STATE_*).
+ * @param[in]  uri           The remote URI stored for the call.
+ * @param[out] call_index    Where the new call index is stored.
+ *
+ * @return int            New call index if positive or 0,
+ *                        errno value if negative.
+ */
+int bt_tbs_add_call_safe(uint8_t bearer_index, uint8_t state, const char *uri,
+                         uint8_t *call_index);
+
+/**
+ * @brief Enable or disable automatic Dialing->Alerting promotion (test control).
+ *
+ * When disabled, an originated call on the bearer remains in the Dialing state
+ * until bt_tbs_set_call_alerting() is called. This lets a test harness control
+ * the transition timing and keep multiple outgoing calls in Dialing at once.
+ * Enabled by default.
+ *
+ * @param bearer_index  The index of the Telephone Bearer or BT_TBS_GTBS_INDEX.
+ * @param enable        true to auto-promote (default), false to keep Dialing.
+ *
+ * @return int          0 on success, errno value if negative.
+ */
+int bt_tbs_set_auto_alerting_safe(uint8_t bearer_index, bool enable);
+
+/**
+ * @brief Move a Dialing call to the Alerting state (test setup helper).
+ *
+ * @param call_index  The call index to promote.
+ *
+ * @return int        BT_TBS_RESULT_CODE_* if positive or 0,
+ *                    errno value if negative.
+ */
+int bt_tbs_set_call_alerting_safe(uint8_t call_index);
+
+/**
  * @brief Set a new bearer provider.
  *
  * @param bearer_index  The index of the Telephone Bearer or BT_TBS_GTBS_INDEX

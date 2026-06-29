@@ -17,7 +17,8 @@ extern "C" {
 
 struct bt_le_ext_adv *bt_le_ext_adv_find(uint8_t adv_handle);
 
-int bt_le_ext_adv_new_safe(uint8_t adv_handle);
+int bt_le_ext_adv_new_safe(uint8_t adv_handle, uint8_t addr_type,
+                           const uint8_t *addr, uint8_t sid);
 
 int bt_le_ext_adv_delete_safe(uint8_t adv_handle);
 

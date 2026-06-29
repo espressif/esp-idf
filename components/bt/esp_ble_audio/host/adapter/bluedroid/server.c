@@ -46,6 +46,7 @@ static bool is_primary_svc(void)
             svc_in_progress == GTBS_IN_PROGRESS ||
             svc_in_progress == TBS_IN_PROGRESS ||
             svc_in_progress == TMAS_IN_PROGRESS ||
+            svc_in_progress == GMAS_IN_PROGRESS ||
             svc_in_progress == VCS_IN_PROGRESS) {
         return true;
     }
@@ -56,7 +57,8 @@ static bool is_primary_svc(void)
 static bool is_secondary_svc(void)
 {
     if (svc_in_progress == AICS_IN_PROGRESS ||
-            svc_in_progress == VOCS_IN_PROGRESS) {
+            svc_in_progress == VOCS_IN_PROGRESS ||
+            svc_in_progress == OTS_IN_PROGRESS) {
         return true;
     }
 
@@ -67,7 +69,9 @@ static bool any_included_svc(void)
 {
     if (svc_in_progress == CAS_IN_PROGRESS ||
             svc_in_progress == MICS_IN_PROGRESS ||
-            svc_in_progress == VCS_IN_PROGRESS) {
+            svc_in_progress == VCS_IN_PROGRESS ||
+            svc_in_progress == GMCS_IN_PROGRESS ||
+            svc_in_progress == MCS_IN_PROGRESS) {
         return true;
     }
 
@@ -116,11 +120,17 @@ static bool is_svc_uuid_valid(uint16_t uuid)
     case TMAS_IN_PROGRESS:
         return (uuid == BT_UUID_TMAS_VAL);
 
+    case GMAS_IN_PROGRESS:
+        return (uuid == BT_UUID_GMAS_VAL);
+
     case VCS_IN_PROGRESS:
         return (uuid == BT_UUID_VCS_VAL);
 
     case VOCS_IN_PROGRESS:
         return (uuid == BT_UUID_VOCS_VAL);
+
+    case OTS_IN_PROGRESS:
+        return (uuid == BT_UUID_OTS_VAL);
 
     default:
         return false;
@@ -264,7 +274,8 @@ static bool is_svc_attr_uuid_valid(uint16_t attr_uuid)
         return (attr_uuid == BT_UUID_CSIS_SIRK_VAL ||
                 attr_uuid == BT_UUID_CSIS_SET_SIZE_VAL ||
                 attr_uuid == BT_UUID_CSIS_SET_LOCK_VAL ||
-                attr_uuid == BT_UUID_CSIS_RANK_VAL);
+                attr_uuid == BT_UUID_CSIS_RANK_VAL ||
+                attr_uuid == BT_UUID_CSIS_SET_NAME_VAL);
 
     case HAS_IN_PROGRESS:
         return (attr_uuid == BT_UUID_HAS_HEARING_AID_FEATURES_VAL ||
@@ -329,6 +340,13 @@ static bool is_svc_attr_uuid_valid(uint16_t attr_uuid)
     case TMAS_IN_PROGRESS:
         return (attr_uuid == BT_UUID_GATT_TMAPR_VAL);
 
+    case GMAS_IN_PROGRESS:
+        return (attr_uuid == BT_UUID_GMAP_ROLE_VAL ||
+                attr_uuid == BT_UUID_GMAP_UGG_FEAT_VAL ||
+                attr_uuid == BT_UUID_GMAP_UGT_FEAT_VAL ||
+                attr_uuid == BT_UUID_GMAP_BGS_FEAT_VAL ||
+                attr_uuid == BT_UUID_GMAP_BGR_FEAT_VAL);
+
     case VCS_IN_PROGRESS:
         return (attr_uuid == BT_UUID_VCS_STATE_VAL ||
                 attr_uuid == BT_UUID_VCS_CONTROL_VAL ||
@@ -339,6 +357,16 @@ static bool is_svc_attr_uuid_valid(uint16_t attr_uuid)
                 attr_uuid == BT_UUID_VOCS_LOCATION_VAL ||
                 attr_uuid == BT_UUID_VOCS_CONTROL_VAL ||
                 attr_uuid == BT_UUID_VOCS_DESCRIPTION_VAL);
+
+    case OTS_IN_PROGRESS:
+        return (attr_uuid == BT_UUID_OTS_FEATURE_VAL ||
+                attr_uuid == BT_UUID_OTS_NAME_VAL ||
+                attr_uuid == BT_UUID_OTS_TYPE_VAL ||
+                attr_uuid == BT_UUID_OTS_SIZE_VAL ||
+                attr_uuid == BT_UUID_OTS_ID_VAL ||
+                attr_uuid == BT_UUID_OTS_PROPERTIES_VAL ||
+                attr_uuid == BT_UUID_OTS_ACTION_CP_VAL ||
+                attr_uuid == BT_UUID_OTS_LIST_CP_VAL);
 
     default:
         return false;
@@ -365,6 +393,14 @@ static struct inc_svc_inst *get_not_included_inst(void)
         extern struct inc_svc_inst *vcs_not_included_inst(void);
         return vcs_not_included_inst();
 #endif /* CONFIG_BT_VCP_VOL_REND */
+
+#if CONFIG_BT_OTS
+    case GMCS_IN_PROGRESS:
+    case MCS_IN_PROGRESS:
+        /* GMCS and every discrete MCS instance include the single shared OTS. */
+        extern struct inc_svc_inst *gmcs_not_included_inst(void);
+        return gmcs_not_included_inst();
+#endif /* CONFIG_BT_OTS */
 
     default:
         return NULL;
@@ -488,8 +524,11 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
             inc_inst = get_not_included_inst();
 
             if (inc_inst == NULL) {
-                LOG_ERR("[B]IncSvcNotFound[%u]", svc_in_progress);
-                return -1;
+                /* No CSIS registered (csis_svc_p == NULL): skip the include so CAS
+                 * registers standalone, matching the nimble adapter. VCS/MICS size
+                 * their include attrs to the instance count, so never reach here. */
+                LOG_INF("[B]IncSvcSkip[%u]", svc_in_progress);
+                break;
             }
 
             bt_le_bluedroid_gatts_sem_reset();

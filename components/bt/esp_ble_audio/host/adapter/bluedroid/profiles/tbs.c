@@ -50,3 +50,58 @@ int bt_le_bluedroid_gtbs_start(void)
 
     return bt_le_bluedroid_svc_start(gtbs_svc);
 }
+
+int bt_le_bluedroid_tbs_init(void)
+{
+    struct bt_gatt_service *tbs_list;
+    int err;
+
+    /* NULL when BEARER_COUNT==0 (GTBS-only build): nothing discrete to init. */
+    tbs_list = lib_tbs_server_list_get();
+    if (!tbs_list) {
+        return 0;
+    }
+
+    bt_le_bluedroid_set_svc_in_progress(TBS_IN_PROGRESS);
+
+    /* Signed index: BEARER_COUNT can be 0 (GTBS-only), where an unsigned loop var
+     * would trip -Werror=type-limits. */
+    for (int i = 0; i < CONFIG_BT_TBS_BEARER_COUNT; i++) {
+        /* Called once per bearer registration; svc_init assigns attrs[0].handle.
+           Skip empty (unregistered) and already-added slots so a later
+           registration doesn't re-create earlier bearers' services. */
+        if (tbs_list[i].attr_count == 0 || tbs_list[i].attrs[0].handle != 0) {
+            continue;
+        }
+
+        err = bt_le_bluedroid_svc_init(&tbs_list[i]);
+        if (err) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+int bt_le_bluedroid_tbs_start(void)
+{
+    struct bt_gatt_service *tbs_list;
+    int err;
+
+    /* NULL when BEARER_COUNT==0 (GTBS-only build): nothing discrete to start. */
+    tbs_list = lib_tbs_server_list_get();
+    if (!tbs_list) {
+        return 0;
+    }
+
+    bt_le_bluedroid_set_svc_in_progress(TBS_IN_PROGRESS);
+
+    for (int i = 0; i < CONFIG_BT_TBS_BEARER_COUNT; i++) {
+        err = bt_le_bluedroid_svc_start(&tbs_list[i]);
+        if (err) {
+            return err;
+        }
+    }
+
+    return 0;
+}

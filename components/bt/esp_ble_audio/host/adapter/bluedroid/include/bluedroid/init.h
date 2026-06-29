@@ -19,6 +19,7 @@
 #include "bluedroid/profiles/pacs.h"
 #include "bluedroid/profiles/tbs.h"
 #include "bluedroid/profiles/tmas.h"
+#include "bluedroid/profiles/gmas.h"
 #include "bluedroid/profiles/vcs.h"
 #include "bluedroid/profiles/has.h"
 

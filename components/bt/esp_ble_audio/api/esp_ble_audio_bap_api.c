@@ -80,10 +80,11 @@ esp_err_t esp_ble_audio_bap_unicast_server_unregister_cb(const esp_ble_audio_bap
     return ESP_OK;
 }
 
-esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
-                                                      esp_ble_audio_bap_stream_t *stream,
-                                                      esp_ble_audio_codec_cfg_t *codec_cfg,
-                                                      const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref)
+esp_err_t esp_ble_audio_bap_unicast_server_config_ase_with_dir(uint16_t conn_handle,
+                                                               esp_ble_audio_bap_stream_t *stream,
+                                                               esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                               const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref,
+                                                               esp_ble_audio_dir_t dir)
 {
     esp_err_t ret = ESP_OK;
     void *conn;
@@ -101,7 +102,7 @@ esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
         goto unlock;
     }
 
-    err = bt_bap_unicast_server_config_ase(conn, stream, codec_cfg, qos_pref);
+    err = bt_bap_unicast_server_config_ase_with_dir(conn, stream, codec_cfg, qos_pref, dir);
     if (err) {
         ret = ESP_FAIL;
     }
@@ -109,6 +110,16 @@ esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
 unlock:
     bt_le_host_unlock();
     return ret;
+}
+
+esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
+                                                      esp_ble_audio_bap_stream_t *stream,
+                                                      esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                      const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref)
+{
+    /* Direction-agnostic: dir 0 lets the library pick the first free ASE. */
+    return esp_ble_audio_bap_unicast_server_config_ase_with_dir(conn_handle, stream, codec_cfg,
+                                                                qos_pref, (esp_ble_audio_dir_t)0);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 

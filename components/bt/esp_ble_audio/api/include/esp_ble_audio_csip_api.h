@@ -26,10 +26,13 @@ extern "C" {
 #endif
 
 /*!< Size of the Set Identification Resolving Key (SIRK) */
-#define ESP_BLE_AUDIO_CSIP_SIRK_SIZE    BT_CSIP_SIRK_SIZE
+#define ESP_BLE_AUDIO_CSIP_SIRK_SIZE            BT_CSIP_SIRK_SIZE
 
 /*!< Size of the Resolvable Set Identifier (RSI) */
-#define ESP_BLE_AUDIO_CSIP_RSI_SIZE     BT_CSIP_RSI_SIZE
+#define ESP_BLE_AUDIO_CSIP_RSI_SIZE             BT_CSIP_RSI_SIZE
+
+/*!< Maximum length of the Coordinated Set Name (CSIS v1.1), a 0-128 octet UTF-8 string */
+#define ESP_BLE_AUDIO_CSIP_SET_NAME_MAX_LEN     BT_CSIP_SET_NAME_MAX_LEN
 
 /*!< Accept the request to read the SIRK as plaintext */
 #define ESP_BLE_AUDIO_CSIP_READ_SIRK_REQ_RSP_ACCEPT     BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT
@@ -141,6 +144,21 @@ esp_err_t esp_ble_audio_csip_set_member_sirk(esp_ble_audio_csip_set_member_svc_i
  */
 esp_err_t esp_ble_audio_csip_set_member_set_size_and_rank(esp_ble_audio_csip_set_member_svc_inst_t *svc_inst,
                                                           uint8_t size, uint8_t rank);
+
+/**
+ * @brief   Set the Coordinated Set Name (CSIS v1.1) for a service instance.
+ *
+ * If CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE is enabled, this also notifies subscribed
+ * clients (the first ATT_MTU-3 octets if the name is longer).
+ *
+ * @param   svc_inst    The service instance.
+ * @param   name        The new name (UTF-8). May be NULL only if @p len is 0.
+ * @param   len         Length of @p name in octets (0 to BT_CSIP_SET_NAME_MAX_LEN).
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_csip_set_member_set_name(esp_ble_audio_csip_set_member_svc_inst_t *svc_inst,
+                                                 const uint8_t *name, uint8_t len);
 
 /**
  * @brief   Get information about a service instances.

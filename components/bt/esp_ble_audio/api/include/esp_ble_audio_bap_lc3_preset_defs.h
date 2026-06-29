@@ -26,7 +26,38 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
     BT_BAP_LC3_PRESET(_codec, _qos)
 
 /**
- * @brief   Define an LC3 preset configuration.
+ * @brief   Define an LC3 preset from a pre-built QoS configuration.
+ *
+ * @param   _name           Preset configuration name.
+ * @param   _freq           Sample frequency (in Hz).
+ * @param   _duration       Frame duration (in microseconds).
+ * @param   _loc            Audio channel location.
+ * @param   _len            Frame length in octets.
+ * @param   _frames_per_sdu Number of frames per SDU.
+ * @param   _stream_context Stream context (e.g., Media, Conversational, etc.).
+ * @param   _qos            BAP QoS configuration (framed or unframed).
+ *
+ * Backing buffers are sized to `CONFIG_BT_AUDIO_CODEC_CFG_MAX_*_SIZE` so
+ * the preset is safe to mutate via `esp_ble_audio_codec_cfg_*_set_*`.
+ */
+#define ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_QOS(_name, _freq, _duration, _loc, _len, \
+                                                _frames_per_sdu, _stream_context, _qos) \
+    static uint8_t codec_cfg_data_##_name[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE] = \
+        ESP_BLE_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu); \
+    static uint8_t codec_cfg_meta_##_name[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE] = \
+        ESP_BLE_AUDIO_CODEC_CFG_LC3_META(_stream_context); \
+    static esp_ble_audio_bap_lc3_preset_t _name = \
+        ESP_BLE_AUDIO_BAP_LC3_PRESET( \
+            ESP_BLE_AUDIO_CODEC_CFG_LC3_LEN( \
+                codec_cfg_data_##_name, \
+                sizeof((uint8_t[])ESP_BLE_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, \
+                                                                   _len, _frames_per_sdu)), \
+                codec_cfg_meta_##_name, \
+                sizeof((uint8_t[])ESP_BLE_AUDIO_CODEC_CFG_LC3_META(_stream_context))), \
+            _qos);
+
+/**
+ * @brief   Define an LC3 preset configuration with unframed QoS.
  *
  * @param   _name           Preset configuration name.
  * @param   _freq           Sample frequency (in Hz).
@@ -40,26 +71,41 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _rtn            Number of retransmissions.
  * @param   _latency        Maximum transport latency (in milliseconds).
  * @param   _pd             Presentation delay (in microseconds).
- *
- * Backing buffers are sized to `CONFIG_BT_AUDIO_CODEC_CFG_MAX_*_SIZE` so
- * the preset is safe to mutate via `esp_ble_audio_codec_cfg_*_set_*`.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, _freq, _duration, _loc, _len, \
                                             _frames_per_sdu, _stream_context, \
                                             _interval, _sdu, _rtn, _latency, _pd) \
-    static uint8_t codec_cfg_data_##_name[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE] = \
-        ESP_BLE_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu); \
-    static uint8_t codec_cfg_meta_##_name[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE] = \
-        ESP_BLE_AUDIO_CODEC_CFG_LC3_META(_stream_context); \
-    static esp_ble_audio_bap_lc3_preset_t _name = \
-        ESP_BLE_AUDIO_BAP_LC3_PRESET( \
-            ESP_BLE_AUDIO_CODEC_CFG_LC3_LEN( \
-                codec_cfg_data_##_name, \
-                sizeof((uint8_t[])ESP_BLE_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, \
-                                                                   _len, _frames_per_sdu)), \
-                codec_cfg_meta_##_name, \
-                sizeof((uint8_t[])ESP_BLE_AUDIO_CODEC_CFG_LC3_META(_stream_context))), \
-            ESP_BLE_AUDIO_BAP_QOS_CFG_UNFRAMED(_interval, _sdu, _rtn, _latency, _pd));
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_QOS(_name, _freq, _duration, _loc, _len, \
+                                            _frames_per_sdu, _stream_context, \
+                                            ESP_BLE_AUDIO_BAP_QOS_CFG_UNFRAMED(_interval, _sdu, \
+                                                                               _rtn, _latency, _pd))
+
+/**
+ * @brief   Define an LC3 preset configuration with framed QoS.
+ *
+ * Required for 44.1 kHz configs: their SDU interval is not an integer number of
+ * microseconds, so unframed PDUs are invalid (BAP spec Table 5.2).
+ *
+ * @param   _name           Preset configuration name.
+ * @param   _freq           Sample frequency (in Hz).
+ * @param   _duration       Frame duration (in microseconds).
+ * @param   _loc            Audio channel location.
+ * @param   _len            Frame length in octets.
+ * @param   _frames_per_sdu Number of frames per SDU.
+ * @param   _stream_context Stream context (e.g., Media, Conversational, etc.).
+ * @param   _interval       Audio frame interval (in microseconds).
+ * @param   _sdu            SDU size in octets.
+ * @param   _rtn            Number of retransmissions.
+ * @param   _latency        Maximum transport latency (in milliseconds).
+ * @param   _pd             Presentation delay (in microseconds).
+ */
+#define ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, _freq, _duration, _loc, _len, \
+                                                   _frames_per_sdu, _stream_context, \
+                                                   _interval, _sdu, _rtn, _latency, _pd) \
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_QOS(_name, _freq, _duration, _loc, _len, \
+                                            _frames_per_sdu, _stream_context, \
+                                            ESP_BLE_AUDIO_BAP_QOS_CFG_FRAMED(_interval, _sdu, \
+                                                                             _rtn, _latency, _pd))
 
 /**
  * @brief   Helper to declare LC3 Unicast 8_1_1 codec configuration.
@@ -191,12 +237,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_441_1_1_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_7_5, \
-                                        _loc, 97U, 1, \
-                                        _stream_context, \
-                                        8163u, 97u, 5u, 24u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_7_5, \
+                                               _loc, 97U, 1, \
+                                               _stream_context, \
+                                               8163u, 97u, 5u, 24u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Unicast 441_2_1 codec configuration.
@@ -206,12 +252,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_441_2_1_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_10, \
-                                        _loc, 130U, 1, \
-                                        _stream_context, \
-                                        10884u, 130u, 5u, 31u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_10, \
+                                               _loc, 130U, 1, \
+                                               _stream_context, \
+                                               10884u, 130u, 5u, 31u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Unicast 48_1_1 codec configuration.
@@ -431,12 +477,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_441_1_2_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_7_5, \
-                                        _loc, 97U, 1, \
-                                        _stream_context, \
-                                        8163u, 97u, 13u, 80u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_7_5, \
+                                               _loc, 97U, 1, \
+                                               _stream_context, \
+                                               8163u, 97u, 13u, 80u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Unicast 441_2_2 codec configuration.
@@ -446,12 +492,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_UNICAST_PRESET_441_2_2_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_10, \
-                                        _loc, 130U, 1, \
-                                        _stream_context, \
-                                        10884u, 130u, 13u, 85u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_10, \
+                                               _loc, 130U, 1, \
+                                               _stream_context, \
+                                               10884u, 130u, 13u, 85u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Unicast 48_1_2 codec configuration.
@@ -675,12 +721,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_441_1_1_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_7_5, \
-                                        _loc, 97U, 1, \
-                                        _stream_context, \
-                                        8163u, 97u, 4u, 24u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_7_5, \
+                                               _loc, 97U, 1, \
+                                               _stream_context, \
+                                               8163u, 97u, 4u, 24u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Broadcast 441_2_1 codec configuration.
@@ -690,12 +736,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_441_2_1_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_10, \
-                                        _loc, 130U, 1, \
-                                        _stream_context, \
-                                        10884u, 130u, 4u, 31u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_10, \
+                                               _loc, 130U, 1, \
+                                               _stream_context, \
+                                               10884u, 130u, 4u, 31u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Broadcast 48_1_1 codec configuration.
@@ -919,12 +965,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_441_1_2_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_7_5, \
-                                        _loc, 97U, 1, \
-                                        _stream_context, \
-                                        8163u, 97u, 4u, 54u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_7_5, \
+                                               _loc, 97U, 1, \
+                                               _stream_context, \
+                                               8163u, 97u, 4u, 54u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Broadcast 441_2_2 codec configuration.
@@ -934,12 +980,12 @@ typedef struct bt_bap_lc3_preset    esp_ble_audio_bap_lc3_preset_t;
  * @param   _stream_context Stream context.
  */
 #define ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_441_2_2_DEFINE(_name, _loc, _stream_context) \
-    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE(_name, \
-                                        BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
-                                        BT_AUDIO_CODEC_CFG_DURATION_10, \
-                                        _loc, 130U, 1, \
-                                        _stream_context, \
-                                        10884u, 130u, 4u, 60u, 40000u)
+    ESP_BLE_AUDIO_BAP_LC3_PRESET_DEFINE_FRAMED(_name, \
+                                               BT_AUDIO_CODEC_CFG_FREQ_44KHZ, \
+                                               BT_AUDIO_CODEC_CFG_DURATION_10, \
+                                               _loc, 130U, 1, \
+                                               _stream_context, \
+                                               10884u, 130u, 4u, 60u, 40000u)
 
 /**
  * @brief   Helper to declare LC3 Broadcast 48_1_2 codec configuration.

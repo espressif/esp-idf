@@ -311,6 +311,20 @@ int bt_has_client_preset_next_safe(struct bt_has *has, bool sync);
  */
 int bt_has_client_preset_prev_safe(struct bt_has *has, bool sync);
 
+/**
+ * @brief Write Preset Name.
+ *
+ * Client procedure to change the name of the preset identified by @p index.
+ * The result is reflected by the server via a Preset Changed notification.
+ *
+ * @param has Pointer to the Hearing Access Service object.
+ * @param index Preset index whose name to change.
+ * @param name New preset name (BT_HAS_PRESET_NAME_MIN..BT_HAS_PRESET_NAME_MAX octets).
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_client_preset_name_write_safe(struct bt_has *has, uint8_t index, const char *name);
+
 /** @brief Preset operations structure. */
 struct bt_has_preset_ops {
     /**

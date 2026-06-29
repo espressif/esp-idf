@@ -55,6 +55,12 @@ if BT_CSIP_SET_MEMBER
         help
             This option enables support for clients to be notified on Set Size changes.
 
+    config BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE
+        bool "Coordinated Set Name notifiable support"
+        help
+            This option enables support for clients to be notified on Coordinated Set Name
+            changes (CSIS v1.1 Coordinated Set Name characteristic).
+
 endif # BT_CSIP_SET_MEMBER
 
 #################### Coordinated Set Identification Client ####################
