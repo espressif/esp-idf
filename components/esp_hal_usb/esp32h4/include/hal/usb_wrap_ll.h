@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,6 +170,20 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_set_tx_edge(usb_wrap_dev_t *hw, bool clk_
     // Not supported on ESP32-H4: no wrap_phy_tx_edge_sel field
     (void)hw;
     (void)clk_neg_edge;
+}
+
+/**
+ * @brief Route internal FSLS PHY AHB/PHY clock gating to DWC2
+ *
+ * Clears clock force-on bits so DWC2 can gate the internal PHY clocks during
+ * port suspend and internal clock gating.
+ *
+ * @param hw Start address of the USB Wrap registers
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_enable_automatic_phy_control(usb_wrap_dev_t *hw)
+{
+    hw->wrap_otg_conf.wrap_ahb_clk_force_on = 0;
+    hw->wrap_otg_conf.wrap_phy_clk_force_on = 0;
 }
 
 /* ------------------------------ USB PHY Test ------------------------------ */
