@@ -510,7 +510,7 @@ int esp_nan_construct_nira(uint8_t *frm)
 #define NAN_PASN_KDE_OUI_TYPE_LIFETIME  37
 #define NAN_PASN_KEY_LIFETIME_NIK_BIT   BIT(3)
 #define NAN_ATTR_ID_SHARED_KEY_DESC     0x24
-#define NAN_PAIRING_NIK_FUP_TIMEOUT_SEC 2
+#define NAN_PAIRING_NIK_FUP_TIMEOUT_SEC 5
 
 struct nan_pairing_fup_ctx {
     uint8_t svc_id;
@@ -564,11 +564,9 @@ static void nan_pairing_nik_fup_timeout_cb(void *eloop_data, void *user_ctx)
     evt.reason_code = WIFI_NAN_PAIRING_REASON_NIK_FUP_TIMEOUT;
     MACADDR_COPY(evt.peer_nmi, own->nik_fup_pending_peer_nmi);
     nan_app_remove_paired_peer(own->nik_fup_pending_peer_nmi);
-    struct peer_svc_info *peer = nan_find_peer_svc(own->svc_id, 0,
-                                                   own->nik_fup_pending_peer_nmi);
-    esp_nan_complete_pairing(own->svc_id, peer ? peer->svc_id : 0);
+    esp_nan_set_pairing_status(own->svc_id, 0, own->nik_fup_pending_peer_nmi, false);
     nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
-    ESP_LOGW(TAG, "Pairing succeeded but NIK caching timed out for peer " MACSTR
+    ESP_LOGW(TAG, "Failed to complete NIK exchange with peer " MACSTR
              " (reason=%u)", MAC2STR(own->nik_fup_pending_peer_nmi), evt.reason_code);
 }
 
@@ -964,7 +962,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
     if (nan_pairing_take_verify_session(peer_nmi) &&
             (role == NAN_ROLE_PAIRING_RESPONDER || role == NAN_ROLE_PAIRING_INITIATOR)) {
         /* Re-verification: no follow-up ping-pong; notify app directly. */
-        esp_nan_complete_pairing(own_svc_id, peer_remote_svc_id);
+        esp_nan_set_pairing_status(own_svc_id, peer_remote_svc_id, (uint8_t *)peer_nmi, true);
         nan_pairing_post_confirm(peer_nmi);
         return;
     }
@@ -975,7 +973,7 @@ static void nan_pairing_key_installed_cb(const uint8_t *peer_nmi,
         evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
         evt.reason_code = 0;
         MACADDR_COPY(evt.peer_nmi, peer_nmi);
-        esp_nan_complete_pairing(own_svc_id, peer_remote_svc_id);
+        esp_nan_set_pairing_status(own_svc_id, peer_remote_svc_id, (uint8_t *)peer_nmi, true);
         nan_app_post_event(WIFI_EVENT_NAN_PAIRING_CONFIRM, &evt, sizeof(evt));
         return;
     }
@@ -1197,7 +1195,7 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
 
         if (own) {
             nan_pairing_cancel_svc_pending(own);
-            esp_nan_complete_pairing(own->svc_id, peer_svc_id);
+            esp_nan_set_pairing_status(own->svc_id, peer_svc_id, (uint8_t *)peer_mac, true);
         }
         evt.status = WIFI_NAN_PAIRING_STATUS_ACCEPTED;
         evt.reason_code = 0;

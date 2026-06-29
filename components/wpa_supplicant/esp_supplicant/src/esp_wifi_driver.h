@@ -341,7 +341,7 @@ void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
 uint8_t esp_wifi_op_class_supported_internal(uint8_t op_class, uint8_t min_chan, uint8_t max_chan, uint8_t inc, uint8_t bw, channel_bitmap_t *non_pref_channels);
 bool esp_wifi_is_wpa3_compatible_mode_enabled(uint8_t if_index);
 uint8_t esp_wifi_ap_get_owe_config_internal(void);
-esp_err_t esp_nan_complete_pairing(uint8_t svc_id, uint8_t peer_svc_id);
+esp_err_t esp_nan_set_pairing_status(uint8_t svc_id, uint8_t peer_svc_id, uint8_t peer_nmi[6], bool pairing_complete);
 uint8_t *esp_wifi_nan_get_pairing_attrs(uint16_t bootstrap_methods, bool pairing_enabled,
                                         bool nik_cache_enabled, uint32_t *npba_len,
                                         uint32_t *dcea_len, uint32_t *total_len);

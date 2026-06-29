@@ -236,11 +236,11 @@ void esp_nan_app_clear_peer_tks(const uint8_t *peer_nmi, uint8_t service_id);
 /**
   * @brief      Terminate all active NDPs with a peer (PASN verify prep).
   *
-  * @param      peer_nmi  Peer NMI (6 octets).
+  * @param      publish_id  Own publish id
   *
   * @return     ESP_OK if all ends succeeded or none were active.
   */
-esp_err_t esp_nan_app_end_peer_datapaths(const uint8_t *peer_nmi);
+esp_err_t esp_nan_app_end_peer_datapaths(uint8_t publish_id);
 
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
