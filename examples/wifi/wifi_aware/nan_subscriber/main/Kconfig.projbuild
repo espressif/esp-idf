@@ -45,6 +45,16 @@ menu "Example Configuration"
                 (passphrase or PMK) and sets up an encrypted NDP.
                 Disable to discover open (unencrypted) services.
 
+        config EXAMPLE_NAN_GROUP_DATA_PROT
+            bool "Protect group-addressed datapath traffic (ND-GTK)"
+            depends on EXAMPLE_NAN_SECURITY_ENABLED
+            default y
+            help
+                Negotiate and install an ND-GTK so group-addressed (multicast/
+                broadcast) frames on the NAN datapath are encrypted. This is
+                required for IPv6 over the secured datapath (Neighbor Discovery,
+                MLD). Both peers must enable this for group keys to be exchanged.
+
         choice EXAMPLE_NAN_SECURITY_METHOD
             prompt "Security Method"
             depends on EXAMPLE_NAN_SECURITY_ENABLED

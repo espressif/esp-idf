@@ -133,6 +133,9 @@ void wifi_nan_publish(void)
     };
 #ifdef CONFIG_EXAMPLE_NAN_SECURITY_ENABLED
     wifi_nan_discovery_security_params_t security_cfg = {
+#ifdef CONFIG_EXAMPLE_NAN_GROUP_DATA_PROT
+        .group_data_prot = 1,   /* distribute/accept ND-GTK for group-addressed data */
+#endif
         .num_credentials = 1,
         .creds = {
             {
