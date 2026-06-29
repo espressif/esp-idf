@@ -56,7 +56,8 @@ TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
         .flags = {
             .dc_low_on_data = false, // According to SSD1306 datasheet, DC=0 means command, DC=1 means data
             .disable_control_phase = false, // Control phase is used
-        }
+        },
+        .transaction_timeout_ms = 0, // 0 keeps the legacy infinite wait behavior
     };
 
     TEST_ESP_OK(esp_lcd_new_panel_io_i2c(bus_handle, &io_config, &io_handle));
