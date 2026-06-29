@@ -8,6 +8,7 @@ import typing
 import pytest
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -176,9 +177,8 @@ def test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 @pytest.mark.usb_serial_jtag
 @idf_parametrize('config', ['gcov_jtag'], indirect=['config'])
-@idf_parametrize(
-    'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
-)
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_gcov_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_gcov(openocd_dut, dut)
 
@@ -226,6 +226,6 @@ def _test_gcov_uart(dut: IdfDut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['gcov_uart'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32s31', 'esp32h4'], reason='bringup on this module is not done')
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_gcov_uart(dut: IdfDut) -> None:
     _test_gcov_uart(dut)
