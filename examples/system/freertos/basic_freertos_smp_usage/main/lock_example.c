@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -26,7 +26,7 @@ const static char *TAG = "lock example";
 // when the mutex is available, FreeRTOS will reschedule this task and this task can further access the shared resource
 static void inc_num_mutex_iter(void *arg)
 {
-    int core_id = esp_cpu_get_core_id();
+    int core_id = xPortGetCoreID();
     int64_t start_time, end_time, duration = 0;
     start_time = esp_timer_get_time();
     while (s_global_num < ITERATION_NUMBER) {
@@ -47,7 +47,7 @@ static void inc_num_mutex_iter(void *arg)
 // and reschedule the task.
 static void inc_num_spinlock_iter(void *arg)
 {
-    int core_id = esp_cpu_get_core_id();
+    int core_id = xPortGetCoreID();
     int64_t start_time, end_time, duration = 0;
     start_time = esp_timer_get_time();
     while (s_global_num < ITERATION_NUMBER) {
@@ -64,7 +64,7 @@ static void inc_num_spinlock_iter(void *arg)
 
 static void inc_num_atomic_iter(void *arg)
 {
-    int core_id = esp_cpu_get_core_id();
+    int core_id = xPortGetCoreID();
     int64_t start_time, end_time, duration = 0;
     start_time = esp_timer_get_time();
     while (atomic_load(&s_atomic_global_num) < ITERATION_NUMBER) {
@@ -85,7 +85,7 @@ static void inc_num_mutex(void *arg)
     while (!timed_out) {
         xSemaphoreTake(s_mutex, portMAX_DELAY); // == pdTRUE
 
-        int core_id = esp_cpu_get_core_id();
+        int core_id = xPortGetCoreID();
         ESP_LOGI(TAG, "task%d read value = %d on core #%d", task_index, s_global_num, core_id);
         s_global_num++;
         // delay for 500 ms

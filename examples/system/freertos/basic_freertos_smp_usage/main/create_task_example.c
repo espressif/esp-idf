@@ -31,7 +31,7 @@ static void spin_task(void *arg)
     int task_id = (intptr_t)arg;
     ESP_LOGI(TAG, "created task#%d", task_id);
     while (!timed_out) {
-        int core_id = esp_cpu_get_core_id();
+        int core_id = xPortGetCoreID();
         ESP_LOGI(TAG, "task#%d is running on core#%d", task_id, core_id);
         // consume some CPU cycles to keep Core#0 a little busy, so task3 has opportunity to be scheduled on Core#1
         spin_iteration(SPIN_ITER);
