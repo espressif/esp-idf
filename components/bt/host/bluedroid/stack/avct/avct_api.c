@@ -118,6 +118,9 @@ void AVCT_Deregister(void)
 
     /* deregister PSM with L2CAP */
     L2CA_Deregister(AVCT_PSM);
+#if (AVCT_BROWSE_INCLUDED == TRUE)
+    L2CA_Deregister(AVCT_BR_PSM);
+#endif
 }
 
 /*******************************************************************************
@@ -173,9 +176,14 @@ UINT16 AVCT_CreateConn(UINT8 *p_handle, tAVCT_CC *p_cc, BD_ADDR peer_addr)
 
             if (result == AVCT_SUCCESS) {
                 /* bind lcb to ccb */
+                tAVCT_LCB_EVT evt;
                 p_ccb->p_lcb = p_lcb;
                 AVCT_TRACE_DEBUG("ch_state: %d", p_lcb->ch_state);
-                avct_lcb_event(p_lcb, AVCT_LCB_UL_BIND_EVT, (tAVCT_LCB_EVT *) &p_ccb);
+                evt.p_ccb = p_ccb;
+                avct_lcb_event(p_lcb, AVCT_LCB_UL_BIND_EVT, &evt);
+                if (!p_ccb->allocated) {
+                    result = AVCT_NOT_OPEN;
+                }
             }
         }
     }
@@ -212,7 +220,9 @@ UINT16 AVCT_RemoveConn(UINT8 handle)
     }
     /* send unbind event to lcb */
     else {
-        avct_lcb_event(p_ccb->p_lcb, AVCT_LCB_UL_UNBIND_EVT, (tAVCT_LCB_EVT *) &p_ccb);
+        tAVCT_LCB_EVT evt;
+        evt.p_ccb = p_ccb;
+        avct_lcb_event(p_ccb->p_lcb, AVCT_LCB_UL_UNBIND_EVT, &evt);
     }
     return result;
 }
