@@ -41,6 +41,8 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
 
 int bt_le_acl_conn_delete(uint16_t conn_handle);
 
+void bt_conn_le_set_ltk(struct bt_conn *conn, const uint8_t *ltk);
+
 int bt_le_acl_conn_update(uint16_t conn_handle,
                           uint8_t sec_level,
                           bool *encrypted);

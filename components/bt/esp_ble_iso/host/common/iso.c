@@ -91,14 +91,14 @@ int bt_le_iso_cb_register_safe(struct bt_le_iso_cb *cb)
     LOG_DBG("IsoCbReg");
 
     if (cb == NULL) {
-        LOG_ERR("IsoCbNull");
+        LOG_ERR("IsoCbRegNull");
         return -EINVAL;
     }
 
     bt_le_host_lock();
 
     if (sys_slist_find(&iso_cbs, &cb->node, NULL)) {
-        LOG_WRN("IsoCbExist");
+        LOG_WRN("IsoCbRegExist");
         err = -EEXIST;
         goto end;
     }
@@ -117,7 +117,7 @@ void bt_le_iso_cb_unregister_safe(struct bt_le_iso_cb *cb)
     LOG_DBG("IsoCbUnreg");
 
     if (cb == NULL) {
-        LOG_ERR("IsoCbNull");
+        LOG_ERR("IsoCbUnregNull");
         return;
     }
 
@@ -415,7 +415,7 @@ static int iso_tx_sdu_insert(struct bt_iso_chan *chan, const uint8_t *sdu, uint1
 
     sdu_node = calloc(1, sizeof(*sdu_node));
     if (sdu_node == NULL) {
-        LOG_ERR("IsoTxInsertNoMem[%u]", sizeof(*sdu_node));
+        LOG_ERR("IsoTxSduInsertNoMem[%u]", sizeof(*sdu_node));
         return -ENOMEM;
     }
 
@@ -445,7 +445,7 @@ static void iso_tx_sdu_clear(uint16_t handle, bool is_big)
         if ((is_big == false && iso->handle == handle) ||
                 (is_big && iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER &&
                  iso->iso.info.broadcaster.big_handle == handle)) {
-            LOG_DBG("IsoSduRem[%u]", sdu_node->sdu_len);
+            LOG_DBG("IsoTxSduClearRem[%u]", sdu_node->sdu_len);
 
             sys_slist_remove(&iso_tx_sdu_list, prev, &sdu_node->node);
 
@@ -463,22 +463,27 @@ static int validate_iso_send(struct bt_iso_chan *chan, struct net_buf *buf)
 {
     if (chan == NULL || buf == NULL ||
             (buf->data == NULL && buf->len != 0)) {
-        LOG_ERR("InvSendParam[%p][%p]", chan, buf);
+        LOG_ERR("IsoSendInvParam[%p][%p]", chan, buf);
         return -EINVAL;
     }
 
+    if (chan->iso == NULL) {
+        LOG_ERR("IsoSendChanNoIso");
+        return -ENOTCONN;
+    }
+
     if (chan->state != BT_ISO_STATE_CONNECTED) {
-        LOG_ERR("ChanNotConn[%u]", chan->iso->handle);
+        LOG_ERR("IsoSendChanNotConn[%u]", chan->iso->handle);
         return -ENOTCONN;
     }
 
     if (chan->iso->iso.info.can_send == false) {
-        LOG_ERR("ChanNotSend[%u]", chan->iso->handle);
+        LOG_ERR("IsoSendChanNotSend[%u]", chan->iso->handle);
         return -EINVAL;
     }
 
     if (buf->len > chan->qos->tx->sdu) {
-        LOG_ERR("ChanCannotSend[%u][%u][%u]",
+        LOG_ERR("IsoSendChanCannotSend[%u][%u][%u]",
                 chan->iso->handle, buf->len, chan->qos->tx->sdu);
         return -EMSGSIZE;
     }
@@ -510,7 +515,7 @@ static int iso_tx_now(struct bt_iso_chan *chan, const uint8_t *sdu,
 
     pkt = malloc(4 + data_total_len);
     if (pkt == NULL) {
-        LOG_ERR("IsoTxNoMem[%u]", 4 + data_total_len);
+        LOG_ERR("IsoTxNowNoMem[%u]", 4 + data_total_len);
         return -ENOMEM;
     }
 
@@ -563,7 +568,7 @@ static int iso_tx_now(struct bt_iso_chan *chan, const uint8_t *sdu,
          * If using controller from other vendors, the pkt buffer may
          * needs to be freed here.
          */
-        LOG_WRN("IsoTxFail[%d]", err);
+        LOG_WRN("IsoTxNowFail[%d]", err);
         return err;
     }
 
@@ -642,7 +647,7 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
              * If using controller from other vendors, the pkt buffer may
              * needs to be freed here.
              */
-             LOG_WRN("IsoTxFail[%d]", err);
+             LOG_WRN("IsoTxCompFail[%d]", err);
         }
 
         free(sdu_node);

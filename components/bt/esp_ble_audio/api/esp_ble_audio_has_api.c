@@ -86,6 +86,28 @@ esp_err_t esp_ble_audio_has_client_preset_set(esp_ble_audio_has_t *has,
     return ESP_OK;
 }
 
+esp_err_t esp_ble_audio_has_client_preset_name_write(esp_ble_audio_has_t *has,
+                                                     uint8_t index, const char *name)
+{
+    int err;
+
+    if (has == NULL || index == ESP_BLE_AUDIO_HAS_PRESET_INDEX_NONE || name == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (strlen(name) < ESP_BLE_AUDIO_HAS_PRESET_NAME_MIN ||
+            strlen(name) > ESP_BLE_AUDIO_HAS_PRESET_NAME_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = bt_has_client_preset_name_write_safe(has, index, name);
+    if (err) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t esp_ble_audio_has_client_preset_next(esp_ble_audio_has_t *has, bool sync)
 {
     int err;
@@ -227,10 +249,6 @@ esp_err_t esp_ble_audio_has_preset_unavailable(uint8_t index)
 esp_err_t esp_ble_audio_has_preset_active_set(uint8_t index)
 {
     int err;
-
-    if (index == ESP_BLE_AUDIO_HAS_PRESET_INDEX_NONE) {
-        return ESP_ERR_INVALID_ARG;
-    }
 
     err = bt_has_preset_active_set_safe(index);
     if (err) {

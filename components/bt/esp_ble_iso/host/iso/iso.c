@@ -2881,7 +2881,16 @@ void hci_le_big_terminate(struct net_buf *buf)
 
     LOG_DBG("BigTerminated[%u][%p]", big->handle, big);
 
-    big_disconnect(big, evt->reason);
+    /* Source BIG is only terminated by the local host → reason must be
+     * LOCALHOST_TERM (Core 7.7.65.28); fix up controllers reporting otherwise. */
+    uint8_t reason = evt->reason;
+
+    if (reason != BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+        LOG_INF("BigTermReasonFixup[%02x][%02x]", reason, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+        reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+    }
+
+    big_disconnect(big, reason);
 }
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 

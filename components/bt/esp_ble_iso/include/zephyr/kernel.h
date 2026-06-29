@@ -259,6 +259,8 @@ int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);
 
 int k_work_schedule_periodic(struct k_work_delayable *dwork, k_timeout_t period_ms);
 
+int k_work_schedule_periodic_us(struct k_work_delayable *dwork, uint64_t period_us);
+
 k_timeout_t k_work_delayable_remaining_get(struct k_work_delayable *dwork);
 
 /* Slist */

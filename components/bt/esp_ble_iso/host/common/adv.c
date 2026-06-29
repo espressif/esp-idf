@@ -70,7 +70,8 @@ struct bt_le_ext_adv *bt_le_ext_adv_find(uint8_t adv_handle)
 }
 
 _IDF_ONLY
-int bt_le_ext_adv_new_safe(uint8_t adv_handle)
+int bt_le_ext_adv_new_safe(uint8_t adv_handle, uint8_t addr_type,
+                           const uint8_t *addr, uint8_t sid)
 {
     struct bt_le_ext_adv *adv = NULL;
     int err = 0;
@@ -92,6 +93,9 @@ int bt_le_ext_adv_new_safe(uint8_t adv_handle)
     }
 
     adv->handle = adv_handle;
+    adv->addr.type = addr_type;
+    bt_addr_copy(&adv->addr.a, (const bt_addr_t *)addr);
+    adv->sid = sid;
 
 end:
     bt_le_host_unlock();
@@ -135,6 +139,9 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
         LOG_ERR("ExtAdvNotInPool[%p]", adv);
         return -EINVAL;
     }
+
+    info->sid = adv->sid;
+    info->addr = &adv->addr;
 
     /* Force to use ENABLED state for LIB usage */
     info->ext_adv_state = BT_LE_EXT_ADV_STATE_ENABLED;

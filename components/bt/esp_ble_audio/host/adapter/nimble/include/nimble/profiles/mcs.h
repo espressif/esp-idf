@@ -21,6 +21,10 @@ int bt_le_nimble_gmcs_attr_handle_set(void);
 
 int bt_le_nimble_gmcs_init(bool ots_included);
 
+int bt_le_nimble_mcs_attr_handle_set(void);
+
+int bt_le_nimble_mcs_init(void);
+
 #ifdef __cplusplus
 }
 #endif

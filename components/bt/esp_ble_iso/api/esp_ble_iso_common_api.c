@@ -41,8 +41,10 @@ esp_err_t esp_ble_iso_data_parse(const uint8_t ltv[], size_t size,
             continue;
         }
 
+        /* A callback returning false aborts parsing; report it as an error so
+         * callers detect it (bt_audio_data_parse() returns -ECANCELED here). */
         if (func(type, &ltv[i + 2], data_len, user_data) == false) {
-            return ESP_OK;
+            return ESP_FAIL;
         }
 
         i += (size_t)len + 1;
@@ -233,7 +235,8 @@ esp_err_t esp_ble_iso_big_ext_adv_add(esp_ble_iso_ext_adv_info_t *info)
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_le_ext_adv_new_safe(info->adv_handle);
+    err = bt_le_ext_adv_new_safe(info->adv_handle, info->addr_type,
+                                 info->addr, info->sid);
     if (err) {
         return ESP_FAIL;
     }

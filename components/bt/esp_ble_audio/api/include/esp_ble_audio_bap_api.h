@@ -395,6 +395,12 @@ esp_err_t esp_ble_audio_bap_unicast_server_unregister_cb(const esp_ble_audio_bap
 /**
  * @brief   Initialize and configure a new ASE.
  *
+ * @note    Direction-agnostic: configures the first free ASE by index. Sink ASEs
+ *          are ordered before source ASEs, so this picks a sink ASE whenever one
+ *          is free and only falls back to a source ASE when all sink ASEs are in
+ *          use. Use esp_ble_audio_bap_unicast_server_config_ase_with_dir() to
+ *          target a specific direction.
+ *
  * @param   conn_handle Connection handle.
  * @param   stream      Configured stream object to be attached to the ASE.
  * @param   codec_cfg   Codec configuration.
@@ -406,6 +412,27 @@ esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
                                                       esp_ble_audio_bap_stream_t *stream,
                                                       esp_ble_audio_codec_cfg_t *codec_cfg,
                                                       const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref);
+
+/**
+ * @brief   Initialize and configure a new ASE of a specific direction.
+ *
+ * Like esp_ble_audio_bap_unicast_server_config_ase(), but configures the first
+ * free ASE of the requested direction, letting a server initiate a config on a
+ * source ASE (the direction-agnostic variant picks the first free ASE).
+ *
+ * @param   conn_handle Connection handle.
+ * @param   stream      Configured stream object to be attached to the ASE.
+ * @param   codec_cfg   Codec configuration.
+ * @param   qos_pref    Audio Stream Quality of Service Preference.
+ * @param   dir         ASE direction to configure (sink or source).
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_bap_unicast_server_config_ase_with_dir(uint16_t conn_handle,
+                                                               esp_ble_audio_bap_stream_t *stream,
+                                                               esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                               const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref,
+                                                               esp_ble_audio_dir_t dir);
 
 /**
  * @brief   Create unicast group.

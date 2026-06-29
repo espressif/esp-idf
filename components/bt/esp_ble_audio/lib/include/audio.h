@@ -18,13 +18,13 @@ extern "C" {
 
 struct lib_ext_cfgs;
 struct lib_ext_funcs;
-struct lib_funcs;
+struct lib_int_funcs;
 
-extern int lib_ext_structs_check(const uint16_t *ext_structs, size_t size_structs);
-extern int lib_ext_cfgs_set(const struct lib_ext_cfgs *ext_cfgs, size_t size_cfgs);
-extern int lib_ext_funcs_set(const struct lib_ext_funcs *ext_funcs, size_t size_funcs);
-extern int lib_funcs_set(const struct lib_funcs *funcs, size_t size_funcs);
-extern const char *lib_ext_commit_get(void);
+extern int lib_audio_ext_structs_check(const uint16_t *ext_structs, size_t size_structs);
+extern int lib_audio_ext_cfgs_set(const struct lib_ext_cfgs *ext_cfgs, size_t size_cfgs);
+extern int lib_audio_ext_funcs_set(const struct lib_ext_funcs *ext_funcs, size_t size_funcs);
+extern int lib_audio_int_funcs_set(const struct lib_int_funcs *funcs, size_t size_funcs);
+extern const char *lib_audio_commit_get(void);
 
 struct bt_aics;
 struct bt_gatt_service;
@@ -79,7 +79,8 @@ extern int lib_has_init(void);
 extern int lib_has_client_init(void);
 
 extern int lib_mcc_init(void);
-extern struct bt_gatt_service *lib_mcs_svc_get(void);
+extern struct bt_gatt_service *lib_gmcs_svc_get(void);
+extern struct bt_gatt_service *lib_mcs_server_list_get(void);
 extern int lib_mcs_init(void);
 
 extern int lib_media_proxy_init(void);

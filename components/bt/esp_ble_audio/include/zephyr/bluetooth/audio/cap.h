@@ -868,6 +868,11 @@ struct bt_cap_handover_unicast_to_broadcast_param {
     struct bt_cap_unicast_group *unicast_group;
 
     /**
+     * @brief Advertising handle of the broadcast source.
+     */
+    uint8_t adv_handle;
+
+    /**
      * @brief The advertising set to use for the broadcast source
      *
      * This shall remain valid until the procedure has completed.
@@ -972,6 +977,8 @@ int bt_cap_handover_unregister_cb_safe(const struct bt_cap_handover_cb *cb);
  *
  * @return 0 on success or negative error value on failure.
  */
+int bt_cap_handover_unicast_to_broadcast(
+    const struct bt_cap_handover_unicast_to_broadcast_param *param);
 int bt_cap_handover_unicast_to_broadcast_safe(
     const struct bt_cap_handover_unicast_to_broadcast_param *param);
 
