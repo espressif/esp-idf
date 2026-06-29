@@ -162,12 +162,6 @@ void handle_auth_pasn(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t sta
 const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void);
 void nan_pasn_clear_saved_keys(void);
 
-/**
- * Clear stale pairwise keys, saved PASN material, and active NDPs before
- * responder-side PASN verification (proactive pairing_start or passive Auth1).
- */
-void nan_pasn_responder_verify_prepare(const uint8_t *peer_nmi);
-
 /** Look up cached NPK for pairing verification (§7.6.5). Returns 0 on success.
  *  Lookup matches peer_cred.service_hash against active own-service hashes,
  *  or uses a single cached slot when only one NPK is present. */

@@ -499,9 +499,9 @@ static void nan_pasn_clear_peer_tks_for_verify_start(const u8 *peer_nmi)
     nan_pasn_clear_saved_keys();
 }
 
-void nan_pasn_responder_verify_prepare(const u8 *peer_nmi)
+static void nan_pasn_responder_verify_prepare(const u8 *peer_nmi, uint8_t publish_id)
 {
-    esp_nan_app_end_peer_datapaths(peer_nmi);
+    esp_nan_app_end_peer_datapaths(publish_id);
     nan_pasn_clear_peer_tks_for_verify_start(peer_nmi);
 }
 
@@ -1655,7 +1655,7 @@ void handle_auth_pasn(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t sta
                                         &verify_own_inst_id)) {
             goto auth1_verify_done;
         }
-        nan_pasn_responder_verify_prepare(mgmt->sa);
+        nan_pasn_responder_verify_prepare(mgmt->sa, verify_own_inst_id);
 
         if (!pasn) {
             wpa_printf(MSG_INFO, "NAN PASN verify: no PASN context for "

@@ -2598,41 +2598,26 @@ esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req)
 }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-esp_err_t esp_nan_app_end_peer_datapaths(const uint8_t *peer_nmi)
+esp_err_t esp_nan_app_end_peer_datapaths(uint8_t publish_id)
 {
-    wifi_nan_datapath_end_req_t ndp_end[ESP_WIFI_NAN_DATAPATH_MAX_PEERS];
-    int count = 0;
-    esp_err_t last_err = ESP_OK;
-
-    if (!peer_nmi) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    wifi_nan_datapath_end_req_t ndp_end;
+    int i;
 
     NAN_DATA_LOCK();
-    for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+    for (i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
         struct ndl_info *ndl = &s_nan_ctx.ndl[i];
 
-        if (ndl->ndp_id != 0 && MACADDR_EQUAL(ndl->peer_nmi, peer_nmi)) {
-            ndp_end[count].ndp_id = ndl->ndp_id;
-            MACADDR_COPY(ndp_end[count].peer_mac, peer_nmi);
-            count++;
+        if (ndl->publisher_id == publish_id) {
+            ndp_end.ndp_id = ndl->ndp_id;
+            MACADDR_COPY(ndp_end.peer_mac, ndl->peer_nmi);
+            break;
         }
     }
     NAN_DATA_UNLOCK();
+    if (i == ESP_WIFI_NAN_DATAPATH_MAX_PEERS)
+        return ESP_FAIL;
 
-    if (count == 0) {
-        return ESP_OK;
-    }
-
-    for (int i = 0; i < count; i++) {
-        esp_err_t ret = esp_wifi_nan_datapath_end(&ndp_end[i]);
-
-        if (ret != ESP_OK) {
-            last_err = ret;
-        }
-    }
-
-    return last_err;
+    return  esp_wifi_nan_datapath_end(&ndp_end);
 }
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
 
