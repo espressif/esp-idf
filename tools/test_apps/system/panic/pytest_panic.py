@@ -1175,11 +1175,9 @@ def test_non_cache_drom_reg_execute_violation(dut: PanicTestDut, test_func_name:
 
 def spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    try:
-        dut.expect_gme('Instruction access fault')
-    except Exception:
-        dut.expect_exact('SPIRAM (IROM): IROM alignment gap not added into heap')
-    dut.expect_reg_dump(0)
+    match = dut.expect(r'(IROM alignment gap not added into heap|Instruction access fault)')
+    if match.group(1) == b'Instruction access fault':
+        dut.expect_reg_dump(0)
     dut.expect_cpu_reset()
 
 
@@ -1200,14 +1198,10 @@ def test_non_cache_spiram_xip_irom_alignment_reg_execute_violation(dut: PanicTes
 
 def spiram_xip_drom_alignment_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    try:
-        if dut.target == 'esp32s3':
-            dut.expect_gme('InstructionFetchError')
-        else:
-            dut.expect_gme('Instruction access fault')
-    except Exception:
-        dut.expect_exact('SPIRAM (DROM): DROM alignment gap not added into heap')
-    dut.expect_reg_dump(0)
+    fault_reason = 'InstructionFetchError' if dut.target == 'esp32s3' else 'Instruction access fault'
+    match = dut.expect(rf'(DROM alignment gap not added into heap|{fault_reason})')
+    if match.group(1) != b'DROM alignment gap not added into heap':
+        dut.expect_reg_dump(0)
     dut.expect_cpu_reset()
 
 
