@@ -489,8 +489,8 @@ esp_err_t esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(uint64_t gpio_pin_
  * @brief Enable wakeup from light sleep using GPIOs
  *
  * Each GPIO supports wakeup function, which can be triggered on either low level
- * or high level. Unlike EXT0 and EXT1 wakeup sources, this method can be used
- * both for all IOs: RTC IOs and digital IOs. It can only be used to wakeup from
+ * or high level. This method can be used with any IO (RTC or digital), whereas
+ * external RTC wakeup is limited to RTC GPIOs. It can only be used to wakeup from
  * light sleep though.
  *
  * To enable wakeup, first call gpio_wakeup_enable, specifying gpio number and
