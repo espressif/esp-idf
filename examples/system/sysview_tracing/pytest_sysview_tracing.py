@@ -31,13 +31,16 @@ def _validate_trace_data(trace_log: list[str], target: str, is_uart: bool = Fals
             content = f.read()
             search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
             assert search_str in content, f'SysView trace data not found in {log}'
-
-            # For UART transport, validate STOP record at end of file
-            # TODO: Adapt this to JTAG as well.
-            if is_uart:
-                size = len(content)
-                assert size >= 2, 'Trace file too small to contain STOP record'
-                assert content[-2] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
+            # The file must end with a TRACE_STOP record: the STOP event ID
+            # followed by a variable-length timestamp delta. Walk back
+            # over the trailing continuation bytes (0x80 bit set)
+            # to find the event ID, since its offset is not fixed.
+            size = len(content)
+            assert size >= 2, 'Trace file too small to contain STOP record'
+            i = size - 2
+            while i >= 0 and (content[i] & 0x80):
+                i -= 1
+            assert i >= 0 and content[i] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
 
 
 def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
