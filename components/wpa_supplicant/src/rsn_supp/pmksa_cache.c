@@ -46,7 +46,8 @@ static void pmksa_cache_free_entry(struct rsn_pmksa_cache *pmksa,
         enum pmksa_free_reason reason)
 {
     pmksa->pmksa_count--;
-    pmksa->free_cb(entry, pmksa->ctx, reason);
+    if (pmksa->free_cb)
+        pmksa->free_cb(entry, pmksa->ctx, reason);
     _pmksa_cache_free_entry(entry);
 }
 

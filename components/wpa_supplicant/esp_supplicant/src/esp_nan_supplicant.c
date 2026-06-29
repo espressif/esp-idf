@@ -16,6 +16,7 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
 #include "common/nan.h"
 #include "esp_wifi_driver.h"
 #include "crypto/crypto.h"
@@ -49,11 +50,73 @@
 
 static struct nan_pasn_key_material g_nan_pasn_saved_keys;
 
-/* Key index for esp_wifi_set_nan_key_internal (NAN PASN pairwise TK). */
-int temp = 1;
+#define NAN_NIRA_NONCE_LEN 8
+#define NAN_NIRA_TAG_LEN   8
+#define NAN_NIRA_ATTR_LEN  20
+#define NAN_PASN_CSIA_ATTR_MAX_LEN (3 + 1 + 2 * 8)
+#define NAN_PASN_PAIRING_BOOTSTRAP_METHODS WIFI_NAN_BOOTSTRAP_PIN_CODE_DISPLAY
+#define NAN_PASN_PAIRING_CSIA_PUB_ID 5
+
+static int nan_pasn_npkid_from_nira_attr(const u8 *nira, u16 nira_len, u8 *npkid)
+{
+    if (!nira || !npkid ||
+            nira_len < 4 + NAN_NIRA_NONCE_LEN + NAN_NIRA_TAG_LEN) {
+        return -1;
+    }
+
+    /* NPKID = Nonce || Tag (wire order matches NIRA body after Cipher Version;
+     * PMKID is carried little-endian in the RSNE). */
+    os_memcpy(npkid, nira + 4, NAN_NIRA_NONCE_LEN);
+    os_memcpy(npkid + NAN_NIRA_NONCE_LEN,
+              nira + 4 + NAN_NIRA_NONCE_LEN, NAN_NIRA_TAG_LEN);
+    return 0;
+}
+
+static int nan_pasn_build_local_npkid(u8 *npkid)
+{
+    uint8_t nira_frm[NAN_NIRA_ATTR_LEN];
+
+    if (!npkid ||
+            esp_nan_construct_nira(nira_frm) <
+            (int)(4 + NAN_NIRA_NONCE_LEN + NAN_NIRA_TAG_LEN)) {
+        return -1;
+    }
+
+    return nan_pasn_npkid_from_nira_attr(nira_frm, NAN_NIRA_ATTR_LEN, npkid);
+}
+
+static int nan_validate_custom_pmkid(void *ctx, const u8 *addr, const u8 *pmkid)
+{
+    struct nan_pasn_data *nan = ctx;
+
+    if (!pmkid) {
+        return -1;
+    }
+
+    /*
+     * Pairing verification: NIK is already checked via NIRA and NPK via
+     * PMKSA lookup, but §7.6.5 also binds RSNE PMKID to the same-frame NIRA
+     * (NPKID = Nonce||Tag). Cross-check when we cached NPKID from that NIRA.
+     */
+    if (!nan || !nan->peer_npkid_valid) {
+        return 0;
+    }
+
+    if (os_memcmp(pmkid, nan->peer_npkid, PMKID_LEN) != 0) {
+        wpa_printf(MSG_INFO,
+                   "NAN PASN verify: PMKID/NPKID mismatch for " MACSTR,
+                   MAC2STR(addr));
+        return -1;
+    }
+
+    return 0;
+}
 
 #define NAN_PASN_AES_WRAP_OVERHEAD      8
 #define NAN_PASN_AES_WRAP_MIN_CIPHERTEXT (NAN_PASN_AES_WRAP_OVERHEAD + 8)
+
+static int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode,
+                               esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb);
 
 /**
  * Map PASN pairwise cipher to the NCS-SK CSID used for paired-peer NDPs
@@ -239,7 +302,6 @@ static int nan_pasn_install_nan_pairwise_tk(struct nan_pasn_data *nan, struct pa
     struct wpa_ptk *ptk;
     uint8_t key_rsc[8] = {0};
     int kret;
-    (void)nan;
 
     if (!pasn) {
         return -1;
@@ -258,7 +320,7 @@ static int nan_pasn_install_nan_pairwise_tk(struct nan_pasn_data *nan, struct pa
 
     wpa_hexdump_key(MSG_DEBUG, "NAN PASN: NM-TK", ptk->tk, ptk->tk_len);
     kret = esp_wifi_set_nan_key_internal(
-               NAN_PASN_WIFI_ALG_CCMP, pasn->peer_addr, temp, 1, key_rsc, sizeof(key_rsc),
+               NAN_PASN_WIFI_ALG_CCMP, pasn->peer_addr, 1, 1, key_rsc, sizeof(key_rsc),
                ptk->tk, ptk->tk_len,
                NAN_KEY_NM_TK);
     if (kret != 0) {
@@ -426,6 +488,21 @@ const struct nan_pasn_key_material *nan_pasn_get_saved_keys(void)
 void nan_pasn_clear_saved_keys(void)
 {
     forced_memzero(&g_nan_pasn_saved_keys, sizeof(g_nan_pasn_saved_keys));
+}
+
+static void nan_pasn_clear_peer_tks_for_verify_start(const u8 *peer_nmi)
+{
+    if (!peer_nmi) {
+        return;
+    }
+    esp_nan_app_clear_peer_tks(peer_nmi, 0);
+    nan_pasn_clear_saved_keys();
+}
+
+void nan_pasn_responder_verify_prepare(const u8 *peer_nmi)
+{
+    esp_nan_app_end_peer_datapaths(peer_nmi);
+    nan_pasn_clear_peer_tks_for_verify_start(peer_nmi);
 }
 
 /* NAN KDE OUI Type values from Wi-Fi Aware spec v4.0, Table 126. */
@@ -749,28 +826,6 @@ out:
     return ret;
 }
 
-static int nan_chan_to_freq_mhz(uint8_t chan)
-{
-    if (chan >= 1 && chan <= 13) {
-        return 2407 + (int)chan * 5;
-    }
-    if (chan == 14) {
-        return 2484;
-    }
-    return 0;
-}
-
-static int nan_pasn_get_current_freq_mhz(void)
-{
-    uint8_t primary = 0;
-    wifi_second_chan_t second = WIFI_SECOND_CHAN_NONE;
-
-    if (esp_wifi_get_channel(&primary, &second) != ESP_OK || primary == 0) {
-        return 0;
-    }
-    return nan_chan_to_freq_mhz(primary);
-}
-
 static void nan_pasn_auth_timeout_cancel(struct nan_pasn_data *nan);
 
 static void nan_pasn_auth_timeout_cb(void *eloop_ctx, void *user_data)
@@ -846,48 +901,97 @@ static int nan_set_dev_sae_pin(struct nan_pasn_data *nan, const char *digits)
 }
 
 /*
- * Build Wi-Fi Alliance NAN vendor IE (EID 221) with DCEA / BPBA / CSIA for PASN
- * and pass to @a pasn via pasn_set_extra_ies() so wpa_pasn_add_extra_ies() appends
+ * Build Wi-Fi Alliance NAN vendor IE (EID 221) for PASN.
+ * Bootstrap auth: DCEA + NPBA + CSIA.
+ * Pairing verification: CSIA + NIRA only (no DCEA/NPBA).
+ * Passed to @a pasn via pasn_set_extra_ies() so wpa_pasn_add_extra_ies() appends
  * it after PASN Parameters on Auth 1/3 (and after prepare_data_element on Auth 2).
  */
 static int nan_prepare_pasn_extra_ie(struct nan_pasn_data *nan, struct pasn_data *pasn,
-                                     const struct wpabuf *frame, bool add_dira)
+                                     const struct wpabuf *frame, bool include_nira)
 {
-    static const u8 nan_pasn_attr_payload[] = {
-        NAN_ATTR_DCEA, 0x02, 0x00, 0x00, 0x03,
-        NAN_ATTR_BPBA, 0x05, 0x00, 0x90, 0x02, 0x00, 0x02, 0x00,
-        NAN_ATTR_CSIA, 0x03, 0x00, 0x00, 0x07, 0x05,
-    };
-    u8 fixed[2 + 3 + 1 + sizeof(nan_pasn_attr_payload)];
+    u8 csia_attr[NAN_PASN_CSIA_ATTR_MAX_LEN];
+    u8 nira_attr[NAN_NIRA_ATTR_LEN];
+    uint8_t *pairing_attrs = NULL;
     u8 *buf = NULL;
+    u8 *pos;
     size_t fr_len = 0;
+    size_t csia_len;
+    size_t nira_len = 0;
+    size_t attr_payload_len;
+    size_t vendor_ie_len;
     size_t total_len;
+    uint32_t npba_len = 0;
+    uint32_t dcea_len = 0;
+    uint32_t pairing_attrs_len = 0;
     int ret;
 
     (void)nan;
-    (void)add_dira;
 
-    fixed[0] = WLAN_EID_VENDOR_SPECIFIC;
-    fixed[1] = 3 + 1 + sizeof(nan_pasn_attr_payload);
-    WPA_PUT_BE24(&fixed[2], OUI_WFA);
-    fixed[5] = NAN_OUI_TYPE;
-    os_memcpy(&fixed[6], nan_pasn_attr_payload, sizeof(nan_pasn_attr_payload));
+    ret = esp_nan_construct_csia(csia_attr, NAN_PASN_PAIRING_CSIA_PUB_ID,
+                                 WIFI_NAN_CSID_BIT_NCS_PK_PASN_128, 0);
+    if (ret <= 0 || ret > (int)sizeof(csia_attr)) {
+        wpa_printf(MSG_INFO, "NAN PASN: CSIA build failed");
+        return -1;
+    }
+    csia_len = (size_t) ret;
+    attr_payload_len = csia_len;
+
+    if (include_nira) {
+        ret = esp_nan_construct_nira(nira_attr);
+        if (ret < (int)NAN_NIRA_ATTR_LEN) {
+            wpa_printf(MSG_INFO, "NAN PASN: NIRA build failed");
+            return -1;
+        }
+        nira_len = (size_t) ret;
+        attr_payload_len += nira_len;
+    } else {
+        pairing_attrs = esp_wifi_nan_get_pairing_attrs(NAN_PASN_PAIRING_BOOTSTRAP_METHODS,
+                                                       true, true, &npba_len,
+                                                       &dcea_len, &pairing_attrs_len);
+        if (!pairing_attrs || !pairing_attrs_len) {
+            wpa_printf(MSG_INFO, "NAN PASN: pairing attrs build failed");
+            return -1;
+        }
+        attr_payload_len += pairing_attrs_len;
+    }
 
     if (frame) {
         fr_len = wpabuf_len(frame);
     }
 
-    if (!fr_len) {
-        return pasn_set_extra_ies(pasn, fixed, sizeof(fixed));
+    vendor_ie_len = 3 + 1 + attr_payload_len;
+    if (vendor_ie_len > UINT8_MAX) {
+        wpa_printf(MSG_INFO, "NAN PASN: extra IE too long");
+        return -1;
     }
 
-    total_len = sizeof(fixed) + fr_len;
+    total_len = 2 + vendor_ie_len + fr_len;
     buf = os_malloc(total_len);
     if (!buf) {
         return -1;
     }
-    os_memcpy(buf, fixed, sizeof(fixed));
-    os_memcpy(buf + sizeof(fixed), wpabuf_head_u8(frame), fr_len);
+
+    pos = buf;
+    *pos++ = WLAN_EID_VENDOR_SPECIFIC;
+    *pos++ = (u8) vendor_ie_len;
+    WPA_PUT_BE24(pos, OUI_WFA);
+    pos += 3;
+    *pos++ = NAN_OUI_TYPE;
+    if (pairing_attrs_len) {
+        os_memcpy(pos, pairing_attrs, pairing_attrs_len);
+        pos += pairing_attrs_len;
+    }
+    os_memcpy(pos, csia_attr, csia_len);
+    pos += csia_len;
+    if (nira_len) {
+        os_memcpy(pos, nira_attr, nira_len);
+        pos += nira_len;
+    }
+    if (fr_len) {
+        os_memcpy(pos, wpabuf_head_u8(frame), fr_len);
+    }
+
     ret = pasn_set_extra_ies(pasn, buf, total_len);
     os_free(buf);
     return ret;
@@ -962,7 +1066,7 @@ static void nan_pairing_apply_sae_pin(struct pasn_data *pasn, u8 pasn_type,
     pasn->password = nan->dev_sae_pin;
 }
 
-void nan_pasn_initialize(struct nan_pasn_data *nan, const u8 *addr, int freq, bool verify, bool derive_kek)
+void nan_pasn_initialize(struct nan_pasn_data *nan, const u8 *addr)
 {
     struct pasn_data *pasn;
     struct wpabuf *rsnxe;
@@ -970,6 +1074,8 @@ void nan_pasn_initialize(struct nan_pasn_data *nan, const u8 *addr, int freq, bo
     if (!nan) {
         return;
     }
+
+    nan->peer_npkid_valid = false;
 
     if (nan->pasn) {
         wpa_pasn_reset(nan->pasn);
@@ -1021,15 +1127,13 @@ void nan_pasn_initialize(struct nan_pasn_data *nan, const u8 *addr, int freq, bo
      * ND-PMK is filled by pasn_nd_pmk_derive_from_kdk_store (hostap
      * nan_crypto_derive_nd_pmk_from_kdk). Matches hostap nan_pairing.c.
      */
-    (void)derive_kek;
     pasn->derive_kek = false;
     pasn->kek_len = 0;
 
+    /* Wi-Fi Aware pairing: PASN Auth frames always use SAE as the base AKM. */
+    pasn->akmp = WPA_KEY_MGMT_SAE;
     if (nan->dev_sae_pin_len > 0) {
-        pasn->akmp = WPA_KEY_MGMT_SAE;
         nan_pairing_apply_sae_pin(pasn, nan->cfg->pasn_type, nan);
-    } else if (!verify) {
-        pasn->akmp = WPA_KEY_MGMT_PASN;
     }
 
     pasn->rsn_pairwise = pasn->cipher;
@@ -1059,16 +1163,19 @@ void nan_pasn_initialize(struct nan_pasn_data *nan, const u8 *addr, int freq, bo
     pasn->parse_data_element = nan->cfg->parse_data_element;
     pasn->validate_custom_pmkid = nan->cfg->pasn_validate_pmkid;
 
-    pasn->freq = freq;
-
 }
 
 int nan_initiate_pasn_verify(struct nan_pasn_data *pd, const u8 *peer_addr,
-                             int freq, int role,
+                             int role,
                              const u8 *bssid, const u8 *ssid, size_t ssid_len)
 {
     struct nan_pasn_data *nan;
     struct pasn_data *pasn;
+    uint8_t npk[NAN_PASN_KEY_PMK_MAX];
+    uint8_t own_addr[ETH_ALEN];
+    u8 npkid[PMKID_LEN];
+    size_t npk_len = 0;
+    int akmp = WPA_KEY_MGMT_SAE;
     int ret = 0;
 
     (void)role;
@@ -1087,29 +1194,55 @@ int nan_initiate_pasn_verify(struct nan_pasn_data *pd, const u8 *peer_addr,
     }
 
     nan->dev_role = NAN_ROLE_PAIRING_INITIATOR;
-    nan_pasn_initialize(nan, peer_addr, freq, true, true);
+    nan->pasn_auth2_done = false;
+    nan->pairing_verification = 1;
+    nan_pasn_clear_peer_tks_for_verify_start(peer_addr);
+    nan_pasn_initialize(nan, peer_addr);
     pasn = nan->pasn;
 
-    if (nan_prepare_pasn_extra_ie(nan, pasn, NULL, false) != 0) {
-        wpa_printf(MSG_INFO, "NAN PASN: extra IE failed");
+    if (!pasn) {
         return -1;
     }
 
+    nan->cfg->pasn_validate_pmkid = nan_validate_custom_pmkid;
+    pasn->validate_custom_pmkid = nan_validate_custom_pmkid;
+
+    /* §7.6.5: seed PMKSA with cached NPK and local NPKID (Nonce||Tag). */
+    if (nan_global_peer_npk_lookup(npk, &npk_len, &akmp) != 0 ||
+            esp_wifi_get_mac(WIFI_IF_NAN, own_addr) != ESP_OK ||
+            nan_pasn_build_local_npkid(npkid) != 0) {
+        ret = -1;
+        goto out;
+    }
+
+    if (pasn_initiator_pmksa_cache_add(nan->initiator_pmksa, own_addr,
+                                       (u8 *) peer_addr, npk, npk_len, npkid) != 0) {
+        ret = -1;
+        goto out;
+    }
+
+    pasn_set_akmp(pasn, akmp);
+    pasn->wpa_key_mgmt = akmp;
+    pasn_set_custom_pmkid(pasn, npkid);
+
+    if (nan_prepare_pasn_extra_ie(nan, pasn, NULL, true) != 0) {
+        ret = -1;
+        goto out;
+    }
+
     if (wpa_pasn_verify(pasn, pasn->own_addr, pasn->peer_addr, pasn->bssid,
-                        pasn->akmp, pasn->cipher, pasn->group, pasn->freq,
+                        pasn->akmp, pasn->cipher, pasn->group, 0,
                         NULL, 0, NULL, 0, NULL)) {
         wpa_printf(MSG_INFO, "PASN verify failed");
         ret = -1;
     }
-    if (pasn->extra_ies) {
-        os_free((u8 *) pasn->extra_ies);
-        pasn->extra_ies = NULL;
-        pasn->extra_ies_len = 0;
-    }
+
+out:
+    forced_memzero(npk, sizeof(npk));
     return ret;
 }
 
-int nan_initiate_pasn_auth(struct nan_pasn_data *pd, const u8 *addr, int freq)
+int nan_initiate_pasn_auth(struct nan_pasn_data *pd, const u8 *addr)
 {
     struct nan_pasn_data *nan;
     struct pasn_data *pasn;
@@ -1126,9 +1259,15 @@ int nan_initiate_pasn_auth(struct nan_pasn_data *pd, const u8 *addr, int freq)
     }
 
     nan->dev_role = NAN_ROLE_PAIRING_INITIATOR;
+    nan->pasn_auth2_done = false;
+    nan->pairing_verification = 0;
 
-    nan_pasn_initialize(nan, addr, freq, false, true);
+    nan_pasn_initialize(nan, addr);
     pasn = nan->pasn;
+
+    if (!pasn) {
+        return -1;
+    }
 
     pasn_initiator_pmksa_cache_remove(pasn->pmksa, (u8 *)addr);
 
@@ -1138,7 +1277,7 @@ int nan_initiate_pasn_auth(struct nan_pasn_data *pd, const u8 *addr, int freq)
     }
 
     if (wpas_pasn_start(pasn, pasn->own_addr, pasn->peer_addr, pasn->bssid,
-                        pasn->akmp, pasn->cipher, pasn->group, pasn->freq,
+                        pasn->akmp, pasn->cipher, pasn->group, 0,
                         NULL, 0, NULL, 0, NULL)) {
         wpa_printf(MSG_INFO, "Failed to start PASN");
         ret = -1;
@@ -1167,15 +1306,13 @@ int * int_array_dup(const int *a)
 }
 
 static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
-                                const struct ieee80211_auth *mgmt, size_t len,
-                                int freq)
+                                const struct ieee80211_auth *mgmt, size_t len)
 {
     struct pasn_data *pasn;
     u8 pasn_type;
     int pasn_groups[4] = { 0 };
     u16 auth_alg, auth_transaction, status_code;
 
-    (void)freq;
     if (!nan || !nan->pasn) {
         return -1;
     }
@@ -1246,6 +1383,7 @@ static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
         nan_pasn_store_ptk(nan, &pasn->ptk);
 #endif /* CONFIG_TESTING_OPTIONS */
         nan_pasn_copy_keys_from_pasn(nan, pasn);
+        /* Install NM-TK only after Auth3 is successfully validated. */
         if (nan_pasn_install_nan_pairwise_tk(nan, pasn) == 0 &&
                 nan->pairing_key_installed_cb) {
             const uint8_t *nd_pmk = pasn_nd_pmk_global.valid ?
@@ -1253,6 +1391,7 @@ static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
             size_t nd_pmk_len = pasn_nd_pmk_global.valid ? PMK_LEN : 0;
             nan->pairing_key_installed_cb(pasn->peer_addr,
                                           (uint8_t)nan->dev_role,
+                                          nan->pairing_verification,
                                           nan_pasn_pasn_cipher_to_ndp_csid(pasn->cipher),
                                           nd_pmk, nd_pmk_len,
                                           nan->nik_lifetime_sec);
@@ -1263,8 +1402,108 @@ static int nan_handle_pasn_auth(struct nan_pasn_data *nan,
     return 0;
 }
 
+/**
+ * Find a NIRA attribute inside a WFA NAN vendor-specific IE (OUI + type 0x13).
+ * Returns a pointer to the attribute (ID + length + body) or NULL.
+ */
+static const u8 *nan_pasn_find_nira_attr(const u8 *ies, size_t ies_len, u16 *attr_len)
+{
+    const u8 *ie = ies;
+    const u8 *end = ies + ies_len;
+
+    while (ie + 2 <= end) {
+        u8 id = ie[0];
+        u8 elen = ie[1];
+
+        if (ie + 2 + elen > end) {
+            break;
+        }
+
+        if (id == WLAN_EID_VENDOR_SPECIFIC && elen >= 4 &&
+                WPA_GET_BE24(ie + 2) == OUI_WFA && ie[5] == NAN_OUI_TYPE) {
+            const u8 *pos = ie + 6;
+            const u8 *attrs_end = ie + 2 + elen;
+
+            while (attrs_end - pos >= NAN_ATTR_HDR_LEN) {
+                u8 attr_id = pos[0];
+                u16 attr_body_len = WPA_GET_LE16(pos + 1);
+                u16 total_attr_len;
+
+                if (attr_body_len > (size_t)(attrs_end - pos - NAN_ATTR_HDR_LEN)) {
+                    break;
+                }
+
+                total_attr_len = NAN_ATTR_HDR_LEN + attr_body_len;
+                if (attr_id == NAN_ATTR_NIRA) {
+                    if (attr_len) {
+                        *attr_len = total_attr_len;
+                    }
+                    return pos;
+                }
+                pos += total_attr_len;
+            }
+        }
+        ie += 2 + elen;
+    }
+
+    return NULL;
+}
+
+/* Find NIRA in @a mgmt once, verify identity, and stash NPKID for PMKID
+ * cross-check. When @a own_inst_id is non-NULL the matched own service id is
+ * also returned (0 if none). */
+static bool nan_pasn_auth_process_nira(struct nan_pasn_data *nan,
+                                       const u8 *peer_addr,
+                                       const struct ieee80211_auth *mgmt,
+                                       size_t len, u16 auth_trans,
+                                       uint8_t *own_inst_id)
+{
+    const u8 *var;
+    size_t var_len;
+    const u8 *nira;
+    u16 nira_len = 0;
+
+    if (own_inst_id) {
+        *own_inst_id = 0;
+    }
+
+    if (!nan || !peer_addr || !mgmt) {
+        return false;
+    }
+
+    nan->peer_npkid_valid = false;
+
+    if (len < offsetof(struct ieee80211_auth, auth.variable)) {
+        return false;
+    }
+
+    var = mgmt->auth.variable;
+    var_len = len - offsetof(struct ieee80211_auth, auth.variable);
+    nira = nan_pasn_find_nira_attr(var, var_len, &nira_len);
+    if (!nira) {
+        wpa_printf(MSG_INFO, "NAN PASN verify: NIRA missing in Auth%u from "
+                   MACSTR, auth_trans, MAC2STR(peer_addr));
+        return false;
+    }
+
+    if (!esp_nan_verify_nira_get_own_svc((u8 *) peer_addr, (u8 *) nira, nira_len,
+                                         own_inst_id)) {
+        wpa_printf(MSG_INFO, "NAN PASN verify: NIRA verification failed in "
+                   "Auth%u for " MACSTR, auth_trans, MAC2STR(peer_addr));
+        return false;
+    }
+
+    if (nan_pasn_npkid_from_nira_attr(nira, nira_len, nan->peer_npkid) == 0) {
+        nan->peer_npkid_valid = true;
+    }
+
+    wpa_printf(MSG_DEBUG, "NAN PASN verify: NIRA OK in Auth%u for " MACSTR,
+               auth_trans, MAC2STR(peer_addr));
+    return true;
+}
+
 int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgmt,
-                     size_t len, int freq)
+                     size_t len)
 {
     int ret = 0;
     u16 auth_transaction;
@@ -1293,6 +1532,23 @@ int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgm
 
     if (nan->dev_role == NAN_ROLE_PAIRING_INITIATOR &&
             auth_transaction == WLAN_AUTH_TR_SEQ_PASN_AUTH2) {
+        /*
+         * Duplicate Auth2: responder may retransmit if it didn't get Auth3
+         * ACK. wpa_pasn_auth_rx() would reject with trans_seq mismatch and
+         * we would also lose NM-TK that was already installed; silently
+         * accept the retransmit instead.
+         */
+        if (nan->pasn_auth2_done) {
+            return 0;
+        }
+
+        if (pasn->custom_pmkid_valid &&
+                !nan_pasn_auth_process_nira(nan, mgmt->sa, mgmt, len, 2, NULL)) {
+            wpa_printf(MSG_INFO, "PASN: Auth2 NIRA verify failed");
+            nan->dev_role = NAN_ROLE_IDLE;
+            return -1;
+        }
+
         ret = wpa_pasn_auth_rx(pasn, (const u8 *) mgmt, len, &pasn_data);
         if (ret < 0) {
             wpa_printf(MSG_INFO, "PASN: wpa_pasn_auth_rx() failed");
@@ -1304,13 +1560,15 @@ int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgm
              * successfully built/transmitted by wpa_pasn_auth_rx().
              */
             nan_pasn_copy_keys_from_pasn(nan, pasn);
-            if (nan_pasn_install_nan_pairwise_tk(nan, pasn) == 0 &&
-                    nan->pairing_key_installed_cb) {
+            nan->pasn_auth2_done = true;
+            int tk_ret = nan_pasn_install_nan_pairwise_tk(nan, pasn);
+            if (tk_ret == 0 && nan->pairing_key_installed_cb) {
                 const uint8_t *nd_pmk = pasn_nd_pmk_global.valid ?
                                         pasn_nd_pmk_global.nd_pmk : NULL;
                 size_t nd_pmk_len = pasn_nd_pmk_global.valid ? PMK_LEN : 0;
                 nan->pairing_key_installed_cb(pasn->peer_addr,
                                               (uint8_t)nan->dev_role,
+                                              nan->pairing_verification,
                                               nan_pasn_pasn_cipher_to_ndp_csid(pasn->cipher),
                                               nd_pmk, nd_pmk_len,
                                               nan->nik_lifetime_sec);
@@ -1321,7 +1579,7 @@ int nan_pasn_auth_rx(struct nan_pasn_data *nan, const struct ieee80211_auth *mgm
 #endif /* CONFIG_TESTING_OPTIONS */
         forced_memzero(pasn_get_ptk(pasn), sizeof(pasn->ptk));
     } else {
-        ret = nan_handle_pasn_auth(nan, mgmt, len, freq);
+        ret = nan_handle_pasn_auth(nan, mgmt, len);
     }
     return ret;
 }
@@ -1330,7 +1588,8 @@ void handle_auth_pasn(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t sta
 {
     const struct ieee80211_auth *mgmt;
     struct nan_pasn_data *nan;
-    int rx_freq;
+    bool auth1_verify = false;
+    u8 auth1_pmkid[PMKID_LEN];
 
     (void)trans_seq;
     (void)status;
@@ -1340,15 +1599,114 @@ void handle_auth_pasn(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t sta
     }
     mgmt = (const struct ieee80211_auth *)buf;
     nan = esp_nan_app_get_pasn_data();
-    rx_freq = nan_pasn_get_current_freq_mhz();
-    if (rx_freq <= 0) {
-        rx_freq = 2412;
+    if (!nan) {
+        /*
+         * Only lazy-init on Auth1: a stray Auth2/Auth3 (e.g. retransmit after
+         * we already completed PASN and tore down the session) must be
+         * dropped, otherwise we would init a fresh context and try to process
+         * a mid-handshake frame against it, which fails noisily.
+         */
+        if (le_to_host16(mgmt->auth.auth_transaction) !=
+                WLAN_AUTH_TR_SEQ_PASN_AUTH1) {
+            return;
+        }
+        if (pasn_responder_init(mgmt->sa, UINT32_MAX,
+                                esp_nan_pairing_get_key_installed_cb()) != 0) {
+            return;
+        }
+        nan = esp_nan_app_get_pasn_data();
     }
     if (!nan) {
         wpa_printf(MSG_DEBUG, "NAN PASN: receive_pasn: no context");
         return;
     }
-    nan_pasn_auth_rx(nan, mgmt, len, rx_freq);
+
+    if (le_to_host16(mgmt->auth.auth_transaction) == 1) {
+        struct ieee802_11_elems elems;
+        struct wpa_ie_data rsn_data;
+        struct wpa_pasn_params_data pasn_params;
+
+        if (ieee802_11_parse_elems(mgmt->auth.variable,
+                                   len - offsetof(struct ieee80211_auth, auth.variable),
+                                   &elems, 0) != ParseFailed &&
+                elems.rsn_ie && elems.pasn_params &&
+                wpa_parse_wpa_ie_rsn(elems.rsn_ie - 2, elems.rsn_ie_len + 2,
+                                     &rsn_data) == 0 &&
+                rsn_data.num_pmkid &&
+                wpa_pasn_parse_parameter_ie(elems.pasn_params - 3,
+                                            elems.pasn_params_len + 3,
+                                            false, &pasn_params) == 0 &&
+                pasn_params.wrapped_data_format == WPA_PASN_WRAPPED_DATA_NO) {
+            auth1_verify = true;
+            os_memcpy(auth1_pmkid, rsn_data.pmkid, PMKID_LEN);
+        }
+    }
+
+    if (auth1_verify) {
+        uint8_t npk[NAN_PASN_KEY_PMK_MAX];
+        uint8_t own_addr[ETH_ALEN];
+        size_t npk_len = 0;
+        int akmp = WPA_KEY_MGMT_SAE;
+        struct pasn_data *pasn = nan->pasn;
+        bool auth1_ok = false;
+        uint8_t verify_own_inst_id = 0;
+
+        if (!nan_pasn_auth_process_nira(nan, mgmt->sa, mgmt, len, 1,
+                                        &verify_own_inst_id)) {
+            goto auth1_verify_done;
+        }
+        nan_pasn_responder_verify_prepare(mgmt->sa);
+
+        if (!pasn) {
+            wpa_printf(MSG_INFO, "NAN PASN verify: no PASN context for "
+                       MACSTR, MAC2STR(mgmt->sa));
+            goto auth1_verify_done;
+        }
+        if (nan_global_peer_npk_lookup(npk, &npk_len, &akmp) != 0) {
+            wpa_printf(MSG_INFO, "NAN PASN verify: no cached NPK for "
+                       MACSTR, MAC2STR(mgmt->sa));
+            goto auth1_verify_done;
+        }
+        if (esp_wifi_get_mac(WIFI_IF_NAN, own_addr) != ESP_OK) {
+            wpa_printf(MSG_INFO, "NAN PASN verify: failed to read NAN NMI");
+            goto auth1_verify_done;
+        }
+        if (pasn_responder_pmksa_cache_add(nan->responder_pmksa, own_addr,
+                                           (u8 *) mgmt->sa, npk, npk_len,
+                                           auth1_pmkid) != 0) {
+            wpa_printf(MSG_INFO, "NAN PASN verify: PMKSA cache add failed for "
+                       MACSTR, MAC2STR(mgmt->sa));
+            goto auth1_verify_done;
+        }
+
+        {
+            u8 npkid[PMKID_LEN];
+
+            nan->cfg->pasn_validate_pmkid = nan_validate_custom_pmkid;
+            pasn->validate_custom_pmkid = nan_validate_custom_pmkid;
+            pasn_set_akmp(pasn, akmp);
+            pasn->wpa_key_mgmt = akmp;
+            if (nan_pasn_build_local_npkid(npkid) == 0) {
+                pasn_set_custom_pmkid(pasn, npkid);
+            }
+            if (nan_prepare_pasn_extra_ie(nan, pasn, NULL, true) != 0) {
+                wpa_printf(MSG_INFO, "NAN PASN verify: extra IE (NIRA) build "
+                           "failed for " MACSTR, MAC2STR(mgmt->sa));
+                goto auth1_verify_done;
+            }
+            auth1_ok = true;
+            nan->pairing_verification = 1;
+        }
+
+auth1_verify_done:
+        forced_memzero(npk, sizeof(npk));
+        if (!auth1_ok) {
+            return;
+        }
+        esp_nan_pairing_mark_verify_session(verify_own_inst_id, mgmt->sa);
+    }
+
+    nan_pasn_auth_rx(nan, mgmt, len);
 }
 
 void nan_pasn_pmksa_set_pmk(struct nan_pasn_data *nan, const u8 *src, const u8 *dst,
@@ -1539,15 +1897,13 @@ void nan_pasn_data_deinit(struct nan_pasn_data *pd)
     os_free(pd);
 }
 
-int nan_pasn_auth_initiate(struct nan_pasn_data *pd, const uint8_t *peer_addr, int freq)
+int nan_pasn_auth_initiate(struct nan_pasn_data *pd, const uint8_t *peer_addr)
 {
     if (!pd || !peer_addr) {
         return -1;
     }
-    return nan_initiate_pasn_auth(pd, peer_addr, freq);
+    return nan_initiate_pasn_auth(pd, peer_addr);
 }
-
-#define NAN_PASN_VERIFY_ELOOP_SSID_MAX 32
 
 struct nan_pasn_eloop_ctx {
     uint8_t peer_addr[ETH_ALEN];
@@ -1556,10 +1912,37 @@ struct nan_pasn_eloop_ctx {
     esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb;
 };
 
+static struct nan_pasn_data *nan_pasn_eloop_prepare(struct nan_pasn_eloop_ctx *ctx,
+                                                    const char *pin_to_apply)
+{
+    struct nan_pasn_data *old;
+    struct nan_pasn_data *pd;
+
+    old = esp_nan_app_get_pasn_data();
+    if (old) {
+        nan_pasn_data_deinit(old);
+    }
+
+    pd = nan_pasn_data_init();
+    if (!pd) {
+        return NULL;
+    }
+
+    esp_nan_app_set_pasn_data(pd);
+    pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
+    pd->nik_lifetime_sec = ctx->nik_lifetime_sec;
+
+    if (pin_to_apply && nan_set_dev_sae_pin(pd, pin_to_apply) != 0) {
+        nan_pasn_data_deinit(pd);
+        return NULL;
+    }
+
+    return pd;
+}
+
 static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
 {
     struct nan_pasn_eloop_ctx *ctx = user_data;
-    struct nan_pasn_data *old;
     struct nan_pasn_data *pd;
     char pin_digits[16];
     int n;
@@ -1570,46 +1953,23 @@ static void nan_pasn_auth_eloop_cb(void *eloop_ctx, void *user_data)
         return;
     }
 
-    old = esp_nan_app_get_pasn_data();
-    if (old) {
-        nan_pasn_data_deinit(old);
-    }
-
-    pd = nan_pasn_data_init();
-    if (!pd) {
-        os_free(ctx);
-        return;
-    }
-
-    esp_nan_app_set_pasn_data(pd);
-    pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
-    pd->nik_lifetime_sec = ctx->nik_lifetime_sec;
-
     if (ctx->pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
                         (unsigned)ctx->pincode);
         if (os_snprintf_error(sizeof(pin_digits), n)) {
-            nan_pasn_data_deinit(pd);
             os_free(ctx);
             return;
         }
         pin_to_apply = pin_digits;
     }
 
-    if (pin_to_apply && nan_set_dev_sae_pin(pd, pin_to_apply) != 0) {
-        nan_pasn_data_deinit(pd);
+    pd = nan_pasn_eloop_prepare(ctx, pin_to_apply);
+    if (!pd) {
         os_free(ctx);
         return;
     }
 
-    {
-        int freq = nan_pasn_get_current_freq_mhz();
-
-        if (freq <= 0) {
-            freq = 2412;
-        }
-        nan_pasn_auth_initiate(pd, ctx->peer_addr, freq);
-    }
+    nan_pasn_auth_initiate(pd, ctx->peer_addr);
     os_free(ctx);
 }
 
@@ -1619,8 +1979,12 @@ int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
 {
     struct nan_pasn_eloop_ctx *ctx;
 
+    if (!peer_nmi) {
+        return -1;
+    }
+
     ctx = os_zalloc(sizeof(*ctx));
-    if (!ctx || !peer_nmi) {
+    if (!ctx) {
         return -1;
     }
 
@@ -1637,49 +2001,32 @@ int esp_nan_supp_pasn_initiator_auth(const uint8_t *peer_nmi, uint32_t pincode,
     return 0;
 }
 
-struct nan_pasn_verify_eloop_ctx {
-    uint8_t peer_addr[ETH_ALEN];
-    int freq;
-    int role;
-    uint8_t bssid[ETH_ALEN];
-    uint8_t ssid[NAN_PASN_VERIFY_ELOOP_SSID_MAX];
-    size_t ssid_len;
-};
-
-static void nan_pasn_verify_eloop_cb(void *eloop_ctx, void *user_data)
+static void nan_pasn_verify_init_eloop_cb(void *eloop_ctx, void *user_data)
 {
-    struct nan_pasn_verify_eloop_ctx *ctx = user_data;
+    struct nan_pasn_eloop_ctx *ctx = user_data;
     struct nan_pasn_data *pd;
-    const uint8_t *ssid_arg;
 
     (void)eloop_ctx;
     if (!ctx) {
         return;
     }
 
-    pd = esp_nan_app_get_pasn_data();
+    pd = nan_pasn_eloop_prepare(ctx, NULL);
     if (!pd) {
         os_free(ctx);
         return;
     }
 
-    ssid_arg = ctx->ssid_len ? ctx->ssid : NULL;
-    nan_initiate_pasn_verify(pd, ctx->peer_addr, ctx->freq, ctx->role,
-                             ctx->bssid, ssid_arg, ctx->ssid_len);
+    nan_initiate_pasn_verify(pd, ctx->peer_addr, 0, NULL, NULL, 0);
     os_free(ctx);
 }
 
-int nan_pasn_verify_eloop(unsigned int secs, unsigned int usecs,
-                          const uint8_t *peer_addr, int freq, int role,
-                          const uint8_t *bssid,
-                          const uint8_t *ssid, size_t ssid_len)
+int esp_nan_supp_pasn_initiator_verify(const uint8_t *peer_nmi,
+                                       esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
 {
-    struct nan_pasn_verify_eloop_ctx *ctx;
+    struct nan_pasn_eloop_ctx *ctx;
 
-    if (!peer_addr) {
-        return -1;
-    }
-    if (ssid_len > NAN_PASN_VERIFY_ELOOP_SSID_MAX) {
+    if (!peer_nmi) {
         return -1;
     }
 
@@ -1688,20 +2035,10 @@ int nan_pasn_verify_eloop(unsigned int secs, unsigned int usecs,
         return -1;
     }
 
-    os_memcpy(ctx->peer_addr, peer_addr, ETH_ALEN);
-    ctx->freq = freq;
-    ctx->role = role;
-    if (bssid) {
-        os_memcpy(ctx->bssid, bssid, ETH_ALEN);
-    } else {
-        os_memcpy(ctx->bssid, peer_addr, ETH_ALEN);
-    }
-    if (ssid && ssid_len) {
-        os_memcpy(ctx->ssid, ssid, ssid_len);
-        ctx->ssid_len = ssid_len;
-    }
+    os_memcpy(ctx->peer_addr, peer_nmi, ETH_ALEN);
+    ctx->pairing_key_installed_cb = pairing_key_installed_cb;
 
-    if (eloop_register_timeout(secs, usecs, nan_pasn_verify_eloop_cb, NULL, ctx) != 0) {
+    if (eloop_register_timeout(0, 0, nan_pasn_verify_init_eloop_cb, NULL, ctx) != 0) {
         os_free(ctx);
         return -1;
     }
@@ -1717,9 +2054,11 @@ int nan_pasn_verify_eloop(unsigned int secs, unsigned int usecs,
  *
  * @param peer_addr Peer NAN address, or NULL to use a broadcast placeholder until Auth1.
  * @param pincode 6-digit value 0..999999, or @c UINT32_MAX to keep default PIN from @ref nan_pasn_data_init.
+ * @param pairing_key_installed_cb Callback stored on the responder PASN context.
  * Returns 0 on success, -1 on failure.
  */
-int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
+int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode,
+                        esp_nan_pairing_key_installed_cb_t pairing_key_installed_cb)
 {
     struct nan_pasn_data *pd;
     struct nan_pasn_data *old;
@@ -1728,11 +2067,20 @@ int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
     const u8 *peer = peer_addr ? peer_addr : bcast;
     const char *pin_to_apply = NULL;
     int n;
-    int freq;
 
     os_memset(pin_digits, 0, sizeof(pin_digits));
 
     old = esp_nan_app_get_pasn_data();
+    /* Lazy Auth1 init and scheduled bootstrap init can both call this; do not
+     * tear down an in-progress responder session for the same peer. */
+    if (old && old->dev_role == NAN_ROLE_PAIRING_RESPONDER && old->pasn &&
+            !is_broadcast_ether_addr(peer) &&
+            os_memcmp(old->pasn->peer_addr, peer, ETH_ALEN) == 0) {
+        if (pairing_key_installed_cb) {
+            old->pairing_key_installed_cb = pairing_key_installed_cb;
+        }
+        return 0;
+    }
     if (old) {
         nan_pasn_data_deinit(old);
     }
@@ -1743,6 +2091,7 @@ int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
     }
 
     esp_nan_app_set_pasn_data(pd);
+    pd->pairing_key_installed_cb = pairing_key_installed_cb;
 
     if (pincode != UINT32_MAX) {
         n = os_snprintf(pin_digits, sizeof(pin_digits), "%06u",
@@ -1757,13 +2106,8 @@ int pasn_responder_init(const uint8_t *peer_addr, uint32_t pincode)
         goto fail;
     }
 
-    freq = nan_pasn_get_current_freq_mhz();
-    if (freq <= 0) {
-        freq = 2412;
-    }
-
     pd->dev_role = NAN_ROLE_PAIRING_RESPONDER;
-    nan_pasn_initialize(pd, peer, freq, false, true);
+    nan_pasn_initialize(pd, peer);
 
     if (!pd->pasn || nan_prepare_pasn_extra_ie(pd, pd->pasn, NULL, false) != 0) {
         goto fail;
@@ -1786,16 +2130,15 @@ struct pasn_responder_eloop_ctx {
 static void pasn_responder_init_eloop_cb(void *eloop_ctx, void *user_data)
 {
     struct pasn_responder_eloop_ctx *ctx = user_data;
-    struct nan_pasn_data *pd;
 
     (void)eloop_ctx;
     if (!ctx) {
         return;
     }
-    if (pasn_responder_init(ctx->peer_addr, ctx->pincode) == 0) {
-        pd = esp_nan_app_get_pasn_data();
+    if (pasn_responder_init(ctx->peer_addr, ctx->pincode,
+                            ctx->pairing_key_installed_cb) == 0) {
+        struct nan_pasn_data *pd = esp_nan_app_get_pasn_data();
         if (pd) {
-            pd->pairing_key_installed_cb = ctx->pairing_key_installed_cb;
             pd->nik_lifetime_sec = ctx->nik_lifetime_sec;
         }
     }

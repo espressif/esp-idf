@@ -231,6 +231,11 @@ struct own_svc_info {
 #if CONFIG_ESP_WIFI_NAN_PAIRING
     bool nik_fup_pending;
     uint8_t nik_fup_pending_peer_nmi[MACADDR_LEN];
+    /* Set when the current PASN session for @c verify_session_peer_nmi is a
+     * pairing verification (re-pair). Consumed once in the key-installed
+     * callback to skip the NIK follow-up exchange. */
+    bool verify_session_pending;
+    uint8_t verify_session_peer_nmi[MACADDR_LEN];
 #endif
     uint8_t svc_hash[6];
 };
@@ -308,6 +313,7 @@ typedef struct {
     wifi_nan_peer_creds_t peer_creds[ESP_WIFI_NAN_MAX_PEER_CREDS];
     uint8_t num_peer_creds;
     bool use_nvs_for_caching;
+    uint32_t nik_lifetime;
 #endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;
