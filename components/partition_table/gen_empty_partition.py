@@ -4,21 +4,20 @@
 #
 # This tool generates an empty binary file of the required size.
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import division, print_function, unicode_literals
 
-import argparse
 import sys
+
+import rich_click as click
+from esp_pylib.cli_types import AnyIntType
 
 __version__ = '1.0'
 
-quiet = False
-
 
 def generate_blanked_file(size, output_path):
-    output = b'\xFF' * size
+    output = b'\xff' * size
     try:
         stdout_binary = sys.stdout.buffer  # Python 3
     except AttributeError:
@@ -27,28 +26,23 @@ def generate_blanked_file(size, output_path):
         f.write(output)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Generates an empty binary file of the required size.')
-    parser.add_argument('size', help='Size of generated the file', type=str)
-
-    parser.add_argument('output', help='Path for binary file.', nargs='?', default='-')
-    args = parser.parse_args()
-
-    size = int(args.size, 0)
+@click.command(
+    context_settings={'help_option_names': ['-h', '--help']},
+    help='Generates an empty binary file of the required size.',
+)
+@click.argument('size', type=AnyIntType(), metavar='SIZE')
+@click.argument('output', type=click.Path(), required=False, default='-')
+def cli(size, output):
     if size > 0:
-        generate_blanked_file(size, args.output)
-    return 0
+        generate_blanked_file(size, output)
 
 
-class InputError(RuntimeError):
-    def __init__(self, e):
-        super(InputError, self).__init__(e)
+def main():
+    cli()
 
 
 if __name__ == '__main__':
-    try:
-        r = main()
-        sys.exit(r)
-    except InputError as e:
-        print(e, file=sys.stderr)
-        sys.exit(2)
+    from esp_pylib.excepthook import install_exception_reporting
+
+    install_exception_reporting()
+    main()
