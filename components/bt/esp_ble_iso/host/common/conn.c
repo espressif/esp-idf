@@ -162,7 +162,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
     info->id = conn->id;
     info->state = conn_internal_to_public_state(conn->state);
     info->le.dst = &conn->le.dst;
-    info->le.interval = conn->le.interval;
+    info->le.interval_us = conn->le.interval_us;
 
     if (conn->encrypt) {
         /* Currently the flags is updated for lib usage.
@@ -328,6 +328,15 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type)
     }
 
     return conn;
+}
+
+struct bt_conn *bt_conn_lookup_index(uint8_t index)
+{
+    if (index >= ARRAY_SIZE(acl_conns)) {
+        return NULL;
+    }
+
+    return bt_conn_ref(&acl_conns[index]);
 }
 
 _IDF_ONLY

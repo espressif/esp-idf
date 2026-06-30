@@ -83,7 +83,10 @@ extern "C" {
  */
 #define BT_CSIP_DATA_RSI(_rsi) BT_DATA(BT_DATA_CSIS_RSI, _rsi, BT_CSIP_RSI_SIZE)
 
-/** @brief Opaque Coordinated Set Identification Service instance. */
+/**
+ * @struct bt_csip_set_member_svc_inst
+ * @brief Opaque Coordinated Set Identification Service instance.
+ */
 struct bt_csip_set_member_svc_inst;
 
 /** Callback structure for the Coordinated Set Identification Service */
@@ -224,6 +227,8 @@ int bt_csip_set_member_sirk_safe(struct bt_csip_set_member_svc_inst *svc_inst,
  * It is important to note that a set cannot have multiple devices with the same rank in a set,
  * and it is up to the caller of this function to ensure that.
  * Similarly, it is important that the size is updated on all devices in the set at the same time.
+ * The rank of a device cannot be modified on its own, and a new rank can only be set if the @p size
+ * is different from the current set size.
  *
  * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE} is enabled, this will also send a
  * notification to all connected or bonded clients.
@@ -234,7 +239,7 @@ int bt_csip_set_member_sirk_safe(struct bt_csip_set_member_svc_inst *svc_inst,
  *
  * @retval -EINVAL @p svc_inst is NULL, @p size is less than 1, @p rank is less than 1 or higher
  *                 than @p size for a lockable @p svc_inst.
- * @retval -EALREADY @p size and @p rank are already the provided values.
+ * @retval -EALREADY @p size is already set.
  * @retval 0 Success.
  */
 int bt_csip_set_member_set_size_and_rank_safe(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
