@@ -29,8 +29,14 @@ static esp_err_t lp_spi_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, uin
         return ESP_OK;
     }
 
+    /* Disconnect any previous LP GPIO matrix routing */
+    lp_gpio_matrix_output(pin, LP_SIG_GPIO_OUT_IDX, false, false);
+
     /* Initialize LP_IO */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(pin), LP_SPI_TAG, "LP IO Init failed for GPIO %d", pin);
+
+    /* Set direction: INPUT_OUTPUT for SPI pins that may both drive and sense */
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(pin, direction), LP_SPI_TAG, "LP IO set direction failed for GPIO %d", pin);
 
     /* Connect this LP_IO to the LP SPI pad-out and pad-in indices on the LP IO Matrix. */
     ESP_RETURN_ON_ERROR(lp_gpio_matrix_output(pin, out_pad_idx, false, false), LP_SPI_TAG, "LP IO matrix output failed for %d", pin);
@@ -216,7 +222,7 @@ static void lp_spi_slave_setup_device(const lp_spi_slave_config_t *slave_config)
     }
     lp_spi_ll_set_full_duplex(lp_spi_dev, true);
 
-    /* Configure 3-Wire half-duplex mode */
+    /* Configure 3-Wire half-duplex (SIO) mode */
     lp_spi_ll_set_sio_mode(lp_spi_dev, (slave_config->flags & LP_SPI_DEVICE_3WIRE) != 0);
 
     /* Select the CS pin */
@@ -235,6 +241,9 @@ esp_err_t lp_core_lp_spi_bus_initialize(lp_spi_host_t host_id, const lp_spi_bus_
     if (bus_config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    /* Reset LP-SPI peripheral to a known state */
+    lp_spi_ll_reset();
 
     /* Connect the LP SPI peripheral to a "bus", i.e. a set of
      * GPIO pins defined in the bus_config structure.
@@ -287,4 +296,24 @@ esp_err_t lp_core_lp_spi_slave_initialize(lp_spi_host_t host_id, const lp_spi_sl
     lp_spi_slave_setup_device(slave_config);
 
     return ret;
+}
+
+esp_err_t lp_core_lp_spi_bus_deinit(lp_spi_host_t host_id, const lp_spi_bus_config_t *bus_config)
+{
+    (void)host_id;
+
+    /* Disconnect and deinit LP GPIO pins that were used for SPI signals */
+    if (bus_config != NULL) {
+        if (bus_config->miso_io_num != -1) {
+            rtc_gpio_deinit(bus_config->miso_io_num);
+        }
+        if (bus_config->mosi_io_num != -1) {
+            rtc_gpio_deinit(bus_config->mosi_io_num);
+        }
+        if (bus_config->sclk_io_num != -1) {
+            rtc_gpio_deinit(bus_config->sclk_io_num);
+        }
+    }
+
+    return ESP_OK;
 }
