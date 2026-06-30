@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -162,8 +162,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         .dma_enabled = host->dma_enabled,
         .append_mode = append_mode,
         .mode = config->mode,
-        .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
-        .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
+        .tx_lsbfirst = (config->flags & SPI_SLAVE_HD_TXBIT_LSBFIRST),
+        .rx_lsbfirst = (config->flags & SPI_SLAVE_HD_RXBIT_LSBFIRST),
     };
 
     //Init the hal according to the hal_config set above

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@
 #if !CONFIG_FREERTOS_SMP // IDF-5223
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                   15
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA            15
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                33
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                35
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA         30
 #else
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                   17
@@ -55,8 +55,8 @@
 
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                            26*1000*1000
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                35  //TODO: IDF-9551, check perform
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                   17
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                37  //TODO: IDF-9551, check perform
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                   19
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA         32
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA            15
 
