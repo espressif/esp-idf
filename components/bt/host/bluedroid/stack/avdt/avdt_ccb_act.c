@@ -712,6 +712,8 @@ void avdt_ccb_cmd_fail(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data)
     UINT8           evt;
     tAVDT_SCB       *p_scb;
 
+    memset(&msg, 0, sizeof(msg));
+
     if (p_ccb->p_curr_cmd != NULL) {
         if (p_ccb->p_curr_cmd->event < 1 || p_ccb->p_curr_cmd->event > AVDT_SIG_MAX) {
             osi_free(p_ccb->p_curr_cmd);
