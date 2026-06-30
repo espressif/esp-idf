@@ -50,9 +50,29 @@ typedef union twai_ll_frame_buffer_t twai_hal_frame_t;
 #define TWAI_HAL_EVENT_BUS_ERR                  (1 << 7)
 #define TWAI_HAL_EVENT_ARB_LOST                 (1 << 8)
 #define TWAI_HAL_EVENT_RX_BUFF_FRAME            (1 << 9)
-#define TWAI_HAL_EVENT_TX_BUFF_FREE             (1 << 10)
-#define TWAI_HAL_EVENT_NEED_PERIPH_RESET        (1 << 11)
-#define TWAI_HAL_EVENT_TX_SUCCESS               (1 << 12)
+#define TWAI_HAL_EVENT_NEED_PERIPH_RESET        (1 << 10)
+#define TWAI_HAL_EVENT_TX0_DONE                 (1 << 11)
+#define TWAI_HAL_EVENT_TX0_SUCCESS              (1 << 12)
+#define TWAI_HAL_EVENT_TX1_DONE                 (1 << 13)
+#define TWAI_HAL_EVENT_TX1_SUCCESS              (1 << 14)
+#define TWAI_HAL_EVENT_TX2_DONE                 (1 << 15)
+#define TWAI_HAL_EVENT_TX2_SUCCESS              (1 << 16)
+#define TWAI_HAL_EVENT_TX3_DONE                 (1 << 17)
+#define TWAI_HAL_EVENT_TX3_SUCCESS              (1 << 18)
+#define TWAI_HAL_EVENT_TX4_DONE                 (1 << 19)
+#define TWAI_HAL_EVENT_TX4_SUCCESS              (1 << 20)
+#define TWAI_HAL_EVENT_TX5_DONE                 (1 << 21)
+#define TWAI_HAL_EVENT_TX5_SUCCESS              (1 << 22)
+#define TWAI_HAL_EVENT_TX6_DONE                 (1 << 23)
+#define TWAI_HAL_EVENT_TX6_SUCCESS              (1 << 24)
+#define TWAI_HAL_EVENT_TX7_DONE                 (1 << 25)
+#define TWAI_HAL_EVENT_TX7_SUCCESS              (1 << 26)
+#define TWAI_HAL_TX_BUFFER_SLOT_NUM             8   // support up to 8 TX slots in hal layer
+
+#define TWAI_HAL_EVENT_TX_DONE_MASK             (TWAI_HAL_EVENT_TX0_DONE | TWAI_HAL_EVENT_TX1_DONE | TWAI_HAL_EVENT_TX2_DONE | TWAI_HAL_EVENT_TX3_DONE | \
+                                                TWAI_HAL_EVENT_TX4_DONE | TWAI_HAL_EVENT_TX5_DONE | TWAI_HAL_EVENT_TX6_DONE | TWAI_HAL_EVENT_TX7_DONE)
+#define TWAI_HAL_EVENT_TX_DONE_SLOT(buffer_idx) (TWAI_HAL_EVENT_TX0_DONE << ((buffer_idx) * 2))
+#define TWAI_HAL_EVENT_TX_SUCC_SLOT(buffer_idx) (TWAI_HAL_EVENT_TX0_SUCCESS << ((buffer_idx) * 2))
 
 typedef struct {
     twai_soc_handle_t dev; // TWAI SOC layer handle (i.e. register base address)
@@ -61,6 +81,7 @@ typedef struct {
     uint32_t timer_overflow_cnt;
     twai_error_flags_t errors;
     uint8_t sja1000_filter_id_type;    // hardware don't check id type, check in software, 0:no_filter, 1: std_id_only, 2: ext_id_only
+    uint8_t tx_buffer_num;
     int8_t retry_cnt;
     bool enable_self_test;
     bool enable_loopback;
@@ -295,6 +316,14 @@ static inline twai_error_flags_t twai_hal_get_err_flags(twai_hal_context_t *hal_
  * @return RX message count
  */
 uint32_t twai_hal_get_rx_msg_count(twai_hal_context_t *hal_ctx);
+
+/**
+ * @brief Get the number of TX buffers supported by the hardware
+ *
+ * @param hal_ctx Context of the HAL layer
+ * @return TX buffer count
+ */
+#define twai_hal_get_tx_slot_num(hal_ctx) (hal_ctx->tx_buffer_num)
 
 /**
  * @brief TWAI hal transaction description type

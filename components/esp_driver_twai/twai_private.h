@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/cdefs.h>
 #include <sys/lock.h>
+#include <sys/param.h>
 #include <stdatomic.h>
 #include "sdkconfig.h"
 #if CONFIG_TWAI_ENABLE_DEBUG_LOG

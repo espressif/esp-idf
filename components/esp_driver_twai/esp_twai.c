@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timi
         if (total_div != tseg * pre_div) {
             continue;   // no integer tseg
         }
-        if ((tseg <= (hw_limit->tseg1_max + hw_limit->tseg2_max + 1)) && (tseg >= (hw_limit->tseg1_min + hw_limit->tseg2_min))) {
+        if ((tseg <= (hw_limit->tseg1_max + hw_limit->tseg2_max + hw_limit->prop_max + 1)) && (tseg >= (hw_limit->tseg1_min + hw_limit->tseg2_min + 1))) {
             break;
         }
     }
@@ -44,20 +44,21 @@ uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timi
     uint16_t default_point = (in_param->bitrate >= 800000) ? 750 : ((in_param->bitrate >= 500000) ? 800 : 875);
     uint16_t sample_point = in_param->sp_permill ? in_param->sp_permill : default_point;  // default sample point based on bitrate if not configured
     uint16_t tseg_1 = (tseg * sample_point) / 1000 - 1;
-    tseg_1 = MAX(hw_limit->tseg1_min, MIN(tseg_1, hw_limit->tseg1_max));
-    uint16_t tseg_2 = tseg - tseg_1 - 1;
-    tseg_2 = MAX(hw_limit->tseg2_min, MIN(tseg_2, hw_limit->tseg2_max));
-    uint16_t prop = MAX(1, tseg_1 / 4); // prop_seg is usually shorter than tseg_1 and at least 1
-    tseg_1 -= prop;
+    tseg_1 = MAX(hw_limit->tseg1_min, MIN(tseg_1, hw_limit->tseg1_max + hw_limit->prop_max));
+    uint16_t phase_seg2 = tseg - tseg_1 - 1;
+    phase_seg2 = MAX(hw_limit->tseg2_min, MIN(phase_seg2, hw_limit->tseg2_max));
+    uint16_t phase_seg1 = (tseg_1 * 3) / 4;   // phase_seg1 is usually larger than prop_seg
+    phase_seg1 = MAX(hw_limit->tseg1_min, MIN(phase_seg1, hw_limit->tseg1_max));
+    uint16_t prop = tseg_1 - phase_seg1;
 
     out_param->brp = pre_div;
     out_param->prop_seg = prop;
-    out_param->tseg_1 = tseg_1;
-    out_param->tseg_2 = tseg_2;
-    out_param->sjw = MAX(1, MIN(tseg_2 >> 1, hw_limit->sjw_max));
+    out_param->tseg_1 = phase_seg1;
+    out_param->tseg_2 = phase_seg2;
+    out_param->sjw = MAX(1, MIN(phase_seg2 >> 1, hw_limit->sjw_max));
     out_param->ssp_offset = (tseg * in_param->ssp_permill) / 1000;  // ssp is optional, default 0 if not configured
 
-    return source_freq / (pre_div * (prop + tseg_1 + tseg_2 + 1));
+    return source_freq / (pre_div * (prop + phase_seg1 + phase_seg2 + 1));
 }
 
 esp_err_t twai_node_enable(twai_node_handle_t node)
