@@ -94,6 +94,8 @@ The driver of FIFOs works as below:
 #include "driver/gpio.h"
 #include "driver/sdio_slave.h"
 
+#define SDIO_SLAVE_DMA_DESC_MAX_BUF_SIZE_ALIGNED_DOWN  (SDIO_SLAVE_LL_DMA_DESC_MAX_BUF_SIZE & ~0x3U)
+
 #define SDIO_SLAVE_CHECK(res, str, ret_val) do { if(!(res)){\
     SDIO_SLAVE_LOGE("%s", str);\
     return ret_val;\
@@ -611,7 +613,8 @@ static void sdio_intr_send(void *arg)
 
 esp_err_t sdio_slave_send_queue(uint8_t *addr, size_t len, void *arg, uint32_t wait)
 {
-    SDIO_SLAVE_CHECK(len > 0 && len <= 4092, "length out of range: (0, 4092]", ESP_ERR_INVALID_ARG);
+    SDIO_SLAVE_CHECK(len > 0 && len <= SDIO_SLAVE_DMA_DESC_MAX_BUF_SIZE_ALIGNED_DOWN,
+                     "length out of range for a single DMA descriptor", ESP_ERR_INVALID_ARG);
     SDIO_SLAVE_CHECK(esp_ptr_dma_capable(addr) && (uint32_t)addr % 4 == 0, "buffer to send should be DMA capable and 32-bit aligned",
                      ESP_ERR_INVALID_ARG);
 
