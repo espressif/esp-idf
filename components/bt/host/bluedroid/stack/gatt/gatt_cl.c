@@ -891,7 +891,11 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             /* value_len is the length of current record's value; use it to avoid overread when multiple records present */
             p_clcb->counter = value_len;
             p_clcb->s_handle = handle;
-            if ( p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
+            UINT16 max_rbtype_val_len = (p_clcb->p_tcb->payload_size - 4);
+            if (max_rbtype_val_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+                max_rbtype_val_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
+            }
+            if (p_clcb->counter == max_rbtype_val_len) {
                 p_clcb->op_subtype = GATT_READ_BY_HANDLE;
                 if (!p_clcb->p_attr_buf) {
                     p_clcb->p_attr_buf = (UINT8 *)osi_malloc(GATT_MAX_ATTR_LEN);
