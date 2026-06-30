@@ -352,6 +352,38 @@ void sdmmc_test_rw_psram_buffer(sdmmc_card_t *card)
     TEST_ESP_OK(sdmmc_read_sectors(card, psram_buf, 0, block_count));
     check_buffer(seed_c, psram_buf, buffer_size / sizeof(uint32_t));
 
+    /* Test D: Write from a PSRAM buffer that is NOT cache/DMA aligned.
+     *
+     * The host (or the underlying SPI master) must transparently handle the
+     * unaligned PSRAM source - either by an internal aligned copy or by direct
+     * DMA when the hardware supports it. This exercises the fallback path of the
+     * SDSPI write transfer, which no longer copies the buffer itself but relies
+     * on the SPI master to accept PSRAM buffers (SPI_TRANS_DMA_USE_PSRAM). The
+     * data read back must still match.
+     *
+     * NOTE: this sub-test requires real SD-card + PSRAM hardware to be meaningful.
+     */
+    {
+        const size_t misalign = 1; /* 1-byte offset breaks 4-byte/cache alignment */
+        uint8_t *unaligned_psram = heap_caps_malloc(buffer_size + misalign,
+                                                    MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+        TEST_ASSERT_NOT_NULL_MESSAGE(unaligned_psram, "Failed to allocate PSRAM buffer");
+        uint8_t *src = unaligned_psram + misalign;
+        TEST_ASSERT_MESSAGE(esp_ptr_external_ram(src), "Buffer not in PSRAM");
+
+        const uint32_t seed_d = 0x13572468;
+        for (size_t i = 0; i < buffer_size; i++) {
+            src[i] = (uint8_t)(seed_d + i);
+        }
+        TEST_ESP_OK(sdmmc_write_sectors(card, src, 0, block_count));
+        memset(internal_buf, 0xcc, buffer_size);
+        TEST_ESP_OK(sdmmc_read_sectors(card, internal_buf, 0, block_count));
+        for (size_t i = 0; i < buffer_size; i++) {
+            TEST_ASSERT_EQUAL_HEX8((uint8_t)(seed_d + i), internal_buf[i]);
+        }
+        free(unaligned_psram);
+    }
+
     free(psram_buf);
     free(internal_buf);
     printf("PSRAM buffer R/W test passed\n");

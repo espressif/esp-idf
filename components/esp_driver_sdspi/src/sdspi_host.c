@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,6 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "soc/soc_memory_layout.h"
 #include "esp_private/esp_cache_private.h"
 
 /// Max number of transactions in flight (used in start_command_write_blocks)
@@ -931,22 +930,17 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
 
         // Prepare data to be sent
         size_t will_send = MIN(tx_length, SDSPI_MAX_DATA_LEN);
-        const uint8_t* tx_data = data;
-        if (!esp_ptr_in_dram(tx_data)) {
-            // If the pointer can't be used with DMA, copy data into a new buffer
-            uint8_t* tmp;
-            ret = get_block_buf(slot, &tmp);
-            if (ret != ESP_OK) {
-                return ret;
-            }
-            memcpy(tmp, tx_data, will_send);
-            tx_data = tmp;
-        }
 
-        // Write data
+        // Write data. The SPI master driver handles buffers that are not
+        // directly DMA-usable (e.g. PSRAM, or unaligned): with
+        // SPI_TRANS_DMA_USE_PSRAM it transfers a suitable PSRAM buffer directly
+        // (no copy), and otherwise falls back to an internal aligned buffer
+        // itself. This avoids the redundant copy the SDSPI driver used to do.
+        // The flag is ignored for buffers that are not in PSRAM.
         spi_transaction_t t_data = {
             .length = will_send * 8,
-            .tx_buffer = tx_data,
+            .tx_buffer = data,
+            .flags = SPI_TRANS_DMA_USE_PSRAM,
         };
         ret = spi_device_transmit(slot->spi_handle, &t_data);
         if (ret != ESP_OK) {
