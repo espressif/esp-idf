@@ -68,6 +68,10 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
 #endif
     esp_err_t ret = ESP_OK;
     bool new_codec = false;
+#if JPEG_USE_RETENTION_LINK
+    bool retention_module_inited = false;
+#endif
+    bool bus_clock_enabled = false;
     jpeg_codec_t *codec = NULL;
     _lock_acquire(&s_jpeg_platform.mutex);
     if (!s_jpeg_platform.jpeg_codec) {
@@ -78,7 +82,7 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
             codec->intr_priority = -1;
             codec->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             codec->codec_mutex = xSemaphoreCreateBinaryWithCaps(JPEG_MEM_ALLOC_CAPS);
-            ESP_RETURN_ON_FALSE(codec->codec_mutex, ESP_ERR_NO_MEM, TAG, "No memory for codec mutex");
+            ESP_GOTO_ON_FALSE(codec->codec_mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for codec mutex");
             SLIST_INIT(&codec->jpeg_isr_handler_list);
             xSemaphoreGive(codec->codec_mutex);
 
@@ -95,6 +99,8 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
             esp_err_t err = sleep_retention_module_init(jpeg_regs_retention.module_id, &init_param);
             if (err != ESP_OK) {
                 ESP_LOGW(TAG, "init sleep retention failed on jpeg, jpeg configuration maybe lost after sleep wakeup");
+            } else {
+                retention_module_inited = true;
             }
 #endif
             // init the clock
@@ -102,8 +108,10 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
                 jpeg_ll_enable_bus_clock(true);
                 jpeg_ll_reset_module_register();
             }
+            bus_clock_enabled = true;
 #if CONFIG_PM_ENABLE
-            ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "jpeg_codec", &codec->pm_lock), TAG, "create pm lock failed");
+            ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "jpeg_codec", &codec->pm_lock),
+                              err, TAG, "create pm lock failed");
 #endif
             jpeg_hal_init(&codec->hal);
         } else {
@@ -120,6 +128,32 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
     }
 
     *jpeg_new_codec = s_jpeg_platform.jpeg_codec;
+    _lock_release(&s_jpeg_platform.mutex);
+    return ret;
+
+err:
+    if (codec) {
+        if (codec->codec_mutex) {
+            vSemaphoreDeleteWithCaps(codec->codec_mutex);
+        }
+#if CONFIG_PM_ENABLE
+        if (codec->pm_lock) {
+            esp_pm_lock_delete(codec->pm_lock);
+        }
+#endif
+#if JPEG_USE_RETENTION_LINK
+        if (retention_module_inited) {
+            sleep_retention_module_deinit(jpeg_regs_retention.module_id);
+        }
+#endif
+        if (bus_clock_enabled) {
+            PERIPH_RCC_ATOMIC() {
+                jpeg_ll_enable_bus_clock(false);
+            }
+        }
+        free(codec);
+    }
+    s_jpeg_platform.jpeg_codec = NULL;
     _lock_release(&s_jpeg_platform.mutex);
     return ret;
 }
