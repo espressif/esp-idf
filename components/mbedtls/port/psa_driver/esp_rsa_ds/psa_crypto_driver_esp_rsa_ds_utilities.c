@@ -9,6 +9,8 @@
 #include "mbedtls/asn1.h"
 #include "mbedtls/psa_util.h"
 #include "esp_log.h"
+#include "mbedtls/constant_time.h"
+#include "constant_time_internal.h"
 
 typedef struct {
     psa_algorithm_t md_alg;
@@ -167,63 +169,91 @@ psa_status_t esp_rsa_ds_pad_v15_unpad(unsigned char *input,
     size_t output_max_len,
     size_t *olen)
 {
+    /* This implementation mirrors mbedtls_ct_rsaes_pkcs1_v15_unpadding()
+     * in upstream rsa.c. Below the public-input length check, every
+     * operation must be constant-time w.r.t. the plaintext contents,
+     * the position of the 0x00 separator, and padding validity. Failing
+     * that opens a Bleichenbacher-style padding oracle. The function is
+     * deliberately longer than the project guideline because each step
+     * carries an audit comment that has to survive intact. */
+
+    /* ilen and output_max_len are public; this branch is safe. */
     if (ilen < MIN_V15_PADDING_LEN) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
-
-    unsigned char bad = 0;
-    size_t msg_len = 0;
-    size_t msg_max_len = 0;
-    unsigned char pad_done = 0;
+#if defined(MBEDTLS_PKCS1_V15) && defined(MBEDTLS_RSA_C)
     size_t pad_count = 0;
+    size_t plaintext_size = 0;
+    size_t plaintext_max_size;
+    mbedtls_ct_condition_t bad;
+    mbedtls_ct_condition_t pad_done;
+    mbedtls_ct_condition_t output_too_large;
 
-    msg_max_len = (output_max_len > ilen - MIN_V15_PADDING_LEN) ? ilen - MIN_V15_PADDING_LEN : output_max_len;
+    plaintext_max_size = (output_max_len > ilen - MIN_V15_PADDING_LEN)
+                            ? ilen - MIN_V15_PADDING_LEN : output_max_len;
 
-    /* Check the first byte (0x00) */
-    bad |= input[0];
+    /* EME-PKCS1-v1_5: 0x00 || 0x02 || PS (>= 8 non-zero) || 0x00 || M */
+    bad = mbedtls_ct_bool(input[0]);
+    bad = mbedtls_ct_bool_or(bad, mbedtls_ct_uint_ne(input[1], 2 /* MBEDTLS_RSA_CRYPT */));
 
-    /* Check the padding type */
-    bad |= input[1] ^ 2; // MBEDTLS_RSA_CRYPT;
-
-    /* Scan for separator (0x00) and count padding bytes in constant time */
+    /* Scan the full buffer; pad_done latches at the first 0x00 found. */
+    pad_done = MBEDTLS_CT_FALSE;
     for (size_t i = 2; i < ilen; i++) {
-        unsigned char found = (input[i] == 0x00);
-        pad_done = pad_done | found;
-        pad_count += (pad_done == 0) ? 1 : 0;
+        mbedtls_ct_condition_t found = mbedtls_ct_uint_eq(input[i], 0);
+        pad_done   = mbedtls_ct_bool_or(pad_done, found);
+        pad_count += mbedtls_ct_uint_if_else_0(mbedtls_ct_bool_not(pad_done), 1);
     }
 
-    /* Check if we found a separator and padding is long enough */
-    bad |= (pad_done == 0);  /* No separator found */
-    bad |= (pad_count < 8);  /* Padding too short (need at least 8 non-zero bytes) */
+    /* No separator found, or PS too short. */
+    bad = mbedtls_ct_bool_or(bad, mbedtls_ct_bool_not(pad_done));
+    bad = mbedtls_ct_bool_or(bad, mbedtls_ct_uint_gt(8, pad_count));
 
-    /* Calculate message length */
-    msg_len = ilen - pad_count - 3;
+    /* If invalid, substitute plaintext_max_size so the remaining cache
+     * and timing trace matches the good case. */
+    plaintext_size = mbedtls_ct_uint_if(bad,
+                                        (unsigned) plaintext_max_size,
+                                        (unsigned) (ilen - pad_count - 3));
+    output_too_large = mbedtls_ct_uint_gt(plaintext_size, plaintext_max_size);
+    plaintext_size = mbedtls_ct_uint_if(output_too_large,
+                                        (unsigned) plaintext_max_size,
+                                        (unsigned) plaintext_size);
 
-    /* Check if separator is not at the very end */
-    bad |= (msg_len > output_max_len);
-    if (bad) {
-        msg_len = msg_max_len;
+    /* On any failure path (bad padding, or plaintext doesn't fit) zero
+     * the post-header region of `input` BEFORE the memmove_left + memcpy
+     * below. Those two operations execute unconditionally to keep the
+     * memory access trace fixed; this step ensures they propagate zeros
+     * rather than a failed-decryption plaintext attempt into the
+     * caller-visible output buffer. Mirrors upstream rsa.c. */
+    mbedtls_ct_zeroize_if(mbedtls_ct_bool_or(bad, output_too_large),
+                          input + MIN_V15_PADDING_LEN,
+                          ilen - MIN_V15_PADDING_LEN);
+
+    /* Slide the plaintext to a fixed in-buffer position, then read
+     * from that fixed position. The slide is CT in the secret offset. */
+    mbedtls_ct_memmove_left(input + ilen - plaintext_max_size,
+                            plaintext_max_size,
+                            plaintext_max_size - plaintext_size);
+    if (output_max_len != 0) {
+        /* memmove handles input/output aliasing (callers may pass the
+         * same buffer for both). The length is the public bound, so
+         * the access pattern reveals nothing secret. */
+        memmove(output, input + ilen - plaintext_max_size, plaintext_max_size);
     }
 
-    /* Verify padding bytes are non-zero in constant time */
-#if defined(__clang__) && defined(__xtensa__)
-    #pragma clang loop vectorize(disable)
-#endif
-    for (size_t i = 2; i < ilen; i++) {
-        unsigned char in_padding = (i < pad_count + 2);
-        unsigned char is_zero = (input[i] == 0x00);
-        bad |= in_padding & is_zero;
-    }
+    *olen = plaintext_size;
 
-    if (bad) {
-        return PSA_ERROR_INVALID_ARGUMENT;
-    }
-
-    *olen = msg_len;
-    if (*olen > 0) {
-        memcpy(output, input + ilen - msg_len, msg_len);
-    }
-    return PSA_SUCCESS;
+    /* Collapse both error conditions into the single status we already
+     * return (PSA_ERROR_INVALID_ARGUMENT); distinguishing them would
+     * give a Bleichenbacher attacker a finer oracle. */
+    return (psa_status_t) mbedtls_ct_error_if_else_0(
+                mbedtls_ct_bool_or(bad, output_too_large),
+                PSA_ERROR_INVALID_ARGUMENT);
+#else
+    /* PKCS#1 v1.5 padding is not configured; the driver should not be
+     * dispatched for this algorithm in the first place. */
+    (void) input; (void) output; (void) output_max_len; (void) olen;
+    return PSA_ERROR_NOT_SUPPORTED;
+#endif /* MBEDTLS_PKCS1_V15 && MBEDTLS_RSA_C */
 }
 
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
@@ -417,81 +447,91 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     size_t *olen,
     psa_algorithm_t hash_alg)
 {
+    /* This mirrors mbedtls_rsa_rsaes_oaep_decrypt() in upstream rsa.c.
+     * Below the public-input sanity check, the unpadding scan operates
+     * only through mbedtls_ct primitives, so its time and memory trace
+     * depend solely on ilen and hash_alg. The single branch on `bad`
+     * at the end leaks no more than the return value already does,
+     * which matches the upstream design and is acceptable for OAEP
+     * (the relevant side-channel attack relies on distinguishing
+     * failure modes, not on timing the success path). */
+
     unsigned int hlen = PSA_HASH_LENGTH(hash_alg);
-    unsigned char bad = 0;
-    size_t msg_len = 0;
-
-    /* Validate input length */
-    bad |= (ilen < 2 * hlen + 2);
-
-    /* Apply MGF masks */
-    bad |= esp_rsa_ds_mgf_mask(input + 1, hlen, input + hlen + 1, ilen - hlen - 1, hash_alg) != PSA_SUCCESS;
-
-    bad |= esp_rsa_ds_mgf_mask(input + hlen + 1, ilen - hlen - 1, input + 1, hlen, hash_alg) != PSA_SUCCESS;
-
-    /* Check first byte (should be 0x00) */
-    bad |= input[0];
-
-    /* Skip the first byte and maskSeed */
-    unsigned char *db = input + 1 + hlen;
-    size_t db_len = ilen - hlen - 1;
-
-    /* Compute hash, label is NULL and label_len is 0 */
+    mbedtls_ct_condition_t bad;
+    mbedtls_ct_condition_t in_padding;
+    size_t pad_len;
+    unsigned char *p;
     unsigned char lhash[PSA_HASH_MAX_SIZE];
-    memset(lhash, 0, sizeof(lhash));
+
+    /* All lengths checked here are public. */
+    if (hlen == 0 || hlen > PSA_HASH_MAX_SIZE || ilen < 2 * hlen + 2) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* Unmask seed and DB. A failure here is an internal hash error,
+     * not a ciphertext-dependent condition, so an early return is
+     * safe. */
+    if (esp_rsa_ds_mgf_mask(input + 1, hlen,
+                            input + hlen + 1, ilen - hlen - 1, hash_alg) != PSA_SUCCESS ||
+        esp_rsa_ds_mgf_mask(input + hlen + 1, ilen - hlen - 1,
+                            input + 1, hlen, hash_alg) != PSA_SUCCESS) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* lHash of the empty label, recomputed each call. */
     size_t lhen = 0;
-    bad |= psa_hash_compute(hash_alg, NULL, 0, lhash, sizeof(lhash), &lhen) != PSA_SUCCESS;
-
-    bad |= (lhen != hlen);
-
-    /* Verify hash portion of db against lhash */
-    for (size_t i = 0; i < hlen && i < db_len; i++) {
-        bad |= db[i] ^ lhash[i];
+    if (psa_hash_compute(hash_alg, NULL, 0, lhash, sizeof(lhash), &lhen) != PSA_SUCCESS
+            || lhen != hlen) {
+        mbedtls_platform_zeroize(lhash, sizeof(lhash));
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Skip past lhash in DB */
-    unsigned char *p = db + hlen;
-    size_t remaining = db_len - hlen;
+    /* Constant-time padding check. */
+    p   = input;
+    bad = mbedtls_ct_bool(*p++);          /* First byte must be 0x00 */
+    p  += hlen;                            /* Skip seed */
+    bad = mbedtls_ct_bool_or(bad,
+            mbedtls_ct_bool(mbedtls_ct_memcmp(lhash, p, hlen)));
+    p  += hlen;
 
-    /*
-     * Scan PS || 0x01 || M
-     */
-    unsigned char seen_one = 0;
-    size_t msg_index = 0;
-
-    for (size_t i = 0; i < remaining; i++) {
-        unsigned char is_zero = (p[i] == 0);
-        unsigned char is_one  = (p[i] == 1);
-
-        /* Before delimiter, only 0x00 allowed */
-        bad |= (seen_one == 0) & !(is_zero | is_one);
-
-        /* Record first 0x01 */
-        msg_index |= (seen_one == 0 && is_one) * i;
-        seen_one  |= is_one;
+    /* Count leading zeros in DB (between lHash and the 0x01 delimiter).
+     * The loop scans the full DB region every time; the latch via
+     * in_padding keeps pad_len from incrementing once a non-zero byte
+     * is seen. */
+    pad_len    = 0;
+    in_padding = MBEDTLS_CT_TRUE;
+    for (size_t i = 0; i < ilen - 2 * hlen - 2; i++) {
+        in_padding = mbedtls_ct_bool_and(in_padding, mbedtls_ct_uint_eq(p[i], 0));
+        pad_len   += mbedtls_ct_uint_if_else_0(in_padding, 1);
     }
+    p  += pad_len;
+    bad = mbedtls_ct_bool_or(bad, mbedtls_ct_uint_ne(*p++, 0x01));
 
-    /* Must see exactly one delimiter */
-    bad |= (seen_one == 0);
+    mbedtls_platform_zeroize(lhash, sizeof(lhash));
 
-    /* Calculate message length */
-    msg_len = remaining - msg_index - 1;
-    bad |= (msg_len == 0);
-
-    /* Check output buffer size */
-    bad |= (output_max_len < msg_len);
-
-    if (bad) {
+    /* Single decision point on the accumulated bit. */
+    if (bad != MBEDTLS_CT_FALSE) {
         *olen = 0;
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Copy message in constant time */
-    *olen = msg_len;
-    if (*olen > 0) {
-        memcpy(output, p + msg_index + 1, msg_len);
+    /* Padding is valid; from here the plaintext length is no longer
+     * secret (it is returned to the caller via *olen). */
+    size_t plaintext_size = ilen - (size_t) (p - input);
+    if (plaintext_size > output_max_len) {
+        *olen = 0;
+        return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    *olen = plaintext_size;
+    if (plaintext_size != 0) {
+        /* memmove (not memcpy): the driver's caller aliases input and
+         * output to the same buffer, so the source range [p, p+plaintext_size)
+         * overlaps the destination range [output, output+plaintext_size).
+         * Both pointers and the length are public, so memmove's access
+         * pattern stays fixed by public values -- CT property preserved. */
+        memmove(output, p, plaintext_size);
+    }
     return PSA_SUCCESS;
 }
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
