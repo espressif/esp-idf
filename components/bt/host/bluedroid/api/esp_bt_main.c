@@ -203,6 +203,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 
     if (future_await(*future_p) == FUTURE_FAIL) {
         LOG_ERROR("Bluedroid Initialize Fail");
+        btc_cleanup_partial_init();
         btc_deinit();
         bluedroid_config_deinit();
 #if HEAP_MEMORY_STATS
