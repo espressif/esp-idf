@@ -21,11 +21,9 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20190
 
     The gdbinit file includes commands to start tracing:
     ```
-    mon esp sysview start file:///tmp/heap_log.svdat
-    # For dual-core mode uncomment the line below and comment the line above
-    # mon esp sysview start file:///tmp/heap_log0.svdat file:///tmp/heap_log1.svdat
+    mon esp sysview_mcore start file:///tmp/heap_log.svdat
     ```
-    When program hits breakpoint at `heap_trace_start`, in single core mode, trace data will be saved to `/tmp/heap_log.svdat`. In dual core mode, there will be two trace data files, one for each core. `/tmp/heap_log0.svdat` and `/tmp/heap_log1.svdat`
+    When program hits breakpoint at `heap_trace_start`, trace data will be saved to `/tmp/heap_log.svdat`. The `esp sysview_mcore` command uses the SEGGER SystemView multi-core format, so a single file holds the trace for both single- and dual-core targets.
     Tracing will be stopped when program hits breakpoint at `heap_trace_stop`.
 
 3. [SEGGER SystemView tool](https://www.segger.com/products/development-tools/systemview/). By default SystemView shows only numeric values of IDs and parameters for IDF's heap messages in `Events` view. To make them pretty-looking you need to copy `SYSVIEW_FreeRTOS.txt` from the project's root directory to SystemView installation one.
@@ -54,7 +52,7 @@ To run the example and collect trace data:
 
 2. When program stops at `heap_trace_stop`  quit GDB.
 
-3. Open trace data file in SystemView tool.
+3. Open trace data file in SystemView tool. The multi-core format produced by `esp sysview_mcore` requires SEGGER SystemView v3.60 or later.
 
 4. Now you can inspect all collected events. Log messages are shown in `Terminal` view.
 
@@ -67,10 +65,7 @@ Since SystemView tool is mostly intended for OS level analysis. It allows just t
 ```
 $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b build/sysview_tracing_heap_log.elf /tmp/heap_log.svdat
 ```
-And in dual core mode
-```
-$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b build/sysview_tracing_heap_log.elf /tmp/heap_log0.svdat /tmp/heap_log1.svdat
-```
+The script auto-detects the multi-core capture format and processes both cores from the single file, so the same command works for single- and dual-core targets.
 
 Below is the sample scripts output.
 
