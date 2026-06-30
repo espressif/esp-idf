@@ -907,6 +907,9 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             if (err == ESP_OK) {
                 err = release_ret;
             }
+            // Non-OK here means interrupt teardown did not complete, so the ISR
+            // may still reference i2c_master and its wrapper-owned resources.
+            return err;
         }
     }
 
