@@ -11,11 +11,9 @@
 #include "soc/lp_clkrst_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_struct.h"
+#include "soc/lp_system_struct.h"
 #include "soc/usb_utmi_struct.h"
 #include "hal/config.h"
-#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
-#include "soc/lp_system_struct.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,6 +115,24 @@ FORCE_INLINE_ATTR void usb_utmi_ll_enable_precise_detection(bool enable)
 {
     // Enable VBUS precise detection
     HP_SYSTEM.sys_usbotg20_ctrl.sys_otg_suspendm = enable;
+}
+
+/**
+ * @brief Set USB OTG2.0 suspend state for PMU USB wakeup logic
+ *
+ * @param[in] in_suspend True if USB OTG2.0 is suspended
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_set_suspend_state(bool in_suspend)
+{
+    LP_SYS.usb_ctrl.usbotg20_in_suspend = in_suspend;
+}
+
+/**
+ * @brief Clear USB OTG2.0 wakeup status sent to PMU
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_clear_wakeup_status(void)
+{
+    LP_SYS.usb_ctrl.usbotg20_wakeup_clr = 1;
 }
 
 #ifdef __cplusplus
