@@ -409,10 +409,8 @@ components/esp_rom/esp32s3/ld/esp32s3.rom.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.newlib-nano.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
-components/esp_rom/include/esp_rom_crc.h
 components/esp_rom/linux/esp_rom_crc.c
 components/esp_rom/linux/esp_rom_md5.c
-components/esp_rom/patches/esp_rom_crc.c
 components/esp_rom/patches/esp_rom_longjmp.S
 components/esp_system/ubsan.c
 components/esp_wifi/src/mesh_event.c

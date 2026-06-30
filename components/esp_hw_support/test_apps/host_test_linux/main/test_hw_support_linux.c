@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "unity.h"
+#include "esp_crc.h"
 #include "esp_random.h"
 
 /* Note: these are just sanity tests, the implementation of esp_random() relies on getentropy() on Linux.
@@ -121,6 +122,32 @@ TEST_CASE("esp_fill_random() fills exactly 257 bytes", "[random]")
     TEST_ASSERT_EQUAL(0, one_buf[BUF_SZ - 1]);
     TEST_ASSERT_GREATER_THAN(0, one_buf[BUF_SZ - 2]);
     TEST_ASSERT_GREATER_THAN(0, one_buf[0]);
+}
+
+TEST_CASE("esp_crc32_le supports continuous buffers with standard CRC-32 parameters", "[crc]")
+{
+    static const uint8_t buf0[] = "1234";
+    static const uint8_t buf1[] = "56789";
+    uint32_t crc = (uint32_t)~UINT32_MAX;
+
+    crc = esp_crc32_le(crc, buf0, sizeof(buf0) - 1);
+    crc = esp_crc32_le(crc, buf1, sizeof(buf1) - 1);
+    crc = ~crc ^ UINT32_MAX;
+
+    TEST_ASSERT_EQUAL_HEX32(0xCBF43926, crc);
+}
+
+TEST_CASE("esp_crc16_be supports continuous buffers with CRC-16/XMODEM parameters", "[crc]")
+{
+    static const uint8_t buf0[] = "1234";
+    static const uint8_t buf1[] = "56789";
+    uint16_t crc = (uint16_t)~0x0000;
+
+    crc = esp_crc16_be(crc, buf0, sizeof(buf0) - 1);
+    crc = esp_crc16_be(crc, buf1, sizeof(buf1) - 1);
+    crc = (uint16_t)(~crc ^ 0x0000);
+
+    TEST_ASSERT_EQUAL_HEX16(0x31C3, crc);
 }
 
 void app_main(void)
