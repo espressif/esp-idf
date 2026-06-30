@@ -1,9 +1,10 @@
 /*
  * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0 OR MIT
+ * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "soc/cache_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/hp_system_reg.h"
