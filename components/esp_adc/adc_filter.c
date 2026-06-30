@@ -78,11 +78,15 @@ static esp_err_t s_adc_filter_claim(adc_continuous_handle_t handle, adc_iir_filt
 static esp_err_t s_adc_filter_free(adc_iir_filter_t *filter_ctx)
 {
     assert(filter_ctx);
+    esp_err_t ret = ESP_ERR_NOT_FOUND;
     portENTER_CRITICAL(&s_filter_spinlock);
-    filter_ctx->continuous_ctx->iir_filter[filter_ctx->filter_id] = NULL;
+    if (filter_ctx->continuous_ctx->iir_filter[filter_ctx->filter_id] != NULL) {
+        filter_ctx->continuous_ctx->iir_filter[filter_ctx->filter_id] = NULL;
+        ret = ESP_OK;
+    }
     portEXIT_CRITICAL(&s_filter_spinlock);
 
-    return ESP_OK;
+    return ret;
 }
 #endif
 
