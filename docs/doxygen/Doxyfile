@@ -22,6 +22,10 @@ PROJECT_NAME = "IDF Programming Guide"
 
 INPUT = \
     $(PROJECT_PATH)/components/app_trace/include/esp_app_trace.h \
+    $(PROJECT_PATH)/components/esp_trace/include/esp_trace.h \
+    $(PROJECT_PATH)/components/esp_trace/include/esp_trace_types.h \
+    $(PROJECT_PATH)/components/esp_trace/include/esp_trace_port_encoder.h \
+    $(PROJECT_PATH)/components/esp_trace/include/esp_trace_port_transport.h \
     $(PROJECT_PATH)/components/app_update/include/esp_ota_ops.h \
     $(PROJECT_PATH)/components/bootloader_support/include/bootloader_random.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
