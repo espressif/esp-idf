@@ -9,6 +9,7 @@
 #include <sys/lock.h>
 #include "esp_pm.h"
 #include "esp_system.h"
+#include "esp_heap_caps.h"
 #include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/pm_impl.h"
@@ -56,7 +57,7 @@ esp_err_t esp_pm_lock_create(esp_pm_lock_type_t lock_type, int arg,
     if (out_handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_pm_lock_t* new_lock = (esp_pm_lock_t*) calloc(1, sizeof(*new_lock));
+    esp_pm_lock_t* new_lock = (esp_pm_lock_t*) heap_caps_calloc(1, sizeof(*new_lock), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!new_lock) {
         return ESP_ERR_NO_MEM;
     }
