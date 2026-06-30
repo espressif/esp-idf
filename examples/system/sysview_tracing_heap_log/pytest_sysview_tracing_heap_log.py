@@ -15,22 +15,18 @@ if typing.TYPE_CHECKING:
 
 
 def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
-    # Construct trace log paths
-    trace_log = [
-        os.path.join(dut.logdir, 'heap_log0.svdat')  # pylint: disable=protected-access
-    ]
-    if not dut.app.sdkconfig.get('ESP_SYSTEM_SINGLE_CORE_MODE') or dut.target == 'esp32s3':
-        trace_log.append(os.path.join(dut.logdir, 'heap_log1.svdat'))  # pylint: disable=protected-access
-    trace_files = ' '.join([f'file://{log}' for log in trace_log])
+    # Single multi-core capture file (esp sysview_mcore): one file is enough for
+    # both single- and dual-core targets.
+    trace_log = os.path.join(dut.logdir, 'heap_log.svdat')  # pylint: disable=protected-access
 
-    # Prepare gdbinit file
+    # Prepare gdbinit file pointing at this run's capture file
     gdb_logfile = os.path.join(dut.logdir, 'gdb.txt')
     gdbinit_orig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gdbinit')
     gdbinit = os.path.join(dut.logdir, 'gdbinit')
     with open(gdbinit_orig) as f_r, open(gdbinit, 'w') as f_w:
         for line in f_r:
-            if line.startswith('mon esp sysview start'):
-                f_w.write(f'mon esp sysview start {trace_files}\n')
+            if line.startswith('mon esp sysview_mcore start'):
+                f_w.write(f'mon esp sysview_mcore start file://{trace_log}\n')
             else:
                 f_w.write(line)
 
@@ -52,8 +48,9 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
             # Wait for sysview files to be generated
             p.expect_exact('Tracing is STOPPED')
 
-    # Process sysview trace logs
-    command = [os.path.join(idf_path, 'tools', 'esp_app_trace', 'sysviewtrace_proc.py'), '-p'] + trace_log
+    # Process sysview trace log (sysviewtrace_proc.py auto-detects and splits the
+    # multi-core capture, so a single file works for single- and dual-core)
+    command = [os.path.join(idf_path, 'tools', 'esp_app_trace', 'sysviewtrace_proc.py'), '-p', trace_log]
     with pexpect.spawn(' '.join(command)) as sysviewtrace:
         sysviewtrace.expect(r'Found \d+ leaked bytes in \d+ blocks.', timeout=120)
 
