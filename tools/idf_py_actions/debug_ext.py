@@ -11,9 +11,9 @@ import time
 from threading import Thread
 from typing import Any
 
-from click import INT
-from click.core import Context
 from esp_coredump import CoreDump
+from rich_click import INT
+from rich_click import Context
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.serial_ext import BAUD_RATE

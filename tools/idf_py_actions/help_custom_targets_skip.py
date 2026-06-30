@@ -16,6 +16,9 @@ from __future__ import annotations
 import re
 from collections.abc import Set
 
+# Panel title in ``idf.py --help`` (rich-click)
+CMAKE_CUSTOM_TARGETS_HELP_PANEL_TITLE = 'CMake Custom Targets:'
+
 # ``cmake --build … --target help`` / ``ninja -t targets`` lines: ``name: phony`` (last ``:`` before rule).
 PHONY_BUILD_LINE_RE = re.compile(r'^(.+):\s*(\S+)\s*$')
 # ``build.ninja`` lines: ``build <name>: phony``.
