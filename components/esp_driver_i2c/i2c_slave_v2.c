@@ -220,6 +220,11 @@ static esp_err_t i2c_slave_device_destroy(i2c_slave_dev_handle_t i2c_slave)
         i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
         i2c_common_deinit_pins(i2c_slave->base);
         ret = i2c_release_bus_handle(i2c_slave->base);
+        if (ret != ESP_OK) {
+            // Non-OK here means interrupt teardown did not complete, so the ISR
+            // may still reference i2c_slave and its wrapper-owned resources.
+            return ret;
+        }
     }
     if (i2c_slave->rx_ring_buf) {
         vRingbufferDeleteWithCaps(i2c_slave->rx_ring_buf);
