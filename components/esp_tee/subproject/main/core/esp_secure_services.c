@@ -583,6 +583,13 @@ int _ss_esp_tee_ota_end(void)
 
 /* ---------------------------------------------- Secure Storage ------------------------------------------------- */
 
+/* NOTE: The key-name pointers here (cfg->id/ctx->key_id) are REE-supplied, NULL-terminated
+ * NVS key names used read-only for key lookup (NVS compares them with strncmp bounded to
+ * NVS_KEY_NAME_MAX_SIZE-1) — never written through, never used as a register base.
+ * Pointing one at TEE memory yields at most a load-fault DoS or a useless presence oracle,
+ * so they are left unchecked. Argument checks cost code size and add latency to every
+ * service call, so we keep only the ones that close a real REE->TEE read/write/control-flow gap.
+ */
 esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 {
     return esp_tee_sec_storage_clear_key(key_id);

@@ -145,6 +145,15 @@ void _ss_esprv_int_set_vectored(int rv_int_num, bool vectored)
 
 /* ---------------------------------------------- RTC_WDT ------------------------------------------------- */
 
+static bool is_wdt_dev_valid(const void *dev)
+{
+    return (dev == (const void *)&TIMERG0)
+#if TIMG_LL_GET(INST_NUM) >= 2
+           || (dev == (const void *)&TIMERG1)
+#endif
+           || (dev == (const void *)RWDT_DEV_GET());
+}
+
 void _ss_wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescaler, bool enable_intr)
 {
     bool valid_addr = esp_tee_buf_in_ree(hal, sizeof(wdt_hal_context_t));
@@ -159,7 +168,8 @@ void _ss_wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t pres
 
 void _ss_wdt_hal_deinit(wdt_hal_context_t *hal)
 {
-    bool valid_addr = esp_tee_buf_in_ree(hal, sizeof(wdt_hal_context_t));
+    bool valid_addr = (esp_tee_buf_in_ree(hal, sizeof(wdt_hal_context_t)) &&
+                       is_wdt_dev_valid(hal->mwdt_dev));
 
     if (!valid_addr) {
         return;
@@ -171,6 +181,14 @@ void _ss_wdt_hal_deinit(wdt_hal_context_t *hal)
 
 /* ---------------------------------------------- Secure Storage ------------------------------------------------- */
 
+/* NOTE: The key-name pointers here (cfg->id/ctx->key_id) are REE-supplied, NULL-terminated
+ * NVS key names used read-only for key lookup (NVS compares them with strncmp bounded to
+ * NVS_KEY_NAME_MAX_SIZE-1) — never written through, never used as a register base.
+ * Pointing one at TEE memory yields at most a load-fault DoS or a useless presence oracle,
+ * so they are left unchecked. Argument checks cost code size and add latency to every
+ * service call, so we keep only the ones that close a real REE->TEE read/write/control-flow gap.
+ * The buffers alongside these ARE validated, since the TEE reads/writes them.
+ */
 esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
 {
     bool valid_addr = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
@@ -337,7 +355,10 @@ static bool is_flash_addr_readable(uint32_t paddr, uint32_t len)
 
 static bool is_spi_host_in_ree(spi_flash_host_inst_t *host)
 {
-    return esp_tee_buf_in_ree(host, sizeof(spi_flash_hal_context_t));
+    const spi_flash_hal_context_t *ctx = (const spi_flash_hal_context_t *)host;
+
+    return (esp_tee_buf_in_ree(host, sizeof(spi_flash_hal_context_t)) &&
+            ctx->spi == spi_flash_ll_get_hw(SPI1_HOST));
 }
 
 static bool is_spi_trans_valid(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)

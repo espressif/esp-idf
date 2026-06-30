@@ -256,10 +256,20 @@ esp_err_t __wrap_esp_ds_start_sign(const void *message,
     if (esp_ds_ctx != NULL) {
         *esp_ds_ctx = malloc(sizeof(esp_ds_context_t));
         if (!*esp_ds_ctx) {
+            esp_crypto_ds_lock_release();
             return ESP_ERR_NO_MEM;
         }
     }
-    return esp_tee_service_call(5, SS_ESP_DS_START_SIGN, message, data, key_id, esp_ds_ctx);
+
+    esp_err_t err = esp_tee_service_call(5, SS_ESP_DS_START_SIGN, message, data, key_id, esp_ds_ctx);
+    if (err != ESP_OK) {
+        if (esp_ds_ctx != NULL) {
+            free(*esp_ds_ctx);
+            *esp_ds_ctx = NULL;
+        }
+        esp_crypto_ds_lock_release();
+    }
+    return err;
 }
 
 bool __wrap_esp_ds_is_busy(void)

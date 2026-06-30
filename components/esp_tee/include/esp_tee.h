@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,9 @@ typedef struct {
     uint32_t magic_word;
     uint32_t api_major_version;
     uint32_t api_minor_version;
-    uint32_t reserved[3];
+    uint32_t reserved[2];
+    /* Heap poisoning API */
+    void *ns_heap_poison_fill;
     /* TEE-related fields */
     void *s_int_handler;
     /* REE-related fields */
