@@ -473,5 +473,5 @@ For detailed usage instructions, see:
 Examples demonstrating trace usage can be found in:
 - `examples/system/app_trace_basic/` - Basic application tracing
 - `examples/system/sysview_tracing/` - SystemView tracing example
-- `examples/system/esp_trace/` - Minimal template for integrating an external trace library (encoder + FreeRTOS hooks + vtable lock)
+- `examples/system/esp_trace_custom_library/` - Minimal template for integrating an external trace library (encoder + FreeRTOS hooks + vtable lock)
 - `examples/system/sysview_tracing_heap_log/` - SystemView heap and log tracing example

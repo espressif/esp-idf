@@ -5,6 +5,9 @@
  */
 #pragma once
 
+#include <stdbool.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,9 +39,10 @@ typedef struct {
     /**
      * @brief Encoder name (required)
      *
-     * Must match a registered encoder name. Built-in encoders:
-     * - "sysview" - SEGGER SystemView protocol for FreeRTOS tracing
-     * - "raw" - Pass-through for raw binary data
+     * Must match the name of an encoder registered via ESP_TRACE_REGISTER_ENCODER().
+     * The esp_trace component ships no encoder itself; encoders are provided by
+     * external components (for example, espressif/esp_sysview registers a SystemView
+     * encoder).
      */
     const char *encoder_name;
 
@@ -55,6 +59,7 @@ typedef struct {
      *
      * Must match a registered transport name. Built-in transports:
      * - "apptrace" - Uses app_trace for JTAG or UART communication
+     * - "usb_serial_jtag" - Streams trace data over the USB Serial JTAG peripheral
      *
      */
     const char *transport_name;
@@ -142,7 +147,7 @@ esp_trace_link_types_t esp_trace_get_link_type(esp_trace_handle_t handle);
 /**
  * @brief Panic flush the trace handle. This function is called from panic handler.
  *
- * @param handle The trace handle
+ * @param info Panic info passed from the panic handler
  */
 void esp_trace_panic_handler(const void *info);
 

@@ -63,7 +63,7 @@ examples/system/esp_timer:
   depends_components:
     - esp_timer
 
-examples/system/esp_trace:
+examples/system/esp_trace_custom_library:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
       reason: example transport is USB Serial JTAG

@@ -35,7 +35,7 @@ Open the project configuration menu (`idf.py menuconfig`). Then go into `Example
 - Select where to save the pcap file in `Select destination to store pcap file` menu item.
   - `SD Card` means saving packets (pcap format) into the SD card you plug in. The default SD card work mode is set to SDMMC for target ESP32 and ESP32S3, but SPI is the only choice for other targets.
   - `Memory` means saving packets in memory and can parse packets in place.
-  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Level Tracing -> Data Destination -> JTAG should be enabled to choose `JTAG (App Trace)` as destination.
+  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/transports.html), Component config -> Application Level Tracing -> Data Destination -> JTAG should be enabled to choose `JTAG (App Trace)` as destination.
 - Set the mount point in your filesystem in `SD card mount point in the filesystem` menu item. This configuration only takes effect when you choose to save packets into SD card.
 - Set max name length of pcap file in `Max name length of pcap file` menu item.
 - Set the length of sniffer work queue in `Length of sniffer work queue` menu item.
@@ -306,7 +306,7 @@ I (130566) cmd_pcap: .pcap file close done
 2. Build & Flash with `idf.py -p PORT flash`
 3. Connect JTAG, run OpenOCD (for more information about how-to please refer to [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html)).
 4. Telnet to localhost with 4444 port: `telnet localhost 4444`.
-5. In the telnet session, run command like `esp32 apptrace start file://sniffer-esp32.pcap 1 -1 20` (more information about this command, please refer to [apptrace command](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#openocd-application-level-tracing-commands)).
+5. In the telnet session, run command like `esp32 apptrace start file://sniffer-esp32.pcap 1 -1 20` (more information about this command, please refer to [apptrace command](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/transports.html#openocd-application-level-tracing-commands)).
 6. Run the example, start sniffer with `sniffer` command.
 7. Stop sniffer by entering command `sniffer --stop` in the example console.
 8. Stop tracing by entering command `esp32 apptrace stop` in the telnet session.

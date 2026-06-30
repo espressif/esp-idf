@@ -231,7 +231,7 @@ App 追踪
 初始化流程更改
 ^^^^^^^^^^^^^^^^^^^
 
-对于运行时配置覆盖，提供了新的回调系统。详细信息请参见 :doc:`应用程序跟踪文档 <../../../api-guides/app_trace>` 中关于 ``esp_apptrace_get_user_params()`` 和 ``esp_trace_get_user_params()`` 的说明。
+对于运行时配置覆盖，提供了新的回调系统。详细信息请参见 :doc:`应用程序跟踪文档 <../../../api-guides/tracing/transports>` 中关于 ``esp_apptrace_get_user_params()`` 和 ``esp_trace_get_user_params()`` 的说明。
 
 API 更改
 ^^^^^^^^^^^

@@ -77,6 +77,7 @@ get-started-cmake/get-started-pico-kit          hw-reference/esp32/get-started-p
 get-started-cmake/get-started-pico-kit-v3       hw-reference/esp32/get-started-pico-kit-v3
 
 api-guides/build-system-cmake                   api-guides/build-system
+api-guides/app_trace                            api-guides/tracing/index
 api-guides/freertos-smp                         api-reference/system/freertos_idf
 api-guides/ulp-cmake                            api-guides/ulp
 api-guides/unit-tests-cmake                     api-guides/unit-tests

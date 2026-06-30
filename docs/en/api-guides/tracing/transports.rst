@@ -1,23 +1,27 @@
-Application Level Tracing Library
-=================================
+Application Level Tracing Transport (apptrace)
+==============================================
 
 :link_to_translation:`zh_CN:[中文]`
+
+The **Application Level Tracing** library (the ``app_trace`` component) is the default transport used by the :doc:`esp_trace <index>` tracing system. It transfers arbitrary data between the host and {IDF_TARGET_NAME} via the JTAG or UART interface with small overhead on program execution. It is possible to use the JTAG and UART interfaces simultaneously. The UART interface is mostly used for connection with the SEGGER SystemView tool (see :doc:`sysview`). Tracing over the USB Serial JTAG peripheral is provided by a separate transport, not by apptrace.
+
+This page documents the transport itself: how to configure it, how to send and receive arbitrary application data through it, and the host-side OpenOCD commands used to collect that data. Higher-level features built on top of this transport are documented separately:
+
+- System behavior analysis with SEGGER SystemView: see :doc:`sysview`.
+- Source code coverage with Gcov: see :doc:`gcov`.
+- Plugging in your own trace recorder: see :doc:`custom-trace-library`.
 
 Overview
 --------
 
-ESP-IDF provides a useful feature for program behavior analysis: application level tracing. It is implemented in the corresponding library and can be enabled in menuconfig. This feature allows to transfer arbitrary data between host and {IDF_TARGET_NAME} via JTAG, UART, or USB interfaces with small overhead on program execution. It is possible to use JTAG and UART interfaces simultaneously. The UART interface is mostly used for connection with SEGGER SystemView tool (see `SystemView <https://www.segger.com/products/development-tools/systemview/>`_).
-
-Developers can use this library to send application-specific state of execution to the host and receive commands or other types of information from the opposite direction at runtime. The main use cases of this library are:
+Developers can use this library to send application-specific state of execution to the host and receive commands or other types of information from the opposite direction at runtime. The main standalone use cases of this library are:
 
 1. Collecting application-specific data. See :ref:`app_trace-application-specific-tracing`.
 2. Lightweight logging to the host. See :ref:`app_trace-logging-to-host`.
-3. System behavior analysis. See :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`.
-4. Source code coverage. See :ref:`app_trace-gcov-source-code-coverage`.
 
-Tracing components used when working over JTAG interface are shown in the figure below.
+Tracing components used when working over the JTAG interface are shown in the figure below.
 
-.. figure:: ../../_static/app_trace-overview.jpg
+.. figure:: ../../../_static/app_trace-overview.jpg
     :align: center
     :alt: Tracing Components When Working Over JTAG
 
@@ -39,7 +43,7 @@ Configuration Options and Dependencies
 
 Using of this feature depends on two components:
 
-1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
+1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging </api-guides/jtag-debugging/index>` for details.
 
 2. **Target side:** Application tracing functionality can be enabled in menuconfig. **Important:** You must first enable application tracing by going to ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` and selecting ``ESP-IDF apptrace``. After that, configuration can be done at ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``. Here you can configure the destination for the trace data. For UART interfaces, users have to define port number, baud rate, TX and RX pins numbers, and additional UART-related parameters. When any trace library is selected (for example SEGGER SystemView), these settings will be used for the library as well.
 
@@ -94,7 +98,7 @@ Quick Start Summary
 
 .. note::
 
-    Application tracing can also work as a transport adapter to the esp_trace library. In this case, the Application Level Tracing library will not be used directly, but rather through the selected esp_trace library with new APIs.
+    Application tracing can also work as a transport adapter to the esp_trace library. In this case, the Application Level Tracing library will not be used directly, but rather through the selected esp_trace library with new APIs. See :doc:`index`.
 
 .. note::
 
@@ -226,13 +230,13 @@ In general, users should decide what type of data should be transferred in every
 
 3. The next step is to build the program image and download it to the target as described in the :ref:`Getting Started Guide <get-started-build>`.
 
-4. Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
+4. Run OpenOCD (see :doc:`JTAG Debugging </api-guides/jtag-debugging/index>`).
 
 5. Connect to OpenOCD telnet server. It can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD, you can use ``localhost`` as ``<oocd_host>`` in the command above.
 
 6. Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to the specified file or socket. For description of the corresponding commands, see `OpenOCD Application Level Tracing Commands`_.
 
-7. The final step is to process received data. Since the format of data is defined by users, the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``apptrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
+7. The final step is to process received data. Since the format of data is defined by users, the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``sysviewtrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
 
 
 OpenOCD Application Level Tracing Commands
@@ -389,226 +393,13 @@ Optional arguments:
     Do not print errors.
 
 
-.. _app_trace-system-behaviour-analysis-with-segger-systemview:
-
-System Behavior Analysis with SEGGER SystemView
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Another useful ESP-IDF feature built on top of application tracing library is the system level tracing which produces traces compatible with SEGGER SystemView tool (see `SystemView <https://www.segger.com/products/development-tools/systemview/>`_). SEGGER SystemView is a real-time recording and visualization tool that allows to analyze runtime behavior of an application. It is possible to view events in real-time through the UART interface.
-
-
-How To Use It
-"""""""""""""
-
-SystemView support is provided by the managed component ``espressif/esp_sysview``. The SystemView menu becomes visible only after:
-
-1. Adding the component dependency in ``idf_component.yml``:
-
-   .. code-block:: yaml
-
-       dependencies:
-         espressif/esp_sysview: ^1
-
-2. Selecting the external library in menuconfig: ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``.
-
-After that, you can configure SystemView in ``Component config`` > ``SEGGER SystemView Configuration``. For full, up-to-date instructions, see the component README: `esp_sysview <https://components.espressif.com/components/espressif/esp_sysview>`_.
-
-There are several other options enabled under the same menu:
-
-1. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`) selects the source of timestamps for SystemView events. In the single core mode, timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum frequency. (:ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`) In the dual-core mode, external timer is used to generate timestamps. It's frequency is 1/2 of the CPU frequency.
-
-2. Individually enabled or disabled collection of SystemView events (``CONFIG_SEGGER_SYSVIEW_EVT_XXX``):
-
-    - Trace Buffer Overflow Event
-    - ISR Enter Event
-    - ISR Exit Event
-    - ISR Exit to Scheduler Event
-    - Task Start Execution Event
-    - Task Stop Execution Event
-    - Task Start Ready State Event
-    - Task Stop Ready State Event
-    - Task Create Event
-    - Task Terminate Event
-    - System Idle Event
-    - Timer Enter Event
-    - Timer Exit Event
-
-ESP-IDF has all the code required to produce SystemView compatible traces.
-
-3. To trace over the UART interface in real-time, first select UART as the destination in ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``. Then select Pro or App CPU in ``Component config`` > ``ESP Trace Configuration`` > ``SEGGER SystemView``.
-
-OpenOCD SystemView Tracing Command Options
-""""""""""""""""""""""""""""""""""""""""""
-
-Command usage:
-
-``esp sysview [start <options>] | [stop] | [status]``
-
-Sub-commands:
-
-``start``
-    Start tracing (continuous streaming).
-``stop``
-    Stop tracing.
-``status``
-    Get tracing status.
-
-Start command syntax:
-
-  ``start <outfile1> [outfile2] [poll_period [trace_size [stop_tmo]]]``
-
-``outfile1``
-    Path to file to save data from PRO CPU. This argument should have the following format: ``file://path/to/file``.
-``outfile2``
-    Path to file to save data from APP CPU. This argument should have the following format: ``file://path/to/file``.
-``poll_period``
-    Data polling period (in ms) for available trace data. If greater than 0, then command runs in non-blocking mode. By default, 1 ms.
-``trace_size``
-    Maximum size of data to collect (in bytes). Tracing is stopped after specified amount of data is received. By default, -1 (trace size stop trigger is disabled).
-``stop_tmo``
-    Idle timeout (in sec). Tracing is stopped if there is no data for specified period of time. By default, -1 (disable this stop trigger).
-
-.. note::
-
-    If ``poll_period`` is 0, OpenOCD telnet command line will not be available until tracing is stopped. You must stop it manually by resetting the board or pressing Ctrl+C in the OpenOCD window (not the one with the telnet session). Another option is to set ``trace_size`` and wait until this size of data is collected. At this point, tracing stops automatically.
-
-Command usage examples:
-
-.. highlight:: none
-
-1.  Collect SystemView tracing data to files ``pro-cpu.SVDat`` and ``app-cpu.SVDat``. The files will be saved in ``openocd-esp32`` directory.
-
-    ::
-
-        esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
-
-    The tracing data will be retrieved and saved in non-blocking mode. To stop this process, enter ``esp sysview stop`` command on OpenOCD telnet prompt, optionally pressing Ctrl+C in the OpenOCD window.
-
-2.  Retrieve tracing data and save them indefinitely.
-
-    ::
-
-        esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
-
-    OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing, press Ctrl+C in the OpenOCD window.
-
-
-Multi-Core SystemView Tracing Command
-""""""""""""""""""""""""""""""""""""""
-
-For SystemView version 3.60 and later, which supports multi-core tracing, use the ``esp sysview_mcore`` command. This command is identical to ``esp sysview`` but uses the official SEGGER SystemView multi-core format. Tracing data from all cores are saved in the same file, which can be opened in SEGGER SystemView v3.60 or later.
-
-Command usage example:
-
-.. highlight:: none
-
-::
-
-    esp sysview_mcore start file://heap_log_mcore.SVDat
-
-For detailed command syntax and options, refer to the ``esp sysview`` command above, as ``esp sysview_mcore`` accepts the same parameters.
-
-
-Data Visualization
-""""""""""""""""""
-
-After trace data are collected, users can use a special tool to visualize the results and inspect behavior of the program.
-
-.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
-
-    **Multi-Core Tracing**
-
-    SystemView version 3.60 and later supports tracing from multiple cores. For multi-core tracing, use the ``esp sysview_mcore`` command to generate a single file compatible with SystemView multi-core format:
-
-    ::
-
-        esp sysview_mcore start file://heap_log_mcore.SVDat
-
-    This command will create a single trace file that can be loaded directly into SystemView 3.60+ for multi-core visualization.
-
-    **Note:** SystemView versions before 3.60 do not support multi-core tracing. For older versions, when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two separate files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, after selecting the external library in menuconfig, users can select ``Component config`` > ``SEGGER SystemView Configuration`` to choose which CPU (Pro or App) has to be traced.
-
-    For older SystemView versions, analyzing data for every core in separate instances can be awkward. An alternative is to use the Eclipse plugin called *Impulse*, which can load several trace files, making it possible to inspect events from both cores in one view. This plugin also has no limitation of 1,000,000 events as compared to the free version of SystemView.
-
-Good instructions on how to install, configure, and visualize data in Impulse from one core can be found `here <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_.
-
-.. note::
-
-    ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``. Also, contents of that ESP-IDF-specific file should be used when configuring SystemView serializer using the above link.
-
-.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
-
-    Configure Impulse for Dual Core Traces
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    After installing Impulse and ensuring that it can successfully load trace files for each core in separate tabs, users can add special Multi Adapter port and load both files into one view. To do this, users need to do the following steps in Eclipse:
-
-    1. Open the ``Signal Ports`` view. Go to ``Windows`` > ``Show View`` > ``Other menu``. Find the ``Signal Ports`` view in Impulse folder and double-click it.
-    2. In the ``Signal Ports`` view, right-click ``Ports`` and select ``Add`` > ``New Multi Adapter Port``.
-    3. In the open dialog box, click ``Add`` and select ``New Pipe/File``.
-    4. In the open dialog box, select ``SystemView Serializer`` as Serializer and set path to PRO CPU trace file. Click ``OK``.
-    5. Repeat the steps 3-4 for APP CPU trace file.
-    6. Double-click the created port. View for this port should open.
-    7. Click the ``Start/Stop Streaming`` button. Data should be loaded.
-    8. Use the ``Zoom Out``, ``Zoom In`` and ``Zoom Fit`` buttons to inspect data.
-    9. For settings measurement cursors and other features, please see `Impulse documentation <https://toem.de/index.php/products/impulse>`_).
-
-    .. note::
-
-        If you have problems with visualization (no data is shown or strange behaviors of zoom action are observed), you can try to delete current signal hierarchy and double-click on the necessary file or port. Eclipse will ask you to create a new signal hierarchy.
-
-.. _app_trace-function-tracing:
-
-Compiler-Instrumented Function Tracing
-""""""""""""""""""""""""""""""""""""""
-
-Function tracing records every function entry and exit automatically, without manual trace points. When a source file is built with the GCC flag ``-finstrument-functions``, the compiler inserts a call at the start and end of each function. These calls go to hooks provided by the ``esp_trace`` component, which forward the events to the active trace encoder (for example SystemView). The events carry the raw function and call-site addresses. SystemView records them as raw addresses. Resolving the addresses to function names is done separately against the ELF file (for example with ``addr2line`` or a custom tool).
-
-Enable it under ``Component config`` > ``ESP Trace Configuration`` > ``Function Tracing``. The following options control function tracing:
-
-- :ref:`CONFIG_ESP_TRACE_FUNCTION_TRACE` - build the function-trace hooks and runtime.
-- :ref:`CONFIG_ESP_TRACE_FUNCTION_TRACE_AUTO_START` - when enabled (default), recording follows the encoder's state and begins as soon as the host starts the session. When disabled, drop events until the application calls :cpp:func:`esp_trace_function_trace_start`; an active host session alone is not enough.
-
-Enabling the option compiles the hooks and runtime into the build. It does not add ``-finstrument-functions`` to any code, so on its own it produces no events. To trace a component or file, add the flag from its own ``CMakeLists.txt`` for the sources you want traced:
-
-.. code-block:: cmake
-
-    if(CONFIG_ESP_TRACE_FUNCTION_TRACE)
-        target_compile_options(${COMPONENT_LIB} PRIVATE -finstrument-functions)
-    endif()
-
-Use the GCC ``-finstrument-functions-exclude-file-list`` and ``-finstrument-functions-exclude-function-list`` flags to skip specific files or functions. Keep instrumentation scoped to your own components, and do not instrument code that runs with the flash cache disabled (IRAM ISRs, SPI flash operations).
-
-After collecting a SystemView capture (see `Application Specific Tracing`_), decode the function-trace events with the processing script:
-
-.. code-block:: bash
-
-    $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -i func -b </path/to/program.elf> -t {IDF_TARGET_TOOLCHAIN_PREFIX}- file:///path/to/trace.svdat
-
-The ``-i func`` option selects the function-trace event stream. The script uses the ELF file and toolchain prefix to resolve addresses, then prints a per-function report listing each traced function with its address, entry and exit counts, and source location.
-
 Application Examples
-""""""""""""""""""""
+--------------------
 
-- :example:`system/sysview_tracing` demonstrates how to trace FreeRTOS task and system events using SEGGER SystemView.
-- :example:`system/sysview_tracing_heap_log` demonstrates heap allocation tracing alongside SystemView events.
-- :example:`system/function_tracing` demonstrates compiler-instrumented function entry/exit tracing and how to control which code is instrumented.
+- :example:`system/app_trace_basic` demonstrates how to use the Application Level Tracing Library to log messages to a host via JTAG, providing a faster alternative to UART logs.
+- :example:`system/app_trace_to_plot` demonstrates how to send and plot dummy sensor data to a host via JTAG.
 
-.. _app_trace-gcov-source-code-coverage:
+API Reference
+-------------
 
-Gcov (Source Code Coverage)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In ESP-IDF projects, code coverage analysis using gcov can be done with the help of `espressif/esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_ managed component.
-
-.. _app_trace-integrating-a-custom-trace-library:
-
-Integrating a Custom Trace Library
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The ``esp_trace`` component exposes a stable extension point (``CONFIG_ESP_TRACE_LIB_EXTERNAL``) for plugging in a third-party trace recorder without patching ESP-IDF. An external component provides an encoder adapter (registered via ``ESP_TRACE_REGISTER_ENCODER()``) and a slim ``esp_trace_freertos_impl.h`` that injects the desired FreeRTOS trace hooks. The encoder vtable also offers optional ``start`` / ``stop`` / ``flush`` and ``take_lock`` / ``give_lock`` entries dispatched from the public :cpp:func:`esp_trace_start`, :cpp:func:`esp_trace_stop`, :cpp:func:`esp_trace_flush` API.
-
-Application Examples
-""""""""""""""""""""
-
-- :example:`system/esp_trace` is a minimal copy-paste template that wires up an external encoder, demonstrates the FreeRTOS trace-hook include-chain contract, and covers cross-core serialization through the encoder lock.
+For the transport API, see :doc:`/api-reference/system/app_trace`. For the high-level ``esp_trace`` API, see :doc:`/api-reference/system/esp_trace`.

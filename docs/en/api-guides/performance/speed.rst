@@ -63,7 +63,7 @@ Executing the target multiple times can help average out factors, e.g., RTOS con
 External Tracing
 ^^^^^^^^^^^^^^^^
 
-The :doc:`/api-guides/app_trace` allows measuring code execution with minimal impact on the code itself.
+The :doc:`/api-guides/tracing/transports` allows measuring code execution with minimal impact on the code itself.
 
 Tasks
 ^^^^^

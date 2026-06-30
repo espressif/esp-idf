@@ -63,7 +63,7 @@
 外部跟踪
 ^^^^^^^^^^^^^^^^^^^^
 
-:doc:`/api-guides/app_trace` 可以在几乎不影响代码执行的情况下测量其执行速度。
+:doc:`/api-guides/tracing/transports` 可以在几乎不影响代码执行的情况下测量其执行速度。
 
 任务
 ^^^^^^^

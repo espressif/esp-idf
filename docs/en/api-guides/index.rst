@@ -5,7 +5,6 @@ API Guides
 .. toctree::
    :maxdepth: 1
 
-   app_trace
    startup
    :SOC_BT_SUPPORTED: bt-architecture/index
    :SOC_BT_CLASSIC_SUPPORTED: classic-bt/index
@@ -45,6 +44,7 @@ API Guides
    stdio
    thread-local-storage
    tools/index
+   tracing/index
    unit-tests
    host-apps
    :SOC_USB_OTG_CONSOLE_SUPPORTED: usb-otg-console

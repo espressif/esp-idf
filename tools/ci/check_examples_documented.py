@@ -113,7 +113,6 @@ KNOWN_MISSING = {
     'build_system/cmakev2/features/import_prebuilt/prebuilt',
     # TODO IDF-15381: add :example: references for system and custom_bootloader examples
     'custom_bootloader/bootloader_multiboot',
-    'system/gcov',
     'system/gdbstub',
     'system/rt_mqueue',
     'system/ulp/lp_core/build_system',

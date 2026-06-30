@@ -231,7 +231,7 @@ The ``app_trace`` component is now a sub-component of ``esp_trace`` and will be 
 Initialization Flow Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For runtime configuration override, a new callback system is available. See the :doc:`Application Tracing documentation <../../../api-guides/app_trace>` for details on ``esp_apptrace_get_user_params()`` and ``esp_trace_get_user_params()``.
+For runtime configuration override, a new callback system is available. See the :doc:`Application Tracing documentation <../../../api-guides/tracing/transports>` for details on ``esp_apptrace_get_user_params()`` and ``esp_trace_get_user_params()``.
 
 API Changes
 ^^^^^^^^^^^
