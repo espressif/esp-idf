@@ -25,11 +25,13 @@ typedef enum {
  */
 typedef enum {
     MMU_PAGE_8KB   = 0x2000,
+    MMU_PAGE_SIZE_MIN = MMU_PAGE_8KB,
     MMU_PAGE_16KB  = 0x4000,
     MMU_PAGE_32KB  = 0x8000,
     MMU_PAGE_64KB  = 0x10000,
     MMU_PAGE_128KB = 0x20000,
     MMU_PAGE_256KB = 0x40000,
+    MMU_PAGE_SIZE_MAX = MMU_PAGE_256KB,
 } mmu_page_size_t;
 
 /**
