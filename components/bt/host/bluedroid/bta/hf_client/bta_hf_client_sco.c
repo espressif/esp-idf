@@ -557,9 +557,10 @@ static void bta_hf_client_sco_data_send_msbc(BT_HDR *p_buf, UINT16 out_pkt_len)
                 p_buf3->offset = BTA_HF_CLIENT_BUFF_OFFSET_MIN;
                 p_buf3->len = BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
                 UINT8 *p_data3 = (UINT8 *)(p_buf3 + 1) + p_buf3->offset;
-                memcpy(p_data3, p_data, BTA_HF_CLIENT_MSBC_FRAME_SIZE - BTA_HF_CLIENT_H2_HEADER_LEN - BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3);
-                p_data += BTA_HF_CLIENT_MSBC_FRAME_SIZE - BTA_HF_CLIENT_H2_HEADER_LEN - BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
-                total_len -= BTA_HF_CLIENT_MSBC_FRAME_SIZE - BTA_HF_CLIENT_H2_HEADER_LEN - BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3;
+                UINT16 rem_payload = BTA_HF_CLIENT_MSBC_FRAME_SIZE - (BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3 - BTA_HF_CLIENT_H2_HEADER_LEN);
+                memcpy(p_data3, p_data, rem_payload);
+                p_data += rem_payload;
+                total_len -= rem_payload;
                 bta_hf_client_write_sco_data(p_buf2, p_buf3);
             }
         }
@@ -875,6 +876,7 @@ static void bta_hf_client_sco_event(UINT8 event)
                     }
                 } else {
                     osi_free(p_buf);
+                    break;
                 }
             } else {
                 osi_free(p_buf);
