@@ -507,7 +507,11 @@ esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callbac
 
 esp_err_t esp_a2d_source_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf)
 {
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED || !btc_av_is_started()) {
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (g_a2dp_on_deinit || g_a2dp_source_ongoing_deinit || !btc_av_is_started()) {
         return ESP_ERR_INVALID_STATE;
     }
 
