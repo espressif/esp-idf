@@ -4490,7 +4490,7 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
                     (status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE)           ||
                     (status == HCI_ERR_REPEATED_ATTEMPTS)))) {
             p_dev_rec->security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
-            p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN << bit_shift);
+            p_dev_rec->sec_flags &= ~((BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED) << bit_shift);
 
 
 #ifdef BRCM_NOT_4_BTE
