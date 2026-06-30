@@ -111,15 +111,13 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181
     mon reset halt
     b app_main
     commands
-    mon esp sysview start file:///tmp/sysview_example.svdat
-    # For dual-core mode uncomment the line below and comment the line above
-    # mon esp sysview start file:///tmp/sysview_example0.svdat file:///tmp/sysview_example1.svdat
+    mon esp sysview_mcore start file:///tmp/sysview_example.svdat
     c
     end
     c
     ```
 
-    Using this file GDB will connect to the target, reset it, and start tracing when it hit breakpoint at `app_main`. Trace data will be saved to `/tmp/sysview_example.svdat`.
+    Using this file GDB will connect to the target, reset it, and start tracing when it hit breakpoint at `app_main`. Trace data will be saved to `/tmp/sysview_example.svdat`. The `esp sysview_mcore` command uses the SEGGER SystemView multi-core format, so a single file holds the trace for both single- and dual-core targets.
 
 6.  Run GDB using the following command from the project root directory:
 
@@ -132,12 +130,12 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181
 7.  When program prints the last message, interrupt its execution (e.g. by pressing `CTRL+C`) and type the following command in GDB console to stop tracing:
 
     ```
-    mon esp sysview stop
+    mon esp sysview_mcore stop
     ```
 
     You can also use another breakpoint to stop tracing and add respective lines to `gdbinit`  at step 5.
 
-8.  Open trace data file in SystemView tool.
+8.  Open trace data file in SystemView tool. The multi-core format produced by `esp sysview_mcore` requires SEGGER SystemView v3.60 or later.
 
 9.  Right-click on any event in `Events` view and select:
 
