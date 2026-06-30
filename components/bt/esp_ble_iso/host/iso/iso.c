@@ -624,6 +624,17 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
     case BT_ISO_SINGLE:
         iso_info.flags = 0;
 
+        /* A malformed ISO packet whose ISO_Data_Load_Length is below the SDU
+         * header size would underflow buf->len in net_buf_pull_mem (the guard
+         * assert is compiled out in release) and leak OOB bytes into the recv
+         * callback. Drop it before pulling the header.
+         */
+        if (buf->len < (ts ? sizeof(struct bt_hci_iso_sdu_ts_hdr)
+                           : sizeof(struct bt_hci_iso_sdu_hdr))) {
+            LOG_ERR("ShortIsoSduHdr[%u][%u]", buf->len, ts);
+            return;
+        }
+
         /* The ISO_Data_Load field contains either the first fragment
          * of an SDU or a complete SDU.
          */
