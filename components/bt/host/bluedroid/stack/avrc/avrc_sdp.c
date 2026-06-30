@@ -199,6 +199,11 @@ UINT16 AVRC_FindService(UINT16 service_uuid, BD_ADDR bd_addr,
 
         /* perform service search */
         result = SDP_ServiceSearchAttributeRequest(bd_addr, p_db->p_db, avrc_sdp_cback);
+        if (!result) {
+            avrc_cb.service_uuid = 0;
+            avrc_cb.p_db = NULL;
+            avrc_cb.p_cback = NULL;
+        }
     }
 
     return (result ? AVRC_SUCCESS : AVRC_FAIL);
@@ -413,6 +418,17 @@ void AVRC_Deinit(void)
 {
 #if AVRC_DYNAMIC_MEMORY
     if (avrc_cb_ptr){
+#if (AVRC_METADATA_INCLUDED == TRUE)
+        UINT8 i;
+        for (i = 0; i < AVCT_NUM_CONN; i++) {
+            if (avrc_cb_ptr->fcb[i].p_fmsg) {
+                osi_free(avrc_cb_ptr->fcb[i].p_fmsg);
+            }
+            if (avrc_cb_ptr->rcb[i].p_rmsg) {
+                osi_free(avrc_cb_ptr->rcb[i].p_rmsg);
+            }
+        }
+#endif
         osi_free(avrc_cb_ptr);
         avrc_cb_ptr = NULL;
     }
