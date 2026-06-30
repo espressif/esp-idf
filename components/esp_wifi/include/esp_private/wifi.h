@@ -106,6 +106,7 @@ struct nan_cb_peer_info {
     uint16_t ssi_len;                                       /**< SSI length in bytes */
     wifi_nan_peer_sdf_security_t *peer_security_params;     /**< Peer's discovery security params parsed from SDF */
     nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
+    bool nira_verified;                                     /**< true when received NIRA tag verified against cached NIK */
 };
 
 /* NDP Peer info parsed from NAF. */
@@ -196,6 +197,7 @@ struct nan_sync_callbacks {
     uint32_t (* get_nira_len)(void);
     int (* construct_nira)(uint8_t *frm);
     bool (*verify_nira)(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
+    bool (*peer_nik_cached)(uint8_t *peer_mac);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via
@@ -1202,6 +1204,19 @@ uint32_t esp_nan_get_nira_len(void);
 int esp_nan_construct_nira(uint8_t *frm);
 
 /**
+ * @brief      Construct a NAN Cipher Suite Info Attribute (CSIA)
+ *
+ * @param[out] frm              Buffer to write the attribute to
+ * @param[in]  pub_id           Publish service instance id
+ * @param[in]  own_csid_bitmap  Locally supported cipher suite bitmap
+ * @param[in]  peer_csid_bitmap Peer cipher suite bitmap, or 0 to use own bitmap
+ *
+ * @return     Number of bytes written, or 0 on failure/no cipher suite
+ */
+int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id,
+                           uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
+
+/**
  * @brief      Verify a received NAN Identity Resolution Attribute (NIRA)
  *
  * @param[in]  peer_mac      NMI of the sender
@@ -1211,6 +1226,24 @@ int esp_nan_construct_nira(uint8_t *frm);
  * @return     true if the tag matches, false otherwise
  */
 bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
+
+/**
+ * @brief      Verify a received NIRA and resolve the matched own service id
+ *
+ * Behaves like @ref esp_nan_verify_nira but additionally outputs the local
+ * service instance id the verifying NIK maps to, used to anchor a pairing
+ * verify-session flag. @p own_inst_id is set to 0 when the identity does not
+ * resolve to an active local service.
+ *
+ * @param[in]  peer_mac      NMI of the sender
+ * @param[in]  nira_attr     NIRA attribute buffer
+ * @param[in]  nira_attr_len Attribute length in bytes
+ * @param[out] own_inst_id   Resolved own service instance id (0 if none)
+ *
+ * @return     true if the tag matches, false otherwise
+ */
+bool esp_nan_verify_nira_get_own_svc(uint8_t *peer_mac, uint8_t *nira_attr,
+                                     uint16_t nira_attr_len, uint8_t *own_inst_id);
 
 /**
   * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.
