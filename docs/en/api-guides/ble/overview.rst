@@ -229,6 +229,17 @@ Above the host stacks are the profile implementations by Espressif and some comm
   - :example:`Application examples <bluetooth/blufi>`
 
 
+.. only:: SOC_BLE_AUDIO_SUPPORTED
+
+  ESP-BLE-AUDIO
+  ^^^^^^^^^^^^^
+
+  Bluetooth LE Audio is the audio architecture introduced in Bluetooth Core Specification 5.2. ESP-BLE-AUDIO provides the Generic Audio Framework profiles and services, built on top of the ESP-BLE-ISO transport. Both run on either ESP-Bluedroid or ESP-NimBLE.
+
+  - :doc:`ESP-IDF LE Audio documentation <../esp-ble-audio/ble-audio-index>`: standard overview, architecture, feature support status, etc.
+  - :example:`Application examples <bluetooth/esp_ble_audio>`
+
+
 Applications
 ------------
 
