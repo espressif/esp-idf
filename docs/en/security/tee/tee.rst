@@ -76,7 +76,7 @@ ESP-TEE divides the memory into separate regions for the TEE and REE, allocating
 Internal Memory (SRAM)
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Internal memory is allocated to the the TEE based on the Kconfig options that are available under the :ref:`Memory Configuration <esp-tee-trusted-execution-environment--enable-the-esp-tee-framework-memory-configuration>` section in the :ref:`esp-tee-trusted-execution-environment-` menu. All remaining memory is allocated to the REE.
+Internal memory is allocated to the TEE based on the Kconfig options that are available under the :ref:`Memory Configuration <esp-tee-trusted-execution-environment--enable-the-esp-tee-framework-memory-configuration>` section in the :ref:`esp-tee-trusted-execution-environment-` menu. All remaining memory is allocated to the REE.
 
 .. warning::
 
