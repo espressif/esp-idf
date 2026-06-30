@@ -13,8 +13,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include "soc/lp_spi_struct.h"
 #include "soc/lp_peri_clkrst_struct.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +51,60 @@ static inline void lp_spi_ll_write_buffer_word(lp_spi_ll_dev_t *hw, int n, uint3
 static inline uint32_t lp_spi_ll_read_buffer_word(lp_spi_ll_dev_t *hw, int n)
 {
     return hw->data_buf[n].val;
+}
+
+/**
+ * @brief Write ``len`` bytes into the LP SPI data buffer registers from W0.
+ *        Sub-word safe (no read past ``src``).
+ *
+ * @param hw   LP SPI hardware
+ * @param src  Source byte buffer
+ * @param len  Number of bytes (<= ``LP_SPI_LL_MAX_BUFFER_SIZE``)
+ */
+static inline void lp_spi_ll_write_buffer_bytes(lp_spi_ll_dev_t *hw, const uint8_t *src, size_t len)
+{
+    HAL_ASSERT(len <= LP_SPI_LL_MAX_BUFFER_SIZE);
+    size_t reg_idx = 0;
+    size_t remaining = len;
+    while (remaining >= 4) {
+        uint32_t word;
+        memcpy(&word, src, 4);
+        hw->data_buf[reg_idx].val = word;
+        reg_idx++;
+        src += 4;
+        remaining -= 4;
+    }
+    if (remaining > 0) {
+        uint32_t word = 0;
+        memcpy(&word, src, remaining);
+        hw->data_buf[reg_idx].val = word;
+    }
+}
+
+/**
+ * @brief Read ``len`` bytes from the LP SPI data buffer registers into ``dst``,
+ *        starting at W0. Sub-word safe (no write past ``dst``).
+ *
+ * @param hw   LP SPI hardware
+ * @param dst  Destination byte buffer
+ * @param len  Number of bytes (<= ``LP_SPI_LL_MAX_BUFFER_SIZE``)
+ */
+static inline void lp_spi_ll_read_buffer_bytes(lp_spi_ll_dev_t *hw, uint8_t *dst, size_t len)
+{
+    HAL_ASSERT(len <= LP_SPI_LL_MAX_BUFFER_SIZE);
+    size_t reg_idx = 0;
+    size_t remaining = len;
+    while (remaining >= 4) {
+        uint32_t word = hw->data_buf[reg_idx].val;
+        memcpy(dst, &word, 4);
+        reg_idx++;
+        dst += 4;
+        remaining -= 4;
+    }
+    if (remaining > 0) {
+        uint32_t word = hw->data_buf[reg_idx].val;
+        memcpy(dst, &word, remaining);
+    }
 }
 
 /**
@@ -368,6 +424,16 @@ static inline void lp_spi_ll_reset_cs_timing(lp_spi_ll_dev_t *hw)
 {
     hw->spi_user1.reg_cs_setup_time = 0;
     hw->spi_user1.reg_cs_hold_time = 0;
+}
+
+/**
+ * @brief This resets the LP SPI peripheral
+ */
+static inline void lp_spi_ll_reset(void)
+{
+    LP_PERI_CLKRST.spi_ctrl.lp_spi_rst_en = 1;
+    (void)LP_PERI_CLKRST.spi_ctrl.lp_spi_rst_en;
+    LP_PERI_CLKRST.spi_ctrl.lp_spi_rst_en = 0;
 }
 
 #ifdef __cplusplus
