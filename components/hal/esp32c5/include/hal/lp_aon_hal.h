@@ -15,3 +15,6 @@
 #define rtc_hal_ext1_get_wakeup_pins()                          lp_aon_ll_ext1_get_wakeup_pins()
 
 #define lp_aon_hal_inform_wakeup_type(dslp)                     lp_aon_ll_inform_wakeup_type(dslp)
+
+#define lp_aon_hal_store_wakeup_cause(wakeup_cause)               lp_aon_ll_store_wakeup_cause(wakeup_cause)
+#define lp_aon_hal_load_wakeup_cause()                           lp_aon_ll_load_wakeup_cause()

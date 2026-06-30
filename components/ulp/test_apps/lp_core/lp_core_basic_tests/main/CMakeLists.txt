@@ -59,6 +59,10 @@ if(CONFIG_SOC_LP_VAD_SUPPORTED)
     set(lp_core_sources_vad "lp_core/test_main_vad.c")
 endif()
 
+if(CONFIG_SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE)
+    set(lp_core_sources_halt "lp_core/test_main_halt.c")
+endif()
+
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
@@ -135,5 +139,9 @@ list(APPEND lp_core_test_apps lp_core_test_app_prefix2)
 
 ulp_embed_binary(lp_core_test_app_exception "lp_core/test_main_exception.c" "${lp_core_exp_dep_srcs}")
 list(APPEND lp_core_test_apps lp_core_test_app_exception)
+
+if(CONFIG_SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE)
+    ulp_embed_binary(lp_core_test_app_halt "lp_core/test_main_halt.c" "${lp_core_exp_dep_srcs}")
+endif()
 
 lp_core_test_app_checks(${lp_core_test_apps})
