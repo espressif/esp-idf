@@ -1090,6 +1090,11 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
     UINT8   status;
     BD_ADDR bd_addr;
 
+    if (evt_len < (1 + BD_ADDR_LEN)) {
+        HCI_TRACE_ERROR("HCI_RMT_NAME_REQUEST_COMP_EVT param too short (len=%u)", evt_len);
+        return;
+    }
+
     STREAM_TO_UINT8 (status, p);
     STREAM_TO_BDADDR (bd_addr, p);
 
