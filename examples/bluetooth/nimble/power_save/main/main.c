@@ -16,6 +16,7 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
+#include "soc/rtc.h"
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
@@ -574,7 +575,7 @@ app_main(void)
     // automatic light sleep is enabled if tickless idle support is enabled.
     esp_pm_config_t pm_config = {
             .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
-            .min_freq_mhz = CONFIG_XTAL_FREQ,
+            .min_freq_mhz = rtc_clk_xtal_freq_get(),
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
             .light_sleep_enable = true
 #endif
