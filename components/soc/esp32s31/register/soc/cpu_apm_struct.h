@@ -602,6 +602,7 @@ typedef struct {
     volatile cpu_apm_date_reg_t date;
 } cpu_apm_dev_t;
 
+extern cpu_apm_dev_t CPU_APM;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(cpu_apm_dev_t) == 0x400, "Invalid size of cpu_apm_dev_t structure");
