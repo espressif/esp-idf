@@ -328,6 +328,30 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_api_cs_set_procedure_params,               /* BTA_DM_API_CS_SET_PROCEDURE_PARAMS */
     bta_dm_api_cs_procedure_enable,                   /* BTA_DM_API_CS_PROCEDURE_ENABLE */
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    bta_dm_api_cs_set_security_requirements,          /* BTA_DM_API_CS_SET_SECURITY_REQUIREMENTS */
+    bta_dm_api_cs_set_default_security_requirements,  /* BTA_DM_API_CS_SET_DEFAULT_SECURITY_REQUIREMENTS */
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    bta_dm_ble_gap_set_decision_data,                 /* BTA_DM_API_SET_DECISION_DATA_EVT */
+    bta_dm_ble_gap_set_decision_instructions,         /* BTA_DM_API_SET_DECISION_INSTRUCTIONS_EVT */
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    bta_dm_ble_gap_frame_space_update,                /* BTA_DM_API_FRAME_SPACE_UPDATE_EVT */
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    bta_dm_ble_gap_read_all_local_supp_features,        /* BTA_DM_API_READ_ALL_LOCAL_SUPP_FEAT_EVT */
+    bta_dm_ble_gap_read_all_remote_features,            /* BTA_DM_API_READ_ALL_REMOTE_FEAT_EVT */
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    bta_dm_ble_gap_connection_rate_request,             /* BTA_DM_API_CONNECTION_RATE_REQUEST_EVT */
+    bta_dm_ble_gap_set_default_rate_parameters,         /* BTA_DM_API_SET_DEFAULT_RATE_PARAMETERS_EVT */
+    bta_dm_ble_gap_read_min_supp_conn_interval,           /* BTA_DM_API_READ_MIN_SUPP_CONN_INTERVAL_EVT */
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    bta_dm_ble_gap_enable_utp_ota_mode,                 /* BTA_DM_API_ENABLE_UTP_OTA_MODE_EVT */
+    bta_dm_ble_gap_utp_send,                            /* BTA_DM_API_UTP_SEND_EVT */
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 };
 
 
