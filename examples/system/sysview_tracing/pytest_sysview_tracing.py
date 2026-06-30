@@ -16,31 +16,35 @@ if typing.TYPE_CHECKING:
     from conftest import OpenOCD
 
 
-def _validate_trace_data(trace_log: list[str], target: str, is_uart: bool = False) -> None:
-    """Validate SysView trace data in log file(s).
+def _validate_trace_data(trace_log: str, target: str, dual_core: bool = False, is_uart: bool = False) -> None:
+    """Validate SysView trace data in a single trace log file.
 
     Args:
-        trace_log: List of trace log paths
+        trace_log: Path to the trace log file
         target: Target chip name (e.g., 'esp32', 'esp32s3')
+        dual_core: If True, expect a per-core description block for both cores
+            (the ``esp sysview_mcore`` multi-core capture embeds one per core)
         is_uart: If True, also validate STOP record at end of file
     """
     STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
 
-    for idx, log in enumerate(trace_log):
-        with open(log, 'rb') as f:
-            content = f.read()
-            search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
-            assert search_str in content, f'SysView trace data not found in {log}'
-            # The file must end with a TRACE_STOP record: the STOP event ID
-            # followed by a variable-length timestamp delta. Walk back
-            # over the trailing continuation bytes (0x80 bit set)
-            # to find the event ID, since its offset is not fixed.
-            size = len(content)
-            assert size >= 2, 'Trace file too small to contain STOP record'
-            i = size - 2
-            while i >= 0 and (content[i] & 0x80):
-                i -= 1
-            assert i >= 0 and content[i] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
+    with open(trace_log, 'rb') as f:
+        content = f.read()
+
+    for idx in range(2 if dual_core else 1):
+        search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
+        assert search_str in content, f'SysView core{idx} trace data not found in {trace_log}'
+
+    # The file must end with a TRACE_STOP record: the STOP event ID
+    # followed by a variable-length timestamp delta. Walk back
+    # over the trailing continuation bytes (0x80 bit set)
+    # to find the event ID, since its offset is not fixed.
+    size = len(content)
+    assert size >= 2, 'Trace file too small to contain STOP record'
+    i = size - 2
+    while i >= 0 and (content[i] & 0x80):
+        i -= 1
+    assert i >= 0 and content[i] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
 
 
 def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
@@ -86,22 +90,19 @@ def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
 
 
 def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
-    # Construct trace log paths
-    trace_log = [
-        os.path.join(dut.logdir, 'sys_log0.svdat')  # pylint: disable=protected-access
-    ]
-    if not dut.app.sdkconfig.get('ESP_SYSTEM_SINGLE_CORE_MODE') or dut.target == 'esp32s3':
-        trace_log.append(os.path.join(dut.logdir, 'sys_log1.svdat'))  # pylint: disable=protected-access
-    trace_files = ' '.join([f'file://{log}' for log in trace_log])
+    # Single multi-core capture file (esp sysview_mcore): one file is enough for
+    # both single- and dual-core targets.
+    trace_log = os.path.join(dut.logdir, 'sys_log.svdat')  # pylint: disable=protected-access
+    dual_core = not dut.app.sdkconfig.get('ESP_SYSTEM_SINGLE_CORE_MODE') or dut.target == 'esp32s3'
 
-    # Prepare gdbinit file
+    # Prepare gdbinit file pointing at this run's capture file
     gdb_logfile = os.path.join(dut.logdir, 'gdb.txt')
     gdbinit_orig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gdbinit')
     gdbinit = os.path.join(dut.logdir, 'gdbinit')
     with open(gdbinit_orig) as f_r, open(gdbinit, 'w') as f_w:
         for line in f_r:
-            if line.startswith('mon esp sysview start'):
-                f_w.write(f'mon esp sysview start {trace_files}\n')
+            if line.startswith('mon esp sysview_mcore start'):
+                f_w.write(f'mon esp sysview_mcore start file://{trace_log}\n')
             else:
                 f_w.write(line)
 
@@ -127,9 +128,9 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
         # Do a sleep while sysview samples are captured.
         time.sleep(3)
-        openocd.write('esp sysview stop')
+        openocd.write('esp sysview_mcore stop')
 
-    _validate_trace_data(trace_log, dut.target)
+    _validate_trace_data(trace_log, dut.target, dual_core=dual_core)
 
 
 @pytest.mark.jtag
@@ -155,8 +156,8 @@ def _test_sysview_tracing_uart(dut: IdfDut) -> None:
     dut.serial.close()
     time.sleep(2)  # Wait for the DUT to reboot
     with serial.Serial(dut.serial.port, baudrate=dut.app.sdkconfig.get('APPTRACE_UART_BAUDRATE'), timeout=3) as ser:
-        trace_log = [os.path.join(dut.logdir, 'sys_log_uart.svdat')]  # pylint: disable=protected-access
-        _capture_sysview_trace(ser, trace_log[0])
+        trace_log = os.path.join(dut.logdir, 'sys_log_uart.svdat')  # pylint: disable=protected-access
+        _capture_sysview_trace(ser, trace_log)
         _validate_trace_data(trace_log, dut.target, is_uart=True)
 
 
@@ -184,6 +185,6 @@ def test_sysview_tracing_usj_serial(dut: IdfDut) -> None:
     time.sleep(1)  # wait for USJ port to be ready
     usj_port = '/dev/serial_ports/ttyACM-esp32'
     ser = serial.Serial(usj_port, baudrate=1000000, timeout=10)
-    trace_log = [os.path.join(dut.logdir, 'sys_log_usj.svdat')]  # pylint: disable=protected-access
-    _capture_sysview_trace(ser, trace_log[0])
+    trace_log = os.path.join(dut.logdir, 'sys_log_usj.svdat')  # pylint: disable=protected-access
+    _capture_sysview_trace(ser, trace_log)
     _validate_trace_data(trace_log, dut.target, is_uart=True)
