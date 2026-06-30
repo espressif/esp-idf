@@ -351,20 +351,12 @@ void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr
     if (ip6 == NULL || mac_addr == NULL) {
         return;
     }
-    /* Link-local prefix. */
-    ip6->addr[0] = htonl(0xfe800000ul);
-    ip6->addr[1] = 0;
-
-    /* Assume hwaddr is a 48-bit IEEE 802 MAC. Convert to EUI-64 address. Complement Group bit. */
-    ip6->addr[2] = htonl((((uint32_t)(mac_addr[0] ^ 0x02)) << 24) |
-                         ((uint32_t)(mac_addr[1]) << 16) |
-                         ((uint32_t)(mac_addr[2]) << 8) |
-                         (0xff));
-    ip6->addr[3] = htonl((uint32_t)(0xfeul << 24) |
-                         ((uint32_t)(mac_addr[3]) << 16) |
-                         ((uint32_t)(mac_addr[4]) << 8) |
-                         (mac_addr[5]));
-
+    /* Reuse the interface-agnostic derivation in the esp_wifi netif layer, then
+     * copy the address words into the lwIP ip6_addr_t. The two structures share
+     * the same layout, which is how esp_netif converts between them. */
+    esp_ip6_addr_t esp_ip6;
+    esp_wifi_netif_get_ip6_linklocal_from_mac(&esp_ip6, mac_addr);
+    memcpy(ip6->addr, esp_ip6.addr, sizeof(ip6->addr));
     ip6->zone = IP6_NO_ZONE;
 }
 
@@ -1063,8 +1055,8 @@ static void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_inf
 }
 
 static void nan_app_receive_cb(uint8_t svc_id, struct nan_cb_peer_info *peer_info,
-                        uint8_t *shared_key_attr, uint16_t shared_key_attr_buf_len,
-                        struct nan_cb_npba_t *npba)
+                               uint8_t *shared_key_attr, uint16_t shared_key_attr_buf_len,
+                               struct nan_cb_npba_t *npba)
 {
     if (!peer_info) {
         return;
@@ -1525,8 +1517,6 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
         ESP_LOG_BUFFER_HEXDUMP(TAG, ssi, ssi_len, ESP_LOG_DEBUG);
     }
 
-    esp_netif_action_connected(s_nan_ctx.nan_netif, WIFI_EVENT, WIFI_EVENT_NDP_CONFIRM, evt);
-    esp_netif_create_ip6_linklocal(s_nan_ctx.nan_netif);
     NAN_DATA_UNLOCK();
 
     ip6_addr_t peer_ip6 = {0};
@@ -1536,6 +1526,20 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
 
     ESP_LOGI(TAG, "NDP confirmed with Peer "MACSTR" [NDP ID - %d, Peer IPv6 - %s]",
              MAC2STR(peer_nmi), ndp_id, inet6_ntoa(peer_ip6));
+
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+    /* Pin the peer's link-local -> NDI mapping so traffic to the peer skips
+     * Neighbor Discovery (no NS/NA) on the NAN link. The esp_wifi netif layer
+     * owns the netif lookup and derives the peer's link-local from its NDI
+     * (the address the peer actually sources from). */
+    esp_err_t nbr_err = esp_wifi_netif_set_static_neighbor(WIFI_IF_NAN, peer_ndi, true);
+    if (nbr_err != ESP_OK) {
+        ESP_LOGW(TAG, "static nbr ADD failed: %s", esp_err_to_name(nbr_err));
+    }
+#else
+    esp_netif_action_connected(s_nan_ctx.nan_netif, WIFI_EVENT, WIFI_EVENT_NDP_CONFIRM, evt);
+    esp_netif_create_ip6_linklocal(s_nan_ctx.nan_netif);
+#endif
 
     os_event_group_set_bits(nan_event_group, NDP_ACCEPTED);
     nan_app_post_event(WIFI_EVENT_NDP_CONFIRM, evt, evt_data_len);
@@ -1558,6 +1562,15 @@ static void nan_app_ndp_terminated_cb(uint8_t reason, uint8_t ndp_id, uint8_t in
 
     s_nan_ctx.event &= ~(NDP_INDICATION);
     NAN_DATA_UNLOCK();
+
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+    /* Drop the peer's static neighbor mapping added on NDP confirm. (It is also
+     * cleared automatically if the NAN netif goes down on the last datapath.) */
+    esp_err_t nbr_err = esp_wifi_netif_set_static_neighbor(WIFI_IF_NAN, init_ndi, false);
+    if (nbr_err != ESP_OK) {
+        ESP_LOGW(TAG, "static nbr DEL failed: %s", esp_err_to_name(nbr_err));
+    }
+#endif
 
     wifi_event_ndp_terminated_t *evt = (wifi_event_ndp_terminated_t *)os_zalloc(sizeof(wifi_event_ndp_terminated_t));
     if (!evt) {

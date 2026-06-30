@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <string.h>
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "esp_log.h"
@@ -181,3 +182,45 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
     }
     return ESP_OK;
 }
+
+void esp_wifi_netif_get_ip6_linklocal_from_mac(esp_ip6_addr_t *ip6, const uint8_t mac[6])
+{
+    if (ip6 == NULL || mac == NULL) {
+        return;
+    }
+
+    /* fe80::/64 + EUI-64 of the MAC (802 group bit complemented), laid out in
+     * network byte order straight into esp_ip6_addr_t. Zone stays 0. */
+    const uint8_t linklocal[16] = {
+        0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        (uint8_t)(mac[0] ^ 0x02), mac[1], mac[2], 0xff,
+        0xfe, mac[3], mac[4], mac[5],
+    };
+    memset(ip6, 0, sizeof(*ip6));
+    memcpy(ip6->addr, linklocal, sizeof(linklocal));
+}
+
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+esp_err_t esp_wifi_netif_set_static_neighbor(wifi_interface_t wifi_if, const uint8_t mac[6], bool add)
+{
+    if (mac == NULL || wifi_if >= MAX_WIFI_IFS) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* The netif handle is owned by this layer (recorded when the interface's RX
+     * callback is registered), so callers only need to supply the interface and
+     * the peer MAC. */
+    esp_netif_t *esp_netif = s_wifi_netifs[wifi_if];
+    if (esp_netif == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Derive the peer's link-local address; esp_netif copies only the address
+     * words for static neighbor entries, so no zone handling is needed here. */
+    esp_ip6_addr_t addr6;
+    esp_wifi_netif_get_ip6_linklocal_from_mac(&addr6, mac);
+
+    return add ? esp_netif_add_static_neighbor(esp_netif, &addr6, mac)
+               : esp_netif_remove_static_neighbor(esp_netif, &addr6);
+}
+#endif /* CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES */
