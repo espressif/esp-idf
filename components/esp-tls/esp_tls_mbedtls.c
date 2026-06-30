@@ -845,6 +845,10 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 #if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
     } else if (cfg->psk_hint_key) {
         ESP_LOGD(TAG, "PSK authentication");
+        if (cfg->psk_hint_key->hint == NULL) {
+            ESP_LOGE(TAG, "Failed to use psk_hint_key");
+            return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
+        }
         ret = mbedtls_ssl_conf_psk(&tls->conf, cfg->psk_hint_key->key, cfg->psk_hint_key->key_size,
                                    (const unsigned char *)cfg->psk_hint_key->hint, strlen(cfg->psk_hint_key->hint));
         if (ret != 0) {
@@ -999,6 +1003,10 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         //
         // PSK encryption mode is configured only if no certificate supplied and psk pointer not null
         ESP_LOGD(TAG, "ssl psk authentication");
+        if (cfg->psk_hint_key->hint == NULL) {
+            ESP_LOGE(TAG, "Failed to use psk_hint_key");
+            return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
+        }
         ret = mbedtls_ssl_conf_psk(&tls->conf, cfg->psk_hint_key->key, cfg->psk_hint_key->key_size,
                                    (const unsigned char *)cfg->psk_hint_key->hint, strlen(cfg->psk_hint_key->hint));
         if (ret != 0) {
