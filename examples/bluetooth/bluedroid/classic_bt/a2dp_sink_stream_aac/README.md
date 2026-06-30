@@ -39,7 +39,15 @@ If the internal DAC is selected, analog audio will be available on GPIO25 and GP
 
 #### ESP32-S31
 
-The default output is idle. If I2S is used, it can be configured through menuconfig. Currently, DAC is not supported.
+The default output is I2S. If I2S is used, it can be configured through menuconfig. The default I2S connections are shown below:
+
+| ESP pin   | I2S signal   |
+| :-------- | :----------- |
+| GPIO3     | LRCK         |
+| GPIO4     | DATA         |
+| GPIO2     | BCK          |
+
+Currently, DAC is not supported.
 
 ### Configure the project
 
