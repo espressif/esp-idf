@@ -498,8 +498,10 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    assert(param_size <= bus->max_transfer_bytes && "parameter bytes too long, enlarge max_transfer_bytes");
-    assert(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE && "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
+    ESP_RETURN_ON_FALSE(param_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
+                        "parameter bytes too long, enlarge max_transfer_bytes");
+    ESP_RETURN_ON_FALSE(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG,
+                        "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
     uint32_t cmd_cycles = next_device->lcd_cmd_bits / bus->bus_width;
     // in case bus_width=16 and cmd_bits=8, we still need 1 cmd_cycle
     if (cmd_cycles * bus->bus_width < next_device->lcd_cmd_bits) {
@@ -566,7 +568,8 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    assert(color_size <= bus->max_transfer_bytes && "color bytes too long, enlarge max_transfer_bytes");
+    ESP_RETURN_ON_FALSE(color_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
+                        "color bytes too long, enlarge max_transfer_bytes");
     uint32_t cache_line_size = 0;
     if (esp_ptr_external_ram(color)) {
         // check alignment
