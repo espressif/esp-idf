@@ -748,7 +748,9 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     } while (0);
 
     /* call callback with register event */
-    (*bta_av_cb.p_cback)(BTA_AV_REGISTER_EVT, (tBTA_AV *)&registr);
+    if (bta_av_cb.p_cback != NULL) {
+        (*bta_av_cb.p_cback)(BTA_AV_REGISTER_EVT, (tBTA_AV *)&registr);
+    }
 }
 
 /*******************************************************************************

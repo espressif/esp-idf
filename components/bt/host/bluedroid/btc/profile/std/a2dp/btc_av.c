@@ -39,7 +39,7 @@ bool g_av_with_rc;
 // global variable to indicate a2dp is initialized
 bool g_a2dp_on_init;
 // global variable to indicate a2dp is deinitialized
-bool g_a2dp_on_deinit;
+bool g_a2dp_on_deinit = true;
 // global variable to indicate a2dp source deinitialization is ongoing
 bool g_a2dp_source_ongoing_deinit;
 // global variable to indicate a2dp sink deinitialization is ongoing
