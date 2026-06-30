@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
 # Timer events
 
 TIMER_EVENT_LIMIT = 3
@@ -23,8 +24,14 @@ TASK_ITERATION_POST = 'TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop
 TASK_ITERATION_HANDLING = 'TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed {} times'
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target,markers',
+    [
+        ('supported_targets', pytest.mark.generic),
+        ('linux', pytest.mark.host_test),
+    ],
+    indirect=['target'],
+)
 def test_default_event_loop_example_iteration_events(dut: Dut) -> None:
     logging.info('Checking iteration events posting and handling')
     dut.expect_exact('setting up')
@@ -33,7 +40,7 @@ def test_default_event_loop_example_iteration_events(dut: Dut) -> None:
 
     for iteration in range(1, TASK_ITERATION_LIMIT + 1):
         dut.expect_exact(TASK_ITERATION_POST.format(iteration))
-        logging.info('Posted iteration {} out of {}'.format(iteration, TASK_ITERATION_LIMIT))
+        logging.info(f'Posted iteration {iteration} out of {TASK_ITERATION_LIMIT}')
 
         if iteration < TASK_UNREGISTRATION_LIMIT:
             dut.expect_exact(TASK_ITERATION_HANDLING.format(iteration))
@@ -46,18 +53,24 @@ def test_default_event_loop_example_iteration_events(dut: Dut) -> None:
                 ],
                 expect_all=True,
             )
-            logging.info('Unregistered handler at iteration {} out of {}'.format(iteration, TASK_ITERATION_LIMIT))
+            logging.info(f'Unregistered handler at iteration {iteration} out of {TASK_ITERATION_LIMIT}')
         else:
             dut.expect_exact('TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
 
-        logging.info('Handled iteration {} out of {}'.format(iteration, TASK_ITERATION_LIMIT))
+        logging.info(f'Handled iteration {iteration} out of {TASK_ITERATION_LIMIT}')
 
     dut.expect_exact('TASK_EVENTS:TASK_ITERATION_EVENT: deleting task event source')
     logging.info('Deleted task event source')
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target,markers',
+    [
+        ('supported_targets', pytest.mark.generic),
+        ('linux', pytest.mark.host_test),
+    ],
+    indirect=['target'],
+)
 def test_default_event_loop_example_timer_events(dut: Dut) -> None:
     logging.info('Checking timer events posting and handling')
 
@@ -77,7 +90,7 @@ def test_default_event_loop_example_timer_events(dut: Dut) -> None:
 
     for expiries in range(1, TIMER_EVENT_LIMIT + 1):
         dut.expect_exact('TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop')
-        logging.info('Posted timer expiry event {} out of {}'.format(expiries, TIMER_EVENT_LIMIT))
+        logging.info(f'Posted timer expiry event {expiries} out of {TIMER_EVENT_LIMIT}')
 
         if expiries >= TIMER_EVENT_LIMIT:
             dut.expect_exact('TIMER_EVENTS:TIMER_EVENT_STOPPED: posting to default loop')
@@ -87,7 +100,7 @@ def test_default_event_loop_example_timer_events(dut: Dut) -> None:
         dut.expect_exact('TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler')
         dut.expect_exact('TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler')
 
-        logging.info('Handled timer expiry event {} out of {}'.format(expiries, TIMER_EVENT_LIMIT))
+        logging.info(f'Handled timer expiry event {expiries} out of {TIMER_EVENT_LIMIT}')
 
     dut.expect_exact('TIMER_EVENTS:TIMER_EVENT_STOPPED: timer_stopped_handler')
     dut.expect_exact('TIMER_EVENTS:TIMER_EVENT_STOPPED: deleted timer event source')

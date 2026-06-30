@@ -1,14 +1,20 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
 
+TARGETS = [
+    ('esp32c3', pytest.mark.generic),
+    ('esp32s3', pytest.mark.generic),
+    ('linux', pytest.mark.host_test),
+]
+PROMPT = r'(?:esp32(?:[a-zA-Z]\d)?|linux)>'
 
-@pytest.mark.generic
-@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+
+@idf_parametrize('target,markers', TARGETS, indirect=['target'])
 def test_creating_task(dut: IdfDut) -> None:
-    dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
+    dut.expect(PROMPT)
     # test creating_task
     dut.write('create_task')
     expected_patterns = [
@@ -20,10 +26,9 @@ def test_creating_task(dut: IdfDut) -> None:
     dut.expect(expected_patterns, expect_all=True)
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('target,markers', TARGETS, indirect=['target'])
 def test_queue(dut: IdfDut) -> None:
-    dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
+    dut.expect(PROMPT)
     # test queue tasks
     verify_amount = 5
     dut.write('queue')
@@ -35,10 +40,9 @@ def test_queue(dut: IdfDut) -> None:
         dut.expect('queue example: received data = ' + str(data))
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('target,markers', TARGETS, indirect=['target'])
 def test_locks(dut: IdfDut) -> None:
-    dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
+    dut.expect(PROMPT)
     # test locks
     dut.write('lock')
     expected_patterns = [
@@ -51,10 +55,9 @@ def test_locks(dut: IdfDut) -> None:
     dut.expect(expected_patterns, expect_all=True)
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('target,markers', TARGETS, indirect=['target'])
 def test_task_notification(dut: IdfDut) -> None:
-    dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
+    dut.expect(PROMPT)
     # test task notification
     dut.write('task_notification')
     dut.expect('task notify example: send_task sends a notification')
@@ -62,10 +65,9 @@ def test_task_notification(dut: IdfDut) -> None:
     dut.expect('task notify example: rcv_task is processing this task notification')
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('target,markers', TARGETS, indirect=['target'])
 def test_batch_proc_example(dut: IdfDut) -> None:
-    dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
+    dut.expect(PROMPT)
     # test batch processing example
     dut.write('batch_processing')
 
