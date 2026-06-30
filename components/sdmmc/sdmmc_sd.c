@@ -282,7 +282,7 @@ esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card)
             ESP_LOGE(TAG, "%s: failed to switch bus to DDR mode (0x%x)", __func__, err);
             return err;
         }
-    } else if (card->host.max_freq_khz == SDMMC_FREQ_SDR104) {
+    } else if (card->host.max_freq_khz >= SDMMC_FREQ_SDR104) {
         //UHS-I SDR104
         ESP_LOGV(TAG, "%s: to switch to SDR104", __func__);
         if ((supported_mask & BIT(SD_ACCESS_MODE_SDR104)) == 0) {
@@ -294,7 +294,7 @@ esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card)
             ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (2) returned 0x%x", __func__, err);
             goto out;
         }
-    } else if (card->host.max_freq_khz == SDMMC_FREQ_SDR50) {
+    } else if (card->host.max_freq_khz >= SDMMC_FREQ_SDR50) {
         //UHS-I SDR50
         ESP_LOGV(TAG, "%s: to switch to SDR50", __func__);
         if ((supported_mask & BIT(SD_ACCESS_MODE_SDR50)) == 0) {
