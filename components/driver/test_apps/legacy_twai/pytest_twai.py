@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
+import os
 import subprocess
 import time
 
@@ -13,6 +14,9 @@ from pytest_embedded_idf.utils import idf_parametrize
 # ---------------------------------------------------------------------------
 # Loop Back Tests
 # ---------------------------------------------------------------------------
+
+can_env = os.getenv('CAN_PORT', 'can0')
+print(f'CAN_PORT={can_env}')
 
 
 @pytest.mark.generic
@@ -54,28 +58,26 @@ def esp_reset_and_wait_ready(dut: Dut) -> None:
 @pytest.fixture(name='socket_can')
 def fixture_create_socket_can() -> Bus:
     # Set up the socket CAN with the bitrate
-    start_command = 'sudo -n ip link set can0 up type can bitrate 250000'
-    stop_command = 'sudo -n ip link set can0 down'
-    status_command = 'sudo -n ip -details link show can0'
+    start_command = f'sudo -n ip link set {can_env} up type can bitrate 250000'
+    stop_command = f'sudo -n ip link set {can_env} down'
+    status_command = f'sudo -n ip -details link show {can_env}'
 
     try:
-        result = subprocess.run(status_command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(status_command, shell=True, capture_output=True, text=True, timeout=2)
         if result.returncode != 0:
-            raise Exception('CAN interface "can0" not found')
+            raise Exception(f'CAN interface "{can_env}" not found')
 
         if 'UP' in result.stdout:  # Close the bus anyway if it is already up
-            subprocess.run(stop_command, shell=True, capture_output=True, text=True)
-        subprocess.run(start_command, shell=True, capture_output=True, text=True)
+            subprocess.run(stop_command, shell=True, capture_output=True, text=True, timeout=2)
+        subprocess.run(start_command, shell=True, capture_output=True, text=True, timeout=2)
 
         time.sleep(0.5)
-        bus = Bus(interface='socketcan', channel='can0', bitrate=250000)
+        bus = Bus(interface='socketcan', channel=f'{can_env}', bitrate=250000)
         yield bus  # test invoked here
 
         bus.shutdown()
-    except Exception as e:
-        pytest.skip(f'Open usb-can bus Error: {str(e)}')
     finally:
-        subprocess.run(stop_command, shell=True, capture_output=True, text=True)
+        subprocess.run(stop_command, shell=True, capture_output=True, text=True, timeout=2)
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +85,7 @@ def fixture_create_socket_can() -> Bus:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.twai_std
+@pytest.mark.twai_adapter
 @pytest.mark.parametrize(
     'config',
     [
@@ -95,25 +97,27 @@ def fixture_create_socket_can() -> Bus:
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
 def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
-    esp_reset_and_wait_ready(dut)
+    try:
+        esp_reset_and_wait_ready(dut)
 
-    # TEST_CASE("twai_listen_only", "[twai]")
-    dut.write('"twai_listen_only"')
+        # TEST_CASE("twai_listen_only", "[twai]")
+        dut.write('"twai_listen_only"')
 
-    # wait the DUT to start listening
-    time.sleep(0.1)
+        # wait the DUT to start listening
+        time.sleep(0.1)
 
-    message = Message(
-        arbitration_id=0x123,
-        is_extended_id=False,
-        data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
-    )
-    socket_can.send(message, timeout=0.2)
-    dut.expect_unity_test_output()
-    esp_enter_flash_mode(dut)
+        message = Message(
+            arbitration_id=0x123,
+            is_extended_id=False,
+            data=[0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
+        )
+        socket_can.send(message, timeout=0.2)
+        dut.expect_unity_test_output()
+    finally:
+        esp_enter_flash_mode(dut)
 
 
-@pytest.mark.twai_std
+@pytest.mark.twai_adapter
 @pytest.mark.parametrize(
     'config',
     [
@@ -125,26 +129,31 @@ def test_legacy_twai_listen_only(dut: Dut, socket_can: Bus) -> None:
     'target', ['esp32', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3', 'esp32p4'], indirect=['target']
 )
 def test_legacy_twai_remote_request(dut: Dut, socket_can: Bus) -> None:
-    esp_reset_and_wait_ready(dut)
+    try:
+        esp_reset_and_wait_ready(dut)
 
-    # TEST_CASE("twai_remote_request", "[twai]")
-    dut.write('"twai_remote_request"')
+        # TEST_CASE("twai_remote_request", "[twai]")
+        dut.write('"twai_remote_request"')
 
-    while True:
-        req = socket_can.recv(timeout=0.2)
-        # wait for the remote request frame
-        if req is not None and req.is_remote_frame:
-            break
+        deadline = time.time() + 2.0
+        req = None
+        while time.time() < deadline:
+            req = socket_can.recv(timeout=0.2)
+            if req is not None and req.is_remote_frame:
+                break
 
-    logging.info(f'Received message: {req}')
+        if req is None:
+            raise Exception('Remote frame not received')
+        logging.info(f'Received message: {req}')
 
-    reply = Message(
-        arbitration_id=req.arbitration_id,
-        is_extended_id=req.is_extended_id,
-        data=[0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80],
-    )
-    socket_can.send(reply, timeout=0.2)
-    print('send', reply)
+        reply = Message(
+            arbitration_id=req.arbitration_id,
+            is_extended_id=req.is_extended_id,
+            data=[0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80],
+        )
+        socket_can.send(reply, timeout=0.2)
+        print('send', reply)
 
-    dut.expect_unity_test_output()
-    esp_enter_flash_mode(dut)
+        dut.expect_unity_test_output()
+    finally:
+        esp_enter_flash_mode(dut)
