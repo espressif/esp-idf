@@ -2483,6 +2483,56 @@ int esp_netif_get_all_preferred_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip
     }
     return addr_count;
 }
+
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+typedef struct {
+    const esp_ip6_addr_t *addr;
+    const uint8_t *mac;
+} esp_netif_static_neighbor_t;
+
+static esp_err_t esp_netif_add_static_neighbor_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    const esp_netif_static_neighbor_t *nbr = msg->data;
+    ip6_addr_t ip6;
+
+    memcpy(&ip6, nbr->addr, sizeof(ip6_addr_t));
+    if (nd6_add_static_neighbor(esp_netif->lwip_netif, &ip6, nbr->mac) != ERR_OK) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_add_static_neighbor(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr, const uint8_t *mac)
+{
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || addr == NULL || mac == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    esp_netif_static_neighbor_t nbr = { .addr = addr, .mac = mac };
+    return esp_netif_lwip_ipc_call(esp_netif_add_static_neighbor_api, esp_netif, &nbr);
+}
+
+static esp_err_t esp_netif_remove_static_neighbor_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *esp_netif = msg->esp_netif;
+    const esp_ip6_addr_t *addr = msg->data;
+    ip6_addr_t ip6;
+
+    memcpy(&ip6, addr, sizeof(ip6_addr_t));
+    if (nd6_remove_static_neighbor(esp_netif->lwip_netif, &ip6) != ERR_OK) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_remove_static_neighbor(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr)
+{
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL || addr == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    return esp_netif_lwip_ipc_call(esp_netif_remove_static_neighbor_api, esp_netif, (void *)addr);
+}
+#endif /* CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES */
 #endif
 
 esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
