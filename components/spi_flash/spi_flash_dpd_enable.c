@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,31 +62,30 @@ uint32_t spi_flash_dpd_get_exit_duration(void)
     return SPI_FLASH_TRES1_SAFE_VAL_US;
 }
 
-static esp_err_t spi_flash_enter_dpd(void)
+static esp_err_t spi_flash_enter_dpd(bool wait_delay)
 {
     esp_err_t ret = spi_flash_hal_enter_dpd_mode(esp_flash_default_chip->host);
-    esp_rom_delay_us(spi_flash_dpd_get_enter_duration());
-
-    return ret;
-}
-
-static esp_err_t spi_flash_exit_dpd(void)
-{
-    esp_err_t ret = spi_flash_hal_exit_dpd_mode(esp_flash_default_chip->host);
-    esp_rom_delay_us(spi_flash_dpd_get_exit_duration());
-
-    return ret;
-}
-
-esp_err_t spi_flash_enable_deep_power_down_mode(bool enable)
-{
-    esp_err_t ret = ESP_OK;
-
-    if (enable) {
-        ret = spi_flash_enter_dpd();
-    } else {
-        ret = spi_flash_exit_dpd();
+    if (wait_delay) {
+        esp_rom_delay_us(spi_flash_dpd_get_enter_duration());
     }
 
     return ret;
+}
+
+static esp_err_t spi_flash_exit_dpd(bool wait_delay)
+{
+    esp_err_t ret = spi_flash_hal_exit_dpd_mode(esp_flash_default_chip->host);
+    if (wait_delay) {
+        esp_rom_delay_us(spi_flash_dpd_get_exit_duration());
+    }
+
+    return ret;
+}
+
+esp_err_t spi_flash_enable_deep_power_down_mode(bool enable, bool wait_delay)
+{
+    if (enable) {
+        return spi_flash_enter_dpd(wait_delay);
+    }
+    return spi_flash_exit_dpd(wait_delay);
 }
