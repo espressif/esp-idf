@@ -52,7 +52,13 @@ typedef struct {
 } sleep_retention_create_callback_t;
 
 typedef struct {
-    sleep_retention_create_callback_t create;  /*!< A function handle is used to register the implementation of creating a sleep retention linked list and is executed when the corresponding module is created */
+    sleep_retention_callback_t handle;
+    void *arg;
+} sleep_retention_destroy_callback_t;
+
+typedef struct {
+    sleep_retention_create_callback_t   create;  /*!< A function handler is used to register the implementation of creating a sleep retention linked list and is executed when the corresponding module is created */
+    sleep_retention_destroy_callback_t  destroy; /*!< The callback function handler is invoked after the sleep retention linked list is destroyed */
 } sleep_retention_module_callbacks_t;
 
 typedef enum {
