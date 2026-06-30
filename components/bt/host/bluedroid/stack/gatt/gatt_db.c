@@ -370,7 +370,13 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
 
                 UINT16_TO_STREAM (p, p_attr->handle);
 
-                status = read_attr_value ((void *)p_attr, 0, &p, FALSE, (UINT16)(*p_len - 2), &len, sec_flag, key_size);
+                {
+                    UINT16 max_val_len = (UINT16)(*p_len - 2);
+                    if (max_val_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+                        max_val_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
+                    }
+                    status = read_attr_value ((void *)p_attr, 0, &p, FALSE, max_val_len, &len, sec_flag, key_size);
+                }
                 if (status == GATT_PENDING) {
 
 

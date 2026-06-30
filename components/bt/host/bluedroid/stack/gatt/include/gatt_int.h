@@ -76,6 +76,10 @@ typedef UINT8 tGATT_SEC_ACTION;
 
 #define GATT_HDR_SIZE           3 /* 1B opcode + 2B handle */
 
+/* ATT Read By Type Response: Length field is 1 octet (max 255). */
+#define GATT_MAX_READ_BY_TYPE_PAIR_LEN   255
+#define GATT_MAX_READ_BY_TYPE_VALUE_LEN  (GATT_MAX_READ_BY_TYPE_PAIR_LEN - 2)
+
 /**
  * Wait for ATT cmd response timeout value (40 seconds).
  * The max connection supervision timeout is 32 seconds,
@@ -421,6 +425,7 @@ typedef struct {
     UINT8           tcb_idx;
 #if (GATTS_INCLUDED == TRUE)
     tGATT_PREPARE_WRITE_RECORD prepare_write_record;    /* prepare write packets record */
+    UINT32          exec_write_rsp_trans_id;            /* trans_id of auto-responded execute write */
 #endif // (GATTS_INCLUDED == TRUE)
 } tGATT_TCB;
 
