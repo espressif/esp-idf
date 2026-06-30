@@ -71,6 +71,7 @@ idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity esp_timer test_utils
                        PRIV_REQUIRES esp_driver_gptimer esp_driver_i2c esp_driver_tsens esp_hal_rtc_timer
+                                     esp_driver_gpio hal
                        WHOLE_ARCHIVE
                        EMBED_FILES "test_vad_8k.pcm")
 
