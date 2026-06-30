@@ -810,7 +810,12 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
         }
 
         // Arrange RX buffer
-        size_t will_receive = MIN(rx_length, SDSPI_MAX_DATA_LEN) - extra_data_size;
+        size_t expected_data_size = MIN(rx_length, SDSPI_MAX_DATA_LEN);
+        if (extra_data_size > expected_data_size) {
+            ESP_LOGD(TAG, "%s: invalid extra data size %u (expected <= %u)", __func__, (unsigned)extra_data_size, (unsigned)expected_data_size);
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+        size_t will_receive = expected_data_size - extra_data_size;
         uint8_t* rx_data;
         ret = get_block_buf(slot, &rx_data);
         if (ret != ESP_OK) {
