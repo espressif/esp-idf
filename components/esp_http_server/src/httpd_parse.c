@@ -1032,6 +1032,92 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
     return ESP_ERR_NOT_FOUND;
 }
 
+esp_err_t httpd_req_get_url_query_str_ptr(httpd_req_t *r, const char **buf, size_t *buf_len)
+{
+    /* buf_len is an output pointer that is dereferenced below, so it must be
+     * validated along with the other arguments to avoid a NULL write */
+    if (r == NULL || buf == NULL || buf_len == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!httpd_valid_req(r)) {
+        return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    if (r->uri[0] == '\0') {
+        ESP_LOGD(TAG, "uri is empty");
+        return ESP_FAIL;
+    }
+
+    struct httpd_req_aux   *ra  = r->aux;
+    struct http_parser_url *res = &ra->url_parse_res;
+
+    /* Check if query field is present in the URL */
+    if (res->field_set & (1 << UF_QUERY)) {
+        *buf = r->uri + res->field_data[UF_QUERY].off;
+
+        /* Query data length does not include terminating null */
+        *buf_len = res->field_data[UF_QUERY].len;
+
+        return ESP_OK;
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
+/* Advance the scratch pointer past the current header line to the next one.
+ * Header lines are separated by null characters (their line terminators are
+ * overwritten with '\0' during parsing). */
+static const char *httpd_next_hdr(const char *hdr_ptr)
+{
+    /* Jump to the end of the current field-value string */
+    hdr_ptr = 1 + strchr(hdr_ptr, '\0');
+
+    /* Skip all null characters with which the line terminators were overwritten */
+    while (*hdr_ptr == '\0') {
+        hdr_ptr++;
+    }
+    return hdr_ptr;
+}
+
+/* Locate the value of a header field within the request's scratch buffer.
+ * Returns a pointer to the NULL-terminated value (leading spaces skipped),
+ * or NULL if the field is not present. The caller must validate r/field and
+ * the request pointer before calling. */
+static const char *httpd_find_hdr_value(struct httpd_req_aux *ra, const char *field)
+{
+    const char  *hdr_ptr   = ra->scratch;        /*!< Request headers are kept in scratch buffer */
+    unsigned     count     = ra->req_hdrs_count; /*!< Count set during parsing  */
+    const size_t field_len = strlen(field);
+
+    while (count--) {
+        /* Search for the ':' character. Else, it would mean
+         * that the field is invalid */
+        const char *val_ptr = strchr(hdr_ptr, ':');
+        if (!val_ptr) {
+            break;
+        }
+
+        /* If the field does not match, continue searching. Compare lengths
+         * first as the field from the header is not null terminated (has ':'
+         * in the end). */
+        if (((size_t)(val_ptr - hdr_ptr) != field_len) ||
+            strncasecmp(hdr_ptr, field, field_len)) {
+            if (count) {
+                hdr_ptr = httpd_next_hdr(hdr_ptr);
+            }
+            continue;
+        }
+
+        /* Skip ':' and any preceding spaces */
+        val_ptr++;
+        while (*val_ptr == ' ') {
+            val_ptr++;
+        }
+        return val_ptr;
+    }
+    return NULL;
+}
+
 /* Get the length of the value string of a header request field */
 size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field)
 {
@@ -1043,48 +1129,8 @@ size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field)
         return 0;
     }
 
-    struct httpd_req_aux *ra = r->aux;
-    const char   *hdr_ptr = ra->scratch;         /*!< Request headers are kept in scratch buffer */
-    unsigned      count   = ra->req_hdrs_count;  /*!< Count set during parsing  */
-
-    while (count--) {
-        /* Search for the ':' character. Else, it would mean
-         * that the field is invalid
-         */
-        const char *val_ptr = strchr(hdr_ptr, ':');
-        if (!val_ptr) {
-            break;
-        }
-
-        /* If the field, does not match, continue searching.
-         * Compare lengths first as field from header is not
-         * null terminated (has ':' in the end).
-         */
-        if ((val_ptr - hdr_ptr != strlen(field)) ||
-            (strncasecmp(hdr_ptr, field, strlen(field)))) {
-            if (count) {
-                /* Jump to end of header field-value string */
-                hdr_ptr = 1 + strchr(hdr_ptr, '\0');
-
-                /* Skip all null characters (with which the line
-                 * terminators had been overwritten) */
-                while (*hdr_ptr == '\0') {
-                    hdr_ptr++;
-                }
-            }
-            continue;
-        }
-
-        /* Skip ':' */
-        val_ptr++;
-
-        /* Skip preceding space */
-        while ((*val_ptr != '\0') && (*val_ptr == ' ')) {
-            val_ptr++;
-        }
-        return strlen(val_ptr);
-    }
-    return 0;
+    const char *val_ptr = httpd_find_hdr_value(r->aux, field);
+    return val_ptr ? strlen(val_ptr) : 0;
 }
 
 /* Get the value of a field from the request headers */
@@ -1098,58 +1144,45 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
 
-    struct httpd_req_aux *ra = r->aux;
-    const char   *hdr_ptr = ra->scratch;         /*!< Request headers are kept in scratch buffer */
-    unsigned     count    = ra->req_hdrs_count;  /*!< Count set during parsing  */
-
-    while (count--) {
-        /* Search for the ':' character. Else, it would mean
-         * that the field is invalid
-         */
-        const char *val_ptr = strchr(hdr_ptr, ':');
-        if (!val_ptr) {
-            break;
-        }
-
-        /* If the field, does not match, continue searching.
-         * Compare lengths first as field from header is not
-         * null terminated (has ':' in the end).
-         */
-        if ((val_ptr - hdr_ptr != strlen(field)) ||
-            (strncasecmp(hdr_ptr, field, strlen(field)))) {
-            if (count) {
-                /* Jump to end of header field-value string */
-                hdr_ptr = 1 + strchr(hdr_ptr, '\0');
-
-                /* Skip all null characters (with which the line
-                 * terminators had been overwritten) */
-                while (*hdr_ptr == '\0') {
-                    hdr_ptr++;
-                }
-            }
-            continue;
-        }
-
-        /* Skip ':' */
-        val_ptr++;
-
-        /* Skip preceding space */
-        while ((*val_ptr != '\0') && (*val_ptr == ' ')) {
-            val_ptr++;
-        }
-
-        /* Get the NULL terminated value and copy it to the caller's buffer.
-         * Note `strlcpy()` will always return the size of the source string
-         * including terminimating null.*/
-        size_t full_size = strlcpy(val, val_ptr, val_size);
-
-        /* If buffer length is smaller than needed, return truncation error */
-        if (val_size < full_size) {
-            return ESP_ERR_HTTPD_RESULT_TRUNC;
-        }
-        return ESP_OK;
+    const char *val_ptr = httpd_find_hdr_value(r->aux, field);
+    if (val_ptr == NULL) {
+        return ESP_ERR_NOT_FOUND;
     }
-    return ESP_ERR_NOT_FOUND;
+
+    /* Get the NULL terminated value and copy it to the caller's buffer.
+     * Note `strlcpy()` will always return the size of the source string
+     * including terminating null. */
+    size_t full_size = strlcpy(val, val_ptr, val_size);
+
+    /* If buffer length is smaller than needed, return truncation error */
+    if (val_size < full_size) {
+        return ESP_ERR_HTTPD_RESULT_TRUNC;
+    }
+    return ESP_OK;
+}
+
+esp_err_t httpd_req_get_hdr_value_str_ptr(httpd_req_t *r, const char *field, const char **val, size_t *val_len)
+{
+    /* val and val_len are output pointers that are dereferenced below, so they
+     * must be validated along with the other arguments to avoid a NULL write */
+    if (r == NULL || field == NULL || val == NULL || val_len == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!httpd_valid_req(r)) {
+        return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    const char *val_ptr = httpd_find_hdr_value(r->aux, field);
+    if (val_ptr == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    /* The value lives NULL-terminated in the request scratch buffer; return a
+     * pointer to it instead of copying. Valid only within the URI handler. */
+    *val     = val_ptr;
+    *val_len = strlen(val_ptr);
+    return ESP_OK;
 }
 
 /* Helper function to get a cookie value from a cookie string of the type "cookie1=val1; cookie2=val2" */
