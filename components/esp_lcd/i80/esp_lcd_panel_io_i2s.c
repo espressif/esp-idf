@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -450,6 +450,25 @@ static void i2s_lcd_prepare_param_buffer(lcd_i80_trans_descriptor_t *trans_desc,
 #endif
 }
 
+static bool i2s_lcd_get_color_buffer_size(const esp_lcd_i80_bus_t *bus, size_t color_size, size_t *buffer_size)
+{
+#if I2S_LL_GET(TRANS_SIZE_ALIGN_WORD)
+    size_t input_bytes_per_word = bus->bus_width / 4;
+    if (color_size % input_bytes_per_word) {
+        return false;
+    }
+    size_t word_num = color_size / input_bytes_per_word;
+    if (word_num > (size_t) -1 / 4) {
+        return false;
+    }
+    *buffer_size = word_num * 4;
+#else
+    (void)bus;
+    *buffer_size = color_size;
+#endif
+    return true;
+}
+
 static void i2s_lcd_prepare_color_buffer(lcd_i80_trans_descriptor_t *trans_desc, const void *color, size_t color_size)
 {
 #if I2S_LL_GET(TRANS_SIZE_ALIGN_WORD)
@@ -485,8 +504,8 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    assert(param_size <= bus->max_transfer_bytes && "parameter bytes too long, enlarge max_transfer_bytes");
-    assert(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE && "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
+    ESP_RETURN_ON_FALSE(param_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG, "parameter bytes too long, enlarge max_transfer_bytes");
+    ESP_RETURN_ON_FALSE(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG, "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
     size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
     for (size_t i = 0; i < num_trans_inflight; i++) {
@@ -566,7 +585,10 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    assert(color_size <= bus->max_transfer_bytes && "color bytes too long, enlarge max_transfer_bytes");
+    size_t color_buffer_size = 0;
+    bool valid_color_buffer_size = i2s_lcd_get_color_buffer_size(bus, color_size, &color_buffer_size);
+    ESP_RETURN_ON_FALSE(valid_color_buffer_size && color_buffer_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
+                        "color bytes too long, enlarge max_transfer_bytes");
     size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
     for (size_t i = 0; i < num_trans_inflight; i++) {
