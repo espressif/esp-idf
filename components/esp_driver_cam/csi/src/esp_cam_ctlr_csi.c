@@ -126,6 +126,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
         free(ctlr);
         ESP_RETURN_ON_ERROR(ret, TAG, "no available csi controller");
     }
+    ctlr->csi_fsm = CSI_FSM_INIT;
 
     ESP_LOGD(TAG, "config->queue_items: %d", config->queue_items);
     ctlr->trans_que = xQueueCreateWithCaps(config->queue_items, sizeof(esp_cam_ctlr_trans_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -262,7 +263,6 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
 #endif //CONFIG_PM_ENABLE
 
     ctlr->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    ctlr->csi_fsm = CSI_FSM_INIT;
     ctlr->base.del = s_ctlr_del;
     ctlr->base.enable = s_csi_ctlr_enable;
     ctlr->base.start = s_ctlr_csi_start;
@@ -313,7 +313,9 @@ esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr)
     if (!ctlr->bk_buffer_dis) {
         free(ctlr->backup_buffer);
     }
-    vQueueDeleteWithCaps(ctlr->trans_que);
+    if (ctlr->trans_que) {
+        vQueueDeleteWithCaps(ctlr->trans_que);
+    }
     free(ctlr);
 
     return ESP_OK;
