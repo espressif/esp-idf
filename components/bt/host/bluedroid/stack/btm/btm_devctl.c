@@ -1291,12 +1291,8 @@ void btm_ble_set_channels_complete (UINT8 *p)
         case HCI_SUCCESS:
             cb_params.set_channels.status = BTM_SUCCESS;
             break;
-        case HCI_ERR_UNSUPPORTED_VALUE:
-        case HCI_ERR_ILLEGAL_PARAMETER_FMT:
-            cb_params.set_channels.status = BTM_ILLEGAL_VALUE;
-            break;
         default:
-            cb_params.set_channels.status = BTM_ERR_PROCESSING;
+            cb_params.set_channels.status = BTM_HCI_ERROR | cb_params.set_channels.hci_status;
             break;
     }
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_CHANNELS_COMPLETE_EVT, &cb_params);

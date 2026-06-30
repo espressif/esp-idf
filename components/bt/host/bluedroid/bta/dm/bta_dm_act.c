@@ -5375,10 +5375,11 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
         if ((status = BTM_BleScan(TRUE, p_data->ble_scan.duration,
                                      bta_dm_scan_results_cb, bta_dm_scan_cmpl_cb, bta_dm_scan_discard_cb)) != BTM_CMD_STARTED) {
             APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
+        } else {
+            status = BTM_SUCCESS;
         }
 
         memset(&cb_params, 0, sizeof(cb_params));
-        status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
         cb_params.status = status;
         BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_START_COMPLETE_EVT, &cb_params);
 
@@ -5388,10 +5389,11 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
 
         if (status != BTM_CMD_STARTED){
             APPL_TRACE_WARNING(" %s stop scan failed, status=0x%x\n", __FUNCTION__, status);
+        } else {
+            status = BTM_SUCCESS;
         }
 
         memset(&cb_params, 0, sizeof(cb_params));
-        status = (status == BTM_CMD_STARTED ? BTA_SUCCESS : BTA_FAILURE);
         cb_params.status = status;
         BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SCAN_STOP_COMPLETE_EVT, &cb_params);
 #if (BLE_TOPOLOGY_CHECK == TRUE)
