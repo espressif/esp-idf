@@ -91,10 +91,6 @@ config ESP_ROM_PRINTS_LOCKUP_STATUS
     bool
     default y
 
-config ESP_ROM_ECDSA_VERIFY_PATCH
-    bool
-    default y
-
 config ESP_ROM_BOOTLOADER_OFFSET_FLASH
     hex
     default 0x2000

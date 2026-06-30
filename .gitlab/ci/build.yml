@@ -38,6 +38,7 @@
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd idf-build-apps build
       -p tools/test_apps/system/clang_build_test
+      components/esp_security/test_apps/fault_assert_opt_check
       -t $IDF_TARGET
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}

@@ -6,12 +6,15 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 
+#include "sdkconfig.h"
 #include "esp_rom_caps.h"
 #if ESP_ROM_ECDSA_VERIFY_PATCH
 #include "soc/soc_caps.h"
 #include "esp_fault.h"
+#include "hal/ecc_ll.h"
 #include "rom/ecdsa.h"
 
 #define VALID_MAGIC_OK   0x6A6A6A6AU
@@ -69,6 +72,19 @@ static bool ecdsa_scalars_in_range(const uint32_t *r, const uint32_t *s, const u
     return true;
 }
 
+// TODO: IDF-15721
+/*
+ * Runtime gate that decides whether the ROM ECDSA verification routines
+ * (ets_ecdsa_verify / ets_secure_boot_verify_signature) need the software patch
+ * in this file, or whether the ROM implementation is safe to call directly.
+ *
+ * When a future revision of one of these chips ships a ROM with these ECDSA
+ * verification issues fixed, add a ROM-version check here (e.g. compare the
+ * _rom_eco_version symbol against the first fixed ROM ECO version for that
+ * target) and return false for the fixed ROMs, so they skip the patch and jump
+ * straight to the _rom_ routine.
+ */
+
 extern int _rom_ets_ecdsa_verify(const uint8_t *key, const uint8_t *sig,
                                  ECDSA_CURVE curve_id, const uint8_t *image_digest,
                                  uint8_t *verified_digest);
@@ -113,6 +129,9 @@ int ets_ecdsa_verify(const uint8_t *key, const uint8_t *sig,
 
     ESP_FAULT_ASSERT(ok && ret_status == VALID_MAGIC_OK);
 
+    ecc_ll_power_up();
+    ESP_FAULT_ASSERT(ecc_ll_mem_force_pd_is_clear());
+
     int ret = _rom_ets_ecdsa_verify(key, sig, curve_id, image_digest, verified_digest);
 
     if (ret == 1) {
@@ -125,4 +144,88 @@ int ets_ecdsa_verify(const uint8_t *key, const uint8_t *sig,
 
     return 0;
 }
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+#include "rom/secure_boot.h"
+
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+static bool esp_rom_ecdsa_scalars_in_range(const uint8_t *r_le, const uint8_t *s_le, size_t component_len)
+{
+    const uint32_t *n;
+    int words;
+    switch (component_len) {
+    case 24: n = ecdsa_n_p192; words = 6; break;
+    case 32: n = ecdsa_n_p256; words = 8; break;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    case 48: n = ecdsa_n_p384; words = 12; break;
+#endif
+    default: return false;
+    }
+
+    uint32_t r[12] = { 0 };
+    uint32_t s[12] = { 0 };
+    memcpy(r, r_le, component_len);
+    memcpy(s, s_le, component_len);
+
+    uint32_t result = VALID_MAGIC_FAIL;
+    bool ok = ecdsa_scalars_in_range(r, s, n, words, &result);
+    if (!ok || result != VALID_MAGIC_OK) {
+        return false;
+    }
+    ESP_FAULT_ASSERT(ok && result == VALID_MAGIC_OK);
+    return true;
+}
+
+static bool esp_rom_ecdsa_sig_block_in_range(const ets_secure_boot_sig_block_t *block)
+{
+    if (block->magic_byte != ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC) {
+        return true;
+    }
+    size_t component_len;
+    switch (block->ecdsa.key.curve_id) {
+    case ECDSA_CURVE_P256: component_len = 32; break;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    case ECDSA_CURVE_P384: component_len = 48; break;
+#endif
+    default: return false;
+    }
+    return esp_rom_ecdsa_scalars_in_range(&block->ecdsa.signature[0],
+                                          &block->ecdsa.signature[component_len],
+                                          component_len);
+}
+#endif /* CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME */
+
+extern ets_secure_boot_status_t _rom_ets_secure_boot_verify_signature(const ets_secure_boot_signature_t *sig,
+                                                                      const uint8_t *image_digest,
+                                                                      const ets_secure_boot_key_digests_t *trusted_keys,
+                                                                      uint8_t *verified_digest);
+
+ets_secure_boot_status_t ets_secure_boot_verify_signature(const ets_secure_boot_signature_t *sig,
+                                                          const uint8_t *image_digest,
+                                                          const ets_secure_boot_key_digests_t *trusted_keys,
+                                                          uint8_t *verified_digest)
+{
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    volatile ets_secure_boot_status_t range_status = SB_FAILED;
+    unsigned blocks_in_range = 0;
+    for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        if (esp_rom_ecdsa_sig_block_in_range(&sig->block[i])) {
+            blocks_in_range++;
+        }
+    }
+    if (blocks_in_range == SECURE_BOOT_NUM_BLOCKS) {
+        range_status = SB_SUCCESS;
+    }
+    if (range_status != SB_SUCCESS) {
+        return SB_FAILED;
+    }
+    ESP_FAULT_ASSERT(range_status == SB_SUCCESS);
+    ESP_FAULT_ASSERT(blocks_in_range == SECURE_BOOT_NUM_BLOCKS);
+
+    ecc_ll_power_up();
+    ESP_FAULT_ASSERT(ecc_ll_mem_force_pd_is_clear());
+#endif /* CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME */
+    return _rom_ets_secure_boot_verify_signature(sig, image_digest, trusted_keys, verified_digest);
+}
+#endif /* CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT */
 #endif /* ESP_ROM_ECDSA_VERIFY_PATCH */
