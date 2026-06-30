@@ -453,6 +453,7 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
 
     r = xQueueSend(spihost[host]->trans_queue, (void *)&priv_trans, ticks_to_wait);
     if (!r) {
+        spi_slave_uninstall_priv_trans(host, &priv_trans);
         return ESP_ERR_TIMEOUT;
     }
     esp_intr_enable(spihost[host]->intr);
