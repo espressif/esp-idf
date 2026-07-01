@@ -63,7 +63,7 @@ enum {
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     /*                                  Mem Type Name   | High Priority Matching                                            | Medium Priority Matching                     | Low Priority Matching */
-    [SOC_MEMORY_TYPE_RETENT_MEM]    = { "RETENT_RAM",   { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_RETENTION | MALLOC_CAP_SIMD,    0,                                             0 }},
+    [SOC_MEMORY_TYPE_RETENT_MEM]    = { "RETENT_RAM",   { MALLOC_CAP_RETENTION | MALLOC_CAP_SIMD,                             MALLOC_L2MEM_BASE_CAPS,                        0 }},
     [SOC_MEMORY_TYPE_L2MEM]         = { "RAM",          { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_SIMD,                           0,                                             0 }},
     [SOC_MEMORY_TYPE_SPIRAM]        = { "SPIRAM",       { MALLOC_CAP_SPIRAM,                                                  0,                                             ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
     [SOC_MEMORY_TYPE_SPM]           = { "SPM",          { MALLOC_CAP_SPM,                                                     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
