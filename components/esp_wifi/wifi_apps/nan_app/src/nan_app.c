@@ -272,11 +272,28 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
                                       key_rsc, sizeof(key_rsc),
                                       NULL, 0, NAN_KEY_ND_GTK);
 
+        /* Drop the peer's RX IGTK/BIGTK (BIP-CMAC-128, installed against the
+         * peer NMI at NDP confirm) so no stale BIP keys linger in the blob. */
+        if (ndl->igtk_set) {
+            esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
+                                          (uint8_t *)peer_nmi, ndl->igtk_keyid, 0,
+                                          key_rsc, 6,
+                                          NULL, 0, NAN_KEY_ND_IGTK);
+        }
+        if (ndl->bigtk_set) {
+            esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
+                                          (uint8_t *)peer_nmi, ndl->bigtk_keyid, 0,
+                                          key_rsc, 6,
+                                          NULL, 0, NAN_KEY_ND_BIGTK);
+        }
+
         forced_memzero(ndl->nd_tk, sizeof(ndl->nd_tk));
         forced_memzero(ndl->nd_kck, sizeof(ndl->nd_kck));
         forced_memzero(ndl->nd_kek, sizeof(ndl->nd_kek));
         forced_memzero(ndl->gtk, sizeof(ndl->gtk));
         forced_memzero(ndl->own_gtk, sizeof(ndl->own_gtk));
+        forced_memzero(ndl->igtk, sizeof(ndl->igtk));
+        forced_memzero(ndl->bigtk, sizeof(ndl->bigtk));
         ndl->ptk_set = 0;
         ndl->tk_len = 0;
         ndl->kck_len = 0;
@@ -285,6 +302,10 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
         ndl->own_gtk_set = 0;
         ndl->gtk_len = 0;
         ndl->own_gtk_len = 0;
+        ndl->igtk_set = 0;
+        ndl->bigtk_set = 0;
+        ndl->igtk_len = 0;
+        ndl->bigtk_len = 0;
     }
 
     /* Fallback when no NDL slot tracks peer_ndi yet. */
@@ -1866,6 +1887,13 @@ void esp_nan_action_stop(void)
      * sync_start may use a different (randomized) NMI, which would
      * invalidate every cached derivation. */
     nan_app_clear_paired_peers();
+#endif
+
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Drop the device-global IGTK/BIGTK so the next start regenerates fresh
+     * keys instead of re-installing a stale key with IPN/BIPN=0 (which would
+     * reset the blob's replay counter) — see nan_security_reset_own_group_keys. */
+    nan_security_reset_own_group_keys();
 #endif
 
     esp_nan_internal_register_callbacks(NULL);
