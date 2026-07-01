@@ -1475,9 +1475,8 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
          * nan_security_install_own_group_integrity_keys); not re-installed here,
          * to preserve the blob's monotonic BIPN/IPN across the session. Only the
          * peer RX keys are bound at NDP confirm. §7.1.3.3/§7.1.3.4; NMI==NDI today.
-         * Peer IGTK/BIGTK install RX-only against the peer NMI. seq (IPN/BIPN)
-         * starts at 0 for now; thread the peer's KDE IPN/BIPN once the blob
-         * consumes it for the BIP replay counter. */
+         * Peer IGTK/BIGTK install RX-only against the peer NMI, seeding the BIP
+         * RX replay counter with the peer's advertised IPN/BIPN from the KDE. */
         if (ndl->igtk_set && ndl->igtk_len) {
             if (ndl->igtk_len != NAN_ND_GTK_LEN) {
                 ESP_LOGW(TAG, "NDP confirm: peer IGTK len=%d unsupported (BIP-CMAC-128 only); skipping",
@@ -1485,7 +1484,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             } else {
                 int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
                                                       peer_nmi, ndl->igtk_keyid, 0,
-                                                      key_rsc, 6,
+                                                      ndl->igtk_ipn, 6,
                                                       ndl->igtk, ndl->igtk_len,
                                                       NAN_KEY_ND_IGTK);
                 if (r != 0) {
@@ -1504,7 +1503,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             } else {
                 int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
                                                       peer_nmi, ndl->bigtk_keyid, 0,
-                                                      key_rsc, 6,
+                                                      ndl->bigtk_ipn, 6,
                                                       ndl->bigtk, ndl->bigtk_len,
                                                       NAN_KEY_ND_BIGTK);
                 if (r != 0) {

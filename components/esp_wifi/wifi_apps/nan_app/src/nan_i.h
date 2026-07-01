@@ -332,6 +332,8 @@ struct ndl_info {
     uint8_t igtk_keyid;                 /* peer IGTK Key ID (4 or 5) */
     uint8_t bigtk_keyid;                /* peer BIGTK Key ID (6 or 7) */
     uint8_t gtk_rsc[NAN_KEY_RSC_LEN];   /* peer GTK RSC from Key RSC field */
+    uint8_t igtk_ipn[6];                /* peer IGTK IPN (seeds BIP RX replay counter) */
+    uint8_t bigtk_ipn[6];               /* peer BIGTK BIPN (seeds BIP RX replay counter) */
     uint8_t gtk_set: 1;
     uint8_t igtk_set: 1;
     uint8_t bigtk_set: 1;
