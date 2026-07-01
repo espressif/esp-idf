@@ -188,7 +188,7 @@ extern "C" {
 typedef struct {
     pmu_hal_context_t *hal;
     void *mc;
-#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA || CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
     void *priv;
 #endif
 #if SOC_SPI_FLASH_HAS_DEDICATED_LDO

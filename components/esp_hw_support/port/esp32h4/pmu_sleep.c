@@ -256,6 +256,15 @@ static void pmu_sleep_param_init(pmu_context_t *ctx, const pmu_sleep_param_confi
     pmu_ll_set_modem_wait_target_cycle(ctx->hal->dev, param->hp_sys.modem_wakeup_wait_cycle);
     pmu_ll_set_xtal_stable_wait_cycle(ctx->hal->dev, param->hp_lp.xtal_stable_wait_slow_clk_cycle);
     pmu_ll_set_pll_stable_wait_cycle(ctx->hal->dev, param->hp_sys.pll_stable_wait_cycle);
+
+#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
+    uint16_t ana_wait[ANALOG_WAIT_CTRL_NUM] = {
+        0x20,  // about 1.6us
+        param->hp_sys.analog_wait_target_cycle,
+        param->hp_sys.analog_wait_target_cycle,
+    };
+    pmu_sleep_power_analog_wait_config(ctx->priv, ana_wait);
+#endif
 }
 
 bool pmu_sleep_pll_already_enabled(void)
