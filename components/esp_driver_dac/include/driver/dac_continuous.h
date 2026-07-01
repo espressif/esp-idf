@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,16 +14,6 @@ extern "C" {
 #endif
 
 #if SOC_DAC_SUPPORTED
-
-/**
- * @brief DAC channel mask
- *
- */
-typedef enum {
-    DAC_CHANNEL_MASK_CH0  = BIT(0),             /*!< DAC channel 0 is GPIO25(ESP32) / GPIO17(ESP32S2) */
-    DAC_CHANNEL_MASK_CH1  = BIT(1),             /*!< DAC channel 1 is GPIO26(ESP32) / GPIO18(ESP32S2) */
-    DAC_CHANNEL_MASK_ALL = BIT(0) | BIT(1),     /*!< Both DAC channel 0 and channel 1 */
-} dac_channel_mask_t;
 
 typedef struct dac_continuous_s      *dac_continuous_handle_t;    /*!< DAC continuous channel handle */
 
@@ -139,7 +129,7 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle);
  * @param[in]  handle       The DAC continuous channel handle that obtained from 'dac_continuous_new_channels'
  * @return
  *      - ESP_ERR_INVALID_ARG  The input parameter is invalid
- *      - ESP_ERR_INVALID_STATE The channels have been enabled already
+ *      - ESP_ERR_INVALID_STATE The channels are not enabled, or a write operation is still ongoing
  *      - ESP_OK                Disable the continuous output success
  */
 esp_err_t dac_continuous_disable(dac_continuous_handle_t handle);
@@ -185,9 +175,23 @@ esp_err_t dac_continuous_write(dac_continuous_handle_t handle, uint8_t *buf, siz
  * @return
  *      - ESP_ERR_INVALID_ARG   The input parameter is invalid
  *      - ESP_ERR_INVALID_STATE The DAC continuous mode has not been enabled yet
- *      - ESP_OK                Success to output the acyclic DAC data
+ *      - ESP_OK                Success to output the cyclic DAC data
  */
 esp_err_t dac_continuous_write_cyclically(dac_continuous_handle_t handle, uint8_t *buf, size_t buf_size, size_t *bytes_loaded);
+
+/**
+ * @brief Stop the cyclical conversion triggered by 'dac_continuous_write_cyclically'
+ * @note  For backward compatibility, calling this function is optional. That is, after a cyclic write (conversion) has started,
+ *        users can directly call 'dac_continuous_disable', 'dac_continuous_write_cyclically', 'dac_continuous_start_async_writing',
+ *        or 'dac_continuous_write'. These functions will automatically check for and stop any ongoing cyclic conversion. However,
+ *        this behavior is NOT recommended.
+ * @param[in] handle The DAC continuous channel handle that obtained from 'dac_continuous_new_channels'
+ * @return
+ *      - ESP_ERR_INVALID_ARG   The input parameter is invalid
+ *      - ESP_ERR_INVALID_STATE The DAC continuous is not in cyclic writing mode
+ *      - ESP_OK                Success to stop the cyclic conversion
+ */
+esp_err_t dac_continuous_stop_cyclically(dac_continuous_handle_t handle);
 
 /**
  * @brief Set event callbacks for DAC continuous mode
@@ -220,7 +224,7 @@ esp_err_t dac_continuous_register_event_callback(dac_continuous_handle_t handle,
 esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle);
 
 /**
- * @brief Stop the sync writing
+ * @brief Stop the async writing
  *
  * @param[in] handle        The DAC continuous channel handle that obtained from 'dac_continuous_new_channels'
  * @return
@@ -237,7 +241,7 @@ esp_err_t dac_continuous_stop_async_writing(dac_continuous_handle_t handle);
  *
  * @param[in]  handle        The DAC continuous channel handle that obtained from 'dac_continuous_new_channels'
  * @param[in]  dma_buf       The DMA buffer address, it can be acquired from 'dac_event_data_t' in the 'on_convert_done' callback
- * @param[in]  dma_buf_len   The DMA buffer length, it can be acquired from 'dac_event_data_t' in the 'on_convert_done' callback
+ * @param[in]  dma_buf_len   The DMA buffer length, it can be acquired from 'dac_event_data_t' in the 'on_convert_done' callback. It should always be equal to the buffer size of descriptors. This parameter is kept for compatibility and ignored by the driver.
  * @param[in]  data          The data that need to be written
  * @param[in]  data_len      The data length the need to be written
  * @param[out] bytes_loaded  The bytes number that has been loaded/written into the DMA buffer

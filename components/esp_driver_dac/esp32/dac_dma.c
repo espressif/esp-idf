@@ -138,8 +138,6 @@ esp_err_t dac_dma_periph_init(uint32_t freq_hz, bool is_alternate, bool is_apll)
     /* Should always enable fifo */
     i2s_ll_tx_force_enable_fifo_mod(s_ddp->periph_dev, true);
     i2s_ll_dma_enable_auto_write_back(s_ddp->periph_dev, true);
-    /* Enable the interrupts */
-    i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_EOF | I2S_LL_EVENT_TX_TEOF, true);
 
     return ret;
 err:
@@ -155,7 +153,6 @@ esp_err_t dac_dma_periph_deinit(void)
 
     ESP_RETURN_ON_FALSE(s_ddp->intr_handle == NULL, ESP_ERR_INVALID_STATE, TAG, "The interrupt is not deregistered yet");
     ESP_RETURN_ON_ERROR(i2s_platform_release_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM), TAG, "Failed to release DAC DMA peripheral");
-    i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_EOF | I2S_LL_EVENT_TX_TEOF, false);
     if (s_ddp->use_apll) {
         ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false), TAG, "APLL disable failed");
         s_ddp->use_apll = false;
@@ -181,7 +178,7 @@ static void s_dac_dma_periph_reset(void)
 static void s_dac_dma_periph_start(void)
 {
     i2s_ll_enable_dma(s_ddp->periph_dev, true);
-    i2s_ll_tx_enable_intr(s_ddp->periph_dev);
+    i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_DONE | I2S_LL_EVENT_TX_TEOF, true);
     i2s_ll_tx_start(s_ddp->periph_dev);
     i2s_ll_dma_enable_eof_on_fifo_empty(s_ddp->periph_dev, true);
     i2s_ll_dma_enable_auto_write_back(s_ddp->periph_dev, true);
@@ -191,7 +188,7 @@ static void s_dac_dma_periph_stop(void)
 {
     i2s_ll_tx_stop(s_ddp->periph_dev);
     i2s_ll_tx_stop_link(s_ddp->periph_dev);
-    i2s_ll_tx_disable_intr(s_ddp->periph_dev);
+    i2s_ll_enable_intr(s_ddp->periph_dev, I2S_LL_EVENT_TX_DONE | I2S_LL_EVENT_TX_TEOF, false);
     i2s_ll_enable_dma(s_ddp->periph_dev, false);
     i2s_ll_dma_enable_eof_on_fifo_empty(s_ddp->periph_dev, false);
     i2s_ll_dma_enable_auto_write_back(s_ddp->periph_dev, false);
@@ -213,28 +210,26 @@ void dac_dma_periph_disable(void)
     s_dac_dma_periph_stop();
 }
 
-uint32_t IRAM_ATTR dac_dma_periph_intr_is_triggered(void)
+uint32_t IRAM_ATTR dac_dma_periph_intr_get_mask(void)
 {
     uint32_t status = i2s_ll_get_intr_status(s_ddp->periph_dev);
     if (status == 0) {
-        //Avoid spurious interrupt
-        return false;
+        // Avoid spurious interrupt
+        return 0UL;
     }
     i2s_ll_clear_intr_status(s_ddp->periph_dev, status);
     uint32_t ret = 0;
-    ret |= (status & I2S_LL_EVENT_TX_EOF) ? DAC_DMA_EOF_INTR : 0;
+    ret |= (status & I2S_LL_EVENT_TX_DONE) ? DAC_DMA_DONE_INTR : 0;
     ret |= (status & I2S_LL_EVENT_TX_TEOF) ? DAC_DMA_TEOF_INTR : 0;
     return ret;
 }
 
-uint32_t IRAM_ATTR dac_dma_periph_intr_get_eof_desc(void)
-{
-    uint32_t finish_desc;
-    i2s_ll_tx_get_eof_des_addr(s_ddp->periph_dev, &finish_desc);
-    return finish_desc;
-}
-
-void dac_dma_periph_dma_trans_start(uint32_t desc_addr)
+void IRAM_ATTR dac_dma_periph_trans_start(uintptr_t desc_addr)
 {
     i2s_ll_tx_start_link(s_ddp->periph_dev, desc_addr);
+}
+
+void dac_dma_periph_trans_stop(void)
+{
+    i2s_ll_tx_stop_link(s_ddp->periph_dev);
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,20 +30,19 @@ extern portMUX_TYPE rtc_spinlock;  /*!< Extern global rtc spinlock */
  * @brief Register dac channel in the driver, in case a same channel is reused by different modes
  *
  * @param[in] chan_id   DAC channel id
- * @param[in] mode_name The const string of mode name
  * @return
  *      - ESP_ERR_INVALID_STATE The channel has been occupied
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Register the channel success
  */
-esp_err_t dac_priv_register_channel(dac_channel_t chan_id, const char *mode_name);
+esp_err_t dac_priv_register_channel(dac_channel_t chan_id);
 
 /**
  * @brief Deregister dac channel in the driver
  *
  * @param[in] chan_id   DAC channel id
  * @return
- *      - ESP_ERR_INVALID_STATE The channel has been freed
+ *      - ESP_ERR_INVALID_STATE The channel has been freed or not disabled
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
  *      - ESP_OK                Deregister the channel success
  */
@@ -54,9 +53,9 @@ esp_err_t dac_priv_deregister_channel(dac_channel_t chan_id);
  *
  * @param chan_id       DAC channel id
  * @return
- *      - ESP_ERR_INVALID_STATE The channel has not been registered
+ *      - ESP_ERR_INVALID_STATE The channel has not been registered or already enabled
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
- *      - ESP_OK                Deregister the channel success
+ *      - ESP_OK                Enable the channel success
  */
 esp_err_t dac_priv_enable_channel(dac_channel_t chan_id);
 
@@ -65,9 +64,9 @@ esp_err_t dac_priv_enable_channel(dac_channel_t chan_id);
  *
  * @param chan_id       DAC channel id
  * @return
- *      - ESP_ERR_INVALID_STATE The channel has not been registered
+ *      - ESP_ERR_INVALID_STATE The channel is not enabled
  *      - ESP_ERR_INVALID_ARG   The channel id is incorrect
- *      - ESP_OK                Deregister the channel success
+ *      - ESP_OK                Disable the channel success
  */
 esp_err_t dac_priv_disable_channel(dac_channel_t chan_id);
 

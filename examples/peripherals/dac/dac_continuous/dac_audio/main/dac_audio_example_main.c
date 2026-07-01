@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -49,7 +49,12 @@ static void dac_write_data_asynchronously(dac_continuous_handle_t handle, QueueH
         /* Clear the legacy data in DMA, clear times equal to the 'dac_continuous_config_t::desc_num' */
         for (int i = 0; i < 4; i++) {
             xQueueReceive(que, &evt_data, portMAX_DELAY);
-            memset(evt_data.buf, 0, evt_data.buf_size);
+            /**
+             * NOTE: Directly manipulating the buffer is allowed, but please be aware of data layout and offset.
+             * Therefore, it is generally discouraged except in simple clearing cases.
+             * In this example, the audio data has a global offset of 0x80, so we write 0x80 to clear the buffer.
+             */
+            memset(evt_data.buf, 0x80, evt_data.buf_size);
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

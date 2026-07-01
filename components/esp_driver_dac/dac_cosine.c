@@ -5,7 +5,6 @@
  */
 
 #include <string.h>
-#include "soc/soc_caps.h"
 #include "driver/dac_cosine.h"
 #include "hal/clk_tree_ll.h"
 #include "dac_priv_common.h"
@@ -43,7 +42,7 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     /* Parameters validation */
     DAC_NULL_POINTER_CHECK(cos_cfg);
     DAC_NULL_POINTER_CHECK(ret_handle);
-    ESP_RETURN_ON_FALSE(cos_cfg->chan_id < SOC_DAC_CHAN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
+    ESP_RETURN_ON_FALSE(IS_VALID_DAC_CHANNEL(cos_cfg->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid dac channel id");
     ESP_RETURN_ON_FALSE(cos_cfg->freq_hz >= (130 / clk_ll_rc_fast_get_divider()), ESP_ERR_NOT_SUPPORTED, TAG, "The cosine wave frequency is too low");
     ESP_RETURN_ON_FALSE((!s_cwg_freq) || cos_cfg->flags.force_set_freq || (cos_cfg->freq_hz == s_cwg_freq),
                         ESP_ERR_INVALID_STATE, TAG, "The cosine wave frequency has set already, not allowed to update unless `force_set_freq` is set");
@@ -53,9 +52,9 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
     dac_cosine_handle_t handle = heap_caps_calloc(1, sizeof(struct dac_cosine_s), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_NO_MEM, TAG, "no memory for the dac cosine handle");
     /* Assign configurations */
-    memcpy(&handle->cfg, cos_cfg, sizeof(dac_cosine_config_t));
+    handle->cfg = *cos_cfg;
     /* Register the handle */
-    ESP_GOTO_ON_ERROR(dac_priv_register_channel(cos_cfg->chan_id, "dac cosine"), err1, TAG, "register dac channel %d failed", cos_cfg->chan_id);
+    ESP_GOTO_ON_ERROR(dac_priv_register_channel(cos_cfg->chan_id), err1, TAG, "register dac channel %d failed", cos_cfg->chan_id);
 
     /* Cosine wave generator uses RTC_FAST clock which is divided from RC_FAST */
     uint32_t rtc_clk_freq = 0;
