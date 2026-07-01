@@ -201,6 +201,8 @@ examples/system/ota/partitions_ota:
     - if: CONFIG_NAME == "recovery_bootloader" and SOC_RECOVERY_BOOTLOADER_SUPPORTED != 1
       temporary: true
       reason: disabled for targets that do not support recovery bootloader
+    - if: CONFIG_NAME == "on_update_no_sb_rsa" and SOC_SECURE_BOOT_V2_RSA != 1
+      reason: Secure Boot V2 with RSA signatures is not supported.
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
