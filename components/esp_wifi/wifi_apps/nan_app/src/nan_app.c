@@ -1064,7 +1064,6 @@ static void nan_app_replied_cb(uint8_t pub_id, struct nan_cb_peer_info *peer_inf
     evt->subscribe_id = sub_id;
     MACADDR_COPY(evt->sub_if_mac, sub_nmi);
 
-    //ESP_LOGI(TAG, "Sent Publish to Peer "MACSTR" [Peer Subscribe id - %d]", MAC2STR(sub_nmi), sub_id);
     if (ssi && ssi_len) {
         memcpy(evt->ssi, ssi, ssi_len);
         evt->ssi_len = ssi_len;
