@@ -221,6 +221,6 @@ esp_err_t esp_wifi_netif_set_static_neighbor(wifi_interface_t wifi_if, const uin
     esp_wifi_netif_get_ip6_linklocal_from_mac(&addr6, mac);
 
     return add ? esp_netif_add_static_neighbor(esp_netif, &addr6, mac)
-               : esp_netif_remove_static_neighbor(esp_netif, &addr6);
+           : esp_netif_remove_static_neighbor(esp_netif, &addr6);
 }
 #endif /* CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES */
