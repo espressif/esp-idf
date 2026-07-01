@@ -840,7 +840,7 @@ static int nan_append_gtk_kde(struct ndl_info *ndl, uint8_t **p, const uint8_t *
     if (!ndl->own_gtk_set || !ndl->own_gtk_len) {
         return 0;
     }
-    if (ndl->own_gtk_keyid > 3) {       /* CCMP/GCMP Key ID range (§7.1.3.2: 1 or 2) */
+    if (ndl->own_gtk_keyid < 1 || ndl->own_gtk_keyid > 2) {   /* §7.1.3.2: GTK Key ID is 1 or 2 */
         ESP_LOGW(TAG, "GTK: invalid Key ID %u", ndl->own_gtk_keyid);
         return -1;
     }
@@ -2233,6 +2233,11 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                     kde_buf = plain;
                     kde_len = unwrapped;
                 }
+            } else {
+                /* §7.1.3.5 / 802.11 §12.7.2: group KDEs are only ever carried
+                 * KEK-wrapped; ignore any Key Data presented in the clear. */
+                ESP_LOGW(TAG, "NDP Key Desc: Key Data not encrypted; ignoring KDEs");
+                kde_len = 0;
             }
 
             uint16_t kd_offset = 0;
@@ -2272,6 +2277,7 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                         uint8_t igtk_len = body_len - NAN_IGTK_KDE_PREFIX_LEN;
                         if (igtk_len <= NAN_GTK_MAX_LEN) {
                             ndl->igtk_keyid = body[0];
+                            memcpy(ndl->igtk_ipn, body + 2, 6);   /* IPN follows KeyID(2) */
                             memcpy(ndl->igtk, body + NAN_IGTK_KDE_PREFIX_LEN, igtk_len);
                             ndl->igtk_len = igtk_len;
                             ndl->igtk_set = 1;
@@ -2283,6 +2289,7 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                         uint8_t bigtk_len = body_len - NAN_BIGTK_KDE_PREFIX_LEN;
                         if (bigtk_len <= NAN_GTK_MAX_LEN) {
                             ndl->bigtk_keyid = body[0];
+                            memcpy(ndl->bigtk_ipn, body + 2, 6);   /* BIPN follows KeyID(2) */
                             memcpy(ndl->bigtk, body + NAN_BIGTK_KDE_PREFIX_LEN, bigtk_len);
                             ndl->bigtk_len = bigtk_len;
                             ndl->bigtk_set = 1;
