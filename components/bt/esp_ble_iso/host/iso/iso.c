@@ -624,6 +624,17 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
     case BT_ISO_SINGLE:
         iso_info.flags = 0;
 
+        /* A malformed ISO packet whose ISO_Data_Load_Length is below the SDU
+         * header size would underflow buf->len in net_buf_pull_mem (the guard
+         * assert is compiled out in release) and leak OOB bytes into the recv
+         * callback. Drop it before pulling the header.
+         */
+        if (buf->len < (ts ? sizeof(struct bt_hci_iso_sdu_ts_hdr)
+                           : sizeof(struct bt_hci_iso_sdu_hdr))) {
+            LOG_ERR("ShortIsoSduHdr[%u][%u]", buf->len, ts);
+            return;
+        }
+
         /* The ISO_Data_Load field contains either the first fragment
          * of an SDU or a complete SDU.
          */
@@ -1587,10 +1598,27 @@ static bool is_advanced_cig_param(const struct bt_iso_cig_param *param)
         return true;
     }
 
+    /* This probe runs before valid_cig_param(); guard structure here so
+     * caller misuse (NULL cis_channels/cis/qos, or an over-reported num_cis)
+     * falls through to that check's -EINVAL instead of a NULL or
+     * out-of-bounds deref in this probe.
+     */
+    if (param->cis_channels == NULL ||
+            param->num_cis > BT_ISO_MAX_GROUP_ISO_COUNT ||
+            param->num_cis > CONFIG_BT_ISO_MAX_CHAN) {
+        return false;
+    }
+
     /* Check if any of the CIS contain any test-param-only values */
     for (uint8_t i = 0U; i < param->num_cis; i++) {
         const struct bt_iso_chan *cis = param->cis_channels[i];
-        const struct bt_iso_chan_qos *qos = cis->qos;
+        const struct bt_iso_chan_qos *qos;
+
+        if (cis == NULL || cis->qos == NULL) {
+            continue;
+        }
+
+        qos = cis->qos;
 
         if (qos->num_subevents > 0U) {
             return true;
@@ -1713,6 +1741,14 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
     bool is_p_to_c = false;
 
     if (param == NULL) {
+        return false;
+    }
+
+    /* Not guaranteed by all callers (bt_iso_cig_reconfigure does not pre-check
+     * it); the per-CIS loop below dereferences cis_channels[i] directly.
+     */
+    if (param->cis_channels == NULL) {
+        LOG_ERR("CisChansNull");
         return false;
     }
 
@@ -2509,16 +2545,31 @@ static bool is_advanced_big_param(const struct bt_iso_big_create_param *param)
         return true;
     }
 
+    /* This probe runs before valid_big_param(); guard structure here so
+     * caller misuse (NULL bis_channels/bis/qos/qos->tx, or an over-reported
+     * num_bis) falls through to that check's -EINVAL instead of a NULL or
+     * out-of-bounds deref in this probe.
+     */
+    if (param->bis_channels == NULL ||
+            param->num_bis > BT_ISO_MAX_GROUP_ISO_COUNT ||
+            param->num_bis > CONFIG_BT_ISO_MAX_CHAN) {
+        return false;
+    }
+
     /* Check if any of the CIS contain any test-param-only values */
     for (uint8_t i = 0U; i < param->num_bis; i++) {
         const struct bt_iso_chan *bis = param->bis_channels[i];
-        const struct bt_iso_chan_qos *qos = bis->qos;
+        const struct bt_iso_chan_qos *qos;
+
+        if (bis == NULL || bis->qos == NULL || bis->qos->tx == NULL) {
+            continue;
+        }
+
+        qos = bis->qos;
 
         if (qos->num_subevents > 0U) {
             return true;
         }
-
-        assert(qos->tx != NULL && "BigWithNullTx");
 
         if (qos->tx->max_pdu > 0U || qos->tx->burst_number > 0U) {
             return true;
@@ -2539,6 +2590,17 @@ static bool valid_big_param(const struct bt_iso_big_create_param *param, bool ad
 
     CHECKIF(!param->num_bis) {
         LOG_ERR("InvNumBis[%u]", param->num_bis);
+
+        return false;
+    }
+
+    /* Bound num_bis before the per-BIS loop so a caller that over-reports it
+     * cannot drive the loop past the bis_channels[] array.
+     */
+    CHECKIF(param->num_bis > BT_ISO_MAX_GROUP_ISO_COUNT ||
+            param->num_bis > CONFIG_BT_ISO_MAX_CHAN) {
+        LOG_ERR("TooLargeNumBis[%u][%u][%u]",
+                param->num_bis, BT_ISO_MAX_GROUP_ISO_COUNT, CONFIG_BT_ISO_MAX_CHAN);
 
         return false;
     }
@@ -2582,14 +2644,6 @@ static bool valid_big_param(const struct bt_iso_big_create_param *param, bool ad
     CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
             param->packing != BT_ISO_PACKING_INTERLEAVED) {
         LOG_ERR("InvPacking[%u]", param->packing);
-
-        return false;
-    }
-
-    CHECKIF(param->num_bis > BT_ISO_MAX_GROUP_ISO_COUNT ||
-            param->num_bis > CONFIG_BT_ISO_MAX_CHAN) {
-        LOG_ERR("TooLargeNumBis[%u][%u]",
-                param->num_bis, MAX(CONFIG_BT_ISO_MAX_CHAN, BT_ISO_MAX_GROUP_ISO_COUNT));
 
         return false;
     }
