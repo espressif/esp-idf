@@ -178,16 +178,9 @@ extern void *s_nan_data_lock;
 #define NAN_KEY_FLAG_TX          BIT(3)
 #define NAN_KEY_FLAG_PAIRWISE    BIT(5)
 
-/* NAN key-type selector passed as the last arg of esp_wifi_set_nan_key_internal;
- * tells the blob which NAN SA the key belongs to. Values match the blob's
- * key-type enum. */
-typedef enum {
-    NAN_KEY_ND_TK    = 0,
-    NAN_KEY_ND_GTK   = 1,
-    NAN_KEY_NM_TK    = 2,
-    NAN_KEY_ND_IGTK  = 3,
-    NAN_KEY_ND_BIGTK = 4,
-} nan_key_type_t;
+/* NAN key-type selector (nan_key_type_t: NAN_KEY_ND_TK / ND_GTK / NM_TK / ND_IGTK /
+ * ND_BIGTK), passed as the last arg of esp_wifi_set_nan_key_internal, is defined in
+ * esp_wifi_driver.h (included above) and shared with the blob. */
 
 /* Handshake state */
 enum nan_handshake_state {

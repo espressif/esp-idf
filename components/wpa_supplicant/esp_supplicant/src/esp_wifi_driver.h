@@ -238,6 +238,8 @@ typedef enum {
     NAN_KEY_ND_TK = 0,
     NAN_KEY_ND_GTK,
     NAN_KEY_NM_TK,
+    NAN_KEY_ND_IGTK,        /* 3 - NAN Integrity Group Temporal Key (BIP-CMAC-128) */
+    NAN_KEY_ND_BIGTK,       /* 4 - NAN Beacon Integrity Group Temporal Key (BIP-CMAC-128) */
 } nan_key_type_t;
 
 typedef struct {
