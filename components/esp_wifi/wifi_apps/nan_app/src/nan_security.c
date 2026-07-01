@@ -1726,7 +1726,7 @@ uint32_t esp_nan_get_scia_len(uint8_t num_pmkids)
         return 0;
     }
     uint32_t len = 3 + 20 * num_pmkids;
-    // ESP_LOGI(TAG, "SCIA len getter -> %lu (num_pmkids=%d)", len, num_pmkids);
+    ESP_LOGD(TAG, "GET SCIA LEN: %lu (num_pmkids=%d)", len, num_pmkids);
     return len;
 }
 
