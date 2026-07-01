@@ -748,7 +748,7 @@ void nan_security_install_own_group_integrity_keys(void)
         } else {
             ESP_LOGI(TAG, "NAN start: own IGTK (TX) installed (keyid=%d)", s_nan_ctx.own_igtk_keyid);
         }
-        ESP_LOG_BUFFER_HEXDUMP("## ND-IGTK ", s_nan_ctx.own_igtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEXDUMP("ND-IGTK", s_nan_ctx.own_igtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
     }
     if (nan_ensure_own_bigtk() == 0 && s_nan_ctx.own_bigtk_set) {
         int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
@@ -761,7 +761,7 @@ void nan_security_install_own_group_integrity_keys(void)
         } else {
             ESP_LOGI(TAG, "NAN start: own BIGTK (TX) installed (keyid=%d)", s_nan_ctx.own_bigtk_keyid);
         }
-        ESP_LOG_BUFFER_HEXDUMP("## ND-BIGTK ", s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEXDUMP("ND-BIGTK", s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
     }
 }
 

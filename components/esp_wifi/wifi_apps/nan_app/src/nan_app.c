@@ -1418,7 +1418,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                                                 ndl->nd_tk,
                                                 NAN_NCS_SK_128_TK_LEN,
                                                 NAN_KEY_ND_TK);
-        ESP_LOG_BUFFER_HEXDUMP("## ND-TK ", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
+        ESP_LOG_BUFFER_HEXDUMP("ND-TK", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
         if (ret != 0) {
             ESP_LOGE(TAG, "NDP confirm: failed to install ND-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
             os_free(evt);
@@ -1456,7 +1456,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             } else {
                 ESP_LOGI(TAG, "NDP confirm: own GTK (TX) installed (keyid=%d)", ndl->own_gtk_keyid);
             }
-            ESP_LOG_BUFFER_HEXDUMP("## ND-GTK ", ndl->own_gtk, ndl->own_gtk_len, ESP_LOG_DEBUG);
+            ESP_LOG_BUFFER_HEXDUMP("ND-GTK", ndl->own_gtk, ndl->own_gtk_len, ESP_LOG_DEBUG);
         }
         if (ndl->gtk_set && ndl->gtk_len) {
             int gret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
@@ -1493,7 +1493,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                     ESP_LOGI(TAG, "NDP confirm: peer IGTK (RX) installed (keyid=%d)", ndl->igtk_keyid);
                 }
                 /* Peer IGTK bytes for sniffer MIC cross-check vs the peer's multicast SDFs. */
-                ESP_LOG_BUFFER_HEXDUMP("## PEER ND-IGTK ", ndl->igtk, ndl->igtk_len, ESP_LOG_DEBUG);
+                ESP_LOG_BUFFER_HEXDUMP("PEER ND-IGTK", ndl->igtk, ndl->igtk_len, ESP_LOG_DEBUG);
             }
         }
         if (ndl->bigtk_set && ndl->bigtk_len) {
@@ -1512,7 +1512,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                     ESP_LOGI(TAG, "NDP confirm: peer BIGTK (RX) installed (keyid=%d)", ndl->bigtk_keyid);
                 }
                 /* Peer BIGTK bytes for sniffer MIC cross-check vs the peer's protected Beacons. */
-                ESP_LOG_BUFFER_HEXDUMP("## PEER ND-BIGTK ", ndl->bigtk, ndl->bigtk_len, ESP_LOG_DEBUG);
+                ESP_LOG_BUFFER_HEXDUMP("PEER ND-BIGTK", ndl->bigtk, ndl->bigtk_len, ESP_LOG_DEBUG);
             }
         }
     }
