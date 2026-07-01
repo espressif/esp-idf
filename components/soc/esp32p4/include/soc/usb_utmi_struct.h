@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -11,8 +11,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO: IDF-13430
 
 /**
  * Following register description is taken from
