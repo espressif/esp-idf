@@ -748,7 +748,7 @@ void nan_security_install_own_group_integrity_keys(void)
         } else {
             ESP_LOGI(TAG, "NAN start: own IGTK (TX) installed (keyid=%d)", s_nan_ctx.own_igtk_keyid);
         }
-        ESP_LOG_BUFFER_HEXDUMP("## ND-IGTK ", s_nan_ctx.own_igtk, NAN_ND_GTK_LEN, ESP_LOG_INFO);
+        ESP_LOG_BUFFER_HEXDUMP("## ND-IGTK ", s_nan_ctx.own_igtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
     }
     if (nan_ensure_own_bigtk() == 0 && s_nan_ctx.own_bigtk_set) {
         int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
@@ -761,7 +761,7 @@ void nan_security_install_own_group_integrity_keys(void)
         } else {
             ESP_LOGI(TAG, "NAN start: own BIGTK (TX) installed (keyid=%d)", s_nan_ctx.own_bigtk_keyid);
         }
-        ESP_LOG_BUFFER_HEXDUMP("## ND-BIGTK ", s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN, ESP_LOG_INFO);
+        ESP_LOG_BUFFER_HEXDUMP("## ND-BIGTK ", s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
     }
 }
 
@@ -863,7 +863,9 @@ static int nan_kek_wrap_key_data(struct ndl_info *ndl, const uint8_t *plain,
         pad[plain_len] = 0xDD;
         memset(pad + plain_len + 1, 0, padded - plain_len - 1);
     }
-    if (aes_wrap(ndl->nd_kek, ndl->kek_len, (int)(padded / 8), pad, out) != 0) {
+    int rc = aes_wrap(ndl->nd_kek, ndl->kek_len, (int)(padded / 8), pad, out);
+    forced_memzero(pad, sizeof(pad));       /* scrub plaintext group keys */
+    if (rc != 0) {
         return -1;
     }
     *out_len = padded + 8;
@@ -924,20 +926,24 @@ static int nan_append_own_group_kdes(struct ndl_info *ndl, uint8_t *key_desc, si
     uint8_t plain[NAN_GROUP_KEY_DATA_MAX];
     uint8_t *p = plain;
     const uint8_t *end = plain + sizeof(plain);
+    size_t plain_len = 0;
+    size_t wrapped_len = 0;
+    uint16_t key_info = 0;
+    int ret = NAN_KEY_DESC_MIN_LEN;
+
     if (nan_append_igtk_kde(ndl, &p, end) < 0 ||
         nan_append_bigtk_kde(ndl, &p, end) < 0 ||
         nan_append_gtk_kde(ndl, &p, end) < 0) {
         ESP_LOGW(TAG, "Group KDEs [%s%s%s]: assembly failed; sending without group keys",
                  want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
-        return NAN_KEY_DESC_MIN_LEN;
+        goto out;
     }
 
-    size_t plain_len = (size_t)(p - plain);
+    plain_len = (size_t)(p - plain);
     if (plain_len == 0) {
-        return NAN_KEY_DESC_MIN_LEN;        /* nothing negotiated to send */
+        goto out;                           /* nothing negotiated to send */
     }
 
-    size_t wrapped_len = 0;
     if (nan_kek_wrap_key_data(ndl, plain, plain_len,
                               &key_desc[NAN_KEY_DESC_DATA_OFF],
                               desc_cap > NAN_KEY_DESC_DATA_OFF ?
@@ -945,11 +951,11 @@ static int nan_append_own_group_kdes(struct ndl_info *ndl, uint8_t *key_desc, si
                               &wrapped_len) != 0) {
         ESP_LOGW(TAG, "Group KDEs [%s%s%s]: KEK wrap failed or no headroom; sending without group keys",
                  want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
-        return NAN_KEY_DESC_MIN_LEN;
+        goto out;
     }
 
-    uint16_t key_info = (key_desc[NAN_KEY_DESC_KEY_INFO_OFF] << 8) |
-                        key_desc[NAN_KEY_DESC_KEY_INFO_OFF + 1];
+    key_info = (key_desc[NAN_KEY_DESC_KEY_INFO_OFF] << 8) |
+               key_desc[NAN_KEY_DESC_KEY_INFO_OFF + 1];
     key_info |= NAN_KEY_INFO_ENC_KEY;
     key_desc[NAN_KEY_DESC_KEY_INFO_OFF]     = (key_info >> 8) & 0xFF;
     key_desc[NAN_KEY_DESC_KEY_INFO_OFF + 1] = key_info & 0xFF;
@@ -962,7 +968,11 @@ static int nan_append_own_group_kdes(struct ndl_info *ndl, uint8_t *key_desc, si
     ESP_LOGI(TAG, "Group Key Data wrapped: %u plain -> %u wrapped bytes, KDEs=[%s%s%s]",
              (unsigned)plain_len, (unsigned)wrapped_len,
              want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
-    return NAN_KEY_DESC_MIN_LEN + (int)wrapped_len;
+    ret = NAN_KEY_DESC_MIN_LEN + (int)wrapped_len;
+
+out:
+    forced_memzero(plain, sizeof(plain));   /* scrub assembled plaintext group keys */
+    return ret;
 }
 
 /*
@@ -2288,6 +2298,7 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                 }
                 kd_offset += 2 + kde_flen;
             }
+            forced_memzero(plain, sizeof(plain));   /* scrub decrypted group keys */
         }
     } else if (msg_type == 1) {
         /* M1 received but NDL not created yet — store as pending */
