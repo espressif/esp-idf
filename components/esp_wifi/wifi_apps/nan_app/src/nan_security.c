@@ -1023,10 +1023,6 @@ static int nan_build_scia_attr(uint8_t *frm, uint8_t pub_id,
     }
 
     int written = (int)(p - frm);
-    /*
-    ESP_LOGI(TAG, "SCIA construct: frm=%p wrote=%d (hdr3+20*num_pmkids, num_pmkids=%u)",
-             frm, written, num_pmkids);
-    */
     return written;
 }
 
@@ -1641,10 +1637,6 @@ int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id, uint16_t own_csid_bitma
     }
 
     int written = (int)(p - frm);
-    /*
-    ESP_LOGI(TAG, "CSIA construct: frm=%p wrote=%d (hdr3+cap1+2*csids=%u, bitmap=0x%04x)",
-             frm, written, num_csids, csid_bitmap);
-    */
     return written;
 }
 
@@ -1709,10 +1701,6 @@ uint32_t esp_nan_get_csia_len(uint16_t own_csid_bitmap, uint16_t peer_csid_bitma
     }
     uint8_t num_csids = __builtin_popcount(csid_bitmap);
     uint32_t len = 3 + 1 + 2 * num_csids;
-    /*
-    ESP_LOGI(TAG, "CSIA len getter -> %lu (own=0x%04x, peer=0x%04x, effective=0x%04x, num_csids=%d)",
-             len, own_csid_bitmap, peer_csid_bitmap, csid_bitmap, num_csids);
-    */
     return len;
 }
 
