@@ -1183,17 +1183,6 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
     nan_security_apply_pending(ndl, p_own_svc, pub_id, peer_nmi, peer_ndi);
 #endif
 
-    if (device_caps & NAN_CAPS_NDPE_ATTR) {
-        uint8_t own_bssid[6];
-        esp_err_t err = esp_wifi_get_mac(WIFI_IF_NAN, own_bssid);
-        if (err != ESP_OK) {
-            NAN_DATA_UNLOCK();
-            ESP_LOGE(TAG, "Cannot get own BSSID!");
-            return;
-        }
-        esp_wifi_nan_get_ipv6_linklocal_from_mac(&own_ipv6.u_addr.ip6, own_bssid);
-    }
-
     if (p_own_svc->ndp_resp_needed) {
         ESP_LOGD(TAG, "NDP Req from "MACSTR" [NDP Id: %d], Accept OR Deny using NDP command",
                  MAC2STR(peer_nmi), ndp_id);
@@ -1209,8 +1198,13 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
             uint8_t own_bssid[6];
             esp_err_t err = esp_wifi_get_mac(WIFI_IF_NAN, own_bssid);
             if (err != ESP_OK) {
+                /* Cannot build the auto-response: free the NDL slot and deny the
+                 * peer so it does not wait indefinitely. Send outside the lock. */
+                ESP_LOGE(TAG, "get own NAN MAC failed, rc=0x%x; denying NDP ndp_id=%d", err, ndp_id);
+                nan_reset_ndl(ndp_id, false);
                 NAN_DATA_UNLOCK();
-                ESP_LOGE(TAG, "Cannot get own BSSID!");
+                ndp_resp.accept = false;
+                esp_nan_internal_datapath_resp(&ndp_resp, (uint8_t *)&own_ipv6.u_addr.ip6.addr[2]);
                 return;
             }
             esp_wifi_nan_get_ipv6_linklocal_from_mac(&own_ipv6.u_addr.ip6, own_bssid);
