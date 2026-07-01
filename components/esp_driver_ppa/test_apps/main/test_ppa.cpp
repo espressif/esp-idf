@@ -426,6 +426,64 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
 #endif
 }
 
+TEST_CASE("ppa_srm_yuv420_scaled_output_validation", "[PPA]")
+{
+    const uint32_t in_pic_w = 96;
+    const uint32_t in_pic_h = 96;
+    const uint32_t out_pic_w = 52;
+    const uint32_t out_pic_h = 18;
+    const uint32_t in_block_w = 18;
+    const uint32_t in_block_h = 34;
+    const ppa_srm_color_mode_t cm = PPA_SRM_COLOR_MODE_YUV420;
+
+    uint32_t in_buf_size = ALIGN_UP(in_pic_w * in_pic_h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)cm) / 8, 64);
+    uint32_t out_buf_size = ALIGN_UP(out_pic_w * out_pic_h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)cm) / 8, 64);
+    uint8_t *in_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));
+    TEST_ASSERT_NOT_NULL(in_buf);
+    uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));
+    if (!out_buf) {
+        free(in_buf);
+    }
+    TEST_ASSERT_NOT_NULL(out_buf);
+
+    ppa_client_handle_t ppa_client_handle;
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_SRM;
+    ppa_client_config.max_pending_trans_num = 1;
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
+
+    ppa_srm_oper_config_t oper_config = {};
+    oper_config.in.buffer = in_buf;
+    oper_config.in.pic_w = in_pic_w;
+    oper_config.in.pic_h = in_pic_h;
+    oper_config.in.block_w = in_block_w;
+    oper_config.in.block_h = in_block_h;
+    oper_config.in.block_offset_x = 0;
+    oper_config.in.block_offset_y = 0;
+    oper_config.in.srm_cm = cm;
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = out_buf_size;
+    oper_config.out.pic_w = out_pic_w;
+    oper_config.out.pic_h = out_pic_h;
+    oper_config.out.block_offset_x = 0;
+    oper_config.out.block_offset_y = 0;
+    oper_config.out.srm_cm = cm;
+    oper_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_90;
+    oper_config.scale_x = 1.0;
+    oper_config.scale_y = 1.5;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+
+    oper_config.out.pic_w = 34;
+    oper_config.out.pic_h = 18;
+    oper_config.scale_y = 1.0;
+    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
+    free(in_buf);
+    free(out_buf);
+}
+
 static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
 {
     const uint32_t w = 2;

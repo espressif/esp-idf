@@ -223,6 +223,15 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     uint32_t scale_x_frag = (uint32_t)(config->scale_x * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
     uint32_t scale_y_int = (uint32_t)config->scale_y;
     uint32_t scale_y_frag = (uint32_t)(config->scale_y * PPA_LL_SRM_SCALING_FRAG_MAX) & (PPA_LL_SRM_SCALING_FRAG_MAX - 1);
+    // SRM processes in blocks. Block x/(y) cannot be scaled to odd number when YUV422/YUV420 is the output color mode
+    // When block size is 16x16, odd number is possible, so needs to make them even
+    // When block size is 32x32, calculated frag values are always even
+    if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
+        scale_x_frag = scale_x_frag & ~1;
+        scale_y_frag = scale_y_frag & ~1;
+    } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
+        scale_x_frag = scale_x_frag & ~1;
+    }
     uint32_t new_block_w = 0;
     uint32_t new_block_h = 0;
     if (config->rotation_angle == PPA_SRM_ROTATION_ANGLE_0 || config->rotation_angle == PPA_SRM_ROTATION_ANGLE_180) {
@@ -235,6 +244,13 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     ESP_RETURN_ON_FALSE(new_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
                         new_block_h <= (config->out.pic_h - config->out.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "scale does not fit in the out pic");
+    if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(new_block_w % 2 == 0 && new_block_h % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 output block does not support odd width or height after scaling");
+    } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
+        ESP_RETURN_ON_FALSE(new_block_w % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV422 output block does not support odd width after scaling");
+    }
 
     if (!ppa_check_buffer_alignment(ppa_client, &config->in, true, config->in.block_w) ||
             !ppa_check_buffer_alignment(ppa_client, &config->out, false, new_block_w)) {
@@ -290,15 +306,6 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         srm_trans_desc->scale_x_frag = scale_x_frag;
         srm_trans_desc->scale_y_int = scale_y_int;
         srm_trans_desc->scale_y_frag = scale_y_frag;
-        // SRM processes in blocks. Block x/(y) cannot be scaled to odd number when YUV422/YUV420 is the output color mode
-        // When block size is 16x16, odd number is possible, so needs to make them even
-        // When block size is 32x32, calculated frag values are always even
-        if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
-            srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
-            srm_trans_desc->scale_y_frag = srm_trans_desc->scale_y_frag & ~1;
-        } else if (PPA_IS_CM_YUV422(config->out.srm_cm)) {
-            srm_trans_desc->scale_x_frag = srm_trans_desc->scale_x_frag & ~1;
-        }
         srm_trans_desc->alpha_value = new_alpha_value;
         srm_trans_desc->data_burst_length = ppa_client->data_burst_length;
 
