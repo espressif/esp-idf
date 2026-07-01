@@ -253,3 +253,5 @@ repos:
     hooks:
       - id: check-tests-missing-config
         files: 'pytest_.*\.py$|sdkconfig(\..*)?$|\.idf_build_apps\.toml$|\.idf_ci\.toml$'
+        additional_dependencies:
+          - 'esp-pylib[cli]'
