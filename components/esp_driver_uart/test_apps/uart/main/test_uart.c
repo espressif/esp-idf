@@ -27,6 +27,7 @@
 #include "test_common.h"
 #include "esp_attr.h"
 #include "esp_timer.h"
+#include "sdkconfig.h"
 
 #define BUF_SIZE         (100)
 #define UART_BAUD_11520  (11520)
@@ -868,7 +869,8 @@ TEST_CASE("uart auto baud rate detection", "[uart]")
     TEST_ASSERT(port_select(&port_param));
     // This is indeed a standalone feature, no need to specify the uart port, call port_select() to be compatible with pytest
     // And this test case no need to be tested twice on HP/LP uart ports both exist targets (also, LP UART does not support auto baud rate detection functionality)
-    if (port_param.port_num < SOC_UART_HP_NUM) {
+    uart_port_t uart_num = port_param.port_num;
+    if (uart_num < SOC_UART_HP_NUM) {
         TaskHandle_t console_write_task = NULL;
         xTaskCreate(uart_console_write_task, "uart_console_write_task", 2048, NULL, 5, &console_write_task);
         vTaskDelay(20);
@@ -883,9 +885,9 @@ TEST_CASE("uart auto baud rate detection", "[uart]")
         uart_bitrate_res_t res = {};
 
         uart_get_baudrate(CONFIG_CONSOLE_UART_NUM, &actual_baudrate);
-        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, &conf)); // acquire a new uart port
+        TEST_ESP_OK(uart_detect_bitrate_start(uart_num, &conf)); // acquire a new uart port
         vTaskDelay(pdMS_TO_TICKS(500));
-        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, false, &res)); // no releasing
+        TEST_ESP_OK(uart_detect_bitrate_stop(uart_num, false, &res)); // no releasing
         detected_baudrate = res.clk_freq_hz * 2 / res.pos_period; // assume the wave has a slow falling slew rate
         TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate); // allow 3% error
 
@@ -893,9 +895,9 @@ TEST_CASE("uart auto baud rate detection", "[uart]")
         uart_set_baudrate(CONFIG_CONSOLE_UART_NUM, 38400);
 
         uart_get_baudrate(CONFIG_CONSOLE_UART_NUM, &actual_baudrate);
-        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, NULL)); // use the previously acquired uart port
+        TEST_ESP_OK(uart_detect_bitrate_start(uart_num, NULL)); // use the previously acquired uart port
         vTaskDelay(pdMS_TO_TICKS(500));
-        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, true, &res)); // release the uart port
+        TEST_ESP_OK(uart_detect_bitrate_stop(uart_num, true, &res)); // release the uart port
         detected_baudrate = res.clk_freq_hz * 2 / res.pos_period;
         TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate);
 
@@ -903,9 +905,9 @@ TEST_CASE("uart auto baud rate detection", "[uart]")
         uart_set_baudrate(CONFIG_CONSOLE_UART_NUM, CONFIG_CONSOLE_UART_BAUDRATE);
 
         uart_get_baudrate(CONFIG_CONSOLE_UART_NUM, &actual_baudrate);
-        TEST_ESP_OK(uart_detect_bitrate_start(UART_NUM_1, &conf)); // acquire a new uart port again
+        TEST_ESP_OK(uart_detect_bitrate_start(uart_num, &conf)); // acquire a new uart port again
         vTaskDelay(pdMS_TO_TICKS(500));
-        TEST_ESP_OK(uart_detect_bitrate_stop(UART_NUM_1, true, &res)); // release it
+        TEST_ESP_OK(uart_detect_bitrate_stop(uart_num, true, &res)); // release it
         detected_baudrate = res.clk_freq_hz * 2 / res.pos_period;
         TEST_ASSERT_INT32_WITHIN(actual_baudrate * 0.03, actual_baudrate, detected_baudrate);
 
