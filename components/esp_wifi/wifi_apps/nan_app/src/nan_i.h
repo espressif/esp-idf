@@ -132,12 +132,6 @@ extern void *s_nan_data_lock;
 
 /* NAN KDE OUIs and Data Types carried in the Key Data field (Wi-Fi Aware
  * v4.0 §9.5.21.5 Table 126; formats per 802.11 Fig 12-36/12-42/12-47). */
-#define NAN_KDE_OUI_RSN_0  0x00
-#define NAN_KDE_OUI_RSN_1  0x0F
-#define NAN_KDE_OUI_RSN_2  0xAC
-#define NAN_KDE_OUI_WFA_0  0x50
-#define NAN_KDE_OUI_WFA_1  0x6F
-#define NAN_KDE_OUI_WFA_2  0x9A
 #define NAN_KDE_OUI_RSN    0x000FACUL
 #define NAN_KDE_OUI_WFA    0x506F9AUL
 #define NAN_KDE_TYPE_GTK         1   /* 00-0F-AC GTK KDE */
