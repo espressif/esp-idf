@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -45,11 +45,14 @@ void app_main(void)
         init_ulp_program();
     }
 
-    /* ULP Risc-V read and detected a temperature above the limit */
+    /* ULP Risc-V read and detected a value above the limit on one of the channels */
     if (causes & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         printf("ULP-RISC-V woke up the main CPU\n");
         printf("Threshold: high = %"PRIu32"\n", ulp_adc_threshold);
-        printf("Value = %"PRIu32" was above threshold\n", ulp_wakeup_result);
+        printf("Channel 0 value = %"PRIu32"%s\n", ulp_wakeup_result_0,
+               ulp_wakeup_result_0 > ulp_adc_threshold ? " was above threshold" : "");
+        printf("Channel 1 value = %"PRIu32"%s\n", ulp_wakeup_result_1,
+               ulp_wakeup_result_1 > ulp_adc_threshold ? " was above threshold" : "");
     }
 
     /* Go back to sleep, only the ULP Risc-V will run */
@@ -67,13 +70,20 @@ static void init_ulp_program(void)
 {
     ulp_adc_cfg_t cfg = {
         .adc_n    = EXAMPLE_ADC_UNIT,
-        .channel  = EXAMPLE_ADC_CHANNEL,
+        .channel  = EXAMPLE_ADC_CHANNEL_0,
         .width    = EXAMPLE_ADC_WIDTH,
         .atten    = EXAMPLE_ADC_ATTEN,
         .ulp_mode = ADC_ULP_MODE_RISCV,
     };
 
     ESP_ERROR_CHECK(ulp_adc_init(&cfg));
+
+    /* Configure a second channel on the same ADC unit to show multi-channel use */
+    ulp_adc_chan_cfg_t chan_cfg = {
+        .atten    = EXAMPLE_ADC_ATTEN,
+        .bitwidth = EXAMPLE_ADC_WIDTH,
+    };
+    ESP_ERROR_CHECK(ulp_adc_config_channel(EXAMPLE_ADC_UNIT, EXAMPLE_ADC_CHANNEL_1, &chan_cfg));
 
     esp_err_t err = ulp_riscv_load_binary(ulp_main_bin_start, (ulp_main_bin_end - ulp_main_bin_start));
     ESP_ERROR_CHECK(err);
