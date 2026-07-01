@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,25 +64,6 @@ TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
     TEST_ASSERT(m1==m2);
 }
 
-
-#if CONFIG_SPIRAM_USE_MALLOC && (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
-TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed memory is exhausted", "[heap][psram]")
-{
-    char** dmaMem=malloc(sizeof(char*)*512);
-    assert(dmaMem);
-    int m=tryAllocMem();
-    int i=0;
-    for (i=0; i<512; i++) {
-        dmaMem[i]=heap_caps_malloc(1024, MALLOC_CAP_DMA);
-        if (dmaMem[i]==NULL) break;
-    }
-    for (int j=0; j<i; j++) free(dmaMem[j]);
-    free(dmaMem);
-    tryAllocMemFree();
-    printf("Could allocate %dK of DMA memory after allocating all of %dK of normal memory.\n", i, m);
-    TEST_ASSERT(i);
-}
-#endif
 
 #if CONFIG_SPIRAM
 TEST_CASE("Check if default cap allocates in external memory in priority", "[heap][psram]")

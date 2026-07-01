@@ -124,7 +124,7 @@ config SPIRAM_MALLOC_RESERVE_INTERNAL
         that the internal memory is entirely filled up. This causes allocations that are specifically done in
         internal memory, for example the stack for new tasks or memory to service DMA or have memory that's
         also available when SPI cache is down, to fail. This option reserves a pool specifically for requests
-        like that; the memory in this pool is not given out when a normal malloc() is called.
+        like that;  a normal malloc() can fall back to the pool only after all other internal are exhausted.
 
         Set this to 0 to disable this feature.
 
