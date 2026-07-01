@@ -311,4 +311,17 @@ menu "Power Management"
             Configure the delay time between waking up PSRAM halfsleep mode and the first access to PSRAM.
             Refer to the tXHS parameter in datasheet of the used PSRAM to configure this option.
 
+    config PM_SLEEP_CLK_ICG_ENABLE
+        bool "Enable clock gating control during light sleep"
+        depends on SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+        default y
+        help
+            Enable clock gating for digital peripherals in Light Sleep mode.
+            Some digital peripherals require their functional clocks to
+            remain enabled during sleep. The Sleep Clock ICG selectively
+            ungates the clock tree for these peripherals, allowing their
+            hardware logic to continue running during Light Sleep, while
+            keeping all other peripheral clocks gated to minimize sleep
+            power consumption.
+
 endmenu # "Power Management"

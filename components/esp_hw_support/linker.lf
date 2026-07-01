@@ -44,7 +44,7 @@ entries:
             pmu_param (noflash)
         if SOC_LIGHT_SLEEP_SUPPORTED = y:
             pmu_sleep (noflash)
-            if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
+            if PM_SLEEP_CLK_ICG_ENABLE = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
                 pmu_sleep_clock_icg:pmu_sleep_clock_icg_config (noflash)
             sleep_mspi (noflash)
             if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32S31 != y:
