@@ -1845,17 +1845,9 @@ void esp_nan_action_start(esp_netif_t *nan_netif)
     esp_nan_internal_register_callbacks(&nan_cb);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    /* Device-global group-management protection (IGTKSA/BIGTKSA), one per NMI,
-     * sourced from the NAN start config (wifi_nan_sync_config_t.group_mgmt_prot).
-     * The blob stores it at nan_start; we read it back here. Default on if the
-     * config can't be read, preserving protected-by-default behavior. */
-    {
-        wifi_config_t nan_cfg = {0};
-        s_nan_ctx.group_mgmt_prot =
-            (esp_wifi_get_config(WIFI_IF_NAN, &nan_cfg) == ESP_OK)
-                ? nan_cfg.nan.group_mgmt_prot : true;
-    }
-    /* Install the device-global IGTK/BIGTK for TX now (when enabled) so Beacons
+    /* s_nan_ctx.group_mgmt_prot (device-global IGTKSA/BIGTKSA, one per NMI) was
+     * captured from the user's start config in esp_wifi_nan_sync_start().
+     * Install the device-global IGTK/BIGTK for TX now (when enabled) so Beacons
      * (BIGTK) and group-addressed SDFs (IGTK) are BIP-protected from the first
      * frame, like iOS. The blob gates beacon BIP-TX on an active BIGTK index
      * only (no NDP state), so installing here is sufficient. */
@@ -1939,6 +1931,7 @@ esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
     s_nan_ctx.num_peer_creds = 0;
     memset(s_nan_ctx.peer_creds, 0, sizeof(s_nan_ctx.peer_creds));
     s_nan_ctx.use_nvs_for_caching = nan_cfg->use_nvs_for_caching;
+    s_nan_ctx.group_mgmt_prot = nan_cfg->group_mgmt_prot;
     s_nan_ctx.nik_lifetime = 0;
 
     if (nan_cfg->reset_current_nvs_creds) {
