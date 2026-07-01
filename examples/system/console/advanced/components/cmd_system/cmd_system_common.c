@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,6 +20,8 @@
 #include "esp_console.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
+#include "esp_idf_version.h"
+#include "esp_system.h"
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -35,7 +37,9 @@ static const char *TAG = "cmd_system_common";
 static void register_free(void);
 static void register_heap(void);
 static void register_version(void);
+#ifndef CONFIG_IDF_TARGET_LINUX
 static void register_restart(void);
+#endif
 #if WITH_TASKS_INFO
 static void register_tasks(void);
 #endif
@@ -46,7 +50,9 @@ void register_system_common(void)
     register_free();
     register_heap();
     register_version();
+#ifndef CONFIG_IDF_TARGET_LINUX
     register_restart();
+#endif
 #if WITH_TASKS_INFO
     register_tasks();
 #endif
@@ -121,6 +127,7 @@ static void register_version(void)
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /** 'restart' command restarts the program */
 
 static int restart(int argc, char **argv)
@@ -139,6 +146,7 @@ static void register_restart(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 /** 'free' command prints available heap memory */
 
