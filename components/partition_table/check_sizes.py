@@ -23,6 +23,9 @@ import gen_esp32part
 import rich_click as click
 from esp_pylib.cli_types import AnyIntType
 from esp_pylib.logger import log
+from gen_esp32part import APP_TYPE
+from gen_esp32part import MIN_PARTITION_SUBTYPE_APP_TEE
+from gen_esp32part import NUM_PARTITION_SUBTYPE_APP_TEE
 from gen_esp32part import PartitionTable
 from gen_esp32part import get_ptype_as_int
 from gen_esp32part import get_subtype_as_int
@@ -66,11 +69,14 @@ def check_partition(ptype, subtype, partition_table_file, bin_file):  # type: (s
     ptype_str = str(ptype)
     ptype = get_ptype_as_int(ptype)
     partitions = [p for p in table if p.type == ptype]
+    tee_subtypes = range(MIN_PARTITION_SUBTYPE_APP_TEE, MIN_PARTITION_SUBTYPE_APP_TEE + NUM_PARTITION_SUBTYPE_APP_TEE)
 
     if subtype is not None:
         ptype_str += f' ({subtype})'
         subtype = get_subtype_as_int(ptype, subtype)
         partitions = [p for p in partitions if p.subtype == subtype]
+    elif ptype == APP_TYPE:
+        partitions = [p for p in partitions if p.subtype not in tee_subtypes]
 
     if len(partitions) == 0:
         log.warn(f'Partition table does not contain any partitions matching {ptype_str}')
