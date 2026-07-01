@@ -778,15 +778,17 @@ void nan_security_reset_own_group_keys(void)
     s_nan_ctx.own_bigtk_set = false;
 }
 
+/* 00-0F-AC RSN OUI written into every NAN KDE header. */
+static const uint8_t nan_kde_rsn_oui[3] = {0x00, 0x0f, 0xac};
+
 /* NAN KDE header (802.11 Fig 12-34: DD len OUI(3) DataType(1)); mirrors hostap
  * nan_add_kde_hdr(). data_len excludes the DD/len/OUI/type bytes. */
 static uint8_t *nan_kde_put_hdr(uint8_t *p, uint8_t data_type, uint8_t data_len)
 {
     *p++ = 0xDD;
     *p++ = (uint8_t)(4 + data_len);     /* OUI(3) + DataType(1) + data */
-    *p++ = NAN_KDE_OUI_RSN_0;
-    *p++ = NAN_KDE_OUI_RSN_1;
-    *p++ = NAN_KDE_OUI_RSN_2;
+    memcpy(p, nan_kde_rsn_oui, sizeof(nan_kde_rsn_oui));
+    p += sizeof(nan_kde_rsn_oui);
     *p++ = data_type;
     return p;
 }
