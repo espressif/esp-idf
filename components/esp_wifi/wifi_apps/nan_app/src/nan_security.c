@@ -765,6 +765,19 @@ void nan_security_install_own_group_integrity_keys(void)
     }
 }
 
+void nan_security_reset_own_group_keys(void)
+{
+    forced_memzero(s_nan_ctx.own_igtk, sizeof(s_nan_ctx.own_igtk));
+    memset(s_nan_ctx.own_igtk_ipn, 0, sizeof(s_nan_ctx.own_igtk_ipn));
+    s_nan_ctx.own_igtk_keyid = 0;
+    s_nan_ctx.own_igtk_set = false;
+
+    forced_memzero(s_nan_ctx.own_bigtk, sizeof(s_nan_ctx.own_bigtk));
+    memset(s_nan_ctx.own_bigtk_bipn, 0, sizeof(s_nan_ctx.own_bigtk_bipn));
+    s_nan_ctx.own_bigtk_keyid = 0;
+    s_nan_ctx.own_bigtk_set = false;
+}
+
 /* NAN KDE header (802.11 Fig 12-34: DD len OUI(3) DataType(1)); mirrors hostap
  * nan_add_kde_hdr(). data_len excludes the DD/len/OUI/type bytes. */
 static uint8_t *nan_kde_put_hdr(uint8_t *p, uint8_t data_type, uint8_t data_len)
@@ -962,8 +975,10 @@ static int nan_append_own_group_kdes(struct ndl_info *ndl, uint8_t *key_desc, si
     key_desc[NAN_KEY_DESC_DATA_LEN_OFF]     = (wrapped_len >> 8) & 0xFF;
     key_desc[NAN_KEY_DESC_DATA_LEN_OFF + 1] = wrapped_len & 0xFF;
 
-    /* Key RSC carries the GTK's RSC when a GTK KDE is present (§7.1.3.5). */
-    memcpy(&key_desc[NAN_KEY_DESC_RSC_OFF], ndl->own_gtk_rsc, NAN_KEY_RSC_LEN);
+    /* Key RSC carries the GTK's RSC only when a GTK KDE is present (§7.1.3.5). */
+    if (want_gtk) {
+        memcpy(&key_desc[NAN_KEY_DESC_RSC_OFF], ndl->own_gtk_rsc, NAN_KEY_RSC_LEN);
+    }
 
     ESP_LOGI(TAG, "Group Key Data wrapped: %u plain -> %u wrapped bytes, KDEs=[%s%s%s]",
              (unsigned)plain_len, (unsigned)wrapped_len,

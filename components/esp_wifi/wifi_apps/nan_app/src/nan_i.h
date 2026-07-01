@@ -529,6 +529,12 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
  * Call once at NAN start; never per-NDP (would reset the blob's BIPN counter). */
 void nan_security_install_own_group_integrity_keys(void);
 
+/* Clear the device-global IGTK/BIGTK state on NAN stop so the next NAN start
+ * regenerates fresh keys. Prevents re-installing a stale key with IPN/BIPN=0
+ * (which resets the blob's monotonic replay counter) and key reuse if the NMI
+ * is re-randomized on restart. */
+void nan_security_reset_own_group_keys(void);
+
 /*
  * Match subscriber discovery security to a publisher's params.
  * NCS-SK: Compare locally derived ND-PMKID (subscriber passphrase, publisher NMI) to
