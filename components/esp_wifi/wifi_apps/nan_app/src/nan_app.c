@@ -1399,6 +1399,12 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                                                 NAN_NCS_SK_128_TK_LEN,
                                                 NAN_KEY_ND_TK);
         ESP_LOG_BUFFER_HEXDUMP("## ND-TK ", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_INFO);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "NDP confirm: failed to install ND-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+            os_free(evt);
+            nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+            goto done;
+        }
         ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
                                                 peer_nmi,
                                                 0,
@@ -1409,7 +1415,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                                                 NAN_NCS_SK_128_TK_LEN,
                                                 NAN_KEY_NM_TK);
         if (ret != 0) {
-            ESP_LOGE(TAG, "NDP confirm: failed to install NAN pairwise key (ndp_id=%d, ret=%d)", ndp_id, ret);
+            ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
             os_free(evt);
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
