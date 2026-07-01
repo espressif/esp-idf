@@ -4,7 +4,7 @@ components/esp_driver_uart/test_apps/rs485:
   disable:
     - if: SOC_UART_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32h2"]
+    - if: IDF_TARGET not in ["esp32", "esp32h2", "esp32s3"]
       temporary: true
       reason: lack of runners
   depends_components:
