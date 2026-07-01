@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -184,9 +184,10 @@ static void wifi_default_action_nan_started(void *arg, esp_event_base_t base, in
     if (s_wifi_netifs[WIFI_IF_NAN] != NULL) {
         wifi_start(s_wifi_netifs[WIFI_IF_NAN], base, event_id, data);
         esp_nan_action_start(s_wifi_netifs[WIFI_IF_NAN]);
-        /* Bring the netif up before creating the link-local address;
-         * esp_netif_create_ip6_linklocal() is a no-op unless netif_is_up(). */
-        esp_netif_action_connected(s_wifi_netifs[WIFI_IF_NAN], base, event_id, data);
+        /* Bring the netif up before esp_netif_create_ip6_linklocal() (a no-op unless
+         * netif_is_up()). esp_netif_up() is private, so use the public action handler;
+         * NAN is non-DHCP, so it only calls esp_netif_up() and ignores the event args. */
+        esp_netif_action_connected(s_wifi_netifs[WIFI_IF_NAN], NULL, 0, NULL);
         esp_netif_create_ip6_linklocal(s_wifi_netifs[WIFI_IF_NAN]);
     }
 }
