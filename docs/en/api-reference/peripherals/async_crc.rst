@@ -1,5 +1,5 @@
 ============================
-Asynchronous CRC (Async CRC)
+Asynchronous CRC Calculation
 ============================
 
 :link_to_translation:`zh_CN:[中文]`

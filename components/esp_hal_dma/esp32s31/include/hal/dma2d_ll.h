@@ -78,6 +78,7 @@
 #define DMA2D_LL_CHANNEL_PERIPH_SEL_BIT_WIDTH      (3)
 
 #define DMA2D_LL_DESC_ALIGNMENT 8 // Descriptor must be aligned to 8 bytes
+#define DMA2D_LL_DESC_2D_FIELD_MAX 0x3FFFU // 2D descriptor width/height/coordinate fields are 14-bit
 
 #ifdef __cplusplus
 extern "C" {
@@ -1030,7 +1031,7 @@ static inline void dma2d_ll_tx_configure_color_space_conv(dma2d_dev_t *dev, uint
         input_sel = 7;
         break;
     case DMA2D_CSC_TX_SCRAMBLE:
-        input_sel = 2; // Or 3
+        input_sel = 3; // Other 3-byte/pixel input path
         proc_en = false;
         output_sel = 2;
         break;
