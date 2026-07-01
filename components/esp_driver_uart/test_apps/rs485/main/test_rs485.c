@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,20 +14,22 @@
 #include "esp_random.h"             // for uint32_t esp_random()
 #include "sdkconfig.h"
 
-#define UART_NUM1       (UART_NUM_1)
+#define UART_NUM        (UART_NUM_1 - CONFIG_CONSOLE_UART_NUM)
 #define UART_BAUD_RATE  (115200 * 10)
 #define BUF_SIZE        (512)
 
 #if CONFIG_IDF_TARGET_ESP32
-#define UART1_RX_PIN    (22)
-#define UART1_TX_PIN    (23)
-// For RS485 Half-Duplex Mode manages DE/~RE
-#define RS485_DE_PIN    (18)    // For ESP32, let's use RTS signal to control DE/~RE pin
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define UART1_RX_PIN    (4)
-#define UART1_TX_PIN    (5)
-// For RS485 Half-Duplex Mode manages DE/~RE
-#define RS485_DE_PIN    (12)    // For ESP32H2, let's use DTR signal to control DE/~RE pin
+#define UART_RX_PIN     (22)
+#define UART_TX_PIN     (23)
+#define RS485_DE_PIN    (18) // uses RTS or DTR signal to control DE/~RE pin
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32S3
+#define UART_RX_PIN     (4)
+#define UART_TX_PIN     (5)
+#define RS485_DE_PIN    (12) // uses RTS or DTR signal to control DE/~RE pin
+#else // for build success only (no runner)
+#define UART_RX_PIN     (0)
+#define UART_TX_PIN     (0)
+#define RS485_DE_PIN    (0)
 #endif
 
 // Number of packets to be send during test
@@ -158,7 +160,7 @@ static uint16_t buffer_fill_random(uint8_t *buffer, size_t length)
     return crc;
 }
 
-static void rs485_init(void)
+static void rs485_init(uart_mode_t mode)
 {
     uart_config_t uart_config = {
         .baud_rate = UART_BAUD_RATE,
@@ -170,19 +172,21 @@ static void rs485_init(void)
         .source_clk = UART_SCLK_DEFAULT,
     };
     ESP_LOGI(TAG, "RS485 port initialization...");
-    TEST_ESP_OK(uart_wait_tx_idle_polling(UART_NUM1));
-    // Configure UART1 parameters
-    TEST_ESP_OK(uart_param_config(UART_NUM1, &uart_config));
-    // Set UART1 pins
-#if CONFIG_IDF_TARGET_ESP32
-    TEST_ESP_OK(uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, RS485_DE_PIN, UART_PIN_NO_CHANGE));
-#elif CONFIG_IDF_TARGET_ESP32H2
-    TEST_ESP_OK(uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, RS485_DE_PIN, UART_PIN_NO_CHANGE));
-#endif
+    TEST_ESP_OK(uart_wait_tx_idle_polling(UART_NUM));
+    // Configure UART port parameters
+    TEST_ESP_OK(uart_param_config(UART_NUM, &uart_config));
+    // Set UART pins
+    if (mode == UART_MODE_RS485_HALF_DUPLEX) { // RTS toggle by software, DTR toggle by hardware in this mode
+        TEST_ESP_OK(uart_set_pin(UART_NUM, UART_TX_PIN, UART_RX_PIN, RS485_DE_PIN, UART_PIN_NO_CHANGE));
+    } else if (mode == UART_MODE_RS485_COLLISION_DETECT) { // no RTS toggle in this mode
+        TEST_ESP_OK(uart_set_pin(UART_NUM, UART_TX_PIN, UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, RS485_DE_PIN, UART_PIN_NO_CHANGE));
+    } else {
+        TEST_ASSERT(false);
+    }
     // Install UART driver (we don't need an event queue here)
-    TEST_ESP_OK(uart_driver_install(UART_NUM1, BUF_SIZE * 2, 0, 0, NULL, 0));
-    // Setup rs485 half duplex mode
-    TEST_ESP_OK(uart_set_mode(UART_NUM1, UART_MODE_RS485_HALF_DUPLEX));
+    TEST_ESP_OK(uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0));
+    // Setup the requested rs485 mode
+    TEST_ESP_OK(uart_set_mode(UART_NUM, mode));
 }
 
 static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t buffer_size)
@@ -209,7 +213,7 @@ static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t bu
 // Slave test case for multi device
 static void rs485_slave(void)
 {
-    rs485_init();
+    rs485_init(UART_MODE_RS485_HALF_DUPLEX);
     uint8_t* slave_data = (uint8_t*) malloc(BUF_SIZE);
     uint16_t err_count = 0, good_count = 0;
     unity_send_signal("Slave_ready");
@@ -217,15 +221,15 @@ static void rs485_slave(void)
     ESP_LOGI(TAG, "Start receive loop.");
     for (int pack_count = 0; pack_count < PACKETS_NUMBER; pack_count++) {
         //Read slave_data from UART
-        int len = uart_read_bytes(UART_NUM1, slave_data, BUF_SIZE, PACKET_READ_TICS);
+        int len = uart_read_bytes(UART_NUM, slave_data, BUF_SIZE, PACKET_READ_TICS);
         //Write slave_data back to UART
         if (len > 2) {
             esp_err_t status = print_packet_data("Received ", slave_data, len);
 
             // If received packet is correct then send it back
             if (status == ESP_OK) {
-                uart_write_bytes(UART_NUM1, (char*)slave_data, len);
-                uart_wait_tx_idle_polling(UART_NUM1);
+                uart_write_bytes(UART_NUM, (char*)slave_data, len);
+                uart_wait_tx_idle_polling(UART_NUM);
                 good_count++;
             } else {
                 printf("Incorrect packet received.\r\n");
@@ -238,9 +242,9 @@ static void rs485_slave(void)
     }
     ESP_LOGI(TAG, "Test completed. Received packets = %d, errors = %d", good_count, err_count);
     // Wait for packet to be sent
-    uart_wait_tx_done(UART_NUM1, PACKET_READ_TICS);
+    uart_wait_tx_done(UART_NUM, PACKET_READ_TICS);
     free(slave_data);
-    uart_driver_delete(UART_NUM1);
+    uart_driver_delete(UART_NUM);
     TEST_CHECK_PROC_FAIL(err_count, TEST_ALLOW_PROC_FAIL);
 }
 
@@ -250,7 +254,7 @@ static void rs485_slave(void)
 static void rs485_master(void)
 {
     uint16_t err_count = 0, good_count = 0;
-    rs485_init();
+    rs485_init(UART_MODE_RS485_HALF_DUPLEX);
     uint8_t* master_buffer = (uint8_t*) malloc(BUF_SIZE);
     uint8_t* slave_buffer = (uint8_t*) malloc(BUF_SIZE);
     // The master test case should be synchronized with slave
@@ -263,10 +267,10 @@ static void rs485_master(void)
         // Print created packet for debugging
         esp_err_t status = print_packet_data("Send ", master_buffer, BUF_SIZE);
         TEST_ASSERT(status == ESP_OK);
-        uart_write_bytes(UART_NUM1, (char*)master_buffer, BUF_SIZE);
-        uart_wait_tx_idle_polling(UART_NUM1);
+        uart_write_bytes(UART_NUM, (char*)master_buffer, BUF_SIZE);
+        uart_wait_tx_idle_polling(UART_NUM);
         // Read translated packet from slave
-        int len = uart_read_bytes(UART_NUM1, slave_buffer, BUF_SIZE, PACKET_READ_TICS);
+        int len = uart_read_bytes(UART_NUM, slave_buffer, BUF_SIZE, PACKET_READ_TICS);
         // Check if the received packet is too short
         if (len > 2) {
             // Print received packet and check checksum
@@ -283,11 +287,11 @@ static void rs485_master(void)
             err_count++;
         }
     }
-    uart_wait_tx_done(UART_NUM1, PACKET_READ_TICS);
+    uart_wait_tx_done(UART_NUM, PACKET_READ_TICS);
     // Free the buffer and delete driver at the end
     free(master_buffer);
     free(slave_buffer);
-    uart_driver_delete(UART_NUM1);
+    uart_driver_delete(UART_NUM);
     ESP_LOGI(TAG, "Test completed. Received packets = %d, errors = %d", good_count, err_count);
     TEST_CHECK_PROC_FAIL(err_count, TEST_ALLOW_PROC_FAIL);
 }
@@ -298,3 +302,150 @@ static void rs485_master(void)
  * RS485 bus driver hardware to be connected to boards.
 */
 TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[RS485]", rs485_master, rs485_slave);
+
+// The device under check: in UART_MODE_RS485_COLLISION_DETECT mode the receiver
+// stays enabled during transmission, so the device should be able to read back
+// from the bus the same data it has just sent. Under UART_MODE_RS485_COLLISION_DETECT
+// mode, RTS signal will not be asserted during transmission, instead, uses hardware
+// DTR signal to drive DE pin. And ~RE pin is grounded for continuous reception.
+static void rs485_recv_while_send(uart_mode_t mode)
+{
+    rs485_init(mode);
+    uint8_t *tx_buffer = (uint8_t *) malloc(BUF_SIZE);
+    uint8_t *rx_buffer = (uint8_t *) malloc(BUF_SIZE);
+    TEST_ASSERT_NOT_NULL(tx_buffer);
+    TEST_ASSERT_NOT_NULL(rx_buffer);
+
+    uint16_t err_count = 0;
+    // The device under check reads back its own transmission from the bus, so it must receive every byte on every round (no tolerance here)
+    // The exchange is repeated PACKETS_NUMBER times, kept in sync with the peer by a signal each round
+    for (int i = 0; i < PACKETS_NUMBER; i++) {
+        // Wait until the peer is ready and listening (it must not drive the bus)
+        unity_wait_for_signal("Peer_ready");
+
+        buffer_fill_random(tx_buffer, BUF_SIZE);
+        TEST_ESP_OK(uart_flush_input(UART_NUM));
+        int written = uart_write_bytes(UART_NUM, (const char *) tx_buffer, BUF_SIZE);
+        TEST_ASSERT_EQUAL_INT(BUF_SIZE, written);
+        TEST_ESP_OK(uart_wait_tx_done(UART_NUM, PACKET_READ_TICS));
+
+        // The data sent on the bus is received back while sending
+        int read_len = uart_read_bytes(UART_NUM, rx_buffer, BUF_SIZE, PACKET_READ_TICS);
+        bool ok = (read_len == BUF_SIZE) && (memcmp(tx_buffer, rx_buffer, BUF_SIZE) == 0);
+        ESP_LOGI(TAG, "Packet %d: sent %d bytes, received %d bytes back while sending (%s)",
+                 i, written, read_len, ok ? "match" : "mismatch");
+        if (!ok) {
+            err_count++;
+        }
+
+        // Signal the peer that this round is over so it can resynchronize
+        unity_send_signal("Round_done");
+    }
+    // No missing bytes are allowed on the device that reads back its own data
+    TEST_ASSERT_EQUAL_INT(0, err_count);
+
+    free(tx_buffer);
+    free(rx_buffer);
+    uart_driver_delete(UART_NUM);
+}
+
+// The peer device: it only listens (never drives the bus) so that the device
+// under check can verify it receives its own transmitted data. The peer also
+// receives the same packet from the bus and verifies its integrity (CRC).
+static void rs485_quiet_peer(uart_mode_t mode)
+{
+    rs485_init(mode);
+    uint8_t *rx_buffer = (uint8_t *) malloc(BUF_SIZE);
+    TEST_ASSERT_NOT_NULL(rx_buffer);
+
+    uint16_t err_count = 0;
+    // Mirror the sender: run PACKETS_NUMBER rounds and tolerate a small percentage of failures in case a few bytes are dropped on the bus
+    for (int i = 0; i < PACKETS_NUMBER; i++) {
+        // Discard any residual/partial data from a previous round before announcing readiness for a fresh packet
+        TEST_ESP_OK(uart_flush_input(UART_NUM));
+        unity_send_signal("Peer_ready");
+
+        // The peer receives the packet sent on the bus and verifies it
+        int read_len = uart_read_bytes(UART_NUM, rx_buffer, BUF_SIZE, PACKET_READ_TICS);
+        ESP_LOGI(TAG, "Packet %d: peer received %d bytes", i, read_len);
+        if (read_len != BUF_SIZE || print_packet_data("Peer received ", rx_buffer, read_len) != ESP_OK) {
+            err_count++;
+        }
+
+        // Wait for the sender to finish this round before flushing/reading again
+        unity_wait_for_signal("Round_done");
+    }
+    TEST_CHECK_PROC_FAIL(err_count, TEST_ALLOW_PROC_FAIL);
+
+    free(rx_buffer);
+    uart_driver_delete(UART_NUM);
+}
+
+static void rs485_recv_while_send_coll_det(void)
+{
+    rs485_recv_while_send(UART_MODE_RS485_COLLISION_DETECT);
+}
+
+static void rs485_quiet_peer_coll_det(void)
+{
+    rs485_quiet_peer(UART_MODE_RS485_COLLISION_DETECT);
+}
+
+/*
+ * This multi devices test case verifies that in UART_MODE_RS485_COLLISION_DETECT
+ * mode the device receives back the data it sends out on the bus. It requires
+ * RS485 bus driver hardware (with the receiver kept enabled) connected to the
+ * boards. Only one device drives the bus.
+*/
+TEST_CASE_MULTIPLE_DEVICES("RS485 collision detect mode can receive while sending", "[RS485]", rs485_recv_while_send_coll_det, rs485_quiet_peer_coll_det);
+
+// Both devices transmit (different data) at the same time to force a bus
+// collision. In UART_MODE_RS485_COLLISION_DETECT mode the received data then
+// differs from the transmitted data, which raises the collision flag.
+static void rs485_collision_dev(uart_mode_t mode, const char *self_ready, const char *peer_ready)
+{
+    rs485_init(mode);
+    uint8_t *tx_buffer = (uint8_t *) malloc(BUF_SIZE);
+    TEST_ASSERT_NOT_NULL(tx_buffer);
+    buffer_fill_random(tx_buffer, BUF_SIZE);
+
+    // Barrier: make sure both devices start transmitting at roughly the same time
+    unity_send_signal(self_ready);
+    unity_wait_for_signal(peer_ready);
+
+    bool collision_flag = false;
+    // Both devices drive the bus simultaneously with different data, so the data
+    // received back differs from the transmitted data and the collision flag gets
+    // raised. Keep transmitting for the whole loop (do not stop on the first
+    // detection): if a device stopped early, its peer would then transmit alone
+    // and might never observe a collision.
+    for (int i = 0; i < PACKETS_NUMBER; i++) {
+        bool flag = false;
+        uart_write_bytes(UART_NUM, (const char *) tx_buffer, BUF_SIZE);
+        uart_wait_tx_done(UART_NUM, PACKET_READ_TICS);
+        TEST_ESP_OK(uart_get_collision_flag(UART_NUM, &flag));
+        collision_flag |= flag;
+    }
+    ESP_LOGI(TAG, "Collision detected: %s", collision_flag ? "yes" : "no");
+    TEST_ASSERT_TRUE(collision_flag);
+
+    free(tx_buffer);
+    uart_driver_delete(UART_NUM);
+}
+
+static void rs485_collision_master_coll_det(void)
+{
+    rs485_collision_dev(UART_MODE_RS485_COLLISION_DETECT, "Coll_master_ready", "Coll_slave_ready");
+}
+
+static void rs485_collision_slave_coll_det(void)
+{
+    rs485_collision_dev(UART_MODE_RS485_COLLISION_DETECT, "Coll_slave_ready", "Coll_master_ready");
+}
+
+/*
+ * This multi devices test case verifies the collision detection of the
+ * UART_MODE_RS485_COLLISION_DETECT mode. Both devices transmit at the same time,
+ * causing a bus collision that must be detected by the UART hardware.
+*/
+TEST_CASE_MULTIPLE_DEVICES("RS485 collision detect mode can detect collision", "[RS485]", rs485_collision_master_coll_det, rs485_collision_slave_coll_det);
