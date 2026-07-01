@@ -1,12 +1,11 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.adc
+@pytest.mark.generic
 def test_dac_cosine_wave_example_with_12bit_adc(dut: Dut) -> None:
     res = []
     for _ in range(30):
@@ -20,7 +19,7 @@ def test_dac_cosine_wave_example_with_12bit_adc(dut: Dut) -> None:
 
 
 @pytest.mark.esp32s2
-@pytest.mark.adc
+@pytest.mark.generic
 def test_dac_cosine_wave_example_with_13bit_adc(dut: Dut) -> None:
     res = []
     for _ in range(30):
