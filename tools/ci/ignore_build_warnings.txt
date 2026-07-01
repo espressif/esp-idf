@@ -12,7 +12,7 @@ reassigning to symbol
 changes choice state
 tool_version_check\.cmake
 CryptographyDeprecationWarning
-Warning: \d+/\d+ app partitions are too small for binary
+WARNING: \d+/\d+ app partitions are too small for binary
 CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy\)
 The smallest .+ partition is nearly full \(\d+% free space left\)!
 warning: unknown kconfig symbol 'BT_LE_50_FEATURE_SUPPORT' assigned to*
