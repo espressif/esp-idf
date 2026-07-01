@@ -136,18 +136,13 @@ Overall, You can take following code as reference, the code is going to decode a
         .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
-    size_t tx_buffer_size;
     size_t rx_buffer_size;
 
     jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
         .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
     };
 
-    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
-        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
-    };
-
-    uint8_t *bit_stream = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size, &tx_mem_cfg, &tx_buffer_size);
+    const uint8_t *bit_stream = embedded_jpeg_start;
     uint8_t *out_buf = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1088 * 3, &rx_mem_cfg, &rx_buffer_size);
 
     jpeg_decode_picture_info_t header_info;
@@ -158,11 +153,11 @@ Overall, You can take following code as reference, the code is going to decode a
 
 There are some tips that can help you use this driver more accurately:
 
-1. In above code, you should make sure the `bit_stream` and `out_buf` should be aligned by certain rules. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you malloc a buffer which is aligned in both size and address.
+1. In above code, you should make sure the output buffer `out_buf` follows the driver's alignment requirements. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you allocate a buffer with aligned size and address.
 
-2. The content of `bit_stream` buffer should not be changed until :cpp:func:`jpeg_decoder_process` returns.
+2. The content of `bit_stream` should not be changed until :cpp:func:`jpeg_decoder_process` returns. This input buffer can come directly from flash-mapped embedded data or any other memory region that stays readable for the full call.
 
-3. The width and height of output picture would be 16 bytes aligned if original picture is compressed by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
+3. If the source JPEG uses YUV420 or YUV422 sampling, the decoded output dimensions can be padded up to 16-pixel boundaries. For example, if the visible image size is 1080*1920, the decoder may require an output buffer sized for 1088*1920 pixels. This comes from the JPEG block layout, so please provide enough output buffer memory for the padded image, not only for the visible width and height.
 
 .. _jpeg-encoder-engine:
 
@@ -594,7 +589,7 @@ The JPEG driver usage of hardware resources and its dependency status are shown 
 Application Examples
 --------------------
 
-- :example:`peripherals/jpeg/jpeg_decode` demonstrates how to use the JPEG hardware decoder to decode JPEG pictures of different sizes (1080p and 720p) into RGB format, showcasing the flexibility and speed of hardware decoding.
+- :example:`peripherals/jpeg/jpeg_decode` demonstrates how to use the JPEG hardware decoder to parse one embedded JPEG, decode it into RGB888, stream the raw output as base64 over UART, and validate the result with pytest.
 
 - :example:`peripherals/jpeg/jpeg_encode` demonstrates how to use the JPEG hardware encoder to encode an embedded 720p raw picture, stream the JPEG as base64 over UART, and validate the result with pytest.
 
