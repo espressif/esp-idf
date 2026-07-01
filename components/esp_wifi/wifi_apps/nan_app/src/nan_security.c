@@ -68,10 +68,10 @@ static struct {
 #define NAN_CSID_VALID_BITMAP   ((uint16_t)0x01FE)
 
 /* NCS-GTK cipher-suite bits (group-addressed data). Advertised when a service
- * sets group_data_prot; the basic default we generate/advertise is CCM-128. */
-#define NAN_CSID_GTK_BITS       (WIFI_NAN_CSID_BIT_NCS_GTK_CCM_128 | \
-                                 WIFI_NAN_CSID_BIT_NCS_GTK_GCM_256)
-#define NAN_CSID_GTK_DEFAULT    WIFI_NAN_CSID_BIT_NCS_GTK_CCM_128
+ * sets group_data_prot; the basic default we generate/advertise is CCMP-128. */
+#define NAN_CSID_GTK_BITS       (WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128 | \
+                                 WIFI_NAN_CSID_BIT_NCS_GTK_GCMP_256)
+#define NAN_CSID_GTK_DEFAULT    WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128
 
 /* Sentinel for peer_svc->matched_cred_idx: no PMKID match remembered yet. */
 #define NAN_NO_MATCHED_CRED  0xFF
@@ -1274,7 +1274,7 @@ esp_err_t nan_derive_security_params(const char *service_name,
     }
 
     if (sec_cfg->group_data_prot) {
-        ESP_LOGI(TAG, "NAN GTK: advertising NCS-GTK-CCM-128 (group_data_prot=1) for svc='%s'",
+        ESP_LOGI(TAG, "NAN GTK: advertising NCS-GTK-CCMP-128 (group_data_prot=1) for svc='%s'",
                  service_name);
     }
 

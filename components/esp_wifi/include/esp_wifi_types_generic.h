@@ -933,8 +933,8 @@ typedef enum {
     WIFI_NAN_CSID_NCS_SK_256       = 2,    /**< NCS-SK-256 (PSK/Passphrase). Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_128  = 3,    /**< NCS-PK-2WDH-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_256  = 4,    /**< NCS-PK-2WDH-256. Reserved: not supported right now. */
-    WIFI_NAN_CSID_NCS_GTK_CCM_128  = 5,    /**< Group-data cipher (GTKSA). Selected internally when group_data_prot is set; not user-selectable via csid_bitmap. */
-    WIFI_NAN_CSID_NCS_GTK_GCM_256  = 6,    /**< Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_GTK_CCMP_128 = 5,    /**< NCS-GTK-CCMP-128, the group-data cipher (GTKSA). Selected internally when group_data_prot is set; not user-selectable via csid_bitmap. */
+    WIFI_NAN_CSID_NCS_GTK_GCMP_256 = 6,    /**< NCS-GTK-GCMP-256. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128 (NAN Pairing). Requires CONFIG_ESP_WIFI_NAN_PAIRING and the Wi-Fi Aware component (esp-wifi-apps); not usable with stand-alone ESP-IDF. */
     WIFI_NAN_CSID_NCS_PK_PASN_256  = 8,    /**< NCS-PK-PASN-256. Reserved: not supported right now. */
 } wifi_nan_cipher_suite_id_t;
@@ -943,8 +943,8 @@ typedef enum {
 #define WIFI_NAN_CSID_BIT_NCS_SK_256       (1 << WIFI_NAN_CSID_NCS_SK_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_128  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_256  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_256)
-#define WIFI_NAN_CSID_BIT_NCS_GTK_CCM_128  (1 << WIFI_NAN_CSID_NCS_GTK_CCM_128)
-#define WIFI_NAN_CSID_BIT_NCS_GTK_GCM_256  (1 << WIFI_NAN_CSID_NCS_GTK_GCM_256)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128 (1 << WIFI_NAN_CSID_NCS_GTK_CCMP_128)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_GCMP_256 (1 << WIFI_NAN_CSID_NCS_GTK_GCMP_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_128  (1 << WIFI_NAN_CSID_NCS_PK_PASN_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
 
