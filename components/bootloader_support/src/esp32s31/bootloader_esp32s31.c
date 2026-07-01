@@ -34,6 +34,8 @@
 #include "esp_rom_sys.h"
 #include "soc/regi2c_bias.h"
 #include "hal/regi2c_ctrl.h"
+#include "hal/clk_tree_ll.h"
+#include "hal/psram_ctrlr_ll.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
@@ -58,6 +60,12 @@ static inline void bootloader_hardware_init(void)
 
     REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
     REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
+
+    /* Disable MPLL by default, during mmu_hal_init, a valid clock source is required for the PSRAM,
+       so before shutting down mpll, the PSRAM clock source should be selected to an always-on source. */
+    _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
+    _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
+    clk_ll_mpll_disable();
 }
 
 void bootloader_enable_cpu_reset_info(void)
