@@ -645,7 +645,7 @@ static int nan_build_rsna_key_descriptor(uint8_t *kd, uint16_t key_info_flags,
  * Group Key Data (GTK/IGTK/BIGTK KDEs) — Wi-Fi Aware v4.0 §7.1.3.2/§7.1.3.5/
  * §9.5.21.5. Initiator distributes in M3, responder in M4; KDEs are always
  * KEK-wrapped (NIST AES Key Wrap), never in clear. Structure mirrors hostap
- * src/nan/nan_sec.c nan_sec_add_kdes(); IGTK/BIGTK are placeholders for now.
+ * src/nan/nan_sec.c nan_sec_add_kdes().
  *-----------------------------------------------------------------------*/
 
 /* True if a GTKSA was negotiated for this NDP. gtk_required is the explicit

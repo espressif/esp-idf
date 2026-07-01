@@ -67,8 +67,8 @@ typedef struct {
     uint16_t csid_bitmap;              /**< Selected Cipher Suite ID bit (WIFI_NAN_CSID_BIT_*) */
     uint8_t nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];     /**< ND-PMK */
     uint8_t nd_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< ND-PMKID */
-    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection. Reserved: not supported right now. */
-    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection (GTKSA): distribute a GTK on the secured NDP so multicast data frames are protected. */
+    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection (IGTKSA/BIGTKSA): BIP-protect multicast SDFs and Beacons. */
     uint8_t reserved: 6;               /**< Reserved */
 } wifi_nan_security_params_t;
 
@@ -1209,7 +1209,7 @@ esp_err_t esp_wifi_disconnect_internal(void);
 uint32_t esp_nan_get_nira_len(void);
 
 /**
- * @brief      Construct dummy NAN Identity Resolution Attribute (NIRA)
+ * @brief      Construct NAN Identity Resolution Attribute (NIRA)
  *
  * @param[out] frm     Buffer to write the attribute to
  *
