@@ -1322,8 +1322,8 @@ uint16_t nan_get_ndp_security_csid(uint8_t ndp_id, const uint8_t *peer_nmi)
      * (required for symmetric GTK distribution and third-party/iOS/Android
      * interop). Safe to include NCS-GTK here: the blob treats this value as an
      * opaque bitmap that it passes straight to the host CSIA callbacks
-     * (construct_csia / get_csia_len) and never interprets individual bits
-     * (confirmed by han2). Pairwise/link cipher selection and ND-TK install are
+     * (construct_csia / get_csia_len) and never interprets individual bits.
+     * Pairwise/link cipher selection and ND-TK install are
      * host-driven and do not read this field; the group key has its own install
      * path (NAN_KEY_ND_GTK) and gtk_required gate. */
     return csid;

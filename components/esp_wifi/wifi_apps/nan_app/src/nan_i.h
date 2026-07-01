@@ -173,19 +173,21 @@ extern void *s_nan_data_lock;
 
 /* Internal key-install constants matching esp_wifi_set_sta_key_internal semantics. */
 #define NAN_WIFI_WPA_ALG_CCMP          3
-#define NAN_WIFI_WPA_ALG_BIP_CMAC_128  7   /* IGTK/BIGTK BIP = blob WIFI_WPA_ALG_IGTK (confirmed by han2; 4 is SMS4) */
+#define NAN_WIFI_WPA_ALG_BIP_CMAC_128  7   /* IGTK/BIGTK BIP = blob WIFI_WPA_ALG_IGTK; 4 is SMS4 */
 #define NAN_KEY_FLAG_RX          BIT(2)
 #define NAN_KEY_FLAG_TX          BIT(3)
 #define NAN_KEY_FLAG_PAIRWISE    BIT(5)
 
 /* NAN key-type selector passed as the last arg of esp_wifi_set_nan_key_internal;
- * tells the blob which NAN SA the key belongs to. IGTK/BIGTK values are
- * provisional — confirm with han2 before the lib bump. */
-#define NAN_KEY_ND_TK     0
-#define NAN_KEY_ND_GTK    1
-#define NAN_KEY_NM_TK     2
-#define NAN_KEY_ND_IGTK   3
-#define NAN_KEY_ND_BIGTK  4
+ * tells the blob which NAN SA the key belongs to. Values match the blob's
+ * key-type enum. */
+typedef enum {
+    NAN_KEY_ND_TK    = 0,
+    NAN_KEY_ND_GTK   = 1,
+    NAN_KEY_NM_TK    = 2,
+    NAN_KEY_ND_IGTK  = 3,
+    NAN_KEY_ND_BIGTK = 4,
+} nan_key_type_t;
 
 /* Handshake state */
 enum nan_handshake_state {
