@@ -26,6 +26,7 @@
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_memory_utils.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/ledc_priv.h"
 
 static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 

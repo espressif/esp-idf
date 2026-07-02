@@ -14,8 +14,8 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
-#include "hal/ledc_periph.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/ledc_priv.h"
 #include "esp_rom_serial_output.h"
 
 // Note. Test cases in this file cannot run one after another without reset
