@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,10 +13,13 @@
 */
 
 #include <stdio.h>
+#include <assert.h>
+#include <inttypes.h>
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
 #include "ulp_lp_core.h"
 #include "ulp_main.h"
+#include "hal/lp_core_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -50,6 +53,8 @@ void app_main(void)
 
     if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
         /* ULP read and detected a change in WAKEUP_PIN, prints */
+        printf("LP wakeup cause: 0x%" PRIx32 "\n", ulp_lp_wakeup_cause);
+        assert(ulp_lp_wakeup_cause == LP_CORE_LL_WAKEUP_SOURCE_LP_IO);
         printf("ULP woke up the main CPU! \n");
     } else {
         /* not a wakeup from ULP, load the firmware */

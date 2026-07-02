@@ -19,6 +19,17 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
     - esp_hw_support
 
 
+components/ulp/test_apps/lp_core/lp_core_gpio_wakeup_tests:
+  enable:
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0) and (SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED == 1)
+  depends_components:
+    - ulp
+    - esp_driver_gpio
+    - esp_hal_gpio
+    - esp_hal_pmu
+    - esp_hw_support
+
+
 components/ulp/test_apps/lp_core/lp_core_hp_mem:
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
