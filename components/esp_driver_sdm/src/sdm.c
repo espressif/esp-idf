@@ -35,6 +35,7 @@
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "sdm_priv.h"
 
 #if CONFIG_SDM_OBJ_CACHE_SAFE
 #define SDM_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -92,16 +93,16 @@ static sdm_platform_t s_platform;
 static esp_err_t sdm_create_sleep_retention_link_cb(void *group)
 {
     int group_id = ((sdm_group_t *)group)->group_id;
-    esp_err_t err = sleep_retention_entries_create(soc_sdm_retention_infos[group_id].regdma_entry_array,
-                                                   soc_sdm_retention_infos[group_id].array_size,
-                                                   REGDMA_LINK_PRI_SDM, soc_sdm_retention_infos[group_id].module);
+    esp_err_t err = sleep_retention_entries_create(sdm_reg_retention_infos[group_id].regdma_entry_array,
+                                                   sdm_reg_retention_infos[group_id].array_size,
+                                                   REGDMA_LINK_PRI_SDM, sdm_reg_retention_infos[group_id].module);
     return err;
 }
 
 static void sdm_create_retention_module(sdm_group_t *group)
 {
     int group_id = group->group_id;
-    sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
+    sleep_retention_module_t module = sdm_reg_retention_infos[group_id].module;
     _lock_acquire(&s_platform.mutex);
     if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
@@ -154,7 +155,7 @@ static esp_err_t sdm_group_install(sdm_group_t *group, soc_module_clk_t clk_src)
     }
 
 #if SDM_USE_RETENTION_LINK
-    sleep_retention_module_t module = soc_sdm_retention_infos[group_id].module;
+    sleep_retention_module_t module = sdm_reg_retention_infos[group_id].module;
     sleep_retention_module_init_param_t init_param = {
         .cbs = {
             .create = {
@@ -235,7 +236,7 @@ static void sdm_group_uninstall(sdm_group_t *group)
     }
 
 #if SDM_USE_RETENTION_LINK
-    sleep_retention_module_t module = soc_sdm_retention_infos[group->group_id].module;
+    sleep_retention_module_t module = sdm_reg_retention_infos[group->group_id].module;
     sleep_retention_module_detach(module);
     if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
