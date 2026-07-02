@@ -129,10 +129,10 @@ If none of our chip series meet your needs, please contact `customer support tea
     * - .. centered:: |6.0|
       - Channel Sounding
       - |experimental|
-      - |unsupported|
+      - |experimental|
     * -
       - LL Extended Feature Set
-      - |developing202606|
+      - |experimental|
       - |developing202606|
     * -
       - Decision-Based Advertising Filtering
@@ -140,12 +140,12 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |unsupported|
     * -
       - Enhancements for ISOAL
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |experimental|
     * -
       - Monitoring Advertisers
-      - |developing202606|
-      - |developing202606|
+      - |experimental|
+      - |experimental|
     * -
       - Frame Space Update
       - |unsupported|
@@ -169,6 +169,9 @@ You are encouraged to consult with our `customer support team <https://www.espre
    :class: align-center
    :width: 125px
 .. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
+   :class: align-center
+   :width: 125px
+.. |developing202612| image:: ../../../_static/ble/feature_status/developing202612.svg
    :class: align-center
    :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
