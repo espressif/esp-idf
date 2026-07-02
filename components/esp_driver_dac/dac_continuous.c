@@ -411,8 +411,7 @@ esp_err_t dac_continuous_enable(dac_continuous_handle_t handle)
 #endif
 
     DAC_CHANNEL_MASK_FOREACH(chan, handle->cfg.chan_mask) {
-        esp_err_t res = dac_priv_enable_channel(chan);
-        assert(res == ESP_OK);
+        dac_priv_enable_channel(chan);
     }
     dac_dma_periph_enable();
     esp_intr_enable(handle->intr_handle);
