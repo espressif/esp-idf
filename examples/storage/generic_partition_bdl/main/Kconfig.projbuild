@@ -1,0 +1,188 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_STORAGE_MEDIA
+        prompt "Whole-disk block device"
+        default EXAMPLE_STORAGE_MEDIA_SPIFLASH
+        help
+            Select the underlying "whole-disk" block device that gets partitioned
+            with an MBR and split into a FAT and a LittleFS partition using the
+            generic-partition Block Device Layer (BDL).
+
+        config EXAMPLE_STORAGE_MEDIA_SPIFLASH
+            bool "SPI flash 'storage' data partition"
+            help
+                Use a SPI flash data partition (labelled "storage") as the whole disk.
+                No extra hardware is required, so this option also works in QEMU/CI.
+
+        config EXAMPLE_STORAGE_MEDIA_SDCARD
+            bool "SD/eMMC card"
+            help
+                Use an SD/eMMC card as the whole disk. The card can be accessed
+                through the SDMMC host or over the generic SPI bus (SDSPI); pick
+                the peripheral below.
+                WARNING: running the example overwrites the card's partition table.
+    endchoice
+
+    choice EXAMPLE_SD_HOST
+        prompt "SD card host peripheral"
+        depends on EXAMPLE_STORAGE_MEDIA_SDCARD
+        default EXAMPLE_SD_HOST_SDMMC if SOC_SDMMC_HOST_SUPPORTED
+        default EXAMPLE_SD_HOST_SDSPI
+        help
+            Select the peripheral used to talk to the SD/eMMC card.
+
+        config EXAMPLE_SD_HOST_SDMMC
+            bool "SDMMC host"
+            depends on SOC_SDMMC_HOST_SUPPORTED
+            help
+                Access the card through the dedicated SDMMC host controller.
+
+        config EXAMPLE_SD_HOST_SDSPI
+            bool "SD SPI (SD card over the SPI bus)"
+            help
+                Access the card over the generic SPI bus using the SDSPI protocol.
+                Works on any target with a free SPI host, but is slower and always
+                uses a 1-line data bus.
+    endchoice
+
+    choice EXAMPLE_SDMMC_BUS_WIDTH
+        prompt "SDMMC bus width"
+        depends on EXAMPLE_SD_HOST_SDMMC
+        default EXAMPLE_SDMMC_BUS_WIDTH_4
+
+        config EXAMPLE_SDMMC_BUS_WIDTH_4
+            bool "4 lines (D0 - D3)"
+
+        config EXAMPLE_SDMMC_BUS_WIDTH_1
+            bool "1 line (D0)"
+    endchoice
+
+    config EXAMPLE_SDMMC_INTERNAL_PULLUP
+        bool "Enable internal pull-ups on the SDMMC lines"
+        depends on EXAMPLE_SD_HOST_SDMMC
+        default n
+        help
+            Enable the internal pull-ups on the SDMMC CMD/DATA lines. The SD
+            specification requires external 10 kOhm pull-ups; the internal ones are
+            weak and only adequate for boards that do not provide external pull-ups
+            (for example the ESP32-S3-USB-OTG devkit). Prefer external pull-ups when
+            the board has them.
+
+    # On SoCs whose SDMMC controller routes through the GPIO matrix (e.g. ESP32-S3,
+    # ESP32-P4) the slot pins are freely assignable, so expose them here. On SoCs
+    # with a fixed SDMMC IO_MUX (e.g. ESP32) the slot default pins are used instead.
+    config EXAMPLE_SDMMC_PIN_CLK
+        int "SDMMC CLK GPIO number"
+        depends on EXAMPLE_SD_HOST_SDMMC && SOC_SDMMC_USE_GPIO_MATRIX
+        default 36 if IDF_TARGET_ESP32S3
+        default 43 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            GPIO for the SDMMC CLK line. The ESP32-S3-USB-OTG devkit uses GPIO 36.
+
+    config EXAMPLE_SDMMC_PIN_CMD
+        int "SDMMC CMD GPIO number"
+        depends on EXAMPLE_SD_HOST_SDMMC && SOC_SDMMC_USE_GPIO_MATRIX
+        default 35 if IDF_TARGET_ESP32S3
+        default 44 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            GPIO for the SDMMC CMD line. The ESP32-S3-USB-OTG devkit uses GPIO 35.
+
+    config EXAMPLE_SDMMC_PIN_D0
+        int "SDMMC D0 GPIO number"
+        depends on EXAMPLE_SD_HOST_SDMMC && SOC_SDMMC_USE_GPIO_MATRIX
+        default 37 if IDF_TARGET_ESP32S3
+        default 39 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            GPIO for the SDMMC D0 line. The ESP32-S3-USB-OTG devkit uses GPIO 37.
+
+    config EXAMPLE_SDMMC_PIN_D1
+        int "SDMMC D1 GPIO number"
+        depends on EXAMPLE_SD_HOST_SDMMC && SOC_SDMMC_USE_GPIO_MATRIX && EXAMPLE_SDMMC_BUS_WIDTH_4
+        default 38 if IDF_TARGET_ESP32S3
+        default 40 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            GPIO for the SDMMC D1 line (4-line mode only). The ESP32-S3-USB-OTG
+            devkit uses GPIO 38.
+
+    config EXAMPLE_SDMMC_PIN_D2
+        int "SDMMC D2 GPIO number"
+        depends on EXAMPLE_SD_HOST_SDMMC && SOC_SDMMC_USE_GPIO_MATRIX && EXAMPLE_SDMMC_BUS_WIDTH_4
+        default 33 if IDF_TARGET_ESP32S3
+        default 41 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            GPIO for the SDMMC D2 line (4-line mode only). The ESP32-S3-USB-OTG
+            devkit uses GPIO 33.
+
+    config EXAMPLE_SDMMC_PIN_D3
+        int "SDMMC D3 GPIO number"
+        depends on EXAMPLE_SD_HOST_SDMMC && SOC_SDMMC_USE_GPIO_MATRIX && EXAMPLE_SDMMC_BUS_WIDTH_4
+        default 34 if IDF_TARGET_ESP32S3
+        default 42 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            GPIO for the SDMMC D3 line (4-line mode only). The ESP32-S3-USB-OTG
+            devkit uses GPIO 34.
+
+    config EXAMPLE_SDSPI_PIN_MOSI
+        int "SDSPI MOSI GPIO number"
+        depends on EXAMPLE_SD_HOST_SDSPI
+        default 15 if IDF_TARGET_ESP32
+        default 35 if IDF_TARGET_ESP32S2
+        default 4 if IDF_TARGET_ESP32S3
+        default 5 if IDF_TARGET_ESP32H2
+        default 36 if IDF_TARGET_ESP32P4
+        default 4
+
+    config EXAMPLE_SDSPI_PIN_MISO
+        int "SDSPI MISO GPIO number"
+        depends on EXAMPLE_SD_HOST_SDSPI
+        default 2 if IDF_TARGET_ESP32
+        default 37 if IDF_TARGET_ESP32S2
+        default 5 if IDF_TARGET_ESP32S3
+        default 0 if IDF_TARGET_ESP32H2
+        default 47 if IDF_TARGET_ESP32P4
+        default 6
+
+    config EXAMPLE_SDSPI_PIN_CLK
+        int "SDSPI CLK GPIO number"
+        depends on EXAMPLE_SD_HOST_SDSPI
+        default 14 if IDF_TARGET_ESP32
+        default 36 if IDF_TARGET_ESP32S2
+        default 2 if IDF_TARGET_ESP32S3
+        default 4 if IDF_TARGET_ESP32H2
+        default 53 if IDF_TARGET_ESP32P4
+        default 5
+
+    config EXAMPLE_SDSPI_PIN_CS
+        int "SDSPI CS GPIO number"
+        depends on EXAMPLE_SD_HOST_SDSPI
+        default 13 if IDF_TARGET_ESP32
+        default 34 if IDF_TARGET_ESP32S2
+        default 8 if IDF_TARGET_ESP32S3
+        default 33 if IDF_TARGET_ESP32P4
+        default 1
+
+    config EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+        depends on EXAMPLE_STORAGE_MEDIA_SDCARD
+        depends on SOC_SDMMC_IO_POWER_EXTERNAL || SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+        bool "SD power supply comes from internal LDO IO (READ HELP!)"
+        default y
+        help
+            Only needed when the SD card is connected to specific IO pins which can be used for high-speed SDMMC.
+            Please read the schematic first and check if the SD VDD is connected to any internal LDO output.
+            Unselect this option if the SD card is powered by an external power supply.
+
+    config EXAMPLE_SD_PWR_CTRL_LDO_IO_ID
+        depends on EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+        int "LDO ID"
+        default 4 if IDF_TARGET_ESP32P4
+        default 1 if IDF_TARGET_ESP32S31
+        help
+            Please read the schematic first and input your LDO ID.
+
+endmenu
