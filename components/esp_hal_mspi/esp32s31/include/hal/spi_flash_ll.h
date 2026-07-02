@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ extern "C" {
                                      }\
                                      dev_id; \
                                     })
+#define SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL   (1)
 // WB_mode is available, we extend 8 bits to occupy `Continuous Read Mode` bits.
 #define SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS  (8)
 
@@ -67,7 +68,8 @@ typedef union  {
 #define spi_flash_ll_set_dummy(dev, dummy)                   gpspi_flash_ll_set_dummy((spi_dev_t*)dev, dummy)
 #define spi_flash_ll_set_hold(dev, hold_n)                   gpspi_flash_ll_set_hold((spi_dev_t*)dev, hold_n)
 #define spi_flash_ll_set_cs_setup(dev, cs_setup_time)        gpspi_flash_ll_set_cs_setup((spi_dev_t*)dev, cs_setup_time)
-#define spi_flash_ll_set_extra_address(dev, extra_addr)      { /* Not supported on gpspi on ESP32-P4*/ }
+#define spi_flash_ll_set_extra_address(dev, extra_addr)      { /* Not supported on gpspi on ESP32-S31*/ }
+#define spi_flash_ll_wb_mode_enable(dev, wb_mode_enale)      { /* Not supported on gpspi on ESP32-S31*/ }
 #define spi_flash_ll_set_dummy_out(dev, en, lev)             gpspi_flash_ll_set_dummy_out((spi_dev_t*)dev, en, lev)
 #else
 #define spi_flash_ll_reset(dev)                              spimem_flash_ll_reset((spi_mem_dev_t*)dev)
@@ -98,6 +100,7 @@ typedef union  {
 #define spi_flash_ll_set_hold(dev, hold_n)                   spimem_flash_ll_set_hold((spi_mem_dev_t*)dev, hold_n)
 #define spi_flash_ll_set_cs_setup(dev, cs_setup_time)        spimem_flash_ll_set_cs_setup((spi_mem_dev_t*)dev, cs_setup_time)
 #define spi_flash_ll_set_extra_address(dev, extra_addr)      spimem_flash_ll_set_extra_address((spi_mem_dev_t*)dev, extra_addr)
+#define spi_flash_ll_wb_mode_enable(dev, wb_mode_enale)      spimem_flash_ll_wb_mode_enable((spi_mem_dev_t*)dev, wb_mode_enale)
 #define spi_flash_ll_get_ctrl_val(dev)                       spimem_flash_ll_get_ctrl_val((spi_mem_dev_t*)dev)
 #define spi_flash_ll_set_dummy_out(dev, en, lev)             spimem_flash_ll_set_dummy_out((spi_mem_dev_t*)dev, en, lev)
 #define spi_flash_ll_sync_reset()                            spimem_flash_ll_sync_reset()
