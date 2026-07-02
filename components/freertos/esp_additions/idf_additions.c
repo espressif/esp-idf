@@ -436,7 +436,7 @@ err:
         }
         else
         {
-            vSemaphoreDelete( xStreamBuffer );
+            vStreamBufferDelete( xStreamBuffer );
         }
 
         /* Free the memory buffers */
