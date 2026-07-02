@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,14 +21,17 @@
 #include "example_config.h"
 
 uint32_t adc_threshold = EXAMPLE_ADC_TRESHOLD;
-int32_t wakeup_result;
+int32_t wakeup_result_0;
+int32_t wakeup_result_1;
 
 int main (void)
 {
-    int32_t last_result = ulp_riscv_adc_read_channel(EXAMPLE_ADC_UNIT, EXAMPLE_ADC_CHANNEL);
+    int32_t last_result_0 = ulp_riscv_adc_read_channel(EXAMPLE_ADC_UNIT, EXAMPLE_ADC_CHANNEL_0);
+    int32_t last_result_1 = ulp_riscv_adc_read_channel(EXAMPLE_ADC_UNIT, EXAMPLE_ADC_CHANNEL_1);
 
-    if (last_result > adc_threshold) {
-        wakeup_result = last_result;
+    if (last_result_0 > adc_threshold || last_result_1 > adc_threshold) {
+        wakeup_result_0 = last_result_0;
+        wakeup_result_1 = last_result_1;
         ulp_riscv_wakeup_main_processor();
     }
 
