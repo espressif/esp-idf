@@ -6394,9 +6394,10 @@ void btm_sec_update_legacy_auth_state(tACL_CONN *p_acl_cb, UINT8 legacy_auth_sta
 *******************************************************************************/
 void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
-    tACL_CONN         *p_acl_cb  = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-    btm_sec_update_legacy_auth_state(p_acl_cb, BTM_ACL_LEGACY_AUTH_REMOTE);
+    tACL_CONN *p_acl_cb = btm_handle_to_acl(handle);
+    if (p_acl_cb) {
+        btm_sec_update_legacy_auth_state(p_acl_cb, BTM_ACL_LEGACY_AUTH_REMOTE);
+    }
 }
 #endif /// (CLASSIC_BT_INCLUDED == TRUE)
 #endif  ///SMP_INCLUDED == TRUE
