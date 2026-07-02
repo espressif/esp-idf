@@ -199,6 +199,11 @@ static inline void ulp_lp_core_gpio_intr_enable(lp_io_num_t lp_io_num, gpio_int_
 static inline void ulp_lp_core_gpio_clear_intr_status(void)
 {
     rtcio_ll_clear_interrupt_status();
+#if CONFIG_IDF_TARGET_ESP32P4
+    for (int rtcio_num = 0; rtcio_num < SOC_RTCIO_PIN_COUNT; rtcio_num++) {
+        LP_GPIO.pin[rtcio_num].edge_wakeup_clr = 1;
+    }
+#endif
 }
 
 /**
