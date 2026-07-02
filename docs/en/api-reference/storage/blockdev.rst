@@ -227,6 +227,11 @@ When an overlap or invalid range is detected, the build fails with a diagnostic 
 
 .. _blockdev-apis:
 
+Application Examples
+--------------------
+
+- :example:`storage/generic_partition_bdl` demonstrates how to partition a raw block device at run time using only the Block Device Layer, by writing an MBR partition table onto a whole-disk BDL (a SPI flash data partition or an SD/eMMC card) and mounting FATFS and LittleFS on generic-partition BDL slices.
+
 API Reference
 -------------
 
