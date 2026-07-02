@@ -160,21 +160,21 @@ static inline void _spicommon_dma_rcc_clock_ctrl(spi_dma_chan_t dma_chan, bool e
     if (enable) {
         PERIPH_RCC_ACQUIRE_ATOMIC(dma_periph, ref_count) {
             if (ref_count == 0) {
-                spi_dma_ll_enable_bus_clock(dma_chan, true);
-                spi_dma_ll_reset_register(dma_chan);
+                spi_ll_dma_enable_bus_clock(dma_chan, true);
+                spi_ll_dma_reset_register(dma_chan);
             }
         }
     } else {
         PERIPH_RCC_RELEASE_ATOMIC(dma_periph, ref_count) {
             if (ref_count == 0) {
-                spi_dma_ll_enable_bus_clock(dma_chan, false);
+                spi_ll_dma_enable_bus_clock(dma_chan, false);
             }
         }
     }
 #else
     PERIPH_RCC_ATOMIC() {
-        spi_dma_ll_enable_bus_clock(dma_chan, enable);
-        spi_dma_ll_reset_register(dma_chan);
+        spi_ll_dma_enable_bus_clock(dma_chan, enable);
+        spi_ll_dma_reset_register(dma_chan);
     }
 #endif
 }
@@ -380,7 +380,7 @@ esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, in
         return ESP_ERR_NO_MEM;
     }
     // cache sync using align_up length thanks to heap alloc already consider the cache alignment requirement
-    uint8_t aligned_len = SPI_ALIGN_UP(sizeof(spi_dma_desc_t) * dma_desc_ct, bus_ctx[host_id]->bus_attr.cache_align_int);
+    size_t aligned_len = ESP_ALIGN_UP(sizeof(spi_dma_desc_t) * dma_desc_ct, bus_ctx[host_id]->bus_attr.cache_align_int);
     // write back and then invalidate the cache, because later we will read/write the link list items by non-cached address
     esp_err_t ret = esp_cache_msync(dma_ctx->dmadesc_tx, aligned_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     ESP_RETURN_ON_FALSE_ISR((ret == ESP_OK) || (ret == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_ARG, SPI_TAG, "dma desc sync failed");
@@ -1127,7 +1127,7 @@ bool SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworka
     } else {
         //Reset DMA
         PERIPH_RCC_ATOMIC() {
-            spi_dma_ll_reset_register(dmachan);
+            spi_ll_dma_reset_register(dmachan);
         }
         ret = true;
     }
@@ -1147,7 +1147,7 @@ void SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_idle(int dmachan)
     if (dmaworkaround_waiting_for_chan == dmachan) {
         //Reset DMA
         PERIPH_RCC_ATOMIC() {
-            spi_dma_ll_reset_register(dmachan);
+            spi_ll_dma_reset_register(dmachan);
         }
         dmaworkaround_waiting_for_chan = 0;
         //Call callback

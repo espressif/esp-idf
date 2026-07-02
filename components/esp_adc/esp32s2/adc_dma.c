@@ -28,7 +28,7 @@ static IRAM_ATTR void adc_dma_intr_handler(void *arg)
     bool conversion_finish = spi_ll_get_intr(ctx->adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
     if (conversion_finish) {
         spi_ll_clear_intr(ctx->adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
-        intptr_t desc_addr = spi_dma_ll_get_in_suc_eof_desc_addr(ctx->adc_dma.adc_spi_dev, ctx->adc_dma.dma_chan_id);
+        intptr_t desc_addr = spi_ll_dma_get_in_suc_eof_desc_addr(ctx->adc_dma.adc_spi_dev, ctx->adc_dma.dma_chan_id);
         ctx->rx_eof_desc_addr = desc_addr;
         need_yield = ctx->adc_intr_func(ctx);
     }
@@ -80,7 +80,7 @@ esp_err_t adc_dma_start(adc_dma_t adc_dma, dma_descriptor_t *addr)
 {
     spi_ll_clear_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
     spi_ll_enable_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
-    spi_dma_ll_rx_start(adc_dma.adc_spi_dev, adc_dma.dma_chan_id, (lldesc_t *)addr);
+    spi_ll_dma_rx_start(adc_dma.adc_spi_dev, adc_dma.dma_chan_id, (lldesc_t *)addr);
     return ESP_OK;
 }
 
@@ -88,12 +88,12 @@ esp_err_t adc_dma_stop(adc_dma_t adc_dma)
 {
     spi_ll_disable_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
     spi_ll_clear_intr(adc_dma.adc_spi_dev, ADC_DMA_INTR_MASK);
-    spi_dma_ll_rx_stop(adc_dma.adc_spi_dev, adc_dma.dma_chan_id);
+    spi_ll_dma_rx_stop(adc_dma.adc_spi_dev, adc_dma.dma_chan_id);
     return ESP_OK;
 }
 
 esp_err_t adc_dma_reset(adc_dma_t adc_dma)
 {
-    spi_dma_ll_rx_reset(adc_dma.adc_spi_dev, adc_dma.dma_chan_id);
+    spi_ll_dma_rx_reset(adc_dma.adc_spi_dev, adc_dma.dma_chan_id);
     return ESP_OK;
 }

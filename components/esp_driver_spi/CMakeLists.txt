@@ -13,6 +13,9 @@ if(CONFIG_SOC_GPSPI_SUPPORTED)
         "src/gpspi/spi_master.c"
         "src/gpspi/spi_slave.c"
     )
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "src/${target}/spi_retention.c")
+    endif()
 
     if(NOT CONFIG_SOC_GDMA_SUPPORTED)
         list(APPEND srcs "src/gpspi/spi_dma.c")

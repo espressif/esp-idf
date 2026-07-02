@@ -1247,7 +1247,7 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+static inline void spi_ll_dma_enable_bus_clock(spi_host_device_t host_id, bool enable)
 {
     if (enable) {
         switch (host_id) {
@@ -1276,9 +1276,9 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define spi_dma_ll_enable_bus_clock(...) do { \
+#define spi_ll_dma_enable_bus_clock(...) do { \
         (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        spi_dma_ll_enable_bus_clock(__VA_ARGS__); \
+        spi_ll_dma_enable_bus_clock(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -1286,7 +1286,7 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
  *
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
-static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
+static inline void spi_ll_dma_reset_register(spi_host_device_t host_id)
 {
     switch (host_id) {
     case SPI2_HOST:
@@ -1304,9 +1304,9 @@ static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define spi_dma_ll_reset_register(...) do { \
+#define spi_ll_dma_reset_register(...) do { \
         (void)__DECLARE_RCC_RC_ATOMIC_ENV; \
-        spi_dma_ll_reset_register(__VA_ARGS__); \
+        spi_ll_dma_reset_register(__VA_ARGS__); \
     } while(0)
 
 //---------------------------------------------------RX-------------------------------------------------//
@@ -1317,7 +1317,7 @@ static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
  * @param channel DMA channel, for chip version compatibility, not used.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
+static inline void spi_ll_dma_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     dma_in->dma_conf.in_rst = 1;
     dma_in->dma_conf.in_rst = 0;
@@ -1331,7 +1331,7 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
  * @param addr    Address of the beginning DMA descriptor.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
+static inline void spi_ll_dma_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
     dma_in->dma_in_link.start = 1;
@@ -1343,7 +1343,7 @@ static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, 
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
  * @param channel DMA channel, for chip version compatibility, not used.
  */
-static inline void spi_dma_ll_rx_stop(spi_dma_dev_t *dma_in, uint32_t channel)
+static inline void spi_ll_dma_rx_stop(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     dma_in->dma_in_link.stop = 1;
 }
@@ -1355,7 +1355,7 @@ static inline void spi_dma_ll_rx_stop(spi_dma_dev_t *dma_in, uint32_t channel)
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
+static inline void spi_ll_dma_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     //This is not supported in esp32s2
 }
@@ -1367,7 +1367,7 @@ static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
+static inline void spi_ll_dma_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     dma_in->dma_conf.indscr_burst_en = enable;
 }
@@ -1380,7 +1380,7 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32
  * @return        The address
  */
 __attribute__((always_inline))
-static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in, uint32_t channel)
+static inline uint32_t spi_ll_dma_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     ESP_STATIC_ANALYZER_CHECK(!dma_in, -1);
     return dma_in->dma_in_suc_eof_des_addr;
@@ -1393,7 +1393,7 @@ static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in
  * @param internal_size The internal memory alignment requirements.
  * @param external_size The external memory alignment requirements.
  */
-static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
+static inline void spi_ll_dma_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
 {
     *internal_size = 4;
     // SPI2 supports external memory, SPI3 does not
@@ -1408,7 +1408,7 @@ static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, u
  * @param channel DMA channel, for chip version compatibility, not used.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
+static inline void spi_ll_dma_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     //Reset TX DMA peripheral
     dma_out->dma_conf.out_rst = 1;
@@ -1423,7 +1423,7 @@ static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
  * @param addr    Address of the beginning DMA descriptor.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
+static inline void spi_ll_dma_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;
     dma_out->dma_out_link.start = 1;
@@ -1435,7 +1435,7 @@ static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel,
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
  * @param channel DMA channel, for chip version compatibility, not used.
  */
-static inline void spi_dma_ll_tx_stop(spi_dma_dev_t *dma_out, uint32_t channel)
+static inline void spi_ll_dma_tx_stop(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     dma_out->dma_out_link.stop = 1;
 }
@@ -1447,7 +1447,7 @@ static inline void spi_dma_ll_tx_stop(spi_dma_dev_t *dma_out, uint32_t channel)
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_data_burst_en = enable;
 }
@@ -1459,7 +1459,7 @@ static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint3
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.outdscr_burst_en = enable;
 }
@@ -1471,7 +1471,7 @@ static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint3
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  1: when dma pop all data from fifo  0:when ahb push all data to fifo.
  */
-static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_set_out_eof_generation(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_eof_mode = enable;
 }
@@ -1483,7 +1483,7 @@ static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, uin
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_auto_wrback = enable;
 }
@@ -1496,28 +1496,28 @@ static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uin
  * @return        The address
  */
 __attribute__((always_inline))
-static inline uint32_t spi_dma_ll_get_out_eof_desc_addr(spi_dma_dev_t *dma_out, uint32_t channel)
+static inline uint32_t spi_ll_dma_get_out_eof_desc_addr(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     ESP_STATIC_ANALYZER_CHECK(!dma_out, -1);
     return dma_out->dma_out_eof_des_addr;
 }
 
-static inline void spi_dma_ll_rx_restart(spi_dma_dev_t *dma_in, uint32_t channel)
+static inline void spi_ll_dma_rx_restart(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     dma_in->dma_in_link.restart = 1;
 }
 
-static inline void spi_dma_ll_tx_restart(spi_dma_dev_t *dma_out, uint32_t channel)
+static inline void spi_ll_dma_tx_restart(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     dma_out->dma_out_link.restart = 1;
 }
 
-static inline void spi_dma_ll_rx_disable(spi_dma_dev_t *dma_in)
+static inline void spi_ll_dma_rx_disable(spi_dma_dev_t *dma_in)
 {
     dma_in->dma_in_link.dma_rx_ena = 0;
 }
 
-static inline void spi_dma_ll_tx_disable(spi_dma_dev_t *dma_out)
+static inline void spi_ll_dma_tx_disable(spi_dma_dev_t *dma_out)
 {
     dma_out->dma_out_link.dma_tx_ena = 0;
 }
