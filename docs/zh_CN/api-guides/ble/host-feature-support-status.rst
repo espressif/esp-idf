@@ -129,10 +129,10 @@ ESP 主机主要功能支持状态
     * - .. centered:: |6.0|
       - Channel Sounding
       - |experimental|
-      - |unsupported|
+      - |experimental|
     * -
       - LL Extended Feature Set
-      - |developing202606|
+      - |experimental|
       - |developing202606|
     * -
       - Decision-Based Advertising Filtering
@@ -140,12 +140,12 @@ ESP 主机主要功能支持状态
       - |unsupported|
     * -
       - Enhancements for ISOAL
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |experimental|
     * -
       - Monitoring Advertisers
-      - |developing202606|
-      - |developing202606|
+      - |experimental|
+      - |experimental|
     * -
       - Frame Space Update
       - |unsupported|
@@ -169,6 +169,9 @@ ESP 主机主要功能支持状态
    :class: align-center
    :width: 125px
 .. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
+   :class: align-center
+   :width: 125px
+.. |developing202612| image:: ../../../_static/ble/feature_status/developing202612.svg
    :class: align-center
    :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
