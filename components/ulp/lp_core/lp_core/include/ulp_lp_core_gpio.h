@@ -231,6 +231,11 @@ static inline void ulp_lp_core_gpio_intr_enable(lp_io_num_t lp_io_num, gpio_int_
 static inline void ulp_lp_core_gpio_clear_intr_status(void)
 {
     rtcio_ll_clear_interrupt_status();
+#if SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
+    for (int rtcio_num = 0; rtcio_num < SOC_RTCIO_PIN_COUNT; rtcio_num++) {
+        rtcio_ll_clear_edge_wakeup_latch(rtcio_num);
+    }
+#endif
 }
 
 /**
