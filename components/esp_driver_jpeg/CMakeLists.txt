@@ -9,6 +9,9 @@ if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
                     "jpeg_common.c"
                     "jpeg_param.c"
         )
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "${target}/jpeg_retention.c")
+    endif()
     if(CONFIG_SOC_JPEG_DECODE_SUPPORTED)
         list(APPEND srcs
                         "jpeg_parse_marker.c"
@@ -32,6 +35,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
+                       PRIV_INCLUDE_DIRS "."
                        PRIV_REQUIRES "${priv_requires}"
                        REQUIRES "${requires}"
                       )
