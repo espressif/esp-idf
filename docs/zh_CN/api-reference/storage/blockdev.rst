@@ -157,6 +157,11 @@
 
 .. _blockdev-apis:
 
+应用示例
+--------
+
+- :example:`storage/generic_partition_bdl` 演示了如何仅使用块设备层在运行时对裸块设备进行分区：将 MBR 分区表写入整盘 BDL（SPI flash 数据分区或 SD/eMMC 卡），并在通用分区 BDL 切片上挂载 FATFS 和 LittleFS。
+
 API 参考
 --------
 
