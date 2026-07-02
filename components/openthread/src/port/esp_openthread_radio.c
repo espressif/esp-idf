@@ -110,10 +110,32 @@ static inline bool get_event(uint8_t event)
     return s_txrx_events & event;
 }
 
+static void ot_radio_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info);
+static void ot_radio_receive_sfd_done(void);
+static void ot_radio_transmit_done(const uint8_t *frame, const uint8_t *ack,
+                                        esp_ieee802154_frame_info_t *ack_frame_info);
+static void ot_radio_transmit_failed(const uint8_t *frame, esp_ieee802154_tx_error_t error);
+static void ot_radio_transmit_sfd_done(uint8_t *frame);
+static void ot_radio_energy_detect_done(int8_t power);
+static esp_err_t ot_radio_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info,
+                                                 uint8_t *enhack_frame);
+
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
 {
     ESP_RETURN_ON_FALSE(s_radio_event_fd == -1, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
                         "Radio was initialized already!");
+
+    esp_ieee802154_event_cb_list_t cb_list = {
+        .rx_done_cb = ot_radio_receive_done,
+        .rx_sfd_done_cb = ot_radio_receive_sfd_done,
+        .tx_done_cb = ot_radio_transmit_done,
+        .tx_failed_cb = ot_radio_transmit_failed,
+        .tx_sfd_done_cb = ot_radio_transmit_sfd_done,
+        .ed_done_cb = ot_radio_energy_detect_done,
+        .enh_ack_generator_cb = ot_radio_enh_ack_generator,
+    };
+    ESP_RETURN_ON_ERROR(esp_ieee802154_event_callback_list_register(cb_list), OT_PLAT_LOG_TAG,
+                        "Failed to register ieee802154 event callbacks");
 
     s_radio_event_fd = eventfd(0, EFD_SUPPORT_ISR);
 
@@ -146,6 +168,7 @@ void esp_openthread_radio_deinit(void)
     }
 
     esp_ieee802154_disable();
+    esp_ieee802154_event_callback_list_unregister();
     esp_openthread_platform_workflow_unregister(s_radio_workflow);
 }
 
@@ -576,8 +599,8 @@ uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
 }
 
 // events
-void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack,
-                                            esp_ieee802154_frame_info_t *ack_frame_info)
+static void IRAM_ATTR ot_radio_transmit_done(const uint8_t *frame, const uint8_t *ack,
+                                                  esp_ieee802154_frame_info_t *ack_frame_info)
 {
     ETS_ASSERT(frame == (uint8_t *)&s_transmit_psdu);
 
@@ -637,8 +660,8 @@ static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_f
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info,
-                                                uint8_t *enhack_frame)
+static esp_err_t IRAM_ATTR ot_radio_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info,
+                                                           uint8_t *enhack_frame)
 {
     otRadioFrame ack_frame;
     otRadioFrame ot_frame;
@@ -685,7 +708,7 @@ esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802
     return ESP_OK;
 }
 
-void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
+static void IRAM_ATTR ot_radio_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
     otRadioFrame ot_frame;
     ot_frame.mPsdu = data + 1;
@@ -713,7 +736,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     set_event(EVENT_RX_DONE);
 }
 
-void IRAM_ATTR esp_ieee802154_transmit_failed(const uint8_t *frame, esp_ieee802154_tx_error_t error)
+static void IRAM_ATTR ot_radio_transmit_failed(const uint8_t *frame, esp_ieee802154_tx_error_t error)
 {
     ETS_ASSERT(frame == (uint8_t *)&s_transmit_psdu);
 
@@ -722,11 +745,11 @@ void IRAM_ATTR esp_ieee802154_transmit_failed(const uint8_t *frame, esp_ieee8021
     set_event(EVENT_TX_FAILED);
 }
 
-void IRAM_ATTR esp_ieee802154_receive_sfd_done(void)
+static void IRAM_ATTR ot_radio_receive_sfd_done(void)
 {
 }
 
-void IRAM_ATTR esp_ieee802154_transmit_sfd_done(uint8_t *frame)
+static void IRAM_ATTR ot_radio_transmit_sfd_done(uint8_t *frame)
 {
     assert(frame == (uint8_t *)&s_transmit_psdu || frame == s_enhack);
 
@@ -758,15 +781,11 @@ void IRAM_ATTR esp_ieee802154_transmit_sfd_done(uint8_t *frame)
 #endif // OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
 }
 
-void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
+static void IRAM_ATTR ot_radio_energy_detect_done(int8_t power)
 {
     s_ed_power = power;
 
     set_event(EVENT_ENERGY_DETECT_DONE);
-}
-
-void IRAM_ATTR esp_ieee802154_cca_done(bool channel_free)
-{
 }
 
 otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
