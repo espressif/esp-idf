@@ -12,7 +12,7 @@ Usage:
 from datetime import datetime
 from pathlib import Path
 
-import click
+import rich_click as click
 from src.app import BLELogApp
 from src.backend.models import format_bytes
 from src.backend.uart_transport import validate_uart_port

@@ -891,7 +891,11 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             /* value_len is the length of current record's value; use it to avoid overread when multiple records present */
             p_clcb->counter = value_len;
             p_clcb->s_handle = handle;
-            if ( p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
+            UINT16 max_rbtype_val_len = (p_clcb->p_tcb->payload_size - 4);
+            if (max_rbtype_val_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+                max_rbtype_val_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
+            }
+            if (p_clcb->counter == max_rbtype_val_len) {
                 p_clcb->op_subtype = GATT_READ_BY_HANDLE;
                 if (!p_clcb->p_attr_buf) {
                     p_clcb->p_attr_buf = (UINT8 *)osi_malloc(GATT_MAX_ATTR_LEN);
@@ -1124,10 +1128,14 @@ BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb)
         if (att_ret == GATT_SUCCESS || att_ret == GATT_CONGESTED) {
             sent = TRUE;
             p_cmd->to_send = FALSE;
-            if(p_cmd->p_cmd) {
-                osi_free(p_cmd->p_cmd);
-                p_cmd->p_cmd = NULL;
-            }
+            /* On GATT_SUCCESS / GATT_CONGESTED, L2CAP has taken ownership of
+             * p_cmd->p_cmd (it was either accepted normally, or enqueued just
+             * before the channel turned congested). The "already congested"
+             * drop path inside L2CA_SendFixedChnlData() is filtered out earlier
+             * by attp_send_msg_to_l2cap() and returned as GATT_BUSY, which
+             * falls into the error branch below. So we must not free the
+             * buffer here. */
+            p_cmd->p_cmd = NULL;
 
             /* dequeue the request if is write command or sign write */
             if (p_cmd->op_code != GATT_CMD_WRITE && p_cmd->op_code != GATT_SIGN_CMD_WRITE) {
@@ -1145,13 +1153,22 @@ BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb)
                 gatt_end_operation(p_clcb, att_ret, NULL);
             }
         } else {
-            GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error");
+            GATT_TRACE_ERROR("gatt_cl_send_next_cmd_inq: L2CAP sent error, status=%d", att_ret);
             /* attp_send_msg_to_l2cap() already freed p_cmd->p_cmd on failure */
             p_cmd->p_cmd = NULL;
-            memset(p_cmd, 0, sizeof(tGATT_CMD_Q));
-            p_tcb->pending_cl_req ++;
-            p_tcb->pending_cl_req %= GATT_CL_MAX_LCB;
+            p_cmd->to_send = FALSE;
+            /* Dequeue the failing command so pending_cl_req is advanced and the
+             * associated p_clcb can be retrieved. */
+            p_clcb = gatt_cmd_dequeue(p_tcb, &rsp_code);
             p_cmd = &p_tcb->cl_cmd_q[p_tcb->pending_cl_req];
+            /* Notify the upper layer about the failure. Without this the
+             * response timer is never armed (non-write ops) and the write
+             * completion callback is never fired, leaving the application
+             * stuck waiting for a callback that will never come. The p_clcb
+             * would also leak. */
+            if (p_clcb != NULL) {
+                gatt_end_operation(p_clcb, att_ret, NULL);
+            }
         }
 
     }

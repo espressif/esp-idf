@@ -20,6 +20,11 @@ extern "C" {
 #define TEE_SECURE_INUM    (31)
 #if SOC_INT_CLIC_SUPPORTED
 #define TEE_PASS_INUM      (30)
+/* CLIC: 3 effective priority bits (NLBITS=3), max priority = 7 */
+#define TEE_SECURE_INUM_PRIO    (7)
+#else
+/* PLIC: 4-bit priority field, max priority = 15 */
+#define TEE_SECURE_INUM_PRIO    (15)
 #endif
 
 #define ESP_TEE_M2U_SWITCH_MAGIC  0xfedef
@@ -111,6 +116,14 @@ void esp_tee_configure_region_protection(void);
  * @brief Configure APM protection for TEE
  */
 void esp_tee_configure_apm_protection(void);
+
+/**
+ * @brief Reset the crypto peripherals to a clean state.
+ *
+ * Mirrors esp_system_reset_modules_on_exit() in the non-TEE path.
+ * Intended to be called from the TEE panic handler before a software reset.
+ */
+void esp_tee_soc_reset_crypto_peripherals(void);
 
 /**
  * @brief Switch to the REE app after TEE initialization is complete

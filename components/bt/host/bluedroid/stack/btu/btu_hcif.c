@@ -50,7 +50,7 @@
 #include "stack/btu.h"
 
 extern void btm_process_cancel_complete(UINT8 status, UINT8 mode);
-extern void btm_ble_test_command_complete(UINT8 *p);
+extern void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 // BLE Channel Sounding parameter validation macros per BLE spec
@@ -174,6 +174,18 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len);
 #if (BLE_FEAT_ADV_MONITOR == TRUE)
 static void btu_ble_monitor_adv_report_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+static void btu_ble_read_all_remote_feat_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+static void btu_ble_frame_space_update_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+static void btu_ble_utp_receive_evt(UINT8 *p, UINT16 evt_len);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+static void btu_ble_conn_rate_change_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt);
 static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len, bool v2_evt);
@@ -560,6 +572,16 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_monitor_adv_report_evt(p);
             break;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+        case HCI_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT:
+            btu_ble_read_all_remote_feat_complete_evt(p);
+            break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+        case HCI_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT:
+            btu_ble_frame_space_update_complete_evt(p);
+            break;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
         case HCI_BLE_PERIOD_ADV_SYNC_TRANS_RECV_EVT:
             btu_ble_periodic_adv_sync_trans_recv(p);
@@ -629,6 +651,16 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_subrate_change_evt(p);
             break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+        case HCI_BLE_UTP_RECEIVE_EVT:
+            btu_ble_utp_receive_evt(p, hci_evt_len);
+            break;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+        case HCI_BLE_CONN_RATE_CHANGE_EVT:
+            btu_ble_conn_rate_change_evt(p);
+            break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
         case HCI_BLE_PA_SUBEVT_DATA_REQUEST_EVT:
             btu_ble_pa_subevt_data_request_evt(p);
@@ -951,6 +983,20 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
+#if BLE_INCLUDED == TRUE
+    /* Capture the disconnecting device's address before btm_acl_disconnected()
+     * clears the matched connection handle. The record itself is re-looked-up
+     * afterwards (by address) because callbacks fired during disconnection may
+     * have already freed it. */
+    BD_ADDR  disc_bda;
+    BOOLEAN  have_disc_bda = FALSE;
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev_by_handle(handle);
+    if (p_dev_rec) {
+        memcpy(disc_bda, p_dev_rec->bd_addr, BD_ADDR_LEN);
+        have_disc_bda = TRUE;
+    }
+#endif
+
     dev_find = btm_acl_disconnected(handle, reason);
 
 #if (BLE_FEAT_ISO_CIG_EN == TRUE)
@@ -963,6 +1009,48 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
     HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x dev_find %d", handle, reason, dev_find);
 
     UNUSED(dev_find);
+
+#if BLE_INCLUDED == TRUE
+    /* Delete unpaired device records to free memory (~356B per device).
+     *
+     * Re-find the record by address: callbacks invoked during
+     * btm_acl_disconnected() may already have freed it, so the pointer captured
+     * before the call cannot be trusted.
+     *
+     * Only delete when the device is fully idle and unpaired:
+     * 1. No active BR/EDR connection (hci_handle invalid)
+     * 2. No active LE connection (ble_hci_handle invalid) - protects the still
+     *    connected transport of a dual-mode device when the other one drops
+     * 3. No BLE security keys (unpaired) - when SMP is enabled
+     *
+     * BT_TRANSPORT_LE is used so that any retained BR/EDR link key keeps a
+     * BR/EDR-bonded record alive; an LE-unpaired record that has no BR/EDR key
+     * collapses to BTM_SEC_IN_USE only and is removed from the list.
+     *
+     * Skip deletion on HCI_ERR_CONN_FAILED_ESTABLISHMENT when connect
+     * retry is enabled.
+     */
+    if (have_disc_bda
+#if (GATTC_CONNECT_RETRY_EN == TRUE)
+        && reason != HCI_ERR_CONN_FAILED_ESTABLISHMENT
+#endif
+    ) {
+        p_dev_rec = btm_find_dev(disc_bda);
+        if (p_dev_rec
+            && p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE      /* No active BR/EDR connection */
+            && p_dev_rec->ble_hci_handle == BTM_SEC_INVALID_HANDLE  /* No active LE connection */
+#if SMP_INCLUDED == TRUE
+            && !p_dev_rec->ble.key_type                            /* No BLE security keys */
+#endif
+        ) {
+            BTM_TRACE_WARNING(
+                "Deleting unpaired device %02X:%02X:%02X:%02X:%02X:%02X",
+                p_dev_rec->bd_addr[0], p_dev_rec->bd_addr[1], p_dev_rec->bd_addr[2],
+                p_dev_rec->bd_addr[3], p_dev_rec->bd_addr[4], p_dev_rec->bd_addr[5]);
+            btm_sec_free_dev(p_dev_rec, BT_TRANSPORT_LE);
+        }
+    }
+#endif // BLE_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1001,6 +1089,11 @@ static void btu_hcif_rmt_name_request_comp_evt (UINT8 *p, UINT16 evt_len)
 {
     UINT8   status;
     BD_ADDR bd_addr;
+
+    if (evt_len < (1 + BD_ADDR_LEN)) {
+        HCI_TRACE_ERROR("HCI_RMT_NAME_REQUEST_COMP_EVT param too short (len=%u)", evt_len);
+        return;
+    }
 
     STREAM_TO_UINT8 (status, p);
     STREAM_TO_BDADDR (bd_addr, p);
@@ -1331,11 +1424,17 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_create_ll_conn_complete(*p);
         break;
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
-#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TEST_END:
-        btm_ble_test_command_complete(p);
+        /* Forward raw parameters + length; upper layers validate before parsing. */
+        btm_ble_test_command_complete(p, evt_len);
+        break;
+#else
+    case HCI_BLE_TRANSMITTER_TEST:
+    case HCI_BLE_RECEIVER_TEST:
+    case HCI_BLE_TEST_END:
         break;
 #endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_CREATE_CONN_CANCEL:
@@ -1397,7 +1496,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #if (BLE_50_DTM_TEST_EN == TRUE)
     case HCI_BLE_ENH_RX_TEST:
     case HCI_BLE_ENH_TX_TEST:
-        btm_ble_test_command_complete(p);
+        btm_ble_test_command_complete(p, evt_len);
         break;
 #endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
@@ -1477,6 +1576,16 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_read_monitor_adv_list_size_complete(p);
         break;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    case HCI_BLE_READ_ALL_LOCAL_SUPP_FEATURES:
+        btm_ble_read_all_local_supp_features_complete(p);
+        break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        btm_ble_read_min_supp_conn_interval_complete(p);
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1646,6 +1755,38 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         btm_subrate_req_cmd_status(status);
         break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    case HCI_BLE_FRAME_SPACE_UPDATE:
+    {
+        UINT16 conn_handle = HCI_INVALID_HANDLE;
+        if (p_cmd != NULL) {
+            p_cmd++; /* skip param length */
+            STREAM_TO_UINT16(conn_handle, p_cmd);
+        }
+        btm_frame_space_update_cmd_status(status, conn_handle);
+        break;
+    }
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    case HCI_BLE_READ_ALL_REMOTE_FEATURES:
+        btm_read_all_remote_feat_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case HCI_BLE_CONNECTION_RATE_REQUEST:
+    {
+        UINT16 conn_handle = HCI_INVALID_HANDLE;
+        if (p_cmd != NULL) {
+            p_cmd++; /* skip param length */
+            STREAM_TO_UINT16(conn_handle, p_cmd);
+        }
+        btm_conn_rate_req_cmd_status(status, conn_handle);
+        break;
+    }
+    case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
+        btm_ble_read_min_supp_conn_interval_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     case HCI_BLE_CS_READ_REMOTE_SUPP_CAPS:
         btm_ble_cs_read_remote_supp_caps_cmd_status(status);
@@ -1829,6 +1970,11 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
 {
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_status_hack_t));
     command_status_hack_t *hack = (command_status_hack_t *)&event->data[0];
+#if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
+    if (status != HCI_SUCCESS) {
+        btsnd_hci_ble_set_status(status);
+    }
+#endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
 
     hack->callback = btu_hcif_command_status_evt_on_task;
     hack->status = status;
@@ -2655,6 +2801,20 @@ static void btu_ble_monitor_adv_report_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+static void btu_ble_read_all_remote_feat_complete_evt(UINT8 *p)
+{
+    btm_ble_read_all_remote_features_complete_evt(p);
+}
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+static void btu_ble_frame_space_update_complete_evt(UINT8 *p)
+{
+    btm_ble_frame_space_update_complete_evt(p);
+}
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p, bool v2_evt)
 {
@@ -3328,6 +3488,40 @@ static void btu_ble_subrate_change_evt(UINT8 *p)
     btm_ble_subrate_change_evt(&subrate_change_evt);
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+static void btu_ble_conn_rate_change_evt(UINT8 *p)
+{
+    tBTM_BLE_CONN_RATE_CHANGE conn_rate_change = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(conn_rate_change.status, p);
+    STREAM_TO_UINT16(conn_rate_change.conn_handle, p);
+    STREAM_TO_UINT16(conn_rate_change.conn_interval, p);
+    STREAM_TO_UINT16(conn_rate_change.subrate_factor, p);
+    STREAM_TO_UINT16(conn_rate_change.peripheral_latency, p);
+    STREAM_TO_UINT16(conn_rate_change.continuation_number, p);
+    STREAM_TO_UINT16(conn_rate_change.supervision_timeout, p);
+
+    btm_ble_conn_rate_change_evt(&conn_rate_change);
+}
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+static void btu_ble_utp_receive_evt(UINT8 *p, UINT16 evt_len)
+{
+    if (!p || evt_len < 1) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    btm_ble_utp_receive_evt(p, evt_len);
+}
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 static void btu_ble_pa_subevt_data_request_evt(UINT8 *p)

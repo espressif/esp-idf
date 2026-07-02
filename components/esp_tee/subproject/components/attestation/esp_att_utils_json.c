@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,7 +174,30 @@ esp_err_t esp_att_utils_eat_data_to_json(struct esp_att_sw_claim_list *head, con
     free(auth_challenge_hexstr);
 
     json_gen_obj_set_int(&json_gen, "client_id", cfg->client_id);
+    json_gen_obj_set_int(&json_gen, "chip_id", cfg->chip_id);
     json_gen_obj_set_int(&json_gen, "device_ver", cfg->device_ver);
+
+    json_gen_push_object(&json_gen, "ueid");
+
+    char mac_hexstr[ESP_ATT_EAT_UEID_MAC_SZ * 2 + 1] = {0};
+    err = esp_att_utils_hexbuf_to_hexstr(cfg->ueid_mac, sizeof(cfg->ueid_mac),
+                                         mac_hexstr, sizeof(mac_hexstr));
+    if (err != ESP_OK) {
+        free(json_buf);
+        return err;
+    }
+    json_gen_obj_set_string(&json_gen, "mac", mac_hexstr);
+
+    char opt_id_hexstr[ESP_ATT_EAT_UEID_OPT_ID_SZ * 2 + 1] = {0};
+    err = esp_att_utils_hexbuf_to_hexstr(cfg->ueid_opt_id, sizeof(cfg->ueid_opt_id),
+                                         opt_id_hexstr, sizeof(opt_id_hexstr));
+    if (err != ESP_OK) {
+        free(json_buf);
+        return err;
+    }
+    json_gen_obj_set_string(&json_gen, "optional_id", opt_id_hexstr);
+
+    json_gen_pop_object(&json_gen);
 
     char dev_id_hexstr[ESP_ATT_EAT_DEV_ID_SZ * 2 + 1] = {0};
     err = esp_att_utils_hexbuf_to_hexstr(cfg->device_id, sizeof(cfg->device_id), dev_id_hexstr, sizeof(dev_id_hexstr));
@@ -201,6 +224,7 @@ esp_err_t esp_att_utils_eat_data_to_json(struct esp_att_sw_claim_list *head, con
         esp_err_t err = part_metadata_to_json(&claim->metadata, &claim_json);
         if (err != ESP_OK || claim_json == NULL) {
             ESP_LOGE(TAG, "Failed to format the FW metadata to JSON!");
+            free(json_buf);
             return err;
         }
 

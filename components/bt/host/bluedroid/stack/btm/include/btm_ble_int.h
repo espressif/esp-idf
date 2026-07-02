@@ -444,7 +444,7 @@ void btm_ble_increment_sign_ctr(BD_ADDR bd_addr, BOOLEAN is_local );
 BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div);
 BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types);
 
-void btm_ble_test_command_complete(UINT8 *p);
+void btm_ble_test_command_complete(UINT8 *p, UINT16 len);
 void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback);
 
 void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY_VALUE *p_keys, BOOLEAN pass_to_application);
@@ -510,6 +510,10 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+void btm_ble_adjust_conn_addr_for_ext_adv(UINT16 handle);
+#endif
+
 char btm_ble_map_adv_tx_power(int tx_power_index);
 #if (BLE_TOPOLOGY_CHECK == TRUE)
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request);
@@ -531,6 +535,9 @@ BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *laten
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params);
 void btm_ble_scan_timeout_evt(void);
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
+void btm_ble_clear_ext_adv_ter_con_handle(UINT16 con_handle);
+#endif
 void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params);
 void btm_ble_ext_adv_report_evt(tBTM_BLE_EXT_ADV_REPORT *params);
 void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params);
@@ -592,6 +599,20 @@ void btm_ble_transmit_power_report_evt(tBTM_BLE_TRANS_POWER_REPORT_EVT *params);
 #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 void btm_ble_subrate_change_evt(tBTM_BLE_SUBRATE_CHANGE_EVT *params);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+void btm_ble_frame_space_update_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+void btm_ble_read_all_local_supp_features_complete(UINT8 *p);
+void btm_ble_read_all_remote_features_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+void btm_ble_conn_rate_change_evt(tBTM_BLE_CONN_RATE_CHANGE *params);
+void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+void btm_ble_utp_receive_evt(UINT8 *p, UINT16 len);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 void btm_ble_pa_subevt_data_req_evt(tBTM_BLE_PA_SUBEVT_DATA_REQ_EVT *params);
 void btm_ble_pa_rsp_rpt_evt(tBTM_BLE_PA_RSP_REPORT_EVT *params);
@@ -606,6 +627,14 @@ void btm_ble_cs_proc_enable_cmpl_evt(tBTM_BLE_CS_PROC_ENABLE_CMPL_EVT *proc_en);
 void btm_ble_cs_subevt_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CMPL_EVT *subevt_result);
 void btm_ble_cs_subevt_continue_result_evt(tBTM_BLE_CS_SUBEVT_RESULT_CONTINUE_EVT *subevt_continue_result);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
+static inline tBTM_STATUS btm_ble_status_from_hci(UINT8 hci_status)
+{
+    return (hci_status == HCI_SUCCESS) ? BTM_SUCCESS : (tBTM_STATUS)(BTM_HCI_ERROR | hci_status);
+}
+
+#define BTM_BLE_TRACE_HCI_CMD_FAIL(func, hci_status) \
+    BTM_TRACE_ERROR("%s, fail to send the hci command, the error code = 0x%x", (func), (hci_status))
 
 
 /*

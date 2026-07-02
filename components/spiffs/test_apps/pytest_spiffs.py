@@ -6,6 +6,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize(
     'config',
     [
@@ -16,4 +17,17 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_spiffs_generic(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=120)
+
+
+@pytest.mark.quad_psram
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_spiffs_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)

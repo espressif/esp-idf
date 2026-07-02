@@ -6,3 +6,9 @@ CONFIG_BT_ENABLED=y
 CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
 # CONFIG_BT_LE_50_FEATURE_SUPPORT is not used on ESP32, ESP32-C3 and ESP32-S3.
 # CONFIG_BT_LE_50_FEATURE_SUPPORT is not set
+
+# Disable unused Bluedroid host features for iBeacon (advertising/scanning only, no GATT/SMP)
+# CONFIG_BT_GATTS_ENABLE is not set
+# CONFIG_BT_GATTC_ENABLE is not set
+# CONFIG_BT_BLE_SMP_ENABLE is not set
+# CONFIG_BT_BLE_42_DTM_TEST_EN is not set

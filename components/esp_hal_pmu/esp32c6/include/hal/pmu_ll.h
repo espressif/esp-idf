@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -517,6 +517,11 @@ FORCE_INLINE_ATTR void pmu_ll_hp_clear_wakeup_intr_status(pmu_dev_t *hw)
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_intr_status(pmu_dev_t *hw)
 {
     hw->hp_ext.int_clr.reject = 1;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_hp_clear_lp_cpu_exc_intr_status(pmu_dev_t *hw)
+{
+    hw->hp_ext.int_clr.lp_cpu_exc = 1;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_enable_sw_intr(pmu_dev_t *hw, bool enable)

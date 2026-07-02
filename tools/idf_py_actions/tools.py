@@ -16,7 +16,7 @@ from typing import Any
 from typing import TextIO
 from typing import cast
 
-import click
+import rich_click as click
 import yaml
 from esp_idf_monitor import get_ansi_converter
 
@@ -395,6 +395,19 @@ class RunTool:
         env_copy = dict(os.environ)
         env_copy.update(self.env or {})
 
+        # Color control:
+        # 1. CLICOLOR_FORCE:
+        #   By default, GNU Make and Ninja strip away color escape sequences when they see that their stdout
+        #   is redirected. If idf.py's stdout is not redirected, the final output is a TTY, so we can tell
+        #   Make/Ninja to disable stripping of color escape sequences. (Requires Ninja v1.9.0 or later.)
+        # 2. FORCE_COLOR:
+        #   The same idea as above, but FORCE_COLOR is used by Python packages like rich.
+        # 3. NO_COLOR:
+        #   Universal kill switch; if set, we won't force colors.
+        if sys.stdout.isatty() and not env_copy.get('NO_COLOR'):
+            env_copy.setdefault('CLICOLOR_FORCE', '1')
+            env_copy.setdefault('FORCE_COLOR', '1')
+
         process: Process | subprocess.CompletedProcess[bytes]
         if self.hints:
             process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
@@ -592,17 +605,23 @@ def run_target(
     if env is None:
         env = {}
 
-    generator_cmd = GENERATORS[args.generator]['command']
+    generator_cmd = list(GENERATORS[args.generator]['command'])
+
+    if args.generator == 'Ninja':
+        parallel_level = os.environ.get('IDF_PY_BUILD_JOBS')
+        if parallel_level:
+            try:
+                jobs = int(parallel_level)
+            except ValueError as e:
+                raise FatalError('Environment variable IDF_PY_BUILD_JOBS must be a positive integer') from e
+
+            if jobs <= 0:
+                raise FatalError('Environment variable IDF_PY_BUILD_JOBS must be a positive integer')
+
+            generator_cmd += ['-j', str(jobs)]
 
     if args.verbose:
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
-
-    # By default, GNU Make and Ninja strip away color escape sequences when they see that their stdout is redirected.
-    # If idf.py's stdout is not redirected, the final output is a TTY, so we can tell Make/Ninja to disable stripping
-    # of color escape sequences. (Requires Ninja v1.9.0 or later.)
-    if sys.stdout.isatty():
-        if 'CLICOLOR_FORCE' not in env:
-            env['CLICOLOR_FORCE'] = '1'
 
     RunTool(
         generator_cmd[0],

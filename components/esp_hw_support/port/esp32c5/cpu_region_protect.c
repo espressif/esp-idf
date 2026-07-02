@@ -9,9 +9,9 @@
 #include "esp_cpu.h"
 #include "esp_fault.h"
 #include "esp32c5/rom/rom_layout.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
-#endif /* CONFIG_SPIRAM */
+#endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
 
 #ifdef BOOTLOADER_BUILD
 // Without L bit set

@@ -1,17 +1,16 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from typing import Dict
 
-from click.core import Context
+from rich_click import Context
+
 from idf_py_actions.errors import FatalError
+from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import is_target_supported
-from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import run_target
 
 
-def action_extensions(base_actions: Dict, project_path: str) -> Dict:
-
+def action_extensions(base_actions: dict, project_path: str) -> dict:
     SUPPORTED_TARGETS = ['esp32s2', 'esp32s3', 'esp32p4']
 
     def dfu_target(target_name: str, ctx: Context, args: PropertyDict, part_size: str) -> None:
@@ -29,8 +28,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             run_target(target_name, args, {'ESP_DFU_PATH': path})
         except FatalError:
             # Cannot capture the error from dfu-util here so the best advise is:
-            print('Please have a look at the "Device Firmware Upgrade through USB" chapter in API Guides of the '
-                  'ESP-IDF documentation for solving common dfu-util issues.')
+            print(
+                'Please have a look at the "Device Firmware Upgrade through USB" chapter in API Guides of the '
+                'ESP-IDF documentation for solving common dfu-util issues.'
+            )
             raise
 
     dfu_actions = {
@@ -43,8 +44,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--part-size'],
                         'help': 'Large files are split up into smaller partitions in order to avoid timeout during '
-                                'erasing flash. This option allows to overwrite the default partition size of '
-                                'mkdfu.py.'
+                        'erasing flash. This option allows to overwrite the default partition size of '
+                        'mkdfu.py.',
                     }
                 ],
             },
@@ -62,8 +63,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--path'],
                         'default': '',
                         'help': 'Specify path to DFU device. The default empty path works if there is just one '
-                                'ESP device with the same product identifier. See the device list for paths '
-                                'of available devices.'
+                        'ESP device with the same product identifier. See the device list for paths '
+                        'of available devices.',
                     }
                 ],
             },

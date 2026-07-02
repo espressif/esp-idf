@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,8 +53,9 @@ static esp_err_t esp_trace_create(const esp_trace_open_params_t *params)
     const esp_trace_encoder_vtable_t *enc_vt = esp_trace_find_encoder(params->encoder_name);
     const esp_trace_transport_vtable_t *tp_vt = esp_trace_find_transport(params->transport_name);
 
-    if (!enc_vt || !tp_vt) {
-        ESP_EARLY_LOGE(TAG, "Encoder '%s' or transport '%s' not found", params->encoder_name, params->transport_name);
+    // Encoder must be found but transport is optional
+    if (!enc_vt) {
+        ESP_EARLY_LOGE(TAG, "Encoder '%s' not found", params->encoder_name);
         return ESP_ERR_NOT_FOUND;
     }
 
@@ -103,7 +104,7 @@ static esp_err_t esp_trace_init(const esp_trace_open_params_t *params)
     portENTER_CRITICAL(&s_init_lock);
 
     /* Setup transport first (encoder depends on it) */
-    if (h->transport.vt->init) {
+    if (h->transport.vt && h->transport.vt->init) {
         err = h->transport.vt->init(&h->transport, params->transport_cfg);
         if (err != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Transport open failed: %d", err);
@@ -150,9 +151,51 @@ esp_err_t esp_trace_write(esp_trace_handle_t h, const void *data, size_t size, u
     return h->encoder.vt->write(&h->encoder, data, size, tmo);
 }
 
+esp_err_t esp_trace_start(void)
+{
+    esp_trace_handle_t h = s_active_handle;
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!h->encoder.vt->start) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return h->encoder.vt->start(&h->encoder);
+}
+
+esp_err_t esp_trace_stop(void)
+{
+    esp_trace_handle_t h = s_active_handle;
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!h->encoder.vt->stop) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return h->encoder.vt->stop(&h->encoder);
+}
+
+esp_err_t esp_trace_flush(void)
+{
+    esp_trace_handle_t h = s_active_handle;
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!h->encoder.vt->flush) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return h->encoder.vt->flush(&h->encoder);
+}
+
 bool esp_trace_is_host_connected(esp_trace_handle_t h)
 {
-    if (!h || !h->transport.vt->is_host_connected) {
+    if (!h || !h->transport.vt || !h->transport.vt->is_host_connected) {
         return false;
     }
 
@@ -161,7 +204,7 @@ bool esp_trace_is_host_connected(esp_trace_handle_t h)
 
 esp_trace_link_types_t esp_trace_get_link_type(esp_trace_handle_t h)
 {
-    if (!h || !h->transport.vt->get_link_type) {
+    if (!h || !h->transport.vt || !h->transport.vt->get_link_type) {
         return ESP_TRACE_LINK_UNKNOWN;
     }
 
@@ -183,7 +226,7 @@ void esp_trace_panic_handler(const void *info)
         h->encoder.vt->panic_handler(&h->encoder, info);
     }
 
-    if (h->transport.vt->panic_handler) {
+    if (h->transport.vt && h->transport.vt->panic_handler) {
         h->transport.vt->panic_handler(&h->transport, info);
     }
 }

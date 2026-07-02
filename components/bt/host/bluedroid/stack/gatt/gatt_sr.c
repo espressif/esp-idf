@@ -414,6 +414,27 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
                                       UINT32 trans_id, UINT8 op_code,
                                       tGATT_STATUS status, tGATTS_RSP *p_msg)
 {
+    if ((p_tcb->exec_write_rsp_trans_id == trans_id) && (op_code == GATT_REQ_EXEC_WRITE)) {
+        /*
+        * Execute Write is a special case without a handle, so both stack and application
+        * may try to send a response.
+        * - Stack: may have already sent an automatic Execute Write Response.
+        * - App: may call esp_gatts_send_response() with the same trans_id.
+        *
+        * To prevent sending two responses for the same Execute Write request,
+        * we check if this trans_id has already been auto-responded by stack.
+        * If so, ignore the application response without sending another ATT packet.
+        * Still update cback_cnt/dequeue sr_cmd so state stays consistent when multiple
+        * apps are registered; only clear exec_write_rsp_trans_id after all apps respond.
+        */
+        gatt_sr_update_cback_cnt(p_tcb, gatt_if, FALSE, FALSE);
+        if (gatt_sr_is_cback_cnt_zero(p_tcb)) {
+            gatt_dequeue_sr_cmd(p_tcb);
+            p_tcb->exec_write_rsp_trans_id = 0;
+        }
+        return GATT_SUCCESS;
+    }
+
     tGATT_STATUS    ret_code = GATT_SUCCESS;
     UNUSED(trans_id);
 
@@ -481,6 +502,7 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
 *******************************************************************************/
 void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, UINT8 *p_data)
 {
+    BOOLEAN response_sent = false;
     UINT8   *p = p_data, flag, i = 0;
     UINT32  trans_id = 0;
     tGATT_IF gatt_if;
@@ -536,6 +558,7 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
             is_prepare_write_valid = TRUE;
         }
         GATT_TRACE_DEBUG("Send execute_write_rsp\n");
+        response_sent = TRUE;
     } else if ((prepare_record->error_code_app == GATT_SUCCESS) &&
         (prepare_record->total_num > queue_num)){
         //No error for stack_rsp's handles and there exist some app_rsp's handles,
@@ -579,6 +602,10 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
                         if (total_num_saved > queue_num) {
                             trans_id = gatt_sr_enqueue_cmd(p_tcb, op_code, 0);
                             gatt_sr_copy_prep_cnt_to_cback_cnt(p_tcb);
+                        }
+                        /* Record trans_id if stack already sent response, to prevent app from sending duplicate */
+                        if (response_sent) {
+                            p_tcb->exec_write_rsp_trans_id = trans_id;
                         }
                         for (i = 0; i < GATT_MAX_APPS; i++) {
                             if (p_tcb->prep_cnt[i]) {
@@ -655,6 +682,11 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
         if (prepare_record->total_num > queue_num){
             trans_id = gatt_sr_enqueue_cmd(p_tcb, op_code, 0);
             gatt_sr_copy_prep_cnt_to_cback_cnt(p_tcb);
+        }
+
+        /* Record trans_id if stack already sent response, to prevent app from sending duplicate */
+        if (response_sent) {
+            p_tcb->exec_write_rsp_trans_id = trans_id;
         }
 
         for (i = 0; i < GATT_MAX_APPS; i++) {
@@ -754,8 +786,7 @@ void gatt_process_read_multi_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
 
             for (ll = 0; ll < p_tcb->sr_cmd.multi_req.num_handles; ll ++) {
                 if ((p_msg = (tGATTS_RSP *)osi_malloc(sizeof(tGATTS_RSP))) != NULL) {
-                    memset(p_msg, 0, sizeof(tGATTS_RSP))
-                    ;
+                    memset(p_msg, 0, sizeof(tGATTS_RSP));
                     handle = p_tcb->sr_cmd.multi_req.handles[ll];
                     i_rcb = gatt_sr_find_i_rcb_by_handle(handle);
 
@@ -1496,10 +1527,17 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
         }
     }
 
+    /* sr_cmd enqueued at handle but no attribute branch ran (null DB/list or no exact handle). */
+    if (trans_id != 0 && !is_need_prepare_write_rsp && !is_need_queue_data &&
+            status == GATT_SUCCESS) {
+        status = GATT_INVALID_HANDLE;
+    }
+
     if (is_need_queue_data){
         queue_data = (tGATT_PREPARE_WRITE_QUEUE_DATA *)osi_malloc(len + sizeof(tGATT_PREPARE_WRITE_QUEUE_DATA));
         if (queue_data == NULL){
             status = GATT_PREPARE_Q_FULL;
+            is_need_prepare_write_rsp = FALSE;
         } else {
             queue_data->p_attr = p_attr_temp;
             queue_data->len = len;
@@ -1509,7 +1547,16 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             if (prepare_record->queue == NULL) {
                 prepare_record->queue = fixed_queue_new(QUEUE_SIZE_MAX);
             }
-            fixed_queue_enqueue(prepare_record->queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT);
+            if (prepare_record->queue == NULL ||
+                fixed_queue_length(prepare_record->queue) >=
+                    fixed_queue_capacity(prepare_record->queue)) {
+                osi_free(queue_data);
+                queue_data = NULL;
+                status = GATT_PREPARE_Q_FULL;
+                is_need_prepare_write_rsp = FALSE;
+            } else {
+                fixed_queue_enqueue(prepare_record->queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT);
+            }
         }
     }
 

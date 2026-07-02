@@ -624,12 +624,24 @@ typedef struct {
     BOOLEAN                     directed;
     BOOLEAN                     scannable;
     BOOLEAN                     connetable;
+    /* Per-set on-air address policy, captured at BTM_BleSetExtendedAdvParams()
+     * time. For now we only consider CONTROLLER_RPA_LIST_ENABLE == TRUE;
+     * CONTROLLER_RPA_LIST_ENABLE == FALSE is out of scope temporarily. The global
+     * addr_mgnt_cb is a single slot shared across all sets, so in multi-ADV
+     * it does not necessarily reflect the policy used for a given connection. */
+    tBLE_ADDR_TYPE              own_addr_type;
+    BOOLEAN                     rand_addr_set;
+    BD_ADDR                     rand_addr;
 } tBTM_BLE_EXTENDED_INST;
 
 typedef struct {
     tBTM_BLE_EXTENDED_INST inst[MAX_BLE_ADV_INSTANCE]; /* dynamic array to store adv instance */
     UINT8  scan_duplicate;
 } tBTM_BLE_EXTENDED_CB;
+
+/* Defined in btm_ble_5_gap.c. Exposed for per-set address lookup from
+ * SMP / BTM at LE connection complete. */
+extern tBTM_BLE_EXTENDED_CB extend_adv_cb;
 
 #define BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE       (1 << 0)
 #define BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE         (1 << 1)
@@ -978,7 +990,33 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 #define    BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT   74
 #define    BTM_BLE_5_GAP_ENABLE_MONITOR_ADV_COMPLETE_EVT           75
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               76
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define    BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT       76
+#define    BTM_BLE_5_GAP_READ_ALL_REMOTE_FEAT_COMPLETE_EVT         77
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#define    BTM_BLE_5_GAP_FRAME_SPACE_UPDATE_COMPLETE_EVT           78
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+#define    BTM_BLE_5_GAP_SET_DECISION_DATA_COMPLETE_EVT            79
+#define    BTM_BLE_5_GAP_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT    80
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define    BTM_BLE_5_GAP_CONNECTION_RATE_REQUEST_COMPLETE_EVT    81
+#define    BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT                    82
+#define    BTM_BLE_5_GAP_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT 86
+#define    BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT 87
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define    BTM_BLE_5_GAP_ENABLE_UTP_OTA_MODE_COMPLETE_EVT        83
+#define    BTM_BLE_5_GAP_UTP_SEND_COMPLETE_EVT                   84
+#define    BTM_BLE_5_GAP_UTP_RECEIVE_EVT                         85
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define    BTM_BLE_GAP_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT       88
+#define    BTM_BLE_GAP_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT 89
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               90
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1228,6 +1266,76 @@ typedef struct {
 } tBTM_BLE_MONITOR_ADV_LIST_SIZE;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#ifndef BLE_LL_EXT_FEAT_DATA_LEN
+#define BLE_LL_EXT_FEAT_DATA_LEN                         248
+#endif
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT8 max_page;
+    UINT8 *le_features;
+} tBTM_BLE_READ_ALL_LOCAL_SUPP_FEAT;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+    UINT8 max_remote_page;
+    UINT8 max_valid_page;
+    UINT8 *le_features;
+} tBTM_BLE_READ_ALL_REMOTE_FEAT;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+    UINT8 initiator;
+    UINT16 frame_space;
+    UINT8 phys;
+    UINT16 spacing_types;
+} tBTM_BLE_FRAME_SPACE_UPDATE;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+} tBTM_BLE_CONNECTION_RATE_REQUEST_CMPL;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT16 conn_handle;
+    UINT16 conn_interval;
+    UINT16 subrate_factor;
+    UINT16 peripheral_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} tBTM_BLE_CONN_RATE_CHANGE;
+
+#define BTM_BLE_MAX_CONN_INTERVAL_GROUPS    41
+
+typedef struct {
+    UINT16 min_125us;
+    UINT16 max_125us;
+    UINT16 stride_125us;
+} tBTM_BLE_MIN_CONN_INTERVAL_GROUP;
+
+typedef struct {
+    tBTM_STATUS status;
+    UINT8 min_supported_conn_interval;
+    UINT8 num_groups;
+    tBTM_BLE_MIN_CONN_INTERVAL_GROUP *groups;
+} tBTM_BLE_READ_MIN_SUPP_CONN_INTERVAL;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+typedef struct {
+    UINT8 len;
+    UINT8 *data;
+} tBTM_BLE_UTP_RECEIVE;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+
 typedef struct {
     UINT16 sync_handle;
     UINT8 tx_power;
@@ -1451,6 +1559,17 @@ typedef struct {
     UINT16 conn_handle;
 } tBTM_BLE_CS_SEC_ENABLE_CMPL_EVT;
 
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} tBTM_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT;
+
+typedef struct {
+    UINT8 status;
+} tBTM_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+
 typedef struct {
     UINT8 status;
     UINT16 conn_handle;
@@ -1528,7 +1647,6 @@ typedef struct {
 
 typedef struct {
     UINT8 status;
-    UINT16 conn_handle;
     UINT8 num_config_supported;
     UINT16 max_consecutive_proc_supported;
     UINT8 num_ant_supported;
@@ -1938,6 +2056,25 @@ typedef union {
     tBTM_BLE_MONITOR_ADV_REPORT                 monitor_adv_report;
     tBTM_BLE_MONITOR_ADV_LIST_SIZE              monitor_adv_list_size;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    tBTM_BLE_READ_ALL_LOCAL_SUPP_FEAT           read_all_local_supp_feat;
+    tBTM_BLE_READ_ALL_REMOTE_FEAT               read_all_remote_feat;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    tBTM_BLE_FRAME_SPACE_UPDATE                 frame_space_update;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    tBTM_BLE_CONNECTION_RATE_REQUEST_CMPL       conn_rate_request;
+    tBTM_BLE_CONN_RATE_CHANGE                   conn_rate_change;
+    tBTM_BLE_READ_MIN_SUPP_CONN_INTERVAL        read_min_supp_conn_interval;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    tBTM_BLE_UTP_RECEIVE                        utp_receive;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    tBTM_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT cs_set_security_requirements;
+    tBTM_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT cs_set_default_security_requirements;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -2726,7 +2863,7 @@ void BTM_BleClearWhitelist(void);
 **               p_cmd_cmpl_cback - Command Complete callback
 **
 *******************************************************************************/
-void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
 
 /*******************************************************************************
@@ -2742,7 +2879,7 @@ void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback);
 **
 *******************************************************************************/
 void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
-                            UINT8 packet_payload, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+                            UINT8 packet_payload, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
 /*******************************************************************************
 **
@@ -2753,7 +2890,7 @@ void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
 ** Parameter       p_cmd_cmpl_cback - Command complete callback
 **
 *******************************************************************************/
-void BTM_BleTestEnd(tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleTestEnd(tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
 /*******************************************************************************
 **
@@ -3053,6 +3190,20 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance);
 
 tBTM_STATUS BTM_BleExtAdvSetClear(void);
 
+/*******************************************************************************
+**
+** Function         BTM_BleGetExtAdvInstByConHandle
+**
+** Description      Map an LE connection handle to the ext-adv instance
+**                  that produced it.
+**
+** Returns          Instance index on success, 0xFF if no match (e.g.
+**                  initiator role or legacy advertising).
+**
+*******************************************************************************/
+UINT8 BTM_BleGetExtAdvInstByConHandle(UINT16 con_handle);
+
+
 tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Params *params);
 
 tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data, BOOLEAN only_update_did);
@@ -3084,12 +3235,47 @@ tBTM_STATUS BTM_BleClearMonitorAdvList(void);
 tBTM_STATUS BTM_BleReadMonitorAdvListSize(void);
 tBTM_STATUS BTM_BleEnableMonitorAdv(UINT8 enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+tBTM_STATUS BTM_BleSetDecisionData(UINT8 adv_handle, UINT8 decision_type_flags,
+                                   UINT8 data_len, const UINT8 *p_data);
+tBTM_STATUS BTM_BleSetDecisionInstructions(UINT8 num_tests, const UINT8 *test_flags,
+                                           const UINT8 *test_fields, const UINT8 *test_params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+tBTM_STATUS BTM_BleFrameSpaceUpdate(UINT16 conn_handle, UINT16 frame_space_min,
+                                    UINT16 frame_space_max, UINT8 phys, UINT16 spacing_types);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+tBTM_STATUS BTM_BleReadAllLocalSuppFeatures(void);
+tBTM_STATUS BTM_BleReadAllRemoteFeatures(UINT16 conn_handle, UINT8 page_requested);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+tBTM_STATUS BTM_BleConnectionRateRequest(UINT16 conn_handle, UINT16 conn_interval_min,
+                                         UINT16 conn_interval_max, UINT16 subrate_min,
+                                         UINT16 subrate_max, UINT16 max_latency,
+                                         UINT16 continuation_number, UINT16 supervision_timeout,
+                                         UINT16 min_ce_len, UINT16 max_ce_len);
+void BTM_BleSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_interval_max,
+                                     UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                     UINT16 continuation_number, UINT16 supervision_timeout,
+                                     UINT16 min_ce_len, UINT16 max_ce_len);
+tBTM_STATUS BTM_BleReadMinSuppConnInterval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+tBTM_STATUS BTM_BleEnableUtpOtaMode(UINT8 enable);
+tBTM_STATUS BTM_BleUtpSend(UINT8 data_len, const UINT8 *p_data);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_DTM_TEST_EN == TRUE)
-void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 
-void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len, UINT8 packet_payload, UINT8 phy, tBTM_CMPL_CB *p_cmd_cmpl_cback);
+void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len, UINT8 packet_payload, UINT8 phy, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback);
 #endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -3229,5 +3415,9 @@ void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_p
                                 UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
 void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+void BTM_BleGapCsSetSecurityRequirements(UINT16 conn_handle, UINT64 cs_security_requirements);
+void BTM_BleGapCsSetDefaultSecurityRequirements(UINT64 cs_security_requirements);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 #endif

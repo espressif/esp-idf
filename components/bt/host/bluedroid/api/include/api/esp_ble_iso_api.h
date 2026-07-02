@@ -69,7 +69,7 @@ typedef enum {
 #define BLE_ISO_WORST_CASE_SCA_LEVEL_20_PPM     (0x07)
 
 #define BLE_ISO_PACKING_SEQUENTIAL                      (0x00)
-#define BLE_ISO_PACKING_INTERLEAVED                     (0x00)
+#define BLE_ISO_PACKING_INTERLEAVED                     (0x01)
 
 #define BLE_ISO_FRAMING_UNFRAMED_PDU                    (0x00)
 #define BLE_ISO_FRAMING_FRAMED_PDU_SEGMENTABLE_MODE     (0x01)

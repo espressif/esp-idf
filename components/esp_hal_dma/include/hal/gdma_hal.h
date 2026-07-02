@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,9 +52,9 @@ typedef struct {
 typedef struct {
     // The bitmap of the IDs that can be used by M2M are different between AXI DMA and AHB DMA, so we need to save a copy for each of them
     uint32_t m2m_free_periph_mask;
-    // TODO: we can add more private data here, e.g. the interrupt event mask of interest
-    // for now, the AXI DMA and AHB DMA are sharing the same interrupt mask, so we don't need to store it here
-    // If one day they become incompatible, we shall save a copy for each of them as a private data
+    // Supported interrupt events can vary across DMA instances (e.g. AHB vs AXI)
+    uint32_t tx_event_mask;
+    uint32_t rx_event_mask;
 } gdma_hal_priv_data_t;
 
 /**
@@ -102,6 +102,8 @@ struct gdma_hal_context_t {
 #if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
     void (*set_weight)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t weight);  /// Set the channel weight
 #endif // SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+    bool (*is_tx_link_switch_event_supported)(gdma_hal_context_t *hal); /// Check if TX link-switch interrupt is supported
+    void (*request_link_switch_event)(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir); /// Raise the interrupt when tx link switch complete
 };
 
 void gdma_hal_deinit(gdma_hal_context_t *hal);
@@ -160,6 +162,10 @@ void gdma_hal_enable_etm_task(gdma_hal_context_t *hal, int chan_id, gdma_channel
 #if SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
 void gdma_hal_set_weight(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t weight);
 #endif //SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
+
+void gdma_hal_request_link_switch_event(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir);
+
+bool gdma_hal_is_tx_link_switch_event_supported(gdma_hal_context_t *hal);
 
 #ifdef __cplusplus
 }

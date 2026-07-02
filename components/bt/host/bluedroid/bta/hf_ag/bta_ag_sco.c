@@ -846,6 +846,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
                     }
                 } else {
                     osi_free(p_buf);
+                    break;
                 }
             } else {
                 osi_free(p_buf);
@@ -1997,9 +1998,10 @@ static void bta_ag_sco_data_send_msbc(tBTA_AG_SCB *p_scb, BT_HDR *p_buf)
                 p_buf3->offset = BTA_AG_BUFF_OFFSET_MIN;
                 p_buf3->len = BTA_AG_SCO_OUT_PKT_LEN_EV3;
                 UINT8 *p_data3 = (UINT8 *)(p_buf3 + 1) + p_buf3->offset;
-                memcpy(p_data3, p_data, BTA_AG_MSBC_FRAME_SIZE - BTA_AG_H2_HEADER_LEN - BTA_AG_SCO_OUT_PKT_LEN_EV3);
-                p_data += BTA_AG_MSBC_FRAME_SIZE - BTA_AG_H2_HEADER_LEN - BTA_AG_SCO_OUT_PKT_LEN_EV3;
-                total_len -= BTA_AG_MSBC_FRAME_SIZE - BTA_AG_H2_HEADER_LEN - BTA_AG_SCO_OUT_PKT_LEN_EV3;
+                UINT16 rem_payload = BTA_AG_MSBC_FRAME_SIZE - (BTA_AG_SCO_OUT_PKT_LEN_EV3 - BTA_AG_H2_HEADER_LEN);
+                memcpy(p_data3, p_data, rem_payload);
+                p_data += rem_payload;
+                total_len -= rem_payload;
                 bta_ag_write_sco_data(p_scb, p_buf2, p_buf3);
             }
         }

@@ -427,7 +427,7 @@ static esp_err_t sec2_new_session(protocomm_security_handle_t handle, uint32_t s
     if (cur_session->id != -1) {
         /* Only one session is allowed at a time */
         ESP_LOGE(TAG, "Closing old session with id %" PRIu32, cur_session->id);
-        sec2_close_session(cur_session, session_id);
+        sec2_close_session(cur_session, cur_session->id);
     }
 
     cur_session->id = session_id;
@@ -505,12 +505,14 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_aead_encrypt failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
         ESP_LOGE(TAG, "psa_aead_encrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
@@ -566,12 +568,14 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "psa_aead_decrypt failed with status=%d", status);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 
     if (out_len != *outlen) {
         ESP_LOGE(TAG, "psa_aead_decrypt output length mismatch: expected %zd, got %zu", *outlen, out_len);
         free(*outbuf);
+        *outbuf = NULL;
         return ESP_FAIL;
     }
 

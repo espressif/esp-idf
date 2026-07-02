@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
- * BLE UART — Bluedroid backend. Implements the lifecycle declared in
+ * ESP-BLE-UART — Bluedroid backend. Implements the lifecycle declared in
  * ble_uart.h on top of the Bluedroid host using the service-table API
  * (esp_ble_gatts_create_attr_tab). Active when
  * CONFIG_BT_BLUEDROID_ENABLED=y; otherwise ble_uart_nimble.c is used.
@@ -21,6 +21,7 @@
 #include "ble_uart.h"
 
 #include <inttypes.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
@@ -109,8 +110,41 @@ static bool              s_subscribed;
 static bool              s_installed;
 static bool              s_opened;
 static bool              s_shutting_down;
+/* Set by ble_uart_close_async() when its worker task is in flight,
+ * cleared by the worker just before it exits. uninstall() polls this
+ * to drain a pending async close before tearing the stack down. */
+static volatile bool     s_closing;
 static volatile bool     s_attr_tab_ready;
 static bool              s_adv_active;
+
+/* Resolved security policy. Computed once in install() from cfg.encrypted
+ * + the per-feature overrides (cfg.sc/bonding/mitm/io_cap), then read
+ * by the GAP event handler and the GATT-table builder.
+ *   s_link_encrypted = true if any of {sc, bonding, mitm} resolved ON
+ *                      → kick pairing on connect, require encryption on chars
+ *   s_mitm_required  = resolved mitm bit
+ *                      → require ENC_MITM perm flags (Just-Works peer cannot read/write) */
+static bool              s_link_encrypted;
+static bool              s_mitm_required;
+
+/* Pending Passkey-Entry / Numeric-Comparison request awaiting an
+ * application reply via ble_uart_passkey_reply / ble_uart_compare_reply.
+ *
+ * Bluedroid identifies the pairing peer by BD address (no conn-handle
+ * exposed at the SM layer), so we cache it in s_pending_io_bda. The
+ * `kind` field discriminates the two flavors so the wrong reply API
+ * is rejected up front. NONE = no request in flight.
+ *
+ * No FreeRTOS lock — both fields are written only from the BTC task,
+ * and the reply API is the only outside reader. The reader takes a
+ * local snapshot before issuing the SDK reply call. */
+typedef enum {
+    PENDING_IO_NONE   = 0,
+    PENDING_IO_PASSKEY,    /* expects ble_uart_passkey_reply */
+    PENDING_IO_NUMCMP,     /* expects ble_uart_compare_reply */
+} pending_io_kind_t;
+static volatile pending_io_kind_t s_pending_io_kind;
+static esp_bd_addr_t              s_pending_io_bda;
 
 /* Two-bit latch driving the "configure adv data + scan rsp before
  * start_advertising" sequence. start_advertising fires only when both
@@ -119,10 +153,25 @@ static bool              s_adv_active;
 #define SCAN_RSP_CONFIG_FLAG  (1 << 1)
 static uint8_t           s_adv_config_done;
 
+/* Optional user-supplied advertising payloads. When *_len is non-zero
+ * we feed *_data straight to the Bluedroid raw configuration API
+ * (esp_ble_gap_config_adv_data_raw / config_scan_rsp_data_raw); the
+ * adv buffer carries the 3-byte Flags AD element we built in install()
+ * followed by the user's bytes. Zero length means "use the default
+ * struct-based path in configure_advertising()". */
+static uint8_t   s_adv_data_buf[3 + BLE_UART_ADV_DATA_MAX];
+static uint8_t   s_adv_data_len;
+static uint8_t   s_scan_rsp_buf[BLE_UART_SCAN_RSP_DATA_MAX];
+static uint8_t   s_scan_rsp_len;
+
 /* Long-write accumulator (Bluedroid doesn't reassemble for us). */
 static uint8_t   s_rx_buf[RX_SCRATCH];
 static uint16_t  s_prep_len;
 static bool      s_prep_bad;
+
+/* Forward declaration so handle_write() / GATT-event handler / GAP-event
+ * handler can fire events before emit_evt's body lower in this file. */
+static void emit_evt(const ble_uart_evt_t *evt);
 
 /* ===== Backend rc → public rc ========================================= */
 
@@ -139,17 +188,26 @@ static int xlate_rc(esp_err_t rc)
 
 /* ===== GATT attribute table =========================================== */
 
-/* Permissions are patched at install time depending on cfg.encrypted. */
+/* Permissions are patched at install time depending on the resolved
+ * security policy. Three permission tiers:
+ *   !link_enc           → plain READ / WRITE (any peer)
+ *    link_enc && !mitm  → ENCRYPTED (Just-Works peer OK; auth bit not required)
+ *    link_enc &&  mitm  → ENC_MITM (only authenticated peers) */
 static esp_gatts_attr_db_t s_nus_db[NUS_IDX_NB];
 
-static void build_attr_table(bool encrypted)
+static void build_attr_table(bool link_enc, bool mitm)
 {
-    const esp_gatt_perm_t r_perm = encrypted
-        ? (ESP_GATT_PERM_READ_ENC_MITM)
-        : (ESP_GATT_PERM_READ);
-    const esp_gatt_perm_t w_perm = encrypted
-        ? (ESP_GATT_PERM_WRITE_ENC_MITM)
-        : (ESP_GATT_PERM_WRITE);
+    esp_gatt_perm_t r_perm, w_perm;
+    if (!link_enc) {
+        r_perm = ESP_GATT_PERM_READ;
+        w_perm = ESP_GATT_PERM_WRITE;
+    } else if (mitm) {
+        r_perm = ESP_GATT_PERM_READ_ENC_MITM;
+        w_perm = ESP_GATT_PERM_WRITE_ENC_MITM;
+    } else {
+        r_perm = ESP_GATT_PERM_READ_ENCRYPTED;
+        w_perm = ESP_GATT_PERM_WRITE_ENCRYPTED;
+    }
 
     /* [SVC] primary service declaration */
     s_nus_db[NUS_IDX_SVC] = (esp_gatts_attr_db_t){
@@ -238,7 +296,7 @@ static void build_attr_table(bool encrypted)
 static esp_ble_adv_data_t s_adv_data = {
     .set_scan_rsp        = false,
     .include_name        = true,
-    .include_txpower     = true,
+    .include_txpower     = false,
     .min_interval        = 0,
     .max_interval        = 0,
     .appearance          = 0x00,
@@ -251,8 +309,9 @@ static esp_ble_adv_data_t s_adv_data = {
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
 
-/* Scan response = 128-bit UART service UUID. Splitting it off the primary payload
- * leaves room for name + tx_pwr in the 31-byte primary. */
+/* Scan response = 128-bit UART service UUID. Splitting it off the primary
+ * payload leaves room for the Complete Local Name in the 31-byte primary
+ * (an 18-byte UUID element + a 9-byte name AD wouldn't fit alongside Flags). */
 static esp_ble_adv_data_t s_scan_rsp_data = {
     .set_scan_rsp        = true,
     .include_name        = false,
@@ -284,6 +343,11 @@ static int start_advertising(void)
 /* Push adv data + scan response. start_advertising is triggered from
  * the matching SET_COMPLETE_EVT once both halves are realised.
  *
+ * Each half independently picks struct-API (default payload) or raw-API
+ * (when the app supplied bytes via cfg). The two SET_COMPLETE event
+ * variants (regular vs. _RAW_) clear the same latch bit, so the GAP
+ * handler doesn't need to know which path we took.
+ *
  * On a sync failure of either config call, the matching SET_COMPLETE_EVT
  * will NEVER fire — so we must wipe the latch entirely (not just clear
  * one bit) to avoid (a) advertising silently lost, or (b) the other
@@ -292,13 +356,23 @@ static int configure_advertising(void)
 {
     s_adv_config_done = ADV_CONFIG_FLAG | SCAN_RSP_CONFIG_FLAG;
 
-    esp_err_t rc = esp_ble_gap_config_adv_data(&s_adv_data);
+    esp_err_t rc;
+    if (s_adv_data_len > 0) {
+        rc = esp_ble_gap_config_adv_data_raw(s_adv_data_buf, s_adv_data_len);
+    } else {
+        rc = esp_ble_gap_config_adv_data(&s_adv_data);
+    }
     if (rc != ESP_OK) {
         ESP_LOGE(TAG, "config_adv_data rc=%s", esp_err_to_name(rc));
         s_adv_config_done = 0;
         return xlate_rc(rc);
     }
-    rc = esp_ble_gap_config_adv_data(&s_scan_rsp_data);
+
+    if (s_scan_rsp_len > 0) {
+        rc = esp_ble_gap_config_scan_rsp_data_raw(s_scan_rsp_buf, s_scan_rsp_len);
+    } else {
+        rc = esp_ble_gap_config_adv_data(&s_scan_rsp_data);
+    }
     if (rc != ESP_OK) {
         ESP_LOGE(TAG, "config_scan_rsp rc=%s", esp_err_to_name(rc));
         /* adv_data is in flight; its SET_COMPLETE_EVT will hit the
@@ -420,8 +494,17 @@ static void handle_write(esp_ble_gatts_cb_param_t *p)
         } else {
             uint16_t cccd = (uint16_t)p->write.value[0]
                           | ((uint16_t)p->write.value[1] << 8);
-            s_subscribed = (cccd & 0x0001) != 0;
-            ESP_LOGI(TAG, "subscribe cccd=0x%04x sub=%d", cccd, s_subscribed);
+            bool sub = (cccd & 0x0001) != 0;
+            ESP_LOGI(TAG, "subscribe cccd=0x%04x sub=%d", cccd, sub);
+            /* Edge-trigger: a redundant CCCD write (same value twice)
+             * shouldn't double-fire SUBSCRIBED. */
+            if (sub != s_subscribed) {
+                s_subscribed = sub;
+                emit_evt(&(ble_uart_evt_t){
+                    .id = BLE_UART_EVT_SUBSCRIBED,
+                    .subscribed = { .subscribed = sub },
+                });
+            }
         }
     }
 
@@ -508,7 +591,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         ESP_LOGI(TAG, "mtu=%u (conn=%u)", s_local_mtu, param->mtu.conn_id);
         break;
 
-    case ESP_GATTS_CONNECT_EVT:
+    case ESP_GATTS_CONNECT_EVT: {
         /* Bluedroid only fires this on a successful physical link;
          * the param struct has no status field. */
         s_conn_id    = param->connect.conn_id;
@@ -521,24 +604,61 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         memcpy(s_remote_bda, param->connect.remote_bda, sizeof(s_remote_bda));
         ESP_LOGI(TAG, "connect conn_id=%u remote " ESP_BD_ADDR_STR,
                  s_conn_id, ESP_BD_ADDR_HEX(s_remote_bda));
-        if (s_cfg.encrypted) {
+        /* esp_bd_addr_t is already MSB-first, matches our public
+         * bytes[] convention — no byte reversal needed. Narrow the
+         * 4-value Bluedroid addr type into our public 2-value enum
+         * (RPA_* collapse onto their underlying public/random type). */
+        ble_uart_evt_t e = { .id = BLE_UART_EVT_CONNECTED };
+        memcpy(e.connected.peer.bytes, param->connect.remote_bda, 6);
+        e.connected.peer.type =
+            (param->connect.ble_addr_type == BLE_ADDR_TYPE_PUBLIC
+             || param->connect.ble_addr_type == BLE_ADDR_TYPE_RPA_PUBLIC)
+            ? BLE_UART_ADDR_TYPE_PUBLIC
+            : BLE_UART_ADDR_TYPE_RANDOM;
+        emit_evt(&e);
+        if (s_link_encrypted) {
             /* Kick pairing immediately rather than lazily on the
-             * first encrypted attribute access. */
-            esp_ble_set_encryption(param->connect.remote_bda,
-                                   ESP_BLE_SEC_ENCRYPT_MITM);
+             * first encrypted attribute access. The security level
+             * tracks the resolved MITM bit so a mitm=OFF peer is
+             * allowed to pair via Just Works. */
+            esp_ble_sec_act_t sec_act = s_mitm_required
+                                        ? ESP_BLE_SEC_ENCRYPT_MITM
+                                        : ESP_BLE_SEC_ENCRYPT_NO_MITM;
+            esp_ble_set_encryption(param->connect.remote_bda, sec_act);
         }
         break;
+    }
 
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(TAG, "disconnect conn_id=%u reason=0x%x",
                  param->disconnect.conn_id, param->disconnect.reason);
+        /* Drop any pending Passkey-Entry / NC reply; pairing was
+         * cancelled along with the link. */
+        s_pending_io_kind = PENDING_IO_NONE;
+        /* Match NimBLE's BLE_GAP_SUBSCRIBE_REASON_TERM behaviour: if
+         * the central was subscribed when the link dropped, synthesize
+         * an "implicit unsubscribe" event before DISCONNECTED so a
+         * strict state-machine consumer can rely on a single rule
+         * ("SUBSCRIBED tracks notification flow") regardless of host
+         * stack. NimBLE does this in ble_gatts.c on TERM; Bluedroid
+         * doesn't, so we do it here. */
+        if (s_subscribed) {
+            s_subscribed = false;
+            emit_evt(&(ble_uart_evt_t){
+                .id = BLE_UART_EVT_SUBSCRIBED,
+                .subscribed = { .subscribed = false },
+            });
+        }
         s_conn_id    = 0xFFFF;
-        s_subscribed = false;
         /* MTU is per-connection: reset to the spec default 23 so the
          * next peer (if it skips the MTU exchange) doesn't inherit
          * the previous link's negotiated value and overflow tx chunks. */
         s_local_mtu  = 23;
         prep_reset();
+        emit_evt(&(ble_uart_evt_t){
+            .id = BLE_UART_EVT_DISCONNECTED,
+            .disconnected = { .reason = (int)param->disconnect.reason },
+        });
         if (!s_shutting_down) {
             start_advertising();
         }
@@ -576,15 +696,23 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
      *   1) drop stale events (latch already zeroed by a sync failure);
      *   2) drop async failures (status != SUCCESS) and wipe the latch
      *      so the other half can't satisfy the "==0 → start_adv" check
-     *      and launch advertising with a malformed payload. */
+     *      and launch advertising with a malformed payload.
+     *
+     * Each side handles two event variants — the regular SET_COMPLETE
+     * (struct API) and the _RAW_ variant (raw-bytes API). They both
+     * clear the same latch bit; only the parameter struct differs. */
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
+    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT: {
         if (!(s_adv_config_done & ADV_CONFIG_FLAG)) {
             ESP_LOGD(TAG, "stale ADV_DATA_SET_COMPLETE_EVT ignored");
             break;
         }
-        if (param->adv_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(TAG, "adv_data set failed status=0x%x",
-                     param->adv_data_cmpl.status);
+        esp_bt_status_t st =
+            (event == ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT)
+                ? param->adv_data_cmpl.status
+                : param->adv_data_raw_cmpl.status;
+        if (st != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(TAG, "adv_data set failed status=0x%x", st);
             s_adv_config_done = 0;
             break;
         }
@@ -593,15 +721,20 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
             start_advertising();
         }
         break;
+    }
 
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+    case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT: {
         if (!(s_adv_config_done & SCAN_RSP_CONFIG_FLAG)) {
             ESP_LOGD(TAG, "stale SCAN_RSP_DATA_SET_COMPLETE_EVT ignored");
             break;
         }
-        if (param->scan_rsp_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(TAG, "scan_rsp set failed status=0x%x",
-                     param->scan_rsp_data_cmpl.status);
+        esp_bt_status_t st =
+            (event == ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT)
+                ? param->scan_rsp_data_cmpl.status
+                : param->scan_rsp_data_raw_cmpl.status;
+        if (st != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(TAG, "scan_rsp set failed status=0x%x", st);
             s_adv_config_done = 0;
             break;
         }
@@ -610,6 +743,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
             start_advertising();
         }
         break;
+    }
 
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
@@ -618,7 +752,20 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
             s_adv_active = false;
             break;
         }
-        ESP_LOGI(TAG, "advertising started");
+        /* With a caller-supplied adv_data the broadcast name is whatever
+         * bytes the caller put in — not necessarily the GAP-service
+         * Device Name. Log each path differently so a misconfigured
+         * payload is easy to spot. (The GAP name itself isn't echoed
+         * here on this backend: Bluedroid swallows the pointer in
+         * REG_EVT and there's no sync getter.) */
+        if (s_adv_data_len > 0 || s_scan_rsp_len > 0) {
+            ESP_LOGI(TAG, "advertising with custom payload "
+                          "(adv=%u B, scan_rsp=%u B)",
+                     (unsigned)s_adv_data_len,
+                     (unsigned)s_scan_rsp_len);
+        } else {
+            ESP_LOGI(TAG, "advertising started");
+        }
         break;
 
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
@@ -626,16 +773,45 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
         ESP_LOGI(TAG, "advertising stopped");
         break;
 
-    case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:
-        show_passkey(param->ble_security.key_notif.passkey);
+    case ESP_GAP_BLE_PASSKEY_NOTIF_EVT: {
+        uint32_t pk = param->ble_security.key_notif.passkey;
+        /* Banner stays for backward compat with log-scraping tests;
+         * on_event is additive. */
+        show_passkey(pk);
+        emit_evt(&(ble_uart_evt_t){
+            .id = BLE_UART_EVT_PASSKEY_DISPLAY,
+            .passkey = { .passkey = pk },
+        });
         break;
+    }
 
     case ESP_GAP_BLE_AUTH_CMPL_EVT: {
         esp_ble_auth_cmpl_t *a = &param->ble_security.auth_cmpl;
+        /* Pairing has resolved one way or the other; clear any pending
+         * Passkey-Entry / NC request so the next pairing starts fresh
+         * and a stale reply from a slow user gets rejected. */
+        s_pending_io_kind = PENDING_IO_NONE;
         if (a->success) {
             ESP_LOGI(TAG, "pairing ok auth_mode=0x%x", a->auth_mode);
+            /* Bluedroid has no `key_size` field on auth_cmpl; we
+             * forced 16 in configure_security() (ESP_BLE_SM_MAX_KEY_SIZE).
+             * Authenticated/bonded come from the negotiated auth_mode
+             * bitfield (ESP_LE_AUTH_BOND=bit0, REQ_MITM=bit2, SC=bit3). */
+            emit_evt(&(ble_uart_evt_t){
+                .id = BLE_UART_EVT_LINK_SECURE,
+                .link_secure = {
+                    .encrypted     = true,
+                    .authenticated = !!(a->auth_mode & ESP_LE_AUTH_REQ_MITM),
+                    .bonded        = !!(a->auth_mode & ESP_LE_AUTH_BOND),
+                    .key_size      = 16,
+                },
+            });
         } else {
             ESP_LOGW(TAG, "pairing failed reason=0x%x", a->fail_reason);
+            emit_evt(&(ble_uart_evt_t){
+                .id = BLE_UART_EVT_PAIRING_FAILED,
+                .pairing_failed = { .reason = (int)a->fail_reason },
+            });
         }
         break;
     }
@@ -649,13 +825,49 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event,
                  param->ble_security.ble_key.key_type);
         break;
 
-    case ESP_GAP_BLE_NC_REQ_EVT:
-        /* Numeric Comparison shouldn't fire with our DisplayOnly IO
-         * (BT Core §2.3.5.1). Reject — accepting would flag the LTK
-         * as MITM-authenticated without any user actually comparing
-         * the digits, silently downgrading the security we asked for. */
-        esp_ble_confirm_reply(param->ble_security.ble_req.bd_addr, false);
+    case ESP_GAP_BLE_PASSKEY_REQ_EVT:
+        /* Central is asking us to enter a passkey it just displayed.
+         * Cache the peer + flavour so ble_uart_passkey_reply() knows
+         * where to inject; the application now owes us a reply. */
+        ESP_LOGI(TAG, "passkey entry requested from " ESP_BD_ADDR_STR,
+                 ESP_BD_ADDR_HEX(param->ble_security.ble_req.bd_addr));
+        memcpy(s_pending_io_bda, param->ble_security.ble_req.bd_addr,
+               sizeof(s_pending_io_bda));
+        s_pending_io_kind = PENDING_IO_PASSKEY;
+        emit_evt(&(ble_uart_evt_t){ .id = BLE_UART_EVT_PASSKEY_REQUEST });
         break;
+
+    case ESP_GAP_BLE_NC_REQ_EVT: {
+        /* Numeric Comparison: both ends should display the same
+         * 6-digit value. We surface it via on_event and wait for the
+         * application to confirm via ble_uart_compare_reply().
+         *
+         * Backstop: with no on_event registered we'd silently hang
+         * the SM until pairing times out. resolve_sec_policy already
+         * rejects that combination at install time (DISPLAY_YES_NO /
+         * KEYBOARD_DISPLAY both require on_event), but a peer can
+         * still trigger NC against an AUTO io_cap that resolved to
+         * DisplayOnly — extremely unlikely in practice (would need
+         * the central to *also* run with DisplayOnly), but if it
+         * does happen we reject the comparison rather than silently
+         * accept and pretend the user verified the digits. */
+        uint32_t cmp = param->ble_security.key_notif.passkey;
+        if (s_cfg.on_event == NULL) {
+            ESP_LOGW(TAG, "NC_REQ but no on_event handler; rejecting");
+            esp_ble_confirm_reply(param->ble_security.ble_req.bd_addr, false);
+            break;
+        }
+        ESP_LOGI(TAG, "numeric compare %06" PRIu32 " from " ESP_BD_ADDR_STR,
+                 cmp, ESP_BD_ADDR_HEX(param->ble_security.ble_req.bd_addr));
+        memcpy(s_pending_io_bda, param->ble_security.ble_req.bd_addr,
+               sizeof(s_pending_io_bda));
+        s_pending_io_kind = PENDING_IO_NUMCMP;
+        emit_evt(&(ble_uart_evt_t){
+            .id = BLE_UART_EVT_NUMERIC_COMPARE,
+            .numeric_compare = { .passkey = cmp },
+        });
+        break;
+    }
 
     default:
         break;
@@ -705,14 +917,307 @@ int ble_uart_tx(const uint8_t *data, size_t len)
 bool ble_uart_is_connected(void)  { return s_conn_id != 0xFFFF; }
 bool ble_uart_is_subscribed(void) { return s_subscribed; }
 
+/* ===== Event dispatch ================================================= */
+
+/* NULL-safe forwarder so each call site stays one-liner. Runs on the
+ * BTC task; emit_evt's caller owns the (typically stack-allocated)
+ * ble_uart_evt_t. */
+static void emit_evt(const ble_uart_evt_t *evt)
+{
+    if (s_cfg.on_event != NULL) {
+        s_cfg.on_event(evt);
+    }
+}
+
+/* ===== Pairing replies ================================================ */
+
+/* Snapshot the pending request, validate against the expected kind,
+ * issue the matching SDK reply, clear pending state. Mirror of the
+ * NimBLE backend's do_pairing_reply. */
+static int do_pairing_reply(pending_io_kind_t expected,
+                            uint32_t passkey,
+                            bool accept)
+{
+    pending_io_kind_t kind = s_pending_io_kind;
+    if (kind == PENDING_IO_NONE || kind != expected) {
+        return BLE_UART_ENOTCONN;
+    }
+
+    /* Snapshot the address; clear pending state up front so a
+     * re-entrant on_event triggered by the SDK reply doesn't see
+     * stale state. (esp_ble_passkey_reply / confirm_reply are
+     * synchronous on Bluedroid.) */
+    esp_bd_addr_t bda;
+    memcpy(bda, s_pending_io_bda, sizeof(bda));
+    s_pending_io_kind = PENDING_IO_NONE;
+
+    esp_err_t rc;
+    if (expected == PENDING_IO_PASSKEY) {
+        rc = esp_ble_passkey_reply(bda, true, passkey);
+    } else { /* PENDING_IO_NUMCMP */
+        rc = esp_ble_confirm_reply(bda, accept);
+    }
+    if (rc != ESP_OK) {
+        ESP_LOGW(TAG, "%s rc=%s",
+                 expected == PENDING_IO_PASSKEY ? "passkey_reply" : "confirm_reply",
+                 esp_err_to_name(rc));
+        return xlate_rc(rc);
+    }
+    return BLE_UART_OK;
+}
+
+int ble_uart_passkey_reply(uint32_t passkey)
+{
+    if (passkey > 999999) {
+        return BLE_UART_EINVAL;
+    }
+    return do_pairing_reply(PENDING_IO_PASSKEY, passkey, false);
+}
+
+int ble_uart_compare_reply(bool match)
+{
+    return do_pairing_reply(PENDING_IO_NUMCMP, 0, match);
+}
+
+/* ===== Bond management ================================================ */
+
+int ble_uart_get_bond_count(size_t *out_count)
+{
+    if (out_count == NULL || !s_installed) {
+        return BLE_UART_EINVAL;
+    }
+    int n = esp_ble_get_bond_device_num();
+    if (n < 0) {
+        ESP_LOGW(TAG, "get_bond_device_num rc=%d", n);
+        return BLE_UART_EFAIL;
+    }
+    *out_count = (size_t)n;
+    return BLE_UART_OK;
+}
+
+int ble_uart_get_bonded_peers(ble_uart_addr_t *out, size_t cap, size_t *out_count)
+{
+    if (out_count == NULL || !s_installed
+        || (out == NULL && cap > 0)) {
+        return BLE_UART_EINVAL;
+    }
+    int total = esp_ble_get_bond_device_num();
+    if (total < 0) {
+        ESP_LOGW(TAG, "get_bond_device_num rc=%d", total);
+        return BLE_UART_EFAIL;
+    }
+    if (total == 0) {
+        *out_count = 0;
+        return BLE_UART_OK;
+    }
+    if (cap == 0) {
+        *out_count = (size_t)total;
+        return BLE_UART_OK;
+    }
+
+    /* esp_ble_get_bond_device_list expects a buffer sized to `total`
+     * (it takes dev_num as in/out — the input must be ≥ actual). Heap
+     * because esp_ble_bond_dev_t is ~80 B per entry. */
+    esp_ble_bond_dev_t *list = calloc((size_t)total, sizeof(*list));
+    if (list == NULL) {
+        return BLE_UART_ENOMEM;
+    }
+    int got = total;
+    esp_err_t rc = esp_ble_get_bond_device_list(&got, list);
+    if (rc != ESP_OK) {
+        ESP_LOGW(TAG, "get_bond_device_list rc=%s", esp_err_to_name(rc));
+        free(list);
+        return xlate_rc(rc);
+    }
+
+    /* Marshal at most `cap` entries; report total count regardless so
+     * a caller with an under-sized buffer learns to retry. */
+    size_t to_copy = ((size_t)got < cap) ? (size_t)got : cap;
+    for (size_t i = 0; i < to_copy; i++) {
+        memcpy(out[i].bytes, list[i].bd_addr, 6);
+        out[i].type =
+            (list[i].bd_addr_type == BLE_ADDR_TYPE_PUBLIC
+             || list[i].bd_addr_type == BLE_ADDR_TYPE_RPA_PUBLIC)
+            ? BLE_UART_ADDR_TYPE_PUBLIC
+            : BLE_UART_ADDR_TYPE_RANDOM;
+    }
+    free(list);
+    *out_count = (size_t)got;
+    return BLE_UART_OK;
+}
+
+int ble_uart_remove_peer(const ble_uart_addr_t *peer)
+{
+    if (peer == NULL || !s_installed) {
+        return BLE_UART_EINVAL;
+    }
+    /* esp_bd_addr_t is uint8_t[6] in MSB-first order, identical to
+     * our public ble_uart_addr_t.bytes — pass through. The address
+     * type is not part of esp_ble_remove_bond_device's contract:
+     * Bluedroid identifies bonds by BD address alone. */
+    esp_bd_addr_t bd;
+    memcpy(bd, peer->bytes, sizeof(bd));
+    esp_err_t rc = esp_ble_remove_bond_device(bd);
+    if (rc != ESP_OK) {
+        ESP_LOGW(TAG, "remove_bond_device rc=%s", esp_err_to_name(rc));
+        return xlate_rc(rc);
+    }
+    return BLE_UART_OK;
+}
+
+int ble_uart_clear_bonds(void)
+{
+    if (!s_installed) {
+        return BLE_UART_EINVAL;
+    }
+    int n = esp_ble_get_bond_device_num();
+    if (n < 0) {
+        ESP_LOGW(TAG, "get_bond_device_num rc=%d", n);
+        return BLE_UART_EFAIL;
+    }
+    if (n == 0) {
+        return BLE_UART_OK;
+    }
+
+    /* Pull the full list once. Removing entries one-by-one inside
+     * the iterator would not be safe — esp_ble_remove_bond_device
+     * mutates the underlying SMP list. Heap-allocate to avoid a
+     * worst-case stack burst (each esp_ble_bond_dev_t is ~80 B). */
+    esp_ble_bond_dev_t *list = calloc((size_t)n, sizeof(*list));
+    if (list == NULL) {
+        return BLE_UART_ENOMEM;
+    }
+    esp_err_t rc = esp_ble_get_bond_device_list(&n, list);
+    if (rc != ESP_OK) {
+        ESP_LOGW(TAG, "get_bond_device_list rc=%s", esp_err_to_name(rc));
+        free(list);
+        return xlate_rc(rc);
+    }
+
+    /* Remove each. Record the first failure but keep going so a
+     * single corrupt entry doesn't strand the rest. */
+    esp_err_t first_err = ESP_OK;
+    for (int i = 0; i < n; i++) {
+        esp_err_t e = esp_ble_remove_bond_device(list[i].bd_addr);
+        if (e != ESP_OK && first_err == ESP_OK) {
+            first_err = e;
+            ESP_LOGW(TAG, "remove_bond_device[%d] rc=%s",
+                     i, esp_err_to_name(e));
+        }
+    }
+    free(list);
+    return first_err == ESP_OK ? BLE_UART_OK : xlate_rc(first_err);
+}
+
 /* ===== Lifecycle ====================================================== */
 
-static int configure_security(bool encrypted)
+/* Resolved view of cfg.encrypted + the per-feature overrides
+ * (cfg.sc / cfg.bonding / cfg.mitm / cfg.io_cap). Computed once in
+ * install() and consumed by configure_security() / build_attr_table(). */
+struct sec_policy {
+    bool sc;
+    bool bonding;
+    bool mitm;
+    bool link_enc;              /* derived: sc || bonding || mitm */
+    esp_ble_io_cap_t   iocap;   /* ESP_IO_CAP_OUT / NONE */
+    esp_ble_auth_req_t auth_req;/* assembled bit-mask, see below */
+};
+
+static int resolve_sec_policy(const ble_uart_config_t *cfg,
+                              struct sec_policy *out)
 {
-    esp_ble_auth_req_t auth_req = encrypted ? ESP_LE_AUTH_REQ_SC_MITM_BOND
-                                            : ESP_LE_AUTH_NO_BOND;
-    esp_ble_io_cap_t   iocap    = encrypted ? ESP_IO_CAP_OUT
-                                            : ESP_IO_CAP_NONE;
+    const ble_uart_security_t *sec = &cfg->security;
+
+    /* Range-check the public enums up front. Accepting (say) a
+     * dangling 99 here would propagate to esp_ble_gap_set_security_param
+     * as garbage and the SM would refuse pairing for non-obvious reasons. */
+    if ((unsigned)sec->sc      > BLE_UART_SEC_ON
+     || (unsigned)sec->bonding > BLE_UART_SEC_ON
+     || (unsigned)sec->mitm    > BLE_UART_SEC_ON
+     || (unsigned)sec->io_cap  > BLE_UART_IO_CAP_KEYBOARD_DISPLAY) {
+        return BLE_UART_EINVAL;
+    }
+
+    /* Input-capable IO caps fire BLE_UART_EVT_PASSKEY_REQUEST or
+     * BLE_UART_EVT_NUMERIC_COMPARE and need an application reply via
+     * ble_uart_passkey_reply / ble_uart_compare_reply. With on_event
+     * NULL the caller would never see the request and pairing would
+     * silently stall until the SM times out — fail synchronously.
+     *
+     * This checks the *configured* io_cap, not the value resolved
+     * below. AUTO and DISPLAY_ONLY are excluded on purpose: AUTO with
+     * mitm=ON becomes DisplayOnly; the central enters the passkey we
+     * generate — no ble_uart_passkey_reply() / compare_reply() needed.
+     * BLE_UART_EVT_PASSKEY_DISPLAY is additive when on_event is set. */
+    if (cfg->on_event == NULL
+        && (sec->io_cap == BLE_UART_IO_CAP_KEYBOARD_ONLY
+         || sec->io_cap == BLE_UART_IO_CAP_DISPLAY_YES_NO
+         || sec->io_cap == BLE_UART_IO_CAP_KEYBOARD_DISPLAY)) {
+        return BLE_UART_EINVAL;
+    }
+
+    /* AUTO inherits the bit from cfg.encrypted; OFF / ON override. */
+    bool preset = cfg->encrypted;
+    out->sc      = (sec->sc      == BLE_UART_SEC_AUTO) ? preset
+                                                       : (sec->sc      == BLE_UART_SEC_ON);
+    out->bonding = (sec->bonding == BLE_UART_SEC_AUTO) ? preset
+                                                       : (sec->bonding == BLE_UART_SEC_ON);
+    out->mitm    = (sec->mitm    == BLE_UART_SEC_AUTO) ? preset
+                                                       : (sec->mitm    == BLE_UART_SEC_ON);
+    /* "Link will be encrypted" iff the SM runs at all — and the SM
+     * runs whenever any of these three bits is set. Pairing-without-
+     * bonding still encrypts the live link with a session LTK. */
+    out->link_enc = out->sc || out->bonding || out->mitm;
+
+    /* IO capability: AUTO picks the minimum that lets the resolved
+     * MITM bit succeed; the explicit values map straight to the
+     * Bluedroid ESP_IO_CAP_* constants used by the SM. */
+    switch (sec->io_cap) {
+    case BLE_UART_IO_CAP_DISPLAY_ONLY:
+        out->iocap = ESP_IO_CAP_OUT;
+        break;
+    case BLE_UART_IO_CAP_NO_INPUT_OUTPUT:
+        out->iocap = ESP_IO_CAP_NONE;
+        break;
+    case BLE_UART_IO_CAP_KEYBOARD_ONLY:
+        out->iocap = ESP_IO_CAP_IN;
+        break;
+    case BLE_UART_IO_CAP_DISPLAY_YES_NO:
+        out->iocap = ESP_IO_CAP_IO;
+        break;
+    case BLE_UART_IO_CAP_KEYBOARD_DISPLAY:
+        out->iocap = ESP_IO_CAP_KBDISP;
+        break;
+    case BLE_UART_IO_CAP_AUTO:
+    default:
+        out->iocap = out->mitm ? ESP_IO_CAP_OUT : ESP_IO_CAP_NONE;
+        break;
+    }
+
+    /* Just Works (NoInputNoOutput) cannot satisfy MITM — the SM
+     * would reject pairing in flight. Catch it synchronously here. */
+    if (out->mitm && out->iocap == ESP_IO_CAP_NONE) {
+        return BLE_UART_EINVAL;
+    }
+
+    /* Bluedroid's auth_req is a bit-mask:
+     *      bit 0 = ESP_LE_AUTH_BOND
+     *      bit 2 = ESP_LE_AUTH_REQ_MITM
+     *      bit 3 = ESP_LE_AUTH_REQ_SC_ONLY
+     * The combined ESP_LE_AUTH_REQ_SC_MITM_BOND etc. constants are
+     * just convenience names for those bit unions — assembling from
+     * the individual flags here mirrors any combination cleanly. */
+    out->auth_req = (esp_ble_auth_req_t)(
+          (out->bonding ? ESP_LE_AUTH_BOND        : 0)
+        | (out->mitm    ? ESP_LE_AUTH_REQ_MITM    : 0)
+        | (out->sc      ? ESP_LE_AUTH_REQ_SC_ONLY : 0));
+    return BLE_UART_OK;
+}
+
+static int configure_security(const struct sec_policy *pol)
+{
+    esp_ble_auth_req_t auth_req = pol->auth_req;
+    esp_ble_io_cap_t   iocap    = pol->iocap;
     uint8_t key_size = 16;
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
     uint8_t rsp_key  = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;
@@ -753,6 +1258,83 @@ int ble_uart_install(const ble_uart_config_t *cfg)
     } else {
         memset(&s_cfg, 0, sizeof(s_cfg));
     }
+
+    /* Validate device_name length up front. Beyond
+     * BLE_UART_DEVICE_NAME_MAX the default-path advertising would
+     * silently fail at config_adv_data time; surfacing the error here
+     * is much friendlier. strnlen with cap+1 also stops a missing-NUL
+     * caller buffer from running into uninitialised memory. */
+    if (s_cfg.device_name != NULL) {
+        size_t nlen = strnlen(s_cfg.device_name, BLE_UART_DEVICE_NAME_MAX + 1);
+        if (nlen > BLE_UART_DEVICE_NAME_MAX) {
+            ESP_LOGE(TAG, "device_name too long: > %u bytes",
+                     (unsigned)BLE_UART_DEVICE_NAME_MAX);
+            memset(&s_cfg, 0, sizeof(s_cfg));
+            return BLE_UART_EINVAL;
+        }
+    }
+
+    /* Validate caller-supplied advertising payloads up front so an
+     * oversized buffer fails the install instead of corrupting the
+     * adv packet at start time (where errors only surface in logs).
+     * (NULL + len>0 is also rejected — almost always a caller bug.) */
+    if (s_cfg.adv_data_len > BLE_UART_ADV_DATA_MAX
+        || (s_cfg.adv_data == NULL && s_cfg.adv_data_len > 0)) {
+        ESP_LOGE(TAG, "bad adv_data: ptr=%p len=%u (max=%u)",
+                 s_cfg.adv_data,
+                 (unsigned)s_cfg.adv_data_len,
+                 (unsigned)BLE_UART_ADV_DATA_MAX);
+        memset(&s_cfg, 0, sizeof(s_cfg));
+        return BLE_UART_EINVAL;
+    }
+    if (s_cfg.scan_rsp_data_len > BLE_UART_SCAN_RSP_DATA_MAX
+        || (s_cfg.scan_rsp_data == NULL && s_cfg.scan_rsp_data_len > 0)) {
+        ESP_LOGE(TAG, "bad scan_rsp_data: ptr=%p len=%u (max=%u)",
+                 s_cfg.scan_rsp_data,
+                 (unsigned)s_cfg.scan_rsp_data_len,
+                 (unsigned)BLE_UART_SCAN_RSP_DATA_MAX);
+        memset(&s_cfg, 0, sizeof(s_cfg));
+        return BLE_UART_EINVAL;
+    }
+
+    /* Resolve cfg.encrypted + per-feature overrides into a flat
+     * policy. Validation (out-of-range enums + impossible MITM/IO
+     * combination) happens up front so install() rejects bad cfgs
+     * synchronously, before any host-stack resources are allocated. */
+    struct sec_policy pol;
+    int srv = resolve_sec_policy(&s_cfg, &pol);
+    if (srv != BLE_UART_OK) {
+        ESP_LOGE(TAG, "bad security cfg: encrypted=%d sc=%d bonding=%d "
+                      "mitm=%d io_cap=%d",
+                 (int)s_cfg.encrypted,
+                 (int)s_cfg.security.sc,      (int)s_cfg.security.bonding,
+                 (int)s_cfg.security.mitm,    (int)s_cfg.security.io_cap);
+        memset(&s_cfg, 0, sizeof(s_cfg));
+        return srv;
+    }
+    s_link_encrypted = pol.link_enc;
+    s_mitm_required  = pol.mitm;
+
+    /* Copy raw payloads now (caller's pointers may not outlive install).
+     * For adv_data we also prepend the 3-byte Flags AD ourselves —
+     * the controller-visible Flags element is library-controlled and
+     * not part of what the application owns. */
+    s_adv_data_len = 0;
+    s_scan_rsp_len = 0;
+    if (s_cfg.adv_data != NULL && s_cfg.adv_data_len > 0) {
+        s_adv_data_buf[0] = 0x02;   /* AD length */
+        s_adv_data_buf[1] = 0x01;   /* AD type:  Flags */
+        s_adv_data_buf[2] = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT;
+        memcpy(s_adv_data_buf + 3, s_cfg.adv_data, s_cfg.adv_data_len);
+        s_adv_data_len = (uint8_t)(3 + s_cfg.adv_data_len);
+    }
+    if (s_cfg.scan_rsp_data != NULL && s_cfg.scan_rsp_data_len > 0) {
+        memcpy(s_scan_rsp_buf, s_cfg.scan_rsp_data, s_cfg.scan_rsp_data_len);
+        s_scan_rsp_len = (uint8_t)s_cfg.scan_rsp_data_len;
+    }
+    /* Drop the pointers — install must not retain caller buffers. */
+    s_cfg.adv_data      = NULL;
+    s_cfg.scan_rsp_data = NULL;
 
     /* Free BR/EDR controller RAM we won't use (no-op on BLE-only chips). */
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
@@ -813,7 +1395,7 @@ int ble_uart_install(const ble_uart_config_t *cfg)
 
     /* SM must be configured before app_register so any incoming
      * pairing request finds the right policy. */
-    int srv = configure_security(s_cfg.encrypted);
+    srv = configure_security(&pol);
     if (srv != BLE_UART_OK) {
         ESP_LOGE(TAG, "security config failed rc=%d", srv);
         rc = ESP_FAIL;
@@ -830,7 +1412,7 @@ int ble_uart_install(const ble_uart_config_t *cfg)
                  esp_err_to_name(rc));
     }
 
-    build_attr_table(s_cfg.encrypted);
+    build_attr_table(s_link_encrypted, s_mitm_required);
 
     rc = esp_ble_gatts_app_register(UART_APP_ID);
     if (rc != ESP_OK) {
@@ -908,7 +1490,11 @@ int ble_uart_open(void)
     return BLE_UART_OK;
 }
 
-int ble_uart_close(void)
+/* Body of ble_uart_close(); also called directly by the close-async
+ * worker, which has already latched s_closing itself. The public
+ * wrapper below uses s_closing to reject a sync close that races
+ * with an in-flight async close. */
+static int do_close(void)
 {
     if (!s_opened) {
         return BLE_UART_EALREADY;
@@ -951,10 +1537,91 @@ int ble_uart_close(void)
     return BLE_UART_OK;
 }
 
+int ble_uart_close(void)
+{
+    /* If a ble_uart_close_async() worker is in flight, the close
+     * sequence is already running on the worker's task — let it
+     * finish rather than racing it from here. The worker drives
+     * s_opened to false on its own, so the next sync close after
+     * the worker drains will get the natural !s_opened EALREADY. */
+    if (s_closing) {
+        return BLE_UART_EALREADY;
+    }
+    return do_close();
+}
+
+/* ===== Async close ==================================================== */
+
+/* Background worker spawned by ble_uart_close_async(). Lives just
+ * long enough to run the synchronous close path (which blocks up to
+ * 500 ms waiting for DISCONNECT_EVT), then fires the completion event
+ * and self-deletes. Spawned as a separate task so on_event handlers
+ * running on the BTC task aren't pinned by the disconnect wait. */
+static void close_async_task(void *arg)
+{
+    (void)arg;
+
+    /* Bypass the s_closing gate in ble_uart_close(): we ARE the
+     * in-flight async close that gate is meant to protect against. */
+    int rc = do_close();
+    if (rc != BLE_UART_OK && rc != BLE_UART_EALREADY) {
+        ESP_LOGW(TAG, "close_async: do_close rc=%d", rc);
+    }
+
+    /* Deliver CLOSED on the worker task. Applications must defer
+     * ble_uart_uninstall() to another task (PORTING.md §5.3.2).
+     * Concurrent uninstall() may clear s_cfg while we read on_event. */
+    emit_evt(&(ble_uart_evt_t){
+        .id = BLE_UART_EVT_CLOSED,
+        .closed = { .status = rc },
+    });
+
+    s_closing = false;
+    vTaskDelete(NULL);
+}
+
+int ble_uart_close_async(void)
+{
+    /* Same-state checks as the synchronous variant: nothing to close
+     * if we never opened, and no point spawning a second worker if
+     * the first hasn't drained yet. */
+    if (!s_opened || s_closing) {
+        return BLE_UART_EALREADY;
+    }
+
+    /* Latch BEFORE spawning so a racing caller (different task) sees
+     * the in-flight state immediately and gets EALREADY. */
+    s_closing = true;
+
+    /* 3 KB is comfortably more than the close path uses (a couple of
+     * GAP API calls + a 50×10ms vTaskDelay loop); bump if you wedge
+     * a heavy on_event handler between adv_stop and CLOSED. */
+    BaseType_t ok = xTaskCreate(close_async_task, "ble_close",
+                                3072, NULL,
+                                tskIDLE_PRIORITY + 2, NULL);
+    if (ok != pdPASS) {
+        s_closing = false;
+        return BLE_UART_ENOMEM;
+    }
+    return BLE_UART_OK;
+}
+
 int ble_uart_uninstall(void)
 {
     if (!s_installed) {
         return BLE_UART_EALREADY;
+    }
+
+    /* If a ble_uart_close_async() worker is still draining, poll s_closing
+     * for up to ~5 s before touching shared state. On timeout, teardown
+     * continues anyway — applications must follow PORTING.md §5.3.2 so
+     * uninstall runs only after the worker has finished. */
+    for (int i = 0; i < 500 && s_closing; i++) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    if (s_closing) {
+        ESP_LOGW(TAG, "uninstall: close_async worker still running, "
+                      "tearing down anyway");
     }
 
     /* Best-effort cleanup. We MUST NOT early-return on a per-step
@@ -962,21 +1629,23 @@ int ble_uart_uninstall(void)
      * some half-torn-down state, blocking both re-install and retry.
      * Mirror the install() goto-fail philosophy: record the first
      * error, keep tearing down, and always wipe our state. */
-    esp_err_t first_err = ESP_OK;
+    int first_rc = BLE_UART_OK;
 
     if (s_opened) {
         int rc = ble_uart_close();
         if (rc != BLE_UART_OK && rc != BLE_UART_EALREADY) {
             ESP_LOGE(TAG, "ble_uart_close rc=%d", rc);
-            if (first_err == ESP_OK) first_err = rc;
+            if (first_rc == BLE_UART_OK) {
+                first_rc = rc;
+            }
         }
     }
 
     if (s_gatts_if != ESP_GATT_IF_NONE) {
         esp_err_t rc = esp_ble_gatts_app_unregister(s_gatts_if);
-        if (rc != ESP_OK && first_err == ESP_OK) {
+        if (rc != ESP_OK && first_rc == BLE_UART_OK) {
             ESP_LOGE(TAG, "gatts_app_unregister rc=%s", esp_err_to_name(rc));
-            first_err = rc;
+            first_rc = xlate_rc(rc);
         }
         s_gatts_if = ESP_GATT_IF_NONE;
     }
@@ -984,22 +1653,30 @@ int ble_uart_uninstall(void)
     esp_err_t rc = esp_bluedroid_disable();
     if (rc != ESP_OK) {
         ESP_LOGE(TAG, "bluedroid_disable rc=%s", esp_err_to_name(rc));
-        if (first_err == ESP_OK) first_err = rc;
+        if (first_rc == BLE_UART_OK) {
+            first_rc = xlate_rc(rc);
+        }
     }
     rc = esp_bluedroid_deinit();
     if (rc != ESP_OK) {
         ESP_LOGE(TAG, "bluedroid_deinit rc=%s", esp_err_to_name(rc));
-        if (first_err == ESP_OK) first_err = rc;
+        if (first_rc == BLE_UART_OK) {
+            first_rc = xlate_rc(rc);
+        }
     }
     rc = esp_bt_controller_disable();
     if (rc != ESP_OK) {
         ESP_LOGE(TAG, "controller_disable rc=%s", esp_err_to_name(rc));
-        if (first_err == ESP_OK) first_err = rc;
+        if (first_rc == BLE_UART_OK) {
+            first_rc = xlate_rc(rc);
+        }
     }
     rc = esp_bt_controller_deinit();
     if (rc != ESP_OK) {
         ESP_LOGE(TAG, "controller_deinit rc=%s", esp_err_to_name(rc));
-        if (first_err == ESP_OK) first_err = rc;
+        if (first_rc == BLE_UART_OK) {
+            first_rc = xlate_rc(rc);
+        }
     }
 
     /* Wipe state unconditionally, even on partial failure. */
@@ -1012,11 +1689,18 @@ int ble_uart_uninstall(void)
     s_installed       = false;
     s_opened          = false;
     s_shutting_down   = false;
+    s_closing         = false;
     s_attr_tab_ready  = false;
     s_adv_active      = false;
     s_adv_config_done = 0;
+    s_adv_data_len    = 0;
+    s_scan_rsp_len    = 0;
+    s_link_encrypted  = false;
+    s_mitm_required   = false;
+    s_pending_io_kind = PENDING_IO_NONE;
+    memset(s_pending_io_bda, 0, sizeof(s_pending_io_bda));
     prep_reset();
-    return first_err == ESP_OK ? BLE_UART_OK : xlate_rc(first_err);
+    return first_rc;
 }
 
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */

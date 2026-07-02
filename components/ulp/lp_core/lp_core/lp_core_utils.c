@@ -25,8 +25,22 @@
 
 #include "esp_cpu.h"
 #include "ulp_lp_core_cpu_freq_shared.h"
+#include "ulp_lp_core_lp_uart_shared.h"
+#include "ulp_lp_core_uart.h"
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+#include "hal/lp_aon_hal.h"
+#include "rom/rtc.h"
+#endif
 
 static uint32_t lp_wakeup_cause = 0;
+
+#if SOC_ULP_LP_UART_SUPPORTED
+void ulp_lp_core_lp_uart_reset_wakeup_en(void)
+{
+    lp_core_ll_enable_lp_uart_wakeup(false);
+    lp_core_ll_enable_lp_uart_wakeup(true);
+}
+#endif
 
 void ulp_lp_core_update_wakeup_cause(void)
 {
@@ -42,6 +56,13 @@ void ulp_lp_core_update_wakeup_cause(void)
             && (uart_ll_get_intraw_mask(&LP_UART) & LP_UART_WAKEUP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_UART;
         uart_ll_clr_intsts_mask(&LP_UART, LP_UART_WAKEUP_INT_CLR);
+#if SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
+        // In these chips, the LP UART wakeup source is kept triggered, so we need to
+        // reset the wakeup register and flush the UART buffer manually after waking up.
+        lp_core_uart_tx_flush(LP_UART_NUM_0);
+        lp_core_uart_clear_buf();
+        ulp_lp_core_lp_uart_reset_wakeup_en();
+#endif
     }
 #endif
 
@@ -133,18 +154,22 @@ void ulp_lp_core_delay_cycles(uint32_t cycles)
     }
 }
 
-#if SOC_ULP_LP_UART_SUPPORTED
-
-void ulp_lp_core_lp_uart_reset_wakeup_en(void)
+void ulp_lp_core_sleep_start_lp_core(void)
 {
-    lp_core_ll_enable_lp_uart_wakeup(false);
-    lp_core_ll_enable_lp_uart_wakeup(true);
-}
+#if SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE
+    /* LP store register to save wakeup cause for HP core to query.
+     * Using a hardware register avoids symbol linking issues between
+     * the independently compiled HP and LP core binaries.
+     * Save PMU wakeup cause to LP store register for HP core to query */
+    lp_aon_hal_store_wakeup_cause(pmu_ll_hp_get_wakeup_cause(&PMU));
 #endif
+
+    lp_core_ll_request_sleep();
+}
 
 void ulp_lp_core_halt(void)
 {
-    lp_core_ll_request_sleep();
+    ulp_lp_core_sleep_start_lp_core();
 
     while (1);
 }
@@ -153,7 +178,7 @@ void ulp_lp_core_stop_lp_core(void)
 {
     /* Disable wake-up source and put lp core to sleep */
     lp_core_ll_set_wakeup_source(0);
-    lp_core_ll_request_sleep();
+    ulp_lp_core_sleep_start_lp_core();
 }
 
 void __attribute__((noreturn)) abort(void)

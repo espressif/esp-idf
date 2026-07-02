@@ -411,22 +411,31 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         err = esp_http_client_perform(https_ota_handle->http_client);
         if (err == ESP_OK) {
             int status = esp_http_client_get_status_code(https_ota_handle->http_client);
-            if (status != HttpStatus_Ok) {
-                // If server doesn't support HEAD request, we need to get image length from GET request
-                // using Range header
+            if (status == HttpStatus_Ok) {
+                https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
+            } else if (status == HttpStatus_NotModified) {
+                // No new image to download; report it from the HEAD response instead of issuing a redundant GET
+                err = ESP_ERR_HTTP_NOT_MODIFIED;
+                goto http_cleanup;
+            } else {
+                // HEAD not usable (e.g. 405/501, or 403 for GET-signed URLs); fall back to a ranged GET
+                ESP_LOGD(TAG, "HEAD request returned status %d, falling back to ranged GET", status);
                 esp_http_client_set_header(https_ota_handle->http_client, "Range", "bytes=0-0");
                 esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
 
                 err = esp_http_client_perform(https_ota_handle->http_client);
-                if (err == ESP_OK) {
-                    status = esp_http_client_get_status_code(https_ota_handle->http_client);
-                    if (status != HttpStatus_Ok && status != HttpStatus_PartialContent) {
-                        ESP_LOGE(TAG, "Received incorrect http status %d", status);
-                        err = ESP_FAIL;
-                        goto http_cleanup;
-                    }
-                } else {
+                if (err != ESP_OK) {
                     ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);
+                    goto http_cleanup;
+                }
+                status = esp_http_client_get_status_code(https_ota_handle->http_client);
+                err = _http_handle_response_code(https_ota_handle, status);
+                if (err != ESP_OK) {
+                    goto http_cleanup;
+                }
+                if (status != HttpStatus_Ok && status != HttpStatus_PartialContent) {
+                    ESP_LOGE(TAG, "Received incorrect http status %d", status);
+                    err = ESP_FAIL;
                     goto http_cleanup;
                 }
                 esp_http_client_set_header(https_ota_handle->http_client, "Range", NULL);
@@ -438,8 +447,6 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
                     // If server responds with 206 Partial Content, we can get image length from content-range header
                     https_ota_handle->image_length = esp_http_client_get_content_range(https_ota_handle->http_client);
                 }
-            } else {
-                https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
             }
         } else {
             ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);

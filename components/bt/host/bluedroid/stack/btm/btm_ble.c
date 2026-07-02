@@ -736,7 +736,7 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
 **               p_cmd_cmpl_cback - Command Complete callback
 **
 *******************************************************************************/
-void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
 
@@ -758,7 +758,7 @@ void BTM_BleReceiverTest(UINT8 rx_freq, tBTM_CMPL_CB *p_cmd_cmpl_cback)
 **
 *******************************************************************************/
 void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
-                            UINT8 packet_payload, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+                            UINT8 packet_payload, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
     if (btsnd_hcic_ble_transmitter_test(tx_freq, test_data_len, packet_payload) == FALSE) {
@@ -776,7 +776,7 @@ void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
 ** Parameter       p_cmd_cmpl_cback - Command complete callback
 **
 *******************************************************************************/
-void BTM_BleTestEnd(tBTM_CMPL_CB *p_cmd_cmpl_cback)
+void BTM_BleTestEnd(tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
 
@@ -788,14 +788,14 @@ void BTM_BleTestEnd(tBTM_CMPL_CB *p_cmd_cmpl_cback)
 /*******************************************************************************
 ** Internal Functions
 *******************************************************************************/
-void btm_ble_test_command_complete(UINT8 *p)
+void btm_ble_test_command_complete(UINT8 *p, UINT16 len)
 {
-    tBTM_CMPL_CB   *p_cb = btm_cb.devcb.p_le_test_cmd_cmpl_cb;
+    tBTM_DTM_CMD_CMPL_CBACK *p_cb = btm_cb.devcb.p_le_test_cmd_cmpl_cb;
 
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = NULL;
 
     if (p_cb) {
-        (*p_cb)(p);
+        (*p_cb)(p, len);
     }
 }
 #endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
@@ -813,7 +813,7 @@ void btm_ble_test_command_complete(UINT8 *p)
 **                 p_cmd_cmpl_cback - Command Complete callback
 **
 *******************************************************************************/
-void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_index, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
 
@@ -836,7 +836,7 @@ void BTM_BleEnhancedReceiverTest(UINT8 rx_freq, UINT8 phy, UINT8 modulation_inde
 **
 *******************************************************************************/
 void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
-                            UINT8 packet_payload, UINT8 phy, tBTM_CMPL_CB *p_cmd_cmpl_cback)
+                            UINT8 packet_payload, UINT8 phy, tBTM_DTM_CMD_CMPL_CBACK *p_cmd_cmpl_cback)
 {
     btm_cb.devcb.p_le_test_cmd_cmpl_cb = p_cmd_cmpl_cback;
     if (btsnd_hcic_ble_enhand_tx_test(tx_freq, test_data_len, packet_payload, phy) == FALSE) {
@@ -1846,6 +1846,81 @@ UINT8 btm_ble_br_keys_req(tBTM_SEC_DEV_REC *p_dev_rec, tBTM_LE_IO_REQ *p_data)
 #endif  ///SMP_INCLUDED
 
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_adjust_conn_addr_for_ext_adv
+**
+** Description      Rewrite p_acl->conn_addr / conn_addr_type from the
+**                  per-set state in extend_adv_cb.inst[] for the ext-adv
+**                  instance that produced this connection.
+**
+**                  The defaults written by btm_acl_created() and
+**                  btm_ble_refresh_local_resolvable_private_addr() come
+**                  from the global addr_mgnt_cb single slot, which in
+**                  multi-ADV may not reflect the policy actually used on
+**                  air for THIS connection and causes SMP c1 / f5 / f6
+**                  to compute the wrong local address (pair fail 0x04).
+**
+**                  RPA paths (own_addr_type 0x02, or 0x03 with a valid
+**                  local RPA in the LE Enhanced Connection Complete event)
+**                  are left untouched. For 0x03 when the controller falls
+**                  back to per-set identity (zero local_rpa), replace the
+**                  global private_addr written by
+**                  btm_ble_refresh_local_resolvable_private_addr().
+**
+**                  No-op when no ext-adv instance matches the handle
+**                  (initiator role or legacy adv).
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_adjust_conn_addr_for_ext_adv(UINT16 handle)
+{
+    UINT8 inst;
+    tACL_CONN *p_acl;
+    tBLE_ADDR_TYPE on_air_type;
+
+    inst = BTM_BleGetExtAdvInstByConHandle(handle);
+    if (inst >= MAX_BLE_ADV_INSTANCE) {
+        return;
+    }
+
+    p_acl = btm_handle_to_acl(handle);
+    if (p_acl == NULL) {
+        BTM_TRACE_WARNING("%s: no ACL for handle 0x%04x, skip", __func__, handle);
+        return;
+    }
+
+    on_air_type = extend_adv_cb.inst[inst].own_addr_type;
+    if (on_air_type == BLE_ADDR_PUBLIC) {
+        p_acl->conn_addr_type = BLE_ADDR_PUBLIC;
+        memcpy(p_acl->conn_addr,
+               controller_get_interface()->get_address()->address,
+               BD_ADDR_LEN);
+    } else if (on_air_type == BLE_ADDR_RANDOM &&
+               extend_adv_cb.inst[inst].rand_addr_set) {
+        p_acl->conn_addr_type = BLE_ADDR_RANDOM;
+        memcpy(p_acl->conn_addr,
+               extend_adv_cb.inst[inst].rand_addr,
+               BD_ADDR_LEN);
+    } else if (on_air_type == BLE_ADDR_RANDOM_ID &&
+               extend_adv_cb.inst[inst].rand_addr_set &&
+               !BTM_BLE_IS_RESOLVE_BDA(p_acl->conn_addr)) {
+        /* Identity fallback: controller used per-set static random, not RPA. */
+        p_acl->conn_addr_type = BLE_ADDR_RANDOM;
+        memcpy(p_acl->conn_addr,
+               extend_adv_cb.inst[inst].rand_addr,
+               BD_ADDR_LEN);
+    }
+
+    BTM_TRACE_DEBUG("%s: handle=0x%04x inst=%u type=%u addr=%02x:%02x:%02x:%02x:%02x:%02x",
+                    __func__, handle, inst, p_acl->conn_addr_type,
+                    p_acl->conn_addr[0], p_acl->conn_addr[1], p_acl->conn_addr[2],
+                    p_acl->conn_addr[3], p_acl->conn_addr[4], p_acl->conn_addr[5]);
+}
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
+
 #if (BLE_PRIVACY_SPT == TRUE )
 /*******************************************************************************
 **
@@ -1903,6 +1978,11 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
 
     l2cble_conn_comp (handle, role, bda, bda_type, conn_interval,
                       conn_latency, conn_timeout);
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+    /* Multi-ADV: fix up p_acl->conn_addr / conn_addr_type from per-set state. */
+    btm_ble_adjust_conn_addr_for_ext_adv(handle);
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
 
     return;
 }
@@ -2067,6 +2147,12 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
                 }
             }
 #endif
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+            /* Multi-ADV: must run AFTER the global-addr_mgnt_cb defaults above
+             * so per-set state wins for connections produced by an ext-adv set. */
+            btm_ble_adjust_conn_addr_for_ext_adv(handle);
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
         }
     } else {
         role = HCI_ROLE_UNKNOWN;
@@ -2903,26 +2989,47 @@ uint8_t btm_ble_scan_active_count(void)
     return count;
 }
 
+#if (BLE_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
+extern bool btc_config_has_section(const char *section);
+#endif
+
 uint8_t btm_ble_sec_dev_record_count(void)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
     list_node_t *p_node = NULL;
     uint8_t count = 0;
 
-    /* First look for the non-paired devices for the oldest entry */
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev_rec = list_node(p_node);
+#if (SMP_INCLUDED == TRUE)
         if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE) && (p_dev_rec->ble.key_type != BTM_LE_KEY_NONE)) {
-            BTM_TRACE_DEBUG("%s BLE security device #%d: bd_addr=%02X:%02X:%02X:%02X:%02X:%02X",
+#else
+        if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE)) {
+#endif
+#if (SMP_INCLUDED == TRUE)
+            /* Check if device exists in NVS */
+            char bdstr[18] = {0};
+            bdaddr_to_string((bt_bdaddr_t *)p_dev_rec->bd_addr, bdstr, sizeof(bdstr));
+
+            BTM_TRACE_WARNING("%s device #%d: "MACSTR", key_type=0x%02x (PENC:%d PID:%d PCSRK:%d LENC:%d LID:%d LCSRK:%d), in_nvs=%d",
                             __func__,
                             count,
-                            p_dev_rec->bd_addr[0],
-                            p_dev_rec->bd_addr[1],
-                            p_dev_rec->bd_addr[2],
-                            p_dev_rec->bd_addr[3],
-                            p_dev_rec->bd_addr[4],
-                            p_dev_rec->bd_addr[5]);
+                            MAC2STR(p_dev_rec->bd_addr),
+                            p_dev_rec->ble.key_type,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_PENC) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_PID) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_PCSRK) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_LENC) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_LID) ? 1 : 0,
+                            (p_dev_rec->ble.key_type & BTM_LE_KEY_LCSRK) ? 1 : 0,
+                            btc_config_has_section(bdstr));
+#else
+            BTM_TRACE_WARNING("%s device #%d: "MACSTR,
+                            __func__,
+                            count,
+                            MAC2STR(p_dev_rec->bd_addr));
+#endif
             count++;
         }
     }

@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +15,9 @@ extern "C" {
 #include "esp_err.h"
 #include "hal/adc_types.h"
 #include "esp_adc/adc_oneshot.h"
+#if SOC_LP_ADC_SUPPORTED
+#include "soc/lp_adc_struct.h"
+#endif
 
 /**
  * @brief LP ADC channel configurations
@@ -107,6 +111,23 @@ esp_err_t lp_core_lp_adc_read_channel_raw(adc_unit_t unit_id, adc_channel_t chan
  *         ESP_FAIL if the read fails
  */
 esp_err_t lp_core_lp_adc_read_channel_converted(adc_unit_t unit_id, adc_channel_t channel, int *voltage_mv);
+
+#if SOC_LP_ADC_SUPPORTED
+/**
+ * @brief Enable or disable the LP ADC conversion-done interrupt to the LP CPU (LP_ADC int_ena cocpu_saradc1/2_int_ena).
+ *
+ * @param unit_id  ADC unit (ADC_UNIT_1 / ADC_UNIT_2)
+ * @param enable   true to enable, false to disable
+ */
+static inline void ulp_lp_core_lp_adc_intr_enable(adc_unit_t unit_id, bool enable)
+{
+    if (unit_id == ADC_UNIT_1) {
+        LP_ADC.int_ena.cocpu_saradc1_int_ena = enable;
+    } else if (unit_id == ADC_UNIT_2) {
+        LP_ADC.int_ena.cocpu_saradc2_int_ena = enable;
+    }
+}
+#endif /* SOC_LP_ADC_SUPPORTED */
 
 #ifdef __cplusplus
 }

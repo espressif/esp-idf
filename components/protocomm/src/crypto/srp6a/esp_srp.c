@@ -636,6 +636,7 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
 
     char *bytes_S;
     int len_S;
+    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
 
     u = vu = avu = S = NULL;
     bytes_S = NULL;
@@ -677,6 +678,11 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
     if (! u) {
         goto error;
     }
+    if (esp_mpi_cmp_int(u, 0) == 0) {
+        ESP_LOGE(TAG, "Rejected SRP scrambling parameter: u == 0 (RFC 5054 Section 2.5.3)");
+        ret = ESP_ERR_INVALID_ARG;
+        goto error;
+    }
     hexdump_mpi("u", u);
 
     /* S = (A v^u)^b */
@@ -698,7 +704,6 @@ esp_err_t esp_srp_get_session_key(esp_srp_handle_t *hd, char *bytes_A, int len_A
         goto error;
     }
 
-    psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
     psa_status_t status = psa_hash_setup(&hash_op, PSA_ALG_SHA_512);
     ESP_GOTO_ON_FALSE(status == PSA_SUCCESS, ESP_FAIL, error, TAG, "Failed to setup hash operation: %d", status);
     psa_hash_update(&hash_op, (unsigned char *)bytes_S, len_S);

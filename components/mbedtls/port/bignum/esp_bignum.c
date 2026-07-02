@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2026 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -134,6 +134,7 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
     mbedtls_mpi_init(&RR);
     MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&RR, num_bits * 2, 1));
     MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(Rinv, &RR, M));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_shrink(Rinv, num_words));
 
 cleanup:
     mbedtls_mpi_free(&RR);
@@ -359,12 +360,44 @@ cleanup2:
 static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
 {
     int ret = 0;
+    mbedtls_mpi X_temp;
+    const mbedtls_mpi *X_ptr = X;
 
     mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
     mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) otherwise &RR_new */
     mbedtls_mpi_uint Mprime;
 
-    size_t x_words = mpi_words(X);
+    mbedtls_mpi_init(&X_temp);
+    mbedtls_mpi_init(&Rinv_new);
+
+    /* Validate modulus M and exponent Y first to avoid passing invalid inputs to reduction */
+    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->MBEDTLS_PRIVATE(p[0]) & 1) == 0) {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if (mbedtls_mpi_cmp_int(Y, 0) < 0) {
+        ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+        goto cleanup;
+    }
+
+    if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
+        ret = mbedtls_mpi_lset(Z, 1);
+        goto cleanup;
+    }
+
+    /* Perform base reduction if absolute value of base X is larger than modulus M */
+    if (mbedtls_mpi_cmp_abs(X, M) >= 0) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&X_temp, X));
+        X_temp.MBEDTLS_PRIVATE(s) = 1;
+        MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(&X_temp, &X_temp, M));
+        if (mbedtls_mpi_cmp_int(&X_temp, 0) != 0) {
+            X_temp.MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s);
+        }
+        X_ptr = &X_temp;
+    }
+
+    size_t x_words = mpi_words(X_ptr);
     size_t y_words = mpi_words(Y);
     size_t m_words = mpi_words(M);
 
@@ -374,30 +407,21 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     size_t num_words = mpi_hal_calc_hardware_words(MAX(m_words, MAX(x_words, y_words)));
 
     if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
-        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
-    }
-
-    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->MBEDTLS_PRIVATE(p[0]) & 1) == 0) {
-        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
-    }
-
-    if (mbedtls_mpi_cmp_int(Y, 0) < 0) {
-        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
-    }
-
-    if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
-        return mbedtls_mpi_lset(Z, 1);
+        ret = MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+        goto cleanup;
     }
 
     /* Determine RR pointer, either _RR for cached value
        or local RR_new */
     if (_Rinv == NULL) {
-        mbedtls_mpi_init(&Rinv_new);
         Rinv = &Rinv_new;
     } else {
         Rinv = _Rinv;
     }
-    if (Rinv->MBEDTLS_PRIVATE(p) == NULL) {
+    /* Rinv depends on num_words, which may vary with blinded exponents.
+       calculate_rinv() stores Rinv with exactly num_words limbs, so the
+       allocation size is used here as the cache tag. */
+    if (Rinv->MBEDTLS_PRIVATE(p) == NULL || Rinv->MBEDTLS_PRIVATE(n) != num_words) {
         MBEDTLS_MPI_CHK(calculate_rinv(Rinv, M, num_words));
     }
 
@@ -405,7 +429,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 
     // Montgomery exponentiation: Z = X ^ Y mod M  (HAC 14.94)
 #ifdef ESP_MPI_USE_MONT_EXP
-    ret = mpi_montgomery_exp_calc(Z, X, Y, M, Rinv, num_words, Mprime) ;
+    ret = mpi_montgomery_exp_calc(Z, X_ptr, Y, M, Rinv, num_words, Mprime) ;
     MBEDTLS_MPI_CHK(ret);
 #else
     esp_mpi_enable_hardware_hw_op();
@@ -418,7 +442,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     }
 #endif
 
-    esp_mpi_exp_mpi_mod_hw_op(X, Y, M, Rinv, Mprime, num_words);
+    esp_mpi_exp_mpi_mod_hw_op(X_ptr, Y, M, Rinv, Mprime, num_words);
     ret = mbedtls_mpi_grow(Z, m_words);
     if (ret != 0) {
         esp_mpi_disable_hardware_hw_op();
@@ -440,7 +464,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 #endif
 
     // Compensate for negative X
-    if (X->MBEDTLS_PRIVATE(s) == -1 && (Y->MBEDTLS_PRIVATE(p[0]) & 1) != 0) {
+    if (X_ptr->MBEDTLS_PRIVATE(s) == -1 && (Y->MBEDTLS_PRIVATE(p[0]) & 1) != 0) {
         Z->MBEDTLS_PRIVATE(s) = -1;
         MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(Z, M, Z));
     } else {
@@ -448,9 +472,8 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     }
 
 cleanup:
-    if (_Rinv == NULL) {
-        mbedtls_mpi_free(&Rinv_new);
-    }
+    mbedtls_mpi_free(&Rinv_new);
+    mbedtls_mpi_free(&X_temp);
     return ret;
 }
 

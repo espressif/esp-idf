@@ -16,11 +16,6 @@
 #include "esp_cpu.h"
 #include "esp_log.h"
 #include "hal/apm_hal.h"
-#include "hal/aes_ll.h"
-#include "hal/sha_ll.h"
-#include "hal/hmac_ll.h"
-#include "hal/ds_ll.h"
-#include "hal/ecc_ll.h"
 
 #include "esp_tee.h"
 #include "esp_tee_intr.h"
@@ -68,13 +63,7 @@ void esp_tee_soc_secure_sys_init(void)
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
     }
 
-    /* TODO: IDF-8958
-     * The values for the secure interrupt number and priority and
-     * the interrupt priority threshold (for both M and U mode) need
-     * to be investigated further
-     */
-    /* TODO: Currently, we do not allow interrupts to be set up with a priority greater than 7, see intr_alloc.c */
-    esprv_int_set_priority(TEE_SECURE_INUM, 7);
+    esprv_int_set_priority(TEE_SECURE_INUM, TEE_SECURE_INUM_PRIO);
     esprv_int_set_type(TEE_SECURE_INUM, ESP_CPU_INTR_TYPE_LEVEL);
     esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH);
     esprv_int_enable(BIT(TEE_SECURE_INUM));
@@ -101,12 +90,8 @@ void esp_tee_soc_secure_sys_init(void)
     esp_tee_protect_intr_src(ETS_SHA_INTR_SOURCE);          // SHA
     esp_tee_protect_intr_src(ETS_ECC_INTR_SOURCE);          // ECC
 
-    /* Disable protected crypto peripheral clocks; they will be toggled as needed when the peripheral is in use */
-    aes_ll_enable_bus_clock(false);
-    sha_ll_enable_bus_clock(false);
-    hmac_ll_enable_bus_clock(false);
-    ds_ll_enable_bus_clock(false);
-    ecc_ll_enable_bus_clock(false);
+    /* Reset the protected crypto peripherals and leave their clocks disabled */
+    esp_tee_soc_reset_crypto_peripherals();
 }
 
 IRAM_ATTR inline void esp_tee_switch_to_ree(uint32_t ree_entry_addr)

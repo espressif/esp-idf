@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,6 +117,87 @@ esp_err_t esp_trace_lock_take(esp_trace_lock_t *lock, uint32_t tmo_us);
  * @return ESP_OK on success
  */
 esp_err_t esp_trace_lock_give(esp_trace_lock_t *lock);
+
+///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// RING BUFFER //////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+#include <stdbool.h>
+
+/**
+ * @brief Power-of-2 ring buffer for trace transports
+ *
+ * Lightweight, FreeRTOS-free ring buffer suitable for use in trace hot paths
+ * (ISR-safe contexts, critical sections). Size must be a power of 2.
+ *
+ */
+typedef struct {
+    uint8_t *buffer;            ///< Heap-allocated data buffer
+    uint32_t max_size;          ///< Buffer capacity (must be power of 2)
+    volatile uint32_t count;    ///< Bytes currently stored
+    volatile uint32_t head;     ///< Write index
+    volatile uint32_t tail;     ///< Read index
+} esp_trace_rb_t;
+
+/**
+ * @brief Initialize ring buffer (allocates internal memory)
+ *
+ * @param rb    Pointer to ring buffer structure
+ * @param size  Buffer size in bytes (must be power of 2)
+ * @return ESP_OK on success, ESP_ERR_NO_MEM on allocation failure
+ */
+esp_err_t esp_trace_rb_init(esp_trace_rb_t *rb, uint32_t size);
+
+/**
+ * @brief Get number of bytes currently stored in the ring buffer
+ */
+static inline uint32_t esp_trace_rb_data_len(const esp_trace_rb_t *rb)
+{
+    return rb->count;
+}
+
+/**
+ * @brief Write data into the ring buffer (overwrites oldest data if full)
+ *
+ * @param rb    Ring buffer
+ * @param data  Source data
+ * @param len   Number of bytes to write
+ * @return ESP_OK always (data is always accepted; oldest data may be dropped)
+ */
+esp_err_t esp_trace_rb_put(esp_trace_rb_t *rb, const uint8_t *data, uint32_t len);
+
+/**
+ * @brief Read and consume data from the ring buffer
+ *
+ * @param rb    Ring buffer
+ * @param data  Destination buffer
+ * @param len   Maximum number of bytes to read
+ * @return Number of bytes actually read
+ */
+uint32_t esp_trace_rb_get(esp_trace_rb_t *rb, uint8_t *data, uint32_t len);
+
+/**
+ * @brief Peek at contiguous readable data without consuming
+ *
+ * Returns a pointer to the contiguous block of data starting at the tail.
+ * When the readable region wraps around the end of the buffer, only the
+ * first contiguous portion is returned. Call again after consume() for the rest.
+ *
+ * @param rb    Ring buffer
+ * @param[out] data  Set to point at the contiguous data (valid until next put/consume)
+ * @return Number of contiguous bytes available (0 if empty)
+ */
+uint32_t esp_trace_rb_peek_contiguous(const esp_trace_rb_t *rb, const uint8_t **data);
+
+/**
+ * @brief Consume (discard) bytes from the read side of the ring buffer
+ *
+ * Typically called after esp_trace_rb_peek_contiguous() + processing.
+ *
+ * @param rb    Ring buffer
+ * @param len   Number of bytes to consume (must be <= esp_trace_rb_data_len())
+ */
+void esp_trace_rb_consume(esp_trace_rb_t *rb, uint32_t len);
 
 #ifdef __cplusplus
 }

@@ -87,16 +87,20 @@ TX 事件数据在 :cpp:type:`uhci_tx_done_event_data_t` 中定义：
 
 RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 
-- :cpp:member:`uhci_rx_event_data_t::data` 指向接收到的数据。数据保存在 :cpp:func:`uhci_receive` 函数的 ``buffer`` 参数中。用户在回调返回之前不应释放此接收缓冲区。
+- :cpp:member:`uhci_rx_event_data_t::data` 指向接收到的数据。数据保存在 :cpp:func:`uhci_receive` 函数 ``buffer`` 参数指定的缓冲区中，因此用户在回调返回之前不应释放此接收缓冲区。``edata->data`` 所指向的数据通常仅保证在回调期间可读。若回调返回后仍需使用该数据，请先拷贝到外部缓冲区。
 - :cpp:member:`uhci_rx_event_data_t::recv_size` 表示接收到的数据大小。此值不会大于 :cpp:func:`uhci_receive` 函数的 ``buffer_size`` 参数。
 - :cpp:member:`uhci_rx_event_data_t::flags::totally_received` 指示当前接收缓冲区是否是事务中的最后一个。
+
+.. note::
+
+    如果希望不拷贝而在回调外继续使用 ``edata->data`` （例如把指针通过队列传给任务处理），属于高级零拷贝用法。用户需要理解底层 DMA 环形缓冲区的分块和覆盖行为，并保证消费者处理速度快于覆盖速度。
 
 启动 UHCI 传输
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :cpp:func:`uhci_transmit` 是一个非阻塞函数，这意味着在调用后会立即返回。您可以通过 :cpp:member:`uhci_event_callbacks_t::on_tx_trans_done` 相关回调指示事务完成。我们还提供了一个函数 :cpp:func:`uhci_wait_all_tx_transaction_done` 来阻塞线程，等待所有事务完成。
 
-以下代码显示了如何通过 UHCI 接收数据：
+以下代码显示了如何通过 UHCI 传输数据：
 
 .. code:: c
 
@@ -111,9 +115,9 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 启动 UHCI 接收
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:cpp:func:`uhci_receive` 是一个非阻塞函数，这意味着该函数在调用后会立即返回。用户可以通过 :cpp:member:`uhci_rx_event_data_t::recv_size` 获取相关的回调，以指示接收事件并判断事务是否完成。
+:cpp:func:`uhci_receive` 是一个非阻塞函数，这意味着该函数在调用后会立即返回。用户可以通过 :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` 获取相关的回调，以指示接收事件并判断事务是否完成。
 
-以下代码展示了如何通过 UHCI 传输数据：
+以下代码展示了如何通过 UHCI 接收数据：
 
 .. code:: c
 
@@ -146,13 +150,13 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
         .on_rx_trans_event = s_uhci_rx_event_cbs,
     };
 
-    // 注册回调，并开始启动回收
+    // 注册回调，并启动接收
     ESP_ERROR_CHECK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, ctx));
     ESP_ERROR_CHECK(uhci_receive(uhci_ctrl, pdata, 100));
 
     uhci_event_t evt;
     while (1) {
-        // 一个在任务中的队列用来接收 UHCI 抛出的事件
+        // 在任务中，队列用于接收 UHCI 抛出的事件
         if (xQueueReceive(uhci_queue, &evt, portMAX_DELAY) == pdTRUE) {
             if (evt == UHCI_EVT_EOF) {
                 printf("Received size: %d\n", ctx->receive_size);
@@ -199,7 +203,7 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 
 通过启用 Kconfig 选项 :ref:`CONFIG_UHCI_ISR_CACHE_SAFE`，可实现以下功能：
 
-1. 即使缓存被禁用，中断也能被服务。
+1. 即使缓存被禁用，中断也能被及时处理。
 2. 将 ISR 使用的所有函数放入 IRAM [1]_
 3. 将驱动对象放入 DRAM，防止其意外映射到 PSRAM。
 

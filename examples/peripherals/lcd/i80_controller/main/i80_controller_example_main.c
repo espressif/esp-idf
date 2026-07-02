@@ -360,7 +360,7 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Create LVGL task");
     xTaskCreate(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, NULL);
-
+    vTaskDelay(pdMS_TO_TICKS(10));
     ESP_LOGI(TAG, "Display LVGL animation");
     // Lock the mutex due to the LVGL APIs are not thread-safe
     _lock_acquire(&lvgl_api_lock);

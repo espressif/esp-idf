@@ -10,6 +10,7 @@ import pytest
 import serial
 from pytest_embedded_idf import IdfDut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 if typing.TYPE_CHECKING:
     from conftest import OpenOCD
@@ -158,3 +159,15 @@ def _test_sysview_tracing_uart(dut: IdfDut) -> None:
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_sysview_tracing_uart(dut: IdfDut) -> None:
     _test_sysview_tracing_uart(dut)
+
+
+@pytest.mark.usb_serial_jtag
+@idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
+@pytest.mark.parametrize('config', [pytest.param('sysview_usj')], indirect=True)
+def test_sysview_tracing_usj_serial(dut: IdfDut) -> None:
+    time.sleep(1)  # wait for USJ port to be ready
+    usj_port = '/dev/serial_ports/ttyACM-esp32'
+    ser = serial.Serial(usj_port, baudrate=1000000, timeout=10)
+    trace_log = [os.path.join(dut.logdir, 'sys_log_usj.svdat')]  # pylint: disable=protected-access
+    _capture_sysview_trace(ser, trace_log[0])
+    _validate_trace_data(trace_log, dut.target, is_uart=True)

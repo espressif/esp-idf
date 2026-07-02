@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,9 @@
 #include "soc/lp_clkrst_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_struct.h"
+#include "soc/lp_system_struct.h"
 #include "soc/usb_utmi_struct.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,6 +84,29 @@ FORCE_INLINE_ATTR void _usb_utmi_ll_reset_register(void)
     } while(0)
 
 /**
+ * @brief Enable/disable 15k pulldown resistors on D+/D- lines
+ *
+ * In USB Host mode, 15k pulldown resistors must be connected on both D+ and D-.
+ * In USB Device mode, pulldown resistors must be disconnected.
+ *
+ * @note On ESP32-P4 v3+, pulldowns are no longer controlled by USB-OTG peripheral
+ *       and must be controlled by software via LP_SYS registers.
+ *       On earlier revisions, pulldowns are controlled by the USB-OTG hardware.
+ *
+ * @param[in] enable true to connect pulldowns (Host mode), false to disconnect (Device mode)
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_enable_data_pulldowns(bool enable)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dppulldown = enable;
+    LP_SYS.hp_usb_otghs_phy_ctrl.hp_utmiotg_dmpulldown = enable;
+#else
+    // On pre-v3 ESP32-P4, pulldowns are controlled by the USB-OTG peripheral
+    (void)enable;
+#endif
+}
+
+/**
  * @brief Enable precise detection of VBUS
  *
  * @param[in] enable Enable/Disable precise detection
@@ -90,6 +115,24 @@ FORCE_INLINE_ATTR void usb_utmi_ll_enable_precise_detection(bool enable)
 {
     // Enable VBUS precise detection
     HP_SYSTEM.sys_usbotg20_ctrl.sys_otg_suspendm = enable;
+}
+
+/**
+ * @brief Set USB OTG2.0 suspend state for PMU USB wakeup logic
+ *
+ * @param[in] in_suspend True if USB OTG2.0 is suspended
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_set_suspend_state(bool in_suspend)
+{
+    LP_SYS.usb_ctrl.usbotg20_in_suspend = in_suspend;
+}
+
+/**
+ * @brief Clear USB OTG2.0 wakeup status sent to PMU
+ */
+FORCE_INLINE_ATTR void usb_utmi_ll_clear_wakeup_status(void)
+{
+    LP_SYS.usb_ctrl.usbotg20_wakeup_clr = 1;
 }
 
 #ifdef __cplusplus

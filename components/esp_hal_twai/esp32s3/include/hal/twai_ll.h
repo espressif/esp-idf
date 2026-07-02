@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,7 @@ extern "C" {
 #define TWAI_LL_BRP_MAX         16384
 #define TWAI_LL_TSEG1_MIN       1
 #define TWAI_LL_TSEG2_MIN       1
+#define TWAI_LL_PROP_MAX        0   //hardware don't support prop_seg
 #define TWAI_LL_TSEG1_MAX       16  //the max register value
 #define TWAI_LL_TSEG2_MAX       8
 #define TWAI_LL_SJW_MAX         4
@@ -625,6 +626,17 @@ static inline void twai_ll_set_acc_filter(twai_dev_t *hw, uint32_t code, uint32_
 }
 
 /* ------------------------- TX/RX Buffer Registers ------------------------- */
+
+/**
+ * @brief Get the number of TX buffers that are preset in the hardware.
+ *
+ * @param hw Pointer to the TWAI-FD device hardware.
+ * @return The number of TX buffers available.
+ */
+static inline uint32_t twai_ll_get_tx_buffer_total(twai_dev_t *hw)
+{
+    return 1;   // only one TX buffer
+}
 
 /**
  * @brief   Copy a formatted TWAI frame into TX buffer for transmission

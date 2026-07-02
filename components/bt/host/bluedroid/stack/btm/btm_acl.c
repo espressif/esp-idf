@@ -571,6 +571,12 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
                          btm_cb.ble_ctr_cb.inq_var.connectable_mode,
                          p->link_role);
 
+        if (p->transport == BT_TRANSPORT_LE) {
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE)
+            btm_ble_clear_ext_adv_ter_con_handle(p->hci_handle);
+#endif
+        }
+
         p_dev_rec = btm_find_dev(bda);
         if ( p_dev_rec) {
             BTM_TRACE_DEBUG("before update p_dev_rec->sec_flags=0x%x\n", p_dev_rec->sec_flags);
@@ -2279,7 +2285,7 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda)
 {
     tACL_CONN *p;
-    tBTM_BLE_CH_MAP_RESULTS result;
+    tBTM_BLE_CH_MAP_RESULTS result = {0};
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params;
     UINT8 status;
 
@@ -2322,7 +2328,7 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     if (p_cb->white_list_avail_size == 0) {
-        BTM_TRACE_WARNING("%s Whitelist full.", __func__);
+        BTM_TRACE_WARNING("%s Whitelist size is 0.", __func__);
     }
     *length = p_cb->white_list_avail_size;
     return;
@@ -2356,7 +2362,7 @@ void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
 *******************************************************************************/
 void btm_read_channel_map_complete(UINT8 *p)
 {
-    tBTM_BLE_CH_MAP_RESULTS results;
+    tBTM_BLE_CH_MAP_RESULTS results = {0};
     UINT16 handle;
     tACL_CONN *p_acl_cb = NULL;
 
@@ -2387,7 +2393,7 @@ void btm_read_channel_map_complete(UINT8 *p)
                 memcpy(results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
             }
         } else {
-            results.status = BTM_ERR_PROCESSING;
+            results.status = BTM_HCI_ERROR | results.hci_status;
             BTM_TRACE_ERROR("BTM Channel Map Read Failed: hci status 0x%02x", results.hci_status);
         }
 

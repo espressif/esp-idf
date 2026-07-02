@@ -45,7 +45,7 @@ else()
         endif()
     endif()
 
-    list(APPEND private_required_comp soc hal esp_hal_uart)
+    list(APPEND private_required_comp soc hal esp_hal_uart esp_hal_security)
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
@@ -74,6 +74,18 @@ endif()
 
 if(CONFIG_SECURE_ENABLE_TEE AND CONFIG_IDF_TARGET_ESP32C5 AND NOT ESP_TEE_BUILD)
     list(APPEND sources "patches/esp_rom_cache_esp32c5.c")
+endif()
+
+if(CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP)
+    list(APPEND sources "patches/esp_rom_cache_writeback_esp32p4.c")
+endif()
+
+if(CONFIG_ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_NO_MAP)
+    list(APPEND sources "patches/esp_rom_cache_writeback_esp32c5_esp32c61_esp32h4.c")
+endif()
+
+if(CONFIG_ESP_ROM_ECDSA_VERIFY_PATCH)
+    list(APPEND sources "patches/esp_rom_ecdsa.c")
 endif()
 
 idf_component_register(SRCS ${sources}
@@ -192,11 +204,8 @@ if(BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
-        rom_linker_script("mbedtls")
         # For ESP32C2(ECO4), mbedTLS in ROM has been updated to v3.6.0-LTS
-        if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
-            rom_linker_script("mbedtls.eco4")
-        endif()
+        rom_linker_script("mbedtls.eco4")
     endif()
 
 else() # Regular app build
@@ -408,11 +417,8 @@ else() # Regular app build
     endif()
 
     if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
-        rom_linker_script("mbedtls")
         # For ESP32C2(ECO4), mbedTLS in ROM has been updated to v3.6.0-LTS
-        if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
-            rom_linker_script("mbedtls.eco4")
-        endif()
+        rom_linker_script("mbedtls.eco4")
     endif()
 
     if(CONFIG_ESP_ROM_DELAY_US_PATCH AND CONFIG_SECURE_ENABLE_TEE AND

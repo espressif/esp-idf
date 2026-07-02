@@ -273,6 +273,20 @@ typedef enum {
     ESP_GAP_BLE_CLEAR_MONITOR_ADV_COMPLETE_EVT,                  /*!< When clear monitor advertiser list complete, the event comes */
     ESP_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT,         /*!< When read monitor advertiser list size complete, the event comes */
     ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT,                 /*!< When enable/disable monitor advertising complete, the event comes */
+    ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT,                  /*!< When set decision data complete, the event comes */
+    ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT,          /*!< When set decision instructions complete, the event comes */
+    ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT,                 /*!< When frame space update complete, the event comes */
+    ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT,           /*!< When read all local supported LE features complete, the event comes */
+    ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT,             /*!< When read all remote LE features complete, the event comes */
+    ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT,            /*!< When connection rate request command complete, the event comes */
+    ESP_GAP_BLE_CONN_RATE_CHANGE_EVT,                            /*!< When connection rate change event is received, the event comes */
+    ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT,        /*!< When set default rate parameters complete, the event comes */
+    ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT,        /*!< When read minimum supported connection interval complete, the event comes */
+    ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT,                /*!< When enable UTP OTA mode complete, the event comes */
+    ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT,                           /*!< When UTP send complete, the event comes */
+    ESP_GAP_BLE_UTP_RECEIVE_EVT,                                 /*!< When UTP data is received, the event comes */
+    ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT,           /*!< When CS set security requirements complete, the event comes */
+    ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT,   /*!< When CS set default security requirements complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -296,6 +310,7 @@ typedef uint8_t esp_gap_ble_channels[ESP_GAP_BLE_CHANNELS_LEN];
  *
  * - Advertising interval: unit is 0.625ms (range: 20ms to 10240ms)
  * - Connection interval: unit is 1.25ms (range: 7.5ms to 4000ms)
+ * - Connection rate interval (Core 6.2 SCI): unit is 125us (range: 375us), see ESP_BLE_GAP_CONN_RATE_*
  * - Scan interval/window: unit is 0.625ms
  * - Periodic advertising interval: unit is 1.25ms
  * - Supervision timeout: unit is 10ms (range: 100ms to 32000ms)
@@ -984,10 +999,25 @@ typedef struct {
     esp_ble_addr_type_t peer_addr_type; /*!< ext adv peer address type */
     esp_bd_addr_t peer_addr;            /*!< ext adv peer address */
     esp_ble_adv_filter_t filter_policy; /*!< ext adv filter policy */
-    int8_t tx_power;                    /*!< ext adv tx power */
+    int8_t tx_power;                    /*!< ext adv tx power.
+                                             For this advertising set, priority is higher than
+                                             `esp_ble_tx_power_set()`, `esp_ble_tx_power_set_enhanced()`,
+                                             and menuconfig default TX power (`CONFIG_BT_CTRL_DFT_TX_POWER_LEVEL`).
+                                             The actual applied TX power may be different from the requested value,
+                                             depending on the Controller TX power granularity/level mechanism.
+                                             (for example ESP32-C3/ESP32-S3 with 3 dBm step), the actual
+                                             applied TX power may be rounded down and be 0 to 2 dBm lower
+                                             than the requested value.) */
     esp_ble_gap_pri_phy_t primary_phy;  /*!< ext adv primary phy */
     uint8_t max_skip;                   /*!< ext adv maximum skip */
-    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
+    esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy.
+                                             Note: If the advertiser sends connectable advertising packets on the LE Coded
+                                             PHY, the peer may then establish the ACL connection on the LE Coded PHY, which
+                                             will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+                                             scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer
+                                             than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M PHY)
+                                             first, and only use the LE Coded PHY when the long-range capability is really
+                                             required. */
     uint8_t sid;                        /*!< ext adv sid */
     bool scan_req_notif;                /*!< ext adv scan request event notify */
 #if (CONFIG_BT_BLE_FEAT_ADV_CODING_SELECTION)
@@ -1238,6 +1268,172 @@ typedef struct {
     esp_bd_addr_t addr;             /*!< Device address of the advertiser to remove from the monitor list */
 } esp_ble_gap_remove_monitor_adv_params_t;
 #endif // (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+#define ESP_BLE_GAP_DECISION_DATA_MAX_LEN               248
+#define ESP_BLE_GAP_DECISION_MAX_TESTS                  8
+#define ESP_BLE_GAP_DECISION_TEST_PARAM_LEN             16
+#define ESP_BLE_GAP_DECISION_TEST_PARAMS_MAX_LEN        (ESP_BLE_GAP_DECISION_MAX_TESTS * ESP_BLE_GAP_DECISION_TEST_PARAM_LEN)
+#define ESP_BLE_GAP_DECISION_TYPE_FLAG_RESOLVABLE_TAG   (1 << 0)
+
+#define ESP_BLE_GAP_DECISION_SCAN_FILTER_NO_DECISIONS   0x00
+#define ESP_BLE_GAP_DECISION_SCAN_FILTER_ALL_PDUS       0x04
+#define ESP_BLE_GAP_DECISION_SCAN_FILTER_DECISIONS_ONLY 0x0C
+
+/**
+ * @brief Parameters for setting decision data for an advertising set (DBAF)
+ */
+typedef struct {
+    uint8_t adv_handle;              /*!< Advertising set handle */
+    uint8_t decision_type_flags;     /*!< Decision type flags (e.g. ESP_BLE_GAP_DECISION_TYPE_FLAG_RESOLVABLE_TAG) */
+    uint8_t data_len;                /*!< Length of decision data, max: ESP_BLE_GAP_DECISION_DATA_MAX_LEN */
+    const uint8_t *data;             /*!< Pointer to decision data */
+} esp_ble_gap_set_decision_data_params_t;
+
+/**
+ * @brief Parameters for setting decision instructions for decision-based advertising filtering (DBAF)
+ */
+typedef struct {
+    uint8_t num_tests;               /*!< Number of decision tests, max: ESP_BLE_GAP_DECISION_MAX_TESTS */
+    const uint8_t *test_flags;       /*!< Pointer to test flags array (num_tests octets) */
+    const uint8_t *test_fields;      /*!< Pointer to test fields array (num_tests octets) */
+    const uint8_t *test_params;      /*!< Pointer to test parameters (num_tests * ESP_BLE_GAP_DECISION_TEST_PARAM_LEN octets) */
+} esp_ble_gap_set_decision_instructions_params_t;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#define ESP_BLE_GAP_FRAME_SPACE_MAX_US                  10000
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_1M_MASK             (1 << 0)
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_2M_MASK             (1 << 1)
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_CODED_MASK          (1 << 2)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_CP_MASK (1 << 0)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_PC_MASK (1 << 1)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_MCES_MASK       (1 << 2)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_CIS_MASK    (1 << 3)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_MSS_CIS_MASK    (1 << 4)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_ACL_IFS_MASK    \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_CP_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_PC_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_ACL_MASK        \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_ACL_IFS_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_MCES_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_CIS_MASK        \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_CIS_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_MSS_CIS_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_PHY_MASK                \
+    (ESP_BLE_GAP_FRAME_SPACE_PHY_1M_MASK | ESP_BLE_GAP_FRAME_SPACE_PHY_2M_MASK | \
+     ESP_BLE_GAP_FRAME_SPACE_PHY_CODED_MASK)
+#define ESP_BLE_GAP_FRAME_SPACE_SPACING_MASK            \
+    (ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_CP_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_ACL_PC_MASK | \
+     ESP_BLE_GAP_FRAME_SPACE_SPACING_MCES_MASK | ESP_BLE_GAP_FRAME_SPACE_SPACING_IFS_CIS_MASK | \
+     ESP_BLE_GAP_FRAME_SPACE_SPACING_MSS_CIS_MASK)
+
+/**
+ * @brief Parameters for requesting a Frame Space Update on a connection
+ */
+typedef struct {
+    uint16_t conn_handle;            /*!< Connection handle */
+    uint16_t frame_space_min;        /*!< Minimum frame space in microseconds, max: ESP_BLE_GAP_FRAME_SPACE_MAX_US */
+    uint16_t frame_space_max;        /*!< Maximum frame space in microseconds, max: ESP_BLE_GAP_FRAME_SPACE_MAX_US */
+    uint8_t phys;                    /*!< PHY mask (ESP_BLE_GAP_FRAME_SPACE_PHY_*_MASK) */
+    uint16_t spacing_types;          /*!< Spacing types mask (ESP_BLE_GAP_FRAME_SPACE_SPACING_*_MASK) */
+} esp_ble_gap_frame_space_update_params_t;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#define ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN                248
+#define ESP_BLE_GAP_LL_EXT_FEAT_MAX_PAGE                10
+
+/**
+ * @brief Parameters for reading all remote LE features for a connection
+ */
+typedef struct {
+    uint16_t conn_handle;            /*!< Connection handle */
+    uint8_t page_requested;          /*!< The number of the highest-numbered page of features that the Host requires and the Controller shall obtain,
+                                        range: 0 to ESP_BLE_GAP_LL_EXT_FEAT_MAX_PAGE */
+} esp_ble_gap_read_all_remote_feat_params_t;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US          125
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_MIN              3
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_MAX              0x7D00
+#define ESP_BLE_GAP_CONN_RATE_SUBRATE_MIN               0x0001
+#define ESP_BLE_GAP_CONN_RATE_SUBRATE_MAX               0x01F4
+#define ESP_BLE_GAP_CONN_RATE_MAX_LATENCY_MAX           0x01F3
+#define ESP_BLE_GAP_CONN_RATE_SUBRATE_LATENCY_PRODUCT_MAX 500
+#define ESP_BLE_GAP_CONN_RATE_CONTINUATION_NUMBER_MAX   0x01F3
+#define ESP_BLE_GAP_CONN_RATE_SUPERVISION_TIMEOUT_MIN   0x000A
+#define ESP_BLE_GAP_CONN_RATE_SUPERVISION_TIMEOUT_MAX   0x0C80
+#define ESP_BLE_GAP_CONN_RATE_SUPERVISION_TIMEOUT_FACTOR 40
+
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_US(units) \
+    ((uint32_t)(units) * ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US)
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_US(us) \
+    ((uint16_t)(((us) + (ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US - 1U)) / ESP_BLE_GAP_CONN_RATE_INTERVAL_UNIT_US))
+#define ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_MS(ms) \
+    ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_US((uint32_t)(ms) * 1000U)
+#define ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US(interval, subrate) \
+    (ESP_BLE_GAP_CONN_RATE_INTERVAL_US(interval) * (uint32_t)(subrate))
+
+/**
+ * @brief Parameters for requesting a connection rate update (Shorter Connection Intervals)
+ */
+typedef struct {
+    uint16_t conn_handle;             /*!< Connection handle */
+    uint16_t conn_interval_min;       /*!< Minimum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t conn_interval_max;       /*!< Maximum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t subrate_min;             /*!< Minimum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t subrate_max;             /*!< Maximum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t max_latency;             /*!< Maximum Peripheral latency in subrated connection intervals. Range: 0x0000 to 0x01F3 */
+    uint16_t continuation_number;     /*!< Continuation number. Range: 0x0000 to 0x01F3 */
+    uint16_t supervision_timeout;     /*!< Supervision timeout in 10 ms units. Range: 0x000A to 0x0C80 */
+    uint16_t min_ce_len;              /*!< Minimum connection event length in 125 us units */
+    uint16_t max_ce_len;              /*!< Maximum connection event length in 125 us units */
+} esp_ble_gap_connection_rate_request_params_t;
+
+/**
+ * @brief Default connection rate parameters for future Central connections
+ */
+typedef struct {
+    uint16_t conn_interval_min;       /*!< Minimum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t conn_interval_max;       /*!< Maximum connection interval in 125 us units. Range: 0x0003 to 0x7D00 */
+    uint16_t subrate_min;             /*!< Minimum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t subrate_max;             /*!< Maximum subrate factor. Range: 0x0001 to 0x01F4 */
+    uint16_t max_latency;             /*!< Maximum Peripheral latency in subrated connection intervals. Range: 0x0000 to 0x01F3 */
+    uint16_t continuation_number;     /*!< Continuation number. Range: 0x0000 to 0x01F3 */
+    uint16_t supervision_timeout;     /*!< Supervision timeout in 10 ms units. Range: 0x000A to 0x0C80 */
+    uint16_t min_ce_len;              /*!< Minimum connection event length in 125 us units */
+    uint16_t max_ce_len;              /*!< Maximum connection event length in 125 us units */
+} esp_ble_gap_default_rate_param_t;
+
+#define ESP_BLE_GAP_CONN_RATE_MAX_INTERVAL_GROUPS       41
+
+/**
+ * @brief Supported connection interval group returned by read minimum supported connection interval
+ */
+typedef struct {
+    uint16_t min_125us;               /*!< Lower bound of supported interval group in 125 us units */
+    uint16_t max_125us;               /*!< Upper bound of supported interval group in 125 us units */
+    uint16_t stride_125us;            /*!< Stride between supported intervals in 125 us units */
+} esp_ble_gap_min_conn_interval_group_t;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+#define ESP_BLE_GAP_UTP_DATA_MAX_LEN                    254
+
+/**
+ * @brief Parameters for enabling or disabling LE Unified Test Protocol (UTP) OTA mode
+ */
+typedef struct {
+    uint8_t enable;                   /*!< 0x00: Disable UTP OTA mode, 0x01: Enable UTP OTA mode */
+} esp_ble_gap_enable_utp_ota_mode_params_t;
+
+/**
+ * @brief Parameters for sending LE Unified Test Protocol (UTP) data
+ */
+typedef struct {
+    uint8_t data_len;                 /*!< UTP data length, range: 0x01 to 0xFE */
+    const uint8_t *data;              /*!< Pointer to UTP data */
+} esp_ble_gap_utp_send_params_t;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 
 typedef enum {
     ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
@@ -1535,6 +1731,34 @@ typedef enum {
 #define ESP_BLE_CS_INITIATOR_ROLE_ENABLED  (1 << 0)
 /** Reflector role is enabled */
 #define ESP_BLE_CS_REFLECTOR_ROLE_ENABLED  (1 << 1)
+
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+/** CS tone security requirement (bit 0 of CS_Security_Requirements) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_CS_TONE                      (1ULL << 0)
+/** 150 ns RTT accuracy security requirement (bit 1) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_RTT_150NS_ACCURACY           (1ULL << 1)
+/** 10 ns RTT accuracy security requirement (bit 2) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_RTT_10NS_ACCURACY            (1ULL << 2)
+/** RTT sounding sequence or random sequence security requirement (bit 3) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_RTT_SOUNDING_OR_RANDOM       (1ULL << 3)
+/** Normalized Attack Detector Metric security requirement (bit 4) */
+#define ESP_BLE_CS_SECURITY_REQUIREMENT_NADM                         (1ULL << 4)
+
+/**
+* @brief CS set security requirements parameters
+*/
+typedef struct {
+    uint16_t conn_handle;              /*!< Connection_Handle. Host does not validate the handle range; the Controller checks it (0x0000 to 0x0EFF). */
+    uint64_t cs_security_requirements; /*!< 8-octet CS security requirements bitmask (bits 0-4). Host does not validate reserved bits 5-63; the Controller checks they are zero. */
+} esp_ble_cs_set_security_requirements_params;
+
+/**
+* @brief CS set default security requirements parameters
+*/
+typedef struct {
+    uint64_t cs_security_requirements; /*!< 8-octet CS security requirements bitmask for future connections (bits 0-4). Host does not validate reserved bits 5-63; the Controller checks they are zero. */
+} esp_ble_cs_set_default_security_requirements_params;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /**
 * @brief CS set default settings parameters
@@ -2192,6 +2416,130 @@ typedef union {
         esp_bt_status_t status;              /*!< Indicate enable/disable monitor advertising operation success status */
     } enable_monitor_adv;                    /*!< Event parameter of ESP_GAP_BLE_ENABLE_MONITOR_ADV_COMPLETE_EVT */
 #endif
+#if (BLE_FEAT_DBAF == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT
+     */
+    struct ble_set_decision_data_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate set decision data operation success status */
+    } set_decision_data;                     /*!< Event parameter of ESP_GAP_BLE_SET_DECISION_DATA_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT
+     */
+    struct ble_set_decision_instructions_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate set decision instructions operation success status */
+    } set_decision_instructions;             /*!< Event parameter of ESP_GAP_BLE_SET_DECISION_INSTRUCTIONS_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT
+     */
+    struct ble_frame_space_update_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate frame space update operation success status */
+        uint16_t conn_handle;                /*!< Connection handle */
+        uint8_t initiator;                   /*!< 0x00: Local Host initiated, 0x01: Local Controller initiated, 0x02: Peer initiated */
+        uint16_t frame_space;                /*!< Updated frame space in microseconds */
+        uint8_t phys;                        /*!< PHY mask updated */
+        uint16_t spacing_types;              /*!< Spacing types mask updated */
+    } frame_space_update;                    /*!< Event parameter of ESP_GAP_BLE_FRAME_SPACE_UPDATE_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT
+     */
+    struct ble_read_all_local_supp_feat_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read all local supported LE features operation success status */
+        uint8_t max_page;                    /*!< Maximum supported features page number */
+        uint8_t le_features[ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN]; /*!< LE features data */
+    } read_all_local_supp_feat;              /*!< Event parameter of ESP_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT
+     */
+    struct ble_read_all_remote_feat_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read all remote LE features operation success status */
+        uint16_t conn_handle;                /*!< Connection handle */
+        uint8_t max_remote_page;             /*!< Maximum remote features page number supported by peer */
+        uint8_t max_valid_page;              /*!< Maximum valid features page number in le_features */
+        uint8_t le_features[ESP_BLE_GAP_LL_EXT_FEAT_DATA_LEN]; /*!< Remote LE features data */
+    } read_all_remote_feat;                  /*!< Event parameter of ESP_GAP_BLE_READ_ALL_REMOTE_FEAT_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT
+     *
+     * Reported when the HCI Connection Rate Request command is accepted or rejected by the controller,
+     * or when the host fails to send the command locally.
+     */
+    struct ble_connection_rate_request_cmpl_param {
+        esp_bt_status_t status;              /*!< Command success status, or host/controller error code */
+        uint16_t conn_handle;                /*!< Connection handle */
+    } connection_rate_req_cmpl;                /*!< Event parameter of ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CONN_RATE_CHANGE_EVT
+     */
+    struct ble_conn_rate_change_evt {
+        esp_bt_status_t status;              /*!< Indicate connection rate change status */
+        uint16_t conn_handle;                /*!< Connection handle */
+        uint16_t conn_interval;              /*!< Underlying connection interval in 125 us units */
+        uint16_t subrate_factor;             /*!< Subrate factor applied to the connection interval */
+        uint16_t peripheral_latency;         /*!< Peripheral latency in subrated connection intervals */
+        uint16_t continuation_number;        /*!< Continuation number */
+        uint16_t supervision_timeout;        /*!< Supervision timeout in 10 ms units */
+    } conn_rate_change_evt;                    /*!< Event parameter of ESP_GAP_BLE_CONN_RATE_CHANGE_EVT. Effective interval (us) = ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US(conn_interval, subrate_factor) */
+    /**
+     * @brief ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT
+     */
+    struct ble_set_default_rate_parameters_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate set default rate parameters operation success status */
+    } set_default_rate_parameters_cmpl;        /*!< Event parameter of ESP_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT
+     */
+    struct ble_read_min_supp_conn_interval_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate read minimum supported connection interval operation success status */
+        uint8_t min_supported_conn_interval; /*!< Minimum supported connection interval in 125 us units */
+        uint8_t num_groups;                  /*!< Number of supported interval groups; 0 if only RCV is supported */
+        esp_ble_gap_min_conn_interval_group_t groups[ESP_BLE_GAP_CONN_RATE_MAX_INTERVAL_GROUPS]; /*!< Supported interval groups; valid when num_groups > 0 */
+    } read_min_supp_conn_interval;             /*!< Event parameter of ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT */
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT
+     */
+    struct ble_enable_utp_ota_mode_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate enable UTP OTA mode operation success status */
+    } enable_utp_ota_mode_cmpl;                /*!< Event parameter of ESP_GAP_BLE_ENABLE_UTP_OTA_MODE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT
+     */
+    struct ble_utp_send_cmpl_param {
+        esp_bt_status_t status;              /*!< Indicate UTP send operation success status */
+    } utp_send_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_UTP_SEND_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_UTP_RECEIVE_EVT
+     */
+    struct ble_utp_receive_evt {
+        uint8_t len;                         /*!< UTP data length */
+        uint8_t data[ESP_BLE_GAP_UTP_DATA_MAX_LEN]; /*!< UTP data */
+    } utp_receive;                             /*!< Event parameter of ESP_GAP_BLE_UTP_RECEIVE_EVT */
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT
+     */
+    struct ble_cs_set_security_requirements {
+        esp_bt_status_t status;         /*!< 0x00: CS set security requirements command succeeded
+                                               other: CS set security requirements command failed */
+        uint16_t conn_handle;           /*!< Connection Handle */
+    } cs_set_security_requirements; /*!< Event parameter of ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT
+     */
+    struct ble_cs_set_default_security_requirements {
+        esp_bt_status_t status;         /*!< 0x00: CS set default security requirements command succeeded
+                                               other: CS set default security requirements command failed */
+    } cs_set_default_security_requirements; /*!< Event parameter of ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT */
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
     /**
      * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
@@ -2517,7 +2865,6 @@ typedef union {
      */
     struct ble_cs_read_local_supp_caps_evt {
         esp_bt_status_t status;                  /*!< Indicate channel sounding read local supported capabilities command successfully completed */
-        uint16_t conn_handle;                    /*!< Connection Handle */
         uint8_t num_config_supported;            /*!< Number of CS configurations supported per connection */
         uint16_t max_consecutive_proc_supported; /*!< 0x0000: Support for both a fixed number of consecutive CS procedures and for an indefinite number of CS procedures until termination
                                                     0x0001 to 0xFFFF: Maximum number of consecutive CS procedures supported */
@@ -2895,7 +3242,11 @@ typedef void (* esp_gap_ble_cb_t)(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
  *
  * @param[in]       callback: callback function
  *
- * @note            Avoid performing time-consuming operations within the callback functions.
+ * @note            Do NOT perform time-consuming operations in the callback. Time-consuming operations
+ *                  include: taking semaphores that may block for a long time (e.g. xSemaphoreTake with
+ *                  long timeout or portMAX_DELAY), blocking delays (e.g. vTaskDelay), and flash
+ *                  read/write/erase. Such operations may block the Bluetooth stack and lead to
+ *                  instability or deadlock. Defer heavy work to a separate task if needed.
  *
  * @return
  *                  - ESP_OK : success
@@ -3093,6 +3444,11 @@ esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint
 
 /**
  * @brief           This function clears the random address for the application
+ *
+ * @note            This function shall not be used when:
+ *                  - Advertising is enabled,
+ *                  - Scanning is enabled, or
+ *                  - any LE connection exists / a create connection command is pending.
  *
  * @return
  *                  - ESP_OK : success
@@ -3632,6 +3988,12 @@ esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr);
 * @param[in]       tx_phy_mask : indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : indicates the receiver PHYs that the Host prefers the Controller to use
 *
+* @note            Including the LE Coded PHY in tx_phy_mask / rx_phy_mask may cause subsequent ACL connections to run on
+*                  the LE Coded PHY, which will significantly degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence
+*                  scenarios because Coded PHY (S=2/S=8) packets occupy the radio for much longer than 1M/2M PHY packets.
+*                  It is recommended to use the LE 2M PHY (or LE 1M PHY) first, and only include the LE Coded PHY when the
+*                  long-range capability is really required.
+*
 * @return            - ESP_OK : success
 *                    - other  : failed
 *
@@ -3647,6 +4009,11 @@ esp_err_t esp_ble_gap_set_preferred_default_phy(esp_ble_gap_phy_mask_t tx_phy_ma
 * @param[in]       tx_phy_mask : a bit field that indicates the transmitter PHYs that the Host prefers the Controller to use
 * @param[in]       rx_phy_mask : a bit field that indicates the receiver PHYs that the Host prefers the Controller to use
 * @param[in]       phy_options : a bit field that allows the Host to specify options for PHYs
+*
+* @note            Switching an existing ACL connection to the LE Coded PHY via tx_phy_mask / rx_phy_mask will significantly
+*                  degrade Wi-Fi performance in Bluetooth/Wi-Fi coexistence scenarios, because Coded PHY (S=2/S=8) packets
+*                  occupy the radio for much longer than 1M/2M PHY packets. It is recommended to use the LE 2M PHY (or LE 1M
+*                  PHY) first, and only switch to the LE Coded PHY when the long-range capability is really required.
 *
 * @return            - ESP_OK : success
 *                    - other  : failed
@@ -3960,6 +4327,12 @@ esp_err_t esp_ble_gap_get_periodic_list_size(uint8_t *size);
 * @param[in]       phy_2m_conn_params : Connection parameters for the LE 2M PHY are provided.
 * @param[in]       phy_coded_conn_params : Scan connectable advertisements on the LE Coded PHY. Connection parameters for the LE Coded PHY are provided.
 *
+* @note            Using the LE Coded PHY for the ACL connection will significantly degrade Wi-Fi performance, because
+*                  the on-air transmission time of a Coded PHY packet (S=2 or S=8) is much longer than that of a 1M/2M PHY
+*                  packet, so the Bluetooth controller occupies the radio for a longer time and leaves less airtime for Wi-Fi.
+*                  In Bluetooth/Wi-Fi coexistence scenarios, it is recommended to use the LE 2M PHY or LE 1M PHY first, and
+*                  only fall back to the LE Coded PHY when the long-range capability is really required.
+*
 * @return            - ESP_OK : success
 *                    - other  : failed
 *
@@ -4028,6 +4401,145 @@ esp_err_t esp_ble_gap_read_monitor_adv_list_size(void);
 */
 esp_err_t esp_ble_gap_enable_monitor_adv(bool enable);
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+
+#if (BLE_FEAT_DBAF == TRUE)
+/**
+* @brief           Set decision data for an advertising set (DBAF).
+*
+* @param[in]       params : Pointer to decision data parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_set_decision_data(const esp_ble_gap_set_decision_data_params_t *params);
+
+/**
+* @brief           Set decision instructions for decision-based advertising filtering (DBAF).
+*
+* @param[in]       params : Pointer to decision instructions parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_set_decision_instructions(const esp_ble_gap_set_decision_instructions_params_t *params);
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+/**
+* @brief           Request a Frame Space Update on a connection.
+*
+* @param[in]       params : Pointer to frame space update parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_frame_space_update(const esp_ble_gap_frame_space_update_params_t *params);
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+/**
+* @brief           Read all local supported LE features (LL Extended Feature Set).
+*
+* @return            - ESP_OK : success (command sent)
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_all_local_supp_features(void);
+
+/**
+* @brief           Read all remote LE features for a connection (LL Extended Feature Set).
+*
+* @param[in]       params : Pointer to read remote features parameters.
+*
+* @return            - ESP_OK : success (command sent)
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_all_remote_features(const esp_ble_gap_read_all_remote_feat_params_t *params);
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+/**
+* @brief           Request a connection rate update (Shorter Connection Intervals, Core 6.2).
+*
+*                  This API may be used by a Central or a Peripheral to request a change to the
+*                  connection interval, subrate factor, and/or other connection parameters.
+*                  `conn_interval_min/max` use 125 us units (minimum 375 us = 3).
+*                  Use ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_MS() or ESP_BLE_GAP_CONN_RATE_INTERVAL_FROM_US()
+*                  to convert from common time units.
+*
+*                  When the controller accepts or rejects the HCI command, `ESP_GAP_BLE_CONNECTION_RATE_REQUEST_COMPLETE_EVT`
+*                  is reported with `status` and `conn_handle`. On command acceptance, `ESP_GAP_BLE_CONN_RATE_CHANGE_EVT`
+*                  subsequently reports the applied parameters. The effective connection interval in microseconds is:
+*                  ESP_BLE_GAP_CONN_RATE_EFF_INTERVAL_US(conn_interval, subrate_factor).
+*
+* @param[in]       params : Pointer to connection rate request parameters.
+*
+* @return            - ESP_OK : success (command sent)
+*                    - ESP_ERR_INVALID_ARG : invalid parameters
+*                    - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+*                    - ESP_FAIL : other failures
+*
+*/
+esp_err_t esp_ble_gap_connection_rate_request(const esp_ble_gap_connection_rate_request_params_t *params);
+
+/**
+* @brief           Set default connection rate parameters for future Central connections (Core 6.2).
+*
+*                  Preconfigures the default connection rate parameters that may be requested by a
+*                  Peripheral on new ACL connections where the local device is Central.
+*
+* @param[in]       params : Pointer to default rate parameters.
+*
+* @return            - ESP_OK : success
+*                    - ESP_ERR_INVALID_ARG : invalid parameters
+*                    - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+*                    - ESP_FAIL : other failures
+*
+*/
+esp_err_t esp_ble_gap_set_default_rate_parameters(const esp_ble_gap_default_rate_param_t *params);
+
+/**
+* @brief           Read the Controller minimum supported connection interval and interval groups.
+*
+*                  On success, `ESP_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT` returns the
+*                  minimum supported interval and optional interval groups. If `num_groups` is 0,
+*                  the Controller only supports Rounded Connection Interval Values (RCV).
+*
+* @return            - ESP_OK : success (command sent)
+*                    - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+*                    - ESP_FAIL : other failures
+*
+*/
+esp_err_t esp_ble_gap_read_min_supported_connection_interval(void);
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+/**
+* @brief           Enable or disable LE Unified Test Protocol (UTP) OTA mode.
+*
+* @param[in]       params : Pointer to enable UTP OTA mode parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_enable_utp_ota_mode(const esp_ble_gap_enable_utp_ota_mode_params_t *params);
+
+/**
+* @brief           Send LE UTP data.
+*
+* @param[in]       params : Pointer to UTP send parameters.
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_utp_send(const esp_ble_gap_utp_send_params_t *params);
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -4385,11 +4897,17 @@ esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *defau
  */
 esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_params);
 
+/** Host Feature Set bit position: Channel Sounding Host Support (Bluetooth Core, bit 47) */
+#define ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT    47
+
 /**
  * @brief           This function is called to set host feature.
  *
- * @param[in]       bit_num: the bit position in the FeatureSet.
- * @param[in]       bit_val: the feature is enabled or disabled
+ * @param[in]       bit_num: the bit position in the FeatureSet (e.g. ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT).
+ * @param[in]       bit_val: 0x00 to disable, 0x01 to enable Host support for the feature
+ *
+ * @note            Channel Sounding Host APIs require CS Host Support enabled first:
+ *                  esp_ble_gap_set_host_feature(ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT, 1).
  *
  * @return
  *                  - ESP_OK : success
@@ -4492,6 +5010,50 @@ esp_err_t esp_ble_cs_write_cached_remote_supported_capabilities(esp_ble_cs_write
  *                  - other  : failed
  */
 esp_err_t esp_ble_cs_security_enable(uint16_t conn_handle);
+
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+/**
+ * @brief           Set Channel Sounding security requirements for a connection (Core 6.3).
+ *
+ *                  Requires CONFIG_BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS and CS Host Support enabled
+ *                  via esp_ble_gap_set_host_feature(ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT, 1).
+ *                  Must be issued before CS procedures are enabled on the connection.
+ *
+ *                  The Host does not validate Connection_Handle range or CS_Security_Requirements
+ *                  reserved bits (5-63); the Controller performs these checks and reports errors
+ *                  via ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT.
+ *
+ * @param[in]       params: CS set security requirements parameters
+ *
+ * @return
+ *                  - ESP_OK : success (command queued)
+ *                  - ESP_ERR_INVALID_ARG : params is NULL
+ *                  - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+ *                  - ESP_FAIL : other failures
+ */
+esp_err_t esp_ble_cs_set_security_requirements(esp_ble_cs_set_security_requirements_params *params);
+
+/**
+ * @brief           Set initial Channel Sounding security requirements for future connections (Core 6.3).
+ *
+ *                  Requires CONFIG_BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS and CS Host Support enabled
+ *                  via esp_ble_gap_set_host_feature(ESP_BLE_HOST_FEATURE_CS_HOST_SUPPORT, 1).
+ *                  Does not affect existing connections.
+ *
+ *                  The Host does not validate CS_Security_Requirements reserved bits (5-63);
+ *                  the Controller performs this check and reports errors via
+ *                  ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT.
+ *
+ * @param[in]       params: CS set default security requirements parameters
+ *
+ * @return
+ *                  - ESP_OK : success (command queued)
+ *                  - ESP_ERR_INVALID_ARG : params is NULL
+ *                  - ESP_ERR_INVALID_STATE : Bluedroid is not enabled
+ *                  - ESP_FAIL : other failures
+ */
+esp_err_t esp_ble_cs_set_default_security_requirements(esp_ble_cs_set_default_security_requirements_params *params);
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 
 /**
  * @brief           This function is used to set default CS settings in the local Controller

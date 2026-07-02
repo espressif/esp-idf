@@ -280,7 +280,11 @@ typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
  *
  * @param[in]      callback The pointer to the application callback function
  *
- * @note            Avoid performing time-consuming operations within the callback functions.
+ * @note            Do NOT perform time-consuming operations in the callback. Time-consuming operations
+ *                  include: taking semaphores that may block for a long time (e.g. xSemaphoreTake with
+ *                  long timeout or portMAX_DELAY), blocking delays (e.g. vTaskDelay), and flash
+ *                  read/write/erase. Such operations may block the Bluetooth stack and lead to
+ *                  instability or deadlock. Defer heavy work to a separate task if needed.
  *
  * @return
  *          - ESP_OK: Success
@@ -330,10 +334,22 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
  *
  * @note
  *      1. Do not enable `BT_BLE_42_FEATURES_SUPPORTED` and `BT_BLE_50_FEATURES_SUPPORTED` in the menuconfig simultaneously.
- *      1. The function always triggers `ESP_GATTC_CONNECT_EVT` and `ESP_GATTC_OPEN_EVT`.
- *      2. When the device acts as GATT server, besides the above two events, this function triggers `ESP_GATTS_CONNECT_EVT` as well.
- *      3. This function will establish an ACL connection as a Central and a virtual connection as a GATT Client. If the ACL connection already exists, it will create a virtual connection only.
-
+ *      2. The function always triggers `ESP_GATTC_CONNECT_EVT` and `ESP_GATTC_OPEN_EVT`.
+ *      3. When the device acts as GATT server, besides the above two events, this function triggers `ESP_GATTS_CONNECT_EVT` as well.
+ *      4. This function will establish an ACL connection as a Central and a virtual connection as a GATT Client. If the ACL connection already exists, it will create a virtual connection only.
+ *      5. The `is_aux` parameter in `esp_gatt_creat_conn_params_t` determines which connection interface to use:
+ *         - If `is_aux` is true, the BLE 5.0 extended connection interface will be used.
+ *         - If `is_aux` is false, the BLE 4.2 interface (legacy connection) will be used.
+ *         - When connecting to a legacy advertising device using BLE 5.0 interface, `is_aux` should be set to true.
+ *      6. Auto-setting of `is_aux` parameter (handled in L2CAP layer):
+ *         - If only BLE 4.2 feature is enabled, `is_aux` will be automatically set to false.
+ *         - If only BLE 5.0 feature is enabled, `is_aux` will be automatically set to true.
+ *         - If both BLE 4.2 and BLE 5.0 features are enabled (not recommended):
+ *           * The stack will automatically infer whether to use BLE 5.0 or BLE 4.2 interface
+ *             based on previously used APIs.
+ *           * Otherwise, the user-specified value will be used.
+ *         - Note: It is strongly recommended NOT to enable both BLE 4.2 and BLE 5.0 features
+ *           simultaneously in menuconfig.
  *
  * @param[in]       gattc_if: GATT client access interface.
  * @param[in]       esp_gatt_create_conn: Pointer to the structure containing connection parameters.
@@ -503,8 +519,12 @@ esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id,
  *      2. `esp_ble_gattc_cache_refresh` can be used to discover services again.
  *
  * @return
- *      - ESP_OK: Success
- *      - ESP_FAIL: Failure
+ *      - ESP_GATT_OK: Success
+ *      - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *      - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
+ *      - ESP_GATT_NOT_FOUND: No matching service was found in the local cache
+ *      - ESP_GATT_INVALID_OFFSET: `offset` is out of range of the matched services
+ *      - ESP_GATT_NO_RESOURCES: Failed to allocate memory for the UUID lookup
  */
 esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t conn_id, esp_bt_uuid_t *svc_uuid,
                                             esp_gattc_service_elem_t *result, uint16_t *count, uint16_t offset);
@@ -522,13 +542,17 @@ esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t con
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *      - ESP_OK: Success
+ *      - ESP_GATT_OK: Success
+ *      - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *      - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *      - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *      - ESP_FAIL: Failure due to other reasons
+ *      - ESP_GATT_NOT_FOUND: No characteristic found in the given handle range
+ *      - ESP_GATT_INVALID_OFFSET: `offset` is out of range of the matched characteristics
  */
 esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
                                              uint16_t conn_id,
@@ -552,10 +576,12 @@ esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
  *      2. `char_handle` must be greater than 0.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `char_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No descriptor found under the given characteristic
+ *       - ESP_GATT_INVALID_OFFSET: `offset` is out of range of the matched descriptors
  */
 esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
                                               uint16_t conn_id,
@@ -576,13 +602,16 @@ esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No characteristic matching `char_uuid` found in the handle range
  */
 esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
                                                  uint16_t conn_id,
@@ -606,12 +635,16 @@ esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No descriptor matching the given UUIDs found in the handle range
  */
 esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
                                                   uint16_t conn_id,
@@ -637,10 +670,11 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
  *      2. `char_handle` must be greater than 0.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `char_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No descriptor matching `descr_uuid` found under `char_handle`
  */
 esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
                                                          uint16_t conn_id,
@@ -662,12 +696,16 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
  *
  * @note
  *      1. This API does not trigger any event.
- *      2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *         cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
+ *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle` or `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `result` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No included service matching `incl_uuid` found in the handle range
  */
 esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
                                                     uint16_t conn_id,
@@ -691,13 +729,15 @@ esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
  *
  * @note
  *     1. This API does not trigger any event.
- *     2. `start_handle` must be greater than 0, and smaller than `end_handle` if the `type` is not `ESP_GATT_DB_DESCRIPTOR`.
+ *     2. If the `type` is not `ESP_GATT_DB_DESCRIPTOR`, `start_handle` must not be greater than
+ *        `end_handle`, and `start_handle` and `end_handle` must not both be 0. 0 is allowed for
+ *        `start_handle` alone and matches cached attributes from the beginning of the handle range.
  *
  * @return
- *                  - ESP_OK: Success
+ *                  - ESP_GATT_OK: Success
+ *                  - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *                  - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle`, `end_handle`
  *                  - ESP_GATT_INVALID_PDU: NULL pointer to `count`
- *                  - ESP_FAIL: Failure due to other reasons
  */
 esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
                                                uint16_t conn_id,
@@ -719,13 +759,16 @@ esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
  *
  * @note
  *       1. This API does not trigger any event.
- *       2. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *       2. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *          `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and matches
+ *          cached attributes from the beginning of the handle range.
  *
  * @return
- *       - ESP_OK: Success
+ *       - ESP_GATT_OK: Success
+ *       - ESP_GATT_WRONG_STATE: Bluedroid stack is not enabled
  *       - ESP_GATT_INVALID_HANDLE: Invalid GATT `start_handle`, `end_handle`
  *       - ESP_GATT_INVALID_PDU: NULL pointer to `db` or NULL pointer to `count` or the count value is 0
- *       - ESP_FAIL: Failure due to other reasons
+ *       - ESP_GATT_NOT_FOUND: No GATT database element found in the given handle range
  *
  */
 esp_gatt_status_t esp_ble_gattc_get_db(esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t start_handle, uint16_t end_handle,
@@ -768,7 +811,9 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
  * @note
  *      1. This function triggers `ESP_GATTC_READ_CHAR_EVT`.
  *      2. This function should be called only after the connection has been established.
- *      3. `start_handle` must be greater than 0, and smaller than `end_handle`.
+ *      3. `start_handle` must not be greater than `end_handle`, and `start_handle` and
+ *         `end_handle` must not both be 0. 0 is allowed for `start_handle` alone and is
+ *         treated as 1 on air.
  *
  * @return
  *       - ESP_OK: Success
@@ -858,12 +903,14 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
  * @param[in]       value_len  The length of the value to write in bytes
  * @param[in]       value      The value to write
  * @param[in]       write_type The type of Attribute write operation
- * @param[in]       auth_req   Authentication request type
+ * @param[in]       auth_req   Authenticate request type
  *
  * @note
  *      1. This function triggers `ESP_GATTC_WRITE_CHAR_EVT`.
  *      2. This function should be called only after the connection has been established.
  *      3. `handle` must be greater than 0.
+ *      4. If `auth_req` is not `ESP_GATT_AUTH_REQ_NONE`, the stack may start encryption
+ *         or SMP pairing before sending the ATT write.
  *
  * @return
  *       - ESP_OK: Success
@@ -997,6 +1044,22 @@ esp_err_t esp_ble_gattc_execute_write (esp_gatt_if_t gattc_if, uint16_t conn_id,
  *       1. This function triggers `ESP_GATTC_REG_FOR_NOTIFY_EVT`.
  *       2. You should call `esp_ble_gattc_write_char_descr()` after this API to write Client Characteristic Configuration (CCC) descriptor to the value of 1 (Enable Notification) or 2 (Enable Indication).
  *       3. `handle` must be greater than 0.
+ *       4. This API should be invoked only after service discovery for the target
+ *          peer has completed (i.e. after `ESP_GATTC_SEARCH_CMPL_EVT` has been
+ *          received, or after a previously persisted cache has been loaded). The
+ *          recommended way to obtain `handle` is via the cache accessor APIs such
+ *          as `esp_ble_gattc_get_all_char` or `esp_ble_gattc_get_char_by_uuid`.
+ *       5. When the GATT cache for `server_bda` is ready, the stack will validate
+ *          `handle` against the cache: it must refer to a characteristic value
+ *          whose properties include Notify or Indicate. If this validation fails,
+ *          `ESP_GATTC_REG_FOR_NOTIFY_EVT` reports `ESP_GATT_ILLEGAL_PARAMETER`
+ *          and the registration is rejected. If the cache is not yet ready (for
+ *          example the API is called before service discovery completes), the
+ *          stack skips this validation for backward compatibility, but in that
+ *          case any incoming notification whose handle does not match a prior
+ *          registration will be silently dropped by the host. Calling the API
+ *          with an invalid handle in that window is therefore strongly
+ *          discouraged.
  *
  * @return
  *        - ESP_OK: Success

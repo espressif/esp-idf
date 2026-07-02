@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,9 @@
 #include "esp_private/startup_internal.h"
 
 static const char *TAG = "heap_init";
+
+/* Flag indicating if the system is in startup */
+static bool s_in_startup = true;
 
 /* Linked-list of registered heaps */
 struct registered_heap_ll registered_heaps;
@@ -88,6 +91,11 @@ void heap_caps_enable_nonos_stack_heaps(void)
             }
         }
     }
+
+    /* heap_caps_enable_nonos_stack_heaps is called from main_task right before
+     * app_main is called so setting this variable here is as close as we can get
+     * within the heap component to the actual start of the application */
+    s_in_startup = false;
 }
 
 /* Initialize the heap allocator to use all of the memory not
@@ -313,6 +321,15 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
         goto done;
     }
     multi_heap_set_lock(p_new->heap, &p_new->heap_mux);
+
+    if (!s_in_startup) {
+        /* Set minimum_free_bytes to 0 so the newly added heap does not
+         * artificially inflate minimum free size. Only perform this operation
+         * for heaps created after startup. The heaps created by IDF component
+         * before app_main is reached should be taken into account in the calculation
+         * of the minimum free size. */
+        multi_heap_restore_minimum_free_bytes(p_new->heap, 0);
+    }
 
     /* (This insertion is atomic to registered_heaps, so
        we don't need to worry about thread safety for readers,

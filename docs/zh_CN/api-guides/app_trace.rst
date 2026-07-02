@@ -557,9 +557,27 @@ Start 子命令语法：
 
         如果你在可视化方面遇到了问题（未显示数据或者缩放操作异常），可以尝试删除当前的信号层次结构，再双击必要的文件或端口。Eclipse 会请求创建新的信号层次结构。
 
+应用示例
+""""""""
+
+- :example:`system/sysview_tracing` 演示如何使用 SEGGER SystemView 记录 FreeRTOS 任务与系统事件。
+- :example:`system/sysview_tracing_heap_log` 演示如何在记录 SystemView 事件的同时，对堆内存分配进行跟踪。
+
 .. _app_trace-gcov-source-code-coverage:
 
 Gcov（源代码覆盖率）
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 在 ESP-IDF 项目中，可以借助 `espressif/esp_gcov <https://components.espressif.com/components/espressif/esp_gcov>`_ 托管组件使用 gcov 进行代码覆盖率分析。
+
+.. _app_trace-integrating-a-custom-trace-library:
+
+集成自定义跟踪库
+^^^^^^^^^^^^^^^^
+
+``esp_trace`` 组件提供了稳定的扩展点 (``CONFIG_ESP_TRACE_LIB_EXTERNAL``)，允许在不修改 ESP-IDF 的情况下接入第三方跟踪记录器。外部组件需提供一个编码器适配器（通过 ``ESP_TRACE_REGISTER_ENCODER()`` 注册）以及一个轻量的 ``esp_trace_freertos_impl.h``，用于注入所需的 FreeRTOS 跟踪钩子。编码器虚表还提供可选的 ``start`` / ``stop`` / ``flush`` 及 ``take_lock`` / ``give_lock`` 入口，由公共 API :cpp:func:`esp_trace_start`、:cpp:func:`esp_trace_stop`、:cpp:func:`esp_trace_flush` 调度。
+
+应用示例
+""""""""
+
+- :example:`system/esp_trace` 是一个最简的复制粘贴模板，演示如何接入外部编码器、说明 FreeRTOS 跟踪钩子头文件的包含链约束，以及通过编码器锁实现多核序列化。

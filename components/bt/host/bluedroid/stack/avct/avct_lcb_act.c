@@ -425,7 +425,12 @@ void avct_lcb_chnl_disc(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 {
     UNUSED(p_data);
 
-    L2CA_DisconnectReq(p_lcb->ch_lcid);
+    tAVCT_LCB_EVT evt;
+
+    if (!L2CA_DisconnectReq(p_lcb->ch_lcid)) {
+        evt.result = AVCT_RESULT_FAIL;
+        avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &evt);
+    }
 }
 
 /*******************************************************************************
@@ -474,6 +479,7 @@ void avct_lcb_cong_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
             if (L2CA_DataWrite(p_lcb->ch_lcid, p_buf) == L2CAP_DW_CONGESTED)
             {
                 p_lcb->cong = TRUE;
+                event = AVCT_CONG_IND_EVT;
             }
         }
     }

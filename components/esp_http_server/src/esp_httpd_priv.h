@@ -17,6 +17,7 @@
 
 #include <esp_http_server.h>
 #include "osal.h"
+#include "freertos/semphr.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -130,9 +131,7 @@ struct httpd_data {
     httpd_config_t config;                  /*!< HTTPD server configuration */
     int listen_fd;                          /*!< Server listener FD */
     int ctrl_fd;                            /*!< Ctrl message receiver FD */
-#if CONFIG_HTTPD_QUEUE_WORK_BLOCKING
-    SemaphoreHandle_t ctrl_sock_semaphore;  /*!< Ctrl socket semaphore */
-#endif
+    SemaphoreHandle_t ctrl_sock_semaphore;  /*!< Ctrl mbox slot reservation (sized to LWIP_UDP_RECVMBOX_SIZE) */
     int msg_fd;                             /*!< Ctrl message sender FD */
     struct thread_data hd_td;               /*!< Information for the HTTPD thread */
     struct sock_db *hd_sd;                  /*!< The socket database */

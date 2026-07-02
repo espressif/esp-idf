@@ -121,6 +121,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_BT,                //!< Wakeup caused by BT (light sleep only)
     ESP_SLEEP_WAKEUP_VAD,               //!< Wakeup caused by VAD
     ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT,   //!< Wakeup caused by VDD_BAT under voltage.
+    ESP_SLEEP_WAKEUP_USB,               //!< Wakeup caused by USB HS (light sleep only)
 } esp_sleep_source_t;
 
 /**
@@ -133,7 +134,6 @@ typedef enum {
 
 /* Leave this type define for compatibility */
 typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
-
 enum {
     ESP_ERR_SLEEP_REJECT = ESP_ERR_INVALID_STATE,
     ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
@@ -489,8 +489,8 @@ esp_err_t esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(uint64_t gpio_pin_
  * @brief Enable wakeup from light sleep using GPIOs
  *
  * Each GPIO supports wakeup function, which can be triggered on either low level
- * or high level. Unlike EXT0 and EXT1 wakeup sources, this method can be used
- * both for all IOs: RTC IOs and digital IOs. It can only be used to wakeup from
+ * or high level. This method can be used with any IO (RTC or digital), whereas
+ * external RTC wakeup is limited to RTC GPIOs. It can only be used to wakeup from
  * light sleep though.
  *
  * To enable wakeup, first call gpio_wakeup_enable, specifying gpio number and
@@ -544,6 +544,22 @@ esp_err_t esp_sleep_enable_bt_wakeup(void);
  *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
  */
 esp_err_t esp_sleep_disable_bt_wakeup(void);
+
+/**
+ * @brief Enable wakeup by High-Speed USB-OTG
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
+ */
+esp_err_t esp_sleep_enable_usb_wakeup(void);
+
+/**
+ * @brief Disable wakeup by High-Speed USB-OTG
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
+ */
+esp_err_t esp_sleep_disable_usb_wakeup(void);
 
 /**
  * @brief Enable wakeup by WiFi MAC

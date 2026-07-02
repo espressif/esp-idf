@@ -83,31 +83,29 @@ if(CONFIG_SOC_AES_SUPPORTED)
                                         "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                                         "${COMPONENT_DIR}/port/aes/esp_aes_xts.c")
     target_include_directories(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/include/aes")
-    if(CONFIG_MBEDTLS_HARDWARE_AES)
-        target_sources(tfpsacrypto PRIVATE
-                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
-                "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes_gcm.c"
-        )
-    endif()
-
+    target_sources(tfpsacrypto PRIVATE
+            "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes.c"
+            "${COMPONENT_DIR}/port/psa_driver/esp_aes/psa_crypto_driver_esp_aes_gcm.c"
+    )
 endif()
 # SHA implementation
 if(CONFIG_SOC_SHA_SUPPORTED)
     target_sources(tfpsacrypto PRIVATE
         "${COMPONENT_DIR}/port/psa_driver/esp_sha/psa_crypto_driver_esp_sha.c"
-        "${COMPONENT_DIR}/port/psa_driver/esp_sha/core/psa_crypto_driver_esp_sha1.c"
         "${COMPONENT_DIR}/port/psa_driver/esp_sha/core/psa_crypto_driver_esp_sha256.c"
-        "${COMPONENT_DIR}/port/psa_driver/esp_sha/core/psa_crypto_driver_esp_sha512.c"
         "${COMPONENT_DIR}/port/sha/core/sha.c"
         "${COMPONENT_DIR}/port/sha/esp_sha.c"
-        "${COMPONENT_DIR}/port/psa_driver/esp_mac/psa_crypto_driver_esp_hmac_transparent.c"
-        )
-endif()
-
-if(CONFIG_MBEDTLS_ROM_MD5)
-    target_sources(tfpsacrypto PRIVATE
-        "${COMPONENT_DIR}/port/psa_driver/esp_md/psa_crypto_driver_esp_md5.c"
     )
+    if(CONFIG_MBEDTLS_SHA1_C)
+        target_sources(tfpsacrypto PRIVATE
+            "${COMPONENT_DIR}/port/psa_driver/esp_sha/core/psa_crypto_driver_esp_sha1.c"
+        )
+    endif()
+    if(CONFIG_SOC_SHA_SUPPORT_SHA512 AND CONFIG_MBEDTLS_SHA512_C)
+        target_sources(tfpsacrypto PRIVATE
+            "${COMPONENT_DIR}/port/psa_driver/esp_sha/core/psa_crypto_driver_esp_sha512.c"
+        )
+    endif()
 endif()
 
 if(CONFIG_SOC_ECC_SUPPORTED)
@@ -120,6 +118,9 @@ if(CONFIG_SOC_HMAC_SUPPORTED)
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/psa_driver/esp_mac/psa_crypto_driver_esp_hmac_opaque.c")
     target_sources(tfpsacrypto PRIVATE "${COMPONENT_DIR}/port/esp_hmac_pbkdf2.c")
     target_link_libraries(tfpsacrypto PRIVATE idf::efuse)
+else()
+    target_sources(tfpsacrypto PRIVATE
+        "${COMPONENT_DIR}/port/psa_driver/esp_mac/psa_crypto_driver_esp_hmac_transparent.c")
 endif()
 
 # PSA Attestation

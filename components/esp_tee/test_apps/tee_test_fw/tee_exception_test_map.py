@@ -78,6 +78,12 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
         },
     },
     'esp32c61': {
+        # NOTE: On ESP32-C61, MMU-spillover does not raise a CPU panic — the TEE
+        # test fills the bad mapping with a poison pattern and calls esp_restart().
+        # Verified separately in the pytest, so drop it from the panic-driven map.
+        'ree_isolation': {
+            '_remove': ['MMU-spillover'],
+        },
         # NOTE: ESP32-C61 does not support the following peripherals
         'apm_violation': {
             '_remove': ['AES', 'HMAC', 'DS'],

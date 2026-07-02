@@ -368,6 +368,7 @@ conditional_include_dict = {
     'SOC_ECDSA_SUPPORTED': ['api-reference/peripherals/ecdsa.rst'],
     'SOC_HMAC_SUPPORTED': ['api-reference/peripherals/hmac.rst'],
     'SOC_ASYNC_MEMCPY_SUPPORTED': ['api-reference/system/async_memcpy.rst'],
+    'SOC_DMA2D_SUPPORTED': ['api-reference/peripherals/async_color_convert.rst'],
     'SOC_KEY_MANAGER_SUPPORTED': ['api-reference/peripherals/key_manager.rst'],
     'CONFIG_IDF_TARGET_ARCH_XTENSA': XTENSA_DOCS,
     'CONFIG_IDF_TARGET_ARCH_RISCV': RISCV_DOCS,
@@ -409,6 +410,7 @@ conditional_include_dict = {
 extensions += [  # noqa: F405
     'sphinx_copybutton',
     'sphinxcontrib.wavedrom',
+    'sphinxcontrib.mermaid',
     # Note: order is important here, events must
     # be registered by one extension before they can be
     # connected to another extension

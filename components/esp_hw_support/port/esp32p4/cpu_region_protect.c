@@ -11,9 +11,9 @@
 #include "esp_fault.h"
 #include "hal/cache_ll.h"
 #include "riscv/csr.h"
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
-#endif /* CONFIG_SPIRAM */
+#endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
 
 #include "soc/chip_revision.h"
 #include "hal/config.h"
@@ -198,14 +198,14 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(22, 26, page_aligned_drom_resv_end, PMP_TOR | R);
 
 #else
-#if CONFIG_SPIRAM
+#if !BOOTLOADER_BUILD && CONFIG_SPIRAM
     const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH);
     PMP_RESET_AND_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | CONDITIONAL_RWX);
 
     const uint32_t pmpaddr11 = PMPADDR_NAPOT(CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_LOW), CACHE_LL_L2MEM_NON_CACHE_ADDR(SOC_EXTRAM_HIGH));
     PMP_RESET_AND_ENTRY_SET(11, pmpaddr11, PMP_NAPOT | CONDITIONAL_RWX);
     _Static_assert(SOC_EXTRAM_LOW < SOC_EXTRAM_HIGH, "Invalid I/D_EXTRAM region");
-#endif /* CONFIG_SPIRAM */
+#endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
 
     const uint32_t pmpaddr12 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
     PMP_RESET_AND_ENTRY_SET(12, pmpaddr12, PMP_NAPOT | CONDITIONAL_RX);

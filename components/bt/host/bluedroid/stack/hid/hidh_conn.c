@@ -766,6 +766,11 @@ static void hidh_l2cif_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
         return;
     }
 
+    if (p_msg->len < 1) {
+        HIDH_TRACE_WARNING ("HID-Host Rcvd Empty L2CAP data");
+        osi_free (p_msg);
+        return;
+    }
 
     ttype    = HID_GET_TRANS_FROM_HDR(*p_data);
     param    = HID_GET_PARAM_FROM_HDR(*p_data);

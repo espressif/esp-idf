@@ -8,6 +8,7 @@
 - :doc:`分区表 API <partition>` 基于 :doc:`/api-guides/partition-tables` ，允许以块为单位访问 SPI flash。
 - :doc:`非易失性存储库 (NVS) <nvs_flash>` 在 SPI NOR flash 上实现了一个有容错性，和磨损均衡功能的键值对存储。
 - :doc:`虚拟文件系统 (VFS) <vfs>` 库提供了一个用于注册文件系统驱动的接口。SPIFFS、FAT 以及多种其他的文件系统库都基于 VFS。
+- :doc:`块设备层 <blockdev>` 定义了一个通用的块设备抽象，使得存储驱动、中间件和文件系统可以互操作，而不需要专门的适配器。
 - :doc:`SPIFFS <spiffs>` 是一个专为 SPI NOR flash 优化的磨损均衡的文件系统，非常适用于小分区和低吞吐率的应用。
 - :doc:`FAT <fatfs>` 是一个可用于 SPI flash 或者 SD/MMC 存储卡的标准文件系统。
 - :doc:`磨损均衡 <wear-levelling>` 库实现了一个适用于 SPI NOR flash 的 flash 翻译层 (FTL)，用于 flash 中 FAT 分区的容器。
@@ -33,6 +34,7 @@
    nvs_partition_parse.rst
    sdmmc
    partition
+   blockdev
    spiffs
    vfs
    wear-levelling

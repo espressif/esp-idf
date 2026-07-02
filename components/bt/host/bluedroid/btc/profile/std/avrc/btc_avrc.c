@@ -487,11 +487,15 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         if (btc_rc_cb.rc_connected) {
             BTC_TRACE_ERROR("Got RC OPEN in connected state, Connected RC: %d \
                 and Current RC: %d", btc_rc_cb.rc_handle, p_rc_open->rc_handle );
-            if ((btc_rc_cb.rc_handle != p_rc_open->rc_handle)
-                    && (bdcmp(btc_rc_cb.rc_addr, p_rc_open->peer_addr))) {
-                BTC_TRACE_DEBUG("Got RC connected for some other handle");
-                BTA_AvCloseRc(p_rc_open->rc_handle);
-                return;
+            if (btc_rc_cb.rc_handle != p_rc_open->rc_handle) {
+                if (bdcmp(btc_rc_cb.rc_addr, p_rc_open->peer_addr) == 0) {
+                    /* same device reconnected with new handle - close stale one */
+                    BTA_AvCloseRc(btc_rc_cb.rc_handle);
+                } else {
+                    BTC_TRACE_DEBUG("Got RC connected for some other handle");
+                    BTA_AvCloseRc(p_rc_open->rc_handle);
+                    return;
+                }
             }
         }
         memcpy(btc_rc_cb.rc_addr, p_rc_open->peer_addr, sizeof(BD_ADDR));
@@ -526,7 +530,11 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
     } else {
         BTC_TRACE_ERROR("%s Connect failed with error code: %d",
                         __FUNCTION__, p_rc_open->status);
-        btc_rc_cb.rc_connected = FALSE;
+        /* only clear state if the failure belongs to the active connection */
+        if (p_rc_open->rc_handle == btc_rc_cb.rc_handle ||
+            bdcmp(btc_rc_cb.rc_addr, p_rc_open->peer_addr) == 0) {
+            btc_rc_cb.rc_connected = FALSE;
+        }
     }
 }
 
@@ -541,9 +549,18 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
 static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 {
     BTC_TRACE_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
-    if ((p_rc_close->rc_handle != btc_rc_cb.rc_handle)
-            && (bdcmp(btc_rc_cb.rc_addr, p_rc_close->peer_addr))) {
-        BTC_TRACE_ERROR("Got disconnect of unknown device");
+    if (!btc_rc_cb.rc_connected) {
+        BTC_TRACE_WARNING("Got disconnect when not connected");
+        return;
+    }
+    if (p_rc_close->rc_handle != btc_rc_cb.rc_handle) {
+        if (bdcmp(btc_rc_cb.rc_addr, p_rc_close->peer_addr) != 0) {
+            BTC_TRACE_ERROR("Got disconnect of unknown device");
+            return;
+        }
+        /* ignore disconnect for superseded handle on same device */
+        BTC_TRACE_DEBUG("Ignoring disconnect for stale rc_handle %d (current %d)",
+                        p_rc_close->rc_handle, btc_rc_cb.rc_handle);
         return;
     }
 
@@ -639,6 +656,12 @@ static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
                   ((uint32_t)vendor_msg->p_vendor_data[2 + attr_index] << 8) |
                   ((uint32_t)vendor_msg->p_vendor_data[1 + attr_index] << 16) |
                   ((uint32_t)vendor_msg->p_vendor_data[attr_index] << 24);
+
+        if (!AVRC_IS_VALID_MEDIA_ATTRIBUTE(attr_id)) {
+            BTC_TRACE_WARNING("invalid attr_id 0x%x, skip", attr_id);
+            attr_index += attr_length + 8;
+            continue;
+        }
 
         //Convert to mask id
         param[i].meta_rsp.attr_id = (1 << (attr_id - 1));
@@ -1153,6 +1176,11 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
  ***************************************************************************/
 BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 {
+#if AVRC_DYNAMIC_MEMORY == TRUE
+    if (btc_rc_cb_ptr == NULL) {
+        return FALSE;
+    }
+#endif
     if (btc_rc_cb.rc_connected == TRUE) {
         bdcpy(peer_addr, btc_rc_cb.rc_addr);
         return TRUE;
@@ -1257,7 +1285,7 @@ static void btc_avrc_ct_deinit(void)
 
 static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id)
 {
-    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    bt_status_t ret = BT_STATUS_UNSUPPORTED;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
@@ -1265,6 +1293,7 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
     tAVRC_APP_SETTING values = {0};
+    tAVRC_STS cmd_status;
 
     values.attr_id = attr_id;
     values.attr_val = value_id;
@@ -1276,13 +1305,15 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
     avrc_cmd.set_app_val.pdu = AVRC_PDU_SET_PLAYER_APP_VALUE;
 
     if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
-        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-        if (status == AVRC_STS_NO_ERROR) {
+        cmd_status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (cmd_status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, BTA_AV_CMD_CTRL, p_msg);
-            status = BT_STATUS_SUCCESS;
+            ret = BT_STATUS_SUCCESS;
+        } else {
+            ret = BT_STATUS_FAIL;
         }
     } else {
-        status = BT_STATUS_FAIL;
+        ret = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
@@ -1290,18 +1321,19 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
     BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    return status;
+    return ret;
 }
 
 static bt_status_t btc_avrc_ct_send_get_rn_caps_cmd(uint8_t tl)
 {
-    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    bt_status_t ret = BT_STATUS_UNSUPPORTED;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
 
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
+    tAVRC_STS cmd_status;
 
     avrc_cmd.get_caps.opcode = AVRC_OP_VENDOR;
     avrc_cmd.get_caps.status = AVRC_STS_NO_ERROR;
@@ -1309,13 +1341,15 @@ static bt_status_t btc_avrc_ct_send_get_rn_caps_cmd(uint8_t tl)
     avrc_cmd.get_caps.capability_id = AVRC_CAP_EVENTS_SUPPORTED;
 
     if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
-        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-        if (status == AVRC_STS_NO_ERROR) {
+        cmd_status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (cmd_status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
-            status = BT_STATUS_SUCCESS;
+            ret = BT_STATUS_SUCCESS;
+        } else {
+            ret = BT_STATUS_FAIL;
         }
     } else {
-        status = BT_STATUS_FAIL;
+        ret = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
@@ -1323,18 +1357,19 @@ static bt_status_t btc_avrc_ct_send_get_rn_caps_cmd(uint8_t tl)
     BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    return status;
+    return ret;
 }
 
 static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_id, uint32_t event_parameter)
 {
-    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    bt_status_t ret = BT_STATUS_UNSUPPORTED;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
 
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
+    tAVRC_STS cmd_status;
 
     avrc_cmd.reg_notif.opcode = AVRC_OP_VENDOR;
     avrc_cmd.reg_notif.status = AVRC_STS_NO_ERROR;
@@ -1343,13 +1378,15 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
     avrc_cmd.reg_notif.pdu = AVRC_PDU_REGISTER_NOTIFICATION;
 
     if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
-        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-        if (status == AVRC_STS_NO_ERROR) {
+        cmd_status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (cmd_status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_NOTIF, p_msg);
-            status = BT_STATUS_SUCCESS;
+            ret = BT_STATUS_SUCCESS;
+        } else {
+            ret = BT_STATUS_FAIL;
         }
     } else {
-        status = BT_STATUS_FAIL;
+        ret = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
@@ -1357,18 +1394,19 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
     BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    return status;
+    return ret;
 }
 
 static bt_status_t btc_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume)
 {
-    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    bt_status_t ret = BT_STATUS_UNSUPPORTED;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
 
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
+    tAVRC_STS cmd_status;
 
     avrc_cmd.volume.opcode = AVRC_OP_VENDOR;
     avrc_cmd.volume.status = AVRC_STS_NO_ERROR;
@@ -1376,13 +1414,15 @@ static bt_status_t btc_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t 
     avrc_cmd.volume.pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME;
 
     if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
-        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-        if (status == AVRC_STS_NO_ERROR) {
+        cmd_status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (cmd_status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_CTRL, p_msg);
-            status = BT_STATUS_SUCCESS;
+            ret = BT_STATUS_SUCCESS;
+        } else {
+            ret = BT_STATUS_FAIL;
         }
     } else {
-        status = BT_STATUS_FAIL;
+        ret = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
@@ -1390,12 +1430,12 @@ static bt_status_t btc_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t 
     BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    return status;
+    return ret;
 }
 
 static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 {
-    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    bt_status_t ret = BT_STATUS_UNSUPPORTED;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
@@ -1403,6 +1443,7 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
+    tAVRC_STS cmd_status;
 
     avrc_cmd.get_elem_attrs.opcode = AVRC_OP_VENDOR;
     avrc_cmd.get_elem_attrs.status = AVRC_STS_NO_ERROR;
@@ -1418,13 +1459,15 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
     avrc_cmd.get_elem_attrs.num_attr = index;
 
     if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
-        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-        if (status == AVRC_STS_NO_ERROR) {
+        cmd_status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (cmd_status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
-            status = BT_STATUS_SUCCESS;
+            ret = BT_STATUS_SUCCESS;
+        } else {
+            ret = BT_STATUS_FAIL;
         }
     } else {
-        status = BT_STATUS_FAIL;
+        ret = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
@@ -1432,31 +1475,34 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
     BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    return status;
+    return ret;
 }
 
 static bt_status_t btc_avrc_ct_send_get_play_status_cmd(uint8_t tl)
 {
-    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+    bt_status_t ret = BT_STATUS_UNSUPPORTED;
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
 
     tAVRC_COMMAND avrc_cmd = {0};
     BT_HDR *p_msg = NULL;
+    tAVRC_STS cmd_status;
 
     avrc_cmd.get_play_status.opcode = AVRC_OP_VENDOR;
     avrc_cmd.get_play_status.status = AVRC_STS_NO_ERROR;
     avrc_cmd.get_play_status.pdu = AVRC_PDU_GET_PLAY_STATUS;
 
     if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
-        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-        if (status == AVRC_STS_NO_ERROR) {
+        cmd_status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (cmd_status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
-            status = BT_STATUS_SUCCESS;
+            ret = BT_STATUS_SUCCESS;
+        } else {
+            ret = BT_STATUS_FAIL;
         }
     } else {
-        status = BT_STATUS_FAIL;
+        ret = BT_STATUS_FAIL;
         BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
@@ -1464,7 +1510,7 @@ static bt_status_t btc_avrc_ct_send_get_play_status_cmd(uint8_t tl)
     BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
 #endif
 
-    return status;
+    return ret;
 }
 
 static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
@@ -1758,6 +1804,8 @@ void btc_avrc_ct_call_handler(btc_msg_t *msg)
     default:
         BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }
+
+    btc_avrc_arg_deep_free(msg);
 }
 
 void btc_avrc_tg_call_handler(btc_msg_t *msg)

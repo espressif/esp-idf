@@ -11,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Generator
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import ot_ci_function as ocf
@@ -103,6 +104,25 @@ ESPPORT3 = os.getenv('ESPPORT3')
 ESPPORT4 = os.getenv('ESPPORT4')
 
 PORT_MAPPING = {'ESPPORT1': 'esp32h2', 'ESPPORT2': 'esp32s3', 'ESPPORT3': 'esp32c6', 'ESPPORT4': 'esp32c5'}
+
+
+@pytest.fixture(scope='module', autouse=True)
+def erase_flash_after_all_cases() -> Generator[None, None, None]:
+    yield
+
+    serial_ports = list(dict.fromkeys(filter(None, map(os.getenv, PORT_MAPPING))))
+    failed_ports = []
+    for serial_port in serial_ports:
+        command = ['python', '-m', 'esptool', '--port', serial_port, 'erase_flash']
+        logging.info('Erasing flash on %s: %s', serial_port, ' '.join(command))
+        result = subprocess.run(command, capture_output=True, text=True)
+        logging.info('Erase flash stdout on %s:\n%s', serial_port, result.stdout)
+        if result.stderr:
+            logging.info('Erase flash stderr on %s:\n%s', serial_port, result.stderr)
+        if result.returncode != 0:
+            failed_ports.append(serial_port)
+
+    assert not failed_ports, f'Failed to erase flash on ports: {failed_ports}'
 
 
 # Case 1: Thread network formation and attaching
@@ -246,11 +266,7 @@ def test_Bidirectional_IPv6_connectivity(Init_interface: bool, dut: tuple[IdfDut
         cli_global_unicast_addr = ocf.get_global_unicast_addr(cli, br)
         logging.info(f'cli_global_unicast_addr {cli_global_unicast_addr}')
         interface_name = ocf.get_host_interface_name()
-        command = 'ifconfig ' + interface_name + ' | grep inet6 | grep global'
-        out_bytes = subprocess.check_output(command, shell=True, timeout=5)
-        out_str = out_bytes.decode('utf-8')
-        pattern = rf'\W+({onlinkprefix}(?:\w+:){{3}}\w+)\W+'
-        host_global_unicast_addr = re.findall(pattern, out_str)
+        host_global_unicast_addr = ocf.list_host_usable_onlink_global_addresses(interface_name, onlinkprefix)
         logging.info(f'host_global_unicast_addr: {host_global_unicast_addr}')
         if not host_global_unicast_addr:
             raise Exception(f'onlinkprefix: {onlinkprefix}, host_global_unicast_addr: {host_global_unicast_addr}')

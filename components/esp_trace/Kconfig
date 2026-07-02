@@ -34,6 +34,16 @@ menu "ESP Trace Configuration"
         config ESP_TRACE_TRANSPORT_APPTRACE
             bool "ESP-IDF apptrace"
 
+        config ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+            bool "USB Serial JTAG"
+            depends on SOC_USB_SERIAL_JTAG_SUPPORTED && !ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+            help
+                Use USB Serial JTAG peripheral as trace transport.
+
+                Note: This option is not available when USB Serial JTAG is used as
+                primary or secondary console (ESP_CONSOLE_USB_SERIAL_JTAG or
+                ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG).
+
         config ESP_TRACE_TRANSPORT_EXTERNAL
             bool "External transport from component registry"
             depends on !ESP_TRACE_LIB_NONE
@@ -48,6 +58,7 @@ menu "ESP Trace Configuration"
     config ESP_TRACE_TRANSPORT_NAME
         string
         default "apptrace" if ESP_TRACE_TRANSPORT_APPTRACE
+        default "usb_serial_jtag" if ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
         default "ext" if ESP_TRACE_TRANSPORT_EXTERNAL
         default "none" if ESP_TRACE_TRANSPORT_NONE
 
@@ -58,6 +69,21 @@ menu "ESP Trace Configuration"
             Internal config to enable tracing dependency around components.
 
     rsource "$IDF_PATH/components/app_trace/Kconfig.apptrace"
+
+    menu "USB Serial JTAG Trace Configuration"
+        depends on ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+
+        config ESP_TRACE_USJ_TX_BUFFER_SIZE
+            int "TX buffer size"
+            default 2048
+            range 256 32768
+            help
+                Size of the TX ring buffer for USB Serial JTAG trace transport.
+                Larger buffer allows more trace data to be queued before blocking.
+
+                Note: Buffer size must be a power of 2.
+
+    endmenu
 
     choice ESP_TRACE_TIMESTAMP_SOURCE
         depends on ESP_TRACE_ENABLE

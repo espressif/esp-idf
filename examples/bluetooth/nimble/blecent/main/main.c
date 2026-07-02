@@ -31,28 +31,6 @@
 #include "host/ble_esp_gattc_cache.h"
 #endif
 
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define TEST_CI_ADDRESS_CHIP_OFFSET (0)
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define TEST_CI_ADDRESS_CHIP_OFFSET (1)
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define TEST_CI_ADDRESS_CHIP_OFFSET (2)
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define TEST_CI_ADDRESS_CHIP_OFFSET (3)
-#elif CONFIG_IDF_TARGET_ESP32C5
-#define TEST_CI_ADDRESS_CHIP_OFFSET (4)
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define TEST_CI_ADDRESS_CHIP_OFFSET (5)
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define TEST_CI_ADDRESS_CHIP_OFFSET (6)
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define TEST_CI_ADDRESS_CHIP_OFFSET (7)
-#elif CONFIG_IDF_TARGET_ESP32C61
-#define TEST_CI_ADDRESS_CHIP_OFFSET (8)
-#endif
-#endif
-
 #if MYNEWT_VAL(BLE_GATTC)
 /*** The UUID of the service containing the subscribable characteristic ***/
 static const ble_uuid_t * remote_svc_uuid =
@@ -503,10 +481,6 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     uint32_t *addr_offset;
 #endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
     uint8_t test_addr[6];
-    uint32_t peer_addr[6];
-
-    memset(peer_addr, 0x0, sizeof peer_addr);
-
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
         return 0;
@@ -515,21 +489,14 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 #if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
 #endif
-
-        /* Conversion */
-	for(int i=0; i<6; i++) {
-	   test_addr[i] = (uint8_t )peer_addr[i];
-        }
 
 #if CONFIG_EXAMPLE_USE_CI_ADDRESS
 	addr_offset = (uint32_t *)&test_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         test_addr[5] = 0xC3;
-        test_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
 	if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
 	    return 0;
@@ -571,10 +538,6 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     uint32_t *addr_offset;
 #endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
     uint8_t test_addr[6];
-    uint32_t peer_addr[6];
-
-    memset(peer_addr, 0x0, sizeof peer_addr);
-
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -591,22 +554,14 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
 #if !CONFIG_EXAMPLE_USE_CI_ADDRESS
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
-               &peer_addr[5], &peer_addr[4], &peer_addr[3],
-               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-	printf("peer-->  %lx %lx %lx %lx %lx %lx \n", peer_addr[5], peer_addr[4],
-			peer_addr[3], peer_addr[2], peer_addr[1], peer_addr[0]);
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+        printf("peer-->  %s\n", addr_str(test_addr));
 #endif
-        /* Conversion */
-	for (int i=0; i<6; i++) {
-	   test_addr[i] = (uint8_t )peer_addr[i];
-	}
-
 #if CONFIG_EXAMPLE_USE_CI_ADDRESS
 	addr_offset = (uint32_t *)&test_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         test_addr[5] = 0xC3;
-        test_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
 
 	if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -345,10 +345,12 @@ esp_err_t heap_caps_monitor_local_minimum_free_size_start(void)
 
     heap = SLIST_FIRST(&registered_heaps);
     for (size_t counter = 0; counter < min_free_bytes_monitoring.counter; counter++) {
-        size_t old_minimum = multi_heap_reset_minimum_free_bytes(heap->heap);
+        if (heap->heap != NULL) {
+            size_t old_minimum = multi_heap_reset_minimum_free_bytes(heap->heap);
 
-        if (min_free_bytes_monitoring.values[counter] > old_minimum) {
-            min_free_bytes_monitoring.values[counter] = old_minimum;
+            if (min_free_bytes_monitoring.values[counter] > old_minimum) {
+                min_free_bytes_monitoring.values[counter] = old_minimum;
+            }
         }
 
         heap = SLIST_NEXT(heap, next);
@@ -367,7 +369,9 @@ esp_err_t heap_caps_monitor_local_minimum_free_size_stop(void)
     MULTI_HEAP_LOCK(&min_free_bytes_monitoring.mux);
     heap_t *heap = SLIST_FIRST(&registered_heaps);
     for (size_t counter = 0; counter < min_free_bytes_monitoring.counter; counter++) {
-        multi_heap_restore_minimum_free_bytes(heap->heap, min_free_bytes_monitoring.values[counter]);
+        if (heap->heap != NULL) {
+            multi_heap_restore_minimum_free_bytes(heap->heap, min_free_bytes_monitoring.values[counter]);
+        }
 
         heap = SLIST_NEXT(heap, next);
     }

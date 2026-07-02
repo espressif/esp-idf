@@ -18,6 +18,8 @@
 #include "bta_dm_int.h"
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
+static SemaphoreHandle_t s_init_done_sem = NULL;
+static bool s_init_clean = false;
 
 extern int bte_main_boot_entry(void *cb);
 extern int bte_main_shutdown(void);
@@ -44,18 +46,46 @@ static void btc_disable_bluetooth(void)
     }
 }
 
-void btc_init_callback(void)
+void btc_init_callback(bt_status_t status)
 {
-    future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE), FUTURE_SUCCESS);
+    s_init_clean = (status == BT_STATUS_SUCCESS) ? false : true;
+    future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE),
+                 (status == BT_STATUS_SUCCESS) ? FUTURE_SUCCESS : FUTURE_FAIL);
+}
+
+void btc_cleanup_partial_init(void)
+{
+    if (s_init_clean) {
+        xSemaphoreTake(s_init_done_sem, portMAX_DELAY);
+        bte_main_shutdown();
+#if (SMP_INCLUDED)
+        btc_config_clean_up();
+#endif
+        osi_alarm_deinit();
+        osi_alarm_delete_mux();
+#if BTA_DYNAMIC_MEMORY
+        vSemaphoreDelete(deinit_semaphore);
+        deinit_semaphore = NULL;
+#endif /* #if BTA_DYNAMIC_MEMORY */
+        vSemaphoreDelete(s_init_done_sem);
+        s_init_done_sem = NULL;
+        s_init_clean = false;
+    } else {
+        if (s_init_done_sem) {
+            vSemaphoreDelete(s_init_done_sem);
+            s_init_done_sem = NULL;
+        }
+        osi_alarm_deinit();
+        osi_alarm_delete_mux();
+    }
 }
 
 static void btc_init_bluetooth(void)
 {
     osi_alarm_create_mux();
     osi_alarm_init();
-    if (bte_main_boot_entry(btc_init_callback) != 0) {
-        osi_alarm_deinit();
-        osi_alarm_delete_mux();
+    s_init_done_sem = xSemaphoreCreateBinary();
+    if ((s_init_done_sem == NULL) || (bte_main_boot_entry(btc_init_callback) != 0)) {
         future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE), FUTURE_FAIL);
         return;
     }
@@ -71,6 +101,7 @@ static void btc_init_bluetooth(void)
 #if BTA_DYNAMIC_MEMORY
     deinit_semaphore = xSemaphoreCreateBinary();
 #endif /* #if BTA_DYNAMIC_MEMORY */
+    xSemaphoreGive(s_init_done_sem);
 }
 
 
@@ -98,6 +129,10 @@ static void btc_deinit_bluetooth(void)
     vSemaphoreDelete(deinit_semaphore);
     deinit_semaphore = NULL;
 #endif /* #if BTA_DYNAMIC_MEMORY */
+    if (s_init_done_sem) {
+        vSemaphoreDelete(s_init_done_sem);
+        s_init_done_sem = NULL;
+    }
 }
 
 void btc_main_call_handler(btc_msg_t *msg)
@@ -183,7 +218,6 @@ uint32_t btc_get_ble_status(void)
     }
 #endif // #if ((SMP_INCLUDED == TRUE) || (BLE_PRIVACY_SPT == TRUE))
 
-#if (SMP_INCLUDED == TRUE)
     // Number of recorded devices
     extern uint8_t btm_ble_sec_dev_record_count(void);
     uint8_t sec_dev_cnt = btm_ble_sec_dev_record_count();
@@ -191,14 +225,14 @@ uint32_t btc_get_ble_status(void)
         BTC_TRACE_WARNING("%s security device record count %d", __func__, sec_dev_cnt);
         status |= BIT(BTC_BLE_STATUS_DEVICE_REC);
     }
-
+#if SMP_INCLUDED == TRUE
     // Number of saved bonded devices
     int bond_cnt = btc_storage_get_num_ble_bond_devices();
     if (bond_cnt) {
         BTC_TRACE_WARNING("%s bonded devices count %d", __func__, bond_cnt);
         status |= BIT(BTC_BLE_STATUS_BOND);
     }
-#endif // SMP_INCLUDED
+#endif // SMP_INCLUDED == TRUE
 
 #if (BLE_PRIVACY_SPT == TRUE)
     // Privacy enabled

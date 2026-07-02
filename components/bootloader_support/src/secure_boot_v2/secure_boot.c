@@ -347,8 +347,12 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
     if (boot_key_digests.num_digests < SECURE_BOOT_NUM_BLOCKS) {
         /* The revocation index can be 0, 1, 2. Bootloader count can be 1,2,3. */
         for (unsigned i = boot_key_digests.num_digests; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+#ifndef CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             ESP_LOGI(TAG, "Revoking empty key digest slot (%d)...", i);
             esp_efuse_set_digest_revoke(i);
+#else
+            ESP_LOGW(TAG, "Unused key digest slot (%d) left un-revoked due to the config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS", i);
+#endif
         }
     }
 #endif // SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS

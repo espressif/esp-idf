@@ -272,7 +272,13 @@ void btu_task_start_up(void *param)
     btu_init_core();
 
     /* Initialize any optional stack components */
-    BTE_InitStack();
+    if (BTE_InitStack() != BT_STATUS_SUCCESS) {
+        HCI_TRACE_ERROR("BTE_InitStack failed");
+        if (bluedroid_init_done_cb) {
+            bluedroid_init_done_cb(BT_STATUS_NOMEM);
+        }
+        return;
+    }
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
     bta_sys_init();
@@ -280,11 +286,9 @@ void btu_task_start_up(void *param)
 
     // Inform the bt jni thread initialization is ok.
     // btif_transfer_context(btif_init_ok, 0, NULL, 0, NULL);
-#if(defined(BT_APP_DEMO) && BT_APP_DEMO == TRUE)
     if (bluedroid_init_done_cb) {
-        bluedroid_init_done_cb();
+        bluedroid_init_done_cb(BT_STATUS_SUCCESS);
     }
-#endif
 }
 
 void btu_task_shut_down(void)
@@ -321,6 +325,7 @@ static void btu_general_alarm_process(void *param)
         break;
 
     case BTU_TTYPE_L2CAP_LINK:
+    case BTU_TTYPE_L2CAP_LINK_RETRY:
     case BTU_TTYPE_L2CAP_CHNL:
     case BTU_TTYPE_L2CAP_HOLD:
     case BTU_TTYPE_L2CAP_INFO:
@@ -549,6 +554,13 @@ static void btu_l2cap_alarm_process(void *param)
 {
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)param;
     assert(p_tle != NULL);
+
+    osi_mutex_lock(&btu_l2cap_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
+    if (!hash_map_has_key(btu_l2cap_alarm_hash_map, p_tle) || p_tle->in_use == FALSE) {
+        osi_mutex_unlock(&btu_l2cap_alarm_lock);
+        return;
+    }
+    osi_mutex_unlock(&btu_l2cap_alarm_lock);
 
     switch (p_tle->event) {
     case BTU_TTYPE_L2CAP_CHNL:      /* monitor or retransmission timer */

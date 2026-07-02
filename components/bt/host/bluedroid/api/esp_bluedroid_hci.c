@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "esp_log.h"
 #include "esp_bluedroid_hci.h"
 #include "common/bt_target.h"
+#include "bt_common.h"
 #include "hci/hci_trans_int.h"
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
@@ -69,7 +70,11 @@ void hci_host_send_packet(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     if (data != NULL && len > 1) {
-        bt_hci_log_record_hci_data(data[0], &data[1], (uint16_t)(len - 1));
+        uint8_t data_type = bt_hci_log_h4_type_to_data_type(data[0]);
+        bt_hci_log_record_hci_data(data_type, &data[1], (uint16_t)(len - 1));
+#if BT_HCI_INSIGHTS_INCLUDED
+        bt_hci_log_record_insights(data_type, &data[1], (uint16_t)(len - 1));
+#endif
     }
 #endif
 #if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED

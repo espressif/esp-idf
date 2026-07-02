@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -254,20 +254,22 @@ static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
     while (1) {
         status = READ_PERI_REG(RTC_I2C_INT_ST_REG);
 
-        /* Return ESP_OK if Tx or Rx data interrupt bits are set. */
+        /* If a NAK, Timeout, or Arbitration Loss occurs, abort immediately. */
+#if CONFIG_IDF_TARGET_ESP32S2
+        if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
+#elif CONFIG_IDF_TARGET_ESP32S3
+        if ((status & RTC_I2C_TIME_OUT_INT_ST) ||
+#endif // CONFIG_IDF_TARGET_ESP32S2
+                (status & RTC_I2C_ACK_ERR_INT_ST) ||
+                (status & RTC_I2C_ARBITRATION_LOST_INT_ST)) {
+            ret = ESP_FAIL;
+            break;
+        }
+
+        /* Return ESP_OK only if hardware channels are error-free and data bits are latched. */
         if ((status & RTC_I2C_TX_DATA_INT_ST) ||
                 (status & RTC_I2C_RX_DATA_INT_ST)) {
             ret = ESP_OK;
-            break;
-            /* In case of error status, break and return ESP_FAIL */
-#if CONFIG_IDF_TARGET_ESP32S2
-        } else if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
-#elif CONFIG_IDF_TARGET_ESP32S3
-        } else if ((status & RTC_I2C_TIME_OUT_INT_ST) ||
-#endif // CONFIG_IDF_TARGET_ESP32S2
-                   (status & RTC_I2C_ACK_ERR_INT_ST) ||
-                   (status & RTC_I2C_ARBITRATION_LOST_INT_ST)) {
-            ret = ESP_FAIL;
             break;
         }
 

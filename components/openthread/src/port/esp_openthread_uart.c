@@ -60,12 +60,10 @@ otError otPlatUartSend(const uint8_t *buf, uint16_t buf_length)
     usb_serial_jtag_ll_txfifo_flush();
 #endif
 
+    otPlatUartSendDone();
     if (rval != (int)buf_length) {
         return OT_ERROR_FAILED;
     }
-
-    otPlatUartSendDone();
-
     return OT_ERROR_NONE;
 }
 #endif

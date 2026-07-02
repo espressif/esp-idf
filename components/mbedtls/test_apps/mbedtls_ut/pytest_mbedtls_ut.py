@@ -117,18 +117,19 @@ def test_mbedtls_hmac_opaque(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_hmac_key')
 
 
-# TODO: IDF-15012
-# @pytest.mark.generic
-# @pytest.mark.parametrize(
-#     'config',
-#     [
-#         'rom_impl',
-#     ],
-#     indirect=True,
-# )
-# @idf_parametrize('target', ['esp32c2'], indirect=['target'])
-# def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
-#     dut.run_all_single_board_cases()
+@pytest.mark.esp32c2_rev2
+@pytest.mark.xtal_26mhz
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config, baud',
+    [
+        ('rom_impl', '74880'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic
@@ -155,3 +156,22 @@ def test_mbedtls_ds_rsa(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_mbedtls_aria(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='aria')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'cross_signed',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_mbedtls_cross_signed(dut: Dut) -> None:
+    dut.run_all_single_board_cases(
+        name=[
+            'cross-signed certificate bundle with time-date check',
+            'custom certificate bundle',
+            'certificate bundle - expired cert rejected with time-date check',
+        ]
+    )

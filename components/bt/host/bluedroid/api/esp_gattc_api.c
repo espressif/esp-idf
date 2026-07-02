@@ -93,7 +93,7 @@ esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn
     memcpy(arg.open.remote_bda, creat_conn_params->remote_bda, ESP_BD_ADDR_LEN);
     arg.open.remote_addr_type = creat_conn_params->remote_addr_type;
     arg.open.is_direct = creat_conn_params->is_direct;
-    arg.open.is_aux= creat_conn_params->is_aux;
+    arg.open.is_aux = creat_conn_params->is_aux;
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     arg.open.is_pawr_synced = false;
     arg.open.adv_handle = 0xFF;
@@ -397,7 +397,9 @@ esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id,
 esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t conn_id, esp_bt_uuid_t *svc_uuid,
                                             esp_gattc_service_elem_t *result, uint16_t *count, uint16_t offset)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (result == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
@@ -415,14 +417,16 @@ esp_gatt_status_t esp_ble_gattc_get_all_char(esp_gatt_if_t gattc_if,
                                              esp_gattc_char_elem_t *result,
                                              uint16_t *count, uint16_t offset)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
 
     if (result == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
     }
 
-    if ((start_handle == 0) && (end_handle == 0)) {
+    if ((start_handle == 0 && end_handle == 0) || start_handle > end_handle) {
         *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -437,7 +441,9 @@ esp_gatt_status_t esp_ble_gattc_get_all_descr(esp_gatt_if_t gattc_if,
                                               esp_gattc_descr_elem_t *result,
                                               uint16_t *count, uint16_t offset)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (char_handle == 0) {
         return ESP_GATT_INVALID_HANDLE;
@@ -459,13 +465,15 @@ esp_gatt_status_t esp_ble_gattc_get_char_by_uuid(esp_gatt_if_t gattc_if,
                                                  esp_gattc_char_elem_t *result,
                                                  uint16_t *count)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (result == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
     }
 
-    if (start_handle == 0 && end_handle == 0) {
+    if ((start_handle == 0 && end_handle == 0) || start_handle > end_handle) {
         *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -484,10 +492,17 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_uuid(esp_gatt_if_t gattc_if,
                                                   esp_gattc_descr_elem_t *result,
                                                   uint16_t *count)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (result == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
+    }
+
+    if ((start_handle == 0 && end_handle == 0) || start_handle > end_handle) {
+        *count = 0;
+        return ESP_GATT_INVALID_HANDLE;
     }
 
     uint16_t conn_hdl = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
@@ -501,7 +516,9 @@ esp_gatt_status_t esp_ble_gattc_get_descr_by_char_handle(esp_gatt_if_t gattc_if,
                                                          esp_gattc_descr_elem_t *result,
                                                          uint16_t *count)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (result == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
@@ -524,13 +541,15 @@ esp_gatt_status_t esp_ble_gattc_get_include_service(esp_gatt_if_t gattc_if,
                                                     esp_gattc_incl_svc_elem_t *result,
                                                     uint16_t *count)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (result == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
     }
 
-    if (start_handle == 0 && end_handle == 0) {
+    if ((start_handle == 0 && end_handle == 0) || start_handle > end_handle) {
         *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -547,13 +566,17 @@ esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
                                                uint16_t char_handle,
                                                uint16_t *count)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
     if (count == NULL) {
         return ESP_GATT_INVALID_PDU;
     }
 
-    if ((start_handle == 0 && end_handle == 0) && (type != ESP_GATT_DB_DESCRIPTOR)) {
+    /* start_handle/end_handle are ignored for ESP_GATT_DB_DESCRIPTOR (see esp_gattc_api.h). */
+    if (type != ESP_GATT_DB_DESCRIPTOR &&
+        ((start_handle == 0 && end_handle == 0) || start_handle > end_handle)) {
         *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -565,14 +588,16 @@ esp_gatt_status_t esp_ble_gattc_get_attr_count(esp_gatt_if_t gattc_if,
 esp_gatt_status_t esp_ble_gattc_get_db(esp_gatt_if_t gattc_if, uint16_t conn_id, uint16_t start_handle, uint16_t end_handle,
                                        esp_gattc_db_elem_t *db, uint16_t *count)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_GATT_WRONG_STATE;
+    }
 
 
     if (db == NULL || count == NULL || *count == 0) {
         return ESP_GATT_INVALID_PDU;
     }
 
-    if (start_handle == 0 && end_handle == 0) {
+    if ((start_handle == 0 && end_handle == 0) || start_handle > end_handle) {
         *count = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
@@ -644,8 +669,12 @@ esp_err_t esp_ble_gattc_read_by_type (esp_gatt_if_t gattc_if,
         return ESP_FAIL;
     }
 
-    if (start_handle == 0 || end_handle == 0) {
+    if ((start_handle == 0 && end_handle == 0) || start_handle > end_handle) {
         return ESP_GATT_INVALID_HANDLE;
+    }
+
+    if (start_handle == 0) {
+        start_handle = 1;
     }
 
     msg.sig = BTC_SIG_API_CALL;
@@ -670,7 +699,12 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if ((read_multi == NULL) || (read_multi->num_attr == 0) || (read_multi->num_attr > ESP_GATT_MAX_READ_MULTI_HANDLES)) {
+    if (read_multi == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint8_t num_attr = read_multi->num_attr;
+
+    if ((num_attr == 0) || (num_attr > ESP_GATT_MAX_READ_MULTI_HANDLES)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -689,10 +723,10 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_MULTIPLE_CHAR;
     arg.read_multiple.conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
-    arg.read_multiple.num_attr = read_multi->num_attr;
+    arg.read_multiple.num_attr = num_attr;
     arg.read_multiple.auth_req = auth_req;
 
-    memcpy(arg.read_multiple.handles, read_multi->handles, sizeof(uint16_t)*read_multi->num_attr);
+    memcpy(arg.read_multiple.handles, read_multi->handles, sizeof(uint16_t) * num_attr);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -707,7 +741,12 @@ esp_err_t esp_ble_gattc_read_multiple_variable(esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if ((read_multi == NULL) || (read_multi->num_attr == 0) || (read_multi->num_attr > ESP_GATT_MAX_READ_MULTI_HANDLES)) {
+    if (read_multi == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uint8_t num_attr = read_multi->num_attr;
+
+    if ((num_attr == 0) || (num_attr > ESP_GATT_MAX_READ_MULTI_HANDLES)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -726,9 +765,9 @@ esp_err_t esp_ble_gattc_read_multiple_variable(esp_gatt_if_t gattc_if,
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_READ_MULTIPLE_VARIABLE_CHAR;
     arg.read_multiple.conn_id = BTC_GATT_CREATE_CONN_ID(gattc_if, conn_id);
-    arg.read_multiple.num_attr = read_multi->num_attr;
+    arg.read_multiple.num_attr = num_attr;
     arg.read_multiple.auth_req = auth_req;
-    memcpy(arg.read_multiple.handles, read_multi->handles, sizeof(uint16_t)*read_multi->num_attr);
+    memcpy(arg.read_multiple.handles, read_multi->handles, sizeof(uint16_t) * num_attr);
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -829,6 +868,10 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if ((value_len > 0) && (value == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
     if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
@@ -873,6 +916,10 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if ((value_len > 0) && (value == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
     if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
@@ -914,6 +961,10 @@ esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
     memset(&arg, 0, sizeof(arg));
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if ((value_len > 0) && (value == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
     if (!gatt_check_connection_state_by_tcb(p_tcb)) {

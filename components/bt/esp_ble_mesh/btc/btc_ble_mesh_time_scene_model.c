@@ -176,6 +176,7 @@ static void btc_ble_mesh_time_scene_client_copy_req_data(btc_msg_t *msg, void *p
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_TIME_SCENE_CLIENT_TIMEOUT_EVT:
         break;
     default:
@@ -210,6 +211,7 @@ static void btc_ble_mesh_time_scene_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_TIME_SCENE_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
             bt_mesh_free(arg->params);

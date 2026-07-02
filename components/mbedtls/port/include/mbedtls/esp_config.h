@@ -810,7 +810,9 @@
 #else
 #undef MBEDTLS_FS_IO
 #undef MBEDTLS_PSA_ITS_FILE_C
+#if !defined(ESP_PSA_ITS_AVAILABLE)
 #undef MBEDTLS_PSA_CRYPTO_STORAGE_C
+#endif
 #endif
 
 #ifndef CONFIG_IDF_TARGET_LINUX
@@ -2091,6 +2093,18 @@
 #define PSA_WANT_ALG_ECDH 1
 #else
 #undef PSA_WANT_ALG_ECDH
+#endif
+
+/**
+ * \def MBEDTLS_ECJPAKE_C
+ *
+ * Enable the ECJPAKE based ciphersuites.
+ */
+#ifdef CONFIG_MBEDTLS_ECJPAKE_C
+#define PSA_WANT_ALG_JPAKE 1
+#else
+#undef PSA_WANT_ALG_JPAKE
+#undef PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
 #endif
 
 /**

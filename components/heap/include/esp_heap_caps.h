@@ -50,6 +50,7 @@ extern "C" {
 #define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
 #define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches
 #define MALLOC_CAP_SIMD             (1<<20) ///< Memory must be capable of being used for SIMD instructions (i.e. allow for SIMD-specific-bit data accesses)
+#define MALLOC_CAP_SPIRAM_NO_ENC    (1<<21) ///< Memory must be in the PSRAM region exempt from flash encryption (plaintext in PSRAM; see CONFIG_SPIRAM_ENC_EXEMPT)
 
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
@@ -228,6 +229,9 @@ size_t heap_caps_get_free_size( uint32_t caps );
  * @note Note the result may be less than the global all-time minimum available heap of this kind, as "low watermarks" are
  * tracked per-region. Individual regions' heaps may have reached their "low watermarks" at different points in time. However,
  * this result still gives a "worst case" indication for all-time minimum free heap.
+ *
+ * @note Heaps added at runtime using heap_caps_add_region_with_caps() (i.e., from app_main onwards) are not taken into
+ * account in the minimum free size calculation.
  *
  * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
  *                    of memory

@@ -2,6 +2,15 @@ config BT_CTRL_MODE_EFF
     int
     default 1
 
+config BT_CTRL_CHECK_CONFIG_EFF
+    int
+    default 1
+    help
+        Marker that controller Kconfig is active (always set in sdkconfig).
+        Must not be unset in normal IDF builds. Controller-only integrations
+        that do not export this symbol rely on esp_bt.h to apply compile-time
+        defaults for missing BLE feature CONFIG_* names.
+
 config BT_CTRL_BLE_MAX_ACT
     int "BLE Max Instances"
     default 6
@@ -566,7 +575,7 @@ config BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
 config BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE
     bool "Allow BLE connection interval below the spec minimum"
     default y
-    select BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT if BT_BLUEDROID_ENABLED
+    select BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT if BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
     help
         Enabling this option allows the BLE controller to use a connection interval
         smaller than the Bluetooth Core specification minimum of 7.5 ms. On
@@ -581,12 +590,9 @@ config BT_CTRL_BLE_MIN_CONN_INTERVAL_ENABLE
         This option is enabled by default. Disable it to stay compliant with the BLE
         specification (minimum connection interval 7.5 ms).
 
-        Host stack: When Bluedroid is the BLE host, enabling this option also selects
-        BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT so the host accepts connection
-        intervals below the spec minimum. NimBLE host does not provide equivalent
-        support yet; it is planned for a future release. Until then, use Bluedroid
-        if you need coordinated host and controller behavior for sub-minimum
-        intervals.
+        Host stack: Enabling this option also selects
+        BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT so the active BLE host accepts
+        connection intervals below the spec minimum.
 
 menu "Controller debug log Options (Experimental)"
     config BT_CTRL_LE_LOG_EN

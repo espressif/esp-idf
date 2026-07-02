@@ -311,7 +311,7 @@ Please see more information to enable this feature in the :ref:`anti-rollback` g
 Encrypted Firmware Distribution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Encrypted firmware distribution during over-the-air updates ensures that the application stays encrypted **in transit** from the server to the the device. This can act as an additional layer of protection on top of the TLS communication during OTA updates and protect the identity of the application.
+Encrypted firmware distribution during over-the-air updates ensures that the application stays encrypted **in transit** from the server to the device. This can act as an additional layer of protection on top of the TLS communication during OTA updates and protect the identity of the application.
 
 Please see working example for this documented in :ref:`ota_updates_pre-encrypted-firmware` section.
 

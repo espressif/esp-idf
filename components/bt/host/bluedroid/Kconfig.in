@@ -48,6 +48,14 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+config BT_CLASSIC_MAX_RECONNECT_ON_COLLISION
+    int "Maximum number of reconnection attempts in case of collision"
+    depends on BT_CLASSIC_ENABLED
+    default 5
+    help
+        The maximum number of reconnection attempts when encountering rejection of connection
+        request with error code 0x0B(Connection Already Exists) from peer device
+
 config BT_CLASSIC_ENABLE_POWER_CTRL_VSC
     bool "Enable Espressif Vendor-specific HCI commands for power control of Classic Bluetooth"
     depends on BT_CLASSIC_ENABLED
@@ -1380,23 +1388,6 @@ config BT_BLE_RPA_TIMEOUT
         This set RPA timeout of Controller and Host.
         Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
 
-config BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
-    bool "Allow BLE connection interval below Bluetooth Core Spec minimum (disable host check)"
-    depends on BT_BLE_ENABLED
-    default n
-    help
-        When enabled, the Bluedroid host skips the minimum BLE connection
-        interval validation (Bluetooth Core Spec minimum is 0x0006 / 7.5 ms)
-        and accepts any non-zero interval value from the application. The
-        BLE controller then enforces what is actually allowed; how small the
-        connection interval may be depends on controller capability and its
-        own configuration, not on this host option text.
-
-        End users should NOT set this option directly. In typical IDF builds it
-        follows the active Controller integration when that Controller supports
-        this mode; use the Controller's own configuration (menu entries and symbol
-        names differ by chip) instead of toggling this host symbol manually.
-
 menuconfig BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 and above features(please disable BLE 4.2 if enable BLE 5.0)"
     depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
@@ -1603,7 +1594,20 @@ config BT_BLE_FEAT_CHANNEL_SOUNDING
     depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CHANNEL_SOUNDING_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
     default n
     help
-        Enable BLE channel sounding
+        Enable BLE channel sounding.
+        CS Security Requirements (Core 6.3) is configured separately via
+        BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS.
+
+config BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS
+    bool "Enable BLE CS Security Requirements (Core 6.3)"
+    depends on BT_BLE_FEAT_CHANNEL_SOUNDING && ((BT_CONTROLLER_ENABLED && SOC_BLE_CS_SECURITY_REQUIREMENTS_SUPPORTED) || BT_CONTROLLER_DISABLED) # NOERROR
+    default n
+    help
+        Enable Channel Sounding security requirements HCI commands (Bluetooth Core 6.3).
+        Supports LE CS Set Security Requirements (0x00A7) and
+        LE CS Set Default Security Requirements (0x00A8).
+        Use esp_ble_cs_set_security_requirements() and
+        esp_ble_cs_set_default_security_requirements().
 
 config BT_BLE_FEAT_ADV_MONITOR
     bool "Enable BLE Advertising Monitor (LE Monitor Advertisement)"
@@ -1613,6 +1617,50 @@ config BT_BLE_FEAT_ADV_MONITOR
         Enable LE Monitor Advertisement feature (Bluetooth Core 6.0).
         Allows the host to add devices to a monitor list and receive reports when
         the controller detects advertising from those devices (e.g. RSSI threshold).
+
+config BT_BLE_FEAT_DBAF
+    bool "Enable BLE Decision-Based Advertising Filtering (DBAF)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_DBAF_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Decision-Based Advertising Filtering (Bluetooth Core 6.0).
+        Supports LE Set Decision Data and LE Set Decision Instructions HCI commands.
+
+config BT_BLE_FEAT_FRAME_SPACE_UPDATE
+    bool "Enable BLE Frame Space Update"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_FRAME_SPACE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Frame Space Update feature (Bluetooth Core 6.0).
+
+config BT_BLE_FEAT_LL_EXT_FEAT
+    bool "Enable BLE LL Extended Feature Set"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_LL_EXT_FEAT_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LL Extended Feature Set (Bluetooth Core 6.0).
+        Supports LE Read All Local/Remote Supported Features HCI commands.
+
+config BT_BLE_FEAT_SHORTER_CONN_INTERVALS
+    bool "Enable BLE Shorter Connection Intervals (Core 6.2)"
+    depends on BT_BLE_FEAT_CONN_SUBRATING && (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SHORTER_CONN_INTERVALS_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable Shorter Connection Intervals feature (Bluetooth Core 6.2).
+        Requires Connection Subrating (Core 5.3) per [Vol 6] Part B, Section 4.6.50.
+        Supports LE Connection Rate Request, LE Set Default Rate Parameters,
+        LE Read Minimum Supported Connection Interval commands and LE Connection Rate Change event.
+        Connection intervals use 125 us units (minimum 375 us). Use esp_ble_gap_connection_rate_request(),
+        esp_ble_gap_set_default_rate_parameters(), esp_ble_gap_read_min_supported_connection_interval()
+        and ESP_BLE_GAP_CONN_RATE_* conversion macros in esp_gap_ble_api.h.
+
+config BT_BLE_FEAT_LE_UTP
+    bool "Enable BLE Unified Test Protocol (UTP)"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_LE_UTP_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable LE Unified Test Protocol (Bluetooth Core 6.2).
+        Supports LE Enable UTP OTA Mode, LE UTP Send commands and LE UTP Receive event.
 
 menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"

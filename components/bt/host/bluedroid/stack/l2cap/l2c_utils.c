@@ -88,6 +88,9 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             btu_free_timer(&p_lcb->timer_entry);
             btu_free_timer(&p_lcb->info_timer_entry);
             btu_free_timer(&p_lcb->upda_con_timer);
+#if (CLASSIC_BT_INCLUDED == TRUE)
+            btu_free_timer(&p_lcb->retry_timer_entry);
+#endif
 
             memset (p_lcb, 0, sizeof (tL2C_LCB));
             memcpy (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN);
@@ -114,6 +117,7 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
 #endif
             {
 #if (CLASSIC_BT_INCLUDED == TRUE)
+                p_lcb->retry_timer_entry.param = (TIMER_PARAM_TYPE)p_lcb;
                 l2cb.num_links_active++;
                 l2c_link_adjust_allocation();
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -181,6 +185,10 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     memset(&p_lcb->info_timer_entry, 0, sizeof(TIMER_LIST_ENT));
     btu_free_timer(&p_lcb->upda_con_timer);
     memset(&p_lcb->upda_con_timer, 0, sizeof(TIMER_LIST_ENT));
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    btu_free_timer(&p_lcb->retry_timer_entry);
+    memset(&p_lcb->retry_timer_entry, 0, sizeof(TIMER_LIST_ENT));
+#endif
 
     /* Release any unfinished L2CAP packet on this link */
     if (p_lcb->p_hcit_rcv_acl) {
@@ -871,7 +879,7 @@ void l2cu_send_peer_config_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len, UINT16 rej_len)
 {
     BT_HDR  *p_buf;
-    UINT16  len, cfg_len, buf_space, len1;
+    UINT16  len, cfg_len, buf_space, len1, opt_len;
     UINT8   *p, *p_hci_len, *p_data_end;
     UINT8   cfg_code;
 
@@ -928,38 +936,42 @@ void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len,
     /* Now, put the rejected options */
     p_data_end = p_data + data_len;
     while (p_data < p_data_end) {
+        if ((p_data_end - p_data) < L2CAP_CFG_OPTION_OVERHEAD) {
+            break;
+        }
         cfg_code = *p_data;
         cfg_len = *(p_data + 1);
+        opt_len = cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
+        if (opt_len > (UINT16)(p_data_end - p_data)) {
+            p_data = p_data_end;
+            break;
+        }
 
         switch (cfg_code & 0x7F) {
         /* skip known options */
         case L2CAP_CFG_TYPE_MTU:
         case L2CAP_CFG_TYPE_FLUSH_TOUT:
         case L2CAP_CFG_TYPE_QOS:
-            p_data += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
+        case L2CAP_CFG_TYPE_FCR:
+        case L2CAP_CFG_TYPE_FCS:
+        case L2CAP_CFG_TYPE_EXT_FLOW:
+            p_data += opt_len;
             break;
 
         /* unknown options; copy into rsp if not hints */
         default:
-            /* sanity check option length */
-            if ((cfg_len + L2CAP_CFG_OPTION_OVERHEAD) <= data_len) {
-                if ((cfg_code & 0x80) == 0) {
-                    if (buf_space >= (cfg_len + L2CAP_CFG_OPTION_OVERHEAD)) {
-                        memcpy(p, p_data, cfg_len + L2CAP_CFG_OPTION_OVERHEAD);
-                        p += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
-                        buf_space -= (cfg_len + L2CAP_CFG_OPTION_OVERHEAD);
-                    } else {
-                        L2CAP_TRACE_WARNING("L2CAP - cfg_rej exceeds allocated buffer");
-                        p_data = p_data_end; /* force loop exit */
-                        break;
-                    }
+            if ((cfg_code & 0x80) == 0) {
+                if (buf_space >= opt_len) {
+                    memcpy(p, p_data, opt_len);
+                    p += opt_len;
+                    buf_space -= opt_len;
+                } else {
+                    L2CAP_TRACE_WARNING("L2CAP - cfg_rej exceeds allocated buffer");
+                    p_data = p_data_end; /* force loop exit */
+                    break;
                 }
-                p_data += cfg_len + L2CAP_CFG_OPTION_OVERHEAD;
             }
-            /* bad length; force loop exit */
-            else {
-                p_data = p_data_end;
-            }
+            p_data += opt_len;
             break;
         }
     }

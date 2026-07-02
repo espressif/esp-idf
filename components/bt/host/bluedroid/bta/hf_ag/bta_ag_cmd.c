@@ -696,7 +696,7 @@ static tBTA_AG_PEER_CODEC bta_ag_parse_bac(tBTA_AG_SCB *p_scb, char *p_s)
 
             default:
                 APPL_TRACE_ERROR("Unknown Codec UUID(%d) received", uuid_codec);
-                return BTA_AG_CODEC_NONE;
+                break;
         }
         if (cont) {
             p_s = p + 1;
@@ -917,13 +917,16 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                 val.value = BTA_AG_HF_DIAL_NUM;
             }
             if (event != 0) {
-                while ((val.str[dst] = p_arg[src]) != '\0') {
+                while (dst < BTA_AG_AT_MAX_LEN && (val.str[dst] = p_arg[src]) != '\0') {
                     if (val.str[dst] == ';') {
                         val.str[dst] = '\0';
                         break;
                     }
                     src++;
                     dst++;
+                }
+                if (dst >= BTA_AG_AT_MAX_LEN) {
+                    val.str[BTA_AG_AT_MAX_LEN] = '\0';
                 }
             }
             break;

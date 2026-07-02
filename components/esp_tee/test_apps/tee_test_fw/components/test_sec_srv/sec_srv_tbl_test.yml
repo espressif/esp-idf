@@ -77,3 +77,7 @@ secure_services:
         type: custom
         function: esp_tee_test_stack_underflow
         args: 0
+      - id: 219
+        type: custom
+        function: esp_tee_test_read_sec_stg
+        args: 1

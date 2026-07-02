@@ -5,11 +5,11 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5, esp32h21="RSA-PSS 或 ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2, esp32c61="ECDSA", esp32c6, esp32h2, esp32p4, esp32c5="RSA-PSS 或 ECDSA", esp32h21="RSA-PSS"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4, esp32h21="RSA-3072、ECDSA-256", esp32c5="RSA-3072、ECDSA-384、ECDSA-256"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2, esp32c61="ECDSA-256", esp32c6, esp32h2, esp32p4="RSA-3072、ECDSA-256", esp32h21="RSA-3072", esp32c5="RSA-3072、ECDSA-384、ECDSA-256"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4, esp32h21="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6, esp32h2, esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。", esp32c5="推荐使用 ECDSA，其验证时间更短。可以在菜单中选择 RSA 或 ECDSA 方案。"}
 
 {IDF_TARGET_SBV2_SCHEME_RECOMMENDATION:default="如果需要快速启动，推荐使用 RSA；如果需要较短的密钥长度，建议使用 ECDSA。", esp32c5="如果需要快速启动且需要较短的密钥长度，建议使用 ECDSA。"}
 
@@ -51,6 +51,18 @@
 .. note::
 
     在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure`` 的命令相比，可能会损失一部分高级功能。
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，基于 ECDSA 的 Secure Boot V2 方案在某些输入向量下无法正常工作，因此**不推荐使用**。请改用基于 RSA 的 Secure Boot V2 方案。如果仍需使用基于 ECDSA 的方案，请启用 :ref:`CONFIG_SECURE_BOOT_INSECURE` 和 :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`。该问题将在未来的硬件 ECO 版本中修复，详情请参阅硬件勘误文档。
+
+.. only:: CONFIG_SECURE_BOOT_V2_ECDSA_INSECURE and not SOC_SECURE_BOOT_V2_RSA
+
+    .. warning::
+
+        在 {IDF_TARGET_NAME} 上，基于 ECDSA 的 Secure Boot V2 方案在某些输入向量下存在漏洞，因此**不推荐用于量产**。如果仍需使用基于 ECDSA 的 Secure Boot V2 方案，请启用 :ref:`CONFIG_SECURE_BOOT_INSECURE` 和 :ref:`CONFIG_SECURE_BOOT_V2_FORCE_ENABLE_ECDSA`。该问题将在未来的硬件 ECO 版本中修复，详情请参阅硬件勘误文档。
 
 背景
 ----
@@ -729,9 +741,7 @@ Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像
 
     .. note::
 
-        请注意，启用配置 :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` 只能确保 **应用程序** 不会撤销未使用的摘要槽。
-        若想在设备首次启动时启用安全启动，那么即使启用了上述配置，引导加载程序也会在启用安全启动时撤销未使用的摘要槽，因为保留未使用的密钥槽会构成安全隐患。
-        如果在开发流程中需要保留未使用摘要槽，则应从外部启用安全启动 (:ref:`enable-secure-boot-v2-externally`)，而不是在启动设备时启用安全启动，这样引导加载程序就无需启用安全启动，从而避免安全隐患。
+        启用配置 :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` 后，未使用的摘要槽在两种情况下都将保持未撤销状态：在 **应用程序** 运行时，以及在设备首次启动时由 **引导加载程序** 启用安全启动时。请注意，除非调试接口和下载接口已完全禁用，且远程接口已针对安全风险进行全面审计，否则保留未使用的密钥槽可能构成安全风险。
 
     保守方法
     ~~~~~~~~

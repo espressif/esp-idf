@@ -28,7 +28,7 @@ The BDL interface follows the Open-Closed Principle (open for extension, closed 
 The BDL interface structure is described by the following pseudo-code:
 
 ```
-struct esp_blockdev_t {
+typedef struct esp_blockdev {
 
     //DEVICE FLAGS
     esp_blockdev_flags_t device_flags

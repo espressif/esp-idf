@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -187,17 +187,17 @@ Cache_Invalidate_Addr = 0x4fc003e4;
 Cache_Invalidate_Addr_Gid = 0x4fc003e8;
 Cache_Clean_Addr = 0x4fc003ec;
 Cache_Clean_Addr_Gid = 0x4fc003f0;
-Cache_WriteBack_Addr = 0x4fc003f4;
+PROVIDE( Cache_WriteBack_Addr = 0x4fc003f4 );
 Cache_WriteBack_Addr_Gid = 0x4fc003f8;
-Cache_WriteBack_Invalidate_Addr = 0x4fc003fc;
+PROVIDE( Cache_WriteBack_Invalidate_Addr = 0x4fc003fc );
 Cache_WriteBack_Invalidate_Addr_Gid = 0x4fc00400;
 Cache_Invalidate_All = 0x4fc00404;
 Cache_Invalidate_All_Gid = 0x4fc00408;
 Cache_Clean_All = 0x4fc0040c;
 Cache_Clean_All_Gid = 0x4fc00410;
-Cache_WriteBack_All = 0x4fc00414;
+PROVIDE( Cache_WriteBack_All = 0x4fc00414 );
 Cache_WriteBack_All_Gid = 0x4fc00418;
-Cache_WriteBack_Invalidate_All = 0x4fc0041c;
+PROVIDE( Cache_WriteBack_Invalidate_All = 0x4fc0041c );
 Cache_WriteBack_Invalidate_All_Gid = 0x4fc00420;
 Cache_Mask_All = 0x4fc00424;
 Cache_Suspend_L1_CORE0_ICache_Autoload = 0x4fc00428;
@@ -450,9 +450,8 @@ esp_rom_km_huk_risk = 0x4fc0071c;
 /* Functions */
 ets_emsa_pss_verify = 0x4fc00720;
 ets_rsa_pss_verify = 0x4fc00724;
-ets_ecdsa_verify = 0x4fc00728;
-ets_secure_boot_verify_bootloader_with_keys = 0x4fc0072c;
-ets_secure_boot_verify_signature = 0x4fc00730;
+_rom_ets_ecdsa_verify = 0x4fc00728;
+_rom_ets_secure_boot_verify_signature = 0x4fc00730;
 ets_secure_boot_read_key_digests = 0x4fc00734;
 ets_secure_boot_revoke_public_key_digest = 0x4fc00738;
 

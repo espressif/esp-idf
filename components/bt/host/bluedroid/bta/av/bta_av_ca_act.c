@@ -298,7 +298,6 @@ void bta_av_ca_api_get(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
     GOEPC_RequestAddHeader(p_rcb->cover_art_goep_hdl, COVER_ART_HEADER_ID_IMG_HANDLE, (UINT8 *)image_handle_utf16, BTA_AV_CA_IMG_HDL_UTF16_LEN);
     if (p_data->api_ca_get.type == BTA_AV_CA_GET_IMAGE) {
         GOEPC_RequestAddHeader(p_rcb->cover_art_goep_hdl, COVER_ART_HEADER_ID_IMG_DESCRIPTOR, (UINT8 *)p_data->api_ca_get.image_descriptor, p_data->api_ca_get.image_descriptor_len);
-        osi_free(p_data->api_ca_get.image_descriptor);
     }
     /* always request to enable srm */
     GOEPC_RequestSetSRM(p_rcb->cover_art_goep_hdl, TRUE, FALSE);
@@ -314,7 +313,10 @@ error:
 void bta_av_ca_response(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
 {
     tOBEX_PARSE_INFO info;
-    OBEX_ParseResponse(p_data->ca_response.pkt, p_data->ca_response.opcode, &info);
+    if (OBEX_ParseResponse(p_data->ca_response.pkt, p_data->ca_response.opcode, &info) != OBEX_SUCCESS) {
+        osi_free(p_data->ca_response.pkt);
+        goto error;
+    }
     /* we always use a final get */
     if (p_data->ca_response.opcode == OBEX_OPCODE_GET_FINAL
         && (info.response_code == OBEX_RESPONSE_CODE_CONTINUE || info.response_code == (OBEX_RESPONSE_CODE_CONTINUE | OBEX_FINAL_BIT_MASK)))
@@ -322,13 +324,15 @@ void bta_av_ca_response(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
         UINT8 *header = NULL;
         UINT8 *body_data = NULL;
         UINT16 body_data_len = 0;
+        UINT8 *pkt_data = (UINT8 *)(p_data->ca_response.pkt + 1) + p_data->ca_response.pkt->offset;
+        UINT8 *pkt_end = pkt_data + p_data->ca_response.pkt->len;
         while((header = OBEX_GetNextHeader(p_data->ca_response.pkt, &info)) != NULL) {
             switch (*header)
             {
             case OBEX_HEADER_ID_BODY:
             /* actually,END_OF_BODY should not in this continue response */
             case OBEX_HEADER_ID_END_OF_BODY: {
-                UINT16 hdr_len = OBEX_GetHeaderLength(header);
+                UINT16 hdr_len = OBEX_GetHeaderLength(header, pkt_end);
                 UINT16 seg_len = (hdr_len >= 3) ? (UINT16)(hdr_len - 3) : 0;
                 if (body_data == NULL) {
                     /* first body header */
@@ -373,7 +377,10 @@ error:
 void bta_av_ca_response_final(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
 {
     tOBEX_PARSE_INFO info;
-    OBEX_ParseResponse(p_data->ca_response.pkt, p_data->ca_response.opcode, &info);
+    if (OBEX_ParseResponse(p_data->ca_response.pkt, p_data->ca_response.opcode, &info) != OBEX_SUCCESS) {
+        osi_free(p_data->ca_response.pkt);
+        goto error;
+    }
     UINT8 *header = NULL;
     if (p_data->ca_response.opcode == OBEX_OPCODE_CONNECT) {
         /* we expect a success response code with final bit set */
@@ -385,14 +392,21 @@ void bta_av_ca_response_final(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
                 p_rcb->cover_art_max_tx = info.max_packet_length;
             }
             BOOLEAN cid_found = false;
+            UINT8 *pkt_data = (UINT8 *)(p_data->ca_response.pkt + 1) + p_data->ca_response.pkt->offset;
+            UINT8 *pkt_end = pkt_data + p_data->ca_response.pkt->len;
             while((header = OBEX_GetNextHeader(p_data->ca_response.pkt, &info)) != NULL) {
                 if (*header == OBEX_HEADER_ID_CONNECTION_ID) {
+                    if (OBEX_GetHeaderLength(header, pkt_end) != 5) {
+                        osi_free(p_data->ca_response.pkt);
+                        goto error;
+                    }
                     cid_found = true;
                     memcpy((UINT8 *)(&p_rcb->cover_art_cid), header + 1, 4);
                     break;
                 }
             }
             if (!cid_found) {
+                osi_free(p_data->ca_response.pkt);
                 goto error;
             }
             tBTA_AV_CA_STATUS ca_status;
@@ -412,13 +426,15 @@ void bta_av_ca_response_final(tBTA_AV_RCB *p_rcb, tBTA_AV_DATA *p_data)
         UINT16 body_data_len = 0;
         /* check response code is success */
         if (info.response_code == (OBEX_RESPONSE_CODE_OK | OBEX_FINAL_BIT_MASK)) {
+            UINT8 *pkt_data = (UINT8 *)(p_data->ca_response.pkt + 1) + p_data->ca_response.pkt->offset;
+            UINT8 *pkt_end = pkt_data + p_data->ca_response.pkt->len;
             while((header = OBEX_GetNextHeader(p_data->ca_response.pkt, &info)) != NULL) {
                 switch (*header)
                 {
                 /* actually, BODY should not in this final response */
                 case OBEX_HEADER_ID_BODY:
                 case OBEX_HEADER_ID_END_OF_BODY: {
-                    UINT16 hdr_len = OBEX_GetHeaderLength(header);
+                    UINT16 hdr_len = OBEX_GetHeaderLength(header, pkt_end);
                     UINT16 seg_len = (hdr_len >= 3) ? (UINT16)(hdr_len - 3) : 0;
                     if (body_data == NULL) {
                         /* first body header */

@@ -172,6 +172,9 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 /* BTU internal timer for BR/EDR power control*/
 #define BTU_TTYPE_BTM_BREDR_PWR_CTRL                112
 
+/* L2CAP host-driven Create_Connection retry back-off timer */
+#define BTU_TTYPE_L2CAP_LINK_RETRY                  113
+
 /* BTU Task Signal */
 typedef enum {
     SIG_BTU_START_UP = 0,
@@ -290,7 +293,7 @@ void  btu_hcif_cmd_timeout (UINT8 controller_id);
 void  btu_init_core(void);
 void  btu_free_core(void);
 
-void BTU_StartUp(void);
+bool BTU_StartUp(void);
 void BTU_ShutDown(void);
 
 void btu_task_start_up(void *param);

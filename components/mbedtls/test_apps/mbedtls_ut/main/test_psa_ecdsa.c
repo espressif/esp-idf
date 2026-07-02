@@ -10,6 +10,9 @@
 #include <inttypes.h>
 #include <esp_log.h>
 
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#include "mbedtls/private/ecp.h"
+#include "mbedtls/private/bignum.h"
 #include "psa/crypto.h"
 #include "psa_crypto_driver_esp_ecdsa_contexts.h"
 #include "psa_crypto_driver_esp_ecdsa.h"
@@ -215,7 +218,7 @@ const uint8_t ecdsa384_pub_y_km[] = {
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
 
 void test_ecdsa_verify(esp_ecdsa_curve_t curve, const uint8_t *hash, const uint8_t *r_comp, const uint8_t *s_comp,
-                       const uint8_t *pub_x, const uint8_t *pub_y)
+                       const uint8_t *pub_x, const uint8_t *pub_y, psa_status_t expected_status)
 {
     size_t hash_len = 0;
     int64_t elapsed_time;
@@ -264,19 +267,25 @@ void test_ecdsa_verify(esp_ecdsa_curve_t curve, const uint8_t *hash, const uint8
     memcpy(signature, r_comp, plen_bytes);
     memcpy(signature + plen_bytes, s_comp, plen_bytes);
 
-    ccomp_timer_start();
-    status = psa_verify_hash(key_id, PSA_ALG_ECDSA(sha_alg), hash, hash_len, signature, 2 * plen_bytes);
-    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
-    elapsed_time = ccomp_timer_stop();
+    if (expected_status == PSA_SUCCESS) {
+        ccomp_timer_start();
+        status = psa_verify_hash(key_id, PSA_ALG_ECDSA(sha_alg), hash, hash_len, signature, 2 * plen_bytes);
+        TEST_ASSERT_EQUAL(expected_status, status);
+        elapsed_time = ccomp_timer_stop();
 
-    if (curve == ESP_ECDSA_CURVE_SECP256R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
-    }
+        if (curve == ESP_ECDSA_CURVE_SECP256R1) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P256_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        }
 #if SOC_ECDSA_SUPPORT_CURVE_P384
-    else if (curve == ESP_ECDSA_CURVE_SECP384R1) {
-        TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P384_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
-    }
+        else if (curve == ESP_ECDSA_CURVE_SECP384R1) {
+            TEST_PERFORMANCE_CCOMP_LESS_THAN(ECDSA_P384_VERIFY_OP, "%" NEWLIB_NANO_COMPAT_FORMAT" us", NEWLIB_NANO_COMPAT_CAST(elapsed_time));
+        }
 #endif
+    } else {
+        status = psa_verify_hash(key_id, PSA_ALG_ECDSA(sha_alg), hash, hash_len, signature, 2 * plen_bytes);
+        TEST_ASSERT_EQUAL(expected_status, status);
+    }
+
     psa_destroy_key(key_id);
     psa_reset_key_attributes(&key_attr);
 }
@@ -288,7 +297,7 @@ TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbe
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
 #endif
-    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y);
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y, PSA_SUCCESS);
 }
 
 #ifdef SOC_ECDSA_SUPPORT_CURVE_P384
@@ -299,7 +308,83 @@ TEST_CASE("mbedtls ECDSA signature verification performance on SECP384R1", "[mbe
         TEST_IGNORE_MESSAGE("ECDSA is not supported");
     }
 #endif
-    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y);
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y, PSA_SUCCESS);
+}
+#endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
+
+/*
+ * Range-check regression test for the esp_ecdsa PSA driver.
+ *
+ * The two cases below exercise both branches of the r,s range check:
+ *   - r = 0, s = 0  (lower bound: r > 0 / s > 0)
+ *   - r = N, s = valid  (upper bound: r < N)
+ * Both must be rejected by the verifier.
+ *
+ *  ROM mbedtls (e.g. ESP32-C2 with CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL=y):
+ *  The ROM was built against an older mbedtls where
+ *  MBEDTLS_ERR_ECP_VERIFY_FAILED was the legacy high-level value
+ *  -0x4E80 (-20096). The current mbedtls_to_psa_error() no longer
+ *  has a case for that number (the macro name now resolves to
+ *  -149 in the new tree), and -20096 falls outside the PSA
+ *  pass-through window (-0x1000, -0x80) in psa_crypto.c, so it
+ *  hits the default branch and is returned as
+ *  PSA_ERROR_GENERIC_ERROR (-132).
+ */
+#if !SOC_ECDSA_SUPPORTED && CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL
+#define ECDSA_RANGE_CHECK_REJECT_STATUS  PSA_ERROR_GENERIC_ERROR
+#else
+#define ECDSA_RANGE_CHECK_REJECT_STATUS  PSA_ERROR_INVALID_SIGNATURE
+#endif
+
+/* Curve order N in big-endian, taken from mbedtls instead of a hard-coded table. */
+static void ecdsa_get_curve_order_be(mbedtls_ecp_group_id id, uint8_t *n_be, size_t len)
+{
+    mbedtls_ecp_group grp;
+    mbedtls_ecp_group_init(&grp);
+    TEST_ASSERT_EQUAL(0, mbedtls_ecp_group_load(&grp, id));
+    TEST_ASSERT_EQUAL(0, mbedtls_mpi_write_binary(&grp.N, n_be, len));
+    mbedtls_ecp_group_free(&grp);
+}
+
+TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SECP256R1", "[mbedtls]")
+{
+#if SOC_ECDSA_SUPPORTED
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+#endif
+    static const uint8_t zero32[32] = { 0 };
+    uint8_t p256_n_be[32];
+    ecdsa_get_curve_order_be(MBEDTLS_ECP_DP_SECP256R1, p256_n_be, sizeof(p256_n_be));
+
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, zero32, zero32,       ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, zero32, p256_n_be,    ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, p256_n_be, zero32,    ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, p256_n_be, p256_n_be, ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, zero32,    ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, ecdsa256_r, p256_n_be, ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP256R1, sha, p256_n_be, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=valid */
+}
+
+#ifdef SOC_ECDSA_SUPPORT_CURVE_P384
+TEST_CASE("mbedtls ECDSA signature verification rejects out-of-range r, s on SECP384R1", "[mbedtls]")
+{
+#if SOC_ECDSA_SUPPORTED
+    if (!ecdsa_ll_is_supported()) {
+        TEST_IGNORE_MESSAGE("ECDSA is not supported");
+    }
+#endif
+    static const uint8_t zero48[48] = { 0 };
+    uint8_t p384_n_be[48];
+    ecdsa_get_curve_order_be(MBEDTLS_ECP_DP_SECP384R1, p384_n_be, sizeof(p384_n_be));
+
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, zero48, zero48,       ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, zero48, p384_n_be,    ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=0, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, p384_n_be, zero48,    ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, p384_n_be, p384_n_be, ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, zero48,    ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=0 */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, ecdsa384_r, p384_n_be, ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=valid, s=N */
+    test_ecdsa_verify(ESP_ECDSA_CURVE_SECP384R1, sha, p384_n_be, ecdsa384_s, ecdsa384_pub_x, ecdsa384_pub_y, ECDSA_RANGE_CHECK_REJECT_STATUS); /* r=N, s=valid */
 }
 #endif /* SOC_ECDSA_SUPPORT_CURVE_P384 */
 
@@ -402,7 +487,7 @@ void test_ecdsa_sign(esp_ecdsa_curve_t curve, const uint8_t *hash, const uint8_t
 
     TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
     TEST_ASSERT_TRUE(signature_len == 2 * plen_bytes);
-    test_ecdsa_verify(curve, sha, signature, signature + plen_bytes, pub_x, pub_y);
+    test_ecdsa_verify(curve, sha, signature, signature + plen_bytes, pub_x, pub_y, PSA_SUCCESS);
     psa_destroy_key(priv_key_id);
     psa_reset_key_attributes(&priv_attr);
 }

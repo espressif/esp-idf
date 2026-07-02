@@ -135,7 +135,7 @@ int k_delayed_work_submit(struct k_delayed_work *work, int32_t delay)
     }
 
     /* If delay is 0, call the corresponding timeout handler. */
-    if (delay == 0) {
+    if (delay <= 0) {
         k_work_submit(&work->work);
         return 0;
     }

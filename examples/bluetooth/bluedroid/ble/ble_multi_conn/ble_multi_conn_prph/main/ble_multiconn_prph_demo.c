@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -139,10 +139,14 @@ static void ble_prph_set_new_adv(void)
         is_advertising = true;
         esp_ble_gap_addr_create_static(new_rand_addr);
 #if (BLE50_SUPPORTED == 1)
-        esp_ble_gap_ext_adv_set_rand_addr(EXT_ADV_HANDLE, new_rand_addr);
+        esp_err_t err = esp_ble_gap_ext_adv_set_rand_addr(EXT_ADV_HANDLE, new_rand_addr);
 #else
-        esp_ble_gap_set_rand_addr(new_rand_addr);
+        esp_err_t err = esp_ble_gap_set_rand_addr(new_rand_addr);
 #endif
+        if (err != ESP_OK) {
+            is_advertising = false;
+            ESP_LOGE(DEMO_TAG, "Set random addr failed: %s", esp_err_to_name(err));
+        }
     }
 }
 
@@ -178,41 +182,67 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Extended adv random address set, status %d, "ESP_BD_ADDR_STR"",
             param->ext_adv_set_rand_addr.status, ESP_BD_ADDR_HEX(new_rand_addr));
+        if (param->ext_adv_set_rand_addr.status != ESP_BT_STATUS_SUCCESS) {
+            is_advertising = false;
+            break;
+        }
         esp_ble_gap_ext_adv_start(NUM_EXT_ADV_SET, &ext_adv[0]);
         break;
     case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Extended advertising params set, status %d", param->ext_adv_set_params.status);
+        if (param->ext_adv_set_params.status != ESP_BT_STATUS_SUCCESS) {
+            break;
+        }
         esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE, sizeof(adv_data_raw), &adv_data_raw[0]);
         break;
     case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Extended advertising data set, status %d", param->ext_adv_data_set.status);
+        if (param->ext_adv_data_set.status != ESP_BT_STATUS_SUCCESS) {
+            break;
+        }
         ble_prph_restart_adv();
         break;
     case ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Extended advertising start, status %d", param->ext_adv_start.status);
-        is_advertising = true;
+        if (param->ext_adv_start.status == ESP_BT_STATUS_SUCCESS) {
+            is_advertising = true;
+        } else {
+            is_advertising = false;
+        }
         break;
     case ESP_GAP_BLE_ADV_TERMINATED_EVT:
         ESP_LOGI(DEMO_TAG, "Extended advertising terminated, status = %d", param->adv_terminate.status);
         if (param->adv_terminate.status == 0x00) {
             ESP_LOGI(DEMO_TAG, "Advertising successfully ended with a connection being created");
-            is_advertising = false;
         }
+        /* Any terminate reason means advertising has stopped; clear flag so restart can run */
+        is_advertising = false;
         break;
 #else
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Advertising data set, status %d", param->adv_data_raw_cmpl.status);
+        if (param->adv_data_raw_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            break;
+        }
         esp_ble_gap_addr_create_static(new_rand_addr);
         esp_ble_gap_set_rand_addr(new_rand_addr);
         break;
     case ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT:
         ESP_LOGI(DEMO_TAG, "Random address set, status %d, addr "ESP_BD_ADDR_STR"",
             param->set_rand_addr_cmpl.status, ESP_BD_ADDR_HEX(new_rand_addr));
+        if (param->set_rand_addr_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            is_advertising = false;
+            break;
+        }
         esp_ble_gap_start_advertising(&legacy_adv_params);
         break;
     case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Advertising start, status %d", param->adv_start_cmpl.status);
-        is_advertising = true;
+        if (param->adv_start_cmpl.status == ESP_BT_STATUS_SUCCESS) {
+            is_advertising = true;
+        } else {
+            is_advertising = false;
+        }
         break;
     case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
         ESP_LOGI(DEMO_TAG, "Advertising stop, status %d", param->adv_stop_cmpl.status);
@@ -248,16 +278,20 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
         ESP_LOG_BUFFER_HEX(DEMO_TAG, param->write.value, param->write.len);
         break;
     case ESP_GATTS_CONNECT_EVT:
+        prph_conn_num++;
         ESP_LOGI(DEMO_TAG, "Connected, conn_id %u, remote "ESP_BD_ADDR_STR", total %u",
-                 param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda), ++prph_conn_num);
+                 param->connect.conn_id, ESP_BD_ADDR_HEX(param->connect.remote_bda), prph_conn_num);
         is_advertising = false;
 #if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
         ble_prph_restart_adv();
 #endif
         break;
     case ESP_GATTS_DISCONNECT_EVT:
+        if (prph_conn_num > 0) {
+            prph_conn_num--;
+        }
         ESP_LOGI(DEMO_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%x, total %d",
-            ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason, (prph_conn_num ? --prph_conn_num : prph_conn_num));
+                 ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason, prph_conn_num);
         /* start advertising again when disconnected */
         ble_prph_restart_adv();
         break;
@@ -274,7 +308,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     case ESP_GATTS_CREAT_ATTR_TAB_EVT:
     {
         ESP_LOGI(DEMO_TAG, "The number handle = %x", param->add_attr_tab.num_handle);
-        if (param->create.status == ESP_GATT_OK) {
+        if (param->add_attr_tab.status == ESP_GATT_OK) {
             if (param->add_attr_tab.num_handle == HRS_IDX_NB) {
                 memcpy(profile_handle_table, param->add_attr_tab.handles,
                        sizeof(profile_handle_table));
@@ -289,7 +323,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
                          param->add_attr_tab.num_handle, HRS_IDX_NB);
             }
         } else {
-            ESP_LOGE(DEMO_TAG, " Create attribute table failed, error code = %x", param->create.status);
+            ESP_LOGE(DEMO_TAG, " Create attribute table failed, error code = %x", param->add_attr_tab.status);
         }
         break;
     }

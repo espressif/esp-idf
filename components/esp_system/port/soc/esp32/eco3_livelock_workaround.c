@@ -45,6 +45,9 @@ uint32_t ESP_SYSTEM_IRAM_ATTR esp_int_wdt_livelock_get_feed_stage0_ticks(void)
 
 void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_livelock_workaround(bool enable)
 {
+    if (!soc_has_cache_lock_bug()) {
+        return;
+    }
     uint32_t stage0_ticks = IWDT_STAGE0_TIMEOUT_US;
     if (enable) {
         esp_int_wdt_set_livelock_params(CONFIG_ESP_INT_WDT_TIMEOUT_MS);

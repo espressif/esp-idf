@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import json
 import logging
 from pathlib import Path
 
@@ -297,3 +298,53 @@ def test_idf_component_set_get_property_apis(idf_py: IdfPyFunc) -> None:
     assert 'LIB=' in result and len(result.split('LIB=')[1].split('\n')[0]) > 0, (
         'idf_component_get_property should retrieve COMPONENT_LIB'
     )
+
+
+@pytest.mark.usefixtures('test_app_copy')
+def test_local_component_shadows_managed_dep_in_manifest(idf_py: IdfPyFunc) -> None:
+    """A component's manifest declares `<ns>/<name>` while the project has a
+    local `components/<name>` that shadows it. The dep must resolve to the
+    local short-named component rather than failing with
+    `Failed to resolve component '<ns>__<name>'`.
+
+    Regression test for the cmakev2 per-component injection path that lost
+    the project-wide context _choose_component needs to rewrite a manifest-
+    declared namespaced dep to its locally-shadowing short name. The fix
+    seeds the per-component requirements file with one entry per discovered
+    component so known_components matches what cmakev1's project-wide
+    injection produces.
+    """
+    logging.info('Testing local component shadows manifest-declared managed dep')
+
+    # Local shadow named `lvgl`.
+    (Path('components/lvgl')).mkdir(parents=True)
+    (Path('components/lvgl/CMakeLists.txt')).write_text('idf_component_register(SRCS "lvgl_stub.c" INCLUDE_DIRS ".")\n')
+    (Path('components/lvgl/lvgl_stub.c')).write_text('void lvgl_local_stub(void) {}\n')
+
+    # A second local component whose manifest declares the namespaced dep.
+    # override_path keeps the component manager offline by pointing the dep
+    # at the local lvgl directory.
+    (Path('components/consumer')).mkdir(parents=True)
+    (Path('components/consumer/CMakeLists.txt')).write_text(
+        'idf_component_register(SRCS "consumer.c" INCLUDE_DIRS ".")\n'
+    )
+    (Path('components/consumer/consumer.c')).write_text('void consumer_stub(void) {}\n')
+    (Path('components/consumer/idf_component.yml')).write_text(
+        'dependencies:\n  idf: ">=5.0"\n  lvgl/lvgl:\n    version: "*"\n    override_path: "../lvgl"\n'
+    )
+
+    # Force consumer into the build via main (cmakev2 only builds required components).
+    replace_in_file(
+        'main/CMakeLists.txt',
+        '# placeholder_inside_idf_component_register',
+        'PRIV_REQUIRES consumer',
+    )
+
+    # Without the fix this fails with "Failed to resolve component 'lvgl__lvgl'".
+    idf_py('reconfigure')
+
+    with open('build/project_description.json') as f:
+        data = json.load(f)
+    paths = data.get('build_component_paths', [])
+    assert any(p.endswith('/components/lvgl') for p in paths), f'local lvgl not in build_component_paths: {paths}'
+    assert not any('lvgl__lvgl' in p for p in paths), f'managed lvgl__lvgl should not be in build: {paths}'

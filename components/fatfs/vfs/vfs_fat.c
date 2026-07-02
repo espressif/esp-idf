@@ -179,6 +179,9 @@ esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
 {
     size_t ctx = find_context_index_by_path(conf->base_path);
     if (ctx < FF_VOLUMES) {
+        if (out_fs) {
+            *out_fs = &s_fat_ctxs[ctx]->fs;
+        }
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -221,7 +224,9 @@ esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
     //compatibility
     s_fat_ctx = fat_ctx;
 
-    *out_fs = &fat_ctx->fs;
+    if (out_fs) {
+        *out_fs = &fat_ctx->fs;
+    }
 
     return ESP_OK;
 }
@@ -237,7 +242,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
     esp_err_t err = esp_vfs_unregister(fat_ctx->base_path);
     if (err != ESP_OK) {
-        return err;
+        ESP_LOGW(TAG, "esp_vfs_unregister failed (0x%x), cleaning up anyway", err); // should not happen, but if it does, we don't want to leak memory and keep the VFS in a broken state
     }
     _lock_close(&fat_ctx->lock);
 
@@ -251,7 +256,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     free(fat_ctx->flags);
     free(fat_ctx);
     s_fat_ctxs[ctx] = NULL;
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t esp_vfs_fat_info(const char* base_path,
@@ -562,7 +567,12 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
     f_res = f_write(file, src, size, &wr);
     if (((wr == 0) && (size != 0)) && (f_res == 0)) {
         errno = ENOSPC;
-        return -1;
+        ret = -1;
+        FRESULT seek_res = f_lseek(file, prev_pos);
+        if (seek_res != FR_OK) {
+            ESP_LOGE(TAG, "%s: f_lseek restore after ENOSPC write failed (fresult=%d)", __func__, seek_res);
+        }
+        goto pwrite_release;
     }
     if (f_res == FR_OK) {
         ret = wr;
@@ -1009,7 +1019,7 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
         if (res != FR_OK) {
             ESP_LOGD(TAG, "%s: rewinddir fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
-            return;
+            goto seekdir_done;
         }
         fat_dir->offset = 0;
     }
@@ -1018,10 +1028,11 @@ static void vfs_fat_seekdir(void* ctx, DIR* pdir, long offset)
         if (res != FR_OK) {
             ESP_LOGD(TAG, "%s: f_readdir fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
-            return;
+            goto seekdir_done;
         }
         fat_dir->offset++;
     }
+seekdir_done:
     _lock_release(&fat_ctx->lock);
 }
 

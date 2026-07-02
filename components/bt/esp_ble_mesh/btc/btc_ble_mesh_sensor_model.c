@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,7 +87,6 @@ void btc_ble_mesh_sensor_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
                 dst->sensor_client_get_state.get_state->series_get.raw_value_x1 = bt_mesh_alloc_buf(length);
                 if (!dst->sensor_client_get_state.get_state->series_get.raw_value_x1) {
                     BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
-                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                     /* Free the previously allocated resources */
                     bt_mesh_free(dst->sensor_client_get_state.params);
                     dst->sensor_client_get_state.params = NULL;
@@ -103,7 +102,6 @@ void btc_ble_mesh_sensor_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
                 length = src->sensor_client_get_state.get_state->series_get.raw_value_x2->len;
                 dst->sensor_client_get_state.get_state->series_get.raw_value_x2 = bt_mesh_alloc_buf(length);
                 if (!dst->sensor_client_get_state.get_state->series_get.raw_value_x2) {
-                    BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                     BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
                     /* Free the previously allocated resources */
                     if (dst->sensor_client_get_state.get_state->series_get.raw_value_x1) {
@@ -499,6 +497,7 @@ static void btc_ble_mesh_sensor_client_copy_req_data(btc_msg_t *msg, void *p_des
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_SENSOR_CLIENT_TIMEOUT_EVT:
         break;
     default:
@@ -557,6 +556,7 @@ static void btc_ble_mesh_sensor_client_free_req_data(btc_msg_t *msg)
                 break;
             }
         }
+        __attribute__((fallthrough));
     case ESP_BLE_MESH_SENSOR_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
             bt_mesh_free(arg->params);
@@ -759,6 +759,7 @@ static void btc_ble_mesh_sensor_server_copy_req_data(btc_msg_t *msg, void *p_des
                 p_dest_data->value.state_change.sensor_cadence_set.trigger_delta_up = bt_mesh_alloc_buf(length);
                 if (p_dest_data->value.state_change.sensor_cadence_set.trigger_delta_up == NULL) {
                     BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* The allocated memory will be released by btc_ble_mesh_sensor_server_free_req_data */
                     return;
                 }
                 net_buf_simple_add_mem(p_dest_data->value.state_change.sensor_cadence_set.trigger_delta_up,
@@ -770,6 +771,7 @@ static void btc_ble_mesh_sensor_server_copy_req_data(btc_msg_t *msg, void *p_des
                 p_dest_data->value.state_change.sensor_cadence_set.fast_cadence_low = bt_mesh_alloc_buf(length);
                 if (p_dest_data->value.state_change.sensor_cadence_set.fast_cadence_low == NULL) {
                     BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* The allocated memory will be released by btc_ble_mesh_sensor_server_free_req_data */
                     return;
                 }
                 net_buf_simple_add_mem(p_dest_data->value.state_change.sensor_cadence_set.fast_cadence_low,
@@ -781,6 +783,7 @@ static void btc_ble_mesh_sensor_server_copy_req_data(btc_msg_t *msg, void *p_des
                 p_dest_data->value.state_change.sensor_cadence_set.fast_cadence_high = bt_mesh_alloc_buf(length);
                 if (p_dest_data->value.state_change.sensor_cadence_set.fast_cadence_high == NULL) {
                     BT_ERR("%s, Out of memory, act %d", __func__, msg->act);
+                    /* The allocated memory will be released by btc_ble_mesh_sensor_server_free_req_data */
                     return;
                 }
                 net_buf_simple_add_mem(p_dest_data->value.state_change.sensor_cadence_set.fast_cadence_high,
@@ -877,7 +880,7 @@ static void btc_ble_mesh_sensor_server_free_req_data(btc_msg_t *msg)
     switch (msg->act) {
     case ESP_BLE_MESH_SENSOR_SERVER_STATE_CHANGE_EVT:
         if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET ||
-            arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK) {
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK) {
             bt_mesh_free_buf(arg->value.state_change.sensor_cadence_set.trigger_delta_down);
             bt_mesh_free_buf(arg->value.state_change.sensor_cadence_set.trigger_delta_up);
             bt_mesh_free_buf(arg->value.state_change.sensor_cadence_set.fast_cadence_low);
@@ -896,7 +899,7 @@ static void btc_ble_mesh_sensor_server_free_req_data(btc_msg_t *msg)
         break;
     case ESP_BLE_MESH_SENSOR_SERVER_RECV_SET_MSG_EVT:
         if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET ||
-            arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK) {
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK) {
             bt_mesh_free_buf(arg->value.set.sensor_cadence.cadence);
         } else if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_SET ||
                    arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_SET_UNACK) {

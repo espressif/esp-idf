@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdio.h>
 #include <string.h>
 
 #include "esp_log.h"
@@ -364,6 +365,45 @@ TEST_CASE("Test TEE Secure Storage - Null Pointer and Zero Length", "[sec_storag
     TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
 }
 
+TEST_CASE("Test TEE Secure Storage - Verify data encryption", "[sec_storage_encr]")
+{
+    ESP_LOGI(TAG, "Populating NVS-based TEE Secure Storage; encrypted with XTS-AES-512");
+    static const struct {
+        const char *id;
+        esp_tee_sec_storage_type_t type;
+        uint32_t flags;
+    } key_cfgs[] = {
+        { "aes256_key0",     ESP_SEC_STG_KEY_AES256,          SEC_STORAGE_FLAG_WRITE_ONCE },
+        { "aes256_key1",     ESP_SEC_STG_KEY_AES256,          SEC_STORAGE_FLAG_NONE       },
+        { "attest_key",      ESP_SEC_STG_KEY_ECDSA_SECP256R1, SEC_STORAGE_FLAG_WRITE_ONCE },
+        { "ecdsa_p256_key0", ESP_SEC_STG_KEY_ECDSA_SECP256R1, SEC_STORAGE_FLAG_NONE       },
+    };
+
+    for (size_t i = 0; i < sizeof(key_cfgs) / sizeof(key_cfgs[0]); i++) {
+        esp_tee_sec_storage_key_cfg_t cfg = {
+            .id    = key_cfgs[i].id,
+            .type  = key_cfgs[i].type,
+            .flags = key_cfgs[i].flags,
+        };
+        if ((cfg.flags & SEC_STORAGE_FLAG_WRITE_ONCE) == 0) {
+            esp_err_t err = esp_tee_sec_storage_clear_key(cfg.id);
+            TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_NOT_FOUND);
+        }
+        TEST_ESP_OK(esp_tee_sec_storage_gen_key(&cfg));
+    }
+
+    const size_t dump_sz = 4096;
+    uint8_t *buf = heap_caps_malloc(dump_sz, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(buf);
+
+    TEST_ESP_OK((esp_err_t)esp_tee_service_call(2, SS_ESP_TEE_TEST_READ_SEC_STG, buf));
+    printf("\nSEC_STG_DUMP_BEGIN\n");
+    ESP_LOG_BUFFER_HEX(TAG, buf, dump_sz);
+    printf("SEC_STG_DUMP_END\n");
+
+    free(buf);
+}
+
 TEST_CASE("Test TEE Secure Storage - WRITE_ONCE keys", "[sec_storage]")
 {
     const char *key_id = "key_id_test_wo";
@@ -425,6 +465,10 @@ static void do_ecdsa_sign_and_verify(const esp_tee_sec_storage_key_cfg_t *cfg, c
     TEST_ESP_OK(verify_ecdsa_sign(cfg->type, digest, digest_len, &pubkey, &sign));
 }
 
+/* NOTE: In release mode (CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE), the test expects
+ * the eFuse-burned HMAC key used for TEE secure storage to be available at
+ * the path "test_keys/tee_sec_stg_hmac_key.bin"
+ */
 TEST_CASE("Test TEE Secure Storage - Host-generated keys", "[sec_storage_host_keygen]")
 {
     const char *aes_key_ids[] = { "aes256_key0", "aes256_key1" };
