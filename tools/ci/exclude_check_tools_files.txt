@@ -38,7 +38,6 @@ tools/ci/metrics/size_metrics/size_metrics_config.yml
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/mypy_ignore_list.txt
-tools/ci/previous_stage_job_status.py
 tools/ci/push_to_github.sh
 tools/ci/python_packages/common_test_methods.py
 tools/ci/python_packages/gitlab_api.py

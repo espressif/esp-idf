@@ -16,7 +16,7 @@ all_build_finished:
   script:
     - echo "all test jobs finished"
 
-generate_pytest_build_report:
+generate_presigned_json:
   stage: assign_test
   image: $ESP_ENV_IMAGE
   tags:
@@ -29,16 +29,11 @@ generate_pytest_build_report:
       job: pipeline_variables
   artifacts:
     paths:
-      - failed_apps.html
-      - built_apps.html
-      - skipped_apps.html
-      - build_report.html
       - presigned.json
     expire_in: 1 week
     when: always
   script:
-    - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type build
-    - python tools/ci/previous_stage_job_status.py --stage build
+    - idf-ci gitlab generate-presigned-json --output presigned.json
 
 app-size-metrics:
   stage: assign_test
