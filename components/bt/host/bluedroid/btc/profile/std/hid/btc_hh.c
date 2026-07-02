@@ -1407,10 +1407,11 @@ void btc_hh_cb_handler(btc_msg_t *msg)
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
 #endif
                 btc_hh_remove_device(p_dev->bd_addr);
+            } else {
+                p_dev->dev_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
             }
 
             btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
-            p_dev->dev_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
             param.close.status = p_data->dev_status.status;
         } else {
             BTC_TRACE_ERROR("Error: cannot find device with handle %d", p_data->dev_status.handle);
