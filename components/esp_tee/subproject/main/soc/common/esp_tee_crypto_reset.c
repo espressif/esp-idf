@@ -61,6 +61,7 @@ void esp_tee_soc_reset_crypto_peripherals(void)
 #if SOC_HMAC_SUPPORTED
     hmac_ll_enable_bus_clock(true);
     hmac_ll_reset_register();
+    hmac_ll_clean();
     hmac_ll_enable_bus_clock(false);
 #endif
 
