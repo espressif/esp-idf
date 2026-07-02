@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
-#include "hal/mwdt_periph.h"
 #include "hal/wdt_hal.h"
 #include "soc/system_intr.h"
 #include "freertos/FreeRTOS.h"
@@ -24,6 +23,7 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_int_wdt.h"
+#include "mwdt_priv.h"
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 #include "esp_private/sleep_retention.h"
@@ -58,8 +58,8 @@ ESP_LOG_ATTR_TAG(TAG, "int_wdt");
 static esp_err_t sleep_int_wdt_retention_init(void *arg)
 {
     uint32_t group_id = *(uint32_t *)arg;
-    esp_err_t err = sleep_retention_entries_create(tg_wdt_regs_retention[group_id].link_list,
-                                                   tg_wdt_regs_retention[group_id].link_num,
+    esp_err_t err = sleep_retention_entries_create(mwdt_reg_retention_info[group_id].regdma_entry_array,
+                                                   mwdt_reg_retention_info[group_id].array_size,
                                                    REGDMA_LINK_PRI_SYS_PERIPH_LOW,
                                                    (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
     if (err == ESP_OK) {
