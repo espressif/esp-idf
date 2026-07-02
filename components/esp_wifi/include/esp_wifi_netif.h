@@ -81,6 +81,42 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx);
  */
 esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t fn, void * arg);
 
+/**
+ * @brief Derive an IPv6 link-local address from a link-layer (MAC) address
+ *
+ * Computes fe80::/64 combined with the EUI-64 form of the given MAC (the 802
+ * group bit complemented) into an esp_ip6_addr_t (zone 0). Interface-agnostic.
+ *
+ * @param[out] ip6 destination, set to the derived IPv6 link-local address
+ * @param[in]  mac source link-layer (MAC) address (6 bytes)
+ */
+void esp_wifi_netif_get_ip6_linklocal_from_mac(esp_ip6_addr_t *ip6, const uint8_t mac[6]);
+
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
+/**
+ * @brief Pin (or remove) a static IPv6 link-local neighbor mapping on a wifi netif
+ *
+ * Installs a fixed link-local IPv6 -> MAC mapping for a peer reachable on the
+ * given wifi interface so that traffic to the peer bypasses Neighbor Discovery
+ * (no NS/NA exchanged), or removes a previously installed one. This layer owns
+ * both the netif lookup (from the interface type) and the derivation of the
+ * peer's link-local address from its MAC, so the caller only supplies the
+ * interface and the peer MAC. Only available when lwIP static ND6 entries are
+ * enabled.
+ *
+ * @param[in] wifi_if wifi interface the peer is reachable on
+ * @param[in] mac     peer's link-layer (MAC) address
+ * @param[in] add     true to add the mapping, false to remove it
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if mac is NULL or wifi_if is out of range
+ *      - ESP_ERR_INVALID_STATE if the interface's netif is not up
+ *      - error code from the underlying esp_netif call otherwise
+ */
+esp_err_t esp_wifi_netif_set_static_neighbor(wifi_interface_t wifi_if, const uint8_t mac[6], bool add);
+#endif /* CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES */
+
 #ifdef __cplusplus
 }
 #endif

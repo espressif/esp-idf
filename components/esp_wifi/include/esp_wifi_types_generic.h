@@ -606,6 +606,7 @@ typedef struct {
     bool disable_random_mac;/**< Disable the MAC Randomisation in NAN */
     bool reset_current_nvs_creds; /**< Erase all NAN credentials (own NIK and cached peer NIK/NPK entries) saved in NVS before starting. */
     bool use_nvs_for_caching;     /**< Persist newly-learned peer credentials (NIK/NPK) to NVS so they survive across reboots. */
+    bool group_mgmt_prot;         /**< Device-global group management protection (IGTKSA/BIGTKSA): BIP-protect Beacons + multicast SDFs. Forces GTKSA on all secured services (CSIA caps cannot encode IGTK/BIGTK without GTKSA). */
 } wifi_nan_sync_config_t;
 
 /**
@@ -932,9 +933,9 @@ typedef enum {
     WIFI_NAN_CSID_NCS_SK_256       = 2,    /**< NCS-SK-256 (PSK/Passphrase). Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_128  = 3,    /**< NCS-PK-2WDH-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_256  = 4,    /**< NCS-PK-2WDH-256. Reserved: not supported right now. */
-    WIFI_NAN_CSID_NCS_GTK_CCM_128  = 5,
-    WIFI_NAN_CSID_NCS_GTK_GCM_256  = 6,
-    WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_GTK_CCMP_128 = 5,    /**< NCS-GTK-CCMP-128, the group-data cipher (GTKSA). Selected internally when group_data_prot is set; not user-selectable via csid_bitmap. */
+    WIFI_NAN_CSID_NCS_GTK_GCMP_256 = 6,    /**< NCS-GTK-GCMP-256. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128 (NAN Pairing). Requires CONFIG_ESP_WIFI_NAN_PAIRING and the Wi-Fi Aware component (esp-wifi-apps); not usable with stand-alone ESP-IDF. */
     WIFI_NAN_CSID_NCS_PK_PASN_256  = 8,    /**< NCS-PK-PASN-256. Reserved: not supported right now. */
 } wifi_nan_cipher_suite_id_t;
 
@@ -942,8 +943,8 @@ typedef enum {
 #define WIFI_NAN_CSID_BIT_NCS_SK_256       (1 << WIFI_NAN_CSID_NCS_SK_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_128  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_256  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_256)
-#define WIFI_NAN_CSID_BIT_NCS_GTK_CCM_128  (1 << WIFI_NAN_CSID_NCS_GTK_CCM_128)
-#define WIFI_NAN_CSID_BIT_NCS_GTK_GCM_256  (1 << WIFI_NAN_CSID_NCS_GTK_GCM_256)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128 (1 << WIFI_NAN_CSID_NCS_GTK_CCMP_128)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_GCMP_256 (1 << WIFI_NAN_CSID_NCS_GTK_GCMP_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_128  (1 << WIFI_NAN_CSID_NCS_PK_PASN_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
 
@@ -974,8 +975,8 @@ typedef struct {
   * is computed by the stack as the union of each credential's @c csid.
   */
 typedef struct {
-    uint8_t group_data_prot: 1;                  /**< Group addressed data frame protection. Reserved: not supported right now. */
-    uint8_t group_mgmt_prot: 1;                  /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t group_data_prot: 1;                  /**< Group addressed data frame protection (GTKSA): distribute a GTK on the secured NDP so multicast data frames are protected. */
+    uint8_t group_mgmt_prot: 1;                  /**< Group addressed management frame protection (IGTKSA/BIGTKSA): BIP-protect multicast SDFs and Beacons. */
     uint8_t reserved: 6;                         /**< Reserved */
     uint8_t num_credentials;                     /**< Number of valid entries in @c creds (0..ESP_WIFI_NAN_MAX_CREDS_PER_SVC). 0 = open service. */
     wifi_nan_credential_t creds[ESP_WIFI_NAN_MAX_CREDS_PER_SVC]; /**< Credentials list. */

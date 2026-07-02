@@ -510,6 +510,11 @@ int esp_nan_construct_nira(uint8_t *frm)
 #define NAN_PASN_KDE_OUI_TYPE_LIFETIME  37
 #define NAN_PASN_KEY_LIFETIME_NIK_BIT   BIT(3)
 #define NAN_ATTR_ID_SHARED_KEY_DESC     0x24
+/* iOS sends its NIK follow-up ~2.5-2.6 s after we derive the NM-TK; a 2 s window
+ * fired first and destructively removed the peer, so the late NIK arrived after
+ * teardown and the follow-up went out unprotected -> peer never started the NDP.
+ * 5 s lets the NIK land in time, so the cancel in the store-NIK path keeps the
+ * peer SA intact. */
 #define NAN_PAIRING_NIK_FUP_TIMEOUT_SEC 5
 
 struct nan_pairing_fup_ctx {
