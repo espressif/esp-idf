@@ -28,47 +28,51 @@ The component in an SBOM is described with information such as its name and vers
     * - Timestamp
       - Record of the date and time of the SBOM data assembly.
 
-To generate an NTIA‑compliant SBOM file for an ESP‑IDF project, use the ``idf.py sbom-create`` command. This command generates an SBOM file in Software Package Data Exchange (`SPDX`_) format, version 2.2. The generated SBOM can then be scanned for known vulnerabilities in the National Vulnerability Database (`NVD`_) using Common Platform Enumeration (`CPE`_) identifiers with the ``idf.py sbom-check`` command.
+To generate an NTIA‑compliant SBOM file for an ESP‑IDF project, use the ``idf.py sbom-create`` command. By default, this command generates an SBOM file in the Software Package Data Exchange (`SPDX`_) format, version 2.2. Other formats can be selected with the ``--format`` option: SPDX JSON, SPDX 3.0 JSON-LD, and CycloneDX. The generated SBOM can then be scanned for known vulnerabilities in the National Vulnerability Database (`NVD`_) using Common Platform Enumeration (`CPE`_) identifiers with the ``idf.py sbom-check`` command, which detects the SBOM format automatically.
 
 The ``idf.py sbom-create`` and ``idf.py sbom-check`` commands provide basic integration of the `esp-idf-sbom`_ tool into ``idf.py``. For more detailed information, see the documentation in the `esp-idf-sbom`_ project.
 
-Generating SPDX SBOM File for ESP-IDF Project
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Generating an SBOM File for ESP-IDF Project
+===========================================
 
-The generated SPDX SBOM file contains information derived from the project’s build artifacts. To ensure these artifacts are up-to-date, the ``idf.py sbom-create`` command depends on the ``idf.py build`` command. If the project has not yet been built, or if source files have changed, a build is automatically triggered before the SBOM is generated. This guarantees that the resulting SBOM always accurately reflects the current state of the project.
+The generated SBOM file contains information derived from the project’s build artifacts. To ensure these artifacts are up-to-date, the ``idf.py sbom-create`` command depends on the ``idf.py build`` command. If the project has not yet been built, or if source files have changed, a build is automatically triggered before the SBOM is generated. This guarantees that the resulting SBOM always accurately reflects the current state of the project.
 
-To generate a default minimal SPDX SBOM file for your project, run the following command in your project directory.
+To generate a default minimal SBOM file for your project, run the following command in your project directory.
 
 .. code-block:: bash
 
     $ idf.py sbom-create
 
-By default, the SPDX SBOM file is created in the build directory and named after the project, with the ``.spdx`` extension. For example, for the ``hello_world`` example project, the file will be located at ``build/hello_world.spdx`` by default. The output location of the generated SPDX SBOM file can be changed using the ``--spdx-file`` option. For more information and additional options, see ``idf.py sbom-create --help``.
+By default, the SBOM file is created in the build directory and named after the project, with an extension matching the selected format (``.spdx`` for the default SPDX 2.2 tag/value format). For example, for the ``hello_world`` example project, the file will be located at ``build/hello_world.spdx`` by default.
 
-The ``idf.py sbom-create`` command generates the default SPDX SBOM file for a project. If more control is required over how the SPDX SBOM file is generated and what information it contains, refer to the `esp-idf-sbom`_ tool documentation. That documentation also provides detailed information about the component layout within SPDX SBOM files and the manifest files used to describe components.
+The output format is selected with the ``--format`` option, which accepts ``spdx-tag-value`` (SPDX 2.2 tag/value, the default), ``spdx-json`` (SPDX 2.2 JSON), ``spdx-json-ld`` (SPDX 3.0 JSON-LD), and ``cyclonedx-json`` (CycloneDX 1.6 JSON). The output location can be changed with the ``--file`` option (the former ``--spdx-file`` name is still accepted). For more information and additional options, see ``idf.py sbom-create --help``.
 
-Checking SPDX SBOM File for Vulnerabilities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``idf.py sbom-create`` command generates the default SBOM file for a project. If more control is required over how the SBOM file is generated and what information it contains, refer to the `esp-idf-sbom`_ tool documentation. That documentation also provides detailed information about the component layout within the SBOM file and the manifest files used to describe components.
 
-The ``idf.py sbom-check`` command scans a project's SPDX SBOM file for known vulnerabilities. While this command is the primary method within ESP-IDF, you can also use any other third-party utility that supports the SPDX format, such as `cve-bin-tool`_.
+Checking an SBOM File for Vulnerabilities
+=========================================
 
-To check an SPDX SBOM file for vulnerabilities, use the following syntax:
+The ``idf.py sbom-check`` command scans a project's SBOM file for known vulnerabilities and detects the SBOM format automatically. While this command is the primary method within ESP-IDF, you can also use any other third-party utility that supports the format you generated, such as `cve-bin-tool`_ for SPDX.
 
-.. code-block:: bash
-
-    $ idf.py sbom-check --spdx-file <path_to_file>
-
-For example, to scan the SPDX SBOM file generated for the ``hello_world`` example, run:
+To check an SBOM file for vulnerabilities, use the following syntax:
 
 .. code-block:: bash
 
-    $ idf.py sbom-check --spdx-file build/hello_world.spdx
+    $ idf.py sbom-check --file <path_to_file>
+
+For example, to scan the SBOM file generated for the ``hello_world`` example, run:
+
+.. code-block:: bash
+
+    $ idf.py sbom-check --file build/hello_world.spdx
 
 
 By default, the ``idf.py sbom-check`` command uses a local mirror of the `NVD`_ database. You can choose between two modes of operation:
 
 * **Local Mirror (Default):** This requires approximately 900 MB of disk space. While the initial population of the database may take some time, this method is convenient for frequent, fast, and offline scans.
-* **NVD REST API:** Use the ``--nvd-api`` option to query the NVD database directly online. This is better suited for occasional or ad hoc scans where you want to avoid the disk space overhead of a local mirror.
+* **NVD REST API:** Use the ``--nvd-api`` option to query the NVD database directly online. This is better suited for occasional or ad hoc scans where you want to avoid the disk space overhead of a local mirror. Without an API key, NVD's rate limit makes this mode slow; set the ``NVDAPIKEY`` environment variable with a free key requested from `NVD`_ to raise the limit and speed up online scans roughly 10x.
+
+``idf.py sbom-check`` returns a non-zero exit status when any vulnerability is found, so it can be used to gate a CI pipeline.
 
 The command by default generates a report table summarizing any potential vulnerabilities found. Below is an example of a shortened report for a hypothetical project that intentionally uses an outdated version of the ``expat`` component to demonstrate the detection capabilities. For more information and additional options, see ``idf.py sbom-check --help``.
 
@@ -154,7 +158,7 @@ The command by default generates a report table summarizing any potential vulner
     [... additional lines removed ...]
 
 Checking Components for Vulnerabilities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=======================================
 
 In addition to build artifacts, the ``idf.py sbom-create`` command uses SBOM manifest files located in component directories as a primary data source. You can use ``idf.py sbom-check`` to scan these component manifest files directly for vulnerabilities without needing to generate a complete project SBOM file.
 
@@ -173,10 +177,9 @@ To scan a specific directory instead of the current one, use the ``--path`` opti
     idf.py sbom-check --path <path_to_directory>
 
 .. _esp-idf-sbom: https://github.com/espressif/esp-idf-sbom
-.. _SBOM: https://en.wikipedia.org/wiki/Software_supply_chain
+.. _SBOM: https://www.cisa.gov/sbom
 .. _NVD: https://nvd.nist.gov
 .. _SPDX: https://spdx.dev
-.. _SPDX specification: https://spdx.github.io/spdx-spec/v2.2.2/
 .. _NTIA: https://www.ntia.gov
 .. _CPE: https://nvd.nist.gov/products/cpe
 .. _cve-bin-tool: https://github.com/intel/cve-bin-tool
