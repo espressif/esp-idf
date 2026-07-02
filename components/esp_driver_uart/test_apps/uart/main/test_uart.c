@@ -26,6 +26,7 @@
 #include "soc/clk_tree_defs.h"
 #include "test_common.h"
 #include "esp_attr.h"
+#include "esp_timer.h"
 
 #define BUF_SIZE         (100)
 #define UART_BAUD_11520  (11520)
@@ -642,6 +643,214 @@ TEST_CASE("uart in one-wire mode", "[uart]")
         free(rd_data);
     }
 
+    TEST_ESP_OK(uart_driver_delete(uart_num));
+}
+
+// XON/XOFF software flow control characters (must match the ones the driver programs into the hardware)
+#define TEST_UART_XON_CHAR   (0x11)
+#define TEST_UART_XOFF_CHAR  (0x13)
+
+// A small, fixed amount of payload written to the UART to probe whether the transmitter is draining it.
+// Kept well within the smallest HW TX FIFO (the LP UART has only 16 bytes) so the write always fits and, since
+// the FIFO is empty at every call site, uart_write_bytes() never blocks waiting for FIFO space.
+#define TEST_UART_TX_PROBE_BYTES  (8)
+
+// The probe window: a running transmitter drains TEST_UART_TX_PROBE_BYTES in well under 1 ms at any reasonable
+// baud rate, so 100 ms is plenty to tell "draining" (tx goes idle) from "paused" (tx never goes idle).
+#define TEST_UART_TX_PROBE_WINDOW_MS  (100)
+
+// Queue a fixed chunk of payload through the driver's TX path (installed with no TX ring buffer, so the bytes
+// go straight to the HW TX FIFO). The payload byte must differ from XON/XOFF; its value is irrelevant to the
+// local TX flow control decision.
+static void test_uart_write_txfifo_probe(uart_port_t uart_num)
+{
+    uint8_t payload[TEST_UART_TX_PROBE_BYTES];
+    memset(payload, 0x55, sizeof(payload));
+    uart_write_bytes(uart_num, payload, sizeof(payload));
+}
+
+// Return true once TX has stopped draining (i.e. an XOFF was received and the transmitter paused).
+// Each iteration queues a small probe into the (empty) FIFO and waits for the transmitter to go idle: if it
+// cannot finish within the probe window the transmitter is paused. Otherwise it drained the probe (running),
+// leaving the FIFO empty again for the next iteration.
+static bool test_uart_wait_tx_paused(uart_port_t uart_num, int timeout_ms)
+{
+    int64_t deadline = esp_timer_get_time() + (int64_t)timeout_ms * 1000;
+    while (esp_timer_get_time() < deadline) {
+        test_uart_write_txfifo_probe(uart_num);
+        if (uart_wait_tx_done(uart_num, pdMS_TO_TICKS(TEST_UART_TX_PROBE_WINDOW_MS)) == ESP_ERR_TIMEOUT) {
+            return true; // probe could not drain -> paused
+        }
+    }
+    return false;
+}
+
+// Return true once TX starts draining again (i.e. an XON was received and the transmitter resumed).
+// The probe bytes queued by the pause step are still sitting in the FIFO (nothing drains while paused), so we
+// just wait for the transmitter to finally go idle, which only happens once it resumes and shifts them out.
+static bool test_uart_wait_tx_resumed(uart_port_t uart_num, int timeout_ms)
+{
+    int64_t deadline = esp_timer_get_time() + (int64_t)timeout_ms * 1000;
+    while (esp_timer_get_time() < deadline) {
+        if (uart_wait_tx_done(uart_num, pdMS_TO_TICKS(TEST_UART_TX_PROBE_WINDOW_MS)) == ESP_OK) {
+            return true; // FIFO drained -> resumed
+        }
+    }
+    return false;
+}
+
+// Wait until the RX FIFO has accumulated more than the XOFF threshold (so an XOFF should have been sent).
+static bool test_uart_wait_rxfifo_filled(uart_dev_t *hw, uint32_t xoff_thresh, int timeout_ms)
+{
+    int64_t deadline = esp_timer_get_time() + (int64_t)timeout_ms * 1000;
+    while (esp_timer_get_time() < deadline) {
+        if (uart_ll_get_rxfifo_len(hw) > xoff_thresh) {
+            return true;
+        }
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
+    return false;
+}
+
+// Drain the whole HW RX FIFO directly (the driver's RX interrupts are disabled), dropping the level below the
+// XON threshold so the hardware sends an XON.
+static void test_uart_drain_rxfifo(uart_dev_t *hw)
+{
+    uint8_t buf[64];
+    uint32_t len;
+    while ((len = uart_ll_get_rxfifo_len(hw)) > 0) {
+        if (len > sizeof(buf)) {
+            len = sizeof(buf);
+        }
+        uart_ll_read_rxfifo(hw, buf, len);
+    }
+}
+
+/*
+ * This test verifies both directions of the UART hardware software-flow-control (XON/XOFF) feature:
+ *   1. Receiving flow control: once the UART receives an XOFF character it must stop transmitting, and resume
+ *      once it receives an XON character.
+ *   2. Sending flow control: once the RX FIFO fills past the XOFF threshold the UART must transmit an XOFF
+ *      character, and once it is drained below the XON threshold it must transmit an XON character.
+ *
+ * For the HP UART port, the test taps the UART RX onto the console UART RX pad so the host (pytest) can inject
+ * XON/XOFF (direction 1) over the very same serial connection it already uses to talk to the console, without
+ * extra wiring. For direction 2, the console TX pad is temporarily re-routed to the UART TX signal so the host
+ * can observe the XON/XOFF characters the UART sends. The console UART RX pad is a regular (HP) GPIO though,
+ * while the LP UART can only use LP-capable (RTC) GPIOs, so it cannot borrow the console pads. Hence for the LP
+ * UART port the test keeps the LP UART on its normal pins and a manual tester is expected to physically wire
+ * the console/UART0 RX and TX lines to them. (CI only exercises HP UART.)
+ *
+ * The UART TX shifts data out at the configured baud rate regardless of where it is routed, so direction 1 is
+ * observed on the DUT by watching the HW TX FIFO drain.
+ */
+TEST_CASE("uart software flow control (XON/XOFF)", "[uart_flow_ctrl]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+    uart_port_t uart_num = port_param.port_num;
+    uart_dev_t *hw = UART_LL_GET_HW(uart_num);
+    const bool is_hp_uart = (uart_num < SOC_UART_HP_NUM);
+
+    printf("Note that if you are in any terminal program, likely the XON/XOFF will be trapped by the shell. Run 'stty -ixon -ixoff' to let the keys pass through your terminal application!\n");
+
+    int rx_pin, tx_pin;
+    if (is_hp_uart) {
+        // HP UART: tap the UART RX onto the console UART RX pad so the host can inject XON/XOFF over the console.
+        // The TX is left unrouted for now; it is hijacked onto the console TX pad later for the sending direction.
+        rx_pin = uart_periph_signal[CONFIG_CONSOLE_UART_NUM].pins[SOC_UART_PERIPH_SIGNAL_RX].default_gpio;
+        TEST_ASSERT(rx_pin >= 0);
+        tx_pin = UART_PIN_NO_CHANGE;
+    } else {
+        // LP UART: keep both pins on their normal IOs; a manual tester wires the console/UART0 lines to them.
+        printf("LP UART needs manual wiring of console UART lines to the UART pins (TX-to-RX, RX-to-TX)\n");
+        rx_pin = port_param.rx_pin_num;
+        tx_pin = port_param.tx_pin_num;
+    }
+
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = port_param.default_src_clk,
+    };
+    // No TX ring buffer: the direct FIFO writes below go straight to the HW TX FIFO, so monitoring the FIFO
+    // level reflects the real transmitter state.
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 0, NULL, 0));
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    TEST_ESP_OK(uart_set_pin(uart_num, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    // RX FIFO thresholds and fill size that drive the *sending* direction (part 2). They must fit the HW FIFO,
+    // which is much smaller on the LP UART (16 bytes) than on the HP UART (128 bytes).
+    // - xoff_thresh: when the RX FIFO rises above this, the hardware sends XOFF
+    // - xon_thresh:  when the RX FIFO drops below this, the hardware sends XON
+    // - fill_bytes:  amount the host sends, chosen > xoff_thresh and <= HW FIFO length (so no overflow)
+    int xon_thresh, xoff_thresh, fill_bytes;
+    if (is_hp_uart) {
+        xon_thresh = 10;
+        xoff_thresh = 40;
+        fill_bytes = 64;
+    } else {
+        xon_thresh = 2;
+        xoff_thresh = 8;
+        fill_bytes = 12;
+    }
+
+    // Enable software flow control with the thresholds above.
+    TEST_ESP_OK(uart_set_sw_flow_ctrl(uart_num, true, xon_thresh, xoff_thresh));
+
+    // ---- Part 1: receiving XON/XOFF pauses / resumes the transmitter ----
+    printf("\n");
+    printf("Send %#04x (XOFF - Ctrl+S) to stop UART transmission\n", TEST_UART_XOFF_CHAR);
+    bool paused = test_uart_wait_tx_paused(uart_num, 20000);
+    TEST_ASSERT_MESSAGE(paused, "UART transmitter did not pause after receiving XOFF");
+    printf("UART transmission stopped\n");
+
+    printf("Send %#04x (XON - Ctrl+Q) to start UART transmission\n", TEST_UART_XON_CHAR);
+    bool resumed = test_uart_wait_tx_resumed(uart_num, 20000);
+    TEST_ASSERT_MESSAGE(resumed, "UART transmitter did not resume after receiving XON");
+    printf("UART transmission resumed\n");
+
+    // Part 1 left the transmitter idle (uart_wait_tx_done returned OK); reset the TX FIFO anyway to guarantee a
+    // clean slate before observing the auto XON/XOFF.
+    uart_ll_txfifo_rst(hw);
+
+    // ---- Part 2: filling / draining the RX FIFO makes the UART send XOFF / XON ----
+    // Disable the driver's RX interrupts so the RX FIFO is not auto-drained; we drain it explicitly below. This
+    // guarantees the XOFF is sent (FIFO stays above the XOFF threshold) before we drop it below the XON threshold.
+    TEST_ESP_OK(uart_disable_rx_intr(uart_num));
+    uart_ll_rxfifo_rst(hw);
+
+    printf("\n");
+    printf("Send %d bytes to fill RX FIFO\n", fill_bytes);
+    fflush(stdout);
+
+    const int console_tx_pin = uart_periph_signal[CONFIG_CONSOLE_UART_NUM].pins[SOC_UART_PERIPH_SIGNAL_TX].default_gpio;
+    const int console_tx_signal = uart_periph_signal[CONFIG_CONSOLE_UART_NUM].pins[SOC_UART_PERIPH_SIGNAL_TX].signal;
+    const int uart_tx_signal = uart_periph_signal[uart_num].pins[SOC_UART_PERIPH_SIGNAL_TX].signal;
+
+    if (is_hp_uart) {
+        // Make sure the prompt is fully sent, then hijack the console TX pad so the host reads the UART's TX.
+        uart_wait_tx_idle_polling(CONFIG_CONSOLE_UART_NUM);
+        gpio_func_sel(console_tx_pin, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(console_tx_pin, uart_tx_signal, false, false);
+    }
+
+    bool filled = test_uart_wait_rxfifo_filled(hw, xoff_thresh, 20000); // by now an XOFF should have been sent
+    test_uart_drain_rxfifo(hw);                                         // dropping below XON threshold sends XON
+    uart_wait_tx_idle_polling(uart_num);                   // let the XON finish transmitting
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    if (is_hp_uart) {
+        // Restore the console TX pad so the unity test result can be reported over the console again.
+        esp_rom_gpio_connect_out_signal(console_tx_pin, console_tx_signal, false, false);
+    }
+    TEST_ASSERT_MESSAGE(filled, "RX FIFO was not filled past the XOFF threshold by the host");
+    printf("Please manually read the TX signal to confirm that it actually sent XOFF and XON characters\n");
+
+    TEST_ESP_OK(uart_set_sw_flow_ctrl(uart_num, false, 0, 0));
     TEST_ESP_OK(uart_driver_delete(uart_num));
 }
 
