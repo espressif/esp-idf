@@ -480,10 +480,12 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
             ret_code = attp_send_sr_msg (p_tcb, p_tcb->sr_cmd.p_rsp_msg);
             p_tcb->sr_cmd.p_rsp_msg = NULL;
         } else {
-            if (p_tcb->sr_cmd.status == GATT_SUCCESS){
-                status = GATT_UNKNOWN_ERROR;
+            tGATT_STATUS err_status = p_tcb->sr_cmd.status;
+
+            if (err_status == GATT_SUCCESS) {
+                err_status = GATT_UNKNOWN_ERROR;
             }
-            ret_code = gatt_send_error_rsp (p_tcb, status, op_code, p_tcb->sr_cmd.handle, FALSE);
+            ret_code = gatt_send_error_rsp (p_tcb, err_status, op_code, p_tcb->sr_cmd.handle, FALSE);
         }
 
         gatt_dequeue_sr_cmd(p_tcb);
