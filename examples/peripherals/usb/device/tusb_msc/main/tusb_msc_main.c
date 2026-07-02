@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -373,6 +373,11 @@ static esp_err_t storage_init_sdmmc(sdmmc_card_t **card)
         return ret;
     }
     host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
+#if SOC_SDMMC_IO_UHS_POWER_EXTERNAL
+    //for uhs-i power
+    host.io_voltage = 1.8f;
 #endif
 
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
