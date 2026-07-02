@@ -50,7 +50,7 @@
     "HINT: The component 'component' could not be found. This could be because: component name was misspelled, the component was not added to the build, the component has been moved to the IDF component manager, the component has been removed and refactored into some other component or the component may not be supported by the selected target.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details about moved components.\nRefer to the build-system guide for more details about how components are found and included in the build."
 
 'fatal error: tmp/atca_mbedtls_wrap.h: No such file or directory\n':
-    "HINT: To use CONFIG_ESP_TLS_USE_SECURE_ELEMENT option, please install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib'"
+    "HINT: The cryptoauthlib mbedTLS wrapper (atca_mbedtls_wrap.h) is no longer used to integrate a secure element. Enable CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED, install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib', and provide the key via esp_key_config_t (ESP_KEY_SOURCE_PSA). Please refer to the migration guide for more information."
 
 'fatal error: brownout.h: No such file or directory\n':
     'HINT: The Brownout API (functions/types/macros prefixed with "esp_brownout") has been made into a private API. If users still require usage of the Brownout API (though this is not recommended), it can be included via  #include "esp_private/brownout.h".'

@@ -20,6 +20,7 @@
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <esp_local_ctrl.h>
+#include <esp_key_config.h>
 #include <protocomm_ble.h>
 
 static const char *TAG = "control";
@@ -239,8 +240,14 @@ void start_esp_local_ctrl_service(void)
     /* Load server private key */
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
-    https_conf.prvtkey_pem = prvtkey_pem_start;
-    https_conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+    static esp_key_config_t server_key = {
+        .source = ESP_KEY_SOURCE_BUFFER,
+        .buffer = {
+            .data = prvtkey_pem_start,
+        }
+    };
+    server_key.buffer.len = prvtkey_pem_end - prvtkey_pem_start;
+    https_conf.server_key = &server_key;
 #else
     httpd_config_t http_conf = HTTPD_DEFAULT_CONFIG();
 #endif

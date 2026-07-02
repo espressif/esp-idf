@@ -22,6 +22,7 @@
 #include <unistd.h>
 #endif  // !CONFIG_IDF_TARGET_LINUX
 #include <esp_https_server.h>
+#include "esp_key_config.h"
 #include "keep_alive.h"
 #include "sdkconfig.h"
 
@@ -211,8 +212,14 @@ static httpd_handle_t start_wss_echo_server(void)
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
-    conf.prvtkey_pem = prvtkey_pem_start;
-    conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+    static esp_key_config_t server_key = {
+        .source = ESP_KEY_SOURCE_BUFFER,
+        .buffer = {
+            .data = prvtkey_pem_start,
+        }
+    };
+    server_key.buffer.len = prvtkey_pem_end - prvtkey_pem_start;
+    conf.server_key = &server_key;
 
     esp_err_t ret = httpd_ssl_start(&server, &conf);
     if (ESP_OK != ret) {

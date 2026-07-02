@@ -25,6 +25,7 @@
 
 #include <esp_https_server.h>
 #include "esp_tls.h"
+#include "esp_key_config.h"
 #include "sdkconfig.h"
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
@@ -206,8 +207,14 @@ static httpd_handle_t start_webserver(void)
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
-    conf.prvtkey_pem = prvtkey_pem_start;
-    conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
+    static esp_key_config_t server_key = {
+        .source = ESP_KEY_SOURCE_BUFFER,
+        .buffer = {
+            .data = prvtkey_pem_start,
+        }
+    };
+    server_key.buffer.len = prvtkey_pem_end - prvtkey_pem_start;
+    conf.server_key = &server_key;
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_SERVER_CUSTOM_CIPHERSUITES
     static const int ciphersuites_to_use[] = {
