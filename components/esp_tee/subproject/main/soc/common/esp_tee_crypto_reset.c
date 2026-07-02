@@ -29,8 +29,9 @@
 #endif
 
 #include "esp_tee.h"
+#include "esp_attr.h"
 
-void esp_tee_soc_reset_crypto_peripherals(void)
+void IRAM_ATTR esp_tee_soc_reset_crypto_peripherals(void)
 {
     /* Reset the crypto peripherals to a clean state and leave their clocks disabled; drivers re-enable on demand */
 #if SOC_AES_SUPPORTED
