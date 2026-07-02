@@ -237,6 +237,10 @@ psa_status_t esp_hmac_setup_opaque(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    if (esp_hmac_ctx->alg != 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
     if (key_buffer_size < sizeof(esp_hmac_efuse_key_storage_t)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -265,81 +269,118 @@ psa_status_t esp_hmac_setup_opaque(
 
     memset(esp_hmac_ctx, 0, sizeof(esp_hmac_opaque_operation_t));
 
+    esp_hmac_ctx->alg = alg;
     esp_hmac_ctx->key_buffer = key_buffer;
     esp_hmac_ctx->is_persistent = is_persistent;
 
     return PSA_SUCCESS;
 }
 
-psa_status_t esp_hmac_update_opaque(esp_hmac_opaque_operation_t *esp_hmac_ctx, const uint8_t *data, size_t data_length)
+#if SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD
+static psa_status_t esp_hmac_opaque_resolve_key(const esp_hmac_opaque_operation_t *ctx,
+                                                hmac_key_id_t *hmac_key_id,
+                                                const esp_key_mgr_key_recovery_info_t **kri)
 {
-    if (!esp_hmac_ctx || !data || data_length == 0) {
-        return PSA_ERROR_INVALID_ARGUMENT;
+    const uint8_t *key_buffer = ctx->key_buffer;
+    *kri = NULL;
+
+    if (hmac_storage_get_key_source(key_buffer) == ESP_HMAC_KEY_SOURCE_KEY_MGR) {
+        *kri = ctx->is_persistent
+             ? &((const esp_hmac_km_key_storage_t *)key_buffer)->key_recovery_info
+             : ((const esp_hmac_volatile_key_storage_t *)key_buffer)->opaque_key.key_recovery_info;
+        if (esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)*kri) != ESP_OK) {
+            *kri = NULL;
+            ESP_LOGE("ESP_HMAC_OPAQUE", "Failed to activate key");
+            return PSA_ERROR_INVALID_HANDLE;
+        }
+        *hmac_key_id = HMAC_KEY_KM;
+        return PSA_SUCCESS;
     }
 
+    *hmac_key_id = ctx->is_persistent
+                 ? ((const esp_hmac_efuse_key_storage_t *)key_buffer)->efuse_key_id
+                 : ((const esp_hmac_volatile_key_storage_t *)key_buffer)->opaque_key.efuse_key_id;
+    return PSA_SUCCESS;
+}
+#else
+static psa_status_t esp_hmac_opaque_resolve_key(const esp_hmac_opaque_operation_t *ctx,
+                                                hmac_key_id_t *hmac_key_id)
+{
+    const uint8_t *key_buffer = ctx->key_buffer;
+    *hmac_key_id = ctx->is_persistent
+                 ? ((const esp_hmac_efuse_key_storage_t *)key_buffer)->efuse_key_id
+                 : ((const esp_hmac_volatile_key_storage_t *)key_buffer)->opaque_key.efuse_key_id;
+    return PSA_SUCCESS;
+}
+#endif /* SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD */
+
+static psa_status_t esp_hmac_opaque_calculate(esp_hmac_opaque_operation_t *ctx,
+                                              const uint8_t *data, size_t data_length)
+{
     hmac_key_id_t hmac_key_id = 0;
+    psa_status_t status;
 
 #if SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD
-    const esp_key_mgr_key_recovery_info_t *key_recovery_info = NULL;
+    const esp_key_mgr_key_recovery_info_t *kri = NULL;
+    status = esp_hmac_opaque_resolve_key(ctx, &hmac_key_id, &kri);
+#else
+    status = esp_hmac_opaque_resolve_key(ctx, &hmac_key_id);
 #endif /* SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD */
-
-    if (!esp_hmac_ctx->is_persistent) {
-        const esp_hmac_volatile_key_storage_t *ptr_st =
-            (const esp_hmac_volatile_key_storage_t *)esp_hmac_ctx->key_buffer;
-#if SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD
-        esp_hmac_key_source_t key_source = hmac_storage_get_key_source(esp_hmac_ctx->key_buffer);
-        if (key_source == ESP_HMAC_KEY_SOURCE_KEY_MGR) {
-            key_recovery_info = ptr_st->opaque_key.key_recovery_info;
-            esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
-            if (err != ESP_OK) {
-                ESP_LOGE("ESP_HMAC_OPAQUE", "Failed to activate key: 0x%x", err);
-                return PSA_ERROR_INVALID_HANDLE;
-            }
-            hmac_key_id = HMAC_KEY_KM;
-        } else
-#endif /* SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD */
-        {
-            hmac_key_id = ptr_st->opaque_key.efuse_key_id;
-        }
-    } else {
-#if SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD
-        esp_hmac_key_source_t key_source = hmac_storage_get_key_source(esp_hmac_ctx->key_buffer);
-        if (key_source == ESP_HMAC_KEY_SOURCE_KEY_MGR) {
-            const esp_hmac_km_key_storage_t *km_st =
-                (const esp_hmac_km_key_storage_t *)esp_hmac_ctx->key_buffer;
-            key_recovery_info = &km_st->key_recovery_info;
-            esp_err_t err = esp_key_mgr_activate_key((esp_key_mgr_key_recovery_info_t *)key_recovery_info);
-            if (err != ESP_OK) {
-                ESP_LOGE("ESP_HMAC_OPAQUE", "Failed to activate key: 0x%x", err);
-                return PSA_ERROR_INVALID_HANDLE;
-            }
-            hmac_key_id = HMAC_KEY_KM;
-        } else
-#endif /* SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD */
-        {
-            const esp_hmac_efuse_key_storage_t *efuse_st =
-                (const esp_hmac_efuse_key_storage_t *)esp_hmac_ctx->key_buffer;
-            hmac_key_id = efuse_st->efuse_key_id;
-        }
+    if (status != PSA_SUCCESS) {
+        return status;
     }
 
-    esp_err_t hmac_ret = esp_hmac_calculate(hmac_key_id, data, data_length, esp_hmac_ctx->hmac);
+    esp_err_t hmac_ret = esp_hmac_calculate(hmac_key_id, data, data_length, ctx->hmac);
 
 #if SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD
-    if (key_recovery_info) {
-        esp_key_mgr_deactivate_key(key_recovery_info->key_type);
+    if (kri) {
+        esp_key_mgr_deactivate_key(kri->key_type);
     }
 #endif /* SOC_KEY_MANAGER_SUPPORTED && !ESP_TEE_BUILD */
+
+    if (hmac_ret == ESP_OK) {
+        ctx->computed = true;
+        return PSA_SUCCESS;
+    }
+
+    mbedtls_platform_zeroize(ctx->hmac, sizeof(ctx->hmac));
 
     if (hmac_ret == ESP_ERR_INVALID_ARG) {
         return PSA_ERROR_INVALID_ARGUMENT;
     } else if (hmac_ret == ESP_FAIL) {
         return PSA_ERROR_HARDWARE_FAILURE;
-    } else if (hmac_ret == ESP_OK) {
-        return PSA_SUCCESS;
     }
 
     return PSA_ERROR_CORRUPTION_DETECTED;
+}
+
+psa_status_t esp_hmac_update_opaque(esp_hmac_opaque_operation_t *esp_hmac_ctx, const uint8_t *data, size_t data_length)
+{
+    if (!esp_hmac_ctx) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    if (data == NULL && data_length != 0) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (esp_hmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (esp_hmac_ctx->computed) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    /*
+     * A zero-length update is a valid no-op. The empty-message MAC is produced
+     * lazily in finish: the one-shot HW HMAC cannot be fed incrementally, so we
+     * must not commit a MAC until we know no further (non-empty) data follows.
+     */
+    if (data_length == 0) {
+        return PSA_SUCCESS;
+    }
+
+    return esp_hmac_opaque_calculate(esp_hmac_ctx, data, data_length);
 }
 
 psa_status_t esp_hmac_finish_opaque(
@@ -352,12 +393,34 @@ psa_status_t esp_hmac_finish_opaque(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mac_size < ESP_HMAC_RESULT_SIZE) {
-        return PSA_ERROR_BUFFER_TOO_SMALL;
+    if (esp_hmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
     }
 
-    memcpy(mac, esp_hmac_ctx->hmac, ESP_HMAC_RESULT_SIZE);
-    *mac_length = ESP_HMAC_RESULT_SIZE;
+    if (mac_size == 0 || mac_size > ESP_HMAC_RESULT_SIZE) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    /*
+     * No update committed a MAC: the message is empty (e.g. psa_mac_compute()
+     * over "" or setup->finish with no update). Compute HMAC(key, "") now.
+     * esp_hmac_calculate() rejects a NULL pointer, so pass a valid zero-length
+     * buffer rather than NULL.
+     */
+    if (!esp_hmac_ctx->computed) {
+        const uint8_t empty = 0;
+        psa_status_t status = esp_hmac_opaque_calculate(esp_hmac_ctx, &empty, 0);
+        if (status != PSA_SUCCESS) {
+            return status;
+        }
+    }
+
+    /* PSA core passes the truncated length as mac_size; copy exactly that
+     * many bytes to honour PSA_ALG_TRUNCATED_MAC. */
+    memcpy(mac, esp_hmac_ctx->hmac, mac_size);
+    *mac_length = mac_size;
+
+    mbedtls_platform_zeroize(esp_hmac_ctx->hmac, sizeof(esp_hmac_ctx->hmac));
 
     return PSA_SUCCESS;
 }
@@ -379,20 +442,23 @@ psa_status_t esp_hmac_compute_opaque(
 
     status = esp_hmac_setup_opaque(&esp_hmac_ctx, attributes, key_buffer, key_buffer_size, alg);
     if (status != PSA_SUCCESS) {
-        return status;
+        goto exit;
     }
 
     status = esp_hmac_update_opaque(&esp_hmac_ctx, input, input_length);
     if (status != PSA_SUCCESS) {
-        return status;
+        goto exit;
     }
 
-    status = esp_hmac_finish_opaque(&esp_hmac_ctx, mac, mac_size, mac_length);
-    if (status != PSA_SUCCESS) {
-        return status;
+    size_t actual_mac_length = 0;
+    status = esp_hmac_finish_opaque(&esp_hmac_ctx, mac, mac_size, &actual_mac_length);
+    if (status == PSA_SUCCESS) {
+        *mac_length = actual_mac_length;
     }
 
-    return PSA_SUCCESS;
+exit:
+    esp_hmac_abort_opaque(&esp_hmac_ctx);
+    return status;
 }
 
 psa_status_t esp_hmac_verify_finish_opaque(
@@ -404,7 +470,19 @@ psa_status_t esp_hmac_verify_finish_opaque(
     uint8_t actual_mac[ESP_HMAC_RESULT_SIZE];
     size_t actual_mac_length = 0;
 
-    status = esp_hmac_finish_opaque(esp_hmac_ctx, actual_mac, sizeof(actual_mac), &actual_mac_length);
+    if (esp_hmac_ctx == NULL || mac == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (mac_length == 0 || mac_length > sizeof(actual_mac)) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (esp_hmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    status = esp_hmac_finish_opaque(esp_hmac_ctx, actual_mac, mac_length, &actual_mac_length);
     if (status == PSA_SUCCESS) {
         if (mbedtls_ct_memcmp(mac, actual_mac, mac_length) != 0) {
             status = PSA_ERROR_INVALID_SIGNATURE;

@@ -14,6 +14,7 @@
 #include "psa_crypto_driver_esp_opaque_common.h"
 #include "include/psa_crypto_driver_esp_rsa_ds_utilities.h"
 
+#include "mbedtls/platform_util.h"
 #include "esp_log.h"
 #include "esp_efuse.h"
 #include "esp_assert.h"
@@ -412,6 +413,26 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_start(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+#if !defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
+    if (PSA_ALG_IS_RSA_PSS(alg)) {
+        /* PSS encode is only compiled under TLS1.3; fail up front before any
+         * peripheral lock / allocation. */
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+#endif /* !defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) */
+
+    /* Cross-check the supplied hash_length against PSA_ALG_GET_HASH(alg).
+     * For PKCS1V15_SIGN_RAW the hash field is opaque-length data; skip. */
+    {
+        psa_algorithm_t hash_alg_check = PSA_ALG_SIGN_GET_HASH(alg);
+        if (hash_alg_check != PSA_ALG_NONE) {
+            size_t expected = PSA_HASH_LENGTH(hash_alg_check);
+            if (expected == 0 || hash_length != expected) {
+                return PSA_ERROR_INVALID_ARGUMENT;
+            }
+        }
+    }
+
     esp_rsa_ds_key_source_t key_source = ESP_RSA_DS_KEY_SOURCE_EFUSE;
     uint16_t rsa_length_bits = 0;
     const esp_ds_data_t *ds_data = NULL;
@@ -454,12 +475,21 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_start(
 
     unsigned char *em = heap_caps_malloc_prefer(rsa_len_bytes, 1, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     if (em == NULL) {
-        esp_rsa_ds_release_ds_lock();
-        return PSA_ERROR_INSUFFICIENT_MEMORY;
+        status = PSA_ERROR_INSUFFICIENT_MEMORY;
+        goto error;
     }
 
+    /* Derive PSS salt length from the alg: -1 (MBEDTLS_RSA_SALT_LEN_ANY) for
+     * PSS_ANY_SALT, else the standard FIPS 186-4 fixed length. */
+    int saltlen = -1;
+    if (PSA_ALG_IS_RSA_PSS(alg) && !PSA_ALG_IS_RSA_PSS_ANY_SALT(alg)) {
+        int klen = (int) rsa_len_bytes;
+        int hlen = (int) hash_length;
+        int room = klen - 2 - hlen;
+        saltlen = (room < 0) ? 0 : ((room > hlen) ? hlen : room);
+    }
     status = esp_rsa_ds_pad(
-        padding, hash_alg, hash_length, hash, -1, em, rsa_len_bytes);
+        padding, hash_alg, hash_length, hash, saltlen, em, rsa_len_bytes);
     if (status != PSA_SUCCESS) {
         goto error;
     }
@@ -500,9 +530,12 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_start(
 
 error:
     if (em) {
-        memset(em, 0, rsa_len_bytes);
+        mbedtls_platform_zeroize(em, rsa_len_bytes);
         heap_caps_free(em);
         em = NULL;
+    }
+    if (status != PSA_SUCCESS) {
+        esp_rsa_ds_opaque_sign_hash_abort(operation);
     }
 
     return status;
@@ -530,10 +563,12 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_complete(
         return PSA_ERROR_BUFFER_TOO_SMALL;
     }
 
+    psa_status_t status;
     esp_err_t err = esp_ds_finish_sign((void *)operation->sig_buffer, operation->esp_rsa_ds_ctx);
     operation->esp_rsa_ds_ctx = NULL;
     if (err != ESP_OK) {
-        return PSA_ERROR_GENERIC_ERROR;
+        status = PSA_ERROR_GENERIC_ERROR;
+        goto cleanup;
     }
 
     unsigned int words_len = expected_signature_size / 4;
@@ -544,16 +579,11 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_complete(
     }
 
     *signature_length = expected_signature_size;
+    status = PSA_SUCCESS;
 
-    esp_rsa_ds_release_ds_lock();
-
-    if (operation->sig_buffer) {
-        memset(operation->sig_buffer, 0, operation->sig_buffer_size);
-        heap_caps_free(operation->sig_buffer);
-        operation->sig_buffer = NULL;
-    }
-
-    return PSA_SUCCESS;
+cleanup:
+    (void)esp_rsa_ds_opaque_sign_hash_abort(operation);
+    return status;
 }
 
 psa_status_t esp_rsa_ds_opaque_sign_hash_abort(
@@ -583,7 +613,7 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_abort(
 
     // Free allocated memory if exists
     if (operation->sig_buffer) {
-        memset(operation->sig_buffer, 0, operation->sig_buffer_size);
+        mbedtls_platform_zeroize(operation->sig_buffer, operation->sig_buffer_size);
         heap_caps_free(operation->sig_buffer);
         operation->sig_buffer = NULL;
     }
@@ -592,7 +622,7 @@ psa_status_t esp_rsa_ds_opaque_sign_hash_abort(
     esp_rsa_ds_release_ds_lock();
 
     // Clear the operation structure
-    memset(operation, 0, sizeof(esp_rsa_ds_opaque_sign_hash_operation_t));
+    mbedtls_platform_zeroize(operation, sizeof(esp_rsa_ds_opaque_sign_hash_operation_t));
 
     return PSA_SUCCESS;
 }
@@ -620,7 +650,6 @@ psa_status_t esp_rsa_ds_opaque_signature_sign_hash(
         hash_length
     );
     if (status != PSA_SUCCESS) {
-        esp_rsa_ds_opaque_sign_hash_abort(&operation);
         return status;
     }
 
@@ -764,10 +793,17 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
     size_t input_length, const uint8_t *salt, size_t salt_length,
     uint8_t *output, size_t output_size, size_t *output_length)
 {
-    (void)salt;
-    (void)salt_length;
-
+    psa_status_t ret = PSA_ERROR_CORRUPTION_DETECTED;
     esp_err_t err = ESP_FAIL;
+    uint32_t *em_words = NULL;
+    uint32_t *out_tmp = NULL;
+    size_t data_len = 0;
+    bool lock_held = false;
+    esp_ds_context_t *ds_ctx = NULL;
+#if SOC_KEY_MANAGER_SUPPORTED
+    bool is_km_key_active = false;
+    esp_key_mgr_key_recovery_info_t *km_ri = NULL;
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
 
     if (!attributes || !key || !input || input_length < 1 || !output || !output_length) {
         return PSA_ERROR_INVALID_ARGUMENT;
@@ -777,25 +813,37 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+    /* Decrypt requires a private key. The PSA core enforces this via key
+     * usage, but check the type here as defense-in-depth. */
+    if (!PSA_KEY_TYPE_IS_RSA(psa_get_key_type(attributes)) ||
+        !PSA_KEY_TYPE_IS_KEY_PAIR(psa_get_key_type(attributes))) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    /* PKCS1V15_CRYPT has no label; reject any non-empty salt. */
+    if (alg == PSA_ALG_RSA_PKCS1V15_CRYPT && salt_length != 0) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    if (salt == NULL && salt_length != 0) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     bool is_persistent = esp_opaque_key_is_persistent(attributes);
 
     esp_rsa_ds_key_source_t key_source = ESP_RSA_DS_KEY_SOURCE_EFUSE;
     uint16_t rsa_length_bits = 0;
     const esp_ds_data_t *ds_data = NULL;
     hmac_key_id_t hmac_key_id = 0;
-#if SOC_KEY_MANAGER_SUPPORTED
-    esp_key_mgr_key_recovery_info_t *km_ri = NULL;
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
 
-    psa_status_t status = esp_rsa_ds_extract_storage(
+    ret = esp_rsa_ds_extract_storage(
         key, key_length, is_persistent,
         &key_source, &rsa_length_bits, &ds_data, &hmac_key_id
 #if SOC_KEY_MANAGER_SUPPORTED
         , &km_ri
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
     );
-    if (status != PSA_SUCCESS) {
-        return status;
+    if (ret != PSA_SUCCESS) {
+        return ret;
     }
 
     if (input_length != (rsa_length_bits / 8)) {
@@ -812,13 +860,14 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
     if (xSemaphoreTake(s_ds_lock, s_timeout_ms / portTICK_PERIOD_MS) != pdTRUE) {
         return PSA_ERROR_GENERIC_ERROR;
     }
+    lock_held = true;
 
     size_t ilen = rsa_length_bits / 8;
-    size_t data_len = ilen / 4;
-    uint32_t *em_words = heap_caps_malloc_prefer(sizeof(uint32_t) * data_len, 1, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    data_len = ilen / 4;
+    em_words = heap_caps_malloc_prefer(sizeof(uint32_t) * data_len, 1, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     if (em_words == NULL) {
-        esp_rsa_ds_release_ds_lock();
-        return PSA_ERROR_INSUFFICIENT_MEMORY;
+        ret = PSA_ERROR_INSUFFICIENT_MEMORY;
+        goto exit;
     }
 
     for (unsigned int i = 0; i < (data_len); i++) {
@@ -826,60 +875,38 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
     }
 
 #if SOC_KEY_MANAGER_SUPPORTED
-    bool is_km_key_active = false;
     if (key_source == ESP_RSA_DS_KEY_SOURCE_KEY_MGR) {
         err = esp_key_mgr_activate_key(km_ri);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to activate key: 0x%x", err);
-            memset(em_words, 0, sizeof(uint32_t) * data_len);
-            heap_caps_free(em_words);
-            esp_rsa_ds_release_ds_lock();
-            return PSA_ERROR_INVALID_HANDLE;
+            ret = PSA_ERROR_INVALID_HANDLE;
+            goto exit;
         }
         is_km_key_active = true;
     }
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
 
-    esp_ds_context_t *ds_ctx = NULL;
     err = esp_ds_start_sign((const void *)em_words,
                             ds_data,
                             hmac_key_id,
                             &ds_ctx);
     if (err != ESP_OK) {
-        memset(em_words, 0, sizeof(uint32_t) * data_len);
-        heap_caps_free(em_words);
-#if SOC_KEY_MANAGER_SUPPORTED
-        if (is_km_key_active) {
-            esp_key_mgr_deactivate_key(km_ri->key_type);
-        }
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
-        esp_rsa_ds_release_ds_lock();
-        return PSA_ERROR_GENERIC_ERROR;
+        ret = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
     }
 
     err = esp_ds_finish_sign((void *)em_words, ds_ctx);
-
-#if SOC_KEY_MANAGER_SUPPORTED
-    if (is_km_key_active) {
-        esp_key_mgr_deactivate_key(km_ri->key_type);
-    }
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
-
+    ds_ctx = NULL;
     if (err != ESP_OK) {
-        memset(em_words, 0, sizeof(uint32_t) * data_len);
-        heap_caps_free(em_words);
-        esp_rsa_ds_release_ds_lock();
-        return PSA_ERROR_GENERIC_ERROR;
+        ret = PSA_ERROR_GENERIC_ERROR;
+        goto exit;
     }
-
-    esp_rsa_ds_release_ds_lock();
 
     // Remove padding
-    uint32_t *out_tmp = heap_caps_malloc_prefer(sizeof(uint32_t) * data_len, 1, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    out_tmp = heap_caps_malloc_prefer(sizeof(uint32_t) * data_len, 1, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     if (out_tmp == NULL) {
-        memset(em_words, 0, sizeof(uint32_t) * data_len);
-        heap_caps_free(em_words);
-        return PSA_ERROR_INSUFFICIENT_MEMORY;
+        ret = PSA_ERROR_INSUFFICIENT_MEMORY;
+        goto exit;
     }
 
     for (unsigned int i = 0; i < (data_len); i++) {
@@ -887,13 +914,12 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
     }
 
     size_t unpadded_len = 0;
-    psa_status_t ret = PSA_ERROR_NOT_SUPPORTED;
     if (padding == ESP_RSA_DS_PADDING_PKCS_V15) {
         ret = esp_rsa_ds_pad_v15_unpad((unsigned char *)out_tmp, ilen, (unsigned char *)out_tmp, ilen, &unpadded_len);
     }
 #if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
     else if (padding == ESP_RSA_DS_PADDING_OAEP) {
-        ret = esp_rsa_ds_pad_oaep_unpad((unsigned char *)out_tmp, ilen, (unsigned char *)out_tmp, ilen, &unpadded_len, PSA_ALG_RSA_OAEP_GET_HASH(alg));
+        ret = esp_rsa_ds_pad_oaep_unpad((unsigned char *)out_tmp, ilen, (unsigned char *)out_tmp, ilen, &unpadded_len, PSA_ALG_RSA_OAEP_GET_HASH(alg), salt, salt_length);
     }
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
     else {
@@ -916,9 +942,21 @@ psa_status_t esp_rsa_ds_opaque_asymmetric_decrypt(
     ret = PSA_SUCCESS;
 
 exit:
-    memset(em_words, 0, sizeof(uint32_t) * data_len);
-    memset(out_tmp, 0, sizeof(uint32_t) * data_len);
-    heap_caps_free(em_words);
-    heap_caps_free(out_tmp);
+#if SOC_KEY_MANAGER_SUPPORTED
+    if (is_km_key_active && km_ri) {
+        esp_key_mgr_deactivate_key(km_ri->key_type);
+    }
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+    if (em_words != NULL) {
+        mbedtls_platform_zeroize(em_words, sizeof(uint32_t) * data_len);
+        heap_caps_free(em_words);
+    }
+    if (out_tmp != NULL) {
+        mbedtls_platform_zeroize(out_tmp, sizeof(uint32_t) * data_len);
+        heap_caps_free(out_tmp);
+    }
+    if (lock_held) {
+        esp_rsa_ds_release_ds_lock();
+    }
     return ret;
 }

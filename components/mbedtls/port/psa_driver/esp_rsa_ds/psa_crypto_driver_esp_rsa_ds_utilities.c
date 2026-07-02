@@ -43,13 +43,13 @@ static const oid_md_mapping_t oid_md_table[] = {
     { PSA_ALG_NONE, NULL, 0 }
 };
 
-static int esp_rsa_ds_get_oid_by_psa_alg(psa_algorithm_t md_alg, const char **oid, size_t *olen)
+static psa_status_t esp_rsa_ds_get_oid_by_psa_alg(psa_algorithm_t md_alg, const char **oid, size_t *olen)
 {
     for (size_t i = 0; oid_md_table[i].md_alg != PSA_ALG_NONE; i++) {
         if (oid_md_table[i].md_alg == md_alg) {
             *oid = oid_md_table[i].oid;
             *olen = oid_md_table[i].oid_len;
-            return 0;
+            return PSA_SUCCESS;
         }
     }
     return PSA_ERROR_NOT_SUPPORTED;
@@ -379,14 +379,20 @@ psa_status_t esp_rsa_ds_pad_v21_encode(psa_algorithm_t hash_alg,
 
     hlen = PSA_HASH_LENGTH(hash_alg);
 
+    /* Reject hash-less or unknown algorithms up front: hlen == 0 would
+     * underflow min_slen below and wrap the olen bounds checks. */
+    if (hlen == 0 || hlen > PSA_HASH_MAX_SIZE) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     if (saltlen == -1) {
         /* Calculate the largest possible salt length, up to the hash size.
         * Normally this is the hash length, which is the maximum salt length
-        * according to FIPS 185-4 �5.5 (e) and common practice. If there is not
+        * according to FIPS 186-4 Section 5.5 (e) and common practice. If there is not
         * enough room, use the maximum salt length that fits. The constraint is
         * that the hash length plus the salt length plus 2 bytes must be at most
-        * the key length. This complies with FIPS 186-4 �5.5 (e) and RFC 8017
-        * (PKCS#1 v2.2) �9.1.1 step 3. */
+        * the key length. This complies with FIPS 186-4 Section 5.5 (e) and RFC 8017
+        * (PKCS#1 v2.2) Section 9.1.1 step 3. */
         min_slen = hlen - 2;
         if (olen < hlen + min_slen + 2) {
             return PSA_ERROR_INVALID_ARGUMENT;
@@ -432,7 +438,6 @@ psa_status_t esp_rsa_ds_pad_v21_encode(psa_algorithm_t hash_alg,
         return ret;
     }
 
-    msb = dst_len * 8 - 1;
     sig[0] &= 0xFF >> (olen * 8 - msb);
 
     p += hlen;
@@ -445,7 +450,9 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     unsigned char *output,
     size_t output_max_len,
     size_t *olen,
-    psa_algorithm_t hash_alg)
+    psa_algorithm_t hash_alg,
+    const uint8_t *label,
+    size_t label_length)
 {
     /* This mirrors mbedtls_rsa_rsaes_oaep_decrypt() in upstream rsa.c.
      * Below the public-input sanity check, the unpadding scan operates
@@ -512,6 +519,7 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     /* Single decision point on the accumulated bit. */
     if (bad != MBEDTLS_CT_FALSE) {
         *olen = 0;
+        mbedtls_platform_zeroize(input, ilen);
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 

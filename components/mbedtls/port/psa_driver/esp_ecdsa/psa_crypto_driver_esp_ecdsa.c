@@ -17,6 +17,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/bignum.h"
 
+#include "mbedtls/platform_util.h"
 #include "esp_assert.h"
 #include "esp_fault.h"
 #include "esp_crypto_lock.h"
@@ -453,6 +454,14 @@ psa_status_t esp_ecdsa_transparent_verify_hash_start(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
+    /* HW only implements SECP_R1; reject any other ECC family up front so
+     * we never derive the curve from key_bits alone. */
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+    if (!PSA_KEY_TYPE_IS_ECC(key_type) ||
+        PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     size_t key_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
     esp_ecdsa_curve_t curve = psa_bits_to_ecdsa_curve(key_len);
     if (curve == ESP_ECDSA_CURVE_MAX) {
@@ -529,6 +538,17 @@ psa_status_t esp_ecdsa_transparent_verify_hash_start(
     change_endianess(public_key_buffer + 1 + key_len, point.y, key_len);
     point.len = key_len;
 
+    /* Reject the identity (point at infinity, all-zero coords) explicitly —
+     * esp_ecc_point_verify may not catch it on all peripherals. */
+    bool qx_zero = true, qy_zero = true;
+    for (size_t i = 0; i < key_len; i++) {
+        qx_zero = qx_zero && (point.x[i] == 0);
+        qy_zero = qy_zero && (point.y[i] == 0);
+    }
+    if (qx_zero && qy_zero) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
     if (!esp_ecc_point_verify(&point)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -580,7 +600,7 @@ psa_status_t esp_ecdsa_transparent_verify_hash_complete(esp_ecdsa_transparent_ve
 psa_status_t esp_ecdsa_transparent_verify_hash_abort(esp_ecdsa_transparent_verify_hash_operation_t *operation)
 {
     if (operation) {
-        memset(operation, 0, sizeof(esp_ecdsa_transparent_verify_hash_operation_t));
+        mbedtls_platform_zeroize(operation, sizeof(esp_ecdsa_transparent_verify_hash_operation_t));
     }
     return PSA_SUCCESS;
 }
@@ -600,16 +620,12 @@ psa_status_t esp_ecdsa_transparent_verify_hash(
     esp_ecdsa_transparent_verify_hash_operation_t operation;
 
     status = esp_ecdsa_transparent_verify_hash_start(&operation, attributes, key_buffer, key_buffer_size, alg, hash, hash_length, signature, signature_length);
-    if (status != PSA_SUCCESS) {
-        return status;
+    if (status == PSA_SUCCESS) {
+        status = esp_ecdsa_transparent_verify_hash_complete(&operation);
     }
 
-    status = esp_ecdsa_transparent_verify_hash_complete(&operation);
-    if (status != PSA_SUCCESS) {
-        return status;
-    }
-
-    return esp_ecdsa_transparent_verify_hash_abort(&operation);
+    esp_ecdsa_transparent_verify_hash_abort(&operation);
+    return status;
 }
 #endif /* SOC_ECDSA_SUPPORTED */
 
@@ -710,6 +726,12 @@ static psa_status_t esp_ecdsa_validate_efuse_block(esp_ecdsa_curve_t curve, int 
  */
 static psa_status_t validate_ecdsa_opaque_key_attributes(const psa_key_attributes_t *attributes, const esp_ecdsa_opaque_key_t *opaque_key)
 {
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+    if (!PSA_KEY_TYPE_IS_ECC_KEY_PAIR(key_type) ||
+        PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
     esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
 
     if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != opaque_key->curve) {
@@ -742,6 +764,11 @@ static psa_status_t validate_ecdsa_opaque_key_attributes(const psa_key_attribute
  */
 static psa_status_t validate_storage_curve(const psa_key_attributes_t *attributes, esp_ecdsa_curve_t stored_curve)
 {
+    psa_key_type_t key_type = psa_get_key_type(attributes);
+    if (!PSA_KEY_TYPE_IS_ECC(key_type) ||
+        PSA_KEY_TYPE_ECC_GET_FAMILY(key_type) != PSA_ECC_FAMILY_SECP_R1) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
     esp_ecdsa_curve_t expected_curve = psa_bits_to_ecdsa_curve(PSA_BITS_TO_BYTES(psa_get_key_bits(attributes)));
     if (expected_curve == ESP_ECDSA_CURVE_MAX || expected_curve != stored_curve) {
         ESP_LOGE(TAG, "Invalid curve expected");
@@ -1033,6 +1060,12 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
                 return PSA_ERROR_NOT_SUPPORTED;
             }
         }
+#else
+        /* Without HW/SW deterministic-ECDSA support, do not silently downgrade
+         * a deterministic-alg request to randomized. */
+        if (PSA_ALG_ECDSA_IS_DETERMINISTIC(operation->alg)) {
+            return PSA_ERROR_NOT_SUPPORTED;
+        }
 #endif /* CONFIG_MBEDTLS_ECDSA_DETERMINISTIC && SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
         uint8_t zeroes[MAX_ECDSA_COMPONENT_LEN] = {0};
@@ -1069,6 +1102,11 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
         ecdsa_curve_t hal_curve = esp_ecdsa_curve_to_hal_curve(curve);
         if (hal_curve == (ecdsa_curve_t)-1) {
             esp_ecdsa_release_hardware();
+#if SOC_KEY_MANAGER_SUPPORTED
+            if (key_recovery_info) {
+                esp_key_mgr_deactivate_key(key_recovery_info->key_type);
+            }
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
             return PSA_ERROR_INVALID_ARGUMENT;
         }
 
@@ -1156,7 +1194,7 @@ psa_status_t esp_ecdsa_opaque_sign_hash_complete(
 psa_status_t esp_ecdsa_opaque_sign_hash_abort(esp_ecdsa_opaque_sign_hash_operation_t *operation)
 {
     if (operation) {
-        memset(operation, 0, sizeof(esp_ecdsa_opaque_sign_hash_operation_t));
+        mbedtls_platform_zeroize(operation, sizeof(esp_ecdsa_opaque_sign_hash_operation_t));
     }
     return PSA_SUCCESS;
 }
@@ -1184,12 +1222,9 @@ psa_status_t esp_ecdsa_opaque_sign_hash(
     }
 
     status = esp_ecdsa_opaque_sign_hash_complete(&operation, signature, signature_size, signature_length);
-    if (status != PSA_SUCCESS) {
-        esp_ecdsa_opaque_sign_hash_abort(&operation);
-        return status;
-    }
 
-    return esp_ecdsa_opaque_sign_hash_abort(&operation);
+    esp_ecdsa_opaque_sign_hash_abort(&operation);
+    return status;
 }
 
 psa_status_t esp_ecdsa_opaque_export_public_key(

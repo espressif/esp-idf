@@ -82,6 +82,8 @@ psa_status_t esp_rsa_ds_pad_v21_encode(psa_algorithm_t hash_alg,
  * @param output_max_len    Maximum length of the output buffer
  * @param olen  Pointer to the length of the output data
  * @param hash_alg  Hash algorithm identifier
+ * @param label     OAEP label the ciphertext is bound to (may be NULL if label_length is 0)
+ * @param label_length  Length of the label in bytes
  * @return psa_status_t
  *       PSA_ERROR_INVALID_ARGUMENT if arguments are invalid
  *        PSA_SUCCESS on success
@@ -91,7 +93,9 @@ psa_status_t esp_rsa_ds_pad_oaep_unpad(unsigned char *input,
     unsigned char *output,
     size_t output_max_len,
     size_t *olen,
-    psa_algorithm_t hash_alg);
+    psa_algorithm_t hash_alg,
+    const uint8_t *label,
+    size_t label_length);
 #endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 #ifdef __cplusplus
 }

@@ -6,6 +6,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "psa_crypto_core.h"
+#include "mbedtls/platform_util.h"
 #include "aes/esp_aes_gcm.h"
 #include "psa_crypto_driver_esp_aes_gcm.h"
 #include "../include/psa_crypto_driver_esp_aes_contexts.h"
@@ -31,8 +32,16 @@ static psa_status_t esp_crypto_aes_gcm_setup(
         goto exit;
     }
 
-    /* Get the tag length from the algorithm */
+    /* Get the tag length from the algorithm and reject GCM-disallowed values
+     * (GCM permits only {4, 8, 12, 13, 14, 15, 16}). */
     tag_length = PSA_ALG_AEAD_GET_TAG_LENGTH(alg);
+    switch (tag_length) {
+        case 4: case 8: case 12: case 13: case 14: case 15: case 16:
+            break;
+        default:
+            status = PSA_ERROR_INVALID_ARGUMENT;
+            goto exit;
+    }
 
     if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
         status = PSA_ERROR_NOT_SUPPORTED;
@@ -46,16 +55,14 @@ static psa_status_t esp_crypto_aes_gcm_setup(
     }
 
     esp_aes_gcm_init(ctx);
+    esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx = (void *) ctx;
 
     status = mbedtls_to_psa_error(esp_aes_gcm_setkey(ctx, 2, key_buffer, key_buffer_size * 8));
-
     if (status != PSA_SUCCESS) {
-        esp_aes_gcm_free(ctx);
-        free(ctx);
+        (void)esp_crypto_aes_gcm_abort(esp_aes_gcm_driver_ctx);
         goto exit;
     }
 
-    esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx = (void *) ctx;
     esp_aes_gcm_driver_ctx->mode = mode;
     esp_aes_gcm_driver_ctx->tag_length = tag_length;
 
@@ -90,6 +97,9 @@ psa_status_t esp_crypto_aes_gcm_set_nonce(
    const uint8_t *nonce,
    size_t nonce_length)
 {
+    if (esp_aes_gcm_driver_ctx == NULL || esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
     esp_gcm_context *ctx = (esp_gcm_context *) esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx;
     return mbedtls_to_psa_error(esp_aes_gcm_starts(ctx, esp_aes_gcm_driver_ctx->mode, nonce, nonce_length));
 }
@@ -99,6 +109,9 @@ psa_status_t esp_crypto_aes_gcm_update_ad(
     const uint8_t *aad,
     size_t aad_length)
 {
+    if (esp_aes_gcm_driver_ctx == NULL || esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
     esp_gcm_context *ctx = (esp_gcm_context *) esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx;
     return mbedtls_to_psa_error(esp_aes_gcm_update_ad(ctx, aad, aad_length));
 }
@@ -114,6 +127,9 @@ psa_status_t esp_crypto_aes_gcm_update(
     size_t update_output_length = input_length;
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
 
+    if (esp_aes_gcm_driver_ctx == NULL || esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
     esp_gcm_context *ctx = (esp_gcm_context *) esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx;
     status = mbedtls_to_psa_error(esp_aes_gcm_update(ctx, input, input_length, output, output_size, &update_output_length));
     if (status == PSA_SUCCESS) {
@@ -133,6 +149,11 @@ psa_status_t esp_crypto_aes_gcm_finish(
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
     size_t finish_output_size = 0;
+
+    if (esp_aes_gcm_driver_ctx == NULL || esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx == NULL) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
     size_t requested_tag_length = esp_aes_gcm_driver_ctx->tag_length;
 
     if (tag_size < requested_tag_length) {
@@ -157,17 +178,22 @@ psa_status_t esp_crypto_aes_gcm_finish(
         /* Copy only the requested tag length */
         memcpy(tag, full_tag, requested_tag_length);
     }
+    mbedtls_platform_zeroize(full_tag, sizeof(full_tag));
     return status;
 }
 
 psa_status_t esp_crypto_aes_gcm_abort(esp_aes_gcm_operation_t *esp_aes_gcm_driver_ctx)
 {
+    if (esp_aes_gcm_driver_ctx == NULL) {
+        return PSA_SUCCESS;
+    }
     esp_gcm_context *ctx = (esp_gcm_context *) esp_aes_gcm_driver_ctx->esp_aes_gcm_ctx;
     if (ctx == NULL) {
         return PSA_SUCCESS;
     }
     esp_aes_gcm_free(ctx);
     free(ctx);
+    mbedtls_platform_zeroize(esp_aes_gcm_driver_ctx, sizeof(*esp_aes_gcm_driver_ctx));
     return PSA_SUCCESS;
 }
 
@@ -219,6 +245,7 @@ psa_status_t esp_crypto_aes_gcm_encrypt(
         memcpy(tag, full_tag, tag_length);
         *ciphertext_length = plaintext_length + tag_length;
     }
+    mbedtls_platform_zeroize(full_tag, sizeof(full_tag));
 
 exit:
     esp_crypto_aes_gcm_abort(&esp_aes_gcm_driver_ctx);
