@@ -179,6 +179,10 @@ otError NcpBase::VendorSetPropertyHandler(spinel_prop_key_t aPropKey)
 
         int32_t pending_mode = 0;
         mDecoder.ReadInt32(pending_mode);
+        if (pending_mode < ESP_IEEE802154_AUTO_PENDING_DISABLE || pending_mode > ESP_IEEE802154_AUTO_PENDING_ZIGBEE) {
+            error = OT_ERROR_INVALID_ARGS;
+            break;
+        }
         esp_ieee802154_set_pending_mode(static_cast<esp_ieee802154_pending_mode_t>(pending_mode));
         break;
     }
