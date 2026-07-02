@@ -53,122 +53,122 @@
       - |supported|
     * - .. centered:: |5.0|
       - 2 Msym/s PHY for LE
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_50_SUPPORTED
+
+            |unsupported|
     * -
       - LE Long Range (Coded PHY S=2/S=8)
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_50_SUPPORTED
+
+            |unsupported|
     * -
       - High Duty Cycle Non-Connectable Advertising
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_50_SUPPORTED
+
+            |unsupported|
     * -
       - LE Advertising Extensions
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_50_SUPPORTED
+
+            |unsupported|
     * -
       - LE Channel Selection Algorithm #2
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
-      - .. only:: esp32
+        .. only:: not SOC_BLE_50_SUPPORTED
 
             |unsupported|
-        .. only:: not esp32
+      - .. only:: SOC_BLE_50_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_50_SUPPORTED
+
+            |unsupported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - .. only:: esp32h2
+      - .. only:: SOC_BLE_CTE_SUPPORTED
 
             |experimental|
-        .. only:: esp32 or esp32c3 or esp32s3 or esp32c6 or esp32c2
+        .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
-      - .. only:: esp32h2
+      - .. only:: SOC_BLE_CTE_SUPPORTED
 
             |experimental|
-        .. only::  esp32 or esp32c3 or esp32s3 or esp32c6 or esp32c2
+        .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
-      - .. only:: esp32h2
+      - .. only:: SOC_BLE_CTE_SUPPORTED
 
             |experimental|
-        .. only:: esp32 or esp32c3 or esp32s3 or esp32c6 or esp32c2
+        .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
     * -
@@ -178,32 +178,52 @@
       - |experimental|
     * -
       - Randomized Advertising Channel Indexing
-      - |unsupported|
-      - |NA|
-      - |NA|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |experimental|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |NA|
+      - .. only:: esp32c2
+
+            |unsupported|
+        .. only:: not esp32c2
+
+            |NA|
     * -
       - Periodic Advertising Sync Transfer
-      - .. only:: esp32 or esp32c3 or esp32s3
-
-            |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |supported|
-      - .. only:: esp32 or esp32c3 or esp32s3
+        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |supported|
-      - .. only:: esp32 or esp32c3 or esp32s3
+        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c2 or esp32c5
+      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+
+            |unsupported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
-      - |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
       - |unsupported|
       - |unsupported|
     * -
@@ -213,120 +233,102 @@
       - |experimental|
     * -
       - LE Power Control
-      - .. only:: esp32 or esp32c2
-
-            |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+      - .. only:: SOC_BLE_POWER_CONTROL_SUPPORTED
 
             |experimental|
-      - .. only:: esp32 or esp32c2
+        .. only:: not SOC_BLE_POWER_CONTROL_SUPPORTED
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+      - .. only:: SOC_BLE_POWER_CONTROL_SUPPORTED
 
             |experimental|
-      - .. only:: esp32 or esp32c2
+        .. only:: not SOC_BLE_POWER_CONTROL_SUPPORTED
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
+      - .. only:: SOC_BLE_POWER_CONTROL_SUPPORTED
 
             |experimental|
+        .. only:: not SOC_BLE_POWER_CONTROL_SUPPORTED
+
+            |unsupported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
-      - .. only:: esp32 or esp32c3 or esp32s3
-
-            |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |supported|
-      - .. only:: esp32 or esp32c3 or esp32s3
+        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
-
-           |supported|
-      - .. only:: esp32 or esp32c3 or esp32s3
-
-            |unsupported|
-        .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
+      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
 
             |supported|
+        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+
+            |supported|
+        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+
+            |unsupported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+      - .. only:: SOC_BLE_SUBRATE_SUPPORTED
 
             |experimental|
-        .. only:: esp32c2
+        .. only:: not SOC_BLE_SUBRATE_SUPPORTED
 
             |unsupported|
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+      - .. only:: SOC_BLE_SUBRATE_SUPPORTED
 
             |experimental|
-        .. only:: esp32c2
+        .. only:: not SOC_BLE_SUBRATE_SUPPORTED
 
             |unsupported|
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+      - .. only:: SOC_BLE_SUBRATE_SUPPORTED
 
             |experimental|
-        .. only:: esp32c2
+        .. only:: not SOC_BLE_SUBRATE_SUPPORTED
 
             |unsupported|
     * -
       - LE Channel Classification
-      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
-
-            |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2 or esp32c5
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
 
             |experimental|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+      - .. only:: (SOC_ESP_NIMBLE_CONTROLLER or esp32c3 or esp32s3) and not esp32c2
 
             |experimental|
-        .. only:: esp32c2
+        .. only:: not ((SOC_ESP_NIMBLE_CONTROLLER or esp32c3 or esp32s3) and not esp32c2)
 
             |unsupported|
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+      - .. only:: (SOC_ESP_NIMBLE_CONTROLLER or esp32c3 or esp32s3) and not esp32c2
 
             |experimental|
-        .. only:: esp32c2
+        .. only:: not ((SOC_ESP_NIMBLE_CONTROLLER or esp32c3 or esp32s3) and not esp32c2)
 
             |unsupported|
-      - .. only:: esp32
-
-            |unsupported|
-        .. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+      - .. only:: (SOC_ESP_NIMBLE_CONTROLLER or esp32c3 or esp32s3) and not esp32c2
 
             |experimental|
-        .. only:: esp32c2
+        .. only:: not ((SOC_ESP_NIMBLE_CONTROLLER or esp32c3 or esp32s3) and not esp32c2)
 
             |unsupported|
     * -
@@ -337,28 +339,28 @@
     * -
       - LE GATT Security Levels Characteristic
       - |NA|
-      - |experimental|
+      - |unsupported|
       - |experimental|
     * -
       - Periodic Advertising with Responses
-      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
-
-            |unsupported|
-        .. only:: esp32c6 or esp32h2
+      - .. only:: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
+        .. only:: not SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2
+      - .. only:: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
 
             |experimental|
-      - .. only:: esp32 or esp32c3 or esp32s3 or esp32c2
+        .. only:: not SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
 
             |unsupported|
-        .. only:: esp32c6 or esp32h2
+      - .. only:: SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
 
             |experimental|
+        .. only:: not SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
+
+            |unsupported|
     * - .. centered:: |6.0|
       - Channel Sounding
       - |unsupported|
@@ -366,9 +368,24 @@
       - |unsupported|
     * -
       - LL Extended Feature Set
-      - |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
+
+            |developing202612|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
+
+            |developing202612|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
+
+            |developing202612|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
     * -
       - Decision-Based Advertising Filtering
       - |unsupported|
@@ -381,9 +398,24 @@
       - |unsupported|
     * -
       - Monitoring Advertisers
-      - |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
+
+            |developing202612|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
+
+            |developing202612|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
+
+            |developing202612|
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER or esp32c2
+
+            |unsupported|
     * -
       - Frame Space Update
       - |unsupported|
@@ -406,6 +438,9 @@
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
    :width: 65px
+.. |developing202612| image:: ../../../_static/ble/feature_status/developing202612.svg
+   :class: align-center
+   :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
    :width: 75px

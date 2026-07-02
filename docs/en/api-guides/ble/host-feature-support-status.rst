@@ -157,8 +157,8 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - LL Extended Feature Set
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |developing202606|
     * -
       - Decision-Based Advertising Filtering
       - |unsupported|
@@ -169,7 +169,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - Monitoring Advertisers
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - Frame Space Update
@@ -187,6 +187,12 @@ You are encouraged to consult with our `customer support team <https://www.espre
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
+.. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
+   :class: align-center
+   :width: 125px
+.. |developing202612| image:: ../../../_static/ble/feature_status/developing202612.svg
+   :class: align-center
+   :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
 .. |experimental| image:: ../../../_static/ble/feature_status/experimental.svg

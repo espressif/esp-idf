@@ -157,8 +157,8 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - LL Extended Feature Set
-      - |unsupported|
-      - |unsupported|
+      - |experimental|
+      - |developing202606|
     * -
       - Decision-Based Advertising Filtering
       - |unsupported|
@@ -169,7 +169,7 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - Monitoring Advertisers
-      - |unsupported|
+      - |experimental|
       - |experimental|
     * -
       - Frame Space Update
@@ -187,6 +187,12 @@ ESP 主机主要功能支持状态
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
+.. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
+   :class: align-center
+   :width: 125px
+.. |developing202612| image:: ../../../_static/ble/feature_status/developing202612.svg
+   :class: align-center
+   :width: 125px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
 .. |experimental| image:: ../../../_static/ble/feature_status/experimental.svg
