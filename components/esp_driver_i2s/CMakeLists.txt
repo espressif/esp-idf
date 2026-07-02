@@ -17,6 +17,9 @@ endif()
 if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs "i2s_common.c"
                      "i2s_std.c")
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "${target}/i2s_retention.c")
+    endif()
     if(CONFIG_SOC_I2S_SUPPORTS_PDM)
         list(APPEND srcs "i2s_pdm.c")
     endif()
@@ -42,6 +45,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include}
+                    PRIV_INCLUDE_DIRS "."
                     PRIV_REQUIRES ${priv_requires}
                     REQUIRES esp_hal_i2s
                     LDFRAGMENTS linker.lf

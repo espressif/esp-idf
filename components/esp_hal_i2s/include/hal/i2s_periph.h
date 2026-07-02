@@ -8,10 +8,6 @@
 #include "soc/soc.h"
 #include "soc/interrupts.h"
 #include "soc/soc_caps.h"
-#include "soc/regdma.h"
-#if SOC_HAS(PAU)
-#include "soc/retention_periph_defs.h"
-#endif
 
 #if SOC_HAS(I2S)
 #include "soc/i2s_struct.h"
@@ -64,15 +60,6 @@ extern const i2s_signal_conn_t i2s_periph_signal[I2S_LL_GET(INST_NUM)];
 extern const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM];
 #endif
 
-#if SOC_HAS(PAU)
-typedef struct {
-    const periph_retention_module_t retention_module;
-    const regdma_entries_config_t *entry_array;
-    uint32_t array_size;
-} i2s_reg_retention_info_t;
-
-extern const i2s_reg_retention_info_t i2s_reg_retention_info[I2S_LL_GET(INST_NUM)];
-#endif  // SOC_HAS(PAU)
 #endif  // SOC_HAS(I2S)
 
 #ifdef __cplusplus
