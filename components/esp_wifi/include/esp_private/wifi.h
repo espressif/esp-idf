@@ -195,6 +195,7 @@ struct nan_sync_callbacks {
     void (* receive_pasn)(uint8_t *buf, size_t len, uint16_t trans_seq, uint16_t status);
     uint32_t (* get_nira_len)(void);
     int (* construct_nira)(uint8_t *frm);
+    bool (*verify_nira)(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via
@@ -230,6 +231,9 @@ struct nan_secure_dp_funcs {
     /* Byte length of the M4 Shared Key Descriptor including any
      * encrypted KDE payload (GTK/IGTK/BIGTK). */
     int (*ndp_security_install_get_shared_desc_len)(void);
+
+    uint8_t (*get_ndp_resp_num_pmkids)(uint8_t ndp_id, const uint8_t *peer_nmi);
+    uint32_t (*get_ndp_resp_shared_key_desc_len)(uint8_t ndp_id, const uint8_t *peer_nmi);
 
     /* --- CSIA / SCIA construction. Each writes a complete NAN
      *     attribute (header + body) at @c frm and returns bytes
@@ -1196,6 +1200,17 @@ uint32_t esp_nan_get_nira_len(void);
  * @return     Number of bytes written
  */
 int esp_nan_construct_nira(uint8_t *frm);
+
+/**
+ * @brief      Verify a received NAN Identity Resolution Attribute (NIRA)
+ *
+ * @param[in]  peer_mac      NMI of the sender
+ * @param[in]  nira_attr     NIRA attribute buffer
+ * @param[in]  nira_attr_len Attribute length in bytes
+ *
+ * @return     true if the tag matches, false otherwise
+ */
+bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
 
 /**
   * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.

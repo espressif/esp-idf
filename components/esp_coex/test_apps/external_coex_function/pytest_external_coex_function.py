@@ -8,9 +8,10 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @idf_parametrize(
     'target',
-    ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32s31'],
+    ['esp32h2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c6', 'esp32c61', 'esp32c5', 'esp32s31', 'esp32h4', 'esp32h21'],
     indirect=['target'],
 )
+@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='lack of runners')
 def test_external_coex_unit_test(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

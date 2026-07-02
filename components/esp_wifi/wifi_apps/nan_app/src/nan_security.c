@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -97,36 +97,6 @@ static const uint8_t *nan_find_attr(const uint8_t *attrs, size_t attrs_len,
 static bool nan_csid_bitmap_has_pasn(uint16_t csid_bitmap)
 {
     return (csid_bitmap & WIFI_NAN_CSID_BIT_NCS_PK_PASN_128) != 0;
-}
-
-/*
- * Service ID = first 6 bytes of SHA256(lowercase(service_name))
- * per Wi-Fi Aware v4.0 §5.1.5 (Service Name and Service ID).
- */
-static bool nan_compute_service_id(const char *service_name, uint8_t service_id[6])
-{
-    if (!service_name || !g_wifi_default_wpa_crypto_funcs.sha256_vector) {
-        return false;
-    }
-    size_t name_len = strlen(service_name);
-    char *lower = os_malloc(name_len + 1);
-    if (!lower) {
-        return false;
-    }
-    strlcpy(lower, service_name, name_len + 1);
-    for (char *p = lower; *p; p++) {
-        *p = tolower((unsigned char) * p);
-    }
-    uint8_t hash[32];
-    const uint8_t *addr[1] = {(const uint8_t *)lower};
-    size_t len[1] = {name_len};
-    int ret = g_wifi_default_wpa_crypto_funcs.sha256_vector(1, addr, len, hash);
-    os_free(lower);
-    if (ret != 0) {
-        return false;
-    }
-    memcpy(service_id, hash, 6);
-    return true;
 }
 
 #define NAN_SERVICE_ID_LEN 6
@@ -456,6 +426,91 @@ static bool nan_security_fill_from_paired_cache(struct ndl_info *ndl, const uint
     return true;
 }
 #endif
+
+static bool nan_ndp_resp_resolve_pmk(struct ndl_info *ndl, const uint8_t *peer_nmi)
+{
+    static const uint8_t zero_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN] = {0};
+    static const uint8_t zero_pmk[ESP_WIFI_NAN_NDP_PMK_LEN] = {0};
+
+    if (!ndl || !peer_nmi) {
+        return false;
+    }
+
+    bool have_peer_pmkid = (memcmp(ndl->security_ctx.nd_pmkid, zero_pmkid,
+                                   ESP_WIFI_NAN_NDP_PMKID_LEN) != 0);
+    bool need_pmk = (ndl->security_ctx.type != WIFI_NAN_SECURITY_ENCRYPTED) ||
+                    (memcmp(ndl->security_ctx.nd_pmk, zero_pmk, ESP_WIFI_NAN_NDP_PMK_LEN) == 0);
+
+    if (!need_pmk) {
+        return have_peer_pmkid;
+    }
+
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+    if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
+        return have_peer_pmkid;
+    }
+#endif
+
+    if (!have_peer_pmkid) {
+        return false;
+    }
+
+    struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
+    int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
+                                              ndl->peer_nmi, ndl->peer_ndi) : -1;
+    if (matched_idx < 0) {
+        return false;
+    }
+
+    ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
+    ndl->security_ctx.csid_bitmap = p_svc->derived_security[matched_idx].csid_bitmap;
+    memcpy(ndl->security_ctx.nd_pmk,
+           p_svc->derived_security[matched_idx].nd_pmk,
+           ESP_WIFI_NAN_NDP_PMK_LEN);
+    return true;
+}
+
+uint8_t esp_nan_get_ndp_resp_num_pmkids(uint8_t ndp_id, const uint8_t *peer_nmi)
+{
+    static const uint8_t zero_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN] = {0};
+
+    if (!peer_nmi) {
+        return 0;
+    }
+
+    NAN_DATA_LOCK();
+    struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
+    if (!ndl) {
+        ndl = nan_find_ndl(0, (uint8_t *)peer_nmi);
+    }
+    uint8_t num = 0;
+    if (ndl && memcmp(ndl->security_ctx.nd_pmkid, zero_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN) != 0) {
+        num = 1;
+    }
+    NAN_DATA_UNLOCK();
+    return num;
+}
+
+uint32_t esp_nan_get_ndp_resp_shared_key_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi)
+{
+    if (!peer_nmi) {
+        return 0;
+    }
+
+    NAN_DATA_LOCK();
+    struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
+    if (!ndl) {
+        ndl = nan_find_ndl(0, (uint8_t *)peer_nmi);
+    }
+    if (!ndl || ndl->handshake_state != NAN_HANDSHAKE_M1_RCVD ||
+            !nan_ndp_resp_resolve_pmk(ndl, peer_nmi)) {
+        NAN_DATA_UNLOCK();
+        return 0;
+    }
+    NAN_DATA_UNLOCK();
+
+    return esp_nan_get_shared_key_desc_attr_len(0);
+}
 
 /*
  * Build RSNA Key Descriptor payload (95-byte EAPOL-Key layout, see
@@ -1164,9 +1219,9 @@ int esp_nan_ndp_security_install_get_shared_desc_len(void)
 
 int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t ndp_id, const uint8_t *peer_nmi)
 {
-    const uint32_t attr_len = esp_nan_get_shared_key_desc_attr_len(0);
+    const uint32_t attr_len = esp_nan_get_ndp_resp_shared_key_desc_len(ndp_id, peer_nmi);
 
-    if (!buf || buf_len < attr_len || !peer_nmi) {
+    if (!buf || !peer_nmi || attr_len == 0 || buf_len < attr_len) {
         return 0;
     }
 
@@ -1182,50 +1237,10 @@ int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t n
         ESP_LOGW(TAG, "NDP Resp Key Desc: NDL not in M1_RCVD (state=%d)", ndl->handshake_state);
         return 0;
     }
-
-    /* Resolve PMK from publish when: NDL not encrypted, or encrypted but nd_pmk not set */
-    {
-        static const uint8_t zero_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN] = {0};
-        static const uint8_t zero_pmk[ESP_WIFI_NAN_NDP_PMK_LEN] = {0};
-        bool have_peer_pmkid = (memcmp(ndl->security_ctx.nd_pmkid, zero_pmkid,
-                                       ESP_WIFI_NAN_NDP_PMKID_LEN) != 0);
-        bool need_pmk = (ndl->security_ctx.type != WIFI_NAN_SECURITY_ENCRYPTED) ||
-                        (memcmp(ndl->security_ctx.nd_pmk, zero_pmk, ESP_WIFI_NAN_NDP_PMK_LEN) == 0);
-
-        bool resolved_from_pairing_cache = false;
-#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
-        if (need_pmk) {
-            resolved_from_pairing_cache = nan_security_fill_from_paired_cache(ndl, peer_nmi);
-        }
-#endif
-
-        if (resolved_from_pairing_cache) {
-            ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from paired-peer cache");
-        } else if (need_pmk && have_peer_pmkid) {
-            struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
-            int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
-                                                      ndl->peer_nmi, ndl->peer_ndi) : -1;
-            if (matched_idx >= 0) {
-                ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
-                ndl->security_ctx.csid_bitmap = p_svc->derived_security[matched_idx].csid_bitmap;
-                memcpy(ndl->security_ctx.nd_pmk,
-                       p_svc->derived_security[matched_idx].nd_pmk,
-                       ESP_WIFI_NAN_NDP_PMK_LEN);
-                ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from cred slot %d", matched_idx);
-            } else if (ndl->security_ctx.type != WIFI_NAN_SECURITY_ENCRYPTED) {
-                NAN_DATA_UNLOCK();
-                ESP_LOGW(TAG, "NDP Resp Key Desc: NDL not encrypted; send NDP Response without Shared Key Descriptor");
-                return 0;
-            } else {
-                NAN_DATA_UNLOCK();
-                ESP_LOGW(TAG, "NDP Resp Key Desc: no PMK for peer PMKID; ensure matching credential on both devices");
-                return 0;
-            }
-        } else if (ndl->security_ctx.type != WIFI_NAN_SECURITY_ENCRYPTED) {
-            NAN_DATA_UNLOCK();
-            ESP_LOGW(TAG, "NDP Resp Key Desc: NDL not encrypted; send NDP Response without Shared Key Descriptor");
-            return 0;
-        }
+    if (!nan_ndp_resp_resolve_pmk(ndl, peer_nmi)) {
+        NAN_DATA_UNLOCK();
+        ESP_LOGW(TAG, "NDP Resp Key Desc: no PMK for peer PMKID; ensure matching credential on both devices");
+        return 0;
     }
 
     /* Generate SNonce and derive PTK if not yet done */
