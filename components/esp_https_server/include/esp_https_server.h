@@ -18,7 +18,9 @@
 extern "C" {
 #endif
 
+#if CONFIG_ESP_HTTPS_SERVER_EVENTS || __DOXYGEN__
 ESP_EVENT_DECLARE_BASE(ESP_HTTPS_SERVER_EVENT);
+#endif // CONFIG_ESP_HTTPS_SERVER_EVENTS || __DOXYGEN__
 
 typedef enum {
     HTTPS_SERVER_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */

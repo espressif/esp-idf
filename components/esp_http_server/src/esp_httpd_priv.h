@@ -591,6 +591,8 @@ esp_err_t httpd_sess_close_lru_direct(struct httpd_data *hd);
  * @}
  */
 
+#ifdef CONFIG_HTTPD_ENABLE_EVENTS
+
 #if CONFIG_HTTPD_SERVER_EVENT_POST_TIMEOUT == -1
 #define ESP_HTTP_SERVER_EVENT_POST_TIMEOUT portMAX_DELAY
 #else
@@ -602,6 +604,18 @@ esp_err_t httpd_sess_close_lru_direct(struct httpd_data *hd);
  *
  */
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size);
+
+#else // CONFIG_HTTPD_ENABLE_EVENTS
+static inline void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
+{
+    // Events disabled, do nothing
+    (void) event_id;
+    (void) event_data;
+    (void) event_data_size;
+}
+#endif // CONFIG_HTTPD_ENABLE_EVENTS
+
+esp_err_t httpd_crypto_sha1(const uint8_t *data, size_t data_len, uint8_t *hash);
 
 #ifdef __cplusplus
 }
