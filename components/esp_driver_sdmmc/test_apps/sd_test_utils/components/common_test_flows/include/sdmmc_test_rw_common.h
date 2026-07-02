@@ -73,6 +73,31 @@ void sdmmc_test_rw_highprio_task(sdmmc_card_t* card);
  */
 void sdmmc_test_rw_unaligned_buffer_multiblock(sdmmc_card_t* card, size_t chunk_size);
 
+/**
+ * @brief Test read/write with PSRAM-allocated buffers
+ *
+ * This function verifies that the driver correctly handles buffers allocated in PSRAM.
+ * When the host reports the PSRAM buffer as directly usable (via check_buffer_alignment),
+ * data is transferred directly without intermediate copying. Otherwise, the driver uses
+ * double-buffering through internal RAM.
+ *
+ * The test covers:
+ * - Writing from PSRAM, reading to internal RAM
+ * - Writing from internal RAM, reading to PSRAM
+ * - Both writing and reading from PSRAM
+ *
+ * If PSRAM is not enabled (CONFIG_SPIRAM), this function is a no-op. Callers
+ * must skip the test (TEST_IGNORE) BEFORE initializing the slot/controller, so
+ * that this function is not relied upon to abort the test. Doing the skip here
+ * would longjmp out of the test before the caller's cleanup runs and leak the
+ * SD slot.
+ *
+ * This test function works both with SDMMC and SDSPI hosts.
+ *
+ * @param card Pointer to the card object, must be initialized before calling this function.
+ */
+void sdmmc_test_rw_psram_buffer(sdmmc_card_t *card);
+
 #ifdef __cplusplus
 };
 #endif

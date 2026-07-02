@@ -536,6 +536,16 @@ bool sd_host_check_buffer_alignment(sd_host_sdmmc_slot_t *slot, const void *buf,
         return false;
     }
 
+#if !SOC_SDMMC_PSRAM_DMA_CAPABLE
+    // The SDMMC peripheral's DMA cannot reach PSRAM on this target, so a PSRAM
+    // buffer can never be used directly regardless of its alignment. Reporting
+    // it as not directly usable makes the protocol layer fall back to an
+    // internal DMA-capable buffer.
+    if (esp_ptr_external_ram(buf)) {
+        return false;
+    }
+#endif
+
     esp_err_t ret = ESP_FAIL;
     int cache_flags = 0;
     size_t cache_alignment_bytes = 0;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,4 +127,27 @@ TEST_CASE("sdmmc read/write with concurrent high-prio task, slot 0, 4-bit", "[sd
 TEST_CASE("sdmmc read/write with concurrent high-prio task, slot 1, 4-bit", "[sdmmc]")
 {
     do_one_sdmmc_rw_test_highprio_task(1, 4);
+}
+
+static void do_one_sdmmc_rw_test_psram_dma_buffer(int slot, int width)
+{
+    sdmmc_card_t card;
+    int freq_khz = SDMMC_FREQ_HIGHSPEED;
+#if !CONFIG_SPIRAM
+    TEST_IGNORE_MESSAGE("PSRAM is not enabled");
+#endif
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, NO_DDR, NO_EMMC);
+    sdmmc_test_sd_begin(slot, width, freq_khz, 0, &card);
+    sdmmc_test_rw_psram_buffer(&card);
+    sdmmc_test_sd_end(&card);
+}
+
+TEST_CASE("sdmmc read/write using PSRAM DMA accessible buffer, slot 0, 4-bit", "[sdmmc]")
+{
+    do_one_sdmmc_rw_test_psram_dma_buffer(0, 4);
+}
+
+TEST_CASE("sdmmc read/write using PSRAM DMA accessible buffer, slot 1, 4-bit", "[sdmmc]")
+{
+    do_one_sdmmc_rw_test_psram_dma_buffer(1, 4);
 }
