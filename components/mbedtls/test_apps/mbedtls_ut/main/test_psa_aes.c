@@ -1623,6 +1623,7 @@ TEST_CASE("mbedtls CTR, input buf = output buf", "[aes]")
     status = psa_cipher_finish(&operation, buf + output_len, SZ - output_len, &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     total_len += output_len;
+    TEST_ASSERT_EQUAL(SZ, total_len);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr_inplace_end, buf + SZ - 32, 32);
 
@@ -1645,6 +1646,7 @@ TEST_CASE("mbedtls CTR, input buf = output buf", "[aes]")
     status = psa_cipher_finish(&operation, buf + output_len, SZ - output_len, &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     total_len += output_len;
+    TEST_ASSERT_EQUAL(SZ, total_len);
 
     for (int i = 0; i < SZ; i++) {
         TEST_ASSERT_EQUAL_HEX8(0x3A, buf[i]);
@@ -1710,6 +1712,7 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
     status = psa_cipher_finish(&operation, ciphertext + output_len, SZ - output_len, &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     total_len += output_len;
+    TEST_ASSERT_EQUAL(SZ, total_len);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ofb_chained_end, ciphertext + SZ - 32, 32);
 
@@ -1732,6 +1735,7 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
     status = psa_cipher_finish(&operation, decryptedtext + output_len, SZ - output_len, &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     total_len += output_len;
+    TEST_ASSERT_EQUAL(SZ, total_len);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
 
@@ -1800,6 +1804,7 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
         status = psa_cipher_finish(&operation, ciphertext + i + output_len, SZ - output_len, &output_len);
         TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         total_len += output_len;
+        TEST_ASSERT_EQUAL(SZ, total_len);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr, ciphertext + i, SZ);
 
@@ -1822,6 +1827,7 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
         status = psa_cipher_finish(&operation, decryptedtext + output_len, SZ - output_len, &output_len);
         TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         total_len += output_len;
+        TEST_ASSERT_EQUAL(SZ, total_len);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
     }
@@ -1896,6 +1902,7 @@ void aes_psram_one_buf_ctr_test(void)
         status = psa_cipher_finish(&operation, buf + i + output_len, SZ - output_len, &output_len);
         TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         total_len += output_len;
+        TEST_ASSERT_EQUAL(SZ, total_len);
 
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr, buf + i, SZ);
 
@@ -1918,6 +1925,7 @@ void aes_psram_one_buf_ctr_test(void)
         status = psa_cipher_finish(&operation, buf + output_len, SZ - output_len, &output_len);
         TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
         total_len += output_len;
+        TEST_ASSERT_EQUAL(SZ, total_len);
 
         TEST_ASSERT_EACH_EQUAL_HEX8(0x26, buf + i, SZ - i);
     }
@@ -1977,6 +1985,7 @@ void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
     status = psa_cipher_finish(&operation, ciphertext + output_len, SZ - output_len, &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     total_len += output_len;
+    TEST_ASSERT_EQUAL(SZ, total_len);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_long_input_end, ciphertext + SZ - 32, 32);
 
@@ -1999,6 +2008,7 @@ void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
     status = psa_cipher_finish(&operation, decryptedtext + output_len, SZ - output_len, &output_len);
     TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
     total_len += output_len;
+    TEST_ASSERT_EQUAL(SZ, total_len);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(long_input, decryptedtext, SZ);
 
