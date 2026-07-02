@@ -6,34 +6,29 @@
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/stream_buffer.h"
 #include "freertos/message_buffer.h"
 #include "freertos/event_groups.h"
 #include "freertos/idf_additions.h"
+#include "freertos/freertos_debug.h"
 #include "esp_memory_utils.h"
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_freertos_hooks.h"
+#include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 
 /*
-Test ...Create...WithCaps() functions
+Test ESP-IDF FreeRTOS API additions from idf_additions.h:
+    - ...Create...WithCaps() / ...DeleteWithCaps() memory capability helpers
+    - Task utility helpers (xTaskGetCoreID, xTaskGetStackStart, per-core handle queries, etc.)
 
-Purpose:
-    - Test that the ___Create___WithCaps() functions create objects using with correct memory capabilities
-
-Procedure:
-    - Create different FreeRTOS objects (e.g. queues, event groups etc) using the various ___Create___WithCaps()
-      functions with (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT) capabilities.
-    - Call the ___GetStaticBuffers() functions to get the address of the memory of the created objects
-    - Check that the memory has (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT) capabilities by calling esp_ptr_in_dram()
-
-Expected:
-    - ___Create___WithCaps() should create objects in DRAM
-*/
+Run only these cases from the Unity menu with the [idf_additions] tag filter.
+ */
 
 #define OBJECT_MEMORY_CAPS      (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
 
@@ -53,7 +48,7 @@ static void task_with_caps_self_delete(void *arg)
     vTaskDeleteWithCaps(NULL);
 }
 
-TEST_CASE("IDF additions: Task creation with memory caps and deletion from another task", "[freertos]")
+TEST_CASE("IDF additions: Task creation with memory caps and deletion from another task", "[freertos][idf_additions]")
 {
     TaskHandle_t task_handle = NULL;
     StackType_t *puxStackBuffer;
@@ -72,7 +67,7 @@ TEST_CASE("IDF additions: Task creation with memory caps and deletion from anoth
     vTaskDeleteWithCaps(task_handle);
 }
 
-TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[freertos]")
+TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[freertos][idf_additions]")
 {
     TaskHandle_t task_handle = NULL;
     StackType_t *puxStackBuffer;
@@ -91,7 +86,7 @@ TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[f
 
 #if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
-TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletion stress test", "[freertos]")
+TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletion stress test", "[freertos][idf_additions]")
 {
 #define TEST_NUM_TASKS      5
 #define TEST_NUM_ITERATIONS 1000
@@ -133,7 +128,7 @@ static void task_with_caps_running_on_other_core(void *arg)
     }
 }
 
-TEST_CASE("IDF additions: Task creation with memory caps and deletion from another core", "[freertos]")
+TEST_CASE("IDF additions: Task creation with memory caps and deletion from another core", "[freertos][idf_additions]")
 {
     TaskHandle_t task_handle = NULL;
     StackType_t *puxStackBuffer;
@@ -154,7 +149,7 @@ TEST_CASE("IDF additions: Task creation with memory caps and deletion from anoth
 
 #endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
-TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos]")
+TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos][idf_additions]")
 {
     QueueHandle_t queue_handle;
     uint8_t *queue_storage;
@@ -171,7 +166,7 @@ TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos]")
     vQueueDeleteWithCaps(queue_handle);
 }
 
-TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos]")
+TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos][idf_additions]")
 {
     SemaphoreHandle_t sem_handle;
     StaticSemaphore_t *sem_obj;
@@ -213,7 +208,7 @@ TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos]")
     vSemaphoreDeleteWithCaps(sem_handle);
 }
 
-TEST_CASE("IDF additions: Stream & message buffer creation with memory caps", "[freertos]")
+TEST_CASE("IDF additions: Stream & message buffer creation with memory caps", "[freertos][idf_additions]")
 {
     StreamBufferHandle_t stream_buffer_handle;
     uint8_t *stream_buffer_storage;
@@ -227,7 +222,7 @@ TEST_CASE("IDF additions: Stream & message buffer creation with memory caps", "[
     TEST_ASSERT(esp_ptr_in_dram(stream_buffer_storage));
     TEST_ASSERT(esp_ptr_in_dram(stream_buffer_obj));
     // Free the stream buffer
-    vStreamBufferDelete(stream_buffer_handle);
+    vStreamBufferDeleteWithCaps(stream_buffer_handle);
 
     MessageBufferHandle_t msg_buffer_handle;
     uint8_t *msg_buffer_storage;
@@ -241,10 +236,10 @@ TEST_CASE("IDF additions: Stream & message buffer creation with memory caps", "[
     TEST_ASSERT(esp_ptr_in_dram(msg_buffer_storage));
     TEST_ASSERT(esp_ptr_in_dram(msg_buffer_obj));
     // Free the message buffer
-    vMessageBufferDelete(msg_buffer_handle);
+    vMessageBufferDeleteWithCaps(msg_buffer_handle);
 }
 
-TEST_CASE("IDF additions: Event group creation with memory caps", "[freertos]")
+TEST_CASE("IDF additions: Event group creation with memory caps", "[freertos][idf_additions]")
 {
     EventGroupHandle_t evt_group_handle;
     StaticEventGroup_t *evt_group_obj;
@@ -256,8 +251,260 @@ TEST_CASE("IDF additions: Event group creation with memory caps", "[freertos]")
     TEST_ASSERT_EQUAL(pdTRUE, xEventGroupGetStaticBuffer(evt_group_handle, &evt_group_obj));
     TEST_ASSERT(esp_ptr_in_dram(evt_group_obj));
     // Free the event group
-    vEventGroupDelete(evt_group_handle);
+    vEventGroupDeleteWithCaps(evt_group_handle);
 }
+
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Task utility API tests (xTaskGetCoreID, xTaskGetStackStart, per-core handle helpers, etc.)
+ * --------------------------------------------------------------------------------------------------------------------- */
+
+static void stack_test_task(void *arg)
+{
+    (void)arg;
+    vTaskSuspend(NULL);
+}
+
+typedef struct {
+    TaskHandle_t parent;
+    BaseType_t expected_core;
+    BaseType_t observed_core;
+    TaskHandle_t self_handle;
+} core_id_query_ctx_t;
+
+static void pinned_core_id_task(void *arg)
+{
+    core_id_query_ctx_t *ctx = (core_id_query_ctx_t *)arg;
+
+    ctx->self_handle = xTaskGetCurrentTaskHandle();
+    ctx->observed_core = xPortGetCoreID();
+    TEST_ASSERT_EQUAL(ctx->expected_core, ctx->observed_core);
+    TEST_ASSERT_EQUAL(ctx->expected_core, xTaskGetCoreID(NULL));
+    TEST_ASSERT_EQUAL(ctx->expected_core, xTaskGetCoreID(ctx->self_handle));
+
+    xTaskNotifyGive(ctx->parent);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("IDF additions: xTaskGetCoreID for pinned tasks", "[freertos][idf_additions]")
+{
+    const TaskHandle_t parent = xTaskGetCurrentTaskHandle();
+    core_id_query_ctx_t ctx[CONFIG_FREERTOS_NUMBER_OF_CORES];
+
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        ctx[core].parent = parent;
+        ctx[core].expected_core = core;
+        ctx[core].observed_core = -1;
+        ctx[core].self_handle = NULL;
+
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(pinned_core_id_task,
+                                                          "core_id",
+                                                          2048,
+                                                          &ctx[core],
+                                                          UNITY_FREERTOS_PRIORITY + 1,
+                                                          NULL,
+                                                          core));
+    }
+
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+        TEST_ASSERT_EQUAL(core, ctx[core].observed_core);
+        TEST_ASSERT_EQUAL(core, xTaskGetCoreID(ctx[core].self_handle));
+    }
+
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        vTaskDelete(ctx[core].self_handle);
+    }
+    vTaskDelay(1);
+}
+
+#if (CONFIG_FREERTOS_NUMBER_OF_CORES > 1) && !CONFIG_FREERTOS_SMP
+
+static SemaphoreHandle_t s_unpinned_done_sem;
+static TaskHandle_t s_unpinned_task_handle;
+
+static void unpinned_core_id_task(void *arg)
+{
+    (void)arg;
+    s_unpinned_task_handle = xTaskGetCurrentTaskHandle();
+    xSemaphoreGive(s_unpinned_done_sem);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("IDF additions: xTaskGetCoreID returns tskNO_AFFINITY for unpinned task", "[freertos][idf_additions]")
+{
+    s_unpinned_done_sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(s_unpinned_done_sem);
+    s_unpinned_task_handle = NULL;
+
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(unpinned_core_id_task,
+                                                      "unpinned",
+                                                      2048,
+                                                      NULL,
+                                                      UNITY_FREERTOS_PRIORITY - 1,
+                                                      NULL,
+                                                      tskNO_AFFINITY));
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(s_unpinned_done_sem, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_NOT_NULL(s_unpinned_task_handle);
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(s_unpinned_task_handle));
+
+    vTaskDelete(s_unpinned_task_handle);
+    vSemaphoreDelete(s_unpinned_done_sem);
+    vTaskDelay(1);
+}
+
+#endif /* CONFIG_FREERTOS_NUMBER_OF_CORES > 1 && !CONFIG_FREERTOS_SMP */
+
+#if CONFIG_FREERTOS_UNICORE
+
+TEST_CASE("IDF additions: xTaskGetCoreID returns 0 on unicore", "[freertos][idf_additions]")
+{
+    TEST_ASSERT_EQUAL(0, xTaskGetCoreID(NULL));
+    TEST_ASSERT_EQUAL(0, xTaskGetCoreID(xTaskGetCurrentTaskHandle()));
+}
+
+#endif /* CONFIG_FREERTOS_UNICORE */
+
+TEST_CASE("IDF additions: xTaskGetStackStart", "[freertos][idf_additions]")
+{
+    StackType_t *current_stack_via_null = xTaskGetStackStart(NULL);
+    StackType_t *current_stack_via_handle = xTaskGetStackStart(xTaskGetCurrentTaskHandle());
+
+    TEST_ASSERT_NOT_NULL(current_stack_via_null);
+    TEST_ASSERT_EQUAL_PTR(current_stack_via_null, current_stack_via_handle);
+
+    TaskHandle_t caps_task = NULL;
+    StackType_t *caps_stack_buffer = NULL;
+    StaticTask_t *caps_task_buffer = NULL;
+
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCoreWithCaps(stack_test_task,
+                                                              "stack_caps",
+                                                              4096,
+                                                              NULL,
+                                                              UNITY_FREERTOS_PRIORITY + 1,
+                                                              &caps_task,
+                                                              UNITY_FREERTOS_CPU,
+                                                              OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NOT_NULL(caps_task);
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(caps_task, &caps_stack_buffer, &caps_task_buffer));
+    TEST_ASSERT_EQUAL_PTR(caps_stack_buffer, xTaskGetStackStart(caps_task));
+
+    vTaskDeleteWithCaps(caps_task);
+    vTaskDelay(10);
+
+#define STATIC_STACK_BYTES 4096
+    static StackType_t static_stack[STATIC_STACK_BYTES / sizeof(StackType_t)];
+    static StaticTask_t static_task_buffer;
+
+    memset(&static_task_buffer, 0, sizeof(static_task_buffer));
+
+    TaskHandle_t static_task = xTaskCreateStaticPinnedToCore(stack_test_task,
+                                                             "stack_static",
+                                                             STATIC_STACK_BYTES,
+                                                             NULL,
+                                                             UNITY_FREERTOS_PRIORITY + 1,
+                                                             static_stack,
+                                                             &static_task_buffer,
+                                                             UNITY_FREERTOS_CPU);
+    TEST_ASSERT_NOT_NULL(static_task);
+    TEST_ASSERT_EQUAL_PTR(static_stack, xTaskGetStackStart(static_task));
+
+    vTaskDelete(static_task);
+    vTaskDelay(1);
+}
+
+#if !CONFIG_FREERTOS_SMP
+
+TEST_CASE("IDF additions: xTaskGetIdleTaskHandleForCore", "[freertos][idf_additions]")
+{
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        TaskHandle_t idle_for_core = xTaskGetIdleTaskHandleForCore(core);
+        char expected_name[configMAX_TASK_NAME_LEN];
+
+        TEST_ASSERT_NOT_NULL(idle_for_core);
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+        snprintf(expected_name, sizeof(expected_name), "IDLE%d", core);
+#else
+        snprintf(expected_name, sizeof(expected_name), "IDLE");
+#endif
+        TEST_ASSERT_EQUAL_STRING(expected_name, pcTaskGetName(idle_for_core));
+    }
+
+#if CONFIG_FREERTOS_UNICORE
+    TEST_ASSERT_EQUAL(xTaskGetIdleTaskHandle(), xTaskGetIdleTaskHandleForCore(0));
+#endif
+}
+
+typedef struct {
+    TaskHandle_t parent;
+    BaseType_t core;
+    TaskHandle_t self_handle;
+    TaskHandle_t queried_handle;
+    void * queried_tcb;
+} per_core_handle_ctx_t;
+
+static void running_on_core_task(void *arg)
+{
+    per_core_handle_ctx_t *ctx = (per_core_handle_ctx_t *)arg;
+
+    ctx->self_handle = xTaskGetCurrentTaskHandle();
+    ctx->queried_handle = xTaskGetCurrentTaskHandleForCore(ctx->core);
+    ctx->queried_tcb = pvTaskGetCurrentTCBForCore(ctx->core);
+
+    xTaskNotifyGive(ctx->parent);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("IDF additions: xTaskGetCurrentTaskHandleForCore and pvTaskGetCurrentTCBForCore", "[freertos][idf_additions]")
+{
+    const TaskHandle_t parent = xTaskGetCurrentTaskHandle();
+
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        per_core_handle_ctx_t ctx = {
+            .parent = parent,
+            .core = core,
+            .self_handle = NULL,
+            .queried_handle = NULL,
+            .queried_tcb = NULL,
+        };
+
+        while (ulTaskNotifyTake(pdFALSE, 0) != 0) {
+            ;
+        }
+
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(running_on_core_task,
+                                                          "on_core",
+                                                          2048,
+                                                          &ctx,
+                                                          UNITY_FREERTOS_PRIORITY + 1,
+                                                          NULL,
+                                                          core));
+
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+
+        TEST_ASSERT_EQUAL_PTR(ctx.self_handle, ctx.queried_handle);
+        TEST_ASSERT_EQUAL_PTR((void *)ctx.self_handle, ctx.queried_tcb);
+
+        vTaskDelete(ctx.self_handle);
+        vTaskDelay(1);
+    }
+}
+
+#endif /* !CONFIG_FREERTOS_SMP */
+
+#if CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS && !CONFIG_FREERTOS_SMP
+
+TEST_CASE("IDF additions: ulTaskGetIdleRunTimeCounterForCore", "[freertos][idf_additions]")
+{
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
+        configRUN_TIME_COUNTER_TYPE idle_counter = ulTaskGetIdleRunTimeCounterForCore(core);
+        configRUN_TIME_COUNTER_TYPE idle_percent = ulTaskGetIdleRunTimePercentForCore(core);
+
+        TEST_ASSERT_GREATER_OR_EQUAL(0, idle_counter);
+        TEST_ASSERT_LESS_OR_EQUAL(100, idle_percent);
+    }
+}
+
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS && !CONFIG_FREERTOS_SMP */
 
 #if !CONFIG_FREERTOS_SMP
 /*
