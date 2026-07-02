@@ -270,7 +270,16 @@ def _partition_selection_options(func):
             help='select the default boot partition using the same fallback logic as the IDF bootloader',
         ),
         click.option('--partition-subtype', '-s', help='subtype of the partition'),
-        click.option('--extra-partition-subtypes', multiple=True, help='Extra partition subtype entries'),
+        # Use OptionEatAll to keep argparse nargs='*' semantics: a single
+        # --extra-partition-subtypes flag consumes all following space-separated
+        # entries (CMake project_include.cmake passes them this way).
+        click.option(
+            '--extra-partition-subtypes',
+            multiple=True,
+            cls=OptionEatAll,
+            type=str,
+            help='Extra partition subtype entries',
+        ),
     ]
     for decorator in reversed(decorators):
         func = decorator(func)

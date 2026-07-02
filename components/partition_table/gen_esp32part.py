@@ -20,6 +20,7 @@ import struct
 import sys
 
 import rich_click as click
+from esp_pylib.cli_options import OptionEatAll
 from esp_pylib.cli_types import AnyIntType
 from esp_pylib.logger import log
 
@@ -793,7 +794,16 @@ def run_gen(
     default=None,
     help='Require app partitions to be suitable for secure boot',
 )
-@click.option('--extra-partition-subtypes', multiple=True, help='Extra partition subtype entries')
+# Use OptionEatAll to keep argparse nargs='*' semantics: a single
+# --extra-partition-subtypes flag consumes all following space-separated
+# entries (CMake partition_table/CMakeLists.txt passes them this way).
+@click.option(
+    '--extra-partition-subtypes',
+    multiple=True,
+    cls=OptionEatAll,
+    type=str,
+    help='Extra partition subtype entries',
+)
 @click.argument('input_file', type=click.File('rb'), metavar='INPUT')
 @click.argument('output', type=click.Path(), required=False, default='-')
 def cli(
