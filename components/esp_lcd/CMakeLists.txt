@@ -31,6 +31,9 @@ endif()
 
 if(CONFIG_SOC_LCDCAM_I80_LCD_SUPPORTED)
     list(APPEND srcs "i80/esp_lcd_panel_io_i80.c")
+    if(CONFIG_SOC_PAU_SUPPORTED)
+        list(APPEND srcs "i80/${target}/lcd_retention.c")
+    endif()
 endif()
 
 if(CONFIG_SOC_LCDCAM_RGB_LCD_SUPPORTED)
@@ -45,7 +48,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_INCLUDE_DIRS "priv_include"
+                       PRIV_INCLUDE_DIRS "priv_include" "i80"
                        PRIV_REQUIRES ${priv_requires}
                        REQUIRES ${public_requires}
                        LDFRAGMENTS linker.lf)
