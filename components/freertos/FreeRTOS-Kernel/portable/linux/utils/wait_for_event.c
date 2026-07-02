@@ -92,3 +92,12 @@ void event_signal(event_t *ev)
     pthread_cond_signal(&ev->cond);
     pthread_mutex_unlock(&ev->mutex);
 }
+
+/*-----------------------------------------------------------*/
+/* Discard a pending signal that was never consumed by a wait */
+void event_clear(event_t *ev)
+{
+    pthread_mutex_lock(&ev->mutex);
+    ev->event_triggered = false;
+    pthread_mutex_unlock(&ev->mutex);
+}

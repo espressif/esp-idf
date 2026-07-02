@@ -219,6 +219,33 @@ static void linux_port_switch_context(TaskHandle_t current_task_hdl)
          * in its initial event_wait (linux_port_task_runner), so we must
          * signal it even though current_thread == next_thread. */
         if (next_thread != current_thread || !s_scheduler_started) {
+            /* Discard any stale wake on the task being switched out.
+             *
+             * Because tasks are pthreads that cannot be forcibly paused,
+             * the port can only "unschedule" a task by choosing a different
+             * next task; the outgoing task keeps running until it next
+             * blocks itself in event_wait (e.g. via vPortYield). If, while
+             * it was unscheduled, the scheduler already switched back into
+             * it (event_signal in a later switch) without the task ever
+             * having parked in event_wait, that signal is never consumed
+             * and event_triggered stays latched. Its next voluntary block
+             * would then return immediately instead of blocking (e.g.
+             * vTaskDelay(100ms) returning in 0ms).
+             *
+             * Clearing here, under s_port_mutex and atomically with the
+             * scheduling decision, drops that latched-but-unconsumed wake.
+             * It is safe: a legitimate wake can only be delivered later,
+             * when the scheduler next selects this task as next_thread.
+             *
+             * Reached only for a genuine switch to a different task:
+             * entering this block with next_thread == current_thread
+             * happens solely on the first switch (!s_scheduler_started),
+             * which the current_thread NULL-check below also tolerates.
+             * The NULL-check additionally guards the deleted-task path
+             * where the outgoing task has no thread mapping. */
+            if (current_thread) {
+                event_clear(current_thread->ev);
+            }
             linux_port_unblock_thread(next_thread);
         }
     }

@@ -92,6 +92,13 @@ bool event_wait_timed(event_t *ev, time_t ms);
  */
 void event_signal(event_t *ev);
 
+/**
+ * @brief Discard a pending signal that was never consumed by a wait
+ *
+ * @param ev
+ */
+void event_clear(event_t *ev);
+
 #ifdef __cplusplus
 }
 #endif
