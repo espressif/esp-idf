@@ -27,7 +27,7 @@ config BT_CTRL_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
-config BT_CTRL_SLEEP_ENABLE
+menuconfig BT_CTRL_SLEEP_ENABLE
     bool "Enable Bluetooth Controller sleep"
     default n
     help
@@ -54,6 +54,30 @@ choice BT_CTRL_LP_CLK_SRC
             legacy ADV and SCAN due to low clock accuracy.
 
 endchoice
+
+config BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM
+    bool "Put sleep related code into IRAM to optimize power consumption"
+    default n
+    depends on BT_CTRL_SLEEP_ENABLE
+    help
+        Put frequently-executed sleep functions into IRAM for faster execution
+        and lower power consumption. Occupies extra 3 KB RAM.
+
+config BT_CTRL_LE_ADV_SLEEP_CODE_IN_IRAM
+    bool "Put BLE advertising sleep code into IRAM"
+    default y
+    depends on BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM && BT_CTRL_BLE_ENABLE
+    help
+        Put frequently-executed advertising functions into IRAM.
+        Occupies extra 8 KB RAM.
+
+config BT_CTRL_LE_CONN_SLEEP_CODE_IN_IRAM
+    bool "Put BLE connection sleep code into IRAM"
+    default y
+    depends on BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM && BT_CTRL_BLE_ENABLE
+    help
+        Put frequently-executed connection functions into IRAM.
+        Occupies extra 8 KB RAM.
 
 config BT_DUAL_MODE_ARCH
     bool
