@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -23,7 +23,27 @@
 #include "nvs_flash.h"
 #include "esp_log.h"
 
+#include "sdkconfig.h"
+
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+#include "esp_psa_its.h"
+#endif
+
 static const char *TAG = "esp_psa_its";
+
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+/* Single registered custom backend (NULL when none registered) */
+static const esp_psa_its_custom_ops_t *s_custom_ops = NULL;
+
+/**
+ * Check if a UID falls within the custom backend range.
+ */
+static inline bool uid_in_custom_range(psa_storage_uid_t uid)
+{
+    return (uid >= CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN &&
+            uid <= CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MAX);
+}
+#endif /* CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND */
 
 /* NVS namespace for PSA ITS */
 #define PSA_ITS_NVS_NAMESPACE "psa_its"
@@ -106,6 +126,15 @@ psa_status_t psa_its_get_info(psa_storage_uid_t uid,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+    if (uid_in_custom_range(uid)) {
+        if (s_custom_ops == NULL || s_custom_ops->get_info == NULL) {
+            return PSA_ERROR_STORAGE_FAILURE;
+        }
+        return s_custom_ops->get_info(s_custom_ops->ctx, uid, p_info);
+    }
+#endif
+
     /* Convert UID to NVS key */
     uid_to_nvs_key(uid, nvs_key);
 
@@ -187,6 +216,16 @@ psa_status_t psa_its_get(psa_storage_uid_t uid,
     if (p_data == NULL && data_length != 0) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+    if (uid_in_custom_range(uid)) {
+        if (s_custom_ops == NULL || s_custom_ops->get == NULL) {
+            return PSA_ERROR_STORAGE_FAILURE;
+        }
+        return s_custom_ops->get(s_custom_ops->ctx, uid, data_offset,
+                                 data_length, p_data, p_data_length);
+    }
+#endif
 
     /* Convert UID to NVS key */
     uid_to_nvs_key(uid, nvs_key);
@@ -297,6 +336,16 @@ psa_status_t psa_its_set(psa_storage_uid_t uid,
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+    if (uid_in_custom_range(uid)) {
+        if (s_custom_ops == NULL || s_custom_ops->set == NULL) {
+            return PSA_ERROR_STORAGE_FAILURE;
+        }
+        return s_custom_ops->set(s_custom_ops->ctx, uid, data_length,
+                                 p_data, create_flags);
+    }
+#endif
+
     /* Convert UID to NVS key */
     uid_to_nvs_key(uid, nvs_key);
 
@@ -383,6 +432,15 @@ psa_status_t psa_its_remove(psa_storage_uid_t uid)
     psa_its_entry_t *existing_entry = NULL;
     psa_status_t status = PSA_ERROR_STORAGE_FAILURE;
 
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+    if (uid_in_custom_range(uid)) {
+        if (s_custom_ops == NULL || s_custom_ops->remove == NULL) {
+            return PSA_ERROR_STORAGE_FAILURE;
+        }
+        return s_custom_ops->remove(s_custom_ops->ctx, uid);
+    }
+#endif
+
     /* Convert UID to NVS key */
     uid_to_nvs_key(uid, nvs_key);
 
@@ -451,3 +509,30 @@ exit:
     nvs_close(handle);
     return status;
 }
+
+#if CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+psa_status_t esp_psa_its_register_custom_backend(const esp_psa_its_custom_ops_t *ops)
+{
+    if (ops == NULL || ops->set == NULL || ops->get == NULL ||
+        ops->get_info == NULL || ops->remove == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (s_custom_ops != NULL) {
+        return PSA_ERROR_NOT_PERMITTED;
+    }
+
+    s_custom_ops = ops;
+    return PSA_SUCCESS;
+}
+
+psa_status_t esp_psa_its_unregister_custom_backend(void)
+{
+    if (s_custom_ops == NULL) {
+        return PSA_ERROR_DOES_NOT_EXIST;
+    }
+
+    s_custom_ops = NULL;
+    return PSA_SUCCESS;
+}
+#endif

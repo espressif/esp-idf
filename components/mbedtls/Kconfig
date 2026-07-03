@@ -30,6 +30,38 @@ menu "mbedTLS"
                 which is added through vfs component for ESP32 based targets or by
                 the host system when the target is Linux.
 
+        config MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+            bool "Enable custom storage backend for PSA ITS"
+            default n
+            help
+                Enable support for registering a custom storage backend that
+                handles PSA ITS operations for keys in a reserved UID range.
+                When enabled, users can call esp_psa_its_register_custom_backend()
+                to route storage operations for UIDs in the configured range to
+                their own implementation. UIDs outside the range continue using
+                the default NVS backend.
+
+        config MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN
+            hex "Minimum UID for custom backend range"
+            depends on MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+            default 0x30000000
+            range 0x00000001 0x3FFFFFFF
+            help
+                The minimum UID value (inclusive) that will be routed to the
+                custom storage backend. Must be within the PSA user key ID
+                range (0x00000001 - 0x3FFFFFFF).
+
+        config MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MAX
+            hex "Maximum UID for custom backend range"
+            depends on MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND
+            default 0x3FFFFFFF
+            range MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN 0x3FFFFFFF
+            help
+                The maximum UID value (inclusive) that will be routed to the
+                custom storage backend. Must be >= the minimum UID and within
+                the PSA user key ID range (0x00000001 - 0x3FFFFFFF); the lower
+                bound is enforced by Kconfig.
+
         config MBEDTLS_THREADING_C
             bool "Enable the threading abstraction layer"
             default y
