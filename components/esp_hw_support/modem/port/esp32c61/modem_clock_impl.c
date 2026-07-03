@@ -12,14 +12,15 @@
 
 /* Clock dependency definitions */
 #define WIFI_CLOCK_DEPS                     ( MODEM_CLOCKS( WIFI_MAC, WIFI_APB, WIFI_BB, WIFI_BB_44M, COEXIST ) )
-#define BLE_CLOCK_DEPS                      ( MODEM_CLOCKS( BLE_MAC, BT_I154_COMMON_BB, ETM, COEXIST ) )
+#define BLE_CLOCK_DEPS                      ( MODEM_CLOCKS( BLE_MAC, BT_I154_COMMON_BB, ETM, COEXIST, BT_APB ) )
+#define BT_APB_CLOCK_DEPS                   ( MODEM_CLOCKS( BT_APB, ETM ) )
 #define COEXIST_CLOCK_DEPS                  ( MODEM_CLOCKS( COEXIST ) )
 #define I2C_ANA_MST_CLOCK_DEPS              ( MODEM_CLOCKS( I2C_MASTER ) )
 #define PHY_CLOCK_DEPS                      ( MODEM_CLOCKS( MODEM_ADC_COMMON_FE, MODEM_PRIVATE_FE ) | I2C_ANA_MST_CLOCK_DEPS )
 #define MODEM_ETM_CLOCK_DEPS                ( MODEM_CLOCKS( ETM ) )
 #define MODEM_ADC_COMMON_FE_CLOCK_DEPS      ( MODEM_CLOCKS( MODEM_ADC_COMMON_FE ) )
 #define PHY_CALIBRATION_WIFI_CLOCK_DEPS     ( MODEM_CLOCKS( WIFI_APB, WIFI_BB, WIFI_BB_44M ) )
-#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS  ( MODEM_CLOCKS( WIFI_APB, WIFI_BB_44M, BT_I154_COMMON_BB ) )
+#define PHY_CALIBRATION_BT_I154_CLOCK_DEPS  ( MODEM_CLOCKS( WIFI_APB, WIFI_BB_44M, BT_I154_COMMON_BB, BT_APB ) )
 #define PHY_CALIBRATION_CLOCK_DEPS          ( PHY_CALIBRATION_WIFI_CLOCK_DEPS | PHY_CALIBRATION_BT_I154_CLOCK_DEPS )
 
 uint32_t IRAM_ATTR modem_clock_get_module_deps(shared_periph_module_t module)
@@ -34,6 +35,7 @@ uint32_t IRAM_ATTR modem_clock_get_module_deps(shared_periph_module_t module)
         case PERIPH_BT_MODULE:                  deps = BLE_CLOCK_DEPS;                  break;
         case PERIPH_PHY_CALIBRATION_MODULE:     deps = PHY_CALIBRATION_CLOCK_DEPS;      break;
         case PERIPH_MODEM_ETM_MODULE:           deps = MODEM_ETM_CLOCK_DEPS;            break;
+        case PERIPH_BT_APB_MODULE:              deps = BT_APB_CLOCK_DEPS;               break;
         default:
             assert(0);
     }
@@ -86,6 +88,18 @@ static esp_err_t IRAM_ATTR modem_clock_ble_mac_check_enable(modem_clock_context_
 }
 #endif
 
+static void IRAM_ATTR modem_clock_bt_apb_configure(modem_clock_context_t *ctx, bool enable)
+{
+    modem_syscon_ll_enable_bt_apb_clock(ctx->hal->syscon_dev, enable);
+}
+
+#if CONFIG_ESP_MODEM_CLOCK_ENABLE_CHECKING
+static esp_err_t IRAM_ATTR modem_clock_bt_apb_check_enable(modem_clock_context_t *ctx)
+{
+    return modem_syscon_ll_bt_apb_clock_is_enabled(ctx->hal->syscon_dev) ? ESP_OK : ESP_FAIL;
+}
+#endif
+
 static void IRAM_ATTR modem_clock_wifi_apb_configure(modem_clock_context_t *ctx, bool enable)
 {
     if (enable || !(ctx->modem_status & MODEM_STATUS_WIFI_INITED)) {
@@ -114,17 +128,13 @@ static esp_err_t IRAM_ATTR modem_clock_wifi_bb_44m_check_enable(modem_clock_cont
 
 static void IRAM_ATTR modem_clock_ble_i154_bb_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_syscon_ll_enable_bt_apb_clock(ctx->hal->syscon_dev, enable);
-    modem_syscon_ll_enable_bt_clock(ctx->hal->syscon_dev, enable);
+    modem_syscon_ll_enable_bt_bb_clock(ctx->hal->syscon_dev, enable);
 }
 
 #if CONFIG_ESP_MODEM_CLOCK_ENABLE_CHECKING
 static esp_err_t IRAM_ATTR modem_clock_ble_i154_bb_check_enable(modem_clock_context_t *ctx)
 {
-    bool all_clock_enabled = true;
-    all_clock_enabled &= modem_syscon_ll_bt_apb_clock_is_enabled(ctx->hal->syscon_dev);
-    all_clock_enabled &= modem_syscon_ll_bt_clock_is_enabled(ctx->hal->syscon_dev);
-    return all_clock_enabled ? ESP_OK : ESP_FAIL;
+    return modem_syscon_ll_bt_bb_clock_is_enabled(ctx->hal->syscon_dev) ? ESP_OK : ESP_FAIL;
 }
 #endif
 
@@ -215,6 +225,7 @@ static void IRAM_ATTR modem_clock_configure_impl(modem_clock_context_t *ctx, int
         : (dev_id == MODEM_CLOCK_WIFI_BB)               ? modem_clock_wifi_bb_configure
         : (dev_id == MODEM_CLOCK_ETM)                   ? modem_clock_etm_configure
         : (dev_id == MODEM_CLOCK_BLE_MAC)               ? modem_clock_ble_mac_configure
+        : (dev_id == MODEM_CLOCK_BT_APB)                ? modem_clock_bt_apb_configure
         : (dev_id == MODEM_CLOCK_BT_I154_COMMON_BB)     ? modem_clock_ble_i154_bb_configure
         : (dev_id == MODEM_CLOCK_DATADUMP)              ? modem_clock_data_dump_configure
         : NULL);
@@ -238,6 +249,7 @@ static esp_err_t IRAM_ATTR modem_clock_check_impl(modem_clock_context_t *ctx, in
         : (dev_id == MODEM_CLOCK_WIFI_BB)               ? modem_clock_wifi_bb_check_enable
         : (dev_id == MODEM_CLOCK_ETM)                   ? modem_clock_etm_check_enable
         : (dev_id == MODEM_CLOCK_BLE_MAC)               ? modem_clock_ble_mac_check_enable
+        : (dev_id == MODEM_CLOCK_BT_APB)                ? modem_clock_bt_apb_check_enable
         : (dev_id == MODEM_CLOCK_BT_I154_COMMON_BB)     ? modem_clock_ble_i154_bb_check_enable
         : (dev_id == MODEM_CLOCK_DATADUMP)              ? modem_clock_data_dump_check_enable
         : NULL);
