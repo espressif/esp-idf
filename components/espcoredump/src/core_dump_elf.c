@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -497,8 +497,8 @@ static int elf_process_task_data(core_dump_elf_t *self)
     core_dump_task_header_t task_hdr = { 0 };
     core_dump_mem_seg_header_t interrupted_stack = { 0 };
     TaskIterator_t task_iter;
-    uint16_t tasks_num = 0;
-    uint16_t bad_tasks_num = 0;
+    uint16_t written_task_num = 0;
+    uint16_t __attribute__((unused)) bad_tasks_num = 0;
 
     ESP_COREDUMP_LOG_PROCESS("================   Processing task data   ================");
 
@@ -516,7 +516,7 @@ static int elf_process_task_data(core_dump_elf_t *self)
         if (ret > 0) {
             elf_len += ret;
         }
-        tasks_num++;
+        written_task_num++;
     }
 
     esp_core_dump_task_iterator_init(&task_iter);
@@ -525,12 +525,11 @@ static int elf_process_task_data(core_dump_elf_t *self)
         if (!task_iter.pxTaskHandle || task_iter.pxTaskHandle == current_task) {
             continue;
         }
-        if (tasks_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
+        if (written_task_num > CONFIG_ESP_COREDUMP_MAX_TASKS_NUM) {
             ESP_COREDUMP_LOG_PROCESS("Reached maximum number of tasks (%d), stopping task data processing",
                                      CONFIG_ESP_COREDUMP_MAX_TASKS_NUM);
             break;
         }
-        tasks_num++;
         if (!esp_core_dump_get_task_snapshot(task_iter.pxTaskHandle, &task_hdr, NULL)) {
             bad_tasks_num++;
             continue;
@@ -539,8 +538,9 @@ static int elf_process_task_data(core_dump_elf_t *self)
         ELF_CHECK_ERR((ret > 0), ret,
                       "Task %x, TCB write failed, return (%d).", task_iter.pxTaskHandle, ret);
         elf_len += ret;
+        written_task_num++;
     }
-    ESP_COREDUMP_LOG_PROCESS("Found %d bad task out of %d", bad_tasks_num, tasks_num);
+    ESP_COREDUMP_LOG_PROCESS("Found %d bad task out of %d", bad_tasks_num, bad_tasks_num + written_task_num);
 
     return elf_len;
 }
@@ -797,7 +797,7 @@ esp_err_t esp_core_dump_write_elf(void)
     core_dump_elf_t self = { 0 };
     core_dump_header_t dump_hdr = { 0 };
     int tot_len = sizeof(dump_hdr);
-    int write_len = sizeof(dump_hdr);
+    int __attribute__((unused)) write_len = sizeof(dump_hdr);
 
     esp_err_t err = esp_core_dump_write_init();
     if (err != ESP_OK) {
