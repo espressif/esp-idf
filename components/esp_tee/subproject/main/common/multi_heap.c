@@ -107,7 +107,10 @@ void *esp_tee_heap_malloc(size_t size)
 
 void *esp_tee_heap_calloc(size_t n, size_t size)
 {
-    size_t reg_size = n * size;
+    size_t reg_size;
+    if (__builtin_mul_overflow(n, size, &reg_size)) {
+        return NULL;
+    }
     void *ptr = esp_tee_heap_malloc(reg_size);
     if (ptr != NULL) {
         memset(ptr, 0x00, reg_size);
@@ -239,7 +242,10 @@ void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps)
 void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps)
 {
     (void) caps;
-    uint32_t reg_size = n * size;
+    size_t reg_size;
+    if (__builtin_mul_overflow(n, size, &reg_size)) {
+        return NULL;
+    }
 
     void *ptr = esp_tee_heap_aligned_alloc(reg_size, alignment);
     if (ptr != NULL) {

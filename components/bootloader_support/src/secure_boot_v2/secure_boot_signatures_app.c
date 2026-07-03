@@ -314,7 +314,13 @@ esp_err_t esp_secure_boot_verify_with_efuse_digest_index(int efuse_digest_index,
     // Read key digests from efuse
     esp_secure_boot_key_digests_t efuse_key_digests;
     memset(&efuse_key_digests, 0, sizeof(esp_secure_boot_key_digests_t));
-    esp_secure_boot_read_key_digests(&efuse_key_digests);
+    /* A non-revoked slot can still be unprovisioned, leaving its digest pointer NULL even
+     * when the read returns ESP_OK; comparing it would dereference NULL in memcmp(). Check
+     * both the read result and the specific slot (matches get_secure_boot_key_digests()). */
+    if (esp_secure_boot_read_key_digests(&efuse_key_digests) != ESP_OK ||
+            efuse_key_digests.key_digests[efuse_digest_index] == NULL) {
+        return ESP_FAIL;
+    }
 
     for (int i = 0; i < img_key_digests.num_digests; i++) {
         if (!memcmp(img_key_digests.key_digests[i], efuse_key_digests.key_digests[efuse_digest_index], ESP_SECURE_BOOT_KEY_DIGEST_LEN)) {
