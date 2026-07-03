@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,16 +13,12 @@
 #include "esp_cache.h"
 #include "esp_crypto_dma.h"
 #include "esp_crypto_lock.h"
-#include "esp_memory_utils.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
-#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
-#include "hal/efuse_hal.h"
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
-
 #if SOC_AXI_GDMA_SUPPORTED
 #include "hal/axi_dma_ll.h"
+#include "hal/gdma_ll.h"
 #elif SOC_AHB_GDMA_VERSION == 1
 #include "hal/gdma_ll.h"
 #elif SOC_AHB_GDMA_VERSION == 2
@@ -117,23 +113,6 @@ err:
     return ret;
 }
 
-
-/* The external memory ecc-aes access must be enabled when there exists
-   at least one buffer in the DMA descriptors that resides in external memory. */
-#if (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED)
-static bool check_dma_descs_need_ext_mem_ecc_aes_access(const crypto_dma_desc_t *dmadesc)
-{
-    crypto_dma_desc_t* desc = (crypto_dma_desc_t*) dmadesc;
-    while (desc) {
-        if (esp_ptr_in_drom(desc->buffer) || esp_ptr_external_ram(desc->buffer)) {
-            return true;
-        }
-        desc = desc->next;
-    }
-    return false;
-}
-#endif /* (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED) */
-
 esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, crypto_dma_user_t peripheral)
 {
     int rx_ch_id = 0;
@@ -176,23 +155,6 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
     ahb_dma_ll_rx_reset_channel(&AHB_DMA, rx_ch_id);
 #endif /* SOC_AXI_GDMA_SUPPORTED */
 
-/* When GDMA operations are carried out using external memory with external memory encryption enabled,
-   we need to enable AXI-DMA's AES-ECC mean access bit. */
-#if (SOC_GDMA_EXT_MEM_ENC_ALIGNMENT && SOC_AXI_GDMA_SUPPORTED)
-    if (efuse_hal_flash_encryption_enabled()) {
-        int tx_ch_id = 0;
-        gdma_get_channel_id(s_tx_channel, &tx_ch_id);
-
-        if (check_dma_descs_need_ext_mem_ecc_aes_access(input) || check_dma_descs_need_ext_mem_ecc_aes_access(output)) {
-            axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(&AXI_DMA, rx_ch_id, true);
-            axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(&AXI_DMA, tx_ch_id, true);
-        } else {
-            axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(&AXI_DMA, rx_ch_id, false);
-            axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(&AXI_DMA, tx_ch_id, false);
-        }
-    }
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
-
     gdma_start(s_tx_channel, (intptr_t)input);
     gdma_start(s_rx_channel, (intptr_t)output);
 
@@ -204,11 +166,11 @@ bool esp_crypto_shared_gdma_done(void)
 {
     int rx_ch_id = 0;
     gdma_get_channel_id(s_rx_channel, &rx_ch_id);
-    while (1) {
-        if ((axi_dma_ll_rx_get_interrupt_status(&AXI_DMA, rx_ch_id, true) & 1)) {
-            break;
-        }
+    uint32_t intr_status = 0;
+    while (!(intr_status & GDMA_LL_EVENT_RX_SUC_EOF)) {
+        intr_status = axi_dma_ll_rx_get_interrupt_status(&AXI_DMA, rx_ch_id, true);
     }
+    axi_dma_ll_rx_clear_interrupt_status(&AXI_DMA, rx_ch_id, intr_status);
     return true;
 }
 #endif /* SOC_AXI_GDMA_SUPPORTED */
