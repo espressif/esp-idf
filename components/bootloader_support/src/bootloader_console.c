@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,8 +54,9 @@ void bootloader_console_init(void)
     const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
     const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
 
-    // Switch to the new UART (this just changes UART number used for esp_rom_printf in ROM code).
-    esp_rom_output_set_as_console(uart_num);
+    // Switch to the new UART
+    esp_rom_output_set_as_console(uart_num); // changes UART number used for esp_rom_printf in ROM code
+    esp_rom_output_switch_buffer(uart_num);
 
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
