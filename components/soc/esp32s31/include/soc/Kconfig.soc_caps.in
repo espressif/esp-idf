@@ -1771,6 +1771,10 @@ config SOC_I2S_SUPPORTS_TX_SYNC_CNT
     bool
     default y
 
+config SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_RX_RECOMB
     bool
     default y

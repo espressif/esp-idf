@@ -39,7 +39,7 @@ static esp_err_t s_i2s_del_etm_task(esp_etm_task_t *task)
     if (i2s_task->task_type == I2S_ETM_TASK_START) {
         // The i2s start no longer be controlled by etm
         i2s_task->handle->is_etm_start = false;
-    } else {
+    } else if (i2s_task->task_type == I2S_ETM_TASK_STOP) {
         // The i2s stop no longer be controlled by etm
         i2s_task->handle->is_etm_stop = false;
     }
@@ -104,7 +104,7 @@ esp_err_t i2s_new_etm_task(i2s_chan_handle_t handle, const i2s_etm_task_config_t
     if (config->task_type == I2S_ETM_TASK_START) {
         // The i2s start will be controlled by etm
         handle->is_etm_start = true;
-    } else {
+    } else if (config->task_type == I2S_ETM_TASK_STOP) {
         // The i2s stop will be controlled by etm
         handle->is_etm_stop = true;
     }

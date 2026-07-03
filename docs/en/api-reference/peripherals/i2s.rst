@@ -313,6 +313,109 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
 - :cpp:func:`i2s_channel_preload_data`: Preloading audio data into the I2S internal cache, enabling the TX channel to immediately send data upon activation, thereby reducing the initial audio output delay.
 - :cpp:func:`i2s_channel_tune_rate`: Dynamically fine-tuning the audio rate at runtime to match the speed of the audio data producer and consumer, thereby preventing the accumulation or shortage of intermediate buffered data that caused by rate mismatches.
 
+.. only:: SOC_I2S_SUPPORTS_TX_SYNC_CNT
+
+    - :cpp:func:`i2s_channel_get_sync_count`: Read the TX synchronization counters through
+      :cpp:type:`i2s_sync_count_t`. When TX FIFO synchronization is supported, ``diff_count`` is also returned.
+      This API can also actively clear the counters through the ``reset`` argument.
+
+.. only:: SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+
+    TX FIFO Synchronization
+    """""""""""""""""""""""
+
+    {IDF_TARGET_NAME} supports I2S TX FIFO synchronization. It can periodically trigger ``I2S_ETM_TASK_SYNC_FIFO`` task through ETM to check the difference between the actual TX FIFO data count and the expected count. This feature is useful when multiple I2S TX ports or an external timing source need to stay synchronized.
+
+    TX FIFO synchronization related APIs include:
+
+    - :cpp:func:`i2s_channel_get_sync_count`: Read the TX synchronization counters through :cpp:type:`i2s_sync_count_t`.
+      When TX FIFO synchronization is supported, ``diff_count`` is also returned as ``I2S_TX_FIFO_CNT - I2S_TX_FIFO_IDEAL_CNT``.
+    - :cpp:func:`i2s_channel_config_tx_fifo_sync`: Configure the expected count, automatic supplement threshold,
+      manual supplement threshold, and hardware supplement mode. It can be called while the TX channel is running,
+      but TX FIFO synchronization must be disabled.
+    - :cpp:func:`i2s_channel_enable_tx_fifo_sync`: Enable or disable TX FIFO synchronization. When enabled,
+      both automatic hardware data supplementation and manual interrupt are activated simultaneously.
+      When disabled, both are deactivated. Enabling TX FIFO synchronization resets the TX FIFO/BCLK synchronization
+      counters. This API must be called after :cpp:func:`i2s_channel_config_tx_fifo_sync`.
+    - :cpp:func:`i2s_channel_register_event_callback`: Register the manual supplement threshold interrupt callback. When
+      ``diff_count`` exceeds the manual supplement threshold, the driver calls this callback in the ISR and provides
+      ``diff_count`` through :cpp:type:`i2s_sync_event_data_t`. Registering the callback only updates the handler;
+      the TX sync interrupt's enable/disable is controlled by :cpp:func:`i2s_channel_enable_tx_fifo_sync`.
+
+    The typical usage steps are:
+
+    1. Create and initialize an I2S TX channel.
+    2. Call :cpp:func:`i2s_channel_config_tx_fifo_sync` to configure :cpp:type:`i2s_tx_fifo_sync_config_t`. ``ideal_cnt``
+       is the expected number of transmitted data units at each ETM synchronization check. This step can be performed while the TX channel is running, but TX FIFO synchronization must be disabled before reconfiguration. ``auto_suppl_thresh`` is
+       the automatic hardware supplement threshold and must be smaller than ``manual_suppl_thresh``.
+       ``manual_suppl_thresh`` is the threshold for triggering the callback for manual handling. If the difference
+       exceeds the automatic supplement threshold but has not reached the manual supplement threshold, hardware
+       automatically supplements or deletes the corresponding amount of data to synchronize with ``ideal_cnt``.
+    3. To handle severe out-of-sync conditions, call :cpp:func:`i2s_channel_register_event_callback` to register a callback.
+    4. Call :cpp:func:`i2s_channel_enable_tx_fifo_sync` with ``enable`` set to ``true`` to activate both automatic
+       hardware supplementation and manual interrupt simultaneously. This call resets the TX FIFO/BCLK synchronization
+       counters, so the first ETM synchronization check uses a new count window.
+    5. Call :cpp:func:`i2s_new_etm_task` to create the ``I2S_ETM_TASK_SYNC_FIFO`` task, and connect an external ETM event to this task.
+    6. Enable the ETM channel and I2S TX channel, so that ETM events periodically trigger synchronization checks.
+
+    The following example shows how to use a GPTimer alarm event to trigger the I2S TX FIFO synchronization check, and
+    get ``diff_count`` in the manual supplement threshold interrupt:
+
+    .. code-block:: c
+
+        #include "driver/i2s_common.h"
+        #include "driver/i2s_etm.h"
+        #include "driver/gptimer.h"
+        #include "esp_etm.h"
+
+        /* Assume the I2S TX channel, GPTimer, and ETM channel have been created and initialized */
+        i2s_chan_handle_t tx_handle;
+        gptimer_handle_t timer;
+        esp_etm_channel_handle_t etm_channel;
+
+        static bool IRAM_ATTR i2s_tx_sync_callback(i2s_chan_handle_t handle,
+                                                   const i2s_sync_event_data_t *event,
+                                                   void *user_ctx)
+        {
+            // Applications can use event->diff_count to adjust the data source, choose a compensation policy, or report it to upper layers.
+            return false;
+        }
+
+        i2s_tx_fifo_sync_config_t sync_cfg = {
+            .ideal_cnt = 1000,
+            .manual_suppl_thresh = 64,
+            .auto_suppl_thresh = 32,
+            .suppl_mode = I2S_TX_FIFO_SYNC_SUPPL_MODE_LAST_DATA,
+        };
+        i2s_event_callbacks_t cbs = {
+            .on_tx_sync_evt = i2s_tx_sync_callback,
+        };
+        i2s_channel_config_tx_fifo_sync(tx_handle, &sync_cfg);
+        i2s_channel_register_event_callback(tx_handle, &cbs, NULL);
+        i2s_channel_enable_tx_fifo_sync(tx_handle, true);
+
+        i2s_etm_task_config_t i2s_task_cfg = {
+            .task_type = I2S_ETM_TASK_SYNC_FIFO,
+        };
+        esp_etm_task_handle_t i2s_sync_task = NULL;
+        i2s_new_etm_task(tx_handle, &i2s_task_cfg, &i2s_sync_task);
+
+        gptimer_etm_event_config_t timer_event_cfg = {
+            .event_type = GPTIMER_ETM_EVENT_ALARM_MATCH,
+        };
+        esp_etm_event_handle_t timer_event = NULL;
+        gptimer_new_etm_event(timer, &timer_event_cfg, &timer_event);
+
+        esp_etm_channel_connect(etm_channel, timer_event, i2s_sync_task);
+        esp_etm_channel_enable(etm_channel);
+
+    .. note::
+
+        After ``I2S_ETM_TASK_SYNC_FIFO`` is triggered, hardware automatically clears the TX FIFO/BCLK synchronization counters.
+        To avoid a synchronization check using partially updated configuration, call :cpp:func:`i2s_channel_enable_tx_fifo_sync`
+        with ``enable`` set to ``false`` before reconfiguring TX FIFO synchronization. If an ETM event source may still
+        trigger during reconfiguration, disable the ETM channel or pause the event source as needed.
+
 .. _i2s-iram-safe:
 
 IRAM Safe
