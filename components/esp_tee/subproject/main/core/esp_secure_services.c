@@ -592,17 +592,24 @@ int _ss_esp_tee_ota_end(void)
  */
 esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 {
+    bool valid_arg = !esp_tee_sec_storage_is_key_tee_owned(key_id);
+    if (!valid_arg) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_arg);
+
     return esp_tee_sec_storage_clear_key(key_id);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 {
-    bool valid_addr = esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t));
-
-    if (!valid_addr) {
+    bool valid_arg = esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
+                     !(cfg->flags & SEC_STORAGE_FLAG_TEE_ONLY) &&
+                     !esp_tee_sec_storage_is_key_tee_owned(cfg->id);
+    if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(valid_arg);
 
     return esp_tee_sec_storage_gen_key(cfg);
 }

@@ -93,7 +93,7 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
 
     esp_err_t err = esp_tee_sec_storage_clear_key(cfg.id);
     if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) {
-        ESP_LOGE(TAG, "Failed to clear key %d!", cfg.id);
+        ESP_LOGE(TAG, "Failed to clear key %s!", cfg.id);
         goto exit;
     }
 
@@ -186,7 +186,7 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
 
     err = esp_tee_sec_storage_clear_key(cfg.id);
     if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) {
-        ESP_LOGE(TAG, "Failed to clear key %d!", cfg.id);
+        ESP_LOGE(TAG, "Failed to clear key %s!", cfg.id);
         goto exit;
     }
 

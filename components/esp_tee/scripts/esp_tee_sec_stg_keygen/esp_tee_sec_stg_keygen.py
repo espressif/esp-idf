@@ -31,6 +31,7 @@ class KeyType(Enum):
 class Flags(IntFlag):
     NONE = 0x00000000
     WRITE_ONCE = 0x00000001
+    TEE_ONLY = 0x00000002
 
 
 # === Key Generators ===
@@ -112,6 +113,11 @@ def parse_args() -> argparse.Namespace:
         action='store_true',
         help='make key persistent - cannot be modified or deleted once written',
     )
+    parser.add_argument(
+        '--tee-only',
+        action='store_true',
+        help='mark key as owned exclusively by the TEE - the REE cannot use, generate or clear it',
+    )
     return parser.parse_args()
 
 
@@ -122,12 +128,16 @@ def main() -> None:
     flags = Flags.NONE
     if args.write_once:
         flags |= Flags.WRITE_ONCE
+    if args.tee_only:
+        flags |= Flags.TEE_ONLY
 
     print(f'[+] Generating key of type: {key_type.name} (value: {key_type.value})')
     if args.input:
         print(f'[+] Using user-provided key file: {args.input}')
     if args.write_once:
         print('[+] WRITE_ONCE flag is set')
+    if args.tee_only:
+        print('[+] TEE_ONLY flag is set')
 
     key_data = generate_key_data(key_type, flags, args.input)
 
