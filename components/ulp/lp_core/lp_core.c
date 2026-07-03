@@ -165,15 +165,8 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     lp_core_ll_rst_at_sleep_enable(true);
 #endif
 
-    /* Set wake-up sources */
-    lp_core_ll_set_wakeup_source(lp_core_get_wakeup_source_hw_flags(cfg->wakeup_source));
-
     /* Enable JTAG debugging */
     lp_core_ll_debug_module_enable(true);
-
-    if (cfg->wakeup_source & ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU) {
-        lp_core_ll_hp_wake_lp();
-    }
 
 #if SOC_ULP_LP_UART_SUPPORTED
     if (cfg->wakeup_source & ULP_LP_CORE_WAKEUP_SOURCE_LP_UART) {
@@ -195,6 +188,13 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         ulp_lp_core_lp_timer_set_wakeup_time(cfg->lp_timer_sleep_duration_us);
     }
 #endif
+
+    /* Set wake-up sources */
+    lp_core_ll_set_wakeup_source(lp_core_get_wakeup_source_hw_flags(cfg->wakeup_source));
+
+    if (cfg->wakeup_source & ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU) {
+        lp_core_ll_hp_wake_lp();
+    }
 
     return ESP_OK;
 }
