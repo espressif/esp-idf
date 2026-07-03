@@ -281,6 +281,16 @@ uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list)
     return (uintptr_t)(list->items);
 }
 
+uintptr_t gdma_link_get_item_addr(gdma_link_list_handle_t list, int item_index)
+{
+    if (!list) {
+        return 0;
+    }
+    int num_items = list->num_items;
+    item_index = (item_index % num_items + num_items) % num_items;
+    return (uintptr_t)(list->items + item_index * list->item_size);
+}
+
 esp_err_t gdma_link_concat(gdma_link_list_handle_t first_link, int first_link_item_index, gdma_link_list_handle_t second_link, int second_link_item_index)
 {
     if (!first_link) {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,6 +116,19 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
  *      - NULL: Get the address failed
  */
 uintptr_t gdma_link_get_head_addr(gdma_link_list_handle_t list);
+
+/**
+ * @brief Get the address of a specific link list item by index
+ * @note  The returned address is the cached address used by the DMA hardware (same convention as `gdma_link_get_head_addr`).
+ *        It can be passed directly to the DMA start function to resume transmission from a specific descriptor.
+ *
+ * @param[in] list       Link list handle, allocated by `gdma_new_link_list`
+ * @param[in] item_index Index of the link list item (wraps around if out of range)
+ * @return
+ *      - Address of the specified item
+ *      - 0: Invalid handle
+ */
+uintptr_t gdma_link_get_item_addr(gdma_link_list_handle_t list, int item_index);
 
 /**
  * @brief Concatenate two link lists as follows:
