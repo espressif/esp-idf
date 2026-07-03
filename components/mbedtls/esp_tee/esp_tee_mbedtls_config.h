@@ -61,12 +61,10 @@
 #endif
 #define PSA_WANT_ECC_SECP_R1_256 1
 
-#ifdef CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
-#define PSA_WANT_ALG_DETERMINISTIC_ECDSA 1
-#else
+/* ECDSA signatures over TEE secure-storage keys are compulsorily
+ * non-deterministic (randomized nonce) */
 #undef PSA_WANT_ALG_DETERMINISTIC_ECDSA
 #undef MBEDTLS_HMAC_DRBG_C
-#endif
 
 #if SOC_SHA_SUPPORTED
 #define ESP_SHA_DRIVER_ENABLED

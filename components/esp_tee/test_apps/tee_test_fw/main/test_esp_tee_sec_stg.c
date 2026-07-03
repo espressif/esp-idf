@@ -145,6 +145,43 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp256r1)", "[sec_stora
     }
 }
 
+TEST_CASE("Test TEE Secure Storage - Signatures are non-deterministic (ecdsa_secp256r1)", "[sec_storage]")
+{
+    const size_t sig_len = 2 * ECDSA_SECP256R1_KEY_LEN;
+
+    uint8_t msg_digest[SHA256_DIGEST_SZ];
+    esp_fill_random(msg_digest, sizeof(msg_digest));
+
+    esp_tee_sec_storage_key_cfg_t key_cfg = {
+        .id = "ecdsa_nondet",
+        .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1
+    };
+
+    esp_err_t err = esp_tee_sec_storage_clear_key(key_cfg.id);
+    TEST_ASSERT_TRUE(err == ESP_OK || err == ESP_ERR_NOT_FOUND);
+    TEST_ESP_OK(esp_tee_sec_storage_gen_key(&key_cfg));
+
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
+    TEST_ESP_OK(esp_tee_sec_storage_ecdsa_get_pubkey(&key_cfg, &pubkey));
+
+    uint8_t signatures[MAX_SEC_STG_ITER][2 * ECDSA_SECP256R1_KEY_LEN];
+
+    for (unsigned int i = 0; i < MAX_SEC_STG_ITER; i++) {
+        esp_tee_sec_storage_ecdsa_sign_t sign = {};
+        TEST_ESP_OK(esp_tee_sec_storage_ecdsa_sign(&key_cfg, msg_digest, sizeof(msg_digest), &sign));
+
+        TEST_ESP_OK(verify_ecdsa_sign(key_cfg.type, msg_digest, sizeof(msg_digest), &pubkey, &sign));
+
+        for (unsigned int j = 0; j < i; j++) {
+            TEST_ASSERT_TRUE_MESSAGE(memcmp(sign.signature, signatures[j], sig_len) != 0,
+                                     "ECDSA signature repeated - deterministic signing detected");
+        }
+        memcpy(signatures[i], sign.signature, sig_len);
+    }
+
+    TEST_ESP_OK(esp_tee_sec_storage_clear_key(key_cfg.id));
+}
+
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
 TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp384r1)", "[sec_storage]")
 {
@@ -685,21 +722,6 @@ static void test_ecdsa_sign(esp_ecdsa_curve_t curve)
 
     TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
     TEST_ASSERT_EQUAL(signature_len, 2 * key_len);
-
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
-    uint8_t signature_det_verify[2 * ECDSA_SECP384R1_KEY_LEN];
-    size_t signature_det_verify_len = 0;
-
-    status = psa_sign_hash(priv_key_id,
-                           alg,
-                           sha, sha_len,
-                           signature_det_verify, 2 * key_len,
-                           &signature_det_verify_len);
-
-    TEST_ASSERT_EQUAL_HEX32(PSA_SUCCESS, status);
-    TEST_ASSERT_EQUAL(signature_det_verify_len, signature_len);
-    TEST_ASSERT_EQUAL_HEX8_ARRAY(signature, signature_det_verify, signature_len);
-#endif
 
     psa_set_key_type(&pub_key_attr, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_bits(&pub_key_attr, key_len * 8);
