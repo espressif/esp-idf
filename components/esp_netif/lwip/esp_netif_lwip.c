@@ -1615,11 +1615,11 @@ static esp_err_t esp_netif_set_hostname_api(esp_netif_api_msg_t *msg)
     esp_netif_t *esp_netif = msg->esp_netif;
     const char *hostname = msg->data;
 
-    ESP_LOGD(TAG, "%s esp_netif:%p hostname %s", __func__, esp_netif, hostname);
-
-    if (!esp_netif) {
+    if (!esp_netif || hostname == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    ESP_LOGV(TAG, "%s esp_netif:%p hostname %s", __func__, esp_netif, hostname);
 
 #if LWIP_NETIF_HOSTNAME
 
