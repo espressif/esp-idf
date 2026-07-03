@@ -11,6 +11,7 @@
 #include <esp_types.h>
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
+#include "soc/pmu_icg_mapping.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -324,6 +325,12 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
+    struct {
+        uint32_t clock[2];
+    } icg_func;
+    struct {
+        uint32_t clock[2];
+    } icg_apb;
 } pmu_sleep_digital_config_t;
 
 
@@ -334,17 +341,22 @@ typedef struct {
         .hp_pad_hold_all = 1,                                               \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1,   \
         .c_channel       = (sleep_flags & PMU_SLEEP_PD_TOP) ? 0 : 1         \
-    }                                                                       \
+    },                                                                      \
+    .icg_func = { .clock = { 0, 0 } },                                      \
 }
 
-#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags) {                \
+#define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) {     \
     .syscntl = {                                                            \
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,      \
         .lp_pad_hold_all = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 1 : 0,      \
         .hp_pad_hold_all = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 1 : 0,      \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1,   \
         .c_channel       = (sleep_flags & PMU_SLEEP_PD_TOP) ? 0 : 1         \
-    }                                                                       \
+    },                                                                      \
+    .icg_func = {                                                           \
+        .clock = { PMU_SLEEP_CLK_ICG_FUNC_LO(clk_flags),                    \
+                   PMU_SLEEP_CLK_ICG_FUNC_HI(clk_flags) }                   \
+    },                                                                      \
 }
 
 typedef struct {

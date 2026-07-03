@@ -33,14 +33,6 @@
     (num) == 2 ? (&UART2) : \
     (num) == 3 ? (&UART3) : \
     (num) == 4 ? (&UART4) : (&LP_UART))
-// Get UART sleep clock with giving uart num
-#define UART_LL_SLEEP_CLOCK(num) \
-    ( ((num) == UART_NUM_0) ? (ESP_SLEEP_CLOCK_UART0) \
-    : ((num) == UART_NUM_1) ? (ESP_SLEEP_CLOCK_UART1) \
-    : ((num) == UART_NUM_2) ? (ESP_SLEEP_CLOCK_UART2) \
-    : ((num) == UART_NUM_3) ? (ESP_SLEEP_CLOCK_UART3) \
-    : ((num) == UART_NUM_4) ? (ESP_SLEEP_CLOCK_UART4) \
-    : (ESP_SLEEP_CLOCK_MAX))
 
 #define UART_LL_REG_FIELD_BIT_SHIFT(hw)     (((hw) == &LP_UART) ? 3 : 0)
 
