@@ -31,12 +31,12 @@
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
 #include "esp_private/esp_flash_internal.h" //For dangerous write protection
+#include "esp_macros.h"
 #if CONFIG_SECURE_SIGNED_DATA_PARTITION
 #include "psa/crypto.h"
 #endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
 
 #define OTA_SLOT(i) (i & 0x0F)
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 /* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */
 typedef struct ota_ops_entry_ {
@@ -212,7 +212,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
             erase_size = partition->size;
         } else {
-            erase_size = ALIGN_UP(image_size, partition->erase_size);
+            erase_size = ESP_ALIGN_UP(image_size, partition->erase_size);
         }
         esp_err_t err = esp_partition_erase_range(partition, 0, erase_size);
         if (err != ESP_OK) {
@@ -549,7 +549,7 @@ static esp_err_t ota_verify_data_partition_signature(const esp_partition_t *part
     uint32_t data_length = ((total_written_size) & ~((SPI_FLASH_SEC_SIZE) - 1)) - SPI_FLASH_SEC_SIZE;
 
     /* Rounding off data length to the upper 4k boundary for hash calculation */
-    uint32_t padded_length = ALIGN_UP(data_length, SPI_FLASH_SEC_SIZE);
+    uint32_t padded_length = ESP_ALIGN_UP(data_length, SPI_FLASH_SEC_SIZE);
 #if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
     err = ota_calc_partition_bin_sha(partition, padded_length, digest, PSA_ALG_SHA_384);
 #else

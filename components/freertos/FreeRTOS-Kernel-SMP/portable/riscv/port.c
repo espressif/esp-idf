@@ -33,6 +33,7 @@
 #include "port_systick.h"
 #include "portmacro.h"
 #include "esp_memory_utils.h"
+#include "esp_macros.h"
 #if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
 #include "esp_timer.h"
 #endif
@@ -351,13 +352,7 @@ void vPortEndScheduler(void)
 
 // ------------------------ Stack --------------------------
 
-/**
- * @brief Align stack pointer in a downward growing stack
- *
- * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
- * This macro is generally used when allocating aligned areas on a downward growing stack.
- */
-#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
+
 
 /**
  * @brief Allocate and initialize GCC TLS area
@@ -401,11 +396,11 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
     extern char _thread_local_bss_start, _thread_local_bss_end;
     const uint32_t tls_data_size = (uint32_t)&_thread_local_data_end - (uint32_t)&_thread_local_data_start;
     const uint32_t tls_bss_size = (uint32_t)&_thread_local_bss_end - (uint32_t)&_thread_local_bss_start;
-    const uint32_t tls_area_size = ALIGNUP(16, tls_data_size + tls_bss_size);
+    const uint32_t tls_area_size = ESP_ALIGN_UP(tls_data_size + tls_bss_size, 16);
     // TODO: check that TLS area fits the stack
 
     // Allocate space for the TLS area on the stack. The area must be aligned to 16-bytes
-    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
+    uxStackPointer = ESP_ALIGN_DOWN(uxStackPointer - (UBaseType_t)tls_area_size, 16);
     // Initialize the TLS data with the initialization values of each TLS variable
     memcpy((void *)uxStackPointer, &_thread_local_data_start, tls_data_size);
     // Initialize the TLS bss with zeroes
@@ -453,7 +448,7 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer,
     - The stack frame must be allocated to a 16-byte aligned address.
     - We use RV_STK_FRMSZ (instead of sizeof(RvExcFrame)) as it rounds up the total size to a multiple of 16.
     */
-    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - RV_STK_FRMSZ);
+    uxStackPointer = ESP_ALIGN_DOWN(uxStackPointer - RV_STK_FRMSZ, 16);
 
     // Clear the entire interrupt stack frame
     RvExcFrame *frame = (RvExcFrame *)uxStackPointer;

@@ -78,10 +78,6 @@ void *multi_heap_find_containing_block(multi_heap_handle_t heap, void *ptr)
 #endif // !CONFIG_HEAP_TLSF_USE_ROM_IMPL
 #endif // !MULTI_HEAP_POISONING
 
-#define ALIGN(X) ((X) & ~(sizeof(void *)-1))
-#define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 typedef struct multi_heap_info {
     void *lock;
     size_t free_bytes;

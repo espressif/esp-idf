@@ -25,9 +25,7 @@
 #include "esp_memory_utils.h"
 #include "gdma_test_utils.h"
 #include "esp_efuse.h"
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+#include "esp_macros.h"
 
 TEST_CASE("GDMA channel allocation", "[GDMA]")
 {
@@ -573,7 +571,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     }
     if (sram_alignment) {
         // do write-back for the source data because it's in the cache
-        TEST_ESP_OK(esp_cache_msync(src_data, ALIGN_UP(data_length, sram_alignment), ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+        TEST_ESP_OK(esp_cache_msync(src_data, ESP_ALIGN_UP(data_length, sram_alignment), ESP_CACHE_MSYNC_FLAG_DIR_C2M));
     }
 
     gdma_buffer_mount_config_t tx_buf_mount_config[] = {

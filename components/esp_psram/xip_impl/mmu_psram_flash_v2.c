@@ -25,9 +25,7 @@
 #include "esp_mmu_map.h"
 #include "esp_heap_caps.h"
 #include "esp_private/image_process.h"
-
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
+#include "esp_macros.h"
 
 /**
  * If using `int`, then for CLANG, with enabled optimization when inlined function is provided with the address of external symbol, the two least bits of the constant used inside that function get cleared.
@@ -102,7 +100,7 @@ static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, 
     }
 
     ESP_EARLY_LOGV(TAG, "mapped_size: 0x%"PRIx32, mapped_size);
-    assert(mapped_size == ALIGN_UP_BY(size, CONFIG_MMU_PAGE_SIZE));
+    assert(mapped_size == ESP_ALIGN_UP(size, CONFIG_MMU_PAGE_SIZE));
 
     return mapped_size;
 }
@@ -110,26 +108,26 @@ static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, 
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 /* As heap memory is allocated in 4-byte aligned manner, we need to align the instruction to 4-byte boundary */
-#define INSTRUCTION_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4)
+#define INSTRUCTION_ALIGNMENT_GAP_START ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, 4)
 /* The end of the instruction is aligned to CONFIG_MMU_PAGE_SIZE boundary as the flash instruction is mapped to PSRAM */
-#define INSTRUCTION_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
+#define INSTRUCTION_ALIGNMENT_GAP_END ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
 
 size_t mmu_psram_get_text_segment_length(void)
 {
-    return ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
+    return ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE) - ESP_ALIGN_DOWN((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
 }
 
 void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
 {
     // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
-    // Or create a new region from (uint32_t)&_instruction_reserved_end to ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4) as only byte-accessible
+    // Or create a new region from (uint32_t)&_instruction_reserved_end to ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, 4) as only byte-accessible
     *gap_start = INSTRUCTION_ALIGNMENT_GAP_START;
     *gap_end = INSTRUCTION_ALIGNMENT_GAP_END;
 }
 
 bool mmu_psram_check_ptr_addr_in_xip_psram_instruction_region(const void *p)
 {
-    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
+    if ((intptr_t)p >= ESP_ALIGN_DOWN((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
 
@@ -143,7 +141,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     uint32_t flash_drom_paddr_start = 0;
     uint32_t flash_irom_paddr_start = 0;
     image_process_get_flash_segments_info(&flash_drom_paddr_start, &flash_irom_paddr_start);
-    flash_irom_paddr_start = ALIGN_DOWN_BY(flash_irom_paddr_start, CONFIG_MMU_PAGE_SIZE);
+    flash_irom_paddr_start = ESP_ALIGN_DOWN(flash_irom_paddr_start, CONFIG_MMU_PAGE_SIZE);
     ESP_EARLY_LOGV(TAG, "flash_irom_paddr_start: 0x%x", flash_irom_paddr_start);
 
     if ((MMU_PAGE_TO_BYTES(start_page) + s_irom_size) > psram_size) {
@@ -151,7 +149,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
         return ESP_ERR_NO_MEM;
     }
 
-    uint32_t irom_load_addr_aligned = ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
+    uint32_t irom_load_addr_aligned = ESP_ALIGN_DOWN((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
     s_irom_paddr_offset = flash_irom_paddr_start - MMU_PAGE_TO_BYTES(start_page);
     s_irom_vaddr_start = irom_load_addr_aligned;
     ESP_EARLY_LOGV(TAG, "flash_irom_paddr_start: 0x%"PRIx32", MMU_PAGE_TO_BYTES(start_page): 0x%"PRIx32", s_irom_paddr_offset: 0x%"PRIx32", s_irom_vaddr_start: 0x%"PRIx32, flash_irom_paddr_start, MMU_PAGE_TO_BYTES(start_page), s_irom_paddr_offset, s_irom_vaddr_start);
@@ -173,25 +171,25 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 
 size_t mmu_psram_get_rodata_segment_length(void)
 {
-    return ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
+    return ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE) - ESP_ALIGN_DOWN((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
 }
 
 /* As heap memory is allocated in 4-byte aligned manner, we need to align the rodata to 4-byte boundary */
-#define RODATA_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4)
+#define RODATA_ALIGNMENT_GAP_START ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, 4)
 /* The end of the rodata is aligned to CONFIG_MMU_PAGE_SIZE boundary as the flash rodata is mapped to PSRAM */
-#define RODATA_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
+#define RODATA_ALIGNMENT_GAP_END ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
 
 void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
 {
     // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
-    // Or create a new region from (uint32_t)&_rodata_reserved_end to ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4) as only byte-accessible
+    // Or create a new region from (uint32_t)&_rodata_reserved_end to ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, 4) as only byte-accessible
     *gap_start = RODATA_ALIGNMENT_GAP_START;
     *gap_end = RODATA_ALIGNMENT_GAP_END;
 }
 
 bool mmu_psram_check_ptr_addr_in_xip_psram_rodata_region(const void *p)
 {
-    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
+    if ((intptr_t)p >= ESP_ALIGN_DOWN((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
 
@@ -205,7 +203,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     uint32_t flash_drom_paddr_start = 0;
     uint32_t flash_irom_paddr_start = 0;
     image_process_get_flash_segments_info(&flash_drom_paddr_start, &flash_irom_paddr_start);
-    flash_drom_paddr_start = ALIGN_DOWN_BY(flash_drom_paddr_start, CONFIG_MMU_PAGE_SIZE);
+    flash_drom_paddr_start = ESP_ALIGN_DOWN(flash_drom_paddr_start, CONFIG_MMU_PAGE_SIZE);
     ESP_EARLY_LOGV(TAG, "flash_drom_paddr_start: 0x%x", flash_drom_paddr_start);
 
     if ((MMU_PAGE_TO_BYTES(start_page) + s_drom_size) > psram_size) {
@@ -213,7 +211,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
         return ESP_ERR_NO_MEM;
     }
 
-    uint32_t drom_load_addr_aligned = ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
+    uint32_t drom_load_addr_aligned = ESP_ALIGN_DOWN((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
     s_drom_paddr_offset = flash_drom_paddr_start - MMU_PAGE_TO_BYTES(start_page);
     s_drom_vaddr_start = drom_load_addr_aligned;
     ESP_EARLY_LOGV(TAG, "flash_drom_paddr_start: 0x%"PRIx32", MMU_PAGE_TO_BYTES(start_page): 0x%"PRIx32", s_drom_paddr_offset: 0x%"PRIx32", s_drom_vaddr_start: 0x%"PRIx32, flash_drom_paddr_start, MMU_PAGE_TO_BYTES(start_page), s_drom_paddr_offset, s_drom_vaddr_start);

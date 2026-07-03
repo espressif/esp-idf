@@ -19,6 +19,7 @@
 #include "esp_efuse_chip.h"
 
 #include "secure_boot_signature_priv.h"
+#include "esp_macros.h"
 
 // Secure boot V2 for app
 
@@ -29,7 +30,6 @@ _Static_assert(SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == SECURE_BOOT_NUM_BLOCKS,
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 /* A signature block is valid when it has correct magic byte, crc. */
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block)
@@ -64,7 +64,7 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
 
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
     uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = {0};
-    size_t sig_block_addr = img_metadata.start_addr + ALIGN_UP(img_metadata.image_len, FLASH_SECTOR_SIZE);
+    size_t sig_block_addr = img_metadata.start_addr + ESP_ALIGN_UP(img_metadata.image_len, FLASH_SECTOR_SIZE);
 
     ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%"PRIu32" (sig block offset 0x%u)", img_metadata.start_addr, sig_block_addr);
 
@@ -182,7 +182,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
 
     /* Rounding off length to the upper 4k boundary */
-    uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
+    uint32_t padded_length = ESP_ALIGN_UP(length, FLASH_SECTOR_SIZE);
     ESP_LOGD(TAG, "verifying signature src_addr 0x%"PRIx32" length 0x%"PRIx32, src_addr, length);
 
 #if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS

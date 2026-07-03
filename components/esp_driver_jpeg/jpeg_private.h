@@ -8,7 +8,8 @@
 
 #include <stdint.h>
 #include <stdatomic.h>
-#include "sys/queue.h"
+#include <sys/queue.h>
+#include "esp_macros.h"
 #include "esp_private/dma2d.h"
 #include "driver/jpeg_types.h"
 #include "freertos/FreeRTOS.h"
@@ -29,8 +30,6 @@ extern "C" {
 
 // JPEG encoder and decoder shares same interrupt ID.
 #define JPEG_INTR_ALLOC_FLAG              (ESP_INTR_FLAG_SHARED)
-
-#define JPEG_ALIGN_UP(num, align)         (((num) + ((align) - 1)) & ~((align) - 1))
 
 // Use retention link only when the target supports sleep retention and PM is enabled
 #define JPEG_USE_RETENTION_LINK  (CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)

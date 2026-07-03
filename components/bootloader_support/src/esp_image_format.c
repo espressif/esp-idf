@@ -26,8 +26,7 @@
 #include "spi_flash_mmap.h"
 #include "hal/efuse_hal.h"
 #include "sdkconfig.h"
-
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+#include "esp_macros.h"
 
 /* Checking signatures as part of verifying images is necessary:
    - Always if secure boot is enabled
@@ -1039,7 +1038,7 @@ static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint3
         // sector (offset 0x0)  and does not get appended to the image.
 #if CONFIG_SECURE_BOOT_V2_ENABLED
         // Sanity check - secure boot v2 signature block starts on 4K boundary
-        sig_block_len = ALIGN_UP(end, FLASH_SECTOR_SIZE) - end;
+        sig_block_len = ESP_ALIGN_UP(end, FLASH_SECTOR_SIZE) - end;
         sig_block_len += sizeof(ets_secure_boot_signature_t);
 #endif
     } else {
@@ -1048,7 +1047,7 @@ static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint3
         sig_block_len = sizeof(esp_secure_boot_sig_block_t);
 #else
         // Sanity check - secure boot v2 signature block starts on 4K boundary
-        sig_block_len = ALIGN_UP(end, FLASH_SECTOR_SIZE) - end;
+        sig_block_len = ESP_ALIGN_UP(end, FLASH_SECTOR_SIZE) - end;
         sig_block_len += sizeof(ets_secure_boot_signature_t);
 #endif
     }
@@ -1179,7 +1178,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     // End of the image needs to be padded all the way to a 4KB boundary, after the simple hash
     // (for apps they are usually already padded due to --secure-pad-v2, only a problem if this option was not used.)
-    uint32_t padded_end = ALIGN_UP(end, FLASH_SECTOR_SIZE);
+    uint32_t padded_end = ESP_ALIGN_UP(end, FLASH_SECTOR_SIZE);
     if (padded_end > end) {
         const void *padding = bootloader_mmap(end, padded_end - end);
 #if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS

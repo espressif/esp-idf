@@ -11,8 +11,6 @@
 #include "driver/parlio_rx.h"
 #include "parlio_priv.h"
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED
 #else

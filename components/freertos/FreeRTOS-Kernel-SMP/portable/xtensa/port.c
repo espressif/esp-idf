@@ -36,6 +36,7 @@
 #include "esp_freertos_hooks.h"
 #include "esp_intr_alloc.h"
 #include "esp_memory_utils.h"
+#include "esp_macros.h"
 #include <xtensa/hal.h>             /* required for xthal_get_ccount() */
 #if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
 #include "esp_timer.h"
@@ -48,14 +49,6 @@
 #endif // CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
-
-/**
- * @brief Align stack pointer in a downward growing stack
- *
- * This macro is used to round a stack pointer downwards to the nearest n-byte boundary, where n is a power of 2.
- * This macro is generally used when allocating aligned areas on a downward growing stack.
- */
-#define STACKPTR_ALIGN_DOWN(n, ptr)     ((ptr) & (~((n)-1)))
 
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  * - Various variables used to maintain the FreeRTOS port's state. Used from both port.c and various .S files
@@ -310,7 +303,7 @@ static void vPortCleanUpCoprocArea( void *pxTCB )
 
     /* Get pointer to the task's coprocessor save area from TCB->pxEndOfStack. See uxInitialiseStackCPSA() */
     uxCoprocArea = ( UBaseType_t ) ( ( ( StaticTask_t * ) pxTCB )->pxDummy8 );  /* Get TCB_t.pxEndOfStack */
-    uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
+    uxCoprocArea = ESP_ALIGN_DOWN(uxCoprocArea - XT_CP_SIZE, 16);
 
     /* Extract core ID from the affinity mask */
     xTargetCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy26;
@@ -447,13 +440,13 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackCPSA(UBaseType_t uxStackPointer)
     */
 
     // Allocate overall coprocessor save area, aligned down to 16 byte boundary
-    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - XT_CP_SIZE);
+    uxStackPointer = ESP_ALIGN_DOWN(uxStackPointer - XT_CP_SIZE, 16);
     // Initialize the coprocessor context switching flags.
     uint32_t *p = (uint32_t *)uxStackPointer;
     p[0] = 0;   // Clear XT_CPENABLE and XT_CPSTORED
     p[1] = 0;   // Clear XT_CP_CS_ST
     // XT_CP_ASA points to the aligned start of the individual CP save areas (i.e., start of CP0 SA)
-    p[2] = (uint32_t)ALIGNUP(XCHAL_TOTAL_SA_ALIGN, (uint32_t)uxStackPointer + 12);
+    p[2] = (uint32_t)ESP_ALIGN_UP((uint32_t)uxStackPointer + 12, XCHAL_TOTAL_SA_ALIGN);
     return uxStackPointer;
 }
 #endif /* XCHAL_CP_NUM > 0 */
@@ -503,11 +496,11 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
     extern char _thread_local_bss_start, _thread_local_bss_end;
     const uint32_t tls_data_size = (uint32_t)&_thread_local_data_end - (uint32_t)&_thread_local_data_start;
     const uint32_t tls_bss_size = (uint32_t)&_thread_local_bss_end - (uint32_t)&_thread_local_bss_start;
-    const uint32_t tls_area_size = ALIGNUP(16, tls_data_size + tls_bss_size);
+    const uint32_t tls_area_size = ESP_ALIGN_UP(tls_data_size + tls_bss_size, 16);
     // TODO: check that TLS area fits the stack
 
     // Allocate space for the TLS area on the stack. The area must be allocated at a 16-byte aligned address
-    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
+    uxStackPointer = ESP_ALIGN_DOWN(uxStackPointer - (UBaseType_t)tls_area_size, 16);
     // Initialize the TLS data with the initialization values of each TLS variable
     memcpy((void *)uxStackPointer, &_thread_local_data_start, tls_data_size);
     // Initialize the TLS bss with zeroes
@@ -540,7 +533,7 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
     */
     const uint32_t tls_section_align = (uint32_t)&_tls_section_alignment;  // ALIGN value of .flash.tdata section
     #define TCB_SIZE 8
-    const uint32_t base = ALIGNUP(tls_section_align, TCB_SIZE);
+    const uint32_t base = ESP_ALIGN_UP(TCB_SIZE, tls_section_align);
     *ret_threadptr_reg_init = (uint32_t)uxStackPointer - base;
 
     return uxStackPointer;
@@ -587,7 +580,7 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackFrame(UBaseType_t uxStackPointer,
         - rounds up the total size to a multiple of 16
     */
     UBaseType_t uxStackPointerPrevious = uxStackPointer;
-    uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - XT_STK_FRMSZ);
+    uxStackPointer = ESP_ALIGN_DOWN(uxStackPointer - XT_STK_FRMSZ, 16);
 
     // Clear the entire interrupt stack frame
     memset((void *)uxStackPointer, 0, (size_t)(uxStackPointerPrevious - uxStackPointer));

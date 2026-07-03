@@ -18,6 +18,7 @@
 #include <sys/param.h>      // for the MIN macro
 #include "esp_app_desc.h"
 #include "esp_memory_utils.h"
+#include "esp_macros.h"
 
 #define ELF_CLASS ELFCLASS32
 
@@ -89,11 +90,6 @@ typedef struct {
 
 // Represents lightweight implementation to save core dump data into ELF formatted binary
 
-#ifdef ALIGN_UP
-#undef ALIGN_UP
-#endif
-#define ALIGN_UP(x, a) (((x) + (a) - 1) & ~((a) - 1))
-
 // Builds elf header and check all data offsets
 static int elf_write_file_header(core_dump_elf_t *self, uint32_t seg_count)
 {
@@ -157,7 +153,7 @@ static int elf_add_segment(core_dump_elf_t *self,
 {
     esp_err_t err = ESP_FAIL;
     elf_phdr seg_hdr = { 0 };
-    int data_len = ALIGN_UP(data_sz, 4);
+    int data_len = ESP_ALIGN_UP(data_sz, 4);
 
     ELF_CHECK_ERR((data != NULL), ELF_PROC_ERR_OTHER,
                   "Invalid data for segment.");
@@ -219,7 +215,7 @@ static int elf_write_note_header(core_dump_elf_t *self, const char* name, uint32
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                   "Write ELF note header failure (%d)", err);
     // write note name
-    err = esp_core_dump_write_data(&self->write_data, name_buffer, ALIGN_UP(note_hdr.n_namesz, 4));
+    err = esp_core_dump_write_data(&self->write_data, name_buffer, ESP_ALIGN_UP(note_hdr.n_namesz, 4));
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                   "Write ELF note name failure (%d)", err);
 
@@ -238,7 +234,7 @@ static int elf_write_note(core_dump_elf_t *self,
     ELF_CHECK_ERR((name_len <= ELF_NOTE_NAME_MAX_SIZE), 0,
                   "Segment note name is too long %d.", name_len);
 
-    uint32_t note_size = ALIGN_UP(name_len, 4) + ALIGN_UP(data_sz, 4) + sizeof(elf_note);
+    uint32_t note_size = ESP_ALIGN_UP(name_len, 4) + ESP_ALIGN_UP(data_sz, 4) + sizeof(elf_note);
 
     // write segment data during second pass
     if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
@@ -252,7 +248,7 @@ static int elf_write_note(core_dump_elf_t *self,
         // which might not be aligned by default. Therefore, we need to verify alignment and add padding if necessary.
         err = esp_core_dump_write_data(&self->write_data, data, data_sz);
         if (err == ESP_OK) {
-            const int pad_size = ALIGN_UP(data_sz, 4) - data_sz;
+            const int pad_size = ESP_ALIGN_UP(data_sz, 4) - data_sz;
             if (pad_size > 0) {
                 uint8_t pad_bytes[3] = {0};
                 ESP_COREDUMP_LOG_PROCESS("Core dump note data needs %d bytes padding", pad_size);
@@ -687,7 +683,7 @@ static int elf_add_wdt_panic_details(core_dump_elf_t *self)
 
         esp_task_wdt_print_triggered_tasks(elf_write_core_dump_note_cb, &param, NULL);
         ELF_CHECK_ERR((param.total_size > 0), ELF_PROC_ERR_WRITE_FAIL, "Write ELF note data failure (%d)", err);
-        const int pad_size = ALIGN_UP(self->note_data_size, 4) - self->note_data_size;
+        const int pad_size = ESP_ALIGN_UP(self->note_data_size, 4) - self->note_data_size;
         if (pad_size > 0) {
             uint8_t pad_bytes[3] = {0};
             ESP_COREDUMP_LOG_PROCESS("Core dump note needs %d bytes padding", pad_size);
@@ -696,7 +692,7 @@ static int elf_add_wdt_panic_details(core_dump_elf_t *self)
         }
     }
 
-    return ALIGN_UP(name_len, 4) + ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note);
+    return ESP_ALIGN_UP(name_len, 4) + ESP_ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note);
 }
 #endif //CONFIG_ESP_TASK_WDT_EN
 
@@ -966,14 +962,14 @@ static void esp_core_dump_parse_note_section(uint8_t *coredump_data, elf_note_co
                 for (size_t idx = 0; idx < size; ++idx) {
                     if (target_notes[idx].n_type == note->n_type) {
                         char *nm = (char *)&note[1];
-                        target_notes[idx].n_ptr = nm + ALIGN_UP(note->n_namesz, 4);
+                        target_notes[idx].n_ptr = nm + ESP_ALIGN_UP(note->n_namesz, 4);
                         target_notes[idx].n_descsz = note->n_descsz;
                         ESP_COREDUMP_LOGD("%d bytes target note (%X) found in the note section",
                                           note->n_descsz, note->n_type);
                         break;
                     }
                 }
-                consumed_note_sz += ALIGN_UP(note->n_namesz, 4) + ALIGN_UP(note->n_descsz, 4) + sizeof(elf_note);
+                consumed_note_sz += ESP_ALIGN_UP(note->n_namesz, 4) + ESP_ALIGN_UP(note->n_descsz, 4) + sizeof(elf_note);
             }
         }
     }

@@ -8,6 +8,7 @@
 #include "soc/soc.h"
 #include "esp_cpu.h"
 #include "esp_fault.h"
+#include "esp_macros.h"
 #include "esp32c5/rom/rom_layout.h"
 #if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
@@ -27,9 +28,8 @@
 #define CONDITIONAL_RWX         RWX
 #endif
 
-#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_UP(addr, align)  (((addr) + (align) - 1) & ~((align) - 1))
+#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
+#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ESP_ALIGN_DOWN(addr, SOC_MMU_PAGE_SIZE)
 
 static void esp_cpu_configure_invalid_regions(void)
 {
@@ -259,7 +259,7 @@ void esp_cpu_configure_region_protection(void)
 #if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
     size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
     PMP_ENTRY_CFG_RESET(10);
-    PMP_ENTRY_SET(10, ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET(10, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 #endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
 #else
     const uint32_t pmpaddr6 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);

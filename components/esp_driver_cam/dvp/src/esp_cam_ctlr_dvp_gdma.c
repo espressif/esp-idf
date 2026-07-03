@@ -11,8 +11,7 @@
 #include "esp_private/esp_cache_private.h"
 #include "esp_cam_ctlr_dvp_dma.h"
 #include "esp_memory_utils.h"
-
-#define ALIGN_UP_BY(num, align)             (((num) + ((align) - 1)) & ~((align) - 1))
+#include "esp_macros.h"
 
 #if defined(SOC_GDMA_TRIG_PERIPH_CAM0_BUS) && (SOC_GDMA_TRIG_PERIPH_CAM0_BUS == SOC_GDMA_BUS_AHB)
 #define DVP_GDMA_NEW_CHANNEL            gdma_new_ahb_channel
@@ -113,7 +112,7 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
     }
     dma->size = size;
     alignment_size = (alignment_size == 0) ? 1 : alignment_size;
-    dma->desc_size = ALIGN_UP_BY(dma->desc_count * sizeof(esp_cam_ctlr_dvp_dma_desc_t), alignment_size);
+    dma->desc_size = ESP_ALIGN_UP(dma->desc_count * sizeof(esp_cam_ctlr_dvp_dma_desc_t), alignment_size);
 
     ESP_LOGD(TAG, "alignment_size: %d, dma->desc_count: %d, dma->desc_size: %d", alignment_size, dma->desc_count, dma->desc_size);
     dma->desc = heap_caps_aligned_alloc(alignment_size, dma->desc_size, DVP_GDMA_DESC_ALLOC_CAPS);

@@ -32,6 +32,7 @@
 #include "esp_log.h"
 #include "esp_rom_md5.h"
 #include "bootloader_util.h"
+#include "esp_macros.h"
 #include "hal/efuse_hal.h"
 
 #if CONFIG_IDF_TARGET_LINUX
@@ -49,8 +50,6 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 typedef struct partition_list_item_ {
     esp_partition_t info;
@@ -592,7 +591,7 @@ esp_err_t esp_partition_copy(const esp_partition_t* dest_part, uint32_t dest_off
         return ESP_ERR_INVALID_SIZE;
     }
 
-    esp_err_t error = esp_partition_erase_range(dest_part, dest_offset, ALIGN_UP(dest_erase_size, SPI_FLASH_SEC_SIZE));
+    esp_err_t error = esp_partition_erase_range(dest_part, dest_offset, ESP_ALIGN_UP(dest_erase_size, SPI_FLASH_SEC_SIZE));
     if (error) {
         ESP_LOGE(TAG, "Erasing destination partition range failed (err=0x%x)", error);
         return error;

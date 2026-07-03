@@ -29,8 +29,6 @@
 
 #include "esp32s2/rom/rtc.h"
 
-#define ALIGN_DOWN(val, align)  ((val) & ~((align) - 1))
-
 extern int _bss_end;
 
 void esp_system_reset_modules_on_exit(void)
@@ -104,7 +102,7 @@ void esp_restart_noos(void)
         // If stack_addr is from External Memory (CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM is used)
         // then need to switch SP to Internal Memory otherwise
         // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
-        uint32_t new_sp = ALIGN_DOWN((uint32_t)&_bss_end, 16);
+        uint32_t new_sp = ESP_ALIGN_DOWN((uint32_t)&_bss_end, 16);
         SET_STACK(new_sp);
     }
 #endif

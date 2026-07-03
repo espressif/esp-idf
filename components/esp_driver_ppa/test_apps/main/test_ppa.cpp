@@ -26,8 +26,7 @@
 #include "esp_clk_tree.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#include "esp_macros.h"
 
 TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
 {
@@ -36,8 +35,8 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
     const esp_color_fourcc_t buf_1_color_type_id = ESP_COLOR_FOURCC_BGRA32;
     const esp_color_fourcc_t buf_2_color_type_id = ESP_COLOR_FOURCC_BGRA32;
 
-    uint32_t buf_1_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8, 64);
-    uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
+    uint32_t buf_1_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8, 64);
+    uint32_t buf_2_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
     uint8_t *buf_1 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA)); // cache alignment is implicited by MALLOC_CAP_DMA
     TEST_ASSERT_NOT_NULL(buf_1);
     uint8_t *buf_2 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
@@ -166,7 +165,7 @@ TEST_CASE("ppa_pending_transactions_in_queue", "[PPA]")
     const esp_color_fourcc_t buf_2_color_type_id = ESP_COLOR_FOURCC_OUYY_EVYY;
 
     uint32_t buf_1_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_1_color_type_id) / 8;
-    uint32_t buf_2_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
+    uint32_t buf_2_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth(buf_2_color_type_id) / 8, 64);
     uint8_t *buf_1 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_1_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(buf_1);
     uint8_t *buf_2 = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, buf_2_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
@@ -273,7 +272,7 @@ static void ppa_srm_basic_data_correctness_check(bool auto_light_sleep)
     const float scale_y = 1.0;
 
     const uint32_t buf_len = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)cm) / 8; // 32
-    uint32_t out_buf_size = ALIGN_UP(buf_len, 64);
+    uint32_t out_buf_size = ESP_ALIGN_UP(buf_len, 64);
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)); // located in internal RAM so even w/ flash encrypted, it won't be affected
     TEST_ASSERT_NOT_NULL(out_buf);
     esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -681,7 +680,7 @@ static void ppa_fill_basic_data_correctness_check(bool auto_light_sleep)
 
     uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm); // bits
     uint32_t out_buf_len = w * h * out_pixel_depth / 8;
-    uint32_t out_buf_size = ALIGN_UP(out_buf_len, 64);
+    uint32_t out_buf_size = ESP_ALIGN_UP(out_buf_len, 64);
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
 
@@ -816,7 +815,7 @@ TEST_CASE("ppa_srm_performance", "[PPA]")
     const float scale_y = 1.0;
 
     uint32_t in_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_cm) / 8;
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
+    uint32_t out_buf_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
@@ -892,9 +891,9 @@ TEST_CASE("ppa_blend_performance", "[PPA]")
     if (esp_efuse_is_flash_encryption_enabled()) {
         in_buf_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
     }
-    uint32_t in_bg_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8, in_buf_alignment);
-    uint32_t in_fg_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8, in_buf_alignment);
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
+    uint32_t in_bg_buf_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_bg_cm) / 8, in_buf_alignment);
+    uint32_t in_fg_buf_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_fg_cm) / 8, in_buf_alignment);
+    uint32_t out_buf_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_bg_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_bg_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
@@ -976,7 +975,7 @@ TEST_CASE("ppa_fill_performance", "[PPA]")
     const uint32_t block_h = 480;
     const ppa_fill_color_mode_t out_cm = PPA_FILL_COLOR_MODE_RGB565;
 
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
+    uint32_t out_buf_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
 
@@ -1036,7 +1035,7 @@ TEST_CASE("ppa_srm_stress_test", "[PPA]")
     const float scale_y = 1.0;
 
     uint32_t in_buf_size = w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)in_cm) / 8;
-    uint32_t out_buf_size = ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
+    uint32_t out_buf_size = ESP_ALIGN_UP(w * h * color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)out_cm) / 8, 64);
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA));
     TEST_ASSERT_NOT_NULL(out_buf);
     uint8_t *in_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, in_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));

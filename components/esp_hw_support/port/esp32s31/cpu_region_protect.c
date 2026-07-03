@@ -11,6 +11,7 @@
 #include "esp_fault.h"
 #include "hal/cache_ll.h"
 #include "riscv/csr.h"
+#include "esp_macros.h"
 #if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
 #endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
@@ -33,9 +34,8 @@
 #define CONDITIONAL_RWX         RWX
 #endif
 
-#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_UP(addr, align)  (((addr) + (align) - 1) & ~((align) - 1))
+#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
+#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ESP_ALIGN_DOWN(addr, SOC_MMU_PAGE_SIZE)
 
 void esp_cpu_configure_region_protection(void)
 {

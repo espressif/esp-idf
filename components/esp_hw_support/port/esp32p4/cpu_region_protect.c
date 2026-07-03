@@ -11,6 +11,7 @@
 #include "esp_fault.h"
 #include "hal/cache_ll.h"
 #include "riscv/csr.h"
+#include "esp_macros.h"
 #if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
 #endif /* !BOOTLOADER_BUILD && CONFIG_SPIRAM */
@@ -34,9 +35,8 @@
 #define CONDITIONAL_RWX         RWX
 #endif
 
-#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
-#define ALIGN_UP(addr, align)  (((addr) + (align) - 1) & ~((align) - 1))
+#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
+#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ESP_ALIGN_DOWN(addr, SOC_MMU_PAGE_SIZE)
 
 static void esp_cpu_configure_invalid_regions(void)
 {
@@ -175,19 +175,19 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, page_aligned_irom_resv_end, PMP_TOR | RW);
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(14, 19, ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(14, 19, ESP_ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 
 #elif CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, page_aligned_irom_resv_end, PMP_TOR | RW);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, ALIGN_UP(page_aligned_irom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(13, 18, ESP_ALIGN_UP(page_aligned_irom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 
 #elif CONFIG_SPIRAM_RODATA
     PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(12, 17, ESP_ALIGN_UP((uint32_t)(&_rodata_reserved_end) + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 
 #else
-    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, ALIGN_UP(SOC_EXTRAM_LOW + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET_CACHED_AND_UNCACHED(11, 16, ESP_ALIGN_UP(SOC_EXTRAM_LOW + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 #endif
 #endif /* CONFIG_SPIRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
 
@@ -322,7 +322,7 @@ static void esp_cpu_configure_region_protection_rev_less_than_v3(void)
 
     size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
     PMP_ENTRY_CFG_RESET(10);
-    PMP_ENTRY_SET(10, ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+    PMP_ENTRY_SET(10, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
 #else
     PMP_ENTRY_CFG_RESET(6);
     PMP_ENTRY_CFG_RESET(7);

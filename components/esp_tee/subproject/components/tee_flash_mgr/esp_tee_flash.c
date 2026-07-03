@@ -17,8 +17,7 @@
 #include "esp_tee.h"
 #include "esp_tee_flash.h"
 #include "sdkconfig.h"
-
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+#include "esp_macros.h"
 
 static const char *TAG = "esp_tee_flash";
 
@@ -258,7 +257,7 @@ bool esp_tee_flash_check_prange_write_protected(const size_t paddr, const size_t
     }
 
     const size_t ptb_start = CONFIG_PARTITION_TABLE_OFFSET;
-    const size_t ptb_end   = ALIGN_UP(CONFIG_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN, FLASH_SECTOR_SIZE);
+    const size_t ptb_end   = ESP_ALIGN_UP(CONFIG_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN, FLASH_SECTOR_SIZE);
     bool ptb_overlap = (paddr_start < ptb_end) && (paddr_end > ptb_start);
 
     /* Bootloader: write-protected unless dangerous writes are explicitly allowed. */

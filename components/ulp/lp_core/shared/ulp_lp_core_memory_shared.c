@@ -9,8 +9,7 @@
 #include "soc/soc.h"
 #include "esp_rom_caps.h"
 #include "esp_assert.h"
-
-#define ALIGN_DOWN(SIZE, AL)   (SIZE & ~(AL - 1))
+#include "esp_macros.h"
 
 /* The last CONFIG_ULP_SHARED_MEM bytes of the reserved memory are reserved for a shared cfg struct
    The main cpu app and the ulp binary can share variables automatically through the linkerscript generated from
@@ -38,6 +37,6 @@ ulp_lp_core_memory_shared_cfg_t* ulp_lp_core_memory_shared_cfg_get(void)
     /* Ensure the end where the shared memory starts is aligned to 8 bytes
     if updating this also update the same in ulp_lp_core_riscv.ld
     */
-    return (ulp_lp_core_memory_shared_cfg_t *)(ulp_base_addr + ALIGN_DOWN(CONFIG_ULP_COPROC_RESERVE_MEM, 0x8)  - CONFIG_ULP_SHARED_MEM);
+    return (ulp_lp_core_memory_shared_cfg_t *)(ulp_base_addr + ESP_ALIGN_DOWN(CONFIG_ULP_COPROC_RESERVE_MEM, 0x8)  - CONFIG_ULP_SHARED_MEM);
 #endif
 }

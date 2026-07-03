@@ -11,6 +11,7 @@
 
 #include "esp_err.h"
 #include "esp_system.h"
+#include "esp_macros.h"
 #include "esp_log.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
@@ -29,7 +30,7 @@ extern int _iram_start;
 extern int _iram_text_start;
 extern int _iram_text_end;
 
-#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
+#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
 
 __attribute__((noinline))
 static void run_function(void (*test_addr)(void)) {

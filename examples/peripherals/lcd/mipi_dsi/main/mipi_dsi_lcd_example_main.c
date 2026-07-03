@@ -19,6 +19,7 @@
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_macros.h"
 #include "lvgl.h"
 #include "esp_lcd_ili9881c.h"
 #include "esp_lcd_ek79007.h"
@@ -73,9 +74,6 @@ static const char *TAG = "example";
 #define EXAMPLE_PIN_NUM_REFRESH_MONITOR         20  // Monitor the Refresh Rate by toggling the GPIO
 #endif
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your Application ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,8 +94,8 @@ extern void example_lvgl_demo_ui(lv_display_t *disp);
 void example_rounder_flush_area_cb(lv_event_t * event)
 {
     lv_area_t * area = lv_event_get_invalidated_area(event);
-    area->x1 = ALIGN_DOWN(area->x1, 16);
-    area->x2 = ALIGN_UP(area->x2, 16) - 1;
+    area->x1 = ESP_ALIGN_DOWN(area->x1, 16);
+    area->x2 = ESP_ALIGN_UP(area->x2, 16) - 1;
 }
 #endif
 

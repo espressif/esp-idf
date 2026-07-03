@@ -48,6 +48,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_dma_utils.h"
 #include "driver/rmt_types.h"
+#include "esp_macros.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,9 +89,6 @@ extern "C" {
 #else
 #define RMT_GET_NON_CACHE_ADDR(addr) (addr)
 #endif
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 #define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 

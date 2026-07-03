@@ -15,13 +15,12 @@
 
 #include "esp_tee.h"
 #include "secure_service_num.h"
+#include "esp_macros.h"
 
 #define TEE_IMG_SRC_PART_SUBTYPE  (ESP_PARTITION_SUBTYPE_APP_OTA_1)
 #define OTA_BUF_SIZE              (512)
 
 #define FLASH_SECTOR_SIZE       (4096)
-#define ALIGN_UP(num, align)    (((num) + ((align)-1)) & ~((align)-1))
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 static const char *TAG = "test_esp_tee_ota";
 
@@ -81,7 +80,7 @@ static uint32_t copy_tee_update(void)
     uint32_t tee_next_img_len = tee_next_metadata.image_len;
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
-    tee_next_img_len = ALIGN_UP(tee_next_img_len, FLASH_SECTOR_SIZE) + FLASH_SECTOR_SIZE;
+    tee_next_img_len = ESP_ALIGN_UP(tee_next_img_len, FLASH_SECTOR_SIZE) + FLASH_SECTOR_SIZE;
 #endif
 
     uint32_t curr_write_offset = 0;

@@ -18,8 +18,7 @@
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
 #include "esp_efuse.h"
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#include "esp_macros.h"
 
 // All test will perform `M2M_TRANS_TIMES` times memcpy transactions, utilizing all available 2D-DMA channels.
 // This tests the hardware capability of multiple 2D-DMA transactions running together, and the driver capbility of
@@ -623,9 +622,9 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
 
     uint8_t *prtx;
     uint8_t *prrx;
-    size_t tx_buf_size = ALIGN_UP(vb * hb * 2, 64); // buffer msync alignment restriction
+    size_t tx_buf_size = ESP_ALIGN_UP(vb * hb * 2, 64); // buffer msync alignment restriction
     uint8_t *tx_buf = heap_caps_aligned_calloc(64, tx_buf_size * M2M_TRANS_TIMES, sizeof(uint8_t), buf_malloc_cap);
-    size_t rx_buf_size = ALIGN_UP(va * ha * 2, 64); // buffer msync alignment restriction
+    size_t rx_buf_size = ESP_ALIGN_UP(va * ha * 2, 64); // buffer msync alignment restriction
     uint8_t *rx_buf = heap_caps_aligned_calloc(64, rx_buf_size * M2M_TRANS_TIMES, sizeof(uint8_t), buf_malloc_cap);
     TEST_ASSERT_NOT_NULL(tx_buf);
     TEST_ASSERT_NOT_NULL(rx_buf);

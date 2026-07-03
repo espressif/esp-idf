@@ -371,7 +371,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 
     // Align the buffer address to mem_alignment
     if ((((uintptr_t)buffer) & (mem_alignment - 1)) != 0) {
-        uintptr_t aligned_address = ALIGN_UP((uintptr_t)buffer, mem_alignment);
+        uintptr_t aligned_address = ESP_ALIGN_UP((uintptr_t)buffer, mem_alignment);
         size_t offset = aligned_address - (uintptr_t)buffer;
         ESP_RETURN_ON_FALSE_ISR(buffer_size > offset, ESP_ERR_INVALID_ARG, TAG, "buffer size is not aligned and is too small, please increase the buffer size");
         ESP_EARLY_LOGD(TAG, "origin buffer %p not satisfy alignment %d, align buffer to %p", buffer, mem_alignment, aligned_address);
@@ -379,12 +379,12 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         buffer_size -= offset;
     }
     // Align the buffer size to mem_alignment
-    buffer_size = ALIGN_DOWN(buffer_size, mem_alignment);
+    buffer_size = ESP_ALIGN_DOWN(buffer_size, mem_alignment);
     ESP_RETURN_ON_FALSE_ISR(buffer_size > 0, ESP_ERR_INVALID_ARG, TAG, "buffer size is less than alignment: %"PRIu32", please increase the buffer size", mem_alignment);
 
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
-        size_t max_buf_sz_per_dma_node = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
+        size_t max_buf_sz_per_dma_node = ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, mem_alignment);
         ESP_RETURN_ON_FALSE_ISR(buffer_size <= rx_chan->num_dma_nodes * max_buf_sz_per_dma_node,
                                 ESP_ERR_INVALID_ARG, TAG, "buffer size exceeds DMA capacity: %"PRIu32", please increase the mem_block_symbols", rx_chan->num_dma_nodes * max_buf_sz_per_dma_node);
     }
@@ -424,7 +424,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
         }
         // we will mount the buffer to multiple DMA nodes, in a balanced way
         size_t per_dma_block_size = buffer_size / rx_chan->num_dma_nodes;
-        per_dma_block_size = ALIGN_DOWN(per_dma_block_size, mem_alignment);
+        per_dma_block_size = ESP_ALIGN_DOWN(per_dma_block_size, mem_alignment);
         size_t last_dma_block_size = buffer_size - per_dma_block_size * (rx_chan->num_dma_nodes - 1);
         rmt_rx_mount_dma_buffer(rx_chan, buffer, buffer_size, mem_alignment, per_dma_block_size, last_dma_block_size);
         gdma_reset(channel->dma_chan);
@@ -790,7 +790,7 @@ __attribute__((always_inline))
 static inline size_t rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
 {
     size_t received_bytes = gdma_link_count_buffer_size_till_eof(rx_chan->dma_link, start_index);
-    received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
+    received_bytes = ESP_ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
@@ -798,7 +798,7 @@ __attribute__((always_inline))
 static inline size_t rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
 {
     size_t received_bytes = gdma_link_get_length(rx_chan->dma_link, desc_index);
-    received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
+    received_bytes = ESP_ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 

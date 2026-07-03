@@ -47,8 +47,6 @@
 #define TAIL_CANARY_PATTERN 0xBAAD5678
 
 
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 typedef struct {
     uint32_t head_canary;
     size_t alloc_size;

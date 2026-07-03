@@ -26,8 +26,6 @@
 
 ESP_LOG_ATTR_TAG(TAG, "dma_utils");
 
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffer_len, dma_buffer_split_array_t *align_buf_array, uint8_t** ret_stash_buffer)
 {
     esp_err_t ret = ESP_OK;

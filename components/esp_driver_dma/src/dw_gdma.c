@@ -56,8 +56,6 @@ ESP_LOG_ATTR_TAG(TAG, "dw-gdma");
 
 #define DW_GDMA_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-
 typedef struct dw_gdma_group_t dw_gdma_group_t;
 typedef struct dw_gdma_channel_t dw_gdma_channel_t;
 
