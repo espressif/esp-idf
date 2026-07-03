@@ -745,6 +745,10 @@ UINT16 AVDT_ReconfigReq(UINT8 handle, tAVDT_CFG *p_cfg)
     UINT16          result = AVDT_SUCCESS;
     tAVDT_SCB_EVT   evt;
 
+    if (p_cfg == NULL) {
+        return AVDT_BAD_PARAMS;
+    }
+
     /* map handle to scb */
     if ((p_scb = avdt_scb_by_hdl(handle)) == NULL) {
         result = AVDT_BAD_HANDLE;
