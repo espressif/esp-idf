@@ -10,6 +10,24 @@ entries:
 entries:
     .adv_fast_execute_code_iram1+
 
+[sections:sleep_text]
+entries:
+    .iram_sleep+
+    .iram_btslp+
+
+[sections:sleep_text_adv]
+entries:
+    .iram_sleep_adv+
+
+[sections:sleep_text_conn]
+entries:
+    .iram_sleep_conn+
+
+[sections:sleep_single_sleep]
+entries:
+    .iram_single_sleep+
+
+
 [scheme:bt_default]
 entries:
     bt_bss -> dram0_bss
@@ -26,6 +44,26 @@ entries:
         adv_fast_execute_code_iram_text -> iram0_text
     else:
         adv_fast_execute_code_iram_text -> flash_text
+
+    if BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM = y:
+        sleep_text -> iram0_text
+    else:
+        sleep_text -> flash_text
+
+    if BT_CTRL_LE_ADV_SLEEP_CODE_IN_IRAM = y:
+        sleep_text_adv->iram0_text
+    else:
+        sleep_text_adv->flash_text
+
+    if BT_CTRL_LE_CONN_SLEEP_CODE_IN_IRAM = y:
+        sleep_text_conn->iram0_text
+    else:
+        sleep_text_conn->flash_text
+
+    if BT_CTRL_SLEEP_RELATED_CODE_IN_IRAM = y || BT_CTRL_RUN_IN_FLASH_ONLY = n:
+        sleep_single_sleep->iram0_text
+    else:
+        sleep_single_sleep->flash_text
 
 # For the following fragments, order matters for
 # 'ALIGN(4) ALIGN(4, post) SURROUND(sym)', which generates:
