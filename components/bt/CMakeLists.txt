@@ -91,6 +91,7 @@ set(bt_priv_requires
     esp_ringbuf
     esp_gdbstub
     esp_security
+    esp_event
 )
 
 idf_component_register(SRCS "${srcs}"

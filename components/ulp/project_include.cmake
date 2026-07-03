@@ -5,6 +5,7 @@
 function(__setup_ulp_project app_name project_path prefix type s_sources exp_dep_srcs)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+        set(sources "")
         spaces2list(s_sources)
         foreach(source ${s_sources})
             get_filename_component(source ${source} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_LIST_DIR})

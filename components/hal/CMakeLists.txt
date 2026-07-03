@@ -3,6 +3,7 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 set(srcs "hal_utils.c")
 set(includes "platform_port/include")
+set(priv_include)
 set(requires)
 
 # target specific include must be added before the generic one
