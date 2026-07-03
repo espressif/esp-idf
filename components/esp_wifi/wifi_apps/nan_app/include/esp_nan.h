@@ -24,6 +24,7 @@ extern "C" {
     .disable_random_mac = false, \
     .reset_current_nvs_creds = false, \
     .use_nvs_for_caching = false, \
+    .group_mgmt_prot = false, \
 };
 
 #define NDP_STATUS_ACCEPTED     1

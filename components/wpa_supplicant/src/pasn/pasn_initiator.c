@@ -624,6 +624,9 @@ static struct wpabuf * wpas_pasn_build_auth_1(struct pasn_data *pasn,
 #else /* CONFIG_IEEE80211R */
 		goto fail;
 #endif /* CONFIG_IEEE80211R */
+	} else if (verify && pasn->custom_pmkid_valid) {
+		/* Wi-Fi Aware pairing verification: NPKID in RSNE, no wrapped data */
+		pmkid = pasn->custom_pmkid;
 	} else if (wrapped_data != WPA_PASN_WRAPPED_DATA_NO) {
 		struct rsn_pmksa_cache_entry *pmksa;
 

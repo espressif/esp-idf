@@ -14,6 +14,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
 #include "esp_log.h"
@@ -23,6 +24,7 @@
 #include "esp_nan.h"
 #include "utils/common.h"
 #include "crypto/sha256.h"
+#include "crypto/aes_wrap.h"
 #include "nan_i.h"
 
 static const char *TAG = "nan_sec";
@@ -55,6 +57,8 @@ static struct {
 static struct {
     bool has_pmkid;
     bool has_csid;
+    bool peer_group_data;   /* peer signalled group-data (GTK) support in its CSIA */
+    uint8_t peer_caps;      /* raw CSIA Capabilities byte; IGTK/BIGTK gating derives bits 1-2 */
     uint8_t pub_id;
     uint8_t pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN];
     uint16_t csid_bitmap;
@@ -62,6 +66,12 @@ static struct {
 
 /* Spec Table 121: valid CSIDs are 1..8. Bit 0 and bits 9..15 are not assigned. */
 #define NAN_CSID_VALID_BITMAP   ((uint16_t)0x01FE)
+
+/* NCS-GTK cipher-suite bits (group-addressed data). Advertised when a service
+ * sets group_data_prot; the basic default we generate/advertise is CCMP-128. */
+#define NAN_CSID_GTK_BITS       (WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128 | \
+                                 WIFI_NAN_CSID_BIT_NCS_GTK_GCMP_256)
+#define NAN_CSID_GTK_DEFAULT    WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128
 
 /* Sentinel for peer_svc->matched_cred_idx: no PMKID match remembered yet. */
 #define NAN_NO_MATCHED_CRED  0xFF
@@ -315,30 +325,70 @@ static int nan_ndp_ptk_derive(const uint8_t *pmk, const uint8_t *i_addr, const u
     return 0;
 }
 
+static bool nan_mac_is_zero(const uint8_t mac[6])
+{
+    static const uint8_t zero[6] = {0};
+
+    return memcmp(mac, zero, 6) == 0;
+}
+
+/*
+ * Resolve IAddr/RAddr for NDP PTK derivation. When NDPE has not yet assigned
+ * an NDI, fall back to the peer NMI so both sides derive the same PTK.
+ * Returns 0 on success, -1 if our NAN MAC cannot be retrieved.
+ */
+static int nan_ndp_ptk_addrs(const struct ndl_info *ndl, bool responder,
+                             uint8_t i_addr[6], uint8_t r_addr[6])
+{
+    uint8_t our_mac[6];
+
+    if (esp_wifi_get_mac(WIFI_IF_NAN, our_mac) != ESP_OK) {
+        ESP_LOGE(TAG, "nan_ndp_ptk_addrs: get our MAC failed");
+        return -1;
+    }
+    if (responder) {
+        if (nan_mac_is_zero(ndl->peer_ndi)) {
+            memcpy(i_addr, ndl->peer_nmi, 6);
+        } else {
+            memcpy(i_addr, ndl->peer_ndi, 6);
+        }
+        memcpy(r_addr, our_mac, 6);
+    } else {
+        memcpy(i_addr, our_mac, 6);
+        if (nan_mac_is_zero(ndl->peer_ndi)) {
+            memcpy(r_addr, ndl->peer_nmi, 6);
+        } else {
+            memcpy(r_addr, ndl->peer_ndi, 6);
+        }
+    }
+    return 0;
+}
+
 /*
  * Lazy initiator PTK derivation. No-op if ndl->ptk_set is already 1.
  * Caller MUST hold NAN_DATA_LOCK. On success, ndl->nd_kck/kek/tk and
  * the corresponding *_len fields are populated and ptk_set=1.
  *
- * Spec §7.1.3.5: PTK PRF takes Data Interface addresses. Local NDI is
- * obtained via esp_wifi_get_mac(WIFI_IF_NAN); peer NDI lives in
- * ndl->peer_ndi, populated by ndp_response_indication on M2 RX.
+ * Spec §7.1.3.5: PTK PRF takes Data Interface addresses resolved via
+ * nan_ndp_ptk_addrs (peer NDI when assigned, else peer NMI).
  *
  * Returns 0 on success, -1 on failure.
  */
 static int ndl_ensure_ptk(struct ndl_info *ndl)
 {
+    uint8_t i_addr[6];
+    uint8_t r_addr[6];
+
     if (ndl->ptk_set) {
         return 0;
     }
-    uint8_t our_mac[6];
-    if (esp_wifi_get_mac(WIFI_IF_NAN, our_mac) != ESP_OK) {
-        ESP_LOGE(TAG, "ndl_ensure_ptk: get our MAC failed");
+    if (nan_ndp_ptk_addrs(ndl, false, i_addr, r_addr) != 0) {
+        ESP_LOGE(TAG, "ndl_ensure_ptk: PTK address resolution failed");
         return -1;
     }
     if (nan_ndp_ptk_derive(ndl->security_ctx.nd_pmk,
-                           our_mac,         /* IAddr = Initiator NDI (us) */
-                           ndl->peer_ndi,   /* RAddr = Responder NDI (peer) */
+                           i_addr,
+                           r_addr,
                            ndl->anonce, ndl->snonce,
                            ndl->nd_kck, ndl->nd_kek, ndl->nd_tk) != 0) {
         ESP_LOGE(TAG, "ndl_ensure_ptk: PTK derivation failed");
@@ -417,6 +467,34 @@ static bool nan_security_fill_from_paired_cache(struct ndl_info *ndl, const uint
         return false;
     }
 
+    /* Early-reject: if the NDP Request carried an ND-PMKID, our cached ND-PMK must reproduce it (§7.1.3.5) before we commit. */
+    static const uint8_t zero_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN] = {0};
+    if (memcmp(ndl->security_ctx.nd_pmkid, zero_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN) != 0) {
+        uint8_t our_nmi[6];
+        uint8_t service_id[6];
+        struct own_svc_info *own_svc = nan_find_own_svc(ndl->publisher_id);
+
+        if (esp_wifi_get_mac(WIFI_IF_NAN, our_nmi) != ESP_OK || !own_svc ||
+                !own_svc->svc_name[0] || !nan_compute_service_id(own_svc->svc_name, service_id)) {
+            ESP_LOGW(TAG, "Paired ND-PMK: cannot verify peer ND-PMKID (own NMI/service unavailable for pub_id=%u), deferring to handshake MIC",
+                     ndl->publisher_id);
+        } else {
+            uint8_t expected[ESP_WIFI_NAN_NDP_PMKID_LEN];
+            /* Spec order (Initiator=peer, Responder=us), then reversed for interop, mirroring nan_match_pmkid(). */
+            bool ok = (nan_derive_ndp_request_pmkid(paired->nd_pmk, peer_nmi, our_nmi, service_id, expected) &&
+                       memcmp(expected, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN) == 0) ||
+                      (nan_derive_ndp_request_pmkid(paired->nd_pmk, our_nmi, peer_nmi, service_id, expected) &&
+                       memcmp(expected, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN) == 0);
+            if (!ok) {
+                ESP_LOGE(TAG, "Paired ND-PMK rejected for peer "MACSTR": NDP-Request ND-PMKID does not match cached pairing key (csid=%u), secured NDP setup aborted",
+                         MAC2STR(peer_nmi), paired->ndp_csid);
+                ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_WARN);
+                return false;
+            }
+            ESP_LOGD(TAG, "Paired ND-PMK: peer ND-PMKID verified for "MACSTR, MAC2STR(peer_nmi));
+        }
+    }
+
     ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
     ndl->security_ctx.csid_bitmap = (uint16_t)(1u << paired->ndp_csid);
     memcpy(ndl->security_ctx.nd_pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
@@ -445,29 +523,32 @@ static bool nan_ndp_resp_resolve_pmk(struct ndl_info *ndl, const uint8_t *peer_n
         return have_peer_pmkid;
     }
 
+    bool pmk_resolved = false;
+
+    if (have_peer_pmkid) {
+        struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
+        int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
+                                                  ndl->peer_nmi, ndl->peer_ndi) : -1;
+        if (matched_idx >= 0) {
+            ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
+            ndl->security_ctx.csid_bitmap = p_svc->derived_security[matched_idx].csid_bitmap;
+            memcpy(ndl->security_ctx.nd_pmk,
+                   p_svc->derived_security[matched_idx].nd_pmk,
+                   ESP_WIFI_NAN_NDP_PMK_LEN);
+            ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from cred slot %d", matched_idx);
+            pmk_resolved = true;
+        }
+    }
+
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
-    if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
-        return have_peer_pmkid;
+    if (!pmk_resolved && need_pmk &&
+            nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
+        ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from paired-peer cache");
+        pmk_resolved = true;
     }
 #endif
 
-    if (!have_peer_pmkid) {
-        return false;
-    }
-
-    struct own_svc_info *p_svc = nan_find_own_svc(ndl->publisher_id);
-    int matched_idx = p_svc ? nan_match_pmkid(p_svc, ndl->security_ctx.nd_pmkid,
-                                              ndl->peer_nmi, ndl->peer_ndi) : -1;
-    if (matched_idx < 0) {
-        return false;
-    }
-
-    ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
-    ndl->security_ctx.csid_bitmap = p_svc->derived_security[matched_idx].csid_bitmap;
-    memcpy(ndl->security_ctx.nd_pmk,
-           p_svc->derived_security[matched_idx].nd_pmk,
-           ESP_WIFI_NAN_NDP_PMK_LEN);
-    return true;
+    return pmk_resolved;
 }
 
 uint8_t esp_nan_get_ndp_resp_num_pmkids(uint8_t ndp_id, const uint8_t *peer_nmi)
@@ -560,6 +641,357 @@ static int nan_build_rsna_key_descriptor(uint8_t *kd, uint16_t key_info_flags,
     return NAN_KEY_DESC_MIN_LEN;
 }
 
+/*-------------------------------------------------------------------------
+ * Group Key Data (GTK/IGTK/BIGTK KDEs) — Wi-Fi Aware v4.0 §7.1.3.2/§7.1.3.5/
+ * §9.5.21.5. Initiator distributes in M3, responder in M4; KDEs are always
+ * KEK-wrapped (NIST AES Key Wrap), never in clear. Structure mirrors hostap
+ * src/nan/nan_sec.c nan_sec_add_kdes().
+ *-----------------------------------------------------------------------*/
+
+/* True if a GTKSA was negotiated for this NDP. gtk_required is the explicit
+ * result of (our service has group_data_prot) AND (peer advertised NCS-GTK),
+ * computed at NDL finalize on both roles. We deliberately do NOT also gate on
+ * security_ctx.csid_bitmap: that field carries the advertised GTK bit on some
+ * paths and would over-fire when only one side enabled group protection. */
+static bool nan_ndl_gtk_negotiated(const struct ndl_info *ndl)
+{
+    return ndl->gtk_required;
+}
+
+/* IGTK/BIGTK negotiation gates. Per §7.1.3.5: include the IGTK/BIGTK KDE iff BOTH
+ * peers advertise the capability in their CSIA. igtk_required/bigtk_required are
+ * set at NDL finalize on both roles from (our service has group_mgmt_prot) AND
+ * (peer advertised IGTKSA/BIGTKSA in its CSIA caps byte). */
+static bool nan_ndl_igtk_negotiated(const struct ndl_info *ndl)
+{
+    return ndl->igtk_required;
+}
+
+static bool nan_ndl_bigtk_negotiated(const struct ndl_info *ndl)
+{
+    return ndl->bigtk_required;
+}
+
+/* Lazily generate the local data-path GTK (CCMP-128). Fresh GTK starts at RSC 0. */
+static int nan_ensure_own_gtk(struct ndl_info *ndl)
+{
+    if (ndl->own_gtk_set) {
+        return 0;
+    }
+    if (os_get_random(ndl->own_gtk, NAN_ND_GTK_LEN) != 0) {
+        return -1;
+    }
+    ndl->own_gtk_len = NAN_ND_GTK_LEN;
+    ndl->own_gtk_keyid = 1;                 /* spec allows Key ID 1 or 2 */
+    memset(ndl->own_gtk_rsc, 0, NAN_KEY_RSC_LEN);
+    ndl->own_gtk_set = 1;
+    return 0;
+}
+
+/* Lazily generate the device-global IGTK/BIGTK (BIP-CMAC-128, §7.1.3.3/§7.1.3.4).
+ * Exactly one key per local NMI, reused across all secured NDPs; IPN/BIPN start
+ * at 0. Generated by this device (transmitter) per spec. */
+static int nan_ensure_own_igtk(void)
+{
+    if (s_nan_ctx.own_igtk_set) {
+        return 0;
+    }
+    if (os_get_random(s_nan_ctx.own_igtk, NAN_ND_GTK_LEN) != 0) {
+        return -1;
+    }
+    s_nan_ctx.own_igtk_keyid = 4;           /* spec allows Key ID 4 or 5 */
+    memset(s_nan_ctx.own_igtk_ipn, 0, sizeof(s_nan_ctx.own_igtk_ipn));
+    s_nan_ctx.own_igtk_set = true;
+    return 0;
+}
+
+static int nan_ensure_own_bigtk(void)
+{
+    if (s_nan_ctx.own_bigtk_set) {
+        return 0;
+    }
+    if (os_get_random(s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN) != 0) {
+        return -1;
+    }
+    s_nan_ctx.own_bigtk_keyid = 6;          /* spec allows Key ID 6 or 7 */
+    memset(s_nan_ctx.own_bigtk_bipn, 0, sizeof(s_nan_ctx.own_bigtk_bipn));
+    s_nan_ctx.own_bigtk_set = true;
+    return 0;
+}
+
+/* Generate (once) and TX-install the device-global IGTK/BIGTK at NAN start, so
+ * Beacons (BIGTK) and group-addressed SDFs (IGTK) are BIP-protected from the
+ * first frame — matching peers (e.g. iOS) that protect from NAN start, not just
+ * after the first NDP. The keys are device-global per §7.1.3.3/§7.1.3.4 and the
+ * same bytes are later distributed KEK-wrapped in M3/M4. Install MUST happen
+ * only here (not per-NDP), else re-installing with IPN/BIPN=0 would reset the
+ * blob's monotonic replay counter mid-session. Best-effort: a failed install
+ * warns but does not block NAN start. */
+void nan_security_install_own_group_integrity_keys(void)
+{
+    uint8_t own_nmi[6];
+    if (!s_nan_ctx.group_mgmt_prot) {
+        return;     /* group-management protection disabled device-wide */
+    }
+    if (esp_wifi_get_mac(WIFI_IF_NAN, own_nmi) != ESP_OK) {
+        ESP_LOGW(TAG, "NAN start: get NMI failed; own IGTK/BIGTK TX not installed");
+        return;
+    }
+    if (nan_ensure_own_igtk() == 0 && s_nan_ctx.own_igtk_set) {
+        int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
+                                              own_nmi, s_nan_ctx.own_igtk_keyid, 1,
+                                              s_nan_ctx.own_igtk_ipn, sizeof(s_nan_ctx.own_igtk_ipn),
+                                              s_nan_ctx.own_igtk, NAN_ND_GTK_LEN,
+                                              NAN_KEY_ND_IGTK);
+        if (r != 0) {
+            ESP_LOGW(TAG, "NAN start: own IGTK (TX) install failed, rc=0x%x", r);
+        } else {
+            ESP_LOGI(TAG, "NAN start: own IGTK (TX) installed (keyid=%d)", s_nan_ctx.own_igtk_keyid);
+        }
+        ESP_LOG_BUFFER_HEXDUMP("ND-IGTK", s_nan_ctx.own_igtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
+    }
+    if (nan_ensure_own_bigtk() == 0 && s_nan_ctx.own_bigtk_set) {
+        int r = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
+                                              own_nmi, s_nan_ctx.own_bigtk_keyid, 1,
+                                              s_nan_ctx.own_bigtk_bipn, sizeof(s_nan_ctx.own_bigtk_bipn),
+                                              s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN,
+                                              NAN_KEY_ND_BIGTK);
+        if (r != 0) {
+            ESP_LOGW(TAG, "NAN start: own BIGTK (TX) install failed, rc=0x%x", r);
+        } else {
+            ESP_LOGI(TAG, "NAN start: own BIGTK (TX) installed (keyid=%d)", s_nan_ctx.own_bigtk_keyid);
+        }
+        ESP_LOG_BUFFER_HEXDUMP("ND-BIGTK", s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN, ESP_LOG_DEBUG);
+    }
+}
+
+void nan_security_reset_own_group_keys(void)
+{
+    forced_memzero(s_nan_ctx.own_igtk, sizeof(s_nan_ctx.own_igtk));
+    memset(s_nan_ctx.own_igtk_ipn, 0, sizeof(s_nan_ctx.own_igtk_ipn));
+    s_nan_ctx.own_igtk_keyid = 0;
+    s_nan_ctx.own_igtk_set = false;
+
+    forced_memzero(s_nan_ctx.own_bigtk, sizeof(s_nan_ctx.own_bigtk));
+    memset(s_nan_ctx.own_bigtk_bipn, 0, sizeof(s_nan_ctx.own_bigtk_bipn));
+    s_nan_ctx.own_bigtk_keyid = 0;
+    s_nan_ctx.own_bigtk_set = false;
+}
+
+/* 00-0F-AC RSN OUI written into every NAN KDE header. */
+static const uint8_t nan_kde_rsn_oui[3] = {0x00, 0x0f, 0xac};
+
+/* NAN KDE header (802.11 Fig 12-34: DD len OUI(3) DataType(1)); mirrors hostap
+ * nan_add_kde_hdr(). data_len excludes the DD/len/OUI/type bytes. */
+static uint8_t *nan_kde_put_hdr(uint8_t *p, uint8_t data_type, uint8_t data_len)
+{
+    *p++ = 0xDD;
+    *p++ = (uint8_t)(4 + data_len);     /* OUI(3) + DataType(1) + data */
+    memcpy(p, nan_kde_rsn_oui, sizeof(nan_kde_rsn_oui));
+    p += sizeof(nan_kde_rsn_oui);
+    *p++ = data_type;
+    return p;
+}
+
+/* IGTK KDE (§9.5.21.5: KeyID(2 LE) IPN(6) IGTK); mirrors hostap nan_sec_igtk_kde().
+ * Carries the device-global IGTK (BIP-CMAC-128); the peer installs it RX-only to
+ * verify our group-addressed management frames. */
+static int nan_append_igtk_kde(struct ndl_info *ndl, uint8_t **p, const uint8_t *end)
+{
+    if (!nan_ndl_igtk_negotiated(ndl)) {
+        return 0;
+    }
+    if ((size_t)(end - *p) < NAN_KDE_HDR_LEN + NAN_IGTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN) {
+        return -1;
+    }
+    uint8_t *q = nan_kde_put_hdr(*p, NAN_KDE_TYPE_IGTK,
+                                 NAN_IGTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN);
+    *q++ = s_nan_ctx.own_igtk_keyid & 0xFF; *q++ = 0;       /* KeyID (2, LE) — 4/5 */
+    memcpy(q, s_nan_ctx.own_igtk_ipn, 6); q += 6;           /* IPN (6) */
+    memcpy(q, s_nan_ctx.own_igtk, NAN_ND_GTK_LEN); q += NAN_ND_GTK_LEN;
+    *p = q;
+    return 0;
+}
+
+/* BIGTK KDE (§9.5.21.5: KeyID(2 LE) BIPN(6) BIGTK); mirrors hostap nan_sec_bigtk_kde().
+ * Carries the device-global BIGTK (BIP-CMAC-128); the peer installs it RX-only to
+ * verify our protected Beacon frames. */
+static int nan_append_bigtk_kde(struct ndl_info *ndl, uint8_t **p, const uint8_t *end)
+{
+    if (!nan_ndl_bigtk_negotiated(ndl)) {
+        return 0;
+    }
+    if ((size_t)(end - *p) < NAN_KDE_HDR_LEN + NAN_BIGTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN) {
+        return -1;
+    }
+    uint8_t *q = nan_kde_put_hdr(*p, NAN_KDE_TYPE_BIGTK,
+                                 NAN_BIGTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN);
+    *q++ = s_nan_ctx.own_bigtk_keyid & 0xFF; *q++ = 0;      /* KeyID (2, LE) — 6/7 */
+    memcpy(q, s_nan_ctx.own_bigtk_bipn, 6); q += 6;         /* BIPN (6) */
+    memcpy(q, s_nan_ctx.own_bigtk, NAN_ND_GTK_LEN); q += NAN_ND_GTK_LEN;
+    *p = q;
+    return 0;
+}
+
+/* GTK KDE (§7.1.3.2/§9.5.21.5, 802.11 Fig 12-36); mirrors hostap nan_sec_gtk_kde().
+ * Tx bit stays 0: the peer installs this as an RX-only group key. */
+static int nan_append_gtk_kde(struct ndl_info *ndl, uint8_t **p, const uint8_t *end)
+{
+    if (!ndl->own_gtk_set || !ndl->own_gtk_len) {
+        return 0;
+    }
+    if (ndl->own_gtk_keyid < 1 || ndl->own_gtk_keyid > 2) {   /* §7.1.3.2: GTK Key ID is 1 or 2 */
+        ESP_LOGW(TAG, "GTK: invalid Key ID %u", ndl->own_gtk_keyid);
+        return -1;
+    }
+    if ((size_t)(end - *p) < NAN_KDE_HDR_LEN + NAN_GTK_KDE_PREFIX_LEN + ndl->own_gtk_len) {
+        return -1;
+    }
+    uint8_t *q = nan_kde_put_hdr(*p, NAN_KDE_TYPE_GTK,
+                                 NAN_GTK_KDE_PREFIX_LEN + ndl->own_gtk_len);
+    *q++ = ndl->own_gtk_keyid & 0x03;   /* KeyID (b0-1); Tx (b2)=0; b3-7 reserved */
+    *q++ = 0;                           /* Reserved */
+    memcpy(q, ndl->own_gtk, ndl->own_gtk_len);
+    *p = q + ndl->own_gtk_len;
+    return 0;
+}
+
+/* NIST AES Key Wrap of Key Data with the ND-KEK. Pads the plaintext to >=16
+ * octets and a multiple of 8 (0xDD then 0x00, per §12.7.2). Cipher = padded+8. */
+static int nan_kek_wrap_key_data(struct ndl_info *ndl, const uint8_t *plain,
+                                 size_t plain_len, uint8_t *out, size_t out_cap,
+                                 size_t *out_len)
+{
+    uint8_t pad[NAN_GROUP_KEY_DATA_MAX];
+    size_t padded = plain_len;
+    if (padded < 16) {
+        padded = 16;
+    }
+    if (padded % 8) {
+        padded = (padded + 7) & ~((size_t)7);
+    }
+    if (padded > sizeof(pad) || (padded + 8) > out_cap) {
+        return -1;
+    }
+    memcpy(pad, plain, plain_len);
+    if (padded > plain_len) {
+        pad[plain_len] = 0xDD;
+        memset(pad + plain_len + 1, 0, padded - plain_len - 1);
+    }
+    int rc = aes_wrap(ndl->nd_kek, ndl->kek_len, (int)(padded / 8), pad, out);
+    forced_memzero(pad, sizeof(pad));       /* scrub plaintext group keys */
+    if (rc != 0) {
+        return -1;
+    }
+    *out_len = padded + 8;
+    return 0;
+}
+
+/* NIST AES Key Unwrap of received Key Data with the ND-KEK. Plain = cipher-8. */
+static int nan_kek_unwrap_key_data(struct ndl_info *ndl, const uint8_t *cipher,
+                                   size_t cipher_len, uint8_t *out, size_t out_cap,
+                                   size_t *out_len)
+{
+    if (cipher_len < 24 || (cipher_len % 8) != 0) { /* >=16 plaintext + 8 wrap */
+        return -1;
+    }
+    size_t plain_len = cipher_len - 8;
+    if (plain_len > out_cap) {
+        return -1;
+    }
+    if (aes_unwrap(ndl->nd_kek, ndl->kek_len, (int)(plain_len / 8), cipher, out) != 0) {
+        return -1;
+    }
+    *out_len = plain_len;
+    return 0;
+}
+
+/* Build the local group Key Data (KDE order IGTK, BIGTK, GTK per upstream),
+ * KEK-wrap it, and patch Encrypted-Data bit + Key Data Length + Key RSC into
+ * the 95-byte descriptor in place. Returns the extended descriptor length, or
+ * NAN_KEY_DESC_MIN_LEN (pairwise-only) on negotiation-off or any error so the
+ * handshake still completes. Mirrors hostap nan_sec_add_kdes(); §7.1.3.5: KDEs
+ * are sent only KEK-wrapped, never in clear. */
+static int nan_append_own_group_kdes(struct ndl_info *ndl, uint8_t *key_desc, size_t desc_cap)
+{
+    bool want_gtk   = nan_ndl_gtk_negotiated(ndl);
+    bool want_igtk  = nan_ndl_igtk_negotiated(ndl);
+    bool want_bigtk = nan_ndl_bigtk_negotiated(ndl);
+    if (!want_gtk && !want_igtk && !want_bigtk) {
+        return NAN_KEY_DESC_MIN_LEN;
+    }
+    if (!ndl->ptk_set) {
+        ESP_LOGW(TAG, "Group KDEs [%s%s%s]: PTK/KEK not set; sending without group keys",
+                 want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
+        return NAN_KEY_DESC_MIN_LEN;
+    }
+    if (want_gtk && nan_ensure_own_gtk(ndl) != 0) {
+        ESP_LOGW(TAG, "GTK: own key generation failed; sending without group keys");
+        return NAN_KEY_DESC_MIN_LEN;
+    }
+    if (want_igtk && nan_ensure_own_igtk() != 0) {
+        ESP_LOGW(TAG, "IGTK: own key generation failed; sending without group keys");
+        return NAN_KEY_DESC_MIN_LEN;
+    }
+    if (want_bigtk && nan_ensure_own_bigtk() != 0) {
+        ESP_LOGW(TAG, "BIGTK: own key generation failed; sending without group keys");
+        return NAN_KEY_DESC_MIN_LEN;
+    }
+
+    uint8_t plain[NAN_GROUP_KEY_DATA_MAX];
+    uint8_t *p = plain;
+    const uint8_t *end = plain + sizeof(plain);
+    size_t plain_len = 0;
+    size_t wrapped_len = 0;
+    uint16_t key_info = 0;
+    int ret = NAN_KEY_DESC_MIN_LEN;
+
+    if (nan_append_igtk_kde(ndl, &p, end) < 0 ||
+        nan_append_bigtk_kde(ndl, &p, end) < 0 ||
+        nan_append_gtk_kde(ndl, &p, end) < 0) {
+        ESP_LOGW(TAG, "Group KDEs [%s%s%s]: assembly failed; sending without group keys",
+                 want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
+        goto out;
+    }
+
+    plain_len = (size_t)(p - plain);
+    if (plain_len == 0) {
+        goto out;                           /* nothing negotiated to send */
+    }
+
+    if (nan_kek_wrap_key_data(ndl, plain, plain_len,
+                              &key_desc[NAN_KEY_DESC_DATA_OFF],
+                              desc_cap > NAN_KEY_DESC_DATA_OFF ?
+                                  desc_cap - NAN_KEY_DESC_DATA_OFF : 0,
+                              &wrapped_len) != 0) {
+        ESP_LOGW(TAG, "Group KDEs [%s%s%s]: KEK wrap failed or no headroom; sending without group keys",
+                 want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
+        goto out;
+    }
+
+    key_info = (key_desc[NAN_KEY_DESC_KEY_INFO_OFF] << 8) |
+               key_desc[NAN_KEY_DESC_KEY_INFO_OFF + 1];
+    key_info |= NAN_KEY_INFO_ENC_KEY;
+    key_desc[NAN_KEY_DESC_KEY_INFO_OFF]     = (key_info >> 8) & 0xFF;
+    key_desc[NAN_KEY_DESC_KEY_INFO_OFF + 1] = key_info & 0xFF;
+    key_desc[NAN_KEY_DESC_DATA_LEN_OFF]     = (wrapped_len >> 8) & 0xFF;
+    key_desc[NAN_KEY_DESC_DATA_LEN_OFF + 1] = wrapped_len & 0xFF;
+
+    /* Key RSC carries the GTK's RSC only when a GTK KDE is present (§7.1.3.5). */
+    if (want_gtk) {
+        memcpy(&key_desc[NAN_KEY_DESC_RSC_OFF], ndl->own_gtk_rsc, NAN_KEY_RSC_LEN);
+    }
+
+    ESP_LOGI(TAG, "Group Key Data wrapped: %u plain -> %u wrapped bytes, KDEs=[%s%s%s]",
+             (unsigned)plain_len, (unsigned)wrapped_len,
+             want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
+    ret = NAN_KEY_DESC_MIN_LEN + (int)wrapped_len;
+
+out:
+    forced_memzero(plain, sizeof(plain));   /* scrub assembled plaintext group keys */
+    return ret;
+}
+
 /*
  * Internal SCIA builder shared by Publish SDF and NDP-Response paths.
  * Per-entry layout: Len(2) + Type(1) + PubID(1) + Value(PMKID_LEN) = 20 bytes.
@@ -592,7 +1024,8 @@ static int nan_build_scia_attr(uint8_t *frm, uint8_t pub_id,
         p += ESP_WIFI_NAN_NDP_PMKID_LEN;
     }
 
-    return (int)(p - frm);
+    int written = (int)(p - frm);
+    return written;
 }
 
 /*
@@ -827,8 +1260,22 @@ esp_err_t nan_derive_security_params(const char *service_name,
         }
         out_derived[i].type            = WIFI_NAN_SECURITY_ENCRYPTED;
         out_derived[i].csid_bitmap     = (uint16_t)(1u << cred->csid);
+        /* Advertise the basic-default NCS-GTK suite alongside the credential's
+         * PMK cipher when the service enables group-addressed data protection.
+         * The blob unions derived_security[].csid_bitmap into the on-air CSIA,
+         * so this is what makes us announce GTK support (§7.1.3.5). The bit is
+         * masked back out for the pairwise/link cipher query (see
+         * nan_get_ndp_security_csid). */
+        if (sec_cfg->group_data_prot) {
+            out_derived[i].csid_bitmap |= NAN_CSID_GTK_DEFAULT;
+        }
         out_derived[i].group_data_prot = sec_cfg->group_data_prot;
         out_derived[i].group_mgmt_prot = sec_cfg->group_mgmt_prot;
+    }
+
+    if (sec_cfg->group_data_prot) {
+        ESP_LOGI(TAG, "NAN GTK: advertising NCS-GTK-CCMP-128 (group_data_prot=1) for svc='%s'",
+                 service_name);
     }
 
     /* Mirror the derived material into the host's own_svc_info slot for this
@@ -869,6 +1316,16 @@ uint16_t nan_get_ndp_security_csid(uint8_t ndp_id, const uint8_t *peer_nmi)
     struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
     uint16_t csid = ndl ? ndl->security_ctx.csid_bitmap : 0;
     NAN_DATA_UNLOCK();
+    /* Return the FULL negotiated bitmap, INCLUDING NCS-GTK when group-addressed
+     * data protection is in use, so the on-air NDP Request/Response CSIA
+     * advertises the group cipher and the peer can detect our group-data support
+     * (required for symmetric GTK distribution and third-party/iOS/Android
+     * interop). Safe to include NCS-GTK here: the blob treats this value as an
+     * opaque bitmap that it passes straight to the host CSIA callbacks
+     * (construct_csia / get_csia_len) and never interprets individual bits.
+     * Pairwise/link cipher selection and ND-TK install are
+     * host-driven and do not read this field; the group key has its own install
+     * path (NAN_KEY_ND_GTK) and gtk_required gate. */
     return csid;
 }
 
@@ -888,6 +1345,19 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
     }
 
     const wifi_nan_discovery_security_params_t *cfg = &own_svc->user_cfg;
+
+    /* Remember whether this publisher signalled group-data (GTK) support, so the
+     * initiator NDP-req path can gate GTK distribution on mutual support. The
+     * spec-correct signal is the CSIA Capabilities byte (parsed into
+     * group_data_prot by esp_nan_parse_publish_security); an NCS-GTK cipher-suite
+     * ID is the legacy Android/ESP signal and is OR'd in for interop. */
+    peer_svc->peer_group_data_cap = (peer_sec->group_data_prot ||
+                                     (peer_sec->csid_bitmap & NAN_CSID_GTK_BITS)) ? 1 : 0;
+    /* IGTK/BIGTK (group management) support comes from the CSIA Capabilities
+     * byte (parsed into group_mgmt_prot/group_bigtk_prot by
+     * esp_nan_parse_publish_security): IGTKSA = bits 1-2 != 0, BIGTKSA = 10. */
+    peer_svc->peer_group_mgmt_cap  = peer_sec->group_mgmt_prot ? 1 : 0;
+    peer_svc->peer_group_bigtk_cap = peer_sec->group_bigtk_prot ? 1 : 0;
 
     if (cfg->num_credentials == 0 ||
             cfg->num_credentials > ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
@@ -1073,6 +1543,35 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
 
     ndl->security_ctx.type        = WIFI_NAN_SECURITY_ENCRYPTED;
     ndl->security_ctx.csid_bitmap = (uint16_t)(1u << ndp_csid);
+    /* Distribute a GTK in M3 only if we enabled group_data_prot AND the
+     * publisher advertised an NCS-GTK suite (recorded at SDF match). */
+    ndl->gtk_required = (cfg->group_data_prot && peer_svc &&
+                         peer_svc->peer_group_data_cap) ? 1 : 0;
+    /* Advertise NCS-GTK in the NDP-Request CSIA so any responder (incl.
+     * third-party/iOS/Android) can detect our group-data support and
+     * reciprocate. Carried in ndl->security_ctx.csid_bitmap, which
+     * nan_get_ndp_security_csid() returns verbatim to the blob for the on-air
+     * M1/M2 CSIA. Pairwise cipher selection / ND-TK install do not read this
+     * field, so including the group bit here is safe. */
+    if (ndl->gtk_required) {
+        ndl->security_ctx.csid_bitmap |= NAN_CSID_GTK_DEFAULT;
+    }
+    if (cfg->group_data_prot) {
+        ESP_LOGI(TAG, "NDP GTK: %s (initiator) - own group_prot=1, peer NCS-GTK=%d",
+                 ndl->gtk_required ? "negotiated" : "NOT negotiated",
+                 (peer_svc && peer_svc->peer_group_data_cap) ? 1 : 0);
+    }
+    /* IGTK distributed in M3 iff we enabled group_mgmt_prot AND the publisher
+     * advertised IGTKSA; BIGTK additionally requires BIGTKSA (§7.1.3.5). */
+    bool peer_igtk  = peer_svc && peer_svc->peer_group_mgmt_cap;
+    bool peer_bigtk = peer_svc && peer_svc->peer_group_bigtk_cap;
+    ndl->igtk_required  = (s_nan_ctx.group_mgmt_prot && peer_igtk) ? 1 : 0;
+    ndl->bigtk_required = (s_nan_ctx.group_mgmt_prot && peer_bigtk) ? 1 : 0;
+    if (s_nan_ctx.group_mgmt_prot) {
+        ESP_LOGI(TAG, "NDP IGTK/BIGTK: igtk=%s bigtk=%s (initiator) - peer igtk=%d bigtk=%d",
+                 ndl->igtk_required ? "yes" : "no", ndl->bigtk_required ? "yes" : "no",
+                 peer_igtk, peer_bigtk);
+    }
     memcpy(ndl->security_ctx.nd_pmk,   pmk,        ESP_WIFI_NAN_NDP_PMK_LEN);
     memcpy(ndl->security_ctx.nd_pmkid, pair_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN);
 
@@ -1109,8 +1608,27 @@ int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id, uint16_t own_csid_bitma
     *p++ = attr_len & 0xFF;
     *p++ = (attr_len >> 8) & 0xFF;
 
-    /* Capabilities byte (0x4 set for iOS interop) */
-    *p++ = 0x4;
+    /* Capabilities group-SA bits (§9.5.21.2 Table 122) are strictly nested:
+     *   00 = none, 01 = GTKSA+IGTKSA, 10 = GTKSA+IGTKSA+BIGTKSA.
+     * There is no "IGTK/BIGTK without GTKSA" codepoint, so:
+     *   - device-global group_mgmt_prot set -> 10 (BIGTK forces GTK+IGTK; we also
+     *     force GTKSA on every secured service, see nan_claim_own_svc_slot);
+     *   - else if this CSIA carries a GTK suite -> 01 (GTKSA mandates IGTKSA);
+     *   - else -> 00.
+     * Advertising support never blocks a peer that lacks protection: the keys and
+     * frame protection are set up only AFTER mutual capability negotiation — the
+     * IGTK/BIGTK/GTK KDEs are exchanged iff BOTH peers advertise support
+     * (§7.1.3.5), and a non-supporting peer ignores the unknown MME elements and
+     * still connects. */
+    uint8_t grp_caps;
+    if (s_nan_ctx.group_mgmt_prot) {
+        grp_caps = (uint8_t)(NAN_CSIA_CAP_GTK_SUPP_ALL << NAN_CSIA_CAP_GTK_SUPP_POS);   /* 0x04 (10) */
+    } else if (own_csid_bitmap & NAN_CSID_GTK_DEFAULT) {
+        grp_caps = (uint8_t)(NAN_CSIA_CAP_GTK_SUPP_IGTK << NAN_CSIA_CAP_GTK_SUPP_POS);  /* 0x02 (01) */
+    } else {
+        grp_caps = NAN_CSIA_CAP_GTK_SUPP_NONE;                                          /* 0x00 (00) */
+    }
+    *p++ = grp_caps;
 
     /* Cipher Suite ID list: [CSID(1)] [Publish ID(1)] */
     for (uint8_t csid = 1; csid <= 8; csid++) {
@@ -1120,7 +1638,8 @@ int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id, uint16_t own_csid_bitma
         }
     }
 
-    return (int)(p - frm);
+    int written = (int)(p - frm);
+    return written;
 }
 
 int esp_nan_construct_scia_publish(uint8_t *frm, uint8_t pub_id,
@@ -1184,8 +1703,6 @@ uint32_t esp_nan_get_csia_len(uint16_t own_csid_bitmap, uint16_t peer_csid_bitma
     }
     uint8_t num_csids = __builtin_popcount(csid_bitmap);
     uint32_t len = 3 + 1 + 2 * num_csids;
-    ESP_LOGD(TAG, "GET CSIA LEN: %lu (own=0x%04x, peer=0x%04x, num_csids=%d)",
-             len, own_csid_bitmap, peer_csid_bitmap, num_csids);
     return len;
 }
 
@@ -1212,9 +1729,112 @@ uint32_t esp_nan_get_shared_key_desc_attr_len(uint16_t key_data_len)
     return total;
 }
 
-int esp_nan_ndp_security_install_get_shared_desc_len(void)
+/* Which group KDEs a key descriptor carries (for sizing + logging). */
+#define NAN_KDE_PRESENT_GTK    BIT(0)
+#define NAN_KDE_PRESENT_IGTK   BIT(1)
+#define NAN_KDE_PRESENT_BIGTK  BIT(2)
+
+/* Exact wrapped group Key Data length this NDL will emit — mirrors what
+ * nan_append_own_group_kdes() writes, with NO side effects (does not generate the
+ * GTK). Sets *kde_mask to the included KDEs. 0 = no group keys (pairwise-only).
+ * Caller holds the lock. Keep in lockstep with nan_append_{igtk,bigtk,gtk}_kde(). */
+static size_t nan_group_key_data_wrapped_len(const struct ndl_info *ndl, uint8_t *kde_mask)
 {
-    return (int)esp_nan_get_shared_key_desc_attr_len(0);
+    uint8_t mask = 0;
+    size_t plain = 0;
+    if (!ndl || !ndl->ptk_set) {
+        if (kde_mask) {
+            *kde_mask = 0;
+        }
+        return 0;   /* no KEK yet -> nothing can be wrapped */
+    }
+    /* Order matches the builder: IGTK, BIGTK, GTK. Each branch contributes iff
+     * its negotiation gate (igtk/bigtk/gtk_required) fired for this NDP. */
+    if (nan_ndl_igtk_negotiated(ndl)) {
+        plain += NAN_KDE_HDR_LEN + NAN_IGTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN;
+        mask |= NAN_KDE_PRESENT_IGTK;
+    }
+    if (nan_ndl_bigtk_negotiated(ndl)) {
+        plain += NAN_KDE_HDR_LEN + NAN_BIGTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN;
+        mask |= NAN_KDE_PRESENT_BIGTK;
+    }
+    if (nan_ndl_gtk_negotiated(ndl)) {
+        plain += NAN_KDE_HDR_LEN + NAN_GTK_KDE_PREFIX_LEN + NAN_ND_GTK_LEN;
+        mask |= NAN_KDE_PRESENT_GTK;
+    }
+    if (kde_mask) {
+        *kde_mask = mask;
+    }
+    if (plain == 0) {
+        return 0;
+    }
+    size_t padded = plain < 16 ? 16 : plain;          /* NIST AES Key Wrap minimum */
+    if (padded % 8) {
+        padded = (padded + 7) & ~((size_t)7);
+    }
+    return padded + 8;                                 /* + AES-Key-Wrap overhead */
+}
+
+/* INFO log of the descriptor length and which group KDEs it carries, so on-device
+ * logs show what was sized/sent (not a silent length). */
+static void nan_log_group_desc_len(const char *msg, uint8_t ndp_id, int ret,
+                                   uint16_t key_data_len, uint8_t kde_mask,
+                                   bool found, bool ptk_set)
+{
+    if (!found) {
+        ESP_LOGW(TAG, "%s desc len: no NDL (ndp_id=%d) -> len=%d (no Key Data)",
+                 msg, ndp_id, ret);
+    } else if (key_data_len == 0) {
+        ESP_LOGI(TAG, "%s desc len=%d (ndp_id=%d): no group KDEs (ptk_set=%d)",
+                 msg, ret, ndp_id, ptk_set);
+    } else {
+        ESP_LOGI(TAG, "%s desc len=%d (ndp_id=%d): Key Data=%u KDEs=[%s%s%s]",
+                 msg, ret, ndp_id, key_data_len,
+                 (kde_mask & NAN_KDE_PRESENT_GTK)   ? "GTK "   : "",
+                 (kde_mask & NAN_KDE_PRESENT_IGTK)  ? "IGTK "  : "",
+                 (kde_mask & NAN_KDE_PRESENT_BIGTK) ? "BIGTK " : "");
+    }
+}
+
+/* Exact M4 (NDP Security Install) Shared Key Descriptor length for this NDP, so the
+ * blob allocates exactly what the builder writes (no on-air zero-padding). */
+int esp_nan_ndp_security_install_get_shared_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi)
+{
+    uint16_t key_data_len = 0;
+    uint8_t kde_mask = 0;
+    bool found = false, ptk = false;
+    NAN_DATA_LOCK();
+    struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
+    if (ndl) {
+        found = true;
+        ptk = ndl->ptk_set;
+        key_data_len = (uint16_t)nan_group_key_data_wrapped_len(ndl, &kde_mask);
+    }
+    NAN_DATA_UNLOCK();
+
+    int ret = (int)esp_nan_get_shared_key_desc_attr_len(key_data_len);
+    nan_log_group_desc_len("M4 Security Install", ndp_id, ret, key_data_len, kde_mask, found, ptk);
+    return ret;
+}
+
+/* Exact M3 (NDP Confirm) length for the initiator path; same contract as M4. */
+int esp_nan_ndp_confirm_get_shared_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi)
+{
+    uint16_t key_data_len = 0;
+    uint8_t kde_mask = 0;
+    bool found = false, ptk = false;
+    NAN_DATA_LOCK();
+    struct ndl_info *ndl = nan_find_ndl(ndp_id, (uint8_t *)peer_nmi);
+    if (ndl) {
+        found = true;
+        ptk = ndl->ptk_set;
+        key_data_len = (uint16_t)nan_group_key_data_wrapped_len(ndl, &kde_mask);
+    }
+    NAN_DATA_UNLOCK();
+
+    int ret = (int)esp_nan_get_shared_key_desc_attr_len(key_data_len);
+    nan_log_group_desc_len("M3 Confirm", ndp_id, ret, key_data_len, kde_mask, found, ptk);
+    return ret;
 }
 
 int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t ndp_id, const uint8_t *peer_nmi)
@@ -1253,15 +1873,16 @@ int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t n
         /* M2 echoes M1's replay counter unchanged (per RSNA 4-way handshake). */
         memcpy(ndl->tx_replay_counter, ndl->rx_replay_counter, NAN_REPLAY_COUNTER_LEN);
 
-        uint8_t our_mac[6];
-        if (esp_wifi_get_mac(WIFI_IF_NAN, our_mac) != ESP_OK) {
+        uint8_t i_addr[6];
+        uint8_t r_addr[6];
+        if (nan_ndp_ptk_addrs(ndl, true, i_addr, r_addr) != 0) {
             NAN_DATA_UNLOCK();
-            ESP_LOGE(TAG, "NDP Resp Key Desc: get our MAC failed");
+            ESP_LOGE(TAG, "NDP Resp Key Desc: PTK address resolution failed");
             return 0;
         }
         if (nan_ndp_ptk_derive(ndl->security_ctx.nd_pmk,
-                               ndl->peer_ndi,  /* IAddr = Initiator NDI (Wi-Fi Aware v4.0 §7.1.3.5) */
-                               our_mac,        /* RAddr = Responder NDI */
+                               i_addr,         /* IAddr = Initiator NDI (Wi-Fi Aware v4.0 §7.1.3.5) */
+                               r_addr,         /* RAddr = Responder NDI */
                                ndl->anonce, ndl->snonce,
                                ndl->nd_kck, ndl->nd_kek, ndl->nd_tk) != 0) {
             NAN_DATA_UNLOCK();
@@ -1332,14 +1953,12 @@ int esp_nan_get_ndp_security_install_key_desc(uint8_t *buf, size_t buf_len, uint
 
     uint8_t *p = buf;
     *p++ = NAN_ATTR_ID_SHARED_KEY_DESC;
-    {
-        uint16_t body_len = 1 + NAN_KEY_DESC_MIN_LEN;
-        *p++ = body_len & 0xFF;
-        *p++ = (body_len >> 8) & 0xFF;
-    }
+    uint8_t *len_field = p;          /* backpatched once Key Data length is known */
+    p += 2;
     *p++ = ndl->publisher_id;
 
-    int n = nan_build_rsna_key_descriptor(p,
+    uint8_t *key_desc = p;
+    int n = nan_build_rsna_key_descriptor(key_desc,
                                           NAN_KEY_INFO_MIC |
                                           NAN_KEY_INFO_SECURE |
                                           NAN_KEY_INFO_INSTALL,
@@ -1351,11 +1970,18 @@ int esp_nan_get_ndp_security_install_key_desc(uint8_t *buf, size_t buf_len, uint
         return 0;
     }
 
-    n = 3 + 1 + n;
+    /* Responder distributes its GTK in M4 (§7.1.3.2). Buffer headroom comes
+     * from esp_nan_ndp_security_install_get_shared_desc_len(); falls back to
+     * pairwise-only if the blob under-allocated the buffer. */
+    n = nan_append_own_group_kdes(ndl, key_desc, buf_len - 4);
+
+    uint16_t body_len = 1 + (uint16_t)n;
+    len_field[0] = body_len & 0xFF;
+    len_field[1] = (body_len >> 8) & 0xFF;
 
     NAN_DATA_UNLOCK();
-    ESP_LOGD(TAG, "NDP M4 Key Desc: built for ndp_id=%d", ndp_id);
-    return n;
+    ESP_LOGD(TAG, "NDP M4 Key Desc: built (key_desc=%d bytes) for ndp_id=%d", n, ndp_id);
+    return 3 + 1 + n;
 }
 
 int esp_nan_update_ndp_resp_mic(uint8_t *m2_body, size_t body_len, uint8_t *key_desc_attr,
@@ -1376,6 +2002,7 @@ int esp_nan_update_ndp_security_install_mic(uint8_t *m4_body, size_t body_len, u
 
 void esp_nan_parse_ndp_csia(void *frm, size_t buf_len, wifi_nan_security_params_t *param)
 {
+
     if (!frm || !param || buf_len < 3) {
         return;
     }
@@ -1410,12 +2037,31 @@ void esp_nan_parse_ndp_csia(void *frm, size_t buf_len, wifi_nan_security_params_
             s_pending_scia.has_csid = true;
             s_pending_scia.pub_id = pub_id;
             s_pending_scia.csid_bitmap = accum;
+            /* Peer wants group-data (GTK) protection if it advertises GTKSA
+             * support in the CSIA Capabilities byte (body[0] bits 1-2,
+             * §9.5.21.2 Table 122 — how iOS signals it) or lists an NCS-GTK
+             * cipher suite (how Android/ESP signal it). The Capabilities byte
+             * is the spec-correct indicator; an NCS-GTK CSID only selects WHICH
+             * group cipher and need not be present. */
+            s_pending_scia.peer_group_data =
+                ((body[0] & NAN_CSIA_CAP_GTK_SUPP_MASK) ||
+                 (accum & NAN_CSID_GTK_BITS)) ? true : false;
+            if (s_pending_scia.peer_group_data) {
+                param->group_data_prot = 1;
+            }
+            /* Store the raw CSIA Capabilities byte; IGTK/BIGTK gating derives
+             * bits 1-2 (01=IGTKSA, 10=+BIGTKSA) independently at NDL finalize. */
+            s_pending_scia.peer_caps = body[0];
+            if (body[0] & NAN_CSIA_CAP_GTK_SUPP_MASK) {
+                param->group_mgmt_prot = 1;
+            }
         }
     }
 }
 
 void esp_nan_parse_ndp_scia(void *frm, size_t buf_len, wifi_nan_security_params_t *param)
 {
+
     if (!frm || !param || buf_len < 3) {
         return;
     }
@@ -1565,57 +2211,106 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
 
         memcpy(ndl->key_rsc, key_rsc, NAN_KEY_RSC_LEN);
 
-        /* Parse Key Data (KDEs) - only when not encrypted */
-        if (key_data_len > 0 && (NAN_KEY_DESC_DATA_OFF + key_data_len <= key_desc_len) && !has_enc_key) {
-            uint8_t *key_data = &key_desc[NAN_KEY_DESC_DATA_OFF];
+        /* Parse Key Data (KDEs). Per §7.1.3.5 group keys are always carried
+         * KEK-wrapped, so decrypt with the ND-KEK before walking. The plaintext
+         * may carry 0xDD/0x00 AES-Key-Wrap padding after the last KDE. */
+        if (key_data_len > 0 && (NAN_KEY_DESC_DATA_OFF + key_data_len <= key_desc_len)) {
+            uint8_t plain[NAN_GROUP_KEY_DATA_MAX];
+            const uint8_t *kde_buf = &key_desc[NAN_KEY_DESC_DATA_OFF];
+            size_t kde_len = key_data_len;
+
+            if (has_enc_key) {
+                size_t unwrapped = 0;
+                if (!ndl->ptk_set) {
+                    ESP_LOGW(TAG, "NDP Key Desc: encrypted Key Data but PTK/KEK not set; skipping KDEs");
+                    kde_len = 0;
+                } else if (nan_kek_unwrap_key_data(ndl, &key_desc[NAN_KEY_DESC_DATA_OFF],
+                                                   key_data_len, plain, sizeof(plain),
+                                                   &unwrapped) != 0) {
+                    ESP_LOGW(TAG, "NDP Key Desc: KEK unwrap of Key Data failed; skipping KDEs");
+                    kde_len = 0;
+                } else {
+                    kde_buf = plain;
+                    kde_len = unwrapped;
+                }
+            } else {
+                /* §7.1.3.5 / 802.11 §12.7.2: group KDEs are only ever carried
+                 * KEK-wrapped; ignore any Key Data presented in the clear. */
+                ESP_LOGW(TAG, "NDP Key Desc: Key Data not encrypted; ignoring KDEs");
+                kde_len = 0;
+            }
+
             uint16_t kd_offset = 0;
-
-            while (kd_offset + 2 <= key_data_len) {
-                uint8_t kde_type = key_data[kd_offset];
-                uint8_t kde_len = key_data[kd_offset + 1];
-
-                if (kd_offset + 2 + kde_len > key_data_len) {
+            while (kd_offset + 2 <= kde_len) {
+                uint8_t kde_id  = kde_buf[kd_offset];
+                uint8_t kde_flen = kde_buf[kd_offset + 1];
+                /* All KDEs start with 0xDD; a 0xDD/0x00 pad (or any short
+                 * element) terminates the meaningful list. */
+                if (kde_id != 0xDD || kde_flen < 4 ||
+                    kd_offset + 2 + kde_flen > kde_len) {
                     break;
                 }
 
-                if (kde_type == 0xDD && kde_len >= 4) {
-                    uint32_t oui = (key_data[kd_offset + 2] << 16) | (key_data[kd_offset + 3] << 8) | key_data[kd_offset + 4];
-                    uint8_t data_type = key_data[kd_offset + 5];
-                    uint8_t *data = &key_data[kd_offset + 6];
-                    uint8_t data_len = kde_len - 4;
+                uint32_t oui = (kde_buf[kd_offset + 2] << 16) |
+                               (kde_buf[kd_offset + 3] << 8) | kde_buf[kd_offset + 4];
+                uint8_t data_type = kde_buf[kd_offset + 5];
+                const uint8_t *body = &kde_buf[kd_offset + 6];
+                uint8_t body_len = kde_flen - 4;   /* after OUI(3) + DataType(1) */
 
-                    if (oui == 0x000FAC) { /* WFA OUI */
-                        if (data_type == 1 && data_len <= NAN_GTK_MAX_LEN) {
-                            memcpy(ndl->gtk, data, data_len);
-                            ndl->gtk_len = data_len;
+                if (oui == NAN_KDE_OUI_RSN) {
+                    if (data_type == NAN_KDE_TYPE_GTK && body_len > NAN_GTK_KDE_PREFIX_LEN) {
+                        /* GTK KDE: KeyID/Tx(1) Reserved(1) GTK(var) */
+                        uint8_t gtk_len = body_len - NAN_GTK_KDE_PREFIX_LEN;
+                        if (gtk_len <= NAN_GTK_MAX_LEN) {
+                            ndl->gtk_keyid = body[0] & 0x03;
+                            memcpy(ndl->gtk, body + NAN_GTK_KDE_PREFIX_LEN, gtk_len);
+                            ndl->gtk_len = gtk_len;
+                            memcpy(ndl->gtk_rsc, key_rsc, NAN_KEY_RSC_LEN);
                             ndl->gtk_set = 1;
-                            ESP_LOGI(TAG, "KDE: GTK stored (len=%d)", data_len);
-                        } else if (data_type == 3 && data_len >= 6) {
-                            ESP_LOGI(TAG, "KDE: MAC Address: " MACSTR, MAC2STR(data));
-                        } else if (data_type == 4 && data_len <= NAN_GTK_MAX_LEN) {
-                            memcpy(ndl->igtk, data, data_len);
-                            ndl->igtk_len = data_len;
-                            ndl->igtk_set = 1;
-                            ESP_LOGI(TAG, "KDE: IGTK stored (len=%d)", data_len);
-                        } else if (data_type == 5 && data_len <= NAN_GTK_MAX_LEN) {
-                            memcpy(ndl->bigtk, data, data_len);
-                            ndl->bigtk_len = data_len;
-                            ndl->bigtk_set = 1;
-                            ESP_LOGI(TAG, "KDE: BIGTK stored (len=%d)", data_len);
+                            ESP_LOGI(TAG, "KDE: peer GTK stored (keyid=%d, len=%d)",
+                                     ndl->gtk_keyid, gtk_len);
                         }
-                    } else if (oui == 0x506F9A) { /* NAN OUI */
-                        if (data_type == 36 && data_len >= 1) {
-                            ESP_LOGI(TAG, "KDE: NIK (Cipher Ver: %d)", data[0]);
-                        } else if (data_type == 37 && data_len >= 6) {
-                            uint16_t key_bitmap = data[0] | (data[1] << 8);
-                            uint32_t lifetime = (data[2] << 24) | (data[3] << 16) | (data[4] << 8) | data[5];
-                            ESP_LOGI(TAG, "KDE: NAN Key Lifetime: %lu s, Bitmap: 0x%04x",
-                                     (unsigned long)lifetime, key_bitmap);
+                    } else if (data_type == NAN_KDE_TYPE_MAC && body_len >= 6) {
+                        ESP_LOGI(TAG, "KDE: MAC Address: " MACSTR, MAC2STR(body));
+                    } else if (data_type == NAN_KDE_TYPE_IGTK && body_len > NAN_IGTK_KDE_PREFIX_LEN) {
+                        /* IGTK KDE: KeyID(2 LE) IPN(6) IGTK(var) */
+                        uint8_t igtk_len = body_len - NAN_IGTK_KDE_PREFIX_LEN;
+                        if (igtk_len <= NAN_GTK_MAX_LEN) {
+                            ndl->igtk_keyid = body[0];
+                            memcpy(ndl->igtk_ipn, body + 2, 6);   /* IPN follows KeyID(2) */
+                            memcpy(ndl->igtk, body + NAN_IGTK_KDE_PREFIX_LEN, igtk_len);
+                            ndl->igtk_len = igtk_len;
+                            ndl->igtk_set = 1;
+                            ESP_LOGI(TAG, "KDE: peer IGTK stored (keyid=%d, len=%d)",
+                                     ndl->igtk_keyid, igtk_len);
+                        }
+                    } else if (data_type == NAN_KDE_TYPE_BIGTK && body_len > NAN_BIGTK_KDE_PREFIX_LEN) {
+                        /* BIGTK KDE: KeyID(2 LE) BIPN(6) BIGTK(var) */
+                        uint8_t bigtk_len = body_len - NAN_BIGTK_KDE_PREFIX_LEN;
+                        if (bigtk_len <= NAN_GTK_MAX_LEN) {
+                            ndl->bigtk_keyid = body[0];
+                            memcpy(ndl->bigtk_ipn, body + 2, 6);   /* BIPN follows KeyID(2) */
+                            memcpy(ndl->bigtk, body + NAN_BIGTK_KDE_PREFIX_LEN, bigtk_len);
+                            ndl->bigtk_len = bigtk_len;
+                            ndl->bigtk_set = 1;
+                            ESP_LOGI(TAG, "KDE: peer BIGTK stored (keyid=%d, len=%d)",
+                                     ndl->bigtk_keyid, bigtk_len);
                         }
                     }
+                } else if (oui == NAN_KDE_OUI_WFA) {
+                    if (data_type == NAN_KDE_TYPE_NIK && body_len >= 1) {
+                        ESP_LOGI(TAG, "KDE: NIK (Cipher Ver: %d)", body[0]);
+                    } else if (data_type == NAN_KDE_TYPE_KEY_LIFE && body_len >= 6) {
+                        uint16_t key_bitmap = body[0] | (body[1] << 8);
+                        uint32_t lifetime = (body[2] << 24) | (body[3] << 16) |
+                                            (body[4] << 8) | body[5];
+                        ESP_LOGI(TAG, "KDE: NAN Key Lifetime: %lu s, Bitmap: 0x%04x",
+                                 (unsigned long)lifetime, key_bitmap);
+                    }
                 }
-                kd_offset += 2 + kde_len;
+                kd_offset += 2 + kde_flen;
             }
+            forced_memzero(plain, sizeof(plain));   /* scrub decrypted group keys */
         }
     } else if (msg_type == 1) {
         /* M1 received but NDL not created yet — store as pending */
@@ -1651,7 +2346,19 @@ esp_err_t esp_nan_parse_publish_security(const uint8_t *attrs, size_t attrs_len,
         ESP_LOGD(TAG, "Found CSIA in Publish SDF, len=%d", csia_len);
         ESP_LOG_BUFFER_HEXDUMP(TAG, csia, csia_len, ESP_LOG_DEBUG);
 
-        /* Skip Capabilities byte; iterate [CSID(1)] [Publish ID(1)] entries */
+        /* Capabilities byte (csia[0]) bits 1-2 = GTKSA/IGTKSA/BIGTKSA support
+         * (§9.5.21.2 Table 122): 01 = GTKSA+IGTKSA, 10 = +BIGTKSA. This — not an
+         * NCS-GTK cipher-suite ID — is how a peer (notably iOS) advertises it. */
+        uint8_t grp_supp = csia[0] & NAN_CSIA_CAP_GTK_SUPP_MASK;
+        if (grp_supp) {
+            security->group_data_prot = 1;
+            security->group_mgmt_prot = 1;   /* IGTKSA */
+        }
+        if (grp_supp == (NAN_CSIA_CAP_GTK_SUPP_ALL << NAN_CSIA_CAP_GTK_SUPP_POS)) {
+            security->group_bigtk_prot = 1;  /* BIGTKSA */
+        }
+
+        /* iterate [CSID(1)] [Publish ID(1)] entries after the Capabilities byte */
         size_t offset = 1;
         while (offset + 2 <= csia_len) {
             uint8_t csid = csia[offset];
@@ -1662,6 +2369,12 @@ esp_err_t esp_nan_parse_publish_security(const uint8_t *attrs, size_t attrs_len,
             }
 
             offset += 2;
+        }
+
+        /* Android/ESP peers advertise group-data support by listing an NCS-GTK
+         * cipher suite instead of (or with) the Capabilities byte bits. */
+        if (security->csid_bitmap & NAN_CSID_GTK_BITS) {
+            security->group_data_prot = 1;
         }
     }
 
@@ -1710,10 +2423,38 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                                 const uint8_t *peer_nmi,
                                 const uint8_t *peer_ndi)
 {
+
     if (ndl && s_pending_scia.pub_id == pub_id &&
             (s_pending_scia.has_csid || s_pending_scia.has_pmkid)) {
 
         if (s_pending_scia.has_csid) {
+            /* GTK is exchanged only if both sides support it: our service must
+             * enable group_data_prot AND the peer must have signalled group-data
+             * support in its NDP-Request CSIA (Capabilities byte for iOS, or an
+             * NCS-GTK cipher suite for Android/ESP — captured in peer_group_data
+             * by esp_nan_parse_ndp_csia). */
+            ndl->gtk_required = (p_own_svc && p_own_svc->user_cfg.group_data_prot &&
+                                 s_pending_scia.peer_group_data) ? 1 : 0;
+            if (p_own_svc && p_own_svc->user_cfg.group_data_prot) {
+                ESP_LOGI(TAG, "NDP GTK: %s (responder) - own group_prot=1, peer group_data=%d",
+                         ndl->gtk_required ? "negotiated" : "NOT negotiated",
+                         s_pending_scia.peer_group_data);
+            }
+            /* IGTK distributed in M4 iff we enabled group_mgmt_prot AND the peer
+             * advertised IGTKSA; BIGTK additionally requires BIGTKSA (§7.1.3.5). */
+            {
+                bool own_mgmt = s_nan_ctx.group_mgmt_prot;
+                uint8_t grp = s_pending_scia.peer_caps & NAN_CSIA_CAP_GTK_SUPP_MASK;
+                bool peer_igtk  = grp != 0;
+                bool peer_bigtk = grp == (NAN_CSIA_CAP_GTK_SUPP_ALL << NAN_CSIA_CAP_GTK_SUPP_POS);
+                ndl->igtk_required  = (own_mgmt && peer_igtk) ? 1 : 0;
+                ndl->bigtk_required = (own_mgmt && peer_bigtk) ? 1 : 0;
+                if (own_mgmt) {
+                    ESP_LOGI(TAG, "NDP IGTK/BIGTK: igtk=%s bigtk=%s (responder) - peer caps=0x%02x",
+                             ndl->igtk_required ? "yes" : "no", ndl->bigtk_required ? "yes" : "no",
+                             s_pending_scia.peer_caps);
+                }
+            }
             ndl->security_ctx.csid_bitmap = s_pending_scia.csid_bitmap;
             ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
         }
@@ -1721,6 +2462,8 @@ void nan_security_apply_pending(struct ndl_info *ndl,
         if (s_pending_scia.has_pmkid) {
             memcpy(ndl->security_ctx.nd_pmkid, s_pending_scia.pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN);
             int matched_idx = nan_match_pmkid(p_own_svc, s_pending_scia.pmkid, peer_nmi, peer_ndi);
+            bool pmk_resolved = false;
+
             if (matched_idx >= 0) {
                 ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
                 ndl->security_ctx.csid_bitmap = p_own_svc->derived_security[matched_idx].csid_bitmap;
@@ -1728,13 +2471,15 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                        p_own_svc->derived_security[matched_idx].nd_pmk,
                        ESP_WIFI_NAN_NDP_PMK_LEN);
                 ESP_LOGD(TAG, "NDP Indication: PMKID validated via cred slot %d", matched_idx);
+                pmk_resolved = true;
             }
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
             else if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
                 ESP_LOGD(TAG, "NDP Indication: PMK sourced from paired-peer cache");
+                pmk_resolved = true;
             }
 #endif
-            else {
+            if (!pmk_resolved) {
                 ESP_LOGW(TAG, "NDP Indication: PMKID validation failed");
             }
         }
@@ -2053,14 +2798,12 @@ int esp_nan_get_ndp_confirm_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_
 
     uint8_t *p = buf;
     *p++ = NAN_ATTR_ID_SHARED_KEY_DESC;
-    {
-        uint16_t body_len = 1 + NAN_KEY_DESC_MIN_LEN;
-        *p++ = body_len & 0xFF;
-        *p++ = (body_len >> 8) & 0xFF;
-    }
+    uint8_t *len_field = p;          /* backpatched once Key Data length is known */
+    p += 2;
     *p++ = ndl->publisher_id;
 
-    int n = nan_build_rsna_key_descriptor(p,
+    uint8_t *key_desc = p;
+    int n = nan_build_rsna_key_descriptor(key_desc,
                                           NAN_KEY_INFO_MIC |
                                           NAN_KEY_INFO_SECURE |
                                           NAN_KEY_INFO_ACK,
@@ -2072,12 +2815,19 @@ int esp_nan_get_ndp_confirm_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_
         return 0;
     }
 
-    n = 3 + 1 + n;
+    /* Initiator distributes its GTK in M3 (§7.1.3.2). Needs the blob to size
+     * the M3 buffer with GTK headroom (ndp_confirm_get_shared_desc_len);
+     * falls back to pairwise-only otherwise. */
+    n = nan_append_own_group_kdes(ndl, key_desc, buf_len - 4);
+
+    uint16_t body_len = 1 + (uint16_t)n;
+    len_field[0] = body_len & 0xFF;
+    len_field[1] = (body_len >> 8) & 0xFF;
 
     NAN_DATA_UNLOCK();
     /* State transition to M3_SENT happens in host TX-confirm hook */
-    ESP_LOGD(TAG, "NDP M3 Key Desc: built (MIC=0, driver must call esp_nan_update_ndp_confirm_mic) for ndp_id=%d", ndp_id);
-    return n;
+    ESP_LOGD(TAG, "NDP M3 Key Desc: built (key_desc=%d bytes, MIC=0; driver must call esp_nan_update_ndp_confirm_mic) for ndp_id=%d", n, ndp_id);
+    return 3 + 1 + n;
 }
 
 /**

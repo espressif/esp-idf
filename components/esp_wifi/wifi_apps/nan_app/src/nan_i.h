@@ -130,6 +130,40 @@ extern void *s_nan_data_lock;
 #define NAN_KEY_INFO_ENC_KEY  BIT(12)
 #define NAN_KEY_INFO_KEY_TYPE BIT(3)   /* 1=Pairwise, 0=Group */
 
+/* NAN KDE OUIs and Data Types carried in the Key Data field (Wi-Fi Aware
+ * v4.0 §9.5.21.5 Table 126; formats per 802.11 Fig 12-36/12-42/12-47). */
+#define NAN_KDE_OUI_RSN    0x000FACUL
+#define NAN_KDE_OUI_WFA    0x506F9AUL
+#define NAN_KDE_TYPE_GTK         1   /* 00-0F-AC GTK KDE */
+#define NAN_KDE_TYPE_MAC         3   /* 00-0F-AC MAC address KDE */
+#define NAN_KDE_TYPE_IGTK        9   /* 00-0F-AC IGTK KDE */
+#define NAN_KDE_TYPE_BIGTK       14  /* 00-0F-AC BIGTK KDE */
+#define NAN_KDE_TYPE_NIK         36  /* 50-6F-9A NIK KDE */
+#define NAN_KDE_TYPE_KEY_LIFE    37  /* 50-6F-9A NAN Key Lifetime KDE */
+
+/* KDE inner-prefix lengths (bytes before the actual key material). */
+#define NAN_KDE_HDR_LEN          6   /* DD(1) + len(1) + OUI(3) + DataType(1) */
+#define NAN_GTK_KDE_PREFIX_LEN   2   /* KeyID/Tx(1) + Reserved(1) */
+#define NAN_IGTK_KDE_PREFIX_LEN  8   /* KeyID(2) + IPN(6) */
+#define NAN_BIGTK_KDE_PREFIX_LEN 8   /* KeyID(2) + BIPN(6) */
+
+/* CSIA Capabilities group-SA support (§9.5.21.2 Table 122, bits 1-2, bit 2 high
+ * order). Mirrors hostap nan_defs.h NAN_CS_INFO_CAPA_GTK_SUPP_*. */
+#define NAN_CSIA_CAP_GTK_SUPP_POS    1
+#define NAN_CSIA_CAP_GTK_SUPP_MASK   0x06
+#define NAN_CSIA_CAP_GTK_SUPP_NONE   0   /* 00: no group SA */
+#define NAN_CSIA_CAP_GTK_SUPP_IGTK   1   /* 01: GTKSA + IGTKSA */
+#define NAN_CSIA_CAP_GTK_SUPP_ALL    2   /* 10: GTKSA + IGTKSA + BIGTKSA */
+
+/* ND-GTK is the data-path group key (CCMP-128). */
+#define NAN_ND_GTK_LEN           16
+/* Host-side bound for the group Key Data scratch buffers (plaintext + AES-wrap),
+ * sized for GTK+IGTK+BIGTK: GTK 24B + IGTK 30B + BIGTK 30B + optional Key Lifetime
+ * KDE(s), padded to a multiple of 8, + 8B NIST AES Key Wrap overhead (~104B worst
+ * case). NOT the descriptor-len reservation — the getters now return the EXACT
+ * per-NDP length, so the blob allocates exactly what the builder writes. */
+#define NAN_GROUP_KEY_DATA_MAX   128
+
 /* NCS-SK-128 only for now (Table 21): KCK 128 bits, KEK 128 bits, TK 128 bits, MIC 16 bytes */
 #define NAN_NCS_SK_128_KCK_LEN  16
 #define NAN_NCS_SK_128_KEK_LEN  16
@@ -138,10 +172,15 @@ extern void *s_nan_data_lock;
 #define NAN_NCS_SK_128_PTK_LEN  (NAN_NCS_SK_128_KCK_LEN + NAN_NCS_SK_128_KEK_LEN + NAN_NCS_SK_128_TK_LEN)
 
 /* Internal key-install constants matching esp_wifi_set_sta_key_internal semantics. */
-#define NAN_WIFI_WPA_ALG_CCMP    3
+#define NAN_WIFI_WPA_ALG_CCMP          3
+#define NAN_WIFI_WPA_ALG_BIP_CMAC_128  7   /* IGTK/BIGTK BIP = blob WIFI_WPA_ALG_IGTK; 4 is SMS4 */
 #define NAN_KEY_FLAG_RX          BIT(2)
 #define NAN_KEY_FLAG_TX          BIT(3)
 #define NAN_KEY_FLAG_PAIRWISE    BIT(5)
+
+/* NAN key-type selector (nan_key_type_t: NAN_KEY_ND_TK / ND_GTK / NM_TK / ND_IGTK /
+ * ND_BIGTK), passed as the last arg of esp_wifi_set_nan_key_internal, is defined in
+ * esp_wifi_driver.h (included above) and shared with the blob. */
 
 /* Handshake state */
 enum nan_handshake_state {
@@ -195,6 +234,13 @@ struct peer_svc_info {
      * whose ND-PMKID matched the publisher SCIA. The initiator NDP-req path
      * uses this to pick the right credential for M1's pair-PMKID. */
     uint8_t matched_cred_idx;
+    /* Set at SDF match if the publisher advertised an NCS-GTK suite in its CSIA;
+     * the initiator NDP-req path uses it (with our own group_data_prot) to
+     * decide whether to distribute a GTK during NDP setup. */
+    uint8_t peer_group_data_cap: 1;
+    uint8_t peer_group_mgmt_cap: 1;     /* peer advertised IGTKSA (CSIA caps bits 1-2 != 0) */
+    uint8_t peer_group_bigtk_cap: 1;    /* peer advertised BIGTKSA (CSIA caps bits 1-2 == 10) */
+    uint8_t peer_sec_reserved: 5;
 #endif
 #if CONFIG_ESP_WIFI_NAN_PAIRING
     /* Peer NIK / cipher version / lifetime extracted from a NAN Shared Key
@@ -231,6 +277,11 @@ struct own_svc_info {
 #if CONFIG_ESP_WIFI_NAN_PAIRING
     bool nik_fup_pending;
     uint8_t nik_fup_pending_peer_nmi[MACADDR_LEN];
+    /* Set when the current PASN session for @c verify_session_peer_nmi is a
+     * pairing verification (re-pair). Consumed once in the key-installed
+     * callback to skip the NIK follow-up exchange. */
+    bool verify_session_pending;
+    uint8_t verify_session_peer_nmi[MACADDR_LEN];
 #endif
     uint8_t svc_hash[6];
 };
@@ -268,19 +319,37 @@ struct ndl_info {
 
     uint8_t handshake_state;
 
-    /* Group key state (unsupported -- pairwise-only M1-M4 flow today;
-     * fields kept to match the spec-defined RSNA key descriptor layout
-     * and stay forward-compatible). */
+    /* Received peer group keys (RX GTKSA). GTK protects group-addressed data
+     * frames the peer transmits; installed against the peer NDI. IGTK/BIGTK
+     * protect group-addressed management/Beacon frames (NMI plane). */
     uint8_t gtk[NAN_GTK_MAX_LEN];
     uint8_t igtk[NAN_GTK_MAX_LEN];
     uint8_t bigtk[NAN_GTK_MAX_LEN];
     uint8_t gtk_len;
     uint8_t igtk_len;
     uint8_t bigtk_len;
+    uint8_t gtk_keyid;                  /* peer GTK Key ID (1 or 2) */
+    uint8_t igtk_keyid;                 /* peer IGTK Key ID (4 or 5) */
+    uint8_t bigtk_keyid;                /* peer BIGTK Key ID (6 or 7) */
+    uint8_t gtk_rsc[NAN_KEY_RSC_LEN];   /* peer GTK RSC from Key RSC field */
+    uint8_t igtk_ipn[6];                /* peer IGTK IPN (seeds BIP RX replay counter) */
+    uint8_t bigtk_ipn[6];               /* peer BIGTK BIPN (seeds BIP RX replay counter) */
     uint8_t gtk_set: 1;
     uint8_t igtk_set: 1;
     uint8_t bigtk_set: 1;
     uint8_t group_keys_reserved: 5;
+
+    /* Own group key (TX GTKSA) distributed to the peer in M3 (initiator) or
+     * M4 (responder); installed against the local NDI as the TX group key. */
+    uint8_t own_gtk[NAN_ND_GTK_LEN];
+    uint8_t own_gtk_len;
+    uint8_t own_gtk_keyid;              /* own GTK Key ID (1 or 2) */
+    uint8_t own_gtk_rsc[NAN_KEY_RSC_LEN];
+    uint8_t own_gtk_set: 1;
+    uint8_t gtk_required: 1;            /* GTKSA negotiated for this NDP */
+    uint8_t igtk_required: 1;          /* IGTKSA negotiated for this NDP */
+    uint8_t bigtk_required: 1;         /* BIGTKSA negotiated for this NDP */
+    uint8_t own_group_reserved: 4;
 
     uint8_t key_rsc[NAN_KEY_RSC_LEN];
 #endif
@@ -299,6 +368,28 @@ typedef struct {
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN];
     bool own_nik_valid;
+    /* Device-global IGTKSA/BIGTKSA (one per NMI, §7.1.3.3/§7.1.3.4). Generated
+     * once via os_get_random and reused across all secured NDPs; copied into
+     * each M3/M4 and installed against the local NMI. BIP-CMAC-128 (16-byte).
+     * On ESP the NMI and NDI are the same MAC today. */
+    uint8_t own_igtk[NAN_ND_GTK_LEN];
+    uint8_t own_igtk_ipn[6];
+    uint8_t own_igtk_keyid;             /* 4 or 5 */
+    bool    own_igtk_set;
+    uint8_t own_bigtk[NAN_ND_GTK_LEN];
+    uint8_t own_bigtk_bipn[6];
+    uint8_t own_bigtk_keyid;            /* 6 or 7 */
+    bool    own_bigtk_set;
+    /* Device-global "support + use group management protection (IGTKSA/BIGTKSA)".
+     * One setting per NMI, not per service: Beacons are NMI-level and there is
+     * exactly one IGTKSA/BIGTKSA per NMI (§7.1.3.3/§7.1.3.4). Sourced from
+     * wifi_nan_sync_config_t.group_mgmt_prot at NAN start. When set it: forces
+     * GTKSA on every secured service (the CSIA caps field cannot encode IGTK/
+     * BIGTK without GTKSA, §9.5.21.2 Table 122), generates own IGTK+BIGTK,
+     * advertises caps 0x04, and BIP-protects Beacons + multicast SDFs.
+     * Advertising never blocks a non-supporting peer — keys and protection are
+     * set up only after capability negotiation (§7.1.3.5). */
+    bool    group_mgmt_prot;
     uint8_t cached_nira_nonce[8];
     uint8_t cached_nira_tag[8];
     bool nira_cached;
@@ -308,6 +399,7 @@ typedef struct {
     wifi_nan_peer_creds_t peer_creds[ESP_WIFI_NAN_MAX_PEER_CREDS];
     uint8_t num_peer_creds;
     bool use_nvs_for_caching;
+    uint32_t nik_lifetime;
 #endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;
@@ -334,7 +426,8 @@ bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
 uint32_t esp_nan_get_csia_len(uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
 uint32_t esp_nan_get_scia_len(uint8_t num_pmkids);
 uint32_t esp_nan_get_shared_key_desc_attr_len(uint16_t key_data_len);
-int      esp_nan_ndp_security_install_get_shared_desc_len(void);
+int      esp_nan_ndp_security_install_get_shared_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi);
+int      esp_nan_ndp_confirm_get_shared_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi);
 uint8_t esp_nan_get_ndp_resp_num_pmkids(uint8_t ndp_id, const uint8_t *peer_nmi);
 uint32_t esp_nan_get_ndp_resp_shared_key_desc_len(uint8_t ndp_id, const uint8_t *peer_nmi);
 
@@ -421,6 +514,17 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
                                               const struct own_svc_info *own_svc,
                                               const struct peer_svc_info *peer_svc,
                                               const uint8_t *peer_nmi);
+
+/* Generate (once) and TX-install the device-global IGTK/BIGTK so Beacons and
+ * group-addressed SDFs are BIP-protected from NAN start (§7.1.3.3/§7.1.3.4).
+ * Call once at NAN start; never per-NDP (would reset the blob's BIPN counter). */
+void nan_security_install_own_group_integrity_keys(void);
+
+/* Clear the device-global IGTK/BIGTK state on NAN stop so the next NAN start
+ * regenerates fresh keys. Prevents re-installing a stale key with IPN/BIPN=0
+ * (which resets the blob's monotonic replay counter) and key reuse if the NMI
+ * is re-randomized on restart. */
+void nan_security_reset_own_group_keys(void);
 
 /*
  * Match subscriber discovery security to a publisher's params.

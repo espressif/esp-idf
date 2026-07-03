@@ -606,6 +606,7 @@ typedef struct {
     bool disable_random_mac;/**< Disable the MAC Randomisation in NAN */
     bool reset_current_nvs_creds; /**< Erase all NAN credentials (own NIK and cached peer NIK/NPK entries) saved in NVS before starting. */
     bool use_nvs_for_caching;     /**< Persist newly-learned peer credentials (NIK/NPK) to NVS so they survive across reboots. */
+    bool group_mgmt_prot;         /**< Device-global group management protection (IGTKSA/BIGTKSA): BIP-protect Beacons + multicast SDFs. Forces GTKSA on all secured services (CSIA caps cannot encode IGTK/BIGTK without GTKSA). */
 } wifi_nan_sync_config_t;
 
 /**
@@ -932,9 +933,9 @@ typedef enum {
     WIFI_NAN_CSID_NCS_SK_256       = 2,    /**< NCS-SK-256 (PSK/Passphrase). Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_128  = 3,    /**< NCS-PK-2WDH-128. Reserved: not supported right now. */
     WIFI_NAN_CSID_NCS_PK_2WDH_256  = 4,    /**< NCS-PK-2WDH-256. Reserved: not supported right now. */
-    WIFI_NAN_CSID_NCS_GTK_CCM_128  = 5,
-    WIFI_NAN_CSID_NCS_GTK_GCM_256  = 6,
-    WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_GTK_CCMP_128 = 5,    /**< NCS-GTK-CCMP-128, the group-data cipher (GTKSA). Selected internally when group_data_prot is set; not user-selectable via csid_bitmap. */
+    WIFI_NAN_CSID_NCS_GTK_GCMP_256 = 6,    /**< NCS-GTK-GCMP-256. Reserved: not supported right now. */
+    WIFI_NAN_CSID_NCS_PK_PASN_128  = 7,    /**< NCS-PK-PASN-128 (NAN Pairing). Requires CONFIG_WIFI_RMT_NAN_PAIRING and the Wi-Fi Aware component (esp-wifi-apps); not usable with stand-alone ESP-IDF. */
     WIFI_NAN_CSID_NCS_PK_PASN_256  = 8,    /**< NCS-PK-PASN-256. Reserved: not supported right now. */
 } wifi_nan_cipher_suite_id_t;
 
@@ -942,8 +943,8 @@ typedef enum {
 #define WIFI_NAN_CSID_BIT_NCS_SK_256       (1 << WIFI_NAN_CSID_NCS_SK_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_128  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_2WDH_256  (1 << WIFI_NAN_CSID_NCS_PK_2WDH_256)
-#define WIFI_NAN_CSID_BIT_NCS_GTK_CCM_128  (1 << WIFI_NAN_CSID_NCS_GTK_CCM_128)
-#define WIFI_NAN_CSID_BIT_NCS_GTK_GCM_256  (1 << WIFI_NAN_CSID_NCS_GTK_GCM_256)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_CCMP_128 (1 << WIFI_NAN_CSID_NCS_GTK_CCMP_128)
+#define WIFI_NAN_CSID_BIT_NCS_GTK_GCMP_256 (1 << WIFI_NAN_CSID_NCS_GTK_GCMP_256)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_128  (1 << WIFI_NAN_CSID_NCS_PK_PASN_128)
 #define WIFI_NAN_CSID_BIT_NCS_PK_PASN_256  (1 << WIFI_NAN_CSID_NCS_PK_PASN_256)
 
@@ -974,8 +975,8 @@ typedef struct {
   * is computed by the stack as the union of each credential's @c csid.
   */
 typedef struct {
-    uint8_t group_data_prot: 1;                  /**< Group addressed data frame protection. Reserved: not supported right now. */
-    uint8_t group_mgmt_prot: 1;                  /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t group_data_prot: 1;                  /**< Group addressed data frame protection (GTKSA): distribute a GTK on the secured NDP so multicast data frames are protected. */
+    uint8_t group_mgmt_prot: 1;                  /**< Group addressed management frame protection (IGTKSA/BIGTKSA): BIP-protect multicast SDFs and Beacons. */
     uint8_t reserved: 6;                         /**< Reserved */
     uint8_t num_credentials;                     /**< Number of valid entries in @c creds (0..ESP_WIFI_NAN_MAX_CREDS_PER_SVC). 0 = open service. */
     wifi_nan_credential_t creds[ESP_WIFI_NAN_MAX_CREDS_PER_SVC]; /**< Credentials list. */
@@ -1305,8 +1306,6 @@ typedef enum {
     WIFI_EVENT_DPP_URI_READY,            /**< DPP URI is ready through Bootstrapping */
     WIFI_EVENT_DPP_CFG_RECVD,            /**< DPP Configuration Response; payload is wifi_event_dpp_config_received_t */
     WIFI_EVENT_DPP_FAILED,               /**< DPP failed */
-    WIFI_EVENT_NAN_BOOTSTRAP_INDICATION, /**< Received NAN Pairing Bootstrapping Request from a Peer */
-    WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED,  /**< NAN Pairing Bootstrapping completed (success/failure) */
     WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
     WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN pairing completed after NIK follow-up exchange */
     WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< Posted when the device joins, starts, or merges into a NAN cluster */
@@ -1636,38 +1635,6 @@ typedef struct {
     uint8_t ndp_id;                             /**< NDP instance id */
     uint8_t init_ndi[6];                        /**< Initiator's NAN Data Interface MAC */
 } wifi_event_ndp_terminated_t;
-
-/**
-  * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_INDICATION event
-  *
-  * Posted when a NAN Pairing Bootstrapping Request is received from a peer.
-  * The application should respond using esp_wifi_nan_bootstrap_response().
-  */
-typedef struct {
-    uint8_t peer_svc_id;                        /**< Peer's service instance id */
-    uint8_t own_svc_id;                         /**< Own service instance id */
-    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
-    uint16_t selected_method;                   /**< Bootstrapping method selected by initiator (one WIFI_NAN_BOOTSTRAP_* bit) */
-    uint8_t is_comeback;                        /**< 1 if this is a comeback retry with cookie */
-    uint32_t cookie;                            /**< Comeback cookie from initiator (0 if none) */
-} wifi_event_nan_bootstrap_indication_t;
-
-/**
-  * @brief Argument structure for WIFI_EVENT_NAN_BOOTSTRAP_COMPLETED event
-  *
-  * Posted when a NAN Pairing Bootstrapping Response is received,
-  * or when the bootstrapping handshake completes/fails.
-  */
-typedef struct {
-    uint8_t status;                             /**< 0=Accepted, 1=Rejected, 2=Comeback (wifi_nan_pairing_status_t) */
-    uint8_t peer_svc_id;                        /**< Peer's service instance id */
-    uint8_t own_svc_id;                         /**< Own service instance id */
-    uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
-    uint16_t matched_method;                    /**< Matched bootstrapping method, one WIFI_NAN_BOOTSTRAP_* bit (valid if accepted) */
-    uint8_t reason_code;                        /**< Rejection reason (valid if rejected) */
-    uint16_t comeback_after;                    /**< Comeback deferral time in TUs (valid if comeback) */
-    uint32_t cookie;                            /**< Comeback cookie from responder (0 if none) */
-} wifi_event_nan_bootstrap_complete_t;
 
 /**
   * @brief Argument structure for WIFI_EVENT_NAN_PAIRING_CONFIRM event

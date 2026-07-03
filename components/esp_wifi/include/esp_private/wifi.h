@@ -67,8 +67,8 @@ typedef struct {
     uint16_t csid_bitmap;              /**< Selected Cipher Suite ID bit (WIFI_NAN_CSID_BIT_*) */
     uint8_t nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];     /**< ND-PMK */
     uint8_t nd_pmkid[ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< ND-PMKID */
-    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection. Reserved: not supported right now. */
-    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection. Reserved: not supported right now. */
+    uint8_t group_data_prot: 1;        /**< Group addressed data frame protection (GTKSA): distribute a GTK on the secured NDP so multicast data frames are protected. */
+    uint8_t group_mgmt_prot: 1;        /**< Group addressed management frame protection (IGTKSA/BIGTKSA): BIP-protect multicast SDFs and Beacons. */
     uint8_t reserved: 6;               /**< Reserved */
 } wifi_nan_security_params_t;
 
@@ -89,10 +89,11 @@ typedef struct {
     uint8_t num_pmkids;                /**< Number of parsed PMKIDs */
     uint8_t pmkids[NAN_PEER_MAX_PMKIDS][ESP_WIFI_NAN_NDP_PMKID_LEN]; /**< Parsed ND-PMKIDs */
     uint8_t group_data_prot: 1;        /**< Peer advertises group data frame protection */
-    uint8_t group_mgmt_prot: 1;        /**< Peer advertises group mgmt frame protection */
+    uint8_t group_mgmt_prot: 1;        /**< Peer advertises IGTKSA (CSIA caps bits 1-2 != 0) */
     uint8_t pairing_setup: 1;          /**< Pairing setup: 0 - disabled, 1 - enabled */
     uint8_t npk_nik_caching: 1;        /**< NPK/NIK caching: 0 - disabled, 1 - enabled (valid if pairing_setup) */
-    uint8_t reserved: 4;               /**< Reserved */
+    uint8_t group_bigtk_prot: 1;       /**< Peer advertises BIGTKSA (CSIA caps bits 1-2 == 10) */
+    uint8_t reserved: 3;               /**< Reserved */
 } wifi_nan_peer_sdf_security_t;
 
 /* NAN Peer info parsed from SDF */
@@ -106,6 +107,7 @@ struct nan_cb_peer_info {
     uint16_t ssi_len;                                       /**< SSI length in bytes */
     wifi_nan_peer_sdf_security_t *peer_security_params;     /**< Peer's discovery security params parsed from SDF */
     nan_vendor_ie_t *vendor_ie;                             /**< Vendor-specific IE, if any */
+    bool nira_verified;                                     /**< true when received NIRA tag verified against cached NIK */
 };
 
 /* NDP Peer info parsed from NAF. */
@@ -196,6 +198,7 @@ struct nan_sync_callbacks {
     uint32_t (* get_nira_len)(void);
     int (* construct_nira)(uint8_t *frm);
     bool (*verify_nira)(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
+    bool (*peer_nik_cached)(uint8_t *peer_mac);
 };
 
 /* Host helpers for NAN encrypted-datapath, registered via
@@ -228,9 +231,11 @@ struct nan_secure_dp_funcs {
      * with the given Key Data field length. */
     uint32_t (*get_shared_key_desc_attr_len)(uint16_t key_data_len);
 
-    /* Byte length of the M4 Shared Key Descriptor including any
-     * encrypted KDE payload (GTK/IGTK/BIGTK). */
-    int (*ndp_security_install_get_shared_desc_len)(void);
+    /* Exact byte length of the M4 (NDP Security Install) Shared Key Descriptor
+     * attribute for this NDP, including any encrypted KDE payload (GTK/IGTK/BIGTK).
+     * @ndp_id + @peer_nmi identify the NDL so the host returns the exact length the
+     * builder will write (no over-reservation / on-air zero-padding). */
+    int (*ndp_security_install_get_shared_desc_len)(uint8_t ndp_id, const uint8_t *peer_nmi);
 
     uint8_t (*get_ndp_resp_num_pmkids)(uint8_t ndp_id, const uint8_t *peer_nmi);
     uint32_t (*get_ndp_resp_shared_key_desc_len)(uint8_t ndp_id, const uint8_t *peer_nmi);
@@ -360,10 +365,21 @@ struct nan_secure_dp_funcs {
                                         const wifi_nan_discovery_security_params_t *sec_cfg,
                                         wifi_nan_security_params_t *out_derived);
 
-    /* Returns the cipher-suite bitmap negotiated for an in-flight NDP,
-     * or 0 if the NDP is open. Used by RX/TX paths to decide whether
-     * to apply CCMP/GCMP and which key length to use. */
+    /* Returns the full cipher-suite bitmap negotiated for an in-flight NDP
+     * (including the group cipher NCS-GTK when group-addressed data protection
+     * is in use), or 0 if the NDP is open. The blob treats this as an opaque
+     * value passed straight to the host CSIA callbacks (construct_csia /
+     * get_csia_len) to build the on-air M1/M3 CSIA own-bitmap; it must NOT
+     * interpret individual CSID bits. Pairwise cipher selection and key install
+     * are host-driven and independent of this value. */
     uint16_t (*get_ndp_security_csid)(uint8_t ndp_id, const uint8_t *peer_nmi);
+
+    /* Exact byte length of the M3 (NDP Confirm) Shared Key Descriptor attribute for
+     * this NDP, including any encrypted KDE payload (GTK/IGTK/BIGTK). @ndp_id +
+     * @peer_nmi identify the NDL. Mirrors ndp_security_install_get_shared_desc_len
+     * for the initiator path. Appended at the end of the struct to preserve the
+     * layout of the fields above. */
+    int (*ndp_confirm_get_shared_desc_len)(uint8_t ndp_id, const uint8_t *peer_nmi);
 };
 
 /**
@@ -1193,13 +1209,26 @@ esp_err_t esp_wifi_disconnect_internal(void);
 uint32_t esp_nan_get_nira_len(void);
 
 /**
- * @brief      Construct dummy NAN Identity Resolution Attribute (NIRA)
+ * @brief      Construct NAN Identity Resolution Attribute (NIRA)
  *
  * @param[out] frm     Buffer to write the attribute to
  *
  * @return     Number of bytes written
  */
 int esp_nan_construct_nira(uint8_t *frm);
+
+/**
+ * @brief      Construct a NAN Cipher Suite Info Attribute (CSIA)
+ *
+ * @param[out] frm              Buffer to write the attribute to
+ * @param[in]  pub_id           Publish service instance id
+ * @param[in]  own_csid_bitmap  Locally supported cipher suite bitmap
+ * @param[in]  peer_csid_bitmap Peer cipher suite bitmap, or 0 to use own bitmap
+ *
+ * @return     Number of bytes written, or 0 on failure/no cipher suite
+ */
+int esp_nan_construct_csia(uint8_t *frm, uint8_t pub_id,
+                           uint16_t own_csid_bitmap, uint16_t peer_csid_bitmap);
 
 /**
  * @brief      Verify a received NAN Identity Resolution Attribute (NIRA)
@@ -1211,6 +1240,24 @@ int esp_nan_construct_nira(uint8_t *frm);
  * @return     true if the tag matches, false otherwise
  */
 bool esp_nan_verify_nira(uint8_t *peer_mac, uint8_t *nira_attr, uint16_t nira_attr_len);
+
+/**
+ * @brief      Verify a received NIRA and resolve the matched own service id
+ *
+ * Behaves like @ref esp_nan_verify_nira but additionally outputs the local
+ * service instance id the verifying NIK maps to, used to anchor a pairing
+ * verify-session flag. @p own_inst_id is set to 0 when the identity does not
+ * resolve to an active local service.
+ *
+ * @param[in]  peer_mac      NMI of the sender
+ * @param[in]  nira_attr     NIRA attribute buffer
+ * @param[in]  nira_attr_len Attribute length in bytes
+ * @param[out] own_inst_id   Resolved own service instance id (0 if none)
+ *
+ * @return     true if the tag matches, false otherwise
+ */
+bool esp_nan_verify_nira_get_own_svc(uint8_t *peer_mac, uint8_t *nira_attr,
+                                     uint16_t nira_attr_len, uint8_t *own_inst_id);
 
 /**
   * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.
