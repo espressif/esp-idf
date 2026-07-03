@@ -25,7 +25,7 @@ bool ble_log_ts_init(void)
     gpio_config_t sync_io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = BIT(CONFIG_BLE_LOG_SYNC_IO_NUM),
+        .pin_bit_mask = BIT64(CONFIG_BLE_LOG_SYNC_IO_NUM),
     };
     if (gpio_config(&sync_io_conf) != ESP_OK) {
         goto exit;
