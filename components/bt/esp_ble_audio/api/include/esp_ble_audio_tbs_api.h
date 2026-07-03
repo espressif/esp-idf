@@ -318,15 +318,12 @@ esp_err_t esp_ble_audio_tbs_set_status_flags(uint8_t bearer_index, uint16_t stat
 /**
  * @brief   Sets the URI scheme list of a bearer.
  *
- * @param   bearer_index    The index of the Telephone Bearer.
- * @param   uri_list        List of URI prefixes (e.g. {"skype", "tel"}).
- * @param   uri_count       Number of URI prefixes in @p uri_list.
+ * @param   bearer_index       The index of the Telephone Bearer.
+ * @param   uri_scheme_list    Comma-separated list of URI prefixes (e.g. "skype,tel").
  *
  * @return  ESP_OK on success, or an error code on failure.
  */
-esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index,
-                                                const char **uri_list,
-                                                uint8_t uri_count);
+esp_err_t esp_ble_audio_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list);
 
 /**
  * @brief   Register the callbacks for TBS.
@@ -627,6 +624,16 @@ esp_err_t esp_ble_audio_tbs_client_register_cb(esp_ble_audio_tbs_client_cb_t *cb
  * @return  Pointer to TBS instance if found, NULL otherwise.
  */
 esp_ble_audio_tbs_instance_t *esp_ble_audio_tbs_client_get_by_ccid(uint16_t conn_handle, uint8_t ccid);
+
+/**
+ * @brief   Look up Telephone Bearer Service instance by index.
+ *
+ * @param   conn_handle Connection handle.
+ * @param   index       The index to lookup a service instance for.
+ *
+ * @return  Pointer to TBS instance if found, NULL otherwise.
+ */
+esp_ble_audio_tbs_instance_t *esp_ble_audio_tbs_client_get_by_index(uint16_t conn_handle, uint8_t index);
 
 #ifdef __cplusplus
 }

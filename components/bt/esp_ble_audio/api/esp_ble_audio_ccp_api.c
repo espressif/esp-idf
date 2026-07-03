@@ -73,7 +73,7 @@ esp_err_t esp_ble_audio_ccp_call_control_server_set_bearer_provider_name(
 }
 
 esp_err_t esp_ble_audio_ccp_call_control_server_get_bearer_provider_name(
-    esp_ble_audio_ccp_call_control_server_bearer_t *bearer, const char **name)
+    esp_ble_audio_ccp_call_control_server_bearer_t *bearer, char *name, size_t name_size)
 {
     esp_err_t err;
 
@@ -81,7 +81,31 @@ esp_err_t esp_ble_audio_ccp_call_control_server_get_bearer_provider_name(
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_ccp_call_control_server_get_bearer_provider_name_safe(bearer, name);
+    err = bt_ccp_call_control_server_get_bearer_provider_name_safe(bearer, name, name_size);
+    if (err) {
+        switch (err) {
+        case -EFAULT:
+            return ESP_ERR_INVALID_STATE;
+        case -ENOMEM:
+            return ESP_ERR_NO_MEM;
+        default:
+            return ESP_FAIL;
+        }
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_audio_ccp_call_control_server_get_bearer_uci(
+    esp_ble_audio_ccp_call_control_server_bearer_t *bearer, char *uci)
+{
+    esp_err_t err;
+
+    if (bearer == NULL || uci == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = bt_ccp_call_control_server_get_bearer_uci_safe(bearer, uci);
     if (err) {
         return ESP_FAIL;
     }

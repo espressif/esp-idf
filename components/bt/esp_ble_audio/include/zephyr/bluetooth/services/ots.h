@@ -551,7 +551,10 @@ struct bt_ots_obj_metadata {
     uint32_t                       props;
 };
 
-/** @brief Opaque OTS instance. */
+/**
+ * @struct bt_ots
+ * @brief Opaque OTS instance.
+ */
 struct bt_ots;
 
 /** @brief Descriptor for OTS object addition */

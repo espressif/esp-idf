@@ -1851,7 +1851,7 @@ static void handle_gatts_read_event(struct bt_le_gatts_read_event *event)
         } else {
             ret = attr->read(conn, attr, (void *)rsp, GATT_MAX_ATTR_LEN, 0);
             if (ret < 0) {
-                LOG_ERR("[B]GattsRdEvtFail[%u][%d]", event->attr_handle, ret);
+                LOG_DBG("[B]GattsRdEvtErr[%u][%d]", event->attr_handle, ret);
 
                 status = BT_GATT_ERR(ret);
             }
@@ -1942,7 +1942,7 @@ static void handle_gatts_write_event(struct bt_le_gatts_write_event *event)
         } else {
             ret = attr->write(conn, attr, event->value, event->len, 0, 0);
             if (ret < 0) {
-                LOG_ERR("[B]GattsWrEvtFail[%u][%d]", event->attr_handle, ret);
+                LOG_DBG("[B]GattsWrEvtErr[%u][%d]", event->attr_handle, ret);
 
                 status = BT_GATT_ERR(ret);
             }

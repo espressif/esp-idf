@@ -120,7 +120,6 @@ static esp_ble_iso_chan_qos_t iso_qos = {
 static esp_ble_iso_chan_t iso_chan = {
     .ops = &iso_ops,
     .qos = &iso_qos,
-    .required_sec_level = SECURITY_LEVEL,
 };
 
 static void create_cig_and_cis(uint16_t acl_handle)
@@ -253,8 +252,8 @@ static void acl_connect(esp_ble_iso_gap_app_event_t *event)
              event->acl_connect.conn_handle, event->acl_connect.role,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
 
-    if (iso_chan.required_sec_level == ESP_BLE_ISO_SECURITY_NO_MITM ||
-            iso_chan.required_sec_level == ESP_BLE_ISO_SECURITY_MITM) {
+    if (SECURITY_LEVEL == ESP_BLE_ISO_SECURITY_NO_MITM ||
+            SECURITY_LEVEL == ESP_BLE_ISO_SECURITY_MITM) {
         err = pairing_start(event->acl_connect.conn_handle);
         if (err) {
             ESP_LOGE(TAG, "Failed to initiate security, err %d", err);
