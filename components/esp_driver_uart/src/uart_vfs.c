@@ -588,7 +588,6 @@ static esp_err_t uart_end_select(void *end_select_args)
             if (s_uart_select_count[i] == 0) {
                 uart_set_select_notif_callback(i, NULL);
             }
-            break;
         }
     }
     portEXIT_CRITICAL(uart_get_selectlock());

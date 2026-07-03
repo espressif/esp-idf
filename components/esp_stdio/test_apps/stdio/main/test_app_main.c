@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <errno.h>
 #include "sdkconfig.h"
 
 #include "esp_rom_serial_output.h"
@@ -18,6 +19,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 #if CONFIG_ESP_CONSOLE_NONE
 /* Set up UART on UART_0 (console) to be able to
@@ -50,6 +52,9 @@ static void console_none_print(void)
 #endif
 
 #if CONFIG_VFS_SUPPORT_IO
+#define ESP_STDIO_RUN_OPEN_CLOSE_CHECK 1
+
+#if ESP_STDIO_RUN_OPEN_CLOSE_CHECK
 static void console_open_close_check(void)
 {
     printf("Opening /dev/console\n");
@@ -65,6 +70,79 @@ static void console_open_close_check(void)
 
     printf("This should be printed to stdout\n");
 }
+#endif
+
+static void stdio_fd_mode_behavior_check(void)
+{
+    printf("STDIO_TEST:MODE=FORWARDING\n");
+
+    int fd0 = open("/dev/console", O_RDWR);
+    assert(fd0 >= 0);
+
+    int fd1 = open("/dev/console", O_RDWR);
+    assert(fd1 >= 0);
+    assert(fd0 != fd1);
+    printf("STDIO_TEST:UNIQUE_FDS_OK\n");
+
+    const char *msg = "STDIO_TEST:WRITE_OK\n";
+    ssize_t wr = write(fd0, msg, strlen(msg));
+    assert(wr == (ssize_t) strlen(msg));
+
+    assert(fsync(fd0) == 0);
+    printf("STDIO_TEST:FSYNC_OK\n");
+
+    assert(close(fd0) == 0);
+    assert(close(fd1) == 0);
+    printf("STDIO_TEST:CLOSE_OK\n");
+}
+
+static void stdio_fd_init_check(void)
+{
+    int in_fd = fileno(stdin);
+    int out_fd = fileno(stdout);
+    int err_fd = fileno(stderr);
+
+    assert(in_fd == 0);
+    assert(out_fd == 1);
+    assert(err_fd == 2);
+
+    printf("STDIO_TEST:FD_INIT:IN=%d,OUT=%d,ERR=%d\n", in_fd, out_fd, err_fd);
+    fprintf(stdout, "STDIO_TEST:STREAM:STDOUT\n");
+    fflush(stdout);
+    fprintf(stderr, "STDIO_TEST:STREAM:STDERR\n");
+    fflush(stderr);
+}
+
+#if CONFIG_VFS_SUPPORT_SELECT && CONFIG_ESP_CONSOLE_UART
+static void stdio_select_fd_mapping_check(void)
+{
+    bool driver_installed_here = false;
+    esp_err_t err = uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0);
+    if (err == ESP_OK) {
+        driver_installed_here = true;
+    } else {
+        assert(err == ESP_ERR_INVALID_STATE);
+    }
+
+    fd_set writefds;
+    FD_ZERO(&writefds);
+    FD_SET(fileno(stdout), &writefds);
+    FD_SET(fileno(stderr), &writefds);
+
+    struct timeval tv = {
+        .tv_sec = 0,
+        .tv_usec = 0,
+    };
+
+    errno = 0;
+    int ret = select(fileno(stderr) + 1, NULL, &writefds, NULL, &tv);
+    assert(ret >= 0);
+    if (driver_installed_here) {
+        assert(uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM) == ESP_OK);
+    }
+    printf("STDIO_TEST:SELECT:LOGICAL_FD_MAP_OK\n");
+}
+#endif
 #endif // CONFIG_VFS_SUPPORT_IO
 
 void app_main(void)
@@ -80,6 +158,11 @@ void app_main(void)
     assert(fd > 2 && "Incorrect file descriptor returned, stdin, stdout, stderr were not correctly assigned");
 
     close(fd);
+
+    stdio_fd_init_check();
+#if CONFIG_VFS_SUPPORT_SELECT && CONFIG_ESP_CONSOLE_UART
+    stdio_select_fd_mapping_check();
+#endif
 #endif // CONFIG_VFS_SUPPORT_IO
 
 #if CONFIG_ESP_CONSOLE_NONE
@@ -87,7 +170,12 @@ void app_main(void)
 #endif // CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_VFS_SUPPORT_IO
+#if ESP_STDIO_RUN_OPEN_CLOSE_CHECK
     console_open_close_check();
+#else
+    printf("STDIO_TEST:SKIP:OPEN_CLOSE_CHECK\n");
+#endif
+    stdio_fd_mode_behavior_check();
 #endif // CONFIG_VFS_SUPPORT_IO
 
 }
