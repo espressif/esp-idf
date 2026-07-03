@@ -251,8 +251,10 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
             if (p_ccb->p_lcb == p_lcb) {
                 bind = TRUE;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
-                p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
-                                       0, p_lcb->peer_addr);
+                if (p_ccb->cc.p_ctrl_cback) {
+                    p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
+                                        0, p_lcb->peer_addr);
+                }
             }
             /* if unbound acceptor and lcb doesn't already have a ccb for this PID */
             else if ((p_ccb->p_lcb == NULL) && (p_ccb->cc.role == AVCT_ACP) &&
@@ -261,8 +263,10 @@ void avct_lcb_open_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                 bind = TRUE;
                 p_ccb->p_lcb = p_lcb;
                 L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
-                p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT,
-                                       0, p_lcb->peer_addr);
+                if (p_ccb->cc.p_ctrl_cback) {
+                    p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT,
+                                        0, p_lcb->peer_addr);
+                }
             }
         }
     }
@@ -321,8 +325,10 @@ void avct_lcb_close_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                                  0, p_lcb->peer_addr);
             } else {
                 p_ccb->p_lcb = NULL;
-                (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), AVCT_DISCONNECT_IND_EVT,
-                                          0, p_lcb->peer_addr);
+                if (p_ccb->cc.p_ctrl_cback) {
+                    (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), AVCT_DISCONNECT_IND_EVT,
+                                            0, p_lcb->peer_addr);
+                }
             }
         }
     }
@@ -359,8 +365,10 @@ void avct_lcb_close_cfm(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
                 avct_ccb_dealloc(p_ccb, event, p_data->result, p_lcb->peer_addr);
             } else {
                 p_ccb->p_lcb = NULL;
-                (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), event,
-                                          p_data->result, p_lcb->peer_addr);
+                if (p_ccb->cc.p_ctrl_cback) {
+                    (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), event,
+                                            p_data->result, p_lcb->peer_addr);
+                }
             }
         }
     }
@@ -379,8 +387,10 @@ void avct_lcb_close_cfm(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 void avct_lcb_bind_conn(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 {
     p_data->p_ccb->p_lcb = p_lcb;
-    (*p_data->p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_data->p_ccb),
-                                      AVCT_CONNECT_CFM_EVT, 0, p_lcb->peer_addr);
+    if (p_data->p_ccb->cc.p_ctrl_cback) {
+        (*p_data->p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_data->p_ccb),
+                                        AVCT_CONNECT_CFM_EVT, 0, p_lcb->peer_addr);
+    }
 }
 
 /*******************************************************************************
@@ -487,7 +497,9 @@ void avct_lcb_cong_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
     /* send event to all ccbs on this lcb */
     for (i = 0; i < AVCT_NUM_CONN; i++, p_ccb++) {
         if (p_ccb->allocated && (p_ccb->p_lcb == p_lcb)) {
-            (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), event, 0, p_lcb->peer_addr);
+            if (p_ccb->cc.p_ctrl_cback) {
+                (*p_ccb->cc.p_ctrl_cback)(avct_ccb_to_idx(p_ccb), event, 0, p_lcb->peer_addr);
+            }
         }
     }
 }
@@ -689,7 +701,12 @@ void avct_lcb_msg_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
         /* PID found; send msg up, adjust bt hdr and call msg callback */
         p_data->p_buf->offset += AVCT_HDR_LEN_SINGLE;
         p_data->p_buf->len -= AVCT_HDR_LEN_SINGLE;
-        (*p_ccb->cc.p_msg_cback)(avct_ccb_to_idx(p_ccb), label, cr_ipid, p_data->p_buf);
+        if (p_ccb->cc.p_msg_cback) {
+            (*p_ccb->cc.p_msg_cback)(avct_ccb_to_idx(p_ccb), label, cr_ipid, p_data->p_buf);
+        } else {
+            osi_free(p_data->p_buf);
+            p_data->p_buf = NULL;
+        }
     } else {
         /* PID not found; drop message */
         AVCT_TRACE_WARNING("No ccb for PID=%x", pid);
