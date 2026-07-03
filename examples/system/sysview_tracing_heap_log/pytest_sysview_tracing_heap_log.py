@@ -77,6 +77,7 @@ def test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: str
     soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'),
     indirect=['target'],
 )
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_examples_sysview_tracing_heap_log_usj(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfDut) -> None:
     _test_examples_sysview_tracing_heap_log(openocd_dut, idf_path, dut)
