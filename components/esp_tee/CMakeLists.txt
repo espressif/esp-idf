@@ -124,18 +124,26 @@ if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)
         list(APPEND exclude_srv "attestation")
     endif()
 
+    # The parser uses OptionEatAll, so each flag consumes all following values and
+    # the CMake lists can be passed directly. --exclude behaves like nargs='+', so
+    # omit it entirely when empty (a bare --exclude would error / swallow --wrap).
+    set(exclude_args)
+    if(exclude_srv)
+        set(exclude_args "--exclude" ${exclude_srv})
+    endif()
+
     idf_build_get_property(secure_service_headers_dir SECURE_SERVICE_HEADERS_DIR)
     execute_process(
         COMMAND python ${secure_service_yml_parser_py}
         "--sec_srv" ${secure_service_yml}
-        "--exclude" ${exclude_srv}
+        ${exclude_args}
         WORKING_DIRECTORY ${secure_service_headers_dir}
     )
 
     execute_process(
         COMMAND python ${secure_service_yml_parser_py}
         "--sec_srv" ${secure_service_yml}
-        "--exclude" ${exclude_srv} "--wrap"
+        ${exclude_args} "--wrap"
         OUTPUT_VARIABLE wrap_list
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         OUTPUT_STRIP_TRAILING_WHITESPACE
