@@ -909,9 +909,6 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             if (i2c_master->event_queue) {
                 vQueueDeleteWithCaps(i2c_master->event_queue);
             }
-            if (i2c_master->queues_storage) {
-                free(i2c_master->queues_storage);
-            }
             free(i2c_master->i2c_async_ops);
             for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
                 if (i2c_master->trans_queues[i]) {
@@ -1123,13 +1120,8 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
         i2c_master->trans_finish = true;
         i2c_master->new_queue = true;
         i2c_master->queue_size = bus_config->trans_queue_depth;
-        i2c_master->queues_storage = (uint8_t*)heap_caps_calloc(bus_config->trans_queue_depth * I2C_TRANS_QUEUE_MAX, sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
-        ESP_RETURN_ON_FALSE(i2c_master->queues_storage, ESP_ERR_NO_MEM, TAG, "no mem for queue storage");
-        i2c_transaction_t **pp_trans_desc = (i2c_transaction_t **)i2c_master->queues_storage;
         for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
             i2c_master->trans_queues[i] = xQueueCreateWithCaps(bus_config->trans_queue_depth, sizeof(i2c_transaction_t), I2C_MEM_ALLOC_CAPS);
-
-            pp_trans_desc += bus_config->trans_queue_depth;
             // sanity check
             assert(i2c_master->trans_queues[i]);
         }

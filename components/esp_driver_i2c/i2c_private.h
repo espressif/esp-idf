@@ -157,7 +157,6 @@ struct i2c_master_bus_t {
     size_t queue_size;                                               // I2C transaction queue size.
     size_t num_trans_inflight;                                       // Indicates the number of transactions that are undergoing but not recycled to ready_queue
     size_t num_trans_inqueue;                                        // Indicates the number of transaction in queue transaction.
-    void* queues_storage;                                            // storage of transaction queues
     bool sent_all;                                                   // true if the queue transaction is sent
     bool in_progress;                                                // true if current transaction is in progress
     bool trans_finish;                                               // true if current command has been sent out.
