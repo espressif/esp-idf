@@ -16,6 +16,8 @@ extern "C" {
 #include "esp_err.h"
 #include "esp_bit_defs.h"
 
+#include "sdkconfig.h"
+
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP384R1_SIGN
 #define MAX_ECDSA_SUPPORTED_KEY_LEN         48   /*!< Maximum supported size for the ECDSA key (SECP384R1) */
 #else
@@ -25,6 +27,7 @@ extern "C" {
 
 #define SEC_STORAGE_FLAG_NONE               0      /*!< No flags */
 #define SEC_STORAGE_FLAG_WRITE_ONCE         BIT(0) /*!< Data can only be written once */
+#define SEC_STORAGE_FLAG_TEE_ONLY           BIT(1) /*!< Key is owned exclusively by the TEE */
 
 /**
  * @brief Enum to represent the type of key stored in the secure storage
@@ -97,6 +100,21 @@ typedef struct {
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
 esp_err_t esp_tee_sec_storage_init(void);
+
+/**
+ * @brief Check whether a key ID is owned exclusively by the TEE
+ *
+ * A key is TEE-owned if either:
+ *   - it refers to the reserved TEE attestation key
+ *     (`CONFIG_SECURE_TEE_ATT_KEY_STR_ID`); this also blocks the REE from
+ *     "squatting" the ID before the TEE creates the key, or
+ *   - the stored key carries the ::SEC_STORAGE_FLAG_TEE_ONLY flag.
+ *
+ * @param key_id  NULL-terminated key identifier string (may be NULL)
+ *
+ * @return true if the key is TEE-owned (REE access must be denied), false otherwise
+ */
+bool esp_tee_sec_storage_is_key_tee_owned(const char *key_id);
 #endif
 
 /**

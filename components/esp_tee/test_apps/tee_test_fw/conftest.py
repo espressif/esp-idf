@@ -418,6 +418,7 @@ class TEESerial(IdfSerial):
             'type': 'ecdsa_p256',
             'input': 'ecdsa_p256_key.pem',
             'write_once': True,
+            'tee_only': True,
             'b64': (
                 'LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUlNU1VpUktHaVZjSTIvbUZFekI3eXRIOVJj'
                 'd0wyUThkNDhONHNFUHFYc0RvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFSkYxYXRZQUxrdnB4cCt4N3c1dmVPQ1Vj'
@@ -493,6 +494,7 @@ class TEESerial(IdfSerial):
             [sys.executable, ESP_TEE_SEC_STG_KEYGEN, '-k', entry['type'], '-o', str(tmp_dir / f'{entry["key"]}.bin')]
             + (['-i', entry['input']] if entry['input'] else [])
             + (['--write-once'] if entry['write_once'] else [])
+            + (['--tee-only'] if entry.get('tee_only') else [])
             for entry in self.KEY_DEFS
         ]
 

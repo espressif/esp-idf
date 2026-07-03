@@ -204,7 +204,7 @@ static int tee_sec_stg_gen_key(int argc, char **argv)
 
     err = esp_tee_sec_storage_clear_key(cfg.id);
     if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) {
-        ESP_LOGE(TAG, "Failed to clear key %d!", cfg.id);
+        ESP_LOGE(TAG, "Failed to clear key %s!", cfg.id);
         goto exit;
     }
 
