@@ -624,13 +624,13 @@ static inline bool modem_syscon_ll_bt_mac_clock_is_enabled(modem_syscon_dev_t *h
 }
 
 __attribute__((always_inline))
-static inline void modem_syscon_ll_enable_bt_clock(modem_syscon_dev_t *hw, bool en)
+static inline void modem_syscon_ll_enable_bt_bb_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_btbb_en = en;
 }
 
 __attribute__((always_inline))
-static inline bool modem_syscon_ll_bt_clock_is_enabled(modem_syscon_dev_t *hw)
+static inline bool modem_syscon_ll_bt_bb_clock_is_enabled(modem_syscon_dev_t *hw)
 {
     return hw->clk_conf1.clk_btbb_en;
 }

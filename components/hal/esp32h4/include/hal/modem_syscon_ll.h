@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -452,6 +452,12 @@ static inline void modem_syscon_ll_enable_bt_bb_clock(modem_syscon_dev_t *hw, bo
 }
 
 __attribute__((always_inline))
+static inline bool modem_syscon_ll_bt_bb_clock_is_enabled(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf1.clk_btbb_en;
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_enable_bt_mac_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_btmac_en = en;
@@ -461,22 +467,6 @@ __attribute__((always_inline))
 static inline bool modem_syscon_ll_bt_mac_clock_is_enabled(modem_syscon_dev_t *hw)
 {
     return hw->clk_conf1.clk_btmac_en;
-}
-
-__attribute__((always_inline))
-static inline void modem_syscon_ll_enable_bt_clock(modem_syscon_dev_t *hw, bool en)
-{
-    hw->clk_conf1.clk_bt_apb_en = en;
-    hw->clk_conf1.clk_btbb_en = en;
-    hw->clk_conf1.clk_btmac_en = en;
-}
-
-__attribute__((always_inline))
-static inline bool modem_syscon_ll_bt_clock_is_enabled(modem_syscon_dev_t *hw)
-{
-    return  hw->clk_conf1.clk_bt_apb_en &&
-            hw->clk_conf1.clk_btbb_en &&
-            hw->clk_conf1.clk_btmac_en;
 }
 
 __attribute__((always_inline))
