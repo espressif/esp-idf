@@ -122,7 +122,7 @@ typedef struct {
     };
     union {
         uint64_t timestamp;         /**< Timestamp for received message */
-        uint64_t trigger_time;      /**< Trigger time for transmitting message*/
+        uint64_t trigger_time;      /**< Trigger time for transmitting message in scheduled TX mode */
     };
 } twai_frame_header_t;
 
