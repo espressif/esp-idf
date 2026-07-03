@@ -40,10 +40,25 @@ if(CONFIG_ESP_PHY_ENABLED)
 
     if(CONFIG_SOC_WIFI_SUPPORTED)
         if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN)
-            if(NOT EXISTS "${build_dir}/phy_multiple_init_data.bin")
-                file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin
-                DESTINATION "${build_dir}")
+            set(_phy_multi_src "${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_multiple_init_data.bin")
+            if(NOT "${CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_CUSTOM_PATH}" STREQUAL "")
+                idf_build_get_property(project_dir PROJECT_DIR)
+                set(_phy_multi_custom_path "${CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_CUSTOM_PATH}")
+                if(NOT IS_ABSOLUTE "${_phy_multi_custom_path}")
+                    get_filename_component(_phy_multi_custom_path
+                        "${project_dir}/${_phy_multi_custom_path}" ABSOLUTE)
+                endif()
+                if(IS_DIRECTORY "${_phy_multi_custom_path}")
+                    set(_phy_multi_custom_path "${_phy_multi_custom_path}/phy_multiple_init_data.bin")
+                endif()
+                if(EXISTS "${_phy_multi_custom_path}")
+                    set(_phy_multi_src "${_phy_multi_custom_path}")
+                endif()
             endif()
+            # Refresh copied bin each configure so sdkconfig/path edits match embed + flash contents.
+            # configure_file(COPYONLY) tracks the source file as a configure dependency.
+            message(STATUS "esp_phy: phy_multiple_init_data.bin <- ${_phy_multi_src}")
+            configure_file("${_phy_multi_src}" "${build_dir}/phy_multiple_init_data.bin" COPYONLY)
         endif()
 
         if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
@@ -131,9 +146,17 @@ if(CONFIG_ESP_PHY_ENABLED)
 
         set(phy_name "phy")
 
-        esptool_py_flash_target(${phy_name}-flash "${main_args}" "${sub_args}")
-        esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
-        esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
+        # When the multiple PHY init data bin is embedded into the application image
+        # (CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED=y), the data is already part of
+        # app.bin and there is no need to flash it again to the `phy` data partition.
+        # Skip registering it as a flashable image in that case.
+        if(NOT CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
+            esptool_py_flash_target(${phy_name}-flash "${main_args}" "${sub_args}")
+            esptool_py_flash_target_image(${phy_name}-flash ${phy_name}
+                "${phy_partition_offset}" "${phy_init_data_bin}")
+            esptool_py_flash_target_image(flash ${phy_name}
+                "${phy_partition_offset}" "${phy_init_data_bin}")
+        endif()
     endif()
 
 endif()
