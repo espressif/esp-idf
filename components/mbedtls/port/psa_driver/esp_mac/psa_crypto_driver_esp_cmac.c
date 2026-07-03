@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include "mbedtls/platform_util.h"
 #include "psa/crypto.h"
 #include "psa_crypto_driver_esp_cmac.h"
 #include "psa_crypto_driver_esp_cmac_contexts.h"
@@ -66,20 +67,19 @@ static inline void mbedtls_put_unaligned_uint32(void *p, uint32_t x)
 
 psa_status_t esp_cmac_abort(esp_cmac_operation_t *esp_cmac_ctx)
 {
-    psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
-
-    status = psa_destroy_key(esp_cmac_ctx->key_id);
-    if (status != PSA_SUCCESS) {
-        return status;
+    if (esp_cmac_ctx == NULL) {
+        return PSA_SUCCESS;
     }
 
-    status = esp_aes_cipher_abort(&esp_cmac_ctx->esp_aes_ctx);
-    if (status != PSA_SUCCESS) {
-        return status;
+    if (esp_cmac_ctx->alg == 0) {
+        return PSA_SUCCESS;
     }
+
+    (void)psa_destroy_key(esp_cmac_ctx->key_id);
+    (void)esp_aes_cipher_abort(&esp_cmac_ctx->esp_aes_ctx);
 
     mbedtls_platform_zeroize(esp_cmac_ctx, sizeof(esp_cmac_operation_t));
-    return status;
+    return PSA_SUCCESS;
 }
 
 psa_status_t esp_cmac_setup(esp_cmac_operation_t *esp_cmac_ctx,
@@ -89,10 +89,27 @@ psa_status_t esp_cmac_setup(esp_cmac_operation_t *esp_cmac_ctx,
                             psa_algorithm_t alg)
 {
     psa_status_t status = PSA_ERROR_CORRUPTION_DETECTED;
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+    if (esp_cmac_ctx == NULL) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (esp_cmac_ctx->alg != 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (PSA_ALG_FULL_LENGTH_MAC(alg) != PSA_ALG_CMAC) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+    if (psa_get_key_type(attributes) != PSA_KEY_TYPE_AES) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
 
     memset(esp_cmac_ctx, 0, sizeof(*esp_cmac_ctx));
 
-    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    esp_cmac_ctx->alg = alg;
+
     psa_key_type_t key_type = psa_get_key_type(attributes);
     size_t key_bits = psa_get_key_bits(attributes);
     psa_algorithm_t cmac_aes_key_alg = PSA_ALG_ECB_NO_PADDING;
@@ -105,24 +122,21 @@ psa_status_t esp_cmac_setup(esp_cmac_operation_t *esp_cmac_ctx,
     /* Import key for cipher operations */
     status = psa_import_key(&key_attributes, key_buffer, key_buffer_size, &esp_cmac_ctx->key_id);
     if (status != PSA_SUCCESS) {
-        goto exit;
+        goto error;
     }
 
     status = esp_aes_cipher_encrypt_setup(&esp_cmac_ctx->esp_aes_ctx, &key_attributes, key_buffer, key_buffer_size, cmac_aes_key_alg);
     if (status != PSA_SUCCESS) {
-        psa_destroy_key(esp_cmac_ctx->key_id);
-        goto exit;
+        goto error;
     }
 
-    psa_reset_key_attributes(&key_attributes);
-    esp_cmac_ctx->alg = alg;
-    esp_cmac_ctx->unprocessed_len = 0;
     esp_cmac_ctx->cipher_block_length = PSA_BLOCK_CIPHER_BLOCK_LENGTH(key_type);
-    mbedtls_platform_zeroize(esp_cmac_ctx->state, sizeof(esp_cmac_ctx->state));
-    mbedtls_platform_zeroize(esp_cmac_ctx->unprocessed_block, sizeof(esp_cmac_ctx->unprocessed_block));
-
-exit:
     psa_reset_key_attributes(&key_attributes);
+    return PSA_SUCCESS;
+
+error:
+    psa_reset_key_attributes(&key_attributes);
+    esp_cmac_abort(esp_cmac_ctx);
     return status;
 }
 
@@ -140,8 +154,17 @@ psa_status_t esp_cmac_update(esp_cmac_operation_t *esp_cmac_ctx, const uint8_t *
     size_t n, j, olen, block_size;
     unsigned char *state;
 
-    if (esp_cmac_ctx == NULL || data == NULL) {
+    if (esp_cmac_ctx == NULL) {
         return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    if (data == NULL && data_length != 0) {
+        return PSA_ERROR_INVALID_ARGUMENT;
+    }
+    if (esp_cmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+    if (data_length == 0) {
+        return PSA_SUCCESS;
     }
 
     state = esp_cmac_ctx->state;
@@ -294,12 +317,18 @@ psa_status_t esp_cmac_finish(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
+    if (esp_cmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
     state = esp_cmac_ctx->state;
     block_size = esp_cmac_ctx->cipher_block_length;
 
     mbedtls_platform_zeroize(K1, sizeof(K1));
     mbedtls_platform_zeroize(K2, sizeof(K2));
-    cmac_generate_subkeys(&esp_cmac_ctx->esp_aes_ctx, block_size, K1, K2);
+    if ((status = cmac_generate_subkeys(&esp_cmac_ctx->esp_aes_ctx, block_size, K1, K2)) != PSA_SUCCESS) {
+        goto exit;
+    }
 
     last_block = esp_cmac_ctx->unprocessed_block;
 
@@ -324,10 +353,9 @@ psa_status_t esp_cmac_finish(
 exit:
     mbedtls_platform_zeroize(K1, sizeof(K1));
     mbedtls_platform_zeroize(K2, sizeof(K2));
+    mbedtls_platform_zeroize(M_last, sizeof(M_last));
 
-    esp_cmac_ctx->unprocessed_len = 0;
-    mbedtls_platform_zeroize(esp_cmac_ctx->unprocessed_block, sizeof(esp_cmac_ctx->unprocessed_block));
-    mbedtls_platform_zeroize(state, PSA_CMAC_MAX_BLOCK_SIZE);
+    (void)esp_cmac_abort(esp_cmac_ctx);
 
     return status;
 }
@@ -384,7 +412,11 @@ psa_status_t esp_cmac_verify_finish(
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 
-    if (mac_length > sizeof(actual_mac)) {
+    if (esp_cmac_ctx->alg == 0) {
+        return PSA_ERROR_BAD_STATE;
+    }
+
+    if (mac_length == 0 || mac_length > sizeof(actual_mac)) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 

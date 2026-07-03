@@ -5,12 +5,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2025-2026 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <stdio.h>
 #include <string.h>
 #include "mbedtls/esp_config.h"
+#include "mbedtls/platform_util.h"
 #include "psa_crypto_driver_esp_sha.h"
 #include "../include/psa_crypto_driver_esp_sha256.h"
 #include "esp_sha_internal.h"
@@ -190,20 +191,24 @@ psa_status_t esp_sha256_driver_compute(
 #endif // SOC_SHA_SUPPORT_SHA224
     int ret = esp_sha256_starts(ctx, mode);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     ret = esp_sha256_update(ctx, input, input_length);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
 
     ret = esp_sha256_finish(ctx, hash);
     if (ret != ESP_OK) {
-        return PSA_ERROR_HARDWARE_FAILURE;
+        goto hw_fail;
     }
     *hash_length = PSA_HASH_LENGTH(alg);
     return PSA_SUCCESS;
+
+hw_fail:
+    mbedtls_platform_zeroize(ctx, sizeof(*ctx));
+    return PSA_ERROR_HARDWARE_FAILURE;
 }
 
 psa_status_t esp_sha256_driver_update(
@@ -260,7 +265,7 @@ psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx)
     if (!ctx) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
-    memset(ctx, 0, sizeof(esp_sha256_context));
+    mbedtls_platform_zeroize(ctx, sizeof(esp_sha256_context));
     return PSA_SUCCESS;
 }
 

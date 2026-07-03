@@ -37,9 +37,11 @@ typedef struct {
  * @brief Structure to store opaque HMAC operation context.
  */
 typedef struct {
+    psa_algorithm_t alg;                        /**< MAC algorithm (PSA_ALG_HMAC(PSA_ALG_SHA_256)); 0 = fresh / aborted. */
     const uint8_t *key_buffer;                  /**< Pointer to the per-source storage struct in key slot */
     uint8_t hmac[ESP_HMAC_RESULT_SIZE];         /**< Buffer to store the HMAC result */
     bool is_persistent;                         /**< Cached persistence flag for use in update */
+    bool computed;                              /**< True once update has produced a MAC into hmac[]; gates double-update. */
 } esp_hmac_opaque_operation_t;
 
 #endif /* ESP_HMAC_OPAQUE_DRIVER_ENABLED */
