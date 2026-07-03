@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +24,7 @@ void sleep_cache_suspend(void);
  */
 void sleep_cache_resume(void);
 
-#if !CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && CONFIG_SPIRAM
+#if SOC_PM_CPU_RETENTION_BY_SW && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && CONFIG_SPIRAM
 /**
  * @brief Cache writeback before sleep when CPU/cache may power down (SPIRAM / PAU paths; Kconfig-driven).
  * @param sleep_flags Same flags as light sleep, e.g. @c PMU_SLEEP_PD_CPU when relevant.
