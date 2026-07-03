@@ -63,6 +63,18 @@ menu "PHY"
                     3. Country configured by API esp_wifi_set_country()
                     and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
 
+            config ESP_PHY_MULTIPLE_INIT_DATA_BIN_CUSTOM_PATH
+                string "Custom path to phy_multiple_init_data.bin"
+                depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
+                default ""
+                help
+                    Absolute path, or path relative to the project directory, to the file
+                    phy_multiple_init_data.bin, or to a directory containing that file.
+
+                    If this field is left empty, or the file cannot be found at the resolved path,
+                    the default binary located at components/esp_phy/<chip>/phy_multiple_init_data.bin
+                    will be used.
+
             config ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
                 bool "Support embedded multiple phy init data bin to app bin"
                 depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
