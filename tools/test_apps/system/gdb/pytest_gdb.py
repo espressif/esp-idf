@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import re
+import time
 import typing
 
 import pexpect
@@ -20,6 +21,8 @@ def _test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
     # Don't need to have output from UART anymore
     dut.serial.stop_redirect_thread()
+
+    time.sleep(1)  # Wait for the USJ port to be ready
 
     with (
         openocd_dut.run(),
@@ -47,5 +50,6 @@ def test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 @pytest.mark.usb_serial_jtag
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_idf_gdb_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_idf_gdb(openocd_dut, dut)

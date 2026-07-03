@@ -102,6 +102,7 @@ def _capture_trace(ser: serial.Serial, trace_log_path: str, capture_s: float = 5
 @pytest.mark.usb_serial_jtag
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.parametrize('config', [pytest.param('default')], indirect=True)
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_esp_trace_ext_lib_usj(dut: IdfDut) -> None:
     dut.expect('Start of trace session', timeout=5)
