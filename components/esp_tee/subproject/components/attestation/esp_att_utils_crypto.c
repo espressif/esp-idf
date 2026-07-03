@@ -42,6 +42,8 @@ static esp_err_t gen_ecdsa_keypair_secp256r1(esp_att_ecdsa_keypair_t *keypair)
     esp_tee_sec_storage_key_cfg_t key_cfg = {
         .id = (const char *)(ESP_ATT_TK_KEY_ID),
         .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1,
+        /* The attestation key must never be usable from the REE */
+        .flags = SEC_STORAGE_FLAG_TEE_ONLY,
     };
 
     esp_err_t err = esp_tee_sec_storage_gen_key(&key_cfg);

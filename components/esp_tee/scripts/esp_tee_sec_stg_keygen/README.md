@@ -18,6 +18,7 @@ Options:
   -o, --output TEXT     output binary file name  [required]
   -i, --input TEXT      input key file (.pem for ecdsa, .bin for aes)
   --write-once          make key persistent - cannot be modified or deleted once written
+  --tee-only            mark key as owned exclusively by the TEE - the REE cannot use, generate or clear it
   -h, --help            Show this message and exit.
 ```
 
@@ -32,7 +33,7 @@ python esp_tee_sec_stg_keygen.py -k ecdsa_p384 -o ecdsa_p384_k0.bin
 
 ```bash
 openssl ecparam -name prime256v1 -genkey -noout -out ecdsa_p256.pem
-python esp_tee_sec_stg_keygen.py -k ecdsa_p256 -o ecdsa_p256_k1.bin -i ecdsa_p256.pem --write-once
+python esp_tee_sec_stg_keygen.py -k ecdsa_p256 -o ecdsa_p256_k1.bin -i ecdsa_p256.pem --write-once --tee-only
 ```
 
 ### AES-256 Key

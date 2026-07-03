@@ -14,6 +14,10 @@ To ensure security, the EAT is cryptographically protected. The remote relying p
 
   - Support for Attestation can be toggled using the option :ref:`CONFIG_SECURE_TEE_ATTESTATION` (enabled by default).
 
+  - The attestation signing key (identified by :ref:`CONFIG_SECURE_TEE_ATT_KEY_STR_ID`) is owned exclusively by the TEE. When the TEE generates this key, it is marked with the ``SEC_STORAGE_FLAG_TEE_ONLY`` flag, and the REE is denied any access to it through the secure service interface - it cannot use the key for signing, regenerate it, or clear it. This ensures that the attestation evidence can only ever be signed from within the TEE.
+
+  - In addition, the reserved key ID is treated as TEE-owned even before the key exists, which prevents the REE from "squatting" the ID with a key of its own before the TEE provisions it. If the key is pre-provisioned as part of an NVS image (see :doc:`Secure Storage <tee-sec-storage>`), it **must** be generated with the ``--tee-only`` flag of the :component_file:`esp_tee_sec_stg_keygen.py<esp_tee/scripts/esp_tee_sec_stg_keygen/esp_tee_sec_stg_keygen.py>`  tool.
+
 Attestation Flow
 ----------------
 

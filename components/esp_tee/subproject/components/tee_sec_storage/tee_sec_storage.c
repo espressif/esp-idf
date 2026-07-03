@@ -285,6 +285,29 @@ static esp_err_t secure_storage_read(const char *key_id, void *data, size_t *len
     return nvs_get_blob(tee_nvs_hdl, key_id, data, len);
 }
 
+bool esp_tee_sec_storage_is_key_tee_owned(const char *key_id)
+{
+    if (key_id == NULL) {
+        return false;
+    }
+
+    bool is_att_key = false, is_tee_only = false;
+    esp_err_t err = ESP_FAIL;
+
+#if CONFIG_SECURE_TEE_ATTESTATION
+    is_att_key = (strncmp(key_id, CONFIG_SECURE_TEE_ATT_KEY_STR_ID, NVS_KEY_NAME_MAX_SIZE) == 0);
+#endif
+
+    sec_stg_key_t keyctx = {};
+    size_t keyctx_len = sizeof(keyctx);
+
+    err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
+    is_tee_only = (err == ESP_OK) && ((keyctx.flags & SEC_STORAGE_FLAG_TEE_ONLY) != 0);
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+
+    return (is_att_key || is_tee_only);
+}
+
 /* ---------------------------------------------- Interface APIs ------------------------------------------------- */
 
 esp_err_t esp_tee_sec_storage_init(void)
