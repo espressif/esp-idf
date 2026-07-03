@@ -208,6 +208,10 @@ function(__generate_sdkconfig)
     # Generate Kconfig outputs
     __generate_kconfig_outputs()
 
+    # Mirror CONFIG_* values onto build properties so
+    # `idf_build_get_property(var CONFIG_FOO)` keeps working.
+    __import_sdkconfig_as_build_properties()
+
     idf_msg("Generated sdkconfig configuration")
 endfunction()
 

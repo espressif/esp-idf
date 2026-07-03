@@ -83,7 +83,12 @@ function(idf_build_get_property variable property)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
     if("${property}" STREQUAL BUILD_COMPONENTS)
-        idf_die("Build property 'BUILD_COMPONENTS' is not supported")
+        # BUILD_COMPONENTS is populated by the Build system v1 compatibility
+        # shim; reject only when running as a native Build system v2 project.
+        idf_build_get_property(_v1_compat __V1_COMPAT_SHIM)
+        if(NOT _v1_compat)
+            idf_die("Build property 'BUILD_COMPONENTS' is not supported")
+        endif()
     endif()
 
     set(genexpr)
@@ -356,11 +361,25 @@ function(idf_build_library library)
 
     # Include the requested components and link their interface targets to the
     # library.
+    #
+    # On the GNU linker, bracket the component interface list with
+    # --start-group/--end-group so the linker re-scans archives until all
+    # symbols resolve. Required when the archive defining a __wrap_*
+    # implementation is encountered after the archive consuming the wrapped
+    # symbol on the link line; without group iteration the wrap symbol is
+    # unresolved.
+    idf_build_get_property(linker_type LINKER_TYPE)
+    if("${linker_type}" STREQUAL "GNU")
+        target_link_libraries("${library}" INTERFACE "-Wl,--start-group")
+    endif()
     foreach(component_name IN LISTS ARG_COMPONENTS)
         idf_component_include("${component_name}")
         idf_component_get_property(component_interface "${component_name}" COMPONENT_INTERFACE)
         target_link_libraries("${library}" INTERFACE "${component_interface}")
     endforeach()
+    if("${linker_type}" STREQUAL "GNU")
+        target_link_libraries("${library}" INTERFACE "-Wl,--end-group")
+    endif()
 
     # Process optional requirements in DEFERRED mode only (no-op in IMMEDIATE or when unset).
     idf_build_get_property(opt_req_mode IDF_COMPONENT_OPTIONAL_REQUIRES_MODE)
