@@ -575,11 +575,9 @@ esp_err_t esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cf
 
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT | PSA_KEY_USAGE_VERIFY_HASH);
-    psa_algorithm_t ecdsa_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
 
-#if CONFIG_MBEDTLS_ECDSA_DETERMINISTIC
-    ecdsa_alg = PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256);
-#endif
+    /* ECDSA signatures over TEE secure-storage keys are compulsorily non-deterministic */
+    psa_algorithm_t ecdsa_alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
 
     psa_set_key_algorithm(&key_attributes, ecdsa_alg);
 
