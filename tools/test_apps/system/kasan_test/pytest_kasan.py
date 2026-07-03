@@ -11,9 +11,21 @@ Two configurations:
              at a time via the Unity menu, expecting a panic.
 """
 
+import os
+
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+
+# KASAN instrumentation is not yet emitted under build system v2, so the test
+# binary never reports a KASAN error and these cases would always fail. Skip the
+# whole module at collection time so no target_test job is even generated for it.
+# TODO: IDF-15864
+if os.environ.get('IDF_BUILD_V2') == '1':
+    pytest.skip(
+        'KASAN is not yet supported under build system v2. TODO: IDF-15864',
+        allow_module_level=True,
+    )
 
 # ---------------------------------------------------------------------------
 # no_halt configuration: all tests pass in one run

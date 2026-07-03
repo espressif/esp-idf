@@ -361,7 +361,7 @@ build_docker:
 ############################
 # Host test with test apps #
 ############################
-test_pytest_qemu:
+.test_pytest_qemu_template:
   extends:
     - .host_test_template
   artifacts:
@@ -371,15 +371,6 @@ test_pytest_qemu:
       - "**/build*/*.bin"
     reports:
       junit: XUNIT_RESULT.xml
-  parallel:
-    matrix:
-      - IDF_TARGET: "esp32"
-        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
-        # Skip Clang + Xtensa tests due to bootloader size issue
-        IDF_TOOLCHAIN: [gcc]
-      - IDF_TARGET: "esp32c3"
-        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
-        IDF_TOOLCHAIN: [gcc, clang]
   script:
     - run_cmd idf-ci build run
       --build-system cmake
@@ -394,7 +385,20 @@ test_pytest_qemu:
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
-test_pytest_linux:
+test_pytest_qemu:
+  extends:
+    - .test_pytest_qemu_template
+  parallel:
+    matrix:
+      - IDF_TARGET: "esp32"
+        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
+        # Skip Clang + Xtensa tests due to bootloader size issue
+        IDF_TOOLCHAIN: [gcc]
+      - IDF_TARGET: "esp32c3"
+        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
+        IDF_TOOLCHAIN: [gcc, clang]
+
+.test_pytest_linux_template:
   extends:
     - .host_test_template
   artifacts:
@@ -417,6 +421,10 @@ test_pytest_linux:
       -m \"not macos\"
       --junitxml=XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+test_pytest_linux:
+  extends:
+    - .test_pytest_linux_template
 
 test_pytest_macos:
   extends:
@@ -523,6 +531,34 @@ pytest_buildv2_system:
       --work-dir ${CI_PROJECT_DIR}/test_build_system
       --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+
+# Run QEMU tests with the cmakev2 build system (via the IDF_BUILD_V2 shim).
+# Triggered only when the 'buildv2' MR label is set.
+test_pytest_qemu_buildv2:
+  extends:
+    - .test_pytest_qemu_template
+    - .rules:labels:buildv2
+  allow_failure: true
+  parallel:
+    matrix:
+      - IDF_TARGET: "esp32"
+        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
+        IDF_TOOLCHAIN: [gcc]
+      - IDF_TARGET: "esp32c3"
+        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
+        IDF_TOOLCHAIN: [gcc]
+  variables:
+    IDF_BUILD_V2: "1"
+
+# Run Linux-target pytest tests with the cmakev2 build system (via the
+# IDF_BUILD_V2 shim). Triggered only when the 'buildv2' MR label is set.
+test_pytest_linux_buildv2:
+  extends:
+    - .test_pytest_linux_template
+    - .rules:labels:buildv2
+  allow_failure: true
+  variables:
+    IDF_BUILD_V2: "1"
 
 pytest_build_system_macos:
   extends:

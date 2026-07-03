@@ -36,35 +36,21 @@ set(MENUCONFIG_INLINE_MIN_KCONFIG_VERSION "3.9.0")
 function(__init_kconfig)
     idf_build_get_property(idf_path IDF_PATH)
 
-    # Initialize SDKCONFIG and SDKCONFIG_DEFAULTS build properties using environment
-    # variables, CMake cache variables, or default values.
-    if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
-        set(sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
-    else()
-        set(sdkconfig_defaults "")
-    endif()
-
+    # Initialize the SDKCONFIG file path build property.
     __get_default_value(VARIABLE SDKCONFIG
                         DEFAULT "${CMAKE_SOURCE_DIR}/sdkconfig"
                         OUTPUT sdkconfig)
-    __get_default_value(VARIABLE SDKCONFIG_DEFAULTS
-                        DEFAULT "${sdkconfig_defaults}"
-                        OUTPUT sdkconfig_defaults)
-
     __get_absolute_paths(PATHS "${sdkconfig}" OUTPUT sdkconfig)
-    __get_absolute_paths(PATHS "${sdkconfig_defaults}" OUTPUT sdkconfig_defaults)
-
-    set(sdkconfig_defaults_checked "")
-    foreach(sdkconfig_default ${sdkconfig_defaults})
-        if(NOT EXISTS "${sdkconfig_default}")
-            idf_die("SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
-        endif()
-        list(APPEND sdkconfig_defaults_checked ${sdkconfig_default})
-    endforeach()
-
     idf_build_set_property(SDKCONFIG "${sdkconfig}")
     idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
-    idf_build_set_property(SDKCONFIG_DEFAULTS "${sdkconfig_defaults_checked}")
+
+    # Initialize the SDKCONFIG_DEFAULTS build property. __init_idf_target()
+    # reads this property to detect the target from the defaults files, so it
+    # must be resolved here. It is resolved again from __generate_sdkconfig()
+    # to pick up a SDKCONFIG_DEFAULTS variable assigned after
+    # include(project.cmake) but before project().
+    __resolve_sdkconfig_defaults()
+
     idf_build_set_property(GENERATE_SDKCONFIG 1)
 
     # Setup ESP-IDF root Kconfig and sdkconfig.rename files.
@@ -76,6 +62,54 @@ function(__init_kconfig)
     set(config_dir "${build_dir}/config")
     file(MAKE_DIRECTORY "${config_dir}")
     idf_build_set_property(CONFIG_DIR "${config_dir}")
+endfunction()
+
+#[[
+    __resolve_sdkconfig_defaults()
+
+    Resolve SDKCONFIG_DEFAULTS into a list of absolute, existing paths
+    and store it on the SDKCONFIG_DEFAULTS build property.
+
+    A SDKCONFIG_DEFAULTS variable (or environment variable) takes precedence
+    and is (re)resolved onto the build property. Otherwise a value already
+    accumulated on the build property (e.g. via
+    ``idf_build_set_property(SDKCONFIG_DEFAULTS "<path>" APPEND)``) is
+    preserved, and only when nothing has been set does it fall back to the
+    project's sdkconfig.defaults file. This makes the helper idempotent and
+    safe to call both early (from __init_kconfig) and again at
+    sdkconfig-generation time.
+#]]
+function(__resolve_sdkconfig_defaults)
+    if(NOT DEFINED SDKCONFIG_DEFAULTS AND NOT DEFINED ENV{SDKCONFIG_DEFAULTS})
+        # No SDKCONFIG_DEFAULTS variable override: keep a value already set on
+        # the build property; only fall back to the default when unset.
+        idf_build_get_property(existing SDKCONFIG_DEFAULTS)
+        if(existing)
+            return()
+        endif()
+    endif()
+
+    if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+        set(sdkconfig_defaults_default "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+    else()
+        set(sdkconfig_defaults_default "")
+    endif()
+
+    __get_default_value(VARIABLE SDKCONFIG_DEFAULTS
+                        DEFAULT "${sdkconfig_defaults_default}"
+                        OUTPUT sdkconfig_defaults)
+
+    __get_absolute_paths(PATHS "${sdkconfig_defaults}" OUTPUT sdkconfig_defaults)
+
+    set(sdkconfig_defaults_checked "")
+    foreach(sdkconfig_default IN LISTS sdkconfig_defaults)
+        if(NOT EXISTS "${sdkconfig_default}")
+            idf_die("SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
+        endif()
+        list(APPEND sdkconfig_defaults_checked "${sdkconfig_default}")
+    endforeach()
+
+    idf_build_set_property(SDKCONFIG_DEFAULTS "${sdkconfig_defaults_checked}")
 endfunction()
 
 #[[
@@ -187,6 +221,13 @@ endfunction()
     4. Generate all output files (sdkconfig.h, sdkconfig.cmake, etc.)
 #]]
 function(__generate_sdkconfig)
+    # Re-resolve SDKCONFIG_DEFAULTS so that a value assigned to the
+    # SDKCONFIG_DEFAULTS variable after include(project.cmake) but before
+    # project() is honored. The helper is idempotent: it only re-reads when
+    # the SDKCONFIG_DEFAULTS variable (or environment variable) is set, and
+    # otherwise leaves a value accumulated on the build property untouched.
+    __resolve_sdkconfig_defaults()
+
     # Collect Kconfig files from discovered components
     __consolidate_component_kconfig_files()
 

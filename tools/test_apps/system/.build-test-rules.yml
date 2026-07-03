@@ -106,6 +106,9 @@ tools/test_apps/system/init_array:
     - tools/tools.json
 
 tools/test_apps/system/kasan_test:
+  disable:
+    - if: IDF_BUILD_V2 == "1"
+      reason: 'KASAN is not yet supported under build system v2. TODO: IDF-15864'
   depends_components:
     - *common_components
     - esp_system
