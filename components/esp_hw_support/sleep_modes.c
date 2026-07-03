@@ -674,14 +674,24 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
         mac_bb_power_down_cb_execute();
 #endif
 #if CONFIG_IDF_TARGET_ESP32
-    esp_sleep_gpio_pupd_config_workaround_apply();
+        esp_sleep_gpio_pupd_config_workaround_apply();
 #endif
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if SOC_PM_CPU_RETENTION_BY_RTCCNTL
+        // Inside sleep_enable_cpu_retention, it will writeback the cache if the tag memory is power down with the CPU.
         sleep_enable_cpu_retention();
-#endif
-#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && CONFIG_SPIRAM
-    sleep_cache_safe_writeback(sleep_flags);
-#endif
+#elif SOC_PM_CPU_RETENTION_BY_SW && CONFIG_SPIRAM
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        // For chips with SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE, if writeback is performed here,
+        // L1 dcache will still be dirty later, since the current function stack is in L2 MEM,
+        // so the writeback will be postponed to pmu_sleep.
+#else
+        // When SPIRAM is using, we need to writeback all dirty cache data to protect SPIRAM data conherence
+        // since the cache tag memory will be powered down with CPU.
+        sleep_cache_safe_writeback(sleep_flags);
+#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#endif // SOC_PM_CPU_RETENTION_BY_SW && CONFIG_SPIRAM
+#endif // CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #if ADC_LL_ANA_CALI_REG_PD_WORKAROUND
         adc_hal_i2c_saradc_reg_backup();
 #endif
