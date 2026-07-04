@@ -4,7 +4,11 @@
 # Note: Paths are expected to be quoted in the CFLAGS variable
 separate_arguments(CFLAGS_LIST UNIX_COMMAND "${CFLAGS}")
 
-execute_process(COMMAND "${CC}" "-C" "-P" "-x" "c" "-E" ${CFLAGS_LIST} "${SOURCE}"
+# Comment handling is left to the caller via CFLAGS. The default linker-script
+# CFLAGS keep comments (-C) to preserve historical output. Callers whose
+# templates include headers with C++-style "//" comments, which ld rejects,
+# e.g. the ULP memory layout including soc/soc.h, omit -C in their flags.
+execute_process(COMMAND "${CC}" "-P" "-x" "c" "-E" ${CFLAGS_LIST} "${SOURCE}"
                 RESULT_VARIABLE RET_CODE
                 OUTPUT_VARIABLE PREPROCESSED_LINKER_SCRIPT
                 ERROR_VARIABLE ERROR_VAR)

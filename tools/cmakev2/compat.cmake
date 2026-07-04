@@ -165,6 +165,25 @@ endfunction()
         ``linkerscript`` template. The ``linkerscript`` is processed with ldgen
         to produce the ``output``.
 
+    *FLAGS[in,opt]*
+
+        Explicit preprocessor flags for the linker script(s) registered by this
+        call, for example ``-D`` defines or extra ``-I`` include directories.
+        When given, they replace the default parent-dir==target include
+        heuristic while a ``.in`` script or template is preprocessed.
+        ``-I<config_dir>`` and the linked components' include directories are
+        always added regardless. Applies to every ``scriptfile`` in the same
+        call.
+
+    *MEMORY[opt]*
+
+        Marks the script(s) as the memory-layout base for the link. Such
+        scripts are emitted as ``-T`` before all other linker scripts, so that
+        section-placement scripts from other components can reference their
+        ``MEMORY`` regions and ``REGION_ALIAS`` names. Needed when the memory
+        layout lives in a different component than the section scripts that
+        depend on it.
+
     This function adds one or more linker scripts to the specified component
     target, incorporating the linker script into the linking process.
 
@@ -178,19 +197,38 @@ function(target_linker_script target deptype scriptfiles)
     # The linker script files, templates, and their output filenames are stored
     # only as component properties. The script files are generated and added to
     # the library link interface in the idf_build_library function.
-    set(options)
-    set(one_value PROCESS)
+    set(options MEMORY)
+    set(one_value PROCESS FLAGS)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
     foreach(scriptfile ${scriptfiles})
         get_filename_component(scriptfile "${scriptfile}" ABSOLUTE)
         idf_msg("Adding linker script ${scriptfile}")
+        __linker_script_key("${scriptfile}" script_key)
         if(ARG_PROCESS)
             get_filename_component(output "${ARG_PROCESS}" ABSOLUTE)
             idf_component_set_property("${target}" LINKER_SCRIPTS_TEMPLATE "${scriptfile}" APPEND)
-            idf_component_set_property("${target}" LINKER_SCRIPTS_GENERATED "${output}" APPEND)
+            # Key the generated output path by the template instead of keeping a
+            # second list index-aligned with LINKER_SCRIPTS_TEMPLATE.
+            idf_component_set_property("${target}" "LINKER_SCRIPT_GENERATED_${script_key}" "${output}")
         else()
-            idf_component_set_property("${target}" LINKER_SCRIPTS ${scriptfile} APPEND)
+            idf_component_set_property("${target}" LINKER_SCRIPTS "${scriptfile}" APPEND)
+        endif()
+        # Memory-layout scripts are emitted before other scripts in the link,
+        # so section-placement scripts can reference their MEMORY regions.
+        if(ARG_MEMORY)
+            idf_component_set_property("${target}" "LINKER_SCRIPT_MEMORY_${script_key}" TRUE)
+        endif()
+        # Per-script preprocessor flags, consumed by __preprocess_linker_script
+        # when a ".in" script or template is built. The "__DEFAULT__" sentinel
+        # means FLAGS was not given (use the parent-dir==target heuristic); any
+        # other value, including empty, means FLAGS was given and replaces it.
+        # This distinguishes "not given" from "given empty", which the property
+        # value alone cannot (both would read back as empty).
+        if(DEFINED ARG_FLAGS)
+            idf_component_set_property("${target}" "LINKER_SCRIPT_FLAGS_${script_key}" "${ARG_FLAGS}")
+        else()
+            idf_component_set_property("${target}" "LINKER_SCRIPT_FLAGS_${script_key}" "__DEFAULT__")
         endif()
     endforeach()
 endfunction()

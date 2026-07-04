@@ -214,13 +214,16 @@ function(preprocess_linker_file cmake_target script_in output_var preserve_suffi
         set(extra_cflags "-I\"${dir_to_include}\"")
     endif()
 
+    # Keep comments (-C): historical behavior for cmakev1 linker scripts. It was
+    # previously hardcoded in linker_script_preprocessor.cmake, which now leaves
+    # comment handling to the caller.
     add_custom_command(
         OUTPUT ${script_out}
         COMMAND ${CMAKE_COMMAND}
             "-DCC=${CMAKE_C_COMPILER}"
             "-DSOURCE=${script_in}"
             "-DTARGET=${script_out}"
-            "-DCFLAGS=-I\"${config_dir}\" ${extra_cflags}"
+            "-DCFLAGS=-C -I\"${config_dir}\" ${extra_cflags}"
             -P "${linker_script_generator}"
         MAIN_DEPENDENCY ${script_in}
         DEPENDS ${sdkconfig_header}
