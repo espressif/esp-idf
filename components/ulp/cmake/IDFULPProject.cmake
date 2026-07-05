@@ -19,6 +19,39 @@ if(BUILD_FSM)
     check_expected_tool_version("esp32ulp-elf" ${CMAKE_ASM_COMPILER})
 endif()
 
+# CMake v1-only helpers that preprocess the ULP memory-layout linker template
+# with the C preprocessor. The CMake v2 path attaches the template through
+# target_linker_script(... FLAGS) and does not use these.
+function(__ulp_create_arg_file arguments output_file)
+    # Escape all spaces
+    list(TRANSFORM arguments REPLACE " " "\\\\ ")
+    # Create a single string with all args separated by space
+    list(JOIN arguments " " arguments)
+    # Generate the response file late enough for target generator expressions
+    # in include directories to resolve to their final build-system values.
+    file(GENERATE OUTPUT "${output_file}" CONTENT "${arguments}")
+endfunction()
+
+function(__ulp_add_preprocessed_linker_script ulp_app_name ld_template ld_script ld_script_target)
+    # Use the C preprocessor so sdkconfig and SoC constants can shape the
+    # linker template before the ULP executable is linked.
+    set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ld_script} ${ARGN} ${ld_template})
+    set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ld_script}_args.txt)
+    __ulp_create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+
+    add_custom_command(OUTPUT ${ld_script}
+                    COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                    MAIN_DEPENDENCY ${ld_template}
+                    DEPENDS ${SDKCONFIG_HEADER}
+                    COMMENT "Generating ${ld_script} linker script..."
+                    VERBATIM)
+
+    add_custom_target(${ld_script_target} DEPENDS ${ld_script})
+    add_dependencies(${ulp_app_name} ${ld_script_target})
+    target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}/${ld_script})
+endfunction()
+
 function(ulp_apply_default_options ulp_app_name)
     if(BUILD_RISCV)
         target_link_options(${ulp_app_name} PRIVATE "-nostartfiles")

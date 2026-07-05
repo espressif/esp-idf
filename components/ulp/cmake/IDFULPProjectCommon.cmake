@@ -32,36 +32,6 @@ macro(ulp_apply_build_type_options)
     endif()
 endmacro()
 
-function(__ulp_create_arg_file arguments output_file)
-    # Escape all spaces
-    list(TRANSFORM arguments REPLACE " " "\\\\ ")
-    # Create a single string with all args separated by space
-    list(JOIN arguments " " arguments)
-    # Generate the response file late enough for target generator expressions
-    # in include directories to resolve to their final build-system values.
-    file(GENERATE OUTPUT "${output_file}" CONTENT "${arguments}")
-endfunction()
-
-function(__ulp_add_preprocessed_linker_script ulp_app_name ld_template ld_script ld_script_target)
-    # Use the C preprocessor so sdkconfig and SoC constants can shape the
-    # linker template before the ULP executable is linked.
-    set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ld_script} ${ARGN} ${ld_template})
-    set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ld_script}_args.txt)
-    __ulp_create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
-
-    add_custom_command(OUTPUT ${ld_script}
-                    COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                    MAIN_DEPENDENCY ${ld_template}
-                    DEPENDS ${SDKCONFIG_HEADER}
-                    COMMENT "Generating ${ld_script} linker script..."
-                    VERBATIM)
-
-    add_custom_target(${ld_script_target} DEPENDS ${ld_script})
-    add_dependencies(${ulp_app_name} ${ld_script_target})
-    target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}/${ld_script})
-endfunction()
-
 function(ulp_add_build_binary_targets ulp_app_name)
     cmake_parse_arguments(ULP "" "PREFIX" "" ${ARGN})
     if(NOT ULP_PREFIX)
