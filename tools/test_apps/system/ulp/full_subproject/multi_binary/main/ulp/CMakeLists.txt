@@ -1,23 +1,17 @@
 cmake_minimum_required(VERSION 3.22)
 
-include(${IDF_PATH}/tools/cmakev2/idf.cmake)
+include(${IDF_PATH}/components/ulp/cmake/ulp_project.cmake)
 
 project(${IDF_DEFAULT_PROJECT_NAME} C CXX ASM)
 
-include(IDFULPProject)
+ulp_project_init()
 
-idf_project_init()
-ulp_prepare_build()
-
-idf_build_library(ulp_shared_library
-                  COMPONENTS ulp_shared)
-
-idf_build_executable(add
-                     COMPONENTS ulp_add_main
+ulp_build_executable(add
+                     COMPONENTS ulp_add_main ulp_shared
                      MAPFILE_TARGET add_mapfile)
-target_link_libraries(add PRIVATE ulp_shared_library)
+ulp_build_binary(add)
 
-idf_build_executable(multiply
-                     COMPONENTS ulp_multiply_main
+ulp_build_executable(multiply
+                     COMPONENTS ulp_multiply_main ulp_shared
                      MAPFILE_TARGET multiply_mapfile)
-target_link_libraries(multiply PRIVATE ulp_shared_library)
+ulp_build_binary(multiply)

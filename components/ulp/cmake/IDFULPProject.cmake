@@ -1,8 +1,7 @@
-if(IDF_BUILD_V2 AND COMMAND idf_project_init)
-    include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectv2.cmake)
-    return()
-endif()
-
+# This is the CMake v1 (legacy) ULP child entry point, used by ulp_embed_binary.
+# CMake v2 full-subproject builds include components/ulp/cmake/ulp_project.cmake
+# instead.
+#
 # Legacy ULP child projects are plain CMake projects, so the parent-provided
 # sdkconfig.cmake has to be loaded here before the common ULP helpers inspect
 # CONFIG_* values. CMake v1 callers pass this path explicitly.

@@ -125,6 +125,10 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
         set(ulp_project_args)
         if(IDF_BUILD_V2)
             set(ulp_project_args
+                # The parent passes a superset of variables that different ULP
+                # subproject styles consume (e.g. ULP_VAR_PREFIX only by
+                # ulp_project_default, COMPONENT_INCLUDES only by hand-written
+                # subprojects). Do not warn about the ones a given child ignores.
                 --no-warn-unused-cli
                 -DIDF_DEFAULT_PROJECT_NAME=${app_name}
                 -DIDF_BUILD_V2=y
@@ -166,7 +170,9 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 -DCOMPONENT_DIR=${COMPONENT_DIR}
                 -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                 -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
-                -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE})
+                -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
+                # The v1 ULP child resolves include(IDFULPProject) via the module path.
+                -DCMAKE_MODULE_PATH=${ulp_cmake_dir})
         endif()
 
         externalproject_add(${app_name}
@@ -183,7 +189,6 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                         -DIDF_TARGET=${idf_target}
                         -DIDF_PATH=${idf_path}
                         -DPYTHON=${python}
-                        -DCMAKE_MODULE_PATH=${ulp_cmake_dir}
                         ${extra_cmake_args}
             BUILD_COMMAND ${CMAKE_COMMAND} --build ${ulp_binary_dir} --target build
             BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}

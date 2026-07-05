@@ -599,12 +599,14 @@ function(idf_build_library library)
     # seen before any section-placement script references them.
     foreach(script IN LISTS memory_scripts other_scripts)
         get_filename_component(script_dir "${script}" DIRECTORY)
-        # Add linker script directory to the linker search path.
+        # Add the linker script directory to the linker search path so INCLUDE
+        # directives inside a script can resolve sibling scripts by name.
         target_link_directories("${library}" INTERFACE "${script_dir}")
-        # Add linker script to link. Use the full path because direct ld
-        # resolves -T against only the -L directories that came before it, while
-        # CMake may emit link options before link directories. Keep -L above so
-        # linker scripts can still INCLUDE siblings by name.
+        # Add the linker script to the link by absolute path. Passing the full
+        # path (rather than a bare name resolved via -L) keeps this working for
+        # direct linker drivers such as the ULP FSM esp32ulp-elf-ld link, where
+        # the -L search directories follow the -T options on the command line
+        # and GNU ld therefore does not use them to locate the -T script.
         # Regarding the usage of SHELL, see
         # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
         # Quote the path: SHELL: strings are re-split on spaces, so an unquoted

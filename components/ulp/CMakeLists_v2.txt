@@ -181,19 +181,3 @@ elseif(ULP_TYPE STREQUAL "fsm")
                          FLAGS "${ulp_ld_flags}")
     target_link_options(${COMPONENT_LIB} INTERFACE "SHELL:-u entry")
 endif()
-
-function(__ulp_configure_executable ulp_app_name)
-    # Generate the files consumed by the parent app: .bin payload plus symbol
-    # header/linker exports produced from the ULP ELF.
-    set(binary_target_args)
-    if(DEFINED ULP_VAR_PREFIX)
-        set(ulp_var_prefix "${ULP_VAR_PREFIX}")
-        if(ULP_PREFIX_APPEND_BIN_NAME)
-            string(MAKE_C_IDENTIFIER "${ulp_var_prefix}${ulp_app_name}_" ulp_var_prefix)
-        endif()
-        list(APPEND binary_target_args PREFIX ${ulp_var_prefix})
-    endif()
-    ulp_add_build_binary_targets(${ulp_app_name} ${binary_target_args})
-endfunction()
-
-idf_component_register_build_event_callback(EVENT POST_ELF CALLBACK __ulp_configure_executable)
