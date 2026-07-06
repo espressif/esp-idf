@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,8 @@ bool esp_event_is_handler_registered(esp_event_loop_handle_t event_loop, esp_eve
     esp_event_base_node_t* base_node;
     esp_event_id_node_t* id_node;
     esp_event_handler_node_t* handler;
+
+    xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
 
     SLIST_FOREACH(loop_node, &(loop->loop_nodes), next) {
         SLIST_FOREACH(handler, &(loop_node->handlers), next) {
@@ -52,6 +54,6 @@ bool esp_event_is_handler_registered(esp_event_loop_handle_t event_loop, esp_eve
     }
 
 out:
-    xSemaphoreGive(loop->mutex);
+    xSemaphoreGiveRecursive(loop->mutex);
     return result;
 }
