@@ -20,6 +20,8 @@ extern "C" {
 #include "soc/crypto_dma_reg.h"
 #include "soc/dport_reg.h"
 
+#define CRYPTO_DMA_LL_DESC_ALIGNMENT    4
+
 typedef enum {
     CRYPTO_DMA_AES = 0,
     CRYPTO_DMA_SHA,

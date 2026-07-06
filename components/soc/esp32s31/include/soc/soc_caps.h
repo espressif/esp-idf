@@ -380,9 +380,9 @@
 /*-------------------------- AES CAPS ----------------------------------------*/
 #define SOC_AES_GDMA                            (1)
 #define SOC_AES_SUPPORT_DMA                     (1)
+#define SOC_AES_SUPPORT_GCM                     (1)
 #define SOC_AES_SUPPORT_AES_128                 (1)
 #define SOC_AES_SUPPORT_AES_256                 (1)
-// TODO: [ESP32S31] IDF-14633 SOC_AES_SUPPORT_GCM not enabled: GCM control registers (AAD_BLOCK_NUM, REMAINDER_BIT_NUM, CONTINUE) non-functional on v0.0 silicon
 #define SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION   (1)
 
 /*-------------------------- SHA CAPS ----------------------------------------*/
