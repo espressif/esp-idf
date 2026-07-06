@@ -71,13 +71,13 @@ def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
             except serial.SerialTimeoutException:
                 assert False, 'Timeout reached while reading from serial port, exiting...'
 
-        # Wait some time to let data accumulate in target's ring buffer
+        # Give pending trace data a short window to reach the host before requesting STOP.
         time.sleep(0.2)
 
         # Send Stop command
         ser.write(STOP_CMD)
 
-        # Capture until target flushed data or timeout (3 seconds)
+        # Capture the final data produced by STOP and the transport flush.
         end_time = time.time() + 3.0
         last_data_time = time.time()
         while time.time() < end_time and (time.time() - last_data_time) <= 1.0:
