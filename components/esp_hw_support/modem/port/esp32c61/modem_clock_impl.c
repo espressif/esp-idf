@@ -12,7 +12,7 @@
 
 /* Clock dependency definitions */
 #define WIFI_CLOCK_DEPS                     ( MODEM_CLOCKS( WIFI_MAC, WIFI_APB, WIFI_BB, WIFI_BB_44M, COEXIST ) )
-#define BLE_CLOCK_DEPS                      ( MODEM_CLOCKS( BLE_MAC, BT_I154_COMMON_BB, ETM, COEXIST, BT_APB, BT_PERIPHERAL ) )
+#define BLE_CLOCK_DEPS                      ( MODEM_CLOCKS( BT_MAC, BT_I154_COMMON_BB, ETM, COEXIST, BT_APB, BT_PERIPHERAL ) )
 #define BT_APB_CLOCK_DEPS                   ( MODEM_CLOCKS( BT_APB, ETM ) )
 #define COEXIST_CLOCK_DEPS                  ( MODEM_CLOCKS( COEXIST ) )
 #define I2C_ANA_MST_CLOCK_DEPS              ( MODEM_CLOCKS( I2C_MASTER ) )
@@ -238,7 +238,7 @@ static void IRAM_ATTR modem_clock_configure_impl(modem_clock_context_t *ctx, int
         : (dev_id == MODEM_CLOCK_WIFI_MAC)              ? modem_clock_wifi_mac_configure
         : (dev_id == MODEM_CLOCK_WIFI_BB)               ? modem_clock_wifi_bb_configure
         : (dev_id == MODEM_CLOCK_ETM)                   ? modem_clock_etm_configure
-        : (dev_id == MODEM_CLOCK_BLE_MAC)               ? modem_clock_ble_mac_configure
+        : (dev_id == MODEM_CLOCK_BT_MAC)                ? modem_clock_ble_mac_configure
         : (dev_id == MODEM_CLOCK_BT_PERIPHERAL)         ? modem_clock_bt_peripheral_configure
         : (dev_id == MODEM_CLOCK_BT_APB)                ? modem_clock_bt_apb_configure
         : (dev_id == MODEM_CLOCK_BT_I154_COMMON_BB)     ? modem_clock_ble_i154_bb_configure
@@ -263,7 +263,7 @@ static esp_err_t IRAM_ATTR modem_clock_check_impl(modem_clock_context_t *ctx, in
         : (dev_id == MODEM_CLOCK_WIFI_MAC)              ? modem_clock_wifi_mac_check_enable
         : (dev_id == MODEM_CLOCK_WIFI_BB)               ? modem_clock_wifi_bb_check_enable
         : (dev_id == MODEM_CLOCK_ETM)                   ? modem_clock_etm_check_enable
-        : (dev_id == MODEM_CLOCK_BLE_MAC)               ? modem_clock_ble_mac_check_enable
+        : (dev_id == MODEM_CLOCK_BT_MAC)                ? modem_clock_ble_mac_check_enable
         : (dev_id == MODEM_CLOCK_BT_PERIPHERAL)         ? modem_clock_bt_peripheral_check_enable
         : (dev_id == MODEM_CLOCK_BT_APB)                ? modem_clock_bt_apb_check_enable
         : (dev_id == MODEM_CLOCK_BT_I154_COMMON_BB)     ? modem_clock_ble_i154_bb_check_enable

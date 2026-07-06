@@ -309,7 +309,7 @@ static void IRAM_ATTR modem_clock_configure_impl(modem_clock_context_t *ctx, int
 #endif
         : (dev_id == MODEM_CLOCK_ETM)                   ? modem_clock_etm_configure
 #if SOC_BT_SUPPORTED
-        : (dev_id == MODEM_CLOCK_BLE_MAC)               ? modem_clock_ble_mac_configure
+        : (dev_id == MODEM_CLOCK_BT_MAC)                ? modem_clock_ble_mac_configure
         : (dev_id == MODEM_CLOCK_BT_PERIPHERAL)         ? modem_clock_bt_peripheral_configure
         : (dev_id == MODEM_CLOCK_BT_APB)                ? modem_clock_bt_apb_configure
 #endif
@@ -342,7 +342,7 @@ static esp_err_t IRAM_ATTR modem_clock_check_impl(modem_clock_context_t *ctx, in
         : (dev_id == MODEM_CLOCK_WIFI_BB)               ? modem_clock_wifi_bb_check_enable
         : (dev_id == MODEM_CLOCK_WIFI_BB_80X1)          ? modem_clock_wifi_bb_80x1_check_enable
         : (dev_id == MODEM_CLOCK_ETM)                   ? modem_clock_etm_check_enable
-        : (dev_id == MODEM_CLOCK_BLE_MAC)               ? modem_clock_ble_mac_check_enable
+        : (dev_id == MODEM_CLOCK_BT_MAC)                ? modem_clock_ble_mac_check_enable
         : (dev_id == MODEM_CLOCK_BT_PERIPHERAL)         ? modem_clock_bt_peripheral_check_enable
         : (dev_id == MODEM_CLOCK_BT_APB)                ? modem_clock_bt_apb_check_enable
         : (dev_id == MODEM_CLOCK_BT_I154_COMMON_BB)     ? modem_clock_ble_i154_bb_check_enable
