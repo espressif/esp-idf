@@ -861,20 +861,37 @@ esp_err_t dma2d_configure_color_space_conversion(dma2d_channel_handle_t dma2d_ch
     int channel_id = dma2d_chan->channel_id;
 
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
-        ESP_GOTO_ON_FALSE_ISR((1 << channel_id) & DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        bool tx_csc_supported = ((1U << channel_id) & DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK) != 0;
+        bool tx_csc_disabled = config->tx_csc_option == DMA2D_CSC_TX_NONE &&
+                               config->pre_scramble == DMA2D_SCRAMBLE_ORDER_NONE;
         ESP_GOTO_ON_FALSE_ISR(config->tx_csc_option < DMA2D_CSC_TX_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-        ESP_GOTO_ON_FALSE_ISR(config->post_scramble == 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        ESP_GOTO_ON_FALSE_ISR(config->post_scramble == DMA2D_SCRAMBLE_ORDER_NONE, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
         ESP_GOTO_ON_FALSE_ISR(config->pre_scramble == DMA2D_SCRAMBLE_ORDER_BYTE2_1_0 || (config->pre_scramble != DMA2D_SCRAMBLE_ORDER_BYTE2_1_0 && config->tx_csc_option != DMA2D_CSC_TX_NONE),
                               ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        ESP_GOTO_ON_FALSE_ISR(tx_csc_supported || tx_csc_disabled,
+                              ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        if (!tx_csc_supported) {
+            // bypass register configuration
+            return ret;
+        }
 
         dma2d_ll_tx_configure_color_space_conv(group->hal.dev, channel_id, config->tx_csc_option);
         dma2d_ll_tx_set_csc_pre_scramble(group->hal.dev, channel_id, config->pre_scramble);
     } else {
-        ESP_GOTO_ON_FALSE_ISR((1 << channel_id) & DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        bool rx_csc_supported = ((1U << channel_id) & DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK) != 0;
+        bool rx_csc_disabled = config->rx_csc_option == DMA2D_CSC_RX_NONE &&
+                               config->pre_scramble == DMA2D_SCRAMBLE_ORDER_NONE &&
+                               config->post_scramble == DMA2D_SCRAMBLE_ORDER_NONE;
         ESP_GOTO_ON_FALSE_ISR(config->rx_csc_option < DMA2D_CSC_RX_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
         ESP_GOTO_ON_FALSE_ISR((config->pre_scramble == DMA2D_SCRAMBLE_ORDER_BYTE2_1_0 && config->post_scramble == DMA2D_SCRAMBLE_ORDER_BYTE2_1_0) ||
                               ((config->pre_scramble != DMA2D_SCRAMBLE_ORDER_BYTE2_1_0 || config->post_scramble != DMA2D_SCRAMBLE_ORDER_BYTE2_1_0) && config->rx_csc_option != DMA2D_CSC_RX_NONE),
                               ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        ESP_GOTO_ON_FALSE_ISR(rx_csc_supported || rx_csc_disabled,
+                              ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+        if (!rx_csc_supported) {
+            // bypass register configuration
+            return ret;
+        }
 
         dma2d_ll_rx_configure_color_space_conv(group->hal.dev, channel_id, config->rx_csc_option);
         dma2d_ll_rx_set_csc_pre_scramble(group->hal.dev, channel_id, config->pre_scramble);
