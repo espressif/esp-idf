@@ -275,6 +275,22 @@ typedef enum {
     PCNT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
 } soc_periph_pcnt_clk_src_t;
 
+//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Temperature Sensor
+ */
+#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief Type of Temp Sensor clock source
+ */
+typedef enum {
+    TEMPERATURE_SENSOR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default choice */
+} soc_periph_temperature_sensor_clk_src_t;
+
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
 /**

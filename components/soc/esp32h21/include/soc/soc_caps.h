@@ -36,7 +36,7 @@
 #define SOC_IEEE802154_BLE_ONLY         1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
-// #define SOC_TEMP_SENSOR_SUPPORTED       1    //TODO: [ESP32H21] IDF-11624
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1
 // #define SOC_ULP_SUPPORTED               1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
@@ -472,10 +472,12 @@
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
-// #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
-// #define SOC_TEMPERATURE_SENSOR_SUPPORT_ETM                    (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                   (1)
+#define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_ETM                    (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION        (1)
+#define SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN            (1)
 
 /*--------------------------------- RNG CAPS --------------------------------------------*/
 // #define SOC_RNG_CLOCK_IS_INDEPENDENT                          (1)

@@ -22,8 +22,10 @@
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/critical_section.h"
 #include "esp_private/adc_share_hw_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "hal/sar_ctrl_ll.h"
 #include "hal/adc_ll.h"
+#include "hal/temperature_sensor_ll.h"
 
 ESP_LOG_ATTR_TAG(TAG, "sar_periph_ctrl");
 extern portMUX_TYPE rtc_spinlock;
