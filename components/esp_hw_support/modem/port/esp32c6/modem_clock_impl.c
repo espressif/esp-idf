@@ -97,12 +97,16 @@ static esp_err_t IRAM_ATTR modem_clock_ble_mac_check_enable(modem_clock_context_
 static void IRAM_ATTR modem_clock_bt_apb_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_syscon_ll_enable_bt_apb_clock(ctx->hal->syscon_dev, enable);
+    modem_syscon_ll_enable_modem_sec_apb_clock(ctx->hal->syscon_dev, enable);
 }
 
 #if CONFIG_ESP_MODEM_CLOCK_ENABLE_CHECKING
 static esp_err_t IRAM_ATTR modem_clock_bt_apb_check_enable(modem_clock_context_t *ctx)
 {
-    return modem_syscon_ll_bt_apb_clock_is_enabled(ctx->hal->syscon_dev) ? ESP_OK : ESP_FAIL;
+    bool all_clock_enabled = true;
+    all_clock_enabled &= modem_syscon_ll_bt_apb_clock_is_enabled(ctx->hal->syscon_dev);
+    all_clock_enabled &= modem_syscon_ll_modem_sec_apb_clock_is_enabled(ctx->hal->syscon_dev);
+    return all_clock_enabled ? ESP_OK : ESP_FAIL;
 }
 #endif
 

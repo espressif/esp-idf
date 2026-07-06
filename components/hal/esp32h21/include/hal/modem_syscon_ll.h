@@ -99,17 +99,27 @@ static inline void modem_syscon_ll_enable_modem_sec_clock(modem_syscon_dev_t *hw
     hw->clk_conf.clk_modem_sec_ecb_en = en;
     hw->clk_conf.clk_modem_sec_ccm_en = en;
     hw->clk_conf.clk_modem_sec_bah_en = en;
-    hw->clk_conf.clk_modem_sec_apb_en = en;
 }
 
 __attribute__((always_inline))
 static inline bool modem_syscon_ll_modem_sec_clock_is_enabled(modem_syscon_dev_t *hw)
 {
-    return  hw->clk_conf.clk_modem_sec_en &&
-            hw->clk_conf.clk_modem_sec_ecb_en &&
-            hw->clk_conf.clk_modem_sec_ccm_en &&
-            hw->clk_conf.clk_modem_sec_bah_en &&
-            hw->clk_conf.clk_modem_sec_apb_en;
+    return hw->clk_conf.clk_modem_sec_en &&
+           hw->clk_conf.clk_modem_sec_ecb_en &&
+           hw->clk_conf.clk_modem_sec_ccm_en &&
+           hw->clk_conf.clk_modem_sec_bah_en;
+}
+
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_modem_sec_apb_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf.clk_modem_sec_apb_en = en;
+}
+
+__attribute__((always_inline))
+static inline bool modem_syscon_ll_modem_sec_apb_clock_is_enabled(modem_syscon_dev_t *hw)
+{
+    return hw->clk_conf.clk_modem_sec_apb_en;
 }
 
 __attribute__((always_inline))
