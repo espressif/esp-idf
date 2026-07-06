@@ -104,7 +104,7 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
     .. note::
 
-        ESP32-S31 only provides two universally administered MAC addresses in eFuse, so :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` defaults to two. The "Four" option may only be used when a customer-provided custom base MAC range is used (see :ref:`Custom Base MAC <MAC-Address-Allocation>`), where four universally administered MAC addresses are allocated per device. Using "Four" with the default Espressif eFuse base MAC leads to SoftAP and Ethernet consuming global MAC slots (base+1/+3) that are not allocated on this chip and may collide with the Bluetooth MAC.
+        {IDF_TARGET_NAME} only provides two universally administered MAC addresses in eFuse, so :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` defaults to two. The "Four" option may only be used when a customer-provided custom base MAC range is used (see :ref:`Custom Base MAC <MAC-Address-Allocation>`), where four universally administered MAC addresses are allocated per device. Using "Four" with the default Espressif eFuse base MAC leads to SoftAP and Ethernet consuming global MAC slots (base+1/+3) that are not allocated on this chip and may collide with the Bluetooth MAC.
 
 .. only:: esp32h2 or esp32h21 or esp32h4
 
@@ -114,14 +114,14 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
         * - Interface
           - MAC Address (1 universally administered, default)
-        * - IEEE 802.154
-          - EUI-64 derived from base_mac and MAC_EXT (base_mac[0:3] ‖ MAC_EXT ‖ base_mac[3:6], MAC_EXT defaults to ff:fe)
+        * - IEEE 802.15.4
+          - EUI-64 derived from base_mac and MAC_EXT (base_mac[0:2] ‖ MAC_EXT ‖ base_mac[3:5], MAC_EXT defaults to ff:fe)
         * - Bluetooth
           - base_mac
 
     .. note::
 
-        {IDF_TARGET_NAME} provides a single universally administered MAC address in eFuse (MAC_FACTORY) plus the MAC_EXT field used to build the IEEE 802.154 EUI-64. :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one. Bluetooth reuses the base MAC as-is — the BT offset is not applied because {IDF_TARGET_NAME} has no Wi-Fi, so no second universal MAC slot is required.
+        {IDF_TARGET_NAME} provides a single universally administered MAC address in eFuse (MAC_FACTORY) plus the MAC_EXT field used to build the IEEE 802.15.4 EUI-64. :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` is fixed to one. Bluetooth reuses the base MAC as-is — the BT offset is not applied because {IDF_TARGET_NAME} has no Wi-Fi, so no second universal MAC slot is required.
 
 .. only:: esp32s2
 
