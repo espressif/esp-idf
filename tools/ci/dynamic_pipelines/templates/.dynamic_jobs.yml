@@ -36,6 +36,8 @@
       - build_summary_*.xml
       # list of built apps
       - app_info_*.txt
+      # per-app size metric fragments (aggregated + uploaded by app-size-metrics)
+      - "**/build*/build_size_metrics.json"
     when: always
     expire_in: 1 week
   script:

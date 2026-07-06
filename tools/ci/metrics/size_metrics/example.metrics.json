@@ -1,0 +1,39 @@
+{
+  "app_size": {
+    "data": [
+      {
+        "app": "examples/get-started/hello_world",
+        "target": "esp32c6",
+        "config": "default",
+        "flash_total": 90032,
+        "dram_total": 10740,
+        "iram_total": 34770
+      }
+    ]
+  },
+  "library_size": {
+    "data": [
+      {
+        "app": "examples/get-started/hello_world",
+        "target": "esp32c6",
+        "config": "default",
+        "library": "libesp_hw_support.a",
+        "text": 27096,
+        "rodata": 2360,
+        "data": 1783,
+        "bss": 55,
+        "total": 31294
+      }
+    ]
+  },
+  "bootloader_size": {
+    "data": [
+      {
+        "app": "examples/get-started/hello_world",
+        "target": "esp32c6",
+        "config": "default",
+        "bin_size": 22064
+      }
+    ]
+  }
+}
