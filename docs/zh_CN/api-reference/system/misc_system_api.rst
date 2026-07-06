@@ -104,7 +104,7 @@ MAC 地址
 
     .. note::
 
-        ESP32-S31 在 eFuse 中仅提供两个全局管理型 MAC 地址，因此 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 默认为两个。其中的“四个”选项仅在使用客户自定义基准 MAC 范围时可用（参见 :ref:`自定义基准 MAC <MAC-Address-Allocation>`），且该范围内每个设备需分配 4 个全局管理型 MAC 地址。若在使用乐鑫 eFuse 默认基准 MAC 时选择“四个”，SoftAP 和以太网会占用 base+1/+3 的全局 MAC 槽位，而这些槽位在本芯片上并未分配，可能与蓝牙 MAC 发生冲突。
+        {IDF_TARGET_NAME} 在 eFuse 中仅提供两个全局管理型 MAC 地址，因此 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 默认为两个。其中的“四个”选项仅在使用客户自定义基准 MAC 范围时可用（参见 :ref:`自定义基准 MAC <MAC-Address-Allocation>`），且该范围内每个设备需分配 4 个全局管理型 MAC 地址。若在使用乐鑫 eFuse 默认基准 MAC 时选择“四个”，SoftAP 和以太网会占用 base+1/+3 的全局 MAC 槽位，而这些槽位在本芯片上并未分配，可能与蓝牙 MAC 发生冲突。
 
 .. only:: esp32h2 or esp32h21 or esp32h4
 
@@ -114,14 +114,14 @@ MAC 地址
 
         * - 接口
           - MAC 地址（1 个默认的通用管理地址）
-        * - IEEE 802.154
-          - 由 base_mac 和 MAC_EXT 派生的 EUI-64（base_mac[0:3] ‖ MAC_EXT ‖ base_mac[3:6]，MAC_EXT 默认为 ff:fe）
+        * - IEEE 802.15.4
+          - 由 base_mac 和 MAC_EXT 派生的 EUI-64（base_mac[0:2] ‖ MAC_EXT ‖ base_mac[3:5]，MAC_EXT 默认为 ff:fe）
         * - 蓝牙
           - base_mac
 
     .. note::
 
-        {IDF_TARGET_NAME} 在 eFuse 中仅提供一个全局管理型 MAC 地址（MAC_FACTORY），以及用于构造 IEEE 802.154 EUI-64 的 MAC_EXT 字段。:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为 1。蓝牙直接复用基准 MAC —— 由于 {IDF_TARGET_NAME} 没有 Wi-Fi，BT 偏移不会生效，因此不需要第二个全局 MAC 槽位。
+        {IDF_TARGET_NAME} 在 eFuse 中仅提供一个全局管理型 MAC 地址（MAC_FACTORY），以及用于构造 IEEE 802.15.4 EUI-64 的 MAC_EXT 字段。:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_UNIVERSAL_MAC_ADDRESSES` 固定为 1。蓝牙直接复用基准 MAC —— 由于 {IDF_TARGET_NAME} 没有 Wi-Fi，BT 偏移不会生效，因此不需要第二个全局 MAC 槽位。
 
 .. only:: esp32s2
 

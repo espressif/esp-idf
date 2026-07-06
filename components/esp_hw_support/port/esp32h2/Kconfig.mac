@@ -7,12 +7,13 @@ choice ESP32H2_UNIVERSAL_MAC_ADDRESSES
         single base MAC address.
 
         ESP32-H2 provides a single universally administered MAC address in eFuse
-        (MAC_FACTORY, 6 bytes) plus the MAC_EXT field used to build the IEEE 802.154
+        (MAC_FACTORY, 6 bytes) plus the MAC_EXT field used to build the IEEE 802.15.4
         EUI-64. Only one universal MAC address is consumed:
-          - IEEE 802.154 EUI-64 is derived from the base MAC and MAC_EXT
-            (base_mac[0:3] || MAC_EXT || base_mac[3:6], MAC_EXT defaults to ff:fe);
-          - Bluetooth reuses the base MAC as-is. The BT offset is not applied because
-            ESP32-H2 has no Wi-Fi, so no second universal MAC slot is required.
+
+        - IEEE 802.15.4 EUI-64 is derived from the base MAC and MAC_EXT
+          (base_mac[0:2] || MAC_EXT || base_mac[3:5], MAC_EXT defaults to ff:fe).
+        - Bluetooth reuses the base MAC as-is. The BT offset is not applied because
+          ESP32-H2 has no Wi-Fi, so no second universal MAC slot is required.
 
     config ESP32H2_UNIVERSAL_MAC_ADDRESSES_ONE
         bool "One"
