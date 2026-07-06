@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,21 @@ void esp_sleep_config_gpio_isolate(void)
         }
     }
 
+#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM
+    const gpio_num_t uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
+    const gpio_num_t uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
+#else
+    const gpio_num_t uart_tx_gpio = UART_NUM_0_TXD_DIRECT_GPIO_NUM;
+    const gpio_num_t uart_rx_gpio = UART_NUM_0_RXD_DIRECT_GPIO_NUM;
+#endif
+    // Pull up TX and RX lines to avoid garbled data during sleep
+    gpio_sleep_set_pull_mode(uart_tx_gpio, GPIO_PULLUP_ONLY);
+    gpio_sleep_set_pull_mode(uart_rx_gpio, GPIO_PULLUP_ONLY);
+    // TX pin can be isolated, but RX pin may be used for wakeup, so configure RX pin as input
+    gpio_sleep_set_direction(uart_rx_gpio, GPIO_MODE_INPUT);
+#endif
+
 #if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU && !SOC_MSPI_HAS_INDEPENT_IOMUX
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CLK), GPIO_PULLUP_ONLY);
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_Q),   GPIO_PULLUP_ONLY);
@@ -90,18 +105,6 @@ void esp_sleep_enable_gpio_switch(bool enable)
     ESP_EARLY_LOGI(TAG, "%s automatic switching of GPIO sleep configuration", enable ? "Enable" : "Disable");
     for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
         if (GPIO_IS_VALID_GPIO(gpio_num)) {
-#if CONFIG_ESP_CONSOLE_UART
-#if CONFIG_ESP_CONSOLE_UART_CUSTOM
-            const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
-            const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
-            if ((gpio_num == uart_tx_gpio) || (gpio_num == uart_rx_gpio)) {
-#else
-            if ((gpio_num == UART_NUM_0_TXD_DIRECT_GPIO_NUM) || (gpio_num == UART_NUM_0_RXD_DIRECT_GPIO_NUM)) {
-#endif
-                gpio_sleep_sel_dis(gpio_num);
-                continue;
-            }
-#endif
             /* If the PSRAM is disable in ESP32xx chips equipped with PSRAM, there will be a large current leakage. */
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM & !SOC_MSPI_HAS_INDEPENT_IOMUX
             if (gpio_num == esp_mspi_get_io(ESP_MSPI_IO_CS1)) {
