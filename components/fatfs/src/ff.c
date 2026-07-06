@@ -1133,7 +1133,7 @@ static FRESULT sync_fs (	/* Returns FR_OK or FR_DISK_ERR */
 #if FF_FS_EXFAT
 			else if (fs->fs_type == FS_EXFAT) {	/* exFAT: Update PercInUse field in BPB */
 				if (disk_read(fs->pdrv, fs->win, fs->winsect = fs->volbase, 1) == RES_OK) {	/* Load VBR */
-					BYTE perc_inuse = (fs->free_clst <= fs->n_fatent - 2) ? (BYTE)((QWORD)(fs->n_fatent - 2 - fs->free_clst) * 100 / (fs->n_fatent - 2)) : 0xFF;	/* Precent in use 0-100 or 0xFF(unknown) */
+					BYTE perc_inuse = (fs->n_fatent > 2 && fs->free_clst <= fs->n_fatent - 2) ? (BYTE)((QWORD)(fs->n_fatent - 2 - fs->free_clst) * 100 / (fs->n_fatent - 2)) : 0xFF;	/* Precent in use 0-100 or 0xFF(unknown). CVE-2026-6683: guard divisor (n_fatent-2) against zero */
 
 					if (fs->win[BPB_PercInUseEx] != perc_inuse) {	/* Write it back into VBR if needed */
 						fs->win[BPB_PercInUseEx] = perc_inuse;
@@ -3554,6 +3554,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		ncl = ld_32(fs->win + BPB_NumClusEx);			/* Number of clusters */
 		if (ncl > MAX_EXFAT) return FR_NO_FILESYSTEM;	/* (Too many clusters) */
+		if (ncl == 0) return FR_NO_FILESYSTEM;			/* CVE-2026-6683: reject empty cluster heap (n_fatent-2==0 causes divide-by-zero in sync_fs) */
 		fs->n_fatent = ncl + 2;
 
 		/* Boundaries and Limits */
