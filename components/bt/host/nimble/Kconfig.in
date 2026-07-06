@@ -897,6 +897,13 @@ menu "Services"
         help
             Enable HeartRate Service support
 
+    config BT_NIMBLE_RAS_SERVICE
+        bool "Ranging service"
+        depends on BT_NIMBLE_CHANNEL_SOUNDING
+        default n
+        help
+            Enable Ranging Service (RAS) support for BLE Channel Sounding
+
     menuconfig BT_NIMBLE_HID_SERVICE
         bool "Human Interface Device service"
         default n
