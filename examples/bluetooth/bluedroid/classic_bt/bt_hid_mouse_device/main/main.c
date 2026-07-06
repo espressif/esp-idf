@@ -435,7 +435,7 @@ void app_main(void)
         return;
     }
 
-    ESP_LOGI(TAG, "setting device name");
+    ESP_LOGI(TAG, "setting device name: %s", local_device_name);
     esp_bt_gap_set_device_name(local_device_name);
 
     ESP_LOGI(TAG, "setting cod major, peripheral");
