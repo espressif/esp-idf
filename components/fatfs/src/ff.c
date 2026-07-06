@@ -3483,6 +3483,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		nclst = ld_dword(fs->win + BPB_NumClusEx);		/* Number of clusters */
 		if (nclst > MAX_EXFAT) return FR_NO_FILESYSTEM;	/* (Too many clusters) */
+		if (nclst == 0) return FR_NO_FILESYSTEM;		/* CVE-2026-6683: reject empty exFAT cluster heap (malformed zero-data-cluster volume; the divide-by-(n_fatent-2) sink itself was introduced in R0.16) */
 		fs->n_fatent = nclst + 2;
 
 		/* Boundaries and Limits */
