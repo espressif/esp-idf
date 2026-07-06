@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs)
 
 set(public_include "include")
@@ -50,9 +54,7 @@ if(CONFIG_SOC_ISP_CROP_SUPPORTED)
     list(APPEND srcs "src/isp_crop.c")
 endif()
 
-if(NOT ${target} STREQUAL "linux")
-    list(APPEND requires esp_mm)
-endif()
+list(APPEND requires esp_mm)
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}

@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs "esp_cam_ctlr.c" "dvp_share_ctrl.c")
 
 set(includes "include" "interface")
@@ -18,9 +22,7 @@ if(CONFIG_SOC_ISP_DVP_SUPPORTED)
     list(APPEND includes "isp_dvp/include")
 endif()
 
-if(NOT ${target} STREQUAL "linux")
-    list(APPEND requires esp_mm)
-endif()
+list(APPEND requires esp_mm)
 
 if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
     list(APPEND srcs "dvp/src/esp_cam_ctlr_dvp_gdma.c" "dvp/src/esp_cam_ctlr_dvp_cam.c")

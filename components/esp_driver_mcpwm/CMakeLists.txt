@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_MCPWM_SUPPORTED)
@@ -20,11 +24,7 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
 endif()
 
 set(requires esp_hal_mcpwm)
-if(${target} STREQUAL "linux")
-    set(priv_requires "")
-else()
-    set(priv_requires esp_pm esp_driver_gpio)
-endif()
+set(priv_requires esp_pm esp_driver_gpio)
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}

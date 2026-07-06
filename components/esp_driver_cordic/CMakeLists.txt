@@ -1,14 +1,14 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs)
 set(public_include "include")
 
 set(requires esp_hal_cordic)
-if(${target} STREQUAL "linux")
-    set(priv_requires "")
-else()
-    set(priv_requires esp_pm)
-endif()
+set(priv_requires esp_pm)
 
 if(CONFIG_SOC_CORDIC_SUPPORTED)
     list(APPEND srcs
