@@ -15,6 +15,7 @@ input_argv = {
     'esp32p4': ['uart', 'lp_uart'],
     'esp32c5': ['uart', 'lp_uart'],
     'esp32c61': ['uart'],
+    'esp32h4': ['uart'],
     'esp32s31': ['uart', 'lp_uart'],
 }
 
@@ -62,7 +63,6 @@ def _run_uart_flow_ctrl_case(dut, case) -> None:  # type: ignore
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15619
 def test_uart_single_dev(case_tester) -> None:  # type: ignore
     dut = case_tester.first_dut
     chip_type = dut.app.target
@@ -102,7 +102,6 @@ def test_uart_single_dev(case_tester) -> None:  # type: ignore
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15619
 def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
     dut = case_tester.first_dut
     for case in case_tester.test_menu:
