@@ -77,6 +77,8 @@ typedef enum {
     SOC_ROOT_CIRCUIT_CLK_CPLL,          /*!< CPLL_CLK is the output of the CPLL generator circuit */
     SOC_ROOT_CIRCUIT_CLK_MPLL,          /*!< MPLL_CLK is the output of the MPLL generator circuit */
     SOC_ROOT_CIRCUIT_CLK_APLL,          /*!< APLL_CLK is the output of the APLL generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_XTAL_X2,        /*!< XTALx2 80MHz; ref_80m mux alternate source (see clk_ll_xtalx2_enable) */
+    SOC_ROOT_CIRCUIT_CLK_MAX,
 } soc_root_clk_circuit_t;
 
 /**
@@ -141,9 +143,12 @@ typedef enum {
     // For digital domain: peripherals
     SOC_MOD_CLK_SYS,                           /*!< SYS_CLK is the system clock, derived from SOC_CLK clock source */
     SOC_MOD_CLK_PLL_F20M,                      /*!< PLL_F20M_CLK is derived from BBPLL (clock gating + default divider 24), its default frequency is 20MHz */
-    SOC_MOD_CLK_PLL_F25M,                      /*!< PLL_F25M_CLK is derived from MPLL (clock gating + configurable divider), it will have a frequency of 25MHz */
-    SOC_MOD_CLK_PLL_F50M,                      /*!< PLL_F50M_CLK is derived from C/MPLL (clock gating + configurable divider 10), it will have a frequency of 50MHz */
+    SOC_MOD_CLK_PLL_F25M,                      /*!< PLL_F25M_CLK is from ref_25m (clock gating + configurable divider). Shares HP_SYS `ref_500m_sel` with PLL_F50M (0=CPLL, 1=MPLL); if both are used, they must select the same upstream. */
+    SOC_MOD_CLK_PLL_F50M,                      /*!< PLL_F50M_CLK is from ref_50m (clock gating + configurable divider). Shares `ref_500m_sel` with PLL_F25M; frequency via esp_clk_tree_src_set_freq_hz (CPLL or MPLL upstream). */
+    SOC_MOD_CLK_PLL_F60M,                      /*!< PLL_F60M_CLK is derived from BBPLL (clock gating + default divider 8), its default frequency is 60MHz */
+    SOC_MOD_CLK_REF_F80M,                      /*!< REF_F80M_CLK from ref_80m (gate). Mux: BBPLL/6 (default) or XTALx2 80MHz (`reg_ref_80m_sel`). Frequency 80MHz either path. */
     SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from BBPLL (clock gating + default divider 6), its default frequency is 80MHz */
+    SOC_MOD_CLK_PLL_F120M,                     /*!< PLL_F120M_CLK is derived from BBPLL (clock gating + default divider 4), its default frequency is 120MHz */
     SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from BBPLL (clock gating + default divider 3), its default frequency is 160MHz */
     SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from BBPLL (clock gating + default divider 2), its default frequency is 240MHz */
     SOC_MOD_CLK_CPLL,                          /*!< CPLL is from 40MHz XTAL oscillator frequency multipliers */

@@ -29,7 +29,9 @@
 
 #define CLK_LL_PLL_8M_FREQ_MHZ     (8)
 
+#define CLK_LL_PLL_60M_FREQ_MHZ    (60)
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
+#define CLK_LL_PLL_120M_FREQ_MHZ   (120)
 #define CLK_LL_PLL_160M_FREQ_MHZ   (160)
 #define CLK_LL_PLL_240M_FREQ_MHZ   (240)
 #define CLK_LL_PLL_320M_FREQ_MHZ   (320)
@@ -103,6 +105,47 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_disable(void)
     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_1_REG, PMU_TIE_LOW_GLOBAL_CPLL_ICG) ;
     SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_1_REG, PMU_TIE_LOW_XPD_CPLL | PMU_TIE_LOW_XPD_CPLL_I2C);
     CLEAR_PERI_REG_MASK(HP_ALIVE_SYS_HP_CLK_CTRL_REG, HP_ALIVE_SYS_HP_CPLL_300M_CLK_EN);
+}
+
+/**
+ * @brief Power up XTALX2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtalx2_enable(void)
+{
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_0_REG, PMU_TIE_HIGH_XPD_XTALX2);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_0_REG, PMU_TIE_HIGH_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(HP_ALIVE_SYS_HP_CLK_CTRL_REG, HP_ALIVE_SYS_HP_XTALX2_80M_CLK_EN);
+}
+
+/**
+ * @brief Power down XTALX2 circuit
+ */
+static inline __attribute__((always_inline)) void clk_ll_xtalx2_disable(void)
+{
+    CLEAR_PERI_REG_MASK(HP_ALIVE_SYS_HP_CLK_CTRL_REG, HP_ALIVE_SYS_HP_XTALX2_80M_CLK_EN);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_0_REG, PMU_TIE_LOW_GLOBAL_XTALX2_ICG);
+    SET_PERI_REG_MASK(PMU_IMM_HP_CK_POWER_0_REG, PMU_TIE_LOW_XPD_XTALX2);
+}
+
+/**
+ * @brief Get ref_80m clock source mux selection
+ *
+ * @return false: BBPLL divided path, true: XTALx2 80MHz (`clk_xtalx2_80m`)
+ */
+static inline __attribute__((always_inline)) bool clk_ll_ref_80m_get_src(void)
+{
+    return (bool)HP_SYS_CLKRST.ref_80m_ctrl0.reg_ref_80m_sel;
+}
+
+/**
+ * @brief Select REF_80M_CLK source
+ *
+ * @param in_sel 0 selects BBPLL divided 80MHz, 1 selects XTALx2 80MHz.
+ */
+static inline __attribute__((always_inline)) void clk_ll_ref_80m_set_src(uint8_t in_sel)
+{
+    HAL_ASSERT(in_sel == 0 || in_sel == 1);
+    HP_SYS_CLKRST.ref_80m_ctrl0.reg_ref_80m_sel = in_sel;
 }
 
 /**
@@ -711,6 +754,16 @@ static inline __attribute__((always_inline)) void clk_ll_ref_500m_set_src(uint8_
 }
 
 /**
+ * @brief Get ref_500m clock source mux selection
+ *
+ * @return false: CPLL (320MHz), true: MPLL (500MHz)
+ */
+static inline __attribute__((always_inline)) bool clk_ll_ref_500m_get_src(void)
+{
+    return (bool)HP_SYS_CLKRST.ref_500m_ctrl0.reg_ref_500m_sel;
+}
+
+/**
  * @brief Set PLL_F50M_CLK divider. freq of PLL_F50M_CLK = freq of MPLL_CLK / divider
  *
  * @param divider Divider. CLK_DIV_NUM = divider - 1.
@@ -751,6 +804,26 @@ static inline __attribute__((always_inline)) void clk_ll_pll_f20m_set_divider(ui
 static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f20m_get_divider(void)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.ref_20m_ctrl0, reg_ref_20m_clk_div_num) + 1;
+}
+
+/**
+ * @brief Get PLL_F50M_CLK divider
+ *
+ * @return Divider. Divider = (CLK_DIV_NUM + 1).
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f50m_get_divider(void)
+{
+    return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.ref_50m_ctrl0, reg_ref_50m_clk_div_num) + 1;
+}
+
+/**
+ * @brief Get PLL_F25M_CLK divider
+ *
+ * @return Divider. Divider = (CLK_DIV_NUM + 1).
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f25m_get_divider(void)
+{
+    return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.ref_25m_ctrl0, reg_ref_25m_clk_div_num) + 1;
 }
 
 /**

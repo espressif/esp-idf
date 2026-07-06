@@ -89,7 +89,7 @@ void esp_clk_tree_initialize(void)
 {
 }
 
-bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+bool esp_clk_tree_port_is_power_on(soc_root_clk_circuit_t clk_circuit)
 {
     (void)clk_circuit;
     return false;
