@@ -1,16 +1,16 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(${target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
-endif()
-
 set(srcs)
 
 set(public_include "include")
 
 set(priv_requires "esp_driver_gpio")
 
-set(requires "esp_hal_cam")
+if(${target} STREQUAL "linux")
+    set(requires "")
+else()
+    set(requires "esp_hal_cam" "esp_mm")
+endif()
 
 if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "src/isp_core.c"
@@ -53,8 +53,6 @@ endif()
 if(CONFIG_SOC_ISP_CROP_SUPPORTED)
     list(APPEND srcs "src/isp_crop.c")
 endif()
-
-list(APPEND requires esp_mm)
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}

@@ -1,9 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(${target} STREQUAL "linux")
-    return() # This component is not supported by the POSIX/Linux simulator
-endif()
-
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_PPA_SUPPORTED)
@@ -16,12 +12,18 @@ if(CONFIG_SOC_PPA_SUPPORTED)
     endif()
 endif()
 
-set(priv_requires esp_mm esp_pm esp_driver_dma efuse)
+if(${target} STREQUAL "linux")
+    set(requires "")
+    set(priv_requires "")
+else()
+    set(requires esp_hal_ppa)
+    set(priv_requires esp_mm esp_pm esp_driver_dma efuse)
+endif()
 
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_INCLUDE_DIRS "src"
-                       REQUIRES esp_hal_ppa
+                       REQUIRES "${requires}"
                        PRIV_REQUIRES "${priv_requires}"
                       )
