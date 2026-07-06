@@ -136,7 +136,8 @@ typedef enum {
  * This scramble only fits 3 bytes/pixel format. For non-3 bytes/pixel format, the pixels will be messed up if scrambling is used.
  */
 typedef enum {
-    DMA2D_SCRAMBLE_ORDER_BYTE2_1_0,     /*!< 2D-DMA pixel data scrambled as BYTE2-1-0 (no scramble) */
+    DMA2D_SCRAMBLE_ORDER_NONE,          /*!< 2D-DMA pixel data not scrambled */
+    DMA2D_SCRAMBLE_ORDER_BYTE2_1_0 = DMA2D_SCRAMBLE_ORDER_NONE,     /*!< 2D-DMA pixel data scrambled as BYTE2-1-0 (no scramble) */
     DMA2D_SCRAMBLE_ORDER_BYTE2_0_1,     /*!< 2D-DMA pixel data scrambled as BYTE2-0-1 */
     DMA2D_SCRAMBLE_ORDER_BYTE1_0_2,     /*!< 2D-DMA pixel data scrambled as BYTE1-0-2 */
     DMA2D_SCRAMBLE_ORDER_BYTE1_2_0,     /*!< 2D-DMA pixel data scrambled as BYTE1-2-0 */
