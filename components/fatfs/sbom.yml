@@ -12,3 +12,9 @@ cve-exclude-list:
     reason: Unsigned-subtraction wrap in the dirty-cache refill check. Patched by requiring the cached sector to lie within the direct-I/O range in both f_write() and f_read().
   - cve: CVE-2026-6687
     reason: exFAT label-length overflow in f_getlabel(). Patched by clamping XDIR_NumLabel to the 11-unit exFAT label maximum.
+  - cve: CVE-2026-6684
+    reason: GPT partition-scan loop DoS. Already fixed upstream in FatFs R0.16, where test_gpt_header() caps the partition-entry count at 128.
+  - cve: CVE-2026-6686
+    reason: Read of uninitialized clusters after f_lseek() extends a file past EOF. Longstanding FatFs behavior; not a memory-safety defect and zero-filling every extended cluster is prohibitively costly on flash. Applications sharing media across trust boundaries must zero regions before exposing them.
+  - cve: CVE-2026-6688
+    reason: Long-filename overflow in downstream callers copying FILINFO.fname. Not exposed in ESP-IDF; vfs_fat.c uses bounded snprintf/strlcpy and fname is bounded in-library by FF_MAX_LFN.
