@@ -5411,9 +5411,11 @@ FRESULT f_getlabel (
 #if FF_FS_EXFAT
 				if (fs->fs_type == FS_EXFAT) {
 					WCHAR hs;
-					UINT nw;
+					UINT nw, nchar;
 
-					for (si = di = hs = 0; si < dj.dir[XDIR_NumLabel]; si++) {	/* Extract volume label from 83 entry */
+					nchar = dj.dir[XDIR_NumLabel];	/* Number of UTF-16 characters in the label entry */
+					if (nchar > 11) nchar = 11;		/* CVE-2026-6687: clamp to the exFAT maximum (11) to prevent OOB read of the entry and overflow of the caller label buffer */
+					for (si = di = hs = 0; si < nchar; si++) {	/* Extract volume label from 83 entry */
 						wc = ld_word(dj.dir + XDIR_Label + si * 2);
 						if (hs == 0 && IsSurrogate(wc)) {	/* Is the code a surrogate? */
 							hs = wc; continue;
