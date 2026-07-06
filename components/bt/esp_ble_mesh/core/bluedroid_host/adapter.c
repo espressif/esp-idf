@@ -640,7 +640,7 @@ static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARC
         if (bt_mesh_scan_dev_found_cb) {
             bt_mesh_scan_dev_found_cb(&adv_rpt);
 
-            if (p_data->inq_res.scan_rsp_len) {
+            if (p_data->inq_res.scan_rsp_len && bt_mesh_scan_dev_found_cb) {
                 adv_rpt.adv_type = BLE_MESH_ADV_SCAN_RSP;
                 net_buf_simple_init_with_data(&adv_rpt.adv_data, p_data->inq_res.p_eir + p_data->inq_res.adv_data_len, p_data->inq_res.scan_rsp_len);
                 bt_mesh_scan_dev_found_cb(&adv_rpt);
