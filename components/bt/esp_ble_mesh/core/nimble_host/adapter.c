@@ -956,10 +956,10 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
             if (index != -ENODEV) {
                 bt_mesh_gatts_conn[index].handle = BLE_MESH_GATT_GET_CONN_ID(event->disconnect.conn.conn_handle);
                 (bt_mesh_gatts_conn_cb->disconnected)(&bt_mesh_gatts_conn[index], event->disconnect.reason);
+                bt_mesh_gatts_conn[index].handle = BT_MESH_GATTS_CONN_UNUSED;
             } else {
                 BT_ERR("No device");
             }
-            bt_mesh_gatts_conn[index].handle = BT_MESH_GATTS_CONN_UNUSED;
             memset(bt_mesh_gatts_addr, 0x0, BLE_MESH_ADDR_LEN);
         }
 
