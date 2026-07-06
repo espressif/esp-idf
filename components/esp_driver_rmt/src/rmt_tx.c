@@ -74,7 +74,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
     // For simplicity, encoder will use the non-cached address to read/write the DMA buffer
     tx_channel->dma_mem_base_nc = (rmt_symbol_word_t *)RMT_GET_NON_CACHE_ADDR(dma_mem_base);
     // the DMA buffer size should be aligned to the DMA requirement
-    size_t mount_size_per_node = ALIGN_DOWN(config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_NODES_PING_PONG, int_alignment);
+    size_t mount_size_per_node = ESP_ALIGN_DOWN(config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_NODES_PING_PONG, int_alignment);
     // check the upper and lower bound of mount_size_per_node
     ESP_RETURN_ON_FALSE(mount_size_per_node >= sizeof(rmt_symbol_word_t), ESP_ERR_INVALID_ARG,
                         TAG, "mem_block_symbols is too small");

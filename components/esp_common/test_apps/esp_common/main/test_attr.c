@@ -13,11 +13,10 @@
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
 #include "esp_cache.h"
+#include "esp_macros.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp_private/esp_psram_extram.h"
 #endif
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
 ESP_LOG_ATTR_TAG(TAG, "attr_test");
 
@@ -107,7 +106,7 @@ static void write_spiram_and_reset(void)
 #else
     size_t psram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     uint32_t ext_noinit_size = sizeof(s_noinit_buffer);
-    TEST_ESP_OK(esp_cache_msync(&s_noinit_buffer, ALIGN_UP(ext_noinit_size, psram_alignment), ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+    TEST_ESP_OK(esp_cache_msync(&s_noinit_buffer, ESP_ALIGN_UP(ext_noinit_size, psram_alignment), ESP_CACHE_MSYNC_FLAG_DIR_C2M));
 #endif
 
     printf("Restarting\n");

@@ -26,6 +26,7 @@
 
 #include "psa/crypto.h"
 #include "mbedtls/platform_util.h"
+#include "esp_macros.h"
 
 #if !ESP_TEE_BUILD
 #include "esp_cache.h"
@@ -354,8 +355,6 @@ static inline void dma_desc_append(crypto_dma_desc_t **head, crypto_dma_desc_t *
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 #define AES_DMA_ALLOC_CAPS      (MALLOC_CAP_DMA | MALLOC_CAP_8BIT)
 
 static inline void *aes_dma_calloc(size_t num, size_t size, uint32_t caps, size_t *actual_size)
@@ -372,8 +371,8 @@ static inline esp_err_t dma_desc_link(crypto_dma_desc_t *dmadesc, size_t crypto_
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         /* Write back both input buffers and output buffers to clear any cache dirty bit if set */
         // Even output buffers are C2M synced here, because, while performing an aligned up M2C operation,
-        // extra bytes in the cache (len - ALIGN_UP(len)) might get corrupted if not C2M synced before.
-        ret = esp_cache_msync(dmadesc[i].buffer, ALIGN_UP(dmadesc[i].dw0.length, buffer_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        // extra bytes in the cache (len - ESP_ALIGN_UP(len)) might get corrupted if not C2M synced before.
+        ret = esp_cache_msync(dmadesc[i].buffer, ESP_ALIGN_UP(dmadesc[i].dw0.length, buffer_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -435,7 +434,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
     }
 
     /* Extra bytes that were needed to be processed for supplying the AES peripheral a padded multiple of 16 bytes input */
-    size_t extra_bytes = ALIGN_UP(len, AES_BLOCK_BYTES) - len;
+    size_t extra_bytes = ESP_ALIGN_UP(len, AES_BLOCK_BYTES) - len;
 
     size_t start_offset = ((intptr_t)buffer & (cache_line_size - 1));
 
@@ -446,7 +445,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
     }
 
     if (unaligned_start_bytes < len) {
-        aligned_block_bytes = ALIGN_DOWN((len - unaligned_start_bytes), cache_line_size);
+        aligned_block_bytes = ESP_ALIGN_DOWN((len - unaligned_start_bytes), cache_line_size);
         unaligned_end_bytes = len - unaligned_start_bytes - aligned_block_bytes + extra_bytes;
     } else {
         unaligned_start_bytes = len + extra_bytes;
@@ -454,7 +453,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
         aligned_block_bytes = 0;
     }
 
-    size_t max_desc_size = (is_output) ? ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, cache_line_size) : ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, cache_line_size);
+    size_t max_desc_size = (is_output) ? ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, cache_line_size) : ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, cache_line_size);
 
     dma_descs_needed = (unaligned_start_bytes ? 1 : 0) + dma_desc_get_required_num(aligned_block_bytes, max_desc_size) + (unaligned_end_bytes ? 1 : 0);
 
@@ -666,19 +665,19 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     size_t output_desc_cache_line_size = get_cache_line_size(output_desc);
-    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_desc_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+    if (esp_cache_msync(output_desc, ESP_ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_desc_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
         ESP_LOGE(TAG, "Output DMA descriptor cache sync M2C failed");
         ret = -1;
         goto cleanup;
     }
     for (int i = 0; i < output_dma_desc_num; i++) {
         // Align the output buffer to the cache line size before performing the M2C sync, because M2C sync cannot be performed on buffers with unaligned lengths.
-        // Note: This does not corrupt the extra bytes in the cache (len - ALIGN_UP(len)) because the ESP32-P4 AES driver already performs cache-to-memory (C2M)
+        // Note: This does not corrupt the extra bytes in the cache (len - ESP_ALIGN_UP(len)) because the ESP32-P4 AES driver already performs cache-to-memory (C2M)
         // operations on the output buffer using the aligned-up length.
         // But what if those extra bytes get updated (say by a different process) during the AES operation? Would the updated value be lost/corrupted?
         // No, because the heap allocator would have already allocated a ALIGNED_UP buffer for the output buffer according to the alignment requirements,
         // while allocating the output buffer (see esp_heap_adjust_alignment_to_hw()).
-        if (esp_cache_msync(output_desc[i].buffer, ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+        if (esp_cache_msync(output_desc[i].buffer, ESP_ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
             ESP_LOGE(TAG, "Output DMA descriptor buffers cache sync M2C failed");
             ret = -1;
             goto cleanup;
@@ -689,7 +688,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     aes_hal_transform_dma_finish();
 
     /* Extra bytes that were needed to be processed for supplying the AES peripheral a padded multiple of 16 bytes input */
-    size_t extra_bytes = ALIGN_UP(len, AES_BLOCK_BYTES) - len;
+    size_t extra_bytes = ESP_ALIGN_UP(len, AES_BLOCK_BYTES) - len;
 
     if (output_start_alignment) {
         memcpy(output, output_start_stream_buffer, (output_start_alignment > len) ? len : output_start_alignment);
@@ -908,13 +907,13 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     size_t output_desc_cache_line_size = get_cache_line_size(output_desc);
-    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_desc_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+    if (esp_cache_msync(output_desc, ESP_ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_desc_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
         ESP_LOGE(TAG, "Output DMA descriptor cache sync M2C failed");
         ret = -1;
         goto cleanup;
     }
     for (int i = 0; i < output_dma_desc_num; i++) {
-        if (esp_cache_msync(output_desc[i].buffer, ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+        if (esp_cache_msync(output_desc[i].buffer, ESP_ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
             ESP_LOGE(TAG, "Output DMA descriptor buffers cache sync M2C failed");
             ret = -1;
             goto cleanup;
@@ -925,7 +924,7 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     aes_hal_transform_dma_finish();
 
     /* Extra bytes that were needed to be processed for supplying the AES peripheral a padded multiple of 16 bytes input */
-    size_t extra_bytes = ALIGN_UP(len, AES_BLOCK_BYTES) - len;
+    size_t extra_bytes = ESP_ALIGN_UP(len, AES_BLOCK_BYTES) - len;
 
     if (output_start_alignment) {
         memcpy(output, output_start_stream_buffer, (output_start_alignment > len) ? len : output_start_alignment);

@@ -16,12 +16,12 @@
 #include "unity.h"
 #include "esp_heap_caps.h"
 #include "esp_partition.h"
+#include "esp_macros.h"
 
 #include "esp_mmu_map.h"
 #include "esp_rom_sys.h"
 
 #define TEST_BLOCK_SIZE    CONFIG_MMU_PAGE_SIZE
-#define ALIGN_DOWN(num, align)  (((uint32_t)num) & ~((align) - 1))
 
 const static char *TAG = "MMU_TEST";
 
@@ -85,7 +85,7 @@ TEST_CASE("Cannot map partition to a reserved addresses", "[mmu]")
     /* Map in the address space of the flash ROM area, should fail */
     void *ptr0 = NULL;
     extern uint8_t _flash_rodata_start[];
-    const esp_vaddr_t addr = ALIGN_DOWN(_flash_rodata_start, CONFIG_MMU_PAGE_SIZE);
+    const esp_vaddr_t addr = ESP_ALIGN_DOWN((uint32_t)_flash_rodata_start, CONFIG_MMU_PAGE_SIZE);
     esp_err_t err = esp_mmu_map_virt(addr, part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr0);
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
 }

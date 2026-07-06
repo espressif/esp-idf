@@ -15,14 +15,13 @@
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_efuse.h"
+#include "esp_macros.h"
 
 // Secure boot V2 for bootloader.
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
 
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
-
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
@@ -31,7 +30,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 }; /* Note: this function doesn't do any anti-FI checks on this buffer */
 
     /* Rounding off length to the upper 4k boundary */
-    uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
+    uint32_t padded_length = ESP_ALIGN_UP(length, FLASH_SECTOR_SIZE);
     ESP_LOGD(TAG, "verifying signature src_addr 0x%" PRIx32 " length 0x%" PRIx32, src_addr, length);
 
     /* Calculate digest of main image */

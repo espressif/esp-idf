@@ -11,6 +11,7 @@
 #include "hal/color_hal.h"
 #include "driver/gpio.h"
 #include "esp_cache.h"
+#include "esp_macros.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/gpio.h"
@@ -44,8 +45,6 @@
 #define CAP_DVP_PERIPH_NUM      0                           /*!< Default value */
 #define CAM_DVP_DATA_SIG_NUM    0                           /*!< Default value */
 #endif
-
-#define ALIGN_UP_BY(num, align) ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
 
 #define DVP_CAM_CONFIG_INPUT_PIN(pin, sig, inv)                     \
 {                                                                   \
@@ -230,7 +229,7 @@ static uint32_t IRAM_ATTR esp_cam_ctlr_dvp_get_recved_size(esp_cam_ctlr_dvp_cam_
     uint32_t recv_buffer_size;
 
     if (ctlr->pic_format_jpeg) {
-        recv_buffer_size = ALIGN_UP_BY(MIN(dma_recv_size, ctlr->fb_size_in_bytes), 64);
+        recv_buffer_size = ESP_ALIGN_UP(MIN(dma_recv_size, ctlr->fb_size_in_bytes), 64);
     } else {
         recv_buffer_size = ctlr->fb_size_in_bytes;
     }
@@ -861,7 +860,9 @@ esp_err_t esp_cam_new_dvp_ctlr(const esp_cam_ctlr_dvp_config_t *config, esp_cam_
     ESP_GOTO_ON_ERROR(s_dvp_claim_ctlr(config->ctlr_id, ctlr), fail1, TAG, "no available DVP controller");
 
     ESP_LOGD(TAG, "alignment: 0x%x\n", alignment_size);
-    fb_size_in_bytes = ALIGN_UP_BY(fb_size_in_bytes, alignment_size);
+    if (alignment_size) {
+        fb_size_in_bytes = ESP_ALIGN_UP(fb_size_in_bytes, alignment_size);
+    }
     if (!config->bk_buffer_dis) {
         ctlr->backup_buffer = heap_caps_aligned_alloc(alignment_size, fb_size_in_bytes, DVP_CAM_BK_BUFFER_ALLOC_CAPS);
         ESP_GOTO_ON_FALSE(ctlr->backup_buffer, ESP_ERR_NO_MEM, fail2, TAG, "no mem for DVP backup buffer");

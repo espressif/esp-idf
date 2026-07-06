@@ -41,9 +41,9 @@
 #include "psa/crypto.h"
 #include "bootloader_flash_priv.h"
 #include "esp_attestation_utils.h"
+#include "esp_macros.h"
 
 #define SECURE_BOOT_V2       (0x02)
-#define ALIGN_UP(num, align) (((num) + ((align)-1)) & ~((align)-1))
 
 static const char *TAG = "esp_att_utils";
 
@@ -305,7 +305,7 @@ static esp_err_t get_part_digest(const esp_partition_pos_t *pos, esp_att_part_di
     memcpy(part_digest->calc_digest, digest, digest_len);
 
 #if CONFIG_SECURE_BOOT_V2_ENABLED
-    uint32_t signed_image_len = ALIGN_UP(metadata.image_len, FLASH_SECTOR_SIZE);
+    uint32_t signed_image_len = ESP_ALIGN_UP(metadata.image_len, FLASH_SECTOR_SIZE);
 
     if (signed_image_len % CONFIG_MMU_PAGE_SIZE == 0) {
         part_digest->secure_padding = true;

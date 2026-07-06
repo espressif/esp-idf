@@ -25,6 +25,7 @@
 #include "esp_attr.h"
 #include "test_board.h"
 #include "esp_private/parlio_rx_private.h"
+#include "esp_macros.h"
 
 #define TEST_SPI_HOST   SPI2_HOST
 #define TEST_I2S_PORT   I2S_NUM_0
@@ -67,10 +68,6 @@ typedef struct {
     uint32_t recv_done_cnt;
     uint32_t timeout_cnt;
 } test_data_t;
-
-#ifndef ALIGN_UP
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-#endif
 
 TEST_PARLIO_CALLBACK_ATTR
 static bool test_parlio_rx_partial_recv_callback(parlio_rx_unit_handle_t rx_unit, const parlio_rx_event_data_t *edata, void *user_data)
@@ -312,7 +309,7 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
     uint8_t *recv_buff = NULL;
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
-    size_t buff_size = ALIGN_UP(TEST_EOF_DATA_LEN, alignment);
+    size_t buff_size = ESP_ALIGN_UP(TEST_EOF_DATA_LEN, alignment);
     recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     bool is_success = false;
     // sample 5 times
@@ -477,7 +474,7 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
     uint8_t *payload = NULL;
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
-    size_t payload_size = ALIGN_UP(TEST_PAYLOAD_SIZE, alignment);
+    size_t payload_size = ESP_ALIGN_UP(TEST_PAYLOAD_SIZE, alignment);
     payload = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     TEST_ASSERT(payload);
 
@@ -623,7 +620,7 @@ TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
     uint8_t *payload = NULL;
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
-    size_t payload_size = ALIGN_UP(TEST_PAYLOAD_SIZE, alignment);
+    size_t payload_size = ESP_ALIGN_UP(TEST_PAYLOAD_SIZE, alignment);
     payload = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     TEST_ASSERT(payload);
 
@@ -729,7 +726,7 @@ TEST_CASE("parallel_rx_unit_receive_isr_test", "[parlio_rx]")
     // Allocate DMA compatible buffers
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
-    size_t payload_size = ALIGN_UP(1024, alignment);
+    size_t payload_size = ESP_ALIGN_UP(1024, alignment);
 
     uint8_t *payload1 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     uint8_t *payload2 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
@@ -866,7 +863,7 @@ TEST_CASE("parallel_rx_unit_infinite_transaction_switch_test", "[parlio_rx]")
     // Allocate DMA compatible buffers
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
-    size_t payload_size = ALIGN_UP(1024, alignment);
+    size_t payload_size = ESP_ALIGN_UP(1024, alignment);
 
     uint8_t *payload1 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     uint8_t *payload2 = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
@@ -981,7 +978,7 @@ TEST_CASE("parallel_rx_unit_force_trigger_eof_test", "[parlio_rx][release_only]"
     uint8_t *recv_buff = NULL;
     uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     alignment = alignment < 4 ? 4 : alignment;
-    size_t buff_size = ALIGN_UP(TEST_TASK_LARGE_TRANS_SIZE, alignment);
+    size_t buff_size = ESP_ALIGN_UP(TEST_TASK_LARGE_TRANS_SIZE, alignment);
     recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     TEST_ASSERT_NOT_NULL(recv_buff);
 

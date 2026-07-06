@@ -15,6 +15,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "secure_boot_signature_priv.h"
+#include "esp_macros.h"
 
 
 /* The following API implementations are used only when called
@@ -27,7 +28,6 @@
 extern esp_image_metadata_t tee_data;
 #endif
 
-#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 
 /* A signature block is valid when it has correct magic byte, crc and image digest. */
@@ -72,7 +72,7 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
     esp_err_t ret = ESP_FAIL;
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
     uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = {0};
-    size_t sig_block_addr = flash_offset + ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
+    size_t sig_block_addr = flash_offset + ESP_ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
 
     ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%" PRIx32 " (sig block offset 0x%x)", flash_offset, sig_block_addr);
 

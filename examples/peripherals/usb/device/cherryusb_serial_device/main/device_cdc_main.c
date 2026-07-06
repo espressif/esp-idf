@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_macros.h"
 
 #include "usbd_core.h"
 #include "usbd_cdc_acm.h"
@@ -72,12 +73,10 @@ static ep_status_t s_ep_status[CDC_ACM_CHANNEL_NUM] = {
 #endif
 };
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-
-#define WRITE_BUFFER_SIZE ALIGN_UP(ALIGN_UP(2048, CDC_MAX_MPS), CONFIG_USB_ALIGN_SIZE)
+#define WRITE_BUFFER_SIZE ESP_ALIGN_UP(ESP_ALIGN_UP(2048, CDC_MAX_MPS), CONFIG_USB_ALIGN_SIZE)
 
 #if CONFIG_EXAMPLE_CHERRYUSB_SET_READ_BUFFER_SIZE_MPS
-#define READ_BUFFER_SIZE ALIGN_UP(CDC_MAX_MPS, CONFIG_USB_ALIGN_SIZE)
+#define READ_BUFFER_SIZE ESP_ALIGN_UP(CDC_MAX_MPS, CONFIG_USB_ALIGN_SIZE)
 #else
 #define READ_BUFFER_SIZE WRITE_BUFFER_SIZE
 #endif

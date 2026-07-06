@@ -18,9 +18,7 @@
 #include "esp_lcd_ek79007.h"
 #include "driver/ppa.h"
 #include "esp_efuse.h"
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+#include "esp_macros.h"
 
 TEST_CASE("MIPI DSI Pattern Generator (EK79007)", "[mipi_dsi]")
 {
@@ -251,17 +249,17 @@ TEST_CASE("MIPI DSI use DMA2D (EK79007)", "[mipi_dsi]")
     size_t src_y_start = 50;
     // If flash encryption is enabled, the buffer address and size must be aligned to SOC_MEMSPI_ENCRYPTION_ALIGNMENT.
     if (esp_efuse_is_flash_encryption_enabled()) {
-        test_block_size = ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        test_block_size = ESP_ALIGN_DOWN(test_block_size, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
         start_alignment = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
-        src_x_start = ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
-        src_y_start = ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_x_start = ESP_ALIGN_DOWN(src_x_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+        src_y_start = ESP_ALIGN_DOWN(src_y_start, SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
     }
 
     printf("Add Built-in DMA2D draw bitmap hook\r\n");
     TEST_ESP_OK(esp_lcd_dpi_panel_enable_dma2d(mipi_dpi_panel));
     for (int i = 0; i < 100; i++) {
-        int x_start = ALIGN_DOWN(rand() % (MIPI_DSI_LCD_H_RES - test_block_size), start_alignment);
-        int y_start = ALIGN_DOWN(rand() % (MIPI_DSI_LCD_V_RES - test_block_size), start_alignment);
+        int x_start = ESP_ALIGN_DOWN(rand() % (MIPI_DSI_LCD_H_RES - test_block_size), start_alignment);
+        int y_start = ESP_ALIGN_DOWN(rand() % (MIPI_DSI_LCD_V_RES - test_block_size), start_alignment);
         uint8_t color_byte = rand() & 0xFF;
         memset(img, color_byte, TEST_IMG_SIZE / 2);
         color_byte = rand() & 0xFF;

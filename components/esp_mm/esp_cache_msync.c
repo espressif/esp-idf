@@ -26,8 +26,6 @@
 
 static const char *TAG = "cache";
 
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_spinlock);
 #if CONFIG_ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
 static _lock_t s_mutex;

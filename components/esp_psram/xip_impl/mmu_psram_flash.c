@@ -21,6 +21,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_macros.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/cache_ll.h"
@@ -31,9 +32,6 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #endif
-
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-#define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
 
 /*----------------------------------------------------------------------------
                     Part 1 APIs (See @Backgrounds on top of this file)
@@ -61,8 +59,8 @@ extern char _rodata_reserved_end;
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-#define INSTRUCTION_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4)
-#define INSTRUCTION_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
+#define INSTRUCTION_ALIGNMENT_GAP_START ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, 4)
+#define INSTRUCTION_ALIGNMENT_GAP_END ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
 
 size_t mmu_psram_get_text_segment_length(void)
 {
@@ -79,14 +77,14 @@ size_t mmu_psram_get_text_segment_length(void)
 void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
 {
     // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
-    // Or create a new region from (uint32_t)&_instruction_reserved_end to ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4) as only byte-accessible
+    // Or create a new region from (uint32_t)&_instruction_reserved_end to ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, 4) as only byte-accessible
     *gap_start = INSTRUCTION_ALIGNMENT_GAP_START;
     *gap_end = INSTRUCTION_ALIGNMENT_GAP_END;
 }
 
 bool mmu_psram_check_ptr_addr_in_xip_psram_instruction_region(const void *p)
 {
-    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
+    if ((intptr_t)p >= ESP_ALIGN_DOWN((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ESP_ALIGN_UP((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
 
@@ -130,8 +128,8 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
-#define RODATA_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4)
-#define RODATA_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
+#define RODATA_ALIGNMENT_GAP_START ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, 4)
+#define RODATA_ALIGNMENT_GAP_END ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
 
 size_t mmu_psram_get_rodata_segment_length(void)
 {
@@ -150,14 +148,14 @@ size_t mmu_psram_get_rodata_segment_length(void)
 void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
 {
     // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
-    // Or create a new region from (uint32_t)&_rodata_reserved_end to ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4) as only byte-accessible
+    // Or create a new region from (uint32_t)&_rodata_reserved_end to ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, 4) as only byte-accessible
     *gap_start = RODATA_ALIGNMENT_GAP_START;
     *gap_end = RODATA_ALIGNMENT_GAP_END;
 }
 
 bool mmu_psram_check_ptr_addr_in_xip_psram_rodata_region(const void *p)
 {
-    if ((intptr_t)p >= ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
+    if ((intptr_t)p >= ESP_ALIGN_DOWN((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE) && (intptr_t)p < ESP_ALIGN_UP((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)) {
         return true;
     }
 

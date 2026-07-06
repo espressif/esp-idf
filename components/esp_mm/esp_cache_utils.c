@@ -22,8 +22,6 @@
 #include "riscv/rv_utils.h"
 #endif
 
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 void esp_cache_suspend_ext_mem_cache(void)
 {
 #if (CONFIG_SPIRAM && SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)

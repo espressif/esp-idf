@@ -87,8 +87,6 @@ extern uint8_t _ext_ram_noinit_start;
 extern uint8_t _ext_ram_noinit_end;
 #endif  //#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 typedef struct {
     intptr_t vaddr_start;
     intptr_t vaddr_end;

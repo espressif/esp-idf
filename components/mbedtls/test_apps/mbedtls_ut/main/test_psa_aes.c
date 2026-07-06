@@ -19,6 +19,7 @@
 #include "test_aes_params.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_macros.h"
 #include "freertos/semphr.h"
 #include "esp_memory_utils.h"
 #include "soc/lldesc.h"
@@ -447,9 +448,8 @@ TEST_CASE("PSA AES-CBC-PKCS7 multipart", "[psa-aes]")
 
 TEST_CASE("mbedtls CBC AES-256 DMA buffer align test", "[aes]")
 {
-#define ALIGN_DOWN(val, align) ((val) & ~((align) - 1))
-    // Size is taken considering the maximum DMA buffer size
-    const unsigned SZ = ALIGN_DOWN((2*LLDESC_MAX_NUM_PER_DESC), 16);
+// Size is taken considering the maximum DMA buffer size
+    const unsigned SZ = ESP_ALIGN_DOWN((2*LLDESC_MAX_NUM_PER_DESC), 16);
     psa_key_id_t key_id;
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;

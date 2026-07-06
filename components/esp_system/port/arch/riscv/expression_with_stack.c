@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <esp_expression_with_stack.h>
-#include <riscv/rvruntime-frames.h>
 #include <string.h>
+#include "esp_expression_with_stack.h"
+#include "riscv/rvruntime-frames.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
+#include "esp_macros.h"
 #include "sdkconfig.h"
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #include "esp_private/hw_stack_guard.h"
@@ -21,7 +22,7 @@ static StackType_t *esp_shared_stack_setup_context(StaticTask_t *tcb, void **sp_
     memset(stack, 0xa5U, stack_size * sizeof(StackType_t));
 
     //Align stack to a 16-byte boundary, as required by CPU specific:
-    StackType_t *top_of_stack = (StackType_t *) ALIGNUP(0x10, (uint32_t)(stack + stack_size));
+    StackType_t *top_of_stack = (StackType_t *) ESP_ALIGN_UP((uint32_t)(stack + stack_size), 0x10);
     StackType_t *adjusted_top_of_stack = top_of_stack - RV_STK_FRMSZ;
 
     //Then put the fake stack inside of TCB:

@@ -31,11 +31,7 @@
 #include "esp_private/esp_mmu_map_private.h"
 #include "ext_mem_layout.h"
 #include "esp_mmu_map.h"
-
-//This is for size align
-#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-//This is for vaddr align
-#define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
+#include "esp_macros.h"
 
 //This flag indicates the memory region is merged, we don't care about it anymore
 #define MEM_REGION_MERGED             -1
@@ -145,8 +141,8 @@ static void s_reserve_irom_region(mem_region_t *hw_mem_regions, int region_nums)
     size_t irom_len_to_reserve = (uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_instruction_reserved_start)) == irom_len_to_reserve);
 
-    irom_len_to_reserve += (uint32_t)&_instruction_reserved_start - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
-    irom_len_to_reserve = ALIGN_UP_BY(irom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
+    irom_len_to_reserve += (uint32_t)&_instruction_reserved_start - ESP_ALIGN_DOWN((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
+    irom_len_to_reserve = ESP_ALIGN_UP(irom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
     cache_bus_mask_t bus_mask = s_get_bus_mask((uint32_t)&_instruction_reserved_start, irom_len_to_reserve);
 
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
@@ -173,8 +169,8 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     size_t drom_len_to_reserve = (uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start;
     assert((mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_end) - mmu_ll_vaddr_to_laddr((uint32_t)&_rodata_reserved_start)) == drom_len_to_reserve);
 
-    drom_len_to_reserve += (uint32_t)&_rodata_reserved_start - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
-    drom_len_to_reserve = ALIGN_UP_BY(drom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
+    drom_len_to_reserve += (uint32_t)&_rodata_reserved_start - ESP_ALIGN_DOWN((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
+    drom_len_to_reserve = ESP_ALIGN_UP(drom_len_to_reserve, CONFIG_MMU_PAGE_SIZE);
     cache_bus_mask_t bus_mask = s_get_bus_mask((uint32_t)&_rodata_reserved_start, drom_len_to_reserve);
 
     for (int i = 0; i < SOC_MMU_LINEAR_ADDRESS_REGION_NUM; i++) {
@@ -357,7 +353,7 @@ esp_err_t esp_mmu_map_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, 
     ESP_RETURN_ON_FALSE(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
     ESP_RETURN_ON_ERROR(s_mem_caps_check(caps), TAG, "invalid caps");
 
-    size_t aligned_size = ALIGN_UP_BY(size, CONFIG_MMU_PAGE_SIZE);
+    size_t aligned_size = ESP_ALIGN_UP(size, CONFIG_MMU_PAGE_SIZE);
     uint32_t laddr = 0;
 
     int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, 0, aligned_size, caps, target);
@@ -517,7 +513,7 @@ esp_err_t esp_mmu_map_virt(esp_vaddr_t vaddr_start, esp_paddr_t paddr_start, siz
     _lock_acquire(&s_mmu_ctx.mutex);
     mem_block_t *dummy_head = NULL;
     mem_block_t *dummy_tail = NULL;
-    size_t aligned_size = ALIGN_UP_BY(size, CONFIG_MMU_PAGE_SIZE);
+    size_t aligned_size = ESP_ALIGN_UP(size, CONFIG_MMU_PAGE_SIZE);
     int32_t found_region_id = s_find_available_region(s_mmu_ctx.mem_regions, s_mmu_ctx.num_regions, vaddr_start, aligned_size, caps, target);
     ESP_GOTO_ON_FALSE(found_region_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "no such vaddr range");
 

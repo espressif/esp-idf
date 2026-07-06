@@ -10,12 +10,10 @@
 #include "esp_rom_caps.h"
 #include "soc/extmem_reg.h"
 #include "xtensa/xtruntime.h"
+#include "esp_macros.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #endif
-
-#define ALIGN_UP(addr, align) (((addr) + (align)-1) & ~((align)-1))
-#define ALIGN_DOWN(addr, align)  ((addr) & ~((align) - 1))
 
 // this api is renamed for patch
 extern uint32_t rom_Cache_Count_Flash_Pages(uint32_t bus, uint32_t * page0_mapped);
@@ -115,7 +113,7 @@ int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
 
     /*the start address is unaligned*/
     if (start & (dcache_line_size -1)) {
-        addr = ALIGN_UP(start, dcache_line_size);
+        addr = ESP_ALIGN_UP(start, dcache_line_size);
         start_len = addr - start;
         size = (size < start_len) ? 0 : (size - start_len);
 
@@ -131,7 +129,7 @@ int Cache_WriteBack_Addr(uint32_t addr, uint32_t size)
 
     /*the end address is unaligned*/
     if (end & (dcache_line_size -1)) {
-        end = ALIGN_DOWN(end, dcache_line_size);
+        end = ESP_ALIGN_DOWN(end, dcache_line_size);
         end_len = addr + size - end;
         size = (size - end_len);
 

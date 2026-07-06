@@ -113,7 +113,7 @@ esp_err_t jpeg_new_encoder_engine(const jpeg_encode_engine_cfg_t *enc_eng_cfg, j
 
     uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     uint32_t alignment = cache_line_size;
-    size_t dma_desc_mem_size = JPEG_ALIGN_UP(sizeof(dma2d_descriptor_t), cache_line_size);
+    size_t dma_desc_mem_size = ESP_ALIGN_UP(sizeof(dma2d_descriptor_t), cache_line_size);
 
     encoder_engine->rxlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(encoder_engine->rxlink, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg encoder rxlink");
@@ -322,7 +322,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
                 ESP_GOTO_ON_ERROR(esp_cache_msync((void*)encoder_engine->rxlink, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err1, TAG, "sync memory to cache failed");
             }
             compressed_size = s_dma_desc_get_len(encoder_engine->rxlink);
-            uint32_t _compressed_size = JPEG_ALIGN_UP(compressed_size, cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA));
+            uint32_t _compressed_size = ESP_ALIGN_UP(compressed_size, cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA));
             cache_line_size = esp_cache_get_line_size_by_addr(bit_stream + encoder_engine->header_info->header_len);
             if (cache_line_size > 0) {
                 ESP_GOTO_ON_ERROR(esp_cache_msync((void*)(bit_stream + encoder_engine->header_info->header_len), _compressed_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err1, TAG, "sync memory to cache failed");
@@ -403,7 +403,7 @@ void *jpeg_alloc_encoder_mem(size_t size, const jpeg_encode_memory_alloc_cfg_t *
     size_t cache_align = 0;
     esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_align);
     if (mem_cfg->buffer_direction == JPEG_ENC_ALLOC_OUTPUT_BUFFER) {
-        size = JPEG_ALIGN_UP(size, cache_align);
+        size = ESP_ALIGN_UP(size, cache_align);
         *allocated_size = size;
         return heap_caps_aligned_calloc(cache_align, 1, size, MALLOC_CAP_SPIRAM);
     } else {

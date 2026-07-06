@@ -91,6 +91,20 @@ static inline __attribute__((always_inline, __noreturn__)) void esp_infinite_loo
 }
 #define ESP_INFINITE_LOOP() esp_infinite_loop()
 
+/**
+ * @brief Round value up to a given alignment (must be a power of 2)
+ * @param val  Value to align
+ * @param align  Alignment value (must be a power of 2)
+ */
+#define ESP_ALIGN_UP(val, align)    (((val) + ((align) - 1)) & ~((align) - 1))
+
+/**
+ * @brief Round value down to a given alignment (must be a power of 2)
+ * @param val  Value to align
+ * @param align  Alignment value (must be a power of 2)
+ */
+#define ESP_ALIGN_DOWN(val, align)  ((val) & ~((align) - 1))
+
 #ifdef __cplusplus
 }
 #endif
