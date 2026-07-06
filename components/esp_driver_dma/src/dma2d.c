@@ -167,7 +167,35 @@ revert:
     return found;
 }
 
-/* This function will free up the RX channel and its bundled TX channels, then check for whether there is next transaction to be picked up */
+/* Atomically claim the teardown of the transaction that currently owns `rx_chan`.
+ *
+ * `status.transaction` is published (set) under the group spinlock when channels are
+ * acquired for a transaction, and is used here as a combined identity + claim token:
+ * the claim succeeds only if the channel is still owned by `expected` (the transaction
+ * the caller believes is in-flight). The winner clears it to NULL so that the other
+ * teardown path (the natural-completion ISR vs. dma2d_force_end) will fail its own
+ * claim and therefore will not free the same channels a second time.
+ *
+ * Passing a NULL `expected` never claims (there is nothing to tear down).
+ */
+static inline bool claim_rx_transaction(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan, dma2d_trans_t *expected)
+{
+    bool claimed = false;
+    esp_os_enter_critical_safe(&group->spinlock);
+    if (expected != NULL && rx_chan->base.status.transaction == expected) {
+        rx_chan->base.status.transaction = NULL;
+        claimed = true;
+    }
+    esp_os_exit_critical_safe(&group->spinlock);
+    return claimed;
+}
+
+/* This function will free up the RX channel and its bundled TX channels, then check for whether there is next transaction to be picked up.
+ *
+ * Precondition: the caller must have successfully claimed the teardown of this RX channel's transaction
+ * (i.e. cleared `rx_chan->base.status.transaction` from the owning transaction to NULL under the group
+ * spinlock, via `claim_rx_transaction` or the equivalent inline claim in `dma2d_force_end`). This
+ * guarantees the channels cannot be reassigned and that only one path performs the teardown. */
 static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
 {
     bool need_yield = false;
@@ -215,6 +243,7 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     // 2. Check if next pending transaction in the tailq can start
     bool channels_found = false;
     const dma2d_trans_config_t *next_trans = NULL;
+    uint32_t total_channel_num = 0;
     dma2d_trans_channel_info_t channel_handle_array[DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION];
 
     esp_os_enter_critical_safe(&group->spinlock);
@@ -234,14 +263,9 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
 
     if (channels_found) {
         TAILQ_REMOVE(&group->pending_trans_tailq, next_trans_elm, entry);
-    }
-    esp_os_exit_critical_safe(&group->spinlock);
-
-    if (channels_found) {
-        // If the transaction can be processed, let consumer handle the transaction
-        uint32_t total_channel_num = next_trans->tx_channel_num + next_trans->rx_channel_num;
         // Store the acquired rx_chan into trans_elm (dma2d_trans_t) in case upper driver later need it to call `dma2d_force_end`
         // Upper driver controls the life cycle of trans_elm
+        total_channel_num = next_trans->tx_channel_num + next_trans->rx_channel_num;
         for (int i = 0; i < total_channel_num; i++) {
             if (channel_handle_array[i].dir == DMA2D_CHANNEL_DIRECTION_RX) {
                 next_trans_elm->rx_chan = channel_handle_array[i].chan;
@@ -249,7 +273,17 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
             // Also save the transaction pointer
             channel_handle_array[i].chan->status.transaction = next_trans_elm;
         }
+        // Mark the pick->start window: ownership is published (so the transaction already looks
+        // in-flight to dma2d_force_end) but on_job_picked has not configured/started the channels
+        // yet. dma2d_force_end must wait for `started` to become true before tearing channels down.
+        atomic_store(&next_trans_elm->started, false);
+    }
+    esp_os_exit_critical_safe(&group->spinlock);
+
+    if (channels_found) {
+        // If the transaction can be processed, let consumer handle the transaction
         need_yield |= next_trans->on_job_picked(total_channel_num, channel_handle_array, next_trans->user_config);
+        atomic_store(&next_trans_elm->started, true);
     }
     return need_yield;
 }
@@ -307,16 +341,26 @@ static NOINLINE_ATTR bool _dma2d_default_rx_isr(dma2d_group_t *group, int channe
     }
 
     // If last transaction completes (regardless success or not), free the channels
+    bool transaction_claimed = false;
     if (intr_status & (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR | DMA2D_LL_EVENT_RX_DESC_EMPTY)) {
-        if (!(intr_status & DMA2D_LL_EVENT_RX_ERR_EOF)) {
-            assert(dma2d_ll_rx_is_fsm_idle(group->hal.dev, channel_id));
+        // Only free the channels if we win the claim for the transaction that owned this RX
+        // channel when the interrupt fired (edata.transaction, captured above).
+        // If dma2d_force_end already claimed it, or the channel has already been freed and reassigned to another transaction,
+        // the claim fails and we must not free here, otherwise we would tear down channels that no longer belong to this transaction.
+        // Likewise for the FSM idle sanity check.
+        if (claim_rx_transaction(group, rx_chan, edata.transaction)) {
+            transaction_claimed = true;
+            if (!(intr_status & DMA2D_LL_EVENT_RX_ERR_EOF)) {
+                assert(dma2d_ll_rx_is_fsm_idle(group->hal.dev, channel_id));
+            }
+            need_yield |= free_up_channels(group, rx_chan);
         }
-        need_yield |= free_up_channels(group, rx_chan);
     }
 
     // Handle last transaction's end callbacks (at this point, last transaction's channels are completely freed,
-    // therefore, we don't pass in channel handle to the callbacks anymore)
-    if (intr_status & DMA2D_LL_EVENT_RX_SUC_EOF) {
+    // therefore, we don't pass in channel handle to the callbacks anymore).
+    // Deliver the EOF callback is probably not expected if we lost the claim (i.e. transaction was ended by dma2d_force_end).
+    if (transaction_claimed && (intr_status & DMA2D_LL_EVENT_RX_SUC_EOF)) {
         if (on_recv_eof) {
             edata.rx_eof_desc_addr = suc_eof_desc_addr;
             need_yield |= on_recv_eof(NULL, &edata, user_data);
@@ -996,57 +1040,111 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
         } else {
             TAILQ_INSERT_HEAD(&dma2d_group->pending_trans_tailq, trans_placeholder, entry);
         }
-    }
-    esp_os_exit_critical_safe(&dma2d_group->spinlock);
-    if (!enqueue) {
-        // Free channels available, start transaction immediately
+    } else { // free channels available and acquired
         // Store the acquired rx_chan into trans_placeholder (dma2d_trans_t) in case upper driver later need it to call `dma2d_force_end`
         // Upper driver controls the life cycle of trans_placeholder
         for (int i = 0; i < total_channel_num; i++) {
             if (channel_handle_array[i].dir == DMA2D_CHANNEL_DIRECTION_RX) {
                 trans_placeholder->rx_chan = channel_handle_array[i].chan;
             }
-            // Also save the transaction pointer
+            // Also save the transaction pointer to declare the ownership of the channels (has to be assigned in the same critical section)
             channel_handle_array[i].chan->status.transaction = trans_placeholder;
         }
+        // Mark the pick->start window (see free_up_channels): ownership is published but on_job_picked
+        // has not started the hardware yet, so dma2d_force_end must wait for `started` before tearing channels down.
+        atomic_store(&trans_placeholder->started, false);
+    }
+    esp_os_exit_critical_safe(&dma2d_group->spinlock);
+    if (!enqueue) { // start transaction immediately
         trans_desc->on_job_picked(total_channel_num, channel_handle_array, trans_desc->user_config);
+        atomic_store(&trans_placeholder->started, true);
     }
 
 err:
     return ret;
 }
 
+esp_err_t dma2d_dequeue(dma2d_pool_handle_t dma2d_pool, dma2d_trans_t *trans)
+{
+    ESP_RETURN_ON_FALSE(dma2d_pool && trans, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    dma2d_group_t *dma2d_group = dma2d_pool;
+
+    bool found = false;
+    esp_os_enter_critical(&dma2d_group->spinlock);
+    // The given transaction may have already been picked up (and thus removed from the queue) or may never
+    // have been enqueued. Removing such an element directly would corrupt the queue, so search the queue
+    // first and only remove it if it is genuinely still pending.
+    dma2d_trans_t *trans_elm;
+    TAILQ_FOREACH(trans_elm, &dma2d_group->pending_trans_tailq, entry) {
+        if (trans_elm == trans) {
+            // Safe to remove inside the loop because we break out immediately and never dereference the invalidated link pointer afterwards
+            TAILQ_REMOVE(&dma2d_group->pending_trans_tailq, trans, entry);
+            found = true;
+            break;
+        }
+    }
+    esp_os_exit_critical(&dma2d_group->spinlock);
+
+    // ESP_ERR_NOT_FOUND indicates the transaction is no longer (or was never) pending
+    // i.e. it has already been picked up for processing or it does not exist in this pool's queue
+    return found ? ESP_OK : ESP_ERR_NOT_FOUND;
+}
+
 esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
 {
-    ESP_RETURN_ON_FALSE_ISR(trans && trans->rx_chan && need_yield, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(trans && need_yield, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(trans->rx_chan, ESP_ERR_INVALID_STATE, TAG, "transaction still pending in the queue");
     assert(trans->rx_chan->direction == DMA2D_CHANNEL_DIRECTION_RX);
 
     dma2d_group_t *group = trans->rx_chan->group;
+    dma2d_rx_channel_t *rx_chan = group->rx_chans[trans->rx_chan->channel_id];
+
+    *need_yield = false;
 
     bool in_flight = false;
-    // We judge whether the transaction is in-flight by checking the RX channel it uses is being occupied or free
+    // We judge whether the transaction is in-flight by checking that the RX channel it uses is still owned by *this* transaction.
+    // Clearing the ownership in the same critical section claims the teardown: the natural
+    // completion ISR will then fail its own claim and will not free these channels again.
     esp_os_enter_critical_safe(&group->spinlock);
-    if (!(group->rx_channel_free_mask & (1 << trans->rx_chan->channel_id))) {
+    if (rx_chan->base.status.transaction == trans) {
         in_flight = true;
         dma2d_ll_rx_enable_interrupt(group->hal.dev, trans->rx_chan->channel_id, UINT32_MAX, false);
+        rx_chan->base.status.transaction = NULL; // claim the teardown of this transaction
         // DMA consumer could generate an error in both cases:
         // 1. when TX or RX is transferring data (channel not in idle state)
         // 2. TX successfully passed data to the module, but module cannot process the data, so RX has no data to delivery (RX channel in idle state)
     }
     esp_os_exit_critical_safe(&group->spinlock);
-    ESP_RETURN_ON_FALSE_ISR(in_flight, ESP_ERR_INVALID_STATE, TAG, "transaction not in-flight");
 
-    dma2d_rx_channel_t *rx_chan = group->rx_chans[trans->rx_chan->channel_id];
-    // Stop the RX channel and its bundled TX channels first
-    dma2d_stop(&rx_chan->base);
-    uint32_t tx_chans = rx_chan->bundled_tx_channel_mask;
-    for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
-        if (tx_chans & (1 << i)) {
-            dma2d_stop(&group->tx_chans[i]->base);
+    // If the transaction is no longer owned by this RX channel, it has already completed: its RX
+    // completion ISR has run and freed (and possibly reassigned) the channels. There is nothing to
+    // abort - the transaction has ended, which is exactly what the caller wants - so this is a no-op
+    // success.
+    if (in_flight) {
+        // We now exclusively own the teardown: the channels cannot be reassigned (their free-mask
+        // bits are still marked busy until free_up_channels runs) and a concurrent ISR will bail.
+
+        // The transaction may have been picked but not yet started: the completion ISR (or the
+        // immediate-start path in dma2d_enqueue) publishes ownership (making it look in-flight here)
+        // before calling `on_job_picked`, which configures and starts the channels outside the group
+        // spinlock. Wait for that start to finish before touching the channels, otherwise
+        // `on_job_picked` would configure/start channels that we are concurrently stopping and freeing.
+        // The wait is bounded (on_job_picked runs in ISR context and does not block) and can only
+        // happen across cores.
+        while (!atomic_load(&trans->started)) {
         }
+
+        // Stop the RX channel and its bundled TX channels first
+        dma2d_stop(&rx_chan->base);
+        uint32_t tx_chans = rx_chan->bundled_tx_channel_mask;
+        for (int i = 0; i < DMA2D_LL_GET(TX_CHANS_PER_INST); i++) {
+            if (tx_chans & (1 << i)) {
+                dma2d_stop(&group->tx_chans[i]->base);
+            }
+        }
+        // Then release channels
+        *need_yield = free_up_channels(group, rx_chan);
     }
-    // Then release channels
-    *need_yield = free_up_channels(group, rx_chan);
 
     return ESP_OK;
 }

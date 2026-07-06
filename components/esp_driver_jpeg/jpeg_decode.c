@@ -377,7 +377,14 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     return ESP_OK;
 
 err1:
-    dma2d_force_end(decoder_engine->trans_desc, &need_yield);
+    // The transaction may still be pending in the pool queue (never picked up), so try to dequeue it first.
+    // Dequeuing is atomic against the pick that turns a pending transaction into an in-flight one, so if the
+    // transaction is no longer in the queue, it is already in-flight and we force end it instead.
+    if (dma2d_dequeue(decoder_engine->dma2d_group_handle, decoder_engine->trans_desc) != ESP_OK) {
+        if (dma2d_force_end(decoder_engine->trans_desc, &need_yield) != ESP_OK) {
+            ESP_LOGE(TAG, "failed to end the transaction, it is neither pending nor in-flight");
+        }
+    }
 err2:
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
 #if CONFIG_PM_ENABLE
