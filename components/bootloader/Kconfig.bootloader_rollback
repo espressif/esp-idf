@@ -31,7 +31,7 @@ menu "Recovery Bootloader and Rollback"
 
     config BOOTLOADER_ANTI_ROLLBACK_ENABLE
         bool "Enable bootloader rollback support"
-        depends on BOOTLOADER_RECOVERY_ENABLE
+        depends on BOOTLOADER_RECOVERY_ENABLE && SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
         default n
         help
             This option prevents rollback to previous bootloader image with lower security version.
