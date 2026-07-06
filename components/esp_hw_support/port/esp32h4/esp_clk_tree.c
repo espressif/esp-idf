@@ -92,15 +92,13 @@ void esp_clk_tree_initialize(void)
     // PLL_F64M ++ for MSPI
 }
 
-bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+bool esp_clk_tree_port_is_power_on(soc_root_clk_circuit_t clk_circuit)
 {
-    switch (clk_circuit) {
-    case SOC_ROOT_CIRCUIT_CLK_XTAL_X2:
+    if (clk_circuit == SOC_ROOT_CIRCUIT_CLK_XTAL_X2) {
         return s_xtal_x2_ref_cnt > 0;
-    case SOC_ROOT_CIRCUIT_CLK_BBPLL:
+    }
+    if (clk_circuit == SOC_ROOT_CIRCUIT_CLK_BBPLL) {
         return s_bbpll_ref_cnt > 0;
-    default:
-        break;
     }
     return false;
 }

@@ -9,6 +9,8 @@ archive: libesp_hw_support.a
 entries:
     if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
         esp_clk_tree: esp_clk_tree_enable_src (noflash)
+        if IDF_TARGET_ESP32P4 || IDF_TARGET_ESP32S31 = y:
+            esp_clk_tree: s_gated_ref_clks (noflash)
 
 [mapping:adc_hal]
 archive: libesp_hal_ana_conv.a

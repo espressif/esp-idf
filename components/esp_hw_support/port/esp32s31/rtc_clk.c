@@ -357,7 +357,9 @@ static void rtc_clk_cpu_src_clk_enable(soc_cpu_clk_src_t new_src, uint32_t new_s
             rtc_clk_cpll_configure(rtc_clk_xtal_freq_get(), new_src_freq_mhz);
         }
     } else if (new_src == SOC_CPU_CLK_SRC_PLL_F240M) {
-#if !BOOTLOADER_BUILD
+#if BOOTLOADER_BUILD
+        clk_ll_bbpll_enable();
+#else
         if (!s_is_pll_f240m_acquired) {
             esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true);
             s_is_pll_f240m_acquired = true;
@@ -380,7 +382,9 @@ static void rtc_clk_cpu_src_clk_disable(soc_cpu_clk_src_t old_src)
         }
 #endif
     } else if (old_src == SOC_CPU_CLK_SRC_PLL_F240M) {
-#if !BOOTLOADER_BUILD
+#if BOOTLOADER_BUILD
+        /* Do not clk_ll_bbpll_disable(): Flash may still use BBPLL (reg_flash_clk_src_sel==1) */
+#else
         assert(s_is_pll_f240m_acquired);
         s_is_pll_f240m_acquired = false;
         esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, false);

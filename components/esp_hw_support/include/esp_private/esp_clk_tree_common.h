@@ -124,6 +124,13 @@ bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable);
  */
 bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit);
 
+/**
+ * @brief Chip-specific root clock circuit power status (port/esp_clk_tree.c per target).
+ *
+ * Handles all soc_root_clk_circuit_t values except MPLL/APLL (those are in esp_clk_tree_common.c).
+ */
+bool esp_clk_tree_port_is_power_on(soc_root_clk_circuit_t clk_circuit);
+
 #if SOC_CLK_APLL_SUPPORTED
 /**
  * @brief Enable APLL power if it has not enabled

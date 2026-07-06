@@ -13,12 +13,15 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     clk_utils (noflash)
-    # TODO: PM-630
-    if IDF_TARGET_ESP32S31 != y:
-        esp_clk_tree: esp_clk_tree_enable_src (noflash)
-        esp_clk_tree: esp_clk_tree_enable_power (noflash)
-        esp_clk_tree: esp_clk_tree_is_power_on (noflash)
+    esp_clk_tree: esp_clk_tree_enable_src (noflash)
     if RTC_CLK_FUNC_IN_IRAM = y:
+        esp_clk_tree: esp_clk_tree_enable_power (noflash)
+        esp_clk_tree_common:esp_clk_tree_is_power_on (noflash)
+        if SOC_CLK_MPLL_SUPPORTED = y:
+            esp_clk_tree_common:esp_clk_tree_mpll_release (noflash)
+        if SOC_CLK_APLL_SUPPORTED = y:
+            esp_clk_tree_common:esp_clk_tree_apll_acquire (noflash)
+            esp_clk_tree_common:esp_clk_tree_apll_release (noflash)
         rtc_clk (noflash)
     if IDF_TARGET_ESP32 = y:
         rtc_clk:rtc_clk_cpu_freq_to_pll_mhz (noflash)
