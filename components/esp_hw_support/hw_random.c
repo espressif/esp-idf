@@ -18,6 +18,8 @@
 
 #if !ESP_TEE_BUILD
 #include "esp_private/startup_internal.h"
+#else
+#include "esp_fault.h"
 #endif
 
 #include "hal/rtc_timer_hal.h"
@@ -80,6 +82,9 @@ uint32_t IRAM_ATTR esp_random(void)
     uint32_t result = 0;
     for (size_t i = 0; i < sizeof(result); i++) {
         do {
+#if ESP_TEE_BUILD
+            ESP_FAULT_ASSERT(rng_ll_is_enabled());
+#endif
             ccount = esp_cpu_get_cycle_count();
             result ^= rng_ll_read_data();
         } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
