@@ -681,6 +681,8 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
         // The event has already been unqueued, so ensure it gets executed.
         xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
 
+        bool exec = false;
+
         // check if the event retrieve from the queue is the internal event that is
         // triggered when a handler needs to be removed..
         if (post.base == esp_event_handler_cleanup) {
@@ -694,47 +696,45 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
             if (ctx->legacy) {
                 free(ctx->handler_ctx);
             }
-        }
+        } else {
+            loop->running_task = xTaskGetCurrentTaskHandle();
 
-        loop->running_task = xTaskGetCurrentTaskHandle();
+            esp_event_handler_node_t *handler, *temp_handler;
+            esp_event_loop_node_t *loop_node, *temp_node;
+            esp_event_base_node_t *base_node, *temp_base;
+            esp_event_id_node_t *id_node, *temp_id_node;
 
-        bool exec = false;
-
-        esp_event_handler_node_t *handler, *temp_handler;
-        esp_event_loop_node_t *loop_node, *temp_node;
-        esp_event_base_node_t *base_node, *temp_base;
-        esp_event_id_node_t *id_node, *temp_id_node;
-
-        SLIST_FOREACH_SAFE(loop_node, &(loop->loop_nodes), next, temp_node) {
-            // Execute loop level handlers
-            SLIST_FOREACH_SAFE(handler, &(loop_node->handlers), next, temp_handler) {
-                if (!handler->unregistered) {
-                    handler_execute(loop, handler, post);
-                    exec |= true;
-                }
-            }
-
-            SLIST_FOREACH_SAFE(base_node, &(loop_node->base_nodes), next, temp_base) {
-                if (base_node->base == post.base) {
-                    // Execute base level handlers
-                    SLIST_FOREACH_SAFE(handler, &(base_node->handlers), next, temp_handler) {
-                        if (!handler->unregistered) {
-                            handler_execute(loop, handler, post);
-                            exec |= true;
-                        }
+            SLIST_FOREACH_SAFE(loop_node, &(loop->loop_nodes), next, temp_node) {
+                // Execute loop level handlers
+                SLIST_FOREACH_SAFE(handler, &(loop_node->handlers), next, temp_handler) {
+                    if (!handler->unregistered) {
+                        handler_execute(loop, handler, post);
+                        exec |= true;
                     }
+                }
 
-                    SLIST_FOREACH_SAFE(id_node, &(base_node->id_nodes), next, temp_id_node) {
-                        if (id_node->id == post.id) {
-                            // Execute id level handlers
-                            SLIST_FOREACH_SAFE(handler, &(id_node->handlers), next, temp_handler) {
-                                if (!handler->unregistered) {
-                                    handler_execute(loop, handler, post);
-                                    exec |= true;
-                                }
+                SLIST_FOREACH_SAFE(base_node, &(loop_node->base_nodes), next, temp_base) {
+                    if (base_node->base == post.base) {
+                        // Execute base level handlers
+                        SLIST_FOREACH_SAFE(handler, &(base_node->handlers), next, temp_handler) {
+                            if (!handler->unregistered) {
+                                handler_execute(loop, handler, post);
+                                exec |= true;
                             }
-                            // Skip to next base node
-                            break;
+                        }
+
+                        SLIST_FOREACH_SAFE(id_node, &(base_node->id_nodes), next, temp_id_node) {
+                            if (id_node->id == post.id) {
+                                // Execute id level handlers
+                                SLIST_FOREACH_SAFE(handler, &(id_node->handlers), next, temp_handler) {
+                                    if (!handler->unregistered) {
+                                        handler_execute(loop, handler, post);
+                                        exec |= true;
+                                    }
+                                }
+                                // Skip to next base node
+                                break;
+                            }
                         }
                     }
                 }
@@ -762,7 +762,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 
         xSemaphoreGiveRecursive(loop->mutex);
 
-        if (!exec) {
+        if (!exec && base != esp_event_handler_cleanup) {
             // No handlers were registered, not even loop/base level handlers
             ESP_LOGD(TAG, "no handlers have been registered for event %s:%"PRIu32" posted to loop %p", base, id, event_loop);
         }
