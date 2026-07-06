@@ -14,6 +14,9 @@
 #include "soc/lpperi_struct.h"
 #include "hal/lp_clkrst_ll.h"
 
+//Default value for the RNG timer clock divider
+#define RNG_LL_CFG_PSCALE              255
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +39,16 @@ static inline uint32_t rng_ll_read_data(void)
 static inline void rng_ll_enable_sample(bool enable)
 {
     REG_SET_FIELD(RNG_CFG_REG, RNG_SAMPLE_ENABLE, enable);
+}
+
+/**
+ * @brief Set RNG timer prescaler
+ *
+ * @param prescaler Timer prescaler value (0-255)
+ */
+static inline void rng_ll_set_timer_prescaler(uint8_t prescaler)
+{
+    REG_SET_FIELD(RNG_CFG_REG, RNG_TIMER_PSCALE, prescaler);
 }
 
 /**
@@ -75,6 +88,7 @@ static inline void rng_ll_reset(void)
 static inline void rng_ll_enable(void)
 {
     _lp_clkrst_ll_enable_rng_clock(true);
+    rng_ll_set_timer_prescaler(RNG_LL_CFG_PSCALE);
     rng_ll_enable_sample(true);
     rng_ll_enable_rtc_timer(true);
     rng_ll_enable_rng_timer(true);
@@ -91,6 +105,16 @@ static inline void rng_ll_disable(void)
     rng_ll_enable_rtc_timer(false);
     rng_ll_enable_rng_timer(false);
     _lp_clkrst_ll_enable_rng_clock(false);
+}
+
+/**
+ * @brief Check that the RNG is live: clocked and out of reset.
+ *
+ * @return True if the RNG is enabled and operational, false otherwise.
+ */
+static inline bool rng_ll_is_enabled(void)
+{
+    return LPPERI.clk_en.rng_ck_en && LPPERI.clk_en.rng_apb_ck_en && !LPPERI.reset_en.lp_rng_apb_reset_en;
 }
 
 #ifdef __cplusplus

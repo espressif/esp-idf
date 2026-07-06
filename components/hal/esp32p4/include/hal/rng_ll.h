@@ -13,6 +13,10 @@
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
 #include "soc/trng_reg.h"
 #include "soc/trng_struct.h"
+
+//Default value for the RNG timer clock divider
+#define RNG_LL_CFG_PSCALE              255
+
 #else
 #include "soc/lp_system_reg.h"
 #endif
@@ -121,6 +125,7 @@ static inline void rng_ll_enable(void)
 #if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
     rng_ll_enable_clock(true);
     rng_ll_reset();
+    rng_ll_set_timer_prescaler(RNG_LL_CFG_PSCALE);
     rng_ll_enable_timer(true);
     rng_ll_enable_sample(true);
 #endif

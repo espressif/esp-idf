@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/lpperi_reg.h"
+#include "soc/lpperi_struct.h"
 #include "hal/lp_clkrst_ll.h"
 
 #ifdef __cplusplus
@@ -28,6 +30,11 @@ static inline void rng_ll_enable(void)
 static inline void rng_ll_disable(void)
 {
     _lp_clkrst_ll_enable_rng_clock(false);
+}
+
+static inline bool rng_ll_is_enabled(void)
+{
+    return LPPERI.clk_en.rng_ck_en;
 }
 
 #ifdef __cplusplus

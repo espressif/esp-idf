@@ -96,6 +96,16 @@ static inline void rng_ll_disable(void)
     rng_ll_enable_bus_clock(false);
 }
 
+/**
+ * @brief Check that the RNG is live: clocked and out of reset.
+ *
+ * @return True if the RNG is enabled and operational, false otherwise.
+ */
+static inline bool rng_ll_is_enabled(void)
+{
+    return LP_PERI_CLKRST.rng_ctrl.lp_rng_clk_en && !LP_PERI_CLKRST.rng_ctrl.lp_rng_rst_en;
+}
+
 #ifdef __cplusplus
 }
 #endif
