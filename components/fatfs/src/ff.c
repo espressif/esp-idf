@@ -4004,11 +4004,11 @@ FRESULT f_read (
 				if (disk_read(fs->pdrv, rbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
 #if !FF_FS_READONLY && FF_FS_MINIMIZE <= 2		/* Replace one of the read sectors with cached data if it contains a dirty sector */
 #if FF_FS_TINY
-				if (fs->wflag && fs->winsect - sect < cc) {
+				if (fs->wflag && fs->winsect >= sect && fs->winsect - sect < cc) {	/* CVE-2026-6685: guard against unsigned wrap when winsect < sect (mis-offset would be an OOB write into rbuff) */
 					memcpy(rbuff + ((fs->winsect - sect) * SS(fs)), fs->win, SS(fs));
 				}
 #else
-				if ((fp->flag & FA_DIRTY) && fp->sect - sect < cc) {
+				if ((fp->flag & FA_DIRTY) && fp->sect >= sect && fp->sect - sect < cc) {	/* CVE-2026-6685: guard against unsigned wrap when fp->sect < sect (mis-offset would be an OOB write into rbuff) */
 					memcpy(rbuff + ((fp->sect - sect) * SS(fs)), fp->buf, SS(fs));
 				}
 #endif
@@ -4119,12 +4119,12 @@ FRESULT f_write (
 				if (disk_write(fs->pdrv, wbuff, sect, cc) != RES_OK) ABORT(fs, FR_DISK_ERR);
 #if FF_FS_MINIMIZE <= 2
 #if FF_FS_TINY
-				if (fs->winsect - sect < cc) {	/* Refill sector cache if it gets invalidated by the direct write */
+				if (fs->winsect >= sect && fs->winsect - sect < cc) {	/* Refill sector cache if it gets invalidated by the direct write (CVE-2026-6685: guard against unsigned wrap when winsect < sect) */
 					memcpy(fs->win, wbuff + ((fs->winsect - sect) * SS(fs)), SS(fs));
 					fs->wflag = 0;
 				}
 #else
-				if (fp->sect - sect < cc) { /* Refill sector cache if it gets invalidated by the direct write */
+				if (fp->sect >= sect && fp->sect - sect < cc) { /* Refill sector cache if it gets invalidated by the direct write (CVE-2026-6685: guard against unsigned wrap when fp->sect < sect) */
 					memcpy(fp->buf, wbuff + ((fp->sect - sect) * SS(fs)), SS(fs));
 					fp->flag &= (BYTE)~FA_DIRTY;
 				}
