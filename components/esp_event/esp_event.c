@@ -922,12 +922,26 @@ esp_err_t esp_event_handler_unregister_with_internal(esp_event_loop_handle_t eve
     /* remove the handler if the mutex is taken successfully.
      * otherwise it will be removed from the list later */
     esp_err_t res = ESP_FAIL;
-    if (xSemaphoreTake(loop->mutex, 0) == pdTRUE) {
-        res = loop_remove_handler(&remove_handler_ctx);
-        xSemaphoreGive(loop->mutex);
+    if (xSemaphoreTakeRecursive(loop->mutex, 0) == pdTRUE) {
+        /* We got the mutex. Check whether we are currently inside a handler
+         * callback for this loop (running_task is set while handler_execute()
+         * is active). If we are, we MUST NOT free the handler node immediately
+         * because handler_execute() will still write to handler->invoked /
+         * handler->time (profiling) after the callback returns. Use the
+         * deferred cleanup-event path instead so the node is only freed once
+         * the current dispatch iteration has fully completed. */
+        if (loop->running_task == xTaskGetCurrentTaskHandle()) {
+            res = find_and_unregister_handler(&remove_handler_ctx);
+        } else {
+            res = loop_remove_handler(&remove_handler_ctx);
+        }
+        xSemaphoreGiveRecursive(loop->mutex);
     } else {
+        /* Another task holds the mutex (e.g. the loop task is dispatching an
+         * event). Wait until it is released; by that point running_task will
+         * have been cleared, so direct removal is safe. */
         xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
-        res = find_and_unregister_handler(&remove_handler_ctx);
+        res = loop_remove_handler(&remove_handler_ctx);
         xSemaphoreGiveRecursive(loop->mutex);
     }
 
