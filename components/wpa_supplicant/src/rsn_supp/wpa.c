@@ -405,7 +405,7 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
          * event before receiving this 1/4 message, so try to find a
          * matching PMKSA cache entry here. */
         sm->cur_pmksa = pmksa_cache_get(sm->pmksa, src_addr, sm->own_addr,
-                pmkid, NULL);
+                pmkid, sm->network_ctx, sm->key_mgmt);
         if (sm->cur_pmksa) {
             wpa_printf(MSG_DEBUG,
                     "RSN: found matching PMKID from PMKSA cache");
@@ -474,7 +474,8 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
                                      sm->network_ctx, sm->key_mgmt);
             }
             if (!sm->cur_pmksa && pmkid &&
-                pmksa_cache_get(sm->pmksa, src_addr, sm->own_addr, pmkid, NULL))
+                pmksa_cache_get(sm->pmksa, src_addr, sm->own_addr, pmkid,
+                                sm->network_ctx, sm->key_mgmt))
             {
                 wpa_printf( MSG_DEBUG,
                     "RSN: the new PMK matches with the "
@@ -2687,7 +2688,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
     struct rsn_pmksa_cache_entry *pmksa = NULL;
     if (use_pmk_cache) {
         pmksa = pmksa_cache_get(sm->pmksa, (const u8 *)bssid, sm->own_addr,
-                NULL, NULL);
+                NULL, NULL, 0);
         if (pmksa && (pmksa->akmp != sm->key_mgmt)) {
             use_pmk_cache = false;
         }
