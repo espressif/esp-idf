@@ -1152,7 +1152,7 @@ esp_err_t esp_event_dump(FILE* file)
     portEXIT_CRITICAL(&s_event_loops_spinlock);
 
     // Print the contents of the buffer to the file
-    fprintf(file, buf);
+    fprintf(file, "%s", buf);
 
     // Free the allocated buffer
     free(buf);
