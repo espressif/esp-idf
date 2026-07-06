@@ -10,6 +10,10 @@ Application Examples
 
 - :example:`bluetooth/bluedroid/coex/gattc_gatts_coex` demonstrates the coexistence of GATT client and GATT server by creating a GATT service, starting ADV, and exchanging data between a GATT client and device.
 
+- :example:`bluetooth/bluedroid/ble/ble_ams` demonstrates how to act as an Apple Media Service (AMS) client on the Bluedroid stack, connecting to an iOS device to receive media metadata and send remote playback commands over GATT.
+
+- :example:`bluetooth/nimble/ble_ams` demonstrates how to act as an Apple Media Service (AMS) client on the NimBLE stack, connecting to an iOS device to receive media metadata and send remote playback commands over GATT.
+
 API Reference
 -------------
 
