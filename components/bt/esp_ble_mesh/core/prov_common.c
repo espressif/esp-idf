@@ -199,6 +199,17 @@ bool bt_mesh_gen_prov_start(struct bt_mesh_prov_link *link,
         return false;
     }
 
+    /* Reset the reassembly buffer so every transaction starts from the
+     * buffer origin. prov_msg_recv() pulls the PDU type byte (advancing
+     * buf->data by one) and nothing restores it between transactions, so
+     * without this reset buf->data would drift forward by one byte per
+     * received PDU: the segment-0 memcpy below would then write past the
+     * end of the statically allocated rx buffer (PROV_RX_BUF_SIZE), and
+     * the XACT_SEG_DATA() offsets used for continuation segments would
+     * be skewed by the accumulated drift.
+     */
+    net_buf_simple_reset(link->rx.buf);
+
     link->rx.buf->len = net_buf_simple_pull_be16(buf);
     link->rx.id = rx->xact_id;
     link->rx.fcs = net_buf_simple_pull_u8(buf);
