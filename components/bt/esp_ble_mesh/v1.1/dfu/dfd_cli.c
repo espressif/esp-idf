@@ -142,8 +142,20 @@ static void handle_receiver_list(struct bt_mesh_model *model,
 
     dfd_status_t status = {0};
     status.receiver_list.entries_cnt = net_buf_simple_pull_le16(buf);
+
+    if (status.receiver_list.entries_cnt > CONFIG_BLE_MESH_DFD_CLI_SRV_TARGETS_MAX) {
+        BT_ERR("InvalidDfdSrvEntries:%d",status.receiver_list.entries_cnt);
+        return;
+    }
+
     status.receiver_list.first_index = net_buf_simple_pull_le16(buf);
     status.receiver_list.entries = bt_mesh_calloc(status.receiver_list.entries_cnt * sizeof(target_node_entry_t));
+
+    if (status.receiver_list.entries == NULL) {
+        BT_ERR("MemAllocFailedForSz:%d",status.receiver_list.entries_cnt * sizeof(target_node_entry_t));
+        return;
+    }
+
     for (i = 0; i < status.receiver_list.entries_cnt; i++) {
         target_info = net_buf_simple_pull_le32(buf);
         status.receiver_list.entries[i].addr = TARGET_ADDR(target_info);
