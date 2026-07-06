@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 
@@ -14,8 +14,14 @@ TASK_ITERATION_POSTING = 'posting TASK_EVENTS:TASK_ITERATION_EVENT to {}, iterat
 TASK_ITERATION_HANDLING = 'handling TASK_EVENTS:TASK_ITERATION_EVENT from {}, iteration {}'
 
 
-@pytest.mark.generic
-@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+@idf_parametrize(
+    'target,markers',
+    [
+        ('supported_targets', pytest.mark.generic),
+        ('linux', pytest.mark.host_test),
+    ],
+    indirect=['target'],
+)
 def test_esp_event_user_event_loops(dut: Dut) -> None:
     dut.expect_exact('setting up')
     dut.expect_exact('starting event source')
@@ -30,9 +36,9 @@ def test_esp_event_user_event_loops(dut: Dut) -> None:
             loop = 'loop_without_task'
 
         dut.expect(TASK_ITERATION_POSTING.format(loop, iteration))
-        logging.info('Posted iteration {} to {}'.format(iteration, loop))
+        logging.info(f'Posted iteration {iteration} to {loop}')
         dut.expect(TASK_ITERATION_HANDLING.format(loop, iteration))
-        logging.info('Handled iteration {} from {}'.format(iteration, loop))
+        logging.info(f'Handled iteration {iteration} from {loop}')
 
     dut.expect('deleting task event source')
     logging.info('Deleted task event source')

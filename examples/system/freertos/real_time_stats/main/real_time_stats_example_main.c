@@ -157,7 +157,7 @@ static void stats_task(void *arg)
 
     //Print real time stats periodically
     while (1) {
-        printf("\n\nGetting real time stats over %"PRIu32" ticks\n", STATS_TICKS);
+        printf("\n\nGetting real time stats over %"PRIu32" ticks\n", (uint32_t)STATS_TICKS);
         if (print_real_time_stats(STATS_TICKS) == ESP_OK) {
             printf("Real time stats obtained\n");
         } else {

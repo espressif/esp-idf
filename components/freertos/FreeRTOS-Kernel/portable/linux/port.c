@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/queue.h>
+#include <time.h>
 #include "string.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -592,3 +593,15 @@ void vPortCancelThread(void *pxTaskToDelete)
 void vPortSetStackWatchpoint(void *pxStackStart)
 {
 }
+
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void )
+{
+    struct timespec ts;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    return ( configRUN_TIME_COUNTER_TYPE ) ( ( ( uint64_t ) ts.tv_sec * 1000000ULL ) +
+                                            ( ( uint64_t ) ts.tv_nsec / 1000ULL ) );
+}
+#endif /* CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS */

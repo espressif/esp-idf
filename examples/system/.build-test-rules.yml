@@ -52,10 +52,14 @@ examples/system/efuse:
     - bootloader_support
 
 examples/system/esp_event/default_event_loop:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   depends_components:
     - esp_event
 
 examples/system/esp_event/user_event_loops:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   depends_components:
     - esp_event
 
@@ -264,16 +268,14 @@ examples/system/perfmon:
     - xtensa
 
 examples/system/pthread:
-  disable:
-    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
-      reason: no target specific functionality, testing on a single target is sufficient
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
   depends_components:
     - pthread
 
 examples/system/rt_mqueue:
-  disable_test:
-    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
-      reason: no target specific functionality, testing on a single target is sufficient
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
   depends_components:
     - rt
 
@@ -324,9 +326,8 @@ examples/system/task_watchdog:
     - esp_system
 
 examples/system/unit_test/:
-  disable:
-    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
-      reason: no target specific functionality, testing on a single target is sufficient
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
   depends_components:
     - unity
 

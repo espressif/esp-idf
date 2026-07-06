@@ -137,9 +137,11 @@ extern void vPortCancelThread( void *pxTaskToDelete );
  */
 #define portMEMORY_BARRIER() __asm volatile( "" ::: "memory" )
 
-extern unsigned long ulPortGetRunTime( void );
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() /* no-op */
-#define portGET_RUN_TIME_COUNTER_VALUE()         ulPortGetRunTime()
+#if ( CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS )
+configRUN_TIME_COUNTER_TYPE xPortGetRunTimeCounterValue( void );
+#define portGET_RUN_TIME_COUNTER_VALUE()         xPortGetRunTimeCounterValue()
+#endif
 
 #ifdef __cplusplus
 }
