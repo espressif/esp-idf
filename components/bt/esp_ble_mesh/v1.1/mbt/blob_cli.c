@@ -1398,6 +1398,10 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
     size_t len;
     int idx;
 
+    if (!cli->xfer) {
+        return -EINVAL;
+    }
+
     target = target_get(cli, ctx->addr);
     if (!target) {
         return -ENOENT;
@@ -1408,8 +1412,8 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
     status.missing = status_and_format >> 6;
     status.block.number = net_buf_simple_pull_le16(buf);
     chunk_size = net_buf_simple_pull_le16(buf);
-    if (chunk_size == 0) {
-        BT_ERR("Invalid chunk_size: 0");
+    if (chunk_size == 0 || chunk_size != cli->xfer->chunk_size) {
+        BT_ERR("Invalid chunk_size: %d,%d", chunk_size, cli->xfer->chunk_size);
         return -EINVAL;
     }
     status.block.chunk_count =
