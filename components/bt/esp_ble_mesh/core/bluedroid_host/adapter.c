@@ -1167,7 +1167,7 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         uint8_t index = BLE_MESH_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         tBTA_GATTS_RSP rsp = {0};
         uint8_t buf[100] = {0};
-        uint16_t len = 0;
+        ssize_t len = 0;
 
         BT_DBG("gatts read, handle %d", p_data->req_data.p_data->read_req.handle);
 
@@ -1189,7 +1189,7 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     case BTA_GATTS_WRITE_EVT: {
         struct bt_mesh_gatt_attr *attr = bt_mesh_gatts_find_attr_by_handle(p_data->req_data.p_data->write_req.handle);
         uint8_t index = BLE_MESH_GATT_GET_CONN_ID(p_data->req_data.conn_id);
-        uint16_t len = 0;
+        ssize_t len = 0;
 
         BT_DBG("gatts write, handle %d, len %d, data %s", p_data->req_data.p_data->write_req.handle,
                p_data->req_data.p_data->write_req.len,
