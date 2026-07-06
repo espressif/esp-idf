@@ -3,3 +3,18 @@ version: 'R0.15'
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Person: ChaN'
 description: 'Generic FAT Filesystem Module for embedded systems.'
+cve-exclude-list:
+  - cve: CVE-2026-6682
+    reason: Integer overflow in exFAT mount size validation. Patched by promoting the cluster-heap and bitmap-base multiplies to 64-bit in mount_volume().
+  - cve: CVE-2026-6683
+    reason: exFAT divide-by-zero when NumClusters == 0. The vulnerable exFAT PercInUse sync division was introduced in R0.16 and is not present in this R0.15 release; an empty cluster heap is additionally rejected at mount as defense-in-depth.
+  - cve: CVE-2026-6685
+    reason: Unsigned-subtraction wrap in the dirty-cache refill check. Patched by requiring the cached sector to lie within the direct-I/O range in both f_write() and f_read().
+  - cve: CVE-2026-6687
+    reason: exFAT label-length overflow in f_getlabel(). Patched by clamping XDIR_NumLabel to the 11-unit exFAT label maximum.
+  - cve: CVE-2026-6684
+    reason: GPT partition-scan loop DoS, classified by runZero as pre-R0.16 because the protective GPT validation was added upstream in R0.16. This release does not ship the R0.16 baseline; it ships FatFs R0.15 with Espressif patch2, which already backports that validation. test_gpt_header() checks the GPT header size, CRC and entry size and rejects any partition table declaring more than 128 entries before the scan loop runs, so the unbounded-scan condition is unreachable. An unpatched upstream R0.15 (without patch2) would remain vulnerable.
+  - cve: CVE-2026-6686
+    reason: Read of uninitialized clusters after f_lseek() extends a file past EOF. Longstanding FatFs behavior; not a memory-safety defect and zero-filling every extended cluster is prohibitively costly on flash. Applications sharing media across trust boundaries must zero regions before exposing them.
+  - cve: CVE-2026-6688
+    reason: Long-filename overflow in downstream callers copying FILINFO.fname. Not exposed in ESP-IDF; vfs_fat.c uses bounded snprintf/strlcpy and fname is bounded in-library by FF_MAX_LFN.
