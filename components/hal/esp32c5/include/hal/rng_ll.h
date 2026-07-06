@@ -14,6 +14,10 @@
 #include "hal/lp_clkrst_ll.h"
 
 #define RNG_LL_DEPENDS_ON_LP_PERIPH 1
+//For ESP32C5, RNG needs to be reset and enabled again when wakeup from sleep
+#define RNG_LL_NEEDS_RESET_WHEN_WAKEUP 1
+//Default value for the RNG timer clock divider
+#define RNG_LL_CFG_PSCALE              255
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +41,16 @@ static inline uint32_t rng_ll_read_data(void)
 static inline void rng_ll_enable_sample(bool enable)
 {
     LPPERI.rng_cfg.rng_sample_enable = enable;
+}
+
+/**
+ * @brief Set RNG timer prescaler
+ *
+ * @param prescaler Timer prescaler value (0-255)
+ */
+static inline void rng_ll_set_timer_prescaler(uint8_t prescaler)
+{
+    LPPERI.rng_cfg.rng_timer_pscale = prescaler;
 }
 
 /**
@@ -76,6 +90,7 @@ static inline void rng_ll_reset(void)
 static inline void rng_ll_enable(void)
 {
     _lp_clkrst_ll_enable_rng_clock(true);
+    rng_ll_set_timer_prescaler(RNG_LL_CFG_PSCALE);
     rng_ll_enable_sample(true);
     rng_ll_enable_rtc_timer(true);
     rng_ll_enable_rng_timer(true);
@@ -94,6 +109,15 @@ static inline void rng_ll_disable(void)
     _lp_clkrst_ll_enable_rng_clock(false);
 }
 
+/**
+ * @brief Check that the RNG is live: clocked and out of reset.
+ *
+ * @return True if the RNG is enabled and operational, false otherwise.
+ */
+static inline bool rng_ll_is_enabled(void)
+{
+    return LPPERI.clk_en.rng_ck_en && !LPPERI.reset_en.lp_rng_reset_en;
+}
 
 #ifdef __cplusplus
 }
