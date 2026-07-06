@@ -10,3 +10,5 @@ cve-exclude-list:
     reason: exFAT divide-by-zero when NumClusters == 0. Patched by rejecting an empty cluster heap at mount and guarding the divisor (n_fatent > 2) in sync_fs().
   - cve: CVE-2026-6685
     reason: Unsigned-subtraction wrap in the dirty-cache refill check. Patched by requiring the cached sector to lie within the direct-I/O range in both f_write() and f_read().
+  - cve: CVE-2026-6687
+    reason: exFAT label-length overflow in f_getlabel(). Patched by clamping XDIR_NumLabel to the 11-unit exFAT label maximum.
