@@ -3,3 +3,6 @@ version: 'R0.16'
 supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Person: ChaN'
 description: 'Generic FAT Filesystem Module for embedded systems.'
+cve-exclude-list:
+  - cve: CVE-2026-6682
+    reason: Integer overflow in exFAT mount size validation. Patched by promoting the cluster-heap and bitmap-base multiplies to 64-bit in mount_volume().
