@@ -436,6 +436,15 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
 
     n = *iv_off;
 
+    /* iv[] is a fixed AES_BLOCK_BYTES buffer and n indexes it directly (before the modulo update),
+     * so a caller-supplied *iv_off >= AES_BLOCK_BYTES -- attacker-controlled via the TEE secure
+     * service -- is an out-of-bounds read of iv[] in TEE context (CWE-125), leaking adjacent
+     * memory into the output. Bound it here, matching the block esp_aes_crypt_ofb() variant. */
+    if (n >= AES_BLOCK_BYTES) {
+        ESP_LOGE(TAG, "IV offset out of bounds");
+        return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
     /* If there is an offset then use the output of the previous AES block
         (the updated IV) to calculate the new output */
     while (n > 0 && length > 0) {
