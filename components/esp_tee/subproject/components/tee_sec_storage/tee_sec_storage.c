@@ -37,6 +37,8 @@
 #define AES256_KEY_LEN                      32
 #define AES256_KEY_BITS                     (AES256_KEY_LEN * 8)
 #define AES256_GCM_IV_LEN                   12
+#define AES256_GCM_TAG_LEN_MIN             12   /* NIST SP800-38D general-use minimum (96-bit tag) */
+#define AES256_GCM_TAG_LEN_MAX             16   /* full GCM tag (128-bit) */
 #define ECDSA_SECP384R1_KEY_LEN             48
 #define ECDSA_SECP256R1_KEY_LEN             32
 
@@ -658,8 +660,16 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len == 0 || tag_len == 0 || iv_len == 0) {
-        ESP_LOGE(TAG, "Invalid input/tag/iv length");
+    if (len == 0) {
+        ESP_LOGE(TAG, "Invalid input length");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    /* Enforce standard AES-GCM parameters */
+    if (iv_len != AES256_GCM_IV_LEN ||
+            tag_len < AES256_GCM_TAG_LEN_MIN || tag_len > AES256_GCM_TAG_LEN_MAX) {
+        ESP_LOGE(TAG, "Non-standard GCM iv_len(%u)/tag_len(%u) rejected",
+                 (unsigned)iv_len, (unsigned)tag_len);
         return ESP_ERR_INVALID_SIZE;
     }
 
