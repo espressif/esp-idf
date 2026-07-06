@@ -34,13 +34,24 @@
 
 可将该密钥设置为禁止所有外部资源访问，避免密钥泄露。
 
-此外，在 {IDF_TARGET_NAME} 上的 HMAC 有以下三种应用场景：
+.. only:: SOC_DIG_SIGN_SUPPORTED
 
-#. HMAC 支持软件使用
-#. HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
-#. HMAC 用于启用软禁用的 JTAG 接口
+    此外，在 {IDF_TARGET_NAME} 上的 HMAC 有以下三种应用场景：
 
-第一种应用场景称为 **上行** 模式，后两种应用场景称为 **下行** 模式。
+    #. HMAC 支持软件使用
+    #. HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
+    #. HMAC 用于启用软禁用的 JTAG 接口
+
+    第一种应用场景称为 **上行** 模式，后两种应用场景称为 **下行** 模式。
+
+.. only:: not SOC_DIG_SIGN_SUPPORTED
+
+    此外，在 {IDF_TARGET_NAME} 上的 HMAC 有以下两种应用场景：
+
+    #. HMAC 支持软件使用
+    #. HMAC 用于启用软禁用的 JTAG 接口
+
+    第一种应用场景称为 **上行** 模式，第二种应用场景称为 **下行** 模式。
 
 HMAC 的 eFuse 密钥
 ^^^^^^^^^^^^^^^^^^^
@@ -49,20 +60,35 @@ HMAC 的 eFuse 密钥
 
 每个密钥都有相应的 eFuse 参数 **密钥功能 (key purpose)**，决定密钥应用于 HMAC 的哪种应用场景。
 
-.. list-table::
-   :widths: 15 70
-   :header-rows: 1
+.. only:: SOC_DIG_SIGN_SUPPORTED
 
-   * - 密钥功能
-     - 应用场景
-   * - 8
-     - HMAC 支持软件使用
-   * - 7
-     - HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
-   * - 6
-     - HMAC 启用软禁用的 JTAG 接口
-   * - 5
-     - HMAC 既用作 RSA 数字签名外设 (RSA_DS) 的密钥，又用于启用 JTAG 接口
+    .. list-table::
+       :widths: 15 70
+       :header-rows: 1
+
+       * - 密钥功能
+         - 应用场景
+       * - 8
+         - HMAC 支持软件使用
+       * - 7
+         - HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
+       * - 6
+         - HMAC 启用软禁用的 JTAG 接口
+       * - 5
+         - HMAC 既用作 RSA 数字签名外设 (RSA_DS) 的密钥，又用于启用 JTAG 接口
+
+.. only:: not SOC_DIG_SIGN_SUPPORTED
+
+    .. list-table::
+       :widths: 15 70
+       :header-rows: 1
+
+       * - 密钥功能
+         - 应用场景
+       * - 8
+         - HMAC 支持软件使用
+       * - 5, 6
+         - HMAC 用于启用软禁用的 JTAG 接口（HMAC 下行模式）
 
 这样一来，可以确保密钥用于原定场景。
 
@@ -79,16 +105,18 @@ HMAC 支持软件使用
 
 :cpp:func:`psa_mac_compute` 用于计算 HMAC，该函数接收一个不透明的 PSA 密钥，该密钥引用了包含密钥机密的 eFuse 密钥块，并且该密钥块的用途被设置为上行模式。
 
-HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. only:: SOC_DIG_SIGN_SUPPORTED
 
-密钥功能值：7、5
+    HMAC 用作 RSA 数字签名外设 (RSA_DS) 的密钥
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-HMAC 可用作密钥派生函数，解码 RSA_DS 模块使用的私钥参数。在此情况下，硬件使用标准信息进行计算。在 HMAC 部分只需提供 eFuse 密钥块和功能；而在 RSA_DS 模块则还需要一些额外参数。
+    密钥功能值：7、5
 
-无论是密钥还是实际的 HMAC，都不会暴露在 HMAC 和 RSA_DS 模块之外。对 HMAC 的计算，以及将其传递给 RSA_DS 模块的过程，均在内部进行。
+    HMAC 可用作密钥派生函数，解码 RSA_DS 模块使用的私钥参数。在此情况下，硬件使用标准信息进行计算。在 HMAC 部分只需提供 eFuse 密钥块和功能；而在 RSA_DS 模块则还需要一些额外参数。
 
-详情请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **RSA 数字签名外设 (RSA_DS)** [`PDF <{IDF_TARGET_TRM_CN_URL}#digsig>`__]。
+    无论是密钥还是实际的 HMAC，都不会暴露在 HMAC 和 RSA_DS 模块之外。对 HMAC 的计算，以及将其传递给 RSA_DS 模块的过程，均在内部进行。
+
+    详情请参阅 **{IDF_TARGET_NAME} 技术参考手册** > **RSA 数字签名外设 (RSA_DS)** [`PDF <{IDF_TARGET_TRM_CN_URL}#digsig>`__]。
 
 .. _hmac_for_enabling_jtag:
 

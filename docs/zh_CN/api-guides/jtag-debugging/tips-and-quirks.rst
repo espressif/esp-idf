@@ -253,7 +253,7 @@ JTAG 与 flash 加密和安全启动
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    请注意，一旦 JTAG 被永久禁用，就无法重新启用以访问 JTAG。但是我们也提供了暂时禁用 (soft disable) JTAG 的选项。有关如何暂时禁用以及重新启用 JTAG，请参考 :ref:`hmac_for_enabling_jtag`。
+    请注意，一旦 JTAG 被永久禁用，就无法重新启用以访问 JTAG。但是我们也提供了暂时禁用 (soft disable) JTAG 的选项。有关如何暂时禁用以及重新启用 JTAG，请参考 :ref:`HMAC 启用 JTAG 接口 <hmac_for_enabling_jtag>`。
 
 Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全启动或者 flash 加密，仍会保留 JTAG 的功能。
 
