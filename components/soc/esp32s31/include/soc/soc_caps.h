@@ -467,6 +467,9 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 
+/*-------------------------- PSRAM Encryption CAPS----------------------------*/
+#define SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE  1  /* PSRAM encryption can be configured on a MMU page basis */
+
 /*------------------------Bootloader CAPS---------------------------------*/
 /* Support Recovery Bootloader */
 #define SOC_RECOVERY_BOOTLOADER_SUPPORTED             (1)

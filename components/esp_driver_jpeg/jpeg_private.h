@@ -31,6 +31,18 @@ extern "C" {
 // JPEG encoder and decoder shares same interrupt ID.
 #define JPEG_INTR_ALLOC_FLAG              (ESP_INTR_FLAG_SHARED)
 
+// Buffers fed to the 2D-DMA must be at least 16-byte aligned.
+#define JPEG_DMA2D_BUFFER_ALIGN           16
+
+// The JPEG codec cannot work with encrypted buffer, because it deals with macro block. When an
+// unencrypted PSRAM region is reserved (CONFIG_SPIRAM_ENC_EXEMPT), codec buffers
+// must come from it; otherwise use normal PSRAM.
+#if CONFIG_SPIRAM_ENC_EXEMPT
+#define JPEG_SPIRAM_ALLOC_CAPS            (MALLOC_CAP_SPIRAM_NO_ENC)
+#else
+#define JPEG_SPIRAM_ALLOC_CAPS            (MALLOC_CAP_SPIRAM)
+#endif
+
 // Use retention link only when the target supports sleep retention and PM is enabled
 #define JPEG_USE_RETENTION_LINK  (CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
@@ -249,6 +261,18 @@ esp_err_t jpeg_isr_deregister(jpeg_codec_handle_t jpeg_codec, jpeg_isr_handler_t
  * @return esp_err_t Returns ESP_OK if the interrupt priority meets the requirements, or an error code on failure
  */
 esp_err_t jpeg_check_intr_priority(jpeg_codec_handle_t jpeg_codec, int intr_priority);
+
+/**
+ * @brief Validate a user buffer that will be accessed by the 2D-DMA
+ *
+ * The buffer must be 16-byte aligned. When CONFIG_SPIRAM_ENC_EXEMPT is enabled,
+ * a PSRAM buffer must reside in the unencrypted carve-out, since the 2D-DMA
+ * cannot access encrypted PSRAM. Internal RAM buffers are always accepted.
+ *
+ * @param buffer Buffer pointer provided by the user
+ * @return true if the buffer can be used by the 2D-DMA, false otherwise
+ */
+bool jpeg_check_dma2d_buffer(const void *buffer);
 
 /**
  * @brief Create sleep retention link

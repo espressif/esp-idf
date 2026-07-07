@@ -111,12 +111,9 @@ def assert_jpeg_matches_golden(result_bytes: bytes, golden_path: Path) -> None:
     )
 
 
-@pytest.mark.generic
-@idf_parametrize('target', soc_filtered_targets('SOC_JPEG_ENCODE_SUPPORTED == 1'), indirect=['target'])
-def test_jpeg_encode_example(dut: Dut) -> None:
+def run_jpeg_encode_example(dut: Dut) -> None:
     dut.expect_exact('Loading embedded BGR24 image from flash...')
     dut.expect(r'Embedded raw image size: \d+ bytes')
-    dut.expect_exact('JPEG encoder will read the embedded raw buffer directly from flash.')
     dut.expect_exact('Encoding BGR24(raw) -> JPEG...')
     dut.expect(r'Encoded JPEG size: \d+ bytes')
 
@@ -132,3 +129,26 @@ def test_jpeg_encode_example(dut: Dut) -> None:
     assert_jpeg_matches_golden(jpeg_bytes, GOLDEN_IMAGE_PATH)
 
     dut.expect_exact('JPEG encode demo done.')
+
+
+@pytest.mark.generic
+@idf_parametrize('target', soc_filtered_targets('SOC_JPEG_ENCODE_SUPPORTED == 1'), indirect=['target'])
+def test_jpeg_encode_example(dut: Dut) -> None:
+    run_jpeg_encode_example(dut)
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'flash_enc',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_JPEG_ENCODE_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1'),
+    indirect=['target'],
+)
+def test_jpeg_encode_example_with_flash_encryption(dut: Dut) -> None:
+    run_jpeg_encode_example(dut)

@@ -8,6 +8,8 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/jpeg_decode.h"
@@ -55,6 +57,7 @@ void app_main(void)
     const size_t embedded_size = example_jpeg_end - example_jpeg_start;
     jpeg_decoder_handle_t jpeg_handle = NULL;
     uint8_t *decoded_pixels = NULL;
+    uint8_t *input_buf = NULL;
     unsigned char *encoded = NULL;
 
     printf("Loading embedded JPEG from flash...\n");
@@ -97,12 +100,25 @@ void app_main(void)
         .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
+    /* jpeg don't handle the encrypted data.*/
+    const uint8_t *bit_stream = example_jpeg_start;
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+    size_t input_buffer_size = 0;
+    jpeg_decode_memory_alloc_cfg_t in_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+    };
+    input_buf = (uint8_t *)jpeg_alloc_decoder_mem(embedded_size, &in_mem_cfg, &input_buffer_size);
+    assert(input_buf != NULL);
+    memcpy(input_buf, example_jpeg_start, embedded_size);
+    bit_stream = input_buf;
+#endif
+
     uint32_t decoded_size = 0;
     printf("Decoding JPEG -> RGB888...\n");
     ESP_ERROR_CHECK(jpeg_decoder_process(
                         jpeg_handle,
                         &decode_cfg,
-                        example_jpeg_start, // jpeg decoder can read directly from flash, no need to copy to RAM first
+                        bit_stream,
                         embedded_size,
                         decoded_pixels,
                         decoded_buffer_size,
@@ -134,4 +150,5 @@ void app_main(void)
     ESP_ERROR_CHECK(jpeg_del_decoder_engine(jpeg_handle));
     free(encoded);
     free(decoded_pixels);
+    free(input_buf);
 }

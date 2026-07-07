@@ -25,6 +25,7 @@ JPEG 常用于数字图像，尤其是数码摄影图像的有损压缩。压缩
 - :ref:`jpeg-pixel-storage-layout`，涵盖了 JPEG 解码器和编码器所需的颜色空间顺序。
 - :ref:`jpeg-thread-safety`，列出了驱动程序能保证线程安全的 API。
 - :ref:`jpeg-power-management`，描述了影响 JPEG 驱动程序功耗的因素。
+- :ref:`jpeg-flash-encryption`，介绍了在 flash/PSRAM 加密场景下如何正确使用 JPEG 编解码器。
 - :ref:`jpeg-kconfig-options`，列出了支持的 Kconfig 选项，可以为驱动程序带来不同的效果。
 
 .. _jpeg-resource-allocation:
@@ -567,6 +568,24 @@ YUV420
 当启用电源管理（即设置了 :ref:`CONFIG_PM_ENABLE`）时，系统需要调整或停止 JPEG 的源时钟以进入 Light-sleep 模式，这可能会改变 JPEG 解码器/编码器的处理过程，也可能会导致硬件计算出现意外。为防止以上问题出现，当 JPEG 编码器/解码器工作时，无法进入 Light-sleep 模式。
 
 每当用户通过 JPEG 进行解码或编码（即调用 :cpp:func:`jpeg_encoder_process` 或 :cpp:func:`jpeg_decoder_process`）时，驱动程序会将电源管理设定为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_CPU_FREQ_MAX`，确保获取电源管理锁。一旦编码或解码完成，驱动程序将释放锁，则系统可以进入 Light-sleep 模式。
+
+.. _jpeg-flash-encryption:
+
+加密场景下的使用
+^^^^^^^^^^^^^^^^
+
+JPEG 编解码器通过 2D-DMA 搬运数据，而 JPEG 编解码器 **无法处理已加密的数据**。因此在开启 PSRAM 加密时，需要让 JPEG 的输入/输出缓冲区位于非加密的内存区域，否则编解码会失败。
+
+为支持加密场景，驱动程序做了如下处理：
+
+- 当启用 ``CONFIG_SPIRAM_ENC_EXEMPT`` 时， :cpp:func:`jpeg_alloc_decoder_mem` 和 :cpp:func:`jpeg_alloc_encoder_mem` 会自动从非加密 PSRAM 区域（``MALLOC_CAP_SPIRAM_NO_ENC``）分配缓冲区。
+- 分配的缓冲区会同时满足 cache 行对齐与 2D-DMA 的字节对齐要求。
+
+使用时请注意：
+
+1. 建议始终通过 :cpp:func:`jpeg_alloc_encoder_mem` / :cpp:func:`jpeg_alloc_decoder_mem` 分配缓冲区，以保证对齐与内存区域正确。
+
+2. 非加密区的大小由 ``CONFIG_SPIRAM_ENC_EXEMPT_SIZE`` 决定。由于 JPEG 缓冲区大小取决于图像分辨率，无法自动预测，需根据实际处理的最大图像自行配置。若该区域不足，分配会失败并打印错误日志，提示增大 ``CONFIG_SPIRAM_ENC_EXEMPT_SIZE``；同时注意该值不能大于等于实际 PSRAM 容量，否则非加密区会被禁用。
 
 .. _jpeg-kconfig-options:
 

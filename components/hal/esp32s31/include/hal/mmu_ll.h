@@ -587,6 +587,24 @@ static inline uint32_t mmu_ll_entry_id_to_vaddr_base(uint32_t mmu_id, uint32_t e
     return mmu_ll_laddr_to_vaddr(laddr, type, (mmu_id == MMU_LL_FLASH_MMU_ID) ? MMU_TARGET_FLASH0 : MMU_TARGET_PSRAM0);
 }
 
+/**
+ * Write a PSRAM MMU entry without the SENSITIVE bit, used only for the
+ * carved-out unencrypted region (see CONFIG_SPIRAM_ENC_EXEMPT).
+ *
+ * No anti-FI check: the SENSITIVE bit is intentionally clear, and an FI flip
+ * that sets it would force decryption of plaintext data (garbage, fails safe).
+ */
+__attribute__((always_inline)) static inline void mmu_ll_write_entry_no_enc(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val)
+{
+    HAL_ASSERT(mmu_id == MMU_LL_PSRAM_MMU_ID);
+
+    mmu_val |= SOC_MMU_PSRAM_VALID;
+    mmu_val |= SOC_MMU_ACCESS_PSRAM;
+
+    REG_WRITE(SPI_MEM_S_MMU_ITEM_INDEX_REG, entry_id);
+    REG_WRITE(SPI_MEM_S_MMU_ITEM_CONTENT_REG, mmu_val);
+}
+
 #ifdef __cplusplus
 }
 #endif
