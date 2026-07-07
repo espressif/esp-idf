@@ -443,6 +443,17 @@ void SMP_OobDataReply(BD_ADDR bd_addr, tSMP_STATUS res, UINT8 len, UINT8 *p_data
         return;
     }
 
+    /* Reject an OOB reply that does not match the device currently pairing. */
+    if (memcmp(bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) != 0) {
+        SMP_TRACE_ERROR("%s() - Wrong BD Addr", __func__);
+        return;
+    }
+
+    if (btm_find_dev(bd_addr) == NULL) {
+        SMP_TRACE_ERROR("%s() - no dev CB", __func__);
+        return;
+    }
+
     if (res != SMP_SUCCESS || len == 0 || !p_data) {
         SMP_TRACE_ERROR("%s pairing failed, res=0x%x len=%u p_data=%p",
             __func__, res, len, p_data);
