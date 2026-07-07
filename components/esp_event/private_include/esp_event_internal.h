@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,12 @@ typedef struct esp_event_loop_node {
 
 typedef SLIST_HEAD(esp_event_loop_nodes, esp_event_loop_node) esp_event_loop_nodes_t;
 
+typedef struct esp_event_loop_state {
+    portMUX_TYPE lock;                  /**< spinlock protecting deleting and posts_in_flight */
+    atomic_bool deleting;               /**< true when loop deletion has started; read lock-free from ISR */
+    uint32_t posts_in_flight;           /**< task-context posts that passed the post-entry gate */
+} esp_event_loop_state_t;
+
 /// Event loop
 typedef struct esp_event_loop_instance {
     const char* name;                                               /**< name of this event loop */
@@ -76,6 +82,7 @@ typedef struct esp_event_loop_instance {
     SemaphoreHandle_t mutex;                                        /**< mutex for updating the events linked list */
     esp_event_loop_nodes_t loop_nodes;                              /**< set of linked lists containing the
                                                                             registered handlers for the loop */
+    esp_event_loop_state_t state;                                   /**< loop deletion and post-entry state */
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     atomic_uint_least32_t events_received;                          /**< number of events successfully posted to the loop */
     atomic_uint_least32_t events_dropped;                           /**< number of events dropped due to queue being full */

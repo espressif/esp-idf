@@ -548,6 +548,15 @@ static esp_err_t find_and_unregister_handler(esp_event_remove_handler_context_t*
     return esp_event_post_to(ctx->loop, esp_event_handler_cleanup, 0, ctx, sizeof(esp_event_remove_handler_context_t), portMAX_DELAY);
 }
 
+static bool event_loop_has_posts_in_flight(esp_event_loop_instance_t* loop)
+{
+    portENTER_CRITICAL(&loop->state.lock);
+    bool posts_in_flight = loop->state.posts_in_flight > 0;
+    portEXIT_CRITICAL(&loop->state.lock);
+
+    return posts_in_flight;
+}
+
 /* ---------------------------- Public API --------------------------------- */
 
 esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, esp_event_loop_handle_t* event_loop)
@@ -586,6 +595,10 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
         ESP_LOGE(TAG, "create event loop mutex failed");
         goto on_err;
     }
+
+    loop->state.lock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    atomic_init(&loop->state.deleting, false);
+    loop->state.posts_in_flight = 0;
 
     SLIST_INIT(&(loop->loop_nodes));
 
@@ -779,7 +792,15 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
     SemaphoreHandle_t loop_mutex = loop->mutex;
 
-    xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(loop_mutex, portMAX_DELAY);
+
+    atomic_store(&loop->state.deleting, true);
+    while (event_loop_has_posts_in_flight(loop)) {
+        xSemaphoreGiveRecursive(loop_mutex);
+        // Wait for the posts in flight to finish
+        vTaskDelay(1);
+        xSemaphoreTakeRecursive(loop_mutex, portMAX_DELAY);
+    }
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     portENTER_CRITICAL(&s_event_loops_spinlock);
@@ -979,15 +1000,25 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
+    portENTER_CRITICAL(&loop->state.lock);
+    if (atomic_load(&loop->state.deleting)) {
+        portEXIT_CRITICAL(&loop->state.lock);
+        return ESP_ERR_INVALID_STATE;
+    }
+    loop->state.posts_in_flight++;
+    portEXIT_CRITICAL(&loop->state.lock);
+
     esp_event_post_instance_t post;
     memset((void*)(&post), 0, sizeof(post));
+    esp_err_t err = ESP_OK;
 
     if (event_data != NULL && event_data_size != 0) {
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
         if (event_data_size > sizeof(post.data.val)) {
             post.data.ptr = calloc(1, event_data_size);
             if (post.data.ptr == NULL) {
-                return ESP_ERR_NO_MEM;
+                err = ESP_ERR_NO_MEM;
+                goto on_err;
             }
             post.data_allocated = true;
             memcpy(post.data.ptr, event_data, event_data_size);
@@ -1000,7 +1031,8 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
         void* event_data_copy = esp_event_calloc(1, event_data_size);
 
         if (event_data_copy == NULL) {
-            return ESP_ERR_NO_MEM;
+            err = ESP_ERR_NO_MEM;
+            goto on_err;
         }
 
         memcpy(event_data_copy, event_data, event_data_size);
@@ -1042,14 +1074,20 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
         atomic_fetch_add(&loop->events_dropped, 1);
 #endif
-        return ESP_ERR_TIMEOUT;
+        err = ESP_ERR_TIMEOUT;
+        goto on_err;
     }
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     atomic_fetch_add(&loop->events_received, 1);
 #endif
 
-    return ESP_OK;
+on_err:
+    portENTER_CRITICAL(&loop->state.lock);
+    loop->state.posts_in_flight--;
+    portEXIT_CRITICAL(&loop->state.lock);
+
+    return err;
 }
 
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
@@ -1063,6 +1101,10 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_ba
     }
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
+
+    if (atomic_load(&loop->state.deleting)) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     esp_event_post_instance_t post;
     memset((void*)(&post), 0, sizeof(post));
