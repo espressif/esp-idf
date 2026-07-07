@@ -3490,7 +3490,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		fs->volbase = bsect;
 		fs->database = bsect + ld_dword(fs->win + BPB_DataOfsEx);
 		fs->fatbase = bsect + ld_dword(fs->win + BPB_FatOfsEx);
-		if (maxlba < (QWORD)fs->database + (QWORD)nclst * fs->csize) return FR_NO_FILESYSTEM;	/* CVE-2026-6682: promote to 64-bit before multiply to avoid integer overflow that would accept an undersized volume */
+		if (maxlba < (QWORD)fs->database + (QWORD)nclst * fs->csize) return FR_NO_FILESYSTEM;	/* exFAT mount hardening (defense-in-depth): promote to 64-bit before multiply to avoid integer overflow that would accept an undersized volume */
 		fs->dirbase = ld_dword(fs->win + BPB_RootClusEx);
 
 		/* Get bitmap location and check if it is contiguous (implementation assumption) */
@@ -3506,7 +3506,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		}
 		bcl = ld_dword(fs->win + i + 20);				/* Bitmap cluster */
 		if (bcl < 2 || bcl >= fs->n_fatent) return FR_NO_FILESYSTEM;	/* (Wrong cluster#) */
-		fs->bitbase = fs->database + (LBA_t)fs->csize * (bcl - 2);	/* Bitmap sector (CVE-2026-6682: 64-bit multiply to avoid overflow) */
+		fs->bitbase = fs->database + (LBA_t)fs->csize * (bcl - 2);	/* Bitmap sector (exFAT mount hardening: 64-bit multiply to avoid overflow) */
 		for (;;) {	/* Check if bitmap is contiguous */
 			if (move_window(fs, fs->fatbase + bcl / (SS(fs) / 4)) != FR_OK) return FR_DISK_ERR;
 			cv = ld_dword(fs->win + bcl % (SS(fs) / 4) * 4);
@@ -3529,6 +3529,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		fs->n_fats = fs->win[BPB_NumFATs];				/* Number of FATs */
 		if (fs->n_fats != 1 && fs->n_fats != 2) return FR_NO_FILESYSTEM;	/* (Must be 1 or 2) */
+		if (fs->n_fats == 2 && fasize > 0xFFFFFFFF / 2) return FR_NO_FILESYSTEM;	/* CVE-2026-6682: reject a per-FAT size that overflows DWORD when multiplied by the FAT count; a wrapped (too-small) fasize would move the data area into the FAT region and let a crafted image forge a directory entry with an attacker-controlled file size */
 		fasize *= fs->n_fats;							/* Number of sectors for FAT area */
 
 		fs->csize = fs->win[BPB_SecPerClus];			/* Cluster size */
@@ -3545,6 +3546,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 		/* Determine the FAT sub type */
 		sysect = nrsv + fasize + fs->n_rootdir / (SS(fs) / SZDIRE);	/* RSV + FAT + FF_DIR */
+		if (sysect < fasize) return FR_NO_FILESYSTEM;	/* CVE-2026-6682: reject reserved+FAT+root system-area size that overflows DWORD (same data-area displacement as the FAT-count overflow above) */
 		if (tsect < sysect) return FR_NO_FILESYSTEM;	/* (Invalid volume size) */
 		nclst = (tsect - sysect) / fs->csize;			/* Number of clusters */
 		if (nclst == 0) return FR_NO_FILESYSTEM;		/* (Invalid volume size) */
