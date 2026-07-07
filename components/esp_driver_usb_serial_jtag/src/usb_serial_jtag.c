@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,8 @@
 // The hardware buffer max size is 64, both for RX and TX.
 #define USB_SER_JTAG_ENDP_SIZE          (64)
 #define USB_SER_JTAG_RX_MAX_SIZE        (USB_SER_JTAG_ENDP_SIZE)
+
+#define USB_SER_JTAG_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
 typedef struct {
     intr_handle_t intr_handle;          /*!< USB-SERIAL-JTAG interrupt handler */
@@ -160,6 +162,10 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->rx_buffer_size > 0), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "RX buffer is not prepared");
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->rx_buffer_size > USB_SER_JTAG_RX_MAX_SIZE), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "RX buffer prepared is so small, should larger than 64");
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->tx_buffer_size > 0), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "TX buffer is not prepared");
+    if (usb_serial_jtag_config->intr_priority) {
+        ESP_RETURN_ON_FALSE((usb_serial_jtag_config->intr_priority > 0) && ((1 << usb_serial_jtag_config->intr_priority) & USB_SER_JTAG_ALLOW_INTR_PRIORITY_MASK),
+                            ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "invalid interrupt priority:%d", usb_serial_jtag_config->intr_priority);
+    }
     p_usb_serial_jtag_obj = (usb_serial_jtag_obj_t*) heap_caps_calloc(1, sizeof(usb_serial_jtag_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (p_usb_serial_jtag_obj == NULL) {
         ESP_LOGE(USB_SERIAL_JTAG_TAG, "memory allocate error");
@@ -222,7 +228,12 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     //Assume tx is idle; if any we have nothing in the ringbuffer so this is probably true.
     xSemaphoreGive(p_usb_serial_jtag_obj->tx_idle_sem);
 
-    err = esp_intr_alloc(ETS_USB_SERIAL_JTAG_INTR_SOURCE, 0, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
+    int isr_flags = 0;
+    if (usb_serial_jtag_config->intr_priority) {
+        isr_flags |= 1 << (usb_serial_jtag_config->intr_priority);
+    }
+
+    err = esp_intr_alloc(ETS_USB_SERIAL_JTAG_INTR_SOURCE, isr_flags, usb_serial_jtag_isr_handler_default, NULL, &p_usb_serial_jtag_obj->intr_handle);
     if (err != ESP_OK) {
         goto _exit;
     }

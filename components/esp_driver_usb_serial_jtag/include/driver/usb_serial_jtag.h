@@ -20,11 +20,13 @@ extern "C" {
 typedef struct {
     uint32_t tx_buffer_size;                    /* Size of the buffer (in bytes) for the TX direction */
     uint32_t rx_buffer_size;                    /* Size of the buffer (in bytes) for the RX direction */
+    int intr_priority;                          /*!< USB-Serial-JTAG interrupt priority, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } usb_serial_jtag_driver_config_t;
 
 #define USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT() (usb_serial_jtag_driver_config_t) {\
     .tx_buffer_size = 256,\
     .rx_buffer_size = 256,\
+    .intr_priority = 0,\
 }
 
 /**
