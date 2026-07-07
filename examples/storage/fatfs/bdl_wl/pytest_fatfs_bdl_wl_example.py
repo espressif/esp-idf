@@ -8,6 +8,11 @@ from pytest_embedded_idf.utils import idf_parametrize
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_fatfs_bdl_wl(dut: Dut) -> None:
+    # CI boards reuse the 'storage' FAT partition across tests; stale WL/FAT
+    # metadata can mount but fail on the first write. So first erase the partition
+    dut.serial.erase_partition('storage')
+    dut.serial.hard_reset()
+
     dut.expect('example: Mounting FAT filesystem via BDL', timeout=90)
     dut.expect('example: Filesystem mounted', timeout=90)
     dut.expect('example: Opening file', timeout=90)
