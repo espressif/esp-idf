@@ -16,7 +16,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='no runner')
 def test_dsi_lcd(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -34,7 +33,6 @@ def test_dsi_lcd(dut: Dut) -> None:
     soc_filtered_targets('SOC_MIPI_DSI_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='no runner')
 def test_dsi_lcd_with_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
@@ -49,6 +47,5 @@ def test_dsi_lcd_with_flash_encryption(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='no runner')
 def test_dsi_lcd_esp32p4_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases()

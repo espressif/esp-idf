@@ -83,7 +83,8 @@ static esp_err_t panel_io_dbi_rx_param(esp_lcd_panel_io_t *io, int lcd_cmd, void
     esp_lcd_dsi_bus_handle_t bus = dbi_io->bus;
     mipi_dsi_hal_context_t *hal = &bus->hal;
 
-    mipi_dsi_hal_host_gen_read_dcs_command(hal, dbi_io->virtual_channel, lcd_cmd, dbi_io->lcd_cmd_bits / 8, param, param_size);
+    ESP_RETURN_ON_FALSE(mipi_dsi_hal_host_gen_read_dcs_command(hal, dbi_io->virtual_channel, lcd_cmd, dbi_io->lcd_cmd_bits / 8, param, param_size),
+                        ESP_ERR_TIMEOUT, TAG, "DSI read command timeout");
 
     return ESP_OK;
 }
