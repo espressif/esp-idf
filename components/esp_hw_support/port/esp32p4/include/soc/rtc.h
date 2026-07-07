@@ -71,13 +71,13 @@ extern "C" {
 #if CONFIG_ESP_ENABLE_PVT
 #define PVT_CHANNEL0_SEL    49
 #define PVT_CHANNEL1_SEL    53
-#define PVT_CHANNEL0_CFG    0x13e80
-#define PVT_CHANNEL1_CFG    0x13e80
+#define PVT_CHANNEL0_CFG    0x11fff
+#define PVT_CHANNEL1_CFG    0x17fff
 #define PVT_CHANNEL2_CFG    0x10000
 #define PVT_CMD0            0x24
 #define PVT_CMD1            0x5
 #define PVT_CMD2            0x427
-#define PVT_TARGET          0x7d00
+#define PVT_TARGET          0xffff
 #define PVT_CLK_DIV         1
 #define PVT_EDG_MODE        1
 #if CONFIG_ESP32P4_SELECTS_REV_LESS_V3

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,11 +79,13 @@ void pvt_auto_dbias_init(void)
 {
     uint32_t blk_version = efuse_hal_blk_version();
     if (blk_version >= 2 && blk_version != 100) {
+        REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_PVT_PERI_GROUP4); // Must reset after pd_cpu
+        REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_PVT_PERI_GROUP4);
         SET_PERI_REG_MASK(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
         SET_PERI_REG_MASK(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_PVT_SYS_CLK_EN);
         /*config for dbias func*/
         CLEAR_PERI_REG_MASK(PVT_DBIAS_TIMER_REG, PVT_TIMER_EN);
-        esp_rom_delay_us(100);
+        esp_rom_delay_us(1);
         SET_PERI_REG_BITS(PVT_DBIAS_CHANNEL_SEL0_REG, PVT_DBIAS_CHANNEL0_SEL, PVT_CHANNEL0_SEL, PVT_DBIAS_CHANNEL0_SEL_S);
         SET_PERI_REG_BITS(PVT_DBIAS_CHANNEL_SEL0_REG, PVT_DBIAS_CHANNEL1_SEL, PVT_CHANNEL1_SEL, PVT_DBIAS_CHANNEL1_SEL_S);  // Select monitor cell, which used to monitor PVT situation
         SET_PERI_REG_BITS(PVT_DBIAS_CHANNEL0_SEL_REG, PVT_DBIAS_CHANNEL0_CFG, PVT_CHANNEL0_CFG, PVT_DBIAS_CHANNEL0_CFG_S);
@@ -92,7 +94,6 @@ void pvt_auto_dbias_init(void)
         SET_PERI_REG_BITS(PVT_DBIAS_CMD0_REG, PVT_DBIAS_CMD0_PVT, PVT_CMD0, PVT_DBIAS_CMD0_PVT_S);
         SET_PERI_REG_BITS(PVT_DBIAS_CMD1_REG, PVT_DBIAS_CMD1_PVT, PVT_CMD1, PVT_DBIAS_CMD1_PVT_S);
         SET_PERI_REG_BITS(PVT_DBIAS_CMD2_REG, PVT_DBIAS_CMD2_PVT, PVT_CMD2, PVT_DBIAS_CMD2_PVT_S);                          // Configure auto-dbias adjust property, such as adjusting step
-        SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                                             // Start calibration @HP_CALI_DBIAS_DEFAULT
         SET_PERI_REG_BITS(PVT_DBIAS_TIMER_REG, PVT_TIMER_TARGET, PVT_TARGET, PVT_TIMER_TARGET_S);                           // Configure auto-dbias voltage regulation cycle
 
         SET_PERI_REG_BITS(HP_SYS_CLKRST_PERI_CLK_CTRL24_REG, HP_SYS_CLKRST_REG_PVT_CLK_DIV_NUM, PVT_CLK_DIV, HP_SYS_CLKRST_REG_PVT_CLK_DIV_NUM_S);                       // PVT function clock divider number
@@ -104,8 +105,6 @@ void pvt_auto_dbias_init(void)
         SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_PVT_PERI_GROUP4_CLK_EN);
 
         /*config for pvt cell: unit0; site3; vt1*/
-        SET_PERI_REG_MASK(PVT_CLK_CFG_REG, PVT_MONITOR_CLK_PVT_EN); // Once enable cannot be closed
-        esp_rom_delay_us(100);
         SET_PERI_REG_BITS(PVT_COMB_PD_SITE3_UNIT0_VT1_CONF2_REG, PVT_MONITOR_EDG_MOD_VT1_PD_SITE3_UNIT0, PVT_EDG_MODE, PVT_MONITOR_EDG_MOD_VT1_PD_SITE3_UNIT0_S);  // Select edge_mode
         SET_PERI_REG_BITS(PVT_COMB_PD_SITE3_UNIT0_VT1_CONF1_REG, PVT_DELAY_LIMIT_VT1_PD_SITE3_UNIT0, PVT_DELAY_NUM_HIGH, PVT_DELAY_LIMIT_VT1_PD_SITE3_UNIT0_S);    // The threshold for determining whether the voltage is too high
         SET_PERI_REG_BITS(PVT_COMB_PD_SITE3_UNIT1_VT1_CONF1_REG, PVT_DELAY_LIMIT_VT1_PD_SITE3_UNIT1, PVT_DELAY_NUM_LOW, PVT_DELAY_LIMIT_VT1_PD_SITE3_UNIT1_S);     // The threshold for determining whether the voltage is too low
@@ -124,13 +123,7 @@ void pvt_func_enable(bool enable)
     if (blk_version >= 2 && blk_version != 100){
 
         if (enable) {
-            SET_PERI_REG_MASK(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
-            SET_PERI_REG_MASK(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_PVT_SYS_CLK_EN);
             SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL24_REG, HP_SYS_CLKRST_REG_PVT_CLK_EN);
-            SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_PVT_PERI_GROUP1_CLK_EN);
-            SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_PVT_PERI_GROUP2_CLK_EN);
-            SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_PVT_PERI_GROUP3_CLK_EN);
-            SET_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL25_REG, HP_SYS_CLKRST_REG_PVT_PERI_GROUP4_CLK_EN);
             SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                        // Start calibration @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_CLK_CFG_REG, PVT_MONITOR_CLK_PVT_EN);                                    // Once enable cannot be closed
             SET_PERI_REG_MASK(PVT_COMB_PD_SITE3_UNIT0_VT1_CONF1_REG, PVT_MONITOR_EN_VT1_PD_SITE3_UNIT0);   // Enable pvt clk
@@ -138,6 +131,7 @@ void pvt_func_enable(bool enable)
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL);            // Hand over control of dbias to pvt
             CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_DBIAS_INIT);                      // Must clear @HP_CALI_DBIAS_DEFAULT
             SET_PERI_REG_MASK(PVT_DBIAS_TIMER_REG, PVT_TIMER_EN);                                          // Enable auto dbias
+            esp_rom_delay_us(50);
         } else {
             uint32_t pvt_dcmvset = pvt_get_dcmvset();
             uint32_t pvt_lpdbias = pvt_get_lp_dbias();                                                    // Update pvt_cali_dbias
