@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -814,6 +814,17 @@ esp_err_t esp_wifi_disconnect_internal(void);
  * @brief This API is not context safe and enable easy fragment just for internal test only.
  */
 void esp_wifi_enable_easy_fragment(bool enable);
+
+/**
+ * @brief Weak Wi-Fi assert hook.
+ *
+ * The Wi-Fi library provides a weak default implementation. Applications may
+ * define this symbol to override the default behavior for debugging.
+ *
+ * @note This is intended for diagnostics only and is not part of normal Wi-Fi
+ * operation.
+ */
+void wifi_assert(bool expr, const char *file, const char *func, int line);
 
 #ifdef __cplusplus
 }
