@@ -84,6 +84,7 @@ typedef struct {
     uint32_t      host_id;                          ///< Host ID of the spi peripheral
     bool          dma_enabled;                      ///< DMA enabled or not
     bool          append_mode;                      ///< True for DMA append mode, false for segment mode
+    bool          three_wire_mode;                  ///< True for 3-wire mode, false for 4-wire mode
     uint32_t      spics_io_num;                     ///< CS GPIO pin for this device
     uint8_t       mode;                             ///< SPI mode (0-3)
     uint32_t      command_bits;                     ///< command field bits, multiples of 8 and at least 8.
