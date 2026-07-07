@@ -105,7 +105,7 @@ static inline void analog_cmpr_ll_set_clk_src(int unit_id, ana_cmpr_clk_src_t cl
     case ANA_CMPR_CLK_SRC_RC_FAST:
         HP_SYS_CLKRST.zero_det_ctrl0.reg_zero_det_clk_src_sel = 1;
         break;
-    case ANA_CMPR_CLK_SRC_PLL_F80M:
+    case ANA_CMPR_CLK_SRC_REF_F80M:
         HP_SYS_CLKRST.zero_det_ctrl0.reg_zero_det_clk_src_sel = 2;
         break;
     default:
