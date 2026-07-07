@@ -17,6 +17,7 @@
 extern "C" {
 #include "Mocktask.h"
 #include "Mockqueue.h"
+#include "Mockportmacro.h"
 }
 
 namespace {
@@ -102,6 +103,8 @@ TEST_CASE("test esp_event_loop_create no_task(void)")
     xQueueTakeMutexRecursive_IgnoreAndReturn(0);
     xQueueGiveMutexRecursive_IgnoreAndReturn(0);
     xQueueReceive_IgnoreAndReturn(0);
+    vPortEnterCritical_Ignore();
+    vPortExitCritical_Ignore();
     esp_event_loop_handle_t loop = nullptr;
 
     esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
@@ -115,6 +118,8 @@ TEST_CASE("test esp_event_loop_create no_task(void)")
     xQueueReceive_StopIgnore();
     xQueueTakeMutexRecursive_StopIgnore();
     xQueueGiveMutexRecursive_StopIgnore();
+    vPortEnterCritical_StopIgnore();
+    vPortExitCritical_StopIgnore();
 }
 
 TEST_CASE("test esp_event_loop_create with_task(void)")
@@ -125,6 +130,8 @@ TEST_CASE("test esp_event_loop_create with_task(void)")
     xQueueTakeMutexRecursive_IgnoreAndReturn(0);
     xQueueGiveMutexRecursive_IgnoreAndReturn(0);
     xQueueReceive_IgnoreAndReturn(0);
+    vPortEnterCritical_Ignore();
+    vPortExitCritical_Ignore();
     esp_event_loop_handle_t loop = nullptr;
 
     esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
@@ -138,6 +145,8 @@ TEST_CASE("test esp_event_loop_create with_task(void)")
     xQueueReceive_StopIgnore();
     xQueueTakeMutexRecursive_StopIgnore();
     xQueueGiveMutexRecursive_StopIgnore();
+    vPortEnterCritical_StopIgnore();
+    vPortExitCritical_StopIgnore();
 }
 
 TEST_CASE("registering with ANY_BASE but specific ID fails")
