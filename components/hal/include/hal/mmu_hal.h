@@ -148,6 +148,18 @@ bool mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target
  */
 bool mmu_hal_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len, mmu_vaddr_t type);
 
+/**
+ * Check if the paddr region is valid
+ *
+ * @param mmu_id      MMU ID
+ * @param paddr_start start of the physical address
+ * @param len         length, in bytes
+ *
+ * @return
+ *         True for valid
+ */
+bool mmu_hal_check_valid_paddr_region(uint32_t mmu_id, uint32_t paddr_start, uint32_t len);
+
 #if SOC_MMU_PER_EXT_MEM_TARGET
 /**
  * Get MMU ID from MMU target
