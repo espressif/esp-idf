@@ -764,6 +764,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
             remaining_ticks -= end - marker;
             // If the ticks to run expired, return to the caller
             if (remaining_ticks <= 0) {
+                loop->running_task = NULL;
                 xSemaphoreGiveRecursive(loop->mutex);
                 break;
             } else {
