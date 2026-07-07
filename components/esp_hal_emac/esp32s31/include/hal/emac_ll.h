@@ -1086,7 +1086,7 @@ static inline void emac_ll_clock_enable_ptp(void *ext_regs, soc_periph_emac_ptp_
     case EMAC_PTP_CLK_SRC_XTAL:
         clk_src_val = 0;
         break;
-    case EMAC_PTP_CLK_SRC_PLL_F80M:
+    case EMAC_PTP_CLK_SRC_REF_F80M:
         clk_src_val = 1;
         break;
     default:

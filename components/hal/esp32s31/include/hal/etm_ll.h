@@ -74,7 +74,7 @@ static inline void etm_ll_set_clock_source(int group_id, etm_clock_source_t clk_
     case ETM_CLK_SRC_RC_FAST:
         HP_SYS_CLKRST.etm_ctrl0.reg_soc_etm_clk_sel = 1;
         break;
-    case ETM_CLK_SRC_PLL_F80M:
+    case ETM_CLK_SRC_REF_F80M:
         HP_SYS_CLKRST.etm_ctrl0.reg_soc_etm_clk_sel = 2;
         break;
     default:
