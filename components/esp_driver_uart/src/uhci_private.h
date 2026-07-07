@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_pm.h"
 #include "sdkconfig.h"
+#include "driver/uhci.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +46,9 @@ typedef struct uhci_controller_t uhci_controller_t;
 #endif
 
 typedef struct {
-    void *buffer;               // buffer for saving the received symbols
-    size_t buffer_size;         // size of the buffer, in bytes
+    size_t total_size;                      // sum of all buffer segment sizes in this transaction, in bytes
+    size_t buf_info_count;                  // number of valid entries in buf_info actually used by the current transaction
+    uhci_transmit_buffer_info_t buf_info[]; // flexible array member, storage for this transaction's buffer segments. Its capacity is tx_dir.max_buf_count.
 } uhci_transaction_desc_t;
 
 typedef enum {
@@ -81,6 +83,9 @@ typedef struct {
     size_t int_mem_align;                               // Alignment for internal memory
     size_t ext_mem_align;                               // Alignment for external memory
     atomic_int num_trans_inflight;                      // Indicates the number of transactions that are undergoing but not recycled to ready_queue
+    size_t max_transmit_size;                           // per-transaction max total size in bytes, from config->max_transmit_size; the DMA node pool is sized for this
+    size_t max_buf_count;                               // per-transaction max buffer segment count, from config->max_transmit_buffer_count (at least 1)
+    gdma_buffer_mount_config_t *mount_configs;          // scratch array (capacity max_buf_count) reused by every transmit to mount buffer segments; avoids a VLA in ISR context
 } uhci_tx_dir;
 
 typedef struct {

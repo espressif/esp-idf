@@ -260,6 +260,112 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
     vSemaphoreDelete(exit_sema);
 }
 
+static void uhci_fill_pattern(uint8_t *buf, size_t len, uint8_t start)
+{
+    for (size_t i = 0; i < len; i++) {
+        buf[i] = (uint8_t)(start + i);
+    }
+}
+
+TEST_CASE("UHCI single buffer and multi buffer transmit interleaved", "[uhci]")
+{
+    uart_config_t uart_config = {
+        .baud_rate = 2 * 1000 * 1000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_XTAL,
+    };
+    TEST_ESP_OK(uart_param_config(EX_UART_NUM, &uart_config));
+    // Connect TX and RX together for testing self send-receive
+    TEST_ESP_OK(uart_set_pin(EX_UART_NUM, UART_TX_IO, UART_TX_IO, -1, -1));
+
+    uhci_controller_config_t uhci_cfg = {
+        .uart_port = EX_UART_NUM,
+        .tx_trans_queue_depth = 30,
+        .max_receive_internal_mem = 10 * 1024,
+        .max_transmit_size = 10 * 1024,
+        .max_transmit_buffer_count = 3,
+        .dma_burst_size = 32,
+        .rx_eof_flags.idle_eof = 1,
+    };
+
+    uhci_controller_handle_t uhci_ctrl;
+    SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
+    TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
+
+    // 4 transactions in total: single buffer, multi buffer (3 segments), single buffer, multi buffer (2 segments)
+    int trans_count = 4;
+    void *args[] = { uhci_ctrl, exit_sema, &trans_count };
+    xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
+
+    uint8_t data_wr[DATA_LENGTH];
+    for (int i = 0; i < DATA_LENGTH; i++) {
+        data_wr[i] = i;
+    }
+
+    // 1) plain single buffer transmit
+    TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, DATA_LENGTH));
+    uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+    // Idle gap so RX side sees each transaction as a separate idle-eof event
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+
+    // 2) multi buffer transmit with 3 discontinuous segments
+    size_t seg_sizes_a[3] = {128, 64, 108};
+    uint8_t *segs_a[3];
+    uhci_transmit_buffer_info_t buf_info_a[3];
+    size_t offset = 0;
+    for (int i = 0; i < 3; i++) {
+        segs_a[i] = heap_caps_calloc(1, seg_sizes_a[i], MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        assert(segs_a[i]);
+        uhci_fill_pattern(segs_a[i], seg_sizes_a[i], (uint8_t)offset);
+        buf_info_a[i].write_buffer = segs_a[i];
+        buf_info_a[i].buffer_size = seg_sizes_a[i];
+        offset += seg_sizes_a[i];
+    }
+    TEST_ESP_OK(uhci_multi_buffer_transmit(uhci_ctrl, buf_info_a, 3));
+    uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+    for (int i = 0; i < 3; i++) {
+        free(segs_a[i]);
+    }
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+
+    // 3) plain single buffer transmit again
+    TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, 200));
+    uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+
+    // 4) multi buffer transmit with 2 discontinuous segments
+    size_t seg_sizes_b[2] = {256, 96};
+    uint8_t *segs_b[2];
+    uhci_transmit_buffer_info_t buf_info_b[2];
+    offset = 0;
+    for (int i = 0; i < 2; i++) {
+        segs_b[i] = heap_caps_calloc(1, seg_sizes_b[i], MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        assert(segs_b[i]);
+        uhci_fill_pattern(segs_b[i], seg_sizes_b[i], (uint8_t)offset);
+        buf_info_b[i].write_buffer = segs_b[i];
+        buf_info_b[i].buffer_size = seg_sizes_b[i];
+        offset += seg_sizes_b[i];
+    }
+    TEST_ESP_OK(uhci_multi_buffer_transmit(uhci_ctrl, buf_info_b, 2));
+    uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+    for (int i = 0; i < 2; i++) {
+        free(segs_b[i]);
+    }
+
+    // 5) exceeding max_transmit_buffer_count must be rejected with ESP_ERR_INVALID_ARG,
+    // without consuming a transaction descriptor or touching any buffer.
+    uhci_transmit_buffer_info_t buf_info_over[4] = {0};
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, uhci_multi_buffer_transmit(uhci_ctrl, buf_info_over, 4));
+
+    xSemaphoreTake(exit_sema, portMAX_DELAY);
+    vTaskDelay(2);
+    TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
+    vSemaphoreDelete(exit_sema);
+}
+
 #if CONFIG_SPIRAM
 #if GDMA_LL_GET(AHB_PSRAM_CAPABLE)
 static void uhci_receive_test_in_psram(void *arg)
