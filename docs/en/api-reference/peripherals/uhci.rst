@@ -53,7 +53,8 @@ If the configurations in :cpp:type:`uhci_controller_config_t` is specified, user
         .uart_port = EX_UART_NUM,                 // Connect uart port to UHCI hardware.
         .tx_trans_queue_depth = 30,               // Queue depth of transaction queue.
         .max_receive_internal_mem = 10 * 1024,    // internal memory usage, for more information, please refer to API reference.
-        .max_transmit_size = 10 * 1024,           // Maximum transfer size in one transaction, in bytes.
+        .max_transmit_size = 10 * 1024,           // Maximum transfer size in one transaction, in bytes (including all buffers).
+        .max_transmit_buffer_count = 1,           // Maximum number of buffers in one transmit transaction. 0 or 1 means only single-buffer transmit is used.
         .dma_burst_size = 32,                     // Burst size.
         .rx_eof_flags.idle_eof = 1,               // When to trigger a end of frame event, you can choose `idle_eof`, `rx_brk_eof`, `length_eof`, for more information, please refer to API reference.
     };
@@ -111,6 +112,30 @@ Data can be transmitted via UHCI as follows:
     ESP_ERROR_CHECK(uhci_transmit(uhci_ctrl, data_wr, DATA_LENGTH));
     // Wait all transaction finishes
     ESP_ERROR_CHECK(uhci_wait_all_tx_transaction_done(uhci_ctrl, -1));
+
+If the data to be sent is scattered across several separate buffers, you can send them as a single transaction without copying them into one contiguous buffer first, by using :cpp:func:`uhci_multi_buffer_transmit`. The buffer segments are described by an array of :cpp:type:`uhci_transmit_buffer_info_t` and are transmitted in the given order as one continuous UART stream (internally, the segments are assembled into one DMA link list and only the last segment is marked as the end of the transaction). To use this feature, :cpp:member:`uhci_controller_config_t::max_transmit_buffer_count` must be set to the maximum number of segments you intend to send in one call when creating the controller.
+
+The following constraints apply:
+
+- ``array_size`` must not exceed :cpp:member:`uhci_controller_config_t::max_transmit_buffer_count`.
+- The total size of all segments must not exceed :cpp:member:`uhci_controller_config_t::max_transmit_size`.
+- Every buffer segment must remain valid until the transmission is complete, same as :cpp:func:`uhci_transmit`.
+
+.. code:: c
+
+    uint8_t header[8];
+    uint8_t payload[DATA_LENGTH];
+    // ... fill header and payload ...
+    uhci_transmit_buffer_info_t buffer_info[] = {
+        { .write_buffer = header,  .buffer_size = sizeof(header) },
+        { .write_buffer = payload, .buffer_size = sizeof(payload) },
+    };
+    ESP_ERROR_CHECK(uhci_multi_buffer_transmit(uhci_ctrl, buffer_info, 2));
+    ESP_ERROR_CHECK(uhci_wait_all_tx_transaction_done(uhci_ctrl, -1));
+
+.. note::
+
+    When a transaction is submitted through :cpp:func:`uhci_multi_buffer_transmit` with more than one segment, :cpp:member:`uhci_tx_done_event_data_t::buffer` in the "trans-done" callback only points to the first segment and should be treated as an identifying handle for the transaction, not as the start of a ``sent_size``-byte contiguous region. :cpp:member:`uhci_tx_done_event_data_t::sent_size` is the sum of the sizes of all segments.
 
 Initiating UHCI Reception
 ^^^^^^^^^^^^^^^^^^^^^^^^^
