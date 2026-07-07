@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,9 @@ typedef struct ppa_blend_engine_t {
 
 typedef struct {
     ppa_engine_type_t engine;                     // Engine type
+    struct {
+        uint32_t allow_pd: 1;                     // If set, engine allows the power domain to be powered off when system enters sleep mode
+    } flags;                                      // Configuration flags
 } ppa_engine_config_t;
 
 /******************************** CLIENT *************************************/
@@ -237,6 +240,9 @@ struct ppa_platform_t {
     uint32_t blend_engine_ref_count;            // Reference count used to protect PPA blending engine acquire and release
     size_t buf_alignment_size;                  // Alignment requirement for the outgoing buffer addr and size to satisfy cache line size
     uint32_t dma_desc_mem_size;                 // Alignment requirement for the 2D-DMA descriptor to satisfy cache line size
+    struct {
+        uint32_t allow_pd: 1;                   // If set, driver allows the power domain to be powered off when system enters sleep mode
+    } flags;                                    // Configuration flags
 };
 
 #ifdef __cplusplus
