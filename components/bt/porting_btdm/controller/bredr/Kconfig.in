@@ -223,43 +223,65 @@ menu "TX Power Level settings"
     config BT_CTRL_BR_EDR_TX_PWR_ACL_MIN
         int "Default minimum TX power level for ACL"
         default -13
-        range -24 12
+        range -24 20
         help
             Minimum BR/EDR transmission power level for ACL.
+
+            The transmission power for an ACL connection link will be affected by the following factors:
+            It must fall within the range of [`BT_CTRL_BR_EDR_TX_PWR_ACL_MIN`, `BT_CTRL_BR_EDR_TX_PWR_ACL_MAX`]
+            The initial TX power level for an ACL link is inherited from
+            `BT_CTRL_BR_EDR_TX_PWR_PAGE` (for Central) and `BT_CTRL_BR_EDR_TX_PWR_PSCAN` (for Peripheral).
+            If the power is lower than BT_CTRL_BR_EDR_TX_PWR_ACL_MIN, BT_CTRL_BR_EDR_TX_PWR_ACL_MIN will be used.
+            It can be adjusted in response to LMP power control request PDUs from the peer device.
 
     config BT_CTRL_BR_EDR_TX_PWR_ACL_MAX
         int "Default maximum TX power level for ACL"
         default 4
-        range -24 12
+        range -24 20
         help
             Maximum BR/EDR transmission power level for ACL.
+
+            The transmission power for an ACL connection link will be affected by the following factors:
+            It must fall within the range of [`BT_CTRL_BR_EDR_TX_PWR_ACL_MIN`, `BT_CTRL_BR_EDR_TX_PWR_ACL_MAX`]
+            The initial TX power level for an ACL link is inherited from
+            `BT_CTRL_BR_EDR_TX_PWR_PAGE` (for Central) and `BT_CTRL_BR_EDR_TX_PWR_PSCAN` (for Peripheral).
+            If the power is higher than BT_CTRL_BR_EDR_TX_PWR_ACL_MAX, BT_CTRL_BR_EDR_TX_PWR_ACL_MAX will be used.
+            It can be adjusted in response to LMP power control request PDUs from the peer device.
 
     config BT_CTRL_BR_EDR_TX_PWR_APB
         int "Default TX power level for APB"
         depends on BT_CTRL_BR_EDR_APB_EN
         default 4
-        range -24 12
+        range -24 20
         help
             BR/EDR transmission power level for APB.
 
     config BT_CTRL_BR_EDR_TX_PWR_PAGE
         int "Default TX power level for Page"
         default 4
-        range -24 12
+        range -24 20
         help
             BR/EDR transmission power level for Page.
+            `BT_CTRL_BR_EDR_TX_PWR_PAGE` is recommended to fall within the ACL transmission power range
+            [`BT_CTRL_BR_EDR_TX_PWR_ACL_MIN`, `BT_CTRL_BR_EDR_TX_PWR_ACL_MAX`], because the Bluetooth controller
+            will try to use it as the initial TX power on the ACL link upon connection establishment from page
+            substate.
 
     config BT_CTRL_BR_EDR_TX_PWR_PSCAN
         int "Default TX power level for Page Scan"
         default 4
-        range -24 12
+        range -24 20
         help
             BR/EDR transmission power level for Page Scan.
+            `BT_CTRL_BR_EDR_TX_PWR_PSCAN` is recommended to fall within the ACL transmission power range
+            [`BT_CTRL_BR_EDR_TX_PWR_ACL_MIN`, `BT_CTRL_BR_EDR_TX_PWR_ACL_MAX`], because the Bluetooth controller
+            will try to use it as the initial TX power on the ACL link upon connection establishment from
+            page scan substate.
 
     config BT_CTRL_BR_EDR_TX_PWR_ISCAN
         int "Default TX power level for Inquiry Scan"
         default 4
-        range -24 12
+        range -24 20
         help
             BR/EDR transmission power level for Inquiry Scan.
 
@@ -267,7 +289,7 @@ menu "TX Power Level settings"
         int "Default TX power level for CPB"
         depends on BT_CTRL_BR_EDR_CPB_TX_EN
         default 4
-        range -24 12
+        range -24 20
         help
             BR/EDR transmission power level for CPB.
 
@@ -275,7 +297,7 @@ menu "TX Power Level settings"
         int "Default TX power level for Synchronization Train"
         depends on BT_CTRL_BR_EDR_CPB_TX_EN
         default 4
-        range -24 12
+        range -24 20
         help
             BR/EDR transmission power level for Synchronization Train.
 endmenu

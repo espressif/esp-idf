@@ -52,6 +52,7 @@
 
 #include "btdm_osal.h"
 #include "btdm_endian.h"
+#include "btdm_external.h"
 #if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 #include "psa/crypto.h"
 #endif
@@ -784,12 +785,89 @@ static int bredr_log_printf(const char *fmt, ...)
     return len;
 }
 
+esp_err_t esp_bredr_tx_power_range_get(int8_t *min_power, int8_t *max_power)
+{
+    if (min_power == NULL && max_power == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint8_t pwr_tbl_sz = 0;
+    const int8_t *pwr_tbl = wr_btdm_external_bb_get_tx_pwr_table(&pwr_tbl_sz, TX_PWR_TABLE_MODEM_CFG_BREDR);
+
+    if (pwr_tbl == NULL || pwr_tbl_sz == 0) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    /* The power table is ordered from the lowest to the highest power level */
+    if (min_power != NULL) {
+        *min_power = pwr_tbl[0];
+    }
+    if (max_power != NULL) {
+        *max_power = pwr_tbl[pwr_tbl_sz - 1];
+    }
+
+    return ESP_OK;
+}
+
+/* Check a single configured TX power value against [min_power, max_power]. */
+static bool bredr_check_tx_pwr(const char *name, int8_t value, int8_t min_power, int8_t max_power)
+{
+    if (value < min_power || value > max_power) {
+        ESP_LOGE(BREDR_LOG_TAG, "%s tx power %d dBm out of supported range [%d, %d] dBm", name, value, min_power, max_power);
+        return false;
+    }
+    return true;
+}
+
+/*
+ * Validate the user-configured BR/EDR TX power values against the range actually supported by the chip.
+ * The menuconfig limits only describe the maximum possible range, but the achievable range can be narrower depending on the chip.
+ * Returns ESP_ERR_INVALID_ARG if any configured value is out of range so that controller init can be aborted.
+ */
+static esp_err_t bredr_validate_tx_pwr_cfg(const esp_bredr_controller_config_t *bredr_cfg)
+{
+    int8_t min_power = 0;
+    int8_t max_power = 0;
+
+    esp_err_t ret = esp_bredr_tx_power_range_get(&min_power, &max_power);
+    if (ret != ESP_OK) {
+        ESP_LOGE(BREDR_LOG_TAG, "Failed to get TX power range, err 0x%x", ret);
+        return ret;
+    }
+
+    bool valid = true;
+    valid &= bredr_check_tx_pwr("ACL min", bredr_cfg->acl_min_tx_pwr, min_power, max_power);
+    valid &= bredr_check_tx_pwr("ACL max", bredr_cfg->acl_max_tx_pwr, min_power, max_power);
+    valid &= bredr_check_tx_pwr("Page", bredr_cfg->page_tx_pwr, min_power, max_power);
+    valid &= bredr_check_tx_pwr("Page Scan", bredr_cfg->pscan_tx_pwr, min_power, max_power);
+    valid &= bredr_check_tx_pwr("Inquiry Scan", bredr_cfg->iscan_tx_pwr, min_power, max_power);
+#if UC_BR_EDR_APB_EN
+    valid &= bredr_check_tx_pwr("APB", bredr_cfg->apb_tx_pwr, min_power, max_power);
+#endif
+#if UC_BR_EDR_CPB_TX_LINK_NB
+    valid &= bredr_check_tx_pwr("CPB", bredr_cfg->cpb_tx_pwr, min_power, max_power);
+    valid &= bredr_check_tx_pwr("Sync Train", bredr_cfg->strain_tx_pwr, min_power, max_power);
+#endif
+
+    if (bredr_cfg->acl_min_tx_pwr > bredr_cfg->acl_max_tx_pwr) {
+        ESP_LOGE(BREDR_LOG_TAG, "ACL min tx power %d dBm greater than max %d dBm", bredr_cfg->acl_min_tx_pwr, bredr_cfg->acl_max_tx_pwr);
+        valid = false;
+    }
+
+    return valid ? ESP_OK : ESP_ERR_INVALID_ARG;
+}
+
 int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
 {
     int status;
     esp_err_t err = ESP_OK;
 
     ESP_LOGI(BREDR_LOG_TAG, "BT controller compile version [%s]", co_orca_get_git_version_str());
+
+    err = bredr_validate_tx_pwr_cfg(&cfg->bredr);
+    if (err != ESP_OK) {
+        return err;
+    }
 
     bredr_register_setup_callback(bredr_ctrl_setup_callback);
     bredr_register_ext_dep_callback(bredr_ctrl_ext_dep_callback);
