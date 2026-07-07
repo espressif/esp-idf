@@ -61,6 +61,8 @@ bool esp_nan_verify_nira_get_own_svc(uint8_t *peer_mac, uint8_t *nira_attr,
 #if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 #include "esp_private/esp_supp_nan.h"
 #include "apps_private/wifi_apps_private.h"
+#elif defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE)
+#include "apps_private/wifi_apps_private.h"
 #endif
 
 /* NAN States */
@@ -1889,6 +1891,34 @@ void esp_nan_action_stop(void)
     esp_nan_internal_register_callbacks(NULL);
     os_event_group_clear_bits(nan_event_group, NAN_STARTED_BIT);
     os_event_group_set_bits(nan_event_group, NAN_STOPPED_BIT);
+}
+
+static int nan_set_params_ipc(void *arg)
+{
+    wifi_nan_compat_params_t *params = arg;
+
+    return esp_wifi_nan_set_params_internal(*params);
+}
+
+esp_err_t esp_nan_set_compatibility_mode_internal(nan_compatibility_mode_t mode)
+{
+    wifi_ipc_config_t cfg;
+    wifi_nan_compat_params_t params = {0};
+
+    if (mode > NAN_COMPATIBILITY_MODE_ANDROID) {
+        ESP_LOGE(TAG, "Invalid compatibility mode");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (mode == NAN_COMPATIBILITY_MODE_ANDROID) {
+        params.nan_gsp_in_sda = 1;
+    }
+
+    cfg.fn = nan_set_params_ipc;
+    cfg.arg = &params;
+    cfg.arg_size = sizeof(params);
+
+    return esp_wifi_ipc_internal(&cfg, false);
 }
 
 esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
