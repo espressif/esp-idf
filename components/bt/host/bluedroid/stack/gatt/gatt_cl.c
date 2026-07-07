@@ -300,7 +300,7 @@ void gatt_send_queue_write_cancel (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, tGATT_E
 
     rt = attp_send_cl_msg(p_tcb, p_clcb->clcb_idx, GATT_REQ_EXEC_WRITE, (tGATT_CL_MSG *)&flag);
 
-    if (rt != GATT_SUCCESS) {
+    if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED && rt != GATT_CONGESTED) {
         gatt_end_operation(p_clcb, rt, NULL);
     }
 }
@@ -406,6 +406,7 @@ void gatt_process_find_type_value_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UIN
 {
     tGATT_DISC_RES      result;
     UINT8               *p = p_data;
+    UINT16              req_s_handle, prev_e_handle;
 
     UNUSED(p_tcb);
 
@@ -415,6 +416,9 @@ void gatt_process_find_type_value_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UIN
         return;
     }
 
+    req_s_handle = p_clcb->s_handle;
+    prev_e_handle = req_s_handle - 1;
+
     memset (&result, 0, sizeof(tGATT_DISC_RES));
     result.type.len = 2;
     result.type.uu.uuid16 = GATT_UUID_PRI_SERVICE;
@@ -423,6 +427,25 @@ void gatt_process_find_type_value_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UIN
     while (len >= 4) {
         STREAM_TO_UINT16 (result.handle, p);
         STREAM_TO_UINT16 (result.value.group_value.e_handle, p);
+
+        /* Reject handles that fall outside the requested range or are not
+         * strictly increasing; a malicious/buggy peer must not be able to make
+         * discovery loop forever or report overlapping services. */
+        if (!GATT_HANDLE_IS_VALID(result.handle) ||
+                !GATT_HANDLE_IS_VALID(result.value.group_value.e_handle) ||
+                result.handle < req_s_handle ||
+                result.handle > p_clcb->e_handle ||
+                result.handle > result.value.group_value.e_handle ||
+                result.handle <= prev_e_handle ||
+                result.value.group_value.e_handle <= prev_e_handle) {
+            GATT_TRACE_ERROR("%s invalid handle range: s=%x e=%x req=[%x,%x]",
+                             __func__, result.handle, result.value.group_value.e_handle,
+                             req_s_handle, p_clcb->e_handle);
+            gatt_end_operation(p_clcb, GATT_INVALID_HANDLE, NULL);
+            return;
+        }
+
+        prev_e_handle = result.value.group_value.e_handle;
         GATT_DISC_INFO("%s handle %x, end handle %x", __func__, result.handle, result.value.group_value.e_handle);
         memcpy (&result.value.group_value.service_type,  &p_clcb->uuid, sizeof(tBT_UUID));
 
@@ -433,8 +456,8 @@ void gatt_process_find_type_value_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UIN
         }
     }
 
-    /* last handle  + 1 */
-    p_clcb->s_handle = (result.value.group_value.e_handle == 0) ? 0 : (result.value.group_value.e_handle + 1);
+    /* last handle + 1; empty response ends discovery */
+    p_clcb->s_handle = (prev_e_handle < req_s_handle) ? 0 : (prev_e_handle + 1);
     /* initiate another request */
     gatt_act_discovery(p_clcb) ;
 }
@@ -454,6 +477,7 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
 {
     tGATT_DISC_RES  result = {0};
     UINT8   *p = p_data, uuid_len = 0, type;
+    UINT16  req_s_handle, prev_handle;
 
     UNUSED(p_tcb);
     UNUSED(op_code);
@@ -467,6 +491,9 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
     if (p_clcb->operation != GATTC_OPTYPE_DISCOVERY || p_clcb->op_subtype != GATT_DISC_CHAR_DSCPT) {
         return;
     }
+
+    req_s_handle = p_clcb->s_handle;
+    prev_handle = req_s_handle - 1;
 
     STREAM_TO_UINT8(type, p);
     len -= 1;
@@ -484,6 +511,16 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
     while (len >= uuid_len + 2) {
         STREAM_TO_UINT16 (result.handle, p);
 
+        if (!GATT_HANDLE_IS_VALID(result.handle) ||
+                result.handle < req_s_handle ||
+                result.handle > p_clcb->e_handle ||
+                result.handle <= prev_handle) {
+            GATT_TRACE_ERROR("%s invalid handle %x req=[%x,%x]",
+                             __func__, result.handle, req_s_handle, p_clcb->e_handle);
+            gatt_end_operation(p_clcb, GATT_INVALID_HANDLE, NULL);
+            return;
+        }
+
         if (uuid_len > 0) {
             if (!gatt_parse_uuid_from_cmd(&result.type, uuid_len, &p)) {
                 break;
@@ -492,6 +529,7 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
             memcpy (&result.type, &p_clcb->uuid, sizeof(tBT_UUID));
         }
 
+        prev_handle = result.handle;
         len -= (uuid_len + 2);
 
         GATT_DISC_INFO("%s handle %x, uuid %s", __func__, result.handle, gatt_uuid_to_str(&result.type));
@@ -501,7 +539,7 @@ void gatt_process_read_info_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_c
         }
     }
 
-    p_clcb->s_handle = (result.handle == 0) ? 0 : (result.handle + 1);
+    p_clcb->s_handle = (prev_handle < req_s_handle) ? 0 : (prev_handle + 1);
     /* initiate another request */
     gatt_act_discovery(p_clcb) ;
 }
@@ -697,6 +735,9 @@ void gatt_process_notification(tGATT_TCB *p_tcb, UINT8 op_code,
 
     if (value.len > GATT_MAX_ATTR_LEN) {
         GATT_TRACE_ERROR("value length larger than GATT_MAX_ATTR_LEN, discard");
+        if (op_code == GATT_HANDLE_VALUE_IND) {
+            attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+        }
         return;
     }
 
@@ -762,6 +803,10 @@ void gatt_process_notification(tGATT_TCB *p_tcb, UINT8 op_code,
         STREAM_TO_UINT16(value.len, p);
         len -= 4;
         value.len = MIN(len, value.len);
+        if (value.len > GATT_MAX_ATTR_LEN) {
+            GATT_TRACE_ERROR("value length larger than GATT_MAX_ATTR_LEN, discard");
+            return;
+        }
         memcpy(value.value, p, value.len);
         p += value.len;
         len -= value.len;
@@ -793,10 +838,17 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
     tGATT_DISC_VALUE    record_value;
     UINT8               *p = p_data, value_len, handle_len = 2;
     UINT16              handle = 0;
+    UINT16              req_s_handle = 0, prev_disc_handle = 0;
+    BOOLEAN             is_discovery = (p_clcb->operation == GATTC_OPTYPE_DISCOVERY);
 
     /* discovery procedure and no callback function registered */
-    if (((!p_clcb->p_reg) || (!p_clcb->p_reg->app_cb.p_disc_res_cb)) && (p_clcb->operation == GATTC_OPTYPE_DISCOVERY)) {
+    if (((!p_clcb->p_reg) || (!p_clcb->p_reg->app_cb.p_disc_res_cb)) && is_discovery) {
         return;
+    }
+
+    if (is_discovery) {
+        req_s_handle = p_clcb->s_handle;
+        prev_disc_handle = req_s_handle - 1;
     }
 
     if (len < GATT_READ_BY_TYPE_RSP_MIN_LEN) {
@@ -840,6 +892,16 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             return;
         }
 
+        if (is_discovery && p_clcb->op_subtype != GATT_DISC_SRVC_ALL) {
+            if (handle < req_s_handle || handle > p_clcb->e_handle || handle <= prev_disc_handle) {
+                GATT_TRACE_ERROR("%s invalid handle %x req=[%x,%x]",
+                                 __func__, handle, req_s_handle, p_clcb->e_handle);
+                gatt_end_operation(p_clcb, GATT_INVALID_HANDLE, NULL);
+                return;
+            }
+            prev_disc_handle = handle;
+        }
+
         memset(&result, 0, sizeof(tGATT_DISC_RES));
         memset(&record_value, 0, sizeof(tGATT_DISC_VALUE));
 
@@ -858,6 +920,19 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
                 return;
             } else {
                 record_value.group_value.e_handle = handle;
+                if (!GATT_HANDLE_IS_VALID(result.handle) ||
+                        result.handle < req_s_handle ||
+                        result.handle > p_clcb->e_handle ||
+                        result.handle > record_value.group_value.e_handle ||
+                        result.handle <= prev_disc_handle ||
+                        record_value.group_value.e_handle <= prev_disc_handle) {
+                    GATT_TRACE_ERROR("%s invalid svc range: s=%x e=%x req=[%x,%x]",
+                                     __func__, result.handle, record_value.group_value.e_handle,
+                                     req_s_handle, p_clcb->e_handle);
+                    gatt_end_operation(p_clcb, GATT_INVALID_HANDLE, NULL);
+                    return;
+                }
+                prev_disc_handle = record_value.group_value.e_handle;
                 if (!gatt_parse_uuid_from_cmd(&record_value.group_value.service_type, value_len, &p)) {
                     GATT_TRACE_ERROR("discover all service response parsing failure");
                     break;
@@ -867,6 +942,11 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
         }
         /* discover included service */
         else if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY && p_clcb->op_subtype == GATT_DISC_INC_SRVC) {
+            if (value_len < 4) {
+                GATT_TRACE_ERROR("gatt_process_read_by_type_rsp INCL_SRVC: value_len(%d) too short", value_len);
+                gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+                return;
+            }
             STREAM_TO_UINT16(record_value.incl_service.s_handle, p);
             STREAM_TO_UINT16(record_value.incl_service.e_handle, p);
 
@@ -921,6 +1001,11 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             }
             return;
         } else { /* discover characteristic */
+            if (value_len < 3) {
+                GATT_TRACE_ERROR("gatt_process_read_by_type_rsp CHAR: value_len(%d) too short", value_len);
+                gatt_end_operation(p_clcb, GATT_INVALID_PDU, NULL);
+                return;
+            }
             STREAM_TO_UINT8 (record_value.dclr_value.char_prop, p);
             STREAM_TO_UINT16(record_value.dclr_value.val_handle, p);
             if (!GATT_HANDLE_IS_VALID(record_value.dclr_value.val_handle)) {
@@ -959,12 +1044,12 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
         }
     }
 
-    p_clcb->s_handle = (handle == 0) ? 0 : (handle + 1);
-
-    if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY) {
+    if (is_discovery) {
+        p_clcb->s_handle = (prev_disc_handle < req_s_handle) ? 0 : (prev_disc_handle + 1);
         /* initiate another request */
         gatt_act_discovery(p_clcb) ;
-    } else { /* read characteristic value */
+    } else {
+        p_clcb->s_handle = (handle == 0) ? 0 : (handle + 1);
         gatt_act_read(p_clcb, 0);
     }
 }
@@ -1208,6 +1293,7 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
                                     UINT16 len, UINT8 *p_data, UINT16 eatt_bearer_lcid)
 {
     tGATT_CLCB   *p_clcb = NULL;
+    UINT8        req_op_code = 0;
     UINT8        rsp_code = 0;
 #if (BLE_EATT_CLIENT_INCLUDED == TRUE)
     UINT8        cmd_code = 0;
@@ -1218,40 +1304,62 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
 
     if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF &&
         op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
-        p_clcb = NULL;
 #if (BLE_EATT_CLIENT_INCLUDED == TRUE)
         if (eatt_bearer_lcid != 0) {
             if (gatt_eatt_release_bearer(p_tcb->peer_bda, eatt_bearer_lcid, &cmd_code, &clcb_idx)) {
                 p_clcb = gatt_clcb_find_by_idx(clcb_idx);
                 if (p_clcb != NULL) {
+                    req_op_code = cmd_code;
                     rsp_code = gatt_cmd_to_rsp_code(cmd_code);
                 }
             }
-        }
-#endif
-        if (p_clcb == NULL
-#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
-            && eatt_bearer_lcid == 0
-#endif
-        ) {
-            p_clcb = gatt_cmd_dequeue(p_tcb, &rsp_code);
-            rsp_code = gatt_cmd_to_rsp_code(rsp_code);
-        }
 
-        if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
-            GATT_TRACE_WARNING ("ATT - Ignore wrong response. Receives (%02x) \
-                                Request(%02x) Ignored", op_code, rsp_code);
-#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
-            /* On an EATT bearer the bearer was released above to locate the
-             * pending request. Since this response is wrong/unexpected, restore
-             * the bearer's busy state so the still-pending request keeps it and
-             * completes on the correct response or the response timer. */
-            if (p_clcb != NULL && eatt_bearer_lcid != 0) {
-                gatt_eatt_mark_busy(p_tcb->peer_bda, eatt_bearer_lcid, cmd_code, clcb_idx);
+            if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
+                GATT_TRACE_WARNING ("ATT - Ignore wrong response. Receives (%02x) \
+                                    Request(%02x) Ignored", op_code, rsp_code);
+                /* On an EATT bearer the bearer was released above to locate the
+                 * pending request. Since this response is wrong/unexpected, restore
+                 * the bearer's busy state so the still-pending request keeps it and
+                 * completes on the correct response or the response timer. */
+                if (p_clcb != NULL) {
+                    gatt_eatt_mark_busy(p_tcb->peer_bda, eatt_bearer_lcid, cmd_code, clcb_idx);
+                }
+                return;
             }
+
+            btu_stop_timer (&p_clcb->rsp_timer_ent);
+            p_clcb->retry_count = 0;
+        } else
 #endif
-            return;
-        } else {
+        {
+            if (p_tcb->pending_cl_req == p_tcb->next_slot_inq) {
+                GATT_TRACE_WARNING("ATT - Unexpected response (%02x), no pending command", op_code);
+                return;
+            }
+
+            req_op_code = p_tcb->cl_cmd_q[p_tcb->pending_cl_req].op_code;
+            rsp_code = gatt_cmd_to_rsp_code(req_op_code);
+
+            if (rsp_code != op_code && op_code != GATT_RSP_ERROR) {
+                GATT_TRACE_WARNING ("ATT - Ignore wrong response. Receives (%02x) \
+                                    Request(%02x) Ignored", op_code, rsp_code);
+
+                p_clcb = gatt_cmd_dequeue(p_tcb, &req_op_code);
+                if (p_clcb != NULL) {
+                    btu_stop_timer(&p_clcb->rsp_timer_ent);
+                    gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+                }
+                gatt_cl_send_next_cmd_inq(p_tcb);
+                return;
+            }
+
+            p_clcb = gatt_cmd_dequeue(p_tcb, &req_op_code);
+            if (p_clcb == NULL) {
+                GATT_TRACE_WARNING("ATT - Response (%02x) with no CLCB", op_code);
+                gatt_cl_send_next_cmd_inq(p_tcb);
+                return;
+            }
+
             btu_stop_timer (&p_clcb->rsp_timer_ent);
             p_clcb->retry_count = 0;
         }
@@ -1314,6 +1422,9 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
 
         default:
             GATT_TRACE_ERROR("Unknown opcode = %d", op_code);
+            if (p_clcb != NULL) {
+                gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+            }
             break;
         }
     }
