@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C61 | ESP32-H2 |
-| ----------------- | --------- | -------- |
+| Supported Targets | ESP32-H2 |
+| ----------------- | -------- |
 
 # ESP-IDF BLE Periodic Advertising with CTE Example
 
