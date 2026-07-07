@@ -551,12 +551,6 @@ static void timer_task(void* arg)
     while (true) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // all deferred events are processed at a time
-#if CONFIG_ESP_TIMER_IMPL_LINUX && CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-        esp_timer_impl_try_to_set_next_alarm();
-        if (timer_process_alarm(ESP_TIMER_ISR)) {
-            continue;
-        }
-#endif
         timer_process_alarm(ESP_TIMER_TASK);
     }
 }
@@ -571,7 +565,6 @@ ESP_TIMER_IRAM_ATTR void esp_timer_isr_dispatch_need_yield(void)
 }
 #endif
 
-#ifndef CONFIG_ESP_TIMER_IMPL_LINUX
 static void ESP_TIMER_IRAM_ATTR timer_alarm_handler(void* arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -589,10 +582,9 @@ static void ESP_TIMER_IRAM_ATTR timer_alarm_handler(void* arg)
         vTaskNotifyGiveFromISR(s_timer_task, &xHigherPriorityTaskWoken);
     }
     if (xHigherPriorityTaskWoken == pdTRUE) {
-        portYIELD_FROM_ISR();
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
-#endif // !CONFIG_ESP_TIMER_IMPL_LINUX
 
 static ESP_TIMER_IRAM_ATTR inline bool is_initialized(void)
 {
@@ -646,11 +638,7 @@ esp_err_t esp_timer_init(void)
     }
 #endif // CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
     if (err == ESP_OK) {
-#ifndef CONFIG_ESP_TIMER_IMPL_LINUX
         err = esp_timer_impl_init(&timer_alarm_handler);
-#else
-        err = esp_timer_impl_init(NULL);
-#endif
         if (err != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "ISR init failed");
             deinit_timer_task();
