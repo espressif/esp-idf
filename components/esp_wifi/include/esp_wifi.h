@@ -1584,6 +1584,8 @@ esp_err_t esp_wifi_config_80211_tx(wifi_interface_t ifx, wifi_tx_rate_config_t *
   * @brief      Disable PMF configuration for specified interface
   *
   * @attention  This API should be called after esp_wifi_set_config() and before esp_wifi_start().
+  * @attention  SoftAP: PMF cannot be disabled for `WIFI_AUTH_WPA3_PSK`, `WIFI_AUTH_WPA2_WPA3_PSK`, `WIFI_AUTH_OWE`, or when `wifi_ap_config_t.wpa3_compatible_mode` is enabled.
+  * @attention  Station: PMF cannot be disabled when `wifi_sta_config_t.threshold.authmode` is `WIFI_AUTH_WPA3_PSK`, `WIFI_AUTH_WPA2_WPA3_PSK`, or `WIFI_AUTH_OWE` (see `wifi_scan_threshold_t`), or when `disable_wpa3_compatible_mode` is false.
   *
   * @param      ifx  Interface to be configured.
   *
