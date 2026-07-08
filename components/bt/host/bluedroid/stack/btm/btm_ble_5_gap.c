@@ -251,31 +251,6 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         goto end;
     }
 
-    if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE) {
-        extend_adv_cb.inst[instance].connetable = true;
-    } else {
-        extend_adv_cb.inst[instance].connetable = false;
-    }
-
-    if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE) {
-        extend_adv_cb.inst[instance].scannable = true;
-    } else {
-        extend_adv_cb.inst[instance].scannable = false;
-    }
-
-    if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY) {
-        extend_adv_cb.inst[instance].legacy_pdu = true;
-    } else {
-        extend_adv_cb.inst[instance].legacy_pdu = false;
-    }
-
-    if (params->type & (BTM_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED |
-                        BTM_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)) {
-        extend_adv_cb.inst[instance].directed = true;
-    } else {
-        extend_adv_cb.inst[instance].directed = false;
-    }
-
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
     // if own_addr_type == BLE_ADDR_PUBLIC_ID or BLE_ADDR_RANDOM_ID,
     if((params->own_addr_type == BLE_ADDR_PUBLIC_ID || params->own_addr_type == BLE_ADDR_RANDOM_ID) && BTM_GetLocalResolvablePrivateAddr(rand_addr)) {
@@ -311,6 +286,31 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         goto end;
     }
 #endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
+
+    if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE) {
+        extend_adv_cb.inst[instance].connetable = true;
+    } else {
+        extend_adv_cb.inst[instance].connetable = false;
+    }
+
+    if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE) {
+        extend_adv_cb.inst[instance].scannable = true;
+    } else {
+        extend_adv_cb.inst[instance].scannable = false;
+    }
+
+    if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY) {
+        extend_adv_cb.inst[instance].legacy_pdu = true;
+    } else {
+        extend_adv_cb.inst[instance].legacy_pdu = false;
+    }
+
+    if (params->type & (BTM_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED |
+                        BTM_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)) {
+        extend_adv_cb.inst[instance].directed = true;
+    } else {
+        extend_adv_cb.inst[instance].directed = false;
+    }
 
     extend_adv_cb.inst[instance].configured = true;
     /* Record the post-fallback on-air address type for per-set conn_addr fixup. */
