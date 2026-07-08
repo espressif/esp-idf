@@ -26,32 +26,6 @@ def test_rmt(dut: Dut) -> None:
 
 @pytest.mark.generic
 @pytest.mark.parametrize(
-    'config, skip_autoflash',
-    [
-        ('virt_flash_enc', 'y'),
-    ],
-    indirect=True,
-)
-@idf_parametrize(
-    'target',
-    soc_filtered_targets('SOC_RMT_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1 and IDF_TARGET not in ["esp32s3"]'),
-    indirect=['target'],
-)
-def test_rmt_with_virt_flash_enc(dut: Dut) -> None:
-    print(' - Erase flash')
-    dut.serial.erase_flash()
-
-    print(' - Start app (flash partition_table and app)')
-    dut.serial.write_flash_no_enc()
-    dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('Checking flash encryption...')
-    dut.expect('Generating new flash encryption key...')
-
-    dut.run_all_single_board_cases()
-
-
-@pytest.mark.generic
-@pytest.mark.parametrize(
     'config',
     [
         'cache_safe',
@@ -91,23 +65,31 @@ def test_rmt_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.octal_psram
+@pytest.mark.flash_encryption_f4r8
 @pytest.mark.parametrize(
-    'config, skip_autoflash',
+    'config',
     [
-        ('virt_flash_enc', 'y'),
+        'flash_enc',
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
-def test_rmt_psram_with_virt_flash_enc(dut: Dut) -> None:
-    print(' - Erase flash')
-    dut.serial.erase_flash()
+def test_rmt_with_flash_encryption_esp32s3_f4r8(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
 
-    print(' - Start app (flash partition_table and app)')
-    dut.serial.write_flash_no_enc()
-    dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('Checking flash encryption...')
-    dut.expect('Generating new flash encryption key...')
 
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'flash_enc',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets('SOC_RMT_SUPPORT_DMA == 1 and SOC_FLASH_ENC_SUPPORTED == 1 and IDF_TARGET not in ["esp32s3"]'),
+    indirect=['target'],
+)
+def test_rmt_with_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()

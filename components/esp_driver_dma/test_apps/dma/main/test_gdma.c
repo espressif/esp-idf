@@ -399,6 +399,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
     gdma_channel_alloc_config_t chan_alloc_config = {};
 
 #if SOC_HAS(AHB_GDMA)
+    printf("Testing GDMA M2M Mode by AHB GDMA%s\n", trig_retention_backup ? " with retention backup" : "");
     TEST_ESP_OK(gdma_new_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
     test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
@@ -408,6 +409,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 #endif // SOC_HAS(AHB_GDMA)
 
 #if SOC_HAS(AXI_GDMA)
+    printf("Testing GDMA M2M Mode by AXI GDMA%s\n", trig_retention_backup ? " with retention backup" : "");
     TEST_ESP_OK(gdma_new_axi_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
     bool lli_in_ext_mem = false;
@@ -422,12 +424,17 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 #endif // SOC_HAS(AXI_GDMA)
 
 #if SOC_HAS(LP_AHB_GDMA)
-    TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
+    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+        TEST_IGNORE_MESSAGE("Skip LP-AHB-GDMA GDMA M2M Mode under flash encryption");
+    } else {
+        printf("Testing GDMA M2M Mode by LP-AHB GDMA%s\n", trig_retention_backup ? " with retention backup" : "");
+        TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
-    test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
+        test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
 
-    TEST_ESP_OK(gdma_del_channel(tx_chan));
-    TEST_ESP_OK(gdma_del_channel(rx_chan));
+        TEST_ESP_OK(gdma_del_channel(tx_chan));
+        TEST_ESP_OK(gdma_del_channel(rx_chan));
+    }
 #endif // SOC_HAS(LP_AHB_GDMA)
 }
 
@@ -837,13 +844,19 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
 #endif // SOC_HAS(AXI_GDMA)
 
 #if SOC_HAS(LP_AHB_GDMA)
-    printf("Testing LP-AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
-    TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
+#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+        TEST_IGNORE_MESSAGE("Skipping LP-AHB-GDMA SRAM->PSRAM->SRAM under flash encryption");
+    } else {
+        printf("Testing LP-AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
+        TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
 
-    test_gdma_memcpy_from_to_psram(tx_chan, rx_chan);
+        test_gdma_memcpy_from_to_psram(tx_chan, rx_chan);
 
-    TEST_ESP_OK(gdma_del_channel(tx_chan));
-    TEST_ESP_OK(gdma_del_channel(rx_chan));
+        TEST_ESP_OK(gdma_del_channel(tx_chan));
+        TEST_ESP_OK(gdma_del_channel(rx_chan));
+    }
+#endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
 #endif // SOC_HAS(LP_AHB_GDMA)
 }
 #endif // SOC_SPIRAM_SUPPORTED

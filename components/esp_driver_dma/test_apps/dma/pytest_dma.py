@@ -71,7 +71,17 @@ def test_dma_weighted_arbitration(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32p4', 'esp32c5'], indirect=['target'])
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        'SOC_GDMA_SUPPORTED == 1 and '
+        'SOC_PSRAM_DMA_CAPABLE == 1 and '
+        'SOC_FLASH_ENC_SUPPORTED == 1 and '
+        'IDF_TARGET not in ["esp32s3"]'
+    ),
+    indirect=['target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32c61'], reason='no runner yet')
 def test_dma_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

@@ -17,6 +17,7 @@
 #include "esp_async_memcpy.h"
 #include "hal/efuse_hal.h"
 #include "esp_efuse.h"
+#include "gdma_test_utils.h"
 
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
@@ -409,10 +410,14 @@ TEST_CASE("memory copy performance 40KB: PSRAM->PSRAM", "[async mcp]")
 
 #if SOC_HAS(LP_AHB_GDMA)
 #if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-    printf("Testing memcpy by LP AHB GDMA\r\n");
-    TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
-    test_memcpy_performance(driver, 40 * 1024, true, true);
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+        TEST_IGNORE_MESSAGE("Skipping LP AHB GDMA PSRAM->PSRAM under flash encryption");
+    } else {
+        printf("Testing memcpy by LP AHB GDMA\r\n");
+        TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
+        test_memcpy_performance(driver, 40 * 1024, true, true);
+        TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+    }
 #endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
 #endif // SOC_HAS(LP_AHB_GDMA)
 }
