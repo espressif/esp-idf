@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,4 +41,24 @@
                                 } while (0)
 #else
 #define ESP_OPENTHREAD_ASSERT(a) assert(a)
+#endif
+
+#ifndef ESP_RETURN_VOID_ON_FALSE
+#if defined(CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT)
+#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) \
+    do {                                                  \
+        (void)log_tag;                                    \
+        if (unlikely(!(a))) {                             \
+            return;                                       \
+        }                                                 \
+    } while (0)
+#else
+#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...)                                \
+    do {                                                                                 \
+        if (unlikely(!(a))) {                                                            \
+            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            return;                                                                      \
+        }                                                                                \
+    } while (0)
+#endif
 #endif
