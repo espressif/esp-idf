@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document presents a walkthrough of the GATT Server Service Table example code for the ESP32. This example implements a Bluetooth Low Energy (BLE) Generic Attribute (GATT) Server using a table-like data structure to define the server services and characteristics such as the one shown in the figure below Therefore, it demonstrates a practical way to define the server functionality in one place instead of adding services and characteristics one by one.
+This document presents a walkthrough of the GATT Server Service Table example code for the ESP32. This example implements a Bluetooth Low Energy (BLE) Generic Attribute (GATT) Server using a table-like data structure to define the server services and characteristics such as the one shown in the figure below. Therefore, it demonstrates a practical way to define the server functionality in one place instead of adding services and characteristics one by one.
 
 This example implements the *Heart Rate Profile* as defined by the [Traditional Profile Specifications](https://www.bluetooth.com/specifications/profiles-overview).
 
@@ -10,7 +10,7 @@ This example implements the *Heart Rate Profile* as defined by the [Traditional 
 
 ## Includes
 
-Let’s start by taking a look at the included headers in the [gatts_table_creat_demo.c](../main/gatts_table_creat_demo.c) file:
+Let's start by taking a look at the included headers in the [gatts_table_creat_demo.c](../main/gatts_table_creat_demo.c) file:
 
 ```c
 #include "freertos/FreeRTOS.h"
@@ -26,7 +26,7 @@ Let’s start by taking a look at the included headers in the [gatts_table_creat
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
-#include “gatts_table_creat_demo.h"
+#include "gatts_table_creat_demo.h"
 ```
 These includes are required for the *FreeRTOS* and underlying system components to run, including logging functionality and a library to store data in non-volatile flash memory. We are interested in ``bt.h``, ``esp_bt_main.h``, ``esp_gap_ble_api.h`` and ``esp_gatts_api.h`` which expose the BLE APIs required to implement this example.
 

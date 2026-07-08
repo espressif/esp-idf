@@ -11,7 +11,7 @@ This demo creates GATT a service and then starts advertising, waiting to be conn
 
 To test this demo, we can run the [gatt_client_demo](../gatt_client), which can scan for and connect to this demo automatically. They will start exchanging data once the GATT client has enabled the notification function of the GATT server.
 
-Please, check this [tutorial](tutorial/Gatt_Server_Example_Walkthrough.md) for more information about this example.
+Please check this [tutorial](tutorial/Gatt_Server_Example_Walkthrough.md) for more information about this example.
 
 ## Flow Diagram
 

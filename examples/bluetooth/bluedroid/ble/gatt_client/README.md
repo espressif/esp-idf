@@ -76,7 +76,7 @@ To test this example, you first run the [gatt_server_demo](../gatt_server), whic
 
 This example will enable gatt server's notification function once the connection is established and then the devices start exchanging data.
 
-Please, check this [tutorial](tutorial/Gatt_Client_Example_Walkthrough.md) for more information about this example.
+Please check this [tutorial](tutorial/Gatt_Client_Example_Walkthrough.md) for more information about this example.
 
 ### Hardware Required
 

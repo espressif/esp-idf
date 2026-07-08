@@ -4,7 +4,7 @@
 
 In this tutorial, the GATT client example code for the ESP32 is reviewed. The code implements a Bluetooth Low Energy (BLE) Generic Attribute (GATT) client, which scans for nearby peripheral servers and connects to a predefined service. The client then searches for available characteristics and subscribes to a known characteristic in order to receive notifications or indications. The example can register an Application Profile and initializes a sequence of events, which can be used to configure Generic Access Profile (GAP) parameters and to handle events such as scanning, connecting to peripherals and reading and writing characteristics.
 
-# Includes
+## Includes
 
 This example is located in the examples folder of the ESP-IDF under the [bluetooth/bluedroid/ble/gatt_client/main](../main). The [gattc_demo.c](../main/gattc_demo.c) file located in the main folder contains all the functionality that we are going to review. The header files contained in [gattc_demo.c](../main/gattc_demo.c) are:
 
@@ -25,7 +25,7 @@ This example is located in the examples folder of the ESP-IDF under the [bluetoo
 #include "esp_gatt_common_api.h"
 ```
 
-These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gattc_api.h"`, which expose the BLE APIs required to implement this example.
 
 * `bt.h`: configures the BT controller and VHCI from the host side.
 * `esp_bt_main.h`: initializes and enables the Bluedroid stack.
@@ -34,7 +34,7 @@ These `includes` are required for the FreeRTOS and underlying system components 
 
 ## Main Entry Point
 
-The program’s entry point is the app_main() function:
+The program's entry point is the app_main() function:
 
 ```c
 void app_main()
@@ -414,7 +414,7 @@ ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
 ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
 ```
 
-Finally if the remote device name is the same as we have defined above, the local device stops scanning and tries to open a connection to the remote device using the `esp_ble_gattc_enh_open()` function. This function takes as parameters the Application Profile GATT interface, the remote server address and a boolean value. The boolean value is used to indicate if the connection is done directly or if it’s done in the background (auto-connection), at the moment this boolean value must be set to true in order to establish the connection. Notice that the client opens a virtual connection to the server. The virtual connection returns a connection ID. The virtual connection is the connection between the Application Profile and the remote server. Since many Application Profiles can run on one ESP32, there could be many virtual connection opened to the same remote server. There is also the physical connection which is the actual BLE link between the client and the server. Therefore, if the physical connection is disconnected with the `esp_ble_gap_disconnect()` function, all other virtual connections are closed as well. In this example, each Application Profile creates a virtual connection to the same server with the `esp_ble_gattc_enh_open()` function, so when the close function is called, only that connection from the Application Profile is closed, while if the gap disconnect function is called, both connections will be closed. In addition, connect events are propagated to all profiles because it relates to the physical connection, while open events are propagated only to the profile that creates the virtual connection.
+Finally if the remote device name is the same as we have defined above, the local device stops scanning and tries to open a connection to the remote device using the `esp_ble_gattc_enh_open()` function. This function takes as parameters the Application Profile GATT interface, the remote server address and a boolean value. The boolean value is used to indicate if the connection is done directly or if it's done in the background (auto-connection), at the moment this boolean value must be set to true in order to establish the connection. Notice that the client opens a virtual connection to the server. The virtual connection returns a connection ID. The virtual connection is the connection between the Application Profile and the remote server. Since many Application Profiles can run on one ESP32, there could be many virtual connection opened to the same remote server. There is also the physical connection which is the actual BLE link between the client and the server. Therefore, if the physical connection is disconnected with the `esp_ble_gap_disconnect()` function, all other virtual connections are closed as well. In this example, each Application Profile creates a virtual connection to the same server with the `esp_ble_gattc_enh_open()` function, so when the close function is called, only that connection from the Application Profile is closed, while if the gap disconnect function is called, both connections will be closed. In addition, connect events are propagated to all profiles because it relates to the physical connection, while open events are propagated only to the profile that creates the virtual connection.
 
 ## Configuring the MTU Size
 
@@ -628,7 +628,7 @@ case ESP_GATTC_SEARCH_CMPL_EVT:
         break;
 ```
 
-`esp_ble_gattc_get_attr_count()` gets the attribute count with the given service or characteristic in the gattc cache. The parameters of `esp_ble_gattc_get_attr_count()` function are the GATT interface, the connection ID, the attribute type defined in `esp_gatt_db_attr_type_t`, the attribute start handle, the attribute end handle, the characteristic handle (this parameter is only valid when the type is set to `ESP_GATT_DB_DESCRIPTOR`.) and output the number of attribute has been found in the gattc cache with the given attribute type. Then we allocate a buffer to save the char information for `esp_ble_gattc_get_char_by_uuid()` function. The function finds the characteristic with the given characteristic UUID in the gattc cache. It just gets characteristic from local cache, instead of the remote devices. In a server, there might be more than one chars sharing the same UUID. However, in our gatt_server demo, every char has an unique UUID and that’s why we only use the first char in `char_elem_result`, which is the pointer to the characteristic of the service. Count initially stores the number of the characteristics that the client wants to find, and will be updated with the number of the characteristics that have been actually found in the gattc cache with `esp_ble_gattc_get_char_by_uuid`.
+`esp_ble_gattc_get_attr_count()` gets the attribute count with the given service or characteristic in the gattc cache. The parameters of `esp_ble_gattc_get_attr_count()` function are the GATT interface, the connection ID, the attribute type defined in `esp_gatt_db_attr_type_t`, the attribute start handle, the attribute end handle, the characteristic handle (this parameter is only valid when the type is set to `ESP_GATT_DB_DESCRIPTOR`.) and output the number of attribute has been found in the gattc cache with the given attribute type. Then we allocate a buffer to save the char information for `esp_ble_gattc_get_char_by_uuid()` function. The function finds the characteristic with the given characteristic UUID in the gattc cache. It just gets characteristic from local cache, instead of the remote devices. In a server, there might be more than one chars sharing the same UUID. However, in our gatt_server demo, every char has an unique UUID and that's why we only use the first char in `char_elem_result`, which is the pointer to the characteristic of the service. Count initially stores the number of the characteristics that the client wants to find, and will be updated with the number of the characteristics that have been actually found in the gattc cache with `esp_ble_gattc_get_char_by_uuid`.
 
 ## Registering for Notifications
 
@@ -724,7 +724,7 @@ Where `ESP_GATT_UUID_CHAR_CLIENT_CONFIG` is defined with the UUID to identify th
 ```c
 #define ESP_GATT_UUID_CHAR_CLIENT_CONFIG            0x2902          /*  Client Characteristic Configuration */
 ```
-The value to write is “1” to enable notifications. We also pass `ESP_GATT_WRITE_TYPE_RSP` to request that the server responds to the request of enabling notifications and `ESP_GATT_AUTH_REQ_NONE` to indicate that the Write request does not need authorization.
+The value to write is "1" to enable notifications. We also pass `ESP_GATT_WRITE_TYPE_RSP` to request that the server responds to the request of enabling notifications and `ESP_GATT_AUTH_REQ_NONE` to indicate that the Write request does not need authorization.
 
 
 

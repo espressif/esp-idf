@@ -31,7 +31,7 @@ To exit the serial monitor, type `Ctrl-]`.
 
 See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
 
-# TUTORIAL
+## Tutorial
 
 ## Includes
 
@@ -59,7 +59,7 @@ These `includes` are required for the FreeRTOS and underlying system components 
 
 ## Main Entry Point
 
-The program’s entry point is the `app_main()` function.
+The program's entry point is the `app_main()` function.
 
 ### Non-volatile Storage Library Initialization
 
