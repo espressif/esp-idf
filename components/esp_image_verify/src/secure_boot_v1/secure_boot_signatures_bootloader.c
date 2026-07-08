@@ -7,7 +7,7 @@
 
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
-#include "bootloader_utility.h"
+#include "bootloader_sha_flash.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
@@ -41,7 +41,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
     // Map the signature block
     sigblock = (const esp_secure_boot_sig_block_t *) bootloader_mmap(src_addr + length, sizeof(esp_secure_boot_sig_block_t));
-    if(!sigblock) {
+    if (!sigblock) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%" PRIx32 ", 0x%x) failed", src_addr + length, sizeof(esp_secure_boot_sig_block_t));
         return ESP_FAIL;
     }
@@ -52,7 +52,6 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
     return err;
 }
-
 
 esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
@@ -73,11 +72,11 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
 
     bool is_valid;
     is_valid = uECC_verify_antifault(signature_verification_key_start,
-                           image_digest,
-                           ESP_SECURE_BOOT_DIGEST_LEN,
-                           sig_block->signature,
-                           uECC_secp256r1(),
-                           verified_digest);
+                                     image_digest,
+                                     ESP_SECURE_BOOT_DIGEST_LEN,
+                                     sig_block->signature,
+                                     uECC_secp256r1(),
+                                     verified_digest);
     ESP_LOGD(TAG, "Verification result %d", is_valid);
 
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;

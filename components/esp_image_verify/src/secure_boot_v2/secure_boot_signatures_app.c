@@ -7,7 +7,7 @@
 
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
-#include "bootloader_utility.h"
+#include "bootloader_sha_flash.h"
 #include "bootloader_signature.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
@@ -35,7 +35,7 @@ ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2");
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block)
 {
     if (block->magic_byte != ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC
-        || block->block_crc != esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN)) {
+            || block->block_crc != esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN)) {
         return ESP_FAIL;
     }
     if (block->version != ESP_SECURE_BOOT_SCHEME) {
@@ -100,11 +100,11 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
                     if (verify_image_digest) {
                         // Check we can verify the image using this signature and this key
                         uint8_t temp_verified_digest[ESP_SECURE_BOOT_DIGEST_LEN];
-    #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
                         bool verified = ets_rsa_pss_verify(&block.key, block.signature, image_digest, temp_verified_digest);
-    #elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
                         bool verified = ets_ecdsa_verify(&block.ecdsa.key.point[0], block.ecdsa.signature, block.ecdsa.key.curve_id, image_digest, temp_verified_digest);
-    #endif
+#endif
                         if (!verified) {
                             ESP_LOGE(TAG, "Secure boot key (%d) verification failed.", i);
                             continue;
@@ -157,7 +157,7 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
         // Gets key digests from running app
         ESP_LOGI(TAG, "Take trusted digest key(s) from running app");
         return esp_secure_boot_get_signature_blocks_for_running_app(true, public_key_digests);
-     } else { // CONFIG_SECURE_BOOT_V2_ENABLED
+    } else { // CONFIG_SECURE_BOOT_V2_ENABLED
         ESP_LOGI(TAG, "Take trusted digest key(s) from eFuse block(s)");
         // Read key digests from efuse
         esp_secure_boot_key_digests_t efuse_trusted;
@@ -172,7 +172,7 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
         if (public_key_digests->num_digests > 0) {
             return ESP_OK;
         }
-     }
+    }
     return ESP_ERR_NOT_FOUND;
 }
 
@@ -282,7 +282,7 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
             break;
         }
     }
-    return (ret != 0 || any_trusted_key == false) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
+    return (ret != 0 || any_trusted_key == false) ? ESP_ERR_IMAGE_INVALID : ESP_OK;
 }
 
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME

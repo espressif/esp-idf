@@ -104,7 +104,7 @@ void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data,
         for (size_t i = 0; i < copy_words; i++) {
             sha_text_reg[block_count + i] = __builtin_bswap32(w[i]);
         }
-        asm volatile ("memw");
+        asm volatile("memw");
 
         // Update counters
         words_hashed += copy_words;
@@ -152,7 +152,7 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     assert(words_hashed % BLOCK_WORDS == 60 / 4); // 32-bits left in block
 
     // Calculate 32-bit length for final 32 bits of data
-    uint32_t bit_count = __builtin_bswap32( data_words * 32 );
+    uint32_t bit_count = __builtin_bswap32(data_words * 32);
     bootloader_sha256_data(handle, &bit_count, sizeof(bit_count));
 
     assert(words_hashed % BLOCK_WORDS == 0);
@@ -166,12 +166,12 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     for (size_t i = 0; i < DIGEST_WORDS; i++) {
         digest_words[i] = __builtin_bswap32(sha_text_reg[i]);
     }
-    asm volatile ("memw");
+    asm volatile("memw");
 }
 #endif /* CONFIG_IDF_TARGET_ESP32 */
 #else /* NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM */
 
-#include "bootloader_flash_priv.h"
+/* App-side SHA implementation backed by PSA/mbedtls. */
 #include "psa/crypto.h"
 
 bootloader_sha256_handle_t bootloader_sha256_start(void)
@@ -218,14 +218,13 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     }
 
     free(handle);
-    handle = NULL;
 }
 
 #if SOC_SHA_SUPPORT_SHA512
 
 typedef struct {
     psa_hash_operation_t *hash_op;
-    int psa_alg;
+    psa_algorithm_t psa_alg;
 } bootloader_psa_sha_handle_t;
 
 bootloader_sha_handle_t bootloader_sha512_start(bool is384)
@@ -283,7 +282,6 @@ void bootloader_sha512_finish(bootloader_sha_handle_t handle, uint8_t *digest)
 
     free(op->hash_op);
     free(op);
-    handle = NULL;
 }
 #endif /* SOC_SHA_SUPPORT_SHA512 */
 #endif /* !(NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM) */

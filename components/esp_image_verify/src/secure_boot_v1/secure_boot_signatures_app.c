@@ -7,7 +7,7 @@
 
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
-#include "bootloader_utility.h"
+#include "bootloader_sha_flash.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
@@ -15,7 +15,6 @@
 #include <string.h>
 #include <sys/param.h>
 #include "mbedtls/pk.h"
-
 
 #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");

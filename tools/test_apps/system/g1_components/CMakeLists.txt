@@ -44,11 +44,6 @@ set(extra_allowed_components
 # These components are currently included into "G1" build, but shouldn't.
 # After removing the extra dependencies, remove the components from this list as well.
 set(extra_components_which_shouldnt_be_included
-    # app_update gets added because of spi_flash and esp_partition.
-    # esp_partition will get removed from g1 and spi_flash does not actually seem to need app_update anymore.
-    # When esp-partition is removed from g1 build it should be easy for us to also remove app-update # TODO IDF-8577
-    app_update
-
     # bootloader is only included from esptool_py, which should be removed from G1
     bootloader
 
@@ -85,7 +80,7 @@ set(extra_components_which_shouldnt_be_included
     # esp_pm is pulled in by esp_system due to pm_init and freertos idle hook
     # both could be moved to pm component if esp-system idle hook provided a way to register hooks
     # esp_hw_support dependency seems like it could be removed?
-    # It is also used by esp_driver_gpio, mbedtls all of which should be removed from G1-only build.
+    # It is also used by esp_driver_gpio, which should be removed from G1-only build.
     # IDF-10415
     esp_pm
 
@@ -101,10 +96,6 @@ set(extra_components_which_shouldnt_be_included
     #   should be removed from G1-only build.
     esptool_py
 
-    # mbedtls is a dependency of bootloader_support (plus other easier-to-remove ones)
-    #   it is hard to make it conditional, need to remove bootloader_support.
-    mbedtls
-
     # partition_table is pulled in by app_update, esptool_py, bootloader, esp_partition; all to be removed
     partition_table
 
@@ -118,11 +109,8 @@ set(extra_components_which_shouldnt_be_included
     # pthread is required by cxx. See [refactor-todo] about cxx, can it work without pthread?
     pthread
 
-    # esp_security is required by mbedtls and spi_flash
+    # esp_security is required by spi_flash
     esp_security
-
-    # esp_driver_dma is required by mbedtls
-    esp_driver_dma
 
     # esp_usb_cdc_rom_console is used by the panic handler, will be conditional on cdc console option when
     # the new build-system is implemented

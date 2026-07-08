@@ -9,7 +9,7 @@
 #include "esp_fault.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
-#include "bootloader_utility.h"
+#include "bootloader_sha_flash.h"
 #include "bootloader_signature.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
@@ -63,7 +63,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *block)
 {
     if (block->magic_byte != ETS_SECURE_BOOT_V2_SIGNATURE_MAGIC
-        || block->block_crc != esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN)) {
+            || block->block_crc != esp_rom_crc32_le(0, (uint8_t *)block, CRC_SIGN_BLOCK_LEN)) {
         return ESP_FAIL;
     }
     if (block->version != ESP_SECURE_BOOT_SCHEME) {

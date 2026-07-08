@@ -24,9 +24,9 @@ ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2_rsa");
  * }
  */
 static int encode_rsa_pubkey_der(const uint8_t *modulus, size_t modulus_len,
-                                  const uint8_t *exponent, size_t exponent_len,
-                                  uint8_t *der_buf, size_t der_buf_size,
-                                  uint8_t **der_start, size_t *der_len)
+                                 const uint8_t *exponent, size_t exponent_len,
+                                 uint8_t *der_buf, size_t der_buf_size,
+                                 uint8_t **der_start, size_t *der_len)
 {
     if (!der_buf || !der_start || !der_len || der_buf_size == 0) {
         return MBEDTLS_ERR_X509_BAD_INPUT_DATA;
@@ -77,7 +77,7 @@ static int encode_rsa_pubkey_der(const uint8_t *modulus, size_t modulus_len,
     /* Write SEQUENCE header */
     MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_len(&c, der_buf, len));
     MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_tag(&c, der_buf,
-                                                       MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE));
+                                                     MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE));
 
     *der_start = c;
     *der_len = len;
@@ -137,11 +137,11 @@ esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_bloc
     e_bytes[3] = trusted_block->key.e & 0xFF;
 
     ret = encode_rsa_pubkey_der(
-        n_be, rsa_key_size,
-        e_bytes, sizeof(e_bytes),
-        pubkey_der_buf, pubkey_der_buf_size,
-        &der_start, &der_len
-    );
+              n_be, rsa_key_size,
+              e_bytes, sizeof(e_bytes),
+              pubkey_der_buf, pubkey_der_buf_size,
+              &der_start, &der_len
+          );
 
     free(n_be);
 
@@ -170,8 +170,8 @@ esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_bloc
 
     /* Verify the signature using PSA APIs */
     status = psa_verify_hash(key_id, PSA_ALG_RSA_PSS(PSA_ALG_SHA_256),
-                            image_digest, ESP_SECURE_BOOT_DIGEST_LEN,
-                            sig_be, rsa_key_size);
+                             image_digest, ESP_SECURE_BOOT_DIGEST_LEN,
+                             sig_be, rsa_key_size);
 
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Signature verification failed, err: %d", status);

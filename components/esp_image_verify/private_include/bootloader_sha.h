@@ -5,10 +5,8 @@
  */
 #pragma once
 
-/* Provide a SHA256 API for bootloader_support code,
+/* Provide a SHA256 API for image-verification code,
    that can be used from bootloader or app code.
-
-   This header is available to source code in the bootloader & bootloader_support components only.
    Use PSA APIs or include esp32/sha.h to calculate SHA256 in IDF apps.
 */
 

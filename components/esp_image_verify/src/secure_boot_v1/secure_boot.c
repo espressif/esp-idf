@@ -14,7 +14,6 @@
 #include "esp32/rom/secure_boot.h"
 
 #include "soc/rtc_periph.h"
-#include "bootloader_utility.h"
 
 #include "sdkconfig.h"
 
@@ -37,7 +36,8 @@ ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");
  *
  *  @inputs:        image_len - length of image to calculate digest for
  */
-static bool secure_boot_generate(uint32_t image_len){
+static bool secure_boot_generate(uint32_t image_len)
+{
     esp_err_t err;
     esp_secure_boot_iv_digest_t digest;
     const uint32_t *image;
@@ -53,8 +53,7 @@ static bool secure_boot_generate(uint32_t image_len){
     ets_secure_boot_hash(NULL);
     /* iv stored in sec 0 */
     err = bootloader_flash_erase_sector(0);
-    if (err != ESP_OK)
-    {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "SPI erase failed: 0x%x", err);
         return false;
     }
@@ -65,8 +64,8 @@ static bool secure_boot_generate(uint32_t image_len){
         ESP_LOGE(TAG, "bootloader_mmap(0x1000, 0x%" PRIx32 ") failed", image_len);
         return false;
     }
-    for (size_t i = 0; i < image_len; i+= sizeof(digest.iv)) {
-        ets_secure_boot_hash(&image[i/sizeof(uint32_t)]);
+    for (size_t i = 0; i < image_len; i += sizeof(digest.iv)) {
+        ets_secure_boot_hash(&image[i / sizeof(uint32_t)]);
     }
     bootloader_munmap(image);
 
@@ -76,7 +75,7 @@ static bool secure_boot_generate(uint32_t image_len){
 
     ESP_LOGD(TAG, "write iv+digest to flash");
     err = bootloader_flash_write(FLASH_OFFS_SECURE_BOOT_IV_DIGEST, &digest,
-                           sizeof(digest), esp_efuse_is_flash_encryption_enabled());
+                                 sizeof(digest), esp_efuse_is_flash_encryption_enabled());
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "SPI write failed: 0x%x", err);
         return false;
@@ -90,7 +89,7 @@ esp_err_t esp_secure_boot_generate_digest(void)
     esp_err_t err;
     if (esp_secure_boot_enabled()) {
         ESP_LOGI(TAG, "bootloader secure boot is already enabled."
-                      " No need to generate digest. continuing..");
+                 " No need to generate digest. continuing..");
         return ESP_OK;
     }
 #if CONFIG_SECURE_BOOT_REQUIRE_ALREADY_ENABLED
@@ -135,11 +134,11 @@ esp_err_t esp_secure_boot_generate_digest(void)
     /* Generate secure boot digest using programmed key in EFUSE */
     ESP_LOGI(TAG, "Generating secure boot digest...");
     uint32_t image_len = bootloader_data.image_len;
-    if(bootloader_data.image.hash_appended) {
+    if (bootloader_data.image.hash_appended) {
         /* Secure boot digest doesn't cover the hash */
         image_len -= ESP_IMAGE_HASH_LEN;
     }
-    if (false == secure_boot_generate(image_len)){
+    if (false == secure_boot_generate(image_len)) {
         ESP_LOGE(TAG, "secure boot generation failed");
         return ESP_FAIL;
     }
@@ -165,8 +164,8 @@ esp_err_t esp_secure_boot_permanently_enable(void)
     bool dis_write = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK2);
     if (dis_read != dis_write) {
         ESP_LOGE(TAG, "Pre-loaded key is not %s %s protected. Refusing to blow secure boot efuse.",
-                    (!dis_read) ? "read,":" ",
-                    (!dis_read) ? "write":" ");
+                 (!dis_read) ? "read," : " ",
+                 (!dis_read) ? "write" : " ");
         return ESP_ERR_INVALID_STATE;
     }
     esp_efuse_batch_write_begin(); /* Batch all efuse writes at the end of this function */

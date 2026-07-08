@@ -535,6 +535,10 @@ void esp_partition_munmap(esp_partition_mmap_handle_t handle);
  *          - ESP_ERR_NO_MEM: Cannot allocate memory for sha256 operation.
  *          - ESP_ERR_IMAGE_INVALID: App partition doesn't contain a valid app image.
  *          - ESP_FAIL: An allocation error occurred.
+ *
+ * @note Requires the esp_image_verify component in the build (apps using OTA get
+ *       it through app_update). Calling it without that component fails at link
+ *       time with an undefined reference.
  */
 esp_err_t esp_partition_get_sha256(const esp_partition_t* partition, uint8_t* sha_256);
 

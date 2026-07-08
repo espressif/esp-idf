@@ -11,7 +11,6 @@
 #include "esp_err.h"
 
 #if ESP_TEE_BUILD
-#include "bootloader_sha.h"
 #include "esp_tee_sec_storage.h"
 #endif
 #include "esp_random.h"

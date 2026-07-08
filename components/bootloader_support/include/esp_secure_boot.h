@@ -312,6 +312,16 @@ typedef struct {
  */
 void esp_secure_boot_init_checks(void);
 
+/**
+ * @brief Run the on-update signature-block check for app-side secure boot.
+ *
+ * @important This function is invoked by esp_secure_boot_init_checks() during app
+ * startup when CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT is configured with
+ * V2 RSA or ECDSA schemes. It verifies that the running app's signature blocks
+ * are intact so future OTA updates can be verified.
+ */
+void esp_secure_boot_check_signature_on_update(void);
+
 #if !BOOTLOADER_BUILD && (CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
 
 /** @brief Scan the current running app for signature blocks
