@@ -356,7 +356,7 @@ static int getColumns(void) {
     /* After sending this command, we can get the new position of the cursor,
      * we'd get the size, in columns, of the opened TTY. */
     cols = getCursorPosition();
-    if (cols == -1) {
+    if (cols <= 0) {
         goto failed;
     }
 
@@ -567,6 +567,9 @@ void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
 static void refreshSingleLine(struct linenoiseState *l) {
+    if (l->cols == 0) {
+        l->cols = 80;
+    }
     char seq[64];
     size_t plen = l->plen;
     int fd = fileno(stdout);
@@ -609,6 +612,9 @@ static void refreshSingleLine(struct linenoiseState *l) {
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
 static void refreshMultiLine(struct linenoiseState *l) {
+    if (l->cols == 0) {
+        l->cols = 80;
+    }
     char seq[64];
     int plen = l->plen;
     int rows = (plen+l->len+l->cols-1)/l->cols; /* rows used by current buf. */
@@ -893,6 +899,9 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     l.oldpos = l.pos = 0;
     l.len = 0;
     l.cols = getColumns();
+    if (l.cols == 0) {
+        l.cols = 80;
+    }
     l.maxrows = 0;
     l.history_index = 0;
 
@@ -1173,14 +1182,15 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     flushWrite();
 
     size_t count = 0;
+    int nread = 0;
     const int in_fd = fileno(stdin);
     char c = 'c';
 
-    while (count < buflen) {
+    while (count + 1 < buflen) {
 
-        int nread = read_func(in_fd, &c, 1);
+        nread = read_func(in_fd, &c, 1);
         if (nread < 0) {
-            return nread;
+            break;
         }
         if (c == '\n') {
             break;
@@ -1208,9 +1218,10 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
         fputc(c, stdout); /* echo */
         flushWrite();
     }
+    buf[count] = '\0';
     fputc('\n', stdout);
     flushWrite();
-    return count;
+    return nread < 0 ? nread : (int)count;
 }
 
 static void sanitize(char* src) {
