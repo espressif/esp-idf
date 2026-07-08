@@ -56,37 +56,55 @@ def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
     """
     START_CMD = b'\x01'
     STOP_CMD = b'\x02'
+    STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
 
     ser.reset_input_buffer()
     # Send Start command to start SysView tracing
     ser.write(START_CMD)
 
+    data = bytearray()
+
+    # Capture for 3 seconds
+    end_time = time.time() + 3.0
+    while time.time() < end_time:
+        try:
+            if ser.in_waiting:
+                data += ser.read(ser.in_waiting)
+        except serial.SerialTimeoutException:
+            assert False, 'Timeout reached while reading from serial port, exiting...'
+
+    # Give pending trace data a short window to reach the host before requesting STOP.
+    time.sleep(0.2)
+
+    # Send Stop command
+    ser.write(STOP_CMD)
+
+    # Capture the final data produced by STOP and the transport flush.
+    end_time = time.time() + 3.0
+    last_data_time = time.time()
+    while time.time() < end_time and (time.time() - last_data_time) <= 1.0:
+        try:
+            if ser.in_waiting:
+                data += ser.read(ser.in_waiting)
+                last_data_time = time.time()
+        except serial.SerialTimeoutException:
+            assert False, 'Timeout reached while reading from serial port, exiting...'
+
+    # Drop anything after the TRACE_STOP record (e.g. the ROM boot banner printed
+    # on the shared UART when pytest-embedded resets the DUT after the test).
+    stop_pos = data.rfind(STOP_EVENT_ID)
+    if stop_pos != -1:
+        end = stop_pos + 1
+        # Consume the timestamp delta: continuation bytes have the 0x80 bit set,
+        # terminated by a single byte with 0x80 clear.
+        while end < len(data) and (data[end] & 0x80):
+            end += 1
+        if end < len(data):
+            end += 1
+        data = data[:end]
+
     with open(trace_log_path, 'w+b') as f:
-        # Capture for 3 seconds
-        end_time = time.time() + 3.0
-        while time.time() < end_time:
-            try:
-                if ser.in_waiting:
-                    f.write(ser.read(ser.in_waiting))
-            except serial.SerialTimeoutException:
-                assert False, 'Timeout reached while reading from serial port, exiting...'
-
-        # Give pending trace data a short window to reach the host before requesting STOP.
-        time.sleep(0.2)
-
-        # Send Stop command
-        ser.write(STOP_CMD)
-
-        # Capture the final data produced by STOP and the transport flush.
-        end_time = time.time() + 3.0
-        last_data_time = time.time()
-        while time.time() < end_time and (time.time() - last_data_time) <= 1.0:
-            try:
-                if ser.in_waiting:
-                    f.write(ser.read(ser.in_waiting))
-                    last_data_time = time.time()
-            except serial.SerialTimeoutException:
-                assert False, 'Timeout reached while reading from serial port, exiting...'
+        f.write(data)
 
 
 def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
