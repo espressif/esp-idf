@@ -4490,7 +4490,7 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
                     (status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE)           ||
                     (status == HCI_ERR_REPEATED_ATTEMPTS)))) {
             p_dev_rec->security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
-            p_dev_rec->sec_flags &= ~ (BTM_SEC_LE_LINK_KEY_KNOWN << bit_shift);
+            p_dev_rec->sec_flags &= ~((BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED) << bit_shift);
 
 
 #ifdef BRCM_NOT_4_BTE
@@ -5453,9 +5453,11 @@ static BOOLEAN btm_sec_start_get_name (tBTM_SEC_DEV_REC *p_dev_rec)
 *******************************************************************************/
 static BOOLEAN btm_sec_start_authentication (tBTM_SEC_DEV_REC *p_dev_rec)
 {
-    p_dev_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
-
-    return (btsnd_hcic_auth_request (p_dev_rec->hci_handle));
+    if (btsnd_hcic_auth_request (p_dev_rec->hci_handle)) {
+        p_dev_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /*******************************************************************************
@@ -6394,9 +6396,10 @@ void btm_sec_update_legacy_auth_state(tACL_CONN *p_acl_cb, UINT8 legacy_auth_sta
 *******************************************************************************/
 void btm_sec_handle_remote_legacy_auth_cmp(UINT16 handle)
 {
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
-    tACL_CONN         *p_acl_cb  = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-    btm_sec_update_legacy_auth_state(p_acl_cb, BTM_ACL_LEGACY_AUTH_REMOTE);
+    tACL_CONN *p_acl_cb = btm_handle_to_acl(handle);
+    if (p_acl_cb) {
+        btm_sec_update_legacy_auth_state(p_acl_cb, BTM_ACL_LEGACY_AUTH_REMOTE);
+    }
 }
 #endif /// (CLASSIC_BT_INCLUDED == TRUE)
 #endif  ///SMP_INCLUDED == TRUE

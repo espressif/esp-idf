@@ -716,26 +716,51 @@ void btc_pba_client_call_handler(btc_msg_t *msg)
     }
 }
 
+static bool btc_pba_client_app_param_tag_valid(const uint8_t *ptr, const uint8_t *end, uint8_t value_len)
+{
+    if (ptr + BTA_PBAP_APP_PARAM_HEADER_LENGTH > end) {
+        return false;
+    }
+
+    if (ptr[1] != value_len) {
+        return false;
+    }
+
+    return (ptr + BTA_PBAP_APP_PARAM_HEADER_LENGTH + value_len <= end);
+}
+
 static void parse_pull_phone_book_app_param(esp_pbac_param_t *param, uint8_t *app_param, uint16_t app_param_len)
 {
     if (app_param == NULL || app_param_len == 0) {
         return;
     }
+
     uint8_t *ptr = app_param;
-    while(ptr < app_param + app_param_len) {
+    const uint8_t *end = app_param + app_param_len;
+
+    while (ptr < end) {
         switch (*ptr)
         {
         case BTA_PBAP_APP_PARAM_PHONE_BOOK_SIZE:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_PHONE_BOOK_SIZE)) {
+                goto error;
+            }
             param->pull_phone_book_rsp.include_phone_book_size = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             BE_STREAM_TO_UINT16(param->pull_phone_book_rsp.phone_book_size, ptr);
             break;
         case BTA_PBAP_APP_PARAM_NEW_MISSED_CALLS:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_NEW_MISSED_CALLS)) {
+                goto error;
+            }
             param->pull_phone_book_rsp.include_new_missed_calls = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             BE_STREAM_TO_UINT8(param->pull_phone_book_rsp.new_missed_calls, ptr);
             break;
         case BTA_PBAP_APP_PARAM_PRIMARY_FOLDER_VERSION:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_PRIMARY_FOLDER_VERSION)) {
+                goto error;
+            }
             param->pull_phone_book_rsp.include_primary_folder_version = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -743,6 +768,9 @@ static void parse_pull_phone_book_app_param(esp_pbac_param_t *param, uint8_t *ap
             ptr += BTA_PBAP_APP_PARAM_LENGTH_PRIMARY_FOLDER_VERSION;
             break;
         case BTA_PBAP_APP_PARAM_SECONDARY_FOLDER_VERSION:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_SECONDARY_FOLDER_VERSION)) {
+                goto error;
+            }
             param->pull_phone_book_rsp.include_secondary_folder_version = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -750,6 +778,9 @@ static void parse_pull_phone_book_app_param(esp_pbac_param_t *param, uint8_t *ap
             ptr += BTA_PBAP_APP_PARAM_LENGTH_SECONDARY_FOLDER_VERSION;
             break;
         case BTA_PBAP_APP_PARAM_DATABASE_IDENTIFIER:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_DATABASE_IDENTIFIER)) {
+                goto error;
+            }
             param->pull_phone_book_rsp.include_database_identifier = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -761,8 +792,19 @@ static void parse_pull_phone_book_app_param(esp_pbac_param_t *param, uint8_t *ap
             break;
         }
     }
-error:
     return;
+
+error:
+    param->pull_phone_book_rsp.include_phone_book_size = 0;
+    param->pull_phone_book_rsp.phone_book_size = 0;
+    param->pull_phone_book_rsp.include_new_missed_calls = 0;
+    param->pull_phone_book_rsp.new_missed_calls = 0;
+    param->pull_phone_book_rsp.include_primary_folder_version = 0;
+    param->pull_phone_book_rsp.primary_folder_version = NULL;
+    param->pull_phone_book_rsp.include_secondary_folder_version = 0;
+    param->pull_phone_book_rsp.secondary_folder_version = NULL;
+    param->pull_phone_book_rsp.include_database_identifier = 0;
+    param->pull_phone_book_rsp.database_identifier = NULL;
 }
 
 static void parse_pull_vcard_listing_app_param(esp_pbac_param_t *param, uint8_t *app_param, uint16_t app_param_len)
@@ -770,21 +812,33 @@ static void parse_pull_vcard_listing_app_param(esp_pbac_param_t *param, uint8_t 
     if (app_param == NULL || app_param_len == 0) {
         return;
     }
+
     uint8_t *ptr = app_param;
-    while(ptr < app_param + app_param_len) {
+    const uint8_t *end = app_param + app_param_len;
+
+    while (ptr < end) {
         switch (*ptr)
         {
         case BTA_PBAP_APP_PARAM_PHONE_BOOK_SIZE:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_PHONE_BOOK_SIZE)) {
+                goto error;
+            }
             param->pull_vcard_listing_rsp.include_phone_book_size = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             BE_STREAM_TO_UINT16(param->pull_vcard_listing_rsp.phone_book_size, ptr);
             break;
         case BTA_PBAP_APP_PARAM_NEW_MISSED_CALLS:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_NEW_MISSED_CALLS)) {
+                goto error;
+            }
             param->pull_vcard_listing_rsp.include_new_missed_calls = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             BE_STREAM_TO_UINT8(param->pull_vcard_listing_rsp.new_missed_calls, ptr);
             break;
         case BTA_PBAP_APP_PARAM_PRIMARY_FOLDER_VERSION:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_PRIMARY_FOLDER_VERSION)) {
+                goto error;
+            }
             param->pull_vcard_listing_rsp.include_primary_folder_version = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -792,6 +846,9 @@ static void parse_pull_vcard_listing_app_param(esp_pbac_param_t *param, uint8_t 
             ptr += BTA_PBAP_APP_PARAM_LENGTH_PRIMARY_FOLDER_VERSION;
             break;
         case BTA_PBAP_APP_PARAM_SECONDARY_FOLDER_VERSION:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_SECONDARY_FOLDER_VERSION)) {
+                goto error;
+            }
             param->pull_vcard_listing_rsp.include_secondary_folder_version = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -799,6 +856,9 @@ static void parse_pull_vcard_listing_app_param(esp_pbac_param_t *param, uint8_t 
             ptr += BTA_PBAP_APP_PARAM_LENGTH_SECONDARY_FOLDER_VERSION;
             break;
         case BTA_PBAP_APP_PARAM_DATABASE_IDENTIFIER:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_DATABASE_IDENTIFIER)) {
+                goto error;
+            }
             param->pull_vcard_listing_rsp.include_database_identifier = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -810,8 +870,19 @@ static void parse_pull_vcard_listing_app_param(esp_pbac_param_t *param, uint8_t 
             break;
         }
     }
-error:
     return;
+
+error:
+    param->pull_vcard_listing_rsp.include_phone_book_size = 0;
+    param->pull_vcard_listing_rsp.phone_book_size = 0;
+    param->pull_vcard_listing_rsp.include_new_missed_calls = 0;
+    param->pull_vcard_listing_rsp.new_missed_calls = 0;
+    param->pull_vcard_listing_rsp.include_primary_folder_version = 0;
+    param->pull_vcard_listing_rsp.primary_folder_version = NULL;
+    param->pull_vcard_listing_rsp.include_secondary_folder_version = 0;
+    param->pull_vcard_listing_rsp.secondary_folder_version = NULL;
+    param->pull_vcard_listing_rsp.include_database_identifier = 0;
+    param->pull_vcard_listing_rsp.database_identifier = NULL;
 }
 
 static void parse_pull_vcard_entry_app_param(esp_pbac_param_t *param, uint8_t *app_param, uint16_t app_param_len)
@@ -819,11 +890,17 @@ static void parse_pull_vcard_entry_app_param(esp_pbac_param_t *param, uint8_t *a
     if (app_param == NULL || app_param_len == 0) {
         return;
     }
+
     uint8_t *ptr = app_param;
-    while(ptr < app_param + app_param_len) {
+    const uint8_t *end = app_param + app_param_len;
+
+    while (ptr < end) {
         switch (*ptr)
         {
         case BTA_PBAP_APP_PARAM_DATABASE_IDENTIFIER:
+            if (!btc_pba_client_app_param_tag_valid(ptr, end, BTA_PBAP_APP_PARAM_LENGTH_DATABASE_IDENTIFIER)) {
+                goto error;
+            }
             param->pull_vcard_entry_rsp.include_database_identifier = 1;
             ptr += BTA_PBAP_APP_PARAM_HEADER_LENGTH;
             /* don't copy */
@@ -835,8 +912,11 @@ static void parse_pull_vcard_entry_app_param(esp_pbac_param_t *param, uint8_t *a
             break;
         }
     }
-error:
     return;
+
+error:
+    param->pull_vcard_entry_rsp.include_database_identifier = 0;
+    param->pull_vcard_entry_rsp.database_identifier = NULL;
 }
 
 static uint16_t get_next_dir_len_from_path(char *path, uint16_t path_len, uint16_t path_pos)
