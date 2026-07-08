@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -12,18 +12,22 @@ extern "C" {
 #endif
 
 /** PMU_HP_ACTIVE_DIG_POWER_REG register
- *  need_des
+ *  Configuration register of digital power domains in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_DIG_POWER_REG (DR_REG_PMU_BASE + 0x0)
 /** PMU_HP_ACTIVE_VDD_SPI_PD_EN : R/W; bitpos: [21]; default: 0;
- *  need_des
+ *  Configures whether to power down external flash in HP_ACTIVE state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_ACTIVE_VDD_SPI_PD_EN    (BIT(21))
 #define PMU_HP_ACTIVE_VDD_SPI_PD_EN_M  (PMU_HP_ACTIVE_VDD_SPI_PD_EN_V << PMU_HP_ACTIVE_VDD_SPI_PD_EN_S)
 #define PMU_HP_ACTIVE_VDD_SPI_PD_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_VDD_SPI_PD_EN_S  21
 /** PMU_HP_ACTIVE_HP_MEM_DSLP : R/W; bitpos: [22]; default: 0;
- *  need_des
+ *  Configures whether to put Internal SRAM$x ($x= 0, 1, 2) into Deep-sleep mode in HP_ACTIVE state.
+ *  0: Do not put Internal SRAM into Deep-sleep
+ *  1: Put Internal SRAM into Deep-sleep
  */
 #define PMU_HP_ACTIVE_HP_MEM_DSLP    (BIT(22))
 #define PMU_HP_ACTIVE_HP_MEM_DSLP_M  (PMU_HP_ACTIVE_HP_MEM_DSLP_V << PMU_HP_ACTIVE_HP_MEM_DSLP_S)
@@ -37,7 +41,9 @@ extern "C" {
 #define PMU_HP_ACTIVE_PD_HP_MEM_PD_EN_V  0x0000000FU
 #define PMU_HP_ACTIVE_PD_HP_MEM_PD_EN_S  23
 /** PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to power down MODEM domain in HP_ACTIVE state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN    (BIT(27))
 #define PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_M  (PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_V << PMU_HP_ACTIVE_PD_HP_WIFI_PD_EN_S)
@@ -51,21 +57,27 @@ extern "C" {
 #define PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_ACTIVE_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to power down CPU domain in HP_ACTIVE state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_ACTIVE_PD_HP_CPU_PD_EN    (BIT(29))
 #define PMU_HP_ACTIVE_PD_HP_CPU_PD_EN_M  (PMU_HP_ACTIVE_PD_HP_CPU_PD_EN_V << PMU_HP_ACTIVE_PD_HP_CPU_PD_EN_S)
 #define PMU_HP_ACTIVE_PD_HP_CPU_PD_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_PD_HP_CPU_PD_EN_S  29
 /** PMU_HP_ACTIVE_PD_HP_AON_PD_EN : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to power down Modem Power domain in HP_ACTIVE state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_ACTIVE_PD_HP_AON_PD_EN    (BIT(30))
 #define PMU_HP_ACTIVE_PD_HP_AON_PD_EN_M  (PMU_HP_ACTIVE_PD_HP_AON_PD_EN_V << PMU_HP_ACTIVE_PD_HP_AON_PD_EN_S)
 #define PMU_HP_ACTIVE_PD_HP_AON_PD_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_PD_HP_AON_PD_EN_S  30
 /** PMU_HP_ACTIVE_PD_TOP_PD_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power down Peripherals+ROM domain in HP_ACTIVE state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_ACTIVE_PD_TOP_PD_EN    (BIT(31))
 #define PMU_HP_ACTIVE_PD_TOP_PD_EN_M  (PMU_HP_ACTIVE_PD_TOP_PD_EN_V << PMU_HP_ACTIVE_PD_TOP_PD_EN_S)
@@ -73,11 +85,13 @@ extern "C" {
 #define PMU_HP_ACTIVE_PD_TOP_PD_EN_S  31
 
 /** PMU_HP_ACTIVE_ICG_HP_FUNC_REG register
- *  need_des
+ *  Control register of HP system peripherals' function clocks in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_ICG_HP_FUNC_REG (DR_REG_PMU_BASE + 0x4)
 /** PMU_HP_ACTIVE_DIG_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 4294967295;
- *  need_des
+ *  Configures whether to enable HP system peripherals' function clock in HP_ACTIVE state. For detailed configuration please see Chapter <a href='mod:resclk'>link</a> > Table <a href='tab:clk_pmu_func'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_DIG_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_ACTIVE_DIG_ICG_FUNC_EN_M  (PMU_HP_ACTIVE_DIG_ICG_FUNC_EN_V << PMU_HP_ACTIVE_DIG_ICG_FUNC_EN_S)
@@ -85,11 +99,13 @@ extern "C" {
 #define PMU_HP_ACTIVE_DIG_ICG_FUNC_EN_S  0
 
 /** PMU_HP_ACTIVE_ICG_HP_APB_REG register
- *  need_des
+ *  Control register of HP system peripherals' APB clocks in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_ICG_HP_APB_REG (DR_REG_PMU_BASE + 0x8)
 /** PMU_HP_ACTIVE_DIG_ICG_APB_EN : R/W; bitpos: [31:0]; default: 4294967295;
- *  need_des
+ *  Configures whether to enable HP system peripherals' APB clock in HP_ACTIVE state. For detailed configuration please see Chapter <a href='mod:resclk'>link</a> > Table <a href='tab:clk_pmu_apb'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_DIG_ICG_APB_EN    0xFFFFFFFFU
 #define PMU_HP_ACTIVE_DIG_ICG_APB_EN_M  (PMU_HP_ACTIVE_DIG_ICG_APB_EN_V << PMU_HP_ACTIVE_DIG_ICG_APB_EN_S)
@@ -97,11 +113,11 @@ extern "C" {
 #define PMU_HP_ACTIVE_DIG_ICG_APB_EN_S  0
 
 /** PMU_HP_ACTIVE_ICG_MODEM_REG register
- *  need_des
+ *  Control register of HP system Modem clock gating in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_ICG_MODEM_REG (DR_REG_PMU_BASE + 0xc)
 /** PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures the Modem clock gate in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE    0x00000003U
 #define PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE_M  (PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE_V << PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE_S)
@@ -109,46 +125,58 @@ extern "C" {
 #define PMU_HP_ACTIVE_DIG_ICG_MODEM_CODE_S  30
 
 /** PMU_HP_ACTIVE_HP_SYS_CNTL_REG register
- *  need_des
+ *  System control register in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_HP_SYS_CNTL_REG (DR_REG_PMU_BASE + 0x10)
 /** PMU_HP_ACTIVE_UART_WAKEUP_EN : R/W; bitpos: [24]; default: 0;
- *  need_des
+ *  Configures whether to enable UART wake-up function in HP_ACTIVE state.
+ *  0: Disable wake-up function
+ *  1: Enable wake-up function
  */
 #define PMU_HP_ACTIVE_UART_WAKEUP_EN    (BIT(24))
 #define PMU_HP_ACTIVE_UART_WAKEUP_EN_M  (PMU_HP_ACTIVE_UART_WAKEUP_EN_V << PMU_HP_ACTIVE_UART_WAKEUP_EN_S)
 #define PMU_HP_ACTIVE_UART_WAKEUP_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_UART_WAKEUP_EN_S  24
 /** PMU_HP_ACTIVE_LP_PAD_HOLD_ALL : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures whether to hold LP GPIOs' configuration in HP_ACTIVE state.
+ *  0: Do not hold
+ *  1: Hold
  */
 #define PMU_HP_ACTIVE_LP_PAD_HOLD_ALL    (BIT(25))
 #define PMU_HP_ACTIVE_LP_PAD_HOLD_ALL_M  (PMU_HP_ACTIVE_LP_PAD_HOLD_ALL_V << PMU_HP_ACTIVE_LP_PAD_HOLD_ALL_S)
 #define PMU_HP_ACTIVE_LP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_HP_ACTIVE_LP_PAD_HOLD_ALL_S  25
 /** PMU_HP_ACTIVE_HP_PAD_HOLD_ALL : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to hold HP GPIOs' configuration in HP_ACTIVE state.
+ *  0: Do not hold
+ *  1: Hold
  */
 #define PMU_HP_ACTIVE_HP_PAD_HOLD_ALL    (BIT(26))
 #define PMU_HP_ACTIVE_HP_PAD_HOLD_ALL_M  (PMU_HP_ACTIVE_HP_PAD_HOLD_ALL_V << PMU_HP_ACTIVE_HP_PAD_HOLD_ALL_S)
 #define PMU_HP_ACTIVE_HP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_HP_ACTIVE_HP_PAD_HOLD_ALL_S  26
 /** PMU_HP_ACTIVE_DIG_PAD_SLP_SEL : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to use Light-sleep mode configuration for GPIO in HP_ACTIVE state.
+ *  0: Use normal configuration
+ *  1: Use Light-sleep mode configuration.
  */
 #define PMU_HP_ACTIVE_DIG_PAD_SLP_SEL    (BIT(27))
 #define PMU_HP_ACTIVE_DIG_PAD_SLP_SEL_M  (PMU_HP_ACTIVE_DIG_PAD_SLP_SEL_V << PMU_HP_ACTIVE_DIG_PAD_SLP_SEL_S)
 #define PMU_HP_ACTIVE_DIG_PAD_SLP_SEL_V  0x00000001U
 #define PMU_HP_ACTIVE_DIG_PAD_SLP_SEL_S  27
 /** PMU_HP_ACTIVE_DIG_PAUSE_WDT : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to pause watchdog in HP_ACTIVE state.
+ *  0: Do not pause
+ *  1: Pause
  */
 #define PMU_HP_ACTIVE_DIG_PAUSE_WDT    (BIT(28))
 #define PMU_HP_ACTIVE_DIG_PAUSE_WDT_M  (PMU_HP_ACTIVE_DIG_PAUSE_WDT_V << PMU_HP_ACTIVE_DIG_PAUSE_WDT_S)
 #define PMU_HP_ACTIVE_DIG_PAUSE_WDT_V  0x00000001U
 #define PMU_HP_ACTIVE_DIG_PAUSE_WDT_S  28
 /** PMU_HP_ACTIVE_DIG_CPU_STALL : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to stall CPU in HP_ACTIVE state.
+ *  0: Do not stall
+ *  1: Stall
  */
 #define PMU_HP_ACTIVE_DIG_CPU_STALL    (BIT(29))
 #define PMU_HP_ACTIVE_DIG_CPU_STALL_M  (PMU_HP_ACTIVE_DIG_CPU_STALL_V << PMU_HP_ACTIVE_DIG_CPU_STALL_S)
@@ -156,39 +184,49 @@ extern "C" {
 #define PMU_HP_ACTIVE_DIG_CPU_STALL_S  29
 
 /** PMU_HP_ACTIVE_HP_CK_POWER_REG register
- *  need_des
+ *  Control register of clock source's power in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_HP_CK_POWER_REG (DR_REG_PMU_BASE + 0x14)
 /** PMU_HP_ACTIVE_I2C_ISO_EN : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to enable I2C_ISO in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_I2C_ISO_EN    (BIT(26))
 #define PMU_HP_ACTIVE_I2C_ISO_EN_M  (PMU_HP_ACTIVE_I2C_ISO_EN_V << PMU_HP_ACTIVE_I2C_ISO_EN_S)
 #define PMU_HP_ACTIVE_I2C_ISO_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_I2C_ISO_EN_S  26
 /** PMU_HP_ACTIVE_I2C_RETENTION : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to enable I2C retention in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_I2C_RETENTION    (BIT(27))
 #define PMU_HP_ACTIVE_I2C_RETENTION_M  (PMU_HP_ACTIVE_I2C_RETENTION_V << PMU_HP_ACTIVE_I2C_RETENTION_S)
 #define PMU_HP_ACTIVE_I2C_RETENTION_V  0x00000001U
 #define PMU_HP_ACTIVE_I2C_RETENTION_S  27
 /** PMU_HP_ACTIVE_XPD_BB_I2C : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to enable BB_I2C in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_XPD_BB_I2C    (BIT(28))
 #define PMU_HP_ACTIVE_XPD_BB_I2C_M  (PMU_HP_ACTIVE_XPD_BB_I2C_V << PMU_HP_ACTIVE_XPD_BB_I2C_S)
 #define PMU_HP_ACTIVE_XPD_BB_I2C_V  0x00000001U
 #define PMU_HP_ACTIVE_XPD_BB_I2C_S  28
 /** PMU_HP_ACTIVE_XPD_BBPLL_I2C : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to enable BBPLL_I2C in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_XPD_BBPLL_I2C    (BIT(29))
 #define PMU_HP_ACTIVE_XPD_BBPLL_I2C_M  (PMU_HP_ACTIVE_XPD_BBPLL_I2C_V << PMU_HP_ACTIVE_XPD_BBPLL_I2C_S)
 #define PMU_HP_ACTIVE_XPD_BBPLL_I2C_V  0x00000001U
 #define PMU_HP_ACTIVE_XPD_BBPLL_I2C_S  29
 /** PMU_HP_ACTIVE_XPD_BBPLL : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable BBPLL in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_XPD_BBPLL    (BIT(30))
 #define PMU_HP_ACTIVE_XPD_BBPLL_M  (PMU_HP_ACTIVE_XPD_BBPLL_V << PMU_HP_ACTIVE_XPD_BBPLL_S)
@@ -196,32 +234,32 @@ extern "C" {
 #define PMU_HP_ACTIVE_XPD_BBPLL_S  30
 
 /** PMU_HP_ACTIVE_BIAS_REG register
- *  need_des
+ *  Control register for the operating state of analog circuits (BIAS, DBG, CUR circuits) in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_BIAS_REG (DR_REG_PMU_BASE + 0x18)
 /** PMU_HP_ACTIVE_XPD_BIAS : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures the power supply of BIAS in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_XPD_BIAS    (BIT(25))
 #define PMU_HP_ACTIVE_XPD_BIAS_M  (PMU_HP_ACTIVE_XPD_BIAS_V << PMU_HP_ACTIVE_XPD_BIAS_S)
 #define PMU_HP_ACTIVE_XPD_BIAS_V  0x00000001U
 #define PMU_HP_ACTIVE_XPD_BIAS_S  25
 /** PMU_HP_ACTIVE_DBG_ATTEN : R/W; bitpos: [29:26]; default: 0;
- *  need_des
+ *  Configures the degree of attenuation of the analog band gap in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_DBG_ATTEN    0x0000000FU
 #define PMU_HP_ACTIVE_DBG_ATTEN_M  (PMU_HP_ACTIVE_DBG_ATTEN_V << PMU_HP_ACTIVE_DBG_ATTEN_S)
 #define PMU_HP_ACTIVE_DBG_ATTEN_V  0x0000000FU
 #define PMU_HP_ACTIVE_DBG_ATTEN_S  26
 /** PMU_HP_ACTIVE_PD_CUR : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures the power-down current in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_PD_CUR    (BIT(30))
 #define PMU_HP_ACTIVE_PD_CUR_M  (PMU_HP_ACTIVE_PD_CUR_V << PMU_HP_ACTIVE_PD_CUR_S)
 #define PMU_HP_ACTIVE_PD_CUR_V  0x00000001U
 #define PMU_HP_ACTIVE_PD_CUR_S  30
 /** PMU_HP_ACTIVE_BIAS_SLEEP : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures the sleep or wakeup status of the BIAS circuit in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_BIAS_SLEEP    (BIT(31))
 #define PMU_HP_ACTIVE_BIAS_SLEEP_M  (PMU_HP_ACTIVE_BIAS_SLEEP_V << PMU_HP_ACTIVE_BIAS_SLEEP_S)
@@ -229,18 +267,18 @@ extern "C" {
 #define PMU_HP_ACTIVE_BIAS_SLEEP_S  31
 
 /** PMU_HP_ACTIVE_BACKUP_REG register
- *  need_des
+ *  Data backup control register in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_BACKUP_REG (DR_REG_PMU_BASE + 0x1c)
 /** PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE : R/W; bitpos: [5:4]; default: 0;
- *  need_des
+ *  Configures the ICG during backup process when PMU state switches from HP_SLEEP to HP_ACTIVE.
  */
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE    0x00000003U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE_M  (PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE_V << PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE_S)
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE_V  0x00000003U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODEM_CLK_CODE_S  4
 /** PMU_HP_MODEM2ACTIVE_BACKUP_MODEM_CLK_CODE : R/W; bitpos: [7:6]; default: 0;
- *  need_des
+ *  Configures the ICG during backup process when PMU state switches from HP_MODEM to HP_ACTIVE.
  */
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODEM_CLK_CODE    0x00000003U
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODEM_CLK_CODE_M  (PMU_HP_MODEM2ACTIVE_BACKUP_MODEM_CLK_CODE_V << PMU_HP_MODEM2ACTIVE_BACKUP_MODEM_CLK_CODE_S)
@@ -268,42 +306,58 @@ extern "C" {
 #define PMU_HP_MODEM2ACTIVE_RETENTION_EN_V  0x00000001U
 #define PMU_HP_MODEM2ACTIVE_RETENTION_EN_S  12
 /** PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL : R/W; bitpos: [15:14]; default: 0;
- *  need_des
+ *  Configures the backup module's function clock source when PMU state switches from HP_SLEEP to HP_ACTIVE.
+ *  0: Select XTAL
+ *  1: Select PLL_CLK
+ *  2: Select RC_FAST_CLK
+ *  3: Invalid value
  */
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL    0x00000003U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL_M  (PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL_V << PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL_S)
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_CLK_SEL_S  14
 /** PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL : R/W; bitpos: [17:16]; default: 0;
- *  need_des
+ *  Configures the backup module's function clock source when PMU state switches from HP_MODEM to HP_ACTIVE. The configuration is the same as the register above.
  */
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL    0x00000003U
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_M  (PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_V << PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_S)
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_MODEM2ACTIVE_BACKUP_CLK_SEL_S  16
 /** PMU_HP_SLEEP2ACTIVE_BACKUP_MODE : R/W; bitpos: [22:20]; default: 0;
- *  need_des
+ *  Configures the backup direction and link list when PMU state switches switch from HP_SLEEP to HP_ACTIVE.
+ *  Higher two bits:
+ *  0: From peripheral to memory
+ *  1: From memory to peripheral
+ *  Lower four bits:
+ *  0: PAU_LINK_ADDR_0
+ *  1: PAU_LINK_ADDR_1
+ *  2: PAU_LINK_ADDR_2
+ *  3: PAU_LINK_ADDR_3
  */
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE    0x00000007U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_M  (PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_V << PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_S)
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_V  0x00000007U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_MODE_S  20
 /** PMU_HP_MODEM2ACTIVE_BACKUP_MODE : R/W; bitpos: [25:23]; default: 0;
- *  need_des
+ *  Configures the backup direction and link list when PMU state switches from HP_MODEM to HP_ACTIVE. The configuration is the same as the register above.
  */
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODE    0x00000007U
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_M  (PMU_HP_MODEM2ACTIVE_BACKUP_MODE_V << PMU_HP_MODEM2ACTIVE_BACKUP_MODE_S)
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_V  0x00000007U
 #define PMU_HP_MODEM2ACTIVE_BACKUP_MODE_S  23
 /** PMU_HP_SLEEP2ACTIVE_BACKUP_EN : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to enable the backup flow when PMU state switches from HP_SLEEP to HP_ACTIVE.
+ *  0: Disable backup
+ *  1: Enable backup
  */
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_EN    (BIT(29))
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_EN_M  (PMU_HP_SLEEP2ACTIVE_BACKUP_EN_V << PMU_HP_SLEEP2ACTIVE_BACKUP_EN_S)
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_EN_V  0x00000001U
 #define PMU_HP_SLEEP2ACTIVE_BACKUP_EN_S  29
 /** PMU_HP_MODEM2ACTIVE_BACKUP_EN : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable the backup flow when PMU state switches from HP_MODEM to HP_ACTIVE.
+ *  0: Disable backup
+ *  1: Enable backup
  */
 #define PMU_HP_MODEM2ACTIVE_BACKUP_EN    (BIT(30))
 #define PMU_HP_MODEM2ACTIVE_BACKUP_EN_M  (PMU_HP_MODEM2ACTIVE_BACKUP_EN_V << PMU_HP_MODEM2ACTIVE_BACKUP_EN_S)
@@ -311,11 +365,13 @@ extern "C" {
 #define PMU_HP_MODEM2ACTIVE_BACKUP_EN_S  30
 
 /** PMU_HP_ACTIVE_BACKUP_CLK_REG register
- *  need_des
+ *  Control register for the operating clocks of the backup module in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_BACKUP_CLK_REG (DR_REG_PMU_BASE + 0x20)
 /** PMU_HP_ACTIVE_BACKUP_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 0;
- *  need_des
+ *  Configures whether to enable each peripherals' function clock when the target state is HP_ACTIVE. For details, please refer to Chapter <a href='mod:resclk'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_BACKUP_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_ACTIVE_BACKUP_ICG_FUNC_EN_M  (PMU_HP_ACTIVE_BACKUP_ICG_FUNC_EN_V << PMU_HP_ACTIVE_BACKUP_ICG_FUNC_EN_S)
@@ -323,39 +379,49 @@ extern "C" {
 #define PMU_HP_ACTIVE_BACKUP_ICG_FUNC_EN_S  0
 
 /** PMU_HP_ACTIVE_SYSCLK_REG register
- *  need_des
+ *  Control register of the system clocks in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_SYSCLK_REG (DR_REG_PMU_BASE + 0x24)
 /** PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to enable the clock division for HP_ROOT_CLK in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV    (BIT(26))
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV_M  (PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV_V << PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV_S)
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV_V  0x00000001U
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_NO_DIV_S  26
 /** PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to enable HP_ROOT_CLK in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN    (BIT(27))
 #define PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN_M  (PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN_V << PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN_S)
 #define PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_ICG_SYS_CLOCK_EN_S  27
 /** PMU_HP_ACTIVE_SYS_CLK_SLP_SEL : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to allow PMU to control clock source in HP_ACTIVE state.
+ *  0: Controlled by PCR registers
+ *  1: Controlled by PMU
  */
 #define PMU_HP_ACTIVE_SYS_CLK_SLP_SEL    (BIT(28))
 #define PMU_HP_ACTIVE_SYS_CLK_SLP_SEL_M  (PMU_HP_ACTIVE_SYS_CLK_SLP_SEL_V << PMU_HP_ACTIVE_SYS_CLK_SLP_SEL_S)
 #define PMU_HP_ACTIVE_SYS_CLK_SLP_SEL_V  0x00000001U
 #define PMU_HP_ACTIVE_SYS_CLK_SLP_SEL_S  28
 /** PMU_HP_ACTIVE_ICG_SLP_SEL : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to allow PMU to control the clock gating in HP_ACTIVE state.
+ *  0: Controlled by PCR registers
+ *  1: Controlled by PMU
  */
 #define PMU_HP_ACTIVE_ICG_SLP_SEL    (BIT(29))
 #define PMU_HP_ACTIVE_ICG_SLP_SEL_M  (PMU_HP_ACTIVE_ICG_SLP_SEL_V << PMU_HP_ACTIVE_ICG_SLP_SEL_S)
 #define PMU_HP_ACTIVE_ICG_SLP_SEL_V  0x00000001U
 #define PMU_HP_ACTIVE_ICG_SLP_SEL_S  29
 /** PMU_HP_ACTIVE_DIG_SYS_CLK_SEL : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures the source of HP_ROOT_CLK in HP_ACTIVE state.
+ *  0: XTAL
+ *  1: PLL_CLK
+ *  2: RC_FAST_CLK
+ *  3: Invalid value
  */
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_SEL    0x00000003U
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_SEL_M  (PMU_HP_ACTIVE_DIG_SYS_CLK_SEL_V << PMU_HP_ACTIVE_DIG_SYS_CLK_SEL_S)
@@ -363,7 +429,7 @@ extern "C" {
 #define PMU_HP_ACTIVE_DIG_SYS_CLK_SEL_S  30
 
 /** PMU_HP_ACTIVE_HP_REGULATOR0_REG register
- *  need_des
+ *  Control register of HP regulators' power in HP_ACTIVE state, controlling all settings except drive
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x28)
 /** PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN : R/W; bitpos: [3]; default: 1;
@@ -374,21 +440,28 @@ extern "C" {
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_V  0x00000001U
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_CONNECT_EN_S  3
 /** PMU_LP_DBIAS_VOL : RO; bitpos: [8:4]; default: 24;
- *  need_des
+ *  Indicates the voltage level based on PVT_RTC data, which is the feedback from the PVT module in LP_SLEEP state.
  */
 #define PMU_LP_DBIAS_VOL    0x0000001FU
 #define PMU_LP_DBIAS_VOL_M  (PMU_LP_DBIAS_VOL_V << PMU_LP_DBIAS_VOL_S)
 #define PMU_LP_DBIAS_VOL_V  0x0000001FU
 #define PMU_LP_DBIAS_VOL_S  4
 /** PMU_HP_DBIAS_VOL : RO; bitpos: [13:9]; default: 24;
- *  need_des
+ *  Indicates the voltage level based on PVT data, which is the feedback from PVT module in HP_SLEEP state.
  */
 #define PMU_HP_DBIAS_VOL    0x0000001FU
 #define PMU_HP_DBIAS_VOL_M  (PMU_HP_DBIAS_VOL_V << PMU_HP_DBIAS_VOL_S)
 #define PMU_HP_DBIAS_VOL_V  0x0000001FU
 #define PMU_HP_DBIAS_VOL_S  9
 /** PMU_DIG_REGULATOR0_DBIAS_SEL : R/W; bitpos: [14]; default: 1;
- *  need_des
+ *  Configures to select the DREG configuration source for main HP and LP regulators in different PMU states.
+ *  0: PMU_HP_DBIAS_VOL
+ *  1: DREG value of respective main regulators in respective PMU states configured via the following register fields:
+ *
+ *      - PMU_HP_ACTIVE_HP_REGULATOR_DBIAS
+ *      - PMU_HP_SLEEP_HP_REGULATOR_DBIAS
+ *      - PMU_HP_ACTIVE_LP_REGULATOR_DBIAS
+ *      - PMU_HP_SLEEP_LP_REGULATOR_DBIAS
  */
 #define PMU_DIG_REGULATOR0_DBIAS_SEL    (BIT(14))
 #define PMU_DIG_REGULATOR0_DBIAS_SEL_M  (PMU_DIG_REGULATOR0_DBIAS_SEL_V << PMU_DIG_REGULATOR0_DBIAS_SEL_S)
@@ -402,42 +475,48 @@ extern "C" {
 #define PMU_DIG_DBIAS_INIT_V  0x00000001U
 #define PMU_DIG_DBIAS_INIT_S  15
 /** PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary regulator powering the HP memory in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD    (BIT(16))
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD_M  (PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD_V << PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD_S)
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD_V  0x00000001U
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_XPD_S  16
 /** PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD : R/W; bitpos: [17]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary regulator powering the logic circuit in all HP domains in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD    (BIT(17))
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD_M  (PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD_V << PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD_S)
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD_V  0x00000001U
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_XPD_S  17
 /** PMU_HP_ACTIVE_HP_REGULATOR_XPD : R/W; bitpos: [18]; default: 1;
- *  need_des
+ *  Configures whether to enable the main HP regulator in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_XPD    (BIT(18))
 #define PMU_HP_ACTIVE_HP_REGULATOR_XPD_M  (PMU_HP_ACTIVE_HP_REGULATOR_XPD_V << PMU_HP_ACTIVE_HP_REGULATOR_XPD_S)
 #define PMU_HP_ACTIVE_HP_REGULATOR_XPD_V  0x00000001U
 #define PMU_HP_ACTIVE_HP_REGULATOR_XPD_S  18
 /** PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS : R/W; bitpos: [22:19]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary HP regulator powering the HP memory in HP_ACTIVE state, adjusting its output voltage.
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS    0x0000000FU
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS_M  (PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS_V << PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS_S)
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS_V  0x0000000FU
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_MEM_DBIAS_S  19
 /** PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS : R/W; bitpos: [26:23]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary HP regulator powering the logic circuits in HP domain in HP_ACTIVE state, adjusting its output voltage.
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS    0x0000000FU
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS_M  (PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS_V << PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS_S)
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS_V  0x0000000FU
 #define PMU_HP_ACTIVE_HP_REGULATOR_SLP_LOGIC_DBIAS_S  23
 /** PMU_HP_ACTIVE_HP_REGULATOR_DBIAS : R/W; bitpos: [31:27]; default: 24;
- *  need_des
+ *  Configures the DREG value of the main HP regulator in HP_ACTIVE state, adjusting its output voltage.
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_DBIAS    0x0000001FU
 #define PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_M  (PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_V << PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_S)
@@ -445,11 +524,11 @@ extern "C" {
 #define PMU_HP_ACTIVE_HP_REGULATOR_DBIAS_S  27
 
 /** PMU_HP_ACTIVE_HP_REGULATOR1_REG register
- *  need_des
+ *  Control register of HP regulators' power in HP_ACTIVE state, controlling drive settings
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x2c)
 /** PMU_HP_ACTIVE_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
- *  need_des
+ *  Configures the drive strength of the main HP regulator in HP_ACTIVE state.
  */
 #define PMU_HP_ACTIVE_HP_REGULATOR_DRV_B    0x00FFFFFFU
 #define PMU_HP_ACTIVE_HP_REGULATOR_DRV_B_M  (PMU_HP_ACTIVE_HP_REGULATOR_DRV_B_V << PMU_HP_ACTIVE_HP_REGULATOR_DRV_B_S)
@@ -457,11 +536,13 @@ extern "C" {
 #define PMU_HP_ACTIVE_HP_REGULATOR_DRV_B_S  8
 
 /** PMU_HP_ACTIVE_XTAL_REG register
- *  need_des
+ *  XTAL_CLK power control register in HP_ACTIVE state
  */
 #define PMU_HP_ACTIVE_XTAL_REG (DR_REG_PMU_BASE + 0x30)
 /** PMU_HP_ACTIVE_XPD_XTAL : R/W; bitpos: [31]; default: 1;
- *  need_des
+ *  Configures whether to enable XTAL_CLK in HP_ACTIVE state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_ACTIVE_XPD_XTAL    (BIT(31))
 #define PMU_HP_ACTIVE_XPD_XTAL_M  (PMU_HP_ACTIVE_XPD_XTAL_V << PMU_HP_ACTIVE_XPD_XTAL_S)
@@ -469,18 +550,22 @@ extern "C" {
 #define PMU_HP_ACTIVE_XPD_XTAL_S  31
 
 /** PMU_HP_MODEM_DIG_POWER_REG register
- *  need_des
+ *  Configuration register of digital power domains in HP_MODEM state
  */
 #define PMU_HP_MODEM_DIG_POWER_REG (DR_REG_PMU_BASE + 0x34)
 /** PMU_HP_MODEM_VDD_SPI_PD_EN : R/W; bitpos: [21]; default: 0;
- *  need_des
+ *  Configures whether to power down external flash in HP_MODEM state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_MODEM_VDD_SPI_PD_EN    (BIT(21))
 #define PMU_HP_MODEM_VDD_SPI_PD_EN_M  (PMU_HP_MODEM_VDD_SPI_PD_EN_V << PMU_HP_MODEM_VDD_SPI_PD_EN_S)
 #define PMU_HP_MODEM_VDD_SPI_PD_EN_V  0x00000001U
 #define PMU_HP_MODEM_VDD_SPI_PD_EN_S  21
 /** PMU_HP_MODEM_HP_MEM_DSLP : R/W; bitpos: [22]; default: 0;
- *  need_des
+ *  Configures whether to put Internal SRAM$x ($x= 0, 1, 2) into Deep-sleep mode in HP_MODEM state.
+ *  0: Do not put Internal SRAM into Deep-sleep
+ *  1: Put Internal SRAM into Deep-sleep
  */
 #define PMU_HP_MODEM_HP_MEM_DSLP    (BIT(22))
 #define PMU_HP_MODEM_HP_MEM_DSLP_M  (PMU_HP_MODEM_HP_MEM_DSLP_V << PMU_HP_MODEM_HP_MEM_DSLP_S)
@@ -494,7 +579,9 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_MEM_PD_EN_V  0x0000000FU
 #define PMU_HP_MODEM_PD_HP_MEM_PD_EN_S  23
 /** PMU_HP_MODEM_PD_HP_WIFI_PD_EN : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to power down MODEM domain in HP_MODEM state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN    (BIT(27))
 #define PMU_HP_MODEM_PD_HP_WIFI_PD_EN_M  (PMU_HP_MODEM_PD_HP_WIFI_PD_EN_V << PMU_HP_MODEM_PD_HP_WIFI_PD_EN_S)
@@ -508,21 +595,27 @@ extern "C" {
 #define PMU_HP_MODEM_PD_HP_PERI_PD_EN_V  0x00000001U
 #define PMU_HP_MODEM_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_MODEM_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to power down CPU domain in HP_MODEM state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN    (BIT(29))
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN_M  (PMU_HP_MODEM_PD_HP_CPU_PD_EN_V << PMU_HP_MODEM_PD_HP_CPU_PD_EN_S)
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN_V  0x00000001U
 #define PMU_HP_MODEM_PD_HP_CPU_PD_EN_S  29
 /** PMU_HP_MODEM_PD_HP_AON_PD_EN : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to power down Modem Power domain in HP_MODEM state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN    (BIT(30))
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN_M  (PMU_HP_MODEM_PD_HP_AON_PD_EN_V << PMU_HP_MODEM_PD_HP_AON_PD_EN_S)
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN_V  0x00000001U
 #define PMU_HP_MODEM_PD_HP_AON_PD_EN_S  30
 /** PMU_HP_MODEM_PD_TOP_PD_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power down Peripherals+ROM domain in HP_MODEM state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_MODEM_PD_TOP_PD_EN    (BIT(31))
 #define PMU_HP_MODEM_PD_TOP_PD_EN_M  (PMU_HP_MODEM_PD_TOP_PD_EN_V << PMU_HP_MODEM_PD_TOP_PD_EN_S)
@@ -530,11 +623,13 @@ extern "C" {
 #define PMU_HP_MODEM_PD_TOP_PD_EN_S  31
 
 /** PMU_HP_MODEM_ICG_HP_FUNC_REG register
- *  need_des
+ *  Control register of HP system peripherals' function clocks in HP_MODEM state
  */
 #define PMU_HP_MODEM_ICG_HP_FUNC_REG (DR_REG_PMU_BASE + 0x38)
 /** PMU_HP_MODEM_DIG_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 4294967295;
- *  need_des
+ *  Configures whether to enable HP system peripherals' function clock in HP_MODEM state. For detailed configuration please see Chapter <a href='mod:resclk'>link</a> > Table <a href='tab:clk_pmu_func'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_DIG_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_MODEM_DIG_ICG_FUNC_EN_M  (PMU_HP_MODEM_DIG_ICG_FUNC_EN_V << PMU_HP_MODEM_DIG_ICG_FUNC_EN_S)
@@ -542,11 +637,13 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_ICG_FUNC_EN_S  0
 
 /** PMU_HP_MODEM_ICG_HP_APB_REG register
- *  need_des
+ *  Control register of HP system peripherals' APB clocks in HP_MODEM state
  */
 #define PMU_HP_MODEM_ICG_HP_APB_REG (DR_REG_PMU_BASE + 0x3c)
 /** PMU_HP_MODEM_DIG_ICG_APB_EN : R/W; bitpos: [31:0]; default: 4294967295;
- *  need_des
+ *  Configures whether to enable HP system peripherals' APB clock in HP_MODEM state. For detailed configuration please see Chapter <a href='mod:resclk'>link</a> > Table <a href='tab:clk_pmu_apb'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_DIG_ICG_APB_EN    0xFFFFFFFFU
 #define PMU_HP_MODEM_DIG_ICG_APB_EN_M  (PMU_HP_MODEM_DIG_ICG_APB_EN_V << PMU_HP_MODEM_DIG_ICG_APB_EN_S)
@@ -554,11 +651,11 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_ICG_APB_EN_S  0
 
 /** PMU_HP_MODEM_ICG_MODEM_REG register
- *  need_des
+ *  Control register of HP system Modem clock gating in HP_MODEM state
  */
 #define PMU_HP_MODEM_ICG_MODEM_REG (DR_REG_PMU_BASE + 0x40)
 /** PMU_HP_MODEM_DIG_ICG_MODEM_CODE : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures the Modem clock gate in HP_MODEM state.
  */
 #define PMU_HP_MODEM_DIG_ICG_MODEM_CODE    0x00000003U
 #define PMU_HP_MODEM_DIG_ICG_MODEM_CODE_M  (PMU_HP_MODEM_DIG_ICG_MODEM_CODE_V << PMU_HP_MODEM_DIG_ICG_MODEM_CODE_S)
@@ -566,46 +663,58 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_ICG_MODEM_CODE_S  30
 
 /** PMU_HP_MODEM_HP_SYS_CNTL_REG register
- *  need_des
+ *  System control register in HP_MODEM state
  */
 #define PMU_HP_MODEM_HP_SYS_CNTL_REG (DR_REG_PMU_BASE + 0x44)
 /** PMU_HP_MODEM_UART_WAKEUP_EN : R/W; bitpos: [24]; default: 0;
- *  need_des
+ *  Configures whether to enable UART wake-up function in HP_MODEM state.
+ *  0: Disable wake-up function
+ *  1: Enable wake-up function
  */
 #define PMU_HP_MODEM_UART_WAKEUP_EN    (BIT(24))
 #define PMU_HP_MODEM_UART_WAKEUP_EN_M  (PMU_HP_MODEM_UART_WAKEUP_EN_V << PMU_HP_MODEM_UART_WAKEUP_EN_S)
 #define PMU_HP_MODEM_UART_WAKEUP_EN_V  0x00000001U
 #define PMU_HP_MODEM_UART_WAKEUP_EN_S  24
 /** PMU_HP_MODEM_LP_PAD_HOLD_ALL : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures whether to hold LP GPIOs' configuration in HP_MODEM state.
+ *  0: Do not hold
+ *  1: Hold
  */
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL    (BIT(25))
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL_M  (PMU_HP_MODEM_LP_PAD_HOLD_ALL_V << PMU_HP_MODEM_LP_PAD_HOLD_ALL_S)
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_HP_MODEM_LP_PAD_HOLD_ALL_S  25
 /** PMU_HP_MODEM_HP_PAD_HOLD_ALL : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to hold HP GPIOs' configuration in HP_MODEM state.
+ *  0: Do not hold
+ *  1: Hold
  */
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL    (BIT(26))
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL_M  (PMU_HP_MODEM_HP_PAD_HOLD_ALL_V << PMU_HP_MODEM_HP_PAD_HOLD_ALL_S)
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_HP_MODEM_HP_PAD_HOLD_ALL_S  26
 /** PMU_HP_MODEM_DIG_PAD_SLP_SEL : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to use Light-sleep mode configuration for GPIO in HP_MODEM state.
+ *  0: Use normal configuration
+ *  1: Use Light-sleep mode configuration. For details please refer to Chapter <a href='mod:iomuxgpio'>link</a> > Section <a href='sec:iomuxgpio-pin-func-light-sleep'>link</a>.
  */
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL    (BIT(27))
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL_M  (PMU_HP_MODEM_DIG_PAD_SLP_SEL_V << PMU_HP_MODEM_DIG_PAD_SLP_SEL_S)
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL_V  0x00000001U
 #define PMU_HP_MODEM_DIG_PAD_SLP_SEL_S  27
 /** PMU_HP_MODEM_DIG_PAUSE_WDT : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to pause watchdog in HP_MODEM state.
+ *  0: Do not pause
+ *  1: Pause
  */
 #define PMU_HP_MODEM_DIG_PAUSE_WDT    (BIT(28))
 #define PMU_HP_MODEM_DIG_PAUSE_WDT_M  (PMU_HP_MODEM_DIG_PAUSE_WDT_V << PMU_HP_MODEM_DIG_PAUSE_WDT_S)
 #define PMU_HP_MODEM_DIG_PAUSE_WDT_V  0x00000001U
 #define PMU_HP_MODEM_DIG_PAUSE_WDT_S  28
 /** PMU_HP_MODEM_DIG_CPU_STALL : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to stall CPU in HP_MODEM state.
+ *  0: Do not stall
+ *  1: Stall
  */
 #define PMU_HP_MODEM_DIG_CPU_STALL    (BIT(29))
 #define PMU_HP_MODEM_DIG_CPU_STALL_M  (PMU_HP_MODEM_DIG_CPU_STALL_V << PMU_HP_MODEM_DIG_CPU_STALL_S)
@@ -613,11 +722,13 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_CPU_STALL_S  29
 
 /** PMU_HP_MODEM_HP_CK_POWER_REG register
- *  need_des
+ *  Control register of clock source's power in HP_MODEM state
  */
 #define PMU_HP_MODEM_HP_CK_POWER_REG (DR_REG_PMU_BASE + 0x48)
 /** PMU_HP_MODEM_I2C_ISO_EN : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to enable I2C_ISO in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_I2C_ISO_EN    (BIT(26))
 #define PMU_HP_MODEM_I2C_ISO_EN_M  (PMU_HP_MODEM_I2C_ISO_EN_V << PMU_HP_MODEM_I2C_ISO_EN_S)
@@ -631,21 +742,27 @@ extern "C" {
 #define PMU_HP_MODEM_I2C_RETENTION_V  0x00000001U
 #define PMU_HP_MODEM_I2C_RETENTION_S  27
 /** PMU_HP_MODEM_XPD_BB_I2C : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to enable BB_I2C in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_XPD_BB_I2C    (BIT(28))
 #define PMU_HP_MODEM_XPD_BB_I2C_M  (PMU_HP_MODEM_XPD_BB_I2C_V << PMU_HP_MODEM_XPD_BB_I2C_S)
 #define PMU_HP_MODEM_XPD_BB_I2C_V  0x00000001U
 #define PMU_HP_MODEM_XPD_BB_I2C_S  28
 /** PMU_HP_MODEM_XPD_BBPLL_I2C : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to enable BBPLL_I2C in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_XPD_BBPLL_I2C    (BIT(29))
 #define PMU_HP_MODEM_XPD_BBPLL_I2C_M  (PMU_HP_MODEM_XPD_BBPLL_I2C_V << PMU_HP_MODEM_XPD_BBPLL_I2C_S)
 #define PMU_HP_MODEM_XPD_BBPLL_I2C_V  0x00000001U
 #define PMU_HP_MODEM_XPD_BBPLL_I2C_S  29
 /** PMU_HP_MODEM_XPD_BBPLL : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable BBPLL in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_XPD_BBPLL    (BIT(30))
 #define PMU_HP_MODEM_XPD_BBPLL_M  (PMU_HP_MODEM_XPD_BBPLL_V << PMU_HP_MODEM_XPD_BBPLL_S)
@@ -653,32 +770,32 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_BBPLL_S  30
 
 /** PMU_HP_MODEM_BIAS_REG register
- *  need_des
+ *  Control register for the operating state of analog circuits (BIAS, DBG, CUR circuits) in HP_MODEM state
  */
 #define PMU_HP_MODEM_BIAS_REG (DR_REG_PMU_BASE + 0x4c)
 /** PMU_HP_MODEM_XPD_BIAS : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures the power supply of BIAS in HP_MODEM state.
  */
 #define PMU_HP_MODEM_XPD_BIAS    (BIT(25))
 #define PMU_HP_MODEM_XPD_BIAS_M  (PMU_HP_MODEM_XPD_BIAS_V << PMU_HP_MODEM_XPD_BIAS_S)
 #define PMU_HP_MODEM_XPD_BIAS_V  0x00000001U
 #define PMU_HP_MODEM_XPD_BIAS_S  25
 /** PMU_HP_MODEM_DBG_ATTEN : R/W; bitpos: [29:26]; default: 0;
- *  need_des
+ *  Configures the degree of attenuation of the analog band gap in HP_MODEM state.
  */
 #define PMU_HP_MODEM_DBG_ATTEN    0x0000000FU
 #define PMU_HP_MODEM_DBG_ATTEN_M  (PMU_HP_MODEM_DBG_ATTEN_V << PMU_HP_MODEM_DBG_ATTEN_S)
 #define PMU_HP_MODEM_DBG_ATTEN_V  0x0000000FU
 #define PMU_HP_MODEM_DBG_ATTEN_S  26
 /** PMU_HP_MODEM_PD_CUR : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures the power-down current in HP_MODEM state.
  */
 #define PMU_HP_MODEM_PD_CUR    (BIT(30))
 #define PMU_HP_MODEM_PD_CUR_M  (PMU_HP_MODEM_PD_CUR_V << PMU_HP_MODEM_PD_CUR_S)
 #define PMU_HP_MODEM_PD_CUR_V  0x00000001U
 #define PMU_HP_MODEM_PD_CUR_S  30
 /** PMU_HP_MODEM_BIAS_SLEEP : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures the sleep or wakeup status of the BIAS circuit in HP_MODEM state.
  */
 #define PMU_HP_MODEM_BIAS_SLEEP    (BIT(31))
 #define PMU_HP_MODEM_BIAS_SLEEP_M  (PMU_HP_MODEM_BIAS_SLEEP_V << PMU_HP_MODEM_BIAS_SLEEP_S)
@@ -686,11 +803,11 @@ extern "C" {
 #define PMU_HP_MODEM_BIAS_SLEEP_S  31
 
 /** PMU_HP_MODEM_BACKUP_REG register
- *  need_des
+ *  Data backup control register in HP_MODEM state
  */
 #define PMU_HP_MODEM_BACKUP_REG (DR_REG_PMU_BASE + 0x50)
 /** PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE : R/W; bitpos: [5:4]; default: 0;
- *  need_des
+ *  Configures the ICG during backup process when PMU state switches from HP_SLEEP to HP_MODEM.
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE    0x00000003U
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_M  (PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_V << PMU_HP_SLEEP2MODEM_BACKUP_MODEM_CLK_CODE_S)
@@ -711,21 +828,35 @@ extern "C" {
 #define PMU_HP_SLEEP2MODEM_RETENTION_EN_V  0x00000001U
 #define PMU_HP_SLEEP2MODEM_RETENTION_EN_S  11
 /** PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL : R/W; bitpos: [15:14]; default: 0;
- *  need_des
+ *  Configures the backup module's function clock source when PMU state switches from HP_SLEEP to HP_MODEM.
+ *  0: Select XTAL
+ *  1: Select PLL_CLK
+ *  2: Select RC_FAST_CLK
+ *  3: Invalid value
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL    0x00000003U
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_M  (PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_V << PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_S)
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_SLEEP2MODEM_BACKUP_CLK_SEL_S  14
 /** PMU_HP_SLEEP2MODEM_BACKUP_MODE : R/W; bitpos: [22:20]; default: 0;
- *  need_des
+ *  Configures the backup direction and link list when PMU state switches switch from HP_SLEEP to HP_MODEM.
+ *  Highest bit:
+ *  0: From peripheral to memory
+ *  1: From memory to peripheral
+ *  Lower two bits:
+ *  0: PAU_LINK_ADDR_0
+ *  1: PAU_LINK_ADDR_1
+ *  2: PAU_LINK_ADDR_2
+ *  3: PAU_LINK_ADDR_3
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE    0x00000007U
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_M  (PMU_HP_SLEEP2MODEM_BACKUP_MODE_V << PMU_HP_SLEEP2MODEM_BACKUP_MODE_S)
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_V  0x00000007U
 #define PMU_HP_SLEEP2MODEM_BACKUP_MODE_S  20
 /** PMU_HP_SLEEP2MODEM_BACKUP_EN : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to enable the backup flow when PMU state switches from HP_SLEEP to HP_MODEM.
+ *  0: Disable backup
+ *  1: Enable backup
  */
 #define PMU_HP_SLEEP2MODEM_BACKUP_EN    (BIT(29))
 #define PMU_HP_SLEEP2MODEM_BACKUP_EN_M  (PMU_HP_SLEEP2MODEM_BACKUP_EN_V << PMU_HP_SLEEP2MODEM_BACKUP_EN_S)
@@ -733,11 +864,13 @@ extern "C" {
 #define PMU_HP_SLEEP2MODEM_BACKUP_EN_S  29
 
 /** PMU_HP_MODEM_BACKUP_CLK_REG register
- *  need_des
+ *  Control register for the operating clocks of the backup module in HP_MODEM state
  */
 #define PMU_HP_MODEM_BACKUP_CLK_REG (DR_REG_PMU_BASE + 0x54)
 /** PMU_HP_MODEM_BACKUP_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 0;
- *  need_des
+ *  Configures whether to enable each peripherals' function clock when the target state is HP_MODEM. For details, please refer to Chapter <a href='mod:resclk'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_BACKUP_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_M  (PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_V << PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_S)
@@ -745,39 +878,49 @@ extern "C" {
 #define PMU_HP_MODEM_BACKUP_ICG_FUNC_EN_S  0
 
 /** PMU_HP_MODEM_SYSCLK_REG register
- *  need_des
+ *  Control register of the system clocks in HP_MODEM state
  */
 #define PMU_HP_MODEM_SYSCLK_REG (DR_REG_PMU_BASE + 0x58)
 /** PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to enable the clock division for HP_ROOT_CLK in HP_MODEM state.
  */
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV    (BIT(26))
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_M  (PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_V << PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_S)
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_V  0x00000001U
 #define PMU_HP_MODEM_DIG_SYS_CLK_NO_DIV_S  26
 /** PMU_HP_MODEM_ICG_SYS_CLOCK_EN : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to enable HP_ROOT_CLK in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN    (BIT(27))
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN_M  (PMU_HP_MODEM_ICG_SYS_CLOCK_EN_V << PMU_HP_MODEM_ICG_SYS_CLOCK_EN_S)
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN_V  0x00000001U
 #define PMU_HP_MODEM_ICG_SYS_CLOCK_EN_S  27
 /** PMU_HP_MODEM_SYS_CLK_SLP_SEL : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to allow PMU to control the clock source in HP_MODEM state.
+ *  0: Controlled by PCR registers
+ *  1: Controlled by PMU
  */
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL    (BIT(28))
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL_M  (PMU_HP_MODEM_SYS_CLK_SLP_SEL_V << PMU_HP_MODEM_SYS_CLK_SLP_SEL_S)
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL_V  0x00000001U
 #define PMU_HP_MODEM_SYS_CLK_SLP_SEL_S  28
 /** PMU_HP_MODEM_ICG_SLP_SEL : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to allow PMU to control the clock gating in HP_MODEM state.
+ *  0: Controlled by PCR registers
+ *  1: Controlled by PMU
  */
 #define PMU_HP_MODEM_ICG_SLP_SEL    (BIT(29))
 #define PMU_HP_MODEM_ICG_SLP_SEL_M  (PMU_HP_MODEM_ICG_SLP_SEL_V << PMU_HP_MODEM_ICG_SLP_SEL_S)
 #define PMU_HP_MODEM_ICG_SLP_SEL_V  0x00000001U
 #define PMU_HP_MODEM_ICG_SLP_SEL_S  29
 /** PMU_HP_MODEM_DIG_SYS_CLK_SEL : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures the source of HP_ROOT_CLK in HP_MODEM state.
+ *  0: XTAL
+ *  1: PLL_CLK
+ *  2: RC_FAST_CLK
+ *  3: Invalid value
  */
 #define PMU_HP_MODEM_DIG_SYS_CLK_SEL    0x00000003U
 #define PMU_HP_MODEM_DIG_SYS_CLK_SEL_M  (PMU_HP_MODEM_DIG_SYS_CLK_SEL_V << PMU_HP_MODEM_DIG_SYS_CLK_SEL_S)
@@ -785,7 +928,7 @@ extern "C" {
 #define PMU_HP_MODEM_DIG_SYS_CLK_SEL_S  30
 
 /** PMU_HP_MODEM_HP_REGULATOR0_REG register
- *  need_des
+ *  Control register of HP regulators' power in HP_MODEM state, controlling all settings except drive
  */
 #define PMU_HP_MODEM_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x5c)
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN : R/W; bitpos: [15]; default: 1;
@@ -796,42 +939,48 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_V  0x00000001U
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_CONNECT_EN_S  15
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary regulator powering the HP memory in HP domain in HP_MODEM state.
+ *  0: Disable the regulator
+ *  1: Enable the regulator
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD    (BIT(16))
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_V << PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_S)
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_V  0x00000001U
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_XPD_S  16
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD : R/W; bitpos: [17]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary regulator powering the logic circuit in HP domain in HP_MODEM state.
+ *  0: Disable the regulator
+ *  1: Enable the regulator
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD    (BIT(17))
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_V << PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_S)
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_V  0x00000001U
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_XPD_S  17
 /** PMU_HP_MODEM_HP_REGULATOR_XPD : R/W; bitpos: [18]; default: 1;
- *  need_des
+ *  Configures whether to enable the main HP regulator in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_HP_REGULATOR_XPD    (BIT(18))
 #define PMU_HP_MODEM_HP_REGULATOR_XPD_M  (PMU_HP_MODEM_HP_REGULATOR_XPD_V << PMU_HP_MODEM_HP_REGULATOR_XPD_S)
 #define PMU_HP_MODEM_HP_REGULATOR_XPD_V  0x00000001U
 #define PMU_HP_MODEM_HP_REGULATOR_XPD_S  18
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS : R/W; bitpos: [22:19]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary HP regulator powering the HP memory in HP_MODEM state, adjusting its output voltage.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS    0x0000000FU
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_V << PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_S)
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_V  0x0000000FU
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_MEM_DBIAS_S  19
 /** PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS : R/W; bitpos: [26:23]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary HP regulator powering the logic circuits in HP domain in HP_MODEM state, adjusting its output voltage.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS    0x0000000FU
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_M  (PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_V << PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_S)
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_V  0x0000000FU
 #define PMU_HP_MODEM_HP_REGULATOR_SLP_LOGIC_DBIAS_S  23
 /** PMU_HP_MODEM_HP_REGULATOR_DBIAS : R/W; bitpos: [31:27]; default: 24;
- *  need_des
+ *  Configures the DREG value of the main HP regulator in HP_MODEM state, adjusting its output voltage.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_DBIAS    0x0000001FU
 #define PMU_HP_MODEM_HP_REGULATOR_DBIAS_M  (PMU_HP_MODEM_HP_REGULATOR_DBIAS_V << PMU_HP_MODEM_HP_REGULATOR_DBIAS_S)
@@ -839,11 +988,11 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_DBIAS_S  27
 
 /** PMU_HP_MODEM_HP_REGULATOR1_REG register
- *  need_des
+ *  Control register of HP regulators' power in HP_MODEM state, controlling drive settings
  */
 #define PMU_HP_MODEM_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x60)
 /** PMU_HP_MODEM_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
- *  need_des
+ *  Configures the drive strength of the main HP regulator in HP_MODEM state.
  */
 #define PMU_HP_MODEM_HP_REGULATOR_DRV_B    0x00FFFFFFU
 #define PMU_HP_MODEM_HP_REGULATOR_DRV_B_M  (PMU_HP_MODEM_HP_REGULATOR_DRV_B_V << PMU_HP_MODEM_HP_REGULATOR_DRV_B_S)
@@ -851,11 +1000,13 @@ extern "C" {
 #define PMU_HP_MODEM_HP_REGULATOR_DRV_B_S  8
 
 /** PMU_HP_MODEM_XTAL_REG register
- *  need_des
+ *  XTAL_CLK power control register in HP_MODEM state
  */
 #define PMU_HP_MODEM_XTAL_REG (DR_REG_PMU_BASE + 0x64)
 /** PMU_HP_MODEM_XPD_XTAL : R/W; bitpos: [31]; default: 1;
- *  need_des
+ *  Configures whether to enable XTAL_CLK in HP_MODEM state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_MODEM_XPD_XTAL    (BIT(31))
 #define PMU_HP_MODEM_XPD_XTAL_M  (PMU_HP_MODEM_XPD_XTAL_V << PMU_HP_MODEM_XPD_XTAL_S)
@@ -863,18 +1014,22 @@ extern "C" {
 #define PMU_HP_MODEM_XPD_XTAL_S  31
 
 /** PMU_HP_SLEEP_DIG_POWER_REG register
- *  need_des
+ *  Configuration register of digital power domains in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_DIG_POWER_REG (DR_REG_PMU_BASE + 0x68)
 /** PMU_HP_SLEEP_VDD_SPI_PD_EN : R/W; bitpos: [21]; default: 0;
- *  need_des
+ *  Configures whether to power down external flash in HP_SLEEP state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_SLEEP_VDD_SPI_PD_EN    (BIT(21))
 #define PMU_HP_SLEEP_VDD_SPI_PD_EN_M  (PMU_HP_SLEEP_VDD_SPI_PD_EN_V << PMU_HP_SLEEP_VDD_SPI_PD_EN_S)
 #define PMU_HP_SLEEP_VDD_SPI_PD_EN_V  0x00000001U
 #define PMU_HP_SLEEP_VDD_SPI_PD_EN_S  21
 /** PMU_HP_SLEEP_HP_MEM_DSLP : R/W; bitpos: [22]; default: 0;
- *  need_des
+ *  Configures whether to put Internal SRAM$x ($x= 0, 1, 2) into Deep-sleep mode in HP_SLEEP state.
+ *  0: Do not put Internal SRAM into Deep-sleep
+ *  1: Put Internal SRAM into Deep-sleep
  */
 #define PMU_HP_SLEEP_HP_MEM_DSLP    (BIT(22))
 #define PMU_HP_SLEEP_HP_MEM_DSLP_M  (PMU_HP_SLEEP_HP_MEM_DSLP_V << PMU_HP_SLEEP_HP_MEM_DSLP_S)
@@ -888,7 +1043,9 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_HP_MEM_PD_EN_V  0x0000000FU
 #define PMU_HP_SLEEP_PD_HP_MEM_PD_EN_S  23
 /** PMU_HP_SLEEP_PD_HP_WIFI_PD_EN : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to power down MODEM domain in HP_SLEEP state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_SLEEP_PD_HP_WIFI_PD_EN    (BIT(27))
 #define PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_M  (PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_V << PMU_HP_SLEEP_PD_HP_WIFI_PD_EN_S)
@@ -902,21 +1059,27 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_HP_PERI_PD_EN_V  0x00000001U
 #define PMU_HP_SLEEP_PD_HP_PERI_PD_EN_S  28
 /** PMU_HP_SLEEP_PD_HP_CPU_PD_EN : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to power down CPU domain in HP_SLEEP state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_SLEEP_PD_HP_CPU_PD_EN    (BIT(29))
 #define PMU_HP_SLEEP_PD_HP_CPU_PD_EN_M  (PMU_HP_SLEEP_PD_HP_CPU_PD_EN_V << PMU_HP_SLEEP_PD_HP_CPU_PD_EN_S)
 #define PMU_HP_SLEEP_PD_HP_CPU_PD_EN_V  0x00000001U
 #define PMU_HP_SLEEP_PD_HP_CPU_PD_EN_S  29
 /** PMU_HP_SLEEP_PD_HP_AON_PD_EN : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to power down Modem Power domain in HP_SLEEP state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_SLEEP_PD_HP_AON_PD_EN    (BIT(30))
 #define PMU_HP_SLEEP_PD_HP_AON_PD_EN_M  (PMU_HP_SLEEP_PD_HP_AON_PD_EN_V << PMU_HP_SLEEP_PD_HP_AON_PD_EN_S)
 #define PMU_HP_SLEEP_PD_HP_AON_PD_EN_V  0x00000001U
 #define PMU_HP_SLEEP_PD_HP_AON_PD_EN_S  30
 /** PMU_HP_SLEEP_PD_TOP_PD_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power down Peripherals+ROM domain in HP_SLEEP state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_SLEEP_PD_TOP_PD_EN    (BIT(31))
 #define PMU_HP_SLEEP_PD_TOP_PD_EN_M  (PMU_HP_SLEEP_PD_TOP_PD_EN_V << PMU_HP_SLEEP_PD_TOP_PD_EN_S)
@@ -924,11 +1087,13 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_TOP_PD_EN_S  31
 
 /** PMU_HP_SLEEP_ICG_HP_FUNC_REG register
- *  need_des
+ *  Control register of HP system peripherals' function clocks in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_ICG_HP_FUNC_REG (DR_REG_PMU_BASE + 0x6c)
 /** PMU_HP_SLEEP_DIG_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 4294967295;
- *  need_des
+ *  Configures whether to enable HP system peripherals' function clock in HP_SLEEP state. For detailed configuration please see Chapter <a href='mod:resclk'>link</a> > Table <a href='tab:clk_pmu_func'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_DIG_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_SLEEP_DIG_ICG_FUNC_EN_M  (PMU_HP_SLEEP_DIG_ICG_FUNC_EN_V << PMU_HP_SLEEP_DIG_ICG_FUNC_EN_S)
@@ -936,11 +1101,13 @@ extern "C" {
 #define PMU_HP_SLEEP_DIG_ICG_FUNC_EN_S  0
 
 /** PMU_HP_SLEEP_ICG_HP_APB_REG register
- *  need_des
+ *  Control register of HP system peripherals' APB clocks in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_ICG_HP_APB_REG (DR_REG_PMU_BASE + 0x70)
 /** PMU_HP_SLEEP_DIG_ICG_APB_EN : R/W; bitpos: [31:0]; default: 4294967295;
- *  need_des
+ *  Configures whether to enable HP system peripherals' APB clock in HP_SLEEP state. For detailed configuration please see Chapter <a href='mod:resclk'>link</a> > Table <a href='tab:clk_pmu_apb'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_DIG_ICG_APB_EN    0xFFFFFFFFU
 #define PMU_HP_SLEEP_DIG_ICG_APB_EN_M  (PMU_HP_SLEEP_DIG_ICG_APB_EN_V << PMU_HP_SLEEP_DIG_ICG_APB_EN_S)
@@ -948,11 +1115,11 @@ extern "C" {
 #define PMU_HP_SLEEP_DIG_ICG_APB_EN_S  0
 
 /** PMU_HP_SLEEP_ICG_MODEM_REG register
- *  need_des
+ *  Control register of HP system Modem clock gating in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_ICG_MODEM_REG (DR_REG_PMU_BASE + 0x74)
 /** PMU_HP_SLEEP_DIG_ICG_MODEM_CODE : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures the Modem clock gate in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_DIG_ICG_MODEM_CODE    0x00000003U
 #define PMU_HP_SLEEP_DIG_ICG_MODEM_CODE_M  (PMU_HP_SLEEP_DIG_ICG_MODEM_CODE_V << PMU_HP_SLEEP_DIG_ICG_MODEM_CODE_S)
@@ -960,46 +1127,58 @@ extern "C" {
 #define PMU_HP_SLEEP_DIG_ICG_MODEM_CODE_S  30
 
 /** PMU_HP_SLEEP_HP_SYS_CNTL_REG register
- *  need_des
+ *  System control register in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_HP_SYS_CNTL_REG (DR_REG_PMU_BASE + 0x78)
 /** PMU_HP_SLEEP_UART_WAKEUP_EN : R/W; bitpos: [24]; default: 0;
- *  need_des
+ *  Configures whether to enable UART wake-up function in HP_SLEEP state.
+ *  0: Disable wake-up function
+ *  1: Enable wake-up function
  */
 #define PMU_HP_SLEEP_UART_WAKEUP_EN    (BIT(24))
 #define PMU_HP_SLEEP_UART_WAKEUP_EN_M  (PMU_HP_SLEEP_UART_WAKEUP_EN_V << PMU_HP_SLEEP_UART_WAKEUP_EN_S)
 #define PMU_HP_SLEEP_UART_WAKEUP_EN_V  0x00000001U
 #define PMU_HP_SLEEP_UART_WAKEUP_EN_S  24
 /** PMU_HP_SLEEP_LP_PAD_HOLD_ALL : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures whether to hold LP GPIOs' configuration in HP_SLEEP state.
+ *  0: Do not hold
+ *  1: Hold
  */
 #define PMU_HP_SLEEP_LP_PAD_HOLD_ALL    (BIT(25))
 #define PMU_HP_SLEEP_LP_PAD_HOLD_ALL_M  (PMU_HP_SLEEP_LP_PAD_HOLD_ALL_V << PMU_HP_SLEEP_LP_PAD_HOLD_ALL_S)
 #define PMU_HP_SLEEP_LP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_HP_SLEEP_LP_PAD_HOLD_ALL_S  25
 /** PMU_HP_SLEEP_HP_PAD_HOLD_ALL : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to hold HP GPIOs' configuration in HP_SLEEP state.
+ *  0: Do not hold
+ *  1: Hold
  */
 #define PMU_HP_SLEEP_HP_PAD_HOLD_ALL    (BIT(26))
 #define PMU_HP_SLEEP_HP_PAD_HOLD_ALL_M  (PMU_HP_SLEEP_HP_PAD_HOLD_ALL_V << PMU_HP_SLEEP_HP_PAD_HOLD_ALL_S)
 #define PMU_HP_SLEEP_HP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_HP_SLEEP_HP_PAD_HOLD_ALL_S  26
 /** PMU_HP_SLEEP_DIG_PAD_SLP_SEL : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to use Light-sleep mode configuration for GPIO in HP_SLEEP state.
+ *  0: Use normal configuration
+ *  1: Use Light-sleep mode configuration. For details please refer to Chapter <a href='mod:iomuxgpio'>link</a> > Section <a href='sec:iomuxgpio-pin-func-light-sleep'>link</a>.
  */
 #define PMU_HP_SLEEP_DIG_PAD_SLP_SEL    (BIT(27))
 #define PMU_HP_SLEEP_DIG_PAD_SLP_SEL_M  (PMU_HP_SLEEP_DIG_PAD_SLP_SEL_V << PMU_HP_SLEEP_DIG_PAD_SLP_SEL_S)
 #define PMU_HP_SLEEP_DIG_PAD_SLP_SEL_V  0x00000001U
 #define PMU_HP_SLEEP_DIG_PAD_SLP_SEL_S  27
 /** PMU_HP_SLEEP_DIG_PAUSE_WDT : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to pause watchdog in HP_SLEEP state.
+ *  0: Do not pause
+ *  1: Pause
  */
 #define PMU_HP_SLEEP_DIG_PAUSE_WDT    (BIT(28))
 #define PMU_HP_SLEEP_DIG_PAUSE_WDT_M  (PMU_HP_SLEEP_DIG_PAUSE_WDT_V << PMU_HP_SLEEP_DIG_PAUSE_WDT_S)
 #define PMU_HP_SLEEP_DIG_PAUSE_WDT_V  0x00000001U
 #define PMU_HP_SLEEP_DIG_PAUSE_WDT_S  28
 /** PMU_HP_SLEEP_DIG_CPU_STALL : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to stall CPU in HP_SLEEP state.
+ *  0: Do not stall
+ *  1: Stall
  */
 #define PMU_HP_SLEEP_DIG_CPU_STALL    (BIT(29))
 #define PMU_HP_SLEEP_DIG_CPU_STALL_M  (PMU_HP_SLEEP_DIG_CPU_STALL_V << PMU_HP_SLEEP_DIG_CPU_STALL_S)
@@ -1007,11 +1186,13 @@ extern "C" {
 #define PMU_HP_SLEEP_DIG_CPU_STALL_S  29
 
 /** PMU_HP_SLEEP_HP_CK_POWER_REG register
- *  need_des
+ *  Control register of clock source's power in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_HP_CK_POWER_REG (DR_REG_PMU_BASE + 0x7c)
 /** PMU_HP_SLEEP_I2C_ISO_EN : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to enable I2C_ISO in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_I2C_ISO_EN    (BIT(26))
 #define PMU_HP_SLEEP_I2C_ISO_EN_M  (PMU_HP_SLEEP_I2C_ISO_EN_V << PMU_HP_SLEEP_I2C_ISO_EN_S)
@@ -1025,21 +1206,27 @@ extern "C" {
 #define PMU_HP_SLEEP_I2C_RETENTION_V  0x00000001U
 #define PMU_HP_SLEEP_I2C_RETENTION_S  27
 /** PMU_HP_SLEEP_XPD_BB_I2C : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to enable BB_I2C in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_XPD_BB_I2C    (BIT(28))
 #define PMU_HP_SLEEP_XPD_BB_I2C_M  (PMU_HP_SLEEP_XPD_BB_I2C_V << PMU_HP_SLEEP_XPD_BB_I2C_S)
 #define PMU_HP_SLEEP_XPD_BB_I2C_V  0x00000001U
 #define PMU_HP_SLEEP_XPD_BB_I2C_S  28
 /** PMU_HP_SLEEP_XPD_BBPLL_I2C : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to enable BBPLL_I2C in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_XPD_BBPLL_I2C    (BIT(29))
 #define PMU_HP_SLEEP_XPD_BBPLL_I2C_M  (PMU_HP_SLEEP_XPD_BBPLL_I2C_V << PMU_HP_SLEEP_XPD_BBPLL_I2C_S)
 #define PMU_HP_SLEEP_XPD_BBPLL_I2C_V  0x00000001U
 #define PMU_HP_SLEEP_XPD_BBPLL_I2C_S  29
 /** PMU_HP_SLEEP_XPD_BBPLL : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable BBPLL in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_XPD_BBPLL    (BIT(30))
 #define PMU_HP_SLEEP_XPD_BBPLL_M  (PMU_HP_SLEEP_XPD_BBPLL_V << PMU_HP_SLEEP_XPD_BBPLL_S)
@@ -1047,32 +1234,32 @@ extern "C" {
 #define PMU_HP_SLEEP_XPD_BBPLL_S  30
 
 /** PMU_HP_SLEEP_BIAS_REG register
- *  need_des
+ *  Control register for operation state of analog circuits (BIAS, DBG, CUR) in HP_SLEEP
  */
 #define PMU_HP_SLEEP_BIAS_REG (DR_REG_PMU_BASE + 0x80)
 /** PMU_HP_SLEEP_XPD_BIAS : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures the power supply of BIAS in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_XPD_BIAS    (BIT(25))
 #define PMU_HP_SLEEP_XPD_BIAS_M  (PMU_HP_SLEEP_XPD_BIAS_V << PMU_HP_SLEEP_XPD_BIAS_S)
 #define PMU_HP_SLEEP_XPD_BIAS_V  0x00000001U
 #define PMU_HP_SLEEP_XPD_BIAS_S  25
 /** PMU_HP_SLEEP_DBG_ATTEN : R/W; bitpos: [29:26]; default: 0;
- *  need_des
+ *  Configures the degree of attenuation of the analog band gap in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_DBG_ATTEN    0x0000000FU
 #define PMU_HP_SLEEP_DBG_ATTEN_M  (PMU_HP_SLEEP_DBG_ATTEN_V << PMU_HP_SLEEP_DBG_ATTEN_S)
 #define PMU_HP_SLEEP_DBG_ATTEN_V  0x0000000FU
 #define PMU_HP_SLEEP_DBG_ATTEN_S  26
 /** PMU_HP_SLEEP_PD_CUR : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures the power-down current in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_PD_CUR    (BIT(30))
 #define PMU_HP_SLEEP_PD_CUR_M  (PMU_HP_SLEEP_PD_CUR_V << PMU_HP_SLEEP_PD_CUR_S)
 #define PMU_HP_SLEEP_PD_CUR_V  0x00000001U
 #define PMU_HP_SLEEP_PD_CUR_S  30
 /** PMU_HP_SLEEP_BIAS_SLEEP : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures the sleep or wakeup status of the BIAS circuit in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_BIAS_SLEEP    (BIT(31))
 #define PMU_HP_SLEEP_BIAS_SLEEP_M  (PMU_HP_SLEEP_BIAS_SLEEP_V << PMU_HP_SLEEP_BIAS_SLEEP_S)
@@ -1080,18 +1267,18 @@ extern "C" {
 #define PMU_HP_SLEEP_BIAS_SLEEP_S  31
 
 /** PMU_HP_SLEEP_BACKUP_REG register
- *  need_des
+ *  Data backup control register in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_BACKUP_REG (DR_REG_PMU_BASE + 0x84)
 /** PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE : R/W; bitpos: [7:6]; default: 0;
- *  need_des
+ *  Configures the ICG during backup process when PMU state switches from HP_MODEM to HP_SLEEP.
  */
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE    0x00000003U
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE_M  (PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE_V << PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE_S)
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE_V  0x00000003U
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODEM_CLK_CODE_S  6
 /** PMU_HP_ACTIVE2SLEEP_BACKUP_MODEM_CLK_CODE : R/W; bitpos: [9:8]; default: 0;
- *  need_des
+ *  Configures the ICG during backup process when PMU state switches from HP_ACTIVE to HP_SLEEP.
  */
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODEM_CLK_CODE    0x00000003U
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODEM_CLK_CODE_M  (PMU_HP_ACTIVE2SLEEP_BACKUP_MODEM_CLK_CODE_V << PMU_HP_ACTIVE2SLEEP_BACKUP_MODEM_CLK_CODE_S)
@@ -1119,42 +1306,58 @@ extern "C" {
 #define PMU_HP_ACTIVE2SLEEP_RETENTION_EN_V  0x00000001U
 #define PMU_HP_ACTIVE2SLEEP_RETENTION_EN_S  13
 /** PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL : R/W; bitpos: [17:16]; default: 0;
- *  need_des
+ *  Configures the backup module's function clock source when PMU state switches from HP_MODEM to HP_SLEEP.
+ *  0: Select XTAL
+ *  1: Select PLL_CLK
+ *  2: Select RC_FAST_CLK
+ *  3: Invalid value
  */
 #define PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL    0x00000003U
 #define PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL_M  (PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL_V << PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL_S)
 #define PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_MODEM2SLEEP_BACKUP_CLK_SEL_S  16
 /** PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL : R/W; bitpos: [19:18]; default: 0;
- *  need_des
+ *  Configures the backup module function clock source when PMU state switches from HP_ACTIVE to HP_SLEEP. The configuration is the same as the register above.
  */
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL    0x00000003U
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_M  (PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_V << PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_S)
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_V  0x00000003U
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_CLK_SEL_S  18
 /** PMU_HP_MODEM2SLEEP_BACKUP_MODE : R/W; bitpos: [25:23]; default: 0;
- *  need_des
+ *  Configures the backup direction and link list when PMU state switches switch from HP_MODEM to HP_SLEEP.
+ *  Highest bit:
+ *  0: From peripheral to memory
+ *  1: From memory to peripheral
+ *  Lower two bits:
+ *  0: PAU_LINK_ADDR_0
+ *  1: PAU_LINK_ADDR_1
+ *  2: PAU_LINK_ADDR_2
+ *  3: PAU_LINK_ADDR_3
  */
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODE    0x00000007U
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODE_M  (PMU_HP_MODEM2SLEEP_BACKUP_MODE_V << PMU_HP_MODEM2SLEEP_BACKUP_MODE_S)
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODE_V  0x00000007U
 #define PMU_HP_MODEM2SLEEP_BACKUP_MODE_S  23
 /** PMU_HP_ACTIVE2SLEEP_BACKUP_MODE : R/W; bitpos: [28:26]; default: 0;
- *  need_des
+ *  Configures the backup direction and link list when PMU state switches from HP_ACTIVE to HP_MODEM. The configuration is the same as the register above.
  */
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE    0x00000007U
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_M  (PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_V << PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_S)
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_V  0x00000007U
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_MODE_S  26
 /** PMU_HP_MODEM2SLEEP_BACKUP_EN : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable the backup flow when PMU state switches from HP_MODEM to HP_SLEEP.
+ *  0: Disable backup
+ *  1: Enable backup
  */
 #define PMU_HP_MODEM2SLEEP_BACKUP_EN    (BIT(30))
 #define PMU_HP_MODEM2SLEEP_BACKUP_EN_M  (PMU_HP_MODEM2SLEEP_BACKUP_EN_V << PMU_HP_MODEM2SLEEP_BACKUP_EN_S)
 #define PMU_HP_MODEM2SLEEP_BACKUP_EN_V  0x00000001U
 #define PMU_HP_MODEM2SLEEP_BACKUP_EN_S  30
 /** PMU_HP_ACTIVE2SLEEP_BACKUP_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to enable the backup flow when PMU state switches from HP_ACTIVE to HP_SLEEP.
+ *  0: Disable backup
+ *  1: Enable backup
  */
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_EN    (BIT(31))
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_EN_M  (PMU_HP_ACTIVE2SLEEP_BACKUP_EN_V << PMU_HP_ACTIVE2SLEEP_BACKUP_EN_S)
@@ -1162,11 +1365,13 @@ extern "C" {
 #define PMU_HP_ACTIVE2SLEEP_BACKUP_EN_S  31
 
 /** PMU_HP_SLEEP_BACKUP_CLK_REG register
- *  need_des
+ *  Control register for the operating clocks of the backup module in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_BACKUP_CLK_REG (DR_REG_PMU_BASE + 0x88)
 /** PMU_HP_SLEEP_BACKUP_ICG_FUNC_EN : R/W; bitpos: [31:0]; default: 0;
- *  need_des
+ *  Configures whether to enable each peripherals' function clock when the target state is HP_SLEEP. For details, please refer to Chapter <a href='mod:resclk'>link</a>.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_BACKUP_ICG_FUNC_EN    0xFFFFFFFFU
 #define PMU_HP_SLEEP_BACKUP_ICG_FUNC_EN_M  (PMU_HP_SLEEP_BACKUP_ICG_FUNC_EN_V << PMU_HP_SLEEP_BACKUP_ICG_FUNC_EN_S)
@@ -1174,39 +1379,49 @@ extern "C" {
 #define PMU_HP_SLEEP_BACKUP_ICG_FUNC_EN_S  0
 
 /** PMU_HP_SLEEP_SYSCLK_REG register
- *  need_des
+ *  Control register of the system clocks in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_SYSCLK_REG (DR_REG_PMU_BASE + 0x8c)
 /** PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to enable the clock division for HP_ROOT_CLK in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV    (BIT(26))
 #define PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV_M  (PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV_V << PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV_S)
 #define PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV_V  0x00000001U
 #define PMU_HP_SLEEP_DIG_SYS_CLK_NO_DIV_S  26
 /** PMU_HP_SLEEP_ICG_SYS_CLOCK_EN : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to enable HP_ROOT_CLK in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_ICG_SYS_CLOCK_EN    (BIT(27))
 #define PMU_HP_SLEEP_ICG_SYS_CLOCK_EN_M  (PMU_HP_SLEEP_ICG_SYS_CLOCK_EN_V << PMU_HP_SLEEP_ICG_SYS_CLOCK_EN_S)
 #define PMU_HP_SLEEP_ICG_SYS_CLOCK_EN_V  0x00000001U
 #define PMU_HP_SLEEP_ICG_SYS_CLOCK_EN_S  27
 /** PMU_HP_SLEEP_SYS_CLK_SLP_SEL : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to allow PMU to control the clock source in HP_SLEEP state.
+ *  0: Controlled by PCR registers
+ *  1: Controlled by PMU
  */
 #define PMU_HP_SLEEP_SYS_CLK_SLP_SEL    (BIT(28))
 #define PMU_HP_SLEEP_SYS_CLK_SLP_SEL_M  (PMU_HP_SLEEP_SYS_CLK_SLP_SEL_V << PMU_HP_SLEEP_SYS_CLK_SLP_SEL_S)
 #define PMU_HP_SLEEP_SYS_CLK_SLP_SEL_V  0x00000001U
 #define PMU_HP_SLEEP_SYS_CLK_SLP_SEL_S  28
 /** PMU_HP_SLEEP_ICG_SLP_SEL : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to allow PMU to control the clock gating in HP_SLEEP state.
+ *  0: Controlled by PCR registers
+ *  1: Controlled by PMU
  */
 #define PMU_HP_SLEEP_ICG_SLP_SEL    (BIT(29))
 #define PMU_HP_SLEEP_ICG_SLP_SEL_M  (PMU_HP_SLEEP_ICG_SLP_SEL_V << PMU_HP_SLEEP_ICG_SLP_SEL_S)
 #define PMU_HP_SLEEP_ICG_SLP_SEL_V  0x00000001U
 #define PMU_HP_SLEEP_ICG_SLP_SEL_S  29
 /** PMU_HP_SLEEP_DIG_SYS_CLK_SEL : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures the source of HP_ROOT_CLK in HP_SLEEP state.
+ *  0: XTAL
+ *  1: PLL_CLK
+ *  2: RC_FAST_CLK
+ *  3: Invalid value
  */
 #define PMU_HP_SLEEP_DIG_SYS_CLK_SEL    0x00000003U
 #define PMU_HP_SLEEP_DIG_SYS_CLK_SEL_M  (PMU_HP_SLEEP_DIG_SYS_CLK_SEL_V << PMU_HP_SLEEP_DIG_SYS_CLK_SEL_S)
@@ -1214,7 +1429,7 @@ extern "C" {
 #define PMU_HP_SLEEP_DIG_SYS_CLK_SEL_S  30
 
 /** PMU_HP_SLEEP_HP_REGULATOR0_REG register
- *  need_des
+ *  Control register of HP regulators' power in HP_SLEEP state, controlling all settings except drive
  */
 #define PMU_HP_SLEEP_HP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x90)
 /** PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN : R/W; bitpos: [15]; default: 1;
@@ -1225,42 +1440,48 @@ extern "C" {
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_V  0x00000001U
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_CONNECT_EN_S  15
 /** PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD : R/W; bitpos: [16]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary HP regulator powering the HP memory in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD    (BIT(16))
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD_M  (PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD_V << PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD_S)
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD_V  0x00000001U
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_XPD_S  16
 /** PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD : R/W; bitpos: [17]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary HP regulator powering the logic circuits in HP domain in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD    (BIT(17))
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD_M  (PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD_V << PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD_S)
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD_V  0x00000001U
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_XPD_S  17
 /** PMU_HP_SLEEP_HP_REGULATOR_XPD : R/W; bitpos: [18]; default: 1;
- *  need_des
+ *  Configures whether to enable the main HP regulator in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_XPD    (BIT(18))
 #define PMU_HP_SLEEP_HP_REGULATOR_XPD_M  (PMU_HP_SLEEP_HP_REGULATOR_XPD_V << PMU_HP_SLEEP_HP_REGULATOR_XPD_S)
 #define PMU_HP_SLEEP_HP_REGULATOR_XPD_V  0x00000001U
 #define PMU_HP_SLEEP_HP_REGULATOR_XPD_S  18
 /** PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS : R/W; bitpos: [22:19]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary HP regulator powering the HP memory in HP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS    0x0000000FU
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS_M  (PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS_V << PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS_S)
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS_V  0x0000000FU
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_MEM_DBIAS_S  19
 /** PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS : R/W; bitpos: [26:23]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary HP regulator powering the logic circuits in HP domain in HP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS    0x0000000FU
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS_M  (PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS_V << PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS_S)
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS_V  0x0000000FU
 #define PMU_HP_SLEEP_HP_REGULATOR_SLP_LOGIC_DBIAS_S  23
 /** PMU_HP_SLEEP_HP_REGULATOR_DBIAS : R/W; bitpos: [31:27]; default: 24;
- *  need_des
+ *  Configures the DREG value of the main HP regulator in HP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_DBIAS    0x0000001FU
 #define PMU_HP_SLEEP_HP_REGULATOR_DBIAS_M  (PMU_HP_SLEEP_HP_REGULATOR_DBIAS_V << PMU_HP_SLEEP_HP_REGULATOR_DBIAS_S)
@@ -1268,11 +1489,11 @@ extern "C" {
 #define PMU_HP_SLEEP_HP_REGULATOR_DBIAS_S  27
 
 /** PMU_HP_SLEEP_HP_REGULATOR1_REG register
- *  need_des
+ *  Control register of HP regulators' power in HP_SLEEP state, controlling drive settings
  */
 #define PMU_HP_SLEEP_HP_REGULATOR1_REG (DR_REG_PMU_BASE + 0x94)
 /** PMU_HP_SLEEP_HP_REGULATOR_DRV_B : R/W; bitpos: [31:8]; default: 0;
- *  need_des
+ *  Configures the drive strength of the main HP regulator in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_HP_REGULATOR_DRV_B    0x00FFFFFFU
 #define PMU_HP_SLEEP_HP_REGULATOR_DRV_B_M  (PMU_HP_SLEEP_HP_REGULATOR_DRV_B_V << PMU_HP_SLEEP_HP_REGULATOR_DRV_B_S)
@@ -1280,11 +1501,13 @@ extern "C" {
 #define PMU_HP_SLEEP_HP_REGULATOR_DRV_B_S  8
 
 /** PMU_HP_SLEEP_XTAL_REG register
- *  need_des
+ *  XTAL_CLK power control register in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_XTAL_REG (DR_REG_PMU_BASE + 0x98)
 /** PMU_HP_SLEEP_XPD_XTAL : R/W; bitpos: [31]; default: 1;
- *  need_des
+ *  Configures whether to enable XTAL_CLK in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_XPD_XTAL    (BIT(31))
 #define PMU_HP_SLEEP_XPD_XTAL_M  (PMU_HP_SLEEP_XPD_XTAL_V << PMU_HP_SLEEP_XPD_XTAL_S)
@@ -1292,32 +1515,36 @@ extern "C" {
 #define PMU_HP_SLEEP_XPD_XTAL_S  31
 
 /** PMU_HP_SLEEP_LP_REGULATOR0_REG register
- *  need_des
+ *  LP regulator power control register in HP_SLEEP state, controlling all settings except drive
  */
 #define PMU_HP_SLEEP_LP_REGULATOR0_REG (DR_REG_PMU_BASE + 0x9c)
 /** PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD : R/W; bitpos: [21]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary LP regulator in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD    (BIT(21))
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD_M  (PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD_V << PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD_S)
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD_V  0x00000001U
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_XPD_S  21
 /** PMU_HP_SLEEP_LP_REGULATOR_XPD : R/W; bitpos: [22]; default: 1;
- *  need_des
+ *  Configures whether to enable the main LP regulator in HP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_LP_REGULATOR_XPD    (BIT(22))
 #define PMU_HP_SLEEP_LP_REGULATOR_XPD_M  (PMU_HP_SLEEP_LP_REGULATOR_XPD_V << PMU_HP_SLEEP_LP_REGULATOR_XPD_S)
 #define PMU_HP_SLEEP_LP_REGULATOR_XPD_V  0x00000001U
 #define PMU_HP_SLEEP_LP_REGULATOR_XPD_S  22
 /** PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS : R/W; bitpos: [26:23]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary LP regulator in HP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS    0x0000000FU
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS_M  (PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS_V << PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS_S)
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS_V  0x0000000FU
 #define PMU_HP_SLEEP_LP_REGULATOR_SLP_DBIAS_S  23
 /** PMU_HP_SLEEP_LP_REGULATOR_DBIAS : R/W; bitpos: [31:27]; default: 24;
- *  need_des
+ *  Configures the DREG value of the main LP regulator in HP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_HP_SLEEP_LP_REGULATOR_DBIAS    0x0000001FU
 #define PMU_HP_SLEEP_LP_REGULATOR_DBIAS_M  (PMU_HP_SLEEP_LP_REGULATOR_DBIAS_V << PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S)
@@ -1325,11 +1552,11 @@ extern "C" {
 #define PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S  27
 
 /** PMU_HP_SLEEP_LP_REGULATOR1_REG register
- *  need_des
+ *  LP regulator power control register in HP_SLEEP state, controlling drive settings
  */
 #define PMU_HP_SLEEP_LP_REGULATOR1_REG (DR_REG_PMU_BASE + 0xa0)
 /** PMU_HP_SLEEP_LP_REGULATOR_DRV_B : R/W; bitpos: [31:28]; default: 0;
- *  need_des
+ *  Configures the drive strength of the main LP regulator in HP_SLEEP state.
  */
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B    0x0000000FU
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B_M  (PMU_HP_SLEEP_LP_REGULATOR_DRV_B_V << PMU_HP_SLEEP_LP_REGULATOR_DRV_B_S)
@@ -1337,18 +1564,22 @@ extern "C" {
 #define PMU_HP_SLEEP_LP_REGULATOR_DRV_B_S  28
 
 /** PMU_HP_SLEEP_LP_DIG_POWER_REG register
- *  need_des
+ *  Configuration register of digital power domains in LP system in HP_SLEEP state
  */
 #define PMU_HP_SLEEP_LP_DIG_POWER_REG (DR_REG_PMU_BASE + 0xa8)
 /** PMU_HP_SLEEP_LP_MEM_DSLP : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable Memory Deep-sleep mode for the 320 KB SRAM in HP_ACTIVE, HP_MODEM and HP_SLEEP states.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_HP_SLEEP_LP_MEM_DSLP    (BIT(30))
 #define PMU_HP_SLEEP_LP_MEM_DSLP_M  (PMU_HP_SLEEP_LP_MEM_DSLP_V << PMU_HP_SLEEP_LP_MEM_DSLP_S)
 #define PMU_HP_SLEEP_LP_MEM_DSLP_V  0x00000001U
 #define PMU_HP_SLEEP_LP_MEM_DSLP_S  30
 /** PMU_HP_SLEEP_PD_LP_PERI_PD_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power down Peripherals+ROM domain in HP_ACTIVE, HP_MODEM and HP_SLEEP states.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_HP_SLEEP_PD_LP_PERI_PD_EN    (BIT(31))
 #define PMU_HP_SLEEP_PD_LP_PERI_PD_EN_M  (PMU_HP_SLEEP_PD_LP_PERI_PD_EN_V << PMU_HP_SLEEP_PD_LP_PERI_PD_EN_S)
@@ -1356,32 +1587,40 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_LP_PERI_PD_EN_S  31
 
 /** PMU_HP_SLEEP_LP_CK_POWER_REG register
- *  need_des
+ *  Low-speed clock power control register in HP_ACTIVE, HP_MODEM and HP_SLEEP states
  */
 #define PMU_HP_SLEEP_LP_CK_POWER_REG (DR_REG_PMU_BASE + 0xac)
 /** PMU_HP_SLEEP_XPD_XTAL32K : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to power up XTAL32K_CLK in HP_ACTIVE, HP_MODEM and HP_SLEEP states.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_HP_SLEEP_XPD_XTAL32K    (BIT(28))
 #define PMU_HP_SLEEP_XPD_XTAL32K_M  (PMU_HP_SLEEP_XPD_XTAL32K_V << PMU_HP_SLEEP_XPD_XTAL32K_S)
 #define PMU_HP_SLEEP_XPD_XTAL32K_V  0x00000001U
 #define PMU_HP_SLEEP_XPD_XTAL32K_S  28
 /** PMU_HP_SLEEP_XPD_RC32K : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to power up RC32K_CLK in HP_ACTIVE, HP_MODEM and HP_SLEEP states.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_HP_SLEEP_XPD_RC32K    (BIT(29))
 #define PMU_HP_SLEEP_XPD_RC32K_M  (PMU_HP_SLEEP_XPD_RC32K_V << PMU_HP_SLEEP_XPD_RC32K_S)
 #define PMU_HP_SLEEP_XPD_RC32K_V  0x00000001U
 #define PMU_HP_SLEEP_XPD_RC32K_S  29
 /** PMU_HP_SLEEP_XPD_FOSC_CLK : R/W; bitpos: [30]; default: 1;
- *  need_des
+ *  Configures whether to power up RC_FAST_CLK in HP_ACTIVE, HP_MODEM and HP_SLEEP states.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_HP_SLEEP_XPD_FOSC_CLK    (BIT(30))
 #define PMU_HP_SLEEP_XPD_FOSC_CLK_M  (PMU_HP_SLEEP_XPD_FOSC_CLK_V << PMU_HP_SLEEP_XPD_FOSC_CLK_S)
 #define PMU_HP_SLEEP_XPD_FOSC_CLK_V  0x00000001U
 #define PMU_HP_SLEEP_XPD_FOSC_CLK_S  30
 /** PMU_HP_SLEEP_PD_OSC_CLK : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power up SOSC_CLK in HP_ACTIVE, HP_MODEM and HP_SLEEP states.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_HP_SLEEP_PD_OSC_CLK    (BIT(31))
 #define PMU_HP_SLEEP_PD_OSC_CLK_M  (PMU_HP_SLEEP_PD_OSC_CLK_V << PMU_HP_SLEEP_PD_OSC_CLK_S)
@@ -1389,32 +1628,36 @@ extern "C" {
 #define PMU_HP_SLEEP_PD_OSC_CLK_S  31
 
 /** PMU_LP_SLEEP_LP_REGULATOR0_REG register
- *  need_des
+ *  LP regulator power control register in LP_SLEEP state, controlling all settings except drive
  */
 #define PMU_LP_SLEEP_LP_REGULATOR0_REG (DR_REG_PMU_BASE + 0xb4)
 /** PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD : R/W; bitpos: [21]; default: 1;
- *  need_des
+ *  Configures whether to enable the secondary LP regulator in LP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD    (BIT(21))
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD_M  (PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD_V << PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD_S)
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD_V  0x00000001U
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_XPD_S  21
 /** PMU_LP_SLEEP_LP_REGULATOR_XPD : R/W; bitpos: [22]; default: 1;
- *  need_des
+ *  Configures whether to enable the main LP regulator in LP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_LP_SLEEP_LP_REGULATOR_XPD    (BIT(22))
 #define PMU_LP_SLEEP_LP_REGULATOR_XPD_M  (PMU_LP_SLEEP_LP_REGULATOR_XPD_V << PMU_LP_SLEEP_LP_REGULATOR_XPD_S)
 #define PMU_LP_SLEEP_LP_REGULATOR_XPD_V  0x00000001U
 #define PMU_LP_SLEEP_LP_REGULATOR_XPD_S  22
 /** PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS : R/W; bitpos: [26:23]; default: 12;
- *  need_des
+ *  Configures the DREG value of the secondary LP regulator in LP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS    0x0000000FU
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS_M  (PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS_V << PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS_S)
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS_V  0x0000000FU
 #define PMU_LP_SLEEP_LP_REGULATOR_SLP_DBIAS_S  23
 /** PMU_LP_SLEEP_LP_REGULATOR_DBIAS : R/W; bitpos: [31:27]; default: 24;
- *  need_des
+ *  Configures the DREG value of the main LP regulator in LP_SLEEP state, adjusting its output voltage.
  */
 #define PMU_LP_SLEEP_LP_REGULATOR_DBIAS    0x0000001FU
 #define PMU_LP_SLEEP_LP_REGULATOR_DBIAS_M  (PMU_LP_SLEEP_LP_REGULATOR_DBIAS_V << PMU_LP_SLEEP_LP_REGULATOR_DBIAS_S)
@@ -1422,11 +1665,11 @@ extern "C" {
 #define PMU_LP_SLEEP_LP_REGULATOR_DBIAS_S  27
 
 /** PMU_LP_SLEEP_LP_REGULATOR1_REG register
- *  need_des
+ *  LP regulator power control register in LP_SLEEP state, controlling drive settings
  */
 #define PMU_LP_SLEEP_LP_REGULATOR1_REG (DR_REG_PMU_BASE + 0xb8)
 /** PMU_LP_SLEEP_LP_REGULATOR_DRV_B : R/W; bitpos: [31:28]; default: 0;
- *  need_des
+ *  Configures the drive strength of the main LP regulator in LP_SLEEP state.
  */
 #define PMU_LP_SLEEP_LP_REGULATOR_DRV_B    0x0000000FU
 #define PMU_LP_SLEEP_LP_REGULATOR_DRV_B_M  (PMU_LP_SLEEP_LP_REGULATOR_DRV_B_V << PMU_LP_SLEEP_LP_REGULATOR_DRV_B_S)
@@ -1434,11 +1677,13 @@ extern "C" {
 #define PMU_LP_SLEEP_LP_REGULATOR_DRV_B_S  28
 
 /** PMU_LP_SLEEP_XTAL_REG register
- *  need_des
+ *  XTAL_CLK power control register in LP_SLEEP state
  */
 #define PMU_LP_SLEEP_XTAL_REG (DR_REG_PMU_BASE + 0xbc)
 /** PMU_LP_SLEEP_XPD_XTAL : R/W; bitpos: [31]; default: 1;
- *  need_des
+ *  Configures whether to enable XTAL_CLK in LP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_LP_SLEEP_XPD_XTAL    (BIT(31))
 #define PMU_LP_SLEEP_XPD_XTAL_M  (PMU_LP_SLEEP_XPD_XTAL_V << PMU_LP_SLEEP_XPD_XTAL_S)
@@ -1446,18 +1691,22 @@ extern "C" {
 #define PMU_LP_SLEEP_XPD_XTAL_S  31
 
 /** PMU_LP_SLEEP_LP_DIG_POWER_REG register
- *  need_des
+ *  Configuration register of digital power domains in LP system in LP_SLEEP state
  */
 #define PMU_LP_SLEEP_LP_DIG_POWER_REG (DR_REG_PMU_BASE + 0xc0)
 /** PMU_LP_SLEEP_LP_MEM_DSLP : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to enable Memory Deep-sleep mode for the 320 KB SRAM in LP_SLEEP state.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_LP_SLEEP_LP_MEM_DSLP    (BIT(30))
 #define PMU_LP_SLEEP_LP_MEM_DSLP_M  (PMU_LP_SLEEP_LP_MEM_DSLP_V << PMU_LP_SLEEP_LP_MEM_DSLP_S)
 #define PMU_LP_SLEEP_LP_MEM_DSLP_V  0x00000001U
 #define PMU_LP_SLEEP_LP_MEM_DSLP_S  30
 /** PMU_LP_SLEEP_PD_LP_PERI_PD_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power down the Peripherals+ROM domain in LP_SLEEP state.
+ *  0: Power up
+ *  1: Power down
  */
 #define PMU_LP_SLEEP_PD_LP_PERI_PD_EN    (BIT(31))
 #define PMU_LP_SLEEP_PD_LP_PERI_PD_EN_M  (PMU_LP_SLEEP_PD_LP_PERI_PD_EN_V << PMU_LP_SLEEP_PD_LP_PERI_PD_EN_S)
@@ -1465,32 +1714,40 @@ extern "C" {
 #define PMU_LP_SLEEP_PD_LP_PERI_PD_EN_S  31
 
 /** PMU_LP_SLEEP_LP_CK_POWER_REG register
- *  need_des
+ *  Low-speed clock power control register in LP_SLEEP state
  */
 #define PMU_LP_SLEEP_LP_CK_POWER_REG (DR_REG_PMU_BASE + 0xc4)
 /** PMU_LP_SLEEP_XPD_XTAL32K : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to power up XTAL32K_CLK in LP_SLEEP state.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_LP_SLEEP_XPD_XTAL32K    (BIT(28))
 #define PMU_LP_SLEEP_XPD_XTAL32K_M  (PMU_LP_SLEEP_XPD_XTAL32K_V << PMU_LP_SLEEP_XPD_XTAL32K_S)
 #define PMU_LP_SLEEP_XPD_XTAL32K_V  0x00000001U
 #define PMU_LP_SLEEP_XPD_XTAL32K_S  28
 /** PMU_LP_SLEEP_XPD_RC32K : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to power up RC32K_CLK in LP_SLEEP state.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_LP_SLEEP_XPD_RC32K    (BIT(29))
 #define PMU_LP_SLEEP_XPD_RC32K_M  (PMU_LP_SLEEP_XPD_RC32K_V << PMU_LP_SLEEP_XPD_RC32K_S)
 #define PMU_LP_SLEEP_XPD_RC32K_V  0x00000001U
 #define PMU_LP_SLEEP_XPD_RC32K_S  29
 /** PMU_LP_SLEEP_XPD_FOSC_CLK : R/W; bitpos: [30]; default: 1;
- *  need_des
+ *  Configures whether to power up RC_FAST_CLK in LP_SLEEP state.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_LP_SLEEP_XPD_FOSC_CLK    (BIT(30))
 #define PMU_LP_SLEEP_XPD_FOSC_CLK_M  (PMU_LP_SLEEP_XPD_FOSC_CLK_V << PMU_LP_SLEEP_XPD_FOSC_CLK_S)
 #define PMU_LP_SLEEP_XPD_FOSC_CLK_V  0x00000001U
 #define PMU_LP_SLEEP_XPD_FOSC_CLK_S  30
 /** PMU_LP_SLEEP_PD_OSC_CLK : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to power up SOSC_CLK in LP_SLEEP state.
+ *  0: Power down
+ *  1: Power up
  */
 #define PMU_LP_SLEEP_PD_OSC_CLK    (BIT(31))
 #define PMU_LP_SLEEP_PD_OSC_CLK_M  (PMU_LP_SLEEP_PD_OSC_CLK_V << PMU_LP_SLEEP_PD_OSC_CLK_S)
@@ -1498,32 +1755,32 @@ extern "C" {
 #define PMU_LP_SLEEP_PD_OSC_CLK_S  31
 
 /** PMU_LP_SLEEP_BIAS_REG register
- *  need_des
+ *  Control register for operation state of analog circuits (BIAS, DBG, CUR) in LP_SLEEP
  */
 #define PMU_LP_SLEEP_BIAS_REG (DR_REG_PMU_BASE + 0xc8)
 /** PMU_LP_SLEEP_XPD_BIAS : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures the power supply of BIAS in LP_SLEEP state.
  */
 #define PMU_LP_SLEEP_XPD_BIAS    (BIT(25))
 #define PMU_LP_SLEEP_XPD_BIAS_M  (PMU_LP_SLEEP_XPD_BIAS_V << PMU_LP_SLEEP_XPD_BIAS_S)
 #define PMU_LP_SLEEP_XPD_BIAS_V  0x00000001U
 #define PMU_LP_SLEEP_XPD_BIAS_S  25
 /** PMU_LP_SLEEP_DBG_ATTEN : R/W; bitpos: [29:26]; default: 0;
- *  need_des
+ *  Configures the degree of attenuation of the analog band gap in LP_SLEEP state.
  */
 #define PMU_LP_SLEEP_DBG_ATTEN    0x0000000FU
 #define PMU_LP_SLEEP_DBG_ATTEN_M  (PMU_LP_SLEEP_DBG_ATTEN_V << PMU_LP_SLEEP_DBG_ATTEN_S)
 #define PMU_LP_SLEEP_DBG_ATTEN_V  0x0000000FU
 #define PMU_LP_SLEEP_DBG_ATTEN_S  26
 /** PMU_LP_SLEEP_PD_CUR : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures the power-down current in LP_SLEEP state.
  */
 #define PMU_LP_SLEEP_PD_CUR    (BIT(30))
 #define PMU_LP_SLEEP_PD_CUR_M  (PMU_LP_SLEEP_PD_CUR_V << PMU_LP_SLEEP_PD_CUR_S)
 #define PMU_LP_SLEEP_PD_CUR_V  0x00000001U
 #define PMU_LP_SLEEP_PD_CUR_S  30
 /** PMU_LP_SLEEP_BIAS_SLEEP : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures the sleep or wakeup status of the BIAS circuit in LP_SLEEP state.
  */
 #define PMU_LP_SLEEP_BIAS_SLEEP    (BIT(31))
 #define PMU_LP_SLEEP_BIAS_SLEEP_M  (PMU_LP_SLEEP_BIAS_SLEEP_V << PMU_LP_SLEEP_BIAS_SLEEP_S)
@@ -1531,102 +1788,130 @@ extern "C" {
 #define PMU_LP_SLEEP_BIAS_SLEEP_S  31
 
 /** PMU_IMM_HP_CK_POWER_REG register
- *  need_des
+ *  Software-controlled enable signal for HP clock power on/off
  */
 #define PMU_IMM_HP_CK_POWER_REG (DR_REG_PMU_BASE + 0xcc)
 /** PMU_TIE_LOW_GLOBAL_BBPLL_ICG : WT; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether to force disable the integrated clock gating (ICG) of PLL clock
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_GLOBAL_BBPLL_ICG    (BIT(0))
 #define PMU_TIE_LOW_GLOBAL_BBPLL_ICG_M  (PMU_TIE_LOW_GLOBAL_BBPLL_ICG_V << PMU_TIE_LOW_GLOBAL_BBPLL_ICG_S)
 #define PMU_TIE_LOW_GLOBAL_BBPLL_ICG_V  0x00000001U
 #define PMU_TIE_LOW_GLOBAL_BBPLL_ICG_S  0
 /** PMU_TIE_LOW_GLOBAL_XTAL_ICG : WT; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether to force disable the integrated clock gating (ICG) of XTAL clock.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_GLOBAL_XTAL_ICG    (BIT(1))
 #define PMU_TIE_LOW_GLOBAL_XTAL_ICG_M  (PMU_TIE_LOW_GLOBAL_XTAL_ICG_V << PMU_TIE_LOW_GLOBAL_XTAL_ICG_S)
 #define PMU_TIE_LOW_GLOBAL_XTAL_ICG_V  0x00000001U
 #define PMU_TIE_LOW_GLOBAL_XTAL_ICG_S  1
 /** PMU_TIE_LOW_I2C_RETENTION : WT; bitpos: [2]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for the analog I2C to low, releasing the reset.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_I2C_RETENTION    (BIT(2))
 #define PMU_TIE_LOW_I2C_RETENTION_M  (PMU_TIE_LOW_I2C_RETENTION_V << PMU_TIE_LOW_I2C_RETENTION_S)
 #define PMU_TIE_LOW_I2C_RETENTION_V  0x00000001U
 #define PMU_TIE_LOW_I2C_RETENTION_S  2
 /** PMU_TIE_LOW_XPD_BB_I2C : WT; bitpos: [3]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for BB_I2C to low, releasing the reset.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_XPD_BB_I2C    (BIT(3))
 #define PMU_TIE_LOW_XPD_BB_I2C_M  (PMU_TIE_LOW_XPD_BB_I2C_V << PMU_TIE_LOW_XPD_BB_I2C_S)
 #define PMU_TIE_LOW_XPD_BB_I2C_V  0x00000001U
 #define PMU_TIE_LOW_XPD_BB_I2C_S  3
 /** PMU_TIE_LOW_XPD_BBPLL_I2C : WT; bitpos: [4]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for BBPLL_I2C to low, releasing the reset.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_XPD_BBPLL_I2C    (BIT(4))
 #define PMU_TIE_LOW_XPD_BBPLL_I2C_M  (PMU_TIE_LOW_XPD_BBPLL_I2C_V << PMU_TIE_LOW_XPD_BBPLL_I2C_S)
 #define PMU_TIE_LOW_XPD_BBPLL_I2C_V  0x00000001U
 #define PMU_TIE_LOW_XPD_BBPLL_I2C_S  4
 /** PMU_TIE_LOW_XPD_BBPLL : WT; bitpos: [5]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for BBPLL to low, releasing the reset.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_XPD_BBPLL    (BIT(5))
 #define PMU_TIE_LOW_XPD_BBPLL_M  (PMU_TIE_LOW_XPD_BBPLL_V << PMU_TIE_LOW_XPD_BBPLL_S)
 #define PMU_TIE_LOW_XPD_BBPLL_V  0x00000001U
 #define PMU_TIE_LOW_XPD_BBPLL_S  5
 /** PMU_TIE_LOW_XPD_XTAL : WT; bitpos: [6]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for XTAL_CLK to low, releasing the reset.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_XPD_XTAL    (BIT(6))
 #define PMU_TIE_LOW_XPD_XTAL_M  (PMU_TIE_LOW_XPD_XTAL_V << PMU_TIE_LOW_XPD_XTAL_S)
 #define PMU_TIE_LOW_XPD_XTAL_V  0x00000001U
 #define PMU_TIE_LOW_XPD_XTAL_S  6
 /** PMU_TIE_HIGH_GLOBAL_BBPLL_ICG : WT; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures whether to force enable the integrated clock gating (ICG) of PLL clock.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_GLOBAL_BBPLL_ICG    (BIT(25))
 #define PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_M  (PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_V << PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_S)
 #define PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_V  0x00000001U
 #define PMU_TIE_HIGH_GLOBAL_BBPLL_ICG_S  25
 /** PMU_TIE_HIGH_GLOBAL_XTAL_ICG : WT; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures whether to force enable the integrated clock gating (ICG) of XTAL clock.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_GLOBAL_XTAL_ICG    (BIT(26))
 #define PMU_TIE_HIGH_GLOBAL_XTAL_ICG_M  (PMU_TIE_HIGH_GLOBAL_XTAL_ICG_V << PMU_TIE_HIGH_GLOBAL_XTAL_ICG_S)
 #define PMU_TIE_HIGH_GLOBAL_XTAL_ICG_V  0x00000001U
 #define PMU_TIE_HIGH_GLOBAL_XTAL_ICG_S  26
 /** PMU_TIE_HIGH_I2C_RETENTION : WT; bitpos: [27]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for the analog I2C to high, putting it into reset.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_I2C_RETENTION    (BIT(27))
 #define PMU_TIE_HIGH_I2C_RETENTION_M  (PMU_TIE_HIGH_I2C_RETENTION_V << PMU_TIE_HIGH_I2C_RETENTION_S)
 #define PMU_TIE_HIGH_I2C_RETENTION_V  0x00000001U
 #define PMU_TIE_HIGH_I2C_RETENTION_S  27
 /** PMU_TIE_HIGH_XPD_BB_I2C : WT; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for BB_I2C to high, putting it into reset.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_XPD_BB_I2C    (BIT(28))
 #define PMU_TIE_HIGH_XPD_BB_I2C_M  (PMU_TIE_HIGH_XPD_BB_I2C_V << PMU_TIE_HIGH_XPD_BB_I2C_S)
 #define PMU_TIE_HIGH_XPD_BB_I2C_V  0x00000001U
 #define PMU_TIE_HIGH_XPD_BB_I2C_S  28
 /** PMU_TIE_HIGH_XPD_BBPLL_I2C : WT; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for BBPLL_I2C to high, putting it into reset.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_XPD_BBPLL_I2C    (BIT(29))
 #define PMU_TIE_HIGH_XPD_BBPLL_I2C_M  (PMU_TIE_HIGH_XPD_BBPLL_I2C_V << PMU_TIE_HIGH_XPD_BBPLL_I2C_S)
 #define PMU_TIE_HIGH_XPD_BBPLL_I2C_V  0x00000001U
 #define PMU_TIE_HIGH_XPD_BBPLL_I2C_S  29
 /** PMU_TIE_HIGH_XPD_BBPLL : WT; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for BBPLL to high, putting it into reset.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_XPD_BBPLL    (BIT(30))
 #define PMU_TIE_HIGH_XPD_BBPLL_M  (PMU_TIE_HIGH_XPD_BBPLL_V << PMU_TIE_HIGH_XPD_BBPLL_S)
 #define PMU_TIE_HIGH_XPD_BBPLL_V  0x00000001U
 #define PMU_TIE_HIGH_XPD_BBPLL_S  30
 /** PMU_TIE_HIGH_XPD_XTAL : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to force the power-on reset (POR) signal for XTAL_CLK to high, putting it into reset.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_XPD_XTAL    (BIT(31))
 #define PMU_TIE_HIGH_XPD_XTAL_M  (PMU_TIE_HIGH_XPD_XTAL_V << PMU_TIE_HIGH_XPD_XTAL_S)
@@ -1634,32 +1919,40 @@ extern "C" {
 #define PMU_TIE_HIGH_XPD_XTAL_S  31
 
 /** PMU_IMM_SLEEP_SYSCLK_REG register
- *  need_des
+ *  Software-controlled enable signal for system root clk switching during sleep
  */
 #define PMU_IMM_SLEEP_SYSCLK_REG (DR_REG_PMU_BASE + 0xd0)
 /** PMU_UPDATE_DIG_ICG_SWITCH : WT; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to force power up XTAL.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_UPDATE_DIG_ICG_SWITCH    (BIT(28))
 #define PMU_UPDATE_DIG_ICG_SWITCH_M  (PMU_UPDATE_DIG_ICG_SWITCH_V << PMU_UPDATE_DIG_ICG_SWITCH_S)
 #define PMU_UPDATE_DIG_ICG_SWITCH_V  0x00000001U
 #define PMU_UPDATE_DIG_ICG_SWITCH_S  28
 /** PMU_TIE_LOW_ICG_SLP_SEL : WT; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to force disable the integrated clock gating (ICG) of PMU clock controller.
+ *  0: No effect
+ *  1: Force disable
  */
 #define PMU_TIE_LOW_ICG_SLP_SEL    (BIT(29))
 #define PMU_TIE_LOW_ICG_SLP_SEL_M  (PMU_TIE_LOW_ICG_SLP_SEL_V << PMU_TIE_LOW_ICG_SLP_SEL_S)
 #define PMU_TIE_LOW_ICG_SLP_SEL_V  0x00000001U
 #define PMU_TIE_LOW_ICG_SLP_SEL_S  29
 /** PMU_TIE_HIGH_ICG_SLP_SEL : WT; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to force enable the integrated clock gating (ICG) of PMU clock controller.
+ *  0: No effect
+ *  1: Force enable
  */
 #define PMU_TIE_HIGH_ICG_SLP_SEL    (BIT(30))
 #define PMU_TIE_HIGH_ICG_SLP_SEL_M  (PMU_TIE_HIGH_ICG_SLP_SEL_V << PMU_TIE_HIGH_ICG_SLP_SEL_S)
 #define PMU_TIE_HIGH_ICG_SLP_SEL_V  0x00000001U
 #define PMU_TIE_HIGH_ICG_SLP_SEL_S  30
 /** PMU_UPDATE_DIG_SYS_CLK_SEL : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to force update the HP_ROOT_CLK configuration stored in PMU registers.
+ *  0: No effect
+ *  1: Force update
  */
 #define PMU_UPDATE_DIG_SYS_CLK_SEL    (BIT(31))
 #define PMU_UPDATE_DIG_SYS_CLK_SEL_M  (PMU_UPDATE_DIG_SYS_CLK_SEL_V << PMU_UPDATE_DIG_SYS_CLK_SEL_S)
@@ -1667,11 +1960,13 @@ extern "C" {
 #define PMU_UPDATE_DIG_SYS_CLK_SEL_S  31
 
 /** PMU_IMM_HP_FUNC_ICG_REG register
- *  need_des
+ *  Software-controlled configuration for functional clock gating of PMU's forced update output
  */
 #define PMU_IMM_HP_FUNC_ICG_REG (DR_REG_PMU_BASE + 0xd4)
 /** PMU_UPDATE_DIG_ICG_FUNC_EN : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configure whether to force the PMU to update its ICG enable signals of HP system peripherals' function clocks based on the current PMU state.
+ *  0: No effect
+ *  1: Force update
  */
 #define PMU_UPDATE_DIG_ICG_FUNC_EN    (BIT(31))
 #define PMU_UPDATE_DIG_ICG_FUNC_EN_M  (PMU_UPDATE_DIG_ICG_FUNC_EN_V << PMU_UPDATE_DIG_ICG_FUNC_EN_S)
@@ -1679,11 +1974,13 @@ extern "C" {
 #define PMU_UPDATE_DIG_ICG_FUNC_EN_S  31
 
 /** PMU_IMM_HP_APB_ICG_REG register
- *  need_des
+ *  Software-controlled configuration for APB clock gating of PMU's forced update output
  */
 #define PMU_IMM_HP_APB_ICG_REG (DR_REG_PMU_BASE + 0xd8)
 /** PMU_UPDATE_DIG_ICG_APB_EN : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configure whether to force the PMU to update its ICG enable signals of HP system peripherals' APB clock based on the current PMU state.
+ *  0: No effect
+ *  1: Force update
  */
 #define PMU_UPDATE_DIG_ICG_APB_EN    (BIT(31))
 #define PMU_UPDATE_DIG_ICG_APB_EN_M  (PMU_UPDATE_DIG_ICG_APB_EN_V << PMU_UPDATE_DIG_ICG_APB_EN_S)
@@ -1691,11 +1988,13 @@ extern "C" {
 #define PMU_UPDATE_DIG_ICG_APB_EN_S  31
 
 /** PMU_IMM_MODEM_ICG_REG register
- *  need_des
+ *  Software-controlled configuration for HP system Modem clock gating of PMU's forced update output
  */
 #define PMU_IMM_MODEM_ICG_REG (DR_REG_PMU_BASE + 0xdc)
 /** PMU_UPDATE_DIG_ICG_MODEM_EN : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configure whether to force the PMU to update its ICG enable signals its Modem clock based on the current PMU state.
+ *  0: No effect
+ *  1: Force update
  */
 #define PMU_UPDATE_DIG_ICG_MODEM_EN    (BIT(31))
 #define PMU_UPDATE_DIG_ICG_MODEM_EN_M  (PMU_UPDATE_DIG_ICG_MODEM_EN_V << PMU_UPDATE_DIG_ICG_MODEM_EN_S)
@@ -1722,32 +2021,40 @@ extern "C" {
 #define PMU_TIE_HIGH_LP_ROOTCLK_SEL_S  31
 
 /** PMU_IMM_PAD_HOLD_ALL_REG register
- *  need_des
+ *  Software-controlled signal to tie PMU's HP/LP GPIOs HOLD high or low
  */
 #define PMU_IMM_PAD_HOLD_ALL_REG (DR_REG_PMU_BASE + 0xe4)
 /** PMU_TIE_HIGH_LP_PAD_HOLD_ALL : WT; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures whether to force the PMU LP GPIO HOLD signal to high.
+ *  0: No effect
+ *  1: Force to high
  */
 #define PMU_TIE_HIGH_LP_PAD_HOLD_ALL    (BIT(28))
 #define PMU_TIE_HIGH_LP_PAD_HOLD_ALL_M  (PMU_TIE_HIGH_LP_PAD_HOLD_ALL_V << PMU_TIE_HIGH_LP_PAD_HOLD_ALL_S)
 #define PMU_TIE_HIGH_LP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_TIE_HIGH_LP_PAD_HOLD_ALL_S  28
 /** PMU_TIE_LOW_LP_PAD_HOLD_ALL : WT; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures whether to force the PMU LP GPIO HOLD signal to low.
+ *  0: No effect
+ *  1: Force to low
  */
 #define PMU_TIE_LOW_LP_PAD_HOLD_ALL    (BIT(29))
 #define PMU_TIE_LOW_LP_PAD_HOLD_ALL_M  (PMU_TIE_LOW_LP_PAD_HOLD_ALL_V << PMU_TIE_LOW_LP_PAD_HOLD_ALL_S)
 #define PMU_TIE_LOW_LP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_TIE_LOW_LP_PAD_HOLD_ALL_S  29
 /** PMU_TIE_HIGH_HP_PAD_HOLD_ALL : WT; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to force the PMU HP GPIO HOLD signal to high.
+ *  0: No effect
+ *  1: Force to high
  */
 #define PMU_TIE_HIGH_HP_PAD_HOLD_ALL    (BIT(30))
 #define PMU_TIE_HIGH_HP_PAD_HOLD_ALL_M  (PMU_TIE_HIGH_HP_PAD_HOLD_ALL_V << PMU_TIE_HIGH_HP_PAD_HOLD_ALL_S)
 #define PMU_TIE_HIGH_HP_PAD_HOLD_ALL_V  0x00000001U
 #define PMU_TIE_HIGH_HP_PAD_HOLD_ALL_S  30
 /** PMU_TIE_LOW_HP_PAD_HOLD_ALL : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to force the PMU HP GPIO HOLD signal to low.
+ *  0: No effect
+ *  1: Force to low
  */
 #define PMU_TIE_LOW_HP_PAD_HOLD_ALL    (BIT(31))
 #define PMU_TIE_LOW_HP_PAD_HOLD_ALL_M  (PMU_TIE_LOW_HP_PAD_HOLD_ALL_V << PMU_TIE_LOW_HP_PAD_HOLD_ALL_S)
@@ -1755,18 +2062,22 @@ extern "C" {
 #define PMU_TIE_LOW_HP_PAD_HOLD_ALL_S  31
 
 /** PMU_IMM_I2C_ISO_REG register
- *  need_des
+ *  Software-controlled signal to tie PMU's i2c iso enable high or low
  */
 #define PMU_IMM_I2C_ISO_REG (DR_REG_PMU_BASE + 0xe8)
 /** PMU_TIE_HIGH_I2C_ISO_EN : WT; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures whether to force the PMU I2C_ISO enabling signal to high.
+ *  0: No effect
+ *  1: Force to high
  */
 #define PMU_TIE_HIGH_I2C_ISO_EN    (BIT(30))
 #define PMU_TIE_HIGH_I2C_ISO_EN_M  (PMU_TIE_HIGH_I2C_ISO_EN_V << PMU_TIE_HIGH_I2C_ISO_EN_S)
 #define PMU_TIE_HIGH_I2C_ISO_EN_V  0x00000001U
 #define PMU_TIE_HIGH_I2C_ISO_EN_S  30
 /** PMU_TIE_LOW_I2C_ISO_EN : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to force the PMU I2C_ISO enabling signal to low.
+ *  0: No effect
+ *  1: Force to low
  */
 #define PMU_TIE_LOW_I2C_ISO_EN    (BIT(31))
 #define PMU_TIE_LOW_I2C_ISO_EN_M  (PMU_TIE_LOW_I2C_ISO_EN_V << PMU_TIE_LOW_I2C_ISO_EN_S)
@@ -1774,25 +2085,25 @@ extern "C" {
 #define PMU_TIE_LOW_I2C_ISO_EN_S  31
 
 /** PMU_POWER_WAIT_TIMER0_REG register
- *  need_des
+ *  Software-controlled power-on/off waiting timer for PMU
  */
 #define PMU_POWER_WAIT_TIMER0_REG (DR_REG_PMU_BASE + 0xec)
 /** PMU_DG_HP_POWERDOWN_TIMER : R/W; bitpos: [13:5]; default: 255;
- *  need_des
+ *  Configures the wait cycles before powering down HP power domains.
  */
 #define PMU_DG_HP_POWERDOWN_TIMER    0x000001FFU
 #define PMU_DG_HP_POWERDOWN_TIMER_M  (PMU_DG_HP_POWERDOWN_TIMER_V << PMU_DG_HP_POWERDOWN_TIMER_S)
 #define PMU_DG_HP_POWERDOWN_TIMER_V  0x000001FFU
 #define PMU_DG_HP_POWERDOWN_TIMER_S  5
 /** PMU_DG_HP_POWERUP_TIMER : R/W; bitpos: [22:14]; default: 255;
- *  need_des
+ *  Configures the wait cycles before waking up HP power domains.
  */
 #define PMU_DG_HP_POWERUP_TIMER    0x000001FFU
 #define PMU_DG_HP_POWERUP_TIMER_M  (PMU_DG_HP_POWERUP_TIMER_V << PMU_DG_HP_POWERUP_TIMER_S)
 #define PMU_DG_HP_POWERUP_TIMER_V  0x000001FFU
 #define PMU_DG_HP_POWERUP_TIMER_S  14
 /** PMU_DG_HP_PD_WAIT_TIMER : R/W; bitpos: [31:23]; default: 255;
- *  need_des
+ *  Configures the wait cycles during sleep of HP power domains.
  */
 #define PMU_DG_HP_PD_WAIT_TIMER    0x000001FFU
 #define PMU_DG_HP_PD_WAIT_TIMER_M  (PMU_DG_HP_PD_WAIT_TIMER_V << PMU_DG_HP_PD_WAIT_TIMER_S)
@@ -1800,25 +2111,25 @@ extern "C" {
 #define PMU_DG_HP_PD_WAIT_TIMER_S  23
 
 /** PMU_POWER_WAIT_TIMER1_REG register
- *  need_des
+ *  Software-controlled power-on/off waiting timer for LP PERI controlled by PMU
  */
 #define PMU_POWER_WAIT_TIMER1_REG (DR_REG_PMU_BASE + 0xf0)
 /** PMU_DG_LP_POWERDOWN_TIMER : R/W; bitpos: [15:9]; default: 63;
- *  need_des
+ *  Configures the wait cycles before powering down LP power domains.
  */
 #define PMU_DG_LP_POWERDOWN_TIMER    0x0000007FU
 #define PMU_DG_LP_POWERDOWN_TIMER_M  (PMU_DG_LP_POWERDOWN_TIMER_V << PMU_DG_LP_POWERDOWN_TIMER_S)
 #define PMU_DG_LP_POWERDOWN_TIMER_V  0x0000007FU
 #define PMU_DG_LP_POWERDOWN_TIMER_S  9
 /** PMU_DG_LP_POWERUP_TIMER : R/W; bitpos: [22:16]; default: 63;
- *  need_des
+ *  Configures the wait cycles before waking up LP power domains.
  */
 #define PMU_DG_LP_POWERUP_TIMER    0x0000007FU
 #define PMU_DG_LP_POWERUP_TIMER_M  (PMU_DG_LP_POWERUP_TIMER_V << PMU_DG_LP_POWERUP_TIMER_S)
 #define PMU_DG_LP_POWERUP_TIMER_V  0x0000007FU
 #define PMU_DG_LP_POWERUP_TIMER_S  16
 /** PMU_DG_LP_PD_WAIT_TIMER : R/W; bitpos: [31:23]; default: 255;
- *  need_des
+ *  Configures the wait cycles during sleep of LP power domains.
  */
 #define PMU_DG_LP_PD_WAIT_TIMER    0x000001FFU
 #define PMU_DG_LP_PD_WAIT_TIMER_M  (PMU_DG_LP_PD_WAIT_TIMER_V << PMU_DG_LP_PD_WAIT_TIMER_S)
@@ -1826,32 +2137,32 @@ extern "C" {
 #define PMU_DG_LP_PD_WAIT_TIMER_S  23
 
 /** PMU_POWER_WAIT_TIMER2_REG register
- *  need_des
+ *  Software-controlled waiting timer for HP, LP ISO and reset in PMU
  */
 #define PMU_POWER_WAIT_TIMER2_REG (DR_REG_PMU_BASE + 0xf4)
 /** PMU_DG_LP_ISO_WAIT_TIMER : R/W; bitpos: [7:0]; default: 255;
- *  need_des
+ *  Configures the wait cycles of LP ISO control.
  */
 #define PMU_DG_LP_ISO_WAIT_TIMER    0x000000FFU
 #define PMU_DG_LP_ISO_WAIT_TIMER_M  (PMU_DG_LP_ISO_WAIT_TIMER_V << PMU_DG_LP_ISO_WAIT_TIMER_S)
 #define PMU_DG_LP_ISO_WAIT_TIMER_V  0x000000FFU
 #define PMU_DG_LP_ISO_WAIT_TIMER_S  0
 /** PMU_DG_LP_RST_WAIT_TIMER : R/W; bitpos: [15:8]; default: 255;
- *  need_des
+ *  Configures the wait cycles of LP reset control.
  */
 #define PMU_DG_LP_RST_WAIT_TIMER    0x000000FFU
 #define PMU_DG_LP_RST_WAIT_TIMER_M  (PMU_DG_LP_RST_WAIT_TIMER_V << PMU_DG_LP_RST_WAIT_TIMER_S)
 #define PMU_DG_LP_RST_WAIT_TIMER_V  0x000000FFU
 #define PMU_DG_LP_RST_WAIT_TIMER_S  8
 /** PMU_DG_HP_ISO_WAIT_TIMER : R/W; bitpos: [23:16]; default: 255;
- *  need_des
+ *  Configures the wait cycles of HP ISO control.
  */
 #define PMU_DG_HP_ISO_WAIT_TIMER    0x000000FFU
 #define PMU_DG_HP_ISO_WAIT_TIMER_M  (PMU_DG_HP_ISO_WAIT_TIMER_V << PMU_DG_HP_ISO_WAIT_TIMER_S)
 #define PMU_DG_HP_ISO_WAIT_TIMER_V  0x000000FFU
 #define PMU_DG_HP_ISO_WAIT_TIMER_S  16
 /** PMU_DG_HP_RST_WAIT_TIMER : R/W; bitpos: [31:24]; default: 255;
- *  need_des
+ *  Configures the wait cycles of HP reset control.
  */
 #define PMU_DG_HP_RST_WAIT_TIMER    0x000000FFU
 #define PMU_DG_HP_RST_WAIT_TIMER_M  (PMU_DG_HP_RST_WAIT_TIMER_V << PMU_DG_HP_RST_WAIT_TIMER_S)
@@ -1859,60 +2170,76 @@ extern "C" {
 #define PMU_DG_HP_RST_WAIT_TIMER_S  24
 
 /** PMU_POWER_PD_TOP_CNTL_REG register
- *  need_des
+ *  Configuration register for Peripherals+ROM power domain controlled by PMU
  */
 #define PMU_POWER_PD_TOP_CNTL_REG (DR_REG_PMU_BASE + 0xf8)
 /** PMU_FORCE_TOP_RESET : R/W; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether or not to force reset Peripherals+ROM domain.
+ *  0: No effect
+ *  1: Force reset
  */
 #define PMU_FORCE_TOP_RESET    (BIT(0))
 #define PMU_FORCE_TOP_RESET_M  (PMU_FORCE_TOP_RESET_V << PMU_FORCE_TOP_RESET_S)
 #define PMU_FORCE_TOP_RESET_V  0x00000001U
 #define PMU_FORCE_TOP_RESET_S  0
 /** PMU_FORCE_TOP_ISO : R/W; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether or not to enable the force isolation of Peripherals+ROM domain.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_TOP_ISO    (BIT(1))
 #define PMU_FORCE_TOP_ISO_M  (PMU_FORCE_TOP_ISO_V << PMU_FORCE_TOP_ISO_S)
 #define PMU_FORCE_TOP_ISO_V  0x00000001U
 #define PMU_FORCE_TOP_ISO_S  1
 /** PMU_FORCE_TOP_PU : R/W; bitpos: [2]; default: 1;
- *  need_des
+ *  Configures whether or not to force power up Peripherals+ROM domain. This setting has a lower priority than PMU_PD_TOP_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_FORCE_TOP_PU    (BIT(2))
 #define PMU_FORCE_TOP_PU_M  (PMU_FORCE_TOP_PU_V << PMU_FORCE_TOP_PU_S)
 #define PMU_FORCE_TOP_PU_V  0x00000001U
 #define PMU_FORCE_TOP_PU_S  2
 /** PMU_FORCE_TOP_NO_RESET : R/W; bitpos: [3]; default: 1;
- *  need_des
+ *  Configures whether or not to forcefully prevent the reset of Peripherals+ROM domain. This setting has a lower priority than PMU_FORCE_TOP_RESET.
+ *  0: No effect
+ *  1: Force not reset
  */
 #define PMU_FORCE_TOP_NO_RESET    (BIT(3))
 #define PMU_FORCE_TOP_NO_RESET_M  (PMU_FORCE_TOP_NO_RESET_V << PMU_FORCE_TOP_NO_RESET_S)
 #define PMU_FORCE_TOP_NO_RESET_V  0x00000001U
 #define PMU_FORCE_TOP_NO_RESET_S  3
 /** PMU_FORCE_TOP_NO_ISO : R/W; bitpos: [4]; default: 1;
- *  need_des
+ *  Configures whether or not to disable the force isolation of Peripherals+ROM domain. This setting has a lower priority than PMU_FORCE_TOP_ISO.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_TOP_NO_ISO    (BIT(4))
 #define PMU_FORCE_TOP_NO_ISO_M  (PMU_FORCE_TOP_NO_ISO_V << PMU_FORCE_TOP_NO_ISO_S)
 #define PMU_FORCE_TOP_NO_ISO_V  0x00000001U
 #define PMU_FORCE_TOP_NO_ISO_S  4
 /** PMU_FORCE_TOP_PD : R/W; bitpos: [5]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down Peripherals+ROM domain. This setting has a lower priority than PMU_FORCE_TOP_PU.
+ *  0: No effect
+ *  1: Force power down
  */
 #define PMU_FORCE_TOP_PD    (BIT(5))
 #define PMU_FORCE_TOP_PD_M  (PMU_FORCE_TOP_PD_V << PMU_FORCE_TOP_PD_S)
 #define PMU_FORCE_TOP_PD_V  0x00000001U
 #define PMU_FORCE_TOP_PD_S  5
 /** PMU_PD_TOP_MASK : R/W; bitpos: [10:6]; default: 0;
- *  need_des
+ *  Configures whether or not to force power up Peripherals+ROM domain, regardless the signals from PMU.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_TOP_MASK    0x0000001FU
 #define PMU_PD_TOP_MASK_M  (PMU_PD_TOP_MASK_V << PMU_PD_TOP_MASK_S)
 #define PMU_PD_TOP_MASK_V  0x0000001FU
 #define PMU_PD_TOP_MASK_S  6
 /** PMU_PD_TOP_PD_MASK : R/W; bitpos: [31:27]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down Peripherals+ROM domain, regardless the signals from PMU. This setting has a lower priority than PMU_PD_TOP_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_TOP_PD_MASK    0x0000001FU
 #define PMU_PD_TOP_PD_MASK_M  (PMU_PD_TOP_PD_MASK_V << PMU_PD_TOP_PD_MASK_S)
@@ -1920,60 +2247,76 @@ extern "C" {
 #define PMU_PD_TOP_PD_MASK_S  27
 
 /** PMU_POWER_PD_HPAON_CNTL_REG register
- *  need_des
+ *  Configuration register for Modem Power power domain controlled by PMU
  */
 #define PMU_POWER_PD_HPAON_CNTL_REG (DR_REG_PMU_BASE + 0xfc)
 /** PMU_FORCE_HP_AON_RESET : R/W; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether or not to force reset Modem Power domain.
+ *  0: No effect
+ *  1: Force reset
  */
 #define PMU_FORCE_HP_AON_RESET    (BIT(0))
 #define PMU_FORCE_HP_AON_RESET_M  (PMU_FORCE_HP_AON_RESET_V << PMU_FORCE_HP_AON_RESET_S)
 #define PMU_FORCE_HP_AON_RESET_V  0x00000001U
 #define PMU_FORCE_HP_AON_RESET_S  0
 /** PMU_FORCE_HP_AON_ISO : R/W; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether or not to enable the force isolation of Modem Power domain.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_HP_AON_ISO    (BIT(1))
 #define PMU_FORCE_HP_AON_ISO_M  (PMU_FORCE_HP_AON_ISO_V << PMU_FORCE_HP_AON_ISO_S)
 #define PMU_FORCE_HP_AON_ISO_V  0x00000001U
 #define PMU_FORCE_HP_AON_ISO_S  1
 /** PMU_FORCE_HP_AON_PU : R/W; bitpos: [2]; default: 1;
- *  need_des
+ *  Configures whether or not to force power up Modem Power domain. This setting has a lower priority than PMU_PD_HP_AON_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_FORCE_HP_AON_PU    (BIT(2))
 #define PMU_FORCE_HP_AON_PU_M  (PMU_FORCE_HP_AON_PU_V << PMU_FORCE_HP_AON_PU_S)
 #define PMU_FORCE_HP_AON_PU_V  0x00000001U
 #define PMU_FORCE_HP_AON_PU_S  2
 /** PMU_FORCE_HP_AON_NO_RESET : R/W; bitpos: [3]; default: 1;
- *  need_des
+ *  Configures whether or not to forcefully prevent the reset of Modem Power domain. This setting has a lower priority than PMU_FORCE_HP_AON_RESET.
+ *  0: No effect
+ *  1: Force not reset
  */
 #define PMU_FORCE_HP_AON_NO_RESET    (BIT(3))
 #define PMU_FORCE_HP_AON_NO_RESET_M  (PMU_FORCE_HP_AON_NO_RESET_V << PMU_FORCE_HP_AON_NO_RESET_S)
 #define PMU_FORCE_HP_AON_NO_RESET_V  0x00000001U
 #define PMU_FORCE_HP_AON_NO_RESET_S  3
 /** PMU_FORCE_HP_AON_NO_ISO : R/W; bitpos: [4]; default: 1;
- *  need_des
+ *  Configures whether or not to disable the force isolation of Modem Power domain. This setting has a lower priority than PMU_FORCE_HP_AON_ISO.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_HP_AON_NO_ISO    (BIT(4))
 #define PMU_FORCE_HP_AON_NO_ISO_M  (PMU_FORCE_HP_AON_NO_ISO_V << PMU_FORCE_HP_AON_NO_ISO_S)
 #define PMU_FORCE_HP_AON_NO_ISO_V  0x00000001U
 #define PMU_FORCE_HP_AON_NO_ISO_S  4
 /** PMU_FORCE_HP_AON_PD : R/W; bitpos: [5]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down Modem Power domain. This setting has a lower priority than PMU_FORCE_HP_AON_PU.
+ *  0: No effect
+ *  1: Force power down
  */
 #define PMU_FORCE_HP_AON_PD    (BIT(5))
 #define PMU_FORCE_HP_AON_PD_M  (PMU_FORCE_HP_AON_PD_V << PMU_FORCE_HP_AON_PD_S)
 #define PMU_FORCE_HP_AON_PD_V  0x00000001U
 #define PMU_FORCE_HP_AON_PD_S  5
 /** PMU_PD_HP_AON_MASK : R/W; bitpos: [10:6]; default: 0;
- *  need_des
+ *  Configures whether or not to force power up Modem Power domain, regardless the signals from PMU.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_HP_AON_MASK    0x0000001FU
 #define PMU_PD_HP_AON_MASK_M  (PMU_PD_HP_AON_MASK_V << PMU_PD_HP_AON_MASK_S)
 #define PMU_PD_HP_AON_MASK_V  0x0000001FU
 #define PMU_PD_HP_AON_MASK_S  6
 /** PMU_PD_HP_AON_PD_MASK : R/W; bitpos: [31:27]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down Modem Power domain, regardless the signals from PMU. This setting has a lower priority than PMU_PD_HP_AON_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_HP_AON_PD_MASK    0x0000001FU
 #define PMU_PD_HP_AON_PD_MASK_M  (PMU_PD_HP_AON_PD_MASK_V << PMU_PD_HP_AON_PD_MASK_S)
@@ -1981,60 +2324,76 @@ extern "C" {
 #define PMU_PD_HP_AON_PD_MASK_S  27
 
 /** PMU_POWER_PD_HPCPU_CNTL_REG register
- *  need_des
+ *  Configuration register for CPU power domain controlled by PMU
  */
 #define PMU_POWER_PD_HPCPU_CNTL_REG (DR_REG_PMU_BASE + 0x100)
 /** PMU_FORCE_HP_CPU_RESET : R/W; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether or not to force reset CPU domain.
+ *  0: No effect
+ *  1: Force reset
  */
 #define PMU_FORCE_HP_CPU_RESET    (BIT(0))
 #define PMU_FORCE_HP_CPU_RESET_M  (PMU_FORCE_HP_CPU_RESET_V << PMU_FORCE_HP_CPU_RESET_S)
 #define PMU_FORCE_HP_CPU_RESET_V  0x00000001U
 #define PMU_FORCE_HP_CPU_RESET_S  0
 /** PMU_FORCE_HP_CPU_ISO : R/W; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether or not to enable the force isolation of CPU domain.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_HP_CPU_ISO    (BIT(1))
 #define PMU_FORCE_HP_CPU_ISO_M  (PMU_FORCE_HP_CPU_ISO_V << PMU_FORCE_HP_CPU_ISO_S)
 #define PMU_FORCE_HP_CPU_ISO_V  0x00000001U
 #define PMU_FORCE_HP_CPU_ISO_S  1
 /** PMU_FORCE_HP_CPU_PU : R/W; bitpos: [2]; default: 1;
- *  need_des
+ *  Configures whether or not to force power up CPU domain. This setting has a lower priority than PMU_PD_HP_CPU_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_FORCE_HP_CPU_PU    (BIT(2))
 #define PMU_FORCE_HP_CPU_PU_M  (PMU_FORCE_HP_CPU_PU_V << PMU_FORCE_HP_CPU_PU_S)
 #define PMU_FORCE_HP_CPU_PU_V  0x00000001U
 #define PMU_FORCE_HP_CPU_PU_S  2
 /** PMU_FORCE_HP_CPU_NO_RESET : R/W; bitpos: [3]; default: 1;
- *  need_des
+ *  Configures whether or not to forcefully prevent the reset of CPU domain. This setting has a lower priority than PMU_FORCE_HP_CPU_RESET.
+ *  0: No effect
+ *  1: Force not reset
  */
 #define PMU_FORCE_HP_CPU_NO_RESET    (BIT(3))
 #define PMU_FORCE_HP_CPU_NO_RESET_M  (PMU_FORCE_HP_CPU_NO_RESET_V << PMU_FORCE_HP_CPU_NO_RESET_S)
 #define PMU_FORCE_HP_CPU_NO_RESET_V  0x00000001U
 #define PMU_FORCE_HP_CPU_NO_RESET_S  3
 /** PMU_FORCE_HP_CPU_NO_ISO : R/W; bitpos: [4]; default: 1;
- *  need_des
+ *  Configures whether or not to disable the force isolation of CPU domain. This setting has a lower priority than PMU_FORCE_HP_CPU_ISO.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_HP_CPU_NO_ISO    (BIT(4))
 #define PMU_FORCE_HP_CPU_NO_ISO_M  (PMU_FORCE_HP_CPU_NO_ISO_V << PMU_FORCE_HP_CPU_NO_ISO_S)
 #define PMU_FORCE_HP_CPU_NO_ISO_V  0x00000001U
 #define PMU_FORCE_HP_CPU_NO_ISO_S  4
 /** PMU_FORCE_HP_CPU_PD : R/W; bitpos: [5]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down CPU domain. This setting has a lower priority than PMU_FORCE_HP_CPU_PU.
+ *  0: No effect
+ *  1: Force power down
  */
 #define PMU_FORCE_HP_CPU_PD    (BIT(5))
 #define PMU_FORCE_HP_CPU_PD_M  (PMU_FORCE_HP_CPU_PD_V << PMU_FORCE_HP_CPU_PD_S)
 #define PMU_FORCE_HP_CPU_PD_V  0x00000001U
 #define PMU_FORCE_HP_CPU_PD_S  5
 /** PMU_PD_HP_CPU_MASK : R/W; bitpos: [10:6]; default: 0;
- *  need_des
+ *  Configures whether or not to force power up CPU domain, regardless the signals from PMU.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_HP_CPU_MASK    0x0000001FU
 #define PMU_PD_HP_CPU_MASK_M  (PMU_PD_HP_CPU_MASK_V << PMU_PD_HP_CPU_MASK_S)
 #define PMU_PD_HP_CPU_MASK_V  0x0000001FU
 #define PMU_PD_HP_CPU_MASK_S  6
 /** PMU_PD_HP_CPU_PD_MASK : R/W; bitpos: [31:27]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down CPU domain, regardless the signals from PMU. This setting has a lower priority than PMU_PD_HP_CPU_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_HP_CPU_PD_MASK    0x0000001FU
 #define PMU_PD_HP_CPU_PD_MASK_M  (PMU_PD_HP_CPU_PD_MASK_V << PMU_PD_HP_CPU_PD_MASK_S)
@@ -2103,60 +2462,76 @@ extern "C" {
 #define PMU_PD_HP_PERI_PD_MASK_S  27
 
 /** PMU_POWER_PD_HPWIFI_CNTL_REG register
- *  need_des
+ *  Configuration register for MODEM power domain controlled by PMU
  */
 #define PMU_POWER_PD_HPWIFI_CNTL_REG (DR_REG_PMU_BASE + 0x108)
 /** PMU_FORCE_HP_WIFI_RESET : R/W; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether or not to force reset MODEM domain.
+ *  0: No effect
+ *  1: Force reset
  */
 #define PMU_FORCE_HP_WIFI_RESET    (BIT(0))
 #define PMU_FORCE_HP_WIFI_RESET_M  (PMU_FORCE_HP_WIFI_RESET_V << PMU_FORCE_HP_WIFI_RESET_S)
 #define PMU_FORCE_HP_WIFI_RESET_V  0x00000001U
 #define PMU_FORCE_HP_WIFI_RESET_S  0
 /** PMU_FORCE_HP_WIFI_ISO : R/W; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether or not to enable the force isolation of MODEM domain.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_HP_WIFI_ISO    (BIT(1))
 #define PMU_FORCE_HP_WIFI_ISO_M  (PMU_FORCE_HP_WIFI_ISO_V << PMU_FORCE_HP_WIFI_ISO_S)
 #define PMU_FORCE_HP_WIFI_ISO_V  0x00000001U
 #define PMU_FORCE_HP_WIFI_ISO_S  1
 /** PMU_FORCE_HP_WIFI_PU : R/W; bitpos: [2]; default: 1;
- *  need_des
+ *  Configures whether or not to force power up MODEM domain. This setting has a lower priority than PMU_PD_HP_WIFI_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_FORCE_HP_WIFI_PU    (BIT(2))
 #define PMU_FORCE_HP_WIFI_PU_M  (PMU_FORCE_HP_WIFI_PU_V << PMU_FORCE_HP_WIFI_PU_S)
 #define PMU_FORCE_HP_WIFI_PU_V  0x00000001U
 #define PMU_FORCE_HP_WIFI_PU_S  2
 /** PMU_FORCE_HP_WIFI_NO_RESET : R/W; bitpos: [3]; default: 1;
- *  need_des
+ *  Configures whether or not to forcefully prevent the reset of MODEM domain. This setting has a lower priority than PMU_FORCE_HP_WIFI_RESET.
+ *  0: No effect
+ *  1: Force not reset
  */
 #define PMU_FORCE_HP_WIFI_NO_RESET    (BIT(3))
 #define PMU_FORCE_HP_WIFI_NO_RESET_M  (PMU_FORCE_HP_WIFI_NO_RESET_V << PMU_FORCE_HP_WIFI_NO_RESET_S)
 #define PMU_FORCE_HP_WIFI_NO_RESET_V  0x00000001U
 #define PMU_FORCE_HP_WIFI_NO_RESET_S  3
 /** PMU_FORCE_HP_WIFI_NO_ISO : R/W; bitpos: [4]; default: 1;
- *  need_des
+ *  Configures whether or not to disable the force isolation of MODEM domain. This setting has a lower priority than PMU_FORCE_HP_WIFI_ISO.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_HP_WIFI_NO_ISO    (BIT(4))
 #define PMU_FORCE_HP_WIFI_NO_ISO_M  (PMU_FORCE_HP_WIFI_NO_ISO_V << PMU_FORCE_HP_WIFI_NO_ISO_S)
 #define PMU_FORCE_HP_WIFI_NO_ISO_V  0x00000001U
 #define PMU_FORCE_HP_WIFI_NO_ISO_S  4
 /** PMU_FORCE_HP_WIFI_PD : R/W; bitpos: [5]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down MODEM domain. This setting has a lower priority than PMU_FORCE_HP_WIFI_PU.
+ *  0: No effect
+ *  1: Force power down
  */
 #define PMU_FORCE_HP_WIFI_PD    (BIT(5))
 #define PMU_FORCE_HP_WIFI_PD_M  (PMU_FORCE_HP_WIFI_PD_V << PMU_FORCE_HP_WIFI_PD_S)
 #define PMU_FORCE_HP_WIFI_PD_V  0x00000001U
 #define PMU_FORCE_HP_WIFI_PD_S  5
 /** PMU_PD_HP_WIFI_MASK : R/W; bitpos: [10:6]; default: 0;
- *  need_des
+ *  Configures whether or not to force power up MODEM domain, regardless the signals from PMU.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_HP_WIFI_MASK    0x0000001FU
 #define PMU_PD_HP_WIFI_MASK_M  (PMU_PD_HP_WIFI_MASK_V << PMU_PD_HP_WIFI_MASK_S)
 #define PMU_PD_HP_WIFI_MASK_V  0x0000001FU
 #define PMU_PD_HP_WIFI_MASK_S  6
 /** PMU_PD_HP_WIFI_PD_MASK : R/W; bitpos: [31:27]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down MODEM domain, regardless the signals from PMU. This setting has a lower priority than PMU_PD_HP_WIFI_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_PD_HP_WIFI_PD_MASK    0x0000001FU
 #define PMU_PD_HP_WIFI_PD_MASK_M  (PMU_PD_HP_WIFI_PD_MASK_V << PMU_PD_HP_WIFI_PD_MASK_S)
@@ -2164,46 +2539,58 @@ extern "C" {
 #define PMU_PD_HP_WIFI_PD_MASK_S  27
 
 /** PMU_POWER_PD_LPPERI_CNTL_REG register
- *  need_des
+ *  Configuration register for LPSYS_OFF power domain controlled by PMU
  */
 #define PMU_POWER_PD_LPPERI_CNTL_REG (DR_REG_PMU_BASE + 0x10c)
 /** PMU_FORCE_LP_PERI_RESET : R/W; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether or not to force reset LPSYS_OFF domain.
+ *  0: No effect
+ *  1: Force reset
  */
 #define PMU_FORCE_LP_PERI_RESET    (BIT(0))
 #define PMU_FORCE_LP_PERI_RESET_M  (PMU_FORCE_LP_PERI_RESET_V << PMU_FORCE_LP_PERI_RESET_S)
 #define PMU_FORCE_LP_PERI_RESET_V  0x00000001U
 #define PMU_FORCE_LP_PERI_RESET_S  0
 /** PMU_FORCE_LP_PERI_ISO : R/W; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether or not to enable the force isolation of LPSYS_OFF domain.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_LP_PERI_ISO    (BIT(1))
 #define PMU_FORCE_LP_PERI_ISO_M  (PMU_FORCE_LP_PERI_ISO_V << PMU_FORCE_LP_PERI_ISO_S)
 #define PMU_FORCE_LP_PERI_ISO_V  0x00000001U
 #define PMU_FORCE_LP_PERI_ISO_S  1
 /** PMU_FORCE_LP_PERI_PU : R/W; bitpos: [2]; default: 1;
- *  need_des
+ *  Configures whether or not to force power up LPSYS_OFF domain.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_FORCE_LP_PERI_PU    (BIT(2))
 #define PMU_FORCE_LP_PERI_PU_M  (PMU_FORCE_LP_PERI_PU_V << PMU_FORCE_LP_PERI_PU_S)
 #define PMU_FORCE_LP_PERI_PU_V  0x00000001U
 #define PMU_FORCE_LP_PERI_PU_S  2
 /** PMU_FORCE_LP_PERI_NO_RESET : R/W; bitpos: [3]; default: 1;
- *  need_des
+ *  Configures whether or not to forcefully prevent the reset of LPSYS_OFF domain. This setting has a lower priority than PMU_FORCE_LP_PERI_RESET.
+ *  0: No effect
+ *  1: Force not reset
  */
 #define PMU_FORCE_LP_PERI_NO_RESET    (BIT(3))
 #define PMU_FORCE_LP_PERI_NO_RESET_M  (PMU_FORCE_LP_PERI_NO_RESET_V << PMU_FORCE_LP_PERI_NO_RESET_S)
 #define PMU_FORCE_LP_PERI_NO_RESET_V  0x00000001U
 #define PMU_FORCE_LP_PERI_NO_RESET_S  3
 /** PMU_FORCE_LP_PERI_NO_ISO : R/W; bitpos: [4]; default: 1;
- *  need_des
+ *  Configures whether or not to disable the force isolation of LPSYS_OFF domain. This setting has a lower priority than PMU_FORCE_LP_PERI_ISO.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_LP_PERI_NO_ISO    (BIT(4))
 #define PMU_FORCE_LP_PERI_NO_ISO_M  (PMU_FORCE_LP_PERI_NO_ISO_V << PMU_FORCE_LP_PERI_NO_ISO_S)
 #define PMU_FORCE_LP_PERI_NO_ISO_V  0x00000001U
 #define PMU_FORCE_LP_PERI_NO_ISO_S  4
 /** PMU_FORCE_LP_PERI_PD : R/W; bitpos: [5]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down LPSYS_OFF domain. This setting has a lower priority than PMU_FORCE_LP_PERI_PU.
+ *  0: No effect
+ *  1: Force power down
  */
 #define PMU_FORCE_LP_PERI_PD    (BIT(5))
 #define PMU_FORCE_LP_PERI_PD_M  (PMU_FORCE_LP_PERI_PD_V << PMU_FORCE_LP_PERI_PD_S)
@@ -2211,32 +2598,40 @@ extern "C" {
 #define PMU_FORCE_LP_PERI_PD_S  5
 
 /** PMU_POWER_PD_MEM_CNTL_REG register
- *  need_des
+ *  Configuration register for Internal SRAMx power domain's ISO and overall switch controlled by PMU
  */
 #define PMU_POWER_PD_MEM_CNTL_REG (DR_REG_PMU_BASE + 0x110)
 /** PMU_FORCE_HP_MEM_ISO : R/W; bitpos: [3:0]; default: 0;
- *  need_des
+ *  Configures whether or not to enable the force isolation of Internal SRAMx domain.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_HP_MEM_ISO    0x0000000FU
 #define PMU_FORCE_HP_MEM_ISO_M  (PMU_FORCE_HP_MEM_ISO_V << PMU_FORCE_HP_MEM_ISO_S)
 #define PMU_FORCE_HP_MEM_ISO_V  0x0000000FU
 #define PMU_FORCE_HP_MEM_ISO_S  0
 /** PMU_FORCE_HP_MEM_PD : R/W; bitpos: [7:4]; default: 0;
- *  need_des
+ *  Configures whether or not to force power down Internal SRAMx domain. This setting has a lower priority than PMU_FORCE_HP_MEM_PU.
+ *  0: No effect
+ *  1: Force power down
  */
 #define PMU_FORCE_HP_MEM_PD    0x0000000FU
 #define PMU_FORCE_HP_MEM_PD_M  (PMU_FORCE_HP_MEM_PD_V << PMU_FORCE_HP_MEM_PD_S)
 #define PMU_FORCE_HP_MEM_PD_V  0x0000000FU
 #define PMU_FORCE_HP_MEM_PD_S  4
 /** PMU_FORCE_HP_MEM_NO_ISO : R/W; bitpos: [27:24]; default: 15;
- *  need_des
+ *  Configures whether or not to disable the force isolation of Internal SRAMx domain. This setting has a lower priority than PMU_FORCE_HP_MEM_ISO.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_HP_MEM_NO_ISO    0x0000000FU
 #define PMU_FORCE_HP_MEM_NO_ISO_M  (PMU_FORCE_HP_MEM_NO_ISO_V << PMU_FORCE_HP_MEM_NO_ISO_S)
 #define PMU_FORCE_HP_MEM_NO_ISO_V  0x0000000FU
 #define PMU_FORCE_HP_MEM_NO_ISO_S  24
 /** PMU_FORCE_HP_MEM_PU : R/W; bitpos: [31:28]; default: 15;
- *  need_des
+ *  Configures whether or not to force power up Internal SRAMx domain. This setting has a lower priority than PMU_PD_HP_AON_MASK.
+ *  0: No effect
+ *  1: Force power up
  */
 #define PMU_FORCE_HP_MEM_PU    0x0000000FU
 #define PMU_FORCE_HP_MEM_PU_M  (PMU_FORCE_HP_MEM_PU_V << PMU_FORCE_HP_MEM_PU_S)
@@ -2244,46 +2639,58 @@ extern "C" {
 #define PMU_FORCE_HP_MEM_PU_S  28
 
 /** PMU_POWER_PD_MEM_MASK_REG register
- *  need_des
+ *  Configuration register for LDO switch of individual Internal SRAMx power supply controlled by PMU
  */
 #define PMU_POWER_PD_MEM_MASK_REG (DR_REG_PMU_BASE + 0x114)
 /** PMU_PD_HP_MEM2_PD_MASK : R/W; bitpos: [4:0]; default: 0;
- *  need_des
+ *  Configures whether the Internal SRAM2 follows the power up/down state of Peripherals+ROM domain.
+ *  0: Follows Peripherals+ROM domain
+ *  1: Does not follow Peripherals+ROM domain.
  */
 #define PMU_PD_HP_MEM2_PD_MASK    0x0000001FU
 #define PMU_PD_HP_MEM2_PD_MASK_M  (PMU_PD_HP_MEM2_PD_MASK_V << PMU_PD_HP_MEM2_PD_MASK_S)
 #define PMU_PD_HP_MEM2_PD_MASK_V  0x0000001FU
 #define PMU_PD_HP_MEM2_PD_MASK_S  0
 /** PMU_PD_HP_MEM1_PD_MASK : R/W; bitpos: [9:5]; default: 0;
- *  need_des
+ *  Configures whether the Internal SRAM1 follows the power up/down state of Peripherals+ROM domain.
+ *  0: Follows Peripherals+ROM domain
+ *  1: Does not follow Peripherals+ROM domain.
  */
 #define PMU_PD_HP_MEM1_PD_MASK    0x0000001FU
 #define PMU_PD_HP_MEM1_PD_MASK_M  (PMU_PD_HP_MEM1_PD_MASK_V << PMU_PD_HP_MEM1_PD_MASK_S)
 #define PMU_PD_HP_MEM1_PD_MASK_V  0x0000001FU
 #define PMU_PD_HP_MEM1_PD_MASK_S  5
 /** PMU_PD_HP_MEM0_PD_MASK : R/W; bitpos: [14:10]; default: 0;
- *  need_des
+ *  Configures whether the Internal SRAM0 follows the power up/down state of Peripherals+ROM domain.
+ *  0: Follows Peripherals+ROM domain
+ *  1: Does not follow Peripherals+ROM domain.
  */
 #define PMU_PD_HP_MEM0_PD_MASK    0x0000001FU
 #define PMU_PD_HP_MEM0_PD_MASK_M  (PMU_PD_HP_MEM0_PD_MASK_V << PMU_PD_HP_MEM0_PD_MASK_S)
 #define PMU_PD_HP_MEM0_PD_MASK_V  0x0000001FU
 #define PMU_PD_HP_MEM0_PD_MASK_S  10
 /** PMU_PD_HP_MEM2_MASK : R/W; bitpos: [21:17]; default: 0;
- *  need_des
+ *  Configures whether to force power up Internal SRAM2.
+ *  0: Do not force power up
+ *  1: Force power up
  */
 #define PMU_PD_HP_MEM2_MASK    0x0000001FU
 #define PMU_PD_HP_MEM2_MASK_M  (PMU_PD_HP_MEM2_MASK_V << PMU_PD_HP_MEM2_MASK_S)
 #define PMU_PD_HP_MEM2_MASK_V  0x0000001FU
 #define PMU_PD_HP_MEM2_MASK_S  17
 /** PMU_PD_HP_MEM1_MASK : R/W; bitpos: [26:22]; default: 0;
- *  need_des
+ *  Configures whether to to force power up Internal SRAM1.
+ *  0: Do not force power up
+ *  1: Force power up
  */
 #define PMU_PD_HP_MEM1_MASK    0x0000001FU
 #define PMU_PD_HP_MEM1_MASK_M  (PMU_PD_HP_MEM1_MASK_V << PMU_PD_HP_MEM1_MASK_S)
 #define PMU_PD_HP_MEM1_MASK_V  0x0000001FU
 #define PMU_PD_HP_MEM1_MASK_S  22
 /** PMU_PD_HP_MEM0_MASK : R/W; bitpos: [31:27]; default: 0;
- *  need_des
+ *  Configures whether to force power up Internal SRAM0.
+ *  0: Do not force power up
+ *  1: Force power up
  */
 #define PMU_PD_HP_MEM0_MASK    0x0000001FU
 #define PMU_PD_HP_MEM0_MASK_M  (PMU_PD_HP_MEM0_MASK_V << PMU_PD_HP_MEM0_MASK_S)
@@ -2291,18 +2698,22 @@ extern "C" {
 #define PMU_PD_HP_MEM0_MASK_S  27
 
 /** PMU_POWER_HP_PAD_REG register
- *  need_des
+ *  Configuration register for HP GPIOs power supply controlled by PMU
  */
 #define PMU_POWER_HP_PAD_REG (DR_REG_PMU_BASE + 0x118)
 /** PMU_FORCE_HP_PAD_NO_ISO_ALL : R/W; bitpos: [0]; default: 0;
- *  need_des
+ *  Configures whether or not to disable HP GPIOs to enable ISO signal. This setting has a lower priority than PMU_FORCE_HP_PAD_ISO_ALL.
+ *  0: No effect
+ *  1: Disable
  */
 #define PMU_FORCE_HP_PAD_NO_ISO_ALL    (BIT(0))
 #define PMU_FORCE_HP_PAD_NO_ISO_ALL_M  (PMU_FORCE_HP_PAD_NO_ISO_ALL_V << PMU_FORCE_HP_PAD_NO_ISO_ALL_S)
 #define PMU_FORCE_HP_PAD_NO_ISO_ALL_V  0x00000001U
 #define PMU_FORCE_HP_PAD_NO_ISO_ALL_S  0
 /** PMU_FORCE_HP_PAD_ISO_ALL : R/W; bitpos: [1]; default: 0;
- *  need_des
+ *  Configures whether or not to enable HP GPIOs to enable ISO signal. This setting has a higher priority than PMU_FORCE_HP_PAD_NO_ISO_ALL.
+ *  0: No effect
+ *  1: Enable
  */
 #define PMU_FORCE_HP_PAD_ISO_ALL    (BIT(1))
 #define PMU_FORCE_HP_PAD_ISO_ALL_M  (PMU_FORCE_HP_PAD_ISO_ALL_V << PMU_FORCE_HP_PAD_ISO_ALL_S)
@@ -2310,25 +2721,27 @@ extern "C" {
 #define PMU_FORCE_HP_PAD_ISO_ALL_S  1
 
 /** PMU_POWER_VDD_SPI_CNTL_REG register
- *  need_des
+ *  Configuration register for VDD_SPI power supply controlled by PMU
  */
 #define PMU_POWER_VDD_SPI_CNTL_REG (DR_REG_PMU_BASE + 0x11c)
 /** PMU_VDD_SPI_PWR_WAIT : R/W; bitpos: [28:18]; default: 255;
- *  need_des
+ *  Configures the number of cycles to delay before powering up or down the VDD_SPI cell.
  */
 #define PMU_VDD_SPI_PWR_WAIT    0x000007FFU
 #define PMU_VDD_SPI_PWR_WAIT_M  (PMU_VDD_SPI_PWR_WAIT_V << PMU_VDD_SPI_PWR_WAIT_S)
 #define PMU_VDD_SPI_PWR_WAIT_V  0x000007FFU
 #define PMU_VDD_SPI_PWR_WAIT_S  18
 /** PMU_VDD_SPI_PWR_SW : R/W; bitpos: [30:29]; default: 3;
- *  need_des
+ *  Configure the power switch signal of VDD_SPI cell of HP GPIOs.
  */
 #define PMU_VDD_SPI_PWR_SW    0x00000003U
 #define PMU_VDD_SPI_PWR_SW_M  (PMU_VDD_SPI_PWR_SW_V << PMU_VDD_SPI_PWR_SW_S)
 #define PMU_VDD_SPI_PWR_SW_V  0x00000003U
 #define PMU_VDD_SPI_PWR_SW_S  29
 /** PMU_VDD_SPI_PWR_SEL_SW : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configure to select the power switch control signals of VDD_SPI cell of HP GPIOs.
+ *  0: controlled by PMU
+ *  1: controlled by PMU_VDD_SPI_PWR_SW
  */
 #define PMU_VDD_SPI_PWR_SEL_SW    (BIT(31))
 #define PMU_VDD_SPI_PWR_SEL_SW_M  (PMU_VDD_SPI_PWR_SEL_SW_V << PMU_VDD_SPI_PWR_SEL_SW_S)
@@ -2336,18 +2749,18 @@ extern "C" {
 #define PMU_VDD_SPI_PWR_SEL_SW_S  31
 
 /** PMU_POWER_CK_WAIT_CNTL_REG register
- *  need_des
+ *  Configuration register for system waiting time after clock change controlled by PMU
  */
 #define PMU_POWER_CK_WAIT_CNTL_REG (DR_REG_PMU_BASE + 0x120)
 /** PMU_WAIT_XTL_STABLE : R/W; bitpos: [15:0]; default: 256;
- *  need_des
+ *  Configures the number of CLK_DYN_FAST_CLK cycles to delay the XTAL_CLK gate opening after XTAL_CLK powers up, ensuring clock stability during startup.
  */
 #define PMU_WAIT_XTL_STABLE    0x0000FFFFU
 #define PMU_WAIT_XTL_STABLE_M  (PMU_WAIT_XTL_STABLE_V << PMU_WAIT_XTL_STABLE_S)
 #define PMU_WAIT_XTL_STABLE_V  0x0000FFFFU
 #define PMU_WAIT_XTL_STABLE_S  0
 /** PMU_WAIT_PLL_STABLE : R/W; bitpos: [31:16]; default: 256;
- *  need_des
+ *  Configures the number of CLK_DYN_FAST_CLK cycles to delay the PLL_CLK gate opening after PLL_CLK powers up, ensuring clock stability during startup.
  */
 #define PMU_WAIT_PLL_STABLE    0x0000FFFFU
 #define PMU_WAIT_PLL_STABLE_M  (PMU_WAIT_PLL_STABLE_V << PMU_WAIT_PLL_STABLE_S)
@@ -2355,11 +2768,13 @@ extern "C" {
 #define PMU_WAIT_PLL_STABLE_S  16
 
 /** PMU_SLP_WAKEUP_CNTL0_REG register
- *  need_des
+ *  Sleep request register
  */
 #define PMU_SLP_WAKEUP_CNTL0_REG (DR_REG_PMU_BASE + 0x124)
 /** PMU_SLEEP_REQ : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to switch the chip's PMU state to HP_SLEEP or LP_SLEEP.
+ *  0: Do not switch
+ *  1: Switch depending on the status of LP CPU.
  */
 #define PMU_SLEEP_REQ    (BIT(31))
 #define PMU_SLEEP_REQ_M  (PMU_SLEEP_REQ_V << PMU_SLEEP_REQ_S)
@@ -2367,18 +2782,20 @@ extern "C" {
 #define PMU_SLEEP_REQ_S  31
 
 /** PMU_SLP_WAKEUP_CNTL1_REG register
- *  need_des
+ *  Sleep reject register
  */
 #define PMU_SLP_WAKEUP_CNTL1_REG (DR_REG_PMU_BASE + 0x128)
 /** PMU_SLEEP_REJECT_ENA : R/W; bitpos: [30:0]; default: 0;
- *  need_des
+ *  Configures the sleep rejection source. For the mapping between values and sources please refer to Table <a href='tab:lowpowm-wakeup-source'>link</a>.
  */
 #define PMU_SLEEP_REJECT_ENA    0x7FFFFFFFU
 #define PMU_SLEEP_REJECT_ENA_M  (PMU_SLEEP_REJECT_ENA_V << PMU_SLEEP_REJECT_ENA_S)
 #define PMU_SLEEP_REJECT_ENA_V  0x7FFFFFFFU
 #define PMU_SLEEP_REJECT_ENA_S  0
 /** PMU_SLP_REJECT_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures whether to enable sleep rejection function.
+ *  0: Disable
+ *  1: Enable
  */
 #define PMU_SLP_REJECT_EN    (BIT(31))
 #define PMU_SLP_REJECT_EN_M  (PMU_SLP_REJECT_EN_V << PMU_SLP_REJECT_EN_S)
@@ -2386,11 +2803,11 @@ extern "C" {
 #define PMU_SLP_REJECT_EN_S  31
 
 /** PMU_SLP_WAKEUP_CNTL2_REG register
- *  need_des
+ *  Wakeup source enable register
  */
 #define PMU_SLP_WAKEUP_CNTL2_REG (DR_REG_PMU_BASE + 0x12c)
 /** PMU_WAKEUP_ENA : R/W; bitpos: [31:0]; default: 0;
- *  need_des
+ *  Configures wake-up source. For the mapping between values and sources please refer to Table <a href='tab:lowpowm-wakeup-source'>link</a>.
  */
 #define PMU_WAKEUP_ENA    0xFFFFFFFFU
 #define PMU_WAKEUP_ENA_M  (PMU_WAKEUP_ENA_V << PMU_WAKEUP_ENA_S)
@@ -2398,25 +2815,25 @@ extern "C" {
 #define PMU_WAKEUP_ENA_S  0
 
 /** PMU_SLP_WAKEUP_CNTL3_REG register
- *  need_des
+ *  PMU state selection signal and waiting time register for sleep-Wakeup
  */
 #define PMU_SLP_WAKEUP_CNTL3_REG (DR_REG_PMU_BASE + 0x130)
 /** PMU_LP_MIN_SLP_VAL : R/W; bitpos: [7:0]; default: 0;
- *  need_des
+ *  Configures the LP_SLEEP sleep/wakeup wait time.
  */
 #define PMU_LP_MIN_SLP_VAL    0x000000FFU
 #define PMU_LP_MIN_SLP_VAL_M  (PMU_LP_MIN_SLP_VAL_V << PMU_LP_MIN_SLP_VAL_S)
 #define PMU_LP_MIN_SLP_VAL_V  0x000000FFU
 #define PMU_LP_MIN_SLP_VAL_S  0
 /** PMU_HP_MIN_SLP_VAL : R/W; bitpos: [15:8]; default: 0;
- *  need_des
+ *  Configures the HP_SLEEP sleep/wakeup wait time.
  */
 #define PMU_HP_MIN_SLP_VAL    0x000000FFU
 #define PMU_HP_MIN_SLP_VAL_M  (PMU_HP_MIN_SLP_VAL_V << PMU_HP_MIN_SLP_VAL_S)
 #define PMU_HP_MIN_SLP_VAL_V  0x000000FFU
 #define PMU_HP_MIN_SLP_VAL_S  8
 /** PMU_SLEEP_PRT_SEL : R/W; bitpos: [17:16]; default: 0;
- *  need_des
+ *  Configures to select the configuration data for sleep start and sleep end events.
  */
 #define PMU_SLEEP_PRT_SEL    0x00000003U
 #define PMU_SLEEP_PRT_SEL_M  (PMU_SLEEP_PRT_SEL_V << PMU_SLEEP_PRT_SEL_S)
@@ -2424,11 +2841,11 @@ extern "C" {
 #define PMU_SLEEP_PRT_SEL_S  16
 
 /** PMU_SLP_WAKEUP_CNTL4_REG register
- *  need_des
+ *  Sleep reject event clear register
  */
 #define PMU_SLP_WAKEUP_CNTL4_REG (DR_REG_PMU_BASE + 0x134)
 /** PMU_SLP_REJECT_CAUSE_CLR : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_REJECT_CAUSE.
  */
 #define PMU_SLP_REJECT_CAUSE_CLR    (BIT(31))
 #define PMU_SLP_REJECT_CAUSE_CLR_M  (PMU_SLP_REJECT_CAUSE_CLR_V << PMU_SLP_REJECT_CAUSE_CLR_S)
@@ -2436,18 +2853,18 @@ extern "C" {
 #define PMU_SLP_REJECT_CAUSE_CLR_S  31
 
 /** PMU_SLP_WAKEUP_CNTL5_REG register
- *  need_des
+ *  Waiting time register after Wakeup in LP_SLEEP and HP_SLEEP
  */
 #define PMU_SLP_WAKEUP_CNTL5_REG (DR_REG_PMU_BASE + 0x138)
 /** PMU_MODEM_WAIT_TARGET : R/W; bitpos: [19:0]; default: 128;
- *  need_des
+ *  Configures the wait timer after the Modem wakeup.
  */
 #define PMU_MODEM_WAIT_TARGET    0x000FFFFFU
 #define PMU_MODEM_WAIT_TARGET_M  (PMU_MODEM_WAIT_TARGET_V << PMU_MODEM_WAIT_TARGET_S)
 #define PMU_MODEM_WAIT_TARGET_V  0x000FFFFFU
 #define PMU_MODEM_WAIT_TARGET_S  0
 /** PMU_LP_ANA_WAIT_TARGET : R/W; bitpos: [31:24]; default: 1;
- *  need_des
+ *  Configures the wait timer after turning on the analog power.
  */
 #define PMU_LP_ANA_WAIT_TARGET    0x000000FFU
 #define PMU_LP_ANA_WAIT_TARGET_M  (PMU_LP_ANA_WAIT_TARGET_V << PMU_LP_ANA_WAIT_TARGET_S)
@@ -2455,18 +2872,18 @@ extern "C" {
 #define PMU_LP_ANA_WAIT_TARGET_S  24
 
 /** PMU_SLP_WAKEUP_CNTL6_REG register
- *  need_des
+ *  Waiting time register after Wakeup in HP_MODEM phase
  */
 #define PMU_SLP_WAKEUP_CNTL6_REG (DR_REG_PMU_BASE + 0x13c)
 /** PMU_SOC_WAKEUP_WAIT : R/W; bitpos: [19:0]; default: 128;
- *  need_des
+ *  Configures the HP_MODEM wakeup wait timer.
  */
 #define PMU_SOC_WAKEUP_WAIT    0x000FFFFFU
 #define PMU_SOC_WAKEUP_WAIT_M  (PMU_SOC_WAKEUP_WAIT_V << PMU_SOC_WAKEUP_WAIT_S)
 #define PMU_SOC_WAKEUP_WAIT_V  0x000FFFFFU
 #define PMU_SOC_WAKEUP_WAIT_S  0
 /** PMU_SOC_WAKEUP_WAIT_CFG : R/W; bitpos: [31:30]; default: 0;
- *  need_des
+ *  Configures to select the wait timer for HP_MODEM wakeup.
  */
 #define PMU_SOC_WAKEUP_WAIT_CFG    0x00000003U
 #define PMU_SOC_WAKEUP_WAIT_CFG_M  (PMU_SOC_WAKEUP_WAIT_CFG_V << PMU_SOC_WAKEUP_WAIT_CFG_S)
@@ -2474,11 +2891,11 @@ extern "C" {
 #define PMU_SOC_WAKEUP_WAIT_CFG_S  30
 
 /** PMU_SLP_WAKEUP_CNTL7_REG register
- *  need_des
+ *  Waiting time register after Wakeup in HP_SWITCH phase
  */
 #define PMU_SLP_WAKEUP_CNTL7_REG (DR_REG_PMU_BASE + 0x140)
 /** PMU_ANA_WAIT_TARGET : R/W; bitpos: [31:16]; default: 1;
- *  need_des
+ *  Configures the HP_SWITCH wakeup wait timer.
  */
 #define PMU_ANA_WAIT_TARGET    0x0000FFFFU
 #define PMU_ANA_WAIT_TARGET_M  (PMU_ANA_WAIT_TARGET_V << PMU_ANA_WAIT_TARGET_S)
@@ -2486,11 +2903,11 @@ extern "C" {
 #define PMU_ANA_WAIT_TARGET_S  16
 
 /** PMU_SLP_WAKEUP_STATUS0_REG register
- *  need_des
+ *  Wakeup event register
  */
 #define PMU_SLP_WAKEUP_STATUS0_REG (DR_REG_PMU_BASE + 0x144)
 /** PMU_WAKEUP_CAUSE : RO; bitpos: [31:0]; default: 0;
- *  need_des
+ *  Indicates the wake-up source. For the mapping between values and sources please refer to Table <a href='tab:lowpowm-wakeup-source'>link</a>.
  */
 #define PMU_WAKEUP_CAUSE    0xFFFFFFFFU
 #define PMU_WAKEUP_CAUSE_M  (PMU_WAKEUP_CAUSE_V << PMU_WAKEUP_CAUSE_S)
@@ -2498,11 +2915,11 @@ extern "C" {
 #define PMU_WAKEUP_CAUSE_S  0
 
 /** PMU_SLP_WAKEUP_STATUS1_REG register
- *  need_des
+ *  Reset reject event register
  */
 #define PMU_SLP_WAKEUP_STATUS1_REG (DR_REG_PMU_BASE + 0x148)
 /** PMU_REJECT_CAUSE : RO; bitpos: [31:0]; default: 0;
- *  need_des
+ *  Indicates the wake-up rejection source. For the mapping between values and sources please refer to Table <a href='tab:lowpowm-wakeup-source'>link</a>.
  */
 #define PMU_REJECT_CAUSE    0xFFFFFFFFU
 #define PMU_REJECT_CAUSE_M  (PMU_REJECT_CAUSE_V << PMU_REJECT_CAUSE_S)
@@ -2522,18 +2939,18 @@ extern "C" {
 #define PMU_I2C_POR_WAIT_TARGET_S  0
 
 /** PMU_HP_CK_CNTL_REG register
- *  need_des
+ *  PMU-set waiting time after ICG configuration adjustment
  */
 #define PMU_HP_CK_CNTL_REG (DR_REG_PMU_BASE + 0x150)
 /** PMU_MODIFY_ICG_CNTL_WAIT : R/W; bitpos: [7:0]; default: 10;
- *  need_des
+ *  Configures the number of wait cycles required after modifying the input configurations of the Integrated Clock Gating (ICG) module, ensuring the changes take effect and the clock signals stabilize.
  */
 #define PMU_MODIFY_ICG_CNTL_WAIT    0x000000FFU
 #define PMU_MODIFY_ICG_CNTL_WAIT_M  (PMU_MODIFY_ICG_CNTL_WAIT_V << PMU_MODIFY_ICG_CNTL_WAIT_S)
 #define PMU_MODIFY_ICG_CNTL_WAIT_V  0x000000FFU
 #define PMU_MODIFY_ICG_CNTL_WAIT_S  0
 /** PMU_SWITCH_ICG_CNTL_WAIT : R/W; bitpos: [15:8]; default: 10;
- *  need_des
+ *  Configures the number of wait cycles required after switching the Integrated Clock Gating (ICG) module to its modified configuration, ensuring the transition is properly completed.
  */
 #define PMU_SWITCH_ICG_CNTL_WAIT    0x000000FFU
 #define PMU_SWITCH_ICG_CNTL_WAIT_M  (PMU_SWITCH_ICG_CNTL_WAIT_V << PMU_SWITCH_ICG_CNTL_WAIT_S)
@@ -2553,60 +2970,62 @@ extern "C" {
 #define PMU_POR_DONE_S  31
 
 /** PMU_RF_PWC_REG register
- *  need_des
+ *  Configuration for i2c and rf circuits controlled by PMU
  */
 #define PMU_RF_PWC_REG (DR_REG_PMU_BASE + 0x158)
 /** PMU_XPD_TC5G_I2C : R/W; bitpos: [24]; default: 0;
- *  need_des
+ *  Configures the 5G transmitting output.
  */
 #define PMU_XPD_TC5G_I2C    (BIT(24))
 #define PMU_XPD_TC5G_I2C_M  (PMU_XPD_TC5G_I2C_V << PMU_XPD_TC5G_I2C_S)
 #define PMU_XPD_TC5G_I2C_V  0x00000001U
 #define PMU_XPD_TC5G_I2C_S  24
 /** PMU_XPD_RX5G_I2C : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Configures the 5G receiving output.
  */
 #define PMU_XPD_RX5G_I2C    (BIT(25))
 #define PMU_XPD_RX5G_I2C_M  (PMU_XPD_RX5G_I2C_V << PMU_XPD_RX5G_I2C_S)
 #define PMU_XPD_RX5G_I2C_V  0x00000001U
 #define PMU_XPD_RX5G_I2C_S  25
 /** PMU_PERIF_I2C_RSTB : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Configures the I2C reset.
  */
 #define PMU_PERIF_I2C_RSTB    (BIT(26))
 #define PMU_PERIF_I2C_RSTB_M  (PMU_PERIF_I2C_RSTB_V << PMU_PERIF_I2C_RSTB_S)
 #define PMU_PERIF_I2C_RSTB_V  0x00000001U
 #define PMU_PERIF_I2C_RSTB_S  26
 /** PMU_XPD_PERIF_I2C : R/W; bitpos: [27]; default: 1;
- *  need_des
+ *  Configures the I2C SDA output.
+ *  0: outputs 0
+ *  1: outputs analog peripheral output
  */
 #define PMU_XPD_PERIF_I2C    (BIT(27))
 #define PMU_XPD_PERIF_I2C_M  (PMU_XPD_PERIF_I2C_V << PMU_XPD_PERIF_I2C_S)
 #define PMU_XPD_PERIF_I2C_V  0x00000001U
 #define PMU_XPD_PERIF_I2C_S  27
 /** PMU_XPD_TXRF_I2C : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Configures the RF transmitting output.
  */
 #define PMU_XPD_TXRF_I2C    (BIT(28))
 #define PMU_XPD_TXRF_I2C_M  (PMU_XPD_TXRF_I2C_V << PMU_XPD_TXRF_I2C_S)
 #define PMU_XPD_TXRF_I2C_V  0x00000001U
 #define PMU_XPD_TXRF_I2C_S  28
 /** PMU_XPD_RFRX_PBUS : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Configures the RF receiving output.
  */
 #define PMU_XPD_RFRX_PBUS    (BIT(29))
 #define PMU_XPD_RFRX_PBUS_M  (PMU_XPD_RFRX_PBUS_V << PMU_XPD_RFRX_PBUS_S)
 #define PMU_XPD_RFRX_PBUS_V  0x00000001U
 #define PMU_XPD_RFRX_PBUS_S  29
 /** PMU_XPD_CKGEN_I2C : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Configures the 5G clock generation.
  */
 #define PMU_XPD_CKGEN_I2C    (BIT(30))
 #define PMU_XPD_CKGEN_I2C_M  (PMU_XPD_CKGEN_I2C_V << PMU_XPD_CKGEN_I2C_S)
 #define PMU_XPD_CKGEN_I2C_V  0x00000001U
 #define PMU_XPD_CKGEN_I2C_S  30
 /** PMU_XPD_PLL_I2C : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures the PLL clock generation.
  */
 #define PMU_XPD_PLL_I2C    (BIT(31))
 #define PMU_XPD_PLL_I2C_M  (PMU_XPD_PLL_I2C_V << PMU_XPD_PLL_I2C_S)
@@ -2614,11 +3033,11 @@ extern "C" {
 #define PMU_XPD_PLL_I2C_S  31
 
 /** PMU_BACKUP_CFG_REG register
- *  need_des
+ *  Configuration for backup clock frequency division controlled by PMU
  */
 #define PMU_BACKUP_CFG_REG (DR_REG_PMU_BASE + 0x15c)
 /** PMU_BACKUP_SYS_CLK_NO_DIV : R/W; bitpos: [31]; default: 1;
- *  need_des
+ *  Configures the division number of the backup clock.
  */
 #define PMU_BACKUP_SYS_CLK_NO_DIV    (BIT(31))
 #define PMU_BACKUP_SYS_CLK_NO_DIV_M  (PMU_BACKUP_SYS_CLK_NO_DIV_V << PMU_BACKUP_SYS_CLK_NO_DIV_S)
@@ -2626,7 +3045,7 @@ extern "C" {
 #define PMU_BACKUP_SYS_CLK_NO_DIV_S  31
 
 /** PMU_INT_RAW_REG register
- *  need_des
+ *  PMU sleep/Wakeup raw interrupt
  */
 #define PMU_INT_RAW_REG (DR_REG_PMU_BASE + 0x160)
 /** PMU_LP_CPU_EXC_INT_RAW : R/WTC/SS; bitpos: [27]; default: 0;
@@ -2637,7 +3056,7 @@ extern "C" {
 #define PMU_LP_CPU_EXC_INT_RAW_V  0x00000001U
 #define PMU_LP_CPU_EXC_INT_RAW_S  27
 /** PMU_SDIO_IDLE_INT_RAW : R/WTC/SS; bitpos: [28]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SDIO_IDLE_INT.
  */
 #define PMU_SDIO_IDLE_INT_RAW    (BIT(28))
 #define PMU_SDIO_IDLE_INT_RAW_M  (PMU_SDIO_IDLE_INT_RAW_V << PMU_SDIO_IDLE_INT_RAW_S)
@@ -2651,14 +3070,14 @@ extern "C" {
 #define PMU_SW_INT_RAW_V  0x00000001U
 #define PMU_SW_INT_RAW_S  29
 /** PMU_SOC_SLEEP_REJECT_INT_RAW : R/WTC/SS; bitpos: [30]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SOC_SLEEP_REJECT_INT.
  */
 #define PMU_SOC_SLEEP_REJECT_INT_RAW    (BIT(30))
 #define PMU_SOC_SLEEP_REJECT_INT_RAW_M  (PMU_SOC_SLEEP_REJECT_INT_RAW_V << PMU_SOC_SLEEP_REJECT_INT_RAW_S)
 #define PMU_SOC_SLEEP_REJECT_INT_RAW_V  0x00000001U
 #define PMU_SOC_SLEEP_REJECT_INT_RAW_S  30
 /** PMU_SOC_WAKEUP_INT_RAW : R/WTC/SS; bitpos: [31]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SOC_WAKEUP_INT.
  */
 #define PMU_SOC_WAKEUP_INT_RAW    (BIT(31))
 #define PMU_SOC_WAKEUP_INT_RAW_M  (PMU_SOC_WAKEUP_INT_RAW_V << PMU_SOC_WAKEUP_INT_RAW_S)
@@ -2666,7 +3085,7 @@ extern "C" {
 #define PMU_SOC_WAKEUP_INT_RAW_S  31
 
 /** PMU_HP_INT_ST_REG register
- *  need_des
+ *  PMU sleep/Wakeup status interrupt
  */
 #define PMU_HP_INT_ST_REG (DR_REG_PMU_BASE + 0x164)
 /** PMU_LP_CPU_EXC_INT_ST : RO; bitpos: [27]; default: 0;
@@ -2677,7 +3096,7 @@ extern "C" {
 #define PMU_LP_CPU_EXC_INT_ST_V  0x00000001U
 #define PMU_LP_CPU_EXC_INT_ST_S  27
 /** PMU_SDIO_IDLE_INT_ST : RO; bitpos: [28]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SDIO_IDLE_INT.
  */
 #define PMU_SDIO_IDLE_INT_ST    (BIT(28))
 #define PMU_SDIO_IDLE_INT_ST_M  (PMU_SDIO_IDLE_INT_ST_V << PMU_SDIO_IDLE_INT_ST_S)
@@ -2691,14 +3110,14 @@ extern "C" {
 #define PMU_SW_INT_ST_V  0x00000001U
 #define PMU_SW_INT_ST_S  29
 /** PMU_SOC_SLEEP_REJECT_INT_ST : RO; bitpos: [30]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SOC_SLEEP_REJECT_INT.
  */
 #define PMU_SOC_SLEEP_REJECT_INT_ST    (BIT(30))
 #define PMU_SOC_SLEEP_REJECT_INT_ST_M  (PMU_SOC_SLEEP_REJECT_INT_ST_V << PMU_SOC_SLEEP_REJECT_INT_ST_S)
 #define PMU_SOC_SLEEP_REJECT_INT_ST_V  0x00000001U
 #define PMU_SOC_SLEEP_REJECT_INT_ST_S  30
 /** PMU_SOC_WAKEUP_INT_ST : RO; bitpos: [31]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SOC_WAKEUP_INT.
  */
 #define PMU_SOC_WAKEUP_INT_ST    (BIT(31))
 #define PMU_SOC_WAKEUP_INT_ST_M  (PMU_SOC_WAKEUP_INT_ST_V << PMU_SOC_WAKEUP_INT_ST_S)
@@ -2706,7 +3125,7 @@ extern "C" {
 #define PMU_SOC_WAKEUP_INT_ST_S  31
 
 /** PMU_HP_INT_ENA_REG register
- *  need_des
+ *  PMU sleep/Wakeup interrupt enable
  */
 #define PMU_HP_INT_ENA_REG (DR_REG_PMU_BASE + 0x168)
 /** PMU_LP_CPU_EXC_INT_ENA : R/W; bitpos: [27]; default: 0;
@@ -2717,7 +3136,7 @@ extern "C" {
 #define PMU_LP_CPU_EXC_INT_ENA_V  0x00000001U
 #define PMU_LP_CPU_EXC_INT_ENA_S  27
 /** PMU_SDIO_IDLE_INT_ENA : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SDIO_IDLE_INT.
  */
 #define PMU_SDIO_IDLE_INT_ENA    (BIT(28))
 #define PMU_SDIO_IDLE_INT_ENA_M  (PMU_SDIO_IDLE_INT_ENA_V << PMU_SDIO_IDLE_INT_ENA_S)
@@ -2731,14 +3150,14 @@ extern "C" {
 #define PMU_SW_INT_ENA_V  0x00000001U
 #define PMU_SW_INT_ENA_S  29
 /** PMU_SOC_SLEEP_REJECT_INT_ENA : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SOC_SLEEP_REJECT_INT.
  */
 #define PMU_SOC_SLEEP_REJECT_INT_ENA    (BIT(30))
 #define PMU_SOC_SLEEP_REJECT_INT_ENA_M  (PMU_SOC_SLEEP_REJECT_INT_ENA_V << PMU_SOC_SLEEP_REJECT_INT_ENA_S)
 #define PMU_SOC_SLEEP_REJECT_INT_ENA_V  0x00000001U
 #define PMU_SOC_SLEEP_REJECT_INT_ENA_S  30
 /** PMU_SOC_WAKEUP_INT_ENA : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SOC_WAKEUP_INT.
  */
 #define PMU_SOC_WAKEUP_INT_ENA    (BIT(31))
 #define PMU_SOC_WAKEUP_INT_ENA_M  (PMU_SOC_WAKEUP_INT_ENA_V << PMU_SOC_WAKEUP_INT_ENA_S)
@@ -2746,7 +3165,7 @@ extern "C" {
 #define PMU_SOC_WAKEUP_INT_ENA_S  31
 
 /** PMU_HP_INT_CLR_REG register
- *  need_des
+ *  PMU sleep/Wakeup interrupt clear
  */
 #define PMU_HP_INT_CLR_REG (DR_REG_PMU_BASE + 0x16c)
 /** PMU_LP_CPU_EXC_INT_CLR : WT; bitpos: [27]; default: 0;
@@ -2757,7 +3176,7 @@ extern "C" {
 #define PMU_LP_CPU_EXC_INT_CLR_V  0x00000001U
 #define PMU_LP_CPU_EXC_INT_CLR_S  27
 /** PMU_SDIO_IDLE_INT_CLR : WT; bitpos: [28]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SDIO_IDLE_INT.
  */
 #define PMU_SDIO_IDLE_INT_CLR    (BIT(28))
 #define PMU_SDIO_IDLE_INT_CLR_M  (PMU_SDIO_IDLE_INT_CLR_V << PMU_SDIO_IDLE_INT_CLR_S)
@@ -2771,14 +3190,14 @@ extern "C" {
 #define PMU_SW_INT_CLR_V  0x00000001U
 #define PMU_SW_INT_CLR_S  29
 /** PMU_SOC_SLEEP_REJECT_INT_CLR : WT; bitpos: [30]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SOC_SLEEP_REJECT_INT.
  */
 #define PMU_SOC_SLEEP_REJECT_INT_CLR    (BIT(30))
 #define PMU_SOC_SLEEP_REJECT_INT_CLR_M  (PMU_SOC_SLEEP_REJECT_INT_CLR_V << PMU_SOC_SLEEP_REJECT_INT_CLR_S)
 #define PMU_SOC_SLEEP_REJECT_INT_CLR_V  0x00000001U
 #define PMU_SOC_SLEEP_REJECT_INT_CLR_S  30
 /** PMU_SOC_WAKEUP_INT_CLR : WT; bitpos: [31]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SOC_WAKEUP_INT.
  */
 #define PMU_SOC_WAKEUP_INT_CLR    (BIT(31))
 #define PMU_SOC_WAKEUP_INT_CLR_M  (PMU_SOC_WAKEUP_INT_CLR_V << PMU_SOC_WAKEUP_INT_CLR_S)
@@ -2786,7 +3205,7 @@ extern "C" {
 #define PMU_SOC_WAKEUP_INT_CLR_S  31
 
 /** PMU_LP_INT_RAW_REG register
- *  need_des
+ *  Low-power system raw interrupt
  */
 #define PMU_LP_INT_RAW_REG (DR_REG_PMU_BASE + 0x170)
 /** PMU_LP_CPU_WAKEUP_INT_RAW : R/WTC/SS; bitpos: [20]; default: 0;
@@ -2797,70 +3216,70 @@ extern "C" {
 #define PMU_LP_CPU_WAKEUP_INT_RAW_V  0x00000001U
 #define PMU_LP_CPU_WAKEUP_INT_RAW_S  20
 /** PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW : R/WTC/SS; bitpos: [21]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_MODEM_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW    (BIT(21))
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW_M  (PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW_V << PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW_S)
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_RAW_S  21
 /** PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW : R/WTC/SS; bitpos: [22]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SLEEP_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW    (BIT(22))
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW_M  (PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW_V << PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_RAW_S  22
 /** PMU_SLEEP_SWITCH_MODEM_END_INT_RAW : R/WTC/SS; bitpos: [23]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SLEEP_SWITCH_MODEM_END_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_RAW    (BIT(23))
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_RAW_M  (PMU_SLEEP_SWITCH_MODEM_END_INT_RAW_V << PMU_SLEEP_SWITCH_MODEM_END_INT_RAW_S)
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_RAW_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_RAW_S  23
 /** PMU_MODEM_SWITCH_SLEEP_END_INT_RAW : R/WTC/SS; bitpos: [24]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_MODEM_SWITCH_SLEEP_END_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_RAW    (BIT(24))
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_RAW_M  (PMU_MODEM_SWITCH_SLEEP_END_INT_RAW_V << PMU_MODEM_SWITCH_SLEEP_END_INT_RAW_S)
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_RAW_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_RAW_S  24
 /** PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW : R/WTC/SS; bitpos: [25]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_ACTIVE_SWITCH_SLEEP_END_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW    (BIT(25))
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW_M  (PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW_V << PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW_S)
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW_V  0x00000001U
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_RAW_S  25
 /** PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW : R/WTC/SS; bitpos: [26]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_MODEM_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW    (BIT(26))
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW_M  (PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW_V << PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW_S)
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_RAW_S  26
 /** PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW : R/WTC/SS; bitpos: [27]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SLEEP_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW    (BIT(27))
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW_M  (PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW_V << PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_RAW_S  27
 /** PMU_SLEEP_SWITCH_MODEM_START_INT_RAW : R/WTC/SS; bitpos: [28]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_SLEEP_SWITCH_MODEM_START_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_RAW    (BIT(28))
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_RAW_M  (PMU_SLEEP_SWITCH_MODEM_START_INT_RAW_V << PMU_SLEEP_SWITCH_MODEM_START_INT_RAW_S)
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_RAW_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_RAW_S  28
 /** PMU_MODEM_SWITCH_SLEEP_START_INT_RAW : R/WTC/SS; bitpos: [29]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_MODEM_SWITCH_SLEEP_START_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_RAW    (BIT(29))
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_RAW_M  (PMU_MODEM_SWITCH_SLEEP_START_INT_RAW_V << PMU_MODEM_SWITCH_SLEEP_START_INT_RAW_S)
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_RAW_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_RAW_S  29
 /** PMU_ACTIVE_SWITCH_SLEEP_START_INT_RAW : R/WTC/SS; bitpos: [30]; default: 0;
- *  need_des
+ *  The raw interrupt status of PMU_ACTIVE_SWITCH_SLEEP_START_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_RAW    (BIT(30))
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_RAW_M  (PMU_ACTIVE_SWITCH_SLEEP_START_INT_RAW_V << PMU_ACTIVE_SWITCH_SLEEP_START_INT_RAW_S)
@@ -2875,7 +3294,7 @@ extern "C" {
 #define PMU_HP_SW_TRIGGER_INT_RAW_S  31
 
 /** PMU_LP_INT_ST_REG register
- *  need_des
+ *  PMU state transition interrupt status
  */
 #define PMU_LP_INT_ST_REG (DR_REG_PMU_BASE + 0x174)
 /** PMU_LP_CPU_WAKEUP_INT_ST : RO; bitpos: [20]; default: 0;
@@ -2886,70 +3305,70 @@ extern "C" {
 #define PMU_LP_CPU_WAKEUP_INT_ST_V  0x00000001U
 #define PMU_LP_CPU_WAKEUP_INT_ST_S  20
 /** PMU_MODEM_SWITCH_ACTIVE_END_INT_ST : RO; bitpos: [21]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_MODEM_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ST    (BIT(21))
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ST_M  (PMU_MODEM_SWITCH_ACTIVE_END_INT_ST_V << PMU_MODEM_SWITCH_ACTIVE_END_INT_ST_S)
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ST_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ST_S  21
 /** PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST : RO; bitpos: [22]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SLEEP_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST    (BIT(22))
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST_M  (PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST_V << PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ST_S  22
 /** PMU_SLEEP_SWITCH_MODEM_END_INT_ST : RO; bitpos: [23]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SLEEP_SWITCH_MODEM_END_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ST    (BIT(23))
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ST_M  (PMU_SLEEP_SWITCH_MODEM_END_INT_ST_V << PMU_SLEEP_SWITCH_MODEM_END_INT_ST_S)
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ST_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ST_S  23
 /** PMU_MODEM_SWITCH_SLEEP_END_INT_ST : RO; bitpos: [24]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_MODEM_SWITCH_SLEEP_END_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ST    (BIT(24))
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ST_M  (PMU_MODEM_SWITCH_SLEEP_END_INT_ST_V << PMU_MODEM_SWITCH_SLEEP_END_INT_ST_S)
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ST_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ST_S  24
 /** PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST : RO; bitpos: [25]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_ACTIVE_SWITCH_SLEEP_END_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST    (BIT(25))
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST_M  (PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST_V << PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST_S)
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST_V  0x00000001U
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ST_S  25
 /** PMU_MODEM_SWITCH_ACTIVE_START_INT_ST : RO; bitpos: [26]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_MODEM_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ST    (BIT(26))
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ST_M  (PMU_MODEM_SWITCH_ACTIVE_START_INT_ST_V << PMU_MODEM_SWITCH_ACTIVE_START_INT_ST_S)
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ST_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ST_S  26
 /** PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST : RO; bitpos: [27]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SLEEP_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST    (BIT(27))
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST_M  (PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST_V << PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ST_S  27
 /** PMU_SLEEP_SWITCH_MODEM_START_INT_ST : RO; bitpos: [28]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_SLEEP_SWITCH_MODEM_START_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ST    (BIT(28))
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ST_M  (PMU_SLEEP_SWITCH_MODEM_START_INT_ST_V << PMU_SLEEP_SWITCH_MODEM_START_INT_ST_S)
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ST_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ST_S  28
 /** PMU_MODEM_SWITCH_SLEEP_START_INT_ST : RO; bitpos: [29]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_MODEM_SWITCH_SLEEP_START_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ST    (BIT(29))
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ST_M  (PMU_MODEM_SWITCH_SLEEP_START_INT_ST_V << PMU_MODEM_SWITCH_SLEEP_START_INT_ST_S)
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ST_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ST_S  29
 /** PMU_ACTIVE_SWITCH_SLEEP_START_INT_ST : RO; bitpos: [30]; default: 0;
- *  need_des
+ *  The masked interrupt status of PMU_ACTIVE_SWITCH_SLEEP_START_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_ST    (BIT(30))
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_ST_M  (PMU_ACTIVE_SWITCH_SLEEP_START_INT_ST_V << PMU_ACTIVE_SWITCH_SLEEP_START_INT_ST_S)
@@ -2964,7 +3383,7 @@ extern "C" {
 #define PMU_HP_SW_TRIGGER_INT_ST_S  31
 
 /** PMU_LP_INT_ENA_REG register
- *  need_des
+ *  PMU state transition interrupt enable
  */
 #define PMU_LP_INT_ENA_REG (DR_REG_PMU_BASE + 0x178)
 /** PMU_LP_CPU_WAKEUP_INT_ENA : R/W; bitpos: [20]; default: 0;
@@ -2975,70 +3394,70 @@ extern "C" {
 #define PMU_LP_CPU_WAKEUP_INT_ENA_V  0x00000001U
 #define PMU_LP_CPU_WAKEUP_INT_ENA_S  20
 /** PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA : R/W; bitpos: [21]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_MODEM_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA    (BIT(21))
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA_M  (PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA_V << PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA_S)
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_ENA_S  21
 /** PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA : R/W; bitpos: [22]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SLEEP_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA    (BIT(22))
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA_M  (PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA_V << PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_ENA_S  22
 /** PMU_SLEEP_SWITCH_MODEM_END_INT_ENA : R/W; bitpos: [23]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SLEEP_SWITCH_MODEM_END_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ENA    (BIT(23))
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ENA_M  (PMU_SLEEP_SWITCH_MODEM_END_INT_ENA_V << PMU_SLEEP_SWITCH_MODEM_END_INT_ENA_S)
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ENA_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_ENA_S  23
 /** PMU_MODEM_SWITCH_SLEEP_END_INT_ENA : R/W; bitpos: [24]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_MODEM_SWITCH_SLEEP_END_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ENA    (BIT(24))
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ENA_M  (PMU_MODEM_SWITCH_SLEEP_END_INT_ENA_V << PMU_MODEM_SWITCH_SLEEP_END_INT_ENA_S)
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ENA_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_ENA_S  24
 /** PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA : R/W; bitpos: [25]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_ACTIVE_SWITCH_SLEEP_END_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA    (BIT(25))
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA_M  (PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA_V << PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA_S)
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA_V  0x00000001U
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_ENA_S  25
 /** PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA : R/W; bitpos: [26]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_MODEM_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA    (BIT(26))
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA_M  (PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA_V << PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA_S)
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_ENA_S  26
 /** PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA : R/W; bitpos: [27]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SLEEP_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA    (BIT(27))
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA_M  (PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA_V << PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_ENA_S  27
 /** PMU_SLEEP_SWITCH_MODEM_START_INT_ENA : R/W; bitpos: [28]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_SLEEP_SWITCH_MODEM_START_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ENA    (BIT(28))
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ENA_M  (PMU_SLEEP_SWITCH_MODEM_START_INT_ENA_V << PMU_SLEEP_SWITCH_MODEM_START_INT_ENA_S)
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ENA_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_ENA_S  28
 /** PMU_MODEM_SWITCH_SLEEP_START_INT_ENA : R/W; bitpos: [29]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_MODEM_SWITCH_SLEEP_START_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ENA    (BIT(29))
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ENA_M  (PMU_MODEM_SWITCH_SLEEP_START_INT_ENA_V << PMU_MODEM_SWITCH_SLEEP_START_INT_ENA_S)
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ENA_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_ENA_S  29
 /** PMU_ACTIVE_SWITCH_SLEEP_START_INT_ENA : R/W; bitpos: [30]; default: 0;
- *  need_des
+ *  Write 1 to enable PMU_ACTIVE_SWITCH_SLEEP_START_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_ENA    (BIT(30))
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_ENA_M  (PMU_ACTIVE_SWITCH_SLEEP_START_INT_ENA_V << PMU_ACTIVE_SWITCH_SLEEP_START_INT_ENA_S)
@@ -3053,7 +3472,7 @@ extern "C" {
 #define PMU_HP_SW_TRIGGER_INT_ENA_S  31
 
 /** PMU_LP_INT_CLR_REG register
- *  need_des
+ *  PMU state transition interrupt clear
  */
 #define PMU_LP_INT_CLR_REG (DR_REG_PMU_BASE + 0x17c)
 /** PMU_LP_CPU_WAKEUP_INT_CLR : WT; bitpos: [20]; default: 0;
@@ -3064,70 +3483,70 @@ extern "C" {
 #define PMU_LP_CPU_WAKEUP_INT_CLR_V  0x00000001U
 #define PMU_LP_CPU_WAKEUP_INT_CLR_S  20
 /** PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR : WT; bitpos: [21]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_MODEM_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR    (BIT(21))
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR_M  (PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR_V << PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR_S)
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_END_INT_CLR_S  21
 /** PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR : WT; bitpos: [22]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SLEEP_SWITCH_ACTIVE_END_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR    (BIT(22))
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR_M  (PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR_V << PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_END_INT_CLR_S  22
 /** PMU_SLEEP_SWITCH_MODEM_END_INT_CLR : WT; bitpos: [23]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SLEEP_SWITCH_MODEM_END_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_CLR    (BIT(23))
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_CLR_M  (PMU_SLEEP_SWITCH_MODEM_END_INT_CLR_V << PMU_SLEEP_SWITCH_MODEM_END_INT_CLR_S)
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_CLR_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_END_INT_CLR_S  23
 /** PMU_MODEM_SWITCH_SLEEP_END_INT_CLR : WT; bitpos: [24]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_MODEM_SWITCH_SLEEP_END_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_CLR    (BIT(24))
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_CLR_M  (PMU_MODEM_SWITCH_SLEEP_END_INT_CLR_V << PMU_MODEM_SWITCH_SLEEP_END_INT_CLR_S)
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_CLR_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_END_INT_CLR_S  24
 /** PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR : WT; bitpos: [25]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_ACTIVE_SWITCH_SLEEP_END_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR    (BIT(25))
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR_M  (PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR_V << PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR_S)
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR_V  0x00000001U
 #define PMU_ACTIVE_SWITCH_SLEEP_END_INT_CLR_S  25
 /** PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR : WT; bitpos: [26]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_MODEM_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR    (BIT(26))
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR_M  (PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR_V << PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR_S)
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR_V  0x00000001U
 #define PMU_MODEM_SWITCH_ACTIVE_START_INT_CLR_S  26
 /** PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR : WT; bitpos: [27]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SLEEP_SWITCH_ACTIVE_START_INT.
  */
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR    (BIT(27))
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR_M  (PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR_V << PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR_S)
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR_V  0x00000001U
 #define PMU_SLEEP_SWITCH_ACTIVE_START_INT_CLR_S  27
 /** PMU_SLEEP_SWITCH_MODEM_START_INT_CLR : WT; bitpos: [28]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_SLEEP_SWITCH_MODEM_START_INT.
  */
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_CLR    (BIT(28))
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_CLR_M  (PMU_SLEEP_SWITCH_MODEM_START_INT_CLR_V << PMU_SLEEP_SWITCH_MODEM_START_INT_CLR_S)
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_CLR_V  0x00000001U
 #define PMU_SLEEP_SWITCH_MODEM_START_INT_CLR_S  28
 /** PMU_MODEM_SWITCH_SLEEP_START_INT_CLR : WT; bitpos: [29]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_MODEM_SWITCH_SLEEP_START_INT.
  */
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_CLR    (BIT(29))
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_CLR_M  (PMU_MODEM_SWITCH_SLEEP_START_INT_CLR_V << PMU_MODEM_SWITCH_SLEEP_START_INT_CLR_S)
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_CLR_V  0x00000001U
 #define PMU_MODEM_SWITCH_SLEEP_START_INT_CLR_S  29
 /** PMU_ACTIVE_SWITCH_SLEEP_START_INT_CLR : WT; bitpos: [30]; default: 0;
- *  need_des
+ *  Write 1 to clear PMU_ACTIVE_SWITCH_SLEEP_START_INT.
  */
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_CLR    (BIT(30))
 #define PMU_ACTIVE_SWITCH_SLEEP_START_INT_CLR_M  (PMU_ACTIVE_SWITCH_SLEEP_START_INT_CLR_V << PMU_ACTIVE_SWITCH_SLEEP_START_INT_CLR_S)
@@ -3248,11 +3667,11 @@ extern "C" {
 #define PMU_HP_TRIGGER_LP_S  31
 
 /** PMU_HP_REGULATOR_CFG_REG register
- *  need_des
+ *  PMU-controlled update of digital regulator configuration
  */
 #define PMU_HP_REGULATOR_CFG_REG (DR_REG_PMU_BASE + 0x18c)
 /** PMU_DIG_REGULATOR_EN_CAL : R/W; bitpos: [31]; default: 0;
- *  need_des
+ *  Configures to enable the digital regulator.
  */
 #define PMU_DIG_REGULATOR_EN_CAL    (BIT(31))
 #define PMU_DIG_REGULATOR_EN_CAL_M  (PMU_DIG_REGULATOR_EN_CAL_V << PMU_DIG_REGULATOR_EN_CAL_S)
@@ -3472,11 +3891,11 @@ extern "C" {
 #define PMU_STABLE_VDD_SPI_PWR_DRV_S  31
 
 /** PMU_DATE_REG register
- *  need_des
+ *  Version control
  */
 #define PMU_DATE_REG (DR_REG_PMU_BASE + 0x1a8)
 /** PMU_PMU_DATE : R/W; bitpos: [30:0]; default: 36770128;
- *  need_des
+ *  Version control register.
  */
 #define PMU_PMU_DATE    0x7FFFFFFFU
 #define PMU_PMU_DATE_M  (PMU_PMU_DATE_V << PMU_PMU_DATE_S)
