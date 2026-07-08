@@ -1364,8 +1364,11 @@ def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> Non
     _test_coredump_summary(dut, True, config == 'coredump_flash_encrypted')
 
 
+# Uses the dedicated coredump stack (CONFIG_ESP_COREDUMP_STACK_SIZE) on purpose: this test
+# faults in idle-task context, whose small stack overflows the FreeRTOS end-of-stack watchpoint
+# if the coredump runs in place, causing a double panic. Do not switch back to coredump_flash_default.
 @pytest.mark.generic
-@idf_parametrize('config', ['coredump_flash_default'], indirect=['config'])
+@idf_parametrize('config', ['coredump_flash_custom_stack'], indirect=['config'])
 @idf_parametrize('target', TARGETS_ALL, indirect=['target'])
 def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
