@@ -1,12 +1,17 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs "esp_cam_ctlr.c" "dvp_share_ctrl.c")
+set(srcs)
 
 set(includes "include" "interface")
 
-set(requires "esp_driver_isp" "esp_hal_cam")
-
-set(priv_requires "esp_driver_gpio" "esp_driver_dma")
+if(${target} STREQUAL "linux")
+    set(requires "esp_driver_isp")
+    set(priv_requires "")
+else()
+    list(APPEND srcs "esp_cam_ctlr.c" "dvp_share_ctrl.c")
+    set(requires "esp_driver_isp" "esp_hal_cam" "esp_mm")
+    set(priv_requires "esp_driver_gpio" "esp_driver_dma")
+endif()
 
 if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
     list(APPEND srcs "csi/src/esp_cam_ctlr_csi.c")
@@ -16,10 +21,6 @@ endif()
 if(CONFIG_SOC_ISP_DVP_SUPPORTED)
     list(APPEND srcs "isp_dvp/src/esp_cam_ctlr_isp_dvp.c")
     list(APPEND includes "isp_dvp/include")
-endif()
-
-if(NOT ${target} STREQUAL "linux")
-    list(APPEND requires esp_mm)
 endif()
 
 if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)

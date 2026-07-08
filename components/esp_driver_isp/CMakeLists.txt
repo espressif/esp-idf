@@ -6,7 +6,11 @@ set(public_include "include")
 
 set(priv_requires "esp_driver_gpio")
 
-set(requires "esp_hal_cam")
+if(${target} STREQUAL "linux")
+    set(requires "")
+else()
+    set(requires "esp_hal_cam" "esp_mm")
+endif()
 
 if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "src/isp_core.c"
@@ -48,10 +52,6 @@ endif()
 
 if(CONFIG_SOC_ISP_CROP_SUPPORTED)
     list(APPEND srcs "src/isp_crop.c")
-endif()
-
-if(NOT ${target} STREQUAL "linux")
-    list(APPEND requires esp_mm)
 endif()
 
 idf_component_register(SRCS ${srcs}

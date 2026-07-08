@@ -11,6 +11,10 @@ tools/test_apps/linux_compatible/linux_freertos:
   enable:
     - if: IDF_TARGET == "linux"
 
+tools/test_apps/linux_compatible/linux_full_build:
+  enable:
+    - if: IDF_TARGET == "linux"
+
 tools/test_apps/linux_compatible/mock_build_test:
   enable:
     - if: IDF_TARGET == "linux"

@@ -3,10 +3,11 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs)
 set(public_include "include")
 
-set(requires esp_hal_cordic)
 if(${target} STREQUAL "linux")
+    set(requires "")
     set(priv_requires "")
 else()
+    set(requires esp_hal_cordic)
     set(priv_requires esp_pm)
 endif()
 

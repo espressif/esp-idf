@@ -6,10 +6,11 @@ if(CONFIG_SOC_PCNT_SUPPORTED)
     list(APPEND srcs "src/pulse_cnt.c")
 endif()
 
-set(requires esp_hal_pcnt)
 if(${target} STREQUAL "linux")
+    set(requires "")
     set(priv_requires "")
 else()
+    set(requires esp_hal_pcnt)
     set(priv_requires esp_pm esp_driver_gpio)
 endif()
 

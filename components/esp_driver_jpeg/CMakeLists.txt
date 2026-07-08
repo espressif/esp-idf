@@ -23,10 +23,11 @@ if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
     endif()
 endif()
 
-set(requires esp_hal_jpeg)
 if(${target} STREQUAL "linux")
+    set(requires "")
     set(priv_requires "")
 else()
+    set(requires esp_hal_jpeg)
     set(priv_requires esp_mm esp_pm esp_psram esp_driver_dma)
 endif()
 

@@ -19,10 +19,11 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     endif()
 endif()
 
-set(requires esp_hal_mcpwm)
 if(${target} STREQUAL "linux")
+    set(requires "")
     set(priv_requires "")
 else()
+    set(requires esp_hal_mcpwm)
     set(priv_requires esp_pm esp_driver_gpio)
 endif()
 

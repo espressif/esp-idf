@@ -21,9 +21,16 @@ if(CONFIG_SOC_GPSPI_SUPPORTED)
     endif()
 endif()
 
-idf_component_register(
-    SRCS ${srcs}
-    INCLUDE_DIRS ${includes}
-    REQUIRES soc hal esp_hal_dma
-    PRIV_REQUIRES esp_hal_gpio
-)
+if(${target} STREQUAL "linux")
+    idf_component_register(
+        INCLUDE_DIRS ${includes}
+        REQUIRES soc hal
+    )
+else()
+    idf_component_register(
+        SRCS ${srcs}
+        INCLUDE_DIRS ${includes}
+        REQUIRES soc hal esp_hal_dma
+        PRIV_REQUIRES esp_hal_gpio
+    )
+endif()

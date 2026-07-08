@@ -12,13 +12,15 @@ endif()
 
 if(${target} STREQUAL "linux")
     set(priv_requires "")
+    set(requires "")
 else()
     set(priv_requires esp_pm esp_driver_gpio)
+    set(requires esp_hal_ana_cmpr)
 endif()
 
 idf_component_register(SRCS ${srcs}
                            INCLUDE_DIRS "include"
                            PRIV_REQUIRES "${priv_requires}"
-                           REQUIRES esp_hal_ana_cmpr
+                           REQUIRES "${requires}"
                            LDFRAGMENTS "linker.lf"
                           )
