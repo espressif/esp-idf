@@ -1,0 +1,4 @@
+# For ESP32, only UART0 port has DTR/DSR signal
+# In order to run the rs485 test cases fully, use UART1 as the console uart, so that UART0 can be the test port
+CONFIG_ESP_CONSOLE_UART_CUSTOM=y
+CONFIG_ESP_CONSOLE_UART_CUSTOM_NUM_1=y

@@ -265,6 +265,9 @@ void ESP_SYSTEM_IRAM_ATTR call_start_cpu1(void)
 #elif !CONFIG_ESP_CONSOLE_USB_CDC
     esp_rom_install_uart_printf();
     esp_rom_output_set_as_console(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM
+    esp_rom_output_switch_buffer(CONFIG_ESP_CONSOLE_UART_NUM);
+#endif
 #endif
 
     cpu_utility_ll_enable_debug(1);
