@@ -19,6 +19,10 @@
 #include "esp_intr_types.h"
 #include "esp_pm.h"
 #include "sdkconfig.h"
+#if SOC_PAU_SUPPORTED
+#include "soc/regdma.h"
+#include "soc/retention_periph_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +75,16 @@ struct jpeg_codec_t {
 #endif
     bool retention_link_created;     // mark if the retention link is created.
 };
+
+#if SOC_PAU_SUPPORTED
+typedef struct {
+    const regdma_entries_config_t *entry_array;
+    uint32_t array_size;
+    periph_retention_module_t module_id;
+} jpeg_reg_retention_info_t;
+
+extern const jpeg_reg_retention_info_t jpeg_reg_retention_info;
+#endif
 
 typedef enum {
     JPEG_DEC_DIRECT_OUTPUT_HB = 0, /*!< Direct output */

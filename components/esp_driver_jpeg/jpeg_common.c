@@ -41,7 +41,7 @@ static jpeg_platform_t s_jpeg_platform = {};  // singleton platform
 #if JPEG_USE_RETENTION_LINK
 static esp_err_t s_jpeg_sleep_retention_init_cb(void *arg)
 {
-    esp_err_t ret = sleep_retention_entries_create(jpeg_regs_retention.link_list, jpeg_regs_retention.link_num, REGDMA_LINK_PRI_JPEG, jpeg_regs_retention.module_id);
+    esp_err_t ret = sleep_retention_entries_create(jpeg_reg_retention_info.entry_array, jpeg_reg_retention_info.array_size, REGDMA_LINK_PRI_JPEG, jpeg_reg_retention_info.module_id);
     ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
     return ret;
 }
@@ -50,12 +50,12 @@ void jpeg_create_retention_module(jpeg_codec_handle_t jpeg_codec)
 {
     _lock_acquire(&s_jpeg_platform.mutex);
     if (jpeg_codec->retention_link_created == false) {
-        if (sleep_retention_module_allocate(jpeg_regs_retention.module_id) != ESP_OK) {
+        if (sleep_retention_module_allocate(jpeg_reg_retention_info.module_id) != ESP_OK) {
             // even though the sleep retention module create failed, JPEG driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
         } else {
             jpeg_codec->retention_link_created = true;
-            if (sleep_retention_module_attach(jpeg_regs_retention.module_id) != ESP_OK) {
+            if (sleep_retention_module_attach(jpeg_reg_retention_info.module_id) != ESP_OK) {
                 ESP_LOGW(TAG, "attach retention module failed, power domain can't turn off");
             }
         }
@@ -97,7 +97,7 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
                 .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
                 .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
-            esp_err_t err = sleep_retention_module_init(jpeg_regs_retention.module_id, &init_param);
+            esp_err_t err = sleep_retention_module_init(jpeg_reg_retention_info.module_id, &init_param);
             if (err != ESP_OK) {
                 ESP_LOGW(TAG, "init sleep retention failed on jpeg, jpeg configuration maybe lost after sleep wakeup");
             }
@@ -108,7 +108,7 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
                 jpeg_ll_reset_module_register();
             }
 #if CONFIG_PM_ENABLE
-            ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "jpeg_codec", &codec->pm_lock), TAG, "create pm lock failed");
+            ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, soc_jpeg_signals[0].module_name, &codec->pm_lock), TAG, "create pm lock failed");
 #endif
             jpeg_hal_init(&codec->hal);
         } else {
@@ -152,10 +152,10 @@ esp_err_t jpeg_release_codec_handle(jpeg_codec_handle_t jpeg_codec)
 
 #if JPEG_USE_RETENTION_LINK
             if (jpeg_codec->retention_link_created) {
-                sleep_retention_module_detach(jpeg_regs_retention.module_id);
-                sleep_retention_module_free(jpeg_regs_retention.module_id);
+                sleep_retention_module_detach(jpeg_reg_retention_info.module_id);
+                sleep_retention_module_free(jpeg_reg_retention_info.module_id);
             }
-            sleep_retention_module_deinit(jpeg_regs_retention.module_id);
+            sleep_retention_module_deinit(jpeg_reg_retention_info.module_id);
 #endif
 
             PERIPH_RCC_ATOMIC() {
@@ -194,7 +194,7 @@ esp_err_t jpeg_isr_register(jpeg_codec_handle_t jpeg_codec, intr_handler_t handl
 {
     if (jpeg_codec->intr_handle == NULL) {
         // The jpeg codec interrupt has not been allocated.
-        esp_err_t err = esp_intr_alloc_intrstatus(ETS_JPEG_INTR_SOURCE, flags, (uint32_t)jpeg_ll_get_interrupt_status_reg(jpeg_codec->hal.dev), JPEG_LL_DECODER_EVENT_INTR | JPEG_LL_ENCODER_EVENT_INTR, &jpeg_isr, jpeg_codec, &jpeg_codec->intr_handle);
+        esp_err_t err = esp_intr_alloc_intrstatus(soc_jpeg_signals[0].irq_id, flags, (uint32_t)jpeg_ll_get_interrupt_status_reg(jpeg_codec->hal.dev), JPEG_LL_DECODER_EVENT_INTR | JPEG_LL_ENCODER_EVENT_INTR, &jpeg_isr, jpeg_codec, &jpeg_codec->intr_handle);
         if (err != ESP_OK) {
             return err;
         }
