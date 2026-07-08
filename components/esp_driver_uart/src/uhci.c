@@ -164,7 +164,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         gdma_stop(uhci_ctrl->rx_dir.dma_chan);
         gdma_reset(uhci_ctrl->rx_dir.dma_chan);
 
-        uhci_ctrl->rx_dir.rx_fsm = UHCI_RX_FSM_ENABLE;
+        atomic_store(&uhci_ctrl->rx_dir.rx_fsm, UHCI_RX_FSM_ENABLE);
     }
 
     if (event_data->flags.abnormal_eof) {
@@ -357,10 +357,11 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
         ESP_RETURN_ON_ERROR(esp_cache_msync(mount_configs[0].buffer, usable_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), TAG, "cache sync failed");
     }
 
+    atomic_store(&uhci_ctrl->rx_dir.rx_fsm, UHCI_RX_FSM_RUN);
+
     gdma_reset(uhci_ctrl->rx_dir.dma_chan);
     gdma_start(uhci_ctrl->rx_dir.dma_chan, gdma_link_get_head_addr(uhci_ctrl->rx_dir.dma_link));
 
-    atomic_store(&uhci_ctrl->rx_dir.rx_fsm, UHCI_RX_FSM_RUN);
     return ESP_OK;
 }
 
@@ -473,7 +474,7 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
     }
 
     atomic_init(&uhci_ctrl->tx_dir.tx_fsm, UHCI_TX_FSM_ENABLE);
-    atomic_init(&uhci_ctrl->rx_dir.rx_fsm, UHCI_TX_FSM_ENABLE);
+    atomic_init(&uhci_ctrl->rx_dir.rx_fsm, UHCI_RX_FSM_ENABLE);
 
     // Auto search a free controller
     bool ctrl_found = false;
