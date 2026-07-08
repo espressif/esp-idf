@@ -10,7 +10,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
 
-#if SOC_PMU_SUPPORTED || SOC_IS(ESP32S31) // TODO: ["ESP32S31"] IDF-14653
+#if SOC_PMU_SUPPORTED
 #include "hal/pmu_ll.h"
 #else
 #include "hal/rtc_cntl_ll.h"

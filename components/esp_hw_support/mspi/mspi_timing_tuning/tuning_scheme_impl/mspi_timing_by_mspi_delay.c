@@ -357,7 +357,16 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
     }
 
 #if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_ESPTOOLPY_FLASHMODE_QIO && CONFIG_SPI_FLASH_HPM_ON
-    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, 7);
+    // The total SPI0 (cache) QIO read latency is qio_dummy cycles. On the targets that have
+    // SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL, the ROM's esp_rom_spiflash_cache_mode_config() sends
+    // the 8 continuous-read mode bits (M7-M0) through the hardware WB-mode phase, which already consumes 2 of
+    // those cycles, so the value programmed into SPI_MEM_USR_DUMMY_CYCLELEN must be reduced by 2. dummy_len
+    // is derived as qio_dummy - 1 (the register is N-1 encoded and qio_dummy already reflects HPM), so the
+    // final user dummy is dummy_len - 2, e.g. qio_dummy 10 -> user dummy 7.
+#if SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    uint32_t dummy_len = spi_flash_hpm_get_dummy()->qio_dummy - 1;
+    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len - 2);
+#endif
 #endif
 
     int spi1_usr_dummy = 0;
