@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -278,6 +278,34 @@ TEST_CASE("(WL) readdir, stat work as expected", "[fatfs][wear_levelling]")
 {
     test_setup();
     test_fatfs_readdir_stat("/spiflash/dir");
+    test_teardown();
+}
+
+TEST_CASE("(WL) readdir stat cache with two open directories", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_readdir_stat_dual_opendir("/spiflash/readdir_cache");
+    test_teardown();
+}
+
+TEST_CASE("(WL) readdir stat cache stale after truncate", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_readdir_stat_stale_after_truncate("/spiflash/readdir_cache");
+    test_teardown();
+}
+
+TEST_CASE("(WL) readdir stat cache stale after unlink", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_readdir_stat_stale_after_unlink("/spiflash/readdir_cache");
+    test_teardown();
+}
+
+TEST_CASE("(WL) readdir stat cache concurrent dual opendir", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_readdir_stat_concurrent_dual_opendir("/spiflash/readdir_cache");
     test_teardown();
 }
 
