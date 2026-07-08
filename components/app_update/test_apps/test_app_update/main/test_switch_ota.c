@@ -11,6 +11,7 @@
 #include "bootloader_common.h"
 #include "../bootloader_flash/include/bootloader_flash_priv.h"
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "unity.h"
 #include "utils_update.h"
 #include "sdkconfig.h"
@@ -248,6 +249,7 @@ static void test_flow5(void)
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][timeout=90][reset=SW_CPU_RESET, SW_CPU_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
 #endif
 
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 static void test_rollback1(void)
 {
     uint8_t boot_count = get_boot_count_from_nvs();
@@ -265,7 +267,7 @@ static void test_rollback1(void)
             TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_ota_get_state_partition(cur_app, &ota_state));
             update_partition = app_update();
             TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_NEW, ota_state);
@@ -277,7 +279,7 @@ static void test_rollback1(void)
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
             TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
@@ -329,7 +331,9 @@ static void test_rollback1_1(void)
 // 4 Stage: run OTA0       -> check it -> esp_ota_mark_app_invalid_rollback_and_reboot()         -> reboot
 // 5 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
 TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA0, rollback -> factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback1, test_rollback1, test_rollback1, test_rollback1_1);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 static void test_rollback2(void)
 {
     uint8_t boot_count = get_boot_count_from_nvs();
@@ -347,7 +351,7 @@ static void test_rollback2(void)
             TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_ota_get_state_partition(cur_app, &ota_state));
             update_partition = app_update();
             TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_NEW, ota_state);
@@ -359,7 +363,7 @@ static void test_rollback2(void)
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
             TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
@@ -370,7 +374,7 @@ static void test_rollback2(void)
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
             update_partition = app_update();
             TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_NEW, ota_state);
@@ -382,7 +386,7 @@ static void test_rollback2(void)
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
             TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
             TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
             TEST_ESP_OK(esp_ota_mark_app_invalid_rollback_and_reboot());
 #else
@@ -416,7 +420,7 @@ static void test_rollback2_1(void)
     TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
     TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
     TEST_ESP_OK(esp_ota_get_state_partition(invalid_partition, &ota_state));
-#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK
     TEST_ASSERT_EQUAL(ESP_OTA_IMG_INVALID, ota_state);
 #else
     TEST_ASSERT_EQUAL(ESP_OTA_IMG_ABORTED, ota_state);
@@ -430,7 +434,9 @@ static void test_rollback2_1(void)
 // 4 Stage: run OTA1           -> check it -> PENDING_VERIFY/esp_ota_mark_app_invalid_rollback_and_reboot() -> reboot
 // 5 Stage: run OTA0(rollback) -> check it -> erase OTA_DATA for next tests                    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA1, rollback -> OTA0", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback2, test_rollback2, test_rollback2, test_rollback2_1);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 static void test_erase_last_app_flow(void)
 {
     uint8_t boot_count = get_boot_count_from_nvs();
@@ -484,7 +490,9 @@ static void test_erase_last_app_rollback(void)
 // 4 Stage: run OTA1           -> check it -> erase OTA0 and rollback                          -> reboot
 // 5 Stage: run factory        -> check it -> erase OTA_DATA for next tests                    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Test erase_last_boot_app_partition. factory, OTA1, OTA0, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_rollback);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 static void test_flow6(void)
 {
     uint8_t boot_count = get_boot_count_from_nvs();
@@ -515,6 +523,7 @@ static void test_flow6(void)
 // 2 Stage: run factory -> check it -> copy factory to OTA0             -> reboot  --//--
 // 3 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0 using esp_ota_write_with_offset", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow6, test_flow6);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 
 TEST_CASE("Test esp_partition_get_sha256 returns ESP_ERR_IMAGE_INVALID when image is invalid", "[partitions]")
 {
@@ -538,6 +547,7 @@ TEST_CASE("Test esp_partition_get_sha256 returns ESP_ERR_IMAGE_INVALID when imag
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha_256_cur_app, sha_256_other_app, sizeof(sha_256_cur_app), "must be the same");
 }
 
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 static void test_rollback3(void)
 {
     uint8_t boot_count = get_boot_count_from_nvs();
@@ -567,7 +577,7 @@ static void test_rollback3(void)
             TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
 
             update_partition = esp_ota_get_next_update_partition(NULL);
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
             // two partitions are valid
             TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
             esp_ota_img_states_t ota_state;
@@ -578,7 +588,7 @@ static void test_rollback3(void)
             esp_ota_handle_t update_handle = 0;
             TEST_ESP_OK(esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle));
 
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
             // After esp_ota_begin, the only one partition is valid
             // ota data slots do not have an entry about the update_partition.
             TEST_ESP_ERR(ESP_ERR_NOT_FOUND, esp_ota_get_state_partition(update_partition, &ota_state));
@@ -610,7 +620,7 @@ static void test_rollback3_1(void)
     TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
     const esp_partition_t* next_update_partition = esp_ota_get_next_update_partition(NULL);
     TEST_ASSERT_NOT_NULL(next_update_partition);
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
     // ota data slots do not have an entry about the next_update_partition.
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, esp_ota_get_state_partition(next_update_partition, &ota_state));
 #endif
@@ -618,7 +628,9 @@ static void test_rollback3_1(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("Test rollback. Updated partition invalidated after esp_ota_begin", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback3, test_rollback3, test_rollback3, test_rollback3_1);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 
+#ifndef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
 static void test_rollback4(void)
 {
     uint8_t boot_count = get_boot_count_from_nvs();
@@ -643,7 +655,7 @@ static void test_rollback4(void)
             // This will not change the running partition since we haven't rebooted.
             // The esp_rewrite_otadata() will update the otadata for the non-running partition only.
             app_update();
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
             // The last call to esp_rewrite_otadata should have updated the otadata for the non-running partition only.
             // Therefore, calling esp_ota_get_state_partition on the running partition should succeed and not return ESP_ERR_NOT_FOUND
             const esp_partition_t* running_partition;
@@ -666,3 +678,41 @@ static void test_rollback4(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("Test esp_rewrite_otadata. Updated sequence number for non-running partition always", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback4, test_rollback4, test_rollback4);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
+
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
+static void test_ota_auto_confirm(void)
+{
+    uint8_t boot_count = get_boot_count_from_nvs();
+    boot_count++;
+    set_boot_count_in_nvs(boot_count);
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    esp_ota_img_states_t ota_state = 0x5555AAAA;
+
+    switch (boot_count) {
+        case 2:
+            ESP_LOGI(TAG, "Factory: writing OTA0 and rebooting");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+            app_update();
+            reboot_as_deep_sleep();
+            break;
+        case 3:
+            ESP_LOGI(TAG, "OTA0: verifying OTA app was auto-confirmed during startup");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+            erase_ota_data();
+            break;
+        default:
+            erase_ota_data();
+            TEST_FAIL_MESSAGE("Unexpected stage");
+            break;
+    }
+}
+
+// 1 Stage: After POWER_RESET erase OTA_DATA for this test                     -> reboot through deep sleep.
+// 2 Stage: run factory -> copy factory to OTA0                                -> reboot  --//--
+// 3 Stage: run OTA0    -> verify OTA app was auto-confirmed, state is VALID    -> PASS
+TEST_CASE_MULTIPLE_STAGES("Test OTA auto-confirm during startup (PENDING_VERIFY -> VALID)", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_ota_auto_confirm, test_ota_auto_confirm);
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP

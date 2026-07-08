@@ -138,9 +138,9 @@ If you want to rollback to the `factory` app after the upgrade (or to the first 
 
 ## Supporting Rollback
 
-This feature allows you to roll back to a previous firmware if new image is not usable. The menuconfig option `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the ``Over The Air Updates (OTA)`` article).
+This feature allows you to roll back to a previous firmware if new image is not usable. The menuconfig option `CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP` allows you to track the first boot of the application (see the ``Over The Air Updates (OTA)`` article).
 
-The ``native_ota_example`` contains code to demonstrate how a rollback works. To use it, enable the `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option in the `Example Configuration` submenu of menuconfig to set `Number of the GPIO input for diagnostic` to manipulate the rollback process.
+The ``native_ota_example`` contains code to demonstrate how a rollback works. To use it, enable the `CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP` option in the `Example Configuration` submenu of menuconfig to set `Number of the GPIO input for diagnostic` to manipulate the rollback process.
 
 To trigger a rollback, this GPIO must be pulled low while the message `Diagnostics (5 sec)...` is displayed during the first boot.
 

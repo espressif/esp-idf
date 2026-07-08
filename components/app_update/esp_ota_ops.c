@@ -127,7 +127,7 @@ static esp_err_t image_validate(const esp_partition_t *partition, esp_image_load
 
 static esp_ota_img_states_t set_new_state_otadata(void)
 {
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
     ESP_LOGD(TAG, "Monitoring the first boot of the app is enabled.");
     return ESP_OTA_IMG_NEW;
 #else
@@ -176,7 +176,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
             return ESP_ERR_OTA_PARTITION_CONFLICT;
         }
 
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
         esp_ota_img_states_t ota_state_running_part;
         if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
             if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
@@ -221,7 +221,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         }
     }
 
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
     if (is_ota_partition(partition)) {
         esp_ota_invalidate_inactive_ota_data_slot();
     }
@@ -259,7 +259,7 @@ esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_si
         return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
 
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
     // Mirror esp_ota_begin(): refuse to resume an OTA into an app slot while the running
     // app is still pending verification, otherwise the rollback target could be
     // overwritten during the unconfirmed window.
@@ -1376,7 +1376,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
 
     const esp_partition_t *running_app_part = esp_ota_get_running_partition();
     esp_err_t ret = ESP_FAIL;
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
     esp_ota_img_states_t running_app_state;
     ret = esp_ota_get_state_partition(running_app_part, &running_app_state);
     if (ret != ESP_OK) {

@@ -5,6 +5,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 idf_component_register(SRCS "esp_ota_ops.c"
+                             "ota_auto_confirm.c"
                     INCLUDE_DIRS "include"
                     REQUIRES partition_table bootloader_support
                              esp_app_format esp_bootloader_format esp_partition
@@ -15,6 +16,12 @@ idf_component_register(SRCS "esp_ota_ops.c"
 # mbedtls into app builds; this directive makes it available to esp_ota_ops at
 # link time without app_update forcing mbedtls in by itself.
 idf_component_optional_requires(PRIVATE mbedtls)
+
+if(CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP)
+    # ota_auto_confirm.c has no other externally referenced symbol, so force the linker to pull
+    # it in from the archive to override the weak esp_ota_confirm_rollback_hook() in freertos.
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_ota_confirm_rollback_hook")
+endif()
 
 idf_define_esp_err_codes(HEADERS include/esp_ota_ops.h)
 

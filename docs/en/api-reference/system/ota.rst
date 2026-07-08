@@ -38,13 +38,24 @@ The OTA data partition is two flash sectors (0x2000 bytes) in size, to prevent p
 App Rollback
 ------------
 
-The main purpose of the application rollback is to keep the device working after the update. This feature allows you to roll back to the previous working application in case a new application has critical errors. When the rollback process is enabled and an OTA update provides a new version of the app, one of three things can happen:
+The main purpose of application rollback is to keep the device working after an update. This feature allows the device to return to the previous working application if a new application has critical errors.
+
+Application rollback is enabled by default via :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK`. Disabling this option removes the automatic recovery path after a failed OTA update, and the confirmation mode choice described below is not available.
+
+Application rollback supports two confirmation modes. Both modes enable rollback and start a new OTA application in the ``ESP_OTA_IMG_PENDING_VERIFY`` state. They differ only in when the application is confirmed:
+
+* **Confirm app automatically during system startup** (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP>`) is the default. ESP-IDF marks the application as valid after IDF component initialization completes and immediately before calling ``app_main``.
+* **Application decides the confirmation checkpoint** (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP>`) leaves the application pending until it explicitly confirms or rejects the update. This allows application code to detect the first boot, run self-tests, and choose its own confirmation point.
+
+Switching between these confirmation modes does not change the bootloader rollback behavior; it only changes the confirmation point in the application. Therefore, a rollback-capable bootloader does not need to be rebuilt or updated when switching between automatic and application-controlled confirmation.
+
+If the application resets, crashes, or loses power before the selected confirmation point, the bootloader rolls back to the previous working application on the next boot. When rollback is enabled and an OTA update provides a new version of the application, one of three things can happen:
 
 * The application works fine, :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` marks the running application with the state ``ESP_OTA_IMG_VALID``. There are no restrictions on booting this application.
 * The application has critical errors and further work is not possible, a rollback to the previous application is required, :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` marks the running application with the state ``ESP_OTA_IMG_INVALID`` and reset. This application will not be selected by the bootloader for boot and will boot the previously working application.
-* If the :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set, and a reset occurs without calling either function then the application is rolled back.
+* If a reset occurs before the application is confirmed, the application is rolled back.
 
-The following code serves detect the initial boot for an application after the OTA update. Upon the first boot, the application checks its state and performs diagnostics. If the diagnostics are successful, the application should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` to confirm the operability of the application. If the diagnostics fail, the application should call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` to roll back to the previous working application.
+The following code shows application-controlled confirmation (:ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP <CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP>`). On the first boot after an OTA update, the application observes the ``ESP_OTA_IMG_PENDING_VERIFY`` state and performs diagnostics. If the diagnostics are successful, the application should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` to confirm its operability. If the diagnostics fail, the application should call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` to roll back to the previous working application.
 
 If the application is not able to boot or execute this code due to an abort/reboot/power loss error, the bootloader marks this application as ``ESP_OTA_IMG_INVALID`` in the next booting attempt and rolls back to the previous working application.
 
@@ -84,23 +95,23 @@ States control the process of selecting a boot app:
  ESP_OTA_IMG_UNDEFINED        None restriction. Will be selected.
  ESP_OTA_IMG_INVALID          Will not be selected.
  ESP_OTA_IMG_ABORTED          Will not be selected.
- ESP_OTA_IMG_NEW              If :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
+ ESP_OTA_IMG_NEW              When application rollback is enabled, it will
                               be selected only once. In bootloader the state immediately changes to
                               ``ESP_OTA_IMG_PENDING_VERIFY``.
- ESP_OTA_IMG_PENDING_VERIFY   If :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
+ ESP_OTA_IMG_PENDING_VERIFY   When application rollback is enabled, it will
                               not be selected, and the state will change to ``ESP_OTA_IMG_ABORTED``.
 ============================= ======================================================================
 
-If :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled (by default), then the use of the following functions :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` and :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` are optional, and ``ESP_OTA_IMG_NEW`` and ``ESP_OTA_IMG_PENDING_VERIFY`` states are not used.
+If application rollback is disabled, then the use of the following functions :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` and :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` is optional, and ``ESP_OTA_IMG_NEW`` and ``ESP_OTA_IMG_PENDING_VERIFY`` states are not used. Disabling rollback is strongly discouraged for production devices, as it removes the automatic recovery path after a failed OTA update.
 
-An option in Kconfig :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of a new application. In this case, the application must confirm its operability by calling :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function, otherwise the application will be rolled back upon reboot. It allows you to control the operability of the application during the boot phase. Thus, a new application has only one attempt to boot successfully.
+With application-controlled confirmation, the application can track the first boot of a new application. It must confirm its operability by calling :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`; otherwise, it will be rolled back upon reboot. A new application therefore has only one attempt to reach its confirmation point successfully.
 
 .. _ota_rollback:
 
 Rollback Process
 ^^^^^^^^^^^^^^^^
 
-The description of the rollback process when :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled:
+The application-controlled confirmation process works as follows:
 
 * The new application is successfully downloaded and :cpp:func:`esp_ota_set_boot_partition` function makes this partition bootable and sets the state ``ESP_OTA_IMG_NEW``. This state means that the application is new and should be monitored for its first boot.
 * Reboot :cpp:func:`esp_restart`.
@@ -111,6 +122,38 @@ The description of the rollback process when :menuitem:`CONFIG_BOOTLOADER_APP_RO
 * If the self-test has completed successfully, then you must call the function :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` because the application is awaiting confirmation of operability (``ESP_OTA_IMG_PENDING_VERIFY`` state).
 * If the self-test fails, then call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` function to roll back to the previous working application, while the invalid application is set ``ESP_OTA_IMG_INVALID`` state.
 * If the application has not been confirmed, the state remains ``ESP_OTA_IMG_PENDING_VERIFY``, and the next boot it will be changed to ``ESP_OTA_IMG_ABORTED``, which prevents re-boot of this application. There will be a rollback to the previous working application.
+
+.. _ota_auto_confirm:
+
+Automatic OTA Confirmation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Automatic confirmation is the default confirmation mode. Use it when reaching ``app_main``
+is sufficient to consider an OTA update valid. Select application-controlled confirmation
+instead when the application must confirm the update at an application-defined checkpoint.
+
+In this mode, ESP-IDF calls :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` near the end
+of system startup, after IDF component initialization has completed and immediately before
+calling ``app_main``. Reaching this point is treated as a successful first boot. If startup
+fails before this point, the application remains unconfirmed and the bootloader selects the
+previously working application on the next boot.
+
+Automatic confirmation does not validate application-specific initialization or
+diagnostics performed in ``app_main``. It also changes the OTA state to
+``ESP_OTA_IMG_VALID`` before application code runs. Consequently,
+:cpp:func:`esp_ota_get_state_partition` cannot be used from application code to determine
+whether this is the first boot of the new application. Select
+application-controlled confirmation to detect the first boot by checking for
+``ESP_OTA_IMG_PENDING_VERIFY``, perform self-tests, and then call
+:cpp:func:`esp_ota_mark_app_valid_cancel_rollback` or
+:cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`. Alternatively, the application
+can maintain its own persistent marker for the last application image it ran.
+
+.. note::
+
+  Automatic confirmation is unavailable with anti-rollback. Applications using
+  anti-rollback must confirm the new version explicitly at an application-defined
+  checkpoint.
 
 Unexpected Reset
 ^^^^^^^^^^^^^^^^
@@ -138,11 +181,11 @@ Where the States Are Set
 A brief description of where the states are set:
 
 * ``ESP_OTA_IMG_VALID`` state is set by :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function.
-* ``ESP_OTA_IMG_UNDEFINED`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled.
-* ``ESP_OTA_IMG_NEW`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled.
+* ``ESP_OTA_IMG_UNDEFINED`` state is set by :cpp:func:`esp_ota_set_boot_partition` if application rollback is disabled.
+* ``ESP_OTA_IMG_NEW`` state is set by :cpp:func:`esp_ota_set_boot_partition` if application rollback is enabled.
 * ``ESP_OTA_IMG_INVALID`` state is set by function :cpp:func:`esp_ota_mark_app_invalid_rollback` or :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`.
-* ``ESP_OTA_IMG_ABORTED`` state is set if there was no confirmation of the application operability and occurs reboots (if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled).
-* ``ESP_OTA_IMG_PENDING_VERIFY`` state is set in a bootloader if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled and selected app has ``ESP_OTA_IMG_NEW`` state.
+* ``ESP_OTA_IMG_ABORTED`` state is set if the application reboots before confirmation while application rollback is enabled.
+* ``ESP_OTA_IMG_PENDING_VERIFY`` state is set by the bootloader if application rollback is enabled and the selected application has the ``ESP_OTA_IMG_NEW`` state.
 
 .. _anti-rollback:
 
@@ -155,7 +198,7 @@ Anti-rollback prevents rollback to application with security version lower than 
 
 This function works if set :menuitem:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` option. In the bootloader, when selecting a bootable application, an additional security version check is added which is on the chip and in the application image. The version in the bootable firmware must be greater than or equal to the version in the chip.
 
-:menuitem:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` and :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` options are used together. In this case, rollback is possible only on the security version which is equal or higher than the version in the chip.
+Anti-rollback uses application-controlled confirmation. In this case, rollback is possible only to an application whose security version is equal to or higher than the version in the chip.
 
 
 A Typical Anti-rollback Scheme Is

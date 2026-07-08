@@ -379,7 +379,7 @@ void app_main(void)
     */
     ESP_ERROR_CHECK(example_connect());
 
-#if defined(CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE)
+#if defined(CONFIG_BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP)
     /**
      * We are treating successful WiFi connection as a checkpoint to cancel rollback
      * process and mark newly updated firmware image as active. For production cases,

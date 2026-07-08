@@ -1,0 +1,2 @@
+# Covers the CONFIG_BOOTLOADER_APP_ROLLBACK=n code paths, no longer exercised by any other config.
+CONFIG_BOOTLOADER_APP_ROLLBACK=n

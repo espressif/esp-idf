@@ -288,7 +288,7 @@ void reset_output_pin(uint32_t num_pin)
 
 void mark_app_valid(void)
 {
-#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
     TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
 #endif
 }

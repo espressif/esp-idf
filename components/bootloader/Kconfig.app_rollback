@@ -1,20 +1,51 @@
 menu "Application Rollback"
 
-    config BOOTLOADER_APP_ROLLBACK_ENABLE
-        bool "Enable app rollback support"
-        default n
+    config BOOTLOADER_APP_ROLLBACK
+        bool "Enable application rollback"
+        default y
         help
-            After updating the app, the bootloader runs a new app with the "ESP_OTA_IMG_PENDING_VERIFY" state set.
-            This state prevents the re-run of this app. After the first boot of the new app in the user code, the
-            function should be called to confirm the operability of the app or vice versa about its non-operability.
-            If the app is working, then it is marked as valid. Otherwise, it is marked as not valid and rolls back to
-            the previous working app. A reboot is performed, and the app is booted before the software update.
-            Note: If during the first boot a new app the power goes out or the WDT works, then roll back will happen.
-            Rollback is possible only between the apps with the same security versions.
+            After an OTA update, the bootloader starts the new application in the
+            ESP_OTA_IMG_PENDING_VERIFY state. If the application resets, crashes, or
+            loses power before being confirmed valid, the bootloader marks it as
+            aborted on the next boot and selects the previously working application
+            instead.
+
+            Disabling this option removes the automatic recovery path after a
+            failed OTA update: a failed update can leave the device with an
+            unbootable application.
+
+    choice BOOTLOADER_APP_ROLLBACK_CONFIRM_MODE
+        prompt "Rollback confirmation checkpoint"
+        depends on BOOTLOADER_APP_ROLLBACK
+        default BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
+
+        config BOOTLOADER_APP_ROLLBACK_CONFIRM_ON_STARTUP
+            bool "Confirm app automatically during system startup"
+            help
+                The application is marked valid near the end of system startup,
+                immediately before app_main is called. Reaching app_main is treated
+                as a successful boot; this confirms IDF startup completed but does
+                not verify application-specific functionality.
+
+                Since the state is already ESP_OTA_IMG_VALID by the time app_main
+                runs, application code cannot use esp_ota_get_state_partition() to
+                detect the first boot of a new application.
+
+        config BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP
+            bool "Application decides the confirmation checkpoint"
+            help
+                The application must confirm itself valid during its first boot by
+                calling esp_ota_mark_app_valid_cancel_rollback(), or reject the
+                update with esp_ota_mark_app_invalid_rollback_and_reboot(). If
+                neither is called before a reset, the bootloader marks the app as
+                aborted and rolls back to the previous working application.
+
+                Rollback is possible only between apps with the same security version.
+    endchoice
 
     config BOOTLOADER_APP_ANTI_ROLLBACK
         bool "Enable app anti-rollback support"
-        depends on BOOTLOADER_APP_ROLLBACK_ENABLE
+        depends on BOOTLOADER_APP_ROLLBACK_CONFIRM_BY_APP
         default n
         help
             This option prevents rollback to previous firmware/application image with lower security version.
