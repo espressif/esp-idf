@@ -1,5 +1,0 @@
-# Runtime dependencies (textual, pyserial, click) are managed by the ESP-IDF
-# virtual environment via tools/requirements/requirements.core.txt, not here.
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
