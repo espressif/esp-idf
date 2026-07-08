@@ -219,6 +219,10 @@ TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
 
 TEST_CASE("lcd_rgb_panel_restart", "[lcd]")
 {
+#if CONFIG_IDF_TARGET_ESP32S31 // IDF-15960
+    TEST_IGNORE_MESSAGE("Known issue: lcd_rgb_panel_restart underruns on flash-encrypted runners");
+#endif // CONFIG_IDF_TARGET_ESP32S31
+
     uint8_t *img = malloc(TEST_IMG_SIZE);
     TEST_ASSERT_NOT_NULL(img);
 

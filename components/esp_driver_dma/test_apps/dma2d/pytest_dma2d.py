@@ -41,7 +41,8 @@ def test_dma2d_esp32p4_rev1(dut: Dut) -> None:
     ],
     indirect=True,
 )
-@idf_parametrize('target', soc_filtered_targets('SOC_DMA2D_SUPPORTED == 1'), indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='TODO: IDFCI-10377 no runner yet')
+@idf_parametrize(
+    'target', soc_filtered_targets('SOC_DMA2D_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1'), indirect=['target']
+)
 def test_dma2d_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
