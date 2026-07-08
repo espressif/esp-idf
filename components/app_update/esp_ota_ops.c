@@ -32,9 +32,9 @@
 #include "esp_flash.h"
 #include "esp_private/esp_flash_internal.h" //For dangerous write protection
 #include "esp_macros.h"
-#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#if CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 #include "psa/crypto.h"
-#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+#endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 
 #define OTA_SLOT(i) (i & 0x0F)
 
@@ -491,7 +491,7 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle)
     return ESP_OK;
 }
 
-#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#if CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 #define SHA_CHUNK 256
 static esp_err_t ota_calc_partition_bin_sha(const esp_partition_t *partition, uint32_t length, uint8_t out_digest[ESP_SECURE_BOOT_DIGEST_LEN], psa_algorithm_t alg)
 {
@@ -573,7 +573,7 @@ static esp_err_t ota_verify_data_partition_signature(const esp_partition_t *part
     }
     return err;
 }
-#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+#endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
 
 static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
 {
@@ -600,7 +600,7 @@ static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
             esp_partition_munmap(partition_table_map);
         }
     }
-#if CONFIG_SECURE_SIGNED_DATA_PARTITION
+#if CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
     else if (ota_ops->partition.final->type == ESP_PARTITION_TYPE_DATA &&
             ota_ops->partition.final->subtype == ESP_PARTITION_SUBTYPE_DATA_UNDEFINED) {
         esp_err_t err = ota_verify_data_partition_signature(ota_ops->partition.staging, ota_ops->wrote_size);
@@ -610,7 +610,7 @@ static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
         }
         return ESP_OK;
     }
-#endif // CONFIG_SECURE_SIGNED_DATA_PARTITION
+#endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
     return ret;
 }
 

@@ -420,7 +420,7 @@
 验证数据分区
 ------------
 
-Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像。启用 :menuitem:`CONFIG_SECURE_SIGNED_DATA_PARTITION` 以验证子类型为 ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` 的数据分区。
+Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像。启用 :menuitem:`CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION` 以验证子类型为 ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` 的数据分区。
 
 数据分区镜像必须使用相同的签名密钥，通过 ``idf.py secure-sign-data`` 进行签名，并采用与应用镜像相同的格式。验证使用存储在 eFuse 中的一个或多个公钥摘要，并遵循 :ref:`verify_image` 中所述的流程。
 

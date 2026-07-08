@@ -420,7 +420,7 @@ An image is verified if the public key stored in any signature block is valid fo
 Verifying Data Partitions
 --------------------------
 
-The Secure Boot v2 signature verification can also verify data partition images during OTA updates. Enable :menuitem:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED``.
+The Secure Boot v2 signature verification can also verify data partition images during OTA updates. Enable :menuitem:`CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED``.
 
 Data partition images must be signed using ``idf.py secure-sign-data`` with the same signing key and follow the same format as application images. The verification uses the public key digest(s) stored in eFuse and follows the process described in :ref:`verify_image`.
 

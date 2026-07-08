@@ -235,7 +235,7 @@ The verification of signed OTA updates can be performed even without enabling ha
 Signed Data Partition Updates
 ------------------------------
 
-Data partition images can be verified using the same Secure Boot v2 signature mechanism as application images. Enable :menuitem:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` during OTA updates.
+Data partition images can be verified using the same Secure Boot v2 signature mechanism as application images. Enable :menuitem:`CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` during OTA updates.
 
 Sign data partition images using:
 
