@@ -11,6 +11,7 @@
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/hal_utils.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,6 +129,11 @@ typedef struct {
 /**
  * Default initializer for rtc_clk_config_t
  */
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+#define RTC_CLK_CONFIG_DEFAULT_DISABLE_BBPLL    0   /* USB PHY relies on BBPLL */
+#else
+#define RTC_CLK_CONFIG_DEFAULT_DISABLE_BBPLL    1
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
 #define RTC_CLK_CONFIG_DEFAULT() { \
     .xtal_freq = CONFIG_XTAL_FREQ, \
     .cpu_freq_mhz = CONFIG_BOOTLOADER_CPU_CLK_FREQ_MHZ, \
@@ -141,7 +147,7 @@ typedef struct {
     .disable_apll = 1, \
     .disable_mpll = 1, \
     .disable_cpll = 0, /* Keep CPLL: Flash (bootloader) and typical CPU freqs use it */ \
-    .disable_bbpll = 1, \
+    .disable_bbpll = RTC_CLK_CONFIG_DEFAULT_DISABLE_BBPLL, \
 }
 
 /**

@@ -23,6 +23,7 @@
 #include "mspi_timing_tuning_configs.h"
 #include "esp_private/mspi_timing_config.h"
 #include "hal/mspi_ll.h"
+#include "hal/spi_flash_ll.h"
 #include "rom/spi_flash.h"
 #include "esp_private/spi_flash_os.h"
 
@@ -210,16 +211,26 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
     }
 
 #if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_SPI_FLASH_HPM_ON
+    // dummy_len is derived as qio_dummy - 1 (SPI_MEM_USR_DUMMY_CYCLELEN is N-1 encoded and qio_dummy
+    // already reflects HPM), e.g. qio_dummy 10 -> dummy_len 9.
     uint32_t dummy_len = spi_timing_config_get_dummy();
-#if CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
-    // In the ROM configuration, when esp_rom_spi_set_rd_cmd_bit_len issues the read command in QIO mode, it automatically inserts two dummy cycles.
-    // Therefore, when validating the dummy cycles at 120 MHz, the effective value should be 10 − 2, i.e. 8 dummy cycles.
-    // However, when the 32 MHz cache access configuration is enabled, the corresponding register will be overwritten,
-    // so the extra two dummy cycles no longer exist. In that case, the dummy cycle setting should simply be 10.
-    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len - 2);
-#else
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO
+    // In QIO mode the SPI0 (cache) read carries 8 continuous-read mode bits (M7-M0) after the address;
+    // on 4 IO lines they take 2 clock cycles.
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH && !SPI_FLASH_LL_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    // Special case (e.g. ESP32-P4): the 32-bit-address cache read set up by esp_rom_spiflash_cache_mode_config()
+    // drives the mode bits via the dummy-output control and programs the whole read latency into the dummy
+    // register, so the full dummy_len is used (e.g. dummy_len 9 -> 10 cycles).
     mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len);
-#endif // CONFIG_ESPTOOLPY_FLASHMODE_QIO && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
+#else
+    // Every other QIO read keeps the 2 mode-bit cycles *outside* SPI_MEM_USR_DUMMY_CYCLELEN: they are folded
+    // into the address phase (non 32-bit map), or emitted through the hardware WB phase on WB-mode targets
+    // (e.g. ESP32-S31). So the programmed dummy is reduced by 2 (e.g. dummy_len 9 -> user dummy 7).
+    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len - 2);
+#endif
+#else // !CONFIG_ESPTOOLPY_FLASHMODE_QIO: no continuous-read mode phase, program the full dummy
+    mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, dummy_len);
+#endif // CONFIG_ESPTOOLPY_FLASHMODE_QIO
 #endif
 
     int spi1_usr_dummy = 0;

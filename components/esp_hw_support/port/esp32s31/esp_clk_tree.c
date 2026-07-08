@@ -569,9 +569,11 @@ esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
         }
     case SOC_MOD_CLK_BBPLL:
         esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, acquire);
+        // TODO: IDF-16120 if truly enabled, needs to do calibration
         return ESP_OK;
     case SOC_MOD_CLK_CPLL:
         esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_CPLL, acquire);
+        // TODO: IDF-16120 if truly enabled, needs to do calibration
         return ESP_OK;
     case SOC_MOD_CLK_RC_FAST:   gated_clk_id = ESP_CLK_TREE_GATED_CLK_RC_FAST;   break;
     case SOC_MOD_CLK_PLL_F20M:  gated_clk_id = ESP_CLK_TREE_GATED_CLK_PLL_F20M;  break;

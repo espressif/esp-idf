@@ -66,49 +66,25 @@ def test_esp_flash_26mhz_c2(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='esp_flash')
 
 
-@pytest.mark.flash_32m
 @pytest.mark.parametrize(
     'config',
     [
-        'c5_32m_120m_qio_map',
-        'c5_32m_120m_dio_map',
-        'c5_32m_120m_qio',
-        'c5_32m_120m_dio',
+        '32m_120m_qio_map',
+        '32m_120m_dio_map',
+        '32m_120m_qio',
+        '32m_120m_dio',
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c5'], indirect=['target'])
-def test_esp_flash_32m_c5(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='esp_flash')
-
-
-@pytest.mark.flash_32m
-@pytest.mark.parametrize(
-    'config',
+@idf_parametrize(
+    'target,markers',
     [
-        'c61_32m_120m_qio_map',
-        'c61_32m_120m_dio_map',
-        'c61_32m_120m_qio',
-        'c61_32m_120m_dio',
+        ('esp32p4', (pytest.mark.flash_32m,)),
+        ('esp32c5', (pytest.mark.flash_32m,)),
+        ('esp32c61', (pytest.mark.flash_32m,)),
+        ('esp32s31', (pytest.mark.flash_32m,)),
     ],
-    indirect=True,
+    indirect=['target'],
 )
-@idf_parametrize('target', ['esp32c61'], indirect=['target'])
-def test_esp_flash_32m_c61(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='esp_flash')
-
-
-@pytest.mark.flash_32m
-@pytest.mark.parametrize(
-    'config',
-    [
-        'p4_32m_120m_qio_map',
-        'p4_32m_120m_dio_map',
-        'p4_32m_120m_qio',
-        'p4_32m_120m_dio',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32p4'], indirect=['target'])
-def test_esp_flash_32m_p4(dut: Dut) -> None:
+def test_esp_flash_32m(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='esp_flash')
