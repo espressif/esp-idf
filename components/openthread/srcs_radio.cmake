@@ -41,6 +41,7 @@ set(rcp_srcs
     openthread/src/core/radio/radio.cpp
     openthread/src/core/radio/radio_callbacks.cpp
     openthread/src/core/radio/radio_platform.cpp
+    openthread/src/core/radio/radio_types.cpp
     openthread/src/core/thread/link_quality.cpp
     openthread/src/core/utils/otns.cpp
     openthread/src/core/utils/parse_cmdline.cpp
