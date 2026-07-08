@@ -13,10 +13,6 @@
   - "components/**/Kconfig"
   - "components/**/CMakeLists.txt"
 
-.patterns-python-cache: &patterns-python-cache
-  - "tools/requirements.json"
-  - "tools/requirements/requirements.*.txt"
-
 .patterns-python-files: &patterns-python-files
   - ".gitlab/ci/static-code-analysis.yml"
   - "**/*.py"
@@ -234,15 +230,6 @@
 .rules:dev-push:
   rules:
     - <<: *if-dev-push
-
-.rules:upload-python-cache:
-  rules:
-    - <<: *if-release-tag
-    - <<: *if-schedule-nightly
-    - <<: *if-protected-branch-push
-      changes: *patterns-python-cache
-    - <<: *if-label-upload_cache
-      when: manual
 
 .rules:upload-submodule-cache:
   rules:

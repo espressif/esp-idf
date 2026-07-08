@@ -7,9 +7,6 @@
   # run host_test jobs immediately, only after upload cache
   needs:
     - pipeline_variables
-    - job: upload-pip-cache
-      optional: true
-      artifacts: false
     - job: upload-submodules-cache
       optional: true
       artifacts: false
