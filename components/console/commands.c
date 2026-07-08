@@ -134,6 +134,7 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
     } else {
         // remove from list and free the old hint, because we will alloc new hint for the command
         esp_console_rm_item_free_hint(item);
+        item->hint = NULL;
     }
     item->command = cmd->command;
     item->help = cmd->help;
@@ -382,8 +383,11 @@ esp_err_t esp_console_register_help_command(void)
 esp_err_t esp_console_deregister_help_command(void)
 {
     free(help_args.help_cmd);
+    help_args.help_cmd = NULL;
     free(help_args.verbose_level);
+    help_args.verbose_level = NULL;
     free(help_args.end);
+    help_args.end = NULL;
 
     return esp_console_cmd_deregister("help");
 }
