@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,9 @@ static int esp_mbedtls_ecp_point_multiply(const mbedtls_ecp_group *grp, mbedtls_
     MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary_le(m, m_le, MAX_SIZE));
 
     ret = esp_ecc_point_multiply(&p_pt, m_le, &r_pt, false);
+    if (ret != 0) {
+        goto cleanup;
+    }
 
     for (int i = 0; i < MAX_SIZE; i++) {
         x_tmp[MAX_SIZE - i - 1] = r_pt.x[i];
@@ -43,9 +46,15 @@ static int esp_mbedtls_ecp_point_multiply(const mbedtls_ecp_group *grp, mbedtls_
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(X), x_tmp, MAX_SIZE));
     MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&R->MBEDTLS_PRIVATE(Y), y_tmp, MAX_SIZE));
     MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&R->MBEDTLS_PRIVATE(Z), 1));
+    /* m_le holds the secret scalar (EC private key / per-signature nonce) in
+     * little-endian form. Scrub it on the success path so it cannot be
+     * recovered from stack RAM after the operation completes. */
+    mbedtls_platform_zeroize(m_le, sizeof(m_le));
     return ret;
 
 cleanup:
+    /* Same scrub on every error path that reached here via MBEDTLS_MPI_CHK. */
+    mbedtls_platform_zeroize(m_le, sizeof(m_le));
     return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
 }
 

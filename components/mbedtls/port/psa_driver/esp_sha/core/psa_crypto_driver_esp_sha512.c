@@ -122,6 +122,10 @@ static int esp_sha512_update(esp_sha512_context *ctx, const unsigned char *input
 
         if (ret != 0) {
             esp_sha_release_hardware();
+            /* Operation failed and will be aborted; scrub the partial-block
+             * message bytes in ctx->buffer so a fault that skips the later
+             * abort cannot leave secret input (e.g. an HMAC key) in RAM. */
+            mbedtls_platform_zeroize(ctx->buffer, sizeof(ctx->buffer));
             return ret;
         }
 
@@ -130,6 +134,10 @@ static int esp_sha512_update(esp_sha512_context *ctx, const unsigned char *input
             ret = esp_sha_dma(ctx->mode, input, len, ctx->buffer, local_len, ctx->first_block);
             if (ret != 0) {
                 esp_sha_release_hardware();
+                /* On HW failure scrub the partial-block message bytes in
+                 * ctx->buffer so a fault that skips the later abort cannot
+                 * leave secret input (e.g. an HMAC key) in RAM. */
+                mbedtls_platform_zeroize(ctx->buffer, sizeof(ctx->buffer));
                 return ret;
             }
         } else

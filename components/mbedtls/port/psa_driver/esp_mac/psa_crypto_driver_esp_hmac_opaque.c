@@ -398,6 +398,9 @@ psa_status_t esp_hmac_finish_opaque(
     }
 
     if (mac_size == 0 || mac_size > ESP_HMAC_RESULT_SIZE) {
+        /* A prior update may have left the full HMAC in ctx->hmac; scrub it
+         * before this error return in case a fault skips the later abort. */
+        mbedtls_platform_zeroize(esp_hmac_ctx->hmac, sizeof(esp_hmac_ctx->hmac));
         return PSA_ERROR_INVALID_ARGUMENT;
     }
 

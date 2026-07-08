@@ -207,6 +207,14 @@ psa_status_t esp_cmac_update(esp_cmac_operation_t *esp_cmac_ctx, const uint8_t *
 
     status = PSA_SUCCESS;
 exit:
+    if (status != PSA_SUCCESS) {
+        /* On failure the CBC-MAC chaining state and any buffered block are
+         * key-derived intermediates; scrub them now in case a fault skips the
+         * abort. On success they must persist for the next update/finish. */
+        mbedtls_platform_zeroize(esp_cmac_ctx->state, sizeof(esp_cmac_ctx->state));
+        mbedtls_platform_zeroize(esp_cmac_ctx->unprocessed_block, sizeof(esp_cmac_ctx->unprocessed_block));
+        esp_cmac_ctx->unprocessed_len = 0;
+    }
     return status;
 }
 

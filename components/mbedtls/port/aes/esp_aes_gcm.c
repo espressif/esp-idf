@@ -494,22 +494,25 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
 
     /* Output = GCTR(J0, Input): Encrypt/Decrypt the input */
     int ret = esp_aes_crypt_ctr(&ctx->aes_ctx, input_length, &nc_off, nonce_counter, stream, input, output);
-    if (ret != 0) {
-        return ret;
+    if (ret == 0) {
+        /* ICB gets auto incremented after GCTR operation here so update the context */
+        memcpy(ctx->J0, nonce_counter, AES_BLOCK_BYTES);
+
+        /* Keep updating the length counter for final tag calculation */
+        ctx->data_len += input_length;
+
+        /* Perform intermediate GHASH on "encrypted" data during encryption*/
+        if (ctx->mode == ESP_AES_ENCRYPT) {
+            esp_gcm_ghash(ctx, output, input_length, ctx->ghash);
+        }
     }
 
-    /* ICB gets auto incremented after GCTR operation here so update the context */
-    memcpy(ctx->J0, nonce_counter, AES_BLOCK_BYTES);
-
-    /* Keep updating the length counter for final tag calculation */
-    ctx->data_len += input_length;
-
-    /* Perform intermediate GHASH on "encrypted" data during encryption*/
-    if (ctx->mode == ESP_AES_ENCRYPT) {
-        esp_gcm_ghash(ctx, output, input_length, ctx->ghash);
-    }
-
-    return 0;
+    /* stream holds the AES-CTR keystream and nonce_counter the live CTR state;
+     * both are key-derived secrets. Scrub them on every exit so they cannot be
+     * recovered from stack RAM. */
+    mbedtls_platform_zeroize(stream, sizeof(stream));
+    mbedtls_platform_zeroize(nonce_counter, sizeof(nonce_counter));
+    return ret;
 }
 
 /* Function to read the tag value */
@@ -532,7 +535,13 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     esp_gcm_ghash(ctx, len_block, AES_BLOCK_BYTES, ctx->ghash);
 
     /* Tag T = GCTR(J0, ) where T is truncated to tag_len */
-    return esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, stream, ctx->ghash, tag);
+    int ret = esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, stream, ctx->ghash, tag);
+
+    /* stream holds the AES-CTR keystream used to encrypt the tag (key-derived);
+     * len_block holds the GHASH length block. Scrub both before returning. */
+    mbedtls_platform_zeroize(stream, sizeof(stream));
+    mbedtls_platform_zeroize(len_block, sizeof(len_block));
+    return ret;
 }
 
 #if CONFIG_MBEDTLS_HARDWARE_GCM
@@ -711,7 +720,7 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
     if ( ( ret = esp_aes_gcm_crypt_and_tag( ctx, ESP_AES_DECRYPT, length,
                                             iv, iv_len, aad, aad_len,
                                             input, output, tag_len, check_tag ) ) != 0 ) {
-        return ( ret );
+        goto cleanup;
     }
 
     /* Check tag in "constant-time" */
@@ -721,8 +730,11 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
 
     if ( diff != 0 ) {
         mbedtls_platform_zeroize( output, length );
-        return ( PSA_ERROR_INVALID_SIGNATURE );
+        ret = PSA_ERROR_INVALID_SIGNATURE;
     }
 
-    return ( 0 );
+cleanup:
+    /* check_tag holds the locally recomputed authentication tag. */
+    mbedtls_platform_zeroize( check_tag, sizeof(check_tag) );
+    return ( ret );
 }
