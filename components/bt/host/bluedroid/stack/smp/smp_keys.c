@@ -1759,7 +1759,7 @@ UINT32 smp_calculate_g2(UINT8 *u, UINT8 *v, UINT8 *x, UINT8 *y)
     smp_debug_print_nbyte_little_endian (p_prnt, (const UINT8 *)"cmac mod 2**32 mod 10**6", 4);
 #endif
 
-    SMP_TRACE_ERROR("Value for numeric comparison = %d", vres);
+    SMP_TRACE_WARNING("Value for numeric comparison = %d", vres);
     return vres;
 }
 
