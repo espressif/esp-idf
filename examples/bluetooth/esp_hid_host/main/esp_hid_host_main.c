@@ -131,6 +131,9 @@ void hid_demo_task(void *pvParameters)
 {
     size_t results_len = 0;
     esp_hid_scan_result_t *results = NULL;
+#if CONFIG_BT_HID_HOST_ENABLED
+    ESP_LOGI(TAG, "Expected remote device name: %s", remote_device_name);
+#endif // CONFIG_BT_HID_HOST_ENABLED
     ESP_LOGI(TAG, "SCAN...");
     //start scan for HID devices
     esp_hid_scan(SCAN_DURATION_SECONDS, &results_len, &results);
