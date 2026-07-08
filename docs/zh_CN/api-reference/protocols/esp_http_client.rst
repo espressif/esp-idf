@@ -16,8 +16,8 @@ ESP HTTP 客户端
 应用示例
 --------
 
-:example:`protocols/esp_http_client` 演示了如何使用 ESP HTTP 客户端发起 HTTP/S 请求。
-
+- :example:`protocols/esp_http_client` 演示了如何使用 ESP HTTP 客户端发起 HTTP/S 请求。
+- :example:`protocols/esp_http_client_mutual_auth` 演示了如何使用 ESP HTTP 客户端配置双向 TLS 认证。
 
 HTTP 基本请求
 -------------
