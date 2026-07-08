@@ -72,8 +72,8 @@ set pvt default param
 */
 #define PVT_CHANNEL0_SEL        34
 #define PVT_CHANNEL1_SEL        38
-#define PVT_CHANNEL0_CFG        0x1033e
-#define PVT_CHANNEL1_CFG        0x1033e
+#define PVT_CHANNEL0_CFG        0x11fff
+#define PVT_CHANNEL1_CFG        0x17fff
 #define PVT_CHANNEL2_CFG        0x10000
 #define PVT_CMD0                0x24
 #define PVT_CMD1                0x5
