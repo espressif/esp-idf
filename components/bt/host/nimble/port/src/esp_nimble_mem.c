@@ -191,66 +191,6 @@ uint32_t nimble_mem_dbg_get_max_size_section(uint8_t index)
     return nimble_mem_dbg_max_size_section[index].max_size;
 }
 
-void *nimble_mem_dbg_realloc(void *ptr, size_t new_size, const char *func, int line)
-{
-    size_t old_size = 0;
-    int i;
-
-    void *new_ptr = realloc(ptr, new_size);
-    if (new_ptr == NULL && new_size > 0) {
-        // realloc failed, keep old ptr record
-        return NULL;
-    }
-
-    // Find and clean old record if ptr is not NULL
-    if (ptr != NULL) {
-        for (i = 0; i < NIMBLE_MEM_DBG_INFO_MAX; i++) {
-            if (nimble_mem_dbg_info[i].p == ptr) {
-                old_size = nimble_mem_dbg_info[i].size;
-                nimble_mem_dbg_current_size -= old_size;
-
-                nimble_mem_dbg_info[i].p = NULL;
-                nimble_mem_dbg_info[i].size = 0;
-                nimble_mem_dbg_info[i].func = NULL;
-                nimble_mem_dbg_info[i].line = 0;
-                nimble_mem_dbg_count--;
-                break;
-            }
-        }
-    }
-
-    // Record the new allocation if new_size > 0
-    if (new_ptr != NULL && new_size > 0) {
-        for (i = 0; i < NIMBLE_MEM_DBG_INFO_MAX; i++) {
-            if (nimble_mem_dbg_info[i].p == NULL) {
-                nimble_mem_dbg_info[i].p = new_ptr;
-                nimble_mem_dbg_info[i].size = new_size;
-                nimble_mem_dbg_info[i].func = func;
-                nimble_mem_dbg_info[i].line = line;
-                nimble_mem_dbg_count++;
-                break;
-            }
-        }
-
-        if (i >= NIMBLE_MEM_DBG_INFO_MAX) {
-            ESP_LOGE("BT_NIMBLE_MEM", "%s full %s %d !!\n", __func__, func, line);
-        }
-
-        nimble_mem_dbg_current_size += new_size;
-        if (nimble_mem_dbg_max_size < nimble_mem_dbg_current_size) {
-            nimble_mem_dbg_max_size = nimble_mem_dbg_current_size;
-        }
-
-        for (i = 0; i < NIMBLE_MEM_DBG_MAX_SECTION_NUM; i++) {
-            if (nimble_mem_dbg_max_size_section[i].used &&
-                nimble_mem_dbg_max_size_section[i].max_size < nimble_mem_dbg_current_size) {
-                nimble_mem_dbg_max_size_section[i].max_size = nimble_mem_dbg_current_size;
-            }
-        }
-    }
-
-    return new_ptr;
-}
 #endif // CONFIG_BT_NIMBLE_MEM_DEBUG
 
 #if !CONFIG_BT_NIMBLE_LOW_SPEED_MODE
@@ -306,6 +246,44 @@ void *nimble_mem_calloc(size_t n, size_t size)
 #endif // CONFIG_BT_LE_USED_MEM_STATISTICS_ENABLED
     return mem;
 }
+
+#if !CONFIG_BT_NIMBLE_LOW_SPEED_MODE
+IRAM_ATTR
+#endif
+void *nimble_mem_realloc(void *ptr, size_t size)
+{
+    void *mem = NULL;
+#if CONFIG_BT_LE_USED_MEM_STATISTICS_ENABLED
+    size_t old_size = 0;
+    if (ptr) {
+        old_size = heap_caps_get_allocated_size(ptr);
+    }
+#endif
+
+#ifdef CONFIG_BT_NIMBLE_MEM_ALLOC_MODE_INTERNAL
+    mem = heap_caps_realloc(ptr, size, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#elif CONFIG_BT_NIMBLE_MEM_ALLOC_MODE_EXTERNAL
+    mem = heap_caps_realloc(ptr, size, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
+#elif CONFIG_BT_NIMBLE_MEM_ALLOC_MODE_IRAM_8BIT
+    mem = heap_caps_realloc_prefer(ptr, size, 2,
+                                   MALLOC_CAP_INTERNAL|MALLOC_CAP_IRAM_8BIT,
+                                   MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#else
+    mem = realloc(ptr, size);
+#endif
+
+#if CONFIG_BT_LE_USED_MEM_STATISTICS_ENABLED
+    if (mem) {
+        size_t new_size = heap_caps_get_allocated_size(mem);
+        host_mem_used_size = host_mem_used_size - old_size + new_size;
+    } else if (ptr && size == 0) {
+        host_mem_used_size -= old_size;
+    }
+#endif // CONFIG_BT_LE_USED_MEM_STATISTICS_ENABLED
+
+    return mem;
+}
+
 
 #if !CONFIG_BT_NIMBLE_LOW_SPEED_MODE
 IRAM_ATTR

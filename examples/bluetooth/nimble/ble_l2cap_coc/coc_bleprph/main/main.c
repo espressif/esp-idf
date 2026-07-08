@@ -34,7 +34,7 @@ void ble_store_config_init(void);
 #define COC_BUF_COUNT         (20 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 #define MTU                    512
 
-uint16_t psm = 0x1002;
+uint16_t psm = 0x0080;
 static os_membuf_t sdu_coc_mem[OS_MEMPOOL_SIZE(COC_BUF_COUNT, MTU)];
 static struct os_mempool sdu_coc_mbuf_mempool;
 static struct os_mbuf_pool sdu_os_mbuf_pool;
@@ -333,16 +333,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 #else
             bleprph_advertise();
 #endif
-        } else {
-            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-            assert(rc == 0);
-            bleprph_print_conn_desc(&desc);
-#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
-            rc = ble_l2cap_create_server(psm, MTU, bleprph_l2cap_coc_event_cb, NULL);
-            if (rc != 0) {
-                MODLOG_DFLT(ERROR, "Failed to create L2CAP CoC server; rc=%d", rc);
-            }
-#endif
         }
         return 0;
 
@@ -413,6 +403,15 @@ bleprph_on_sync(void)
     MODLOG_DFLT(INFO, "Device Address: ");
     print_addr(addr_val);
     MODLOG_DFLT(INFO, "\n");
+
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
+    rc = ble_l2cap_create_server(psm, MTU, bleprph_l2cap_coc_event_cb, NULL);
+    if (rc != 0 && rc != BLE_HS_EALREADY) {
+        MODLOG_DFLT(ERROR, "Failed to create L2CAP COC server; rc=%d\n", rc);
+        return;
+    }
+#endif
+
     /* Begin advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     ext_bleprph_advertise();
