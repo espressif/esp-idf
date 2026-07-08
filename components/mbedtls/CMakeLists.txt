@@ -542,6 +542,13 @@ else()
     target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_psa_crypto_init_include_impl")
 endif()
 
+# Force-link esp_mem.c so esp_mbedtls_mem_calloc/free are present whenever
+# mbedtls is in the link. Without this, link order breaks for apps that pull
+# mbedtls but don't call any mbedtls function
+if(NOT (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND ${IDF_TARGET} STREQUAL "linux"))
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u esp_mbedtls_mem_calloc")
+endif()
+
 # Additional optional dependencies for the mbedcrypto library
 function(builtin_optional_deps component_name)
     idf_build_get_property(components BUILD_COMPONENTS)

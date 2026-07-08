@@ -63,7 +63,12 @@ else()
     set(requires esp_partition esp_blockdev)
     set(priv_requires spi_flash)
     if(NOT ${target} STREQUAL "linux")
-        list(APPEND priv_requires esp_libc esptool_py nvs_sec_provider)
+        # mbedtls is needed for NVS encryption (nvs_encrypted_partition.cpp).
+        # It used to be pulled in transitively via bootloader_support, but
+        # that dep was removed in the bootloader_support / esp_image_verify
+        # split. Declare it explicitly so `idf::mbedtls` exists for the
+        # target_link_libraries() call below.
+        list(APPEND priv_requires esp_libc esptool_py nvs_sec_provider mbedtls)
     endif()
 
     idf_component_register(SRCS "${srcs}"
