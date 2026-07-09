@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+#
+# Repository-local CVE exclusions for this ESP-IDF revision.
+#
+# esp-idf-sbom merges this file into its global exclusion list when scanning
+# this tree (see the "Excluding CVEs" section of the esp-idf-sbom README). It
+# uses the same format as esp-idf-sbom's own excluded_cves.yaml. Because the
+# file lives in the tree it is scoped to this branch/revision: the affected
+# release tag (v5.4.4) predates it and is still reported, while release/v5.4 --
+# which carries the fixes and reports 5.4.4 until 5.4.5 is released -- is not.
+#
+# Every CVE below is pinned by NVD to 5.4.4 on the 5.4 line and patched in
+# 5.4.5; the fixes are already merged on release/v5.4 (fix commit cited in each
+# reason). Once version.cmake is bumped to 5.4.5, NVD no longer matches and
+# these entries become no-ops that can be removed.
+
+CVE-2026-45160:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.4.4:*:*:*:*:*:*:*
+  reason: >-
+    Out-of-bounds read in the DHCP server option parser
+    (components/lwip/apps/dhcpserver/dhcpserver.c). Fixed on release/v5.4,
+    patched in 5.4.5 (commit 2bf4dd12002d). The branch still reports 5.4.4
+    until 5.4.5 is released.
+
+CVE-2026-45541:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.4.4:*:*:*:*:*:*:*
+  reason: >-
+    NULL-pointer dereference in the esp_http_server WebSocket
+    subprotocol-negotiation path (components/esp_http_server/src/httpd_ws.c).
+    Fixed on release/v5.4, patched in 5.4.5 (commit 37508ab91124). The branch
+    still reports 5.4.4 until 5.4.5 is released.
+
+CVE-2026-45542:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.4.4:*:*:*:*:*:*:*
+  reason: >-
+    Heap buffer overflow in the protocomm SRP6a session setup
+    (handle_session_command0() in
+    components/protocomm/src/security/security2.c) from an unbounded username
+    length copy. Fixed on release/v5.4, patched in 5.4.5 (commit f5d24a7e919b).
+    The branch still reports 5.4.4 until 5.4.5 is released.
+
+CVE-2026-46532:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.4.4:*:*:*:*:*:*:*
+  reason: >-
+    Out-of-bounds read in the BlueDroid AVRCP vendor-command parser
+    (avrc_pars_vendor_cmd() in
+    components/bt/host/bluedroid/stack/avrc/avrc_pars_tg.c). Fixed on
+    release/v5.4, patched in 5.4.5 (commit 56053c4d1f37). The branch still
+    reports 5.4.4 until 5.4.5 is released.
