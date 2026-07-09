@@ -196,7 +196,11 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     status = psa_cipher_update(&cur_session->ctx_aes, cur_session->client_pubkey, sizeof(cur_session->client_pubkey), outbuf, PUBLIC_KEY_LEN, &outlen);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed at psa_cipher_update with error code : %d", status);
+        psa_cipher_abort(&cur_session->ctx_aes);
+        psa_destroy_key(key_id);
         free(outbuf);
+        free(out_resp);
+        free(out);
         return ESP_FAIL;
     }
 
