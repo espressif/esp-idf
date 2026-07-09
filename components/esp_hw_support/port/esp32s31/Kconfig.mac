@@ -1,6 +1,6 @@
 choice ESP32S31_UNIVERSAL_MAC_ADDRESSES
     bool "Number of universally administered (by IEEE) MAC address"
-    default ESP32S31_UNIVERSAL_MAC_ADDRESSES_FOUR
+    default ESP32S31_UNIVERSAL_MAC_ADDRESSES_TWO
     help
         Configure the number of universally administered (by IEEE) MAC addresses.
         During initialization, MAC addresses for each network interface are generated or derived from a
@@ -13,9 +13,9 @@ choice ESP32S31_UNIVERSAL_MAC_ADDRESSES
         and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet)
         receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC
         addresses, respectively.
-        When using the default (Espressif-assigned) base MAC address, either setting can be used. When using
-        a custom universal MAC address range, the correct setting will depend on the allocation of MAC
-        addresses in this range (either 2 or 4 per device.)
+        ESP32-S31 only provides two universally administered MAC addresses in eFuse, so "Two" is the
+        recommended and default setting. "Four" is only intended for use with a custom base MAC range
+        where four universally administered MAC addresses are allocated per device.
 
     config ESP32S31_UNIVERSAL_MAC_ADDRESSES_TWO
         bool "Two"
