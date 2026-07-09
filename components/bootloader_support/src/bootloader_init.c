@@ -119,6 +119,7 @@ void bootloader_enable_random(void)
 
 void bootloader_print_banner(void)
 {
+#if BOOTLOADER_BUILD
     if (CONFIG_BOOTLOADER_LOG_LEVEL >= ESP_LOG_INFO) {
         const esp_bootloader_desc_t *desc = esp_bootloader_get_description();
         ESP_EARLY_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", desc->idf_ver);
@@ -126,6 +127,7 @@ void bootloader_print_banner(void)
         ESP_EARLY_LOGI(TAG, "compile time %s", desc->date_time);
 #endif
     }
+#endif // BOOTLOADER_BUILD
 
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #if (SOC_CPU_CORES_NUM > 1)

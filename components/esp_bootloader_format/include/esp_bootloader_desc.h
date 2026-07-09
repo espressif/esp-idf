@@ -36,6 +36,7 @@ typedef struct {
 ESP_STATIC_ASSERT(sizeof(esp_bootloader_desc_t) == 80, "esp_bootloader_desc_t should be 80 bytes");
 /** @endcond */
 
+#if BOOTLOADER_BUILD
 /**
  * @brief   Return esp_bootloader_desc structure.
  *
@@ -43,6 +44,7 @@ ESP_STATIC_ASSERT(sizeof(esp_bootloader_desc_t) == 80, "esp_bootloader_desc_t sh
  * @return Pointer to esp_bootloader_desc structure.
  */
 const esp_bootloader_desc_t *esp_bootloader_get_description(void);
+#endif // BOOTLOADER_BUILD
 
 #ifdef __cplusplus
 }
