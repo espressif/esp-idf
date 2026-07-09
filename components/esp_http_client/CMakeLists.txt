@@ -1,7 +1,7 @@
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-    set(req lwip esp_event)
+    set(req lwip esp_event esp_security)
 else()
-    set(req linux esp_event)
+    set(req linux esp_event esp_security)
 endif()
 
 idf_component_register(SRCS "esp_http_client.c"

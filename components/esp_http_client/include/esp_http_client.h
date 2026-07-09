@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_key_config.h"
 #include <sys/socket.h>
 
 #ifdef __cplusplus
@@ -200,6 +201,7 @@ typedef struct {
                                                      DER Certificate - Length of the buffer pointed to by client_cert_der. Should be the length of the certificate. */
     const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
+    const esp_key_config_t      *client_key;         /*!< Unified client key configuration. Takes precedence over client_key_pem when set */
     const char                  *client_key_password;      /*!< Client key decryption password string */
     size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
     esp_http_client_proto_ver_t tls_version;         /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
@@ -236,9 +238,6 @@ typedef struct {
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
     const char                  **alpn_protos;       /*!< Application protocols required for HTTP2. If HTTP2/ALPN support is required, a list of protocols that should be negotiated. The format is length followed by protocol
                                                      name. For the most common cases the following is ok: const char **alpn_protos = { "h2", NULL }; - where 'h2' is the protocol name */
-#endif
-#if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
-    bool use_secure_element;                /*!< Enable this option to use secure element */
 #endif
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */
