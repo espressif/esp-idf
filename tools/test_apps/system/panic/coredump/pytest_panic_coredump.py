@@ -136,7 +136,6 @@ def get_psram_marker(target: str) -> pytest.mark:
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_panic_extram_stack_heap_psram(dut: PanicTestDut, config: str) -> None:
     _test_panic_extram_stack_impl(dut, config)
 
@@ -149,7 +148,6 @@ def test_panic_extram_stack_heap_psram(dut: PanicTestDut, config: str) -> None:
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_panic_extram_stack_heap_bss(dut: PanicTestDut, config: str) -> None:
     _test_panic_extram_stack_impl(dut, config)
 
@@ -162,7 +160,6 @@ def test_panic_extram_stack_heap_bss(dut: PanicTestDut, config: str) -> None:
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 def test_panic_extram_stack_heap_bss_xip(dut: PanicTestDut, config: str) -> None:
     _test_panic_extram_stack_impl(dut, config)
 
