@@ -92,6 +92,7 @@ esp_err_t bitscrambler_load_program(bitscrambler_handle_t handle, const void *pr
  * @return
  *        - ESP_OK
  *        - ESP_ERR_INVALID_ARG: Invalid handle or lut pointer
+ *        - ESP_ERR_INVALID_SIZE: LUT data exceeds hardware capacity
  */
 esp_err_t bitscrambler_load_lut(bitscrambler_handle_t handle, void *lut, size_t size_bytes);
 
