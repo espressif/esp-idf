@@ -92,14 +92,29 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
     twai_ll_set_clkout(hal_ctx->dev, clkout_divider);
 }
 
+void twai_hal_get_timing_limits(twai_timing_limits_t *t_const)
+{
+    t_const->brp_min = TWAI_LL_BRP_MIN;
+    t_const->brp_max = TWAI_LL_BRP_MAX;
+    t_const->brp_inc = 2;   // see `twai_ll_check_brp_validation()`
+    t_const->prop_min = 0;  // hardware don't support prop_seg
+    t_const->prop_max = TWAI_LL_PROP_MAX;
+    t_const->tseg1_min = TWAI_LL_TSEG1_MIN;
+    t_const->tseg1_max = TWAI_LL_TSEG1_MAX;
+    t_const->tseg2_min = TWAI_LL_TSEG2_MIN;
+    t_const->tseg2_max = TWAI_LL_TSEG2_MAX;
+    t_const->sjw_max = TWAI_LL_SJW_MAX;
+}
+
 bool twai_hal_check_timing_valid(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config, bool is_fd)
 {
     (void) is_fd;
     bool valid = true;
     if (t_config) {
+        int hw_seg1 = t_config->tseg_1 + t_config->prop_seg;
         valid &= twai_ll_check_brp_validation(t_config->brp);
         valid &= (t_config->sjw >= 1) && (t_config->sjw <= TWAI_LL_SJW_MAX);
-        valid &= (t_config->tseg_1 >= TWAI_LL_TSEG1_MIN) && (t_config->tseg_1 <= TWAI_LL_TSEG1_MAX);
+        valid &= (hw_seg1 >= TWAI_LL_TSEG1_MIN) && (hw_seg1 <= TWAI_LL_TSEG1_MAX);
         valid &= (t_config->tseg_2 >= TWAI_LL_TSEG2_MIN) && (t_config->tseg_2 <= TWAI_LL_TSEG2_MAX);
     }
     return valid;

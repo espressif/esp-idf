@@ -75,6 +75,24 @@ typedef struct {
 } twai_timing_advanced_config_t;
 
 /**
+ * @brief TWAI hardware-dependent timing limits const
+ *
+ * Used for calculating and checking bit-timing parameters
+ */
+typedef struct {
+    uint32_t brp_min;       /**< Bit-rate prescaler minimum value */
+    uint32_t brp_max;       /**< Bit-rate prescaler maximum value */
+    uint32_t brp_inc;       /**< Bit-rate prescaler increment step */
+    uint32_t prop_min;      /**< Propagation segment minimum value */
+    uint32_t prop_max;      /**< Propagation segment maximum value */
+    uint32_t tseg1_min;     /**< Time segment 1 (phase_seg1) minimum value */
+    uint32_t tseg1_max;     /**< Time segment 1 (phase_seg1) maximum value */
+    uint32_t tseg2_min;     /**< Time segment 2 (phase_seg2) minimum value */
+    uint32_t tseg2_max;     /**< Time segment 2 (phase_seg2) maximum value */
+    uint32_t sjw_max;       /**< Synchronisation jump width maximum value */
+} twai_timing_limits_t;
+
+/**
  * @brief Configuration for TWAI mask filter
  */
 typedef struct {

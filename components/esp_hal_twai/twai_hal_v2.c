@@ -48,6 +48,34 @@ void twai_hal_deinit(twai_hal_context_t *hal_ctx)
     memset(hal_ctx, 0, sizeof(twai_hal_context_t));
 }
 
+void twai_hal_get_timing_limits(twai_timing_limits_t *t_const)
+{
+    t_const->brp_min = TWAI_LL_BRP_MIN;
+    t_const->brp_max = TWAI_LL_BRP_MAX;
+    t_const->brp_inc = 1;
+    t_const->prop_min = 1;
+    t_const->prop_max = TWAI_LL_PROP_MAX;
+    t_const->tseg1_min = TWAI_LL_TSEG1_MIN;
+    t_const->tseg1_max = TWAI_LL_TSEG1_MAX;
+    t_const->tseg2_min = TWAI_LL_TSEG2_MIN;
+    t_const->tseg2_max = TWAI_LL_TSEG2_MAX;
+    t_const->sjw_max = TWAI_LL_SJW_MAX;
+}
+
+void twai_hal_get_timing_limits_fd(twai_timing_limits_t *t_const_fd)
+{
+    t_const_fd->brp_min = TWAI_LL_BRP_MIN;
+    t_const_fd->brp_max = TWAI_LL_BRP_MAX_FD;
+    t_const_fd->brp_inc = 1;
+    t_const_fd->prop_min = 1;
+    t_const_fd->prop_max = TWAI_LL_PROP_MAX_FD;
+    t_const_fd->tseg1_min = TWAI_LL_TSEG1_MIN;
+    t_const_fd->tseg1_max = TWAI_LL_TSEG1_MAX_FD;
+    t_const_fd->tseg2_min = TWAI_LL_TSEG2_MIN;
+    t_const_fd->tseg2_max = TWAI_LL_TSEG2_MAX_FD;
+    t_const_fd->sjw_max = TWAI_LL_SJW_MAX_FD;
+}
+
 bool twai_hal_check_timing_valid(twai_hal_context_t *hal_ctx, const twai_timing_advanced_config_t *t_config, bool is_fd)
 {
     bool valid = true;

@@ -133,6 +133,20 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
 void twai_hal_deinit(twai_hal_context_t *hal_ctx);
 
 /**
+ * @brief Get the hardware-dependent timing limits const
+ *
+ * @param t_const Pointer to timing limits const structure
+ */
+void twai_hal_get_timing_limits(twai_timing_limits_t *t_const);
+
+/**
+ * @brief Get the hardware-dependent timing limits const for FD data timing
+ *
+ * @param t_const_fd Pointer to timing limits const structure for FD data
+ */
+void twai_hal_get_timing_limits_fd(twai_timing_limits_t *t_const_fd);
+
+/**
  * @brief Configure the TWAI peripheral for legacy driver (deprecated)
  *
  * @param hal_ctx Context of the HAL layer

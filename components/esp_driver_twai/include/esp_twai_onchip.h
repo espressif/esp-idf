@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +100,15 @@ static inline twai_mask_filter_config_t twai_make_dual_filter(uint32_t id1, uint
     }
     return dual_cfg;
 }
+
+/**
+ * @brief Get the hardware-dependent timing limits
+ *
+ * @param[in]  is_fd          True for FD data timing, false for classic timing
+ * @param[out] timing_limits  Pointer to timing limits structure
+ * @return ESP_OK if successful, ESP_ERR_INVALID_ARG if invalid argument
+ */
+esp_err_t twai_node_onchip_get_timing_limits(bool is_fd, twai_timing_limits_t *timing_limits);
 
 #ifdef __cplusplus
 }
