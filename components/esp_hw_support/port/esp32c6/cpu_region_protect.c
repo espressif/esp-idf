@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,18 +133,41 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_SET(0, pmpaddr0, PMP_NAPOT | RWX);
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
-    // 2.1 I/D-ROM
+    // 2.1 I-ROM
     PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
     PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
-    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
+    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I-ROM region");
+
+    /* 2.2 D-ROM - redundant with the I-ROM entry above (same range, already
+     * locked RX); kept as a separate pair only to pin the app's IRAM/DRAM split
+     * to entries 5-7.
+     *
+     * C6's ROM mask is not a power of two, so ROM needs a TOR pair on entries
+     * 1-2. Commit d4167fea60c (v6.0) dropped this D-ROM pair and moved the split
+     * down onto entries 3-4 - which bootloaders up to v5.2.1 lock as D-ROM. A
+     * locked PMP entry can't be reconfigured until CPU reset, so such an app
+     * can't gain IRAM execute permission and resets before app_main() (GitHub
+     * #18769). v5.2.2 freed 3-4, so only pre-v5.2.2 C6 bootloaders break.
+     *
+     * CFG_RESET clears stale config a v6.0/v6.0.1 bootloader left here
+     * (PMP_ENTRY_SET only ORs bits); no-op once 3-4 are locked. CONDITIONAL_*
+     * keeps 3-4 locked in the app but unlocked in the bootloader (redundant, so
+     * no protection lost), letting a future app reclaim them once pre-v5.2.2
+     * bootloaders are out of support.
+     */
+    PMP_ENTRY_CFG_RESET(3);
+    PMP_ENTRY_CFG_RESET(4);
+    PMP_ENTRY_SET(3, SOC_DROM_MASK_LOW, CONDITIONAL_NONE);
+    PMP_ENTRY_SET(4, SOC_DROM_MASK_HIGH, PMP_TOR | CONDITIONAL_R);
+    _Static_assert(SOC_DROM_MASK_LOW < SOC_DROM_MASK_HIGH, "Invalid D-ROM region");
 
     if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode
         ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
 
         // 3. IRAM and DRAM
-        const uint32_t pmpaddr3 = PMPADDR_NAPOT(SOC_IRAM_LOW, SOC_IRAM_HIGH);
-        PMP_ENTRY_SET(3, pmpaddr3, PMP_NAPOT | RWX);
+        const uint32_t pmpaddr5 = PMPADDR_NAPOT(SOC_IRAM_LOW, SOC_IRAM_HIGH);
+        PMP_ENTRY_SET(5, pmpaddr5, PMP_NAPOT | RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
     } else {
 #if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && !BOOTLOADER_BUILD
@@ -153,16 +176,16 @@ void esp_cpu_configure_region_protection(void)
         /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
          * Bootloader might have given extra permissions and those won't be cleared
          */
-        PMP_ENTRY_CFG_RESET(3);
-        PMP_ENTRY_CFG_RESET(4);
         PMP_ENTRY_CFG_RESET(5);
-        PMP_ENTRY_SET(3, SOC_IRAM_LOW, NONE);
-        PMP_ENTRY_SET(4, (int)&_iram_text_end, PMP_TOR | RX);
-        PMP_ENTRY_SET(5, SOC_DRAM_HIGH, PMP_TOR | RW);
+        PMP_ENTRY_CFG_RESET(6);
+        PMP_ENTRY_CFG_RESET(7);
+        PMP_ENTRY_SET(5, SOC_IRAM_LOW, NONE);
+        PMP_ENTRY_SET(6, (int)&_iram_text_end, PMP_TOR | RX);
+        PMP_ENTRY_SET(7, SOC_DRAM_HIGH, PMP_TOR | RW);
 #else
         // 3. IRAM and DRAM
-        const uint32_t pmpaddr3 = PMPADDR_NAPOT(SOC_IRAM_LOW, SOC_IRAM_HIGH);
-        PMP_ENTRY_SET(3, pmpaddr3, PMP_NAPOT | CONDITIONAL_RWX);
+        const uint32_t pmpaddr5 = PMPADDR_NAPOT(SOC_IRAM_LOW, SOC_IRAM_HIGH);
+        PMP_ENTRY_SET(5, pmpaddr5, PMP_NAPOT | CONDITIONAL_RWX);
         _Static_assert(SOC_IRAM_LOW < SOC_IRAM_HIGH, "Invalid RAM region");
 #endif
     }
@@ -175,16 +198,16 @@ void esp_cpu_configure_region_protection(void)
     const uint32_t drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
     // 4. I_Cache / D_Cache (flash)
-    PMP_ENTRY_CFG_RESET(6);
-    PMP_ENTRY_CFG_RESET(7);
     PMP_ENTRY_CFG_RESET(8);
-    PMP_ENTRY_SET(6, SOC_IROM_LOW, NONE);
-    PMP_ENTRY_SET(7, irom_resv_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(8, drom_resv_end, PMP_TOR | R);
+    PMP_ENTRY_CFG_RESET(9);
+    PMP_ENTRY_CFG_RESET(10);
+    PMP_ENTRY_SET(8, SOC_IROM_LOW, NONE);
+    PMP_ENTRY_SET(9, irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(10, drom_resv_end, PMP_TOR | R);
 #else
     // 4. I_Cache / D_Cache (flash)
-    const uint32_t pmpaddr6 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
-    PMP_ENTRY_SET(6, pmpaddr6, PMP_NAPOT | CONDITIONAL_RX);
+    const uint32_t pmpaddr8 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_ENTRY_SET(8, pmpaddr8, PMP_NAPOT | CONDITIONAL_RX);
     _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
 #endif
 
@@ -195,28 +218,28 @@ void esp_cpu_configure_region_protection(void)
     /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
      * Bootloader might have given extra permissions and those won't be cleared
      */
-    PMP_ENTRY_CFG_RESET(9);
-    PMP_ENTRY_CFG_RESET(10);
     PMP_ENTRY_CFG_RESET(11);
     PMP_ENTRY_CFG_RESET(12);
-    PMP_ENTRY_SET(9, SOC_RTC_IRAM_LOW, NONE);
+    PMP_ENTRY_CFG_RESET(13);
+    PMP_ENTRY_CFG_RESET(14);
+    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW, NONE);
 
     // First part of LP mem is reserved for ULP coprocessor
 #if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
-    PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RWX);
+    PMP_ENTRY_SET(12, (int)&_rtc_text_start, PMP_TOR | RWX);
 #else
-    PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RW);
+    PMP_ENTRY_SET(12, (int)&_rtc_text_start, PMP_TOR | RW);
 #endif
-    PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+    PMP_ENTRY_SET(13, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(14, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
 #else
-    const uint32_t pmpaddr9 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
-    PMP_ENTRY_SET(9, pmpaddr9, PMP_NAPOT | CONDITIONAL_RWX);
+    const uint32_t pmpaddr11 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
+    PMP_ENTRY_SET(11, pmpaddr11, PMP_NAPOT | CONDITIONAL_RWX);
     _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
 #endif
 
     // 6. Peripheral addresses
-    const uint32_t pmpaddr13 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_ENTRY_SET(13, pmpaddr13, PMP_NAPOT | RW);
+    const uint32_t pmpaddr15 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_ENTRY_SET(15, pmpaddr15, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
