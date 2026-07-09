@@ -155,7 +155,7 @@ typedef struct {
 esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config_t *config, adc_cali_handle_t *ret_handle)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(config && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(config && ret_handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC unit");
     ESP_RETURN_ON_FALSE(config->atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC attenuation");
     ESP_RETURN_ON_FALSE(((config->bitwidth >= ADC_LL_RTC_MIN_BITWIDTH && config->bitwidth <= ADC_LL_RTC_MAX_BITWIDTH) || config->bitwidth == ADC_BITWIDTH_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "invalid bitwidth");
@@ -205,6 +205,9 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     return ESP_OK;
 
 err:
+    if (chars) {
+        free(chars);
+    }
     if (scheme) {
         free(scheme);
     }
