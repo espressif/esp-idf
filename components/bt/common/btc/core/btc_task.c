@@ -548,14 +548,26 @@ error_exit:;
 bt_status_t btc_init(void)
 {
     const size_t workqueue_len[] = {BTC_TASK_WORKQUEUE0_LEN, BTC_TASK_WORKQUEUE1_LEN};
+
+    /* The osi_event subsystem must be ready before any osi_event_create()
+     * (e.g. btc_gap_ble_init() below). It cannot live in osi_init(), which
+     * runs later in the BTC task via bte_main_boot_entry(). */
+    if (osi_thread_event_init() != 0) {
+        return BT_STATUS_NOMEM;
+    }
+
     btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE,
                                    BTC_TASK_WORKQUEUE_NUM, workqueue_len);
     if (btc_thread == NULL) {
+        osi_thread_event_deinit();
         return BT_STATUS_NOMEM;
     }
 
 #if BTC_DYNAMIC_MEMORY
     if (btc_init_mem() != BT_STATUS_SUCCESS){
+        osi_thread_free(btc_thread);
+        btc_thread = NULL;
+        osi_thread_event_deinit();
         return BT_STATUS_NOMEM;
     }
 #endif
@@ -605,6 +617,12 @@ void btc_deinit(void)
 
     osi_thread_free(btc_thread);
     btc_thread = NULL;
+
+    /* Tear down the osi_event subsystem last: btc_gap_ble_deinit() above may
+     * still call osi_event_delete(), which needs the global event lock. This
+     * mirrors moving osi_thread_event_init() into btc_init(); osi_deinit()
+     * (run earlier via bte_main_shutdown()) no longer owns this lifecycle. */
+    osi_thread_event_deinit();
 }
 
 int get_btc_work_queue_size(void)

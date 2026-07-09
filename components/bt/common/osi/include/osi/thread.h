@@ -36,7 +36,7 @@ typedef enum {
  * param stack_size: thread stack size
  * param priority: thread priority
  * param core: the CPU core which this thread run, OSI_THREAD_CORE_AFFINITY means unspecific CPU core
- * param work_queue_num: speicify queue number, the queue[0] has highest priority, and the priority is decrease by index
+ * param work_queue_num: specify queue number, the queue[0] has highest priority, and the priority is decrease by index
  * return : if create successfully, return thread handler; otherwise return NULL.
  */
 osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[]);
@@ -116,5 +116,8 @@ void osi_event_delete(struct osi_event* event);
  *       are expected to post the event sometime later to get the work handled.
  */
 bool osi_thread_post_event(struct osi_event *event, uint32_t timeout);
+
+int osi_thread_event_init(void);
+void osi_thread_event_deinit(void);
 
 #endif /* __THREAD_H__ */
