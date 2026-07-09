@@ -689,6 +689,71 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
     return ESP_OK;
 }
 
+esp_err_t httpd_ws_recv_control_frame(httpd_req_t *req, httpd_ws_frame_t *frame,
+                                      uint8_t *buf, size_t max_len)
+{
+    /* The opcode/FIN were already decoded by httpd_ws_get_frame_type(); a zeroed
+     * frame (len == 0) makes httpd_ws_recv_frame() read the remaining header and
+     * payload. Control payloads are <= 125 bytes (RFC 6455 §5.5). */
+    memset(frame, 0, sizeof(*frame));
+    frame->payload = buf;
+    if (httpd_ws_recv_frame(req, frame, max_len) != ESP_OK) {
+        ESP_LOGD(TAG, LOG_FMT("Cannot receive the full control frame"));
+        return ESP_ERR_INVALID_STATE;
+    }
+    return ESP_OK;
+}
+
+esp_err_t httpd_ws_reply_to_control_frame(httpd_req_t *req, httpd_ws_frame_t *frame)
+{
+    switch (frame->type) {
+    case HTTPD_WS_TYPE_PING:
+        /* Reply to a PING with a PONG echoing the payload (RFC 6455 §5.5.2/5.5.3) */
+        ESP_LOGD(TAG, LOG_FMT("Got a WS PING frame, Replying PONG..."));
+        frame->type = HTTPD_WS_TYPE_PONG;
+        return httpd_ws_send_frame(req, frame);
+    case HTTPD_WS_TYPE_CLOSE:
+        /* Reply to a CLOSE with an empty CLOSE (RFC 6455 §5.5.1) */
+        ESP_LOGD(TAG, LOG_FMT("Got a WS CLOSE frame, Replying CLOSE..."));
+        frame->len = 0;
+        frame->payload = NULL;
+        return httpd_ws_send_frame(req, frame);
+    default:
+        /* PONG and any other control frame require no reply */
+        return ESP_OK;
+    }
+}
+
+esp_err_t httpd_ws_handle_control_frame(httpd_req_t *req)
+{
+    struct httpd_req_aux *aux = req->aux;
+    if (aux == NULL || aux->sd == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    struct sock_db *sd = aux->sd;
+
+    /* The server receives the control-frame body itself. Oversized or malformed
+     * frames are rejected by the max_len cap (zero-trust on client input). */
+    httpd_ws_frame_t frame;
+    uint8_t frame_buf[HTTPD_WS_CTRL_FRAME_BUF_LEN] = { 0 };
+    esp_err_t ret = httpd_ws_recv_control_frame(req, &frame, frame_buf, HTTPD_WS_CTRL_FRAME_MAX_LEN);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    /* Notify the user's control handler with a read-only view of the frame. */
+    esp_err_t handler_ret = ESP_OK;
+    if (sd->ws_control_handler != NULL) {
+        handler_ret = sd->ws_control_handler(req, &frame);
+    }
+
+    /* The server always performs the protocol reply (PONG for PING, CLOSE for
+     * CLOSE). If the handler failed, still reply, then propagate the error so the
+     * caller closes the socket. */
+    esp_err_t reply_ret = httpd_ws_reply_to_control_frame(req, &frame);
+    return (handler_ret != ESP_OK) ? handler_ret : reply_ret;
+}
+
 esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
 {
     esp_err_t ret = httpd_ws_check_req(req);
@@ -756,48 +821,21 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     }
 #endif /* CONFIG_HTTPD_WS_STRICTER_RFC6455 */
 
-    /* If userspace requests control frames, do not deal with the control frames */
+    /* If userspace requests control frames, do not deal with the control frames here */
     if (!sd->ws_control_frames) {
         ESP_LOGD(TAG, LOG_FMT("Handler not requests control frames"));
 
-        /* Reply to PING. For PONG and CLOSE, it will be handled elsewhere. */
-        if (aux->ws_type == HTTPD_WS_TYPE_PING) {
-            ESP_LOGD(TAG, LOG_FMT("Got a WS PING frame, Replying PONG..."));
-
-            /* Read the rest of the PING frame, for PONG to reply back. */
-            /* Please refer to RFC6455 Section 5.5.2 for more details */
+        /* Auto-handle PING and CLOSE: receive the body, then send the reply. PONG is
+         * deliberately not consumed here; it is dispatched to the data handler elsewhere. */
+        if (aux->ws_type == HTTPD_WS_TYPE_PING || aux->ws_type == HTTPD_WS_TYPE_CLOSE) {
             httpd_ws_frame_t frame;
-            uint8_t frame_buf[128] = { 0 };
-            memset(&frame, 0, sizeof(httpd_ws_frame_t));
-            frame.payload = frame_buf;
-
-            if (httpd_ws_recv_frame(req, &frame, 126) != ESP_OK) {
-                ESP_LOGD(TAG, LOG_FMT("Cannot receive the full PING frame"));
-                return ESP_ERR_INVALID_STATE;
+            uint8_t frame_buf[HTTPD_WS_CTRL_FRAME_BUF_LEN] = { 0 };
+            esp_err_t recv_frame_ret = httpd_ws_recv_control_frame(req, &frame, frame_buf,
+                                                                   HTTPD_WS_CTRL_FRAME_MAX_LEN);
+            if (recv_frame_ret != ESP_OK) {
+                return recv_frame_ret;
             }
-
-            /* Now turn the frame to PONG */
-            frame.type = HTTPD_WS_TYPE_PONG;
-            return httpd_ws_send_frame(req, &frame);
-        } else if (aux->ws_type == HTTPD_WS_TYPE_CLOSE) {
-            ESP_LOGD(TAG, LOG_FMT("Got a WS CLOSE frame, Replying CLOSE..."));
-
-            /* Read the rest of the CLOSE frame and response */
-            /* Please refer to RFC6455 Section 5.5.1 for more details */
-            httpd_ws_frame_t frame;
-            uint8_t frame_buf[128] = { 0 };
-            memset(&frame, 0, sizeof(httpd_ws_frame_t));
-            frame.payload = frame_buf;
-
-            if (httpd_ws_recv_frame(req, &frame, 126) != ESP_OK) {
-                ESP_LOGD(TAG, LOG_FMT("Cannot receive the full CLOSE frame"));
-                return ESP_ERR_INVALID_STATE;
-            }
-
-            frame.len = 0;
-            frame.type = HTTPD_WS_TYPE_CLOSE;
-            frame.payload = NULL;
-            return httpd_ws_send_frame(req, &frame);
+            return httpd_ws_reply_to_control_frame(req, &frame);
         }
     }
     return ESP_OK;

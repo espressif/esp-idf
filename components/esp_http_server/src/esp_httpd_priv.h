@@ -89,6 +89,7 @@ struct sock_db {
     bool ws_close;                          /*!< Set to true to close the socket later (when WS Close frame received) */
     esp_err_t (*ws_handler)(httpd_req_t *r);   /*!< WebSocket handler, leave to null if it's not WebSocket */
     bool ws_control_frames;                         /*!< WebSocket flag indicating that control frames should be passed to user handlers */
+    esp_err_t (*ws_control_handler)(httpd_req_t *r, const httpd_ws_frame_t *frame); /*!< Dedicated WebSocket control-frame handler, NULL if not used */
     void *ws_user_ctx;                         /*!< Pointer to user context data which will be available to handler for websocket*/
 #endif
 };
@@ -552,6 +553,61 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
  *  - ESP_FAIL                      : Socket failures
  */
 esp_err_t httpd_ws_get_frame_type(httpd_req_t *req);
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+/* Control frames carry at most 125 bytes of payload (RFC 6455 §5.5). These values
+ * match the historical auto-reply path: a 128-byte receive buffer, and a 126-byte
+ * cap passed to httpd_ws_recv_frame(). */
+#define HTTPD_WS_CTRL_FRAME_BUF_LEN     128
+#define HTTPD_WS_CTRL_FRAME_MAX_LEN     126
+
+/**
+ * @brief   Receive the body of a WebSocket control frame into a caller buffer.
+ *
+ * @note    The opcode/FIN must already have been decoded by httpd_ws_get_frame_type().
+ *          On success @p frame describes the received (unmasked) control frame with
+ *          @p frame->payload pointing into @p buf.
+ *
+ * @param[in]  req      WebSocket request
+ * @param[out] frame    Frame descriptor to populate
+ * @param[in]  buf      Caller-owned buffer of at least HTTPD_WS_CTRL_FRAME_BUF_LEN bytes
+ * @param[in]  max_len  Maximum payload length to accept
+ * @return
+ *  - ESP_OK                : Frame received
+ *  - ESP_ERR_INVALID_STATE : Frame could not be fully received
+ */
+esp_err_t httpd_ws_recv_control_frame(httpd_req_t *req, httpd_ws_frame_t *frame, uint8_t *buf, size_t max_len);
+
+/**
+ * @brief   Send the protocol reply for a received WebSocket control frame.
+ *
+ * @note    PING is answered with a PONG echoing the payload; CLOSE is answered with
+ *          an empty CLOSE; all other control frames (e.g. PONG) require no reply.
+ *
+ * @param[in] req    WebSocket request
+ * @param[in] frame  Control frame previously received (modified in place)
+ * @return
+ *  - ESP_OK  : Reply sent (or none needed)
+ *  - others  : Socket send failure
+ */
+esp_err_t httpd_ws_reply_to_control_frame(httpd_req_t *req, httpd_ws_frame_t *frame);
+
+/**
+ * @brief   Handle an incoming WebSocket control frame via the dedicated control handler.
+ *
+ * @note    Used only when a ws_control_handler is registered (handle_ws_control_frames
+ *          must be true). The server receives the frame body, passes a read-only view
+ *          to the control handler, then performs the protocol reply itself. If the
+ *          control handler returns an error, the reply is still sent and the error is
+ *          propagated so the caller closes the socket.
+ *
+ * @param[in] req    WebSocket request
+ * @return
+ *  - ESP_OK  : Control frame handled and replied
+ *  - others  : Control handler error, or frame could not be received/replied
+ */
+esp_err_t httpd_ws_handle_control_frame(httpd_req_t *req);
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 /**
  * @brief   Trigger an httpd session close externally
