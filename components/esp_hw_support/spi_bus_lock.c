@@ -705,9 +705,15 @@ void spi_bus_lock_unregister_dev(spi_bus_lock_dev_handle_t dev_handle)
 
     spi_bus_lock_t* lock = dev_handle->parent;
     BUS_LOCK_DEBUG_EXECUTE_CHECK(atomic_load(&lock->dev[id]) == (intptr_t)dev_handle);
+    BUS_LOCK_DEBUG_EXECUTE_CHECK(lock->acquiring_dev != dev_handle);
+    BUS_LOCK_DEBUG_EXECUTE_CHECK((lock_status_fetch(lock) & dev_handle->mask) == 0);
 
     if (lock->last_dev == dev_handle) {
         lock->last_dev = NULL;
+    }
+    if (lock->acquiring_dev == dev_handle) {
+        lock->acquiring_dev = NULL;
+        lock->acq_dev_bg_active = false;
     }
 
     atomic_store(&lock->dev[id], (intptr_t)NULL);
@@ -733,6 +739,11 @@ void spi_bus_lock_set_bg_control(spi_bus_lock_handle_t lock, bg_ctrl_func_t bg_e
     lock->bg_enable = bg_enable;
     lock->bg_disable = bg_disable;
     lock->bg_arg = arg;
+}
+
+IRAM_ATTR spi_bus_lock_handle_t spi_bus_lock_get_parent(spi_bus_lock_dev_handle_t dev_handle)
+{
+    return (dev_handle ? dev_handle->parent : NULL);
 }
 
 IRAM_ATTR int spi_bus_lock_get_dev_id(spi_bus_lock_dev_handle_t dev_handle)

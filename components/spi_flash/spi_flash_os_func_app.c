@@ -488,9 +488,15 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, spi_bus_lo
 
 esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip, spi_bus_lock_dev_handle_t* out_dev_handle)
 {
+    *out_dev_handle = NULL;
     if (chip->os_func_data) {
+        app_func_arg_t *ctx = (app_func_arg_t*)chip->os_func_data;
+        spi_bus_lock_dev_handle_t dev_handle = ctx->dev_lock;
+        if (dev_handle && spi_bus_lock_get_acquiring_dev(spi_bus_lock_get_parent(dev_handle)) == dev_handle) {
+            return ESP_ERR_INVALID_STATE;
+        }
         // SPI bus lock is possibly not used on SPI1 bus
-        *out_dev_handle = ((app_func_arg_t*)chip->os_func_data)->dev_lock;
+        *out_dev_handle = dev_handle;
         free(chip->os_func_data);
     }
     chip->os_func = NULL;
