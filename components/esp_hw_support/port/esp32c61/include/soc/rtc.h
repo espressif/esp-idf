@@ -66,15 +66,15 @@ set pvt default param
 */
 #define PVT_CHANNEL0_SEL        33
 #define PVT_CHANNEL1_SEL        37
-#define PVT_CHANNEL0_CFG        0x13e80
-#define PVT_CHANNEL1_CFG        0x13e80
+#define PVT_CHANNEL0_CFG        0x11fff
+#define PVT_CHANNEL1_CFG        0x17fff
 #define PVT_CHANNEL2_CFG        0x10000
 #define PVT_CMD0                0x24
 #define PVT_CMD1                0x5
 #define PVT_CMD2                0x427
 #define PVT_TARGET              0xffff
 #define PVT_CLK_DIV             1
-#define PVT_DELAY_NUM_HIGH      142
+#define PVT_DELAY_NUM_HIGH      145
 #define PVT_DELAY_NUM_LOW       135
 #define PVT_PUMP_CHANNEL_CODE   1
 #define PVT_PUMP_BITMAP         22
