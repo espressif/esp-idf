@@ -221,3 +221,35 @@
     1:
 #endif
 .endm
+
+/**
+ * VALIDATE_REE_SP
+ * Validate an REE-supplied sp before the TEE stores through it. The TEE region is
+ * at the bottom of SRAM, so a valid REE frame [sp - framesz, sp) must lie in the
+ * band above it and below the peripheral window: [SOC_S_DRAM_END, SOC_PERIPHERAL_LOW].
+ * An out-of-bound sp will lead to a fault.
+ *
+ * With chk_priv (default) the check is skipped unless the trap came from U-mode;
+ * pass chk_priv=0 where the U-mode origin is already guaranteed (ecall-from-U).
+ *
+ * TODO: Revisit these bounds for high-performance RISC-V SoCs (e.g. ESP32-P4,
+ * ESP32-S31) with different memory maps than current ESP-TEE targets.
+ *
+ * Clobbers: \tx
+ */
+.macro VALIDATE_REE_SP framesz, tx, chk_priv=1
+.if \chk_priv
+    /* Skip validation unless the previous privilege (mstatus.MPP) was U-mode */
+    csrr    \tx, mstatus
+    srli    \tx, \tx, MSTATUS_MPP_SHIFT
+    andi    \tx, \tx, (MSTATUS_MPP >> MSTATUS_MPP_SHIFT)
+    bnez    \tx, 1f
+.endif
+    li      \tx, (SOC_S_DRAM_END + \framesz)
+    bltu    sp, \tx, _tee_sp_reject      /* frame would dip into the TEE (or sub-TEE) region */
+    li      \tx, SOC_PERIPHERAL_LOW
+    bltu    \tx, sp, _tee_sp_reject      /* sp at/above the peripheral window */
+.if \chk_priv
+1:
+.endif
+.endm
