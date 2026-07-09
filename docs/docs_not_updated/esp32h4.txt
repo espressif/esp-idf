@@ -108,7 +108,6 @@ api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/sdspi_share.rst
 api-reference/peripherals/ana_cmpr.rst
-api-reference/peripherals/hmac.rst
 api-reference/peripherals/key_manager.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/vad.rst
@@ -116,14 +115,12 @@ api-reference/peripherals/i2s.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/lp_i2s.rst
-api-reference/peripherals/ecdsa.rst
 api-reference/peripherals/spi_flash/index.rst
 api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
 api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
 api-reference/peripherals/spi_flash/spi_flash_optional_feature.rst
 api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom.rst
 api-reference/peripherals/sdmmc_host.rst
-api-reference/system/random.rst
 api-reference/system/mm_sync.rst
 api-reference/system/mm.rst
 api-reference/system/esp_https_ota.rst
@@ -131,13 +128,6 @@ api-reference/system/sleep_modes.rst
 api-reference/system/ota.rst
 api-reference/system/inc/power_management_esp32h4.rst
 api-reference/system/power_management.rst
-security/index.rst
-security/flash-encryption.rst
-security/secure-boot-v1.rst
-security/security.rst
-security/security-features-enablement-workflows.rst
-security/secure-boot-v2.rst
-security/vulnerabilities.rst
 security/tee/index.rst
 security/tee/tee-advanced.rst
 security/tee/tee-sec-storage.rst
