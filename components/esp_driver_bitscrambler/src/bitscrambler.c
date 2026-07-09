@@ -23,6 +23,8 @@ static const char *TAG = "bitscrambler";
 
 #define BITSCRAMBLER_BINARY_VER 1 //max version we're compatible with
 #define BITSCRAMBLER_HW_REV 0
+// LUT index register is 11 bits wide, so the LUT address space is 2048 bytes.
+#define BITSCRAMBLER_LUT_MAX_BYTES (1U << 11)
 
 // After a reset, it can take a few cycles for the BitScrambler to actually be
 // reset. We check this many times for this; if it takes longer the hardware
@@ -241,12 +243,28 @@ esp_err_t bitscrambler_load_lut(bitscrambler_handle_t handle, void *lut, size_t 
     if (!handle || !lut) {
         return ESP_ERR_INVALID_ARG;
     }
-    uint32_t *lut_words = (uint32_t*)lut;
+    if (size_bytes > BITSCRAMBLER_LUT_MAX_BYTES) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    const uint8_t *lut_bytes = (const uint8_t *)lut;
     bitscrambler_lut_width_t lut_width = bitscrambler_ll_get_lut_width(handle->hw, handle->cfg.dir);
     bitscrambler_ll_set_lut_width(handle->hw, handle->cfg.dir, BITSCRAMBLER_LUT_WIDTH_32BIT);
     size_t size_words = (size_bytes + 3) / 4;
     for (int w = 0; w < size_words; w++) {
-        bitscrambler_ll_lutmem_write(handle->hw, handle->cfg.dir, w, lut_words[w]);
+        // Assemble each LUT entry byte-wise before writing it to hardware:
+        // 1) callers are allowed to pass unaligned buffers, so reading via a
+        //    uint32_t * could fault or perform an unaligned access on some targets;
+        // 2) the final LUT word may be only partially supplied, and copying the
+        //    valid bytes into a zero-initialized word avoids reading past the end
+        //    of the caller's buffer and leaking adjacent memory into the LUT.
+        uint32_t lut_word = 0;
+        size_t offset = w * sizeof(lut_word);
+        size_t bytes_to_copy = size_bytes - offset;
+        if (bytes_to_copy > sizeof(lut_word)) {
+            bytes_to_copy = sizeof(lut_word);
+        }
+        memcpy(&lut_word, lut_bytes + offset, bytes_to_copy);
+        bitscrambler_ll_lutmem_write(handle->hw, handle->cfg.dir, w, lut_word);
     }
     bitscrambler_ll_set_lut_width(handle->hw, handle->cfg.dir, lut_width);
     return ESP_OK;
