@@ -280,7 +280,7 @@ esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card)
         err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "%s: failed to switch bus to DDR mode (0x%x)", __func__, err);
-            return err;
+            goto out;
         }
     } else if (card->host.max_freq_khz >= SDMMC_FREQ_SDR104) {
         //UHS-I SDR104
