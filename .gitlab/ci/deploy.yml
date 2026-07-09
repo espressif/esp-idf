@@ -34,7 +34,9 @@ push_to_github:
     - .before_script:minimal
     - .rules:push_to_github
   needs:
-    - check_submodule_sync
+    # optional so esp-at/v* mirror pipelines (which skip the submodule check) still run
+    - job: check_submodule_sync
+      optional: true
   tags: [ brew, github_sync ]
   variables:
     # for brew runners, we always set GIT_STRATEGY to fetch

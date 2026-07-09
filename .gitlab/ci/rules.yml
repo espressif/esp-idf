@@ -180,7 +180,8 @@
   if: '$CI_COMMIT_TAG =~ /^qa-test/'
 
 .if-dev-push: &if-dev-push
-  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+  # esp-at: never treat esp-at/v* branches as dev pushes, so no build/test jobs run for mirror pipelines
+  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_BRANCH !~ /^esp-at\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
 
 .if-schedule: &if-schedule
   if: '$CI_PIPELINE_SOURCE == "schedule"'
@@ -212,6 +213,8 @@
   rules:
     - <<: *if-qa-test-tag
       when: never
+    # esp-at: mirror esp-at/v* branch pushes to GitHub
+    - if: '$CI_COMMIT_BRANCH =~ /^esp-at\/v/ && $CI_PIPELINE_SOURCE == "push"'
     - <<: *if-protected-no_label
 
 .rules:protected-no_label-always:

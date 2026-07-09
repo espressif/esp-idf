@@ -1,5 +1,11 @@
 workflow:
   rules:
+    # esp-at: allow pushes of esp-at/v* branches so they can be mirrored to GitHub.
+    # Only the github-sync job runs for these branches (see rules below).
+    - if: '$CI_COMMIT_BRANCH =~ /^esp-at\/v/ && $CI_PIPELINE_SOURCE == "push"'
+      variables:
+        PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
+        IS_MR_PIPELINE: 0
     # Disable those non-protected push triggered pipelines
     - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && $CI_PIPELINE_SOURCE == "push"'
       when: never
@@ -18,18 +24,23 @@ workflow:
 # Place the default settings in `.gitlab/ci/common.yml` instead
 
 include:
-  - '.gitlab/ci/danger.yml'
-  - '.gitlab/ci/common.yml'
-  - '.gitlab/ci/rules.yml'
-  - '.gitlab/ci/upload_cache.yml'
-  - '.gitlab/ci/docs.yml'
-  - '.gitlab/ci/static-code-analysis.yml'
-  - '.gitlab/ci/pre_commit.yml'
-  - '.gitlab/ci/pre_check.yml'
-  - '.gitlab/ci/build.yml'
-  - '.gitlab/ci/integration_test.yml'
-  - '.gitlab/ci/host-test.yml'
-  - '.gitlab/ci/deploy.yml'
-  - '.gitlab/ci/post_deploy.yml'
-  - '.gitlab/ci/retry_failed_jobs.yml'
-  - '.gitlab/ci/test-win.yml'
+  # esp-at: This block is intentionally different from master/release branches.
+  # Keep these edits ONLY on esp-at/v* branches and NEVER merge them into master,
+  # otherwise master's normal CI would lose all these jobs.
+  # Only the files required by the github-mirror job are kept; the rest are disabled
+  # so that pushing an esp-at/v* branch only runs push_to_github.
+  - '.gitlab/ci/common.yml'   # stages, default variables and before_script templates
+  - '.gitlab/ci/rules.yml'    # rule templates used by the deploy jobs
+  - '.gitlab/ci/deploy.yml'   # check_submodule_sync + push_to_github (github mirror)
+  # - '.gitlab/ci/danger.yml'
+  # - '.gitlab/ci/upload_cache.yml'
+  # - '.gitlab/ci/docs.yml'
+  # - '.gitlab/ci/static-code-analysis.yml'
+  # - '.gitlab/ci/pre_commit.yml'
+  # - '.gitlab/ci/pre_check.yml'
+  # - '.gitlab/ci/build.yml'
+  # - '.gitlab/ci/integration_test.yml'
+  # - '.gitlab/ci/host-test.yml'
+  # - '.gitlab/ci/post_deploy.yml'
+  # - '.gitlab/ci/retry_failed_jobs.yml'
+  # - '.gitlab/ci/test-win.yml'
