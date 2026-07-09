@@ -806,6 +806,7 @@ static esp_err_t esp_netif_new_api(esp_netif_api_msg_t *msg)
     const esp_netif_config_t *esp_netif_config = msg->data;
     // mandatory configuration must be provided when creating esp_netif object
     if (esp_netif_config == NULL ||
+        esp_netif_config->base == NULL ||
         esp_netif_config->base->if_key == NULL ||
         NULL != esp_netif_get_handle_from_ifkey_unsafe(esp_netif_config->base->if_key)) {
         ESP_LOGE(TAG, "%s: Failed to configure netif with config=%p (config or if_key is NULL or duplicate key)",
@@ -1151,6 +1152,9 @@ esp_err_t esp_netif_set_mac_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_set_mac(esp_netif_t *esp_netif, uint8_t mac[])
 {
+    if (mac == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
         return ESP_ERR_ESP_NETIF_IF_NOT_READY;
     }
