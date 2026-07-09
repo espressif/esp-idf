@@ -38,7 +38,7 @@ examples/system/ulp/lp_core/gpio_intr_pulse_counter:
 
 examples/system/ulp/lp_core/gpio_wakeup:
   enable:
-    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0) and (SOC_DEEP_SLEEP_SUPPORTED == 1)
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0) and (SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED == 1) # TODO: [ESP32S31] IDF-15884 SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED not declared yet
   <<: *ulp_default_depends
   depends_components+:
     - esp_driver_gpio

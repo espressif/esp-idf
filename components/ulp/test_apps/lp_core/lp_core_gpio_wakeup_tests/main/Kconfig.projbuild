@@ -1,0 +1,10 @@
+menu "LP GPIO Wakeup Test Configuration"
+
+    config TEST_LP_GPIO_WAKEUP_PIN
+        int "GPIO pin wired between wakee and waker boards"
+        default 2
+        help
+            RTC GPIO pin used for LP core GPIO wakeup on the sleeping board.
+            The same pin number must be wired to the GPIO output on the waker board.
+
+endmenu
