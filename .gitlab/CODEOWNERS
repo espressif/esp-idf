@@ -69,7 +69,6 @@
 /pytest.ini                           @esp-idf-codeowners/ci
 /ruff.toml                            @esp-idf-codeowners/tools
 /sdkconfig.rename                     @esp-idf-codeowners/build-config
-/sonar-project.properties             @esp-idf-codeowners/ci
 
 # sort-order-reset
 

@@ -11,7 +11,6 @@ tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
 tools/ci/cleanup_ignore_lists.py
 tools/ci/configure_ci_environment.sh
-tools/ci/deploy_docs.py
 tools/ci/doc_auto_translate.py
 tools/ci/dynamic_pipelines/**/*
 tools/ci/envsubst.py
