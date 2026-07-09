@@ -708,6 +708,13 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         y_start = MAX(y_start, 0);
         y_end = MIN(y_end, v_res);
     }
+    if (x_start >= x_end || y_start >= y_end) {
+        // no valid region to draw, skip
+        if (cb) {
+            cb(&rgb_panel->base, NULL, rgb_panel->user_ctx);
+        }
+        return ESP_OK;
+    }
 
     // check if we want to copy the draw buffer to the internal frame buffer
     bool draw_buf_copy_to_fb = true;
