@@ -56,6 +56,41 @@ typedef struct {
 #endif
 
 /* Default LP I2C GPIO settings */
+#ifdef __cplusplus
+#define LP_I2C_DEFAULT_GPIO_CONFIG() (__extension__({ \
+    lp_core_i2c_pin_cfg_t __lp_i2c_pin_cfg; \
+    __lp_i2c_pin_cfg.sda_io_num = LP_I2C_SDA_IO; \
+    __lp_i2c_pin_cfg.scl_io_num = LP_I2C_SCL_IO; \
+    __lp_i2c_pin_cfg.sda_pullup_en = true; \
+    __lp_i2c_pin_cfg.scl_pullup_en = true; \
+    __lp_i2c_pin_cfg; \
+}))
+
+/* LP I2C fast mode config. Max SCL freq of 400 KHz. */
+#define LP_I2C_FAST_MODE_CONFIG() (__extension__({ \
+    lp_core_i2c_timing_cfg_t __lp_i2c_timing_cfg; \
+    __lp_i2c_timing_cfg.clk_speed_hz = 400000; \
+    __lp_i2c_timing_cfg; \
+}))
+
+/* LP I2C standard mode config. Max SCL freq of 100 KHz. */
+#define LP_I2C_STANDARD_MODE_CONFIG() (__extension__({ \
+    lp_core_i2c_timing_cfg_t __lp_i2c_timing_cfg; \
+    __lp_i2c_timing_cfg.clk_speed_hz = 100000; \
+    __lp_i2c_timing_cfg; \
+}))
+
+#define LP_I2C_DEFAULT_SRC_CLK()                LP_I2C_SCLK_LP_FAST
+
+/* Default LP I2C GPIO settings and timing parameters */
+#define LP_CORE_I2C_DEFAULT_CONFIG() (__extension__({ \
+    lp_core_i2c_cfg_t __lp_i2c_cfg; \
+    __lp_i2c_cfg.i2c_pin_cfg = LP_I2C_DEFAULT_GPIO_CONFIG(); \
+    __lp_i2c_cfg.i2c_timing_cfg = LP_I2C_FAST_MODE_CONFIG(); \
+    __lp_i2c_cfg.i2c_src_clk = LP_I2C_DEFAULT_SRC_CLK(); \
+    __lp_i2c_cfg; \
+}))
+#else
 #define LP_I2C_DEFAULT_GPIO_CONFIG()            \
         .i2c_pin_cfg.sda_io_num = LP_I2C_SDA_IO,\
         .i2c_pin_cfg.scl_io_num = LP_I2C_SCL_IO,\
@@ -80,6 +115,7 @@ typedef struct {
         LP_I2C_FAST_MODE_CONFIG()               \
         LP_I2C_DEFAULT_SRC_CLK()                \
     }
+#endif /* __cplusplus */
 
 /**
  * @brief Initialize and configure the LP I2C for use by the LP core

@@ -1,4 +1,4 @@
-set(app_sources "test_app_main.c" "test_ulp_riscv.c" "test_ulp_riscv_i2c.c")
+set(app_sources "test_app_main.c" "test_ulp_riscv.c" "test_ulp_riscv_i2c.c" "test_ulp_riscv_i2c_config_cpp.cpp")
 set(ulp_sources "ulp/test_main.c")
 set(ulp_sources2 "ulp/test_main_second_cocpu_firmware.c")
 set(ulp_sources3 "ulp/test_main_cocpu_crash.c")
