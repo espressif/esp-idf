@@ -2230,7 +2230,7 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-    if (cfg->pairing && nan_check_paired_service_hash(service_id)) {
+    if (cfg->pairing && cfg->pairing->npk_nik_caching && nan_check_paired_service_hash(service_id)) {
         cfg->pairing->pairing_setup = false;
     }
 #endif
@@ -2412,7 +2412,7 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
     }
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING
-    if (cfg->pairing && nan_check_paired_service_hash(service_id)) {
+    if (cfg->pairing && cfg->pairing->npk_nik_caching && nan_check_paired_service_hash(service_id)) {
         cfg->pairing->pairing_setup = false;
     }
 #endif
