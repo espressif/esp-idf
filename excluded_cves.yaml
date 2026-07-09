@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+#
+# Repository-local CVE exclusions for this ESP-IDF revision.
+#
+# esp-idf-sbom merges this file into its global exclusion list when scanning
+# this tree (see the "Excluding CVEs" section of the esp-idf-sbom README). It
+# uses the same format as esp-idf-sbom's own excluded_cves.yaml. Because the
+# file lives in the tree it is scoped to this branch/revision: the affected
+# release tag (v5.5.4) predates it and is still reported, while release/v5.5 --
+# which carries the fixes and reports 5.5.4 until 5.5.5 is released -- is not.
+#
+# Every CVE below is pinned by NVD to 5.5.4 on the 5.5 line and patched in
+# 5.5.5; the fixes are already merged on release/v5.5 (fix commit cited in each
+# reason). Once version.cmake is bumped to 5.5.5, NVD no longer matches and
+# these entries become no-ops that can be removed.
+
+CVE-2026-45160:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.5.4:*:*:*:*:*:*:*
+  reason: >-
+    Out-of-bounds read in the DHCP server option parser
+    (components/lwip/apps/dhcpserver/dhcpserver.c). Fixed on release/v5.5,
+    patched in 5.5.5 (commit d51b10760924). The branch still reports 5.5.4
+    until 5.5.5 is released.
+
+CVE-2026-45328:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.5.4:*:*:*:*:*:*:*
+  reason: >-
+    ESP-TEE secure-service wrappers (esp_secure_services.c) exposed
+    TEE-protected peripherals and features to the REE. Fixed on release/v5.5,
+    patched in 5.5.5 (commit b471faf803e1). The branch still reports 5.5.4
+    until 5.5.5 is released.
+
+CVE-2026-45329:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.5.4:*:*:*:*:*:*:*
+  reason: >-
+    ESP-TEE secure-service wrappers left caller-supplied input pointers
+    unvalidated, allowing disclosure of TEE memory. Fixed on release/v5.5,
+    patched in 5.5.5 (commits eebabaff2fdc and dcb758a30b32). The branch still
+    reports 5.5.4 until 5.5.5 is released.
+
+CVE-2026-45541:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.5.4:*:*:*:*:*:*:*
+  reason: >-
+    NULL-pointer dereference in the esp_http_server WebSocket
+    subprotocol-negotiation path (components/esp_http_server/src/httpd_ws.c).
+    Fixed on release/v5.5, patched in 5.5.5 (commit 00a2f7fbbbd8). The branch
+    still reports 5.5.4 until 5.5.5 is released.
+
+CVE-2026-45542:
+  cpes:
+    - cpe: cpe:2.3:a:espressif:esp-idf:5.5.4:*:*:*:*:*:*:*
+  reason: >-
+    Heap buffer overflow in the protocomm SRP6a session setup
+    (handle_session_command0() in
+    components/protocomm/src/security/security2.c) from an unbounded username
+    length copy. Fixed on release/v5.5, patched in 5.5.5 (commit 71eb2dbe6aae).
+    The branch still reports 5.5.4 until 5.5.5 is released.
