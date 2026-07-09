@@ -337,6 +337,22 @@ menu "Hardware Settings"
             help
                 If enabled, this option will perform additional checks on modem clock configuration
                 to ensure proper operation and detect potential configuration issues.
+
+        config ESP_BUS_ENABLE_AUTO_GATE
+            bool "Enable bus clock auto-gate"
+            depends on SOC_PM_SUPPORT_BUS_CLK_AUTO_GATE
+            default y if IDF_CI_BUILD
+            default n
+            help
+                Enable this option to use bus clock auto-gate for the system bus.
+
+                When enabled, AHB/APB/AXI/MEM bus clock gating bypass is cleared, so the bus
+                clocks are no longer forced on. Hardware then automatically gates these clocks
+                when there is no bus access, reducing power consumption.
+
+                This option has risk: auto-gating may cause unexpected bus access failures or
+                system instability on some peripherals/scenarios. Enable with caution and
+                verify thoroughly.
     endmenu
 
     rsource "./etm/Kconfig.etm"

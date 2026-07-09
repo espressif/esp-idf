@@ -593,6 +593,8 @@
 
 #define SOC_PM_RETENTION_MODULE_NUM         (64)
 
+#define SOC_PM_SUPPORT_BUS_CLK_AUTO_GATE    (1)  /*!<Support hardware auto clock gating for system bus*/
+
 /*-------------------------- LP_CORE CAPS ------------------------------------*/
 #define SOC_LP_MAILBOX_SUPPORTED                    (1) /*!< LP Core supports LP-mailbox */
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM wakeup */

@@ -70,6 +70,21 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_25m_clk_en(bool enable)
     HP_SYS_CLKRST.ref_25m_ctrl0.reg_ref_25m_clk_en = enable;
 }
 
+/**
+ * @brief Set system bus clock gate bypass
+ *
+ * @param enable  true: bypass bus clock gating (force clocks on);
+ *                false: allow hardware auto clock gating to decrease power consumption
+ */
+FORCE_INLINE_ATTR void clk_gate_ll_set_bus_clock_gate_bypass(bool enable)
+{
+    HP_ALIVE_SYS.bus_clock_gate_bypass.ahb_clk_gating_bypass = enable;
+    HP_ALIVE_SYS.bus_clock_gate_bypass.apb_clk_gating_bypass = enable;
+    HP_ALIVE_SYS.bus_clock_gate_bypass.axi_clk_gating_bypass = enable;
+    HP_ALIVE_SYS.bus_clock_gate_bypass.mem_clk_gating_bypass = enable;
+    HP_ALIVE_SYS.bus_clock_gate_bypass.ahb_mtx_clk_gating_bypass = enable;
+}
+
 typedef struct {
     bool disable_uart0_clk;           ///< Gate UART0 when it is not the console UART
     bool disable_uart1_clk;           ///< Gate UART1 when it is not the console UART
