@@ -90,7 +90,7 @@ esp_err_t UartSpinelInterface::Enable(const esp_radio_spinel_uart_config_t &radi
         return ESP_ERR_INVALID_STATE;
     }
 
-    m_uart_rx_buffer = static_cast<uint8_t *>(heap_caps_malloc(kMaxFrameSize, MALLOC_CAP_8BIT));
+    m_uart_rx_buffer = static_cast<uint8_t *>(heap_caps_calloc(1, kMaxFrameSize, MALLOC_CAP_8BIT));
     if (m_uart_rx_buffer == NULL) {
         return ESP_ERR_NO_MEM;
     }
