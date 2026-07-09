@@ -115,6 +115,10 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
             if (transport == BT_TRANSPORT_LE) {
                 l2cb.num_ble_links_active++;
                 l2c_ble_link_adjust_allocation();
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+                p_lcb->adv_handle = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+                p_lcb->sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
             } else
 #endif
             {
@@ -188,6 +192,8 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
      p_lcb->is_pawr_synced = FALSE;
+     p_lcb->adv_handle = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+     p_lcb->sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
 #endif
 
     /* Stop and release timers */

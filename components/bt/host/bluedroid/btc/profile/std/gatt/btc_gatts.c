@@ -1134,6 +1134,10 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.connect.conn_params.timeout = p_data->conn.conn_params.timeout;
         param.connect.ble_addr_type = p_data->conn.ble_addr_type;
         param.connect.conn_handle = p_data->conn.conn_handle;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        param.connect.adv_handle = p_data->conn.adv_handle;
+        param.connect.sync_handle = p_data->conn.sync_handle;
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
         btc_gatts_cb_to_app(ESP_GATTS_CONNECT_EVT, gatts_if, &param);
         break;
     }
