@@ -348,7 +348,8 @@ typedef UINT8 tAVRC_BATTERY_STATUS;
 #define AVRC_MEDIA_ATTR_ID_NUM_TRACKS            0x00000005
 #define AVRC_MEDIA_ATTR_ID_GENRE                 0x00000006
 #define AVRC_MEDIA_ATTR_ID_PLAYING_TIME          0x00000007        /* in milliseconds */
-#define AVRC_MAX_NUM_MEDIA_ATTR_ID               7
+#define AVRC_MEDIA_ATTR_ID_COVER_ART             0x00000008
+#define AVRC_MAX_NUM_MEDIA_ATTR_ID               8
 
 /* Define the possible values of play state
 */
@@ -888,7 +889,7 @@ typedef union {
                           (a >= AVRC_PLAYER_SETTING_LOW_MENU_EXT)) ? TRUE : FALSE)
 
 #define AVRC_IS_VALID_MEDIA_ATTRIBUTE(a)    ((a >= AVRC_MEDIA_ATTR_ID_TITLE) && \
-                                             (a <= AVRC_MEDIA_ATTR_ID_PLAYING_TIME) ? TRUE : FALSE)
+                                             (a <= AVRC_MEDIA_ATTR_ID_COVER_ART) ? TRUE : FALSE)
 
 #define AVRC_IS_VALID_BATTERY_STATUS(a)    ((a <= AVRC_BATTERY_STATUS_FULL_CHARGE) ? TRUE : FALSE)
 
@@ -973,7 +974,7 @@ typedef struct {
 typedef struct {
     UINT32              attr_id;        /* Use AVRC_MEDIA_ATTR_ID_TITLE, AVRC_MEDIA_ATTR_ID_ARTIST, AVRC_MEDIA_ATTR_ID_ALBUM,
                                            AVRC_MEDIA_ATTR_ID_TRACK_NUM, AVRC_MEDIA_ATTR_ID_NUM_TRACKS,
-                                           AVRC_MEDIA_ATTR_ID_GENRE, AVRC_MEDIA_ATTR_ID_PLAYING_TIME */
+                                           AVRC_MEDIA_ATTR_ID_GENRE, AVRC_MEDIA_ATTR_ID_PLAYING_TIME, AVRC_MEDIA_ATTR_ID_COVER_ART */
     tAVRC_FULL_NAME     name;           /* The attribute value, value length and character set id. */
 } tAVRC_ATTR_ENTRY;
 
