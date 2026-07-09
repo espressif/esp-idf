@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -231,6 +231,22 @@ extern "C" {
 #define AES_USE_HARDWARE_KEY_V  0x00000001U
 #define AES_USE_HARDWARE_KEY_S  4
 
+/** AES_ENDIAN_REG register
+ *  AES Endian configure register
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define AES_ENDIAN_REG (DR_REG_AES_BASE + 0x44)
+/** AES_ENDIAN : R/W; bitpos: [5:0]; default: 0;
+ *  endian. [1:0] key endian, [3:2] text_in endian or in_stream endian,  [5:4] text_out
+ *  endian or out_stream endian
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define AES_ENDIAN    0x0000003FU
+#define AES_ENDIAN_M  (AES_ENDIAN_V << AES_ENDIAN_S)
+#define AES_ENDIAN_V  0x0000003FU
+#define AES_ENDIAN_S  0
+
 /** AES_TRIGGER_REG register
  *  Operation start controlling register
  */
@@ -352,6 +368,51 @@ extern "C" {
 #define AES_INC_SEL_M  (AES_INC_SEL_V << AES_INC_SEL_S)
 #define AES_INC_SEL_V  0x00000001U
 #define AES_INC_SEL_S  0
+
+/** AES_AAD_BLOCK_NUM_REG register
+ *  Additional Authential Data block number register
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define AES_AAD_BLOCK_NUM_REG (DR_REG_AES_BASE + 0xa0)
+/** AES_AAD_BLOCK_NUM : R/W; bitpos: [31:0]; default: 0;
+ *  Those bits stores the number of AAD block.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define AES_AAD_BLOCK_NUM    0xFFFFFFFFU
+#define AES_AAD_BLOCK_NUM_M  (AES_AAD_BLOCK_NUM_V << AES_AAD_BLOCK_NUM_S)
+#define AES_AAD_BLOCK_NUM_V  0xFFFFFFFFU
+#define AES_AAD_BLOCK_NUM_S  0
+
+/** AES_REMAINDER_BIT_NUM_REG register
+ *  AES remainder bit number register
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define AES_REMAINDER_BIT_NUM_REG (DR_REG_AES_BASE + 0xa4)
+/** AES_REMAINDER_BIT_NUM : R/W; bitpos: [6:0]; default: 0;
+ *  Those bits stores the number of remainder bit.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define AES_REMAINDER_BIT_NUM    0x0000007FU
+#define AES_REMAINDER_BIT_NUM_M  (AES_REMAINDER_BIT_NUM_V << AES_REMAINDER_BIT_NUM_S)
+#define AES_REMAINDER_BIT_NUM_V  0x0000007FU
+#define AES_REMAINDER_BIT_NUM_S  0
+
+/** AES_CONTINUE_REG register
+ *  AES continue register
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define AES_CONTINUE_REG (DR_REG_AES_BASE + 0xa8)
+/** AES_CONTINUE : WT; bitpos: [0]; default: 0;
+ *  Set this bit to continue GCM operation.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define AES_CONTINUE    (BIT(0))
+#define AES_CONTINUE_M  (AES_CONTINUE_V << AES_CONTINUE_S)
+#define AES_CONTINUE_V  0x00000001U
+#define AES_CONTINUE_S  0
 
 /** AES_INT_CLEAR_REG register
  *  DMA-AES interrupt clear register

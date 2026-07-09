@@ -12,6 +12,8 @@
 
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
+#elif (SOC_AES_CRYPTO_DMA) || (SOC_SHA_CRYPTO_DMA)
+#include "hal/crypto_dma_ll.h"
 #endif /* SOC_GDMA_SUPPORTED */
 
 #ifdef __cplusplus
@@ -38,7 +40,7 @@ typedef dma_descriptor_align8_t crypto_dma_desc_t;
 #endif /* (SOC_GDMA_TRIG_PERIPH_AES0_BUS == SOC_GDMA_BUS_AHB) || (SOC_GDMA_TRIG_PERIPH_AES0_BUS == SOC_GDMA_BUS_AHB) */
 
 #elif (SOC_AES_CRYPTO_DMA) || (SOC_SHA_CRYPTO_DMA)
-#define DMA_DESC_MEM_ALIGN_SIZE GDMA_LL_AHB_DESC_ALIGNMENT
+#define DMA_DESC_MEM_ALIGN_SIZE CRYPTO_DMA_LL_DESC_ALIGNMENT
 typedef dma_descriptor_align4_t crypto_dma_desc_t;
 
 #endif /* (SOC_AES_GDMA) && (SOC_SHA_GDMA) */
