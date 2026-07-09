@@ -55,16 +55,17 @@ function(ulp_apply_default_sources ulp_app_name)
 
     # Pre-process the linker script
     if(BUILD_RISCV)
-        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld.in)
     elseif(BUILD_LP_CORE)
-        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/lp_core_riscv.ld.in)
     elseif(BUILD_FSM)
-        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
+        set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld.in)
     else()
         message(FATAL_ERROR "Unable to determine ULP type. ")
     endif()
 
-    get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
+    # Strip the .in suffix so the generated script keeps its .ld name.
+    get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME_WLE)
     __ulp_add_preprocessed_linker_script(${ulp_app_name} ${ULP_LD_TEMPLATE} ${ULP_LD_SCRIPT}
                                          ld_script ${ULP_PREPRO_ARGS})
 

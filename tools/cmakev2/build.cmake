@@ -599,12 +599,17 @@ function(idf_build_library library)
     # seen before any section-placement script references them.
     foreach(script IN LISTS memory_scripts other_scripts)
         get_filename_component(script_dir "${script}" DIRECTORY)
-        get_filename_component(script_name "${script}" NAME)
         # Add linker script directory to the linker search path.
         target_link_directories("${library}" INTERFACE "${script_dir}")
-        # Add linker script to link. Regarding the usage of SHELL, see
+        # Add linker script to link. Use the full path because direct ld
+        # resolves -T against only the -L directories that came before it, while
+        # CMake may emit link options before link directories. Keep -L above so
+        # linker scripts can still INCLUDE siblings by name.
+        # Regarding the usage of SHELL, see
         # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
-        target_link_options("${library}" INTERFACE "SHELL:-T ${script_name}")
+        # Quote the path: SHELL: strings are re-split on spaces, so an unquoted
+        # path containing spaces would fall apart.
+        target_link_options("${library}" INTERFACE "SHELL:-T \"${script}\"")
         # Add the linker script as a dependency to ensure the executable is
         # re-linked if the script changes.
         set_property(TARGET "${library}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")

@@ -134,14 +134,21 @@ if(NOT __ULP_BUILD)
     return()
 endif()
 
-# Linker scripts are preprocessed by the C compiler, so this list is later
-# converted into -I arguments for resolving #include lines in the templates.
-set(ulp_linker_script_include_dirs "${CMAKE_CURRENT_SOURCE_DIR}/ld")
+# Preprocessor flags shared by every ULP memory-layout template. The template
+# is a ".in" file, so the standard target_linker_script flow runs the C
+# preprocessor on it. -D__ASSEMBLER__ keeps SoC headers to their macro-only
+# form, and the component's own ld directory is available for relative
+# includes.
+set(ulp_ld_flags "-D__ASSEMBLER__ -I\"${CMAKE_CURRENT_SOURCE_DIR}/ld\"")
 
 # Select the linker template and target-specific link options used by the ULP
-# executable created in the child project.
+# executable created in the child project. The memory-layout template is
+# registered with target_linker_script so the standard build system
+# preprocesses and attaches it; per-type FLAGS supply the include directories
+# its #include lines need.
 if(ULP_TYPE STREQUAL "riscv")
-    set(ulp_ld_template "${CMAKE_CURRENT_SOURCE_DIR}/ld/ulp_riscv.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/ulp_riscv.ld.in" MEMORY
+                         FLAGS "${ulp_ld_flags}")
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}.peripherals.ld")
     target_link_options(${COMPONENT_LIB} INTERFACE
         -nostartfiles
@@ -152,19 +159,15 @@ if(ULP_TYPE STREQUAL "riscv")
         IS_ULP_COCPU
         ULP_RISCV_REGISTER_OPS)
 elseif(ULP_TYPE STREQUAL "lp_core")
-    set(ulp_ld_template "${CMAKE_CURRENT_SOURCE_DIR}/ld/lp_core_riscv.ld")
-    # lp_core_riscv.ld includes common ESP system linker snippets and SoC
-    # headers for target memory constants.
+    # lp_core_riscv.ld includes soc/soc.h and esp_common headers, which are
+    # resolved automatically from the linked component graph. It also includes
+    # the esp_system ld snippets (ld.common, ld.hp_mem_defs); those live in the
+    # component's ld/ directory, which is not a public include dir, so pass it
+    # via FLAGS.
     idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
-    list(APPEND ulp_linker_script_include_dirs
-        "${esp_system_dir}/ld"
-        "${esp_system_dir}/ld/${target}")
-
-    idf_component_get_property(linker_dep_lib soc COMPONENT_LIB)
-    get_target_property(linker_dep_include_dirs "${linker_dep_lib}" INTERFACE_INCLUDE_DIRECTORIES)
-    if(linker_dep_include_dirs)
-        list(APPEND ulp_linker_script_include_dirs ${linker_dep_include_dirs})
-    endif()
+    set(lp_core_ld_flags "${ulp_ld_flags} -I\"${esp_system_dir}/ld\" -I\"${esp_system_dir}/ld/${target}\"")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/lp_core_riscv.ld.in" MEMORY
+                         FLAGS "${lp_core_ld_flags}")
 
     target_link_options(${COMPONENT_LIB} INTERFACE
         -nostartfiles
@@ -174,63 +177,12 @@ elseif(ULP_TYPE STREQUAL "lp_core")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC IS_ULP_COCPU)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough)
 elseif(ULP_TYPE STREQUAL "fsm")
-    set(ulp_ld_template "${CMAKE_CURRENT_SOURCE_DIR}/ld/ulp_fsm.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/ulp_fsm.ld.in" MEMORY
+                         FLAGS "${ulp_ld_flags}")
     target_link_options(${COMPONENT_LIB} INTERFACE "SHELL:-u entry")
 endif()
 
-# Store the selected ULP build metadata on the component. The POST_ELF callback
-# reads these properties when it attaches the generated linker script.
-idf_component_set_property(ulp ULP_LD_TEMPLATE "${ulp_ld_template}")
-idf_component_set_property(ulp ULP_LINKER_SCRIPT_INCLUDE_DIRS
-                           "${ulp_linker_script_include_dirs}")
-
 function(__ulp_configure_executable ulp_app_name)
-    set(include_arg_separator "\n")
-    macro(__ulp_add_target_include_args target)
-        foreach(property INTERFACE_INCLUDE_DIRECTORIES INCLUDE_DIRECTORIES)
-            set(include_args "$<$<BOOL:$<TARGET_PROPERTY:${target},${property}>>:-I$<JOIN:$<TARGET_PROPERTY:${target},${property}>,${include_arg_separator}-I>>")
-            list(APPEND linker_script_include_args "$<TARGET_GENEX_EVAL:${target},${include_args}>")
-        endforeach()
-    endmacro()
-
-    # Generate and attach the ULP linker script after the executable exists so
-    # library/component include directories are available.
-    set(linker_script_include_args)
-
-    # CMake v2 stores the component closure and build-wide include directories
-    # on the executable's library interface after idf_build_executable().
-    get_target_property(library_interface "${ulp_app_name}" LIBRARY_INTERFACE)
-    __ulp_add_target_include_args("${library_interface}")
-
-    idf_library_get_property(component_interfaces "${library_interface}"
-                             LIBRARY_COMPONENT_INTERFACES_LINKED)
-    foreach(component_interface IN LISTS component_interfaces)
-        __ulp_add_target_include_args("${component_interface}")
-
-        # Some component include directories live on the real library target
-        # rather than the interface target, so collect both.
-        idf_component_get_property(component_target "${component_interface}" COMPONENT_REAL_TARGET)
-        if(TARGET "${component_target}")
-            __ulp_add_target_include_args("${component_target}")
-        endif()
-    endforeach()
-
-    idf_component_get_property(linker_include_dirs ulp ULP_LINKER_SCRIPT_INCLUDE_DIRS)
-    set(linker_script_includes ${linker_include_dirs})
-    list(REMOVE_DUPLICATES linker_script_includes)
-    list(TRANSFORM linker_script_includes PREPEND "-I")
-    list(APPEND linker_script_include_args ${linker_script_includes})
-
-    idf_component_get_property(ULP_LD_TEMPLATE ulp ULP_LD_TEMPLATE)
-    get_filename_component(ld_script_name ${ULP_LD_TEMPLATE} NAME)
-    set(ld_script "${ulp_app_name}_${ld_script_name}")
-
-    # Make the generated script an explicit prerequisite of the executable and
-    # then pass it to the linker.
-    string(MAKE_C_IDENTIFIER "${ulp_app_name}_ld_script" ld_script_target)
-    __ulp_add_preprocessed_linker_script(${ulp_app_name} ${ULP_LD_TEMPLATE} ${ld_script}
-                                         ${ld_script_target} ${linker_script_include_args})
-
     # Generate the files consumed by the parent app: .bin payload plus symbol
     # header/linker exports produced from the ULP ELF.
     set(binary_target_args)
