@@ -419,6 +419,7 @@ esp_err_t dac_continuous_start_async_writing(dac_continuous_handle_t handle)
     }
     /* Wait for the previous DMA stop */
     while (atomic_load(&handle->is_running)) {}
+    atomic_store(&handle->is_cyclic, true);
 
     /* Link all descriptors as a ring */
     for (int i = 0; i < handle->cfg.desc_num; i++) {
