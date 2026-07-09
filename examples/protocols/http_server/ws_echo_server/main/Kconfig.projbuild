@@ -20,4 +20,14 @@ menu "Example Configuration"
             In this example, the post-handshake callback is used to send a welcome message
             to the client after the handshake is complete.
 
+    config EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER
+        bool "Enable dedicated WebSocket control-frame handler"
+        default y
+        help
+            Enable this option to register a dedicated handler for WebSocket
+            control frames (PING, PONG, CLOSE) on the /ws endpoint. The handler
+            only observes the frames (e.g. for heartbeat tracking or logging);
+            the server still sends the protocol replies (PONG for PING, CLOSE
+            for CLOSE) itself.
+
 endmenu

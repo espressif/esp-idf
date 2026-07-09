@@ -561,6 +561,98 @@ TEST_CASE("httpd_queue_work fast-fails on ctrl mbox saturation", "[HTTP SERVER]"
 }
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
+/* ------------------------------------------------------------------------- *
+ * White-box fixtures for the dedicated control-frame handler.
+ *
+ * These tests drive httpd_req_new() directly against a fake sock_db, feeding a
+ * crafted (zero-masked) WebSocket frame through a recv_fn override and capturing
+ * the server's reply through a send_fn override. No TCP/IP is involved, so they
+ * run identically on hardware and under QEMU.
+ * ------------------------------------------------------------------------- */
+static int s_ws_data_handler_calls;
+static int s_ws_control_handler_calls;
+static httpd_ws_type_t s_ws_control_seen_type;
+static size_t s_ws_control_seen_len;
+static esp_err_t s_ws_control_ret;
+
+static const uint8_t *s_ws_recv_data;
+static size_t s_ws_recv_len;
+static size_t s_ws_recv_off;
+
+static uint8_t s_ws_sent[128];
+static size_t s_ws_sent_len;
+
+/* recv_fn override: serve the crafted frame byte stream, one chunk per call. */
+static int ws_feed_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
+{
+    (void)hd; (void)sockfd; (void)flags;
+    size_t remaining = s_ws_recv_len - s_ws_recv_off;
+    if (remaining == 0) {
+        return HTTPD_SOCK_ERR_FAIL;
+    }
+    size_t n = (buf_len < remaining) ? buf_len : remaining;
+    memcpy(buf, s_ws_recv_data + s_ws_recv_off, n);
+    s_ws_recv_off += n;
+    return (int)n;
+}
+
+/* send_fn override: capture whatever the server sends back (the protocol reply). */
+static int ws_capture_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
+{
+    (void)hd; (void)sockfd; (void)flags;
+    for (size_t i = 0; i < buf_len && s_ws_sent_len < sizeof(s_ws_sent); i++) {
+        s_ws_sent[s_ws_sent_len++] = (uint8_t)buf[i];
+    }
+    return (int)buf_len;
+}
+
+static esp_err_t ws_data_handler_spy(httpd_req_t *req)
+{
+    (void)req;
+    s_ws_data_handler_calls++;
+    return ESP_OK;
+}
+
+static esp_err_t ws_control_handler_spy(httpd_req_t *req, const httpd_ws_frame_t *frame)
+{
+    (void)req;
+    s_ws_control_handler_calls++;
+    s_ws_control_seen_type = frame->type;
+    s_ws_control_seen_len = frame->len;
+    return s_ws_control_ret;
+}
+
+/* Wire a fake session/server and reset all fixtures around a single frame. */
+static void ws_unit_ctx_init(struct httpd_data *hd, struct sock_db *session,
+                             const uint8_t *frame, size_t frame_len)
+{
+    s_ws_data_handler_calls = 0;
+    s_ws_control_handler_calls = 0;
+    s_ws_control_seen_type = HTTPD_WS_TYPE_CONTINUE;
+    s_ws_control_seen_len = 0;
+    s_ws_control_ret = ESP_OK;
+    s_ws_recv_data = frame;
+    s_ws_recv_len = frame_len;
+    s_ws_recv_off = 0;
+    s_ws_sent_len = 0;
+    memset(s_ws_sent, 0, sizeof(s_ws_sent));
+
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.max_open_sockets = 1;   /* keep any session enumeration in bounds */
+    hd->config = config;
+    hd->hd_sd = session;           /* non-NULL so httpd_sess_get() finds the reply target */
+    hd->hd_req_aux.resp_hdrs = calloc(config.max_resp_headers, sizeof(*hd->hd_req_aux.resp_hdrs));
+    TEST_ASSERT_NOT_NULL(hd->hd_req_aux.resp_hdrs);
+
+    session->fd = 123;
+    session->handle = (httpd_handle_t) hd;
+    session->recv_fn = ws_feed_recv;
+    session->send_fn = ws_capture_send;
+    session->ws_handshake_done = true;
+    session->ws_handler = ws_data_handler_spy;
+    session->ws_close = false;
+}
+
 TEST_CASE("WS recv failure marks close without dispatching handler", "[HTTP SERVER][websocket]")
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -944,6 +1036,119 @@ TEST_CASE("WS send uses 16-bit length encoding for exactly 65535-byte payload", 
     TEST_ASSERT_EQUAL(sizeof(expected_header), ws_send_capture_ctx.len);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(expected_header, ws_send_capture_ctx.data, sizeof(expected_header));
 }
+
+TEST_CASE("WS control handler receives PING and server replies PONG", "[HTTP SERVER][websocket]")
+{
+    /* Masked (zero-key) PING carrying a 2-byte payload "Hi". */
+    static const uint8_t ping_frame[] = { 0x89, 0x82, 0x00, 0x00, 0x00, 0x00, 'H', 'i' };
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+    ws_unit_ctx_init(&hd, &session, ping_frame, sizeof(ping_frame));
+    session.ws_control_frames = true;
+    session.ws_control_handler = ws_control_handler_spy;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(1, s_ws_control_handler_calls);
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_PING, s_ws_control_seen_type);
+    TEST_ASSERT_EQUAL(2, s_ws_control_seen_len);
+    TEST_ASSERT_EQUAL(0, s_ws_data_handler_calls);   /* control frame must not reach data handler */
+    TEST_ASSERT_GREATER_THAN(0, s_ws_sent_len);
+    TEST_ASSERT_EQUAL_HEX8(0x8A, s_ws_sent[0]);      /* FIN | PONG */
+    TEST_ASSERT_FALSE(session.ws_close);
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+
+TEST_CASE("WS control handler receives CLOSE and server replies CLOSE", "[HTTP SERVER][websocket]")
+{
+    static const uint8_t close_frame[] = { 0x88, 0x80, 0x00, 0x00, 0x00, 0x00 };
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+    ws_unit_ctx_init(&hd, &session, close_frame, sizeof(close_frame));
+    session.ws_control_frames = true;
+    session.ws_control_handler = ws_control_handler_spy;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(1, s_ws_control_handler_calls);
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_CLOSE, s_ws_control_seen_type);
+    TEST_ASSERT_EQUAL(0, s_ws_data_handler_calls);
+    TEST_ASSERT_GREATER_THAN(0, s_ws_sent_len);
+    TEST_ASSERT_EQUAL_HEX8(0x88, s_ws_sent[0]);      /* FIN | CLOSE */
+    TEST_ASSERT_TRUE(session.ws_close);              /* server marked the session for close */
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+
+TEST_CASE("WS control handler receives PONG with no reply", "[HTTP SERVER][websocket]")
+{
+    static const uint8_t pong_frame[] = { 0x8A, 0x80, 0x00, 0x00, 0x00, 0x00 };
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+    ws_unit_ctx_init(&hd, &session, pong_frame, sizeof(pong_frame));
+    session.ws_control_frames = true;
+    session.ws_control_handler = ws_control_handler_spy;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(1, s_ws_control_handler_calls);
+    TEST_ASSERT_EQUAL(HTTPD_WS_TYPE_PONG, s_ws_control_seen_type);
+    TEST_ASSERT_EQUAL(0, s_ws_data_handler_calls);
+    TEST_ASSERT_EQUAL(0, s_ws_sent_len);             /* a PONG is never answered */
+    TEST_ASSERT_FALSE(session.ws_close);
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+
+TEST_CASE("WS without control handler auto-replies PING (backward compatible)", "[HTTP SERVER][websocket]")
+{
+    /* Mode 1: no control handler, flag off -> server must still auto-reply PONG and
+     * must not dispatch the PING to the data handler (unchanged legacy behavior). */
+    static const uint8_t ping_frame[] = { 0x89, 0x80, 0x00, 0x00, 0x00, 0x00 };
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+    ws_unit_ctx_init(&hd, &session, ping_frame, sizeof(ping_frame));
+    session.ws_control_frames = false;
+    session.ws_control_handler = NULL;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+    TEST_ASSERT_EQUAL(0, s_ws_control_handler_calls);
+    TEST_ASSERT_EQUAL(0, s_ws_data_handler_calls);
+    TEST_ASSERT_GREATER_THAN(0, s_ws_sent_len);
+    TEST_ASSERT_EQUAL_HEX8(0x8A, s_ws_sent[0]);      /* auto PONG */
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+
+TEST_CASE("WS control handler error still replies then closes socket", "[HTTP SERVER][websocket]")
+{
+    /* A PING is used so ws_close stays false and cleanup does not touch the fake
+     * control socket. The handler fails, but the server must still send the PONG,
+     * and httpd_req_new() must propagate the error so the caller closes the socket. */
+    static const uint8_t ping_frame[] = { 0x89, 0x80, 0x00, 0x00, 0x00, 0x00 };
+    struct httpd_data hd = {0};
+    struct sock_db session = {0};
+    ws_unit_ctx_init(&hd, &session, ping_frame, sizeof(ping_frame));
+    session.ws_control_frames = true;
+    session.ws_control_handler = ws_control_handler_spy;
+    s_ws_control_ret = ESP_FAIL;
+
+    esp_err_t ret = httpd_req_new(&hd, &session);
+
+    TEST_ASSERT_EQUAL(ESP_FAIL, ret);                /* error propagated to caller */
+    TEST_ASSERT_EQUAL(1, s_ws_control_handler_calls);
+    TEST_ASSERT_GREATER_THAN(0, s_ws_sent_len);
+    TEST_ASSERT_EQUAL_HEX8(0x8A, s_ws_sent[0]);      /* reply sent despite handler error */
+
+    free(hd.hd_req_aux.resp_hdrs);
+}
+
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 
 /********* URL query / header pointer-accessor tests *********

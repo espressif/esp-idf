@@ -139,6 +139,36 @@ static esp_err_t ws_post_handshake_cb(httpd_req_t *req)
 }
 #endif /* CONFIG_EXAMPLE_ENABLE_WS_POST_HANDSHAKE_CB */
 
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER
+/*
+ * Dedicated control-frame handler: observes PING/PONG/CLOSE frames without
+ * receiving them in the data handler. The frame is read-only and owned by the
+ * server, which sends the protocol reply (PONG for PING, CLOSE for CLOSE)
+ * itself after this handler returns.
+ *
+ * Type "Ping" in the client to see the full heartbeat round trip: the server
+ * sends a PING and the client's PONG response lands here.
+ */
+static esp_err_t ws_control_frame_handler(httpd_req_t *req, const httpd_ws_frame_t *frame)
+{
+    switch (frame->type) {
+    case HTTPD_WS_TYPE_PING:
+        ESP_LOGI(TAG, "Control frame: PING (len %d), server replies PONG", frame->len);
+        break;
+    case HTTPD_WS_TYPE_PONG:
+        ESP_LOGI(TAG, "Control frame: PONG, heartbeat alive");
+        break;
+    case HTTPD_WS_TYPE_CLOSE:
+        ESP_LOGI(TAG, "Control frame: CLOSE (len %d), server replies CLOSE", frame->len);
+        break;
+    default:
+        ESP_LOGI(TAG, "Control frame: type %d", frame->type);
+        break;
+    }
+    return ESP_OK;
+}
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER */
+
 /*
  * This handler echos back the received ws data
  * and triggers an async send if certain message received
@@ -278,7 +308,13 @@ static const httpd_uri_t ws = {
         .method     = HTTP_GET,
         .handler    = echo_handler,
         .user_ctx   = NULL,
-        .is_websocket = true
+        .is_websocket = true,
+#ifdef CONFIG_EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER
+        /* Route control frames to the dedicated handler; the server still
+         * sends the protocol replies itself. */
+        .handle_ws_control_frames = true,
+        .ws_control_handler = ws_control_frame_handler,
+#endif /* CONFIG_EXAMPLE_ENABLE_WS_CONTROL_FRAME_HANDLER */
 };
 
 static const httpd_uri_t ws_partial = {
