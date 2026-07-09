@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <stdint.h>
 #include "sdkconfig.h"
 #include "unity.h"
 #include "unity_test_utils.h"
@@ -57,6 +58,19 @@ TEST_CASE("Timeout on stuck program", "[bs]")
     bitscrambler_free(bs);
     free(data_in);
     free(data_out);
+}
+
+TEST_CASE("Loopback create failure clears handle and releases channels", "[bs]")
+{
+    bitscrambler_handle_t failed_bs = (bitscrambler_handle_t)0x1;
+
+    esp_err_t err = bitscrambler_loopback_create(&failed_bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, SIZE_MAX / 2);
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
+    TEST_ASSERT_NULL(failed_bs);
+
+    bitscrambler_handle_t bs = NULL;
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, 4096));
+    bitscrambler_free(bs);
 }
 
 TEST_CASE("BitScrambler with EOF counted on upstream", "[bs]")
