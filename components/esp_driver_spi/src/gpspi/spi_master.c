@@ -596,6 +596,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     //catch design errors and aren't meant to be triggered during normal operation.
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue) == 0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(handle->host->cur_cs == DEV_NUM_MAX || handle->host->device[handle->host->cur_cs] != handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
+    SPI_CHECK(handle->host->device_acquiring_lock != handle, "Device has acquired the bus", ESP_ERR_INVALID_STATE);
     if (handle->ret_queue) {
         SPI_CHECK(uxQueueMessagesWaiting(handle->ret_queue) == 0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     }

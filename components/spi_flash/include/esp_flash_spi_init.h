@@ -51,6 +51,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
  *
  * @return
  *      - ESP_ERR_INVALID_ARG: The chip is invalid.
+ *      - ESP_ERR_INVALID_STATE: The chip is still acquiring the SPI bus lock.
  *      - ESP_OK: success.
  */
 esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip);

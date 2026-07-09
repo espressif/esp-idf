@@ -70,7 +70,9 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id, spi_bus_lo
  * @param chip              The chip to deinit os functions
  * @param out_dev_handle    The SPI bus lock passed from `esp_flash_init_os_functions`. The caller should deinitialize
  *                          the lock.
- * @return always ESP_OK.
+ * @return
+ *      - ESP_ERR_INVALID_STATE: the chip is still acquiring the SPI bus lock.
+ *      - ESP_OK: success.
  */
 esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip, spi_bus_lock_dev_handle_t* out_dev_handle);
 
