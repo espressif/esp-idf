@@ -22,6 +22,9 @@ extern "C" {
 #define BITSCRAMBLER_LL_GET_HW(num)      (((num) == 0) ? (&BITSCRAMBLER) : NULL)
 
 #define BITSCRAMBLER_LL_INST_LEN_WORDS   9 //length of one instruction in 32-bit words as defined by HW
+// LUT index register is 11 bits wide, so the LUT address space is 2048 bytes.
+#define BITSCRAMBLER_LL_LUT_MAX_BYTES    (1U << 11)
+#define BITSCRAMBLER_LL_MAX_INST         8
 
 typedef enum {
     BITSCRAMBLER_LL_MEM_LP_MODE_DEEP_SLEEP,    // memory will enter deep sleep during low power stage, keep memory data
