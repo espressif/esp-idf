@@ -14,10 +14,6 @@
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/spi_pins.h"
-#if SOC_PAU_SUPPORTED
-#include "soc/regdma.h"
-#include "soc/retention_periph_defs.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,16 +62,6 @@ typedef struct {
 } spi_signal_conn_t;
 
 extern const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM];
-
-#if SOC_PAU_SUPPORTED
-typedef struct {
-    const periph_retention_module_t module_id;
-    const regdma_entries_config_t *entry_array;
-    uint32_t array_size;
-} spi_reg_retention_info_t;
-
-extern const spi_reg_retention_info_t spi_reg_retention_info[SOC_SPI_PERIPH_NUM - 1];   // -1 to except mspi
-#endif  // SOC_PAU_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -8,8 +8,9 @@
 
 #pragma once
 
-#include <esp_intr_alloc.h>
 #include "esp_pm.h"
+#include "esp_intr_alloc.h"
+#include "esp_macros.h"
 #include "soc/soc.h"   //for SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "driver/spi_common.h"
 #include "hal/spi_types.h"
@@ -17,13 +18,15 @@
 #include "esp_private/spi_dma.h"
 #include "esp_private/gdma.h"
 #include "esp_private/spi_share_hw_ctrl.h"
+#if SOC_PAU_SUPPORTED
+#include "soc/regdma.h"
+#include "soc/retention_periph_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#define SPI_ALIGN_UP(num, align)         (((num) + ((align) - 1)) & ~((align) - 1))
 
 //NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol
 #if SOC_GPSPI_SUPPORTED && defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
@@ -80,6 +83,16 @@ typedef struct {
     spi_dma_desc_t *dmadesc_tx;         ///< DMA descriptor array for TX
     spi_dma_desc_t *dmadesc_rx;         ///< DMA descriptor array for RX
 } spi_dma_ctx_t;
+
+#if SOC_PAU_SUPPORTED
+typedef struct {
+    const periph_retention_module_t module_id;
+    const regdma_entries_config_t *entry_array;
+    uint32_t array_size;
+} spi_reg_retention_info_t;
+
+extern const spi_reg_retention_info_t spi_reg_retention_info[SOC_SPI_PERIPH_NUM - 1];   // -1 to except mspi
+#endif
 
 /// Destructor called when a bus is deinitialized.
 typedef esp_err_t (*spi_destroy_func_t)(void*);

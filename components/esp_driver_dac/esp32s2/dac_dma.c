@@ -183,7 +183,7 @@ int dac_dma_periph_get_intr_signal(void)
 
 static void s_dac_dma_periph_reset(void)
 {
-    spi_dma_ll_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
+    spi_ll_dma_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
     spi_ll_dma_tx_fifo_reset(s_ddp->periph_dev);
 }
 
@@ -196,7 +196,7 @@ void dac_dma_periph_enable(void)
 void dac_dma_periph_disable(void)
 {
     s_dac_dma_periph_reset();
-    spi_dma_ll_tx_stop(s_ddp->periph_dev, s_ddp->dma_chan);
+    spi_ll_dma_tx_stop(s_ddp->periph_dev, s_ddp->dma_chan);
     dac_ll_digi_trigger_output(false);
 }
 
@@ -212,17 +212,17 @@ uint32_t IRAM_ATTR dac_dma_periph_intr_get_mask(void)
 
 void IRAM_ATTR dac_dma_periph_trans_start(uintptr_t desc_addr)
 {
-    spi_dma_ll_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
+    spi_ll_dma_tx_reset(s_ddp->periph_dev, s_ddp->dma_chan);
     spi_ll_dma_tx_fifo_reset(s_ddp->periph_dev);
-    spi_dma_ll_tx_start(s_ddp->periph_dev, s_ddp->dma_chan, (lldesc_t *)desc_addr);
+    spi_ll_dma_tx_start(s_ddp->periph_dev, s_ddp->dma_chan, (lldesc_t *)desc_addr);
 }
 
 void dac_dma_periph_trans_stop(void)
 {
-    spi_dma_ll_tx_stop(s_ddp->periph_dev, s_ddp->dma_chan);
+    spi_ll_dma_tx_stop(s_ddp->periph_dev, s_ddp->dma_chan);
 }
 
 void dac_dma_periph_trans_append(void)
 {
-    spi_dma_ll_tx_restart(s_ddp->periph_dev, s_ddp->dma_chan);
+    spi_ll_dma_tx_restart(s_ddp->periph_dev, s_ddp->dma_chan);
 }

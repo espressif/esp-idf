@@ -1100,7 +1100,7 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+static inline void spi_ll_dma_enable_bus_clock(spi_host_device_t host_id, bool enable)
 {
     (void)host_id; // has only one spi_dma
     if (enable) {
@@ -1112,9 +1112,9 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_dma_ll_enable_bus_clock(...) do { \
+#define spi_ll_dma_enable_bus_clock(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        spi_dma_ll_enable_bus_clock(__VA_ARGS__); \
+        spi_ll_dma_enable_bus_clock(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -1123,7 +1123,7 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
+static inline void spi_ll_dma_reset_register(spi_host_device_t host_id)
 {
     (void)host_id; // has only one spi_dma
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_DMA_RST);
@@ -1132,9 +1132,9 @@ static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spi_dma_ll_reset_register(...) do { \
+#define spi_ll_dma_reset_register(...) do { \
         (void)__DECLARE_RCC_ATOMIC_ENV; \
-        spi_dma_ll_reset_register(__VA_ARGS__); \
+        spi_ll_dma_reset_register(__VA_ARGS__); \
     } while(0)
 
 /**
@@ -1144,7 +1144,7 @@ static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
  * @param channel DMA channel, for chip version compatibility, not used.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
+static inline void spi_ll_dma_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     //Reset RX DMA peripheral
     dma_in->dma_conf.in_rst = 1;
@@ -1159,7 +1159,7 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
  * @param addr    Address of the beginning DMA descriptor.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
+static inline void spi_ll_dma_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
     dma_in->dma_in_link.start = 1;
@@ -1172,7 +1172,7 @@ static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, 
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
+static inline void spi_ll_dma_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     //This is not supported in esp32
 }
@@ -1184,7 +1184,7 @@ static inline void spi_dma_ll_rx_enable_burst_data(spi_dma_dev_t *dma_in, uint32
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
+static inline void spi_ll_dma_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32_t channel, bool enable)
 {
     dma_in->dma_conf.indscr_burst_en = enable;
 }
@@ -1196,7 +1196,7 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32
  * @param internal_size The internal memory alignment requirements.
  * @param external_size The external memory alignment requirements.
  */
-static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
+static inline void spi_ll_dma_get_rx_alignment_require(spi_dma_dev_t *dma_dev, uint32_t *internal_size, uint32_t *external_size)
 {
     *internal_size = 4;     // esp32 needs 4 bytes alignment on hardware design
     *external_size = UINT32_MAX;    // dma of esp32 spi don't support external memory
@@ -1209,7 +1209,7 @@ static inline void spi_dma_ll_get_rx_alignment_require(spi_dma_dev_t *dma_dev, u
  * @param channel DMA channel, for chip version compatibility, not used.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
+static inline void spi_ll_dma_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     //Reset TX DMA peripheral
     dma_out->dma_conf.out_rst = 1;
@@ -1224,7 +1224,7 @@ static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
  * @param addr    Address of the beginning DMA descriptor.
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
+static inline void spi_ll_dma_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;
     dma_out->dma_out_link.start = 1;
@@ -1237,7 +1237,7 @@ static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel,
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_data_burst_en = enable;
 }
@@ -1249,7 +1249,7 @@ static inline void spi_dma_ll_tx_enable_burst_data(spi_dma_dev_t *dma_out, uint3
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.outdscr_burst_en = enable;
 }
@@ -1261,7 +1261,7 @@ static inline void spi_dma_ll_tx_enable_burst_desc(spi_dma_dev_t *dma_out, uint3
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  1: when dma pop all data from fifo  0:when ahb push all data to fifo.
  */
-static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_set_out_eof_generation(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     dma_out->dma_conf.out_eof_mode = enable;
 }
@@ -1273,7 +1273,7 @@ static inline void spi_dma_ll_set_out_eof_generation(spi_dma_dev_t *dma_out, uin
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param enable  True to enable, false to disable
  */
-static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
+static inline void spi_ll_dma_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uint32_t channel, bool enable)
 {
     //does not configure it in ESP32
 }

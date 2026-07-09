@@ -238,7 +238,6 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
     }
 }
 
-#if SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
 /**
  * Write a PSRAM MMU entry without the SENSITIVE bit, used only for the
  * carved-out unencrypted region (see CONFIG_SPIRAM_ENC_EXEMPT).
@@ -253,7 +252,6 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry_no_enc(uint
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), entry_id);
     REG_WRITE(SPI_MEM_MMU_ITEM_CONTENT_REG(0), mmu_raw_value);
 }
-#endif
 
 /**
  * Read the raw value from MMU table

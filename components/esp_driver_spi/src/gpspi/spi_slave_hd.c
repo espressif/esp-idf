@@ -141,8 +141,8 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     };
     gdma_apply_strategy(host->dma_ctx->tx_dma_chan, &dma_strategy);
 #else
-    spi_dma_ll_enable_out_auto_wrback(spi_periph_signal[host->dma_ctx->tx_dma_chan.host_id].hw, host->dma_ctx->tx_dma_chan.chan_id, 1);
-    spi_dma_ll_set_out_eof_generation(spi_periph_signal[host->dma_ctx->tx_dma_chan.host_id].hw, host->dma_ctx->tx_dma_chan.chan_id, 1);
+    spi_ll_dma_enable_out_auto_wrback(spi_periph_signal[host->dma_ctx->tx_dma_chan.host_id].hw, host->dma_ctx->tx_dma_chan.chan_id, 1);
+    spi_ll_dma_set_out_eof_generation(spi_periph_signal[host->dma_ctx->tx_dma_chan.host_id].hw, host->dma_ctx->tx_dma_chan.chan_id, 1);
 #endif
     ret = spicommon_dma_desc_alloc(host_id, bus_config->max_transfer_sz, &host->bus_attr->max_transfer_sz);
     if (ret != ESP_OK) {
