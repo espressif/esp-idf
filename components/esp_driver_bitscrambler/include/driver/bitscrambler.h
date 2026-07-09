@@ -73,6 +73,11 @@ void bitscrambler_free(bitscrambler_handle_t handle);
 /**
  * @brief Load a BitScrambler binary program into BitScrambler memory
  *
+ * @note The program blob is expected to come from a trusted BitScrambler assembler
+ *       output. This API validates the header fields against hardware limits, but it
+ *       does not take an explicit blob length and therefore cannot verify that an
+ *       arbitrary caller-supplied buffer is complete.
+ *
  * @param handle BitScrambler handle
  * @param program Binary program to load
  *
