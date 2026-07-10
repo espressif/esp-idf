@@ -1,4 +1,4 @@
-# BLE Log Console
+# BLE Log Console Migration Notice
 
 BLE Log Console was originally provided in the ESP-IDF repository as the host-side companion tool for the BLE Log feature. It collects BLE log data from ESP chip firmware, then parses, displays, and saves the logs on a PC. The tool works with the BLE Log firmware configuration in ESP-IDF and receives log frames over transports such as UART or SPI Bridge, helping developers inspect the runtime state, loss statistics, and raw log data of BLE components including Controller, Host, and Mesh.
 
@@ -6,17 +6,7 @@ To allow releases, dependency management, documentation, and feature development
 
 New repository: [esp-ble-tools/components/ble_log_console](https://github.com/espressif/esp-ble-tools/tree/main/components/ble_log_console)
 
-## Current Directory
 
-This directory is kept only as a migration notice. It no longer contains the BLE Log Console source code, build scripts, tests, or runtime dependencies.
-
-Previous location:
-
-```text
-tools/bt/ble_log_console
-```
-
-Future development, issue tracking, releases, and documentation for BLE Log Console should use the standalone repository.
 
 ## Relationship With ESP-IDF
 
