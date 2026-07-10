@@ -28,7 +28,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "hal/emac_periph.h"
+#include "emac_priv.h"
 #include "hal/emac_hal.h"
 #include "hal/emac_clk.h"
 #include "sdkconfig.h"
