@@ -149,21 +149,6 @@ class IdfLocalPlugin:
 
         return 'linux' in targets
 
-    @pytest.hookimpl(trylast=True)
-    def pytest_generate_tests(self, metafunc: Metafunc) -> None:
-        if 'embedded_services' not in metafunc.fixturenames:
-            return
-
-        if self._has_parametrized_arg(metafunc, 'embedded_services'):
-            return
-
-        if metafunc.definition.get_closest_marker('qemu') is not None:
-            metafunc.parametrize('embedded_services', ['idf,qemu'], indirect=True)
-            return
-
-        if self._is_linux_target_run(metafunc.config):
-            metafunc.parametrize('embedded_services', ['idf'], indirect=True)
-
     @pytest.hookimpl(wrapper=True)
     def pytest_collection_modifyitems(self, config: Config, items: list[Function]) -> t.Generator[None, None, None]:
         yield  # throw it back to idf-ci
