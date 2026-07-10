@@ -60,16 +60,30 @@ static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_reg
     return frame;
 }
 
+#undef CPU_DOMAIN_DEV_START_ADDR0
+#undef CPU_DOMAIN_DEV_END_ADDR0
+#undef CPU_DOMAIN_DEV_START_ADDR1
+#undef CPU_DOMAIN_DEV_END_ADDR1
+#undef CPU_DOMAIN_DEV_START_ADDR2
+#undef CPU_DOMAIN_DEV_END_ADDR2
+
+#define CPU_DOMAIN_DEV_START_ADDR0 (CLIC_INT_CONFIG_REG)
+#define CPU_DOMAIN_DEV_END_ADDR0 (CLIC_INT_CONFIG_REG + 4)
+#define CPU_DOMAIN_DEV_START_ADDR1 (CLIC_INT_THRESH_REG)
+#define CPU_DOMAIN_DEV_END_ADDR1 (CLIC_INT_THRESH_REG + 4)
+#define CPU_DOMAIN_DEV_START_ADDR2 (CLIC_INT_CTRL_REG(0))
+#define CPU_DOMAIN_DEV_END_ADDR2 (CLIC_INT_CTRL_REG(47) + 4)
+
 static inline void * cpu_domain_clic_sleep_frame_alloc_and_init(uint8_t core_id)
 {
-    static DRAM_ATTR cpu_domain_dev_regs_region_t regions[portNUM_PROCESSORS][2] = {
+    static DRAM_ATTR cpu_domain_dev_regs_region_t regions[portNUM_PROCESSORS][3] = {
        [0 ... portNUM_PROCESSORS - 1] = {
-            { .start = CLIC_INT_CONFIG_REG, .end = CLIC_INT_CONFIG_REG + 4 },
-            { .start = CLIC_INT_THRESH_REG, .end = CLIC_INT_THRESH_REG + 4 },
-            { .start = CLIC_INT_CTRL_REG(0), .end = CLIC_INT_CTRL_REG(47) + 4 },
+            { .start = CPU_DOMAIN_DEV_START_ADDR0, .end = CPU_DOMAIN_DEV_END_ADDR0 },
+            { .start = CPU_DOMAIN_DEV_START_ADDR1, .end = CPU_DOMAIN_DEV_END_ADDR1 },
+            { .start = CPU_DOMAIN_DEV_START_ADDR2, .end = CPU_DOMAIN_DEV_END_ADDR2 },
         }
     };
-    static DRAM_ATTR uint8_t sleep_frame[portNUM_PROCESSORS][CPU_DOMAIN_DEV_TOTAL_SZ(2)] __attribute__((aligned(4)));
+    static DRAM_ATTR uint8_t sleep_frame[portNUM_PROCESSORS][CPU_DOMAIN_DEV_TOTAL_SZ(3)] __attribute__((aligned(4)));
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions[core_id], sizeof(regions[core_id]) / sizeof(regions[core_id][0]), sleep_frame[core_id]);
 }
 
