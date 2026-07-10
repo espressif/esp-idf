@@ -44,6 +44,7 @@ esp_err_t twai_node_recover(twai_node_handle_t node);
 
 /**
  * @brief Delete the TWAI node and release resources
+ * @note  Do NOT call this function in the FreeRTOS timer task.
  *
  * @param node Handle to the TWAI node
  * @return  - ESP_OK: Success
