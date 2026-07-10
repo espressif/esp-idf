@@ -346,7 +346,6 @@ The following HCI VS debugging commands are implemented in Bluetooth Low Energy 
 
     .. doxygendefine:: ESP_BT_VS_WR_DM1_ENABLE_OCF
     .. doxygendefine:: ESP_BT_VS_CLK_UPDATE_OCF
-    .. doxygendefine:: ESP_BT_VS_PCA_OCF
     .. doxygendefine:: ESP_BT_VS_SET_AFH_OCF
     .. doxygendefine:: ESP_BT_VS_SET_EVT_MASK_OCF
     .. doxygendefine:: ESP_BT_VS_SET_AFH_REPORTING_MODE_OCF
@@ -355,6 +354,11 @@ The following HCI VS debugging commands are implemented in Bluetooth Low Energy 
     .. doxygendefine:: ESP_BT_VS_DTM_RX_TEST_START_OCF
     .. doxygendefine:: ESP_BT_VS_DTM_TX_TEST_END_OCF
     .. doxygendefine:: ESP_BT_VS_DTM_RX_TEST_END_OCF
+    .. doxygendefine:: ESP_BT_VS_PCA_OCF
+    .. doxygendefine:: ESP_BT_VS_DISCARD_PING_OCF
+    .. doxygendefine:: ESP_BT_VS_LMP_DBG_ENABLE_OCF
+    .. doxygendefine:: ESP_BT_VS_SEND_LMP_OCF
+    .. doxygendefine:: ESP_BT_VS_LMP_DBG_SAVE_OCF
 
     HCI VS Events for Espressif's Internal-Use Debugging
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -378,3 +382,6 @@ The following HCI VS debugging commands are implemented in Bluetooth Low Energy 
         .. doxygendefine:: ESP_BT_VS_AFH_CHG_EVT_SUBCODE
         .. doxygendefine:: ESP_BT_VS_CH_CLASSIFICATION_EVT_SUBCODE
         .. doxygendefine:: ESP_BT_VS_CH_CLASSIFICATION_REPORTING_MODE_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_LMP_RECEIVED_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_LMP_TX_CFM_EVT_SUBCODE
+        .. doxygendefine:: ESP_BT_VS_LMP_DBG_ENTERED_EVT_SUBCODE
