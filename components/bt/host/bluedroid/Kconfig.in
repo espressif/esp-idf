@@ -153,6 +153,13 @@ config BT_SPP_ENABLED
     help
         This enables the Serial Port Profile
 
+config BT_PAN_ENABLED
+    bool "PAN (Personal Area Networking)"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the Personal Area Networking Profile
+
 config BT_L2CAP_ENABLED
     bool "BT L2CAP"
     depends on BT_CLASSIC_ENABLED

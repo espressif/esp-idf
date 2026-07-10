@@ -538,7 +538,7 @@ static void btu_general_alarm_process(void *param)
 #endif
 #if ((defined(BNEP_INCLUDED) && BNEP_INCLUDED == TRUE))
     case BTU_TTYPE_BNEP:
-        bnep_process_timeout(p_tle);
+        bnep_conn_timer_timeout((void *)p_tle->param);
         break;
 #endif
 

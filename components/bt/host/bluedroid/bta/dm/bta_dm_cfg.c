@@ -117,11 +117,21 @@ tBTA_DM_CFG *const p_bta_dm_cfg = (tBTA_DM_CFG *) &bta_dm_cfg;
 tBTA_DM_RM *const p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
 
 #if BLE_INCLUDED == TRUE
-#  define BTA_DM_NUM_PM_ENTRY         10  /* number of entries in bta_dm_pm_cfg except the first */
-#  define BTA_DM_NUM_PM_SPEC          10  /* number of entries in bta_dm_pm_spec */
+#  define BTA_DM_NUM_PM_ENTRY_BASE    10  /* number of entries in bta_dm_pm_cfg except the first */
+#  define BTA_DM_NUM_PM_SPEC_BASE     10  /* number of entries in bta_dm_pm_spec */
 #else
-#  define BTA_DM_NUM_PM_ENTRY         8  /* number of entries in bta_dm_pm_cfg except the first */
-#  define BTA_DM_NUM_PM_SPEC          8  /* number of entries in bta_dm_pm_spec */
+#  define BTA_DM_NUM_PM_ENTRY_BASE    8   /* number of entries in bta_dm_pm_cfg except the first */
+#  define BTA_DM_NUM_PM_SPEC_BASE     8   /* number of entries in bta_dm_pm_spec */
+#endif
+
+#if (BTA_PAN_INCLUDED == TRUE)
+#  define BTA_DM_NUM_PM_ENTRY         (BTA_DM_NUM_PM_ENTRY_BASE + 3)
+#  define BTA_DM_NUM_PM_SPEC          (BTA_DM_NUM_PM_SPEC_BASE + 2)
+#  define BTA_DM_PM_PANU_SPEC_IDX     BTA_DM_NUM_PM_SPEC_BASE
+#  define BTA_DM_PM_NAP_SPEC_IDX      (BTA_DM_NUM_PM_SPEC_BASE + 1)
+#else
+#  define BTA_DM_NUM_PM_ENTRY         BTA_DM_NUM_PM_ENTRY_BASE
+#  define BTA_DM_NUM_PM_SPEC          BTA_DM_NUM_PM_SPEC_BASE
 #endif
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
@@ -139,6 +149,11 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY + 1] 
 #if BLE_INCLUDED == TRUE
     , {BTA_ID_GATTC,  BTA_ALL_APP_ID,   8} /* gattc spec table */
     , {BTA_ID_GATTS,  BTA_ALL_APP_ID,   9} /* gatts spec table */
+#endif
+#if (BTA_PAN_INCLUDED == TRUE)
+    , {BTA_ID_PAN, BTUI_PAN_ID_PANU, BTA_DM_PM_PANU_SPEC_IDX}  /* PANU spec table */
+    , {BTA_ID_PAN, BTUI_PAN_ID_NAP,  BTA_DM_PM_NAP_SPEC_IDX}   /* NAP spec table */
+    , {BTA_ID_PAN, BTUI_PAN_ID_GN,   BTA_DM_PM_NAP_SPEC_IDX}   /* GN reuses NAP spec table */
 #endif
 };
 
@@ -341,6 +356,45 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
     }
 
 #endif
+
+#if (BTA_PAN_INCLUDED == TRUE)
+    /* PANU */
+    , {
+        (BTA_DM_PM_SNIFF),                                             /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
+        (BTA_DM_PM_SSR2),                                              /* the SSR entry */
+#endif
+        {
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* conn open  active */
+            {{BTA_DM_PM_NO_PREF,   0},   {BTA_DM_PM_NO_ACTION, 0}},    /* conn close  */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app open */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app close */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco open  */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco close   */
+            {{BTA_DM_PM_SNIFF_A2DP_IDX, 5000 + BTA_DM_PM_SPEC_TO_OFFSET}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* busy */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}}     /* mode change retry */
+        }
+    }
+    /* NAP */
+    , {
+        (BTA_DM_PM_SNIFF),                                             /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
+        (BTA_DM_PM_SSR2),                                              /* the SSR entry */
+#endif
+        {
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* conn open  active */
+            {{BTA_DM_PM_NO_PREF,   0},   {BTA_DM_PM_NO_ACTION, 0}},    /* conn close  */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app open */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* app close */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco open  */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}},    /* sco close   */
+            {{BTA_DM_PM_SNIFF_A2DP_IDX, 5000 + BTA_DM_PM_SPEC_TO_OFFSET}, {BTA_DM_PM_NO_ACTION, 0}}, /* idle */
+            {{BTA_DM_PM_ACTIVE,    0},   {BTA_DM_PM_NO_ACTION, 0}},    /* busy */
+            {{BTA_DM_PM_NO_ACTION, 0},   {BTA_DM_PM_NO_ACTION, 0}}     /* mode change retry */
+        }
+    }
+#endif /* BTA_PAN_INCLUDED */
 
 #ifdef BTE_SIM_APP      /* For Insight builds only */
     /* Entries at the end of the pm_spec table are user-defined (runtime configurable),

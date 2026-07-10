@@ -111,6 +111,9 @@ components/bt/host/bluedroid/bta/include/bta/bta_hh_api.h
 components/bt/host/bluedroid/bta/include/bta/bta_hh_co.h
 components/bt/host/bluedroid/bta/include/bta/bta_jv_api.h
 components/bt/host/bluedroid/bta/include/bta/bta_jv_co.h
+components/bt/host/bluedroid/bta/include/bta/bta_pan_api.h
+components/bt/host/bluedroid/bta/include/bta/bta_pan_ci.h
+components/bt/host/bluedroid/bta/include/bta/bta_pan_co.h
 components/bt/host/bluedroid/bta/include/bta/bta_sdp_api.h
 components/bt/host/bluedroid/bta/include/bta/bta_sys.h
 components/bt/host/bluedroid/bta/include/bta/utl.h
@@ -119,6 +122,11 @@ components/bt/host/bluedroid/bta/jv/bta_jv_api.c
 components/bt/host/bluedroid/bta/jv/bta_jv_cfg.c
 components/bt/host/bluedroid/bta/jv/bta_jv_main.c
 components/bt/host/bluedroid/bta/jv/include/bta_jv_int.h
+components/bt/host/bluedroid/bta/pan/bta_pan_act.c
+components/bt/host/bluedroid/bta/pan/bta_pan_api.c
+components/bt/host/bluedroid/bta/pan/bta_pan_ci.c
+components/bt/host/bluedroid/bta/pan/bta_pan_int.h
+components/bt/host/bluedroid/bta/pan/bta_pan_main.c
 components/bt/host/bluedroid/bta/sdp/bta_sdp.c
 components/bt/host/bluedroid/bta/sdp/bta_sdp_act.c
 components/bt/host/bluedroid/bta/sdp/bta_sdp_api.c
@@ -143,6 +151,7 @@ components/bt/host/bluedroid/btc/profile/std/include/btc_hd.h
 components/bt/host/bluedroid/btc/profile/std/include/btc_hh.h
 components/bt/host/bluedroid/btc/profile/std/include/dis_api.h
 components/bt/host/bluedroid/btc/profile/std/include/srvc_api.h
+components/bt/host/bluedroid/btc/profile/std/pan/bta_pan_co.c
 components/bt/host/bluedroid/common/include/common/bt_target.h
 components/bt/host/bluedroid/common/include/common/bt_trace.h
 components/bt/host/bluedroid/common/include/common/bt_vendor_lib.h
@@ -246,6 +255,10 @@ components/bt/host/bluedroid/stack/avrc/avrc_pars_tg.c
 components/bt/host/bluedroid/stack/avrc/avrc_sdp.c
 components/bt/host/bluedroid/stack/avrc/avrc_utils.c
 components/bt/host/bluedroid/stack/avrc/include/avrc_int.h
+components/bt/host/bluedroid/stack/bnep/bnep_api.c
+components/bt/host/bluedroid/stack/bnep/bnep_main.c
+components/bt/host/bluedroid/stack/bnep/bnep_utils.c
+components/bt/host/bluedroid/stack/bnep/include/bnep_int.h
 components/bt/host/bluedroid/stack/btm/btm_acl.c
 components/bt/host/bluedroid/stack/btm/btm_ble.c
 components/bt/host/bluedroid/stack/btm/btm_ble_5_gap.c
@@ -299,6 +312,7 @@ components/bt/host/bluedroid/stack/include/stack/avdt_api.h
 components/bt/host/bluedroid/stack/include/stack/avdtc_api.h
 components/bt/host/bluedroid/stack/include/stack/avrc_api.h
 components/bt/host/bluedroid/stack/include/stack/avrc_defs.h
+components/bt/host/bluedroid/stack/include/stack/bnep_api.h
 components/bt/host/bluedroid/stack/include/stack/bt_types.h
 components/bt/host/bluedroid/stack/include/stack/btm_api.h
 components/bt/host/bluedroid/stack/include/stack/btm_ble_api.h
@@ -315,6 +329,7 @@ components/bt/host/bluedroid/stack/include/stack/hidh_api.h
 components/bt/host/bluedroid/stack/include/stack/l2c_api.h
 components/bt/host/bluedroid/stack/include/stack/l2cap_client.h
 components/bt/host/bluedroid/stack/include/stack/l2cdefs.h
+components/bt/host/bluedroid/stack/include/stack/pan_api.h
 components/bt/host/bluedroid/stack/include/stack/port_api.h
 components/bt/host/bluedroid/stack/include/stack/port_ext.h
 components/bt/host/bluedroid/stack/include/stack/profiles_api.h
@@ -332,6 +347,10 @@ components/bt/host/bluedroid/stack/l2cap/l2c_main.c
 components/bt/host/bluedroid/stack/l2cap/l2c_ucd.c
 components/bt/host/bluedroid/stack/l2cap/l2c_utils.c
 components/bt/host/bluedroid/stack/l2cap/l2cap_client.c
+components/bt/host/bluedroid/stack/pan/include/pan_int.h
+components/bt/host/bluedroid/stack/pan/pan_api.c
+components/bt/host/bluedroid/stack/pan/pan_main.c
+components/bt/host/bluedroid/stack/pan/pan_utils.c
 components/bt/host/bluedroid/stack/rfcomm/include/port_int.h
 components/bt/host/bluedroid/stack/rfcomm/include/rfc_int.h
 components/bt/host/bluedroid/stack/rfcomm/port_api.c
