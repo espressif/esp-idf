@@ -275,11 +275,6 @@ esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pb
 
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
 
-/* Gates for REE-supplied external-flash address ranges. The HAL maps whole pages,
- * so validate the page-rounded span it will actually touch (not the raw byte len)
- * and require page-aligned addresses, so a sub-page or misaligned request cannot
- * smuggle in an adjacent TEE page. mmu_hal_check_valid_ext_vaddr_region() must be
- * enforced HERE, at the boundary: it rejects out-of-window (aliased) vaddrs. */
 static bool tee_ree_ext_vaddr_ok(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 {
     uint32_t page = mmu_hal_pages_to_bytes(mmu_id, 1);
@@ -332,8 +327,6 @@ void _ss_mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 
 bool _ss_mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target)
 {
-    /* Same aliasing gate as map/unmap; translation itself is page-granular and
-     * vaddr need not be aligned, so validate the page containing it. */
     uint32_t page = mmu_hal_pages_to_bytes(mmu_id, 1);
     bool valid_addr = (tee_ree_ext_vaddr_ok(mmu_id, ESP_ALIGN_DOWN(vaddr, page), 1) &&
                        esp_tee_buf_in_ree(out_paddr, sizeof(uint32_t)) &&
