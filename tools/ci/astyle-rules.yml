@@ -66,7 +66,6 @@ components_not_formatted_temporary:
     - "/components/esptool_py/"
     - "/components/fatfs/"
     - "/components/heap/"
-    - "/components/idf_test/"
     - "/components/ieee802154/"
     - "/components/lwip/"
     - "/components/mbedtls/"
