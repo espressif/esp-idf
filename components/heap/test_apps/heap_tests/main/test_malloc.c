@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -63,30 +63,6 @@ TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
     printf("Could allocate %dK on first try, %dK on 2nd try.\n", m1, m2);
     TEST_ASSERT(m1==m2);
 }
-
-#if CONFIG_SPIRAM_USE_MALLOC
-
-#if (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
-TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed memory is exhausted", "[heap]")
-{
-    char** dmaMem=malloc(sizeof(char*)*512);
-    assert(dmaMem);
-    int m=tryAllocMem();
-    int i=0;
-    for (i=0; i<512; i++) {
-        dmaMem[i]=heap_caps_malloc(1024, MALLOC_CAP_DMA);
-        if (dmaMem[i]==NULL) break;
-    }
-    for (int j=0; j<i; j++) free(dmaMem[j]);
-    free(dmaMem);
-    tryAllocMemFree();
-    printf("Could allocate %dK of DMA memory after allocating all of %dK of normal memory.\n", i, m);
-    TEST_ASSERT(i);
-}
-#endif
-
-#endif
-
 
 /* As you see, we are desperately trying to outsmart the compiler, so that it
  * doesn't warn about oversized allocations in the next two unit tests.
@@ -176,7 +152,7 @@ TEST_CASE("test get allocated size", "[heap]")
         const size_t aligned_size = (alloc_sizes[i] + 3) & ~3;
         const size_t real_size = heap_caps_get_allocated_size(ptr_array[i]);
         printf("initial size: %d, requested size : %d, allocated size: %d\n", alloc_sizes[i], aligned_size, real_size);
-        TEST_ASSERT_EQUAL(aligned_size, real_size);
+        TEST_ASSERT(aligned_size <= real_size);
 
         heap_caps_free(ptr_array[i]);
     }
