@@ -1,16 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <esp_system.h>
 #include <esp_http_client.h>
 
 #include "unity.h"
 #include "test_utils.h"
+#include "sdkconfig.h"
 
 #define HOST  "httpbin.org"
 #define USERNAME  "user"
@@ -220,6 +222,108 @@ TEST_CASE("esp_http_client_close() and cleanup() should not dispatch duplicate d
     // Verify that only one disconnect event was dispatched (or none if client was never connected)
     TEST_ASSERT_LESS_OR_EQUAL(1, disconnect_event_count);
 }
+
+#ifdef CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+#include "esp_transport.h"
+
+/*
+ * Minimal stub transport for the Case B test below. write() always reports
+ * success so the test can isolate the strict-header check from the real
+ * transport's failure path.
+ */
+static int stub_transport_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms) { return 0; }
+static int stub_transport_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)  { return len; }
+static int stub_transport_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)        { return 0; }
+static int stub_transport_close(esp_transport_handle_t t)                                              { return 0; }
+static int stub_transport_destroy(esp_transport_handle_t t)                                            { return 0; }
+static int stub_transport_poll(esp_transport_handle_t t, int timeout_ms)                               { return 1; }
+#endif // CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+
+TEST_CASE("esp_http_client_request_send fails when a header exceeds tx buffer", "[ESP HTTP CLIENT]")
+{
+    /*
+     * The "first header too big" path: with a small buffer_size_tx and an
+     * oversized header, http_header_generate_string() returns 0 and the
+     * helper exits the write loop without ever touching the transport.
+     * The after-loop strict check must surface ESP_ERR_HTTP_HEADER_TOO_LONG
+     * instead of silently completing as ESP_OK.
+     */
+    esp_http_client_config_t config = {
+        .url = "http://example.com/",
+        .buffer_size_tx = 128,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    /* Drop the default User-Agent and Host headers so the oversized header
+     * is the very first entry. That keeps us on the Case A path (helper
+     * returns 0 with wlen=0) so the after-loop strict check fires before
+     * esp_transport_write is ever attempted — no network needed. */
+    esp_http_client_set_header(client, "User-Agent", NULL);
+    esp_http_client_set_header(client, "Host", NULL);
+
+    char huge_value[200];
+    memset(huge_value, 'A', sizeof(huge_value) - 1);
+    huge_value[sizeof(huge_value) - 1] = '\0';
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "X-Huge", huge_value));
+
+    esp_err_t err = esp_http_client_request_send(client, 0);
+    TEST_ASSERT_EQUAL(ESP_ERR_HTTP_HEADER_TOO_LONG, err);
+
+    esp_http_client_cleanup(client);
+}
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+TEST_CASE("esp_http_client_request_send fails when an oversized header is mid-list", "[ESP HTTP CLIENT]")
+{
+    /*
+     * Case B: the small header at index 0 paginates, the oversized header
+     * at index 1 cannot fit on its own. A stub transport accepts the first
+     * chunk so the loop runs a second iteration, where the strict check
+     * fires. The stub can only succeed, so an ESP_ERR_HTTP_HEADER_TOO_LONG
+     * return here is unambiguously the strict check (not transport failure).
+     */
+    esp_transport_handle_t stub = esp_transport_init();
+    TEST_ASSERT_NOT_NULL(stub);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_transport_set_func(stub,
+                                                     stub_transport_connect,
+                                                     stub_transport_read,
+                                                     stub_transport_write,
+                                                     stub_transport_close,
+                                                     stub_transport_poll,
+                                                     stub_transport_poll,
+                                                     stub_transport_destroy));
+
+    esp_http_client_config_t config = {
+        .url = "http://example.com/",
+        .buffer_size_tx = 128,
+        .transport = stub,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    /* Clear defaults and set: one small header (fits), one huge header
+     * (alone too big for the buffer). */
+    esp_http_client_set_header(client, "User-Agent", NULL);
+    esp_http_client_set_header(client, "Host", NULL);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "K1", "V1"));
+
+    char huge_value[200];
+    memset(huge_value, 'A', sizeof(huge_value) - 1);
+    huge_value[sizeof(huge_value) - 1] = '\0';
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "X-Huge", huge_value));
+
+    esp_err_t err = esp_http_client_request_send(client, 0);
+    TEST_ASSERT_EQUAL(ESP_ERR_HTTP_HEADER_TOO_LONG, err);
+
+    esp_http_client_cleanup(client);
+    esp_transport_destroy(stub);
+}
+#endif // CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+
+#endif // CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
 
 void app_main(void)
 {

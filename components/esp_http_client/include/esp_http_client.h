@@ -298,6 +298,7 @@ typedef enum {
 #define ESP_ERR_HTTP_READ_TIMEOUT       (ESP_ERR_HTTP_BASE + 11)    /*!< HTTP data read timeout */
 #define ESP_ERR_HTTP_INCOMPLETE_DATA    (ESP_ERR_HTTP_BASE + 12)    /*!< Incomplete data received, less than Content-Length or last chunk */
 #define ESP_ERR_HTTP_REDIRECT_DOWNGRADE (ESP_ERR_HTTP_BASE + 13)   /*!< HTTPS origin redirected to a non-HTTPS scheme (downgrade blocked) */
+#define ESP_ERR_HTTP_HEADER_TOO_LONG    (ESP_ERR_HTTP_BASE + 14)   /*!< A single request header is larger than buffer_size_tx and cannot be sent (only when CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER is enabled) */
 
 /**
  * @brief      Start a HTTP session
@@ -368,6 +369,8 @@ esp_err_t esp_http_client_prepare(esp_http_client_handle_t client);
  *  - ESP_OK on successful
  *  - ESP_FAIL on error
  *  - ESP_ERR_HTTP_WRITE_DATA if write operation fails
+ *  - ESP_ERR_HTTP_HEADER_TOO_LONG if a single request header is larger than buffer_size_tx
+ *    (only when CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER is enabled)
  */
 esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 

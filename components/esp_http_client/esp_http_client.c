@@ -1817,7 +1817,26 @@ esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int writ
     }
 
     int wlen = client->buffer_size_tx - first_line_len;
+#ifdef CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
+    int prev_header_index = client->header_index;
+#endif
     while ((client->header_index = http_header_generate_string(client->request->headers, client->header_index, client->request->buffer->data + first_line_len, &wlen))) {
+#ifdef CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
+        /* No-progress detection: a positive return equal to (or below)
+         * the input index means the offending header at prev_header_index
+         * is larger than the buffer and pagination cannot advance. */
+        if (client->header_index <= prev_header_index) {
+            ESP_LOGD(TAG, "Header at index %d does not fit in tx buffer (size: %d)",
+                     prev_header_index, client->buffer_size_tx);
+            /* This is a permanent failure, not a transient one. Clear errno so
+             * the async caller (which keys "retry later" off errno == EAGAIN)
+             * cannot misread a stale EAGAIN and spin retrying a request that
+             * can never succeed. */
+            errno = 0;
+            return ESP_ERR_HTTP_HEADER_TOO_LONG;
+        }
+        prev_header_index = client->header_index;
+#endif
         if (wlen <= 0) {
             break;
         }
@@ -1842,6 +1861,20 @@ esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int writ
         }
         wlen = client->buffer_size_tx;
     }
+
+#ifdef CONFIG_ESP_HTTP_CLIENT_STRICT_HEADER_BUFFER
+    /* Case where the very first header (at index 0) is larger than the
+     * buffer: the helper returns 0 with *buffer_len zeroed, so the loop
+     * exits without entering the body. Distinguish from a legitimate
+     * empty/already-done state by the zeroed wlen. */
+    if (client->header_index == 0 && wlen == 0) {
+        ESP_LOGD(TAG, "Header at index 0 does not fit in tx buffer (size: %d)", client->buffer_size_tx);
+        /* Permanent failure: clear errno so the async caller does not treat a
+         * stale EAGAIN as "retry later" and spin on an unsendable request. */
+        errno = 0;
+        return ESP_ERR_HTTP_HEADER_TOO_LONG;
+    }
+#endif
 
     client->data_written_index = 0;
     client->data_write_left = client->post_len;
