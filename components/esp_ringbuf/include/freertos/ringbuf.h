@@ -73,6 +73,7 @@ typedef struct xSTATIC_RINGBUFFER {
  * @param[in]   xBufferType Type of ring buffer, see documentation.
  *
  * @note    xBufferSize of no-split/allow-split buffers will be rounded up to the nearest 32-bit aligned size.
+ *          The aligned size must be large enough to hold two item headers.
  *
  * @return  A handle to the created ring buffer, or NULL in case of error.
  */
@@ -86,6 +87,9 @@ RingbufHandle_t xRingbufferCreate(size_t xBufferSize, RingbufferType_t xBufferTy
  *
  * @param[in]   xItemSize   Size of each item to be put into the ring buffer
  * @param[in]   xItemNum    Maximum number of items the buffer needs to hold simultaneously
+ *
+ * @note    Returns NULL if xItemNum is 0, the calculated buffer size overflows,
+ *          or the resulting buffer is too small to hold two item headers.
  *
  * @return  A RingbufHandle_t handle to the created ring buffer, or NULL in case of error.
  */
@@ -102,8 +106,9 @@ RingbufHandle_t xRingbufferCreateNoSplit(size_t xItemSize, size_t xItemNum);
  *              which will be used to hold the ring buffer's data structure
  *
  * @note    xBufferSize of no-split/allow-split buffers MUST be 32-bit aligned.
+ *          The aligned size must be large enough to hold two item headers.
  *
- * @return  A handle to the created ring buffer
+ * @return  A handle to the created ring buffer, or NULL in case of error.
  */
 RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
                                         RingbufferType_t xBufferType,
@@ -538,6 +543,10 @@ BaseType_t xRingbufferGetStaticBuffer(RingbufHandle_t xRingbuffer, uint8_t **ppu
  *
  * @note A queue created using this function must only be deleted using
  * vRingbufferDeleteWithCaps()
+ * @note xBufferSize of no-split/allow-split buffers will be rounded up to the
+ * nearest 32-bit aligned size. The aligned size must be large enough to hold
+ * two item headers.
+ *
  * @param[in] xBufferSize Size of the buffer in bytes
  * @param[in] xBufferType Type of ring buffer, see documentation.
  * @param[in] uxMemoryCaps Memory capabilities of the queue's memory (see
