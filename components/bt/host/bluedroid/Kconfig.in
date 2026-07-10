@@ -1725,6 +1725,87 @@ config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     help
         This enable BLE high duty advertising interval feature
 
+menu "Bluedroid L2CAP CoC"
+    # LE CoC client code is compiled only with GATTC and server code only with
+    # GATTS (see BLE_L2CAP_COC_CLIENT/SERVER_INCLUDED in bt_target.h). Without
+    # either, enabling CoC would silently compile out entirely, so require at
+    # least one GATT role to be enabled.
+    depends on BT_BLE_ENABLED && (BT_GATTC_ENABLE || BT_GATTS_ENABLE)
+
+    config BT_BLE_L2CAP_COC_ENABLED
+        bool "Enable BLE L2CAP Connection Oriented Channels"
+        default n
+        help
+            Enable LE Credit Based Flow Control mode L2CAP CoC in Bluedroid stack.
+            Independent of Classic Bluetooth L2CAP; does not affect esp_bt_l2cap_* APIs.
+
+    config BT_BLE_L2CAP_COC_MAX_CHAN
+        int "Maximum LE CoC channels"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 1 15
+        default 5
+
+    config BT_BLE_L2CAP_COC_MPS
+        int "Default MPS (L2CAP fragment size)"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 23 65533 if !BT_BLE_L2CAP_ENHANCED_COC
+        range 64 65533 if BT_BLE_L2CAP_ENHANCED_COC
+        default 247
+        help
+            Default Maximum PDU Payload Size for LE CoC channels. Legacy LE Credit
+            Based Flow Control allows 23–65533 octets (section 4.22). Enhanced
+            Credit Based Flow Control (ECFC/EATT) requires 64–65533 (section 4.25).
+            When ECFC is enabled the minimum is raised to 64 automatically.
+
+    config BT_BLE_L2CAP_COC_INIT_CREDITS
+        int "Initial RX credit window (K-frames per channel)"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 1 64
+        default 24
+        help
+            Number of LE CoC RX credits granted to the peer when a channel opens.
+            One credit allows the peer to send one K-frame. A larger window can
+            raise sustained throughput but increases how many in-flight frames
+            the peer may send before waiting for more credits (higher RX memory
+            pressure). A smaller window reduces that pressure but can lower
+            throughput. Manual credit mode can stall if a single SDU needs more
+            K-frames than this window; prefer automatic credit mode or a larger
+            MPS when using large MTUs.
+
+    config BT_BLE_L2CAP_ENHANCED_COC
+        bool "Enable Enhanced Credit Based Flow Control (ECFC)"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        default n
+        help
+            Enable LE Enhanced CoC (L2CAP signaling 0x17/0x18) for multi-channel
+            establishment. Required for EATT multi-bearer support.
+
+    config BT_BLE_EATT_ENABLE
+        bool "Enable Enhanced ATT (EATT)"
+        depends on BT_BLE_L2CAP_COC_ENABLED && BT_BLE_L2CAP_ENHANCED_COC
+        default n
+        help
+            Enable EATT bearers over LE Enhanced CoC (PSM 0x0027).
+            GATT operations may use multiple parallel bearers after link encryption.
+
+    config BT_BLE_EATT_CHAN_NUM
+        int "Number of EATT bearers per connection"
+        depends on BT_BLE_EATT_ENABLE
+        range 1 BT_BLE_L2CAP_COC_MAX_CHAN
+        default 3
+        help
+            Number of parallel EATT bearers established per connection. Must not
+            exceed the maximum LE CoC channels, since EATT bearers are LE CoC
+            channels; the range is capped by BT_BLE_L2CAP_COC_MAX_CHAN.
+
+    config BT_BLE_EATT_MTU
+        int "EATT bearer MTU"
+        depends on BT_BLE_EATT_ENABLE
+        range 64 517
+        default 247
+
+endmenu
+
 config BT_ABORT_WHEN_ALLOCATION_FAILS
     bool "Abort when memory allocation fails in BT/BLE stack"
     depends on BT_BLUEDROID_ENABLED
