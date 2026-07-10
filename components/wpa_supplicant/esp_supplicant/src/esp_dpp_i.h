@@ -59,6 +59,7 @@ struct esp_dpp_context_t {
         enum dpp_tx_frame_type type;
     } pending_tx_op;
     bool pending_tx_op_in_progress;
+    bool peer_disc_resp_received;
     unsigned int listen_chan_idx;
 };
 
