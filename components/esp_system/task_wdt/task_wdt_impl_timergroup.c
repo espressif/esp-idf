@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "sdkconfig.h"
-#include "hal/mwdt_periph.h"
 #include "hal/wdt_hal.h"
 #include "soc/system_intr.h"
 #include "esp_check.h"
@@ -16,6 +15,7 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
+#include "mwdt_priv.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_task_wdt_impl.h"
@@ -56,8 +56,8 @@ ESP_LOG_ATTR_TAG(TAG, "task_wdt");
 static esp_err_t sleep_task_wdt_retention_init(void *arg)
 {
     uint32_t group_id = *(uint32_t *)arg;
-    esp_err_t err = sleep_retention_entries_create(tg_wdt_regs_retention[group_id].link_list,
-                                                   tg_wdt_regs_retention[group_id].link_num,
+    esp_err_t err = sleep_retention_entries_create(mwdt_reg_retention_info[group_id].regdma_entry_array,
+                                                   mwdt_reg_retention_info[group_id].array_size,
                                                    REGDMA_LINK_PRI_SYS_PERIPH_LOW,
                                                    (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
     if (err == ESP_OK) {
