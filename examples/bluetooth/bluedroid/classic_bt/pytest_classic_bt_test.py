@@ -210,3 +210,37 @@ def test_bt_avrcp_absolute_volume(app_path: str, dut: tuple[IdfDut, IdfDut]) -> 
     sink_dut.expect_exact(f'AVRC conn_state event: state 1, [{source_dut_mac}]', timeout=30)
     sink_dut.expect_exact(f'AVRC conn_state evt: state 1, [{source_dut_mac}]', timeout=30)
     sink_dut.expect_exact('start volume change simulation', timeout=30)
+
+
+# case 8: A2DP Stream AAC
+@pytest.mark.two_duts
+@pytest.mark.parametrize(
+    'count, app_path, target, config',
+    [
+        (
+            2,
+            f'{str(CUR_DIR / "a2dp_sink_stream_aac")}|{str(CUR_DIR / "a2dp_source_aac")}',
+            'esp32|esp32',
+            'test',
+        ),
+    ],
+    indirect=True,
+)
+def test_bt_a2dp_stream_aac(app_path: str, dut: tuple[IdfDut, IdfDut]) -> None:
+    sink_dut = dut[0]
+    source_dut = dut[1]
+    source_dut_mac = source_dut.expect(r'Bluetooth MAC: (([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2})').group(1).decode('utf8')
+    sink_dut.expect_exact('A2DP PROF STATE: Init Complete', timeout=30)
+    source_dut.expect_exact('A2DP PROF STATE: Init Complete', timeout=30)
+    sink_dut.expect_exact('A2DP register SEP success, seid: 0', timeout=30)
+    sink_dut.expect_exact('A2DP register SEP success, seid: 1', timeout=30)
+
+    source_dut.expect_exact('Found a target device', timeout=60)
+    source_dut.expect_exact('a2dp connecting to peer:', timeout=30)
+    source_dut.expect_exact('A2DP audio stream configuration, codec type: 2', timeout=30)
+    source_dut.expect_exact('a2dp connected', timeout=30)
+    source_dut.expect_exact('a2dp media start successfully.', timeout=60)
+
+    sink_dut.expect_exact('A2DP audio stream configuration, codec type: 2', timeout=30)
+    sink_dut.expect_exact(f'A2DP connection state: Connected, [{source_dut_mac}]', timeout=30)
+    sink_dut.expect_exact('A2DP audio state: Started', timeout=60)
