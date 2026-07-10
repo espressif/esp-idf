@@ -67,7 +67,6 @@ components_not_formatted_temporary:
     - "/components/fatfs/"
     - "/components/hal/"
     - "/components/heap/"
-    - "/components/idf_test/"
     - "/components/ieee802154/"
     - "/components/lwip/"
     - "/components/mbedtls/"
