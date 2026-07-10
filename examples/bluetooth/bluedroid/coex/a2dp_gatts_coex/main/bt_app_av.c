@@ -82,6 +82,30 @@ static void bt_app_avrc_ct_evt_hdl(uint16_t event, void *param)
     }
 }
 
+/* handler for A2DP callback events */
+static void bt_app_a2d_evt_hdl(uint16_t event, void *param)
+{
+    esp_a2d_cb_param_t *a2d = (esp_a2d_cb_param_t *)(param);
+
+    switch (event) {
+    /* when a2dp init or deinit completed, this event comes */
+    case ESP_A2D_PROF_STATE_EVT: {
+        if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
+            /* Get the default value of the delay value */
+            esp_a2d_sink_get_delay_value();
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Deinit Complete");
+        }
+        break;
+    }
+    /* others */
+    default:
+        ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
+        break;
+    }
+}
+
 /********************************
  * EXTERNAL FUNCTION DEFINITIONS
  *******************************/
@@ -89,13 +113,16 @@ static void bt_app_avrc_ct_evt_hdl(uint16_t event, void *param)
 void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
     switch (event) {
+    case ESP_A2D_PROF_STATE_EVT: {
+        bt_app_work_dispatch(bt_app_a2d_evt_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
+        break;
+    }
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
     case ESP_A2D_AUDIO_CFG_EVT: {
         bt_app_work_dispatch(bt_a2d_evt_int_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
         break;
     }
-    case ESP_A2D_PROF_STATE_EVT:
     case ESP_A2D_SNK_PSC_CFG_EVT:
     case ESP_A2D_SNK_SET_DELAY_VALUE_EVT:
     case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
