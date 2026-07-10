@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
