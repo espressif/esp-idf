@@ -30,11 +30,6 @@ extern "C" {
 /* Alignment required for start/end addresses for LP_PERI_PMS regions */
 #define APM_LP_PERI_PMS_REGION_ADDR_ALIGN  (4)
 
-/* Number of configurable MSPI PMS regions (flash/PSRAM) */
-#define APM_MSPI_PMS_REGION_NUM            (4)
-/* Alignment required for start/end addresses for MSPI_PMS regions */
-#define APM_MSPI_PMS_REGION_ADDR_ALIGN     (0x1000)
-
 /* CPU_PERIPH slave mask */
 #define APM_SLAVE_CPU_PERI_ALL_MASK        (0x0FCFU)
 /* HP_PERIPH0 slave mask */

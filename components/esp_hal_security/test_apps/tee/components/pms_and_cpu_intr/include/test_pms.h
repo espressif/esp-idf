@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 
 /* Test-cases */
@@ -54,3 +55,5 @@ void test_sys_pms_master_gdma_slave_hp_mem(void);
 
 void test_sys_pms_master_gdma_slave_ext_mem(void);
 #endif
+
+void test_sys_pms_master_hp_cpu_slave_flash_mspi(void);

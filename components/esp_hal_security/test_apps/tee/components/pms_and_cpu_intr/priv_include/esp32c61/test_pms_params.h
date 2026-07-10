@@ -22,6 +22,9 @@
  */
 #define SOC_APM_CTRL_TEE_MODE_ACCESS_BUG   0
 
+/* MSPI flash/PSRAM PMS on C61 exposes only the secure (TEE) attribute fields */
+#define SOC_MSPI_PMS_SUPPORT_ONLY_TEE_MODE     1
+
 /********* GDMA APM master ID *********/
 #define TEST_GDMA_APM_MASTER_ID         27    /* GDMA_DUMMY11 */
 

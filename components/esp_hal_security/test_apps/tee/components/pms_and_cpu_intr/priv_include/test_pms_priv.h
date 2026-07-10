@@ -66,6 +66,9 @@ void test_pms_ctrl_reset_all(void);
 void test_pms_enable_intr(apm_ctrl_module_t ctrl_mod);
 #endif
 
+void test_pms_mspi_enable_intr(void);
+void test_pms_mspi_disable_intr(void);
+
 /* Utility functions */
 void set_test_vector_table(void);
 void restore_default_vector_table(void);
