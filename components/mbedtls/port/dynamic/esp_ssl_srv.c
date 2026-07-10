@@ -8,7 +8,11 @@
 
 int __real_mbedtls_ssl_handshake_server_step(mbedtls_ssl_context *ssl);
 
+int __real_mbedtls_ssl_tls13_handshake_server_step(mbedtls_ssl_context *ssl);
+
 int __wrap_mbedtls_ssl_handshake_server_step(mbedtls_ssl_context *ssl);
+
+int __wrap_mbedtls_ssl_tls13_handshake_server_step(mbedtls_ssl_context *ssl);
 
 static const char *TAG = "SSL Server";
 
@@ -33,7 +37,8 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add, int prev_state)
 {
     int state = add ? ssl->MBEDTLS_PRIVATE(state) : prev_state;
 
-    if (mbedtls_ssl_is_handshake_over(ssl) || ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
+    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER ||
+        ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
         return 0;
     }
 
@@ -158,6 +163,18 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add, int prev_state)
             }
             break;
         case MBEDTLS_SSL_CERTIFICATE_VERIFY:
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+            /* In TLS 1.3 server flow, CERTIFICATE_VERIFY is the server's own
+             * CertificateVerify (outgoing). In TLS 1.2 it is the client's
+             * CertificateVerify (incoming). The constant is shared but the
+             * direction is reversed, so the required buffer differs. */
+            if (ssl->MBEDTLS_PRIVATE(tls_version) == MBEDTLS_SSL_VERSION_TLS1_3) {
+                if (add) {
+                    CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, MBEDTLS_SSL_OUT_BUFFER_LEN));
+                }
+                break;
+            }
+#endif /* MBEDTLS_SSL_PROTO_TLS1_3 */
             if (add) {
                 CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
             } else {
@@ -198,6 +215,30 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add, int prev_state)
             break;
         case MBEDTLS_SSL_HANDSHAKE_WRAPUP:
             break;
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+        /* TLS 1.3-only server outgoing states: ensure a TX buffer exists.
+         * The shared free-on-empty logic at the top handles teardown. */
+        case MBEDTLS_SSL_HELLO_RETRY_REQUEST:
+        case MBEDTLS_SSL_ENCRYPTED_EXTENSIONS:
+        case MBEDTLS_SSL_SERVER_CCS_AFTER_HELLO_RETRY_REQUEST:
+        case MBEDTLS_SSL_SERVER_CCS_AFTER_SERVER_HELLO:
+        case MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, MBEDTLS_SSL_OUT_BUFFER_LEN));
+            }
+            break;
+        /* TLS 1.3-only server incoming states: allocate RX before, free after. */
+        case MBEDTLS_SSL_CLIENT_CERTIFICATE_VERIFY:
+        case MBEDTLS_SSL_END_OF_EARLY_DATA:
+            if (add) {
+                CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
+            } else {
+                CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
+            }
+            break;
+        case MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET_FLUSH:
+            break;
+#endif /* MBEDTLS_SSL_PROTO_TLS1_3 */
         default:
             break;
     }
@@ -211,6 +252,18 @@ int __wrap_mbedtls_ssl_handshake_server_step(mbedtls_ssl_context *ssl)
     CHECK_OK(manage_resource(ssl, true, prev_state));
 
     CHECK_OK(__real_mbedtls_ssl_handshake_server_step(ssl));
+
+    CHECK_OK(manage_resource(ssl, false, prev_state));
+
+    return 0;
+}
+
+int __wrap_mbedtls_ssl_tls13_handshake_server_step(mbedtls_ssl_context *ssl)
+{
+    int prev_state = ssl->MBEDTLS_PRIVATE(state);
+    CHECK_OK(manage_resource(ssl, true, prev_state));
+
+    CHECK_OK(__real_mbedtls_ssl_tls13_handshake_server_step(ssl));
 
     CHECK_OK(manage_resource(ssl, false, prev_state));
 
