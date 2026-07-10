@@ -228,6 +228,9 @@ static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
            || esp_ptr_in_rtc_dram_fast((void*) sp)
 #endif
+#if SOC_MEM_SPM_SUPPORTED
+           || esp_ptr_in_spm((void *)sp)
+#endif
            ;
 }
 
@@ -311,7 +314,11 @@ bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz)
            || (esp_ptr_in_rtc_slow((void *)addr) && esp_ptr_in_rtc_slow((void *)(addr + sz - 1)))
            || (esp_ptr_in_rtc_dram_fast((void *)addr) && esp_ptr_in_rtc_dram_fast((void *)(addr + sz - 1)))
            || (esp_ptr_external_ram((void *)addr) && esp_ptr_external_ram((void *)(addr + sz - 1)))
-           || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr + sz - 1)));
+           || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr + sz - 1)))
+#if SOC_MEM_SPM_SUPPORTED
+           || (esp_ptr_in_spm((void *)addr) && esp_ptr_in_spm((void *)(addr + sz - 1)))
+#endif
+           ;
 }
 
 /**
