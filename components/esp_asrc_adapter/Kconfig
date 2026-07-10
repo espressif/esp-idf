@@ -1,0 +1,14 @@
+menu "ESP-ASRC Configurations"
+    depends on SOC_ASRC_SUPPORTED
+
+    config ASRC_ALLOW_PD
+        bool "Allow power down of ASRC in light sleep"
+        default n
+        depends on PM_ENABLE && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        help
+            If enabled, the ASRC driver will backup/restore ASRC registers before/after
+            entering/exiting light sleep via the sleep retention framework.
+            By this approach, the system can power off ASRC's power domain (TOP PD).
+            This can save power, but at the expense of more RAM being consumed.
+
+endmenu
