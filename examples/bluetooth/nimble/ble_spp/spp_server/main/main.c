@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -17,14 +18,30 @@
 #include "ble_spp_server.h"
 #include "driver/uart.h"
 
+static const char *tag = "NimBLE_SPP_SERVER";
 static int ble_spp_server_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t own_addr_type;
 int gatt_svr_register(void);
 QueueHandle_t spp_common_uart_queue = NULL;
 static bool conn_handle_subs[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 static uint16_t ble_spp_svc_gatt_read_val_handle;
+static char device_name[32] = "nimble-ble-spp-svr";
 
 void ble_store_config_init(void);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_spp_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 /**
  * Logs information about a connection to the console.
@@ -90,18 +107,19 @@ ble_spp_server_advertise(void)
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
-    const char *name;
-    name = ble_svc_gap_device_name();
-    fields.name = (uint8_t *)name;
-    fields.name_len = strlen(name);
+    fields.name = (uint8_t *)device_name;
+    fields.name_len = strlen(device_name);
     fields.name_is_complete = 1;
 #endif
 
-    fields.uuids16 = (ble_uuid16_t[]) {
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
+    static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(BLE_SVC_SPP_UUID16)
     };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
+#endif
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
@@ -152,6 +170,11 @@ ble_spp_server_gap_event(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             ble_spp_server_print_conn_desc(&desc);
+            ESP_LOGI(tag, "Connected, conn_handle %d, remote %02x:%02x:%02x:%02x:%02x:%02x",
+                     event->connect.conn_handle,
+                     desc.peer_ota_addr.val[5], desc.peer_ota_addr.val[4],
+                     desc.peer_ota_addr.val[3], desc.peer_ota_addr.val[2],
+                     desc.peer_ota_addr.val[1], desc.peer_ota_addr.val[0]);
         }
         MODLOG_DFLT(INFO, "\n");
         if (event->connect.status != 0 || CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1) {
@@ -250,7 +273,7 @@ ble_spp_server_on_sync(void)
 
 void ble_spp_server_host_task(void *param)
 {
-    MODLOG_DFLT(INFO, "BLE Host Task Started");
+    ESP_LOGI(tag, "BLE Host Task Started");
     /* This function will return only when nimble_port_stop() is executed */
     nimble_port_run();
 
@@ -404,7 +427,8 @@ void ble_server_uart_task(void *pvParameters)
 static void ble_spp_uart_init(void)
 {
     uart_config_t uart_config = {
-        .baud_rate = 115200,
+        /* Keep console baud (e.g. 74880 on ESP32-C2 26MHz XTAL) when sharing UART0. */
+        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -480,9 +504,16 @@ app_main(void)
     rc = gatt_svr_init();
     assert(rc == 0);
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(device_name, esp_ble_spp_get_example_name(), sizeof(device_name) - 1);
+    device_name[sizeof(device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
+
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
-    rc = ble_svc_gap_device_name_set("nimble-ble-spp-svr");
+    rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
 #endif
 #endif

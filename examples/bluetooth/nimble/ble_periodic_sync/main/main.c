@@ -15,17 +15,32 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/ble_gap.h"
+#include "host/ble_hs_adv.h"
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
 #include "modlog/modlog.h"
 
 static const char *tag = "NimBLE_BLE_PERIODIC_SYNC";
 static int synced = 0;
-
+static char remote_device_name[32] = "Periodic ADV";
 
 static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg);
 
 void ble_store_config_init(void);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_periodic_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 static void
 periodic_sync_scan(void)
@@ -33,6 +48,7 @@ periodic_sync_scan(void)
     uint8_t own_addr_type;
     struct ble_gap_ext_disc_params disc_params = {0};
     int rc;
+    uint8_t filter_duplicates = 0;
 
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -42,9 +58,15 @@ periodic_sync_scan(void)
     }
 
     disc_params.passive = 1;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan under CI to improve discovery reliability in multi-board labs. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(50);
+    filter_duplicates = 1;
+#endif
 
     rc = ble_gap_ext_disc(own_addr_type, 0, 0,
-                          0, 0, 0, &disc_params, &disc_params,
+                          filter_duplicates, 0, 0, &disc_params, &disc_params,
                           periodic_sync_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error initiating GAP discovery procedure; rc=%d\n",
@@ -56,8 +78,13 @@ void print_periodic_sync_data(struct ble_gap_event *event)
 {
     MODLOG_DFLT(INFO, "status : %d\nperiodic_sync_handle : %d\nsid : %d\n",
                 event->periodic_sync.status, event->periodic_sync.sync_handle, event->periodic_sync.sid);
-    MODLOG_DFLT(INFO, "adv addr : ");
-    ESP_LOG_BUFFER_HEX("NimBLE", event->periodic_sync.adv_addr.val, 6);
+    ESP_LOGI(tag, "Adv Addr: %02x:%02x:%02x:%02x:%02x:%02x",
+             event->periodic_sync.adv_addr.val[5],
+             event->periodic_sync.adv_addr.val[4],
+             event->periodic_sync.adv_addr.val[3],
+             event->periodic_sync.adv_addr.val[2],
+             event->periodic_sync.adv_addr.val[1],
+             event->periodic_sync.adv_addr.val[0]);
     MODLOG_DFLT(INFO, "adv_phy : %s\n", event->periodic_sync.adv_phy == 1 ? "1m" : (event->periodic_sync.adv_phy == 2 ? "2m" : "coded"));
     MODLOG_DFLT(INFO, "per_adv_ival : %d\n", event->periodic_sync.per_adv_ival);
     MODLOG_DFLT(INFO, "adv_clk_accuracy : %d\n", event->periodic_sync.adv_clk_accuracy);
@@ -103,7 +130,30 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_EXT_DISC: {
         /* An advertisement report was received during GAP discovery. */
         const struct ble_gap_ext_disc_desc *disc = &event->ext_disc;
-        if (disc->sid == 2 && synced == 0) {
+        bool should_sync = false;
+
+        if (synced != 0) {
+            return 0;
+        }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+        struct ble_hs_adv_fields fields;
+        int rc_parse = ble_hs_adv_parse_fields(&fields, disc->data, disc->length_data);
+        if (rc_parse == 0 && disc->sid == 2 && disc->periodic_adv_itvl &&
+            fields.name != NULL &&
+            fields.name_len == strlen(remote_device_name) &&
+            memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+            const uint8_t *addr = disc->addr.val;
+            ESP_LOGI(tag, "Found device: addr: %02x:%02x:%02x:%02x:%02x:%02x, name: %s",
+                     addr[5], addr[4], addr[3], addr[2], addr[1], addr[0], remote_device_name);
+            should_sync = true;
+        }
+#else
+        if (disc->sid == 2) {
+            should_sync = true;
+        }
+#endif
+        if (should_sync) {
             struct ble_gap_periodic_sync_params params = {0};
             int rc;
             params.skip = 10;
@@ -120,6 +170,7 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
                 MODLOG_DFLT(ERROR, "Failed to create periodic sync; rc=%d\n", rc);
             } else {
                 synced++;
+                ESP_LOGI(tag, "Create sync");
             }
         }
         return 0;
@@ -137,10 +188,12 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
     case BLE_GAP_EVENT_PERIODIC_SYNC:
         MODLOG_DFLT(INFO, "Periodic sync event : \n");
-        print_periodic_sync_data(event);
         if (event->periodic_sync.status != 0) {
+            ESP_LOGE(tag, "Periodic Sync Failed; status=%d", event->periodic_sync.status);
             synced = 0;
         } else {
+            ESP_LOGI(tag, "Periodic Sync Established");
+            print_periodic_sync_data(event);
             /* Cancel scanning since sync is established */
             ble_gap_disc_cancel();
         }
@@ -194,6 +247,14 @@ app_main(void)
         MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, esp_ble_periodic_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = periodic_sync_on_reset;

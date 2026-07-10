@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "cte_config.h"
 #include "esp_log.h"
@@ -77,6 +78,20 @@ uint8_t antenna_use_gpio[CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT] = {
 
 
 uint8_t antenna_signal_index[4] = {CTE_ANT0_IDX, CTE_ANT1_IDX, CTE_ANT2_IDX, CTE_ANT3_IDX};
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+char *esp_ble_cte_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 int ble_direction_finding_antenna_init(uint8_t* gpio_array,uint8_t gpio_array_len){
     int rc;

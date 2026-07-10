@@ -36,4 +36,12 @@ menu "Example Configuration"
         help
             Used for internal test ONLY.
             Use this option to advertise in a specific random address.
+
+    config EXAMPLE_CI_ID
+        int "example id for CI test"
+        default 0
+
+    config EXAMPLE_CI_PIPELINE_ID
+        int "The pipeline id for CI test"
+        default 0
 endmenu

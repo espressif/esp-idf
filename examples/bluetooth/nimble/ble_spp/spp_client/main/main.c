@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -18,7 +19,7 @@
 
 #define PEER_ADDR_VAL_SIZE      6
 
-static const char *tag = "NimBLE_SPP_BLE_CENT";
+static const char *tag = "NimBLE_SPP_CLIENT";
 static int ble_spp_client_gap_event(struct ble_gap_event *event, void *arg);
 QueueHandle_t spp_common_uart_queue = NULL;
 void ble_store_config_init(void);
@@ -26,6 +27,22 @@ uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
 static SemaphoreHandle_t g_attr_handle_mutex = NULL;
 static void ble_spp_client_scan(void);
 static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char remote_device_name[32];
+
+static char *esp_ble_spp_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #if MYNEWT_VAL(BLE_GATTC)
 static void ble_spp_client_write_subscribe(const struct peer *peer)
@@ -156,6 +173,12 @@ ble_spp_client_scan(void)
     disc_params.filter_policy = 0;
     disc_params.limited = 0;
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan improves discovery reliability in multi-board CI environments. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(50);
+#endif
+
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       ble_spp_client_gap_event, NULL);
     if (rc != 0) {
@@ -196,6 +219,14 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
         return 0;
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (fields.name != NULL &&
+            fields.name_len == strlen(remote_device_name) &&
+            memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+        return 1;
+    }
+    return 0;
+#else
     /* The device has to advertise support for the SPP
      * service (0xABF0).
      */
@@ -205,6 +236,7 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
         }
     }
     return 0;
+#endif
 }
 
 /**
@@ -222,6 +254,10 @@ ble_spp_client_connect_if_interesting(const struct ble_gap_disc_desc *disc)
     if (!ble_spp_client_should_connect(disc)) {
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(tag, "Found device: %s, name: %s", addr_str(disc->addr.val), remote_device_name);
+#endif
 
 #if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
@@ -308,6 +344,8 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
             }
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
+            ESP_LOGI(tag, "Connected, conn_handle %d, remote %s",
+                     event->connect.conn_handle, addr_str(desc.peer_ota_addr.val));
 
             /* Remember peer. */
             rc = peer_add(event->connect.conn_handle);
@@ -486,7 +524,8 @@ void ble_client_uart_task(void *pvParameters)
 static void ble_spp_uart_init(void)
 {
     uart_config_t uart_config = {
-        .baud_rate = 115200,
+        /* Keep console baud (e.g. 74880 on ESP32-C2 26MHz XTAL) when sharing UART0. */
+        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -535,6 +574,14 @@ app_main(void)
 
     /* Initialize UART driver and start uart task */
     ble_spp_uart_init();
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Log after UART0 init so DeviceName is not corrupted by uart_driver_install. */
+    strncpy(remote_device_name, esp_ble_spp_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = ble_spp_client_on_reset;

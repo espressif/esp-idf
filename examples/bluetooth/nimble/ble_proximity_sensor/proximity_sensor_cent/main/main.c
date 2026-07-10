@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -18,10 +20,32 @@
 #include "host/ble_esp_gattc_cache.h"
 #endif
 
+#define EXAMPLE_ADV_NAME_LEN_MAX  29
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *get_example_name(void)
+{
+    static char example_name[EXAMPLE_ADV_NAME_LEN_MAX];
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X", CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF, CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
+
 static const char *tag = "NimBLE_PROX_CENT";
+static char remote_device_name[EXAMPLE_ADV_NAME_LEN_MAX];
 static int8_t tx_pwr_lvl;
 static struct ble_prox_cent_conn_peer conn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
 static struct ble_prox_cent_link_lost_peer disconn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
+
+/* Note: Path loss is calculated using formula : threshold - RSSI value
+ *       by default threshold is kept -128 as per the spec
+ *       high_threshold and low_threshold are hardcoded after testing and noting
+ *       RSSI values when distance between devices are less and more.
+ */
+static int8_t high_threshold = -70;
+static int8_t low_threshold = -100;
 
 void ble_store_config_init(void);
 static void ble_prox_cent_scan(void);
@@ -212,6 +236,12 @@ ble_prox_cent_scan(void)
     disc_params.filter_policy = 0;
     disc_params.limited = 0;
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan improves discovery reliability in multi-board CI environments. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(50);
+#endif
+
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       ble_prox_cent_gap_event, NULL);
     if (rc != 0) {
@@ -232,18 +262,26 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
-    uint8_t test_addr[6];
+    int link_loss_uuid_found = 0;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    char dev_name[EXAMPLE_ADV_NAME_LEN_MAX];
+    int name_matched = 0;
+#endif
     if (!(disc->props & BLE_HCI_ADV_CONN_MASK)) {
         return 0;
     }
-    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
-        ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address; peer_addr_parse outputs little-endian matching disc->addr.val */
-        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
-        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
-            return 0;
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
+    {
+        uint8_t test_addr[6];
+        if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+            ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+            peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+            if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+                return 0;
+            }
         }
     }
+#endif
 
     /* The device has to advertise support for Proximity sensor (link loss)
     * service (0x1803).
@@ -255,17 +293,37 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             break;
         }
 
-        /* Search if Proximity Sensor (Link loss) UUID 0x1803 is advertised (little-endian: [0x03, 0x18]) */
-        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x03 && disc->data[offset + 3] == 0x18 ) {
-                return 1;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+        if (disc->data[offset + 1] == BLE_HS_ADV_TYPE_COMP_NAME ||
+                disc->data[offset + 1] == BLE_HS_ADV_TYPE_INCOMP_NAME) {
+            int name_len = ad_struct_len - 1;
+            if (name_len == (int)strlen(remote_device_name) &&
+                    memcmp(&disc->data[offset + 2], remote_device_name, name_len) == 0) {
+                name_matched = 1;
+                memcpy(dev_name, remote_device_name, name_len + 1);
             }
         }
-
+#endif
+        /* UUID 0x1803 little-endian [0x03, 0x18] */
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
+            if (disc->data[offset + 2] == 0x03 && disc->data[offset + 3] == 0x18) {
+                link_loss_uuid_found = 1;
+            }
+        }
         offset += ad_struct_len + 1;
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (name_matched && link_loss_uuid_found) {
+        ESP_LOGI(tag, "Found device: addr: %02x:%02x:%02x:%02x:%02x:%02x, name: %s",
+                 disc->addr.val[5], disc->addr.val[4], disc->addr.val[3],
+                 disc->addr.val[2], disc->addr.val[1], disc->addr.val[0], dev_name);
+        return 1;
+    }
     return 0;
+#else
+    return link_loss_uuid_found;
+#endif
 }
 #else
 
@@ -275,7 +333,7 @@ ble_prox_cent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
-    uint8_t test_addr[6];
+
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -288,18 +346,38 @@ ble_prox_cent_should_connect(const struct ble_gap_disc_desc *disc)
         return rc;
     }
 
-    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
-        ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address */
-        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
-        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
-            return 0;
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
+    {
+        uint8_t test_addr[6];
+        if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
+            ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+            peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+            if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+                return 0;
+            }
         }
     }
+#endif
 
     /* The device has to advertise support for the Proximity sensor (link loss)
      * service (0x1803).
      */
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (fields.name != NULL &&
+            fields.name_len == strlen(remote_device_name) &&
+            memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+        for (i = 0; i < fields.num_uuids16; i++) {
+            if (ble_uuid_u16(&fields.uuids16[i].u) == BLE_SVC_LINK_LOSS_UUID16) {
+                ESP_LOGI(tag, "Found device: addr: %02x:%02x:%02x:%02x:%02x:%02x, name: %s",
+                         disc->addr.val[5], disc->addr.val[4], disc->addr.val[3],
+                         disc->addr.val[2], disc->addr.val[1], disc->addr.val[0],
+                         remote_device_name);
+                return 1;
+            }
+        }
+    }
+    return 0;
+#else
     for (i = 0; i < fields.num_uuids16; i++) {
         if (ble_uuid_u16(&fields.uuids16[i].u) == BLE_SVC_LINK_LOSS_UUID16) {
             return 1;
@@ -307,6 +385,7 @@ ble_prox_cent_should_connect(const struct ble_gap_disc_desc *disc)
     }
 
     return 0;
+#endif
 }
 #endif
 
@@ -478,9 +557,8 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
                         event->connect.status);
-
-            ble_prox_cent_scan();
         }
+        ble_prox_cent_scan();
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
@@ -639,9 +717,16 @@ ble_prox_cent_path_loss_task(void *pvParameters)
                 MODLOG_DFLT(INFO, "path loss = %d pwr lvl = %d rssi = %d",
                             path_loss, tx_pwr_lvl, rssi);
 
-                if (conn_peer[i].val_handle != 0) {
-                    int8_t path_loss_val = (int8_t)path_loss;
+                if ((conn_peer[i].val_handle != 0) &&
+                        (path_loss > high_threshold || path_loss < low_threshold)) {
+
+                    if (path_loss < low_threshold) {
+                        path_loss = 0;
+                    }
+
 #if MYNEWT_VAL(BLE_GATTC)
+                    /* Alert Level is a single-octet characteristic (UUID 0x2A06). */
+                    uint8_t path_loss_val = (uint8_t)path_loss;
                     rc = ble_gattc_write_no_rsp_flat(i, conn_peer[i].val_handle,
                                                      &path_loss_val, sizeof(path_loss_val));
                     if (rc != 0) {
@@ -755,6 +840,14 @@ app_main(void)
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-prox-cent");
     assert(rc == 0);
+#endif
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
 #endif
 
     /* XXX Need to have template for store */

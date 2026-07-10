@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_check.h"
+#include <string.h>
 
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -17,6 +18,7 @@
 
 static const char *TAG = "CTE_SYNC_EXAMPLE";
 static int is_synced = 0;
+static char sync_target_name[32] = "CTE_Periodic_Adv";
 
 static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg);
 
@@ -173,7 +175,7 @@ static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
                 memcpy(dev_name, &adv_data[index + 2], name_len);
                 dev_name[name_len] = '\0';
 
-                if (strcmp(dev_name, CONFIG_EXAMPLE_SYNC_TARGET_DEVNAME) == 0) {
+                if (strcmp(dev_name, sync_target_name) == 0) {
                     should_sync = true;
                     break;
                 }
@@ -255,9 +257,26 @@ static void periodic_sync_on_reset(int reason)
 static void periodic_sync_on_sync(void)
 {
     int rc;
+    uint8_t own_addr_type;
+    ble_addr_t addr;
+
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
+
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    assert(rc == 0);
+
+    rc = ble_hs_id_copy_addr(own_addr_type, addr.val, NULL);
+    assert(rc == 0);
+
+    ESP_LOGI(TAG, "Bluetooth MAC: %02x:%02x:%02x:%02x:%02x:%02x",
+             addr.val[5], addr.val[4], addr.val[3], addr.val[2], addr.val[1], addr.val[0]);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             sync_target_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Begin scanning for a periodic advertiser to sync with. */
     periodic_sync_scan();
@@ -298,6 +317,14 @@ void app_main(void)
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     rc = ble_svc_gap_device_name_set("periodic_sync_CTE");
     assert(rc == 0);
+#endif
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(sync_target_name, esp_ble_cte_get_example_name(), sizeof(sync_target_name) - 1);
+    sync_target_name[sizeof(sync_target_name) - 1] = '\0';
+#elif CONFIG_EXAMPLE_SYNC_BY_NAME
+    strncpy(sync_target_name, CONFIG_EXAMPLE_SYNC_TARGET_DEVNAME, sizeof(sync_target_name) - 1);
+    sync_target_name[sizeof(sync_target_name) - 1] = '\0';
 #endif
 
 

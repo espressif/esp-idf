@@ -20,12 +20,17 @@
        "use a supported target from README.md (e.g. esp32h2, esp32c6) and run idf.py set-target."
 #endif
 
-#define BLE_PEER_NAME           "esp-multi-conn"
+#define BLE_PEER_NAME_DEFAULT   "esp-multi-conn"
 #define BLE_PEER_MAX_NUM        (MYNEWT_VAL(BLE_MAX_CONNECTIONS) - 1)
 #define BLE_PREF_EVT_LEN_MS     (5)
 #define BLE_PREF_CONN_ITVL_MS   (BLE_PEER_MAX_NUM * BLE_PREF_EVT_LEN_MS)
 
 static const char *TAG = "ESP_MULTI_CONN_CENT";
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char remote_device_name[32];
+#else
+static char remote_device_name[32] = BLE_PEER_NAME_DEFAULT;
+#endif
 
 static const ble_uuid_t *remote_svc_uuid =
     BLE_UUID128_DECLARE(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
@@ -43,6 +48,20 @@ static void ble_cent_connect(void *disc);
 
 static uint8_t own_addr_type;
 static uint8_t s_ble_multi_conn_num = 0;
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_multi_conn_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 /**
  * Called when service discovery of the specified peer has completed.
@@ -91,12 +110,26 @@ ble_cent_client_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
     case BLE_GAP_EVENT_EXT_DISC:
         rc = ble_hs_adv_parse_fields(&fields, event->ext_disc.data, event->ext_disc.length_data);
+        if (rc != 0 || fields.name == NULL) {
+            return 0;
+        }
 
-        /* An advertisement report was received during GAP discovery. */
-        if ((rc == 0) && fields.name && (fields.name_len >= strlen(BLE_PEER_NAME)) &&
-            !strncmp((const char *)fields.name, BLE_PEER_NAME, strlen(BLE_PEER_NAME))) {
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+        if (fields.name_len == strlen(remote_device_name) &&
+                memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+            ESP_LOGI(TAG, "Found device: addr: %s, name: %s",
+                     addr_str(event->ext_disc.addr.val), remote_device_name);
             ble_cent_connect(&event->ext_disc);
         }
+#else
+        /* An advertisement report was received during GAP discovery. */
+        if ((fields.name_len >= strlen(remote_device_name)) &&
+                !strncmp((const char *)fields.name, remote_device_name, strlen(remote_device_name))) {
+            ESP_LOGI(TAG, "Found device: addr: %s, name: %.*s",
+                     addr_str(event->ext_disc.addr.val), fields.name_len, fields.name);
+            ble_cent_connect(&event->ext_disc);
+        }
+#endif
 
         return 0;
 
@@ -312,7 +345,7 @@ ble_cent_scan(void)
 
 /**
  * Connects to the sender of the specified advertisement.The advertisement must contain its full
- * name which we will compare with 'BLE_PEER_NAME'.
+ * name which we will compare with 'remote_device_name'.
  */
 static void
 ble_cent_connect(void *disc)
@@ -430,7 +463,7 @@ blecent_on_sync(void)
     }
 
     /* We will function as both the central and peripheral device, connecting to all peripherals
-     * with the name of BLE_PEER_NAME. Meanwhile, a connectable advertising will be enabled.
+     * with the name of remote_device_name. Meanwhile, a connectable advertising will be enabled.
      * In this example, we register two gap callback functions.
      *  - ble_cent_client_gap_event: Used by the central.
      *  - ble_cent_server_gap_event: Used by the peripheral.
@@ -465,6 +498,13 @@ app_main(void)
         ESP_LOGE(TAG, "Failed to init nimble %d ", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, esp_ble_multi_conn_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;

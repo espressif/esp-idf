@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <stdio.h>
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -26,6 +28,21 @@ static uint8_t sub_data_pattern[BLE_PAWR_SUB_DATA_LEN] = {0};
 static uint8_t conn;
 static uint8_t own_addr_type;
 static struct ble_gap_conn_desc desc;
+static char device_name[32] = "Nimble_PAwR_CONN";
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_pawr_conn_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 char *
 addr_str(const void *addr)
 {
@@ -221,8 +238,8 @@ start_periodic_adv(uint8_t own_addr_type)
     assert (rc == 0);
 
     memset(&adv_fields, 0, sizeof(adv_fields));
-    adv_fields.name = (const uint8_t *)"Nimble_PAwR_CONN";
-    adv_fields.name_len = strlen((char *)adv_fields.name);
+    adv_fields.name = (const uint8_t *)device_name;
+    adv_fields.name_len = strlen(device_name);
 
     /* mbuf chain will be increased if needed */
     data = os_msys_get_pkthdr(BLE_HCI_MAX_ADV_DATA_LEN, 0);
@@ -315,6 +332,13 @@ app_main(void)
         ESP_LOGE(TAG, "Failed to init nimble %d ", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(device_name, esp_ble_pawr_conn_get_example_name(), sizeof(device_name) - 1);
+    device_name[sizeof(device_name) - 1] = '\0';
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = on_reset;

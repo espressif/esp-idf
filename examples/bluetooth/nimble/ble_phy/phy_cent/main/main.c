@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -18,11 +19,28 @@
 static const char *tag = "NimBLE_BLE_PHY_CENT";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 static ble_addr_t conn_addr;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char remote_device_name[32];
+#endif
 
 static void blecent_scan(void);
 
 static uint8_t s_current_phy;
 void ble_store_config_init(void);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_phy_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #if MYNEWT_VAL(BLE_GATTC)
 /**
@@ -234,6 +252,12 @@ blecent_scan(void)
     disc_params.filter_policy = 0;
     disc_params.limited = 0;
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan improves discovery reliability in multi-board CI environments. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(50);
+#endif
+
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       blecent_gap_event, NULL);
     if (rc != 0) {
@@ -268,6 +292,24 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         }
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    while (offset < disc->length_data) {
+        ad_struct_len = disc->data[offset];
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
+            break;
+        }
+        if (disc->data[offset + 1] == BLE_HS_ADV_TYPE_COMP_NAME ||
+                disc->data[offset + 1] == BLE_HS_ADV_TYPE_INCOMP_NAME) {
+            int name_len = ad_struct_len - 1;
+            if (name_len == (int)strlen(remote_device_name) &&
+                    memcmp(&disc->data[offset + 2], remote_device_name, name_len) == 0) {
+                return 1;
+            }
+        }
+        offset += ad_struct_len + 1;
+    }
+    return 0;
+#else
     /* The device has to advertise support LE PHY UUID (0xABF2).
     */
     while (offset < disc->length_data) {
@@ -289,6 +331,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         offset += ad_struct_len + 1;
     }
     return 0;
+#endif
 }
 
 /**
@@ -307,6 +350,11 @@ blecent_connect_if_interesting(void *disc)
     if (!ext_blecent_should_connect((struct ble_gap_ext_disc_desc *)disc)) {
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(tag, "Found device: addr: %s, name: %s",
+             addr_str(((struct ble_gap_ext_disc_desc *)disc)->addr.val), remote_device_name);
+#endif
 
 #if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
@@ -576,6 +624,13 @@ app_main(void)
         MODLOG_DFLT(ERROR, "Failed to init nimble %d \n", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, esp_ble_phy_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = blecent_on_reset;

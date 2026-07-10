@@ -6,6 +6,8 @@
 
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include <stdio.h>
+#include <string.h>
 /* BLE */
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -16,9 +18,24 @@
 #include "coc_blecent.h"
 
 static const char *tag = "NimBLE_BLE_CENT_L2CAP_COC";
+static char remote_device_name[32];
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 
 void ble_store_config_init(void);
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_l2cap_coc_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
 
@@ -240,6 +257,12 @@ blecent_scan(void)
     disc_params.filter_policy = 0;
     disc_params.limited = 0;
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* Full scan improves discovery reliability in multi-board CI environments. */
+    disc_params.itvl = BLE_GAP_SCAN_ITVL_MS(50);
+    disc_params.window = BLE_GAP_SCAN_ITVL_MS(50);
+#endif
+
     rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &disc_params,
                       blecent_gap_event, NULL);
     if (rc != 0) {
@@ -272,6 +295,24 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             return 0;
         }
     }
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    while (offset < disc->length_data) {
+        ad_struct_len = disc->data[offset];
+        if (ad_struct_len == 0 || offset + ad_struct_len + 1 > disc->length_data) {
+            break;
+        }
+        if (disc->data[offset + 1] == BLE_HS_ADV_TYPE_COMP_NAME ||
+                disc->data[offset + 1] == BLE_HS_ADV_TYPE_INCOMP_NAME) {
+            int name_len = ad_struct_len - 1;
+            if (name_len == (int)strlen(remote_device_name) &&
+                    memcmp(&disc->data[offset + 2], remote_device_name, name_len) == 0) {
+                return 1;
+            }
+        }
+        offset += ad_struct_len + 1;
+    }
+    return 0;
+#else
     /* The device has to advertise support for L2CAP COC UUID (0x1812).
     */
     do {
@@ -301,6 +342,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 
     } while (offset < disc->length_data);
     return 0;
+#endif
 }
 #else
 static int
@@ -308,7 +350,6 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 {
     struct ble_hs_adv_fields fields;
     int rc;
-    int i;
     uint8_t test_addr[6];
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -332,14 +373,23 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         }
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    if (fields.name != NULL &&
+            fields.name_len == strlen(remote_device_name) &&
+            memcmp(fields.name, remote_device_name, fields.name_len) == 0) {
+        return 1;
+    }
+    return 0;
+#else
     /* The device has to advertise support for L2CAP COC UUID (0x1812).
      */
-    for (i = 0; i < fields.num_uuids16; i++) {
+    for (int i = 0; i < fields.num_uuids16; i++) {
         if (ble_uuid_u16(&fields.uuids16[i].u) == 0x1812) {
             return 1;
         }
     }
     return 0;
+#endif
 }
 #endif
 
@@ -366,6 +416,16 @@ blecent_connect_if_interesting(void *disc)
     }
 #endif
 
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    addr = &((struct ble_gap_ext_disc_desc *)disc)->addr;
+#else
+    addr = &((struct ble_gap_disc_desc *)disc)->addr;
+#endif
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    ESP_LOGI(tag, "Found device: %s, name: %s", addr_str(addr->val), remote_device_name);
+#endif
+
 #if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
@@ -388,12 +448,6 @@ blecent_connect_if_interesting(void *disc)
     /* Try to connect the the advertiser.  Allow 30 seconds (30000 ms) for
      * timeout.
      */
-#if CONFIG_EXAMPLE_EXTENDED_ADV
-    addr = &((struct ble_gap_ext_disc_desc *)disc)->addr;
-#else
-    addr = &((struct ble_gap_disc_desc *)disc)->addr;
-#endif
-
     rc = ble_gap_connect(own_addr_type, addr, 30000, NULL,
                          blecent_gap_event, NULL);
     if (rc != 0) {
@@ -454,6 +508,8 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
             assert(rc == 0);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
+            ESP_LOGI(tag, "Connected, conn_handle %d, remote %s",
+                     event->connect.conn_handle, addr_str(desc.peer_ota_addr.val));
 
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
             conn_handle_coc = event->connect.conn_handle;
@@ -599,6 +655,15 @@ app_main(void)
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
 #endif
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(remote_device_name, esp_ble_l2cap_coc_get_example_name(), sizeof(remote_device_name) - 1);
+    remote_device_name[sizeof(remote_device_name) - 1] = '\0';
+    ESP_LOGI(tag, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
+
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("blecent-l2coc");

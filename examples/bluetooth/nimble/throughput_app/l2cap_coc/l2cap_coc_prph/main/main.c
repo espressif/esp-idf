@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -19,6 +20,21 @@
 #include "services/gap/ble_svc_gap.h"
 
 static const char *TAG = "l2cap_coc_prph";
+static char device_name[32] = "l2cap-coc-prph";
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+static char *esp_ble_l2cap_coc_tp_get_example_name(void)
+{
+    static char example_name[32];
+
+    memset(example_name, 0, sizeof(example_name));
+    snprintf(example_name, sizeof(example_name), "BE%02X_%05X_%02X",
+             CONFIG_EXAMPLE_CI_ID & 0xFF,
+             CONFIG_EXAMPLE_CI_PIPELINE_ID & 0xFFFFF,
+             CONFIG_IDF_FIRMWARE_CHIP_ID & 0xFF);
+    return example_name;
+}
+#endif
 
 #define L2CAP_COC_PSM       0x0080  /* valid dynamic LE L2CAP CoC PSM (0x0080-0x00FF) */
 #define L2CAP_COC_MTU       CONFIG_EXAMPLE_L2CAP_COC_MTU
@@ -127,12 +143,14 @@ static void prph_reset_rx_stats(int64_t start_time)
 }
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
 static uint8_t ext_adv_pattern[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x12, 0x18,
     0x11, BLE_HS_ADV_TYPE_COMP_NAME,
     'l','2','c','a','p','-','c','o','c','-','p','r','p','h','-','e',
 };
+#endif
 
 static void prph_advertise(void)
 {
@@ -140,6 +158,11 @@ static void prph_advertise(void)
     struct os_mbuf *data;
     uint8_t instance = 0;
     int rc;
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    uint8_t ci_adv_data[32];
+    uint8_t ci_adv_len;
+    uint8_t name_len;
+#endif
 
     memset(&params, 0, sizeof(params));
     params.connectable   = 1;
@@ -157,12 +180,28 @@ static void prph_advertise(void)
         return;
     }
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    name_len = strlen(device_name);
+    memset(ci_adv_data, 0, sizeof(ci_adv_data));
+    ci_adv_data[0] = name_len + 1;
+    ci_adv_data[1] = BLE_HS_ADV_TYPE_COMP_NAME;
+    memcpy(&ci_adv_data[2], device_name, name_len);
+    ci_adv_len = 2 + name_len;
+
+    data = os_msys_get_pkthdr(ci_adv_len, 0);
+    if (!data) {
+        ESP_LOGE(TAG, "ext_adv: failed to alloc adv data mbuf");
+        return;
+    }
+    rc = os_mbuf_append(data, ci_adv_data, ci_adv_len);
+#else
     data = os_msys_get_pkthdr(sizeof(ext_adv_pattern), 0);
     if (!data) {
         ESP_LOGE(TAG, "ext_adv: failed to alloc adv data mbuf");
         return;
     }
     rc = os_mbuf_append(data, ext_adv_pattern, sizeof(ext_adv_pattern));
+#endif
     if (rc != 0) {
         ESP_LOGE(TAG, "ext_adv: mbuf_append failed; rc=%d", rc);
         os_mbuf_free_chain(data);
@@ -193,12 +232,10 @@ static void prph_advertise(void)
     fields.flags                 = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl            = BLE_HS_ADV_TX_PWR_LVL_AUTO;
-#if CONFIG_BT_NIMBLE_GAP_SERVICE
-    const char *name             = ble_svc_gap_device_name();
-    fields.name                  = (uint8_t *)name;
-    fields.name_len              = strlen(name);
+    fields.name                  = (uint8_t *)device_name;
+    fields.name_len              = strlen(device_name);
     fields.name_is_complete      = 1;
-#endif
+#if !(CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID)
     /* Must be static: ble_gap_adv_set_fields copies the pointer, not the data.
      * A stack compound literal becomes dangling after prph_advertise returns,
      * causing corruption when BLE_NIMBLE_ENABLE_CONN_REATTEMPT re-uses the pointer. */
@@ -206,6 +243,7 @@ static void prph_advertise(void)
     fields.uuids16               = adv_uuids16;
     fields.num_uuids16           = 1;
     fields.uuids16_is_complete   = 1;
+#endif
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
@@ -390,6 +428,18 @@ static int prph_gap_event(struct ble_gap_event *event, void *arg)
             return 0;
         }
         ESP_LOGI(TAG, "Connected; handle=%d", event->connect.conn_handle);
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+        {
+            struct ble_gap_conn_desc desc;
+            if (ble_gap_conn_find(event->connect.conn_handle, &desc) == 0) {
+                ESP_LOGI(TAG, "Connected, conn_handle %d, remote %02x:%02x:%02x:%02x:%02x:%02x",
+                         event->connect.conn_handle,
+                         desc.peer_ota_addr.val[5], desc.peer_ota_addr.val[4],
+                         desc.peer_ota_addr.val[3], desc.peer_ota_addr.val[2],
+                         desc.peer_ota_addr.val[1], desc.peer_ota_addr.val[0]);
+            }
+        }
+#endif
         conn_handle = event->connect.conn_handle;
         return 0;
 
@@ -495,8 +545,16 @@ void app_main(void)
     ble_hs_cfg.sync_cb         = prph_on_sync;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    strncpy(device_name, esp_ble_l2cap_coc_tp_get_example_name(), sizeof(device_name) - 1);
+    device_name[sizeof(device_name) - 1] = '\0';
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID,
+             CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
+
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
-    int rc = ble_svc_gap_device_name_set("l2cap-coc-prph");
+    int rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
 #endif
 
