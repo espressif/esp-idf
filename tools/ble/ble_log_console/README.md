@@ -4,7 +4,7 @@ BLE Log Console was originally provided in the ESP-IDF repository as the host-si
 
 To allow releases, dependency management, documentation, and feature development to move independently from the ESP-IDF main repository, BLE Log Console has been migrated out of ESP-IDF and is now maintained in a standalone repository.
 
-New repository: [esp-ble-tools/components/ble_log_console](https://github.com/espressif/esp-ble-tools/components/ble_log_console)
+New repository: [esp-ble-tools/components/ble_log_console](https://github.com/espressif/esp-ble-tools/tree/main/components/ble_log_console)
 
 ## Current Directory
 
