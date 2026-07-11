@@ -250,7 +250,7 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
 {
     ESP_RETURN_ON_FALSE_ISR(type >= TOUCH_CHAN_DATA_TYPE_RAW && type <= TOUCH_CHAN_DATA_TYPE_SMOOTH,
                             ESP_ERR_INVALID_ARG, TAG, "The channel data type is invalid");
-    ESP_RETURN_ON_FALSE_ISR(type == TOUCH_CHAN_DATA_TYPE_SMOOTH && chan_handle->base->data_filter_fn != NULL,
+    ESP_RETURN_ON_FALSE_ISR(type != TOUCH_CHAN_DATA_TYPE_SMOOTH || chan_handle->base->data_filter_fn != NULL,
                             ESP_ERR_INVALID_STATE, TAG, "The software filter has not configured");
     TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
     switch (type) {
