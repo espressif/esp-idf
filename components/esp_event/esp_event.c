@@ -705,36 +705,45 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
         esp_event_base_node_t *base_node, *temp_base;
         esp_event_id_node_t *id_node, *temp_id_node;
 
-        SLIST_FOREACH_SAFE(loop_node, &(loop->loop_nodes), next, temp_node) {
-            // Execute loop level handlers
-            SLIST_FOREACH_SAFE(handler, &(loop_node->handlers), next, temp_handler) {
-                if (!handler->unregistered) {
-                    handler_execute(loop, handler, post);
-                    exec |= true;
-                }
-            }
-
-            SLIST_FOREACH_SAFE(base_node, &(loop_node->base_nodes), next, temp_base) {
-                if (base_node->base == post.base) {
-                    // Execute base level handlers
-                    SLIST_FOREACH_SAFE(handler, &(base_node->handlers), next, temp_handler) {
-                        if (!handler->unregistered) {
-                            handler_execute(loop, handler, post);
-                            exec |= true;
-                        }
+        // The cleanup pseudo-event above is only meant to be consumed by this loop
+        // iteration itself (to defer freeing a handler that unregistered itself
+        // during dispatch). It must never be dispatched to real handlers: in
+        // particular, a handler registered on ESP_EVENT_ANY_BASE (loop level) is
+        // not filtered by post.base below, so without this check it would be
+        // invoked with the internal "cleanup" base/id and a data pointer that
+        // has already been passed to loop_remove_handler() (and possibly freed).
+        if (post.base != esp_event_handler_cleanup) {
+            SLIST_FOREACH_SAFE(loop_node, &(loop->loop_nodes), next, temp_node) {
+                // Execute loop level handlers
+                SLIST_FOREACH_SAFE(handler, &(loop_node->handlers), next, temp_handler) {
+                    if (!handler->unregistered) {
+                        handler_execute(loop, handler, post);
+                        exec |= true;
                     }
+                }
 
-                    SLIST_FOREACH_SAFE(id_node, &(base_node->id_nodes), next, temp_id_node) {
-                        if (id_node->id == post.id) {
-                            // Execute id level handlers
-                            SLIST_FOREACH_SAFE(handler, &(id_node->handlers), next, temp_handler) {
-                                if (!handler->unregistered) {
-                                    handler_execute(loop, handler, post);
-                                    exec |= true;
-                                }
+                SLIST_FOREACH_SAFE(base_node, &(loop_node->base_nodes), next, temp_base) {
+                    if (base_node->base == post.base) {
+                        // Execute base level handlers
+                        SLIST_FOREACH_SAFE(handler, &(base_node->handlers), next, temp_handler) {
+                            if (!handler->unregistered) {
+                                handler_execute(loop, handler, post);
+                                exec |= true;
                             }
-                            // Skip to next base node
-                            break;
+                        }
+
+                        SLIST_FOREACH_SAFE(id_node, &(base_node->id_nodes), next, temp_id_node) {
+                            if (id_node->id == post.id) {
+                                // Execute id level handlers
+                                SLIST_FOREACH_SAFE(handler, &(id_node->handlers), next, temp_handler) {
+                                    if (!handler->unregistered) {
+                                        handler_execute(loop, handler, post);
+                                        exec |= true;
+                                    }
+                                }
+                                // Skip to next base node
+                                break;
+                            }
                         }
                     }
                 }
