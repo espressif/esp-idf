@@ -59,6 +59,12 @@ typedef struct {
 
 _Static_assert(sizeof(control_t) == 3, "control_t must be exactly 24 bits (3 bytes)");
 
+// Sentinel for pkg_info_t.buffer_len meaning "no explicit buffer length was supplied for the
+// pointer currently being formatted" (i.e. treat it as a real NUL-terminated C string). This is
+// distinct from a real, explicit length of 0 (e.g. ESP_LOG_BUFFER_HEX() called with buff_len==0),
+// which must be honored as-is instead of falling back to strlen() on non-string buffer data.
+#define BUFFER_LEN_NOT_SET (-1)
+
 typedef struct {
     uint8_t crc;
     bool buffer_hex_log;
@@ -125,10 +131,17 @@ static unsigned output_pointer(const char *ptr, pkg_info_t *pkg_info)
     if (PRESENT_IN_ELF(addr) || addr == 0) {
         pkg_len = output(&addr, sizeof(addr), pkg_info);
     } else {
-        int len = (pkg_info->buffer_len) ? pkg_info->buffer_len : strlen(ptr);
+        // pkg_info->buffer_len is BUFFER_LEN_NOT_SET (-1) unless we are in the middle of
+        // formatting one of the __ESP_BUFFER_*_FORMAT__ messages, in which case it holds the
+        // *actual* length of the caller-supplied buffer (see output_arguments() below), which
+        // may legitimately be 0 (e.g. logging an empty buffer). Only fall back to strlen() when
+        // no explicit length has been provided, i.e. ptr is a real NUL-terminated C string.
+        int len = (pkg_info->buffer_len != BUFFER_LEN_NOT_SET) ? pkg_info->buffer_len : (int)strlen(ptr);
         int16_t pkg_str_len = 1 - len;
         pkg_len = output(&pkg_str_len, sizeof(pkg_str_len), pkg_info);
-        for (unsigned i = 0; i < MAX(len, 2); i++) {
+        // Emit exactly `len` bytes: previously this was MAX(len, 2), which always read at
+        // least 2 bytes even when len was 0 or 1, reading past the end of the caller's buffer.
+        for (int i = 0; i < len; i++) {
             pkg_len += output(&ptr[i], sizeof(uint8_t), pkg_info);
         }
     }
@@ -269,7 +282,7 @@ void esp_log_format_binary(esp_log_msg_t *message)
         .buffer_hex_log = message->format == __ESP_BUFFER_HEX_FORMAT__,
         .buffer_char_log = message->format == __ESP_BUFFER_CHAR_FORMAT__,
         .buffer_hexdump_log = message->format == __ESP_BUFFER_HEXDUMP_FORMAT__,
-        .buffer_len = 0,
+        .buffer_len = BUFFER_LEN_NOT_SET,
         .len_calculation_stage = false,
     };
 
