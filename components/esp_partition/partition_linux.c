@@ -443,7 +443,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
     if (dst_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (dst_offset + size > partition->size) {
+    if (size > partition->size - dst_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -499,7 +499,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition, size_t src_offset
     if (src_offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (src_offset + size > partition->size) {
+    if (size > partition->size - src_offset) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -544,7 +544,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
     if (offset > partition->size || offset % partition->erase_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size || size % partition->erase_size != 0) {
+    if (size > partition->size - offset || size % partition->erase_size != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -596,7 +596,7 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
     if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (offset + size > partition->size) {
+    if (size > partition->size - offset) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (partition->flash_chip != NULL) {
