@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,17 +72,21 @@ int pthread_key_create(pthread_key_t *key, pthread_destructor_t destructor)
     return 0;
 }
 
-static key_entry_t *find_key(pthread_key_t key)
+static bool lookup_key(pthread_key_t key, pthread_destructor_t *destructor_out)
 {
     portENTER_CRITICAL(&s_keys_lock);
-    key_entry_t *result = NULL;;
-    SLIST_FOREACH(result, &s_keys, next) {
-        if (result->key == key) {
-            break;
+    key_entry_t *entry;
+    SLIST_FOREACH(entry, &s_keys, next) {
+        if (entry->key == key) {
+            if (destructor_out != NULL) {
+                *destructor_out = entry->destructor;
+            }
+            portEXIT_CRITICAL(&s_keys_lock);
+            return true;
         }
     }
     portEXIT_CRITICAL(&s_keys_lock);
-    return result;
+    return false;
 }
 
 int pthread_key_delete(pthread_key_t key)
@@ -94,7 +98,12 @@ int pthread_key_delete(pthread_key_t key)
        and delete any values associated with this key. We do not do this...
     */
 
-    key_entry_t *entry = find_key(key);
+    key_entry_t *entry = NULL;
+    SLIST_FOREACH(entry, &s_keys, next) {
+        if (entry->key == key) {
+            break;
+        }
+    }
     if (entry != NULL) {
         SLIST_REMOVE(&s_keys, entry, key_entry_t_, next);
         free(entry);
@@ -138,9 +147,9 @@ static void pthread_cleanup_thread_specific_data_callback(int index, void *v_tls
         // This is a little slow, walking the linked list of keys once per value,
         // but assumes that the thread's value list will have less entries
         // than the keys list
-        key_entry_t *key = find_key(entry->key);
-        if (key != NULL && key->destructor != NULL) {
-            key->destructor(entry->value);
+        pthread_destructor_t destructor = NULL;
+        if (lookup_key(entry->key, &destructor) && destructor != NULL) {
+            destructor(entry->value);
         }
         free(entry);
     }
@@ -196,8 +205,7 @@ void *pthread_getspecific(pthread_key_t key)
 
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
-    key_entry_t *key_entry = find_key(key);
-    if (key_entry == NULL) {
+    if (!lookup_key(key, NULL)) {
         return ENOENT; // this situation is undefined by pthreads standard
     }
 
