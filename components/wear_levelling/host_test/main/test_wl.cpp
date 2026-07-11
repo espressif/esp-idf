@@ -99,6 +99,39 @@ TEST_CASE("write and read back data", "[wear_levelling]")
     free(read);
 }
 
+TEST_CASE("write and read with zero size are safe no-ops", "[wear_levelling]")
+{
+    esp_err_t result;
+    wl_handle_t wl_handle;
+
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+
+    // Mount wear-levelled partition
+    result = wl_mount(partition, &wl_handle);
+    REQUIRE(result == ESP_OK);
+
+    // wl_write()/wl_read() do not document size==0 as invalid (analogous to
+    // POSIX write()/read() with count==0), so it must not be treated as an
+    // out-of-bounds request. Previously, WL_Flash::write()/read() computed
+    // `(size - 1) / wl_page_size` without checking for size==0 first; since
+    // size is unsigned, size==0 wrapped this to a huge page count and walked
+    // far past the caller-provided buffer.
+    uint8_t dummy = 0xAA;
+    result = wl_write(wl_handle, 0, &dummy, 0);
+    REQUIRE(result == ESP_OK);
+
+    uint8_t read_back = 0x55;
+    result = wl_read(wl_handle, 0, &read_back, 0);
+    REQUIRE(result == ESP_OK);
+
+    // Untouched by a genuine zero-length read.
+    REQUIRE(read_back == 0x55);
+
+    // Unmount
+    result = wl_unmount(wl_handle);
+    REQUIRE(result == ESP_OK);
+}
+
 TEST_CASE("power down test", "[wear_levelling]")
 {
     esp_err_t result;
