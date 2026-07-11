@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,8 @@ typedef struct {
 } __attribute__((packed)) control_t;
 
 _Static_assert(sizeof(control_t) == 3, "control_t must be exactly 24 bits (3 bytes)");
+
+#define BUFFER_LEN_NOT_SET (-1)
 
 typedef struct {
     uint8_t crc;
@@ -125,11 +127,16 @@ static unsigned output_pointer(const char *ptr, pkg_info_t *pkg_info)
     if (PRESENT_IN_ELF(addr) || addr == 0) {
         pkg_len = output(&addr, sizeof(addr), pkg_info);
     } else {
-        int len = (pkg_info->buffer_len) ? pkg_info->buffer_len : strlen(ptr);
-        int16_t pkg_str_len = 1 - len;
+        int data_len = (pkg_info->buffer_len != BUFFER_LEN_NOT_SET) ? pkg_info->buffer_len : (int)strlen(ptr);
+        int encoded_len = MAX(data_len, 2);
+        int16_t pkg_str_len = 1 - encoded_len;
         pkg_len = output(&pkg_str_len, sizeof(pkg_str_len), pkg_info);
-        for (unsigned i = 0; i < MAX(len, 2); i++) {
+        for (int i = 0; i < data_len; i++) {
             pkg_len += output(&ptr[i], sizeof(uint8_t), pkg_info);
+        }
+        const uint8_t padding = 0;
+        for (int i = data_len; i < encoded_len; i++) {
+            pkg_len += output(&padding, sizeof(padding), pkg_info);
         }
     }
     return pkg_len;
@@ -239,6 +246,7 @@ static unsigned calc_pkg_len(esp_log_msg_t *message, pkg_info_t *pkg_info)
     pkg_len += output_arguments(message, args, pkg_info);
     va_end(args);
     pkg_len += sizeof(uint8_t); // crc8
+    pkg_info->buffer_len = BUFFER_LEN_NOT_SET;
     pkg_info->len_calculation_stage = false;
     return pkg_len;
 }
@@ -269,7 +277,7 @@ void esp_log_format_binary(esp_log_msg_t *message)
         .buffer_hex_log = message->format == __ESP_BUFFER_HEX_FORMAT__,
         .buffer_char_log = message->format == __ESP_BUFFER_CHAR_FORMAT__,
         .buffer_hexdump_log = message->format == __ESP_BUFFER_HEXDUMP_FORMAT__,
-        .buffer_len = 0,
+        .buffer_len = BUFFER_LEN_NOT_SET,
         .len_calculation_stage = false,
     };
 
