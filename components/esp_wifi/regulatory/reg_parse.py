@@ -23,13 +23,14 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import math
-import sys
 from collections import OrderedDict
 from collections import defaultdict
-from collections.abc import Callable
 from functools import total_ordering
 from math import ceil
 from typing import TextIO
+
+from esp_pylib.logger import log
+from rich.markup import escape
 
 flag_definitions: dict[str, int] = {
     'NO-OFDM': 1 << 0,
@@ -291,13 +292,8 @@ class Country:
     permissions_2g = property(_get_permissions_2g_tuple)
 
 
-class MySyntaxError(Exception):
-    pass
-
-
 class DBParser:
-    def __init__(self, warn: Callable[[str], None] | None = None) -> None:
-        self._warn_callout = warn or sys.stderr.write
+    def __init__(self) -> None:
         self._lineno: int = 0
         self._comments: list[str] = []
         self._banddup: dict[str, str] = {}
@@ -361,10 +357,10 @@ class DBParser:
 
     def _syntax_error(self, txt: str | None = None) -> None:
         txt = f' ({txt})' if txt else ''
-        raise MySyntaxError(f'Syntax error in line {self._lineno}{txt}')
+        log.die(f'Syntax error in line {self._lineno}{escape(txt)}')
 
     def _warn(self, txt: str) -> None:
-        self._warn(f'Warning (line {self._lineno}): {txt}\n')
+        log.warn(f'line {self._lineno}: {escape(txt)}')
 
     def channel_to_freq(self, channel: int) -> int:
         if channel == 14:
@@ -561,7 +557,10 @@ class DBParser:
                 self._warn(f"country '{cname}' not alpha2")
             cname_bytes = cname.encode('ascii')
             if cname_bytes not in self._countries:
-                self._countries[cname_bytes] = Country(dfs_region, comments=self._comments)
+                try:
+                    self._countries[cname_bytes] = Country(dfs_region, comments=self._comments)
+                except DFSRegionError as e:
+                    self._syntax_error(f'Invalid DFS region {e.dfs_region}')
             self._current_countries[cname_bytes] = self._countries[cname_bytes]
         self._comments = []
 

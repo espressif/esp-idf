@@ -6,5 +6,5 @@
 `esp_wifi_regulatory.c` is generated from `esp_wifi_regulatory.txt` by using the `reg2fw.py` script.
 
 - Generate `esp_wifi_regulatory.c`
-  - `cd ~/esp-idf/components/esp_wifi/regulatory`
+  - `cd ${IDF_PATH}/components/esp_wifi/regulatory`
   - `python reg2fw.py`
