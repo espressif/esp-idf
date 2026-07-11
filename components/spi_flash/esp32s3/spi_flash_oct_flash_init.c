@@ -219,6 +219,7 @@ static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
 }
 #endif   // #if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
 
+#if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
 static void s_mxic_set_required_regs(uint32_t chip_id)
 {
     bool is_swap = false;
@@ -230,6 +231,7 @@ static void s_mxic_set_required_regs(uint32_t chip_id)
     esp_rom_spi_set_dtr_swap_mode(0, is_swap, is_swap);
     esp_rom_spi_set_dtr_swap_mode(1, is_swap, is_swap);
 }
+#endif
 
 
 /*----------------------------------------------------------------------------------------------------
