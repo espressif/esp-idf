@@ -368,7 +368,7 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
         /* Anything failed, then we should erase all the written chunks*/
         int ii=0;
         for(auto it = std::begin(usedPages); it != std::end(usedPages); it++) {
-            it->mPage->eraseItem(nsIndex, ItemType::BLOB_DATA, key, purgeAfterErase, ii++);
+            it->mPage->eraseItem(nsIndex, ItemType::BLOB_DATA, key, purgeAfterErase, static_cast<uint8_t> (chunkStart) + ii++);
         }
     }
     usedPages.clearAndFreeNodes();

@@ -2231,6 +2231,75 @@ TEST_CASE("Modification of values for Multi-page blobs are supported", "[nvs]")
     TEST_ESP_OK(nvs_flash_deinit_partition(TEST_DEFAULT_PARTITION_NAME));
 }
 
+TEST_CASE("Failed multi-page blob update must not corrupt the previous value sharing its page", "[nvs]")
+{
+    // Regression test for a bug in Storage::writeMultiPageBlob()'s failure-cleanup path.
+    //
+    // When a blob is being *updated* (chunkStart == VerOffset::VER_1_OFFSET, i.e. this is
+    // not the first time this key is written), each chunk is written to flash with
+    // on-flash chunk index (chunkStart + N), where N is 0, 1, 2, ... in write order. This
+    // offset is how NVS tells the chunks of the new (in-progress) version apart from the
+    // chunks of the previous (still valid) version while both may be present on flash.
+    //
+    // If the write fails partway through (e.g. a later chunk needs a new page and none is
+    // available), writeMultiPageBlob() erases the chunks it already wrote using a bare
+    // loop counter `ii` (0, 1, 2, ...) instead of `chunkStart + ii`. When the previous,
+    // still-valid version of the blob happens to occupy the very same physical page that
+    // received the first chunk(s) of the failed update -- a common case, since NVS keeps
+    // reusing the current page for new entries of any key until that page is marked full
+    // -- this wrong index accidentally matches the previous version's chunk (whose
+    // on-flash index is 0, 1, 2, ... because it was written first with chunkStart ==
+    // VER_0_OFFSET) and erases it. This destroys committed data even though nvs_set_blob()
+    // correctly reported failure and the caller has every reason to believe the previous
+    // value is untouched.
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = true;
+
+    // 4 physical pages: NVS always keeps one page fully free as a spare, so only 3 are
+    // ever usable for data at once.
+    const uint32_t page_count = 4;
+    CHECK(h.get_sectors() >= page_count);
+
+    nvs::Storage storage(&h);
+    TEST_ESP_OK(storage.init(0, page_count));
+
+    // Consume two of the three usable pages entirely with unrelated single-chunk,
+    // full-page blobs, so that only one usable page remains free for "key" below.
+    uint8_t *filler = (uint8_t *) malloc(nvs::Page::CHUNK_MAX_SIZE);
+    CHECK(filler != NULL);
+    memset(filler, 0xCC, nvs::Page::CHUNK_MAX_SIZE);
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "filler1", filler, nvs::Page::CHUNK_MAX_SIZE, purgeAfterErase));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "filler2", filler, nvs::Page::CHUNK_MAX_SIZE, purgeAfterErase));
+    free(filler);
+
+    // Old value of "key": small enough to be written as a single chunk with plenty of
+    // room left on the one remaining usable page (chunkStart == VER_0_OFFSET, on-flash
+    // chunk index 0). This page is not marked full afterwards.
+    uint8_t old_value[32];
+    memset(old_value, 0xAA, sizeof(old_value));
+    TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "key", old_value, sizeof(old_value), purgeAfterErase));
+
+    // New value: large enough that it cannot fit in the remaining tailroom of the
+    // (now-shared) current page and must spill into a second page -- but no free page is
+    // left (the only two other usable pages are already full, and the sole remaining
+    // spare page must not be handed out or NVS would have zero free pages left), so the
+    // update is expected to fail with ESP_ERR_NVS_NOT_ENOUGH_SPACE after its first chunk
+    // has already landed on the same page as old_value's chunk.
+    const size_t new_size = nvs::Page::CHUNK_MAX_SIZE + nvs::Page::CHUNK_MAX_SIZE / 2;
+    uint8_t *new_value = (uint8_t *) malloc(new_size);
+    CHECK(new_value != NULL);
+    memset(new_value, 0xBB, new_size);
+
+    TEST_ESP_ERR(storage.writeItem(1, nvs::ItemType::BLOB, "key", new_value, new_size, purgeAfterErase),
+                 ESP_ERR_NVS_NOT_ENOUGH_SPACE);
+    free(new_value);
+
+    // The failed update must not have touched the previous, already-committed value.
+    uint8_t readback[32] = {0};
+    TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "key", readback, sizeof(readback)));
+    CHECK(memcmp(old_value, readback, sizeof(old_value)) == 0);
+}
+
 TEST_CASE("Modification from single page blob to multi-page", "[nvs]")
 {
     // TC verifies that NVS API works as expected when modifying blob originally stored as single page blob to multi-page blob.
