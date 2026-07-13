@@ -196,6 +196,10 @@ static esp_err_t esp_netif_br_glue_clear_instance_handlers(esp_netif_br_glue_han
 {
     ESP_RETURN_ON_FALSE(esp_netif_br_glue, ESP_ERR_INVALID_ARG, TAG, "esp_netif_br_glue handle can't be null");
 
+    if (esp_netif_br_glue->eth_ctx_handlers == NULL) {
+        return ESP_OK;
+    }
+
     if (esp_netif_br_glue->eth_ctx_handlers[START_CTX_HANDLER]) {
         esp_event_handler_instance_unregister(ETH_EVENT, ETHERNET_EVENT_START, esp_netif_br_glue->eth_ctx_handlers[START_CTX_HANDLER]);
     }
@@ -212,6 +216,7 @@ static esp_err_t esp_netif_br_glue_clear_instance_handlers(esp_netif_br_glue_han
         esp_event_handler_instance_unregister(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, esp_netif_br_glue->eth_ctx_handlers[DISCONNECT_CTX_HANDLER]);
     }
     free(esp_netif_br_glue->eth_ctx_handlers);
+    esp_netif_br_glue->eth_ctx_handlers = NULL;
 
     if (esp_netif_br_glue->get_ip_ctx_handler) {
         esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, esp_netif_br_glue->get_ip_ctx_handler);
