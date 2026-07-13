@@ -12,6 +12,9 @@
 #include "btc/btc_ble_storage.h"
 #include "bta/bta_gatts_co.h"
 #include "btc/btc_util.h"
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#include "stack/btm_ble_api.h"
+#endif
 
 #if (SMP_INCLUDED == TRUE)
 
@@ -134,6 +137,21 @@ static bt_status_t _btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
     }
 
     int ret = btc_config_set_bin(bdstr, name, (const uint8_t *)key, key_length);
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    /* If this bond's section is keyed by a Host pseudo address (dual local
+     * identity link, still connected at save time), flag the section so the
+     * identity-based NVS de-dup never deletes it as a "duplicate" of the other
+     * local identity's bond (which shares the same peer Identity). Normal /
+     * RPA-keyed bonds are NOT flagged and keep the native cleanup behavior. */
+    {
+        BD_ADDR real_peer;
+        if (BTM_BleGetRealPeerByPseudo(remote_bd_addr->address, real_peer)) {
+            btc_config_set_int(bdstr, BTC_BLE_STORAGE_PSEUDO_BOND_STR, 1);
+        }
+    }
+#endif
+
     _btc_storage_save();
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
@@ -256,6 +274,14 @@ static bt_status_t _btc_storage_remove_all_ble_keys(const char *name)
     if (btc_config_exist(name, BTC_BLE_STORAGE_LE_KEY_LID_STR)) {
         ret |= btc_config_remove(name, BTC_BLE_STORAGE_LE_KEY_LID_STR);
     }
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    /* Clear the dual-identity pseudo-bond marker together with the LE keys so
+     * a removed bond does not leave a stale flag that would shield an empty
+     * section from cleanup. */
+    if (btc_config_exist(name, BTC_BLE_STORAGE_PSEUDO_BOND_STR)) {
+        ret |= btc_config_remove(name, BTC_BLE_STORAGE_PSEUDO_BOND_STR);
+    }
+#endif
 
     return ret;
 }
@@ -272,6 +298,22 @@ void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del
     if (btc_storage_is_all_zeros(del_pid_key->static_addr, sizeof(del_pid_key->static_addr))) {
         return;
     }
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    /* Never use a pseudo-keyed bond as the de-dup baseline: it legitimately
+     * shares the peer Identity with a normal bond on another local identity.
+     * Symmetric with btc_storage_delete_duplicate_ble_devices() skipping pseudo
+     * baselines. The flag is only set when keys are saved, so use the live
+     * pseudo mapping rather than BTC_BLE_STORAGE_PSEUDO_BOND_STR on cur_addr.
+     * Orphan cleanup below still runs; only identity de-dup is skipped. */
+    BOOLEAN skip_identity_dedup = FALSE;
+    {
+        BD_ADDR dummy;
+        if (BTM_BleGetRealPeerByPseudo(cur_addr, dummy)) {
+            skip_identity_dedup = TRUE;
+        }
+    }
+#endif
 
     btc_config_lock();
 
@@ -303,6 +345,13 @@ void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del
             continue;
         }
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+        if (skip_identity_dedup) {
+            iter = btc_config_section_next(iter);
+            continue;
+        }
+#endif
+
         string_to_bdaddr(section, &bd_addr);
 
         char buffer[sizeof(tBTM_LE_KEY_VALUE)] = {0};
@@ -319,7 +368,14 @@ void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del
             if (del_pid_key->addr_type == pid_key->addr_type &&
                     !btc_storage_is_all_zeros(pid_key->static_addr, sizeof(pid_key->static_addr)) &&
                     memcmp(del_pid_key->static_addr, pid_key->static_addr, sizeof(pid_key->static_addr)) == 0 &&
-                    memcmp(cur_addr, bd_addr.address, sizeof(bd_addr.address)) != 0) {
+                    memcmp(cur_addr, bd_addr.address, sizeof(bd_addr.address)) != 0
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+                /* Dual local-identity bond isolation: a section keyed by a Host
+                 * pseudo legitimately shares the peer Identity with another
+                 * local identity's bond; never delete it as a "duplicate". */
+                && !btc_config_exist(section, BTC_BLE_STORAGE_PSEUDO_BOND_STR)
+#endif
+                    ) {
                 if (device_type == BT_DEVICE_TYPE_DUMO) {
                     btc_config_set_int(section, BTC_BLE_STORAGE_DEV_TYPE_STR, BT_DEVICE_TYPE_BREDR);
                     _btc_storage_remove_all_ble_keys(section);
@@ -360,6 +416,19 @@ void btc_storage_delete_duplicate_ble_devices(void)
             continue;
         }
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+        /* Dual local-identity bond isolation: never use a pseudo-keyed section
+         * as the de-dup baseline. The inner check below only protects pseudo
+         * candidates, so without this an order-dependent case remains: if a
+         * pseudo bond is visited first and becomes the baseline, a normal bond
+         * that legitimately shares the same peer Identity (no PseudoBond flag)
+         * would match and be deleted. Skipping pseudo baselines makes the
+         * protection symmetric. */
+        if (btc_config_exist(name, BTC_BLE_STORAGE_PSEUDO_BOND_STR)) {
+            continue;
+        }
+#endif
+
         string_to_bdaddr(name, &bd_addr);
         size_t pid_len = sizeof(tBTM_LE_PID_KEYS);
         bool pid_ok = btc_config_get_bin(name, BTC_BLE_STORAGE_LE_KEY_PID_STR, (uint8_t *)buffer, &pid_len);
@@ -388,7 +457,13 @@ void btc_storage_delete_duplicate_ble_devices(void)
                     temp_pid_key = (tBTM_LE_PID_KEYS *) temp_buffer;
                     if (pid_key->addr_type == temp_pid_key->addr_type &&
                             !btc_storage_is_all_zeros(temp_pid_key->static_addr, sizeof(temp_pid_key->static_addr)) &&
-                            memcmp(pid_key->static_addr, temp_pid_key->static_addr, sizeof(pid_key->static_addr)) == 0) {
+                            memcmp(pid_key->static_addr, temp_pid_key->static_addr, sizeof(pid_key->static_addr)) == 0
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+                    /* Skip pseudo-keyed sections: a dual local-identity bond
+                     * shares the peer Identity with another bond on purpose. */
+                        && !btc_config_exist(temp_name, BTC_BLE_STORAGE_PSEUDO_BOND_STR)
+#endif
+                            ) {
                         temp_iter = btc_config_section_next(temp_iter);
                         if (temp_device_type == BT_DEVICE_TYPE_DUMO) {
                             btc_config_set_int(temp_name, BTC_BLE_STORAGE_DEV_TYPE_STR, BT_DEVICE_TYPE_BREDR);
@@ -915,8 +990,17 @@ bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
 }
 
 #if (BLE_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#define BTC_BLE_FETCH_PSEUDO_BOND_PARAM , bool is_pseudo_bond
+#define BTC_BLE_FETCH_PSEUDO_BOND_ARG     , is_pseudo_bond
+#else
+#define BTC_BLE_FETCH_PSEUDO_BOND_PARAM
+#define BTC_BLE_FETCH_PSEUDO_BOND_ARG
+#endif
+
 static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bdaddr_t bd_addr,
-                 const uint8_t addr_type, const bool add_key, bool *device_added, bool *key_found)
+                 const uint8_t addr_type, const bool add_key BTC_BLE_FETCH_PSEUDO_BOND_PARAM,
+                 bool *device_added, bool *key_found)
 {
     assert(device_added);
     assert(key_found);
@@ -936,7 +1020,12 @@ static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
                 if(_btc_storage_get_ble_dev_auth_mode(&bd_addr, &auth_mode) != BT_STATUS_SUCCESS) {
                     BTC_TRACE_WARNING("%s Failed to get auth mode from flash, please erase flash and download the firmware again", __func__);
                 }
+#if (SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+                BTA_DmAddBleDevice(bta_bd_addr, addr_type, auth_mode, BT_DEVICE_TYPE_BLE,
+                                   is_pseudo_bond ? TRUE : FALSE);
+#else
                 BTA_DmAddBleDevice(bta_bd_addr, addr_type, auth_mode, BT_DEVICE_TYPE_BLE);
+#endif
                 *device_added = true;
             }
 
@@ -956,9 +1045,11 @@ bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, 
     uint32_t device_type = 0;
     int addr_type = BLE_ADDR_PUBLIC;
     bt_bdaddr_t bd_addr;
-    BD_ADDR bta_bd_addr;
     bool device_added = false;
     bool key_found = false;
+#if (SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    const bool is_pseudo_bond = add && btc_config_exist(remote_bd_addr, BTC_BLE_STORAGE_PSEUDO_BOND_STR);
+#endif
 
     if (!btc_config_get_int(remote_bd_addr, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type)) {
         BTC_TRACE_ERROR("%s, device_type = %x", __func__, device_type);
@@ -966,7 +1057,6 @@ bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, 
     }
 
     string_to_bdaddr(remote_bd_addr, &bd_addr);
-    bdcpy(bta_bd_addr, bd_addr.address);
 
     if (_btc_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
         addr_type = BLE_ADDR_PUBLIC;
@@ -974,22 +1064,22 @@ bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, 
     }
 
     _btc_read_le_key(BTM_LE_KEY_PENC, sizeof(tBTM_LE_PENC_KEYS),
-                    bd_addr, addr_type, add, &device_added, &key_found);
+                    bd_addr, addr_type, add BTC_BLE_FETCH_PSEUDO_BOND_ARG, &device_added, &key_found);
 
     _btc_read_le_key(BTM_LE_KEY_PID, sizeof(tBTM_LE_PID_KEYS),
-                    bd_addr, addr_type, add, &device_added, &key_found);
+                    bd_addr, addr_type, add BTC_BLE_FETCH_PSEUDO_BOND_ARG, &device_added, &key_found);
 
     _btc_read_le_key(BTM_LE_KEY_LID, sizeof(tBTM_LE_PID_KEYS),
-                    bd_addr, addr_type, add, &device_added, &key_found);
+                    bd_addr, addr_type, add BTC_BLE_FETCH_PSEUDO_BOND_ARG, &device_added, &key_found);
 
     _btc_read_le_key(BTM_LE_KEY_PCSRK, sizeof(tBTM_LE_PCSRK_KEYS),
-                    bd_addr, addr_type, add, &device_added, &key_found);
+                    bd_addr, addr_type, add BTC_BLE_FETCH_PSEUDO_BOND_ARG, &device_added, &key_found);
 
     _btc_read_le_key(BTM_LE_KEY_LENC, sizeof(tBTM_LE_LENC_KEYS),
-                    bd_addr, addr_type, add, &device_added, &key_found);
+                    bd_addr, addr_type, add BTC_BLE_FETCH_PSEUDO_BOND_ARG, &device_added, &key_found);
 
     _btc_read_le_key(BTM_LE_KEY_LCSRK, sizeof(tBTM_LE_LCSRK_KEYS),
-                    bd_addr, addr_type, add, &device_added, &key_found);
+                    bd_addr, addr_type, add BTC_BLE_FETCH_PSEUDO_BOND_ARG, &device_added, &key_found);
 
     if (key_found) {
         return BT_STATUS_SUCCESS;

@@ -36,6 +36,9 @@
 #include "smp_int.h"
 #include "device/controller.h"
 #include "btm_int.h"
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#include "btm_ble_pseudo.h"
+#endif
 #include "common/bte_appl.h"
 
 #define SMP_PAIRING_REQ_SIZE    7
@@ -1530,6 +1533,10 @@ void smp_collect_local_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
     BTM_ReadConnectionAddr( p_cb->pairing_bda, bda, &addr_type);
     BDADDR_TO_STREAM(p, bda);
     UINT8_TO_STREAM(p, addr_type);
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    BLE_PSEUDO_DBG("smp local addr for f5/f6 = " BLE_PSEUDO_BDA_FMT " type %u (pairing_bda " BLE_PSEUDO_BDA_FMT ")",
+                   BLE_PSEUDO_BDA(bda), addr_type, BLE_PSEUDO_BDA(p_cb->pairing_bda));
+#endif
 }
 
 /*******************************************************************************
@@ -1557,6 +1564,10 @@ void smp_collect_peer_ble_address(UINT8 *le_addr, tSMP_CB *p_cb)
 
     BDADDR_TO_STREAM(p, bda);
     UINT8_TO_STREAM(p, addr_type);
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    BLE_PSEUDO_DBG("smp peer addr for f5/f6 = " BLE_PSEUDO_BDA_FMT " type %u (pairing_bda " BLE_PSEUDO_BDA_FMT ")",
+                   BLE_PSEUDO_BDA(bda), addr_type, BLE_PSEUDO_BDA(p_cb->pairing_bda));
+#endif
 }
 
 /*******************************************************************************
