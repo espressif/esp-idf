@@ -183,8 +183,10 @@ static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t
 {
     switch (event) {
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
-        bt_app_work_dispatch(bt_app_avrc_ct_evt_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t),
-                             bt_avrc_common_copy_metadata, bt_avrc_common_free_metadata);
+        if (!bt_app_work_dispatch(bt_app_avrc_ct_evt_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t),
+                                  bt_avrc_common_copy_metadata, bt_avrc_common_free_metadata)) {
+            ESP_LOGE(BT_RC_CT_TAG, "CT event %d dispatch failed", event);
+        }
         break;
     }
     case ESP_AVRC_CT_CONNECTION_STATE_EVT:
@@ -193,7 +195,9 @@ static void bt_app_rc_ct_cb(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t
     case ESP_AVRC_CT_REMOTE_FEATURES_EVT:
     case ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT:
     case ESP_AVRC_CT_PROF_STATE_EVT:
-        bt_app_work_dispatch(bt_app_avrc_ct_evt_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL, NULL);
+        if (!bt_app_work_dispatch(bt_app_avrc_ct_evt_hdl, event, param, sizeof(esp_avrc_ct_cb_param_t), NULL, NULL)) {
+            ESP_LOGE(BT_RC_CT_TAG, "CT event %d dispatch failed", event);
+        }
         break;
     default:
         ESP_LOGE(BT_RC_CT_TAG, "Invalid AVRC event: %d", event);
@@ -211,7 +215,9 @@ static void bt_app_rc_tg_cb(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t
     case ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT:
     case ESP_AVRC_TG_SET_PLAYER_APP_VALUE_EVT:
     case ESP_AVRC_TG_PROF_STATE_EVT:
-        bt_app_work_dispatch(bt_avrc_common_tg_evt_def_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL, NULL);
+        if (!bt_app_work_dispatch(bt_avrc_common_tg_evt_def_hdl, event, param, sizeof(esp_avrc_tg_cb_param_t), NULL, NULL)) {
+            ESP_LOGE(BT_RC_TG_TAG, "TG event %d dispatch failed", event);
+        }
         break;
     default:
         ESP_LOGE(BT_RC_TG_TAG, "Invalid AVRC event: %d", event);
