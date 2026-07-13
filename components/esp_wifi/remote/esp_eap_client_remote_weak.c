@@ -92,6 +92,11 @@ WEAK esp_err_t esp_eap_client_remote_get_disable_time_check(_Bool *disable)
     LOG_UNSUPPORTED_AND_RETURN(ESP_ERR_NOT_SUPPORTED);
 }
 
+WEAK esp_err_t esp_eap_client_remote_set_phase2_method(esp_eap_phase2_types type)
+{
+    LOG_UNSUPPORTED_AND_RETURN(ESP_ERR_NOT_SUPPORTED);
+}
+
 WEAK esp_err_t esp_eap_client_remote_set_ttls_phase2_method(esp_eap_ttls_phase2_types type)
 {
     LOG_UNSUPPORTED_AND_RETURN(ESP_ERR_NOT_SUPPORTED);
