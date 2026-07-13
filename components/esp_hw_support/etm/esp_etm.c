@@ -16,7 +16,7 @@
 #endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "hal/etm_periph.h"
+#include "etm_retention.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"

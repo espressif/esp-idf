@@ -112,6 +112,9 @@ if(NOT non_os_build)
 
     if(CONFIG_SOC_ETM_SUPPORTED)
         list(APPEND srcs "etm/esp_etm.c")
+        if(CONFIG_SOC_PAU_SUPPORTED)
+            list(APPEND srcs "port/${target}/etm_retention.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_PAU_SUPPORTED)
