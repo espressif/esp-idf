@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
+
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
@@ -22,6 +25,10 @@
 #include "argtable3/argtable3.h"
 #include "cmd_system.h"
 #include "../src/ble_hs_hci_priv.h"
+
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
 /* 0000xxxx-8c26-476f-89a7-a108033a69c7 */
 #define THRPT_UUID_DECLARE(uuid16)                                \
@@ -368,6 +375,10 @@ static void throughput_task(void *arg)
         }
 #endif
 
+#if CONFIG_BLE_LOG_ENABLED
+        ble_log_write_attempt_bytes_reset();
+#endif /* CONFIG_BLE_LOG_ENABLED */
+
         switch (test_data[0]) {
 
         case READ_THROUGHPUT:
@@ -468,6 +479,15 @@ static void throughput_task(void *arg)
         default:
             break;
         }
+
+#if CONFIG_BLE_LOG_ENABLED
+        uint32_t write_attempt_bytes;
+        uint32_t write_attempt_bytes_ll;
+        ble_log_write_attempt_bytes_get(&write_attempt_bytes, &write_attempt_bytes_ll);
+        ESP_LOGI(tag, "BLE log attempt bytes: host=%" PRIu32 ", ll=%" PRIu32 ", total=%" PRIu32,
+                 write_attempt_bytes, write_attempt_bytes_ll,
+                 write_attempt_bytes + write_attempt_bytes_ll);
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
@@ -997,6 +1017,13 @@ app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(tag, "Failed to init BLE log");
+        return;
+    }
+#endif /* CONFIG_BLE_LOG_ENABLED */
 
     ret = nimble_port_init();
     if (ret != ESP_OK) {

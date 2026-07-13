@@ -15,6 +15,50 @@ if BLE_LOG_ENABLED
         help
             Stack size for BLE Log Task
 
+    config BLE_LOG_POOL_TRANS_CNT
+        int "Number of transport buffers in the unified pool"
+        default 16
+        help
+            Total number of transport buffers in the global BLE Log buffer
+            pool. All task / ISR / Link Layer log writers allocate from this
+            single pool. Must be within [2, 32] because buffer availability is
+            tracked with 32-bit hint bitmaps.
+
+    config BLE_LOG_POOL_ISR_RESERVE_CNT
+        int "Transport buffers reserved for ISR context"
+        default 1
+        help
+            Number of buffers reserved for ISR context. ISR writers use the
+            shared region first and only fall back to this reserve when the
+            shared region is exhausted, so task bursts cannot starve ISR logs
+            completely. Must be less than BLE_LOG_POOL_TRANS_CNT (at least one
+            shared buffer must remain).
+
+    config BLE_LOG_POOL_TRANS_SIZE
+        int "Per-transport buffer size (bytes)"
+        default 512
+        help
+            Size in bytes of each transport buffer. A single log frame
+            (including header and checksum overhead) must fit in one buffer.
+
+    config BLE_LOG_POOL_ISR_OPEN_SCAN_MAX
+        int "Max OPEN buffers an ISR writer scans (0 = scan all)"
+        default 0
+        help
+            Upper bound on the number of OPEN buffers an ISR-context writer
+            scans while looking for one to append to. 0 means scan all buffers.
+            A small value bounds worst-case ISR time at the cost of log packing
+            efficiency.
+
+    config BLE_LOG_POOL_TASK_WAIT_TIMEOUT_MS
+        int "Task backpressure wait timeout (ms, 0 = wait forever)"
+        default 50
+        help
+            When no transport buffer is available, a task-context writer blocks
+            (backpressure) up to this timeout waiting for a buffer to be
+            recycled, instead of dropping the log. 0 means block indefinitely
+            (portMAX_DELAY). ISR context never blocks.
+
     config BLE_LOG_LBM_TRANS_BUF_SIZE
         int "Total buffer memory per common LBM (bytes)"
         default 2048
