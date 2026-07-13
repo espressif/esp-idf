@@ -41,6 +41,39 @@ typedef enum {
     BLE_LOG_SRC_MAX,
 } ble_log_src_t;
 
+typedef struct {
+    uint32_t count;
+    uint32_t min_us;
+    uint32_t max_us;
+    uint32_t last_us;
+    uint64_t total_us;
+} ble_log_prph_latency_stat_t;
+
+typedef struct {
+    ble_log_prph_latency_stat_t owned;
+    ble_log_prph_latency_stat_t spi;
+    ble_log_prph_latency_stat_t queue_wait;
+    ble_log_prph_latency_stat_t dma;
+} ble_log_prph_latency_stats_t;
+
+/* Unified buffer pool diagnostics. */
+typedef struct {
+    uint32_t task_wait_count;     /* task writes that blocked waiting for a buffer */
+    uint32_t task_wait_max_us;    /* longest single backpressure wait */
+    uint32_t task_wait_total_us;  /* cumulative backpressure wait time */
+    uint32_t inflight_peak;       /* peak simultaneously in-flight pool buffers */
+    uint32_t send_fail_count;     /* transports dropped because the driver queue was full (== lost_send_fail) */
+    uint32_t lost_frame_cnt;      /* frames dropped since last reset (all sources) */
+    uint32_t lost_bytes_cnt;      /* bytes dropped since last reset (all sources) */
+
+    /* Breakdown of drop reasons since last reset. The first three sum to the
+     * "no buffer to write into" losses (also counted in lost_frame_cnt);
+     * send_fail_count is separate (buffer written but driver submit failed). */
+    uint32_t lost_frame_too_large; /* single frame larger than one transport buffer */
+    uint32_t lost_no_buffer_task;  /* task context could not obtain a buffer */
+    uint32_t lost_no_buffer_isr;   /* ISR context could not obtain a buffer */
+} ble_log_pool_stats_t;
+
 /* HCI Log Direction */
 #define BLE_LOG_HCI_DOWNSTREAM  0
 #define BLE_LOG_HCI_UPSTREAM    1
@@ -69,5 +102,12 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
 #if CONFIG_BLE_LOG_TS_ENABLED
 bool ble_log_sync_enable(bool enable);
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
+
+void ble_log_write_attempt_bytes_get(uint32_t *bytes, uint32_t *bytes_ll);
+void ble_log_write_attempt_bytes_reset(void);
+void ble_log_prph_latency_stats_get(ble_log_prph_latency_stats_t *stats);
+void ble_log_prph_latency_stats_reset(void);
+void ble_log_pool_stats_get(ble_log_pool_stats_t *stats);
+void ble_log_pool_stats_reset(void);
 
 #endif /* __BLE_LOG_H__ */

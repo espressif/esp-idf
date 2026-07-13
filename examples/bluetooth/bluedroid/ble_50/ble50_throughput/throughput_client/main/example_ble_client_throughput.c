@@ -31,6 +31,10 @@
 #include "freertos/task.h"
 #include "esp_timer.h"
 
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif
+
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
@@ -69,6 +73,12 @@ static uint64_t current_time = 0;
 static bool can_send_write = false;
 static SemaphoreHandle_t gattc_semaphore;
 uint8_t write_data[GATTC_WRITE_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0e, 0x0f};
+#if CONFIG_BLE_LOG_ENABLED
+#define BLE_LOG_STAT_TIME_US (60ULL * SECOND_TO_USECOND)
+static bool ble_log_stat_started = false;
+static bool ble_log_stat_reported = false;
+static uint64_t ble_log_stat_start_time = 0;
+#endif
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
 static bool is_connect = false;
@@ -77,6 +87,67 @@ static bool is_connect = false;
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
+
+#if CONFIG_BLE_LOG_ENABLED
+static void ble_log_print_latency_stats(void)
+{
+    ble_log_prph_latency_stats_t stats;
+
+    ble_log_prph_latency_stats_get(&stats);
+    ESP_LOGI(GATTC_TAG, "BLE log buffer owned latency: count=%" PRIu32
+             ", avg=%" PRIu64 " us, min=%" PRIu32 " us, max=%" PRIu32
+             " us, last=%" PRIu32 " us",
+             stats.owned.count,
+             stats.owned.count ? stats.owned.total_us / stats.owned.count : 0,
+             stats.owned.min_us,
+             stats.owned.max_us,
+             stats.owned.last_us);
+    ESP_LOGI(GATTC_TAG, "BLE log SPI DMA latency: count=%" PRIu32
+             ", avg=%" PRIu64 " us, min=%" PRIu32 " us, max=%" PRIu32
+             " us, last=%" PRIu32 " us",
+             stats.spi.count,
+             stats.spi.count ? stats.spi.total_us / stats.spi.count : 0,
+             stats.spi.min_us,
+             stats.spi.max_us,
+             stats.spi.last_us);
+    ESP_LOGI(GATTC_TAG, "BLE log SPI queue wait: count=%" PRIu32
+             ", avg=%" PRIu64 " us, min=%" PRIu32 " us, max=%" PRIu32
+             " us, last=%" PRIu32 " us",
+             stats.queue_wait.count,
+             stats.queue_wait.count ? stats.queue_wait.total_us / stats.queue_wait.count : 0,
+             stats.queue_wait.min_us,
+             stats.queue_wait.max_us,
+             stats.queue_wait.last_us);
+    ESP_LOGI(GATTC_TAG, "BLE log SPI DMA time: count=%" PRIu32
+             ", avg=%" PRIu64 " us, min=%" PRIu32 " us, max=%" PRIu32
+             " us, last=%" PRIu32 " us",
+             stats.dma.count,
+             stats.dma.count ? stats.dma.total_us / stats.dma.count : 0,
+             stats.dma.min_us,
+             stats.dma.max_us,
+             stats.dma.last_us);
+
+    ble_log_pool_stats_t pool_stats;
+    ble_log_pool_stats_get(&pool_stats);
+    ESP_LOGI(GATTC_TAG, "BLE log pool task wait: count=%" PRIu32
+             ", avg=%" PRIu32 " us, max=%" PRIu32 " us",
+             pool_stats.task_wait_count,
+             pool_stats.task_wait_count ? pool_stats.task_wait_total_us / pool_stats.task_wait_count : 0,
+             pool_stats.task_wait_max_us);
+    ESP_LOGI(GATTC_TAG, "BLE log pool: inflight_peak=%" PRIu32 ", send_fail=%" PRIu32
+             ", lost frames=%" PRIu32 ", lost bytes=%" PRIu32,
+             pool_stats.inflight_peak,
+             pool_stats.send_fail_count,
+             pool_stats.lost_frame_cnt,
+             pool_stats.lost_bytes_cnt);
+    ESP_LOGI(GATTC_TAG, "BLE log lost reason: too_large=%" PRIu32
+             ", no_buf_task=%" PRIu32 ", no_buf_isr=%" PRIu32 ", send_fail=%" PRIu32,
+             pool_stats.lost_frame_too_large,
+             pool_stats.lost_no_buffer_task,
+             pool_stats.lost_no_buffer_isr,
+             pool_stats.send_fail_count);
+}
+#endif
 
 
 static esp_bt_uuid_t remote_filter_service_uuid = {
@@ -411,6 +482,11 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         /* Unblock throughput_client_task if it is waiting on gattc_semaphore while congested. */
         can_send_write = true;
         xSemaphoreGive(gattc_semaphore);
+#if CONFIG_BLE_LOG_ENABLED
+        ble_log_stat_started = false;
+        ble_log_stat_reported = false;
+        ble_log_stat_start_time = 0;
+#endif
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
         ESP_LOGI(GATTC_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
@@ -555,6 +631,17 @@ static void throughput_client_task(void *param)
                 assert(res == pdTRUE);
             } else {
                 if (is_connect) {
+#if CONFIG_BLE_LOG_ENABLED
+                    if (!ble_log_stat_started) {
+                        ble_log_write_attempt_bytes_reset();
+                        ble_log_prph_latency_stats_reset();
+                        ble_log_pool_stats_reset();
+                        ble_log_stat_start_time = esp_timer_get_time();
+                        ble_log_stat_started = true;
+                        ble_log_stat_reported = false;
+                        ESP_LOGI(GATTC_TAG, "BLE log 60s write statistic started");
+                    }
+#endif
                     int free_buff_num = esp_ble_get_cur_sendable_packets_num(gl_profile_tab[PROFILE_A_APP_ID].conn_id);
                     if(free_buff_num > 0) {
                         for( ; free_buff_num > 0; free_buff_num--) {
@@ -574,6 +661,20 @@ static void throughput_client_task(void *param)
                     vTaskDelay(300 / portTICK_PERIOD_MS );
                 }
             }
+
+#if CONFIG_BLE_LOG_ENABLED
+            if (ble_log_stat_started && !ble_log_stat_reported &&
+                    (esp_timer_get_time() - ble_log_stat_start_time) >= BLE_LOG_STAT_TIME_US) {
+                uint32_t host_bytes;
+                uint32_t ll_bytes;
+                ble_log_write_attempt_bytes_get(&host_bytes, &ll_bytes);
+                ESP_LOGI(GATTC_TAG, "BLE log 60s write attempt bytes: host=%" PRIu32
+                         ", ll=%" PRIu32 ", total=%" PRIu32,
+                         host_bytes, ll_bytes, host_bytes + ll_bytes);
+                ble_log_print_latency_stats();
+                ble_log_stat_reported = true;
+            }
+#endif
 
     }
 }
@@ -610,6 +711,13 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(GATTC_TAG, "Failed to init BLE log");
+        return;
+    }
+#endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 

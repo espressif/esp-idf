@@ -38,109 +38,40 @@ typedef struct {
 #define BLE_LOG_FRAME_OVERHEAD                  (BLE_LOG_FRAME_HEAD_LEN + BLE_LOG_FRAME_TAIL_LEN)
 #define BLE_LOG_MAKE_FRAME_META(src_code, sn)   (((src_code) & 0xFF) | ((sn) << 8))
 
-/* ---------------------------------- */
-/*     Log Buffer Manager Defines     */
-/* ---------------------------------- */
-typedef enum {
-    BLE_LOG_LBM_LOCK_NONE,
-    BLE_LOG_LBM_LOCK_SPIN,
-    BLE_LOG_LBM_LOCK_ATOMIC,
-    BLE_LOG_LBM_LOCK_MUTEX,
-} ble_log_lbm_lock_t;
+/* ------------------------------------- */
+/*     Unified Buffer Pool Defines       */
+/* ------------------------------------- */
+/* Total transport buffers in the global pool. Bitmaps are 32-bit, so the
+ * pool is capped at 32 buffers. */
+#define BLE_LOG_POOL_TRANS_CNT                  CONFIG_BLE_LOG_POOL_TRANS_CNT
+/* Buffers reserved for ISR context when the shared region is exhausted. */
+#define BLE_LOG_POOL_ISR_RESERVE_CNT            CONFIG_BLE_LOG_POOL_ISR_RESERVE_CNT
+/* Shared region: usable by both task and ISR context. */
+#define BLE_LOG_POOL_SHARED_CNT                 (BLE_LOG_POOL_TRANS_CNT - BLE_LOG_POOL_ISR_RESERVE_CNT)
+/* Per-buffer byte size. */
+#define BLE_LOG_POOL_TRANS_SIZE                 CONFIG_BLE_LOG_POOL_TRANS_SIZE
 
-typedef struct {
-    int trans_idx;
-    ble_log_prph_trans_t *trans[BLE_LOG_TRANS_BUF_CNT];
-    ble_log_lbm_lock_t lock_type;
-    union {
-        /* BLE_LOG_LBM_LOCK_NONE */
-        void *none;
-        /* BLE_LOG_LBM_LOCK_SPIN */
-        portMUX_TYPE spin_lock;
-        /* BLE_LOG_LBM_LOCK_ATOMIC */
-        volatile bool atomic_lock;
-        /* BLE_LOG_LBM_LOCK_MUTEX */
-        SemaphoreHandle_t mutex;
-    };
-    uint32_t trans_inflight;
-    uint32_t trans_inflight_peak;
-} ble_log_lbm_t;
-
-/* --------------------------------------- */
-/*     Log Buffer Manager Pool Defines     */
-/* --------------------------------------- */
-enum {
-#if CONFIG_BLE_LOG_LL_ENABLED
-    BLE_LOG_LBM_LL_TASK,
-    BLE_LOG_LBM_LL_HCI,
-#endif /* CONFIG_BLE_LOG_LL_ENABLED */
-    BLE_LOG_LBM_LL_MAX,
-};
-
-enum {
-    BLE_LOG_LBM_SPIN_TASK = 0,
-    BLE_LOG_LBM_SPIN_ISR,
-    BLE_LOG_LBM_SPIN_MAX,
-};
-
-#define BLE_LOG_LBM_ATOMIC_TASK_CNT             CONFIG_BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT
-#define BLE_LOG_LBM_ATOMIC_ISR_CNT              CONFIG_BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT
-#define BLE_LOG_LBM_ATOMIC_CNT                  (BLE_LOG_LBM_ATOMIC_TASK_CNT +\
-                                                 BLE_LOG_LBM_ATOMIC_ISR_CNT)
-#define BLE_LOG_LBM_COMMON_CNT                  (BLE_LOG_LBM_ATOMIC_CNT + BLE_LOG_LBM_SPIN_MAX)
-#define BLE_LOG_LBM_CNT                         (BLE_LOG_LBM_COMMON_CNT + BLE_LOG_LBM_LL_MAX)
-
-/* Derived per-buffer size from user-configured total-per-LBM budget */
-#define BLE_LOG_TRANS_SIZE                      (CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE / BLE_LOG_TRANS_BUF_CNT)
-#define BLE_LOG_TRANS_LL_SIZE                   (CONFIG_BLE_LOG_LBM_LL_TRANS_BUF_SIZE / BLE_LOG_TRANS_BUF_CNT)
-
-/* Unified queue depth derivation */
-#define BLE_LOG_TRANS_POOL_CNT                  (BLE_LOG_LBM_CNT * BLE_LOG_TRANS_BUF_CNT)
+/* UART redirection uses its own small buffer set, not part of the pool. */
 #if BLE_LOG_UART_REDIR_ENABLED
 #define BLE_LOG_TRANS_REDIR_CNT                 BLE_LOG_TRANS_BUF_CNT
 #else
 #define BLE_LOG_TRANS_REDIR_CNT                 (0)
 #endif
-#define BLE_LOG_TRANS_TOTAL_CNT                 (BLE_LOG_TRANS_POOL_CNT + BLE_LOG_TRANS_REDIR_CNT)
 
-/* ------------------------------------------ */
-/*     Log Buffer Manager Context Defines     */
-/* ------------------------------------------ */
+/* Depth used to size the runtime queue and the peripheral driver queue: the
+ * maximum number of transports that can be in flight simultaneously. */
+#define BLE_LOG_TRANS_TOTAL_CNT                 (BLE_LOG_POOL_TRANS_CNT + BLE_LOG_TRANS_REDIR_CNT)
+
+/* ------------------------------------- */
+/*     UART Redirection Manager          */
+/* ------------------------------------- */
+#if BLE_LOG_UART_REDIR_ENABLED
 typedef struct {
-    union {
-        ble_log_lbm_t lbm_pool[BLE_LOG_LBM_CNT];
-        struct {
-            union {
-                ble_log_lbm_t lbm_common_pool[BLE_LOG_LBM_COMMON_CNT];
-                struct {
-                    union {
-                        ble_log_lbm_t spin_pool[BLE_LOG_LBM_SPIN_MAX];
-                        struct {
-                            ble_log_lbm_t spin_task;
-                            ble_log_lbm_t spin_isr;
-                        };
-                    };
-                    union {
-                        ble_log_lbm_t atomic_pool[BLE_LOG_LBM_ATOMIC_CNT];
-                        struct {
-                            ble_log_lbm_t atomic_pool_task[BLE_LOG_LBM_ATOMIC_TASK_CNT];
-                            ble_log_lbm_t atomic_pool_isr[BLE_LOG_LBM_ATOMIC_ISR_CNT];
-                        };
-                    };
-                };
-            };
-            union {
-                ble_log_lbm_t lbm_ll_pool[BLE_LOG_LBM_LL_MAX];
-#if CONFIG_BLE_LOG_LL_ENABLED
-                struct {
-                    ble_log_lbm_t lbm_ll_task;
-                    ble_log_lbm_t lbm_ll_hci;
-                };
-#endif /* CONFIG_BLE_LOG_LL_ENABLED */
-            };
-        };
-    };
-} ble_log_lbm_ctx_t;
+    ble_log_prph_trans_t *trans[BLE_LOG_TRANS_BUF_CNT];
+    SemaphoreHandle_t mutex;
+    int trans_idx;
+} ble_log_redir_t;
+#endif /* BLE_LOG_UART_REDIR_ENABLED */
 
 /* -------------------------------------------- */
 /*     Buffer Utilization Reporting Defines     */
@@ -232,22 +163,15 @@ enum {
 /* ------------------------------- */
 /*     Compile-Time Guards         */
 /* ------------------------------- */
-_Static_assert(CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE % BLE_LOG_TRANS_BUF_CNT == 0,
-               "Common LBM total buffer size must be a multiple of BLE_LOG_TRANS_BUF_CNT (4)");
-#if CONFIG_BLE_LOG_LL_ENABLED
-_Static_assert(CONFIG_BLE_LOG_LBM_LL_TRANS_BUF_SIZE % BLE_LOG_TRANS_BUF_CNT == 0,
-               "LL LBM total buffer size must be a multiple of BLE_LOG_TRANS_BUF_CNT (4)");
-#endif
-_Static_assert(CONFIG_BLE_LOG_LBM_TRANS_BUF_SIZE / BLE_LOG_TRANS_BUF_CNT >= BLE_LOG_FRAME_OVERHEAD,
-               "Common LBM per-buffer size too small for a single frame");
-_Static_assert(BLE_LOG_TRANS_SIZE >= BLE_LOG_FINAL_STAT_LEN + sizeof(uint32_t) + BLE_LOG_FRAME_OVERHEAD,
-               "Common LBM per-buffer size too small for final statistics frame");
+_Static_assert(BLE_LOG_POOL_TRANS_CNT >= 2 && BLE_LOG_POOL_TRANS_CNT <= 32,
+               "BLE_LOG_POOL_TRANS_CNT must be within [2, 32] (32-bit bitmap)");
+_Static_assert(BLE_LOG_POOL_ISR_RESERVE_CNT >= 0 &&
+               BLE_LOG_POOL_ISR_RESERVE_CNT < BLE_LOG_POOL_TRANS_CNT,
+               "BLE_LOG_POOL_ISR_RESERVE_CNT must leave at least one shared buffer");
+_Static_assert(BLE_LOG_POOL_TRANS_SIZE >= BLE_LOG_FRAME_OVERHEAD,
+               "BLE_LOG_POOL_TRANS_SIZE too small for a single frame");
 _Static_assert((BLE_LOG_TRANS_BUF_CNT & (BLE_LOG_TRANS_BUF_CNT - 1)) == 0,
                "BLE_LOG_TRANS_BUF_CNT must be a power of 2");
-_Static_assert(1 + BLE_LOG_LBM_ATOMIC_TASK_CNT <= 16,
-               "Common task pool exceeds lbm_id 4-bit index limit (max 15)");
-_Static_assert(1 + BLE_LOG_LBM_ATOMIC_ISR_CNT <= 16,
-               "Common ISR pool exceeds lbm_id 4-bit index limit (max 15)");
 _Static_assert(BLE_LOG_TRANS_BUF_CNT <= 255,
                "BLE_LOG_TRANS_BUF_CNT must fit in uint8_t for ble_log_buf_util_t");
 
@@ -256,16 +180,23 @@ _Static_assert(BLE_LOG_TRANS_BUF_CNT <= 255,
 /* --------------------------- */
 bool ble_log_lbm_init(void);
 void ble_log_lbm_deinit(void);
-void ble_log_lbm_enable(bool enable);
-bool ble_log_write_internal(const uint8_t *addr, size_t len);
-void ble_log_write_final_stat(void);
 void ble_log_write_enh_stat(void);
 void ble_log_write_buf_util(void);
+
+/* Unified transport recycle: return a transport to the global pool (or reset
+ * a redirection transport). Safe to call from ISR / driver callback context.
+ * Used by every peripheral tx-done / send-failure path and by the runtime
+ * queue drain, so that buffer recycling behaviour is identical everywhere. */
+void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
+
+/* Account a transport that could not be handed to the peripheral driver. */
+void ble_log_lbm_note_send_fail(void);
+
 #if BLE_LOG_UART_REDIR_ENABLED
-void ble_log_lbm_stream_write(ble_log_lbm_t *lbm, ble_log_src_t src_code,
+void ble_log_lbm_stream_write(ble_log_redir_t *redir, ble_log_src_t src_code,
                                const uint8_t *data, size_t len);
-void ble_log_lbm_stream_flush(ble_log_lbm_t *lbm, ble_log_src_t src_code);
-ble_log_lbm_t *ble_log_prph_get_redir_lbm(void);
+void ble_log_lbm_stream_flush(ble_log_redir_t *redir, ble_log_src_t src_code);
+ble_log_redir_t *ble_log_prph_get_redir_lbm(void);
 #endif
 
 #endif /* __BLE_LOG_LBM_H__ */

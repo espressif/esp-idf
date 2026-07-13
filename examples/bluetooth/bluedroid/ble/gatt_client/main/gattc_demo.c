@@ -29,7 +29,12 @@
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
+
+#if CONFIG_BLE_LOG_ENABLED
+#include "ble_log.h"
+#endif
 
 #define GATTC_TAG "GATTC_DEMO"
 #define REMOTE_SERVICE_UUID        0x00FF
@@ -46,11 +51,77 @@ static bool connect    = false;
 static bool get_server = false;
 static esp_gattc_char_elem_t *char_elem_result   = NULL;
 static esp_gattc_descr_elem_t *descr_elem_result = NULL;
+#if CONFIG_BLE_LOG_ENABLED
+static bool ble_log_connect_stat_started = false;
+static int64_t ble_log_connect_stat_start_time_us = 0;
+static bool ble_log_disconnect_stat_started = false;
+static int64_t ble_log_disconnect_stat_start_time_us = 0;
+#endif
 
 /* Declare static functions */
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
 static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param);
+
+#if CONFIG_BLE_LOG_ENABLED
+static void ble_log_connect_stat_start(void)
+{
+    ble_log_write_attempt_bytes_reset();
+    ble_log_connect_stat_start_time_us = esp_timer_get_time();
+    ble_log_connect_stat_started = true;
+    ESP_LOGI(GATTC_TAG, "BLE log connect statistic started");
+}
+
+static void ble_log_connect_stat_dump(void)
+{
+    uint32_t host_bytes;
+    uint32_t ll_bytes;
+    int64_t elapsed_us;
+
+    if (!ble_log_connect_stat_started) {
+        return;
+    }
+
+    elapsed_us = esp_timer_get_time() - ble_log_connect_stat_start_time_us;
+    ble_log_write_attempt_bytes_get(&host_bytes, &ll_bytes);
+    ESP_LOGI(GATTC_TAG, "BLE log connect attempt bytes: host=%" PRIu32
+             ", ll=%" PRIu32 ", total=%" PRIu32
+             ", elapsed=%" PRId64 " us (%" PRId64 " ms)",
+             host_bytes, ll_bytes, host_bytes + ll_bytes,
+             elapsed_us, elapsed_us / 1000);
+    ble_log_connect_stat_started = false;
+    ble_log_connect_stat_start_time_us = 0;
+}
+
+static void ble_log_disconnect_stat_start(void)
+{
+    ble_log_write_attempt_bytes_reset();
+    ble_log_disconnect_stat_start_time_us = esp_timer_get_time();
+    ble_log_disconnect_stat_started = true;
+    ESP_LOGI(GATTC_TAG, "BLE log disconnect statistic started");
+}
+
+static void ble_log_disconnect_stat_dump(void)
+{
+    uint32_t host_bytes;
+    uint32_t ll_bytes;
+    int64_t elapsed_us;
+
+    if (!ble_log_disconnect_stat_started) {
+        return;
+    }
+
+    elapsed_us = esp_timer_get_time() - ble_log_disconnect_stat_start_time_us;
+    ble_log_write_attempt_bytes_get(&host_bytes, &ll_bytes);
+    ESP_LOGI(GATTC_TAG, "BLE log disconnect attempt bytes: host=%" PRIu32
+             ", ll=%" PRIu32 ", total=%" PRIu32
+             ", elapsed=%" PRId64 " us (%" PRId64 " ms)",
+             host_bytes, ll_bytes, host_bytes + ll_bytes,
+             elapsed_us, elapsed_us / 1000);
+    ble_log_disconnect_stat_started = false;
+    ble_log_disconnect_stat_start_time_us = 0;
+}
+#endif
 
 
 static esp_bt_uuid_t remote_filter_service_uuid = {
@@ -122,9 +193,16 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     case ESP_GATTC_OPEN_EVT:
         if (param->open.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG, "Open failed, status %d", p_data->open.status);
+#if CONFIG_BLE_LOG_ENABLED
+            ble_log_connect_stat_started = false;
+            ble_log_connect_stat_start_time_us = 0;
+#endif
             break;
         }
         ESP_LOGI(GATTC_TAG, "Open successfully, MTU %u", p_data->open.mtu);
+#if CONFIG_BLE_LOG_ENABLED
+        ble_log_connect_stat_dump();
+#endif
         break;
     case ESP_GATTC_DIS_SRVC_CMPL_EVT:
         if (param->dis_srvc_cmpl.status != ESP_GATT_OK){
@@ -312,10 +390,21 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             break;
         }
         ESP_LOGI(GATTC_TAG, "Characteristic write successfully");
+#if CONFIG_BLE_LOG_ENABLED
+        ble_log_disconnect_stat_start();
+#endif
+        esp_ble_gattc_close(gattc_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id);
         break;
     case ESP_GATTC_DISCONNECT_EVT:
         connect = false;
         get_server = false;
+#if CONFIG_BLE_LOG_ENABLED
+        ble_log_disconnect_stat_dump();
+        ble_log_connect_stat_started = false;
+        ble_log_connect_stat_start_time_us = 0;
+        ble_log_disconnect_stat_started = false;
+        ble_log_disconnect_stat_start_time_us = 0;
+#endif
         ESP_LOGI(GATTC_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(p_data->disconnect.remote_bda), p_data->disconnect.reason);
         break;
@@ -375,6 +464,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                     ESP_LOGI(GATTC_TAG, "Device found %s", remote_device_name);
                     if (connect == false) {
                         connect = true;
+
                         ESP_LOGI(GATTC_TAG, "Connect to the remote device");
                         esp_ble_gap_stop_scanning();
                         esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
@@ -384,6 +474,9 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                         creat_conn_params.is_direct = true;
                         creat_conn_params.is_aux = false;
                         creat_conn_params.phy_mask = 0x0;
+#if CONFIG_BLE_LOG_ENABLED
+                        ble_log_connect_stat_start();
+#endif
                         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
                                             &creat_conn_params);
                     }
@@ -473,6 +566,13 @@ void app_main(void)
     #if CONFIG_EXAMPLE_CI_PIPELINE_ID
     memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
     #endif
+
+#if CONFIG_BLE_LOG_ENABLED
+    if (!ble_log_init()) {
+        ESP_LOGE(GATTC_TAG, "Failed to init BLE log");
+        return;
+    }
+#endif
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
