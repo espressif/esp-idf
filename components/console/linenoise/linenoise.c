@@ -138,6 +138,7 @@ __thread FILE *linenoise_stdout;
 #define LINENOISE_MINIMAL_MAX_LINE 64
 #define LINENOISE_COMMAND_MAX_LEN 32
 #define LINENOISE_PASTE_KEY_DELAY 30 /* Delay, in milliseconds, between two characters being pasted from clipboard */
+#define LINENOISE_DEFAULT_COLS 80 /* Minimum sensible terminal width; used as fallback */
 
 static linenoiseCompletionCallback *completionCallback = NULL;
 static linenoiseHintsCallback *hintsCallback = NULL;
@@ -565,8 +566,8 @@ void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
 static void refreshSingleLine(struct linenoiseState *l) {
-    if (l->cols == 0) {
-        l->cols = 80;
+    if (l->cols < LINENOISE_DEFAULT_COLS) {
+        l->cols = LINENOISE_DEFAULT_COLS;
     }
     char seq[64];
     size_t plen = l->plen;
@@ -610,8 +611,8 @@ static void refreshSingleLine(struct linenoiseState *l) {
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
 static void refreshMultiLine(struct linenoiseState *l) {
-    if (l->cols == 0) {
-        l->cols = 80;
+    if (l->cols < LINENOISE_DEFAULT_COLS) {
+        l->cols = LINENOISE_DEFAULT_COLS;
     }
     char seq[64];
     int plen = l->plen;
@@ -897,8 +898,8 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
     l.oldpos = l.pos = 0;
     l.len = 0;
     l.cols = getColumns();
-    if (l.cols == 0) {
-        l.cols = 80;
+    if (l.cols < LINENOISE_DEFAULT_COLS) {
+        l.cols = LINENOISE_DEFAULT_COLS;
     }
     l.maxrows = 0;
     l.history_index = 0;
