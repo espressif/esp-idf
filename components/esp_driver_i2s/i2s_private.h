@@ -30,6 +30,8 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_gpio_reserve.h"
 #if SOC_HAS(PAU)
+#include "soc/regdma.h"
+#include "soc/retention_periph_defs.h"
 #include "esp_private/sleep_retention.h"
 #endif
 #include "esp_pm.h"
@@ -145,6 +147,16 @@ typedef struct {
     esp_clock_output_mapping_handle_t mclk_out_hdl; /*!< The handle of MCLK output signal */
 #endif
 } i2s_controller_t;
+
+#if SOC_HAS(PAU)
+typedef struct {
+    const periph_retention_module_t retention_module;
+    const regdma_entries_config_t *entry_array;
+    uint32_t array_size;
+} i2s_reg_retention_info_t;
+
+extern const i2s_reg_retention_info_t i2s_reg_retention_info[I2S_LL_GET(INST_NUM)];
+#endif
 
 struct i2s_channel_obj_t {
     /* Channel basic information */
