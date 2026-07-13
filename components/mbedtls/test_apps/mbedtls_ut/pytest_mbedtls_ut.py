@@ -5,6 +5,15 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_idf.utils import soc_filtered_targets
 
+# esp32s2 has PSRAM DMA and AES DMA, but no PSRAM ECC Kconfig option.
+PSRAM_ECC_DMA_TARGETS = [
+    target
+    for target in soc_filtered_targets(
+        'SOC_SPIRAM_SUPPORTED == 1 and SOC_PSRAM_DMA_CAPABLE == 1 and SOC_AES_SUPPORT_DMA == 1'
+    )
+    if target != 'esp32s2'
+]
+
 
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='can not pass')  # TODO: IDF-15675
@@ -51,6 +60,19 @@ def test_mbedtls_aes_no_hw(dut: Dut) -> None:
 @idf_parametrize('target', soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1'), indirect=['target'])
 def test_mbedtls_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram_ecc',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', PSRAM_ECC_DMA_TARGETS, indirect=['target'])
+def test_mbedtls_psram_ecc(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='aes', timeout=180)
 
 
 @pytest.mark.flash_encryption_psram
