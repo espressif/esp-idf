@@ -368,11 +368,6 @@ struct bt_hci_vs_legacy_rem_auth_evt {
 #define ESP_BT_VS_CLK_UPDATE_OCF                                    (0x0183)
 
 /**
- * @note The init function is `bt_stack_enableClkCtrlVsCmd(true)`
- */
-#define ESP_BT_VS_PCA_OCF                                           (0x0190)
-
-/**
  * @note The init function is `bt_stack_enableAfhVsCmd(true)`
  */
 #define ESP_BT_VS_SET_AFH_OCF                                       (0x0187)
@@ -412,6 +407,31 @@ struct bt_hci_vs_legacy_rem_auth_evt {
  */
 #define ESP_BT_VS_DTM_RX_TEST_END_OCF                               (0x018f)
 
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_PCA_OCF                                           (0x0190)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_DISCARD_PING_OCF                                  (0x0191)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_LMP_DBG_ENABLE_OCF                                (0x019a)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_SEND_LMP_OCF                                      (0x019b)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_LMP_DBG_SAVE_OCF                                  (0x019c)
+
 //
 // @brief HCI VS Events for Espressif's Internal-Use Debugging
 //
@@ -436,6 +456,21 @@ struct bt_hci_vs_legacy_rem_auth_evt {
  * @note The init function is `bt_stack_enableAfhVsCmd(true)`
  */
 #define ESP_BT_VS_CH_CLASSIFICATION_REPORTING_MODE_EVT_SUBCODE      (0x07)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_LMP_RECEIVED_EVT_SUBCODE                          (0x0a)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_LMP_TX_CFM_EVT_SUBCODE                            (0x0b)
+
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_LMP_DBG_ENTERED_EVT_SUBCODE                       (0x0c)
 
 #ifdef __cplusplus
 }
