@@ -41,7 +41,8 @@ typedef enum {
     ESP_EAP_TTLS_PHASE2_MSCHAPV2,   /**< MS-CHAPv2 (Microsoft Challenge Handshake Authentication Protocol - Version 2) */
     ESP_EAP_TTLS_PHASE2_MSCHAP,     /**< MS-CHAP (Microsoft Challenge Handshake Authentication Protocol) */
     ESP_EAP_TTLS_PHASE2_PAP,        /**< PAP (Password Authentication Protocol) */
-    ESP_EAP_TTLS_PHASE2_CHAP        /**< CHAP (Challenge Handshake Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_CHAP,       /**< CHAP (Challenge Handshake Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_GTC,        /**< GTC (Generic Token Card) */
 } esp_eap_ttls_phase2_types;
 
 /**
@@ -306,7 +307,7 @@ esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type);
  * @return
  *    - ESP_OK: The EAP-TTLS phase 2 method was set successfully.
  */
-esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type);
+esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type) __attribute__((deprecated("Use esp_eap_client_set_phase2_method instead")));
 
 /**
  * @brief Enable or disable Suite-B 192-bit certification checks.
