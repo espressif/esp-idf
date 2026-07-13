@@ -818,7 +818,8 @@ esp_err_t twai_receive_v2(twai_handle_t handle, twai_message_t *message, TickTyp
     message->extd = header.ide;
     message->rtr = header.rtr;
     //Set remaining bytes of data to 0
-    memset(message->data + message->data_length_code, 0, TWAI_FRAME_MAX_LEN - message->data_length_code);
+    uint8_t data_length = (header.dlc > TWAI_FRAME_MAX_LEN) ? TWAI_FRAME_MAX_LEN : header.dlc;
+    memset(message->data + data_length, 0, TWAI_FRAME_MAX_LEN - data_length);
     return ESP_OK;
 }
 
