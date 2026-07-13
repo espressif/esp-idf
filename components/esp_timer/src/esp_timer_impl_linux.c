@@ -163,7 +163,7 @@ static esp_err_t program_timerfd(uint64_t deadline_us)
 
 static void *alarm_thread_func(void *arg)
 {
-    (void)arg;
+    intr_handler_t alarm_handler = (intr_handler_t)arg;
 
 #ifdef PR_SET_TIMERSLACK
     // Set timer slack to 1 ns for this thread.
@@ -219,10 +219,7 @@ static void *alarm_thread_func(void *arg)
                 continue;
             }
 
-            TaskHandle_t timer_task = esp_timer_impl_get_timer_task_handle();
-            if (timer_task != NULL) {
-                xTaskNotifyGive(timer_task);
-            }
+            alarm_handler(NULL);
         }
     }
 
@@ -300,8 +297,6 @@ esp_err_t esp_timer_impl_early_init(void)
 
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
-    (void)alarm_handler;
-
     timestamp_id[0] = UINT64_MAX;
     timestamp_id[1] = UINT64_MAX;
 
@@ -321,7 +316,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         return ESP_FAIL;
     }
 
-    int err = pthread_create(&s_alarm_thread, NULL, alarm_thread_func, NULL);
+    int err = pthread_create(&s_alarm_thread, NULL, alarm_thread_func, alarm_handler);
     if (err != 0) {
         ESP_LOGE(TAG, "Failed to create alarm thread: %s", strerror(err));
 
