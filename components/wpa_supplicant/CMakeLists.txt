@@ -80,7 +80,6 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_enrollee.c")
 
 set(esp_srcs "esp_supplicant/src/esp_eap_client.c"
-    "esp_supplicant/src/esp_wpa2_api_port.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_common.c"
