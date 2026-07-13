@@ -934,8 +934,6 @@ static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *pe
     }
     NAN_DATA_UNLOCK();
 
-    ESP_LOGI(TAG, "Service matched with capabilities: 0x%04x", capab);
-
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     /* Service-match security gate, keyed by the local subscribe (sub_id):
      *   1. This subscribe was created without credentials (open subscribe) ->
@@ -968,6 +966,8 @@ static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *pe
         }
     }
 #endif
+
+    ESP_LOGI(TAG, "Service matched with capabilities: 0x%04x", capab);
 
     size_t evt_data_len = sizeof(wifi_event_nan_svc_match_t) + ssi_len;
     wifi_event_nan_svc_match_t *evt = (wifi_event_nan_svc_match_t *)os_zalloc(evt_data_len);
@@ -2174,6 +2174,10 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
         goto fail;
     }
     memcpy(cfg, publish_cfg, sizeof(*cfg));
+    if (!cfg->security_reqd && cfg->security_cfg) {
+        ESP_LOGW(TAG, "'%s': security_cfg ignored, security_reqd not set", cfg->service_name);
+        cfg->security_cfg = NULL;
+    }
     cfg->pairing = NULL;
     if (publish_cfg->pairing) {
         cfg->pairing = os_malloc(sizeof(*cfg->pairing));
@@ -2355,6 +2359,10 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         goto fail;
     }
     memcpy(cfg, subscribe_cfg, sizeof(*cfg));
+    if (!cfg->security_reqd && cfg->security_cfg) {
+        ESP_LOGW(TAG, "'%s': security_cfg ignored, security_reqd not set", cfg->service_name);
+        cfg->security_cfg = NULL;
+    }
     cfg->pairing = NULL;
     if (subscribe_cfg->pairing) {
         cfg->pairing = os_malloc(sizeof(*cfg->pairing));
