@@ -35,7 +35,7 @@ BLE_LOG_STATIC bool prph_inited = false;
 BLE_LOG_STATIC uhci_controller_handle_t dev_handle = NULL;
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 BLE_LOG_STATIC bool uart_driver_inited = false;
-BLE_LOG_STATIC ble_log_lbm_t *redir_lbm = NULL;
+BLE_LOG_STATIC ble_log_redir_t *redir_lbm = NULL;
 BLE_LOG_STATIC esp_timer_handle_t redir_flush_timer = NULL;
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
@@ -56,10 +56,7 @@ BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool uart_dma_tx_done_cb(
         (uint8_t *)edata->buffer - sizeof(ble_log_prph_trans_ctx_t)
     );
     ble_log_prph_trans_t *trans = uart_trans_ctx->trans;
-    trans->pos = 0;
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+    ble_log_lbm_recycle_trans(trans);
     return true;
 }
 
@@ -122,13 +119,12 @@ bool ble_log_prph_init(size_t trans_cnt)
 
 /* Redirection is required when utilizing UART port 0 */
 #if BLE_LOG_PRPH_UART_DMA_REDIR
-    /* Initialize a dedicated LBM for redirection */
-    redir_lbm = (ble_log_lbm_t *)BLE_LOG_MALLOC(sizeof(ble_log_lbm_t));
+    /* Initialize a dedicated redirection manager (separate from the pool) */
+    redir_lbm = (ble_log_redir_t *)BLE_LOG_MALLOC(sizeof(ble_log_redir_t));
     if (!redir_lbm) {
         goto exit;
     }
-    BLE_LOG_MEMSET(redir_lbm, 0, sizeof(ble_log_lbm_t));
-    redir_lbm->lock_type = BLE_LOG_LBM_LOCK_MUTEX;
+    BLE_LOG_MEMSET(redir_lbm, 0, sizeof(ble_log_redir_t));
 
     /* Transport initialization */
     for (int i = 0; i < BLE_LOG_TRANS_BUF_CNT; i++) {
@@ -136,7 +132,9 @@ bool ble_log_prph_init(size_t trans_cnt)
                                      BLE_LOG_UART_REDIR_BUF_SIZE)) {
             goto exit;
         }
-        redir_lbm->trans[i]->owner = (void *)redir_lbm;
+        /* Redirection transports are not part of the global pool. */
+        redir_lbm->trans[i]->id = BLE_LOG_TRANS_ID_NONE;
+        redir_lbm->trans[i]->state = BLE_LOG_TRANS_STATE_FREE;
     }
 
     /* Mutex initialization */
@@ -276,9 +274,9 @@ void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans)
 BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
 {
     if (uhci_transmit(dev_handle, trans->buf, trans->pos) != ESP_OK) {
-        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+        /* No tx_done will fire on failure: recycle here to avoid leaking. */
+        ble_log_lbm_recycle_trans(trans);
+        ble_log_lbm_note_send_fail();
     }
 }
 
@@ -327,7 +325,7 @@ int __wrap_uart_write_bytes_with_break(uart_port_t uart_num, const void *src, si
     }
 }
 
-ble_log_lbm_t *ble_log_prph_get_redir_lbm(void)
+ble_log_redir_t *ble_log_prph_get_redir_lbm(void)
 {
     return redir_lbm;
 }
@@ -335,10 +333,5 @@ ble_log_lbm_t *ble_log_prph_get_redir_lbm(void)
 
 void ble_log_prph_reset_util_counters(void)
 {
-#if BLE_LOG_PRPH_UART_DMA_REDIR
-    if (redir_lbm) {
-        __atomic_store_n(&redir_lbm->trans_inflight, 0, __ATOMIC_RELAXED);
-        __atomic_store_n(&redir_lbm->trans_inflight_peak, 0, __ATOMIC_RELAXED);
-    }
-#endif
+    /* Redirection manager keeps no in-flight counters to reset. */
 }

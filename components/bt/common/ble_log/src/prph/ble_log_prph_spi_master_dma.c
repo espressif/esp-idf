@@ -38,21 +38,38 @@ BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans);
 /* PRIVATE FUNCTION */
 BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans)
 {
+    uint64_t now_us = esp_timer_get_time();
+
     /* SPI slave performance issue workaround */
-    last_tx_done_ts = esp_timer_get_time();
+    last_tx_done_ts = (uint32_t)now_us;
 
     /* Recycle transport */
     ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
-    trans->pos = 0;
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+    /* Snapshot timing BEFORE recycling: once recycled the buffer may be
+     * grabbed and its timing fields overwritten by another writer. */
+    uint64_t owned_start_us = trans->prph_owned_start_us;
+    uint64_t spi_start_us = trans->spi_queue_start_us;
+    uint64_t spi_pre_cb_us = trans->spi_pre_cb_us;
+    bool queue_wait_valid = spi_start_us != 0 && spi_pre_cb_us >= spi_start_us;
+    bool dma_time_valid = spi_pre_cb_us != 0 && now_us >= spi_pre_cb_us;
+    uint64_t queue_wait_us = queue_wait_valid ? spi_pre_cb_us - spi_start_us : 0;
+    uint64_t dma_time_us = dma_time_valid ? now_us - spi_pre_cb_us : 0;
+    trans->prph_owned_start_us = 0;
+    trans->spi_queue_start_us = 0;
+    trans->spi_pre_cb_us = 0;
+    ble_log_lbm_recycle_trans(trans);
+    ble_log_prph_latency_stats_update(now_us - owned_start_us, owned_start_us != 0,
+                                      now_us - spi_start_us, spi_start_us != 0,
+                                      queue_wait_us, queue_wait_valid,
+                                      dma_time_us, dma_time_valid);
 }
 
 BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
 {
     /* SPI slave performance issue workaround */
     while ((esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
+    ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
+    trans->spi_pre_cb_us = esp_timer_get_time();
 }
 
 /* INTERFACE */
@@ -203,10 +220,16 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
      * cleared regardless of whether it is used for rx as per SPI master driver */
     spi_trans->length = (tx_len << 3);
     spi_trans->rxlength = 0;
+    trans->spi_queue_start_us = esp_timer_get_time();
+    trans->spi_pre_cb_us = 0;
     if (spi_device_queue_trans(dev_handle, spi_trans, 0) != ESP_OK) {
-        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+        /* Driver queue full: no tx_done will fire, recycle here so the buffer
+         * returns to the pool instead of leaking. */
+        trans->prph_owned_start_us = 0;
+        trans->spi_queue_start_us = 0;
+        trans->spi_pre_cb_us = 0;
+        ble_log_lbm_recycle_trans(trans);
+        ble_log_lbm_note_send_fail();
     }
 }
 

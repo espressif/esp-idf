@@ -13,6 +13,8 @@
 #include "ble_log_rt.h"
 #include "ble_log_lbm.h"
 
+#include "esp_timer.h"
+
 /* VARIABLE */
 BLE_LOG_STATIC bool rt_inited = false;
 BLE_LOG_STATIC TaskHandle_t rt_task_handle = NULL;
@@ -166,43 +168,49 @@ void ble_log_rt_deinit(void)
     if (rt_queue_handle) {
         ble_log_prph_trans_t *trans = NULL;
         while (xQueueReceive(rt_queue_handle, &trans, 0) == pdTRUE) {
-            ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-            trans->pos = 0;
-            __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-            __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+            trans->prph_owned_start_us = 0;
+            trans->spi_queue_start_us = 0;
+            trans->spi_pre_cb_us = 0;
+            ble_log_lbm_recycle_trans(trans);
         }
         vQueueDelete(rt_queue_handle);
         rt_queue_handle = NULL;
     }
 }
 
-BLE_LOG_IRAM_ATTR void ble_log_rt_queue_trans(ble_log_prph_trans_t **trans)
+bool ble_log_rt_in_self_task(void)
 {
-    __atomic_store_n(&(*trans)->prph_owned, true, __ATOMIC_RELAXED);
+    return (rt_task_handle != NULL) &&
+           (xTaskGetCurrentTaskHandle() == rt_task_handle);
+}
 
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)(*trans)->owner;
-    uint32_t inflight = __atomic_add_fetch(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    uint32_t peak = __atomic_load_n(&lbm->trans_inflight_peak, __ATOMIC_RELAXED);
-    while (inflight > peak) {
-        if (__atomic_compare_exchange_n(&lbm->trans_inflight_peak, &peak, inflight,
-                                        true, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
-            break;
-        }
+/* CRITICAL:
+ * The transport is already sealed (state == SENDING) and removed from every
+ * hint bitmap by the caller. In task context we submit to the peripheral
+ * driver directly; in ISR / scheduler-suspended context we hand the pointer
+ * to the runtime task. Inflight accounting is owned by the pool (seal /
+ * recycle), not by this function. */
+BLE_LOG_IRAM_ATTR void ble_log_rt_queue_trans(ble_log_prph_trans_t *trans)
+{
+    trans->prph_owned_start_us = esp_timer_get_time();
+    trans->spi_queue_start_us = 0;
+    trans->spi_pre_cb_us = 0;
+
+    if (!BLE_LOG_IN_ISR() && xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        ble_log_prph_send_trans(trans);
+        return;
     }
 
     if (BLE_LOG_IN_ISR()) {
         BaseType_t woken = pdFALSE;
         /* Queue depth == total transport buffer count; queue-full is impossible
          * for a valid transport, so the return value is not checked. */
-        xQueueSendFromISR(rt_queue_handle, trans, &woken);
+        xQueueSendFromISR(rt_queue_handle, &trans, &woken);
         portYIELD_FROM_ISR(woken);
-    } else if (xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED) {
-        /* Non-blocking send to avoid configASSERT when scheduler is suspended
-         * (e.g., during light sleep transitions). Queue-full is impossible;
-         * see comment above. */
-        xQueueSend(rt_queue_handle, trans, 0);
     } else {
-        xQueueSend(rt_queue_handle, trans, portMAX_DELAY);
+        /* Scheduler suspended (e.g., light sleep transition): non-blocking send
+         * to avoid configASSERT. Queue-full is impossible; see comment above. */
+        xQueueSend(rt_queue_handle, &trans, 0);
     }
 }
 
