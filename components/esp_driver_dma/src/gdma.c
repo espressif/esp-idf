@@ -484,6 +484,16 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         ext_mem_alignment = BIT(31);
     }
 
+#if CONFIG_IDF_TARGET_ESP32S31 && SOC_HAS(LP_AHB_GDMA)
+    // ESP32-S31 LP AHB GDMA can't burst-access encrypted external memory.
+    // Keep configuration/installation permissive for callers that only intend to
+    // use internal buffers, but poison the external-memory alignment so any
+    // later PSRAM use fails the caller-side validation.
+    if (config->access_ext_mem && group->bus_id == SOC_GDMA_BUS_LP && esp_efuse_is_flash_encryption_enabled()) {
+        ext_mem_alignment = BIT(31);
+    }
+#endif
+
     dma_chan->int_mem_alignment = int_mem_alignment;
     dma_chan->ext_mem_alignment = ext_mem_alignment;
     return ESP_OK;

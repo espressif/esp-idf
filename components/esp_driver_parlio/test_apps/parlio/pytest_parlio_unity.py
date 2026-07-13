@@ -36,27 +36,21 @@ def test_parlio(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.generic
+@pytest.mark.flash_encryption
 @pytest.mark.parametrize(
-    'config, skip_autoflash',
+    'config',
     [
-        ('virt_flash_enc', 'y'),
+        'flash_enc',
     ],
     indirect=True,
 )
 @idf_parametrize(
-    'target', soc_filtered_targets('SOC_PARLIO_SUPPORTED == 1 and SOC_FLASH_ENC_SUPPORTED == 1'), indirect=['target']
+    'target',
+    soc_filtered_targets('SOC_PARLIO_SUPPORTED == 1 and SOC_PSRAM_DMA_CAPABLE == 1 and SOC_FLASH_ENC_SUPPORTED == 1'),
+    indirect=['target'],
 )
-def test_parlio_with_virt_flash_enc(dut: Dut) -> None:
-    print(' - Erase flash')
-    dut.serial.erase_flash()
-
-    print(' - Start app (flash partition_table and app)')
-    dut.serial.write_flash_no_enc()
-    dut.expect('Loading virtual efuse blocks from real efuses')
-    dut.expect('Checking flash encryption...')
-    dut.expect('Generating new flash encryption key...')
-
+@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner yet')
+def test_parlio_with_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='!release_only')
 
 

@@ -58,4 +58,4 @@ components/esp_lcd/test_apps/spi_lcd:
     - esp_driver_spi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
-    - if: CONFIG_NAME == "virt_flash_enc" and SOC_FLASH_ENC_SUPPORTED != 1
+    - if: CONFIG_NAME == "flash_enc" and SOC_FLASH_ENC_SUPPORTED != 1
