@@ -7,14 +7,6 @@ config BLE_LOG_ENABLED
         Enable BT Log Async Output
 
 if BLE_LOG_ENABLED
-    config BLE_LOG_LBM_AUTO_FLUSH
-        bool "Enable automatic BLE Log LBM buffer flush"
-        default n
-        help
-            Periodically flush partially-filled BLE Log LBM transport buffers
-            that remain pending, reducing latency for low-volume or
-            intermittent logging.
-
     config BLE_LOG_TASK_STACK_SIZE
         int "Stack size for BLE Log Task"
         default 1024 if IDF_TARGET_ARCH_RISCV
@@ -23,40 +15,49 @@ if BLE_LOG_ENABLED
         help
             Stack size for BLE Log Task
 
-    config BLE_LOG_LBM_TRANS_BUF_SIZE
-        int "Total buffer memory per common LBM (bytes)"
-        default 2048
+    config BLE_LOG_POOL_TRANS_CNT
+        int "Number of transport buffers in the unified pool"
+        default 16
         help
-            Total buffer memory allocated for each common pool log buffer
-            manager (LBM). This memory is divided equally among internal
-            transport buffers. Must be a multiple of BLE_LOG_TRANS_BUF_CNT
-            (currently 4).
+            Total number of transport buffers in the global BLE Log buffer
+            pool. All task / ISR / Link Layer log writers allocate from this
+            single pool. Must be within [2, 32] because buffer availability is
+            tracked with 32-bit hint bitmaps.
 
-            The common pool contains:
-            - BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT atomic LBMs (task context)
-            - BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT atomic LBMs (ISR context)
-            - 2 spinlock-protected LBMs (one for task, one for ISR fallback)
-
-            Total common pool memory:
-            (ATOMIC_TASK_CNT + ATOMIC_ISR_CNT + 2) * BLE_LOG_LBM_TRANS_BUF_SIZE
-
-    config BLE_LOG_LBM_ATOMIC_LOCK_TASK_CNT
-        int "Count of log buffer managers with atomic lock protection for task context"
-        default 2
-        help
-            BLE Log module will search for an LBM with atomic lock protection first; if
-            all LBMs with atomic lock protection are unavailable, BLE Log module will
-            try to use the LBM with spin lock protection. So the more LBMs with atomic
-            lock protection are created, the better the logging performance will be.
-
-    config BLE_LOG_LBM_ATOMIC_LOCK_ISR_CNT
-        int "Count of log buffer managers with atomic lock protection for ISR context"
+    config BLE_LOG_POOL_ISR_RESERVE_CNT
+        int "Transport buffers reserved for ISR context"
         default 1
         help
-            BLE Log module will search for an LBM with atomic lock protection first; if
-            all LBMs with atomic lock protection are unavailable, BLE Log module will
-            try to use the LBM with spin lock protection. So the more LBMs with atomic
-            lock protection are created, the more ISRs can nest.
+            Number of buffers reserved for ISR context. ISR writers use the
+            shared region first and only fall back to this reserve when the
+            shared region is exhausted, so task bursts cannot starve ISR logs
+            completely. Must be less than BLE_LOG_POOL_TRANS_CNT (at least one
+            shared buffer must remain).
+
+    config BLE_LOG_POOL_TRANS_SIZE
+        int "Per-transport buffer size (bytes)"
+        default 512
+        help
+            Size in bytes of each transport buffer. A single log frame
+            (including header and checksum overhead) must fit in one buffer.
+
+    config BLE_LOG_POOL_ISR_OPEN_SCAN_MAX
+        int "Max OPEN buffers an ISR writer scans (0 = scan all)"
+        default 0
+        help
+            Upper bound on the number of OPEN buffers an ISR-context writer
+            scans while looking for one to append to. 0 means scan all buffers.
+            A small value bounds worst-case ISR time at the cost of log packing
+            efficiency.
+
+    config BLE_LOG_POOL_TASK_WAIT_TIMEOUT_MS
+        int "Task backpressure wait timeout (ms, 0 = wait forever)"
+        default 50
+        help
+            When no transport buffer is available, a task-context writer blocks
+            (backpressure) up to this timeout waiting for a buffer to be
+            recycled, instead of dropping the log. 0 means block indefinitely
+            (portMAX_DELAY). ISR context never blocks.
 
     config BLE_LOG_IS_ESP_CONTROLLER
         bool "Current BLE Controller is ESP BLE Controller"
@@ -85,22 +86,6 @@ if BLE_LOG_ENABLED
             Enable BLE Log for Link Layer
 
     if BLE_LOG_LL_ENABLED
-        config BLE_LOG_LBM_LL_TRANS_BUF_SIZE
-            int "Total buffer memory per Link Layer LBM (bytes)"
-            default 2048
-            help
-                Total buffer memory allocated for each Link Layer dedicated
-                log buffer manager (LBM). This memory is divided equally among
-                internal transport buffers. Must be a multiple of
-                BLE_LOG_TRANS_BUF_CNT (currently 4).
-
-                There are 2 Link Layer LBMs without lock protection (each is
-                accessed from a single context only):
-                - LL task LBM (Link Layer task context logs)
-                - LL HCI LBM (Link Layer HCI context logs)
-
-                Total LL pool memory: 2 * BLE_LOG_LBM_LL_TRANS_BUF_SIZE
-
         config BLE_LOG_LL_HCI_LOG_PAYLOAD_LEN_LIMIT_ENABLED
             bool "Enable LL HCI Log Payload Length Limit"
             default n

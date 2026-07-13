@@ -39,18 +39,16 @@ BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans);
 BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans)
 {
     /* SPI slave performance issue workaround */
-    last_tx_done_ts = esp_timer_get_time();
+    last_tx_done_ts = (uint32_t)esp_timer_get_time();
 
     /* Recycle transport */
     ble_log_prph_trans_t *trans = (ble_log_prph_trans_t *)(spi_trans->user);
-    trans->pos = 0;
-    ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-    __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-    __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+    ble_log_lbm_recycle_trans(trans);
 }
 
 BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_transaction_t *spi_trans)
 {
+    (void)spi_trans;
     /* SPI slave performance issue workaround */
     while ((esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
 }
@@ -204,9 +202,9 @@ BLE_LOG_IRAM_ATTR void ble_log_prph_send_trans(ble_log_prph_trans_t *trans)
     spi_trans->length = (tx_len << 3);
     spi_trans->rxlength = 0;
     if (spi_device_queue_trans(dev_handle, spi_trans, 0) != ESP_OK) {
-        ble_log_lbm_t *lbm = (ble_log_lbm_t *)trans->owner;
-        __atomic_fetch_sub(&lbm->trans_inflight, 1, __ATOMIC_RELAXED);
-        __atomic_store_n(&trans->prph_owned, false, __ATOMIC_RELEASE);
+        /* Driver queue full: no tx_done will fire, recycle here so the buffer
+         * returns to the pool instead of leaking. */
+        ble_log_lbm_recycle_trans(trans);
     }
 }
 
