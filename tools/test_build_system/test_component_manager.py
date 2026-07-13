@@ -161,10 +161,11 @@ class TestOptionalDependencyWithKconfig:
         res = idf_py('reconfigure', check=False)
 
         assert res.returncode != 0
-        assert (
+        missing_kconfig_msg = (
             f'OF_COURSE_NO_ONE_USE_FOO, introduced by example/cmp, '
-            f'defined in {str(test_app_copy / "main" / "idf_component.yml")}' in res.stderr
+            f'defined in {str(test_app_copy / "main" / "idf_component.yml")}'
         )
+        assert ''.join(missing_kconfig_msg.split()) in ''.join(res.stderr.split())
         assert 'Missing required kconfig option after retry.' in res.stderr
 
     def test_kconfig_in_transitive_dependency(self, idf_py: IdfPyFunc, test_app_copy: Path) -> None:
