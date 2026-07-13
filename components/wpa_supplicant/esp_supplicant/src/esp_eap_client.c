@@ -1252,8 +1252,7 @@ esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type)
         g_eap_phase2_type = "auth=GTC";
         break;
     default:
-        g_eap_phase2_type = "auth=MSCHAPV2";
-        break;
+        return ESP_ERR_INVALID_ARG;
     }
     eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
