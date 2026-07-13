@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enumeration of phase 2 authentication types for EAP-TTLS and EAP-PEAP.
+ *
+ * This enumeration is compatible and has the same values as esp_eap_ttls_phase2_types,
+ * and is intended to be used across both EAP-TTLS and EAP-PEAP.
+ */
+typedef enum {
+    ESP_EAP_PHASE2_EAP,        /**< EAP (Extensible Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_MSCHAPV2,   /**< MS-CHAPv2 (Microsoft Challenge Handshake Authentication Protocol - Version 2) - Supported by PEAP and TTLS */
+    ESP_EAP_PHASE2_MSCHAP,     /**< MS-CHAP (Microsoft Challenge Handshake Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_PAP,        /**< PAP (Password Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_CHAP,       /**< CHAP (Challenge Handshake Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_GTC,        /**< GTC (Generic Token Card) - Supported by PEAP and TTLS */
+} esp_eap_phase2_types;
 
 /**
  * @brief Enumeration of phase 2 authentication types for EAP-TTLS.
@@ -263,6 +278,23 @@ esp_err_t esp_eap_client_set_disable_time_check(bool disable);
  *    - ESP_OK: The status of EAP client certificates time check was retrieved successfully.
  */
 esp_err_t esp_eap_client_get_disable_time_check(bool *disable);
+
+/**
+ * @brief Set EAP phase 2 method for TTLS/PEAP.
+ *
+ * This function sets the phase 2 method to be used during tunneled EAP authentication.
+ * Note that EAP-PEAP only supports EAP-based phase 2 methods (MSCHAPv2, GTC),
+ * while EAP-TTLS supports both EAP and legacy non-EAP protocols (EAP, MSCHAPv2, MSCHAP, PAP, CHAP, GTC).
+ *
+ * This API will overwrite the value set by the older API esp_eap_client_set_ttls_phase2_method
+ * and can be used instead of it.
+ *
+ * @param[in] type The type of phase 2 method to be used.
+ *
+ * @return
+ *    - ESP_OK: The EAP phase 2 method was set successfully.
+ */
+esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type);
 
 /**
  * @brief Set EAP-TTLS phase 2 method.
