@@ -252,6 +252,7 @@ static unsigned calc_pkg_len(esp_log_msg_t *message, pkg_info_t *pkg_info)
     pkg_len += output_arguments(message, args, pkg_info);
     va_end(args);
     pkg_len += sizeof(uint8_t); // crc8
+    pkg_info->buffer_len = BUFFER_LEN_NOT_SET;
     pkg_info->len_calculation_stage = false;
     return pkg_len;
 }
