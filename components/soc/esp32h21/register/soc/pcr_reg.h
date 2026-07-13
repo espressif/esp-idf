@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -1947,54 +1947,54 @@ extern "C" {
  *  SPLL DIV clock-gating configuration register
  */
 #define PCR_PLL_DIV_CLK_EN_REG (DR_REG_PCR_BASE + 0x124)
-/** PCR_PLL_240M_CLK_EN : R/W; bitpos: [0]; default: 1;
+/** PCR_PLL_96M_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  This field is used to open 96 MHz clock (SPLL) driven from SPLL. 0: close, 1:
  *  open(default). Only available when high-speed clock-source SPLL is active.
  */
-#define PCR_PLL_240M_CLK_EN    (BIT(0))
-#define PCR_PLL_240M_CLK_EN_M  (PCR_PLL_240M_CLK_EN_V << PCR_PLL_240M_CLK_EN_S)
-#define PCR_PLL_240M_CLK_EN_V  0x00000001U
-#define PCR_PLL_240M_CLK_EN_S  0
-/** PCR_PLL_160M_CLK_EN : R/W; bitpos: [1]; default: 1;
- *  This field is used to open 64 MHz clock (div3 of SPLL) driven from SPLL. 0: close,
+#define PCR_PLL_96M_CLK_EN    (BIT(0))
+#define PCR_PLL_96M_CLK_EN_M  (PCR_PLL_96M_CLK_EN_V << PCR_PLL_96M_CLK_EN_S)
+#define PCR_PLL_96M_CLK_EN_V  0x00000001U
+#define PCR_PLL_96M_CLK_EN_S  0
+/** PCR_PLL_64M_CLK_EN : R/W; bitpos: [1]; default: 1;
+ *  This field is used to open 64 MHz clock (XTALX2) driven from XTALX2. 0: close,
  *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
-#define PCR_PLL_160M_CLK_EN    (BIT(1))
-#define PCR_PLL_160M_CLK_EN_M  (PCR_PLL_160M_CLK_EN_V << PCR_PLL_160M_CLK_EN_S)
-#define PCR_PLL_160M_CLK_EN_V  0x00000001U
-#define PCR_PLL_160M_CLK_EN_S  1
-/** PCR_PLL_120M_CLK_EN : R/W; bitpos: [2]; default: 1;
- *  This field is used to open 48 MHz clock (div4 of SPLL) driven from SPLL. 0: close,
+#define PCR_PLL_64M_CLK_EN    (BIT(1))
+#define PCR_PLL_64M_CLK_EN_M  (PCR_PLL_64M_CLK_EN_V << PCR_PLL_64M_CLK_EN_S)
+#define PCR_PLL_64M_CLK_EN_V  0x00000001U
+#define PCR_PLL_64M_CLK_EN_S  1
+/** PCR_PLL_48M_CLK_EN : R/W; bitpos: [2]; default: 1;
+ *  This field is used to open 48 MHz clock (div2 of SPLL) driven from SPLL. 0: close,
  *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
-#define PCR_PLL_120M_CLK_EN    (BIT(2))
-#define PCR_PLL_120M_CLK_EN_M  (PCR_PLL_120M_CLK_EN_V << PCR_PLL_120M_CLK_EN_S)
-#define PCR_PLL_120M_CLK_EN_V  0x00000001U
-#define PCR_PLL_120M_CLK_EN_S  2
-/** PCR_PLL_80M_CLK_EN : R/W; bitpos: [3]; default: 1;
- *  This field is used to open 32 MHz clock (div6  of SPLL) driven from SPLL. 0: close,
- *  1: open(default). Only available when high-speed clock-source SPLL is active.
- */
-#define PCR_PLL_80M_CLK_EN    (BIT(3))
-#define PCR_PLL_80M_CLK_EN_M  (PCR_PLL_80M_CLK_EN_V << PCR_PLL_80M_CLK_EN_S)
-#define PCR_PLL_80M_CLK_EN_V  0x00000001U
-#define PCR_PLL_80M_CLK_EN_S  3
-/** PCR_PLL_48M_CLK_EN : R/W; bitpos: [4]; default: 1;
- *  This field is used to open 16 MHz clock (div10 of SPLL) driven from SPLL. 0: close,
- *  1: open(default). Only available when high-speed clock-source SPLL is active.
- */
-#define PCR_PLL_48M_CLK_EN    (BIT(4))
+#define PCR_PLL_48M_CLK_EN    (BIT(2))
 #define PCR_PLL_48M_CLK_EN_M  (PCR_PLL_48M_CLK_EN_V << PCR_PLL_48M_CLK_EN_S)
 #define PCR_PLL_48M_CLK_EN_V  0x00000001U
-#define PCR_PLL_48M_CLK_EN_S  4
-/** PCR_PLL_40M_CLK_EN : R/W; bitpos: [5]; default: 1;
+#define PCR_PLL_48M_CLK_EN_S  2
+/** PCR_PLL_32M_CLK_EN : R/W; bitpos: [3]; default: 1;
+ *  This field is used to open 32 MHz clock (div2 of XTALX2) driven from XTALX2. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
+ */
+#define PCR_PLL_32M_CLK_EN    (BIT(3))
+#define PCR_PLL_32M_CLK_EN_M  (PCR_PLL_32M_CLK_EN_V << PCR_PLL_32M_CLK_EN_S)
+#define PCR_PLL_32M_CLK_EN_V  0x00000001U
+#define PCR_PLL_32M_CLK_EN_S  3
+/** PCR_PLL_16M_CLK_EN : R/W; bitpos: [4]; default: 1;
+ *  This field is used to open 16 MHz clock (div6 of SPLL) driven from SPLL. 0: close,
+ *  1: open(default). Only available when high-speed clock-source SPLL is active.
+ */
+#define PCR_PLL_16M_CLK_EN    (BIT(4))
+#define PCR_PLL_16M_CLK_EN_M  (PCR_PLL_16M_CLK_EN_V << PCR_PLL_16M_CLK_EN_S)
+#define PCR_PLL_16M_CLK_EN_V  0x00000001U
+#define PCR_PLL_16M_CLK_EN_S  4
+/** PCR_PLL_8M_CLK_EN : R/W; bitpos: [5]; default: 1;
  *  This field is used to open 8 MHz clock (div12 of SPLL) driven from SPLL. 0: close,
  *  1: open(default). Only available when high-speed clock-source SPLL is active.
  */
-#define PCR_PLL_40M_CLK_EN    (BIT(5))
-#define PCR_PLL_40M_CLK_EN_M  (PCR_PLL_40M_CLK_EN_V << PCR_PLL_40M_CLK_EN_S)
-#define PCR_PLL_40M_CLK_EN_V  0x00000001U
-#define PCR_PLL_40M_CLK_EN_S  5
+#define PCR_PLL_8M_CLK_EN    (BIT(5))
+#define PCR_PLL_8M_CLK_EN_M  (PCR_PLL_8M_CLK_EN_V << PCR_PLL_8M_CLK_EN_S)
+#define PCR_PLL_8M_CLK_EN_V  0x00000001U
+#define PCR_PLL_8M_CLK_EN_S  5
 
 /** PCR_CTRL_CLK_OUT_EN_REG register
  *  CLK_OUT_EN configuration register
