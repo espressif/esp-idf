@@ -114,7 +114,14 @@ An additional configuration item, :ref:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`, ca
 
 If a suitable block of preferred internal/external memory is not available, the allocator will try the other type of memory.
 
-Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
+Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` reserves a pool of internal DMA-capable memory at startup (in ``main_task``, after PSRAM is initialized). The pool is malloc from the regular internal heaps and re-registered as separate heap pool.
+
+The reserved pool uses the heap capability priority mechanism:
+
+- **Medium priority** — ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``: explicit ``heap_caps_malloc()`` requests with these flags are preferentially served from this pool.
+- **Low priority** — ``MALLOC_CAP_DEFAULT``: ``malloc()`` may use the pool only after other internal heaps with higher-priority ``MALLOC_CAP_DEFAULT`` are exhausted.
+
+Therefore, under normal conditions ``malloc()`` does not allocate from this pool, but it can fall back to it as a last resort before allocation fails entirely.
 
 .. _external_ram_config_bss:
 
