@@ -182,14 +182,35 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
     ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
+    ESP_RETURN_ON_FALSE(config->in_bg.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->in_bg.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX &&
+                        config->in_fg.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->in_fg.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX &&
+                        config->out.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->out.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX,
+                        ESP_ERR_INVALID_ARG, TAG, "dimension exceeds DMA2D descriptor field limit");
+    ESP_RETURN_ON_FALSE(config->in_bg.block_w > 0 && config->in_bg.block_h > 0 &&
+                        config->in_bg.block_offset_x < config->in_bg.pic_w &&
+                        config->in_bg.block_w <= (config->in_bg.pic_w - config->in_bg.block_offset_x) &&
+                        config->in_bg.block_offset_y < config->in_bg.pic_h &&
+                        config->in_bg.block_h <= (config->in_bg.pic_h - config->in_bg.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h + in_bg.block_offset_x/y does not fit in the in pic");
+    ESP_RETURN_ON_FALSE(config->in_fg.block_w > 0 && config->in_fg.block_h > 0 &&
+                        config->in_fg.block_offset_x < config->in_fg.pic_w &&
+                        config->in_fg.block_w <= (config->in_fg.pic_w - config->in_fg.block_offset_x) &&
+                        config->in_fg.block_offset_y < config->in_fg.pic_h &&
+                        config->in_fg.block_h <= (config->in_fg.pic_h - config->in_fg.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w/h + in_fg.block_offset_x/y does not fit in the in pic");
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.blend_cm,
     };
     uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format); // bits
-    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
+    uint32_t out_pic_len = (uint32_t)((uint64_t)config->out.pic_w * config->out.pic_h * out_pixel_depth / 8);
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     ESP_RETURN_ON_FALSE(config->in_bg.block_w == config->in_fg.block_w && config->in_bg.block_h == config->in_fg.block_h,
                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h must be equal to in_fg.block_w/h");
+    ESP_RETURN_ON_FALSE(config->out.block_offset_x < config->out.pic_w &&
+                        config->in_fg.block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        config->out.block_offset_y < config->out.pic_h &&
+                        config->in_fg.block_h <= (config->out.pic_h - config->out.block_offset_y),
+                        ESP_ERR_INVALID_ARG, TAG, "block does not fit in the out pic");
     if (config->bg_byte_swap) {
         PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in_bg.blend", (uint32_t)config->in_bg.blend_cm);
     }
@@ -204,7 +225,6 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     }
     uint32_t new_bg_alpha_value = 0;
     if (config->bg_alpha_update_mode == PPA_ALPHA_FIX_VALUE) {
-        ESP_RETURN_ON_FALSE(config->bg_alpha_fix_val <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid bg_alpha_fix_val");
         new_bg_alpha_value = config->bg_alpha_fix_val;
     } else if (config->bg_alpha_update_mode == PPA_ALPHA_SCALE) {
         ESP_RETURN_ON_FALSE(config->bg_alpha_scale_ratio > 0 && config->bg_alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid bg_alpha_scale_ratio");
@@ -237,23 +257,23 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     // Usually C2M can let the msync do alignment internally, however, it only do L1-cacheline-size alignment for L1->L2, and then L2-cacheline-size alignment for L2->mem
     // While M2C direction manual alignment is L2-cacheline-size alignment for mem->L2->L1
     // Mismatching writeback and invalidate data size could cause synchronization error if in_bg/fg_buffer and out_buffer are the same one
-    uint32_t in_bg_ext_window = (uint32_t)config->in_bg.buffer + config->in_bg.block_offset_y * config->in_bg.pic_w * in_bg_pixel_depth / 8;
+    uint32_t in_bg_ext_window = (uint32_t)config->in_bg.buffer + (uint32_t)((uint64_t)config->in_bg.block_offset_y * config->in_bg.pic_w * in_bg_pixel_depth / 8);
     uint32_t in_bg_ext_window_aligned = PPA_ALIGN_DOWN(in_bg_ext_window, buf_alignment_size);
-    uint32_t in_bg_ext_window_len = config->in_bg.pic_w * config->in_bg.block_h * in_bg_pixel_depth / 8;
+    uint32_t in_bg_ext_window_len = (uint32_t)((uint64_t)config->in_bg.pic_w * config->in_bg.block_h * in_bg_pixel_depth / 8);
     esp_cache_msync((void *)in_bg_ext_window_aligned, PPA_ALIGN_UP(in_bg_ext_window_len + (in_bg_ext_window - in_bg_ext_window_aligned), buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     color_space_pixel_format_t in_fg_pixel_format = {
         .color_type_id = config->in_fg.blend_cm,
     };
     uint32_t in_fg_pixel_depth = color_hal_pixel_format_get_bit_depth(in_fg_pixel_format); // bits
-    uint32_t in_fg_ext_window = (uint32_t)config->in_fg.buffer + config->in_fg.block_offset_y * config->in_fg.pic_w * in_fg_pixel_depth / 8;
+    uint32_t in_fg_ext_window = (uint32_t)config->in_fg.buffer + (uint32_t)((uint64_t)config->in_fg.block_offset_y * config->in_fg.pic_w * in_fg_pixel_depth / 8);
     // Same for fg_buffer msync, do manual alignment
     uint32_t in_fg_ext_window_aligned = PPA_ALIGN_DOWN(in_fg_ext_window, buf_alignment_size);
-    uint32_t in_fg_ext_window_len = config->in_fg.pic_w * config->in_fg.block_h * in_fg_pixel_depth / 8;
+    uint32_t in_fg_ext_window_len = (uint32_t)((uint64_t)config->in_fg.pic_w * config->in_fg.block_h * in_fg_pixel_depth / 8);
     esp_cache_msync((void *)in_fg_ext_window_aligned, PPA_ALIGN_UP(in_fg_ext_window_len + (in_fg_ext_window - in_fg_ext_window_aligned), buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     // Invalidate out_buffer extended window (alignment strict on M2C direction)
-    uint32_t out_ext_window = (uint32_t)config->out.buffer + config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8;
+    uint32_t out_ext_window = (uint32_t)config->out.buffer + (uint32_t)((uint64_t)config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8);
     uint32_t out_ext_window_aligned = PPA_ALIGN_DOWN(out_ext_window, buf_alignment_size);
-    uint32_t out_ext_window_len = config->out.pic_w * config->in_bg.block_h * out_pixel_depth / 8;
+    uint32_t out_ext_window_len = (uint32_t)((uint64_t)config->out.pic_w * config->in_bg.block_h * out_pixel_depth / 8);
     esp_cache_msync((void *)out_ext_window_aligned, PPA_ALIGN_UP(out_ext_window_len + (out_ext_window - out_ext_window_aligned), buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
