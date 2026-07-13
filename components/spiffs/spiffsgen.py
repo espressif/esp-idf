@@ -423,7 +423,13 @@ class SpiffsFS:
         return self.remaining_blocks <= 0
 
     def create_file(self, img_path, file_path):  # type: (str, str) -> None
-        if len(img_path) > self.build_config.obj_name_len:
+        # obj_name_len includes the zero-termination character (see Kconfig
+        # help for CONFIG_SPIFFS_OBJ_NAME_LEN), so the maximum number of
+        # actual name characters is obj_name_len - 1. Without the "- 1" here,
+        # a name exactly obj_name_len characters long is wrongly accepted and
+        # SpiffsObjIndexPage.to_binary() ends up writing zero NUL bytes into
+        # the reserved name field.
+        if len(img_path) > self.build_config.obj_name_len - 1:
             log.die(f"object name '{img_path}' too long")
 
         name = img_path
