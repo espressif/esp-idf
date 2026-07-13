@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/mipi_csi_periph.h"
+#include "soc/interrupts.h"
 
 const soc_mipi_csi_phy_pll_freq_range_t soc_mipi_csi_phy_pll_ranges[] = {
     {90, 99, 0x00},     // [90,100) Mbps
@@ -48,3 +49,9 @@ const soc_mipi_csi_phy_pll_freq_range_t soc_mipi_csi_phy_pll_ranges[] = {
 };
 
 const size_t num_of_soc_mipi_csi_phy_pll_ranges = sizeof(soc_mipi_csi_phy_pll_ranges) / sizeof(soc_mipi_csi_phy_pll_freq_range_t);
+
+const soc_mipi_csi_signal_desc_t soc_mipi_csi_signals[1] = {
+    [0] = {
+        .host_irq_id = ETS_CSI_INTR_SOURCE,
+    }
+};
