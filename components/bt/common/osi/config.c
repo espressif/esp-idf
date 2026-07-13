@@ -20,6 +20,7 @@
 #include "osi/allocator.h"
 #include "osi/config.h"
 #include "osi/list.h"
+#include "osi/osi.h"
 
 #define CONFIG_FILE_MAX_SIZE             (1536)//1.5k
 #define CONFIG_FILE_DEFAULE_LENGTH       (2048)
@@ -612,7 +613,7 @@ static bool config_parse(nvs_handle_t fp, config_t *config)
     assert(config != NULL);
 
     esp_err_t err;
-    int line_num = 0;
+    UNUSED_ATTR int line_num = 0;
     int err_code = 0;
     uint16_t i = 0;
     size_t length = CONFIG_FILE_DEFAULE_LENGTH;
