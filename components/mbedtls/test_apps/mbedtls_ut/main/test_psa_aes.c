@@ -1846,6 +1846,105 @@ TEST_CASE("mbedtls AES internal mem alignment tests", "[aes]")
 
 #ifdef CONFIG_SPIRAM_USE_MALLOC
 
+#if CONFIG_SPIRAM_ECC_ENABLE && SOC_AES_SUPPORT_DMA
+#define TEST_AES_PAYLOAD_LEN 53
+
+struct aes_payload_sim_hdr {
+    uint8_t type;
+    uint8_t fc;
+    uint8_t seq;
+    uint8_t len;
+    uint8_t data[];
+} __attribute__((packed));
+
+static void aes_psram_ecc_cfb128_inplace_test(void)
+{
+    const size_t pkt_len = sizeof(struct aes_payload_sim_hdr) + TEST_AES_PAYLOAD_LEN;
+    struct aes_payload_sim_hdr *pkt = heap_caps_aligned_alloc(16, pkt_len, PSRAM_DMA_CAPS);
+    uint8_t *backup = heap_caps_malloc(TEST_AES_PAYLOAD_LEN, INTERNAL_DMA_CAPS);
+    uint8_t key[16];
+    uint8_t iv[16];
+    psa_key_id_t key_id;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_status_t status;
+    size_t output_len;
+    size_t total_len;
+
+    TEST_ASSERT_NOT_NULL(pkt);
+    TEST_ASSERT_NOT_NULL(backup);
+    TEST_ASSERT_TRUE(esp_ptr_external_ram(pkt));
+    TEST_ASSERT_EQUAL_UINT32(0, (uintptr_t)pkt & 0x0F);
+    TEST_ASSERT_EQUAL_UINT32(sizeof(struct aes_payload_sim_hdr) & 0x0F, (uintptr_t)pkt->data & 0x0F);
+
+    pkt->type = 0x13;
+    pkt->fc = 0x04;
+    pkt->seq = 1;
+    pkt->len = TEST_AES_PAYLOAD_LEN;
+    for (size_t i = 0; i < TEST_AES_PAYLOAD_LEN; i++) {
+        pkt->data[i] = 0x3C + (uint8_t)(i & 0x0F);
+    }
+    memcpy(backup, pkt->data, TEST_AES_PAYLOAD_LEN);
+
+    memset(key, 0x5A, sizeof(key));
+    memset(iv, 0xA5, sizeof(iv));
+    iv[0] = 3;
+
+    status = psa_crypto_init();
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_CFB);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+    psa_set_key_bits(&attributes, 128);
+
+    status = psa_import_key(&attributes, key, sizeof(key), &key_id);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+    status = psa_cipher_encrypt_setup(&operation, key_id, PSA_ALG_CFB);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    status = psa_cipher_set_iv(&operation, iv, sizeof(iv));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    total_len = 0;
+    status = psa_cipher_update(&operation, pkt->data, TEST_AES_PAYLOAD_LEN, pkt->data, TEST_AES_PAYLOAD_LEN, &output_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    total_len += output_len;
+    status = psa_cipher_finish(&operation, pkt->data + output_len, TEST_AES_PAYLOAD_LEN - output_len, &output_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    total_len += output_len;
+    TEST_ASSERT_EQUAL(TEST_AES_PAYLOAD_LEN, total_len);
+
+    memset(iv, 0xA5, sizeof(iv));
+    iv[0] = 3;
+
+    psa_cipher_abort(&operation);
+    operation = (psa_cipher_operation_t)PSA_CIPHER_OPERATION_INIT;
+    status = psa_cipher_decrypt_setup(&operation, key_id, PSA_ALG_CFB);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    status = psa_cipher_set_iv(&operation, iv, sizeof(iv));
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    total_len = 0;
+    status = psa_cipher_update(&operation, pkt->data, TEST_AES_PAYLOAD_LEN, pkt->data, TEST_AES_PAYLOAD_LEN, &output_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    total_len += output_len;
+    status = psa_cipher_finish(&operation, pkt->data + output_len, TEST_AES_PAYLOAD_LEN - output_len, &output_len);
+    TEST_ASSERT_EQUAL(PSA_SUCCESS, status);
+    total_len += output_len;
+    TEST_ASSERT_EQUAL(TEST_AES_PAYLOAD_LEN, total_len);
+
+    TEST_ASSERT_EQUAL_MEMORY(backup, pkt->data, TEST_AES_PAYLOAD_LEN);
+    psa_cipher_abort(&operation);
+    psa_destroy_key(key_id);
+    free(backup);
+    free(pkt);
+}
+
+TEST_CASE("mbedtls AES PSRAM ECC CFB128 in-place test", "[aes][psram_ecc_dma]")
+{
+    aes_psram_ecc_cfb128_inplace_test();
+}
+#endif // CONFIG_SPIRAM_ECC_ENABLE && SOC_AES_SUPPORT_DMA
+
 void aes_psram_one_buf_ctr_test(void)
 {
     psa_key_id_t key_id;

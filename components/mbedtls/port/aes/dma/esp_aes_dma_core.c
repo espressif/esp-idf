@@ -44,10 +44,6 @@
 #include "aes/esp_aes_gcm.h"
 #endif
 
-#ifdef SOC_GDMA_EXT_MEM_ENC_ALIGNMENT
-#include "hal/efuse_hal.h"
-#endif /* SOC_GDMA_EXT_MEM_ENC_ALIGNMENT */
-
 /* Max size of each chunk to process when output buffer is in unaligned external ram
    must be a multiple of block size
 */
