@@ -207,21 +207,25 @@ test_tools:
   script:
     - stat=0
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
+    # --confcutdir=. blocks pytest from walking up to the repo-root conftest.py
+    # (which is for hardware-in-the-loop tests via pytest-embedded), while still
+    # allowing each suite's local conftest.py (e.g. terminal env for rich-click
+    # in tools/test_idf_py) to load — which `--noconftest` would otherwise skip.
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
-    - run_cmd pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_py
-    - run_cmd pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
-    - run_cmd pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
-    - run_cmd pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml  --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
-    - run_cmd pytest --noconftest test_mcp_ext.py      --junitxml=${IDF_PATH}/XUNIT_MCP_EXT.xml      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml  --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_mcp_ext.py      --junitxml=${IDF_PATH}/XUNIT_MCP_EXT.xml      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_bsasm
-    - run_cmd pytest --noconftest test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_bsasm.py        --junitxml=${IDF_PATH}/XUNIT_BSASM.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_mkdfu
-    - run_cmd pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml        --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_size
-    - run_cmd pytest --noconftest test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_idf_size.py     --junitxml=${IDF_PATH}/XUNIT_IDF_SIZE.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}/tools/test_idf_diag
-    - run_cmd pytest --noconftest test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
+    - run_cmd pytest --confcutdir=. test_idf_diag.py     --junitxml=${IDF_PATH}/XUNIT_IDF_DIAG.xml     --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}             || stat=1
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
     - shellcheck -s bash tools/detect_python.sh                                                           || stat=1

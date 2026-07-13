@@ -286,7 +286,9 @@ def test_cmake_preset_basic_functionality(test_app_copy: Path, default_idf_env: 
 
     # Test default preset auto-selection
     ret = run_idf_py('reconfigure')
-    assert "CMake presets file found but no preset name given; using 'default' preset" in ret.stderr
+    # This informational note is emitted via the shared esp_pylib logger's note(), which writes
+    # to stdout (warnings/errors go to stderr).
+    assert "CMake presets file found but no preset name given; using 'default' preset" in ret.stdout
     assert (test_app_copy / 'build' / 'default').is_dir()
     assert (test_app_copy / 'build' / 'default' / 'sdkconfig').is_file()
     # Verify that sdkconfig is NOT in the project root, even when no preset is specified but auto-selected

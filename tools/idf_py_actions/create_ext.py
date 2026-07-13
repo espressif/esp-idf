@@ -8,6 +8,8 @@ from collections.abc import Callable
 from shutil import copyfile
 from shutil import copytree
 
+from esp_pylib.logger import log
+from rich.markup import escape
 from rich_click import Context
 
 from idf_py_actions.tools import PropertyDict
@@ -31,17 +33,21 @@ def is_empty_and_create(path: str, action: str) -> None:
     if not os.path.exists(abspath):
         os.makedirs(abspath)
     elif not os.path.isdir(abspath):
-        print(
-            f'Your target path is not a directory.'
-            f'Please remove the {os.path.abspath(abspath)} or use different target path.'
+        log.die(
+            escape(
+                f'Your target path is not a directory.'
+                f'Please remove the {os.path.abspath(abspath)} or use different target path.'
+            ),
+            exit_code=4,
         )
-        sys.exit(4)
     elif len(os.listdir(path)) > 0:
-        print(
-            f'The directory {abspath} is not empty. To create a {get_type(action)} you must '
-            f'empty the directory or choose a different path.'
+        log.die(
+            escape(
+                f'The directory {abspath} is not empty. To create a {get_type(action)} you must '
+                f'empty the directory or choose a different path.'
+            ),
+            exit_code=3,
         )
-        sys.exit(3)
 
 
 def make_directory_permissions_writable(root_path: str) -> None:

@@ -33,28 +33,6 @@ py_actions_path = os.path.normpath(os.path.join(current_dir, '..', 'idf_py_actio
 link_path = os.path.join(py_actions_path, 'test_ext')
 
 
-# As idf.py uses rich-click, unite modification variables to ensure constant results on various CI terminals
-_idf_py_test_env_saved: dict[str, str | None] = {}
-
-
-def setUpModule() -> None:
-    for key in ('COLUMNS', 'LINES', 'NO_COLOR', 'FORCE_COLOR', 'PY_COLORS', 'TERM'):
-        _idf_py_test_env_saved[key] = os.environ.get(key)
-    os.environ['COLUMNS'] = '200'
-    os.environ['LINES'] = '40'
-    os.environ['NO_COLOR'] = '1'
-    for unset in ('FORCE_COLOR', 'PY_COLORS'):
-        os.environ.pop(unset, None)
-
-
-def tearDownModule() -> None:
-    for key, previous in _idf_py_test_env_saved.items():
-        if previous is None:
-            os.environ.pop(key, None)
-        else:
-            os.environ[key] = previous
-
-
 class TestWithoutExtensions(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -164,9 +142,11 @@ class TestDependencyManagement(TestWithoutExtensions):
             standalone_mode=False,
         )
         sys.stderr = sys.__stderr__
+        # The shared esp_pylib logger wraps long lines at the console width; collapse whitespace
+        # so the substring check does not depend on where the line break lands.
         self.assertIn(
-            'WARNING: Commands "all", "clean" are found in the list of commands more than once.',
-            capturedOutput.getvalue(),
+            'Commands "all", "clean" are found in the list of commands more than once.',
+            ' '.join(capturedOutput.getvalue().split()),
         )
 
         sys.stderr = capturedOutput
@@ -176,7 +156,8 @@ class TestDependencyManagement(TestWithoutExtensions):
         )
         sys.stderr = sys.__stderr__
         self.assertIn(
-            'WARNING: Command "clean" is found in the list of commands more than once.', capturedOutput.getvalue()
+            'Command "clean" is found in the list of commands more than once.',
+            ' '.join(capturedOutput.getvalue().split()),
         )
 
 
@@ -259,7 +240,7 @@ class TestDeprecations(TestWithoutExtensions):
             )
         except subprocess.CalledProcessError as e:
             output = e.output.decode('utf-8', 'ignore').replace('\r\n', '\n')
-            self.assertIn('Error: Command "test-2" is deprecated and was removed\n', output)
+            self.assertIn('Command "test-2" is deprecated and was removed', output)
 
     def test_exit_with_error_for_option(self):
         try:
@@ -270,7 +251,7 @@ class TestDeprecations(TestWithoutExtensions):
             )
         except subprocess.CalledProcessError as e:
             self.assertIn(
-                'Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
+                'Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
                 e.output.decode('utf-8', 'ignore'),
             )
 
@@ -294,19 +275,18 @@ class TestDeprecations(TestWithoutExtensions):
             env=os.environ,
             stderr=subprocess.STDOUT,
         ).decode('utf-8', 'ignore')
-        self.assertIn('Warning: Option "test_sub_1" is deprecated and will be removed in future versions.', output)
+        output = ' '.join(output.split())
+        self.assertIn('Option "test_sub_1" is deprecated and will be removed in future versions.', output)
         self.assertIn(
-            'Warning: Command "test-1" is deprecated and will be removed in future versions. '
-            'Please use alternative command.',
+            'Command "test-1" is deprecated and will be removed in future versions. Please use alternative command.',
             output,
         )
-        self.assertIn('Warning: Option "test_1" is deprecated and will be removed in future versions.', output)
+        self.assertIn('Option "test_1" is deprecated and will be removed in future versions.', output)
         self.assertIn(
-            'Warning: Option "test_2" is deprecated and will be removed in future versions. '
-            'Please update your parameters.',
+            'Option "test_2" is deprecated and will be removed in future versions. Please update your parameters.',
             output,
         )
-        self.assertIn('Warning: Option "test_3" is deprecated and will be removed in future versions.', output)
+        self.assertIn('Option "test_3" is deprecated and will be removed in future versions.', output)
         self.assertNotIn('"test-0" is deprecated', output)
         self.assertNotIn('"test_0" is deprecated', output)
 

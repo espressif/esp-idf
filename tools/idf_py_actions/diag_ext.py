@@ -4,11 +4,12 @@ import sys
 import uuid
 from typing import Any
 
+from esp_pylib.logger import log
+from rich.markup import escape
 from rich_click import Context
 
 from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import RunTool
-from idf_py_actions.tools import yellow_print
 
 
 def diag(
@@ -102,7 +103,7 @@ def diag(
         if args.port:
             diag_args += ['--port', args.port]
         else:
-            yellow_print(
+            log.note(
                 'The target serial port is not specified, so '
                 'autodetection will be used. To set it manually, use '
                 'the "--port" option. Example: "idf.py --port '
@@ -115,13 +116,15 @@ def diag(
         raise
 
     if command == 'create':
-        yellow_print(
-            f'Please make sure to thoroughly check it for any sensitive '
-            f'information before sharing and remove files you do not want '
-            f'to share. Kindly include any additional files you find '
-            f'relevant that were not automatically added. Please archive '
-            f'the contents of the final report directory using the command:\n'
-            f'"idf.py diag --zip {output}".'
+        log.note(
+            escape(
+                f'Please make sure to thoroughly check it for any sensitive '
+                f'information before sharing and remove files you do not want '
+                f'to share. Kindly include any additional files you find '
+                f'relevant that were not automatically added. Please archive '
+                f'the contents of the final report directory using the command:\n'
+                f'"idf.py diag --zip {output}".'
+            )
         )
 
 

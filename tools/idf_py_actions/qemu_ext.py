@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import atexit
 import binascii
@@ -14,13 +14,13 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from esp_pylib.logger import log
+from rich.markup import escape
 from rich_click import Context
 
 try:
     from idf_py_actions.tools import PropertyDict
     from idf_py_actions.tools import ensure_build_directory
-    from idf_py_actions.tools import red_print
-    from idf_py_actions.tools import yellow_print
 except ImportError:
     PropertyDict = Any
 
@@ -168,8 +168,7 @@ def wait_for_socket(port: int, timeout_sec: float = 10.0) -> None:
         except OSError:
             time.sleep(0.1)
             continue
-    red_print(f'Timed out waiting for port {port} to be open')
-    raise SystemExit(1)
+    log.die(f'Timed out waiting for port {port} to be open')
 
 
 def action_extensions(base_actions: dict, project_path: str) -> dict:
@@ -189,20 +188,19 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
         if have_qemu:
             if have_gdb and have_monitor:
-                red_print('Cannot run qemu with both gdb and monitor in the same terminal')
-                raise SystemExit(1)
+                log.die('Cannot run qemu with both gdb and monitor in the same terminal')
             if have_gdb:
                 options.wait_for_gdb = True
                 options.bg_mode = True
             if have_monitor:
                 options.wait_for_monitor = True
                 options.bg_mode = True
-                yellow_print(f'Running qemu on {PYSERIAL_PORT}')
+                log.note(f'Running qemu on {PYSERIAL_PORT}')
                 global_args['port'] = PYSERIAL_PORT
             if have_efuse:
                 options.bg_mode = True
                 options.boot_mode = True
-                yellow_print(f'Running qemu on {PYSERIAL_PORT}')
+                log.note(f'Running qemu on {PYSERIAL_PORT}')
                 global_args['port'] = PYSERIAL_PORT
                 for task in tasks:
                     if fnmatch.fnmatch(task.name, 'efuse-*'):
@@ -233,15 +231,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         target = project_desc['target']
         qemu_target_info = QEMU_TARGETS.get(target)
         if not qemu_target_info:
-            red_print(f'QEMU is not supported for target {target}')
-            raise SystemExit(1)
+            log.die(f'QEMU is not supported for target {target}')
         if not shutil.which(qemu_target_info.qemu_prog):
-            red_print(
+            log.die(
                 f'{qemu_target_info.qemu_prog} is not installed. Please install it using '
                 f'"python $IDF_PATH/tools/idf_tools.py install {qemu_target_info.install_package}" '
                 'or build it from source if the pre-built version is not available for your platform.'
             )
-            raise SystemExit(1)
 
         # Generate flash image and efuse image
         flash_size = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_ESPTOOLPY_FLASHSIZE')
@@ -250,13 +246,12 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             bin_path = flash_file
             try:
                 open(bin_path, 'rb').close()
-                yellow_print(f'Using provided flash image: {bin_path}')
+                log.note(escape(f'Using provided flash image: {bin_path}'))
             except FileNotFoundError:
-                red_print(f'The provided flash image file "{bin_path}" could not be found')
-                raise SystemExit(1)
+                log.die(escape(f'The provided flash image file "{bin_path}" could not be found'))
         else:
             bin_path = os.path.join(args.build_dir, 'qemu_flash.bin')
-            yellow_print(f'Generating flash image: {bin_path}')
+            log.note(escape(f'Generating flash image: {bin_path}'))
             subprocess.check_call(
                 [
                     sys.executable,
@@ -277,9 +272,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             efuse_bin_path = os.path.join(args.build_dir, 'qemu_efuse.bin')
         try:
             open(efuse_bin_path, 'rb').close()
-            yellow_print(f'Using existing efuse image: {efuse_bin_path}')
+            log.note(escape(f'Using existing efuse image: {efuse_bin_path}'))
         except FileNotFoundError:
-            yellow_print(f'Generating efuse image: {efuse_bin_path}')
+            log.note(escape(f'Generating efuse image: {efuse_bin_path}'))
             with open(efuse_bin_path, 'wb') as f:
                 f.write(qemu_target_info.default_efuse)
 
@@ -329,7 +324,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             if qemu_extra_args:
                 qemu_args += shlex.split(qemu_extra_args)
 
-            yellow_print('Running qemu (fg): ' + ' '.join(qemu_args))
+            log.note('Running qemu (fg): ' + escape(' '.join(qemu_args)))
             subprocess.run(qemu_args)
         else:
             if options.wait_for_monitor:
@@ -342,7 +337,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             if qemu_extra_args:
                 qemu_args += shlex.split(qemu_extra_args)
 
-            yellow_print('Running qemu (bg): ' + ' '.join(qemu_args))
+            log.note('Running qemu (bg): ' + escape(' '.join(qemu_args)))
             qemu_proc = subprocess.Popen(
                 qemu_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE
             )
@@ -355,14 +350,14 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
             atexit.register(cleanup_qemu)
             if qemu_proc.poll() is not None:
-                yellow_print('QEMU exited with error')
+                log.err('QEMU exited with error')
                 if qemu_proc.stderr is not None:
-                    yellow_print('Stderr output was:')
-                    yellow_print(qemu_proc.stderr.read().decode('utf-8'))
+                    log.err('Stderr output was:')
+                    log.print(escape(qemu_proc.stderr.read().decode('utf-8')), file=sys.stderr, soft_wrap=True)
                 sys.exit(1)
 
             if gdb and not options.wait_for_gdb:
-                yellow_print('Waiting for GDB to connect. You can now run "idf.py gdb" in another terminal window.')
+                log.note('Waiting for GDB to connect. You can now run "idf.py gdb" in another terminal window.')
 
     qemu_actions = {
         'global_action_callbacks': [global_callback],

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import shutil
@@ -8,6 +8,7 @@ import pytest
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import file_contains
+from test_build_system_helpers import normalize_output
 from test_build_system_helpers import run_cmake
 
 ESP32C3_TARGET = 'esp32c3'
@@ -37,7 +38,7 @@ def test_target_from_environment_idf_py(idf_py: IdfPyFunc, default_idf_env: EnvD
         opts = opts or []
         ret = idf_py(*opts, 'reconfigure', check=False)
         assert ret.returncode == 2
-        assert errmsg in ret.stderr
+        assert normalize_output(errmsg) in normalize_output(ret.stderr)
 
     idf_py('set-target', ESP32S2_TARGET)
     default_idf_env.update({'IDF_TARGET': ESP32_TARGET})
@@ -91,7 +92,7 @@ def test_target_consistency_cmake(default_idf_env: EnvDict, test_app_copy: Path)
         opts = opts or []
         ret = run_cmake(*opts, '-G', 'Ninja', '..', env=default_idf_env, check=False)
         assert ret.returncode == 1
-        assert errmsg in ret.stderr
+        assert normalize_output(errmsg) in normalize_output(ret.stderr)
 
     run_cmake('-G', 'Ninja', '..')
 

@@ -10,6 +10,7 @@ from typing import Any
 
 import rich_click as click
 from click.core import ParameterSource
+from esp_pylib.logger import log
 from rich_click import Context
 
 from idf_py_actions.errors import FatalError
@@ -43,12 +44,6 @@ PORT = {
     'type': click.Path(),
     'default': None,
 }
-
-
-def yellow_print(message: str, newline: str | None = '\n') -> None:
-    """Print a message to stderr with yellow highlighting"""
-    sys.stderr.write(f'\033[0;33m{message}\033[0m{newline}')
-    sys.stderr.flush()
 
 
 def action_extensions(base_actions: dict, project_path: str) -> dict:
@@ -224,7 +219,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         ensure_build_directory(args, ctx.info_name)
         project_desc = _get_project_desc(ctx, args)
         if project_desc['target'] == 'linux':
-            yellow_print('skipping flash since running on linux...')
+            log.note('skipping flash for linux target')
             return
 
         args.port = args.port or get_default_serial_port()
@@ -299,17 +294,17 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             merge_bin_args += ['-f', format]
         if md5_disable:
             if format != 'uf2':
-                yellow_print('idf.py merge-bin: --md5-disable is only valid for UF2 format. Option will be ignored.')
+                log.warn('idf.py merge-bin: --md5-disable is only valid for UF2 format. Option will be ignored.')
             else:
                 merge_bin_args += ['--md5-disable']
         if flash_offset:
             if format != 'raw':
-                yellow_print('idf.py merge-bin: --flash-offset is only valid for RAW format. Option will be ignored.')
+                log.warn('idf.py merge-bin: --flash-offset is only valid for RAW format. Option will be ignored.')
             else:
                 merge_bin_args += ['-t', flash_offset]
         if pad_to_size or fill_flash_size:
             if format != 'raw':
-                yellow_print('idf.py merge-bin: --pad-to-size is only valid for RAW format, option will be ignored.')
+                log.warn('idf.py merge-bin: --pad-to-size is only valid for RAW format, option will be ignored.')
             else:
                 merge_bin_args += ['--pad-to-size', pad_to_size or fill_flash_size]
         if merge_args:

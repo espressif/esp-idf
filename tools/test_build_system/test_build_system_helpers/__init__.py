@@ -17,6 +17,7 @@ from .idf_utils import EnvDict
 from .idf_utils import IdfPyFunc
 from .idf_utils import find_python
 from .idf_utils import get_idf_build_env
+from .idf_utils import normalize_output
 from .idf_utils import run_cmake
 from .idf_utils import run_cmake_and_build
 from .idf_utils import run_idf_py
@@ -45,6 +46,7 @@ __all__ = [
     'ALL_ARTIFACTS_BUILDV2',
     'run_cmake_and_build',
     'find_python',
+    'normalize_output',
     'file_contains',
     'bin_file_contains',
     'bin_files_differ',

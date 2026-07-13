@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -7,7 +7,6 @@ import subprocess
 import sys
 import typing
 from pathlib import Path
-from typing import Union
 
 try:
     EXT_IDF_PATH = os.environ['IDF_PATH']  # type: str
@@ -16,8 +15,17 @@ except KeyError:
     exit(1)
 
 
-EnvDict = typing.Dict[str, str]
+EnvDict = dict[str, str]
 IdfPyFunc = typing.Callable[..., subprocess.CompletedProcess]
+
+
+def normalize_output(text: str) -> str:
+    """Collapse all whitespace runs to a single space.
+
+    Use for content assertions on messages that include file paths: long paths can
+    push lines past COLUMNS=200 and cause Rich to insert a mid-message line break.
+    """
+    return ' '.join(text.split())
 
 
 def find_python(path_var: str) -> str:
@@ -37,15 +45,11 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
     :param idf_path: path of the IDF copy to use
     :return: dictionary of environment variables and their values
     """
-    cmd = [
-        sys.executable,
-        os.path.join(idf_path, 'tools', 'idf_tools.py'),
-        'export',
-        '--format=key-value'
-    ]
+    cmd = [sys.executable, os.path.join(idf_path, 'tools', 'idf_tools.py'), 'export', '--format=key-value']
     keys_values = subprocess.check_output(cmd, stderr=subprocess.PIPE).decode()
-    idf_tool_py_env = {key: os.path.expandvars(value) for key, value in
-                       [line.split('=') for line in keys_values.splitlines()]}
+    idf_tool_py_env = {
+        key: os.path.expandvars(value) for key, value in [line.split('=') for line in keys_values.splitlines()]
+    }
     env_vars = {}  # type: EnvDict
     env_vars.update(os.environ)
     env_vars.update(idf_tool_py_env)
@@ -55,13 +59,15 @@ def get_idf_build_env(idf_path: str) -> EnvDict:
     return env_vars
 
 
-def run_idf_py(*args: str,
-               env: typing.Optional[EnvDict] = None,
-               idf_path: typing.Optional[typing.Union[str,Path]] = None,
-               workdir: typing.Optional[str] = None,
-               check: bool = True,
-               python: typing.Optional[str] = None,
-               input_str: typing.Optional[str] = None) -> subprocess.CompletedProcess:
+def run_idf_py(
+    *args: str,
+    env: EnvDict | None = None,
+    idf_path: str | Path | None = None,
+    workdir: str | None = None,
+    check: bool = True,
+    python: str | None = None,
+    input_str: str | None = None,
+) -> subprocess.CompletedProcess:
     """
     Run idf.py command with given arguments, raise an exception on failure
     :param args: arguments to pass to idf.py
@@ -84,29 +90,35 @@ def run_idf_py(*args: str,
     if python is None:
         python = find_python(env['PATH'])
 
-    cmd = [
-        python,
-        os.path.join(idf_path, 'tools', 'idf.py')
-    ]
+    cmd = [python, os.path.join(idf_path, 'tools', 'idf.py')]
     cmd += args  # type: ignore
     logging.debug('running {} in {}'.format(' '.join(cmd), workdir))
     try:
         return subprocess.run(
-            cmd, env=env, cwd=workdir,
-            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding='utf-8', errors='backslashreplace', input=input_str)
+            cmd,
+            env=env,
+            cwd=workdir,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+            input=input_str,
+        )
     except subprocess.CalledProcessError as e:
         logging.error('The following idf.py command has failed: {}'.format(' '.join(cmd)))
-        logging.error('Working directory: {}'.format(workdir))
-        logging.error('Stdout: {}'.format(e.stdout))
-        logging.error('Stderr: {}'.format(e.stderr))
+        logging.error(f'Working directory: {workdir}')
+        logging.error(f'Stdout: {e.stdout}')
+        logging.error(f'Stderr: {e.stderr}')
         raise
 
 
-def run_cmake(*cmake_args: str,
-              env: typing.Optional[EnvDict] = None,
-              check: bool = True,
-              workdir: typing.Optional[Union[Path,str]] = None) -> subprocess.CompletedProcess:
+def run_cmake(
+    *cmake_args: str,
+    env: EnvDict | None = None,
+    check: bool = True,
+    workdir: Path | str | None = None,
+) -> subprocess.CompletedProcess:
     """
     Run cmake command with given arguments, raise an exception on failure
     :param cmake_args: arguments to pass cmake
@@ -120,7 +132,7 @@ def run_cmake(*cmake_args: str,
     if workdir:
         build_dir = Path(workdir, 'build')
     else:
-        build_dir = (Path(os.getcwd()) / 'build')
+        build_dir = Path(os.getcwd()) / 'build'
 
     build_dir.mkdir(parents=True, exist_ok=True)
 
@@ -129,18 +141,24 @@ def run_cmake(*cmake_args: str,
     logging.debug('running {} in {}'.format(' '.join(cmd), build_dir))
     try:
         return subprocess.run(
-            cmd, env=env, cwd=build_dir,
-            check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, encoding='utf-8', errors='backslashreplace')
+            cmd,
+            env=env,
+            cwd=build_dir,
+            check=check,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            errors='backslashreplace',
+        )
     except subprocess.CalledProcessError as e:
         logging.error('The following cmake command has failed: {}'.format(' '.join(cmd)))
-        logging.error('Working directory: {}'.format(workdir))
-        logging.error('Stdout: {}'.format(e.stdout))
-        logging.error('Stderr: {}'.format(e.stderr))
+        logging.error(f'Working directory: {workdir}')
+        logging.error(f'Stdout: {e.stdout}')
+        logging.error(f'Stderr: {e.stderr}')
         raise
 
 
-def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) -> None:
+def run_cmake_and_build(*cmake_args: str, env: EnvDict | None = None) -> None:
     """
     Run cmake command with given arguments and build afterwards, raise an exception on failure
     :param cmake_args: arguments to pass cmake

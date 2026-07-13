@@ -95,9 +95,10 @@ def test_hints_no_color_output_when_noninteractive(idf_py: IdfPyFunc) -> None:
     with pytest.raises(subprocess.CalledProcessError) as exc_info:
         idf_py('build')
 
-    # Should not actually include a color escape sequence!
-    # Change the assert to the correct value once the bug is fixed.
-    assert '\x1b[0;33mHINT: esp_chip_info.h' in exc_info.value.stderr
+    # the shared esp_pylib logger drops color escape sequences on
+    # non-interactive (non-TTY) output, so the hint appears without any ANSI color codes.
+    assert 'esp_chip_info.h' in exc_info.value.stdout
+    assert '\x1b[' not in exc_info.value.stdout
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -442,7 +443,7 @@ def test_deprecation_warning(idf_py: IdfPyFunc) -> None:
     logging.info('Deprecation warning check')
     ret = idf_py('post_debug', check=False)
     # click warning
-    assert 'Error: Command "post_debug" is deprecated since v4.4 and was removed in v5.0.' in ret.stderr
+    assert 'Command "post_debug" is deprecated since v4.4 and was removed in v5.0.' in ret.stderr
 
     ret = idf_py('efuse_common_table', check=False)
     # cmake warning
@@ -540,8 +541,8 @@ def test_hints_components_loading(
         )
 
     ret = idf_py('build', check=False)
-    assert 'HINT FROM IDF COMPONENT' in ret.stderr, 'Hint from IDF component should be displayed in build output'
-    assert 'HINT FROM PROJECT COMPONENT' in ret.stderr, (
+    assert 'HINT FROM IDF COMPONENT' in ret.stdout, 'Hint from IDF component should be displayed in build output'
+    assert 'HINT FROM PROJECT COMPONENT' in ret.stdout, (
         'Hint from project component should be displayed in build output'
     )
 

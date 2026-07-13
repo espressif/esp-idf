@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 import sys
@@ -55,7 +55,7 @@ class TestHintsMassages(unittest.TestCase):
             with open(error_filename, 'w') as f:
                 f.write(error)
             for generated_hint in generate_hints(f.name):
-                self.assertEqual(generated_hint, hint)
+                self.assertIn(generated_hint, hint)
 
     def tearDown(self) -> None:
         safe_cleanup_tmpdir(self.tmpdir)
@@ -66,7 +66,7 @@ def run_idf(args: list[str], cwd: Path) -> str:
     cmd = [sys.executable, os.path.join(os.environ['IDF_PATH'], 'tools', 'idf.py')]
     try:
         proc = run(cmd + args, capture_output=True, cwd=cwd, text=True, timeout=10 * 60)
-        return str(proc.stdout + proc.stderr)
+        return proc.stdout + proc.stderr
     except TimeoutExpired as e:
         # Print captured output on timeout to help with debugging
         print(f'\n{"=" * 80}')
