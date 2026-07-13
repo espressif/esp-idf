@@ -531,27 +531,6 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
        overflow the internal string buffer if the
        length calculation is not correct.
     */
-#if CONFIG_IDF_TARGET_LINUX
-    const int NUM_TIMERS = 200;
-    esp_timer_handle_t timers[NUM_TIMERS];
-
-    for (int i = 0; i < NUM_TIMERS; ++i) {
-        char name[30];
-        snprintf(name, sizeof(name), "test_timer_number_%d", i);
-        esp_timer_create_args_t timer_args = {
-            .callback = &empty_cb,
-            .arg = NULL,
-            .name = name
-        };
-        TEST_ESP_OK(esp_timer_create(&timer_args, &timers[i]));
-    }
-
-    esp_timer_dump(stdout);
-
-    for (int i = 0; i < NUM_TIMERS; ++i) {
-        TEST_ESP_OK(esp_timer_delete(timers[i]));
-    }
-#else
     enum {
         INACTIVE_TIMER_COUNT = 64,
         NUM_TIMERS = 256,
@@ -591,7 +570,9 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
     fclose(stream);
     TEST_ASSERT_NOT_NULL(strstr(dump_buf, "Timer stats:"));
     TEST_ASSERT_NOT_NULL(strstr(dump_buf, "72057594037927935"));
+#if !CONFIG_IDF_TARGET_LINUX
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+#endif
 
     for (size_t i = 0; i < NUM_TIMERS; ++i) {
         TEST_ESP_OK(esp_timer_stop(timers[i]));
@@ -601,7 +582,6 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
     for (size_t i = 0; i < INACTIVE_TIMER_COUNT; ++i) {
         TEST_ESP_OK(esp_timer_delete(inactive_timers[i]));
     }
-#endif
 }
 
 typedef struct {
