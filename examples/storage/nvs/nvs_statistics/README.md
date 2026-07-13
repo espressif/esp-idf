@@ -20,39 +20,54 @@ Detailed functional description of NVS and API is provided in [documentation](ht
 
 ## Blob Storage-Overhead Measurement
 
-In addition to the basic statistics demonstration, the example can measure how much usable storage a blob actually consumes, taking the NVS metadata and free-space fragmentation into account. This part is enabled by default and can be turned off via `idf.py menuconfig` → *Example Configuration* → *Run NVS blob storage-overhead measurement*.
+In addition to the basic statistics demonstration, the example can measure how many entries a single blob actually consumes compared to its ideal (non-fragmented) cost, taking the NVS metadata and free-space fragmentation into account. This part is disabled by default and can be turned on via `idf.py menuconfig` → *Example Configuration* → *Run NVS blob storage-overhead measurement*.
 
-The measurement sweeps a matrix of **partition sizes** × **blob sizes** and, for each cell, fills the partition to capacity and reports the heap demand, NVS entry usage and the resulting storage overhead.
+For every measured cell the example erases and initializes a dedicated partition, pre-populates its pages with strings so that a target number of free entries remains on each page, writes a single blob and compares its real entry footprint against the ideal one. The results are printed as a single table.
 
-### Variable partition size
+### Configurable sweep
 
-The example uses a custom partition table (`partitions.csv`) that defines several NVS partitions of different sizes (`nvs_16k`, `nvs_32k`, `nvs_64k`). The measurement iterates over them using `nvs_flash_init_partition()` / `nvs_get_stats()`, so the influence of the partition size on the relative overhead becomes directly visible.
+The measurement iterates over two configurable arrays defined at the top of `nvs_statistics_example.c`:
 
-### Variable blob size
+* `measurement_combos[]` — partition size / blob size combinations. The default set sweeps three partition sizes and, for the 16 kB partition, a few blob sizes that straddle the point where the blob no longer fits: `16k / 128 B`, `16k / 350 B`, `16k / 416 B`, `16k / 417 B`, `32k / 768 B`, `32k / 920 B` and `64k / 1612 B`. The partition names refer to the NVS partitions declared in the custom partition table (`partitions.csv`).
+* `page_free_ranges[]` — per-page free-entry targets, each a `{ first_page_free, rest_free }` pair given as an absolute number of free (available) entries that must remain on a page (out of 126 per page). The default set is `{14, 11}`, `{14, 7}`, `{14, 4}` and `{13, 4}`.
 
-For each partition, blobs of increasing size (128, 256, 512, 1024, 2048 and 4096 bytes) are stored with unique keys until `nvs_set_blob()` returns `ESP_ERR_NVS_NOT_ENOUGH_SPACE`. The number of stored blobs is then compared against the theoretical (ideal) count derived from the documented per-blob entry cost:
+Every combination is measured at every free-entry target.
 
-```
-entries_per_blob = 1 (BLOB_INDEX) + k (per-page BLOB_DATA chunk headers) + ceil(blob_size / 32)
-```
-
-where `k` is the number of pages the blob data is split across.
-
-### Worst-case fragmentation
+### Per-page pre-population
 
 By design, each NVS page is a 4096-byte flash sector holding 126 usable 32-byte entries. A string occupies `1 + ceil((len + 1) / 32)` entries and must fit contiguously within a single page, while a blob may split its data into per-page chunks.
 
-To demonstrate the worst case, the example optionally pre-populates a partition so that **every page is filled up to its last 2 entries** (enabled via *Add a worst-case (pre-fragmented) measurement pass*). This is achieved by writing large strings:
+Each free-entry target leaves `first_page_free` free entries on the first page and `rest_free` on every remaining page (the namespace entries on page 0 count towards page 0's occupancy). To leave the requested number of free entries on a page, the example writes a "keep" string that occupies all but the requested free entries, followed by a "filler" string that occupies those remaining entries. Once the whole partition has been filled this way, all filler strings are erased. Every page therefore exposes exactly the requested number of reclaimable free entries, scattering the free space into per-page gaps — the fragmentation pattern the subsequent blob write has to cope with.
 
-* the first string is sized to leave 2 free entries on page 0 while accounting for the namespace entry,
-* every following string fills a fresh page to 124 entries, leaving exactly 2 free.
+### Reported columns
 
-After this step the partition reports a large amount of `free_entries`, but the largest contiguous run of free entries on any page is only 2. The consequences are then measured by filling the partition with blobs:
+A single blob is then written into the pre-populated partition and its consumption is tabulated:
 
-* each blob chunk can only use 1 chunk-header + 1 data entry per page, so roughly half of the consumed space becomes metadata overhead,
-* because the number of chunks per blob is bounded, large blobs may become unstoreable even though many `free_entries` remain.
+| Column | Meaning |
+| ------ | ------- |
+| `Blob Size [B]` | Blob payload size. |
+| `Partition Size [k]` | Partition size in kibibytes. |
+| `Free Entries per Page` → `First [-]` | Number of free (available) entries left on the first NVS page. |
+| `Free Entries per Page` → `Remaining [-]` | Number of free (available) entries left on every remaining NVS page. |
+| `Available Entries [-]` | `available_entries` from `nvs_get_stats()` right before the blob is written. |
+| `Expected Entries [-]` | Ideal (non-fragmented) blob cost: `1 (BLOB_INDEX) + chunks + ceil(blob_size / 32)`. |
+| `Actual Entries [-]` | Real entry consumption of the written blob (`used_entries` delta). |
+| `Overhead Entries [-]` | `Actual Entries − Expected Entries`. |
+| `Overhead [%]` | `100 × Overhead Entries / Expected Entries`. |
 
-This makes the relationship between fragmentation, remaining free space and resulting overhead measurable, instead of presenting a single (best-case) number that could create false expectations.
+If the blob does not fit into the pre-populated partition, `nvs_set_blob()` returns `ESP_ERR_NVS_NOT_ENOUGH_SPACE` and the corresponding row reports `FAIL` for the actual consumption and the derived overhead columns.
+
+### Why a blob may not fit even when `Available Entries` looks sufficient
+
+`Available Entries` is a *partition-wide* total of free, non-reserved entries. It is tempting to compare it against `Expected Entries` and conclude that any blob whose ideal cost is smaller must fit — but a fragmented partition does not work that way, which is exactly what this measurement demonstrates. Several NVS design properties make the real requirement larger, and the usable free space smaller, than that single number suggests:
+
+* **A blob is stored as one data chunk per page, not as one contiguous run.** When the free space is scattered (as the per-page pre-population deliberately arranges it), NVS splits the blob so that each page receives at most one `BLOB_DATA` chunk. The chunks are sized to whatever run of free entries a page can offer, and the split continues page by page until the whole payload is stored.
+* **Every chunk carries its own metadata entry.** Each `BLOB_DATA` chunk costs one header entry on top of its payload entries, and the blob as a whole costs one `BLOB_INDEX` entry. The more the free space is fragmented, the more chunks are needed and the more of these header entries are spent — this is precisely the difference between `Expected Entries` (ideal, minimum chunking) and `Actual Entries` (real, fragmented chunking), and it can push `Overhead [%]` well above 100 %.
+* **A page needs at least two free entries to hold any chunk** (one header entry plus at least one payload entry). Free space that survives only as isolated single-entry gaps still counts towards `Available Entries`, yet no blob chunk can ever be placed there, so that space is effectively unusable for the blob.
+* **The *first* chunk needs a minimum starting free run.** Unless the whole blob fits into the current page, NVS refuses to place the very first `BLOB_DATA` chunk on a page whose free var-data run is smaller than `CHUNK_MAX_SIZE / 10`. With the default `CHUNK_MAX_SIZE = ENTRY_SIZE × (ENTRY_COUNT − 1) = 32 × 125 = 4000` bytes, this threshold is `400` bytes — roughly 13 entries. Such a page is marked full and NVS looks for a page offering a larger free run; if none exists, the write fails with `ESP_ERR_NVS_NOT_ENOUGH_SPACE` *before any chunk is written*. A partition whose free space survives only as many small per-page gaps (for example the `rest_free = 4` target, i.e. ≈ 96 bytes of free var-data per page) therefore offers no page able to *start* a multi-page blob — even though those same gaps could still host the blob's *subsequent* chunks, and even though every one of their entries is counted in `Available Entries`.
+* **One page is always held in reserve** for the power-loss-safe space-reclaim algorithm, and space reclaim only consolidates free entries within a single candidate page per call. There is no operation that gathers scattered free entries from many pages into one large contiguous run for a single write.
+
+Put together, these effects mean the blob's real footprint (`Actual Entries`) can be far larger than its ideal footprint (`Expected Entries`), while the portion of `Available Entries` that a single blob can actually reach is smaller than the raw figure. When the fragmented free space can no longer absorb the chunked-and-metadata-inflated blob, the write fails with `ESP_ERR_NVS_NOT_ENOUGH_SPACE` — even though `Available Entries` on its own looked large enough. In the table below this shows up as rows where `Available Entries` ≥ `Expected Entries` yet `Actual Entries` still reads `FAIL`.
 
 ## How to use example
 
@@ -92,44 +107,35 @@ I (565) nvs_statistics_example: Newly used entries match expectation.
 ...
 ```
 
-The second part reports the blob storage overhead for each partition / blob size, in both a pristine and a pre-fragmented partition:
+The second part reports, for every partition size / blob size combination and every per-page free-entry target, the ideal vs. real blob entry consumption in a single table:
 
 ```
 ...
 I (1265) nvs_statistics_example: Starting NVS blob storage-overhead measurement...
 
-NVS BLOB TEST - 128 B (partition 'nvs_16k', pristine):
-======================
-heap before NVS init: 299220 B
-heap after NVS init:  255472 B (diff 43748 B)
-
-available heap after fill: 254100 B (diff 1372 B)
-expected blobs count: 21
-stored blobs count:   20
-used_entries:  120 (3840 B)
-free_entries:  6 (192 B)
-total_entries: 126 (4032 B)
-STORAGE OVERHEAD: 36%
-
-NVS BLOB TEST - 128 B (partition 'nvs_16k', fragmented):
-======================
-heap before NVS init: 299220 B
-heap after NVS init:  255472 B (diff 43748 B)
-fragmentation strings written: 3
-
-available heap after fill: 254100 B (diff 1372 B)
-expected blobs count: 21
-stored blobs count:   2
-used_entries:  124 (3968 B)
-free_entries:  2 (64 B)
-total_entries: 126 (4032 B)
-STORAGE OVERHEAD: 98%
++---------------+--------------------+---------------------------+-----------------------+----------------------+--------------------+----------------------+--------------+
+|     Blob Size |     Partition Size |   Free Entries per Page   |     Available Entries |     Expected Entries |     Actual Entries |     Overhead Entries |     Overhead |
+|               |                    +-----------+---------------+                       |                      |                    |                      |              |
+|           [B] |                [k] | First [-] | Remaining [-] |                   [-] |                  [-] |                [-] |                  [-] |          [%] |
++---------------+--------------------+-----------+---------------+-----------------------+----------------------+--------------------+----------------------+--------------+
+|           128 |                 16 |        14 |            11 |                    39 |                    6 |                  6 |                    0 |          0.0 |
+|           128 |                 16 |        14 |             4 |                    18 |                    6 |                  6 |                    0 |          0.0 |
+|           350 |                 16 |        14 |             7 |                    28 |                   13 |                 15 |                    2 |         15.4 |
+|           416 |                 16 |        14 |             4 |                    18 |                   15 |                 18 |                    3 |         20.0 |
+|           417 |                 16 |        14 |             4 |                    18 |                   16 |               FAIL |                    - |            - |
+|           768 |                 32 |        14 |             7 |                    56 |                   26 |                 30 |                    4 |         15.4 |
+|          1612 |                 64 |        14 |             4 |                    60 |                   53 |                 71 |                   18 |         34.0 |
 ...
++---------------+--------------------+-----------+---------------+-----------------------+----------------------+--------------------+----------------------+--------------+
+
 I (9000) nvs_statistics_example: NVS blob storage-overhead measurement done.
 I (9010) nvs_statistics_example: Returning from app_main().
 ...
 ```
 
-> The exact numbers depend on the target, partition size and blob size; the values above are illustrative. The key takeaway is the difference in `STORAGE OVERHEAD` and `stored blobs count` between the pristine and fragmented passes.
+> The exact numbers depend on the target, partition size, blob size and per-page free-entry target; the values above are illustrative. Note the following patterns:
+>
+> * `Overhead [%]` grows as fewer free entries are left per page (each additional chunk adds one metadata entry), so the same blob costs more on a heavily fragmented partition than on a lightly fragmented one.
+> * The neighbouring `416 B` and `417 B` rows straddle the fit boundary. With only 4 free entries (≈ 96 bytes) left on every page except the first, the first page — with 14 free entries (≈ 416 bytes of free var-data) — is the only one whose free run clears the ~400-byte minimum-first-chunk threshold, so it is the only page on which a blob can start. The `416 B` blob fits entirely into that first chunk (consuming all 18 available entries), whereas a single extra payload byte in the `417 B` blob no longer fits and there is no further usable space, so the write reports `FAIL` — even though its ideal `Expected Entries` (16) is below the reported `Available Entries` (18). This is the "seems like enough space, but the write still fails" case explained above.
 
 To reset NVS data, erase the contents of flash memory using `idf.py erase-flash`, then upload the program again as described above.

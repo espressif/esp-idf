@@ -14,9 +14,4 @@ def test_examples_nvs_statistics(dut: Dut) -> None:
     dut.expect('Getting post-commit NVS statistics...', timeout=5)
     dut.expect('Newly used entries match expectation.', timeout=5)
 
-    # Blob storage-overhead measurement (sweeps partition and blob sizes).
-    dut.expect('Starting NVS blob storage-overhead measurement...', timeout=10)
-    dut.expect('STORAGE OVERHEAD:', timeout=60)
-    dut.expect('NVS blob storage-overhead measurement done.', timeout=120)
-
     dut.expect('Returning from app_main().', timeout=5)
