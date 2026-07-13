@@ -30,6 +30,9 @@ if(CONFIG_ETH_ENABLED)
                          "src/mac/esp_eth_mac_esp_dma.c"
                          "src/mac/esp_eth_mac_esp_gpio.c"
                          "src/phy/esp_eth_phy_generic.c")
+        if(CONFIG_SOC_PAU_SUPPORTED)
+            list(APPEND srcs "src/mac/${target}/emac_retention.c")
+        endif()
     endif()
 
     if(CONFIG_ETH_USE_OPENETH)
@@ -40,6 +43,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include}
+                       PRIV_INCLUDE_DIRS "src/mac"
                        LDFRAGMENTS ${ld_fragments}
                        REQUIRES esp_event # For using "ESP_EVENT_DECLARE_BASE" in header file
                        PRIV_REQUIRES ${priv_requires})
