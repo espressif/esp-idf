@@ -164,7 +164,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     }
 #if I80_USE_RETENTION_LINK
     // no need to acquire mutex, because the bus is exclusive
-    sleep_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    sleep_retention_module_t module_id = lcd_i80_reg_retention_info[bus_id].retention_module;
     sleep_retention_module_init_param_t init_param = {
         .cbs = {
             .create = {
@@ -292,7 +292,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
         bus->clk_src = SOC_MOD_CLK_INVALID;
     }
 #if I80_USE_RETENTION_LINK
-    const periph_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    const periph_retention_module_t module_id = lcd_i80_reg_retention_info[bus_id].retention_module;
     sleep_retention_module_detach(module_id);
     if (sleep_retention_is_module_created(module_id)) {
         assert(sleep_retention_is_module_inited(module_id));
@@ -616,9 +616,9 @@ static esp_err_t lcd_i80_create_sleep_retention_link_cb(void *arg)
 {
     esp_lcd_i80_bus_t *bus = (esp_lcd_i80_bus_t *)arg;
     int bus_id = bus->bus_id;
-    sleep_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
-    esp_err_t err = sleep_retention_entries_create(soc_i80_lcd_retention_info[bus_id].regdma_entry_array,
-                                                   soc_i80_lcd_retention_info[bus_id].array_size,
+    sleep_retention_module_t module_id = lcd_i80_reg_retention_info[bus_id].retention_module;
+    esp_err_t err = sleep_retention_entries_create(lcd_i80_reg_retention_info[bus_id].regdma_entry_array,
+                                                   lcd_i80_reg_retention_info[bus_id].array_size,
                                                    REGDMA_LINK_PRI_LCDCAM, module_id);
     ESP_RETURN_ON_ERROR(err, TAG, "create retention link failed");
     return ESP_OK;
@@ -627,7 +627,7 @@ static esp_err_t lcd_i80_create_sleep_retention_link_cb(void *arg)
 static void lcd_i80_create_retention_module(esp_lcd_i80_bus_t *bus)
 {
     int bus_id = bus->bus_id;
-    sleep_retention_module_t module_id = soc_i80_lcd_retention_info[bus_id].retention_module;
+    sleep_retention_module_t module_id = lcd_i80_reg_retention_info[bus_id].retention_module;
 
     if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
         if (sleep_retention_module_allocate(module_id) != ESP_OK) {
