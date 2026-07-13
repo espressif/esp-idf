@@ -94,6 +94,8 @@ void mipi_dsi_hal_configure_phy_pll(mipi_dsi_hal_context_t *hal, uint32_t phy_cl
     }
 
     mipi_dsi_hal_phy_write_register(hal, 0x44, hs_freq_sel << 1);
+    // enable 1~1.5Gbps analog circuity support
+    mipi_dsi_hal_phy_write_register(hal, 0x22, (lane_bit_rate_mbps >= 1000) ? 0x88 : 0x80);
     // make use of the N and M factors that configured in the 0x17 and 0x18
     mipi_dsi_hal_phy_write_register(hal, 0x19, 0x30);
     mipi_dsi_hal_phy_write_register(hal, 0x17, pll_N - 1);
