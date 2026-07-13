@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -272,7 +272,6 @@ esp_err_t Storage::findItem(uint8_t nsIndex, ItemType datatype, const char* key,
 esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize, VerOffset chunkStart)
 {
     uint8_t chunkCount = 0;
-    TUsedPageList usedPages;
     size_t remainingSize = dataSize;
     size_t offset = 0;
     esp_err_t err = ESP_OK;
@@ -328,13 +327,6 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
             NVS_ASSERT_OR_RETURN(err != ESP_ERR_NVS_PAGE_FULL, err);
             break;
         } else {
-            UsedPageNode* node = new (std::nothrow) UsedPageNode();
-            if(!node) {
-                err = ESP_ERR_NO_MEM;
-                break;
-            }
-            node->mPage = &page;
-            usedPages.push_back(node);
             if(remainingSize || (tailroom - chunkSize) < Page::ENTRY_SIZE) {
                 if(page.state() != Page::PageState::FULL) {
                     err = page.markFull();
@@ -364,13 +356,33 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
     } while(1);
 
     if(err != ESP_OK) {
-        /* Anything failed, then we should erase all the written chunks*/
-        int ii=0;
-        for(auto it = std::begin(usedPages); it != std::end(usedPages); it++) {
-            it->mPage->eraseItem(nsIndex, ItemType::BLOB_DATA, key, ii++);
+        // As the write was unsuccessful, we have to erase all the BLOB_DATA chunks written so far
+        // They range from static_cast<uint8_t> (chunkStart) to static_cast<uint8_t> (chunkStart) + chunkCount
+        // Space reclaim may happened on any of the pages used to write chunks, so the cleanup is locating the
+        // chunks via findItem before attempting to delete
+
+        esp_err_t findErr;
+        Item item;
+        size_t itemIndex = 0;
+        Page* findPage = nullptr;
+
+        uint8_t chunkMin = static_cast<uint8_t> (chunkStart);
+        uint8_t chunkMax = static_cast<uint8_t> (chunkStart) + chunkCount;
+
+        for(uint8_t chunkIndex = chunkMin; chunkIndex < chunkMax; chunkIndex++) {
+            findErr = findItem(nsIndex, ItemType::BLOB_DATA, key, findPage, item, chunkIndex, nvs::VerOffset::VER_ANY, &itemIndex);
+            if(findErr != ESP_OK) {
+                continue;
+            }
+
+            // Erase the entry
+            findErr = findPage->eraseEntryAndSpan(itemIndex);
+            if(findErr != ESP_OK) {
+                continue;
+            }
         }
     }
-    usedPages.clearAndFreeNodes();
+
     return err;
 }
 
