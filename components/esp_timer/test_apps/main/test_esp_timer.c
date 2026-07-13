@@ -6,6 +6,7 @@
 #include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <time.h>
 #include <sys/time.h>
@@ -504,33 +505,11 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
        overflow the internal string buffer if the
        length calculation is not correct.
     */
-#if CONFIG_IDF_TARGET_LINUX
-    const int NUM_TIMERS = 200;
-    esp_timer_handle_t timers[NUM_TIMERS];
-
-    for (int i = 0; i < NUM_TIMERS; ++i) {
-        char name[30];
-        snprintf(name, sizeof(name), "test_timer_number_%d", i);
-        esp_timer_create_args_t timer_args = {
-            .callback = &empty_cb,
-            .arg = NULL,
-            .name = name
-        };
-        TEST_ESP_OK(esp_timer_create(&timer_args, &timers[i]));
-    }
-
-    esp_timer_dump(stdout);
-
-    for (int i = 0; i < NUM_TIMERS; ++i) {
-        TEST_ESP_OK(esp_timer_delete(timers[i]));
-    }
-#else
     enum {
         INACTIVE_TIMER_COUNT = 64,
         NUM_TIMERS = 256,
     };
     const uint64_t long_period = (1ULL << 56) - 1;
-    const uint64_t long_alarm = (uint64_t)esp_timer_get_time() + 1000000000000ULL;
     /* Keep large test buffers off the Unity task stack on smaller targets. */
     static esp_timer_handle_t inactive_timers[INACTIVE_TIMER_COUNT];
     static char inactive_names[INACTIVE_TIMER_COUNT][30];
@@ -552,7 +531,7 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
             .name = "dump_long_line_timer",
         };
         TEST_ESP_OK(esp_timer_create(&timer_args, &timers[i]));
-        TEST_ESP_OK(esp_timer_start_periodic_at(timers[i], long_period, long_alarm + i));
+        TEST_ESP_OK(esp_timer_start_periodic(timers[i], long_period));
     }
 
     static char dump_buf[4096];
@@ -564,7 +543,9 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
     fclose(stream);
     TEST_ASSERT_NOT_NULL(strstr(dump_buf, "Timer stats:"));
     TEST_ASSERT_NOT_NULL(strstr(dump_buf, "72057594037927935"));
+#if !CONFIG_IDF_TARGET_LINUX
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+#endif
 
     for (size_t i = 0; i < NUM_TIMERS; ++i) {
         TEST_ESP_OK(esp_timer_stop(timers[i]));
@@ -574,7 +555,6 @@ TEST_CASE("Can dump esp_timer stats", "[esp_timer]")
     for (size_t i = 0; i < INACTIVE_TIMER_COUNT; ++i) {
         TEST_ESP_OK(esp_timer_delete(inactive_timers[i]));
     }
-#endif
 }
 
 typedef struct {
