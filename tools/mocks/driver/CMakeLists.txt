@@ -16,6 +16,13 @@ set(include_dirs
     "${original_driver_dir}/i2c/include"
     "${IDF_PATH}/components/esp_driver_usb_serial_jtag/include")
 
+list(APPEND include_dirs
+     "${IDF_PATH}/components/esp_hal_gpio/include"
+     "${IDF_PATH}/components/esp_hal_gpio/linux/include"
+     "${IDF_PATH}/components/esp_hal_gpspi/include"
+     "${IDF_PATH}/components/esp_hal_rmt/include"
+     "${IDF_PATH}/components/esp_hal_i2c/include")
+
 # Note: "hal" and "soc" are only required for corresponding header files and their definitions
 # here, they don't provide functionality when built for running on the host.
 idf_component_mock(INCLUDE_DIRS ${include_dirs}
