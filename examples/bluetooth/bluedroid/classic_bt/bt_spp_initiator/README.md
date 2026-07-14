@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 | ESP32-S31 |
 | ----------------- | ----- | --------- |
 
-# ESP-IDF BT-SPP-INITATOR demo
+# ESP-IDF BT-SPP-INITIATOR demo
 
 This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**) to create an SPP initiator which performs as a client. we aggregate **Secure Simple Pair** (**SSP**) into this demo to show how to use SPP when creating your own APPs. We also provide the demo `bt_spp_acceptor` or the demo `bt_spp_vfs_acceptor` to create an SPP acceptor which performs as a server. In fact, you can create SPP acceptors and SPP initiators on a single device at the same time.
 
@@ -45,7 +45,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 After the program starts, the example will initiate a Bluetooth discovery procedure and filter out the peer device by the name in the EIR(Extended Inquiry Response). After discovering the SPP service, it will connect to the SPP acceptor and send data. The example will calculate the data rate or print the sent data after the SPP connection is established.
 ### Example Output
 
-When you run this example and the IO capability is `ESP_IO_CAP_IO` or `ESP_IO_CAP_IN` , the commands help table prints the following at the very beginning:
+When you run this example and the IO capability is `ESP_IO_CAP_IO` or `ESP_IO_CAP_IN`, the commands help table prints the following at the very beginning:
 
 ```
 ########################################################################
@@ -114,7 +114,7 @@ Whether you should passkey or confirm the number also depends on the IO capabili
 
 ## Example Breakdown
 
-To clearly show how the SSP aggregate with the SPP , we use the Commands and Effects scheme to illustrate the process of secure paring and connection establishment.
+To clearly show how the SSP aggregate with the SPP, we use the Commands and Effects scheme to illustrate the process of secure paring and connection establishment.
 
 - The example will respond to user command through UART console. Please go to `console_uart.c`  for the configuration details.
 
