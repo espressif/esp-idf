@@ -250,8 +250,7 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 
     // erase the partition
     err = part->erase_range(0, part->get_size());
-
-    // No need to delete the partition here, as it is managed by the NVSPartitionManager.
+    delete part;
     return err;
 }
 
