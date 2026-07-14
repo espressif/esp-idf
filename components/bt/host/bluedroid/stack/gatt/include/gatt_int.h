@@ -74,6 +74,20 @@ typedef UINT8 tGATT_SEC_ACTION;
 #define GATT_AUTH_SIGN_MASK     0x80  /*0x1000-0000*/
 #define GATT_AUTH_SIGN_LEN      12
 
+/* Only Write Command (0x52) and Signed Write Command (0xD2) may set the
+ * command/signature bits in the top two MSBs; all other opcodes must be
+ * strictly below GATT_OP_CODE_MAX with those bits clear. */
+static inline BOOLEAN gatt_is_valid_att_opcode(UINT8 op_code)
+{
+    if (op_code == GATT_CMD_WRITE || op_code == GATT_SIGN_CMD_WRITE) {
+        return TRUE;
+    }
+    if (op_code & GATT_WRITE_CMD_MASK) {
+        return FALSE;
+    }
+    return op_code < GATT_OP_CODE_MAX;
+}
+
 #define GATT_HDR_SIZE           3 /* 1B opcode + 2B handle */
 
 /* ATT Read By Type Response: Length field is 1 octet (max 255). */
@@ -301,6 +315,11 @@ typedef struct {
     UINT8            op_code;
     UINT8            status;
     UINT8            cback_cnt[GATT_MAX_APPS];
+#if (BLE_EATT_INCLUDED == TRUE)
+    UINT16           eatt_lcid;     /* EATT bearer the request arrived on, so an
+                                     * async server response is routed back to it
+                                     * after eatt_rx_bearer has been cleared. */
+#endif
 } tGATT_SR_CMD;
 
 #define     GATT_CH_CLOSE               0
@@ -390,6 +409,13 @@ typedef struct {
     UINT32          trans_id;
 
     UINT16          att_lcid;           /* L2CAP channel ID for ATT */
+#if (BLE_EATT_INCLUDED == TRUE)
+    UINT16          eatt_rx_bearer;     /* active EATT bearer for RX/response routing */
+    UINT16          eatt_tx_bearer;     /* transient TX bearer override */
+    UINT16          eatt_ind_bearer;    /* EATT bearer an indication arrived on, so a
+                                         * deferred app confirmation is sent back on it */
+    UINT16          eatt_att_mtu;       /* negotiated L2CAP MTU for EATT bearers */
+#endif
     UINT16          payload_size;
 
     tGATT_CH_STATE  ch_state;
@@ -637,6 +663,19 @@ extern UINT16 gatt_profile_find_conn_id_by_bd_addr(BD_ADDR bda);
 
 
 /* Functions provided by att_protocol.c */
+#if (BLE_EATT_INCLUDED == TRUE)
+extern UINT16 gatt_get_att_mtu(tGATT_TCB *p_tcb);
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+extern UINT16 gatt_eatt_mtu_for_client_op(BD_ADDR bd_addr, UINT8 op_code, UINT16 legacy_mtu);
+#define GATT_CL_ATT_MTU(p_tcb, op) \
+    gatt_eatt_mtu_for_client_op((p_tcb)->peer_bda, (op), (p_tcb)->payload_size)
+#else
+#define GATT_CL_ATT_MTU(p_tcb, op) ((p_tcb)->payload_size)
+#endif
+#else
+#define gatt_get_att_mtu(p_tcb) ((p_tcb)->payload_size)
+#define GATT_CL_ATT_MTU(p_tcb, op) ((p_tcb)->payload_size)
+#endif
 extern tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code, tGATT_CL_MSG *p_msg);
 extern BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg);
 extern tGATT_STATUS attp_send_sr_msg (tGATT_TCB *p_tcb, BT_HDR *p_msg);
@@ -755,7 +794,7 @@ extern UINT8 gatt_act_send_browse(tGATT_TCB *p_tcb, UINT16 index, UINT8 op, UINT
 extern tGATT_CLCB *gatt_cmd_dequeue(tGATT_TCB *p_tcb, UINT8 *p_opcode);
 extern BOOLEAN gatt_cmd_enq(tGATT_TCB *p_tcb, UINT16 clcb_idx, BOOLEAN to_send, UINT8 op_code, BT_HDR *p_buf);
 extern void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
-        UINT16 len, UINT8 *p_data);
+                                           UINT16 len, UINT8 *p_data, UINT16 eatt_bearer_lcid);
 extern void gatt_send_queue_write_cancel (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, tGATT_EXEC_FLAG flag);
 
 /* gatt_auth.c */

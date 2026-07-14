@@ -34,6 +34,9 @@
 #include "stack/gattdefs.h"
 #include "stack/sdp_api.h"
 #include "btm_int.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 /* check if [x, y] and [a, b] have overlapping range */
 #define GATT_VALIDATE_HANDLE_RANGE(x, y, a, b)   (y >= a && x <= b)
 
@@ -1301,6 +1304,20 @@ void gatt_rsp_timeout(TIMER_LIST_ENT *p_tle)
             p_clcb->retry_count < GATT_REQ_RETRY_LIMIT) {
         UINT8 rsp_code;
         GATT_TRACE_WARNING("gatt_rsp_timeout retry discovery primary service");
+#if (BLE_EATT_INCLUDED == TRUE)
+        /* Operations sent over an EATT bearer are tracked in the EATT bearer
+         * table, not the legacy cl_cmd_q. Calling gatt_cmd_dequeue for them would
+         * consume an unrelated legacy command and report "out of sync". Release
+         * the EATT bearer and retry directly (gatt_act_discovery re-acquires a
+         * bearer via attp_cl_send_cmd). */
+        if (gatt_eatt_release_bearer_by_clcb(p_clcb->p_tcb->peer_bda, p_clcb->clcb_idx)) {
+            p_clcb->retry_count++;
+#if (GATTC_INCLUDED == TRUE)
+            gatt_act_discovery(p_clcb);
+#endif  ///GATTC_INCLUDED == TRUE
+            return;
+        }
+#endif  ///BLE_EATT_INCLUDED == TRUE
         if (p_clcb != gatt_cmd_dequeue(p_clcb->p_tcb, &rsp_code)) {
             GATT_TRACE_ERROR("gatt_rsp_timeout command queue out of sync, disconnect");
         } else {
@@ -1336,6 +1353,16 @@ void gatt_ind_ack_timeout(TIMER_LIST_ENT *p_tle)
         p_tcb->ind_count = 0;
     }
 
+#if (BLE_EATT_INCLUDED == TRUE)
+    if (p_tcb != NULL) {
+        /* Auto-ack on the bearer the indication arrived on (0 == legacy ATT). */
+        p_tcb->eatt_tx_bearer = p_tcb->eatt_ind_bearer;
+        attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+        p_tcb->eatt_tx_bearer = 0;
+        p_tcb->eatt_ind_bearer = 0;
+        return;
+    }
+#endif
     attp_send_cl_msg(((tGATT_TCB *)p_tle->param), 0, GATT_HANDLE_VALUE_CONF, NULL);
 }
 #endif // (GATTC_INCLUDED == TRUE)

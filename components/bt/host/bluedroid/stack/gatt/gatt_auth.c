@@ -28,6 +28,9 @@
 #include <string.h>
 
 #include "gatt_int.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "stack/gatt_api.h"
 #include "btm_int.h"
 
@@ -252,6 +255,9 @@ void gatt_notify_enc_cmpl(BD_ADDR bd_addr)
                 }
             }
         }
+#if (BLE_EATT_INCLUDED == TRUE)
+        gatt_eatt_on_encrypted(bd_addr);
+#endif
     } else {
         GATT_TRACE_DEBUG("notify GATT for encryption completion of unknown device");
     }

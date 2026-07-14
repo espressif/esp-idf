@@ -31,6 +31,9 @@
 #include "stack/gatt_api.h"
 #include "gatt_int.h"
 #include "stack/l2c_api.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "btm_int.h"
 #include "stack/sdpdefs.h"
 #include "stack/sdp_api.h"
@@ -636,6 +639,13 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
         return GATT_BUSY;
     } else {
 
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        /* Route the indication over an EATT bearer (if any) so it uses the EATT
+         * MTU instead of the legacy 23-byte ATT MTU. Set transiently and cleared
+         * after the send; all GATT TX runs on the single BTU task. */
+        UINT16 ind_bearer = gatt_eatt_get_server_tx_bearer(p_tcb->peer_bda);
+        p_tcb->eatt_tx_bearer = (ind_bearer != L2CAP_ATT_CID) ? ind_bearer : 0;
+#endif
         if ( (p_msg = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_IND, (tGATT_SR_MSG *)&indication)) != NULL) {
             cmd_status = attp_send_sr_msg (p_tcb, p_msg);
 
@@ -644,6 +654,9 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
                 gatt_start_conf_timer(p_tcb);
             }
         }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        p_tcb->eatt_tx_bearer = 0;
+#endif
     }
     return cmd_status;
 }
@@ -691,12 +704,22 @@ tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
         memcpy (notif.value, p_val, val_len);
         notif.auth_req = GATT_AUTH_REQ_NONE;
 
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        /* Route the notification over an EATT bearer (if any) so it uses the EATT
+         * MTU instead of the legacy 23-byte ATT MTU. Set transiently and cleared
+         * after the send; all GATT TX runs on the single BTU task. */
+        UINT16 notif_bearer = gatt_eatt_get_server_tx_bearer(p_tcb->peer_bda);
+        p_tcb->eatt_tx_bearer = (notif_bearer != L2CAP_ATT_CID) ? notif_bearer : 0;
+#endif
         if ((p_buf = attp_build_sr_msg (p_tcb, GATT_HANDLE_VALUE_NOTIF, (tGATT_SR_MSG *)&notif))
                 != NULL) {
             cmd_sent = attp_send_sr_msg (p_tcb, p_buf);
         } else {
             cmd_sent = GATT_NO_RESOURCES;
         }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        p_tcb->eatt_tx_bearer = 0;
+#endif
     }
     return cmd_sent;
 }
@@ -1212,7 +1235,17 @@ tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle)
 
             GATT_TRACE_DEBUG ("notif_count=%d ", p_tcb->ind_count);
             /* send confirmation now */
+#if (BLE_EATT_INCLUDED == TRUE)
+            /* Route the confirmation back on the EATT bearer the indication came
+             * in on (0 == legacy ATT). eatt_rx_bearer was cleared after the
+             * indication was delivered, so use the saved eatt_ind_bearer. */
+            p_tcb->eatt_tx_bearer = p_tcb->eatt_ind_bearer;
             ret = attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, (tGATT_CL_MSG *)&handle);
+            p_tcb->eatt_tx_bearer = 0;
+            p_tcb->eatt_ind_bearer = 0;
+#else
+            ret = attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, (tGATT_CL_MSG *)&handle);
+#endif
 
             p_tcb->ind_count = 0;
 
@@ -1779,12 +1812,24 @@ tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HLV *tupl
 
     notif.auth_req = GATT_AUTH_REQ_NONE;
 
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    /* Route the multi-value notification over an EATT bearer (if any) so it uses
+     * the EATT MTU instead of the legacy 23-byte ATT MTU, and so gatt_get_att_mtu()
+     * (used for buffer sizing in attp_build_sr_msg) matches the bearer it is sent
+     * on. Set transiently and cleared after the send; all GATT TX runs on the
+     * single BTU task. Mirrors GATTS_HandleValueNotification. */
+    UINT16 mv_bearer = gatt_eatt_get_server_tx_bearer(p_tcb->peer_bda);
+    p_tcb->eatt_tx_bearer = (mv_bearer != L2CAP_ATT_CID) ? mv_bearer : 0;
+#endif
     p_buf = attp_build_sr_msg (p_tcb, GATT_HANDLE_MULTI_VALUE_NOTIF, (tGATT_SR_MSG *)&notif);
     if (p_buf != NULL) {
         cmd_sent = attp_send_sr_msg (p_tcb, p_buf);
     } else {
         cmd_sent = GATT_NO_RESOURCES;
     }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    p_tcb->eatt_tx_bearer = 0;
+#endif
 
     return cmd_sent;
 }
@@ -1794,5 +1839,23 @@ tGATT_STATUS GATTS_ShowLocalDatabase(void)
     gatts_show_local_database();
     return GATT_SUCCESS;
 }
+
+#if (BLE_EATT_INCLUDED == TRUE)
+void GATT_EattSetChanNum(UINT8 num_chan)
+{
+    gatt_eatt_set_chan_num(num_chan);
+}
+
+BOOLEAN GATT_EattSetDefaultBearer(UINT16 conn_id, UINT16 lcid)
+{
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    return gatt_eatt_set_default_bearer(conn_id, lcid);
+#else
+    UNUSED(conn_id);
+    UNUSED(lcid);
+    return FALSE;
+#endif
+}
+#endif
 
 #endif

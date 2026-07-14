@@ -287,6 +287,7 @@ typedef enum {
     ESP_GAP_BLE_UTP_RECEIVE_EVT,                                 /*!< When UTP data is received, the event comes */
     ESP_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS_CMPL_EVT,           /*!< When CS set security requirements complete, the event comes */
     ESP_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS_CMPL_EVT,   /*!< When CS set default security requirements complete, the event comes */
+    ESP_GAP_BLE_EATT_EVT,                                        /*!< When an EATT bearer is connected or disconnected, the event comes. Requires `CONFIG_BT_BLE_EATT_ENABLE` */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -3228,6 +3229,18 @@ typedef union {
         esp_ble_cs_step_info *step_info; /*!< steps information in the CS subevent */
     } cs_subevt_result_continue; /*!< Event parameter of ESP_GAP_BLE_CS_SUBEVENT_RESULT_CONTINUE_EVT */
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+
+    /**
+     * @brief ESP_GAP_BLE_EATT_EVT
+     *
+     * Requires `CONFIG_BT_BLE_EATT_ENABLE`. EATT bearers are established automatically
+     * after the ACL link is encrypted.
+     */
+    struct ble_eatt_evt {
+        uint16_t conn_id;   /*!< GATT connection id of the underlying ACL link. 0xFFFF (GATT_INVALID_CONN_ID) if not yet available. Note: 0 is a valid conn_id (the first BLE connection) */
+        uint8_t status;     /*!< EATT bearer status. 0: connected; 1: disconnected */
+        uint16_t cid;       /*!< Local L2CAP channel identifier (CID) of the EATT bearer */
+    } eatt_evt;             /*!< Event parameter of ESP_GAP_BLE_EATT_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -5166,6 +5179,53 @@ esp_err_t esp_ble_cs_set_procedure_params(esp_ble_cs_set_proc_params *procedure_
  *                  - other  : failed
  */
 esp_err_t esp_ble_cs_procedure_enable(esp_ble_cs_procedure_enable_params *procedure_enable_params);
+
+/**
+ * @brief       Set the number of EATT bearers to establish per connection
+ *
+ *              Requires `CONFIG_BT_BLE_EATT_ENABLE`.
+ *              EATT bearers are created automatically after the link is encrypted.
+ *              Call this function before the bearers are established. The value must
+ *              not exceed `CONFIG_BT_BLE_EATT_CHAN_NUM` (compile-time maximum).
+ *
+ *              This API is intentionally synchronous (does not dispatch through the
+ *              BTC task): it only stores the requested bearer count for future
+ *              connections and returns validation errors immediately.
+ *
+ * @param[in]   num_chan:  Number of EATT bearers to establish per connection
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: `num_chan` is 0 or greater than
+ *                `CONFIG_BT_BLE_EATT_CHAN_NUM`
+ *
+ * @note        Defined only when `CONFIG_BT_BLE_EATT_ENABLE` is set; calling it
+ *              in a build with EATT disabled fails at link time (no definition).
+ */
+esp_err_t esp_ble_eatt_set_chan_num(uint8_t num_chan);
+
+/**
+ * @brief       Set the preferred EATT bearer for GATT client operations on a connection
+ *
+ *              Requires `CONFIG_BT_BLE_EATT_ENABLE`.
+ *              By default the stack selects an available bearer automatically.
+ *              Pass `cid` as 0 to restore automatic selection.
+ *
+ *              This API is intentionally synchronous (does not dispatch through the
+ *              BTC task): it updates the preferred bearer for GATT client TX routing
+ *              and returns validation errors immediately.
+ *
+ * @param[in]   conn_id:  GATT connection id
+ * @param[in]   cid:      Local L2CAP channel identifier (CID) of the preferred EATT bearer
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: invalid `conn_id` or `cid`
+ *
+ * @note        Defined only when `CONFIG_BT_BLE_EATT_ENABLE` is set; calling it
+ *              in a build with EATT disabled fails at link time (no definition).
+ */
+esp_err_t esp_ble_eatt_set_default_bearer(uint16_t conn_id, uint16_t cid);
 
 #ifdef __cplusplus
 }

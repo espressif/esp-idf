@@ -29,6 +29,9 @@
 #include <string.h>
 #include "osi/allocator.h"
 #include "gatt_int.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "l2c_int.h"
 
 #define GATT_WRITE_LONG_HDR_SIZE    5 /* 1 opcode + 2 handle + 2 offset */
@@ -244,7 +247,7 @@ void gatt_act_write (tGATT_CLCB *p_clcb, UINT8 sec_act)
             break;
 
         case GATT_WRITE:
-            if (p_attr->len <= (p_tcb->payload_size - GATT_HDR_SIZE)) {
+            if (p_attr->len <= (GATT_CL_ATT_MTU(p_tcb, GATT_REQ_WRITE) - GATT_HDR_SIZE)) {
                 p_clcb->s_handle = p_attr->handle;
 
                 rt = gatt_send_write_msg(p_tcb,
@@ -359,8 +362,8 @@ void gatt_send_prepare_write(tGATT_TCB  *p_tcb, tGATT_CLCB *p_clcb)
     GATT_TRACE_DEBUG("gatt_send_prepare_write type=0x%x", type );
     to_send = p_attr->len - p_attr->offset;
 
-    if (to_send > (p_tcb->payload_size - GATT_WRITE_LONG_HDR_SIZE)) { /* 2 = UINT16 offset bytes  */
-        to_send = p_tcb->payload_size - GATT_WRITE_LONG_HDR_SIZE;
+    if (to_send > (GATT_CL_ATT_MTU(p_tcb, GATT_REQ_PREPARE_WRITE) - GATT_WRITE_LONG_HDR_SIZE)) { /* 2 = UINT16 offset bytes  */
+        to_send = GATT_CL_ATT_MTU(p_tcb, GATT_REQ_PREPARE_WRITE) - GATT_WRITE_LONG_HDR_SIZE;
     }
 
     p_clcb->s_handle = p_attr->handle;
@@ -722,6 +725,13 @@ void gatt_process_notification(tGATT_TCB *p_tcb, UINT8 op_code,
 
         /* start a timer for app confirmation */
         if (p_tcb->ind_count > 0) {
+#if (BLE_EATT_INCLUDED == TRUE)
+            /* Remember the bearer this indication arrived on (0 == legacy ATT)
+             * so the app's deferred confirmation is routed back to it; by the
+             * time GATTC_SendHandleValueConfirm() runs, eatt_rx_bearer is
+             * already cleared. */
+            p_tcb->eatt_ind_bearer = p_tcb->eatt_rx_bearer;
+#endif
             gatt_start_ind_ack_timer(p_tcb);
         } else { /* no app to indicate, or invalid handle */
             attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
@@ -797,11 +807,11 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
 
     STREAM_TO_UINT8(value_len, p);
 
-    if ((value_len > (p_tcb->payload_size - 2)) || (value_len > (len - 1))  ) {
+    if ((value_len > (gatt_get_att_mtu(p_tcb) - 2)) || (value_len > (len - 1))  ) {
         /* this is an error case that server's response containing a value length which is larger than MTU-2
            or value_len > message total length -1 */
         GATT_TRACE_ERROR("gatt_process_read_by_type_rsp: Discard response op_code=%d value_len=%d > (MTU-2=%d or msg_len-1=%d)",
-                         op_code, value_len, (p_tcb->payload_size - 2), (len - 1));
+                         op_code, value_len, (gatt_get_att_mtu(p_tcb) - 2), (len - 1));
         gatt_end_operation(p_clcb, GATT_ERROR, NULL);
         return;
     }
@@ -891,7 +901,7 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             /* value_len is the length of current record's value; use it to avoid overread when multiple records present */
             p_clcb->counter = value_len;
             p_clcb->s_handle = handle;
-            UINT16 max_rbtype_val_len = (p_clcb->p_tcb->payload_size - 4);
+            UINT16 max_rbtype_val_len = (gatt_get_att_mtu(p_clcb->p_tcb) - 4);
             if (max_rbtype_val_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
                 max_rbtype_val_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
             }
@@ -1000,7 +1010,7 @@ void gatt_process_read_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb,  UINT8 op_code,
 
                 /* send next request if needed  */
 
-                if (len == (p_tcb->payload_size - 1) && /* full packet for read or read blob rsp */
+                if (len == (gatt_get_att_mtu(p_tcb) - 1) && /* full packet for read or read blob rsp */
                         len + offset < GATT_MAX_ATTR_LEN) {
                     GATT_TRACE_DEBUG("full pkt issue read blob for remaining bytes old offset=%d len=%d new offset=%d",
                                      offset, len, p_clcb->counter);
@@ -1067,6 +1077,14 @@ void gatt_process_mtu_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT16 len, UINT
 {
     UINT16 mtu;
     tGATT_STATUS    status = GATT_SUCCESS;
+
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    if (p_tcb->eatt_rx_bearer != 0 && gatt_eatt_is_bearer(p_tcb->eatt_rx_bearer)) {
+        GATT_TRACE_ERROR("ignore MTU response on EATT bearer");
+        gatt_end_operation(p_clcb, GATT_ERROR, NULL);
+        return;
+    }
+#endif
 
     if (len < GATT_MTU_RSP_MIN_LEN) {
         GATT_TRACE_ERROR("invalid MTU response PDU received, discard.");
@@ -1187,21 +1205,51 @@ BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb)
 **
 *******************************************************************************/
 void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
-                                    UINT16 len, UINT8 *p_data)
+                                    UINT16 len, UINT8 *p_data, UINT16 eatt_bearer_lcid)
 {
     tGATT_CLCB   *p_clcb = NULL;
-    UINT8        rsp_code;
+    UINT8        rsp_code = 0;
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    UINT8        cmd_code = 0;
+    UINT16       clcb_idx = 0;
+#else
+    UNUSED(eatt_bearer_lcid);
+#endif
 
     if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF &&
         op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
-        p_clcb = gatt_cmd_dequeue(p_tcb, &rsp_code);
-
-        rsp_code = gatt_cmd_to_rsp_code(rsp_code);
+        p_clcb = NULL;
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+        if (eatt_bearer_lcid != 0) {
+            if (gatt_eatt_release_bearer(p_tcb->peer_bda, eatt_bearer_lcid, &cmd_code, &clcb_idx)) {
+                p_clcb = gatt_clcb_find_by_idx(clcb_idx);
+                if (p_clcb != NULL) {
+                    rsp_code = gatt_cmd_to_rsp_code(cmd_code);
+                }
+            }
+        }
+#endif
+        if (p_clcb == NULL
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+            && eatt_bearer_lcid == 0
+#endif
+        ) {
+            p_clcb = gatt_cmd_dequeue(p_tcb, &rsp_code);
+            rsp_code = gatt_cmd_to_rsp_code(rsp_code);
+        }
 
         if (p_clcb == NULL || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
             GATT_TRACE_WARNING ("ATT - Ignore wrong response. Receives (%02x) \
                                 Request(%02x) Ignored", op_code, rsp_code);
-
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+            /* On an EATT bearer the bearer was released above to locate the
+             * pending request. Since this response is wrong/unexpected, restore
+             * the bearer's busy state so the still-pending request keeps it and
+             * completes on the correct response or the response timer. */
+            if (p_clcb != NULL && eatt_bearer_lcid != 0) {
+                gatt_eatt_mark_busy(p_tcb->peer_bda, eatt_bearer_lcid, cmd_code, clcb_idx);
+            }
+#endif
             return;
         } else {
             btu_stop_timer (&p_clcb->rsp_timer_ent);
@@ -1210,8 +1258,8 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
     }
     /* the size of the message may not be bigger than the local max PDU size*/
     /* The message has to be smaller than the agreed MTU, len does not count op_code */
-    if (len >= p_tcb->payload_size) {
-        GATT_TRACE_ERROR("invalid response/indicate pkt size: %d, PDU size: %d", len + 1, p_tcb->payload_size);
+    if (len >= gatt_get_att_mtu(p_tcb)) {
+        GATT_TRACE_ERROR("invalid response/indicate pkt size: %d, PDU size: %d", len + 1, gatt_get_att_mtu(p_tcb));
         if (op_code != GATT_HANDLE_VALUE_NOTIF && op_code != GATT_HANDLE_VALUE_IND &&
             op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
             gatt_end_operation(p_clcb, GATT_ERROR, NULL);
@@ -1272,7 +1320,12 @@ void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
 
     if (op_code != GATT_HANDLE_VALUE_IND && op_code != GATT_HANDLE_VALUE_NOTIF &&
         op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) {
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+        if (eatt_bearer_lcid == 0)
+#endif
+        {
         gatt_cl_send_next_cmd_inq(p_tcb);
+        }
     }
 }
 
