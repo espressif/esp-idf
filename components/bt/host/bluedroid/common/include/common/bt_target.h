@@ -246,6 +246,14 @@
 #define BLE_50_FEATURE_SUPPORT   FALSE
 #endif
 
+/* Peripheral dual local-identity bond isolation via Host-internal pseudo
+ * address. Guarded so default builds keep the legacy single-bond behavior. */
+#if (UC_BT_BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#define BLE_PERIPH_PSEUDO_ADDR_BOND   TRUE
+#else
+#define BLE_PERIPH_PSEUDO_ADDR_BOND   FALSE
+#endif
+
 #if (UC_BT_BLE_ENABLED ==TRUE)
 #if (UC_BT_BLE_42_FEATURES_SUPPORTED == TRUE || BLE_50_FEATURE_SUPPORT == FALSE)
 #define BLE_42_FEATURE_SUPPORT   TRUE

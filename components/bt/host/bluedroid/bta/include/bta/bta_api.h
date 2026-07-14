@@ -2531,12 +2531,19 @@ extern void BTA_DmBleConfirmReply(BD_ADDR bd_addr, BOOLEAN accept);
 **                  dev_type         - Remote device's device type.
 **                  auth_mode        - auth mode
 **                  addr_type        - LE device address type.
+**                  is_pseudo_bond   - (pseudo bond only) TRUE when NVS section is
+**                                     keyed by a Host pseudo; tagged on BTU thread.
 **
 ** Returns          void
 **
 *******************************************************************************/
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+extern void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode,
+                               tBT_DEVICE_TYPE dev_type, BOOLEAN is_pseudo_bond);
+#else
 extern void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode,
                                tBT_DEVICE_TYPE dev_type);
+#endif
 
 
 /*******************************************************************************
