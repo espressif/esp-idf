@@ -317,6 +317,26 @@ if(CONFIG_BT_BLE_FEAT_ISO_EN)
     )
 endif()
 
+if(CONFIG_BT_BLE_L2CAP_COC_ENABLED)
+    list(APPEND bluedroid_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/stack/l2cap/l2c_ble_le_coc.c"
+        "${CMAKE_CURRENT_LIST_DIR}/btc/profile/std/ble_l2cap/btc_ble_l2cap.c"
+        "${CMAKE_CURRENT_LIST_DIR}/api/esp_ble_l2cap_api.c"
+    )
+endif()
+
+if(CONFIG_BT_BLE_L2CAP_ENHANCED_COC)
+    list(APPEND bluedroid_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/stack/l2cap/l2c_ble_ecfc.c"
+    )
+endif()
+
+if(CONFIG_BT_BLE_EATT_ENABLE)
+    list(APPEND bluedroid_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/stack/gatt/gatt_eatt.c"
+    )
+endif()
+
 if(CONFIG_BT_BLE_FEAT_CTE_EN)
     list(APPEND bluedroid_host_srcs
         "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_ble_cte.c"

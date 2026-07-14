@@ -26,6 +26,9 @@
 #include "btc_gap_ble.h"
 #include "btc_iso_ble.h"
 #include "btc_ble_cte.h"
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+#include "btc_ble_l2cap.h"
+#endif
 #include "btc/btc_dm.h"
 #include "bta/bta_gatt_api.h"
 #if CLASSIC_BT_INCLUDED
@@ -273,6 +276,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if (BLE_FEAT_CTE_EN == TRUE)
     [BTC_PID_BLE_CTE]           = {btc_ble_cte_call_handler,                    btc_ble_cte_cb_handler                   },
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    [BTC_PID_BLE_L2CAP]         = {btc_ble_l2cap_call_handler,                  btc_ble_l2cap_cb_handler                 },
+#endif // #if (BLE_L2CAP_COC_INCLUDED == TRUE)
 };
 
 /*****************************************************************************

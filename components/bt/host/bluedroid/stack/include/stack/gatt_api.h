@@ -1278,6 +1278,11 @@ extern tGATT_STATUS GATTS_HandleMultiValueNotification (UINT16 conn_id, tGATT_HL
 *******************************************************************************/
 extern tGATT_STATUS GATTS_ShowLocalDatabase(void);
 
+#if (BLE_EATT_INCLUDED == TRUE)
+extern void GATT_EattSetChanNum(UINT8 num_chan);
+extern BOOLEAN GATT_EattSetDefaultBearer(UINT16 conn_id, UINT16 lcid);
+#endif
+
 #ifdef __cplusplus
 
 }
