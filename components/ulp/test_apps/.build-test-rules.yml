@@ -1,6 +1,12 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+.ulp_legacy_buildv2_disable: &ulp_legacy_buildv2_disable
+  if: IDF_BUILD_V2 == "1"
+  reason: Legacy ULP apps are covered by CMake v1; buildv2 covers full_subproject ULP apps.
+
 components/ulp/test_apps/lp_core/lp_core_basic_tests:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
     - if: CONFIG_NAME == "xtal" and SOC_CLK_LP_FAST_SUPPORT_XTAL != 1
@@ -20,6 +26,8 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
 
 
 components/ulp/test_apps/lp_core/lp_core_gpio_wakeup_tests:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0) and (SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED == 1)
   depends_components:
@@ -31,6 +39,8 @@ components/ulp/test_apps/lp_core/lp_core_gpio_wakeup_tests:
 
 
 components/ulp/test_apps/lp_core/lp_core_hp_mem:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
   depends_components:
@@ -41,6 +51,8 @@ components/ulp/test_apps/lp_core/lp_core_hp_mem:
 
 
 components/ulp/test_apps/lp_core/lp_core_hp_uart:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: SOC_LP_CORE_SUPPORTED != 1
   depends_components:
@@ -51,6 +63,8 @@ components/ulp/test_apps/lp_core/lp_core_hp_uart:
 
 
 components/ulp/test_apps/ulp_fsm:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_ULP_FSM_SUPPORTED == 1
   depends_components:
@@ -61,6 +75,8 @@ components/ulp/test_apps/ulp_fsm:
 
 
 components/ulp/test_apps/ulp_riscv:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: SOC_RISCV_COPROC_SUPPORTED != 1
   depends_components:

@@ -6,12 +6,20 @@
     - esp_hw_support
     - esp_hal_pmu
 
+.ulp_legacy_buildv2_disable: &ulp_legacy_buildv2_disable
+  if: IDF_BUILD_V2 == "1"
+  reason: Legacy ULP apps are covered by CMake v1; buildv2 covers full_subproject ULP apps.
+
 examples/system/ulp/lp_core/build_system:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/debugging:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
   disable_test:
@@ -21,6 +29,8 @@ examples/system/ulp/lp_core/debugging:
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/gpio:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: SOC_DEEP_SLEEP_SUPPORTED != 1
   enable:
@@ -30,6 +40,8 @@ examples/system/ulp/lp_core/gpio:
     - esp_hal_gpio
 
 examples/system/ulp/lp_core/gpio_intr_pulse_counter:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_ULP_LP_UART_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1)
   <<: *ulp_default_depends
@@ -37,6 +49,8 @@ examples/system/ulp/lp_core/gpio_intr_pulse_counter:
     - esp_hal_gpio
 
 examples/system/ulp/lp_core/gpio_wakeup:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_RTCIO_PIN_COUNT > 0) and (SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED == 1) # TODO: [ESP32S31] IDF-15884 SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED not declared yet
   <<: *ulp_default_depends
@@ -45,16 +59,22 @@ examples/system/ulp/lp_core/gpio_wakeup:
     - esp_hal_gpio
 
 examples/system/ulp/lp_core/inter_cpu_critical_section/:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/interrupt:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/lp_adc:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: (SOC_LP_ADC_SUPPORTED != 1)
   <<: *ulp_default_depends
@@ -64,6 +84,8 @@ examples/system/ulp/lp_core/lp_adc:
     - esp_hal_uart
 
 examples/system/ulp/lp_core/lp_i2c:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_CORE_SUPPORT_I2C == 1 and (SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LP_CORE_SUPPORTED == 1)
   <<: *ulp_default_depends
@@ -71,11 +93,15 @@ examples/system/ulp/lp_core/lp_i2c:
     - esp_hal_i2c
 
 examples/system/ulp/lp_core/lp_mailbox:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/lp_spi:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -83,11 +109,15 @@ examples/system/ulp/lp_core/lp_spi:
     - esp_hal_gpspi
 
 examples/system/ulp/lp_core/lp_timer_interrupt:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: (SOC_LP_CORE_SUPPORTED != 1) or (SOC_LP_TIMER_SUPPORTED != 1)
   <<: *ulp_default_depends
 
 examples/system/ulp/lp_core/lp_touch:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED == 1 and (SOC_DEEP_SLEEP_SUPPORTED == 1 and SOC_LP_CORE_SUPPORTED == 1)
   <<: *ulp_default_depends
@@ -96,6 +126,8 @@ examples/system/ulp/lp_core/lp_touch:
     - esp_hal_touch_sens
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   <<: *ulp_default_depends
@@ -103,6 +135,8 @@ examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
     - esp_hal_uart
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   <<: *ulp_default_depends
@@ -110,6 +144,8 @@ examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
     - esp_hal_uart
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_print:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: (SOC_ULP_LP_UART_SUPPORTED != 1) or (SOC_DEEP_SLEEP_SUPPORTED != 1)
   <<: *ulp_default_depends
@@ -117,11 +153,15 @@ examples/system/ulp/lp_core/lp_uart/lp_uart_print:
     - esp_hal_uart
 
 examples/system/ulp/ulp_fsm/ulp:
+  disable+:
+    - *ulp_legacy_buildv2_disable
   disable:
     - if: SOC_ULP_FSM_SUPPORTED != 1
   <<: *ulp_default_depends
 
 examples/system/ulp/ulp_fsm/ulp_adc:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s3"]
       temporary: true
@@ -132,6 +172,8 @@ examples/system/ulp/ulp_fsm/ulp_adc:
     - esp_hal_ana_conv
 
 examples/system/ulp/ulp_riscv/adc:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -140,6 +182,8 @@ examples/system/ulp/ulp_riscv/adc:
     - esp_hal_ana_conv
 
 examples/system/ulp/ulp_riscv/ds18b20_onewire:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: IDF_TARGET == "esp32s2"
       temporary: true
@@ -149,6 +193,8 @@ examples/system/ulp/ulp_riscv/ds18b20_onewire:
     - esp_hal_gpio
 
 examples/system/ulp/ulp_riscv/gpio:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -156,6 +202,8 @@ examples/system/ulp/ulp_riscv/gpio:
     - esp_hal_gpio
 
 examples/system/ulp/ulp_riscv/gpio_interrupt:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -164,6 +212,8 @@ examples/system/ulp/ulp_riscv/gpio_interrupt:
     - esp_hal_gpio
 
 examples/system/ulp/ulp_riscv/gpio_pulse_counter:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -171,6 +221,8 @@ examples/system/ulp/ulp_riscv/gpio_pulse_counter:
     - esp_hal_gpio
 
 examples/system/ulp/ulp_riscv/i2c:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -178,11 +230,15 @@ examples/system/ulp/ulp_riscv/i2c:
     - esp_hal_i2c
 
 examples/system/ulp/ulp_riscv/interrupts:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
 
 examples/system/ulp/ulp_riscv/touch:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends
@@ -191,6 +247,8 @@ examples/system/ulp/ulp_riscv/touch:
     - esp_hal_touch_sens
 
 examples/system/ulp/ulp_riscv/uart_print:
+  disable:
+    - *ulp_legacy_buildv2_disable
   enable:
     - if: SOC_RISCV_COPROC_SUPPORTED == 1
   <<: *ulp_default_depends

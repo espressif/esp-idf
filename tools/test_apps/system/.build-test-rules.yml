@@ -194,6 +194,9 @@ tools/test_apps/system/ram_loadable_app:
       reason: cannot pass # TODO: IDF-15525
 
 tools/test_apps/system/rtc_mem_reserve:
+  disable:
+    - if: IDF_BUILD_V2 == "1"
+      reason: Legacy ULP apps are covered by CMake v1; buildv2 covers full_subproject ULP apps.
   enable:
     - if: IDF_TARGET in ["esp32p4"]
       reason: only P4 has a potential conflict due to using rtc mem for lp rom data/stack
