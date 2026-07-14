@@ -86,7 +86,6 @@ static void dfd_client_recv_status(struct bt_mesh_model *model,
     } else {
         switch (ctx->recv_op) {
             case BLE_MESH_DFD_OP_RECEIVERS_STATUS:
-            case BLE_MESH_DFD_OP_CAPABILITIES_GET:
             case BLE_MESH_DFD_OP_RECEIVERS_LIST:
             case BLE_MESH_DFD_OP_CAPABILITIES_STATUS:
             case BLE_MESH_DFD_OP_STATUS:
@@ -122,7 +121,7 @@ static void handle_receiver_status(struct bt_mesh_model *model,
     }
 
     if (status.receiver_status.status != BLE_MESH_DFD_SUCCESS) {
-        BT_ERR("StusErr:%d", status);
+        BT_ERR("StusErr:%d", status.receiver_status.status);
         return;
     }
 
@@ -142,8 +141,30 @@ static void handle_receiver_list(struct bt_mesh_model *model,
 
     dfd_status_t status = {0};
     status.receiver_list.entries_cnt = net_buf_simple_pull_le16(buf);
+
+    if (status.receiver_list.entries_cnt > CONFIG_BLE_MESH_DFD_CLI_SRV_TARGETS_MAX) {
+        BT_ERR("InvalidDfdSrvEntries:%d",status.receiver_list.entries_cnt);
+        return;
+    }
+
     status.receiver_list.first_index = net_buf_simple_pull_le16(buf);
-    status.receiver_list.entries = bt_mesh_calloc(status.receiver_list.entries_cnt * sizeof(target_node_entry_t));
+
+    /* Each entry is 4 bytes (packed target info) + 1 byte (fwidx) = 5 bytes. */
+    if (buf->len < (uint32_t)status.receiver_list.entries_cnt * 5u) {
+        BT_ERR("InvRcvListLen:cnt=%d,buf=%d", status.receiver_list.entries_cnt, buf->len);
+        return;
+    }
+
+    if (status.receiver_list.entries_cnt == 0) {
+        status.receiver_list.entries = NULL;
+    } else {
+        status.receiver_list.entries = bt_mesh_calloc(status.receiver_list.entries_cnt * sizeof(target_node_entry_t));
+        if (status.receiver_list.entries == NULL) {
+            BT_ERR("MemAllocFailedForSz:%zu",status.receiver_list.entries_cnt * sizeof(target_node_entry_t));
+            return;
+        }
+    }
+
     for (i = 0; i < status.receiver_list.entries_cnt; i++) {
         target_info = net_buf_simple_pull_le32(buf);
         status.receiver_list.entries[i].addr = TARGET_ADDR(target_info);
@@ -170,7 +191,7 @@ static void handle_capabilities(struct bt_mesh_model *model,
     status.dist_caps.max_fw_sz = net_buf_simple_pull_le32(buf);
     status.dist_caps.max_upload_space = net_buf_simple_pull_le32(buf);
     status.dist_caps.remaining_upload_space = net_buf_simple_pull_le32(buf);
-    status.dist_caps.oob_retrieval_supported = net_buf_simple_pull_le32(buf);
+    status.dist_caps.oob_retrieval_supported = net_buf_simple_pull_u8(buf);
     if (buf->len) {
         status.dist_caps.supported_url_scheme_names = &url_scheme_names;
         net_buf_simple_init_with_data(status.dist_caps.supported_url_scheme_names, buf->data, buf->len);
@@ -189,7 +210,13 @@ static void handle_dfd_status(struct bt_mesh_model *model,
 
     status.dist_status.status = net_buf_simple_pull_u8(buf);
     status.dist_status.dist_phase = net_buf_simple_pull_u8(buf);
-    if (buf->len != 0 && buf->len != 10) {
+    if (buf->len == 0) {
+        /* Only Status and Distribution Phase are present (e.g. IDLE phase);
+         * the optional fields are not part of the message. */
+        dfd_client_recv_status(model, ctx, &status, sizeof(status.dist_status));
+        return;
+    }
+    if (buf->len != 10) {
         BT_ERR("Invalid data");
         return;
     }
@@ -199,13 +226,14 @@ static void handle_dfd_status(struct bt_mesh_model *model,
     status.dist_status.timeout_base = net_buf_simple_pull_le16(buf);
 
     trans_mode_policy = net_buf_simple_pull_u8(buf);
-    if ((trans_mode_policy & ~(BIT6 - 1)) != 0) {
+    if ((trans_mode_policy & 0xF8) != 0) {
         BT_ERR("RFU should be zero");
         return;
     }
-    status.dist_status.trans_mode = trans_mode_policy >> 6;
-    status.dist_status.update_policy = (trans_mode_policy >> 5) & 0x01;
-    status.dist_status.RFU = trans_mode_policy & 0x1f;
+    /* trans_mode: bits 0-1, update_policy: bit 2, RFU: bits 3-7 */
+    status.dist_status.trans_mode = trans_mode_policy & 0x03;
+    status.dist_status.update_policy = (trans_mode_policy >> 2) & 0x01;
+    status.dist_status.RFU = (trans_mode_policy >> 3) & 0x1f;
     status.dist_status.fw_idx = net_buf_simple_pull_le16(buf);
     dfd_client_recv_status(model, ctx, &status, sizeof(status.dist_status));
     return;
@@ -228,7 +256,7 @@ static void handle_upload_status(struct bt_mesh_model *model,
     }
 
     progress_type = net_buf_simple_pull_u8(buf);
-    status.upload_status.upload_progress = progress_type>>1;
+    status.upload_status.upload_progress = progress_type & 0x7F;
 
     if (status.upload_status.upload_progress >= UPLOAD_PROGRESS_UNSET) {
         BT_ERR("Invalid upload progress");
@@ -240,7 +268,7 @@ static void handle_upload_status(struct bt_mesh_model *model,
         return;
     }
 
-    status.upload_status.upload_type = progress_type & 0x01;
+    status.upload_status.upload_type = (progress_type >> 7) & 0x01;
     if (status.upload_status.upload_type == UPLOAD_IN_BAND) {
         status.upload_status.fwid = &buf_cache;
         net_buf_simple_init_with_data(status.upload_status.fwid, buf->data, buf->len);
@@ -288,7 +316,7 @@ const struct bt_mesh_model_op _bt_mesh_dfd_cli_op[] = {
 
 int bt_mesh_dfd_cli_receivers_add(bt_mesh_client_common_param_t *param, dfd_cli_receiver_entry_t *receivers, uint16_t receivers_cnt)
 {
-    uint16_t msg_length = 2;
+    uint32_t msg_length = 2;
     struct net_buf_simple *msg = NULL;
     dfd_cli_receiver_entry_t *entry = NULL;
     int err = 0;
@@ -298,8 +326,13 @@ int bt_mesh_dfd_cli_receivers_add(bt_mesh_client_common_param_t *param, dfd_cli_
         return -EINVAL;
     }
 
+    if (receivers == NULL && receivers_cnt) {
+        BT_ERR("Invalid receivers");
+        return -EINVAL;
+    }
+
     BT_INFO("AddedValidCnt:%d", receivers_cnt);
-    msg_length += (receivers_cnt * 3);
+    msg_length += (uint32_t)receivers_cnt * 3;
 
     /* needs to confirm long or short mic */
     if (msg_length > BLE_MESH_MAX_PDU_LEN_WITH_SMIC) {
@@ -392,7 +425,7 @@ int bt_mesh_dfd_cli_distribution_start(bt_mesh_client_common_param_t *param,
     net_buf_simple_add_le16(&msg, start->app_idx);
     net_buf_simple_add_u8(&msg, start->ttl);
     net_buf_simple_add_le16(&msg, start->timeout_base);
-    net_buf_simple_add_u8(&msg, ((start->trans_mode) << 6) | ((start->update_policy) << 5));
+    net_buf_simple_add_u8(&msg, ((start->trans_mode) & 0x03) | (((start->update_policy) & 0x01) << 2));
     net_buf_simple_add_le16(&msg, start->fw_idx);
 
     if (start->is_va) {
@@ -503,17 +536,17 @@ int bt_mesh_dfd_cli_distribution_upload_oob_start(bt_mesh_client_common_param_t 
 
     if (!param || !start) {
         BT_ERR("Invalid param");
-        return -1;
+        return -EINVAL;
     }
 
     if (!start->url) {
         BT_ERR("Null url info");
-        return -1;
+        return -EINVAL;
     }
 
     if (!start->fwid) {
         BT_ERR("Invalid firmware id");
-        return -1;
+        return -EINVAL;
     }
 
     msg_length += (1 + start->url->len + start->fwid->len);

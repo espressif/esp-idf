@@ -538,6 +538,10 @@ int disc_cb(struct ble_gap_event *event, void *arg)
     switch (desc->data_status) {
     case BLE_GAP_EXT_ADV_DATA_STATUS_COMPLETE:
         if (adv_report_cache.adv_data_len) {
+            if (adv_report_cache.adv_data_len + desc->length_data > BLE_MESH_GAP_ADV_MAX_LEN) {
+                memset(&adv_report_cache, 0, sizeof(adv_report_cache));
+                return false;
+            }
             memcpy(adv_report_cache.adv_data + adv_report_cache.adv_data_len,
                 desc->data, desc->length_data);
             adv_report_cache.adv_data_len += desc->length_data;
@@ -952,10 +956,10 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
             if (index != -ENODEV) {
                 bt_mesh_gatts_conn[index].handle = BLE_MESH_GATT_GET_CONN_ID(event->disconnect.conn.conn_handle);
                 (bt_mesh_gatts_conn_cb->disconnected)(&bt_mesh_gatts_conn[index], event->disconnect.reason);
+                bt_mesh_gatts_conn[index].handle = BT_MESH_GATTS_CONN_UNUSED;
             } else {
                 BT_ERR("No device");
             }
-            bt_mesh_gatts_conn[index].handle = BT_MESH_GATTS_CONN_UNUSED;
             memset(bt_mesh_gatts_addr, 0x0, BLE_MESH_ADDR_LEN);
         }
 
