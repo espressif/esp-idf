@@ -842,6 +842,8 @@ extern void     l2c_fcr_free_timer (tL2C_CCB *p_ccb);
 */
 #if (BLE_INCLUDED == TRUE)
 extern BOOLEAN l2cble_create_conn (tL2C_LCB *p_lcb);
+extern void l2cble_remove_pending_direct_conn (tL2C_LCB *p_lcb);
+extern void l2cble_cleanup_alloc_ccb_failed_conn (tL2C_LCB *p_lcb);
 extern void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len);
 extern void l2cble_conn_comp (UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE type,
                               UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout);
