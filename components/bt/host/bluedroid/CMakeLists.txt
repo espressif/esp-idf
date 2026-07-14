@@ -352,6 +352,12 @@ if(CONFIG_BT_BLE_FEAT_CTE_EN)
     )
 endif()
 
+if(CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND)
+    list(APPEND bluedroid_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/stack/btm/btm_ble_pseudo.c"
+    )
+endif()
+
 # TODO: Added this file in the ble mesh cmake file
 if(CONFIG_BLE_MESH)
     list(APPEND bluedroid_host_srcs "${CMAKE_CURRENT_LIST_DIR}/../../esp_ble_mesh/core/bluedroid_host/adapter.c")
