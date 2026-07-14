@@ -891,6 +891,11 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16(credits, p);
         L2CAP_TRACE_DEBUG("%s spsm %x, scid %x", __func__, spsm, scid);
 
+        if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_INVALID_PARAMETERS);
+            break;
+        }
+
         p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, scid);
         if (p_ccb) {
             l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED);
@@ -912,12 +917,14 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         p_ccb->remote_id = id;
         p_ccb->p_rcb = p_rcb;
         p_ccb->remote_cid = scid;
-        p_ccb->local_conn_cfg.mtu = mtu;
-        p_ccb->local_conn_cfg.mps = controller_get_interface()->get_acl_data_size_ble();
-        p_ccb->local_conn_cfg.credits = credits;
+        /* Peer request fields describe peer receive capability */
         p_ccb->peer_conn_cfg.mtu = mtu;
         p_ccb->peer_conn_cfg.mps = mps;
         p_ccb->peer_conn_cfg.credits = credits;
+        /* Response must advertise our receive capability, not peer's */
+        p_ccb->local_conn_cfg.mtu = L2CAP_LE_DEFAULT_MTU;
+        p_ccb->local_conn_cfg.mps = controller_get_interface()->get_acl_data_size_ble();
+        p_ccb->local_conn_cfg.credits = L2CAP_LE_DEFAULT_CREDIT;
 
         l2cu_send_peer_ble_credit_based_conn_res(p_ccb, L2CAP_LE_RESULT_CONN_OK);
 #else
@@ -1052,6 +1059,17 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
     }
 }
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+static void l2cble_abort_direct_conn_init(tL2C_LCB *p_lcb)
+{
+    btu_stop_timer(&p_lcb->timer_entry);
+    l2cb.is_ble_connecting = FALSE;
+    memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
+    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    p_lcb->link_state = LST_DISCONNECTED;
+}
+#endif // (BLE_50_FEATURE_SUPPORT == TRUE)
+
 /*******************************************************************************
 **
 ** Function         l2cble_init_direct_conn
@@ -1059,6 +1077,9 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 ** Description      This function is to initiate a direct connection
 **
 ** Returns          TRUE connection initiated, FALSE otherwise.
+**
+** Note             On failure the LCB is not released; the caller must call
+**                  l2cu_release_lcb (see l2cu_create_conn contract in l2c_link.c).
 **
 *******************************************************************************/
 BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
@@ -1147,7 +1168,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #if (BLE_TOPOLOGY_CHECK == TRUE)
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
-        l2cu_release_lcb (p_lcb);
         L2CAP_TRACE_ERROR("initiate direct connection fail, topology limitation");
         return FALSE;
     }
@@ -1212,7 +1232,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
                                                     p_dev_rec->conn_params.min_ce_len : BLE_CE_LEN_MIN), /* UINT16 min_ce_len */
                                             (UINT16) ((p_dev_rec->conn_params.max_ce_len != BTM_BLE_CONN_PARAM_UNDEF) ?
                                                     p_dev_rec->conn_params.max_ce_len : BLE_CE_LEN_MIN) /* UINT16 max_ce_len */)) {
-            l2cu_release_lcb (p_lcb);
             L2CAP_TRACE_ERROR("initiate direct connection fail, no resources");
             return (FALSE);
         } else {
@@ -1270,10 +1289,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
         if (p_lcb->is_pawr_synced) {
             if(!btsnd_hcic_ble_create_ext_conn_v2(&aux_conn)) {
-                l2cb.is_ble_connecting = FALSE;
-                memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
-                btm_ble_set_conn_st (BLE_CONN_IDLE);
-                l2cu_release_lcb (p_lcb);
+                l2cble_abort_direct_conn_init(p_lcb);
                 L2CAP_TRACE_ERROR("initiate pawr sync connection failed, no resources");
                 return (FALSE);
             }
@@ -1281,16 +1297,12 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         {
             if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
-                l2cb.is_ble_connecting = FALSE;
-                memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
-                btm_ble_set_conn_st (BLE_CONN_IDLE);
-                l2cu_release_lcb (p_lcb);
+                l2cble_abort_direct_conn_init(p_lcb);
                 L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
                 return (FALSE);
             }
         }
 #else
-    l2cu_release_lcb (p_lcb);
     L2CAP_TRACE_ERROR("BLE 5.0 not support!\n");
     return (FALSE);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -1327,6 +1339,50 @@ BOOLEAN l2cble_create_conn (tL2C_LCB *p_lcb)
         rt = TRUE;
     }
     return rt;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_cleanup_alloc_ccb_failed_conn
+**
+** Description      Clean up after LE CoC setup fails to allocate a CCB. If a
+**                  direct HCI connection is in progress, cancel it and update
+**                  BTM state; otherwise drop a queued direct-connect request.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_cleanup_alloc_ccb_failed_conn (tL2C_LCB *p_lcb)
+{
+    if (p_lcb == NULL) {
+        return;
+    }
+
+    if (p_lcb->link_state == LST_CONNECTING) {
+        if (!L2CA_CancelBleConnectReq(p_lcb->remote_bd_addr)) {
+            L2CAP_TRACE_ERROR("%s: cancel direct connect failed", __func__);
+            l2cu_release_lcb(p_lcb);
+            memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
+            btm_ble_set_conn_st(BLE_CONN_IDLE);
+        }
+    } else {
+        l2cble_remove_pending_direct_conn(p_lcb);
+        l2cu_release_lcb(p_lcb);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_remove_pending_direct_conn
+**
+** Description      Drop a queued direct-connection attempt for this LCB.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_remove_pending_direct_conn (tL2C_LCB *p_lcb)
+{
+    btm_ble_remove_direct_conn_req(p_lcb);
 }
 
 /*******************************************************************************
