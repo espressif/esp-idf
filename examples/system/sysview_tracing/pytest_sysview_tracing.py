@@ -165,7 +165,6 @@ def test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 @idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_sysview_tracing_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_sysview_tracing_jtag(openocd_dut, dut)
@@ -183,7 +182,6 @@ def _test_sysview_tracing_uart(dut: IdfDut) -> None:
 @pytest.mark.generic
 @idf_parametrize('config', ['sysview_uart'], indirect=['config'])
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_sysview_tracing_uart(dut: IdfDut) -> None:
     _test_sysview_tracing_uart(dut)
 
@@ -200,7 +198,6 @@ def test_sysview_tracing_uart_c2(dut: IdfDut) -> None:
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.parametrize('config', [pytest.param('sysview_usj')], indirect=True)
 @idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='lack of runner # TODO: IDFCI-10703')
 def test_sysview_tracing_usj_serial(dut: IdfDut) -> None:
     time.sleep(1)  # wait for USJ port to be ready
     usj_port = '/dev/serial_ports/ttyACM-esp32'
