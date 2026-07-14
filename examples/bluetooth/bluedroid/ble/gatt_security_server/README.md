@@ -7,7 +7,7 @@ This example shows how to use the APIs to connect to and encrypt with peer devic
 
 To test this example, you can run [gatt_security_client_demo](../gatt_security_client), which starts scanning, connects to and starts encryption with `gatt_security_server_demo` automatically.
 
-Please, check this [tutorial](tutorial/Gatt_Security_Server_Example_Walkthrough.md) for more information about this example.
+Please check this [tutorial](tutorial/Gatt_Security_Server_Example_Walkthrough.md) for more information about this example.
 
 ## Flow Diagram
 
