@@ -42,6 +42,7 @@
 #if BLE_INCLUDED == TRUE
 extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
 #if SMP_INCLUDED == TRUE
+#include "smp_int.h"
 // The temp variable to pass parameter between functions when in the connected event callback.
 static BOOLEAN temp_enhanced = FALSE;
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
@@ -458,7 +459,11 @@ void BTM_BleConfirmReply (BD_ADDR bd_addr, UINT8 res)
         return;
     }
 
-    p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
+    /* Only mark the link as authenticated when the user accepts the comparison;
+     * a rejected/failed confirm must not raise the security level. */
+    if (res_smp == SMP_SUCCESS) {
+        p_dev_rec->sec_flags   |= BTM_SEC_LE_AUTHENTICATED;
+    }
     BTM_TRACE_DEBUG ("%s\n", __func__);
     SMP_ConfirmReply(bd_addr, res_smp);
 }
@@ -488,6 +493,13 @@ void BTM_BleOobDataReply(BD_ADDR bd_addr, UINT8 res, UINT8 len, UINT8 *p_data)
         BTM_TRACE_ERROR("BTM_BleOobDataReply() to Unknown device");
         return;
     }
+
+    /* Ignore OOB data supplied for a device other than the one currently pairing. */
+    if (memcmp(bd_addr, smp_cb.pairing_bda, BD_ADDR_LEN) != 0) {
+        BTM_TRACE_ERROR("BTM_BleOobDataReply() - Wrong BD Addr");
+        return;
+    }
+
     if (res_smp == SMP_SUCCESS) {
         p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
     }
@@ -971,10 +983,6 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
         return BTM_SEC_ENC_PENDING;
     }
 
-    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_NONE) {
-        return BTM_SEC_OK;
-    }
-
     UINT8 sec_flag = 0;
     BTM_GetSecurityFlagsByTransport(bdaddr, &sec_flag, BT_TRANSPORT_LE);
 
@@ -1041,6 +1049,12 @@ BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originat
     {
         BTM_TRACE_WARNING ("%s PSM: %d no application registered", __func__, psm);
         (*p_callback) (bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
+        return FALSE;
+    }
+
+    if (btm_find_dev(bd_addr) == NULL) {
+        BTM_TRACE_ERROR ("%s no device record for bd_addr=" MACSTR, __func__, MAC2STR(bd_addr));
+        (*p_callback) (bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_UNKNOWN_ADDR);
         return FALSE;
     }
 
