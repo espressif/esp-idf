@@ -4,6 +4,9 @@ entries:
     if PM_RTOS_IDLE_OPT = y:
         pm_impl:esp_pm_impl_idle_hook (noflash)
         pm_impl:esp_pm_impl_waiti (noflash)
+        if PM_TICKLESS_IDLE_WAITI = y:
+            pm_impl:esp_pm_impl_tickless_waiti (noflash)
+            pm_impl:tickless_waiti_enter (noflash)
 
     if PM_SLP_IRAM_OPT = y:
         pm_impl:esp_pm_impl_get_cpu_freq (noflash)

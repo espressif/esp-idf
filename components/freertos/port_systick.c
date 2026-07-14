@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,6 +50,9 @@ void SysTickIsrHandler(void *arg);
 
 static uint32_t s_handled_systicks[configNUM_CORES] = { 0 };
 
+/* Systimer HAL layer object */
+static systimer_hal_context_t systimer_hal;
+
 /**
  * @brief Set up the systimer peripheral to generate the tick interrupt
  *
@@ -65,8 +68,6 @@ void vSystimerSetup(void)
 #else
     const unsigned level = ESP_INTR_FLAG_LEVEL1;
 #endif
-    /* Systimer HAL layer object */
-    static systimer_hal_context_t systimer_hal;
     /* set system timer interrupt vector */
 
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
@@ -154,6 +155,18 @@ void SysTickIsrHandler(void *arg)
 #ifdef CONFIG_PM_TRACE
     ESP_PM_TRACE_EXIT(TICK, cpuid);
 #endif
+}
+
+uint32_t xPortSysTickClaimElapsedTicks(int cpu_id)
+{
+    uint32_t alarm_id = SYSTIMER_ALARM_OS_TICK_CORE0 + (uint32_t)cpu_id;
+    uint32_t total = systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK) / systimer_ll_get_alarm_period(systimer_hal.dev, alarm_id);
+    uint32_t elapsed = total - s_handled_systicks[cpu_id];
+    if (elapsed == 0) {
+        return 0;
+    }
+    s_handled_systicks[cpu_id] = total;
+    return elapsed;
 }
 #endif /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
 

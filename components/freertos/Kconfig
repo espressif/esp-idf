@@ -331,6 +331,10 @@ menu "FreeRTOS"
                 when no tasks need to run. To skip unnecessary wake-up initialize a timer with the
                 "skip_unhandled_events" option as true.
 
+                While the OS tick interrupt is suppressed during tickless idle, tick hooks are not invoked
+                for those suppressed ticks. This applies to esp_register_freertos_tick_hook() callbacks and
+                to configUSE_TICK_HOOK.
+
                 If disabled, automatic light sleep support will be disabled.
 
         config FREERTOS_IDLE_TIME_BEFORE_SLEEP
