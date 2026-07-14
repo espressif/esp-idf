@@ -174,6 +174,7 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 
 /* L2CAP host-driven Create_Connection retry back-off timer */
 #define BTU_TTYPE_L2CAP_LINK_RETRY                  113
+#define BTU_TTYPE_ATT_WAIT_FOR_CONF                 114
 
 /* BTU Task Signal */
 typedef enum {
