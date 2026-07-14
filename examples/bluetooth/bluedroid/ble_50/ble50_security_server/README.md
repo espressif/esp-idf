@@ -7,7 +7,7 @@ This example shows how to use the APIs to connect in secure manner with peer dev
 
 To test this example, you can run [ble50_security_client_demo](../ble50_security_client), which starts scanning, connects to and starts encryption with `ble50_sec_gattc_demo` automatically.
 
-Please, check this [tutorial](tutorial/ble50_security_server_Example_Walkthrough.md) for more information about this example.
+Please check this [tutorial](tutorial/ble50_security_server_Example_Walkthrough.md) for more information about this example.
 
 ## How to Use Example
 
