@@ -624,6 +624,12 @@ typedef struct {
     BD_ADDR             current_addr;      /* current adv addr*/
     bool                current_addr_valid; /* current addr info is valid or not*/
 #endif
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    BOOLEAN             is_pseudo_bond;     /* record is keyed by a Host pseudo
+                                             * (dual local-identity bond); never
+                                             * consolidate it onto the peer
+                                             * Identity or its LTK is lost */
+#endif
 } tBTM_SEC_BLE;
 
 
@@ -1282,6 +1288,7 @@ void btm_page_to_setup_timeout (void *p_tle);
 BOOLEAN btm_dev_support_switch (BD_ADDR bd_addr);
 
 tBTM_SEC_DEV_REC  *btm_sec_alloc_dev (BD_ADDR bd_addr);
+tBTM_SEC_DEV_REC  *btm_sec_alloc_dev_ex (BD_ADDR bd_addr, tBTM_SEC_DEV_REC *exclude_rec);
 void              btm_sec_free_dev (tBTM_SEC_DEV_REC *p_dev_rec, tBT_TRANSPORT transport);
 tBTM_SEC_DEV_REC  *btm_find_dev (BD_ADDR bd_addr);
 tBTM_SEC_DEV_REC  *btm_find_or_alloc_dev (BD_ADDR bd_addr);

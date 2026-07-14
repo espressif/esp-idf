@@ -500,6 +500,24 @@ config BT_BLE_SMP_BOND_NVS_FLASH
     help
         This select can save SMP bonding keys to nvs flash
 
+config BT_BLE_PERIPH_PSEUDO_ADDR_BOND
+    bool "Peripheral dual local-identity bond isolation (pseudo address)"
+    depends on BT_BLE_SMP_ENABLE && BT_BLE_50_EXTEND_ADV_EN
+    default n
+    help
+        Enable Host-internal pseudo address derivation so that one peer phone
+        connecting through two distinct local identities (e.g. Public and a
+        fixed Static Random advertising set) is treated as two independent
+        peers. Each connection gets its own device record, LTK and NVS bond
+        section keyed by pseudo = f(local_identity, peer). The over-the-air
+        and SMP cryptography keep using the real peer and the real local
+        identity; the pseudo address never leaves the Host.
+
+        This is intended for BLE 5.0 Extended Advertising peripherals that need
+        simultaneous dual-identity connections with isolated bonds. Requires
+        BT_BLE_50_EXTEND_ADV_EN. When disabled (default) the stack behaves
+        exactly as before.
+
 config BT_BLE_RPA_SUPPORTED
     bool "Update RPA to Controller"
     depends on (BT_BLE_SMP_ENABLE && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR

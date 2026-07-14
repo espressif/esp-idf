@@ -2635,6 +2635,54 @@ bool BTM_GetLocalIRK(uint8_t *irk);
 *******************************************************************************/
 BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type);
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+/*******************************************************************************
+** Function         BTM_BleGetRealPeerByPseudo
+**
+** Description      Reverse map a Host pseudo address to the real peer identity
+**                  for a dual-identity (pseudo-address bond) link.
+**
+** Returns          TRUE if the pseudo is known, FALSE otherwise.
+*******************************************************************************/
+BOOLEAN BTM_BleGetRealPeerByPseudo(BD_ADDR pseudo, BD_ADDR real_peer);
+
+/*******************************************************************************
+** Function         BTM_BleGetConnIdentityByPseudo
+**
+** Description      Return the real peer + local identity (and address types)
+**                  for a connected dual-identity link keyed by its pseudo.
+**
+** Returns          TRUE if the pseudo belongs to a finalized link.
+*******************************************************************************/
+BOOLEAN BTM_BleGetConnIdentityByPseudo(BD_ADDR pseudo, BD_ADDR peer, BD_ADDR local,
+                                       UINT8 *peer_type, UINT8 *local_type);
+
+/*******************************************************************************
+** Function         BTM_BleComputePseudoForIdentity
+**
+** Description      Recompute the deterministic Host pseudo for a (local, peer)
+**                  identity pair (e.g. to remove a stored bond by identity).
+*******************************************************************************/
+void BTM_BleComputePseudoForIdentity(BD_ADDR local, UINT8 local_type,
+                                     BD_ADDR peer, UINT8 peer_type, BD_ADDR pseudo);
+
+/*******************************************************************************
+** Function         BTM_BleMarkPseudoBond
+**
+** Description      Mark the device record for bd_addr as a pseudo-address bond
+**                  (dual local-identity). Normally invoked from bta_dm_add_ble_device
+**                  on the BTU thread when BTA_DmAddBleDevice is called with
+**                  is_pseudo_bond=TRUE while loading bonds from NVS. There is no live
+**                  connection at boot, so the side table cannot be consulted. The mark
+**                  prevents the BTM_LE_KEY_PID handler from consolidating two pseudo
+**                  bonds (which share the peer IRK / Identity) into one record and
+**                  losing one LTK after reboot.
+**
+** Returns          TRUE if a record was found and marked.
+*******************************************************************************/
+BOOLEAN BTM_BleMarkPseudoBond(BD_ADDR bd_addr);
+#endif
+
 /*******************************************************************************
 **
 ** Function         BTM__BLEReadDiscoverability

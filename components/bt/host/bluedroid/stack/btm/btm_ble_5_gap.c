@@ -5,6 +5,9 @@
  */
 
 #include "btm_int.h"
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+#include "btm_ble_pseudo.h"
+#endif
 #include "stack/hcimsgs.h"
 #include "stack/hcidefs.h"
 #include "osi/allocator.h"
@@ -625,7 +628,14 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
         extend_adv_cb.inst[instance].own_addr_type = BLE_ADDR_PUBLIC;
         extend_adv_cb.inst[instance].rand_addr_set = FALSE;
         memset(extend_adv_cb.inst[instance].rand_addr, 0, BD_ADDR_LEN);
+        /* Fully reset the per-set record, consistent with BTM_BleExtAdvSetClear(). */
         adv_record[instance].ter_con_handle = INVALID_VALUE_16BIT;
+        adv_record[instance].invalid = false;
+        adv_record[instance].enabled = false;
+        adv_record[instance].instance = INVALID_VALUE_8BIT;
+        adv_record[instance].duration = INVALID_VALUE_32BIT;
+        adv_record[instance].max_events = INVALID_VALUE_32BIT;
+        adv_record[instance].retry_count = 0;
     }
 
 end:
@@ -658,7 +668,18 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
             extend_adv_cb.inst[i].own_addr_type = BLE_ADDR_PUBLIC;
             extend_adv_cb.inst[i].rand_addr_set = FALSE;
             memset(extend_adv_cb.inst[i].rand_addr, 0, BD_ADDR_LEN);
+            /* Fully reset the per-set record, consistent with
+             * btm_ble_advrecod_init() and the disable-all path. Resetting only
+             * ter_con_handle would leave 'enabled' (and the rest) stale, making
+             * btm_ble_ext_adv_active_count() report sets that the controller
+             * has already removed. */
             adv_record[i].ter_con_handle = INVALID_VALUE_16BIT;
+            adv_record[i].invalid = false;
+            adv_record[i].enabled = false;
+            adv_record[i].instance = INVALID_VALUE_8BIT;
+            adv_record[i].duration = INVALID_VALUE_32BIT;
+            adv_record[i].max_events = INVALID_VALUE_32BIT;
+            adv_record[i].retry_count = 0;
         }
     }
 
@@ -1272,6 +1293,14 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
          * after LE (Enhanced) Connection Complete. */
 #if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
         btm_ble_adjust_conn_addr_for_ext_adv(adv_record[params->adv_handle].ter_con_handle);
+#endif
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+        /* The ext-adv instance is now resolvable for this handle. If the link
+         * could not be pseudo-keyed at connection complete (instance not yet
+         * known), finalize it now so bond / LTK storage is isolated. */
+        BLE_PSEUDO_DBG("adv_terminated: adv_handle=%u con_handle=0x%x -> finalize",
+                       params->adv_handle, adv_record[params->adv_handle].ter_con_handle);
+        btm_ble_pseudo_finalize_local(adv_record[params->adv_handle].ter_con_handle);
 #endif
     } else {
         adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE_16BIT;
