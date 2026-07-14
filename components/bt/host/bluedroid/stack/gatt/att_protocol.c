@@ -174,7 +174,11 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
         return NULL;
     }
 
-    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
+    if (payload_size > L2CAP_DEFAULT_MTU) {
+        return NULL;
+    }
+
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -211,7 +215,11 @@ BT_HDR *attp_build_read_multi_cmd(UINT8 op_code, UINT16 payload_size, UINT16 num
     UINT8       *p;
     UINT16      i = 0;
 
-    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL) {
+    if (payload_size > L2CAP_DEFAULT_MTU) {
+        return NULL;
+    }
+
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + (size_t)num_handle * 2 + 1 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -324,6 +332,10 @@ BT_HDR *attp_build_value_cmd(UINT16 payload_size, UINT8 op_code,
 
     /* handle Read By Type response: reserve space for pair_len */
     if (op_code == GATT_RSP_READ_BY_TYPE) {
+        if (len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+            GATT_TRACE_WARNING("ReadByType value truncated to %d", GATT_MAX_READ_BY_TYPE_VALUE_LEN);
+            len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
+        }
         p_pair_len = p++;
         pair_len = len + 2; /* handle(2 bytes) + value length */
         size_now += 1;
