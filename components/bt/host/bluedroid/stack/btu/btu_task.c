@@ -317,6 +317,21 @@ static void btu_general_alarm_process(void *param)
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)param;
     assert(p_tle != NULL);
 
+    /* Skip stale alarms: btu_free_timer removes the entry before the owning
+     * structure may be freed, and btu_stop_timer clears in_use, but neither can
+     * retract a SIG_BTU_GENERAL_ALARM that was already queued to the BTU task. */
+    osi_mutex_lock(&btu_general_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
+    bool active = hash_map_has_key(btu_general_alarm_hash_map, p_tle);
+    osi_mutex_unlock(&btu_general_alarm_lock);
+    if (!active) {
+        osi_mutex_lock(&btu_oneshot_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
+        active = hash_map_has_key(btu_oneshot_alarm_hash_map, p_tle);
+        osi_mutex_unlock(&btu_oneshot_alarm_lock);
+    }
+    if (!active || p_tle->in_use == FALSE) {
+        return;
+    }
+
     switch (p_tle->event) {
     case BTU_TTYPE_BTM_DEV_CTL:
 #if (CLASSIC_BT_INCLUDED == TRUE)
@@ -390,6 +405,12 @@ static void btu_general_alarm_process(void *param)
 #if (GATTC_INCLUDED == TRUE)
         gatt_ind_ack_timeout(p_tle);
 #endif // (GATTC_INCLUDED == TRUE)
+        break;
+
+    case BTU_TTYPE_ATT_WAIT_FOR_CONF:
+#if (GATTS_INCLUDED == TRUE)
+        gatt_conf_timeout(p_tle);
+#endif // (GATTS_INCLUDED == TRUE)
         break;
 
 #if (defined(SMP_INCLUDED) && SMP_INCLUDED == TRUE)
