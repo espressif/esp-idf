@@ -1476,17 +1476,22 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
     }
 
     /* First, see if we already have a le link to the remote */
+    BOOLEAN lcb_allocated = FALSE;
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
     if (p_lcb == NULL)
     {
         /* No link. Get an LCB and start link establishment */
         p_lcb = l2cu_allocate_lcb(p_bd_addr, FALSE, BT_TRANSPORT_LE);
-        if ((p_lcb == NULL)
-             /* currently use BR/EDR for ERTM mode l2cap connection */
-         || (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == FALSE) )
-        {
-            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: 0x%p",
+        if (p_lcb == NULL) {
+            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: NULL",
+                __func__, psm);
+            return 0;
+        }
+        lcb_allocated = TRUE;
+        if (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == FALSE) {
+            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: %p",
                 __func__, psm, p_lcb);
+            l2cu_release_lcb(p_lcb);
             return 0;
         }
     }
@@ -1496,6 +1501,9 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
     if (p_ccb == NULL)
     {
         L2CAP_TRACE_WARNING("%s no CCB, PSM: 0x%04x", __func__, psm);
+        if (lcb_allocated) {
+            l2cble_cleanup_alloc_ccb_failed_conn(p_lcb);
+        }
         return 0;
     }
 
