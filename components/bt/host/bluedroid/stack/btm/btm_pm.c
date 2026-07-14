@@ -971,4 +971,14 @@ static const char *mode_to_string(tBTM_PM_MODE mode)
 }
 #endif
 
+#else /* CLASSIC_BT_INCLUDED != TRUE */
+
+tBTM_STATUS BTM_SetPowerMode(UINT8 pm_id, BD_ADDR remote_bda, tBTM_PM_PWR_MD *p_mode)
+{
+    UNUSED(pm_id);
+    UNUSED(remote_bda);
+    UNUSED(p_mode);
+    return BTM_SUCCESS;
+}
+
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
