@@ -776,7 +776,10 @@ IRAM_ATTR void emac_isr_default_handler(void *args)
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 #if EMAC_LL_CONFIG_ENABLE_INTR_MASK & EMAC_LL_INTR_RECEIVE_ENABLE
-    if (intr_stat & EMAC_LL_DMA_RECEIVE_FINISH_INTR) {
+    /* RBU must also wake the RX task: with the ring full the DMA suspends
+     * and raises no further RECEIVE interrupts, so RBU is the only drain trigger. */
+    if (intr_stat & (EMAC_LL_DMA_RECEIVE_FINISH_INTR |
+                     EMAC_LL_DMA_RECEIVE_BUFF_UNAVAILABLE_INTR)) {
         BaseType_t rx_high_task_woken = pdFALSE;
         /* notify receive task */
         vTaskNotifyGiveFromISR(emac->rx_task_hdl, &rx_high_task_woken);

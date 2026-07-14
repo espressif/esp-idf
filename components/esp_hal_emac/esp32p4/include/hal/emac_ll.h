@@ -142,8 +142,10 @@ extern "C" {
 #define EMAC_LL_MAC_INTR_TIME_STAMP_ENABLE             0x00000200U
 #define EMAC_LL_MAC_INTR_POWER_MANAGEMENT_MOD_ENABLE   0x00000008U
 
-/* Enable needed DMA interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work) */
-#define EMAC_LL_CONFIG_ENABLE_INTR_MASK    (EMAC_LL_INTR_RECEIVE_ENABLE | EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE)
+/* Enable needed DMA interrupts (recv/recv_buf_unavailabal/normal must be enabled to make eth work).
+ * RBU is abnormal-class, so the abnormal summary enable is required with it. */
+#define EMAC_LL_CONFIG_ENABLE_INTR_MASK    (EMAC_LL_INTR_RECEIVE_ENABLE | EMAC_LL_INTR_RECEIVE_BUFF_UNAVAILABLE_ENABLE | \
+                                            EMAC_LL_INTR_ABNORMAL_SUMMARY_ENABLE | EMAC_LL_INTR_NORMAL_SUMMARY_ENABLE)
 
 /* Enable needed MAC interrupts */
 #define EMAC_LL_CONFIG_ENABLE_MAC_INTR_MASK  (EMAC_LL_MAC_INTR_TIME_STAMP_ENABLE)
