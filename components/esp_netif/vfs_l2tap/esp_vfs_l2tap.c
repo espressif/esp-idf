@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -478,14 +478,16 @@ static int l2tap_close(int fd)
 
     if ((s_l2tap_sockets[fd].close_done_sem = xSemaphoreCreateBinary()) == NULL) {
         ESP_LOGE(TAG, "create close_done_sem failed");
-        return -1;
+        goto close_failed;
     }
     // If one task is blocked in I/O operation and another task tries to close the fd, the first task is
     // unblocked by pushing empty queue in low priority task (to ensure context switch to the first task).
     // The first's task read operation then ends with error and the low priority task frees the queue resources.
     if (xTaskCreate(l2tap_clean_task, "l2tap_clean_task", 1024, &s_l2tap_sockets[fd], tskIDLE_PRIORITY, NULL) == pdFAIL) {
         ESP_LOGE(TAG, "create l2tap_clean_task failed");
-        return -1;
+        vSemaphoreDelete(s_l2tap_sockets[fd].close_done_sem);
+        s_l2tap_sockets[fd].close_done_sem = NULL;
+        goto close_failed;
     }
 
     // wait for the low priority close task & then delete the semaphore
@@ -495,6 +497,14 @@ static int l2tap_close(int fd)
     // indicate that socket is ready to be used again
     atomic_store(&s_l2tap_sockets[fd].state, L2TAP_SOCK_STATE_READY);
     return 0;
+
+close_failed:
+    flush_rx_queue(&s_l2tap_sockets[fd]);
+    (void)push_rx_queue(&s_l2tap_sockets[fd], NULL, 0, NULL);
+    delete_rx_queue(&s_l2tap_sockets[fd]);
+    atomic_store(&s_l2tap_sockets[fd].state, L2TAP_SOCK_STATE_READY);
+    errno = ENOMEM;
+    return -1;
 }
 
 // used to find a netif with the attached driver matching the argument
