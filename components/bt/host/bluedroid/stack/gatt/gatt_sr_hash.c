@@ -38,6 +38,14 @@ static const char *gatt_get_attr_name(UINT16 uuid)
     return "Unknown Attribute";
 }
 
+/* GATT declaration attribute types (Primary Service, Characteristic, etc.) are
+ * always stored with 16-bit attribute UUID. Do not compare p_attr->uuid unless
+ * uuid_type is 16, or a 128/32-bit characteristic UUID may be misread. */
+static BOOLEAN gatt_attr_is_uuid16(const tGATT_ATTR16 *p_attr, UINT16 uuid16)
+{
+    return (p_attr->uuid_type == GATT_ATTR_UUID_TYPE_16 && p_attr->uuid == uuid16);
+}
+
 static void attr_uuid_to_bt_uuid(void *p_attr, tBT_UUID *p_uuid)
 {
     tGATT_ATTR16 *p_attr16 = (tGATT_ATTR16 *)p_attr;
@@ -56,15 +64,6 @@ static void attr_uuid_to_bt_uuid(void *p_attr, tBT_UUID *p_uuid)
     }
 }
 
-static UINT8 get_uuid_stream_len(tBT_UUID uuid)
-{
-    // gatt_build_uuid_to_stream always converts 32-bit UUID to 128-bit UUID
-    if (uuid.len == LEN_UUID_32) {
-        return LEN_UUID_128;
-    }
-    return uuid.len;
-}
-
 static size_t calculate_database_info_size(void)
 {
     UINT8 i;
@@ -77,31 +76,45 @@ static size_t calculate_database_info_size(void)
         if (p_db && p_db->p_attr_list) {
             p_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
             while (p_attr) {
-                if (p_attr->uuid == GATT_UUID_PRI_SERVICE ||
-                    p_attr->uuid == GATT_UUID_SEC_SERVICE) {
+                if (gatt_attr_is_uuid16(p_attr, GATT_UUID_PRI_SERVICE) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_SEC_SERVICE)) {
                     // Service declaration
-                    len += 4 + get_uuid_stream_len(p_attr->p_value->uuid);
-                } else if (p_attr->uuid == GATT_UUID_INCLUDE_SERVICE) {
+                    if (p_attr->p_value == NULL) {
+                        GATT_TRACE_WARNING("%s: service decl at handle %u missing p_value",
+                                           __func__, p_attr->handle);
+                    } else {
+                        len += 4 + gatt_get_uuid_stream_len(p_attr->p_value->uuid);
+                    }
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_INCLUDE_SERVICE)) {
                     // Included service declaration
-                    len += 8 + get_uuid_stream_len(p_attr->p_value->incl_handle.service_type);
-                } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
+                    if (p_attr->p_value == NULL) {
+                        GATT_TRACE_WARNING("%s: include service at handle %u missing p_value",
+                                           __func__, p_attr->handle);
+                    } else {
+                        len += 8 + gatt_get_uuid_stream_len(p_attr->p_value->incl_handle.service_type);
+                    }
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_DECLARE)) {
                     tBT_UUID char_uuid = {0};
-                    if (p_attr->p_next == NULL) {
+                    if (p_attr->p_value == NULL) {
+                        GATT_TRACE_WARNING("%s: char decl at handle %u missing p_value",
+                                           __func__, p_attr->handle);
+                    } else if (p_attr->p_next == NULL) {
                         GATT_TRACE_ERROR("%s: malformed DB, char decl at handle %u has no value attr",
                                          __func__, p_attr->handle);
                         break;
+                    } else {
+                        p_attr = (tGATT_ATTR16 *)p_attr->p_next;
+                        attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
+                        len += 7 + gatt_get_uuid_stream_len(char_uuid);
                     }
-                    p_attr = (tGATT_ATTR16 *)p_attr->p_next;
-                    attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
-                    len += 7 + get_uuid_stream_len(char_uuid);
-                } else if (p_attr->uuid == GATT_UUID_CHAR_DESCRIPTION ||
-                    p_attr->uuid == GATT_UUID_CHAR_CLIENT_CONFIG ||
-                    p_attr->uuid == GATT_UUID_CHAR_SRVR_CONFIG ||
-                    p_attr->uuid == GATT_UUID_CHAR_PRESENT_FORMAT ||
-                    p_attr->uuid == GATT_UUID_CHAR_AGG_FORMAT) {
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_DESCRIPTION) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_CLIENT_CONFIG) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_SRVR_CONFIG) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_PRESENT_FORMAT) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_AGG_FORMAT)) {
                     // Descriptor
                     len += 4;
-                } else if (p_attr->uuid == GATT_UUID_CHAR_EXT_PROP) {
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_EXT_PROP)) {
                     // Descriptor
                     len += 6;
                 }
@@ -124,47 +137,55 @@ static void fill_database_info(UINT8 *p_data)
         if (p_db && p_db->p_attr_list) {
             p_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
             while (p_attr) {
-                if (p_attr->uuid == GATT_UUID_PRI_SERVICE ||
-                    p_attr->uuid == GATT_UUID_SEC_SERVICE) {
+                if (gatt_attr_is_uuid16(p_attr, GATT_UUID_PRI_SERVICE) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_SEC_SERVICE)) {
                     // Service declaration
-                    UINT16_TO_STREAM(p_data, p_attr->handle);
-                    UINT16_TO_STREAM(p_data, p_attr->uuid);
-                    gatt_build_uuid_to_stream(&p_data, p_attr->p_value->uuid);
-                } else if (p_attr->uuid == GATT_UUID_INCLUDE_SERVICE) {
+                    if (p_attr->p_value != NULL) {
+                        UINT16_TO_STREAM(p_data, p_attr->handle);
+                        UINT16_TO_STREAM(p_data, p_attr->uuid);
+                        gatt_build_uuid_to_stream(&p_data, p_attr->p_value->uuid);
+                    }
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_INCLUDE_SERVICE)) {
                     // Included service declaration
-                    UINT16_TO_STREAM(p_data, p_attr->handle);
-                    UINT16_TO_STREAM(p_data, GATT_UUID_INCLUDE_SERVICE);
-                    UINT16_TO_STREAM(p_data, p_attr->p_value->incl_handle.s_handle);
-                    UINT16_TO_STREAM(p_data, p_attr->p_value->incl_handle.e_handle);
-                    gatt_build_uuid_to_stream(&p_data, p_attr->p_value->incl_handle.service_type);
-                } else if (p_attr->uuid == GATT_UUID_CHAR_DECLARE) {
+                    if (p_attr->p_value != NULL) {
+                        UINT16_TO_STREAM(p_data, p_attr->handle);
+                        UINT16_TO_STREAM(p_data, GATT_UUID_INCLUDE_SERVICE);
+                        UINT16_TO_STREAM(p_data, p_attr->p_value->incl_handle.s_handle);
+                        UINT16_TO_STREAM(p_data, p_attr->p_value->incl_handle.e_handle);
+                        gatt_build_uuid_to_stream(&p_data, p_attr->p_value->incl_handle.service_type);
+                    }
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_DECLARE)) {
                     tBT_UUID char_uuid = {0};
-                    if (p_attr->p_next == NULL) {
+                    if (p_attr->p_value == NULL) {
+                        GATT_TRACE_WARNING("%s: char decl at handle %u missing p_value",
+                                           __func__, p_attr->handle);
+                    } else if (p_attr->p_next == NULL) {
                         GATT_TRACE_ERROR("%s: malformed DB, char decl at handle %u has no value attr",
                                          __func__, p_attr->handle);
                         break;
+                    } else {
+                        UINT16_TO_STREAM(p_data, p_attr->handle);
+                        UINT16_TO_STREAM(p_data, GATT_UUID_CHAR_DECLARE);
+                        UINT8_TO_STREAM(p_data, p_attr->p_value->char_decl.property);
+                        UINT16_TO_STREAM(p_data, p_attr->p_value->char_decl.char_val_handle);
+                        p_attr = (tGATT_ATTR16 *)p_attr->p_next;
+                        attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
+                        gatt_build_uuid_to_stream(&p_data, char_uuid);
                     }
-                    UINT16_TO_STREAM(p_data, p_attr->handle);
-                    UINT16_TO_STREAM(p_data, GATT_UUID_CHAR_DECLARE);
-                    UINT8_TO_STREAM(p_data, p_attr->p_value->char_decl.property);
-                    UINT16_TO_STREAM(p_data, p_attr->p_value->char_decl.char_val_handle);
-                    p_attr = (tGATT_ATTR16 *)p_attr->p_next;
-                    attr_uuid_to_bt_uuid((void *)p_attr, &char_uuid);
-                    gatt_build_uuid_to_stream(&p_data, char_uuid);
-                } else if (p_attr->uuid == GATT_UUID_CHAR_DESCRIPTION ||
-                    p_attr->uuid == GATT_UUID_CHAR_CLIENT_CONFIG ||
-                    p_attr->uuid == GATT_UUID_CHAR_SRVR_CONFIG ||
-                    p_attr->uuid == GATT_UUID_CHAR_PRESENT_FORMAT ||
-                    p_attr->uuid == GATT_UUID_CHAR_AGG_FORMAT) {
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_DESCRIPTION) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_CLIENT_CONFIG) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_SRVR_CONFIG) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_PRESENT_FORMAT) ||
+                    gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_AGG_FORMAT)) {
                     // Descriptor
                     UINT16_TO_STREAM(p_data, p_attr->handle);
                     UINT16_TO_STREAM(p_data, p_attr->uuid);
-                } else if (p_attr->uuid == GATT_UUID_CHAR_EXT_PROP) {
+                } else if (gatt_attr_is_uuid16(p_attr, GATT_UUID_CHAR_EXT_PROP)) {
                     // Descriptor
                     UINT16_TO_STREAM(p_data, p_attr->handle);
                     UINT16_TO_STREAM(p_data, p_attr->uuid);
-                    // TODO: process extended properties descriptor
-                    if (p_attr->p_value->attr_val.attr_len == 2) {
+                    if (p_attr->p_value != NULL && p_attr->p_value->attr_val.attr_val != NULL
+                            && p_attr->p_value->attr_val.attr_len == 2) {
                         memcpy(p_data, p_attr->p_value->attr_val.attr_val, 2);
                         p_data += 2;
                     } else {
@@ -180,8 +201,8 @@ static void fill_database_info(UINT8 *p_data)
 tGATT_STATUS gatts_calculate_datebase_hash(BT_OCTET16 hash)
 {
     UINT8 tmp;
-    UINT16 i;
-    UINT16 j;
+    size_t i;
+    size_t j;
     size_t len;
     UINT8 *data_buf = NULL;
 
@@ -194,22 +215,31 @@ tGATT_STATUS gatts_calculate_datebase_hash(BT_OCTET16 hash)
 
     data_buf = (UINT8 *)osi_malloc(len);
     if (data_buf == NULL) {
-        GATT_TRACE_ERROR ("%s failed to allocate buffer (%u)\n", __func__, len);
+        GATT_TRACE_ERROR ("%s failed to allocate buffer (%u)\n", __func__, (unsigned)len);
         return GATT_NO_RESOURCES;
     }
 
     fill_database_info(data_buf);
 
     // reverse database info
-    for (i = 0, j = len-1; i < j; i++, j--) {
+    for (i = 0, j = len - 1; i < j; i++, j--) {
         tmp = data_buf[i];
         data_buf[i] = data_buf[j];
         data_buf[j] = tmp;
     }
 
 #if SMP_INCLUDED == TRUE
+    if (len > UINT16_MAX) {
+        GATT_TRACE_ERROR("%s: database info too large (%u)", __func__, (unsigned)len);
+        osi_free(data_buf);
+        return GATT_NO_RESOURCES;
+    }
+
     BT_OCTET16 key = {0};
-    aes_cipher_msg_auth_code(key, data_buf, len, 16, hash);
+    if (!aes_cipher_msg_auth_code(key, data_buf, (UINT16)len, 16, hash)) {
+        osi_free(data_buf);
+        return GATT_ERROR;
+    }
 #endif
 
     osi_free(data_buf);
@@ -228,25 +258,38 @@ void gatts_show_local_database(void)
         if (p_db && p_db->p_attr_list) {
             p_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
             while (p_attr) {
+                if (p_attr->uuid_type != GATT_ATTR_UUID_TYPE_16) {
+                    p_attr = (tGATT_ATTR16 *)p_attr->p_next;
+                    continue;
+                }
+
                 switch (p_attr->uuid) {
                 case GATT_UUID_PRI_SERVICE:
                 case GATT_UUID_SEC_SERVICE:
                     // Service declaration
                     printf("%s\n", gatt_get_attr_name(p_attr->uuid));
-                    printf("\tuuid %s\n", gatt_uuid_to_str(&p_attr->p_value->uuid));
+                    if (p_attr->p_value != NULL) {
+                        printf("\tuuid %s\n", gatt_uuid_to_str(&p_attr->p_value->uuid));
+                    }
                     printf("\thandle %d\n", p_attr->handle);
-                    printf("\tend_handle %d\n",p_db->end_handle-1);
+                    printf("\tend_handle %d\n", p_db->end_handle - 1);
                     break;
                 case GATT_UUID_INCLUDE_SERVICE:
                     // Included service declaration
                     printf("%s\n", gatt_get_attr_name(p_attr->uuid));
-                    printf("\tuuid %s\t", gatt_uuid_to_str(&p_attr->p_value->incl_handle.service_type));
-                    printf("\thandle %d\n", p_attr->p_value->incl_handle.s_handle);
-                    printf("\tend_handle %d\n", p_attr->p_value->incl_handle.e_handle);
+                    if (p_attr->p_value != NULL) {
+                        printf("\tuuid %s\t", gatt_uuid_to_str(&p_attr->p_value->incl_handle.service_type));
+                        printf("\thandle %d\n", p_attr->p_value->incl_handle.s_handle);
+                        printf("\tend_handle %d\n", p_attr->p_value->incl_handle.e_handle);
+                    }
                     break;
                 case GATT_UUID_CHAR_DECLARE: {
                     tBT_UUID char_uuid = {0};
                     tGATT_ATTR16 *p_char_val;
+                    if (p_attr->p_value == NULL) {
+                        printf("characteristic (malformed - no decl value)\n");
+                        break;
+                    }
                     p_char_val = (tGATT_ATTR16 *)p_attr->p_next;
                     if (p_char_val == NULL) {
                         printf("characteristic (malformed - no value attr)\n");
@@ -258,7 +301,8 @@ void gatts_show_local_database(void)
                     printf("\tuuid %s\n", gatt_uuid_to_str(&char_uuid));
                     printf("\tdef_handle %d\n", p_attr->handle);
                     printf("\tval_handle %d\n", p_attr->p_value->char_decl.char_val_handle);
-                    printf("\tperm 0x%04x, prop 0x%02x\n", p_char_val->permission, p_attr->p_value->char_decl.property);
+                    printf("\tperm 0x%04x, prop 0x%02x\n", p_char_val->permission,
+                           p_attr->p_value->char_decl.property);
                     break;
                 }
                 case GATT_UUID_CHAR_EXT_PROP:
@@ -269,6 +313,8 @@ void gatts_show_local_database(void)
                 case GATT_UUID_CHAR_AGG_FORMAT:
                     printf("%s\n", gatt_get_attr_name(p_attr->uuid));
                     printf("\thandle %d\n", p_attr->handle);
+                    break;
+                default:
                     break;
                 }
                 p_attr = (tGATT_ATTR16 *) p_attr->p_next;
