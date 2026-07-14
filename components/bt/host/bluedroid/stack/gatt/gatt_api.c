@@ -180,8 +180,8 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
     p_app_uuid128 = &p_reg->app_uuid128;
 
     if ((p_list = gatt_find_hdl_buffer_by_app_id(p_app_uuid128, p_svc_uuid, svc_inst)) != NULL) {
-        s_hdl = p_list->asgn_range.s_handle;
         GATT_TRACE_DEBUG ("Service already been created!!\n");
+        return p_list->asgn_range.s_handle;
     } else {
         if ( (p_svc_uuid->len == LEN_UUID_16) && (p_svc_uuid->uu.uuid16 == UUID_SERVCLASS_GATT_SERVER)) {
             s_hdl =  gatt_cb.hdl_cfg.gatt_start_hdl;
@@ -235,6 +235,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
 
                 if (p_list) {
                     gatt_remove_an_item_from_list(p_list_info, p_list);
+                    gatt_purge_prepare_write_before_free_db(&p_list->svc_db);
                     gatt_free_attr_value_buffer(p_list);
                     gatt_free_hdl_buffer(p_list);
                 }
@@ -249,6 +250,7 @@ UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
         GATT_TRACE_ERROR ("GATTS_ReserveHandles: service DB initialization failed\n");
         if (p_list) {
             gatt_remove_an_item_from_list(p_list_info, p_list);
+            gatt_purge_prepare_write_before_free_db(&p_list->svc_db);
             gatt_free_attr_value_buffer(p_list);
             gatt_free_hdl_buffer(p_list);
         }
@@ -398,6 +400,7 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
     tGATTS_PENDING_NEW_SRV_START    *p_buf;
     tGATT_REG       *p_reg = gatt_get_regcb(gatt_if);
     tBT_UUID *p_app_uuid128;
+    BOOLEAN         notify_db_change = FALSE;
 
     GATT_TRACE_DEBUG ("GATTS_DeleteService");
 
@@ -418,12 +421,8 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
         GATT_TRACE_DEBUG ("Delete a new service changed item - the service has not yet started");
         osi_free(fixed_queue_try_remove_from_queue(gatt_cb.pending_new_srv_start_q, p_buf));
     } else {
-#if GATTS_ROBUST_CACHING_ENABLED
-        gatt_update_for_database_change();
-#endif /* GATTS_ROBUST_CACHING_ENABLED */
-        if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
-            gatt_proc_srv_chg();
-        }
+        /* Service was started; notify clients after it is removed from sr_reg. */
+        notify_db_change = TRUE;
     }
 
     if ((i_sreg = gatt_sr_find_i_rcb_by_app_id (p_app_uuid128,
@@ -441,8 +440,18 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
     }
 
     gatt_remove_an_item_from_list(p_list_info, p_list);
+    gatt_purge_prepare_write_before_free_db(&p_list->svc_db);
     gatt_free_attr_value_buffer(p_list);
     gatt_free_hdl_buffer(p_list);
+
+    if (notify_db_change) {
+#if GATTS_ROBUST_CACHING_ENABLED
+        gatt_update_for_database_change();
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
+        if (gatt_cb.srv_chg_mode == GATTS_SEND_SERVICE_CHANGE_AUTO) {
+            gatt_proc_srv_chg();
+        }
+    }
 
     return (TRUE);
 }
@@ -1392,6 +1401,15 @@ void GATT_Deregister (tGATT_IF gatt_if)
     for (ii = 0, p_sreg = gatt_cb.sr_reg; ii < GATT_MAX_SR_PROFILES; ii++, p_sreg++) {
         if (p_sreg->in_use && (p_sreg->gatt_if == gatt_if)) {
             GATTS_StopService(p_sreg->s_hdl);
+        }
+    }
+    if (gatt_if > 0 && gatt_if <= GATT_MAX_APPS) {
+        UINT8 prep_idx = (UINT8)(gatt_if - 1);
+        for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
+            p_tcb = list_node(p_node);
+            if (p_tcb->in_use) {
+                p_tcb->prep_cnt[prep_idx] = 0;
+            }
         }
     }
     /* free all services db buffers if owned by this application */
