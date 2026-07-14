@@ -131,7 +131,7 @@ static tGATT_PROFILE_CLCB *gatt_profile_find_clcb_by_bd_addr(BD_ADDR bda, tBT_TR
 
     for (i_clcb = 0, p_clcb = gatt_cb.profile_clcb; i_clcb < GATT_MAX_APPS; i_clcb++, p_clcb++) {
         if (p_clcb->in_use && p_clcb->transport == transport &&
-                p_clcb->connected && !memcmp(p_clcb->bda, bda, BD_ADDR_LEN)) {
+                !memcmp(p_clcb->bda, bda, BD_ADDR_LEN)) {
             return p_clcb;
         }
     }
@@ -157,7 +157,7 @@ tGATT_PROFILE_CLCB *gatt_profile_clcb_alloc (UINT16 conn_id, BD_ADDR bda, tBT_TR
         if (!p_clcb->in_use) {
             p_clcb->in_use      = TRUE;
             p_clcb->conn_id     = conn_id;
-            p_clcb->connected   = TRUE;
+            p_clcb->connected   = (conn_id != 0);
             p_clcb->transport   = transport;
             memcpy (p_clcb->bda, bda, BD_ADDR_LEN);
             break;
@@ -186,6 +186,57 @@ void gatt_profile_clcb_dealloc (tGATT_PROFILE_CLCB *p_clcb)
 
 /*******************************************************************************
 **
+** Function         gatt_copy_read_value
+**
+** Description      Copy attribute value into read/read-blob response.
+**
+** Returns          GATT_SUCCESS if successfully copied; otherwise error code.
+**
+*******************************************************************************/
+static tGATT_STATUS gatt_copy_read_value(UINT8 *value, UINT16 attr_len,
+                                         UINT16 offset, BOOLEAN is_long,
+                                         UINT16 mtu, tGATTS_RSP *p_rsp)
+{
+    UINT16 copy_len;
+    const UINT8 *src = value;
+
+    if (is_long) {
+        if (offset > attr_len) {
+            return GATT_INVALID_OFFSET;
+        }
+        copy_len = attr_len - offset;
+        if (copy_len > 0) {
+            if (value == NULL) {
+                return GATT_UNKNOWN_ERROR;
+            }
+            src = value + offset;
+        }
+    } else {
+        if (offset > attr_len) {
+            return GATT_INVALID_OFFSET;
+        }
+        copy_len = attr_len;
+        if (copy_len > 0 && value == NULL) {
+            return GATT_UNKNOWN_ERROR;
+        }
+    }
+
+    if (is_long && mtu > 0 && copy_len > mtu) {
+        copy_len = mtu;
+    }
+    if (copy_len > GATT_MAX_ATTR_LEN) {
+        copy_len = GATT_MAX_ATTR_LEN;
+    }
+
+    p_rsp->attr_value.len = copy_len;
+    if (copy_len > 0) {
+        memcpy(p_rsp->attr_value.value, src, copy_len);
+    }
+    return GATT_SUCCESS;
+}
+
+/*******************************************************************************
+**
 ** Function         gatt_proc_read
 **
 ** Description      GATT Attributes Database Read/Read Blob Request process
@@ -197,10 +248,18 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
 {
     tGATT_STATUS    status = GATT_NO_RESOURCES;
     UINT16 len = 0;
-    UINT8 *value;
+    UINT16 mtu = GATT_MAX_ATTR_LEN;
+    UINT8 *value = NULL;
+    UINT8 tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB *tcb = gatt_get_tcb_by_idx(tcb_idx);
     UNUSED(type);
 
     GATT_TRACE_DEBUG("%s handle %x", __func__, p_data->handle);
+
+    /* MTU limit applies to Read Blob only; conn_id 0 is used by internal getters. */
+    if (p_data->is_long && tcb != NULL && tcb->payload_size > 1) {
+        mtu = tcb->payload_size - 1;
+    }
 
     if (p_data->is_long) {
         p_rsp->attr_value.offset = p_data->offset;
@@ -209,42 +268,41 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
     p_rsp->attr_value.handle = p_data->handle;
 #if GATTS_ROBUST_CACHING_ENABLED
 
-    UINT8 tcb_idx = GATT_GET_TCB_IDX(conn_id);
-    tGATT_TCB *tcb = gatt_get_tcb_by_idx(tcb_idx);
-
     /* handle request for reading client supported features */
     if (p_data->handle == gatt_cb.handle_of_cl_supported_feat) {
         if (tcb == NULL) {
             return GATT_INSUF_RESOURCE;
         }
-        p_rsp->attr_value.len = 1;
-        memcpy(p_rsp->attr_value.value, &tcb->cl_supp_feat, 1);
-        return GATT_SUCCESS;
+        return gatt_copy_read_value(&tcb->cl_supp_feat, 1, p_data->offset,
+                                    p_data->is_long, mtu, p_rsp);
     }
 
     /* handle request for reading database hash */
     if (p_data->handle == gatt_cb.handle_of_database_hash) {
-        p_rsp->attr_value.len = BT_OCTET16_LEN;
-        memcpy(p_rsp->attr_value.value, gatt_cb.database_hash, BT_OCTET16_LEN);
-        gatt_sr_update_cl_status(tcb, true);
-        return GATT_SUCCESS;
+        if (tcb == NULL) {
+            return GATT_INSUF_RESOURCE;
+        }
+        status = gatt_copy_read_value(gatt_cb.database_hash, BT_OCTET16_LEN,
+                                      p_data->offset, p_data->is_long, mtu, p_rsp);
+        if (status == GATT_SUCCESS) {
+            gatt_sr_update_cl_status(tcb, true);
+        }
+        return status;
     }
 
     /* handle request for reading server supported features */
     if (p_data->handle == gatt_cb.handle_of_sr_supported_feat) {
-        p_rsp->attr_value.len = 1;
-        memcpy(p_rsp->attr_value.value, &gatt_cb.gatt_sr_supported_feat_mask, 1);
-        return GATT_SUCCESS;
+        return gatt_copy_read_value(&gatt_cb.gatt_sr_supported_feat_mask, 1,
+                                    p_data->offset, p_data->is_long, mtu, p_rsp);
     }
 #endif /* GATTS_ROBUST_CACHING_ENABLED */
     /* handle request for reading service changed des and the others */
     status = GATTS_GetAttributeValue(p_data->handle, &len, &value);
-    if(status == GATT_SUCCESS && len > 0 && value) {
-        if(len > GATT_MAX_ATTR_LEN) {
+    if (status == GATT_SUCCESS && (len == 0 || value != NULL)) {
+        if (len > GATT_MAX_ATTR_LEN) {
             len = GATT_MAX_ATTR_LEN;
         }
-        p_rsp->attr_value.len = len;
-        memcpy(p_rsp->attr_value.value, value, len);
+        status = gatt_copy_read_value(value, len, p_data->offset, p_data->is_long, mtu, p_rsp);
     }
     return status;
 }
@@ -418,7 +476,9 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
 
 
     if (!p_clcb->connected) {
-        /* wait for connection */
+        if (!connected) {
+            gatt_profile_clcb_dealloc(p_clcb);
+        }
         return;
     }
 
@@ -426,6 +486,10 @@ static void gatt_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
         p_clcb->conn_id = conn_id;
         p_clcb->connected = TRUE;
 
+        if (p_clcb->ccc_stage == GATT_SVC_CHANGED_CONNECTING) {
+            p_clcb->ccc_stage++;
+            gatt_cl_start_config_ccc(p_clcb);
+        }
     } else {
         gatt_profile_clcb_dealloc(p_clcb);
     }
@@ -682,6 +746,8 @@ void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSP
 
     if (GATT_GetConnIdIfConnected (gatt_cb.gatt_if, remote_bda, &p_clcb->conn_id, transport)) {
         p_clcb->connected = TRUE;
+    } else {
+        p_clcb->connected = FALSE;
     }
     /* hold the link here */
     GATT_Connect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, transport, FALSE, FALSE, 0xFF, 0xFF);
