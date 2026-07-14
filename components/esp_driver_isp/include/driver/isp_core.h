@@ -32,6 +32,7 @@ typedef struct {
     uint32_t h_res;                               ///< Input horizontal resolution, i.e. the number of pixels in a line
     uint32_t v_res;                               ///< Input vertical resolution, i.e. the number of lines in a frame
     color_raw_element_order_t bayer_order;        ///< Bayer order
+    uint32_t dma_burst_size;                      ///< DMA output burst length in units of 64-bit beats. Set to 0 to use default value 16
     int intr_priority;                            ///< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
     struct {
         uint32_t bypass_isp   : 1;                ///< Bypass ISP pipelines
