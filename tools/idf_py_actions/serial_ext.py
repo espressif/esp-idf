@@ -10,6 +10,8 @@ from typing import Any
 
 import rich_click as click
 from click.core import ParameterSource
+from esp_pylib.cli_types import BaudRateType
+from esp_pylib.cli_types import SerialPortType
 from esp_pylib.logger import log
 from rich_click import Context
 
@@ -34,6 +36,7 @@ BAUD_RATE = {
     'scope': 'global',
     'envvar': 'ESPBAUD',
     'default': 460800,
+    'type': BaudRateType(),
 }
 
 PORT = {
@@ -41,7 +44,7 @@ PORT = {
     'help': 'Serial port.',
     'scope': 'global',
     'envvar': 'ESPPORT',
-    'type': click.Path(),
+    'type': SerialPortType(),
     'default': None,
 }
 
