@@ -522,8 +522,17 @@ void smp_proc_sec_grant(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_proc_pair_fail(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    SMP_TRACE_DEBUG("%s", __func__);
-    p_cb->status = *(UINT8 *)p_data;
+    UINT8 reason = *(UINT8 *)p_data;
+
+    SMP_TRACE_DEBUG("%s reason=0x%02x", __func__, reason);
+    /* A peer may send a reserved or out-of-range reason code; normalize it so
+     * upper layers always receive a defined pairing failure status. */
+    if (reason == SMP_SUCCESS || reason > SMP_MAX_FAIL_RSN_PER_SPEC) {
+        SMP_TRACE_WARNING("%s invalid pairing fail reason 0x%02x", __func__, reason);
+        reason = SMP_PAIR_FAIL_UNKNOWN;
+    }
+    p_cb->status = reason;
+    p_cb->failure = reason;
 }
 
 /*******************************************************************************
