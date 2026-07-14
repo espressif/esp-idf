@@ -540,6 +540,31 @@ menu "mbedTLS"
             priority level and any level from 1 to 3 can be selected (based on the availability).
             Note: Higher value indicates high interrupt priority.
 
+    menu "Security hardening"
+
+        config MBEDTLS_CONSTANT_TIME_PRIME_GEN
+            bool "Constant-time prime generation"
+            default y
+            help
+                Use mbedtls' constant-time small-factor test (a constant-time
+                GCD against the product of all odd primes up to 997) when
+                generating prime numbers, e.g. during RSA key generation.
+
+                The constant-time implementation avoids a timing side channel
+                in prime generation, but it makes RSA key generation roughly
+                ten times slower, and its long non-yielding software
+                computations can starve the idle task and trigger the task
+                watchdog, so key generation code may need a larger watchdog
+                timeout or the watchdog disabled.
+
+                If disabled, the variable-time trial division that mbedtls
+                used before version 3.6.7 is used instead, restoring key
+                generation performance. Only consider disabling this if no
+                untrusted code running on the device could observe the timing
+                of key generation operations.
+
+    endmenu # Security hardening
+
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
         default y
