@@ -3798,17 +3798,55 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, (tBTA_DM_SEC *)&conn);
         }
     } else {
-        for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-            if (bdcmp( bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_bda)
-#if BLE_INCLUDED == TRUE
-                    || bta_dm_cb.device_list.peer_device[i].transport != p_data->acl_change.transport
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+        BOOLEAN handle_only_match = FALSE;
+        BD_ADDR op_bda;
+
+        bdcpy(op_bda, p_bda);
 #endif
-               ) {
+        for (i = 0; i < bta_dm_cb.device_list.count; i++) {
+            BOOLEAN entry_match = (bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, p_bda) == 0)
+#if BLE_INCLUDED == TRUE
+                    && (bta_dm_cb.device_list.peer_device[i].transport == p_data->acl_change.transport)
+#endif
+                    ;
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+            /* The peripheral pseudo-address bond feature may re-key an LE link's
+             * address (RPA -> pseudo) AFTER link-up was recorded, so the stored
+             * peer_bdaddr no longer matches the address reported at link-down.
+             * Match by the stable connection handle for LE to avoid leaking
+             * device_list entries (which would eventually exhaust the list). */
+            if (!entry_match &&
+                p_data->acl_change.transport == BT_TRANSPORT_LE &&
+                bta_dm_cb.device_list.peer_device[i].transport == BT_TRANSPORT_LE &&
+                bta_dm_cb.device_list.peer_device[i].conn_handle == p_data->acl_change.handle) {
+                entry_match = TRUE;
+                handle_only_match = TRUE;
+            }
+#endif
+            if (!entry_match) {
                 continue;
             }
 
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+            if (handle_only_match) {
+                tBTM_SEC_DEV_REC *p_rec = btm_find_dev_by_handle(p_data->acl_change.handle);
+                if (p_rec) {
+                    bdcpy(op_bda, p_rec->bd_addr);
+                } else {
+                    APPL_TRACE_WARNING("%s: handle-matched entry but no BTM record (handle=0x%x),"
+                                       " falling back to event addr",
+                                       __func__, p_data->acl_change.handle);
+                }
+            }
+#endif
+
             if ( bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_UNPAIRING ) {
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+                if (BTM_SecDeleteDevice(op_bda, bta_dm_cb.device_list.peer_device[i].transport)) {
+#else
                 if (BTM_SecDeleteDevice(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, bta_dm_cb.device_list.peer_device[i].transport)) {
+#endif
                     issue_unpair_cb = TRUE;
                 }
 
@@ -3863,10 +3901,18 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             }
         }
         if (conn.link_down.is_removed) {
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+            BTM_SecDeleteDevice(op_bda, p_data->acl_change.transport);
+#if (GATTC_INCLUDED == TRUE)
+            /* need to remove all pending background connection */
+            BTA_GATTC_CancelOpen(0, op_bda, FALSE);
+#endif
+#else
             BTM_SecDeleteDevice(p_bda, p_data->acl_change.transport);
 #if (BLE_INCLUDED == TRUE && GATTC_INCLUDED == TRUE)
             /* need to remove all pending background connection */
             BTA_GATTC_CancelOpen(0, p_bda, FALSE);
+#endif
 #endif
         }
 
@@ -3875,6 +3921,11 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         if ( bta_dm_cb.p_sec_cback ) {
             bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
             if ( issue_unpair_cb ) {
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+                if (handle_only_match) {
+                    bdcpy(conn.link_down.bd_addr, op_bda);
+                }
+#endif
                 if (p_data->acl_change.transport == BT_TRANSPORT_LE) {
                     bta_dm_cb.p_sec_cback(BTA_DM_BLE_DEV_UNPAIRED_EVT, &conn);
                 } else {
@@ -5110,7 +5161,19 @@ void bta_dm_add_ble_device (tBTA_DM_MSG *p_data)
                           (p_data->add_ble_device.bd_addr[0] << 24) + (p_data->add_ble_device.bd_addr[1] << 16) + \
                           (p_data->add_ble_device.bd_addr[2] << 8) + p_data->add_ble_device.bd_addr[3],
                           (p_data->add_ble_device.bd_addr[4] << 8) + p_data->add_ble_device.bd_addr[5]);
+        return;
     }
+
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    if (p_data->add_ble_device.is_pseudo_bond) {
+        if (!BTM_BleMarkPseudoBond(p_data->add_ble_device.bd_addr)) {
+            APPL_TRACE_WARNING("BTA_DM: failed to mark pseudo bond for device %08x%04x",
+                               (p_data->add_ble_device.bd_addr[0] << 24) + (p_data->add_ble_device.bd_addr[1] << 16) + \
+                               (p_data->add_ble_device.bd_addr[2] << 8) + p_data->add_ble_device.bd_addr[3],
+                               (p_data->add_ble_device.bd_addr[4] << 8) + p_data->add_ble_device.bd_addr[5]);
+        }
+    }
+#endif
 }
 
 /*******************************************************************************

@@ -15,6 +15,7 @@
    ble-qualification
    低功耗模式介绍 <ble-low-power-mode>
    ble-multiconnection-guide
+   :SOC_BLE_50_SUPPORTED: bluedroid-dual-identity-host-dev
 
 **********
 快速入门

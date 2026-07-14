@@ -34,6 +34,10 @@
 #define BTC_BLE_STORAGE_LE_KEY_LID_STR              "LE_KEY_LID"
 #define BTC_BLE_STORAGE_LE_KEY_LCSRK_STR            "LE_KEY_LCSRK"
 #define BTC_BLE_STORAGE_LE_AUTH_MODE_STR            "AuthMode"
+/* Marks a bond whose section is keyed by a Host pseudo address (dual local
+ * identity feature). Such sections legitimately share the peer Identity with
+ * another (local,peer) bond and must be exempt from identity-based de-dup. */
+#define BTC_BLE_STORAGE_PSEUDO_BOND_STR             "PseudoBond"
 
 #define BTC_BLE_STORAGE_LOCAL_ADAPTER_STR           "Adapter"
 #define BTC_BLE_STORAGE_LE_LOCAL_KEY_IR_STR         "LE_LOCAL_KEY_IR"
