@@ -195,6 +195,66 @@ void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb)
 
 /*******************************************************************************
 **
+** Function         gatt_find_multi_rsp_by_handle
+**
+** Description      Find a read-multiple response entry by attribute handle.
+**                  occurrence selects the Nth matching entry (for duplicate
+**                  handles in the same request).
+**
+** Returns          Pointer to response, or NULL if not found
+**
+*******************************************************************************/
+static tGATTS_RSP *gatt_find_multi_rsp_by_handle(tGATT_SR_CMD *p_cmd, UINT16 handle,
+                                                 UINT16 occurrence)
+{
+    list_t *list;
+    const list_node_t *node;
+    UINT16 match_count = 0;
+
+    if (p_cmd->multi_rsp_q == NULL || fixed_queue_is_empty(p_cmd->multi_rsp_q)) {
+        return NULL;
+    }
+
+    list = fixed_queue_get_list(p_cmd->multi_rsp_q);
+    for (node = list_begin(list); node != list_end(list); node = list_next(node)) {
+        tGATTS_RSP *p_rsp = (tGATTS_RSP *)list_node(node);
+
+        if (p_rsp->attr_value.handle == handle) {
+            if (match_count == occurrence) {
+                return p_rsp;
+            }
+            match_count++;
+        }
+    }
+
+    return NULL;
+}
+
+/*******************************************************************************
+**
+** Function         gatt_get_multi_handle_occurrence
+**
+** Description      Return occurrence index of handle at multi_req index.
+**
+** Returns          occurrence count
+**
+*******************************************************************************/
+static UINT16 gatt_get_multi_handle_occurrence(tGATT_SR_CMD *p_cmd, UINT16 index)
+{
+    UINT16 ii;
+    UINT16 occurrence = 0;
+
+    for (ii = 0; ii < index; ii++) {
+        if (p_cmd->multi_req.handles[ii] == p_cmd->multi_req.handles[index]) {
+            occurrence++;
+        }
+    }
+
+    return occurrence;
+}
+
+/*******************************************************************************
+**
 ** Function         process_read_multi_rsp
 **
 ** Description      This function check the read multiple response.
@@ -251,24 +311,12 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
             *p++ = GATT_RSP_READ_MULTI;
             p_buf->len = 1;
 
-            /* Now walk through the buffers putting the data into the response in order */
-            list_t *list = NULL;
-            const list_node_t *node = NULL;
-            if (! fixed_queue_is_empty(p_cmd->multi_rsp_q)) {
-                list = fixed_queue_get_list(p_cmd->multi_rsp_q);
-			}
+            /* Walk request handles in order; match responses by handle because
+             * stack (sync) and app (async) replies may arrive out of order. */
             for (ii = 0; ii < p_cmd->multi_req.num_handles; ii++) {
-                tGATTS_RSP *p_rsp = NULL;
-                if (list != NULL) {
-                    if (ii == 0) {
-                        node = list_begin(list);
-                    } else {
-                        node = list_next(node);
-					}
-                    if (node != list_end(list)) {
-                        p_rsp = (tGATTS_RSP *)list_node(node);
-					}
-                }
+                tGATTS_RSP *p_rsp = gatt_find_multi_rsp_by_handle(
+                    p_cmd, p_cmd->multi_req.handles[ii],
+                    gatt_get_multi_handle_occurrence(p_cmd, ii));
 
                 if (p_rsp != NULL) {
 
@@ -283,16 +331,11 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                         len = p_rsp->attr_value.len;
                     }
 
-                    if (p_rsp->attr_value.handle == p_cmd->multi_req.handles[ii]) {
-                        memcpy (p, p_rsp->attr_value.value, len);
-                        if (!is_overflow) {
-                            p += len;
-                        }
-                        p_buf->len += len;
-                    } else {
-                        p_cmd->status        = GATT_NOT_FOUND;
-                        break;
+                    memcpy (p, p_rsp->attr_value.value, len);
+                    if (!is_overflow) {
+                        p += len;
                     }
+                    p_buf->len += len;
 
                     if (is_overflow) {
                         break;
@@ -307,7 +350,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
 
 
             /* Sanity check on the buffer length */
-            if (p_buf->len == 0) {
+            if (p_buf->len <= 1) {
                 GATT_TRACE_ERROR("process_read_multi_rsp - nothing found!!");
                 p_cmd->status = GATT_NOT_FOUND;
                 osi_free (p_buf);
@@ -378,24 +421,11 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
             *p++ = GATT_RSP_READ_MULTI_VAR;
             p_buf->len = 1;
 
-            /* Now walk through the buffers putting the data into the response in order */
-            list_t *list = NULL;
-            const list_node_t *node = NULL;
-            if (! fixed_queue_is_empty(p_cmd->multi_rsp_q)) {
-                list = fixed_queue_get_list(p_cmd->multi_rsp_q);
-			}
+            /* Match responses by handle; replies may arrive out of order. */
             for (ii = 0; ii < p_cmd->multi_req.num_handles; ii++) {
-                tGATTS_RSP *p_rsp = NULL;
-                if (list != NULL) {
-                    if (ii == 0) {
-                        node = list_begin(list);
-                    } else {
-                        node = list_next(node);
-					}
-                    if (node != list_end(list)) {
-                        p_rsp = (tGATTS_RSP *)list_node(node);
-					}
-                }
+                tGATTS_RSP *p_rsp = gatt_find_multi_rsp_by_handle(
+                    p_cmd, p_cmd->multi_req.handles[ii],
+                    gatt_get_multi_handle_occurrence(p_cmd, ii));
 
                 if (p_rsp != NULL) {
 
@@ -407,16 +437,11 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
                     }
                     len = MIN(p_rsp->attr_value.len, (mtu - total_len));  // attribute value length
 
-                    if (p_rsp->attr_value.handle == p_cmd->multi_req.handles[ii]) {
-                        GATT_TRACE_DEBUG("%s handle %x len %u", __func__, p_rsp->attr_value.handle, p_rsp->attr_value.len);
-                        UINT16_TO_STREAM(p, p_rsp->attr_value.len);
-                        memcpy (p, p_rsp->attr_value.value, len);
-                        p += len;
-                        p_buf->len += (2+len);
-                    } else {
-                        p_cmd->status = GATT_NOT_FOUND;
-                        break;
-                    }
+                    GATT_TRACE_DEBUG("%s handle %x len %u", __func__, p_rsp->attr_value.handle, p_rsp->attr_value.len);
+                    UINT16_TO_STREAM(p, p_rsp->attr_value.len);
+                    memcpy (p, p_rsp->attr_value.value, len);
+                    p += len;
+                    p_buf->len += (2+len);
                 } else {
                     p_cmd->status = GATT_NOT_FOUND;
                     break;
@@ -425,7 +450,7 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
             } /* loop through all handles*/
 
             /* Sanity check on the buffer length */
-            if (p_buf->len == 0) {
+            if (p_buf->len <= 1) {
                 GATT_TRACE_ERROR("%s - nothing found!!", __func__);
                 p_cmd->status = GATT_NOT_FOUND;
                 osi_free (p_buf);
@@ -561,10 +586,12 @@ tGATT_STATUS gatt_sr_process_app_rsp (tGATT_TCB *p_tcb, tGATT_IF gatt_if,
             ret_code = attp_send_sr_msg (p_tcb, p_tcb->sr_cmd.p_rsp_msg);
             p_tcb->sr_cmd.p_rsp_msg = NULL;
         } else {
-            if (p_tcb->sr_cmd.status == GATT_SUCCESS){
-                status = GATT_UNKNOWN_ERROR;
+            tGATT_STATUS err_status = p_tcb->sr_cmd.status;
+
+            if (err_status == GATT_SUCCESS) {
+                err_status = GATT_UNKNOWN_ERROR;
             }
-            ret_code = gatt_send_error_rsp (p_tcb, status, op_code, p_tcb->sr_cmd.handle, FALSE);
+            ret_code = gatt_send_error_rsp (p_tcb, err_status, op_code, p_tcb->sr_cmd.handle, FALSE);
         }
 
 #if (BLE_EATT_INCLUDED == TRUE)
