@@ -1841,7 +1841,7 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
         if (len > MIN_ADV_LENGTH && data_mask & BTM_BLE_AD_BIT_SERVICE_DATA &&
                 p_data && p_data->p_service_data && p_data->p_service_data->len != 0 && p_data->p_service_data->p_val) {
             if (len  > (p_data->p_service_data->service_uuid.len + MIN_ADV_LENGTH)) {
-                if (p_data->p_service_data->len > (len - MIN_ADV_LENGTH)) {
+                if (p_data->p_service_data->len > (len - MIN_ADV_LENGTH - p_data->p_service_data->service_uuid.len)) {
                     cp_len = len - MIN_ADV_LENGTH - p_data->p_service_data->service_uuid.len;
                 } else {
                     cp_len = p_data->p_service_data->len;
@@ -2895,6 +2895,9 @@ void btm_send_sel_conn_callback(BD_ADDR remote_bda, UINT8 evt_type, UINT8 *p_dat
         }
 
         if (p_dev_name) {
+            if (len > sizeof(remname) - 1) {
+                len = sizeof(remname) - 1;
+            }
             memcpy(remname, p_dev_name, len);
         }
     }
@@ -3018,6 +3021,10 @@ void btm_ble_process_adv_pkt (UINT8 *p_data, UINT8 evt_len)
 #endif
         /* Validate data_len before any path (callee reads 1 + data_len + 1 = data_len+2 bytes from p) */
         data_len = *p; /* read without advancing; p points to data_len byte */
+        if (data_len > BTM_BLE_ADV_DATA_LEN_MAX) {
+            BTM_TRACE_ERROR("btm_ble_process_adv_pkt: legacy adv data_len %u exceeds max %u", data_len, BTM_BLE_ADV_DATA_LEN_MAX);
+            break;
+        }
         if (data_len + 2 > remaining - 8) {
             BTM_TRACE_ERROR("btm_ble_process_adv_pkt: data_len %u + data + rssi exceeds remaining %u", data_len, (UINT16)(remaining - 8));
             break;
