@@ -685,6 +685,7 @@ extern UINT8 *gatt_dbg_op_name(UINT8 op_code);
 extern UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl);
 #endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
 extern BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid, UINT16 len, UINT8 **p_data);
+extern UINT8 gatt_get_uuid_stream_len(tBT_UUID uuid);
 extern UINT8 gatt_build_uuid_to_stream(UINT8 **p_dst, tBT_UUID uuid);
 extern BOOLEAN gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
 extern void gatt_convert_uuid32_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT32 uuid_32);
@@ -692,6 +693,8 @@ extern char *gatt_uuid_to_str(const tBT_UUID *uuid);
 extern void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport, UINT8 *p_sec_flag, UINT8 *p_key_size);
 extern void gatt_start_rsp_timer(UINT16 clcb_idx);
 extern void gatt_start_conf_timer(tGATT_TCB    *p_tcb);
+extern void gatt_conf_timeout(TIMER_LIST_ENT *p_tle);
+extern void gatts_proc_srv_chg_ind_ack(tGATT_TCB *p_tcb);
 extern void gatt_rsp_timeout(TIMER_LIST_ENT *p_tle);
 extern void gatt_ind_ack_timeout(TIMER_LIST_ENT *p_tle);
 extern void gatt_start_ind_ack_timer(tGATT_TCB *p_tcb);
@@ -717,6 +720,7 @@ extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_attr_handle(UINT16 attr_hand
 extern tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void);
 extern void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p);
 extern void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p);
+extern void gatt_purge_prepare_write_before_free_db(tGATT_SVC_DB *p_db);
 extern BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_start, tBT_UUID value);
 extern void gatt_update_last_pri_srv_info(tGATT_SRV_LIST_INFO *p_list);
 extern BOOLEAN gatt_add_a_srv_to_list(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_new);
@@ -782,6 +786,12 @@ extern void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb);
 extern UINT8 gatt_send_write_msg(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code, UINT16 handle,
                                  UINT16 len, UINT16 offset, UINT8 *p_data);
 extern void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport);
+#if (SMP_INCLUDED == TRUE)
+extern void gatt_free_pending_enc_queue(tGATT_TCB *p_tcb);
+#endif // (SMP_INCLUDED == TRUE)
+#if (GATTS_INCLUDED == TRUE)
+extern void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb);
+#endif // (GATTS_INCLUDED == TRUE)
 extern void gatt_end_operation(tGATT_CLCB *p_clcb, tGATT_STATUS status, void *p_data);
 
 extern void gatt_act_discovery(tGATT_CLCB *p_clcb);

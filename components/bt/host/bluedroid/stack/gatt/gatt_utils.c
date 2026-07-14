@@ -134,6 +134,119 @@ void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb)
     p_tcb->prepare_write_record.total_num = 0;
     p_tcb->prepare_write_record.error_code_app = GATT_SUCCESS;
 }
+
+/*******************************************************************************
+**
+** Function         gatt_attr_in_svc_db
+**
+** Description      Return TRUE if p_attr belongs to the given service database.
+**
+*******************************************************************************/
+static BOOLEAN gatt_attr_in_svc_db(tGATT_SVC_DB *p_db, tGATT_ATTR16 *p_attr)
+{
+    tGATT_ATTR16 *p;
+
+    if (p_db == NULL || p_attr == NULL || p_db->p_attr_list == NULL) {
+        return FALSE;
+    }
+
+    for (p = (tGATT_ATTR16 *)p_db->p_attr_list; p != NULL; p = p->p_next) {
+        if (p == p_attr) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/*******************************************************************************
+**
+** Function         gatt_purge_prepare_write_for_svc_db
+**
+** Description      Remove queued prepare-write entries that reference attributes
+**                  in p_db. Must be called before freeing that service database.
+**
+*******************************************************************************/
+static void gatt_purge_prepare_write_for_svc_db(tGATT_TCB *p_tcb, tGATT_SVC_DB *p_db)
+{
+    tGATT_PREPARE_WRITE_QUEUE_DATA *queue_data;
+    tGATT_PREPARE_WRITE_RECORD *prepare_record;
+    fixed_queue_t *old_queue;
+    fixed_queue_t *new_queue;
+    UINT16 purged = 0;
+
+    if (p_tcb == NULL || p_db == NULL || !p_tcb->in_use) {
+        return;
+    }
+
+    prepare_record = &p_tcb->prepare_write_record;
+    old_queue = prepare_record->queue;
+    if (old_queue == NULL || fixed_queue_is_empty(old_queue)) {
+        return;
+    }
+
+    new_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    if (new_queue == NULL) {
+        GATT_TRACE_ERROR("%s: failed to allocate queue, dropping all prepare writes", __func__);
+        gatt_free_pending_prepare_write_queue(p_tcb);
+        return;
+    }
+
+    while (!fixed_queue_is_empty(old_queue)) {
+        queue_data = fixed_queue_dequeue(old_queue, FIXED_QUEUE_MAX_TIMEOUT);
+        if (gatt_attr_in_svc_db(p_db, queue_data->p_attr)) {
+            osi_free(queue_data);
+            purged++;
+        } else {
+            if (!fixed_queue_enqueue(new_queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT)) {
+                GATT_TRACE_ERROR("%s: failed to re-queue prepare write entry", __func__);
+                osi_free(queue_data);
+                purged++;
+            }
+        }
+    }
+
+    fixed_queue_free(old_queue, NULL);
+    if (fixed_queue_is_empty(new_queue)) {
+        fixed_queue_free(new_queue, NULL);
+        prepare_record->queue = NULL;
+    } else {
+        prepare_record->queue = new_queue;
+    }
+
+    if (purged > 0) {
+        if (prepare_record->total_num >= purged) {
+            prepare_record->total_num -= purged;
+        } else {
+            prepare_record->total_num = 0;
+        }
+        if (prepare_record->queue == NULL && prepare_record->total_num == 0) {
+            prepare_record->error_code_app = GATT_SUCCESS;
+        }
+    }
+}
+
+/*******************************************************************************
+**
+** Function         gatt_purge_prepare_write_before_free_db
+**
+** Description      Purge prepare-write queue entries for p_db on all active TCBs.
+**                  Call before freeing a service database.
+**
+*******************************************************************************/
+void gatt_purge_prepare_write_before_free_db(tGATT_SVC_DB *p_db)
+{
+    list_node_t *p_node;
+    list_node_t *p_next;
+    tGATT_TCB   *p_tcb;
+
+    for (p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = p_next) {
+        p_tcb = list_node(p_node);
+        p_next = list_next(p_node);
+        if (p_tcb->in_use) {
+            gatt_purge_prepare_write_for_svc_db(p_tcb, p_db);
+        }
+    }
+}
 #endif // (GATTS_INCLUDED == TRUE)
 
 #if (GATTS_INCLUDED == TRUE)
@@ -413,6 +526,7 @@ void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p)
                 p_value = p_attr->p_value;
                 if ((p_value != NULL) && (p_value->attr_val.attr_val != NULL)){
                     osi_free(p_value->attr_val.attr_val);
+                    p_value->attr_val.attr_val = NULL;
                 }
             }
             p_attr = p_attr->p_next;
@@ -460,6 +574,8 @@ void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id)
         if (memcmp(p_app_id, &p_elem->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
             /* Remove from linked list first */
             gatt_remove_an_item_from_list(p_list_info, p_elem);
+            /* Drop prepare-write queue entries pointing into this DB before free */
+            gatt_purge_prepare_write_before_free_db(&p_elem->svc_db);
             /* Free attribute value buffers */
             gatt_free_attr_value_buffer(p_elem);
             /* Free the handle buffer completely (including svc_buffer and setting in_use = FALSE) */
@@ -490,7 +606,7 @@ BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM 
 
         p_svc_uuid = gatts_get_service_uuid (p_rcb->p_db);
 
-        if (gatt_uuid_compare(value, *p_svc_uuid)) {
+        if (p_svc_uuid && gatt_uuid_compare(value, *p_svc_uuid)) {
             is_last_attribute = FALSE;
             break;
 
@@ -1131,6 +1247,23 @@ BOOLEAN gatt_uuid_compare (tBT_UUID src, tBT_UUID tar)
 
 /*******************************************************************************
 **
+** Function         gatt_get_uuid_stream_len
+**
+** Description      Get the number of bytes gatt_build_uuid_to_stream writes.
+**
+** Returns          UUID stream length.
+**
+*******************************************************************************/
+UINT8 gatt_get_uuid_stream_len(tBT_UUID uuid)
+{
+    if (uuid.len == LEN_UUID_32) {
+        return LEN_UUID_128;
+    }
+    return uuid.len;
+}
+
+/*******************************************************************************
+**
 ** Function         gatt_build_uuid_to_stream
 **
 ** Description      Add UUID into stream.
@@ -1259,8 +1392,39 @@ void gatt_start_rsp_timer(UINT16 clcb_idx)
 void gatt_start_conf_timer(tGATT_TCB    *p_tcb)
 {
     p_tcb->conf_timer_ent.param  = (TIMER_PARAM_TYPE)p_tcb;
-    btu_start_timer (&p_tcb->conf_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_RSP,
+    btu_start_timer (&p_tcb->conf_timer_ent, BTU_TTYPE_ATT_WAIT_FOR_CONF,
                      GATT_WAIT_FOR_RSP_TOUT);
+}
+
+/*******************************************************************************
+**
+** Function         gatt_conf_timeout
+**
+** Description      Called when GATT wait for indication confirmation timer expires
+**
+** Returns          void
+**
+*******************************************************************************/
+void gatt_conf_timeout(TIMER_LIST_ENT *p_tle)
+{
+    tGATT_TCB *p_tcb = (tGATT_TCB *)p_tle->param;
+
+    if (p_tcb == NULL || gatt_get_tcb_by_idx(p_tcb->tcb_idx) != p_tcb) {
+        GATT_TRACE_WARNING("gatt_conf_timeout tcb is already deleted");
+        return;
+    }
+
+    if (p_tcb->indicate_handle == gatt_cb.handle_of_h_r) {
+        /* Server-only remotes may ignore Service Changed indication; do not disconnect. */
+        GATT_TRACE_WARNING("gatt_conf_timeout Service Changed indication timed out, not disconnecting");
+        p_tcb->indicate_handle = 0;
+        gatts_proc_srv_chg_ind_ack(p_tcb);
+        return;
+    }
+
+    GATT_TRACE_WARNING("gatt_conf_timeout handle=%u disconnecting...", p_tcb->indicate_handle);
+    p_tcb->indicate_handle = 0;
+    gatt_disconnect(p_tcb);
 }
 #endif // (GATTS_INCLUDED == TRUE)
 
@@ -1347,23 +1511,24 @@ void gatt_ind_ack_timeout(TIMER_LIST_ENT *p_tle)
 {
     tGATT_TCB *p_tcb = (tGATT_TCB *)p_tle->param;
 
-    GATT_TRACE_WARNING("gatt_ind_ack_timeout send ack now");
-
-    if (p_tcb != NULL) {
-        p_tcb->ind_count = 0;
-    }
-
-#if (BLE_EATT_INCLUDED == TRUE)
-    if (p_tcb != NULL) {
-        /* Auto-ack on the bearer the indication arrived on (0 == legacy ATT). */
-        p_tcb->eatt_tx_bearer = p_tcb->eatt_ind_bearer;
-        attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
-        p_tcb->eatt_tx_bearer = 0;
-        p_tcb->eatt_ind_bearer = 0;
+    if (p_tcb == NULL || gatt_get_tcb_by_idx(p_tcb->tcb_idx) != p_tcb) {
+        GATT_TRACE_WARNING("gatt_ind_ack_timeout tcb is already deleted");
         return;
     }
+
+    GATT_TRACE_WARNING("gatt_ind_ack_timeout send ack now");
+
+    p_tcb->ind_count = 0;
+
+#if (BLE_EATT_INCLUDED == TRUE)
+    /* Auto-ack on the bearer the indication arrived on (0 == legacy ATT). */
+    p_tcb->eatt_tx_bearer = p_tcb->eatt_ind_bearer;
+    attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
+    p_tcb->eatt_tx_bearer = 0;
+    p_tcb->eatt_ind_bearer = 0;
+    return;
 #endif
-    attp_send_cl_msg(((tGATT_TCB *)p_tle->param), 0, GATT_HANDLE_VALUE_CONF, NULL);
+    attp_send_cl_msg(p_tcb, 0, GATT_HANDLE_VALUE_CONF, NULL);
 }
 #endif // (GATTC_INCLUDED == TRUE)
 
@@ -2704,6 +2869,7 @@ BOOLEAN gatt_remove_bg_dev_from_list(tGATT_REG *p_reg, BD_ADDR bd_addr, BOOLEAN 
                 for (j = i + 1; j < GATT_MAX_APPS; j ++) {
                     p_dev->gatt_if[j - 1] = p_dev->gatt_if[j];
                 }
+                p_dev->gatt_if[GATT_MAX_APPS - 1] = 0;
 
                 if (p_dev->gatt_if[0] == 0) {
                     ret = BTM_BleUpdateBgConnDev(FALSE, p_dev->remote_bda);
@@ -2721,6 +2887,7 @@ BOOLEAN gatt_remove_bg_dev_from_list(tGATT_REG *p_reg, BD_ADDR bd_addr, BOOLEAN 
                 for (j = i + 1; j < GATT_MAX_APPS; j ++) {
                     p_dev->listen_gif[j - 1] = p_dev->listen_gif[j];
                 }
+                p_dev->listen_gif[GATT_MAX_APPS - 1] = 0;
 
                 if (p_dev->listen_gif[0] == 0) {
                     // To check, we do not support background connection, code will not be called here
@@ -2766,6 +2933,7 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if)
                     for (k = j + 1; k < GATT_MAX_APPS; k ++) {
                         p_dev_list->gatt_if[k - 1] = p_dev_list->gatt_if[k];
                     }
+                    p_dev_list->gatt_if[GATT_MAX_APPS - 1] = 0;
 
                     if (p_dev_list->gatt_if[0] == 0) {
                         BTM_BleUpdateBgConnDev(FALSE, p_dev_list->remote_bda);
@@ -2783,12 +2951,17 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if)
                     for (k = j + 1; k < GATT_MAX_APPS; k ++) {
                         p_dev_list->listen_gif[k - 1] = p_dev_list->listen_gif[k];
                     }
+                    p_dev_list->listen_gif[GATT_MAX_APPS - 1] = 0;
 
                     if (p_dev_list->listen_gif[0] == 0) {
                         // To check, we do not support background connection, code will not be called here
                         BTM_BleUpdateAdvWhitelist(FALSE, p_dev_list->remote_bda, 0);
                     }
                 }
+            }
+
+            if (p_dev_list->gatt_if[0] == 0 && p_dev_list->listen_gif[0] == 0) {
+                memset(p_dev_list, 0, sizeof(tGATT_BG_CONN_DEV));
             }
         }
     }
