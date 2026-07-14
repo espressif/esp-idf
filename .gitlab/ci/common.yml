@@ -22,7 +22,7 @@ include:
     file: "templates/idf/common-scripts.yml"
     inputs:
       ci_python_constraint_file: "espidf.constraints.v6.2.txt"
-      macos_image: "macos-sequoia-idf-v6.2"
+      macos_image: "registry.hub.docker.com/espressif/macos-idf:sequoia-v6.2"
       windows_image: "windows_11_idf_v6_2"
 
 variables:
@@ -69,7 +69,6 @@ variables:
   ESP_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2:1"
   ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-docs:1"
   TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.2-target-test:1"
-  SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
 
   # Set this variable to the branch of idf-constraints repo in order to test a custom Python constraint file. The
   # branch name must be without the remote part ("origin/"). Keep the variable empty in order to use the constraint
