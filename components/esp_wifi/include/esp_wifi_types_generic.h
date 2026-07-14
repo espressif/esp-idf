@@ -46,11 +46,13 @@ typedef enum {
 typedef enum {
     WIFI_OFFCHAN_TX_CANCEL,   /**< Cancel off-channel transmission */
     WIFI_OFFCHAN_TX_REQ,      /**< Request off-channel transmission */
+    WIFI_OFFCHAN_TX_CONNECTING_REQ,  /**< Off-channel Tx request during connecting state; not recommended for use by public APIs */
 } wifi_action_tx_t;
 
 typedef enum {
     WIFI_ROC_CANCEL,    /**< Cancel remain on channel */
     WIFI_ROC_REQ,       /**< Request remain on channel */
+    WIFI_ROC_CONNECTING_REQ,   /**< Remain-on-channel request during connecting state; not recommended for use by public APIs */
 } wifi_roc_t;
 /**
   * @brief Wi-Fi country policy
@@ -82,6 +84,9 @@ typedef struct {
   * Strength of authmodes
   * Personal Networks   : OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK = DPP
   * Enterprise Networks : WIFI_AUTH_WPA_ENTERPRISE < WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENTERPRISE = WIFI_AUTH_WPA2_WPA3_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192
+  *
+  * @note WIFI_AUTH_UNKNOWN indicates an Access Point with invalid or unparseable security configuration
+  *       detected during scan parsing.
   */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< Authenticate mode : open */
@@ -102,6 +107,7 @@ typedef enum {
     WIFI_AUTH_WPA3_ENTERPRISE,  /**< Authenticate mode : WPA3-Enterprise Only Mode */
     WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< Authenticate mode : WPA3-Enterprise Transition Mode */
     WIFI_AUTH_WPA_ENTERPRISE,   /**< Authenticate mode : WPA-Enterprise security */
+    WIFI_AUTH_UNKNOWN,          /**< Scan parsed authmode: Unknown or invalid security configuration parsed during scan */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
@@ -337,7 +343,8 @@ typedef struct {
     uint32_t wps: 1;                      /**< Bit: 7 flag to identify if WPS is supported or not */
     uint32_t ftm_responder: 1;            /**< Bit: 8 flag to identify if FTM is supported in responder mode */
     uint32_t ftm_initiator: 1;            /**< Bit: 9 flag to identify if FTM is supported in initiator mode */
-    uint32_t reserved: 22;                /**< Bit: 10..31 reserved */
+    uint32_t akm_dpp: 1;                  /**< Bit: 10 flag set when AP supports mixed DPP AKM (e.g., SAE + DPP or WPA2-PSK + DPP) or when AP only supports DPP AKM */
+    uint32_t reserved: 21;                /**< Bit: 11..31 reserved */
     wifi_country_t country;               /**< Country information of AP */
     wifi_he_ap_info_t he_ap;              /**< HE AP info */
     wifi_bandwidth_t bandwidth;           /**< Bandwidth of AP */
