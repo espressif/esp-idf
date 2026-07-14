@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 #include "common/bt_target.h"
 #include "common/bt_trace.h"
 #include "device/bdaddr.h"
@@ -30,17 +32,150 @@
 #include "device/version.h"
 #include "osi/future.h"
 #include "config/stack_config.h"
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
-const bt_event_mask_t BLE_EVENT_MASK = { "\xff\xff\xff\xff\xff\xff\xff\xff" };
-#else
-const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_INCLUDED)
 const bt_event_mask_t CLASSIC_EVENT_MASK = { HCI_DUMO_EVENT_MASK_EXT };
 #else
 const bt_event_mask_t CLASSIC_EVENT_MASK = { HCI_LISBON_EVENT_MASK_EXT };
 #endif
+
+#if (BLE_INCLUDED == TRUE)
+/*
+ * Build LE_Event_Mask from host feature macros (same approach as NimBLE
+ * ble_hs_startup_le_set_evmask_tx). Only enable bits the host can handle.
+ * ARRAY8_TO_STREAM() reverses as_array for HCI (as_array[7] = bits 0-7).
+ */
+static void build_ble_event_mask(bt_event_mask_t *out)
+{
+    uint64_t mask;
+    int i;
+
+    memset(out, 0, sizeof(*out));
+
+    /**
+     * Always enable common LE events:
+     *   bit0  LE Connection Complete
+     *   bit1  LE Advertising Report
+     *   bit2  LE Connection Update Complete
+     *   bit3  LE Read Remote Features Complete
+     *   bit4  LE Long Term Key Request
+     *   bit5  LE Remote Connection Parameter Request
+     *   bit6  LE Data Length Change
+     *   bit7  LE Read Local P-256 Public Key Complete
+     *   bit8  LE Generate DHKey Complete
+     *   bit9  LE Enhanced Connection Complete
+     *   bit10 LE Directed Advertising Report
+     * Legacy non-BLE5 mask was 0x067f (missing bit7/8); include them for LE SC.
+     */
+    mask = 0x00000000000007ffULL;
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    /**
+     * BLE 5.0 baseline:
+     *   bit11-19 PHY / Ext Adv / Periodic / Scan Timeout / Adv Set Terminated /
+     *            Scan Request Received / Channel Selection Algorithm
+     */
+    mask |= 0x00000000000ff800ULL;
+#endif
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    /* bit20 Connectionless IQ Report */
+    mask |= 0x0000000000100000ULL;
+#endif
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    /* bit21-22 Connection IQ Report / CTE Request Failed */
+    mask |= 0x0000000000600000ULL;
+#endif
+#endif
+
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    /* bit23 PAST Received v1 (Host has no PAST v2 handler; do not enable bit37) */
+    mask |= 0x0000000000800000ULL;
+#endif
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    /* bit24 CIS Established v1 */
+    mask |= 0x0000000001000000ULL;
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    /* bit41 CIS Established v2 */
+    mask |= 0x0000020000000000ULL;
+#endif
+#endif
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    /* bit25 CIS Request */
+    mask |= 0x0000000002000000ULL;
+#endif
+#if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
+    /* bit26-27 Create/Terminate BIG Complete */
+    mask |= 0x000000000c000000ULL;
+#endif
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    /* bit28-29 BIG Sync Established/Lost, bit33 BIGInfo Adv Report */
+    mask |= 0x0000000230000000ULL;
+#endif
+    /* bit30 Request Peer SCA Complete */
+    mask |= 0x0000000040000000ULL;
+#endif /* BLE_FEAT_ISO_EN */
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    /* bit31-32 Path Loss Threshold / Transmit Power Reporting */
+    mask |= 0x0000000180000000ULL;
+#endif
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    /* bit34 Subrate Change */
+    mask |= 0x0000000400000000ULL;
+#endif
+
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    /**
+     * PAwR (Core 5.4+):
+     *   bit35 Periodic Advertising Sync Established v2
+     *   bit36 Periodic Advertising Report v2
+     *   bit38 Periodic Advertising Subevent Data Request
+     *   bit39 Periodic Advertising Response Report
+     *   bit40 Enhanced Connection Complete v2
+     */
+    mask |= 0x000001d800000000ULL;
+#endif
+
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    /* bit42 Read All Remote Features Complete */
+    mask |= 0x0000040000000000ULL;
+#endif
+
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    /* bit43-49 Channel Sounding events (no bit50: Host has no CS Test End handler) */
+    mask |= 0x0003f80000000000ULL;
+#endif
+
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    /* bit51 Monitored Advertisers Report */
+    mask |= 0x0008000000000000ULL;
+#endif
+
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    /* bit52 Frame Space Update Complete */
+    mask |= 0x0010000000000000ULL;
+#endif
+
+#if (BLE_FEAT_LE_UTP == TRUE)
+    /* bit53 UTP Receive */
+    mask |= 0x0020000000000000ULL;
+#endif
+
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    /* bit54 Connection Rate Change */
+    mask |= 0x0040000000000000ULL;
+#endif
+
+    for (i = 0; i < 8; i++) {
+        out->as_array[i] = (uint8_t)((mask >> (8 * (7 - i))) & 0xff);
+    }
+}
+#endif /* BLE_INCLUDED == TRUE */
 
 // TODO(zachoverflow): factor out into common module
 const uint8_t SCO_HOST_BUFFER_SIZE = 0xff;
@@ -326,9 +461,13 @@ static void start_up(void)
                 &controller_param.ble_suggested_default_data_txtime);
         }
 
-        // Set the ble event mask next
-        response = AWAIT_COMMAND(controller_param.packet_factory->make_ble_set_event_mask(&BLE_EVENT_MASK));
-        controller_param.packet_parser->parse_generic_command_complete(response);
+        // Set the ble event mask next (feature-gated, NimBLE-style)
+        {
+            bt_event_mask_t ble_event_mask;
+            build_ble_event_mask(&ble_event_mask);
+            response = AWAIT_COMMAND(controller_param.packet_factory->make_ble_set_event_mask(&ble_event_mask));
+            controller_param.packet_parser->parse_generic_command_complete(response);
+        }
     }
 #endif
 
