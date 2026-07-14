@@ -101,7 +101,7 @@ I2C 主机总线需要 :cpp:type:`i2c_master_bus_config_t` 指定的配置：
 I2C 主机设备需要 :cpp:type:`i2c_device_config_t` 指定的配置：
 
 - :cpp:member:`i2c_device_config_t::dev_addr_length` 配置从机设备的地址位长度，可从枚举 :cpp:enumerator:`I2C_ADDR_BIT_LEN_7` 或 :cpp:enumerator:`I2C_ADDR_BIT_LEN_10` （如果支持）中进行选择。
-- :cpp:member:`i2c_device_config_t::device_address` 设置 I2C 设备原始地址，请直接将设备地址解析到此成员。例如，若设备地址为 0x28，则将 0x28 解析到 :cpp:member:`i2c_device_config_t::device_address`，不要带写入或读取位。
+- :cpp:member:`i2c_device_config_t::device_address` 设置 I2C 设备原始地址，请直接将设备地址解析到此成员。对于使用 7 位地址的设备，请使用 **7 位** 地址，不要使用带读/写位的 8 位地址。
 - :cpp:member:`i2c_device_config_t::scl_speed_hz` 设置此设备的 SCL 线频率。
 - :cpp:member:`i2c_device_config_t::scl_wait_us` 设置 SCL 等待时间（以微秒为单位）。通常此值较大，因为从机延伸时间会很长（甚至可能延伸到 12 ms）。设置为 ``0`` 表示使用默认的寄存器值。
 
