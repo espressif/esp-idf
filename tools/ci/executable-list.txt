@@ -48,8 +48,6 @@ examples/system/ota/otatool/otatool_example.sh
 install.fish
 install.sh
 tools/activate.py
-tools/bt/ble_log_console/build.sh
-tools/bt/ble_log_console/run.sh
 tools/check_python_dependencies.py
 tools/ci/build_template_app.sh
 tools/ci/check_api_violation.sh
