@@ -831,4 +831,8 @@ void btc_gap_ble_deinit(void);
 void btc_adv_list_init(void);
 void btc_adv_list_deinit(void);
 
+#if (BLE_EATT_INCLUDED == TRUE)
+void btc_ble_gap_eatt_evt_cback(UINT16 conn_id, UINT8 status, UINT16 cid);
+#endif
+
 #endif /* __BTC_GAP_BLE_H__ */

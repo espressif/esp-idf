@@ -38,6 +38,12 @@
 #define L2CAP_LE_MIN_MTU            23
 #define L2CAP_LE_MIN_MPS            23
 #define L2CAP_LE_MAX_MPS            65533
+#define L2CAP_LE_CLAMP_MPS(m) \
+    ((UINT16)(((m) < L2CAP_LE_MIN_MPS) ? L2CAP_LE_MIN_MPS : \
+     (((m) > L2CAP_LE_MAX_MPS) ? L2CAP_LE_MAX_MPS : (m))))
+/* Enhanced Credit Based Flow Control minimums (Core Spec Vol 3 Part A 4.25). */
+#define L2CAP_LE_ECFC_MIN_MTU        64
+#define L2CAP_LE_ECFC_MIN_MPS        64
 #define L2CAP_LE_MIN_CREDIT         0
 #define L2CAP_LE_MAX_CREDIT         65535
 #define L2CAP_LE_DEFAULT_MTU        512
@@ -285,8 +291,10 @@ typedef struct
 typedef struct t_l2c_ccb {
     BOOLEAN             in_use;                 /* TRUE when in use, FALSE when not */
     tL2C_CHNL_STATE     chnl_state;             /* Channel state                    */
-    tL2CAP_LE_CFG_INFO  local_conn_cfg;         /* Our config for ble conn oriented channel */
-    tL2CAP_LE_CFG_INFO  peer_conn_cfg;          /* Peer device config ble conn oriented channel */
+#if (BLE_INCLUDED == TRUE)
+    tL2CAP_LE_CFG_INFO  local_conn_cfg;         /* LE CoC local channel config */
+    tL2CAP_LE_CFG_INFO  peer_conn_cfg;          /* LE CoC peer channel config */
+#endif
 
     struct t_l2c_ccb    *p_next_ccb;            /* Next CCB in the chain            */
     struct t_l2c_ccb    *p_prev_ccb;            /* Previous CCB in the chain        */
@@ -347,6 +355,23 @@ typedef struct t_l2c_ccb {
     UINT16              fixed_chnl_idle_tout;   /* Idle timeout to use for the fixed channel       */
 #endif
     UINT16              tx_data_len;
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    BOOLEAN             le_coc_active;
+    BOOLEAN             le_ecfc_channel;
+    BOOLEAN             le_coc_no_auto_credit;
+    UINT16              le_coc_rx_avail;
+    UINT16              le_coc_rx_credits_pending;
+    UINT16              le_coc_rx_manual_owed;  /* manual mode: K-frame credits consumed, awaiting recv_ready return */
+    BT_HDR              *le_coc_rx_sdu;
+    UINT16              le_coc_rx_sdu_total;
+    UINT16              le_coc_rx_sdu_rcvd;
+    BOOLEAN             le_coc_rx_have_len;
+    BT_HDR              *le_coc_tx_sdu;
+    UINT16              le_coc_tx_offset;
+    BOOLEAN             le_coc_tx_len_sent;
+    BOOLEAN             le_coc_xmit_busy;       /* try_xmit re-entrancy guard        */
+    BOOLEAN             le_coc_xmit_rerun;      /* re-entered: outer loop must re-run */
+#endif
 } tL2C_CCB;
 
 /***********************************************************************
@@ -449,7 +474,9 @@ typedef struct t_l2c_linkcb {
     tBLE_ADDR_TYPE      open_addr_type; /* be set by open API */
     tBLE_ADDR_TYPE      ble_addr_type;
     UINT16              tx_data_len;            /* tx data length used in data length extension */
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
     fixed_queue_t       *le_sec_pending_q;      /* LE coc channels waiting for security check completion */
+#endif
     UINT8               sec_act;
 #define L2C_BLE_CONN_UPDATE_DISABLE 0x1  /* disable update connection parameters */
 #define L2C_BLE_NEW_CONN_PARAM      0x2  /* new connection parameter to be set */
@@ -720,6 +747,7 @@ extern tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm);
 extern void     l2cu_release_rcb (tL2C_RCB *p_rcb);
 extern tL2C_RCB *l2cu_allocate_ble_rcb (UINT16 psm);
 extern tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm);
+extern tL2C_RCB *l2cu_find_ble_rcb_by_real_psm (UINT16 real_psm);
 
 #if (L2CAP_COC_INCLUDED == TRUE)
 extern UINT8    l2cu_process_peer_cfg_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg);
@@ -828,7 +856,84 @@ extern void l2cble_credit_based_conn_req (tL2C_CCB *p_ccb);
 extern void l2cble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result);
 extern void l2cble_send_peer_disc_req(tL2C_CCB *p_ccb);
 extern void l2cble_send_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credit_value);
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE)
+/* Defined in l2c_ble.c under (SMP_INCLUDED && BLE_L2CAP_COC_INCLUDED); the LE
+ * CoC/ECFC security check has no meaning without SMP, so callers guard their
+ * use with #if (SMP_INCLUDED == TRUE) and fall back to an immediate success. */
 extern BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator, tL2CAP_SEC_CBACK *p_callback, void *p_ref_data);
+extern void l2ble_sec_flush_pending_req(tL2C_LCB *p_lcb, void *p_ref_data);
+#endif
+
+extern BOOLEAN l2c_ble_le_coc_is_chan(tL2C_CCB *p_ccb);
+/* Map a BTM security failure (tBTM_STATUS) to the matching LE CoC/ECFC L2CAP
+ * result code (0x0005-0x0008) so the peer learns the real reason (authorization
+ * / encryption) instead of always seeing "insufficient authentication". */
+extern UINT16 l2c_ble_coc_sec_status_to_result(BD_ADDR bd_addr, tBTM_STATUS status);
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+extern void l2c_ble_le_coc_connect_req(tL2C_CCB *p_ccb);
+extern void l2c_ble_le_coc_handle_credit_conn_res(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+/* Fail a pending base LE CoC (0x14) client request whose sig id was CMD_REJECTed.
+ * Returns TRUE if a matching pending CCB was found and torn down. */
+extern BOOLEAN l2c_ble_le_coc_abort_conn_req(tL2C_LCB *p_lcb, UINT8 id, UINT16 result);
+#endif
+#if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
+extern void l2c_ble_le_coc_connect_rsp(tL2C_CCB *p_ccb, UINT16 result);
+extern void l2c_ble_le_coc_handle_credit_conn_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+#endif
+extern void l2c_ble_le_coc_on_link_up(tL2C_LCB *p_lcb);
+extern void l2c_ble_le_coc_open_channel(tL2C_CCB *p_ccb, UINT16 result);
+extern void l2c_ble_le_coc_cleanup_ccb(tL2C_CCB *p_ccb);
+extern void l2c_ble_le_coc_apply_reconfig(tL2C_CCB *p_ccb, UINT16 new_mtu, UINT16 new_mps);
+extern void l2c_ble_le_coc_handle_flow_ctrl_credit(tL2C_LCB *p_lcb, UINT8 *p, UINT16 cmd_len);
+extern void l2c_ble_le_coc_handle_disc_req(tL2C_CCB *p_ccb, tL2C_LCB *p_lcb, UINT8 id, UINT16 lcid, UINT16 rcid);
+extern void l2c_ble_le_coc_handle_disc_rsp(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+extern void l2c_ble_le_coc_data_ind(tL2C_CCB *p_ccb, BT_HDR *p_msg);
+extern UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data);
+extern BOOLEAN l2c_ble_le_coc_is_congested(UINT16 lcid);
+extern BOOLEAN l2c_ble_le_coc_give_credits(UINT16 lcid, UINT16 credits);
+extern BOOLEAN l2c_ble_le_coc_set_auto_credit(UINT16 lcid, BOOLEAN enable);
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+extern void l2c_ble_le_coc_notify_reconfig(tL2C_CCB *p_ccb, UINT16 status, BOOLEAN peer_initiated);
+#endif
+extern BOOLEAN l2c_ble_le_coc_disconnect(UINT16 lcid);
+/* Per-CCB signalling response timeout (BTU_TTYPE_L2CAP_CHNL on p_ccb->timer_entry):
+ * fires when a peer never answers a pending connect/reconfigure request. */
+extern void l2c_ble_le_coc_channel_timeout(tL2C_CCB *p_ccb);
+extern void l2c_ble_le_coc_start_rsp_timer(tL2C_CCB *p_ccb, UINT16 timeout_sec);
+extern void l2c_ble_le_coc_stop_rsp_timer(tL2C_CCB *p_ccb);
+
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+#if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
+extern void l2c_ble_ecfc_connect_rsp(tL2C_CCB *p_ccb, UINT16 result);
+extern void l2c_ble_ecfc_handle_conn_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+#endif
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+extern void l2c_ble_ecfc_handle_conn_res(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+extern void l2c_ble_ecfc_abort_cl_txn(tL2C_LCB *p_lcb, UINT8 sig_id, UINT16 result);
+/* Abort the ECFC client connect transaction that owns p_ccb (0x18 timed out). */
+extern BOOLEAN l2c_ble_ecfc_on_conn_timeout(tL2C_CCB *p_ccb);
+#endif
+/* Reconfiguration is available regardless of the client/server flag. */
+extern void l2c_ble_ecfc_abort_reconfig_txn(tL2C_LCB *p_lcb, UINT8 sig_id);
+/* Abort the ECFC reconfigure transaction that owns p_ccb (0x1A timed out). */
+extern BOOLEAN l2c_ble_ecfc_on_reconfig_timeout(tL2C_CCB *p_ccb);
+extern void l2c_ble_ecfc_handle_reconfig_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+extern void l2c_ble_ecfc_handle_reconfig_res(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
+extern void l2c_ble_ecfc_on_ccb_release(tL2C_CCB *p_ccb);
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+extern void l2c_ble_ecfc_on_link_up(tL2C_LCB *p_lcb);
+#endif
+extern BOOLEAN l2cu_send_peer_ble_enhanced_credit_conn_req(tL2C_LCB *p_lcb, UINT8 sig_id, UINT16 psm,
+        UINT16 mtu, UINT16 mps, UINT16 credits, UINT8 num_chan, UINT16 *p_scids);
+extern void l2cu_send_peer_ble_enhanced_credit_conn_res(tL2C_LCB *p_lcb, UINT8 rem_id,
+        UINT16 mtu, UINT16 mps, UINT16 credits, UINT16 result, UINT8 num_chan, UINT16 *p_dcids);
+extern void l2cu_reject_ble_enhanced_connection(tL2C_LCB *p_lcb, UINT8 rem_id, UINT16 result, UINT8 num_scids);
+extern BOOLEAN l2cu_send_peer_ble_credit_reconfig_req(tL2C_LCB *p_lcb, UINT8 sig_id,
+        UINT16 mtu, UINT16 mps, UINT8 num_chan, UINT16 *p_dcids);
+extern void l2cu_send_peer_ble_credit_reconfig_rsp(tL2C_LCB *p_lcb, UINT8 rem_id, UINT16 result);
+#endif /* BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE */
+#endif /* BLE_L2CAP_COC_INCLUDED == TRUE */
 
 
 #if (defined BLE_LLT_INCLUDED) && (BLE_LLT_INCLUDED == TRUE)

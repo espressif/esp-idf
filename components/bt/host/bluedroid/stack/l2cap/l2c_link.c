@@ -478,6 +478,7 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 while (!list_is_empty(p_lcb->link_xmit_data_q)) {
                     p_buf = list_front(p_lcb->link_xmit_data_q);
                     list_remove(p_lcb->link_xmit_data_q, p_buf);
+                    p_buf->event = 0;
                     osi_free(p_buf);
                 }
             } else
@@ -1629,6 +1630,11 @@ void l2c_link_segments_xmitted (BT_HDR *p_msg)
     /* Find the LCB based on the handle */
     if ((p_lcb = l2cu_find_lcb_by_handle (handle)) == NULL) {
         L2CAP_TRACE_WARNING ("L2CAP - rcvd segment complete, unknown handle: %d\n", handle);
+        /* The partial segment being bounced back here was already removed from
+         * link_xmit_data_q before it was handed to the controller, so it is not
+         * freed by l2cu_release_lcb()/disc_comp when the link goes away. This
+         * function is its sole owner, so it must be freed here to avoid a leak. */
+        p_msg->event = 0;
         osi_free (p_msg);
         return;
     }

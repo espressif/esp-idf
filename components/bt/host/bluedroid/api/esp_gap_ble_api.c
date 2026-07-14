@@ -14,6 +14,10 @@
 #include "btc_gap_ble.h"
 #include "btc/btc_ble_storage.h"
 #include "esp_random.h"
+#include "common/bt_target.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "stack/gatt_api.h"
+#endif
 
 /* Hard upper bound to prevent excessive allocations in BTC/BTA layers. */
 #define ESP_GAP_BLE_EXT_ADV_DATA_MAX_LEN 1650U
@@ -3226,3 +3230,36 @@ esp_err_t esp_ble_cs_procedure_enable(esp_ble_cs_procedure_enable_params *proced
 }
 
 #endif
+
+#if (BLE_EATT_INCLUDED == TRUE)
+/* Intentionally synchronous: updates the pre-connection EATT bearer count only.
+ * Must be called before the link is encrypted / bearers are established (see API
+ * doc). No btc_transfer_context dispatch — this is a setup-time config write, not
+ * an async stack procedure, and callers need immediate ESP_ERR_INVALID_ARG feedback. */
+esp_err_t esp_ble_eatt_set_chan_num(uint8_t num_chan)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (num_chan == 0 || num_chan > GATT_EATT_MAX_CHAN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    GATT_EattSetChanNum(num_chan);
+    return ESP_OK;
+}
+
+/* Intentionally synchronous: sets the preferred EATT bearer (ec->default_lcid) for
+ * subsequent GATT client TX routing on this connection. No btc_transfer_context
+ * dispatch — by design this is an immediate preference update with synchronous
+ * validation (invalid conn_id/cid returns ESP_ERR_INVALID_ARG at call time).
+ * Client-only: defined solely when the EATT client role is built in, so a build
+ * without it fails at link time rather than exposing a stub. */
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+esp_err_t esp_ble_eatt_set_default_bearer(uint16_t conn_id, uint16_t cid)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (!GATT_EattSetDefaultBearer(conn_id, cid)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return ESP_OK;
+}
+#endif /* BLE_EATT_CLIENT_INCLUDED */
+#endif /* BLE_EATT_INCLUDED */

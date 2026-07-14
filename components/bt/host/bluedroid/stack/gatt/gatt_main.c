@@ -28,6 +28,9 @@
 
 #include "gatt_int.h"
 #include "stack/l2c_api.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "btm_int.h"
 #include "btm_ble_int.h"
 #include "osi/allocator.h"
@@ -149,6 +152,10 @@ void gatt_init (void)
 #endif  ///GATTS_INCLUDED == TRUE
     //init local MTU size
     gatt_default.local_mtu = GATT_MAX_MTU_SIZE;
+
+#if (BLE_EATT_INCLUDED == TRUE)
+    gatt_eatt_init();
+#endif
 }
 
 
@@ -171,6 +178,11 @@ void gatt_free(void)
     fixed_queue_free(gatt_cb.pending_new_srv_start_q, osi_free_func);
     gatt_cb.pending_new_srv_start_q = NULL;
 #endif // (GATTS_INCLUDED == TRUE)
+
+    /* Note: gatt_eatt_deinit() is intentionally invoked from btu_free_core()
+     * BEFORE l2c_free(), because it deregisters L2CAP/GATT resources that
+     * require live L2CAP state. Calling it here (gatt_free runs after l2c_free)
+     * would dereference the already-freed l2c_cb_ptr. */
 
     list_node_t *p_node = NULL;
     tGATT_TCB   *p_tcb  = NULL;
@@ -986,7 +998,7 @@ static void gatt_send_conn_cback(tGATT_TCB *p_tcb)
 void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 {
     UINT8   *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
-    UINT8   op_code, pseudo_op_code;
+    UINT8   op_code;
 #if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
     UINT16  msg_len;
 #endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
@@ -998,10 +1010,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 #endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
         STREAM_TO_UINT8(op_code, p);
 
-        /* remove the two MSBs associated with sign write and write cmd */
-        pseudo_op_code = op_code & (~GATT_WRITE_CMD_MASK);
-
-        if (pseudo_op_code < GATT_OP_CODE_MAX) {
+        if (gatt_is_valid_att_opcode(op_code)) {
 #if (GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
             GATT_TRACE_DEBUG("%s opcode=%x msg_len=%u", __func__, op_code, msg_len);
 #endif ///(GATTS_INCLUDED == TRUE) || (GATTC_INCLUDED == TRUE)
@@ -1017,7 +1026,7 @@ void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf)
 #endif  ///GATTS_INCLUDED == TRUE
                 } else {
 #if (GATTC_INCLUDED == TRUE)
-                    gatt_client_handle_server_rsp (p_tcb, op_code, msg_len, p);
+                    gatt_client_handle_server_rsp (p_tcb, op_code, msg_len, p, 0);
 #endif  ///GATTC_INCLUDED == TRUE
                 }
             }

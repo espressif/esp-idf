@@ -182,6 +182,10 @@ static void reassemble_and_dispatch(BT_HDR *packet)
             }
 
             STREAM_TO_UINT16(l2cap_length, stream);
+            /* A zero-length L2CAP information payload is valid per Core Spec v6.2
+             * Vol 3 Part A 3.1 (B-frame payload is 0..65535 octets); do not drop
+             * it. The downstream length math handles l2cap_length == 0 correctly
+             * (full_length == header-only == 8). */
             /* Check for integer overflow in length calculation */
             if (l2cap_length > (UINT16_MAX - L2CAP_HEADER_SIZE - HCI_ACL_PREAMBLE_SIZE)) {
                 HCI_TRACE_ERROR("L2CAP length too large: %u", l2cap_length);
