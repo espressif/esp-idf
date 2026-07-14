@@ -101,7 +101,7 @@ If the configurations in :cpp:type:`i2c_master_bus_config_t` is specified, then 
 I2C master device requires the configuration that specified by :cpp:type:`i2c_device_config_t`:
 
 - :cpp:member:`i2c_device_config_t::dev_addr_length` configure the address bit length of the slave device. It can be chosen from enumerator :cpp:enumerator:`I2C_ADDR_BIT_LEN_7` or :cpp:enumerator:`I2C_ADDR_BIT_LEN_10` (if supported).
-- :cpp:member:`i2c_device_config_t::device_address` sets the I2C device raw address. Please parse the device address to this member directly. For example, the device address is 0x28, then parse 0x28 to :cpp:member:`i2c_device_config_t::device_address`, don't carry a write or read bit.
+- :cpp:member:`i2c_device_config_t::device_address` sets the raw I2C device address. Pass the device address directly to this member. For devices with a 7-bit address, use the **7-bit** address instead of an 8-bit address that includes the read/write bit.
 - :cpp:member:`i2c_device_config_t::scl_speed_hz` sets the SCL line frequency of this device.
 - :cpp:member:`i2c_device_config_t::scl_wait_us` sets the SCL await time (in μs). Usually this value should not be very small because slave stretch will happen in pretty long time (It's possible even stretch for 12 ms). Set ``0`` means use default register value.
 
