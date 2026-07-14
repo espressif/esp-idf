@@ -240,6 +240,15 @@ Before doing ISP pipeline, you need to enable the ISP processor first, by callin
 
 Calling :cpp:func:`esp_isp_disable` does the opposite, that is, put the driver back to the **init** state.
 
+.. _isp-dma-input:
+
+ISP DMA Input
+~~~~~~~~~~~~~
+
+Besides image streams from camera controllers, the ISP can also read image frames from system memory through DW-GDMA. To use DMA input, set :cpp:member:`esp_isp_processor_cfg_t::input_data_source` in :cpp:type:`esp_isp_processor_cfg_t` to :cpp:enumerator:`ISP_INPUT_DATA_SOURCE_DWGDMA`, and configure the input format, output format, and resolution according to the image frame.
+
+DMA input is useful for feeding software-generated data, offline RAW images, or other test images in memory into the ISP. It can be used to validate an ISP pipeline without a camera sensor, reproduce issues with a specific input image, or generate inspectable output images in pytest. Call :cpp:func:`esp_isp_dma_process_frame` to send one input buffer to the ISP and write the processed image into an output buffer. The input and output buffers must be accessible by DMA; if cacheable memory is used, perform the required cache synchronization before and after the DMA transfer.
+
 ISP AF Controller
 ~~~~~~~~~~~~~~~~~
 
@@ -957,6 +966,7 @@ Application Examples
 --------------------
 
 * :example:`peripherals/isp/multi_pipelines` demonstrates how to use the ISP pipelines to process the image signals from camera sensors and display the video on LCD screen via DSI peripheral.
+* :example:`peripherals/isp/dma_input` demonstrates how to feed software-generated RAW8 Bayer data into the ISP through DW-GDMA and save the processed RGB888 frames as PPM images in pytest.
 * `esp_video/examples <https://github.com/espressif/esp-video-components/tree/master/esp_video/examples>`_ provides some examples of enabling ISP control algorithms.
 
 API Reference
