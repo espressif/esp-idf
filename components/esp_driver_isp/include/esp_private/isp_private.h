@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,8 @@ typedef enum {
 /*---------------------------------------------------------------
             Driver Context
 ---------------------------------------------------------------*/
+typedef struct esp_isp_dma_frame_ctx_t esp_isp_dma_frame_ctx_t;
+
 typedef struct isp_processor_t {
     int                         proc_id;
     isp_clk_src_t               clk_src;
@@ -70,10 +72,14 @@ typedef struct isp_processor_t {
     DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock);
     isp_color_t                 in_color_format;
     isp_color_t                 out_color_format;
+    isp_input_data_source_t     input_data_source;
     uint32_t                    h_res;
     uint32_t                    v_res;
     color_raw_element_order_t   bayer_order;
     bool                        bypass_isp;
+    uint32_t                    dma_in_burst_len;   // ISP DMA input burst length (64-bit beats), kept in sync with the input GDMA dst MSIZE
+    uint32_t                    dma_out_burst_len;  // ISP DMA output burst length (64-bit beats)
+    esp_isp_dma_frame_ctx_t     *dma_frame_ctx;
     /* sub module contexts */
     isp_af_ctlr_t               af_ctlr[ISP_LL_AF_CTLR_NUMS];
     isp_awb_ctlr_t              awb_ctlr;
@@ -130,6 +136,45 @@ bool esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events);
 bool esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events);
 bool esp_isp_sharpen_isr(isp_proc_handle_t proc, uint32_t sharp_events);
 bool esp_isp_hist_isr(isp_proc_handle_t proc, uint32_t hist_events);
+
+/*---------------------------------------------------------------
+                      DMA INPUT
+---------------------------------------------------------------*/
+/**
+ * @brief Configure the ISP DMA input path (frame size, burst length, data type)
+ *
+ * @note Internal helper invoked while creating a processor whose input source is DWGDMA.
+ *
+ * @param[in] proc  Processor handle
+ *
+ * @return
+ *         - ESP_OK              On success
+ *         - ESP_ERR_INVALID_ARG Invalid input color format or frame size
+ */
+esp_err_t isp_dma_configure_input(isp_proc_handle_t proc);
+
+/**
+ * @brief Create the ISP DMA frame context
+ *
+ * @note Internal helper invoked while creating a processor whose input source is DWGDMA.
+ *
+ * @param[in] proc  Processor handle
+ *
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   Invalid processor, burst length, or frame size
+ *         - ESP_ERR_INVALID_STATE Processor input source is not DWGDMA or the context already exists
+ *         - ESP_ERR_NO_MEM        Failed to allocate the context or synchronization objects
+ *         - Other errors returned by the underlying DMA driver
+ */
+esp_err_t isp_dma_new_frame_ctx(isp_proc_handle_t proc);
+
+/**
+ * @brief Delete the ISP DMA frame context
+ *
+ * @param[in] proc  Processor handle
+ */
+void isp_dma_del_frame_ctx(isp_proc_handle_t proc);
 
 #ifdef __cplusplus
 }

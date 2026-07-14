@@ -415,6 +415,8 @@ static inline void dw_gdma_ll_channel_set_dst_master_port(dw_gdma_dev_t *dev, ui
 {
     if (mem_addr == MIPI_DSI_BRG_MEM_BASE) {
         dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MIPI_DSI;
+    } else if (mem_addr == MIPI_CSI_BRG_MEM_BASE) {
+        dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MIPI_CSI;
     } else {
         dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MEMORY;
     }
