@@ -7,6 +7,10 @@ set(COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(test_csi)
 
+# TODO IDF-15784: remove
+# esp_cam_sensor upstream sets locals without reading them; silence -Wunused-but-set-variable
+idf_component_get_property(esp_cam_sensor_lib espressif__esp_cam_sensor COMPONENT_LIB)
+target_compile_options(${esp_cam_sensor_lib} PRIVATE -Wno-unused-but-set-variable)
 
 message(STATUS "Checking camera registers are not read-write by half-word")
 include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)

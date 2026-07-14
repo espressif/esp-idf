@@ -208,6 +208,15 @@ if(CONFIG_LWIP_ENABLE)
         -Wno-array-parameter
     )
 
+    # TODO IDF-15784: remove
+    # vars only used in LWIP_ASSERT / debug; unused when asserts disabled
+    set_source_files_properties(
+        lwip/src/core/netif.c
+        lwip/src/core/ipv4/ip4_napt.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-unused-but-set-variable
+    )
+
     if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
         set_source_files_properties(
             lwip/src/core/ipv4/ip4_addr.c

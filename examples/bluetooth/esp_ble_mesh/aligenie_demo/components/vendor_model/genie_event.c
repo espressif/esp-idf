@@ -1,17 +1,9 @@
 // Copyright (C) 2018-2020 Alibaba Group Holding Limited
-// Adaptations to ESP-IDF Copyright (c) 2020 Espressif Systems (Shanghai) Co. Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -114,7 +106,7 @@ static genie_event_t genie_event_handle_hw_reset_done(void)
  *      1. Handle Mesh Init according esp-ble-mesh init status
  *      2. Start power indeicate if ble-mesh already provisioned
  *      3. Start PB-ADV Timer if  ble-mesh not provisioned
- *      4. Hardware reset ble-mesh provision information if reset flag be configed.
+ *      4. Hardware reset ble-mesh provision information if reset flag be configured.
  *
  * @param p_status
  *
@@ -338,13 +330,13 @@ static genie_event_t genie_event_handle_color_action(elem_state_t *p_elem, uint8
     ENTER_FUNC();
 
 #ifdef CONFIG_MESH_MODEL_HSL_SRV
-    uint16_t lightness = *p_data++;
+    __attribute__((unused)) uint16_t lightness = *p_data++;
     lightness += (*p_data++ << 8);
 
-    uint16_t hue = *p_data++;
+    __attribute__((unused)) uint16_t hue = *p_data++;
     hue += (*p_data++ << 8);
 
-    uint16_t saturation = *p_data++;
+    __attribute__((unused)) uint16_t saturation = *p_data++;
     saturation += (*p_data++ << 8);
 
     ESP_LOGD(TAG, "tar lightness(%d) hue(%d) saturation(%d)", p_elem->state.lightness[VALUE_TYPE_TAR], p_elem->state.hue[VALUE_TYPE_TAR], p_elem->state.saturation[VALUE_TYPE_TAR]);

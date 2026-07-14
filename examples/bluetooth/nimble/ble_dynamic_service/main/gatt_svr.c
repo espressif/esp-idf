@@ -220,7 +220,6 @@ gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg)
  */
 int dynamic_service(const uint8_t operation, const struct ble_gatt_svc_def *svcs, const ble_uuid_t *uuid) {
     int rc = 0;
-    int i = 0;
     switch(operation) {
         case 1:
             /* add services in gatt_svr_svcs */
@@ -243,7 +242,6 @@ int dynamic_service(const uint8_t operation, const struct ble_gatt_svc_def *svcs
                     /* not able to delete service return immidietely */
                     return rc;
                 }
-                i++;
                 return rc;
             break;
     }

@@ -395,6 +395,14 @@ if(CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
 
+# TODO IDF-15784: remove
+# variables can be unused, need to patch submodule
+set_source_files_properties(
+    esp_supplicant/src/esp_common.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-unused-but-set-variable
+)
+
 if(CONFIG_COMPILER_STATIC_ANALYZER AND CONFIG_IDF_TOOLCHAIN_GCC)
     set(eloop_analyzer_flags
         -Wno-analyzer-out-of-bounds
