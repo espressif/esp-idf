@@ -43,17 +43,6 @@ class YmlLinter:
 
         exit(exit_code)
 
-    # name it like _1_ to make it run first
-    def _lint_1_yml_parser(self) -> None:
-        for k, v in self.yml_config.config.items():
-            if (
-                k not in self.yml_config.global_keys
-                and k not in self.yml_config.anchors
-                and k not in self.yml_config.templates
-                and k not in self.yml_config.jobs
-            ):
-                raise SystemExit(f'Parser incorrect. Key {k} not in global keys, anchors, templates,  or jobs')
-
     def _lint_default_values_artifacts(self) -> None:
         defaults_artifacts = self.yml_config.default.get('artifacts', {})
 
@@ -78,20 +67,6 @@ class YmlLinter:
             if undefined_patterns:
                 for item in undefined_patterns:
                     self._errors.append(f'undefined pattern {item}. Please add {item} to .patterns-submodule')
-
-    def _lint_gitlab_yml_templates(self) -> None:
-        unused_templates = self.yml_config.templates.keys() - self.yml_config.used_templates
-        for item in unused_templates:
-            # known unused ones
-            if item not in [
-                '.before_script:fetch:target_test',  # used in dynamic pipeline
-            ]:
-                self._errors.append(f'Unused template: {item}, please remove it')
-
-        undefined_templates = self.yml_config.used_templates - self.yml_config.templates.keys()
-        for item in undefined_templates:
-            if item not in self.yml_config._EXTERNAL_TEMPLATE_KEYS:
-                self._errors.append(f'Undefined template: {item}')
 
     def _lint_dependencies_and_needs(self) -> None:
         """

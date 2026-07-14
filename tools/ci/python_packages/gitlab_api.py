@@ -116,7 +116,7 @@ class Gitlab:
         :param namespace: namespace to match when we have multiple project with same name
         :return: project ID
         """
-        projects = self.gitlab_inst.projects.list(search=name)
+        projects = self.gitlab_inst.projects.list(search=name, get_all=True)
         res = []
         for project in projects:
             if namespace is None:

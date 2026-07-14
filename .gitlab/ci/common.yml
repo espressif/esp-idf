@@ -127,7 +127,6 @@ variables:
         run_cmd idf-ci gitlab upload-artifacts --type log
       fi
 
-
 #############
 # `default` #
 #############

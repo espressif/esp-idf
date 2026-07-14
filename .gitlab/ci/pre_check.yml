@@ -147,6 +147,12 @@ check_test_scripts_build_test_rules:
     # requires basic pytest dependencies
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
 
+check_gitlab_yaml:
+  extends:
+    - .pre_check_template
+  script:
+    - python tools/ci/gitlab_yaml_linter.py
+
 retry_failed_jobs:
   extends:
     - .pre_check_template
