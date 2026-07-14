@@ -26,7 +26,7 @@ TARGETS_RISCV = panic_tests.TARGETS_RISCV
 TARGETS_RISCV_DUAL_CORE = panic_tests.TARGETS_RISCV_DUAL_CORE
 COREDUMP_APP = str(Path(__file__).resolve().parent)
 
-COREDUMP_UNSUPPORTED_TARGETS = {'esp32h4'}
+COREDUMP_UNSUPPORTED_TARGETS = {''}
 COREDUMP_TARGETS_ALL = [target for target in TARGETS_ALL if target not in COREDUMP_UNSUPPORTED_TARGETS]
 COREDUMP_TARGETS_DUAL_CORE = [target for target in TARGETS_DUAL_CORE if target not in COREDUMP_UNSUPPORTED_TARGETS]
 COREDUMP_TARGETS_RISCV = [target for target in TARGETS_RISCV if target not in COREDUMP_UNSUPPORTED_TARGETS]
@@ -132,7 +132,6 @@ def get_psram_marker(target: str) -> pytest.mark:
 )
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 @pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'], reason='TODO: IDF-15623')
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='IDF-12308')
 def test_panic_extram_stack_heap_psram(dut: PanicTestDut, config: str) -> None:
     _test_panic_extram_stack_impl(dut, config)
 
@@ -147,7 +146,6 @@ def test_panic_extram_stack_heap_psram(dut: PanicTestDut, config: str) -> None:
 )
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 @pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'], reason='TODO: IDF-15623')
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='IDF-12308')
 def test_panic_extram_stack_heap_bss(dut: PanicTestDut, config: str) -> None:
     _test_panic_extram_stack_impl(dut, config)
 
@@ -162,7 +160,6 @@ def test_panic_extram_stack_heap_bss(dut: PanicTestDut, config: str) -> None:
 )
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
 @pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61', 'esp32p4', 'esp32s31'], reason='TODO: IDF-15623')
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='IDF-12308')
 def test_panic_extram_stack_heap_bss_xip(dut: PanicTestDut, config: str) -> None:
     _test_panic_extram_stack_impl(dut, config)
 
@@ -308,7 +305,7 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     buffer_value = str(dut.gdb_data_eval_expr('g_noinit_buffer'))
     assert 'NOINIT_TEST_STRING' in buffer_value
 
-    if dut.target not in ['esp32c61', 'esp32c2']:
+    if dut.target in soc_filtered_targets('SOC_RTC_MEM_SUPPORTED == 1'):
         assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA
         assert int(dut.gdb_data_eval_expr('g_rtc_fast_var')) == 0xAABBCCDD
 
