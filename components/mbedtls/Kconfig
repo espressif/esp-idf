@@ -255,11 +255,11 @@ menu "mbedTLS"
                 and in RFC 8446, Section 7.5, for TLS 1.3.
 
         config MBEDTLS_PKCS7_C
-            bool "Enable PKCS #7"
+            bool "Enable PKCS number 7"
             default y
             depends on MBEDTLS_X509_CRL_PARSE_C
             help
-                Enable PKCS #7 core for using PKCS #7-formatted signatures.
+                Enable PKCS number 7 core for using PKCS number 7-formatted signatures.
 
         config MBEDTLS_SSL_CID_PADDING_GRANULARITY
             int "Record plaintext padding"
@@ -524,6 +524,31 @@ menu "mbedTLS"
             Value 0 (default) means that there is no preference regarding the interrupt
             priority level and any level from 1 to 3 can be selected (based on the availability).
             Note: Higher value indicates high interrupt priority.
+
+    menu "Security hardening"
+
+        config MBEDTLS_CONSTANT_TIME_PRIME_GEN
+            bool "Constant-time prime generation"
+            default n
+            help
+                Use mbedtls' constant-time small-factor test (a constant-time
+                GCD against the product of all odd primes up to 997) when
+                generating prime numbers, e.g. during RSA key generation.
+
+                The constant-time implementation avoids a timing side channel
+                in prime generation, but it makes RSA key generation roughly
+                ten times slower, and its long non-yielding software
+                computations can starve the idle task and trigger the task
+                watchdog, so key generation code may need a larger watchdog
+                timeout or the watchdog disabled.
+
+                If disabled, the variable-time trial division that mbedtls
+                used before version 3.6.7 is used instead, restoring key
+                generation performance.
+
+                Please see issue: https://github.com/Mbed-TLS/mbedtls/issues/10830
+
+    endmenu # Security hardening
 
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
@@ -814,21 +839,21 @@ menu "mbedTLS"
             depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
             default y
             help
-                Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+                Enable to support ciphersuites with prefix TLS-ECDHE-ECDSA-WITH-
 
         config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA
             bool "Enable ECDH-ECDSA based ciphersuite modes"
             depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
             default y
             help
-                Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+                Enable to support ciphersuites with prefix TLS-ECDH-ECDSA-WITH-
 
         config MBEDTLS_KEY_EXCHANGE_ECDH_RSA
             bool "Enable ECDH-RSA based ciphersuite modes"
             depends on MBEDTLS_KEY_EXCHANGE_ELLIPTIC_CURVE && MBEDTLS_ECDH_C
             default y
             help
-                Enable to support ciphersuites with prefix TLS-ECDHE-RSA-WITH-
+                Enable to support ciphersuites with prefix TLS-ECDH-RSA-WITH-
 
         config MBEDTLS_KEY_EXCHANGE_ECJPAKE
             bool "Enable ECJPAKE based ciphersuite modes"
