@@ -376,24 +376,11 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
             *p++ = GATT_RSP_READ_MULTI_VAR;
             p_buf->len = 1;
 
-            /* Now walk through the buffers putting the data into the response in order */
-            list_t *list = NULL;
-            const list_node_t *node = NULL;
-            if (! fixed_queue_is_empty(p_cmd->multi_rsp_q)) {
-                list = fixed_queue_get_list(p_cmd->multi_rsp_q);
-			}
+            /* Match responses by handle; replies may arrive out of order. */
             for (ii = 0; ii < p_cmd->multi_req.num_handles; ii++) {
-                tGATTS_RSP *p_rsp = NULL;
-                if (list != NULL) {
-                    if (ii == 0) {
-                        node = list_begin(list);
-                    } else {
-                        node = list_next(node);
-					}
-                    if (node != list_end(list)) {
-                        p_rsp = (tGATTS_RSP *)list_node(node);
-					}
-                }
+                tGATTS_RSP *p_rsp = gatt_find_multi_rsp_by_handle(
+                    p_cmd, p_cmd->multi_req.handles[ii],
+                    gatt_get_multi_handle_occurrence(p_cmd, ii));
 
                 if (p_rsp != NULL) {
 
@@ -405,16 +392,11 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
                     }
                     len = MIN(p_rsp->attr_value.len, (mtu - total_len));  // attribute value length
 
-                    if (p_rsp->attr_value.handle == p_cmd->multi_req.handles[ii]) {
-                        GATT_TRACE_DEBUG("%s handle %x len %u", __func__, p_rsp->attr_value.handle, p_rsp->attr_value.len);
-                        UINT16_TO_STREAM(p, p_rsp->attr_value.len);
-                        memcpy (p, p_rsp->attr_value.value, len);
-                        p += len;
-                        p_buf->len += (2+len);
-                    } else {
-                        p_cmd->status = GATT_NOT_FOUND;
-                        break;
-                    }
+                    GATT_TRACE_DEBUG("%s handle %x len %u", __func__, p_rsp->attr_value.handle, p_rsp->attr_value.len);
+                    UINT16_TO_STREAM(p, p_rsp->attr_value.len);
+                    memcpy (p, p_rsp->attr_value.value, len);
+                    p += len;
+                    p_buf->len += (2+len);
                 } else {
                     p_cmd->status = GATT_NOT_FOUND;
                     break;
@@ -423,7 +405,7 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
             } /* loop through all handles*/
 
             /* Sanity check on the buffer length */
-            if (p_buf->len == 0) {
+            if (p_buf->len <= 1) {
                 GATT_TRACE_ERROR("%s - nothing found!!", __func__);
                 p_cmd->status = GATT_NOT_FOUND;
                 osi_free (p_buf);
