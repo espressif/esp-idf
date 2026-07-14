@@ -6,15 +6,13 @@ maintenance flush register-cache
 
 tb heap_trace_start
 commands
-mon esp sysview start file:///tmp/heap_log.svdat
-# For dual-core mode uncomment the line below and comment the line above
-# mon esp sysview start file:///tmp/heap_log0.svdat file:///tmp/heap_log1.svdat
+mon esp sysview_mcore start file:///tmp/heap_log.svdat
 c
 end
 
 tb heap_trace_stop
 commands
-mon esp sysview stop
+mon esp sysview_mcore stop
 end
 
 c
