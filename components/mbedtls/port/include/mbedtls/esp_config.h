@@ -258,6 +258,18 @@
 #undef MBEDTLS_MPI_MUL_MPI_ALT
 #endif
 
+/* mbedtls 4.1.1 made the small-factor test used in prime
+ * generation constant-time, which slows RSA key generation down roughly
+ * tenfold and starves the idle task (the computation never yields the CPU).
+ * The constant-time variant is the default; when it is explicitly disabled,
+ * fall back to the variable-time trial division from earlier releases. See
+ * MBEDTLS_MPI_PRIME_SIEVE_VARIABLE_TIME in
+ * tf-psa-crypto/drivers/builtin/src/bignum.c.
+ */
+#ifndef CONFIG_MBEDTLS_CONSTANT_TIME_PRIME_GEN
+#define MBEDTLS_MPI_PRIME_SIEVE_VARIABLE_TIME
+#endif
+
 #if defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY) || defined(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN) || defined(CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN)
 #define ESP_ECDSA_DRIVER_ENABLED
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY
