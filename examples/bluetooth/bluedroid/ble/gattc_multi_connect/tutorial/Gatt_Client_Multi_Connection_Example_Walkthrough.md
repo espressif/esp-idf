@@ -1,9 +1,9 @@
 # GATT Client Multi-connection Example Walkthrough
 
 ## Introduction
-This document presents a description of the multi-connection BLE GATT client example for the ESP32. In this implementation, a single ESP32 working as a GATT client connects to three different GATT servers at the same time. This set up illustrates the use case of an ESP32 device acting in a way so that it receives data from different BLE sensors. The unique combination of ESP32’s BLE + Wi-Fi capabilities in addition to connection to multiple peripherals makes it a great candidate to serve as an IoT gateway.
+This document presents a description of the multi-connection BLE GATT client example for the ESP32. In this implementation, a single ESP32 working as a GATT client connects to three different GATT servers at the same time. This set up illustrates the use case of an ESP32 device acting in a way so that it receives data from different BLE sensors. The unique combination of ESP32's BLE + Wi-Fi capabilities in addition to connection to multiple peripherals makes it a great candidate to serve as an IoT gateway.
 
-This example’s workflow is similar to the [GATT Client Example Walkthrough](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md) and is shown in the figure below. However, in the multi-connection implementation, a GATT client searches for three specific server names and once that it has found them it opens a connection to all three of them one after the other. In code, each connection is handled separately with one Application Profile.
+This example's workflow is similar to the [GATT Client Example Walkthrough](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md) and is shown in the figure below. However, in the multi-connection implementation, a GATT client searches for three specific server names and once that it has found them it opens a connection to all three of them one after the other. In code, each connection is handled separately with one Application Profile.
 
 Four ESP32 devices are needed in order to demonstrate this example, among which:
 
@@ -13,7 +13,7 @@ Four ESP32 devices are needed in order to demonstrate this example, among which:
 <div align="center"><img src="image/Multi_Connection_GATT_Client_Flowchart.png" width = "800" alt="Multi-Connection GATT Client Flowchart" align=center/></div>
 
 ## Includes
-The multi-connection example’s main source file is [gattc_multi_connect.c](../main/gattc_multi_connect.c). For details, see Section [Includes](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md#includes) in [GATT Client Example Walkthrough](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md).
+The multi-connection example's main source file is [gattc_multi_connect.c](../main/gattc_multi_connect.c). For details, see Section [Includes](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md#includes) in [GATT Client Example Walkthrough](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md).
 
 ## Main Entry Point
 See Section [Main Entry Point](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md#main-entry-point) in [GATT Client Example Walkthrough](../../gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md).
@@ -69,7 +69,7 @@ See Section [Getting Scan Results](../../gatt_client/tutorial/Gatt_Client_Exampl
 * Then, the device name found is compared to the server names that the client wants to connect to. The server names are defined in the ``remote_device_name`` array:
 
    ```c
-   static const char remote_device_name[3][20] = {"ESP_GATTS_DEMO_1", "ESP_GATTS_DEMO_2", “ESP_GATTS_DEMO_3"};
+   static const char remote_device_name[3][20] = {"ESP_GATTS_DEMO_1", "ESP_GATTS_DEMO_2", "ESP_GATTS_DEMO_3"};
    ```
    The name comparison takes places as follows:
    
@@ -334,7 +334,7 @@ At this point the client has acquired all characteristics from the remote device
 	```c
    #define ESP_GATT_UUID_CHAR_CLIENT_CONFIG            0x2902          /*  Client Characteristic Configuration */
    ```
-	The value to write is “1” to enable notifications. The parameter ``ESP_GATT_WRITE_TYPE_RSP`` is also passed to request that the server responds to the write request, as well as the ``ESP_GATT_AUTH_REQ_NONE`` parameter to indicate that the write request does not need authorization:
+	The value to write is "1" to enable notifications. The parameter ``ESP_GATT_WRITE_TYPE_RSP`` is also passed to request that the server responds to the write request, as well as the ``ESP_GATT_AUTH_REQ_NONE`` parameter to indicate that the write request does not need authorization:
    	
    	```c
    case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
