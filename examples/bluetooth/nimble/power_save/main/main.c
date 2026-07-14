@@ -638,9 +638,11 @@ app_main(void)
 
     nimble_port_freertos_init(bleprph_host_task);
 
+#if CONFIG_EXAMPLE_USE_SCLI
     /* Initialize command line interface to accept input from user */
     rc = scli_init();
     if (rc != ESP_OK) {
         ESP_LOGE(tag, "scli_init() failed");
     }
+#endif // CONFIG_EXAMPLE_USE_SCLI
 }

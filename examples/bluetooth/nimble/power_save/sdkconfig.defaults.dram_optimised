@@ -9,9 +9,9 @@ CONFIG_BT_BLUEDROID_ENABLED=n
 CONFIG_BT_NIMBLE_ENABLED=y
 
 # Enable support for power management
-CONFIG_PM_ENABLE=y
+
 # Enable tickless idle mode
-CONFIG_FREERTOS_USE_TICKLESS_IDLE=y
+
 # Set the tick rate at which FreeRTOS does pre-emptive context switching.
 CONFIG_FREERTOS_HZ=1000
 # Minimum number of ticks to enter sleep mode for
