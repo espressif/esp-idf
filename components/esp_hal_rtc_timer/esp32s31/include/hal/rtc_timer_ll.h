@@ -106,9 +106,21 @@ FORCE_INLINE_ATTR void rtc_timer_ll_alarm_intr_enable(rtc_timer_dev_t *dev, uint
  */
 FORCE_INLINE_ATTR void rtc_timer_ll_set_wakeup_time(uint8_t timer_id, uint64_t ticks)
 {
+    rtc_timer_ll_set_target_enable(&RTC_TIMER, timer_id, false);
     rtc_timer_ll_clear_alarm_intr_status(&RTC_TIMER, timer_id);
     rtc_timer_ll_set_alarm_target(&RTC_TIMER, timer_id, ticks);
     rtc_timer_ll_set_target_enable(&RTC_TIMER, timer_id, true);
+}
+
+/**
+ * @brief Clear/disarm the wakeup timer alarm enabled by rtc_timer_ll_set_wakeup_time()
+ *
+ * @param timer_id Timer ID
+ */
+FORCE_INLINE_ATTR void rtc_timer_ll_clear_wakeup_time(uint8_t timer_id)
+{
+    rtc_timer_ll_set_target_enable(&RTC_TIMER, timer_id, false);
+    rtc_timer_ll_clear_alarm_intr_status(&RTC_TIMER, timer_id);
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,9 +109,21 @@ FORCE_INLINE_ATTR void rtc_timer_ll_record_regdma_work_time_enable(lp_timer_dev_
  */
 FORCE_INLINE_ATTR void rtc_timer_ll_set_wakeup_time(uint8_t timer_id, uint64_t ticks)
 {
+    rtc_timer_ll_set_target_enable(&LP_TIMER, timer_id, false);
     rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, timer_id);
     rtc_timer_ll_set_alarm_target(&LP_TIMER, timer_id, ticks);
     rtc_timer_ll_set_target_enable(&LP_TIMER, timer_id, true);
+}
+
+/**
+ * @brief Clear/disarm the wakeup timer alarm enabled by rtc_timer_ll_set_wakeup_time()
+ *
+ * @param timer_id Timer ID
+ */
+FORCE_INLINE_ATTR void rtc_timer_ll_clear_wakeup_time(uint8_t timer_id)
+{
+    rtc_timer_ll_set_target_enable(&LP_TIMER, timer_id, false);
+    rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, timer_id);
 }
 
 /**
