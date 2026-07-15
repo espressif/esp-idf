@@ -191,6 +191,9 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     ESP_RETURN_ON_FALSE(ppa_ll_srm_is_color_mode_supported(config->in.srm_cm) &&
                         (ppa_ll_srm_is_color_mode_supported(config->out.srm_cm) && config->out.srm_cm != PPA_SRM_COLOR_MODE_YUV444),
                         ESP_ERR_INVALID_ARG, TAG, "unsupported color mode");
+    ESP_RETURN_ON_FALSE(config->in.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->in.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX &&
+                        config->out.pic_w <= DMA2D_LL_DESC_2D_FIELD_MAX && config->out.pic_h <= DMA2D_LL_DESC_2D_FIELD_MAX,
+                        ESP_ERR_INVALID_ARG, TAG, "dimension exceeds DMA2D descriptor field limit");
     // For YUV420 input/output: in desc, ha/hb/va/vb/x/y must be even number
     // For YUV422 input/output: in desc, ha/hb/x must be even number
     if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
@@ -210,11 +213,14 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         ESP_RETURN_ON_FALSE(config->out.pic_w % 2 == 0 && config->out.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "YUV422 output does not support odd w/offset_x");
     }
-    ESP_RETURN_ON_FALSE(config->in.block_w <= (config->in.pic_w - config->in.block_offset_x) &&
+    ESP_RETURN_ON_FALSE(config->in.block_w > 0 && config->in.block_h > 0 &&
+                        config->in.block_offset_x < config->in.pic_w &&
+                        config->in.block_w <= (config->in.pic_w - config->in.block_offset_x) &&
+                        config->in.block_offset_y < config->in.pic_h &&
                         config->in.block_h <= (config->in.pic_h - config->in.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "in.block_w/h + in.block_offset_x/y does not fit in the in pic");
     uint32_t out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->out.srm_cm); // bits
-    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
+    uint32_t out_pic_len = (uint32_t)((uint64_t)config->out.pic_w * config->out.pic_h * out_pixel_depth / 8);
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     ESP_RETURN_ON_FALSE(config->scale_x < PPA_LL_SRM_SCALING_INT_MAX && config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
                         config->scale_y < PPA_LL_SRM_SCALING_INT_MAX && config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
@@ -232,7 +238,10 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         new_block_w = (uint32_t)(scale_y_int * config->in.block_h + scale_y_frag * config->in.block_h / PPA_LL_SRM_SCALING_FRAG_MAX);
         new_block_h = (uint32_t)(scale_x_int * config->in.block_w + scale_x_frag * config->in.block_w / PPA_LL_SRM_SCALING_FRAG_MAX);
     }
-    ESP_RETURN_ON_FALSE(new_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+    ESP_RETURN_ON_FALSE(new_block_w > 0 && new_block_h > 0, ESP_ERR_INVALID_ARG, TAG, "scale makes block size to be 0");
+    ESP_RETURN_ON_FALSE(config->out.block_offset_x < config->out.pic_w &&
+                        new_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        config->out.block_offset_y < config->out.pic_h &&
                         new_block_h <= (config->out.pic_h - config->out.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "scale does not fit in the out pic");
 
@@ -262,16 +271,16 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     size_t in_buf_alignment = esp_ptr_external_ram(config->in.buffer) ? ppa_client->engine->platform->ext_mem_align : ppa_client->engine->platform->int_mem_align;
     if (in_buf_alignment > 0) {
         uint32_t in_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)config->in.srm_cm); // bits
-        uint32_t in_ext_window = (uint32_t)config->in.buffer + config->in.block_offset_y * config->in.pic_w * in_pixel_depth / 8;
-        uint32_t in_ext_window_len = config->in.pic_w * config->in.block_h * in_pixel_depth / 8;
+        uint32_t in_ext_window = (uint32_t)config->in.buffer + (uint32_t)((uint64_t)config->in.block_offset_y * config->in.pic_w * in_pixel_depth / 8);
+        uint32_t in_ext_window_len = (uint32_t)((uint64_t)config->in.pic_w * config->in.block_h * in_pixel_depth / 8);
         esp_cache_msync((void *)in_ext_window, in_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }
     // Invalidate out_buffer extended window (alignment strict on M2C direction)
     size_t out_buf_alignment = esp_ptr_external_ram(config->out.buffer) ? ppa_client->engine->platform->ext_mem_align : ppa_client->engine->platform->int_mem_align;
     if (out_buf_alignment > 0) {
-        uint32_t out_ext_window = (uint32_t)config->out.buffer + config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8;
+        uint32_t out_ext_window = (uint32_t)config->out.buffer + (uint32_t)((uint64_t)config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8);
         uint32_t out_ext_window_aligned = PPA_ALIGN_DOWN(out_ext_window, out_buf_alignment);
-        uint32_t out_ext_window_len = config->out.pic_w * new_block_h * out_pixel_depth / 8; // actual ext_window_len must be less than or equal to this, since actual block_h <= new_block_h (may round down)
+        uint32_t out_ext_window_len = (uint32_t)((uint64_t)config->out.pic_w * new_block_h * out_pixel_depth / 8); // actual ext_window_len must be less than or equal to this, since actual block_h <= new_block_h (may round down)
         assert(out_ext_window + out_ext_window_len <= (uint32_t)config->out.buffer + config->out.buffer_size);
         esp_cache_msync((void *)out_ext_window_aligned, PPA_ALIGN_UP(out_ext_window_len + (out_ext_window - out_ext_window_aligned), out_buf_alignment), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
     }
