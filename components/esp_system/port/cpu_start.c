@@ -216,6 +216,9 @@ void IRAM_ATTR call_start_cpu1(void)
 #else // CONFIG_ESP_CONSOLE_NONE
     esp_rom_install_uart_printf();
     esp_rom_uart_set_as_console(CONFIG_ESP_CONSOLE_UART_NUM);
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM
+    esp_rom_uart_switch_buffer(CONFIG_ESP_CONSOLE_UART_NUM);
+#endif
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
