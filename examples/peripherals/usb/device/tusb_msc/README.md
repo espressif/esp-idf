@@ -59,7 +59,8 @@ GPIOs and SD bus settings can be configured in two ways:
    - Select "SDMMC CARD" for "Storage Media Used"
    - Select "SD/MMC bus width" — "4 lines (D0 - D3)" or "1 line (D0)" (see `CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_1`)
    - On ESP32-S3 and ESP32-P4: set the GPIO numbers for the SD card interface
-2. In the source code: See the initialization of ``sdmmc_slot_config_t slot_config`` structure in the example code.
+2. Using target-specific defaults: Pin and LDO defaults for each chip are in ``sdkconfig.defaults.esp32s3``, ``sdkconfig.defaults.esp32p4``, and ``sdkconfig.defaults.esp32s31``. These are applied automatically when you set the target with ``idf.py set-target``.
+3. In the source code: See the initialization of ``sdmmc_slot_config_t slot_config`` structure in the example code.
 
 By default, this example uses 4-line SD mode, utilizing 6 pins: CLK, CMD, D0 - D3.
 
