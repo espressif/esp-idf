@@ -93,6 +93,7 @@ static esp_err_t sec0_req_handler(protocomm_security_handle_t handle,
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
         ESP_LOGE(TAG, "System out of memory");
+        sec0_session_setup_cleanup(session_id, &resp);
         return ESP_ERR_NO_MEM;
     }
     session_data__pack(&resp, *outbuf);

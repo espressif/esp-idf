@@ -139,6 +139,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         ESP_LOGE(TAG, "psa_cipher_encrypt_setup failed with status=%d", status);
         psa_cipher_abort(&cur_session->ctx_aes);
         psa_destroy_key(key_id);
+        cur_session->key_id_sym = PSA_KEY_ID_NULL;
         return ESP_FAIL;
     }
     status = psa_cipher_set_iv(&cur_session->ctx_aes, cur_session->rand, sizeof(cur_session->rand));
@@ -146,6 +147,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         ESP_LOGE(TAG, "psa_cipher_set_iv failed with status=%d", status);
         psa_cipher_abort(&cur_session->ctx_aes);
         psa_destroy_key(key_id);
+        cur_session->key_id_sym = PSA_KEY_ID_NULL;
         return ESP_FAIL;
     }
 
@@ -155,6 +157,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         ESP_LOGE(TAG, "psa_cipher_update failed with status=%d", status);
         psa_cipher_abort(&cur_session->ctx_aes);
         psa_destroy_key(key_id);
+        cur_session->key_id_sym = PSA_KEY_ID_NULL;
         return ESP_FAIL;
     }
 
@@ -165,6 +168,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
                                  sizeof(cur_session->device_pubkey)) != 0) {
         ESP_LOGE(TAG, "Key mismatch. Close connection");
         psa_destroy_key(key_id);
+        cur_session->key_id_sym = PSA_KEY_ID_NULL;
         if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_CREDENTIALS_MISMATCH, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post credential mismatch event");
         }
@@ -619,6 +623,7 @@ static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
         ESP_LOGE(TAG, "System out of memory");
+        sec1_session_setup_cleanup(cur_session, session_id, &resp);
         return ESP_ERR_NO_MEM;
     }
     session_data__pack(&resp, *outbuf);
