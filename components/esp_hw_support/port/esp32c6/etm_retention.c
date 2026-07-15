@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/etm_periph.h"
+#include "etm_retention.h"
 #include "soc/soc_etm_reg.h"
 
 /**

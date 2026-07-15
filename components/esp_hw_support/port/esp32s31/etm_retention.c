@@ -1,16 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/etm_periph.h"
+#include "etm_retention.h"
 #include "soc/soc_etm_reg.h"
 
 /**
  * ETM Registers to be saved during sleep retention
  * - Channel configuration registers, e.g.: SOC_ETM_CH0_EVT_ID_REG, SOC_ETM_CH0_TASK_ID_REG
- */
+*/
 #define ETM_RETENTION_REGS_CNT ((SOC_ETM_CH49_TASK_ID_REG - SOC_ETM_CH0_EVT_ID_REG) / 4 + 1)
 
 static const regdma_entries_config_t etm_regdma_entries[] = {

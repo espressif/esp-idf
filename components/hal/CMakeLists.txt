@@ -38,7 +38,7 @@ if(NOT esp_tee_build AND NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 
     if(CONFIG_SOC_ETM_SUPPORTED)
-        list(APPEND srcs "etm_hal.c" "${target}/etm_periph.c")
+        list(APPEND srcs "etm_hal.c")
     endif()
 
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT AND CONFIG_SOC_MODEM_CLOCK_SUPPORTED)

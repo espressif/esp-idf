@@ -9,11 +9,9 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/regdma.h"
-
 #if SOC_HAS(ETM)
 #include "hal/etm_ll.h"
 #endif
-
 #if SOC_HAS(PAU)
 #include "soc/retention_periph_defs.h"
 #endif
@@ -22,7 +20,7 @@
 extern "C" {
 #endif
 
-#if SOC_HAS(PAU) && SOC_ETM_SUPPORT_SLEEP_RETENTION
+#if SOC_HAS(PAU)
 
 typedef struct {
     periph_retention_module_t module;                  // ID of the ETM as a retention module
