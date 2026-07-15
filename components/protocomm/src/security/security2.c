@@ -298,6 +298,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
         free(out);
         free(out_resp);
         psa_destroy_key(key_id);
+        cur_session->key_id = PSA_KEY_ID_NULL;
         return ESP_ERR_NO_MEM;
     }
 
@@ -638,6 +639,7 @@ static esp_err_t sec2_req_handler(protocomm_security_handle_t handle,
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
         ESP_LOGE(TAG, "System out of memory");
+        sec2_session_setup_cleanup(cur_session, session_id, &resp);
         return ESP_ERR_NO_MEM;
     }
     session_data__pack(&resp, *outbuf);
