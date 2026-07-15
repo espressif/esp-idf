@@ -144,11 +144,20 @@ void esp_timer_impl_init_system_time(void);
 
 #if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 /**
- * @brief Set the next alarm if there is such an alarm in the cached array.
+ * @brief Check which alarm slots have fired and disarm them.
  *
- * @note Available only when CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD is enabled.
+ * For each dispatch method (TASK and ISR), checks if the cached alarm deadline
+ * has expired. If so, clears the deadline (resets to UINT64_MAX) and sets the
+ * corresponding bit in the returned mask. After processing both slots,
+ * reprograms the hardware alarm to the earliest remaining cached deadline.
+ *
+ * Must be called only from ISR context.
+ *
+ * @return Bitmask of the dispatch methods whose alarm was due:
+ *         bit 0 set means the TASK-dispatch alarm fired,
+ *         bit 1 set means the ISR-dispatch alarm fired.
  */
-void esp_timer_impl_try_to_set_next_alarm(void);
+uint32_t esp_timer_impl_claim_due_alarms(void);
 #endif
 
 /**

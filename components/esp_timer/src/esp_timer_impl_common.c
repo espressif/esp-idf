@@ -51,29 +51,28 @@ void ESP_TIMER_IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 }
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-void ESP_TIMER_IRAM_ATTR esp_timer_impl_try_to_set_next_alarm(void)
+/* Reprogram the hardware alarm to the nearest pending deadline,
+ * i.e. MIN(timestamp_id[0], timestamp_id[1]). The timestamp_id[] cache is not modified.
+ * Must be called with s_time_update_lock held. */
+static inline void ESP_TIMER_IRAM_ATTR esp_timer_impl_rearm_alarm(void)
+{
+    esp_timer_impl_set_alarm_id(timestamp_id[ESP_TIMER_TASK], ESP_TIMER_TASK);
+}
+
+uint32_t ESP_TIMER_IRAM_ATTR esp_timer_impl_claim_due_alarms(void)
 {
     portENTER_CRITICAL_ISR(&s_time_update_lock);
-    unsigned now_alarm_idx;  // ISR is called due to this current alarm
-    unsigned next_alarm_idx; // The following alarm after now_alarm_idx
-    if (timestamp_id[0] < timestamp_id[1]) {
-        now_alarm_idx = 0;
-        next_alarm_idx = 1;
-    } else {
-        now_alarm_idx = 1;
-        next_alarm_idx = 0;
+    uint64_t now = esp_timer_impl_get_time();
+    uint32_t due_mask = 0;
+    for (unsigned alarm_id = 0; alarm_id < sizeof(timestamp_id) / sizeof(timestamp_id[0]); ++alarm_id) {
+        if (timestamp_id[alarm_id] <= now) {
+            due_mask |= 1U << alarm_id;
+            timestamp_id[alarm_id] = UINT64_MAX;
+        }
     }
-
-    if (timestamp_id[next_alarm_idx] != UINT64_MAX) {
-        // The following alarm is valid and can be used.
-        // Remove the current alarm from consideration.
-        esp_timer_impl_set_alarm_id(UINT64_MAX, now_alarm_idx);
-    } else {
-        // There is no the following alarm.
-        // Remove the current alarm from consideration as well.
-        timestamp_id[now_alarm_idx] = UINT64_MAX;
-    }
+    esp_timer_impl_rearm_alarm();
     portEXIT_CRITICAL_ISR(&s_time_update_lock);
+    return due_mask;
 }
 #endif
 
