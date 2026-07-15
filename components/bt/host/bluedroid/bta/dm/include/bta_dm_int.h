@@ -795,6 +795,9 @@ typedef struct {
     tBT_DEVICE_TYPE         dev_type ;
     UINT32                  auth_mode;
     tBLE_ADDR_TYPE          addr_type;
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    BOOLEAN                 is_pseudo_bond;
+#endif
 
 } tBTA_DM_API_ADD_BLE_DEVICE;
 

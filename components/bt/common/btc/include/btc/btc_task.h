@@ -117,6 +117,9 @@ typedef enum {
 #if (BLE_FEAT_CTE_EN == TRUE)
     BTC_PID_BLE_CTE,
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    BTC_PID_BLE_L2CAP,
+#endif // #if (BLE_L2CAP_COC_INCLUDED == TRUE)
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
 

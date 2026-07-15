@@ -330,6 +330,8 @@ tBTM_STATUS BTM_BleBigCreate(uint8_t big_handle, uint8_t adv_handle, uint8_t num
         return BTM_ILLEGAL_VALUE;
     }
 
+    /* btsnd_hcic_ble_big_create() returns FALSE only when HCI_GET_CMD_BUF()
+     * fails (out of memory). That path is not surfaced to the caller by design. */
     btsnd_hcic_ble_big_create(big_handle, adv_handle, num_bis, sdu_interval, max_sdu, max_transport_latency,
                               rtn, phy, packing, framing, encryption, broadcast_code);
 
@@ -348,6 +350,7 @@ tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t
         return BTM_ILLEGAL_VALUE;
     }
 
+    /* See BTM_BleBigCreate: HCI cmd buffer alloc failure is not checked. */
     btsnd_hcic_ble_big_create_test(big_handle, adv_handle, num_bis, sdu_interval, iso_interval, nse,
                                     max_sdu, max_pdu, phy, packing, framing, bn, irc, pto, encryption,
                                     broadcast_code);
@@ -357,6 +360,7 @@ tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t
 tBTM_STATUS BTM_BleBigTerminate(UINT8 big_handle, UINT8 reason)
 {
     // event will be triggered in command status and complete event
+    /* See BTM_BleBigCreate: HCI cmd buffer alloc failure is not checked. */
     btsnd_hcic_ble_big_terminate(big_handle, reason);
     return BTM_SUCCESS;
 }
@@ -373,6 +377,7 @@ tBTM_STATUS BTM_BleBigSyncCreate(uint8_t big_handle, uint16_t sync_handle,
         return BTM_ILLEGAL_VALUE;
     }
 
+    /* See BTM_BleBigCreate: HCI cmd buffer alloc failure is not checked. */
     btsnd_hcic_ble_big_sync_create(big_handle, sync_handle, encryption, bc_code,
                                     mse, big_sync_timeout, num_bis, bis);
     return BTM_SUCCESS;

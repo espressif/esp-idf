@@ -131,6 +131,12 @@
 #define UC_BT_BLE_50_FEATURES_SUPPORTED            FALSE
 #endif
 
+#ifdef CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND
+#define UC_BT_BLE_PERIPH_PSEUDO_ADDR_BOND          CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND
+#else
+#define UC_BT_BLE_PERIPH_PSEUDO_ADDR_BOND          FALSE
+#endif
+
 #ifdef CONFIG_BT_BLE_42_FEATURES_SUPPORTED
 #define UC_BT_BLE_42_FEATURES_SUPPORTED            CONFIG_BT_BLE_42_FEATURES_SUPPORTED
 #else
@@ -611,6 +617,54 @@
 #define UC_BT_BLE_RPA_TIMEOUT                   CONFIG_BT_BLE_RPA_TIMEOUT
 #else
 #define UC_BT_BLE_RPA_TIMEOUT                   900
+#endif
+
+#ifdef CONFIG_BT_BLE_L2CAP_COC_ENABLED
+#define UC_BT_BLE_L2CAP_COC_ENABLED             CONFIG_BT_BLE_L2CAP_COC_ENABLED
+#else
+#define UC_BT_BLE_L2CAP_COC_ENABLED             FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_L2CAP_COC_MAX_CHAN
+#define UC_BT_BLE_L2CAP_COC_MAX_CHAN            CONFIG_BT_BLE_L2CAP_COC_MAX_CHAN
+#else
+#define UC_BT_BLE_L2CAP_COC_MAX_CHAN            5
+#endif
+
+#ifdef CONFIG_BT_BLE_L2CAP_COC_MPS
+#define UC_BT_BLE_L2CAP_COC_MPS                 CONFIG_BT_BLE_L2CAP_COC_MPS
+#else
+#define UC_BT_BLE_L2CAP_COC_MPS                 247
+#endif
+
+#ifdef CONFIG_BT_BLE_L2CAP_COC_INIT_CREDITS
+#define UC_BT_BLE_L2CAP_COC_INIT_CREDITS        CONFIG_BT_BLE_L2CAP_COC_INIT_CREDITS
+#else
+#define UC_BT_BLE_L2CAP_COC_INIT_CREDITS        24
+#endif
+
+#ifdef CONFIG_BT_BLE_L2CAP_ENHANCED_COC
+#define UC_BT_BLE_L2CAP_ENHANCED_COC            CONFIG_BT_BLE_L2CAP_ENHANCED_COC
+#else
+#define UC_BT_BLE_L2CAP_ENHANCED_COC            FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_EATT_ENABLE
+#define UC_BT_BLE_EATT_ENABLE                   CONFIG_BT_BLE_EATT_ENABLE
+#else
+#define UC_BT_BLE_EATT_ENABLE                   FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_EATT_CHAN_NUM
+#define UC_BT_BLE_EATT_CHAN_NUM                 CONFIG_BT_BLE_EATT_CHAN_NUM
+#else
+#define UC_BT_BLE_EATT_CHAN_NUM                 3
+#endif
+
+#ifdef CONFIG_BT_BLE_EATT_MTU
+#define UC_BT_BLE_EATT_MTU                      CONFIG_BT_BLE_EATT_MTU
+#else
+#define UC_BT_BLE_EATT_MTU                      247
 #endif
 
 //SCO VOICE OVER HCI

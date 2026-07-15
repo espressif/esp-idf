@@ -23,6 +23,9 @@
 #include "btc/btc_util.h"
 #include "osi/mutex.h"
 #include "osi/thread.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 #include "osi/pkt_queue.h"
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
@@ -2284,6 +2287,31 @@ static void btc_ble_set_privacy_mode(uint8_t addr_type,
     BTA_DmBleSetPrivacyMode(addr_type, addr, privacy_mode);
 }
 
+#if (BLE_EATT_INCLUDED == TRUE)
+void btc_ble_gap_eatt_evt_cback(UINT16 conn_id, UINT8 status, UINT16 cid)
+{
+    btc_msg_t msg = {0};
+    esp_ble_gap_cb_param_t param = {0};
+    bt_status_t ret;
+
+    param.eatt_evt.conn_id = conn_id;
+    param.eatt_evt.status = status;
+    param.eatt_evt.cid = cid;
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_EATT_EVT;
+
+    /* eatt_evt holds only scalars, so no deep copy/free is needed (matches the
+     * convention used by the other scalar-only GAP cb events in this file). */
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t),
+                               NULL, NULL);
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("EATT evt transfer failed");
+    }
+}
+#endif /* BLE_EATT_INCLUDED == TRUE */
+
 void btc_gap_ble_cb_handler(btc_msg_t *msg)
 {
     esp_ble_gap_cb_param_t *param = (esp_ble_gap_cb_param_t *)msg->arg;
@@ -3094,6 +3122,13 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
     }
         break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BLE_EATT_INCLUDED == TRUE)
+        case ESP_GAP_BLE_EATT_EVT:
+            /* Scalar-only event: nothing to free. Handled explicitly so the
+             * unconditional cb_deep_free call in btc_gap_ble_cb_handler does not
+             * emit a spurious "Unhandled deep free" debug log. */
+            break;
+#endif // (BLE_EATT_INCLUDED == TRUE)
         default:
             BTC_TRACE_DEBUG("Unhandled deep free %d", msg->act);
             break;

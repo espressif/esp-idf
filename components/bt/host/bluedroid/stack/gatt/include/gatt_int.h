@@ -74,6 +74,20 @@ typedef UINT8 tGATT_SEC_ACTION;
 #define GATT_AUTH_SIGN_MASK     0x80  /*0x1000-0000*/
 #define GATT_AUTH_SIGN_LEN      12
 
+/* Only Write Command (0x52) and Signed Write Command (0xD2) may set the
+ * command/signature bits in the top two MSBs; all other opcodes must be
+ * strictly below GATT_OP_CODE_MAX with those bits clear. */
+static inline BOOLEAN gatt_is_valid_att_opcode(UINT8 op_code)
+{
+    if (op_code == GATT_CMD_WRITE || op_code == GATT_SIGN_CMD_WRITE) {
+        return TRUE;
+    }
+    if (op_code & GATT_WRITE_CMD_MASK) {
+        return FALSE;
+    }
+    return op_code < GATT_OP_CODE_MAX;
+}
+
 #define GATT_HDR_SIZE           3 /* 1B opcode + 2B handle */
 
 /* ATT Read By Type Response: Length field is 1 octet (max 255). */
@@ -301,6 +315,11 @@ typedef struct {
     UINT8            op_code;
     UINT8            status;
     UINT8            cback_cnt[GATT_MAX_APPS];
+#if (BLE_EATT_INCLUDED == TRUE)
+    UINT16           eatt_lcid;     /* EATT bearer the request arrived on, so an
+                                     * async server response is routed back to it
+                                     * after eatt_rx_bearer has been cleared. */
+#endif
 } tGATT_SR_CMD;
 
 #define     GATT_CH_CLOSE               0
@@ -390,6 +409,13 @@ typedef struct {
     UINT32          trans_id;
 
     UINT16          att_lcid;           /* L2CAP channel ID for ATT */
+#if (BLE_EATT_INCLUDED == TRUE)
+    UINT16          eatt_rx_bearer;     /* active EATT bearer for RX/response routing */
+    UINT16          eatt_tx_bearer;     /* transient TX bearer override */
+    UINT16          eatt_ind_bearer;    /* EATT bearer an indication arrived on, so a
+                                         * deferred app confirmation is sent back on it */
+    UINT16          eatt_att_mtu;       /* negotiated L2CAP MTU for EATT bearers */
+#endif
     UINT16          payload_size;
 
     tGATT_CH_STATE  ch_state;
@@ -637,6 +663,19 @@ extern UINT16 gatt_profile_find_conn_id_by_bd_addr(BD_ADDR bda);
 
 
 /* Functions provided by att_protocol.c */
+#if (BLE_EATT_INCLUDED == TRUE)
+extern UINT16 gatt_get_att_mtu(tGATT_TCB *p_tcb);
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+extern UINT16 gatt_eatt_mtu_for_client_op(BD_ADDR bd_addr, UINT8 op_code, UINT16 legacy_mtu);
+#define GATT_CL_ATT_MTU(p_tcb, op) \
+    gatt_eatt_mtu_for_client_op((p_tcb)->peer_bda, (op), (p_tcb)->payload_size)
+#else
+#define GATT_CL_ATT_MTU(p_tcb, op) ((p_tcb)->payload_size)
+#endif
+#else
+#define gatt_get_att_mtu(p_tcb) ((p_tcb)->payload_size)
+#define GATT_CL_ATT_MTU(p_tcb, op) ((p_tcb)->payload_size)
+#endif
 extern tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code, tGATT_CL_MSG *p_msg);
 extern BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg);
 extern tGATT_STATUS attp_send_sr_msg (tGATT_TCB *p_tcb, BT_HDR *p_msg);
@@ -648,6 +687,7 @@ extern UINT8 *gatt_dbg_op_name(UINT8 op_code);
 extern UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl);
 #endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
 extern BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid, UINT16 len, UINT8 **p_data);
+extern UINT8 gatt_get_uuid_stream_len(tBT_UUID uuid);
 extern UINT8 gatt_build_uuid_to_stream(UINT8 **p_dst, tBT_UUID uuid);
 extern BOOLEAN gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
 extern void gatt_convert_uuid32_to_uuid128(UINT8 uuid_128[LEN_UUID_128], UINT32 uuid_32);
@@ -655,6 +695,8 @@ extern char *gatt_uuid_to_str(const tBT_UUID *uuid);
 extern void gatt_sr_get_sec_info(BD_ADDR rem_bda, tBT_TRANSPORT transport, UINT8 *p_sec_flag, UINT8 *p_key_size);
 extern void gatt_start_rsp_timer(UINT16 clcb_idx);
 extern void gatt_start_conf_timer(tGATT_TCB    *p_tcb);
+extern void gatt_conf_timeout(TIMER_LIST_ENT *p_tle);
+extern void gatts_proc_srv_chg_ind_ack(tGATT_TCB *p_tcb);
 extern void gatt_rsp_timeout(TIMER_LIST_ENT *p_tle);
 extern void gatt_ind_ack_timeout(TIMER_LIST_ENT *p_tle);
 extern void gatt_start_ind_ack_timer(tGATT_TCB *p_tcb);
@@ -680,6 +722,7 @@ extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_attr_handle(UINT16 attr_hand
 extern tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void);
 extern void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p);
 extern void gatt_free_attr_value_buffer(tGATT_HDL_LIST_ELEM *p);
+extern void gatt_purge_prepare_write_before_free_db(tGATT_SVC_DB *p_db);
 extern BOOLEAN gatt_is_last_attribute(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_start, tBT_UUID value);
 extern void gatt_update_last_pri_srv_info(tGATT_SRV_LIST_INFO *p_list);
 extern BOOLEAN gatt_add_a_srv_to_list(tGATT_SRV_LIST_INFO *p_list, tGATT_SRV_LIST_ELEM *p_new);
@@ -745,6 +788,12 @@ extern void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb);
 extern UINT8 gatt_send_write_msg(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code, UINT16 handle,
                                  UINT16 len, UINT16 offset, UINT8 *p_data);
 extern void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport);
+#if (SMP_INCLUDED == TRUE)
+extern void gatt_free_pending_enc_queue(tGATT_TCB *p_tcb);
+#endif // (SMP_INCLUDED == TRUE)
+#if (GATTS_INCLUDED == TRUE)
+extern void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb);
+#endif // (GATTS_INCLUDED == TRUE)
 extern void gatt_end_operation(tGATT_CLCB *p_clcb, tGATT_STATUS status, void *p_data);
 
 extern void gatt_act_discovery(tGATT_CLCB *p_clcb);
@@ -755,7 +804,7 @@ extern UINT8 gatt_act_send_browse(tGATT_TCB *p_tcb, UINT16 index, UINT8 op, UINT
 extern tGATT_CLCB *gatt_cmd_dequeue(tGATT_TCB *p_tcb, UINT8 *p_opcode);
 extern BOOLEAN gatt_cmd_enq(tGATT_TCB *p_tcb, UINT16 clcb_idx, BOOLEAN to_send, UINT8 op_code, BT_HDR *p_buf);
 extern void gatt_client_handle_server_rsp (tGATT_TCB *p_tcb, UINT8 op_code,
-        UINT16 len, UINT8 *p_data);
+                                           UINT16 len, UINT8 *p_data, UINT16 eatt_bearer_lcid);
 extern void gatt_send_queue_write_cancel (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, tGATT_EXEC_FLAG flag);
 
 /* gatt_auth.c */

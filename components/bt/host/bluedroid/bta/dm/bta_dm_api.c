@@ -1236,10 +1236,32 @@ void BTA_DmAddBleKey (BD_ADDR bd_addr, tBTA_LE_KEY_VALUE *p_le_key, tBTA_LE_KEY_
 **                  dev_type         - Remote device's device type.
 **                  auth_mode        - auth mode
 **                  addr_type        - LE device address type.
+**                  is_pseudo_bond   - (pseudo bond only) TRUE when NVS section is
+**                                     keyed by a Host pseudo; tagged on BTU thread.
 **
 ** Returns          void
 **
 *******************************************************************************/
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode,
+                        tBT_DEVICE_TYPE dev_type, BOOLEAN is_pseudo_bond)
+{
+    tBTA_DM_API_ADD_BLE_DEVICE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_ADD_BLE_DEVICE *) osi_malloc(sizeof(tBTA_DM_API_ADD_BLE_DEVICE))) != NULL) {
+        memset (p_msg, 0, sizeof(tBTA_DM_API_ADD_BLE_DEVICE));
+
+        p_msg->hdr.event = BTA_DM_API_ADD_BLEDEVICE_EVT;
+        bdcpy(p_msg->bd_addr, bd_addr);
+        p_msg->addr_type = addr_type;
+        p_msg->auth_mode = auth_mode;
+        p_msg->dev_type = dev_type;
+        p_msg->is_pseudo_bond = is_pseudo_bond;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#else
 void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode, tBT_DEVICE_TYPE dev_type)
 {
     tBTA_DM_API_ADD_BLE_DEVICE *p_msg;
@@ -1256,6 +1278,7 @@ void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif
 /*******************************************************************************
 **
 ** Function         BTA_DmBlePasskeyReply

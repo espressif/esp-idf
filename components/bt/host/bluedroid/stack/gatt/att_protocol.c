@@ -29,6 +29,9 @@
 
 #include "gatt_int.h"
 #include "stack/l2c_api.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 
 #define GATT_HDR_FIND_TYPE_VALUE_LEN    21
 #define GATT_OP_CODE_SIZE   1
@@ -171,7 +174,11 @@ BT_HDR *attp_build_read_by_type_value_cmd (UINT16 payload_size, tGATT_FIND_TYPE_
         return NULL;
     }
 
-    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET))) != NULL) {
+    if (payload_size > L2CAP_DEFAULT_MTU) {
+        return NULL;
+    }
+
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -208,7 +215,11 @@ BT_HDR *attp_build_read_multi_cmd(UINT8 op_code, UINT16 payload_size, UINT16 num
     UINT8       *p;
     UINT16      i = 0;
 
-    if ((p_buf = (BT_HDR *)osi_malloc((UINT16)(sizeof(BT_HDR) + num_handle * 2 + 1 + L2CAP_MIN_OFFSET))) != NULL) {
+    if (payload_size > L2CAP_DEFAULT_MTU) {
+        return NULL;
+    }
+
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + (size_t)num_handle * 2 + 1 + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         p_buf->offset = L2CAP_MIN_OFFSET;
@@ -321,6 +332,10 @@ BT_HDR *attp_build_value_cmd(UINT16 payload_size, UINT8 op_code,
 
     /* handle Read By Type response: reserve space for pair_len */
     if (op_code == GATT_RSP_READ_BY_TYPE) {
+        if (len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+            GATT_TRACE_WARNING("ReadByType value truncated to %d", GATT_MAX_READ_BY_TYPE_VALUE_LEN);
+            len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
+        }
         p_pair_len = p++;
         pair_len = len + 2; /* handle(2 bytes) + value length */
         size_now += 1;
@@ -387,9 +402,26 @@ BT_HDR *attp_build_value_cmd(UINT16 payload_size, UINT8 op_code,
 tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
 {
     UINT16      l2cap_ret;
+    UINT16      lcid = p_tcb->att_lcid;
 
+#if (BLE_EATT_INCLUDED == TRUE)
+    UINT8       op_code = *((UINT8 *)(p_toL2CAP + 1) + p_toL2CAP->offset);
 
-    if (p_tcb->att_lcid == L2CAP_ATT_CID) {
+    /* Exchange MTU is defined only on the legacy ATT bearer (Core Spec Vol 3
+     * Part G 5.3): keep it on att_lcid even if eatt_tx_bearer/eatt_rx_bearer is
+     * set. Without this, an MTU PDU flushed while an EATT response is still being
+     * processed (eatt_rx_bearer not yet cleared) would be sent on an EATT bearer
+     * and the peer would reject it with REQ_NOT_SUPPORTED. */
+    if (op_code != GATT_REQ_MTU && op_code != GATT_RSP_MTU) {
+        if (p_tcb->eatt_tx_bearer != 0) {
+            lcid = p_tcb->eatt_tx_bearer;
+        } else if (p_tcb->eatt_rx_bearer != 0) {
+            lcid = p_tcb->eatt_rx_bearer;
+        }
+    }
+#endif
+
+    if (lcid == L2CAP_ATT_CID) {
         /* L2CA_SendFixedChnlData() silently drops (osi_free) the buffer when the
          * ATT fixed channel is already in cong_sent state, yet still returns
          * L2CAP_DW_CONGESTED. Without distinguishing this from the post-enqueue
@@ -404,11 +436,25 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
         }
         l2cap_ret = L2CA_SendFixedChnlData (L2CAP_ATT_CID, p_tcb->peer_bda, p_toL2CAP);
     } else {
+#if (BLE_L2CAP_COC_INCLUDED == TRUE) && (BLE_EATT_INCLUDED == TRUE)
+        if (gatt_eatt_is_bearer(lcid)) {
+            l2cap_ret = L2CA_LECocDataWrite(lcid, p_toL2CAP);
+        } else
+#endif
 #if (CLASSIC_BT_INCLUDED == TRUE)
-        l2cap_ret = (UINT16) L2CA_DataWrite (p_tcb->att_lcid, p_toL2CAP);
+        {
+            l2cap_ret = (UINT16) L2CA_DataWrite(lcid, p_toL2CAP);
+        }
 #else
-        l2cap_ret = L2CAP_DW_FAILED;
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+        {
+            /* No L2CAP write consumed the buffer on this BLE-only path (e.g. an
+             * lcid that is neither the ATT fixed channel nor a known EATT
+             * bearer). Free it here so attp_send_msg_to_l2cap always consumes
+             * the buffer exactly once, matching every caller's assumption. */
+            osi_free(p_toL2CAP);
+            l2cap_ret = L2CAP_DW_FAILED;
+        }
+#endif
     }
 
     if (l2cap_ret == L2CAP_DW_FAILED) {
@@ -470,7 +516,7 @@ BT_HDR *attp_build_sr_msg(tGATT_TCB *p_tcb, UINT8 op_code, tGATT_SR_MSG *p_msg)
     case GATT_HANDLE_VALUE_NOTIF:
     case GATT_HANDLE_VALUE_IND:
     case GATT_HANDLE_MULTI_VALUE_NOTIF:
-        p_cmd = attp_build_value_cmd(p_tcb->payload_size,
+        p_cmd = attp_build_value_cmd(gatt_get_att_mtu(p_tcb),
                                      op_code,
                                      p_msg->attr_value.handle,
                                      offset,
@@ -552,6 +598,37 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 cmd_code,
     if (p_tcb != NULL) {
         cmd_code &= ~GATT_AUTH_SIGN_MASK;
 
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+        UINT16 eatt_bearer = L2CAP_ATT_CID;
+        if (cmd_code != GATT_HANDLE_VALUE_CONF && cmd_code != GATT_CMD_WRITE &&
+            cmd_code != GATT_REQ_MTU) {
+            eatt_bearer = gatt_eatt_get_available_bearer(p_tcb->peer_bda, cmd_code);
+        }
+        if (eatt_bearer != L2CAP_ATT_CID) {
+            p_tcb->eatt_tx_bearer = eatt_bearer;
+            att_ret = attp_send_msg_to_l2cap(p_tcb, p_cmd);
+            p_tcb->eatt_tx_bearer = 0;
+            if (att_ret == GATT_SUCCESS) {
+                gatt_eatt_mark_busy(p_tcb->peer_bda, eatt_bearer, cmd_code, clcb_idx);
+                gatt_start_rsp_timer(clcb_idx);
+            } else if (att_ret == GATT_CONGESTED) {
+                /* Buffer is queued at L2CAP; arm the response timer just like the
+                 * legacy path so a lost response cannot hang the CLCB forever. */
+                gatt_eatt_mark_busy(p_tcb->peer_bda, eatt_bearer, cmd_code, clcb_idx);
+                gatt_start_rsp_timer(clcb_idx);
+                /* Normalize to success: the buffer was accepted (queued for
+                 * credit) so the operation is in progress. Returning
+                 * GATT_CONGESTED would make gatt_act_discovery/gatt_act_read
+                 * treat it as failure and free the CLCB via gatt_end_operation
+                 * without releasing this EATT bearer, leaving it stuck busy. */
+                att_ret = GATT_SUCCESS;
+            } else {
+                att_ret = GATT_INTERNAL_ERROR;
+            }
+            return att_ret;
+        }
+#endif
+
         /* no pending request or value confirmation */
         if (p_tcb->pending_cl_req == p_tcb->next_slot_inq ||
                 cmd_code == GATT_HANDLE_VALUE_CONF) {
@@ -598,6 +675,16 @@ tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code,
     UINT16          offset = 0, handle;
 
     if (p_tcb != NULL) {
+        /* Use the legacy ATT payload_size as the fallback MTU. gatt_get_att_mtu()
+         * would return the EATT rx-bearer MTU when eatt_rx_bearer is transiently
+         * set (re-entrant response handling), which could size a PDU for EATT but
+         * send it on the legacy bearer and exceed its MTU. */
+        UINT16 att_mtu = p_tcb->payload_size;
+
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+        att_mtu = gatt_eatt_mtu_for_client_op(p_tcb->peer_bda, op_code, att_mtu);
+#endif
+
         switch (op_code) {
         case GATT_REQ_MTU:
             if (p_msg->mtu <= GATT_MAX_MTU_SIZE) {
@@ -647,7 +734,7 @@ tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code,
         case GATT_CMD_WRITE:
         case GATT_SIGN_CMD_WRITE:
             if (GATT_HANDLE_IS_VALID (p_msg->attr_value.handle)) {
-                p_cmd = attp_build_value_cmd (p_tcb->payload_size,
+                p_cmd = attp_build_value_cmd (att_mtu,
                                               op_code, p_msg->attr_value.handle,
                                               offset,
                                               p_msg->attr_value.len,
@@ -662,12 +749,12 @@ tGATT_STATUS attp_send_cl_msg (tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 op_code,
             break;
 
         case GATT_REQ_FIND_TYPE_VALUE:
-            p_cmd = attp_build_read_by_type_value_cmd(p_tcb->payload_size, &p_msg->find_type_value);
+            p_cmd = attp_build_read_by_type_value_cmd(att_mtu, &p_msg->find_type_value);
             break;
 
         case GATT_REQ_READ_MULTI:
         case GATT_REQ_READ_MULTI_VAR:
-            p_cmd = attp_build_read_multi_cmd(op_code, p_tcb->payload_size,
+            p_cmd = attp_build_read_multi_cmd(op_code, att_mtu,
                                               p_msg->read_multi.num_handles,
                                               p_msg->read_multi.handles);
             break;

@@ -236,9 +236,9 @@ static tGATT_STATUS read_attr_value (void *p_attr,
     status = GATT_NO_RESOURCES;
 
     if (uuid16 == GATT_UUID_PRI_SERVICE || uuid16 == GATT_UUID_SEC_SERVICE) {
-        len = p_attr16->p_value->uuid.len;
-        if (mtu >= p_attr16->p_value->uuid.len) {
-            gatt_build_uuid_to_stream(&p, p_attr16->p_value->uuid);
+        len = gatt_get_uuid_stream_len(p_attr16->p_value->uuid);
+        if (mtu >= len) {
+            len = gatt_build_uuid_to_stream(&p, p_attr16->p_value->uuid);
             status = GATT_SUCCESS;
         }
     } else if (uuid16 == GATT_UUID_CHAR_DECLARE) {
@@ -370,13 +370,19 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
 
                 UINT16_TO_STREAM (p, p_attr->handle);
 
-                {
-                    UINT16 max_val_len = (UINT16)(*p_len - 2);
-                    if (max_val_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
-                        max_val_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
-                    }
-                    status = read_attr_value ((void *)p_attr, 0, &p, FALSE, max_val_len, &len, sec_flag, key_size);
+                /*
+                 * ATT Read By Type Response encodes each Handle-Value Pair length in 1 octet.
+                 * Therefore a single record must be <= 255 bytes including the 2-byte handle,
+                 * i.e. the value length must be <= 253 bytes.
+                 *
+                 * Limit the maximum value length here so that p_rsp->offset (pair_len) never
+                 * exceeds 255 and cannot be truncated when written to the response PDU.
+                 */
+                UINT16 max_value_len = (UINT16)(*p_len - 2);
+                if (max_value_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+                    max_value_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
                 }
+                status = read_attr_value((void *)p_attr, 0, &p, FALSE, max_value_len, &len, sec_flag, key_size);
                 if (status == GATT_PENDING) {
 
 
@@ -1591,6 +1597,8 @@ static BOOLEAN gatts_db_add_service_declaration(tGATT_SVC_DB *p_db, tBT_UUID *p_
                 memcpy(p_attr->p_value->uuid.uu.uuid128, p_service->uu.uuid128, LEN_UUID_128);
             }
             rt = TRUE;
+        } else {
+            deallocate_attr_in_db(p_db, p_attr);
         }
 
     }
