@@ -291,7 +291,22 @@ if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
     endif()
 endif()
 
-list(APPEND link_options "-fno-lto")
+if(CONFIG_COMPILER_LTO_LINKTIME AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
+    list(APPEND link_options "-flto=auto")
+
+    if(CONFIG_APP_REPRODUCIBLE_BUILD)
+        # LTO generates code at link time, where the path remapping applied to
+        # compile_options doesn't take effect, so pass it to the linker as well.
+        # -save-temps keeps LTRANS objects out of $TMPDIR, and a pinned random
+        # seed makes LTO bytecode byte-identical. See the commit message for
+        # details.
+        list(APPEND link_options ${prefix_map_compile_options})
+        list(APPEND link_options "-save-temps")
+        list(APPEND compile_options "-frandom-seed=1")
+    endif()
+else()
+    list(APPEND compile_options "-fno-lto")
+endif()
 
 if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     # Not all versions of the MacOS linker support the -warn_commons flag.
@@ -382,6 +397,27 @@ foreach(component_target ${build_component_targets})
     endif()
     set(__idf_component_context 0)
 endforeach()
+
+if(CONFIG_COMPILER_LTO_COMPILETIME AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
+    include("${CMAKE_CURRENT_LIST_DIR}/tools/cmake/lto.cmake")
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    # Components whose object code is placed by a linker fragment (their own or
+    # another component's) must not be compiled with LTO, otherwise the placement
+    # stops matching. See tools/cmake/lto.cmake for details.
+    __lto_collect_fragment_placed_components(lto_placed_components ${build_components})
+    # For each component, enable LTO unless it has its own linker fragments, is
+    # placed by some fragment, has opted out via NO_LTO, or is not a static library.
+    foreach(component_name ${build_components})
+        idf_component_get_property(ldfragment ${component_name} LDFRAGMENTS)
+        idf_component_get_property(no_lto ${component_name} NO_LTO)
+        idf_component_get_property(component_lib ${component_name} COMPONENT_LIB)
+        get_target_property(type ${component_lib} TYPE)
+        if(NOT ldfragment AND NOT no_lto AND NOT component_name IN_LIST lto_placed_components
+                AND type STREQUAL "STATIC_LIBRARY")
+            target_compile_options(${component_lib} PRIVATE -flto=auto)
+        endif()
+    endforeach()
+endif()
 
 # Run component validation checks after all components have been processed
 # Only run validation for the main project, not subprojects like bootloader

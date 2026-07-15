@@ -385,7 +385,18 @@ function(__init_project_configuration)
         endif()
     endif()
 
-    list(APPEND link_options "-fno-lto")
+    # A subproject that must not use LTO (for example the bootloader) opts out by
+    # setting the SET_COMPILER_LTO build property to NO, the same way it uses
+    # SET_COMPILER_OPTIMIZATION; an unset property means LTO is allowed.
+    idf_build_get_property(set_compiler_lto SET_COMPILER_LTO)
+    if(NOT DEFINED set_compiler_lto OR set_compiler_lto STREQUAL "")
+        set(set_compiler_lto YES)
+    endif()
+    if(CONFIG_COMPILER_LTO_LINKTIME AND set_compiler_lto)
+        list(APPEND link_options "-flto=auto")
+    else()
+        list(APPEND compile_options "-fno-lto")
+    endif()
 
     if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
         # Not all versions of the MacOS linker support the -warn_commons flag.
@@ -473,16 +484,17 @@ function(__init_project_configuration)
     # paths back to the real paths in the filesystem.
     set(gdbinit_dir ${build_dir}/gdbinit)
     set(gdbinit_path "${gdbinit_dir}/prefix_map")
+    set(prefix_map_compile_options)
 
     if(CONFIG_COMPILER_HIDE_PATHS_MACROS)
-        list(APPEND compile_options "-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=.")
-        list(APPEND compile_options "-fmacro-prefix-map=${idf_path}=/IDF")
+        list(APPEND prefix_map_compile_options "-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=.")
+        list(APPEND prefix_map_compile_options "-fmacro-prefix-map=${idf_path}=/IDF")
     endif()
 
     if(CONFIG_APP_REPRODUCIBLE_BUILD)
-        list(APPEND compile_options "-fdebug-prefix-map=${idf_path}=/IDF")
-        list(APPEND compile_options "-fdebug-prefix-map=${project_dir}=/IDF_PROJECT")
-        list(APPEND compile_options "-fdebug-prefix-map=${build_dir}=/IDF_BUILD")
+        list(APPEND prefix_map_compile_options "-fdebug-prefix-map=${idf_path}=/IDF")
+        list(APPEND prefix_map_compile_options "-fdebug-prefix-map=${project_dir}=/IDF_PROJECT")
+        list(APPEND prefix_map_compile_options "-fdebug-prefix-map=${build_dir}=/IDF_BUILD")
 
         # Generate mapping for component paths
         set(gdbinit_file_lines)
@@ -492,7 +504,7 @@ function(__init_project_configuration)
 
             string(TOUPPER ${component_name} component_name_uppercase)
             set(substituted_path "/COMPONENT_${component_name_uppercase}_DIR")
-            list(APPEND compile_options "-fdebug-prefix-map=${component_dir}=${substituted_path}")
+            list(APPEND prefix_map_compile_options "-fdebug-prefix-map=${component_dir}=${substituted_path}")
             string(APPEND gdbinit_file_lines "set substitute-path ${substituted_path} ${component_dir}\n")
         endforeach()
 
@@ -506,14 +518,27 @@ function(__init_project_configuration)
         endif()
         string(STRIP "${compiler_sysroot}" compiler_sysroot)
         get_filename_component(compiler_sysroot "${compiler_sysroot}/.." REALPATH)
-        list(APPEND compile_options "-fdebug-prefix-map=${compiler_sysroot}=/TOOLCHAIN")
+        list(APPEND prefix_map_compile_options "-fdebug-prefix-map=${compiler_sysroot}=/TOOLCHAIN")
         string(APPEND gdbinit_file_lines "set substitute-path /TOOLCHAIN ${compiler_sysroot}\n")
     else()
         set(gdbinit_file_lines "# There is no prefix map defined for the project.\n")
     endif()
+    list(APPEND compile_options ${prefix_map_compile_options})
     # Write the prefix_map file even if it is empty.
     file(MAKE_DIRECTORY ${gdbinit_dir})
     file(WRITE "${gdbinit_path}" "${gdbinit_file_lines}")
+
+    if(CONFIG_APP_REPRODUCIBLE_BUILD AND CONFIG_COMPILER_LTO_LINKTIME AND set_compiler_lto)
+        # LTO generates code at link time, where the path remapping applied to
+        # compile_options doesn't take effect, so pass it to the linker as well.
+        # -save-temps keeps LTRANS objects out of $TMPDIR, and a pinned random
+        # seed makes LTO bytecode byte-identical. See the commit message of
+        # "feat(build): add options to enable link-time optimization (LTO)"
+        # for details.
+        list(APPEND link_options ${prefix_map_compile_options})
+        list(APPEND link_options "-save-temps")
+        list(APPEND compile_options "-frandom-seed=1")
+    endif()
 
     idf_build_set_property(GDBINIT_FILES_PREFIX_MAP "${gdbinit_path}")
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)

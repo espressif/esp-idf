@@ -79,6 +79,12 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 .. list::
 
     - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION` 设置为 ``Optimize for size (-Os)``。在某些情况下，相较于默认设置， ``Optimize for size (-Os)`` 也可以减小二进制文件的大小。请注意，若代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本不存在的错误。
+    - 设置 :ref:`CONFIG_COMPILER_LTO_LINKTIME` 以启用链接时优化 (LTO)，并为部分组件启用编译时 LTO（既可以设置 :ref:`CONFIG_COMPILER_LTO_COMPILETIME`，也可以为特定组件添加 ``-flto=auto`` 编译选项）。与优化大小 (``-Os``) 一同使用时，该选项可以减小二进制文件的大小。``idf.py size``、``idf.py size-components`` 和 ``idf.py size-files`` 均可为启用 LTO 的构建报告准确的大小。请注意，启用 LTO 有以下几点不足：
+
+        - 启用 LTO 会增加构建时间。
+        - 启用 LTO 可能会增加任务的栈使用量。跨翻译单元的内联会用更少但更大的栈帧替代多个较小的栈帧，因此某条调用路径上的峰值栈深度可能增加。该影响通常较小，但对于调用链较深、且跨越多个经 LTO 优化组件的应用程序，影响可能较为明显。启用 LTO 后，请检查任务的栈高水位（例如使用 :cpp:func:`uxTaskGetStackHighWaterMark`），并在必要时增大受影响任务的栈大小。
+        - 不得为使用自定义 :doc:`链接器片段 <../linker-script-generation>` 的组件启用 LTO。这是因为 LTO 会将多个目标文件中的代码合并为一个，导致链接器片段无法控制单个函数和变量的放置位置。
+        - 启用 LTO 可能会使代码更难调试。
     - 通过降低应用程序的 :ref:`CONFIG_LOG_DEFAULT_LEVEL` ，可以减少编译时的日志输出。如果改变 :ref:`CONFIG_LOG_MAXIMUM_LEVEL` 的默认选项，则可以控制二进制文件的大小。减少编译时的日志输出可以减少二进制文件中的字符串数量，并减小调用日志函数的代码大小。
     - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash，同时还可以加快日志记录的速度。
     - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 设置为 ``Silent``，可以避免为所有可能失败的断言编译专门的断言字符串和源文件名。尽管如此，仍可以通过查看断言失败时的内存地址以在代码中找到失败断言。

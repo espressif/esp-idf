@@ -43,6 +43,12 @@ else()
     set(CMAKE_C_COMPILER ${_CMAKE_TOOLCHAIN_PREFIX}gcc)
     set(CMAKE_CXX_COMPILER ${_CMAKE_TOOLCHAIN_PREFIX}g++)
     set(CMAKE_ASM_COMPILER ${_CMAKE_TOOLCHAIN_PREFIX}gcc)
+    # Use the gcc-ar/gcc-ranlib wrappers so that the LTO plugin is loaded when
+    # creating and indexing static archives. This is required for link-time
+    # optimization (CONFIG_COMPILER_LTO_LINKTIME) to work across static libraries;
+    # plain ar/ranlib do not record the LTO symbols in the archive index.
+    set(CMAKE_AR ${_CMAKE_TOOLCHAIN_PREFIX}gcc-ar)
+    set(CMAKE_RANLIB ${_CMAKE_TOOLCHAIN_PREFIX}gcc-ranlib)
 endif()
 
 # Handle different execution contexts for the toolchain file.
