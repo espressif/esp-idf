@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,9 +55,9 @@ static void esp_cpu_configure_invalid_regions(void)
 
     // 8. Using PMA to configure the TEE text and data section access attribute. */
     PMA_ENTRY_CFG_RESET(12);
-    assert(IS_PMA_ENTRY_UNLOCKED(13));
-    assert(IS_PMA_ENTRY_UNLOCKED(14));
-    assert(IS_PMA_ENTRY_UNLOCKED(15));
+    ESP_FAULT_ASSERT(IS_PMA_ENTRY_UNLOCKED(13) &&
+                     IS_PMA_ENTRY_UNLOCKED(14) &&
+                     IS_PMA_ENTRY_UNLOCKED(15));
 
     extern int _tee_iram_end;
     PMA_RESET_AND_ENTRY_SET_TOR(13, SOC_S_IRAM_START, PMA_NONE);
@@ -121,6 +121,20 @@ void esp_tee_configure_region_protection(void)
     PMP_ENTRY_CFG_RESET(4);
     PMP_ENTRY_CFG_RESET(5);
     PMP_ENTRY_CFG_RESET(6);
+    /* Validate the REE-supplied (esp_tee_app_config) bounds before programming
+     * the TOR-chained PMP entries below */
+    const uint32_t ns_iram_end      = (uint32_t)esp_tee_app_config.ns_iram_end;
+    const uint32_t s_irom_resv_end  = SOC_IROM_LOW + CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE;
+    const uint32_t ns_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)esp_tee_app_config.ns_irom_end);
+    const uint32_t ns_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)esp_tee_app_config.ns_drom_end);
+    const uint32_t ns_drom_mmap_end = (uint32_t)(SOC_S_MMU_MMAP_RESV_START_VADDR);
+
+    ESP_FAULT_ASSERT(ns_iram_end >= SOC_NS_IRAM_START &&
+                     ns_iram_end <= SOC_DRAM_HIGH &&
+                     s_irom_resv_end <= ns_irom_resv_end &&
+                     ns_irom_resv_end <= ns_drom_resv_end &&
+                     ns_drom_resv_end <= ns_drom_mmap_end);
+
     if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode
         ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
@@ -130,14 +144,9 @@ void esp_tee_configure_region_protection(void)
     } else {
         // REE SRAM (D/IRAM)
         PMP_ENTRY_SET(4, (int)SOC_NS_IRAM_START, NONE);
-        PMP_ENTRY_SET(5, (int)esp_tee_app_config.ns_iram_end, PMP_TOR | RX);
+        PMP_ENTRY_SET(5, (int)ns_iram_end, PMP_TOR | RX);
         PMP_ENTRY_SET(6, SOC_DRAM_HIGH, PMP_TOR | RW);
     }
-
-    const uint32_t s_irom_resv_end = SOC_IROM_LOW + CONFIG_SECURE_TEE_IROM_SIZE + CONFIG_SECURE_TEE_DROM_SIZE;
-    const uint32_t ns_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)esp_tee_app_config.ns_irom_end);
-    const uint32_t ns_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)esp_tee_app_config.ns_drom_end);
-    const uint32_t ns_drom_mmap_end = (uint32_t)(SOC_S_MMU_MMAP_RESV_START_VADDR);
 
     // 4. I_Cache / D_Cache (flash) - REE
     PMP_ENTRY_CFG_RESET(7);
