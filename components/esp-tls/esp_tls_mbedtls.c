@@ -752,6 +752,15 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 #endif // CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
     }
 
+    /* use_secure_element is deprecated and non-functional: the cryptoauthlib
+     * mbedTLS-ALT integration is not compatible with the PSA-based mbedTLS.
+     * The field is kept for source compatibility only. */
+    if (cfg->use_secure_element) {
+        ESP_LOGE(TAG, "use_secure_element is no longer supported. Use server_key (esp_key_config_t) with "
+                 "CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. See the ESP-TLS migration guide.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     if (cfg->server_key != NULL && cfg->server_key->source == ESP_KEY_SOURCE_BUFFER) {
         /* Unified key config with buffer source */
         esp_tls_pki_t pki = {
@@ -1023,6 +1032,15 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         ESP_LOGE(TAG, "No server verification option set in esp_tls_cfg_t structure. Check esp_tls API reference");
         return ESP_ERR_MBEDTLS_SSL_SETUP_FAILED;
 #endif
+    }
+
+    /* use_secure_element is deprecated and non-functional: the cryptoauthlib
+     * mbedTLS-ALT integration is not compatible with the PSA-based mbedTLS.
+     * The field is kept for source compatibility only. */
+    if (cfg->use_secure_element) {
+        ESP_LOGE(TAG, "use_secure_element is no longer supported. Use client_key (esp_key_config_t) with "
+                 "CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. See the ESP-TLS migration guide.");
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
     if (cfg->client_key != NULL && cfg->client_key->source == ESP_KEY_SOURCE_BUFFER) {
