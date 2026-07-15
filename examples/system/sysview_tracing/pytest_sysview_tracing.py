@@ -128,6 +128,7 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         # Do a sleep while sysview samples are captured.
         time.sleep(3)
         openocd.write('esp sysview stop')
+        openocd.apptrace_wait_stop()
 
     _validate_trace_data(trace_log, dut.target)
 
