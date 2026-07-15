@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,6 +70,47 @@ TEST_CASE("UHCI controller install-uninstall test", "[i2c]")
 
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, uhci_new_controller(&uhci_cfg, &uhci_ctrl2));
 
+    TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
+}
+
+TEST_CASE("UHCI receive/transmit reject invalid buffer size", "[uhci]")
+{
+    uhci_controller_config_t uhci_cfg = {
+        .uart_port = EX_UART_NUM,
+        .tx_trans_queue_depth = 3,
+        .max_receive_internal_mem = 2 * 1024,
+        .max_transmit_size = 2 * 1024,
+        .dma_burst_size = 32,
+        .rx_eof_flags.idle_eof = 1,
+    };
+
+    uhci_controller_handle_t uhci_ctrl;
+    TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
+
+    const size_t oversize = 5 * 1024;
+    uint8_t *big_buf = heap_caps_calloc(1, oversize, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(big_buf);
+
+    // -------- uhci_receive --------
+
+    // buffer_size == 0 must be rejected.
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, uhci_receive(uhci_ctrl, big_buf, 0));
+
+    // Excessively large buffers must be rejected.
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, uhci_receive(uhci_ctrl, big_buf, oversize));
+
+    // -------- uhci_transmit --------
+
+    // write_size == 0 must be rejected.
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, uhci_transmit(uhci_ctrl, big_buf, 0));
+
+    // A single write_size exceeding max_transmit_size must be rejected.
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, uhci_transmit(uhci_ctrl, big_buf, oversize));
+
+    free(big_buf);
+
+    // The controller must still be in a clean, deletable state after all the rejected
+    // calls above, which confirms the RX/TX FSMs were correctly rolled back on error.
     TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
 }
 
@@ -144,7 +185,7 @@ static void uhci_receive_test(void *arg)
             if (evt == UHCI_EVT_EOF) {
                 disp_buf(receive_data, ctx->receive_size);
                 for (int i = 0; i < ctx->receive_size; i++) {
-                    TEST_ASSERT(receive_data[i] == (uint8_t)i);
+                    TEST_ASSERT_EQUAL(receive_data[i], (uint8_t)i);
                 }
                 printf("Received size: %d\n", ctx->receive_size);
                 break;

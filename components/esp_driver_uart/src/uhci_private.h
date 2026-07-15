@@ -54,6 +54,7 @@ typedef enum {
     UHCI_TX_FSM_ENABLE,      /**< FSM is enabling the UHCI system. */
     UHCI_TX_FSM_RUN_WAIT,    /**< FSM is waiting to transition to the running state. */
     UHCI_TX_FSM_RUN,         /**< FSM is in the running state, actively handling UHCI operations. */
+    UHCI_TX_FSM_DELETE,      /**< FSM is claimed by uhci_del_controller() for teardown, no new transaction is accepted. */
 } uhci_tx_fsm_t;
 
 typedef enum {
@@ -68,6 +69,7 @@ typedef enum {
     UHCI_RX_FSM_ENABLE,      /**< FSM is enabling the UHCI system. */
     UHCI_RX_FSM_RUN_WAIT,    /**< FSM is waiting to transition to the running state. */
     UHCI_RX_FSM_RUN,         /**< FSM is in the running state, actively handling UHCI operations. */
+    UHCI_RX_FSM_DELETE,      /**< FSM is claimed by uhci_del_controller() for teardown, no new transaction is accepted. */
 } uhci_rx_fsm_t;
 
 typedef struct {
@@ -81,6 +83,7 @@ typedef struct {
     size_t int_mem_align;                               // Alignment for internal memory
     size_t ext_mem_align;                               // Alignment for external memory
     atomic_int num_trans_inflight;                      // Indicates the number of transactions that are undergoing but not recycled to ready_queue
+    size_t max_transmit_size;                           // per-transaction max size in bytes, from config->max_transmit_size; the DMA node pool is sized for this
 } uhci_tx_dir;
 
 typedef struct {
