@@ -6,7 +6,7 @@ This document provides a test case for BLE smartphone compatibility and includes
 
 ### What You Need
 
-* ESP device which needs to flash [this test program] (https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/bluedroid/ble/ble_compatibility_test/main/ble_compatibility_test.c)
+* ESP device which needs to flash [this test program](https://github.com/espressif/esp-idf/blob/master/examples/bluetooth/bluedroid/ble/ble_compatibility_test/main/ble_compatibility_test.c)
 * Smartphone with LightBlue® Explorer app
 
 ### Initialization
@@ -24,7 +24,7 @@ Prior to conducting tests, please initialize the smartphone and the ESP device a
 * For tests marked with (*) further in the document, please bear in mind the following:
 	* Your phone performance may affect the results of these tests. If such a test fails, it does not mean the phone fails to meet the test requirements, but that you need to arrange targeted tests.
 	* Taking "Test for Connection Success Rate" as an example: if the test cannot be passed for 10 consecutive times, you need to record how many times the test was passed and then arrange targeted tests.
-* For extended testing, please use the [examples] (https://github.com/espressif/esp-idf/tree/master/examples/bluetooth) provided by Espressif. 
+* For extended testing, please use the [examples](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth) provided by Espressif. 
 
        
 ## Test for ADV Performance (*)
