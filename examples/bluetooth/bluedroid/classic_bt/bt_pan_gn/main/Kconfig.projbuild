@@ -1,0 +1,9 @@
+menu "PAN GN Example Configuration"
+
+    config EXAMPLE_PAN_GN_BT_NAME
+        string "GN Hub Bluetooth name"
+        default "ESP_PAN_GN"
+        help
+            Bluetooth name advertised by this GN hub. PANU clients scan for this exact name.
+
+endmenu

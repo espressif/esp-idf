@@ -1,0 +1,24 @@
+menu "PAN NAP Wi-Fi Tether Example"
+
+    config EXAMPLE_WIFI_SSID
+        string "Wi-Fi SSID (uplink)"
+        default "myssid"
+        help
+            Wi-Fi network the ESP32 NAP connects to for Internet uplink.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "Wi-Fi Password"
+        default "mypassword"
+
+    config EXAMPLE_WIFI_CONN_MAX_RETRY
+        int "Wi-Fi connection max retry"
+        default 10
+        range 0 100
+
+    config EXAMPLE_PAN_NAP_BT_NAME
+        string "Bluetooth device name (NAP)"
+        default "ESP_PAN_NAP"
+        help
+            PANU peers (e.g. phone) discover and connect to this name.
+
+endmenu

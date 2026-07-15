@@ -13,6 +13,7 @@
 - 媒体播放控制 (**AVRCP**)
 - 免提通话支持 (**HFP**)
 - 输入设备连接 （**HID** 主机和外设角色）
+- 个人区域网络 (**PAN**)
 
 ----
 
@@ -59,6 +60,10 @@
 - :doc:`Bluetooth HID Device <esp_hidd>`：实现外设角色，如键盘、鼠标或游戏手柄
 - :doc:`Bluetooth HID Host <esp_hidh>`：实现主机角色，用于连接远程 HID 外设
 
+**个人区域网络 (PAN)**
+
+- :doc:`Bluetooth PAN <esp_pan>`：基于 BNEP 的组网，支持 PANU、NAP 和 GN 角色
+
 每个部分通常包含 **概述**、**应用示例** 和 **API 参考**，涵盖用途、主要功能、示例用法及详细 API 文档。
 
 
@@ -77,3 +82,4 @@
    Bluetooth HFP AG <esp_hf_ag>
    Bluetooth HID Device <esp_hidd>
    Bluetooth HID Host <esp_hidh>
+   Bluetooth PAN <esp_pan>
