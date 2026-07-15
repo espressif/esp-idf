@@ -46,6 +46,8 @@ typedef bool (*uhci_tx_done_callback_t)(uhci_controller_handle_t uhci_ctrl, cons
 
 /**
  * @brief UHCI RX Done Event Data Structure
+ *
+ * @note When an abnormal EOF occurs, `data` will be NULL and `recv_size` will be 0.
  */
 typedef struct {
     uint8_t *data;                 /*!< Pointer to the received data buffer */
