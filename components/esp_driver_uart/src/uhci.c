@@ -59,11 +59,14 @@ static bool uhci_gdma_tx_callback_eof(gdma_channel_handle_t dma_chan, gdma_event
     BaseType_t do_yield = pdFALSE;
     uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t) user_data;
     uhci_transaction_desc_t *trans_desc = NULL;
+    uhci_tx_done_event_data_t evt_data = {0};
     bool need_yield = false;
 
     uhci_tx_fsm_t expected_fsm = UHCI_TX_FSM_RUN;
     if (atomic_compare_exchange_strong(&uhci_ctrl->tx_dir.tx_fsm, &expected_fsm, UHCI_TX_FSM_ENABLE_WAIT)) {
         trans_desc = uhci_ctrl->tx_dir.cur_trans;
+        evt_data.buffer = (uint8_t *)trans_desc->buf_info[0].write_buffer;
+        evt_data.sent_size = trans_desc->total_size;
         xQueueSendFromISR(uhci_ctrl->tx_dir.trans_queues[UHCI_TRANS_QUEUE_COMPLETE], &trans_desc, &do_yield);
         if (do_yield) {
             need_yield = true;
@@ -78,10 +81,6 @@ static bool uhci_gdma_tx_callback_eof(gdma_channel_handle_t dma_chan, gdma_event
 #endif
 
     if (uhci_ctrl->tx_dir.on_tx_trans_done) {
-        uhci_tx_done_event_data_t evt_data = {
-            .buffer = uhci_ctrl->tx_dir.cur_trans->buffer,
-            .sent_size = uhci_ctrl->tx_dir.cur_trans->buffer_size,
-        };
         if (uhci_ctrl->tx_dir.on_tx_trans_done(uhci_ctrl, &evt_data, uhci_ctrl->user_data)) {
             need_yield |= true;
         }
@@ -214,7 +213,11 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     // create DMA link list
     gdma_get_alignment_constraints(uhci_ctrl->tx_dir.dma_chan, &uhci_ctrl->tx_dir.int_mem_align, &uhci_ctrl->tx_dir.ext_mem_align);
     size_t buffer_alignment = UHCI_MAX(uhci_ctrl->tx_dir.int_mem_align, uhci_ctrl->tx_dir.ext_mem_align);
-    size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transmit_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    // Given that the combined size of all buffers does not exceed `max_transmit_size` and
+    // the number of buffers does not exceed `max_transmit_buffer_count`, a single transfer
+    // requires at most `esp_dma_calculate_node_count(max_transmit_size) + max_transmit_buffer_count - 1` DMA descriptors.
+    size_t extra_multi_buf_nodes = (config->max_transmit_buffer_count > 1) ? (config->max_transmit_buffer_count - 1) : 0;
+    size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transmit_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE) + extra_multi_buf_nodes;
     gdma_link_list_config_t dma_link_config = {
         .item_alignment = 4,
         .num_items = num_dma_nodes,
@@ -282,16 +285,24 @@ static esp_err_t uhci_gdma_deinitialize(uhci_controller_handle_t uhci_ctrl)
 static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transaction_desc_t *trans)
 {
     uhci_ctrl->tx_dir.cur_trans = trans;
-    size_t buffer_alignment = esp_ptr_internal(trans->buffer) ? uhci_ctrl->tx_dir.int_mem_align : uhci_ctrl->tx_dir.ext_mem_align;
-    gdma_buffer_mount_config_t mount_config = {
-        .buffer = trans->buffer,
-        .buffer_alignment = buffer_alignment,
-        .length = trans->buffer_size,
-        .flags = {
-            .mark_eof = true,
-            .mark_final = GDMA_FINAL_LINK_TO_NULL,
-        }
-    };
+    size_t buf_count = trans->buf_info_count;
+    gdma_buffer_mount_config_t *mount_configs = uhci_ctrl->tx_dir.mount_configs;
+
+    for (size_t i = 0; i < buf_count; i++) {
+        bool is_last = (i == buf_count - 1);
+        size_t buffer_alignment = esp_ptr_internal(trans->buf_info[i].write_buffer) ? uhci_ctrl->tx_dir.int_mem_align : uhci_ctrl->tx_dir.ext_mem_align;
+        mount_configs[i] = (gdma_buffer_mount_config_t) {
+            .buffer = (void *)trans->buf_info[i].write_buffer,
+            .buffer_alignment = buffer_alignment,
+            .length = trans->buf_info[i].buffer_size,
+            .flags = {
+                // Only the last buffer segment is marked EOF/final, so the whole set of segments is
+                // seen by UHCI as a single transaction.
+                .mark_eof = is_last,
+                .mark_final = is_last ? GDMA_FINAL_LINK_TO_NULL : GDMA_FINAL_LINK_TO_DEFAULT,
+            }
+        };
+    }
 
 #if CONFIG_PM_ENABLE
     // acquire power manager lock
@@ -300,7 +311,7 @@ static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transactio
     }
 #endif
 
-    gdma_link_mount_buffers(uhci_ctrl->tx_dir.dma_link, 0, &mount_config, 1, NULL);
+    gdma_link_mount_buffers(uhci_ctrl->tx_dir.dma_link, 0, mount_configs, buf_count, NULL);
     gdma_start(uhci_ctrl->tx_dir.dma_chan, gdma_link_get_head_addr(uhci_ctrl->tx_dir.dma_link));
 }
 
@@ -386,22 +397,42 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
     return ESP_OK;
 }
 
-esp_err_t uhci_transmit(uhci_controller_handle_t uhci_ctrl, uint8_t *write_buffer, size_t write_size)
+esp_err_t uhci_multi_buffer_transmit(uhci_controller_handle_t uhci_ctrl, const uhci_transmit_buffer_info_t *buffer_info_array, size_t array_size)
 {
     ESP_RETURN_ON_FALSE(uhci_ctrl, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE((write_buffer != NULL), ESP_ERR_INVALID_ARG, TAG, "write buffer null");
+    ESP_RETURN_ON_FALSE(buffer_info_array && array_size > 0, ESP_ERR_INVALID_ARG, TAG, "invalid buffer info array");
+    ESP_RETURN_ON_FALSE(array_size <= uhci_ctrl->tx_dir.max_buf_count, ESP_ERR_INVALID_ARG, TAG,
+                        "array_size %zu exceeds max_transmit_buffer_count", array_size);
 
-    size_t alignment = 0;
-    size_t cache_line_size = 0;
-    esp_ptr_external_ram(write_buffer) ? (alignment = uhci_ctrl->tx_dir.ext_mem_align, cache_line_size = uhci_ctrl->ext_mem_cache_line_size) : (alignment = uhci_ctrl->tx_dir.int_mem_align, cache_line_size = uhci_ctrl->int_mem_cache_line_size);
+    size_t total_size = 0;
+    for (size_t i = 0; i < array_size; i++) {
+        const uint8_t *write_buffer = buffer_info_array[i].write_buffer;
+        size_t write_size = buffer_info_array[i].buffer_size;
+        ESP_RETURN_ON_FALSE(write_buffer != NULL && write_size > 0, ESP_ERR_INVALID_ARG, TAG, "buffer segment %zu is invalid", i);
 
-    ESP_RETURN_ON_FALSE(((((uintptr_t)write_buffer) & (alignment - 1)) == 0) && (((write_size) & (alignment - 1)) == 0), ESP_ERR_INVALID_ARG,
-                        TAG, "buffer address or size are not %d bytes aligned", alignment);
+        total_size += write_size;
 
-    if (cache_line_size > 0) {
-        // Write back to cache to synchronize the cache before DMA start
-        ESP_RETURN_ON_ERROR(esp_cache_msync((void *)write_buffer, write_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
+        size_t alignment = 0;
+        size_t cache_line_size = 0;
+        if (esp_ptr_external_ram(write_buffer)) {
+            alignment = uhci_ctrl->tx_dir.ext_mem_align;
+            cache_line_size = uhci_ctrl->ext_mem_cache_line_size;
+        } else {
+            alignment = uhci_ctrl->tx_dir.int_mem_align;
+            cache_line_size = uhci_ctrl->int_mem_cache_line_size;
+        }
+
+        ESP_RETURN_ON_FALSE(((((uintptr_t)write_buffer) & (alignment - 1)) == 0) && (((write_size) & (alignment - 1)) == 0), ESP_ERR_INVALID_ARG,
+                            TAG, "buffer segment %zu address or size are not %zu bytes aligned", i, alignment);
+
+        if (cache_line_size > 0) {
+            // Write back to cache to synchronize the cache before DMA start
+            ESP_RETURN_ON_ERROR(esp_cache_msync((void *)write_buffer, write_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
+        }
     }
+
+    ESP_RETURN_ON_FALSE(total_size <= uhci_ctrl->tx_dir.max_transmit_size, ESP_ERR_INVALID_ARG, TAG,
+                        "total transmit size %zu exceeds max_transmit_size %zu", total_size, uhci_ctrl->tx_dir.max_transmit_size);
 
     uhci_transaction_desc_t *t = NULL;
 
@@ -412,9 +443,11 @@ esp_err_t uhci_transmit(uhci_controller_handle_t uhci_ctrl, uint8_t *write_buffe
     }
     ESP_RETURN_ON_FALSE(t, ESP_ERR_INVALID_STATE, TAG, "no free transaction descriptor, please consider increasing trans_queue_depth");
 
-    memset(t, 0, sizeof(uhci_transaction_desc_t));
-    t->buffer = write_buffer;
-    t->buffer_size = write_size;
+    for (size_t i = 0; i < array_size; i++) {
+        t->buf_info[i] = buffer_info_array[i];
+    }
+    t->buf_info_count = array_size;
+    t->total_size = total_size;
 
     ESP_RETURN_ON_FALSE(xQueueSend(uhci_ctrl->tx_dir.trans_queues[UHCI_TRANS_QUEUE_PROGRESS], &t, 0) == pdTRUE, ESP_ERR_NO_MEM, TAG, "uhci tx transaction queue full");
     atomic_fetch_add(&uhci_ctrl->tx_dir.num_trans_inflight, 1);
@@ -430,6 +463,15 @@ esp_err_t uhci_transmit(uhci_controller_handle_t uhci_ctrl, uint8_t *write_buffe
     }
 
     return ESP_OK;
+}
+
+esp_err_t uhci_transmit(uhci_controller_handle_t uhci_ctrl, uint8_t *write_buffer, size_t write_size)
+{
+    uhci_transmit_buffer_info_t buf_info = {
+        .write_buffer = write_buffer,
+        .buffer_size = write_size,
+    };
+    return uhci_multi_buffer_transmit(uhci_ctrl, &buf_info, 1);
 }
 
 esp_err_t uhci_del_controller(uhci_controller_handle_t uhci_ctrl)
@@ -458,6 +500,10 @@ esp_err_t uhci_del_controller(uhci_controller_handle_t uhci_ctrl)
 
     if (uhci_ctrl->tx_dir.trans_desc_pool) {
         heap_caps_free(uhci_ctrl->tx_dir.trans_desc_pool);
+    }
+
+    if (uhci_ctrl->tx_dir.mount_configs) {
+        heap_caps_free(uhci_ctrl->tx_dir.mount_configs);
     }
 
     if (uhci_ctrl->rx_dir.buffer_size_per_desc_node) {
@@ -518,12 +564,19 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
         ESP_GOTO_ON_FALSE(uhci_ctrl->tx_dir.trans_queues[i], ESP_ERR_NO_MEM, err, TAG, "no mem for transaction queue");
     }
 
-    uhci_ctrl->tx_dir.trans_desc_pool = heap_caps_calloc(config->tx_trans_queue_depth, sizeof(uhci_transaction_desc_t), UHCI_MEM_ALLOC_CAPS);
+    uhci_ctrl->tx_dir.max_buf_count = config->max_transmit_buffer_count > 0 ? config->max_transmit_buffer_count : 1;
+    uhci_ctrl->tx_dir.max_transmit_size = config->max_transmit_size;
+
+    uhci_ctrl->tx_dir.mount_configs = heap_caps_calloc(uhci_ctrl->tx_dir.max_buf_count, sizeof(gdma_buffer_mount_config_t), UHCI_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(uhci_ctrl->tx_dir.mount_configs, ESP_ERR_NO_MEM, err, TAG, "no mem for buffer mount config array");
+
+    size_t desc_elem_size = sizeof(uhci_transaction_desc_t) + uhci_ctrl->tx_dir.max_buf_count * sizeof(uhci_transmit_buffer_info_t);
+    uhci_ctrl->tx_dir.trans_desc_pool = heap_caps_calloc(config->tx_trans_queue_depth, desc_elem_size, UHCI_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(uhci_ctrl->tx_dir.trans_desc_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction desc pool");
     uhci_transaction_desc_t *p_trans_desc = NULL;
 
     for (int i = 0; i < config->tx_trans_queue_depth; i++) {
-        p_trans_desc = &uhci_ctrl->tx_dir.trans_desc_pool[i];
+        p_trans_desc = (uhci_transaction_desc_t *)((uint8_t *)uhci_ctrl->tx_dir.trans_desc_pool + i * desc_elem_size);
         xQueueSend(uhci_ctrl->tx_dir.trans_queues[UHCI_TRANS_QUEUE_READY], &p_trans_desc, 0);
     }
 
