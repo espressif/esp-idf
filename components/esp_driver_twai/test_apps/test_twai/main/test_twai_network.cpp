@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +112,66 @@ TEST_CASE("twai_remote_request", "[twai_net]")
     ESP_LOG_BUFFER_HEX("Data", rx_frame.buffer, twaifd_dlc2len(rx_frame.header.dlc));
     TEST_ASSERT_EQUAL_HEX(0x123, rx_frame.header.id);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_data, rx_frame.buffer, twaifd_dlc2len(rx_frame.header.dlc));
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
+
+#define TEST_RANDOM_FRAME_NUM       100
+TEST_CASE("twai_fd_echo_random_trans", "[twai_net]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_RX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 250000;
+    node_config.data_timing.bitrate = 4000000;
+    node_config.tx_queue_depth = 3;
+
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+    ESP_LOGI("Test", "driver installed");
+
+    uint8_t rx_buffer[TWAIFD_FRAME_MAX_LEN] = {0};
+    twai_frame_t rx_frame = {};
+    rx_frame.buffer = rx_buffer;
+    rx_frame.buffer_len = sizeof(rx_buffer);
+    uint8_t rx_msg_cnt = 0;
+    void *user_data[2] = {&rx_msg_cnt, &rx_frame};
+
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_rx_done = test_listen_only_rx_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, user_data));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    uint8_t tx_buffer[TWAIFD_FRAME_MAX_LEN] = {0};
+    twai_frame_t tx_frame = {};
+    tx_frame.buffer = tx_buffer;
+
+    for (size_t i = 0; i < TEST_RANDOM_FRAME_NUM; i++) {
+        ESP_LOGI("Test", "waiting random frame %d ...", (int)i);
+        while (rx_msg_cnt <= i) {
+            vTaskDelay(1);
+        }
+
+        const size_t rx_len = twaifd_dlc2len(rx_frame.header.dlc);
+        ESP_LOGI("Test", "RX: %lx [%d] fd %d, brs %d, ext %d",
+                 rx_frame.header.id, (int)rx_len, rx_frame.header.fdf, rx_frame.header.brs, rx_frame.header.ide);
+        ESP_LOG_BUFFER_HEX("Data", rx_frame.buffer, rx_len);
+        TEST_ASSERT_LESS_OR_EQUAL(sizeof(rx_buffer), rx_len);
+        TEST_ASSERT_TRUE(rx_frame.header.fdf || rx_len <= 8);
+
+        // ESP only change data and send it back, PC will check the frame is correct
+        for (size_t j = 0; j < rx_len; j++) {
+            tx_buffer[j] = rx_frame.buffer[j] + 2;
+        }
+        tx_frame.header = rx_frame.header;
+        tx_frame.buffer_len = rx_len;
+        ESP_LOGI("Test", "send echo frame");
+        TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 1000));
+        TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 1000));
+    }
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));
