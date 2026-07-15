@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,4 +23,15 @@ int test_init_src_chan_gpio(int unit_id, int init_level)
     TEST_ESP_OK(gpio_set_level(src_chan_num, init_level));
     TEST_ESP_OK(gpio_output_enable(src_chan_num));
     return src_chan_num;
+}
+
+bool IRAM_ATTR test_ana_cmpr_edge_cnt_callback(ana_cmpr_handle_t cmpr, const ana_cmpr_cross_event_data_t *edata, void *user_ctx)
+{
+    test_ana_cmpr_edge_cnt_t *cnt = (test_ana_cmpr_edge_cnt_t *)user_ctx;
+    if (edata->cross_type == ANA_CMPR_CROSS_POS) {
+        cnt->pos_cnt++;
+    } else if (edata->cross_type == ANA_CMPR_CROSS_NEG) {
+        cnt->neg_cnt++;
+    }
+    return false;
 }
