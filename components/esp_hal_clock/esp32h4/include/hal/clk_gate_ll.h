@@ -93,6 +93,20 @@ FORCE_INLINE_ATTR void _clk_gate_ll_ref_96m_clk_en(bool enable)
 #define clk_gate_ll_ref_96m_clk_en(...) (void)__DECLARE_RCC_ATOMIC_ENV; _clk_gate_ll_ref_96m_clk_en(__VA_ARGS__)
 
 /**
+ * @brief Set system bus clock gate bypass
+ *
+ * @param enable  true: bypass bus clock gating (force clocks on);
+ *                false: allow hardware auto clock gating to decrease power consumption
+ */
+FORCE_INLINE_ATTR void clk_gate_ll_set_bus_clock_gate_bypass(bool enable)
+{
+    PCR.bus_clock_gate_bypass.ahb_clk_gating_bypass = enable;
+    PCR.bus_clock_gate_bypass.apb_clk_gating_bypass = enable;
+    PCR.bus_clock_gate_bypass.axi_clk_gating_bypass = enable;
+    PCR.bus_clock_gate_bypass.mem_clk_gating_bypass = enable;
+}
+
+/**
  * @brief Configuration structure for peripheral clock gate settings
  */
 typedef struct {

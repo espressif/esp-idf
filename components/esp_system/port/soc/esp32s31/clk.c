@@ -229,4 +229,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
 
     periph_ll_clk_gate_set_default(rst_reason, &clk_gate_config);
+
+#if CONFIG_ESP_BUS_ENABLE_AUTO_GATE
+    // Clear bus clock gating bypass so hardware can auto-gate idle bus clocks
+    clk_gate_ll_set_bus_clock_gate_bypass(false);
+#endif
 }
