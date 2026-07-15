@@ -22,19 +22,9 @@ IMAGE_CHUNK_PATTERN = (
     r'(?=\r?\n|IMAGE_BASE64|IMAGE_BASE64_END|Frame )'
 )
 IMAGE_OUTPUT_TEMPLATE = 'isp_dma_input_frame{frame:02d}.ppm'
-REFERENCE_IMAGE_NAME = 'reference.ppm'
+REFERENCE_IMAGE_PATH = Path(__file__).parent / 'golden' / 'golden.ppm'
 EXPECTED_PIXEL_FORMAT = 'BGR24'
 EXPECTED_ENCODING = 'base64'
-STANDARD_COLOR_BARS_RGB888 = (
-    (255, 255, 255),  # white
-    (255, 255, 0),  # yellow
-    (0, 255, 255),  # cyan
-    (0, 255, 0),  # green
-    (255, 0, 255),  # magenta
-    (255, 0, 0),  # red
-    (0, 0, 255),  # blue
-    (0, 0, 0),  # black
-)
 RGB888_BYTES_PER_PIXEL = 3
 PPM_MAGIC = b'P6'
 PPM_MAX_VALUE = b'255'
@@ -112,17 +102,6 @@ def decode_bgr24_base64_image(metadata: ImageMetadata, payload_lines: list[str])
     return RgbImage(width=metadata.width, height=metadata.height, pixels_rgb888=_bgr24_to_rgb888(raw_bytes))
 
 
-def generate_standard_color_bar_image(width: int, height: int) -> RgbImage:
-    pixels = bytearray(width * height * RGB888_BYTES_PER_PIXEL)
-    for y in range(height):
-        for x in range(width):
-            bar_index = (x * len(STANDARD_COLOR_BARS_RGB888)) // width
-            offset = (y * width + x) * RGB888_BYTES_PER_PIXEL
-            pixels[offset : offset + RGB888_BYTES_PER_PIXEL] = STANDARD_COLOR_BARS_RGB888[bar_index]
-
-    return RgbImage(width=width, height=height, pixels_rgb888=bytes(pixels))
-
-
 def save_ppm_artifact(image: RgbImage, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -134,14 +113,45 @@ def save_ppm_artifact(image: RgbImage, output_path: Path) -> None:
     logging.info('Saved ISP DMA artifact to %s', output_path)
 
 
-def assert_image_is_meaningful(image: RgbImage) -> None:
-    distinct_pixels = {image.pixels_rgb888[i : i + 3] for i in range(0, len(image.pixels_rgb888), 3)}
-    assert len(distinct_pixels) > 1, 'ISP output is a single flat color; the pipeline likely produced no real data'
+def load_ppm_image(image_path: Path) -> RgbImage:
+    ppm_data = image_path.read_bytes()
+    try:
+        magic, dimensions, max_value, pixels_rgb888 = ppm_data.split(b'\n', 3)
+        width, height = (int(value) for value in dimensions.split())
+    except ValueError as error:
+        raise ValueError(f'Invalid PPM image: {image_path}') from error
+
+    if magic != PPM_MAGIC or max_value != PPM_MAX_VALUE:
+        raise ValueError(f'Unsupported PPM image: {image_path}')
+
+    return RgbImage(width=width, height=height, pixels_rgb888=pixels_rgb888)
+
+
+def assert_image_matches_reference(result_image: RgbImage, reference_image: RgbImage) -> None:
+    assert (result_image.width, result_image.height) == (reference_image.width, reference_image.height), (
+        f'ISP output dimensions do not match reference image: '
+        f'{result_image.width}x{result_image.height} != {reference_image.width}x{reference_image.height}'
+    )
+
+    if result_image.pixels_rgb888 == reference_image.pixels_rgb888:
+        return
+
+    mismatch_offset = next(
+        offset
+        for offset, (actual, expected) in enumerate(zip(result_image.pixels_rgb888, reference_image.pixels_rgb888))
+        if actual != expected
+    )
+    pixel_index, channel = divmod(mismatch_offset, RGB888_BYTES_PER_PIXEL)
+    raise AssertionError(
+        f'ISP output does not match reference image at pixel {pixel_index}, channel {channel}: '
+        f'{result_image.pixels_rgb888[mismatch_offset]} != {reference_image.pixels_rgb888[mismatch_offset]}'
+    )
 
 
 @pytest.mark.generic
 @idf_parametrize('target', soc_filtered_targets('SOC_ISP_SUPPORTED == 1'), indirect=['target'])
 def test_isp_dma_input_example(dut: Dut) -> None:
+    reference_image = load_ppm_image(REFERENCE_IMAGE_PATH)
     frame_count_match = dut.expect(r'Feeding (?P<frame_count>\d+) frames through ISP DMA input...')
     expected_frame_count = int(frame_count_match.group('frame_count').decode('utf-8'))
     logging.info('Expecting %d ISP DMA frame(s)', expected_frame_count)
@@ -156,10 +166,6 @@ def test_isp_dma_input_example(dut: Dut) -> None:
             metadata.height,
             metadata.pixel_format,
         )
-        if expected_frame == 0:
-            reference_image = generate_standard_color_bar_image(metadata.width, metadata.height)
-            save_ppm_artifact(reference_image, Path(dut.logdir) / REFERENCE_IMAGE_NAME)
-
         dut.expect_exact('IMAGE_BASE64_BEGIN')
         logging.info('Receiving base64 image payload for frame %d', metadata.frame)
         payload_lines = collect_base64_payload(dut)
@@ -169,7 +175,7 @@ def test_isp_dma_input_example(dut: Dut) -> None:
         logging.info('Decoded frame %d to RGB888 image', metadata.frame)
         output_path = Path(dut.logdir) / IMAGE_OUTPUT_TEMPLATE.format(frame=metadata.frame)
         save_ppm_artifact(result_image, output_path)
-        assert_image_is_meaningful(result_image)
+        assert_image_matches_reference(result_image, reference_image)
         dut.expect_exact(f'Frame {expected_frame} done')
 
     dut.expect_exact('ISP DMA visual demo done.')
