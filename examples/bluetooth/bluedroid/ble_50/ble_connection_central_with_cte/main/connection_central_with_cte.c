@@ -556,10 +556,6 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    #if CONFIG_EXAMPLE_CI_PIPELINE_ID
-    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
-    #endif
-
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -587,6 +583,13 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
+    ESP_LOGI(LOG_TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+    ext_scan_params.scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE;
+#endif
 
     ret = esp_ble_cte_register_callback(cte_event_handler);
     if (ret){

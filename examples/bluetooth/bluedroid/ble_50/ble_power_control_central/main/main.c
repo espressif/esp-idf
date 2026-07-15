@@ -26,17 +26,18 @@
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
+#include "esp_bt_defs.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #define TAG "BLE_POWER_CONTROL_CENTRAL"
-#define REMOTE_DEVICE_NAME "ESP_PWR_CTL_PRH"
 #define PROFILE_NUM      1
 #define PROFILE_A_APP_ID 0
 
 static bool connect = false;
 static uint16_t conn_handle = 0xFFFF;
+static char remote_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "ESP_PWR_CTL_PRH";
 
 static esp_ble_ext_scan_params_t ext_scan_params = {
     .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
@@ -233,8 +234,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
             ESP_LOGI(TAG, "Found device: "ESP_BD_ADDR_STR", name: %.*s",
                      ESP_BD_ADDR_HEX(param->ext_adv_report.params.addr), adv_name_len, adv_name);
 
-            if (adv_name_len == strlen(REMOTE_DEVICE_NAME) &&
-                strncmp((char *)adv_name, REMOTE_DEVICE_NAME, adv_name_len) == 0) {
+            if (adv_name_len == strlen(remote_device_name) &&
+                strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
                 ESP_LOGI(TAG, "Target device found, connecting...");
                 if (!connect) {
                     connect = true;
@@ -349,6 +350,13 @@ void app_main(void)
         ESP_LOGE(TAG, "Bluedroid enable failed, error = %x", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+    ext_scan_params.scan_duplicate = BLE_SCAN_DUPLICATE_ENABLE;
+#endif
 
     // Register callbacks
     ret = esp_ble_gap_register_callback(gap_event_handler);

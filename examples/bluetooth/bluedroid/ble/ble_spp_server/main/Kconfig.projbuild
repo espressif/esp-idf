@@ -26,4 +26,16 @@ menu "Example 'SPP SERVER' Config"
         help
             Use this option to enable configuration command when this example is used for RF testing.
 
+    config EXAMPLE_CI_ID
+        int "example id for CI test"
+        default 0
+        help
+            This config the example id for CI test. Only for internal used.
+
+    config EXAMPLE_CI_PIPELINE_ID
+        int "The pipeline id for CI test"
+        default 0
+        help
+            This config the pipeline id for CI test. Only for internal used.
+
 endmenu

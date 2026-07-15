@@ -144,7 +144,7 @@ static esp_ble_gap_periodic_adv_sync_params_t periodic_adv_sync_params = {
     .filter_policy = 0,
     .sid = 0,
     .addr_type = BLE_ADDR_TYPE_RANDOM,
-    .skip = 10,
+    .skip = 0,
     .sync_timeout = 1000,
 };
 
@@ -266,7 +266,11 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         //                                                                                             param->period_adv_report.params.data_status,
         //                                                                                             param->period_adv_report.params.data_length,
         //                                                                                             param->period_adv_report.params.rssi);
-        //ESP_LOGI(LOG_TAG, "periodic_evt_counter %d subevt %d",  param->period_adv_report.params.periodic_evt_counter, param->period_adv_report.params.subevt);
+
+        ESP_LOGI(LOG_TAG, "[Periodic Adv Report] handle: %d, periodic_evt_counter %d subevt %d",
+                        param->period_adv_report.params.sync_handle,
+                        param->period_adv_report.params.periodic_evt_counter,
+                        param->period_adv_report.params.subevt);
         if (param->period_adv_report.params.subevt == 0xFF) {
             break;
         }
@@ -510,10 +514,6 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    #if CONFIG_EXAMPLE_CI_PIPELINE_ID
-    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
-    #endif
-
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -540,6 +540,12 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    memcpy(remote_device_name, esp_bluedroid_get_example_name(), sizeof(remote_device_name));
+    ESP_LOGI(LOG_TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             remote_device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     ret = esp_ble_gap_register_callback(gap_event_handler);
     if (ret){

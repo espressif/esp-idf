@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -30,7 +30,6 @@
 #include "subrating_service.h"
 
 #define TAG "BLE_SUBRATING_PERIPHERAL"
-#define DEVICE_NAME "ESP_SUBRATE_PRH"
 
 #define PROFILE_NUM      1
 #define PROFILE_A_APP_ID 0
@@ -40,6 +39,8 @@
 #define NUM_EXT_ADV         1
 
 #define SEM_WAIT_TIMEOUT_MS     5000
+
+static const char *device_name = "ESP_SUBRATE_PRH";
 
 #define FUNC_SEND_WAIT_SEM(func, sem) do {\
         esp_err_t __err_rc = (func);\
@@ -90,6 +91,7 @@ static uint8_t raw_ext_adv_data[] = {
     0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
     0x10, ESP_BLE_AD_TYPE_NAME_CMPL, 'E','S','P','_','S','U','B','R','A','T','E','_','P','R','H'
 };
+static uint8_t raw_ext_adv_data_len = sizeof(raw_ext_adv_data);
 
 static esp_ble_gap_ext_adv_params_t ext_adv_params = {
     .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE,
@@ -126,7 +128,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
                  param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
         if (param->ext_adv_set_params.status == ESP_BT_STATUS_SUCCESS) {
             // Set extended advertising data
-            esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE, sizeof(raw_ext_adv_data), raw_ext_adv_data);
+            esp_ble_gap_config_ext_adv_data_raw(EXT_ADV_HANDLE, raw_ext_adv_data_len, raw_ext_adv_data);
         } else {
             ESP_LOGE(TAG, "Failed to set extended advertising params, status %d", param->ext_adv_set_params.status);
         }
@@ -209,7 +211,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         ESP_LOGI(TAG, "GATT server register, status %d, app_id %d, gatts_if %d",
                  param->reg.status, param->reg.app_id, gatts_if);
 
-        esp_ble_gap_set_device_name(DEVICE_NAME);
+        esp_ble_gap_set_device_name(device_name);
 
         // Set extended advertising parameters
         esp_ble_gap_ext_adv_set_params(EXT_ADV_HANDLE, &ext_adv_params);
@@ -348,6 +350,19 @@ void app_main(void)
         ESP_LOGE(TAG, "Bluedroid enable failed, error = %x", ret);
         return;
     }
+
+#if CONFIG_EXAMPLE_CI_ID && CONFIG_EXAMPLE_CI_PIPELINE_ID
+    /* The CI test only needs adv data containing device_name. */
+    device_name = esp_bluedroid_get_example_name();
+    uint8_t name_len = strlen(device_name);
+    memset(raw_ext_adv_data, 0, raw_ext_adv_data_len);
+    raw_ext_adv_data[0] = name_len + 1;
+    raw_ext_adv_data[1] = ESP_BLE_AD_TYPE_NAME_CMPL;
+    memcpy(&raw_ext_adv_data[2], device_name, name_len);
+    raw_ext_adv_data_len = 2 + name_len;
+    ESP_LOGI(TAG, "DeviceName:%s, CIID:%02X, PipelineID:%05X, ChipID:%02X",
+             device_name, CONFIG_EXAMPLE_CI_ID, CONFIG_EXAMPLE_CI_PIPELINE_ID, CONFIG_IDF_FIRMWARE_CHIP_ID);
+#endif
 
     // Register callbacks
     ret = esp_ble_gap_register_callback(gap_event_handler);

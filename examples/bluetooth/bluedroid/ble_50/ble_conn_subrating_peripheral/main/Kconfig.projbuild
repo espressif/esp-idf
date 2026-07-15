@@ -1,4 +1,4 @@
-menu "Example 'BLE Connection Peripheral with CTE' Config"
+menu "Example 'BLE Connection Subrating Peripheral' Config"
 
     config EXAMPLE_CI_ID
         int "example id for CI test"
