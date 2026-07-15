@@ -723,7 +723,7 @@ Secure Boot Best Practices
 
         espsecure signature-info-v2 datafile.bin
 
-    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+    .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
 
       .. note::
 
@@ -818,7 +818,7 @@ It is preferred to use the ``idf.py`` tool to generate and verify signatures, bu
 
         openssl dgst -sha256 -binary BINARY_FILE  > DIGEST_BINARY_FILE
 
-    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+    .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
 
         In case of ECDSA-P384 signature scheme, SHA-384 must be used to calculate the digest of the image.
 

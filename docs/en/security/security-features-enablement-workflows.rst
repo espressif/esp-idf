@@ -510,7 +510,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
             espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse SECURE_BOOT_EN
 
-    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+    .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
 
         In case Secure Boot v2 is enabled with the ECDSA-P384 signature scheme, SHA-384 must be used to calculate the digest of the image. Thus, the following eFuse needs to be burned:
 

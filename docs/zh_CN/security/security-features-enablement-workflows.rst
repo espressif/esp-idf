@@ -510,7 +510,7 @@ flash 加密指南
 
             espefuse --port PORT --chip {IDF_TARGET_PATH_NAME} burn-efuse SECURE_BOOT_EN
 
-    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+    .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
 
         如果启用了带有 ECDSA-P384 签名方案的 Secure Boot v2，则必须使用 SHA-384 来计算镜像的摘要。因此，需要烧录以下 eFuse：
 
