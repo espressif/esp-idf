@@ -53,6 +53,9 @@ BLE_DOCS = [
     'migration-guides/release-5.x/5.0/bluetooth-low-energy.rst',
 ]
 
+BLE_DUAL_IDENTITY_DOCS = [
+    'api-guides/ble/bluedroid-dual-identity-host-dev.rst',
+]
 
 BLE_MESH_DOCS = [
     'api-guides/esp-ble-mesh/ble-mesh-index.rst',
@@ -334,6 +337,7 @@ ESP32P4_DOCS = [
 conditional_include_dict = {
     'SOC_BT_SUPPORTED': BT_DOCS,
     'SOC_BLE_SUPPORTED': BLE_DOCS,
+    'SOC_BLE_50_SUPPORTED': BLE_DUAL_IDENTITY_DOCS,
     'SOC_BLE_MESH_SUPPORTED': BLE_MESH_DOCS,
     'SOC_BLUFI_SUPPORTED': BLUFI_DOCS,
     'SOC_WIFI_SUPPORTED': WIFI_DOCS,

@@ -16,6 +16,9 @@
 #include "bta_gattc_int.h"
 #include "bta_gatts_int.h"
 #include "bta_dm_int.h"
+#if (BLE_EATT_INCLUDED == TRUE)
+#include "gatt_eatt_int.h"
+#endif
 
 static future_t *main_future[BTC_MAIN_FUTURE_NUM];
 static SemaphoreHandle_t s_init_done_sem = NULL;
@@ -48,6 +51,15 @@ static void btc_disable_bluetooth(void)
 
 void btc_init_callback(bt_status_t status)
 {
+#if (BLE_EATT_INCLUDED == TRUE)
+    /* Only arm the EATT callback once BTE startup actually succeeded. On failure
+     * the partial-init cleanup path tears the stack down (and NULLs this cback
+     * in gatt_eatt_deinit), so registering it here would only briefly reference a
+     * non-running stack. Matches the deliberate NULL-on-teardown in deinit. */
+    if (status == BT_STATUS_SUCCESS) {
+        gatt_eatt_register_evt_cback(btc_ble_gap_eatt_evt_cback);
+    }
+#endif
     s_init_clean = (status == BT_STATUS_SUCCESS) ? false : true;
     future_ready(*btc_main_get_future_p(BTC_MAIN_INIT_FUTURE),
                  (status == BT_STATUS_SUCCESS) ? FUTURE_SUCCESS : FUTURE_FAIL);
