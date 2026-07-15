@@ -86,3 +86,86 @@ TEST_CASE("ana_cmpr internal reference", "[ana_cmpr]")
     TEST_ESP_OK(ana_cmpr_disable(cmpr));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 }
+
+TEST_CASE("ana_cmpr edge-specific interrupt reports correct cross direction", "[ana_cmpr]")
+{
+#if !SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+    TEST_IGNORE_MESSAGE("target cannot distinguish cross direction");
+#else
+    test_ana_cmpr_edge_cnt_t cnt = {};
+    ana_cmpr_event_callbacks_t cbs = {
+        .on_cross = test_ana_cmpr_edge_cnt_callback,
+    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
+    ana_cmpr_debounce_config_t dbc_cfg = {
+        .wait_us = 10,
+    };
+
+    /* Arm only the rising (POS) interrupt: a real rising transition must be
+     * reported as POS, and a following falling transition must not fire at
+     * all, since NEG was never armed. */
+    {
+        ana_cmpr_handle_t cmpr = NULL;
+        ana_cmpr_config_t config = {};
+        config.unit = 0;
+        config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+        config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+        config.cross_type = ANA_CMPR_CROSS_POS;
+        TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+
+        int src_chan_io = test_init_src_chan_gpio();
+        TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+        TEST_ESP_OK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
+        TEST_ESP_OK(ana_cmpr_register_event_callbacks(cmpr, &cbs, &cnt));
+        TEST_ESP_OK(ana_cmpr_enable(cmpr));
+        esp_rom_delay_us(1000); // allow the comparator analog block to settle after power-up
+
+        gpio_set_level(src_chan_io, 1); // rising: armed as POS, must fire as POS
+        esp_rom_delay_us(1000);
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.neg_cnt);
+
+        gpio_set_level(src_chan_io, 0); // falling: NEG never armed, must not fire
+        esp_rom_delay_us(1000);
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.neg_cnt);
+
+        TEST_ESP_OK(ana_cmpr_disable(cmpr));
+        TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
+    }
+
+    /* Same as above, mirrored: arm only the falling (NEG) interrupt. */
+    {
+        cnt.pos_cnt = 0;
+        cnt.neg_cnt = 0;
+        ana_cmpr_handle_t cmpr = NULL;
+        ana_cmpr_config_t config = {};
+        config.unit = 0;
+        config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+        config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+        config.cross_type = ANA_CMPR_CROSS_NEG;
+        TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+
+        int src_chan_io = test_init_src_chan_gpio();
+        TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+        TEST_ESP_OK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
+        TEST_ESP_OK(ana_cmpr_register_event_callbacks(cmpr, &cbs, &cnt));
+        TEST_ESP_OK(ana_cmpr_enable(cmpr));
+        esp_rom_delay_us(1000); // allow the comparator analog block to settle after power-up
+
+        gpio_set_level(src_chan_io, 0); // falling: armed as NEG, must fire as NEG
+        esp_rom_delay_us(1000);
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.neg_cnt);
+
+        gpio_set_level(src_chan_io, 1); // rising: POS never armed, must not fire
+        esp_rom_delay_us(1000);
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.neg_cnt);
+
+        TEST_ESP_OK(ana_cmpr_disable(cmpr));
+        TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
+    }
+#endif
+}
