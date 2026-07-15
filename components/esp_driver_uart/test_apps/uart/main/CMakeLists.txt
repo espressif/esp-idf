@@ -14,7 +14,7 @@ endif()
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
     SRCS ${srcs}
-    REQUIRES esp_driver_uart unity esp_psram test_utils esp_driver_gpio esp_pm
+    REQUIRES esp_driver_uart unity esp_psram test_utils esp_driver_gpio esp_pm esp_timer
     PRIV_INCLUDE_DIRS .
     WHOLE_ARCHIVE
 )

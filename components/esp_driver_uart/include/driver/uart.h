@@ -283,10 +283,12 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow
 /**
  * @brief Set software flow control.
  *
+ * The XON and XOFF characters are '0x11' and '0x13' respectively.
+ *
  * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1)
- * @param enable     switch on or off
- * @param rx_thresh_xon  low water mark
- * @param rx_thresh_xoff high water mark
+ * @param enable     Enable or disable software flow control feature
+ * @param rx_thresh_xon  Low RX FIFO water mark for TX to send XON character
+ * @param rx_thresh_xoff High RX FIFO water mark for TX to send XOFF character
  *
  * @return
  *     - ESP_OK   Success
