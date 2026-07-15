@@ -236,22 +236,26 @@ If the bootloader grows too large then it can collide with the partition table, 
         I (67) boot: Partition Table:
         ...
 
-    Anti-Rollback Feature
-    ^^^^^^^^^^^^^^^^^^^^^
+    .. only:: SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
 
-    The anti-rollback feature prevents downgrading to an older, potentially vulnerable bootloader version. The bootloader header includes a security version, defined by ``CONFIG_BOOTLOADER_SECURE_VERSION``. When ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` is set, the ROM bootloader checks this version against the value stored in ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION``. Only bootloaders with a version greater than or equal to the eFuse value are allowed to boot.
+        Anti-Rollback Feature
+        ^^^^^^^^^^^^^^^^^^^^^
 
-    - The ROM bootloader can update the secure version in eFuse if ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` is set.
-    - The secure version value is incremented as new bootloader versions are deployed, and cannot be decreased.
-    - If the secure version in eFuse is not updated in the ROM bootloader, then the application can update it using the :cpp:func:`esp_efuse_write_field_blob` function.
+        The anti-rollback feature prevents downgrading to an older, potentially vulnerable bootloader version. The bootloader header includes a security version, defined by ``CONFIG_BOOTLOADER_SECURE_VERSION``. When ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` is set, the ROM bootloader checks this version against the value stored in ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION``. Only bootloaders with a version greater than or equal to the eFuse value are allowed to boot.
+
+        - The ROM bootloader can update the secure version in eFuse if ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` is set.
+        - The secure version value is incremented as new bootloader versions are deployed, and cannot be decreased.
+        - If the secure version in eFuse is not updated in the ROM bootloader, then the application can update it using the :cpp:func:`esp_efuse_write_field_blob` function.
 
     Relevant eFuses
     ^^^^^^^^^^^^^^^
 
-    - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` (12 bits): Flash sector address for the recovery bootloader. Default value is 0 (disabled), set any other value to enable, 0xFFF to permanently disable.
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` (1 bit): Enables anti-rollback check in the ROM bootloader.
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` (4 bits): Secure version for anti-rollback protection. The value increases as bits are set—0x0, 0x1, 0x3, 0x7, 0xF.
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` (1 bit): Allows the ROM bootloader to update the secure version in eFuse.
+    .. list::
+
+        - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` (12 bits): Flash sector address for the recovery bootloader. Default value is 0 (disabled), set any other value to enable, 0xFFF to permanently disable.
+        :SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED: - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` (1 bit): Enables anti-rollback check in the ROM bootloader.
+        :SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED: - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` (4 bits): Secure version for anti-rollback protection. The value increases as bits are set—0x0, 0x1, 0x3, 0x7, 0xF.
+        :SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED: - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` (1 bit): Allows the ROM bootloader to update the secure version in eFuse.
 
     .. note::
 
