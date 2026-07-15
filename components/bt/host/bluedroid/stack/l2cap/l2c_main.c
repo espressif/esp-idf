@@ -311,6 +311,13 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         if (p_ccb == NULL) {
             osi_free (p_msg);
         } else {
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+            /* LE CoC data plane only; BR/EDR dynamic channels use l2c_csm / l2c_fcr below */
+            if (p_lcb->transport == BT_TRANSPORT_LE && l2c_ble_le_coc_is_chan(p_ccb)) {
+                l2c_ble_le_coc_data_ind(p_ccb, p_msg);
+                return;
+            }
+#endif
             if (p_lcb->transport == BT_TRANSPORT_LE) {
                 l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
             }
@@ -1147,11 +1154,41 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
          * re-issue the connection attempt now. */
         l2c_link_create_conn_retry ((tL2C_LCB *)p_tle->param);
         break;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
-    case BTU_TTYPE_L2CAP_CHNL:
-        l2c_csm_execute (((tL2C_CCB *)p_tle->param), L2CEVT_TIMEOUT, NULL);
+    case BTU_TTYPE_L2CAP_CHNL: {
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        tL2C_CCB *p_ccb = (tL2C_CCB *)p_tle->param;
+        /* LE CoC/ECFC channels do not use the classic state machine; a per-CCB
+         * BTU_TTYPE_L2CAP_CHNL timer is their connect/reconfigure response
+         * timeout. Route it to the CoC handler. */
+        if (p_ccb != NULL && p_ccb->le_coc_active) {
+            l2c_ble_le_coc_channel_timeout(p_ccb);
+            break;
+        }
+        /* Keep the NULL handling consistent with the CoC check above: the classic
+         * state machine dereferences p_ccb unconditionally, so bail out here
+         * instead of passing a NULL CCB down to l2c_csm_execute. */
+        if (p_ccb == NULL) {
+            L2CAP_TRACE_WARNING("L2CAP channel timeout with NULL CCB");
+            break;
+        }
+#if (CLASSIC_BT_INCLUDED == TRUE)
+        l2c_csm_execute (p_ccb, L2CEVT_TIMEOUT, NULL);
+#else
+        /* p_ccb may be unused when BT_STACK_NO_LOG strips the trace macro. */
+        L2CAP_TRACE_WARNING("Unhandled L2CAP channel timeout for CCB %p", p_ccb);
+        UNUSED(p_ccb);
+#endif
+#elif (CLASSIC_BT_INCLUDED == TRUE)
+        l2c_csm_execute ((tL2C_CCB *)p_tle->param, L2CEVT_TIMEOUT, NULL);
+#else
+        L2CAP_TRACE_WARNING("Unhandled L2CAP channel timeout");
+#endif
         break;
+    }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTU_TTYPE_L2CAP_FCR_ACK:
         l2c_csm_execute (((tL2C_CCB *)p_tle->param), L2CEVT_ACK_TIMEOUT, NULL);
         break;

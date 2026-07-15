@@ -108,7 +108,9 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
 #if (BLE_INCLUDED == TRUE)
             p_lcb->transport       = transport;
             p_lcb->tx_data_len     = controller_get_interface()->get_ble_default_data_packet_length();
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
             p_lcb->le_sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
+#endif
 
             if (transport == BT_TRANSPORT_LE) {
                 l2cb.num_ble_links_active++;
@@ -163,6 +165,16 @@ void l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding)
 void l2cu_release_lcb (tL2C_LCB *p_lcb)
 {
     tL2C_CCB    *p_ccb;
+
+    /* Make double-release harmless. Several failure paths (e.g.
+     * l2cble_init_direct_conn) release the LCB and return FALSE, after which the
+     * API-level caller (e.g. L2CA_ConnectFixedChnl) releases it again. Without
+     * this guard the second call would wrongly decrement num_ble_links_active
+     * and re-run l2cu_process_fixed_disc_cback on an already freed LCB. A valid
+     * LCB always has in_use == TRUE (set in l2cu_allocate_lcb). */
+    if (p_lcb == NULL || !p_lcb->in_use) {
+        return;
+    }
 
     L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
         __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
@@ -253,6 +265,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         while (!list_is_empty(p_lcb->link_xmit_data_q)) {
             BT_HDR *p_buf = list_front(p_lcb->link_xmit_data_q);
             list_remove(p_lcb->link_xmit_data_q, p_buf);
+            p_buf->event = 0;
             osi_free(p_buf);
         }
         list_free(p_lcb->link_xmit_data_q);
@@ -294,7 +307,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         (*p_cb) (L2CAP_PING_RESULT_NO_LINK);
     }
 
-#if (BLE_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE) && (BLE_L2CAP_COC_INCLUDED == TRUE)
 	/* Check and release all the LE COC connections waiting for security */
     if (p_lcb->le_sec_pending_q)
     {
@@ -1721,8 +1734,18 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
     if (!p_ccb->in_use) {
         return;
     }
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+    if (p_lcb != NULL && p_lcb->transport == BT_TRANSPORT_LE) {
+        l2c_ble_ecfc_on_ccb_release(p_ccb);
+    }
+#endif
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    if (p_lcb != NULL && p_lcb->transport == BT_TRANSPORT_LE && p_ccb->le_coc_active) {
+        l2c_ble_le_coc_cleanup_ccb(p_ccb);
+    }
+#endif
 #if BLE_INCLUDED == TRUE
-    if (p_lcb->transport == BT_TRANSPORT_LE) {
+    if (p_lcb != NULL && p_lcb->transport == BT_TRANSPORT_LE) {
         /* Take samephore to avoid race condition */
         l2ble_update_att_acl_pkt_num(L2CA_BUFF_FREE, NULL);
     }
@@ -1988,6 +2011,32 @@ tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm)
     for (xx = 0; xx < BLE_MAX_L2CAP_CLIENTS; xx++, p_rcb++)
     {
         if ((p_rcb->in_use) && (p_rcb->psm == psm)) {
+            return (p_rcb);
+        }
+    }
+
+    /* If here, no match found */
+    return (NULL);
+}
+
+/*******************************************************************************
+**
+** Function         l2cu_find_ble_rcb_by_real_psm
+**
+** Description      Look through the BLE Registration Control Blocks to see if
+**                  anyone registered to handle the application PSM in question
+**
+** Returns          Pointer to the BLE RCB or NULL if not found
+**
+*******************************************************************************/
+tL2C_RCB *l2cu_find_ble_rcb_by_real_psm (UINT16 real_psm)
+{
+    tL2C_RCB    *p_rcb = &l2cb.ble_rcb_pool[0];
+    UINT16      xx;
+
+    for (xx = 0; xx < BLE_MAX_L2CAP_CLIENTS; xx++, p_rcb++)
+    {
+        if ((p_rcb->in_use) && (p_rcb->real_psm == real_psm)) {
             return (p_rcb);
         }
     }
@@ -2306,6 +2355,32 @@ void l2cu_device_reset (void)
 **
 ** Returns          TRUE if successful, FALSE if gki get buffer fails.
 **
+** LCB OWNERSHIP ON FAILURE - READ BEFORE "FIXING" A LEAK HERE:
+**   The release contract of this function is deliberately NOT uniform, and the
+**   callers rely on the current behaviour. Do NOT add an unconditional
+**   l2cu_release_lcb(p_lcb) around the FALSE returns below - it causes a
+**   use-after-free + double free (see l2c_link_hci_disc_comp).
+**
+**   Per-path behaviour on a FALSE return:
+**     - BLE connect path (l2cble_create_conn -> l2cble_init_direct_conn) and the
+**       classic l2cu_create_conn_after_switch RELEASE p_lcb internally on their
+**       own failures. Callers must therefore NOT release again on those paths.
+**     - The "!supports_ble()" and the trailing "return false" paths do NOT
+**       release p_lcb (kept as-is on purpose).
+**
+**   Caller expectations (all currently satisfied by the above):
+**     - l2c_link_hci_disc_comp() keeps using p_lcb after a FALSE return and
+**       releases it itself at the end via lcb_is_free (see the explicit
+**       "must not release the LCB on failure" note there). Releasing internally
+**       would UAF/double-free this hot disconnect+reconnect path.
+**     - L2CA_ConnectFixedChnl() releases p_lcb itself on FALSE.
+**     - The LE CoC/ECFC callers (L2CA_ConnectLECocReq / L2CA_ConnectLEEcocReq)
+**       do NOT release on FALSE; they rely on the BLE path having released. The
+**       only genuine leak is the (practically unreachable) !supports_ble() path
+**       for those callers - if that must be closed, do it at the CoC API entry
+**       (pre-check supports_ble and release the freshly-allocated LCB there),
+**       not by changing the contract of this function.
+**
 *******************************************************************************/
 BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 {
@@ -2327,6 +2402,9 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 
     if (transport == BT_TRANSPORT_LE) {
         if (!controller_get_interface()->supports_ble()) {
+            /* Intentionally does NOT release p_lcb (see the ownership note in the
+             * function header). Practically unreachable for LE callers; close the
+             * CoC leak at the API entry, not here. */
             return FALSE;
         }
         if(addr_type > BLE_ADDR_TYPE_MAX) {
@@ -2384,6 +2462,9 @@ BOOLEAN l2cu_create_conn (tL2C_LCB *p_lcb, tBT_TRANSPORT transport)
 
     return (l2cu_create_conn_after_switch (p_lcb));
 #endif // (CLASSIC_BT_INCLUDED == TRUE)
+    /* Fallthrough only in a BLE-only build reached with a non-LE transport
+     * (effectively dead). Intentionally does NOT release p_lcb - see the
+     * ownership note in the function header. */
     return false;
 }
 
@@ -3269,6 +3350,128 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb)
 
     l2c_link_check_send_pkts (p_lcb, NULL, p_buf);
 }
+
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+BOOLEAN l2cu_send_peer_ble_enhanced_credit_conn_req(tL2C_LCB *p_lcb, UINT8 sig_id, UINT16 psm,
+        UINT16 mtu, UINT16 mps, UINT16 credits, UINT8 num_chan, UINT16 *p_scids)
+{
+    BT_HDR *p_buf;
+    UINT8 *p;
+    UINT16 len = L2CAP_CMD_BLE_ENHANCED_CONN_REQ_BASE_LEN + num_chan * sizeof(UINT16);
+
+    if (p_lcb == NULL || p_scids == NULL || num_chan == 0) {
+        return FALSE;
+    }
+
+    if ((p_buf = l2cu_build_header(p_lcb, len, L2CAP_CMD_BLE_ENHANCED_CONN_REQ, sig_id)) == NULL) {
+        L2CAP_TRACE_WARNING("LE_ECFC tx 0x17 build_header failed sig_id=%u", sig_id);
+        return FALSE;
+    }
+
+    p = (UINT8 *)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+        L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+    UINT16_TO_STREAM(p, psm);
+    UINT16_TO_STREAM(p, mtu);
+    UINT16_TO_STREAM(p, mps);
+    UINT16_TO_STREAM(p, credits);
+    for (UINT8 i = 0; i < num_chan; i++) {
+        UINT16_TO_STREAM(p, p_scids[i]);
+    }
+
+    l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+    return TRUE;
+}
+
+void l2cu_send_peer_ble_enhanced_credit_conn_res(tL2C_LCB *p_lcb, UINT8 rem_id,
+        UINT16 mtu, UINT16 mps, UINT16 credits, UINT16 result, UINT8 num_chan, UINT16 *p_dcids)
+{
+    BT_HDR *p_buf;
+    UINT8 *p;
+    UINT16 len = L2CAP_CMD_BLE_ENHANCED_CONN_RES_BASE_LEN + num_chan * sizeof(UINT16);
+
+    if (p_lcb == NULL) {
+        return;
+    }
+
+    if ((p_buf = l2cu_build_header(p_lcb, len, L2CAP_CMD_BLE_ENHANCED_CONN_RES, rem_id)) == NULL) {
+        L2CAP_TRACE_WARNING("LE_ECFC tx 0x18 build_header failed rem_id=%u", rem_id);
+        return;
+    }
+
+    p = (UINT8 *)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+        L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+    UINT16_TO_STREAM(p, mtu);
+    UINT16_TO_STREAM(p, mps);
+    UINT16_TO_STREAM(p, credits);
+    UINT16_TO_STREAM(p, result);
+    for (UINT8 i = 0; i < num_chan; i++) {
+        UINT16 dcid = (p_dcids != NULL) ? p_dcids[i] : 0;
+        UINT16_TO_STREAM(p, dcid);
+    }
+
+    l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+}
+
+void l2cu_reject_ble_enhanced_connection(tL2C_LCB *p_lcb, UINT8 rem_id, UINT16 result, UINT8 num_scids)
+{
+    if (num_scids == 0) {
+        num_scids = 1;
+    }
+    l2cu_send_peer_ble_enhanced_credit_conn_res(p_lcb, rem_id, 0, 0, 0, result, num_scids, NULL);
+}
+
+BOOLEAN l2cu_send_peer_ble_credit_reconfig_req(tL2C_LCB *p_lcb, UINT8 sig_id,
+        UINT16 mtu, UINT16 mps, UINT8 num_chan, UINT16 *p_dcids)
+{
+    BT_HDR *p_buf;
+    UINT8 *p;
+    UINT16 len = L2CAP_CMD_BLE_CREDIT_RECONFIG_REQ_BASE_LEN + num_chan * sizeof(UINT16);
+
+    if (p_lcb == NULL || p_dcids == NULL || num_chan == 0) {
+        return FALSE;
+    }
+
+    if ((p_buf = l2cu_build_header(p_lcb, len, L2CAP_CMD_BLE_CREDIT_RECONFIG_REQ, sig_id)) == NULL) {
+        L2CAP_TRACE_WARNING("LE_ECFC tx 0x19 build_header failed sig_id=%u", sig_id);
+        return FALSE;
+    }
+
+    p = (UINT8 *)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+        L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+    UINT16_TO_STREAM(p, mtu);
+    UINT16_TO_STREAM(p, mps);
+    for (UINT8 i = 0; i < num_chan; i++) {
+        UINT16_TO_STREAM(p, p_dcids[i]);
+    }
+
+    l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+    return TRUE;
+}
+
+void l2cu_send_peer_ble_credit_reconfig_rsp(tL2C_LCB *p_lcb, UINT8 rem_id, UINT16 result)
+{
+    BT_HDR *p_buf;
+    UINT8 *p;
+
+    if (p_lcb == NULL) {
+        return;
+    }
+
+    if ((p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_BLE_CREDIT_RECONFIG_RSP_LEN,
+                                  L2CAP_CMD_BLE_CREDIT_RECONFIG_RSP, rem_id)) == NULL) {
+        return;
+    }
+
+    p = (UINT8 *)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+        L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+    UINT16_TO_STREAM(p, result);
+    l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+}
+#endif /* BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE */
 
 #endif /* BLE_INCLUDED == TRUE */
 
