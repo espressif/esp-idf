@@ -324,4 +324,12 @@ menu "Power Management"
             keeping all other peripheral clocks gated to minimize sleep
             power consumption.
 
+    config PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
+        bool
+        depends on SOC_PM_SUPPORT_PMU_MODEM_STATE
+        default n
+        help
+            If enabled, the analog wait time when waking up from modem to active state will be skipped.
+            This will reduce the wakeup time.
+
 endmenu # "Power Management"

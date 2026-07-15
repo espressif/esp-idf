@@ -46,6 +46,8 @@ entries:
             pmu_sleep (noflash)
             if PM_SLEEP_CLK_ICG_ENABLE = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
                 pmu_sleep_clock_icg:pmu_sleep_clock_icg_config (noflash)
+            if IDF_TARGET_ESP32H4 = y && BT_LE_MODEM_STATE_ENABLED = y:
+                pmu_sleep_power:pmu_sleep_power_analog_wait_config (noflash)
             sleep_mspi (noflash)
             if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32S31 != y:
                 pmu_param:get_act_lp_dbias (noflash)

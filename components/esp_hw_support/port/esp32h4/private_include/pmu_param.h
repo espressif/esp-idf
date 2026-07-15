@@ -110,7 +110,16 @@ typedef struct {
 
 const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mode_t mode);
 
-
+#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
+#define ANALOG_WAIT_CTRL_NUM        3 // S2M, M2S, M2A
+/**
+ * @brief Update content of selected analog wait ctrl REGDMA links.
+ *
+ * @param ana_wait_context Analog wait ctrl context.
+ * @param analog_wait Update analog wait values at S2M, M2S, M2A retention links.
+ */
+void pmu_sleep_power_analog_wait_config(void *ana_wait_context, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM]);
+#endif
 
 /* Following software configuration instance type from pmu_struct.h used for the PMU state machine in sleep flow*/
 typedef union {
