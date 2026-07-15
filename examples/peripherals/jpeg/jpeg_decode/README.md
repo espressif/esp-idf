@@ -5,21 +5,25 @@
 
 ## Overview
 
-This example demonstrates how to use the JPEG hardware decoder to decode a 1080p and a 720p picture:
+This example demonstrates how to use the JPEG hardware decoder to decode one embedded JPEG image into `RGB888` raw bytes in default `BGR24` order.
 
-If you have a bunch of big JPEG picture need to be decoded, such as `*.jpg` -> `*.rgb`, and this example uses hardware JPEG decoder to accelerate the decoding.
+The example performs:
 
-## How to use example
+- Embedding `main/assets/image.jpg` into the application image
+- Letting the JPEG decoder read the embedded JPEG bitstream directly from flash
+- Parsing the JPEG header with `jpeg_decoder_get_info()`
+- Decoding the image into an `RGB888` output buffer with default `BGR24` byte order
+- Allocating the output buffer for padded dimensions when the JPEG block layout rounds width or height up to 16-pixel boundaries
+- Base64-encoding the decoded raw pixels and printing them with machine-parseable UART markers
+- Letting pytest rebuild `jpeg_decode_result.ppm` for inspection and compare it against `golden_output.ppm`
 
-### Prerequisites Required
+## Hardware Required
 
-This example demonstrates the flexibility of decoding pictures by decoding two different sizes: one in 1080p and another in 720p. It showcases how you can easily modify the code to meet your specific requirements, such as only decoding 1080p photos.
+Any board based on a supported target can be used. No SD card or external storage setup is required.
 
-### Build and Flash
+## Build and Flash
 
-Before you start build and flash this example, please put the image `esp720.jpg` and `esp1080.jpg` in your sdcard.
-
-Enter `idf.py -p PORT flash monitor` to build, flash and monitor the project.
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -27,31 +31,52 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-```bash
-I (1116) jpeg.example: Initializing SD card
-I (1116) gpio: GPIO[43]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1126) gpio: GPIO[44]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1136) gpio: GPIO[39]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1146) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1156) gpio: GPIO[41]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1166) gpio: GPIO[42]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
-I (1416) gpio: GPIO[42]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-Name: SD64G
-Type: SDHC/SDXC
-Speed: 40.00 MHz (limit: 40.00 MHz)
-Size: 60906MB
-CSD: ver=2, sector_size=512, capacity=124735488 read_bl_len=9
-SSR: bus_width=4
-I (1436) jpeg.example: jpg_file_1080:/sdcard/esp1080.jpg
-I (1696) jpeg.example: jpg_file_1080:/sdcard/esp720.jpg
-I (1796) jpeg.example: header parsed, width is 1920, height is 1080
-I (1846) jpeg.example: raw_file_1080:/sdcard/out.rgb
-I (11836) jpeg.example: raw_file_720:/sdcard/out2.rgb
-I (13336) jpeg.example: Card unmounted
-I (13336) main_task: Returned from app_main()
+```text
+Loading embedded JPEG from flash...
+Embedded JPEG size: 43700 bytes
+JPEG header parsed: width=320 height=240
+Decoding JPEG -> RGB888...
+Decoded RGB888 size: 245760 bytes
+JPEG_DECODE_INFO width=320 height=240 padded_width=320 padded_height=256 format=RGB888 encoding=base64 size=245760
+JPEG_DECODE_BASE64_BEGIN
+JPEG_DECODE_BASE64 ...
+JPEG_DECODE_BASE64 ...
+JPEG_DECODE_BASE64_END
+JPEG decode demo done.
 ```
 
-Also, the helper script [open_raw_picture.py](./open_raw_picture.py) simplifies the visualization of the output on your computer. For this to work, go to `examples/peripheral/jpeg/jpeg_decode` and install the requirements by running `pip install -r requirements.txt`.
+`padded_width` and `padded_height` report the actual decoded buffer dimensions. For JPEGs whose block layout pads the output to 16-pixel boundaries, these values can be larger than the visible `width` and `height`, so the output buffer must be sized for the padded image.
+
+## Pytest Regression Check
+
+The accompanying `pytest_jpeg_decode.py` script waits for the `JPEG_DECODE_INFO` and `JPEG_DECODE_BASE64` markers, reconstructs the decoded raw pixel output, crops away padded rows, and saves the visible image as:
+
+- `dut.logdir/jpeg_decode_result.ppm`
+
+The test writes the `PPM` file and compares it with `golden_output.ppm`. This makes the example both a functional regression test and a host-side artifact generator for inspection.
+
+## Running Pytest Locally And Viewing The Image
+
+To run the pytest helper locally on hardware, build the example for your target first, then invoke the test script with the target and serial port:
+
+```bash
+idf.py set-target esp32p4 build
+pytest --target esp32p4 --port PORT pytest_jpeg_decode.py
+```
+
+Replace `esp32p4` with another supported target such as `esp32s31` when needed.
+
+`pytest-embedded` stores per-test logs under `$IDF_PATH/pytest-embedded/`. The script writes the reconstructed image to `jpeg_decode_result.ppm` inside that test log directory, so after the test finishes you can open the generated `PPM` file locally with an image viewer that supports `PPM` to inspect the decoded output.
+
+## Replacing The Embedded JPEG Asset
+
+If you want to try another input image, replace:
+
+- `main/assets/image.jpg`
+
+Keep the replacement as a baseline JPEG with the same general scale if you want UART log volume and test runtime to stay small.
+
+After replacing the asset, rerun the example and update `golden_output.ppm` from the generated `dut.logdir/jpeg_decode_result.ppm` artifact if the new output should become the expected result.
 
 ## Troubleshooting
 

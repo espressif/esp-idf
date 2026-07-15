@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mbedtls/base64.h"
 #include "esp_check.h"
 #include "driver/jpeg_encode.h"
@@ -44,6 +45,7 @@ void app_main(void)
     const size_t embedded_size = esp720p_rgb_end - esp720p_rgb_start;
     uint32_t jpeg_size = 0;
     jpeg_encoder_handle_t jpeg_handle = NULL;
+    uint8_t *rgb_buf = NULL;
 
     printf("Loading embedded BGR24 image from flash...\n");
     printf("Embedded raw image size: %zu bytes\n", embedded_size);
@@ -59,6 +61,18 @@ void app_main(void)
         .width = EXAMPLE_WIDTH,
         .height = EXAMPLE_HEIGHT,
     };
+
+    const uint8_t *rgb_src = esp720p_rgb_start;
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+    size_t input_buffer_size = 0;
+    jpeg_encode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_ENC_ALLOC_INPUT_BUFFER,
+    };
+    rgb_buf = (uint8_t *)jpeg_alloc_encoder_mem(EXAMPLE_RGB_FRAME_SIZE, &rx_mem_cfg, &input_buffer_size);
+    assert(rgb_buf != NULL);
+    memcpy(rgb_buf, esp720p_rgb_start, EXAMPLE_RGB_FRAME_SIZE);
+    rgb_src = rgb_buf;
+#endif
 
     size_t result_buffer_size = 0;
     /* The output JPEG is compressed, so the example does not need to reserve
@@ -78,9 +92,8 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(jpeg_new_encoder_engine(&encode_eng_cfg, &jpeg_handle));
 
-    printf("JPEG encoder will read the embedded raw buffer directly from flash.\n");
     printf("Encoding BGR24(raw) -> JPEG...\n");
-    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, esp720p_rgb_start, EXAMPLE_RGB_FRAME_SIZE,
+    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, rgb_src, EXAMPLE_RGB_FRAME_SIZE,
                                          jpeg_buf, result_buffer_size, &jpeg_size));
     printf("Encoded JPEG size: %" PRIu32 " bytes\n", jpeg_size);
 
@@ -103,4 +116,5 @@ void app_main(void)
     ESP_ERROR_CHECK(jpeg_del_encoder_engine(jpeg_handle));
     free(encoded);
     free(jpeg_buf);
+    free(rgb_buf);
 }

@@ -17,15 +17,18 @@ Functional Overview
 
 This document covers the following sections:
 
--  `Resource Allocation <#resource-allocation>`__ - covers how to allocate JPEG resources with properly set of configurations. It also covers how to recycle the resources when they finished working.
--  `Finite State Machine <#finite-state-machine>`__ - covers JPEG workflow. Introduce how jpeg driver uses internal resources and its software process.
--  `JPEG Decoder Engine <#jpeg-decoder-engine>`__ - covers behavior of JPEG decoder engine. Introduce how to use decoder engine functions to decode an image (from jpg format to raw format).
--  `JPEG Encoder Engine <#jpeg-encoder-engine>`__ - covers behavior of JPEG encoder engine. Introduce how to use encoder engine functions to encode an image (from raw format to jpg format).
--  `Performance Overview <#performance-overview>`__ - covers encoder and decoder performance.
--  `Pixel Storage Layout for Different Color Formats <#pixel-storage-layout-for-different-color-formats>`__ - covers color space order overview required in this JPEG decoder and encoder.
--  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
--  `Power Management <#power-management>`__ - describes how JPEG driver would be affected by power consumption.
--  `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
+-  :ref:`jpeg-resource-allocation` - covers how to allocate JPEG resources with properly set of configurations. It also covers how to recycle the resources when they finished working.
+-  :ref:`jpeg-finite-state-machine` - covers JPEG workflow. Introduce how jpeg driver uses internal resources and its software process.
+-  :ref:`jpeg-decoder-engine` - covers behavior of JPEG decoder engine. Introduce how to use decoder engine functions to decode an image (from jpg format to raw format).
+-  :ref:`jpeg-encoder-engine` - covers behavior of JPEG encoder engine. Introduce how to use encoder engine functions to encode an image (from raw format to jpg format).
+-  :ref:`jpeg-performance-overview` - covers encoder and decoder performance.
+-  :ref:`jpeg-pixel-storage-layout` - covers color space order overview required in this JPEG decoder and encoder.
+-  :ref:`jpeg-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
+-  :ref:`jpeg-power-management` - describes how JPEG driver would be affected by power consumption.
+-  :ref:`jpeg-flash-encryption` - describes how to use the JPEG codec correctly when flash/PSRAM encryption is enabled.
+-  :ref:`jpeg-kconfig-options` - lists the supported Kconfig options that can bring different effects to the driver.
+
+.. _jpeg-resource-allocation:
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -85,6 +88,8 @@ If a previously installed JPEG engine is no longer needed, it's recommended to r
 
     ESP_ERROR_CHECK(jpeg_del_encoder_engine(encoder_engine));
 
+.. _jpeg-finite-state-machine:
+
 Finite State Machine
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -95,6 +100,8 @@ The JPEG driver usage of hardware resources and its process workflow are shown i
     :alt: JPEG finite state machine
 
     JPEG finite state machine
+
+.. _jpeg-decoder-engine:
 
 JPEG Decoder Engine
 ^^^^^^^^^^^^^^^^^^^
@@ -130,18 +137,13 @@ Overall, You can take following code as reference, the code is going to decode a
         .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
-    size_t tx_buffer_size;
     size_t rx_buffer_size;
 
     jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
         .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
     };
 
-    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
-        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
-    };
-
-    uint8_t *bit_stream = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size, &tx_mem_cfg, &tx_buffer_size);
+    const uint8_t *bit_stream = embedded_jpeg_start;
     uint8_t *out_buf = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1088 * 3, &rx_mem_cfg, &rx_buffer_size);
 
     jpeg_decode_picture_info_t header_info;
@@ -152,11 +154,13 @@ Overall, You can take following code as reference, the code is going to decode a
 
 There are some tips that can help you use this driver more accurately:
 
-1. In above code, you should make sure the `bit_stream` and `out_buf` should be aligned by certain rules. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you malloc a buffer which is aligned in both size and address.
+1. In above code, you should make sure the output buffer `out_buf` follows the driver's alignment requirements. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you allocate a buffer with aligned size and address.
 
-2. The content of `bit_stream` buffer should not be changed until :cpp:func:`jpeg_decoder_process` returns.
+2. The content of `bit_stream` should not be changed until :cpp:func:`jpeg_decoder_process` returns. This input buffer can come directly from flash-mapped embedded data or any other memory region that stays readable for the full call.
 
-3. The width and height of output picture would be 16 bytes aligned if original picture is compressed by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
+3. If the source JPEG uses YUV420 or YUV422 sampling, the decoded output dimensions can be padded up to 16-pixel boundaries. For example, if the visible image size is 1080*1920, the decoder may require an output buffer sized for 1088*1920 pixels. This comes from the JPEG block layout, so please provide enough output buffer memory for the padded image, not only for the visible width and height.
+
+.. _jpeg-encoder-engine:
 
 JPEG Encoder Engine
 ^^^^^^^^^^^^^^^^^^^
@@ -216,6 +220,8 @@ There are some tips that can help you use this driver more accurately:
 3. For :cpp:enumerator:`JPEG_ENCODE_IN_FORMAT_RGB888`, the current driver expects the raw input bytes in a BGR24-style layout. Supplying RGB24 raw data would swap the red and blue channels in the encoded JPEG.
 
 4. The compression ratio depends on the chosen `image_quality` and the content of the image itself. Generally, a higher `image_quality` value obviously results in better image quality but a smaller compression ratio. As for the image content, it is hard to give any specific guidelines, so this question is out of the scope of this document. Generally, the baseline JPEG compression ratio can vary from 40:1 to 10:1. Please take the actual situation into account.
+
+.. _jpeg-performance-overview:
 
 Performance Overview
 ^^^^^^^^^^^^^^^^^^^^
@@ -348,6 +354,8 @@ JPEG encoder performance
 .. [#] Format of Original Image
 .. [#] Down sampling method
 
+.. _jpeg-pixel-storage-layout:
+
 Pixel Storage Layout for Different Color Formats
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -424,10 +432,14 @@ In the following picture, each small block means one byte.
 
     YUV420 pixel order
 
+.. _jpeg-thread-safety:
+
 Thread Safety
 ^^^^^^^^^^^^^
 
 The factory function :cpp:func:`jpeg_new_decoder_engine`, :cpp:func:`jpeg_decoder_get_info`, :cpp:func:`jpeg_decoder_process`, and :cpp:func:`jpeg_del_decoder_engine` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
+
+.. _jpeg-power-management:
 
 Power Management
 ^^^^^^^^^^^^^^^^
@@ -435,6 +447,26 @@ Power Management
 When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is set), the system needs to adjust or stop the source clock of JPEG to enter Light-sleep, thus potentially changing the JPEG decoder or encoder process. This might lead to unexpected behavior in hardware calculation. To prevent such issues, entering Light-sleep is disabled for the time when JPEG encoder or decoder is working.
 
 Whenever the user is decoding or encoding via JPEG (i.e., calling :cpp:func:`jpeg_encoder_process` or :cpp:func:`jpeg_decoder_process`), the driver guarantees that the power management lock is acquired by setting it to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_CPU_FREQ_MAX`. Once the encoding or decoding is finished, the driver releases the lock and the system can enter Light-sleep.
+
+.. _jpeg-flash-encryption:
+
+Usage Under Encryption
+^^^^^^^^^^^^^^^^^^^^^^
+
+The JPEG codec moves data via the 2D-DMA, and the JPEG codec **cannot process encrypted data**. Therefore, when PSRAM encryption is enabled, the JPEG input/output buffers must reside in an unencrypted memory region, otherwise encoding/decoding fails.
+
+To support the encrypted scenario, the driver does the following:
+
+- When ``CONFIG_SPIRAM_ENC_EXEMPT`` is enabled, :cpp:func:`jpeg_alloc_decoder_mem` and :cpp:func:`jpeg_alloc_encoder_mem` allocate buffers from the unencrypted PSRAM region (``MALLOC_CAP_SPIRAM_NO_ENC``) automatically.
+- The allocated buffers satisfy both the cache line alignment and the byte alignment required by the 2D-DMA.
+
+Please note the following when using it:
+
+1. It is recommended to always allocate buffers via :cpp:func:`jpeg_alloc_encoder_mem` / :cpp:func:`jpeg_alloc_decoder_mem` to ensure correct alignment and memory region.
+
+2. The size of the unencrypted region is determined by ``CONFIG_SPIRAM_ENC_EXEMPT_SIZE``. Since the JPEG buffer size depends on the image resolution and cannot be predicted automatically, configure it according to the largest image you actually process. If the region is insufficient, the allocation fails and an error log is printed, suggesting to enlarge ``CONFIG_SPIRAM_ENC_EXEMPT_SIZE``. Also note that this value must not be greater than or equal to the actual PSRAM size, otherwise the unencrypted region is disabled.
+
+.. _jpeg-kconfig-options:
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
@@ -455,7 +487,7 @@ The JPEG driver usage of hardware resources and its dependency status are shown 
 Application Examples
 --------------------
 
-- :example:`peripherals/jpeg/jpeg_decode` demonstrates how to use the JPEG hardware decoder to decode JPEG pictures of different sizes (1080p and 720p) into RGB format, showcasing the flexibility and speed of hardware decoding.
+- :example:`peripherals/jpeg/jpeg_decode` demonstrates how to use the JPEG hardware decoder to parse one embedded JPEG, decode it into RGB888, stream the raw output as base64 over UART, and validate the result with pytest.
 
 - :example:`peripherals/jpeg/jpeg_encode` demonstrates how to use the JPEG hardware encoder to encode an embedded 720p raw picture, stream the JPEG as base64 over UART, and validate the result with pytest.
 
