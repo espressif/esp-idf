@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,12 +110,7 @@ TEST_CASE("write and read with zero size are safe no-ops", "[wear_levelling]")
     result = wl_mount(partition, &wl_handle);
     REQUIRE(result == ESP_OK);
 
-    // wl_write()/wl_read() do not document size==0 as invalid (analogous to
-    // POSIX write()/read() with count==0), so it must not be treated as an
-    // out-of-bounds request. Previously, WL_Flash::write()/read() computed
-    // `(size - 1) / wl_page_size` without checking for size==0 first; since
-    // size is unsigned, size==0 wrapped this to a huge page count and walked
-    // far past the caller-provided buffer.
+    // Zero-length wl_write/read must be no-ops; size==0 used to underflow (size-1) and OOB the buffer.
     uint8_t dummy = 0xAA;
     result = wl_write(wl_handle, 0, &dummy, 0);
     REQUIRE(result == ESP_OK);
@@ -312,7 +307,7 @@ void calculate_wl_state_address_info(const esp_partition_t *partition, size_t *o
 void calculate_wl_state_crc(WL_State_s *state_ptr)
 {
     int check_size = WL_STATE_CRC_LEN_V2;
-    // Chech CRC and recover state
+    // Check CRC and recover state
     state_ptr->crc32 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_ptr, check_size);
  }
 

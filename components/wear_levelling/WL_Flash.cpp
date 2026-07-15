@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +127,7 @@ esp_err_t WL_Flash::init()
     WL_RESULT_CHECK(result);
 
     int check_size = WL_STATE_CRC_LEN_V2;
-    // Chech CRC and recover state
+    // Check CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
 
@@ -325,7 +325,7 @@ esp_err_t WL_Flash::updateV1_V2()
     // Check crc for old version and old version
     ESP_LOGV(TAG, "%s start", __func__);
     int check_size = WL_STATE_CRC_LEN_V1;
-    // Chech CRC and recover state
+    // Check CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     wl_state_t sa_copy;
     wl_state_t *state_copy = &sa_copy;
@@ -579,10 +579,7 @@ esp_err_t WL_Flash::write(size_t dest_addr, const void *src, size_t size)
         return ESP_ERR_INVALID_STATE;
     }
     if (size == 0) {
-        // Nothing to do. Guard this explicitly: size is unsigned, so
-        // `size - 1` below would otherwise wrap around to SIZE_MAX and turn
-        // "count" into a huge page count, walking far past the caller's
-        // buffer (see components/wear_levelling/host_test).
+        // size==0: (size-1) unsigned underflow would OOB the caller buffer.
         return ESP_OK;
     }
     ESP_LOGD(TAG, "%s - dest_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) dest_addr, (uint32_t) size);
@@ -605,8 +602,7 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
         return ESP_ERR_INVALID_STATE;
     }
     if (size == 0) {
-        // See the matching guard in WL_Flash::write() above: size==0 must
-        // not be allowed to reach the `size - 1` computation below.
+        // Same size==0 guard as write(); avoid (size-1) underflow below.
         return ESP_OK;
     }
     ESP_LOGD(TAG, "%s - src_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) src_addr, (uint32_t) size);
