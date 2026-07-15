@@ -5,6 +5,7 @@
  */
 
 #include <sys/param.h>
+#include <stdarg.h>
 #include <string.h>
 #include "soc/soc.h"
 #include "esp_types.h"
@@ -702,28 +703,54 @@ esp_err_t esp_timer_deinit(void)
     return ESP_OK;
 }
 
+static void append_to_buffer(char** dst, size_t* dst_size, const char* format, ...)
+{
+    /* Defensive: avoid underflow in the truncation path below if no space remains. */
+    if (*dst_size == 0) {
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+    int cb = vsnprintf(*dst, *dst_size, format, args);
+    va_end(args);
+
+    if (cb < 0) {
+        return;
+    }
+
+    /* On truncation, snprintf returns the full would-be length. Keep the
+     * cursor inside the buffer and preserve the terminating NUL byte.
+     */
+    if ((size_t) cb >= *dst_size) {
+        *dst += *dst_size - 1;
+        *dst_size = 1;
+        return;
+    }
+
+    *dst += cb;
+    *dst_size -= cb;
+}
+
 static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
 {
 #if WITH_PROFILING
-    size_t cb;
     // name is optional, might be missed.
     if (t->name) {
-        cb = snprintf(*dst, *dst_size, "%-20.20s  ", t->name);
+        append_to_buffer(dst, dst_size, "%-20.20s  ", t->name);
     } else {
-        cb = snprintf(*dst, *dst_size, "timer@%-10p  ", t);
+        append_to_buffer(dst, dst_size, "timer@%-10p  ", t);
     }
 
-    cb += snprintf(*dst + cb, *dst_size - cb, "%-10" PRIu64"  %-12" PRIu64"  %-12zu  %-12zu  %-12zu  %-12" PRIu64"\n",
-                   (uint64_t)t->period, t->alarm, t->times_armed,
-                   t->times_triggered, t->times_skipped, t->total_callback_run_time);
+    append_to_buffer(dst, dst_size, "%-10" PRIu64"  %-12" PRIu64"  %-12zu  %-12zu  %-12zu  %-12" PRIu64"\n",
+                     (uint64_t)t->period, t->alarm, t->times_armed,
+                     t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
 #define TIMER_INFO_LINE_LEN 103
 #else
-    size_t cb = snprintf(*dst, *dst_size, "timer@%-14p  %-10" PRIu64"  %-12" PRIu64"\n", t, (uint64_t)t->period, t->alarm);
+    append_to_buffer(dst, dst_size, "timer@%-14p  %-10" PRIu64"  %-12" PRIu64"\n", t, (uint64_t)t->period, t->alarm);
 #define TIMER_INFO_LINE_LEN 47
 #endif
-    *dst += cb;
-    *dst_size -= cb;
 }
 
 esp_err_t esp_timer_dump(FILE* stream)
@@ -757,6 +784,7 @@ esp_err_t esp_timer_dump(FILE* stream)
      * slightly more and the output will be truncated if that is not enough.
      */
     size_t buf_size = TIMER_INFO_LINE_LEN * (timer_count + 3);
+    /* buf_size is the snprintf size, including NUL; keep one extra byte as slack. */
     char* print_buf = calloc(1, buf_size + 1);
     if (print_buf == NULL) {
         return ESP_ERR_NO_MEM;
