@@ -10,7 +10,28 @@ include:
       - "templates/idf/deploy-github.yml"
       - "templates/idf/deploy-docs.yml"
       - "templates/idf/integration-test.yml"
-      - "templates/idf/sync-files.yml"
+  - project: "ci/actions/common"
+    ref: "v2"
+    file: "templates/idf/sync-files.yml"
+    inputs:
+      job_name: "sync-pre-commit-config"
+      remote_repo_url: "https://__token__:${CI_SYNC_REPO_TOKEN}@${CI_SERVER_FQDN}/ci/images.git"
+      ref_name: "ci/sync_idf_pre_commit_config"
+      file_mappings:
+        - ".pre-commit-config.yaml:pre-commit/idf/.pre-commit-config.v6.2.yaml"
+      changes:
+        - ".pre-commit-config.yaml"
+  - project: "ci/actions/common"
+    ref: "v2"
+    file: "templates/idf/sync-files.yml"
+    inputs:
+      job_name: "sync-wifi-regulatory"
+      remote_repo_url: "https://__token__:${QACI_RW_TOKEN}@${CI_SERVER_FQDN}/qa/ats-n2.git"
+      ref_name: "ci/sync_wifi_regulatory"
+      file_mappings:
+        - "components/esp_wifi/regulatory/esp_wifi_regulatory.txt:tools/sync/esp_wifi_regulatory.txt"
+      changes:
+        - "components/esp_wifi/regulatory/esp_wifi_regulatory.txt"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"
     inputs:
@@ -38,3 +59,9 @@ include:
   - ".gitlab/ci/pre_deploy.yml"
   - ".gitlab/ci/deploy.yml"
   - ".gitlab/ci/post_deploy.yml"
+
+# GIT_LFS_SKIP_SMUDGE has no input slot on the sync-files component; merge it onto the
+# generated job by name (component job names are "sync-<job_name>").
+sync-wifi-regulatory:
+  variables:
+    GIT_LFS_SKIP_SMUDGE: 1
