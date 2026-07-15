@@ -845,6 +845,21 @@ examples/peripherals/usb/device/tusb_cdc_acm_wakeup:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1 or SOC_PM_SUPPORT_USB_WAKEUP != 1
 
+examples/peripherals/usb/device/tusb_msc:
+  disable:
+    - if: SOC_USB_OTG_SUPPORTED != 1
+    - if: CONFIG_NAME == "sdmmc" and SOC_SDMMC_HOST_SUPPORTED != 1
+      reason: Only USB-OTG supported targets with SDMMC support
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s2", "esp32p4"]
+      temporary: true
+      reason: lack of runners with usb_device tag
+  depends_components:
+    - fatfs
+    - soc
+  depends_filepatterns:
+    - examples/peripherals/usb/device/tusb_msc/**/*
+
 examples/peripherals/usb/device/tusb_ncm:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
