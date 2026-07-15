@@ -5,9 +5,6 @@ examples/system/app_trace_basic:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: lack of runners
   depends_components:
     - esp_trace
     - app_trace
@@ -74,9 +71,6 @@ examples/system/esp_trace:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: lack of runners
   depends_components:
     - esp_trace
     - freertos
@@ -98,9 +92,6 @@ examples/system/flash_suspend:
 examples/system/gcov:
   disable_test:
     - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: lack of runners
   depends_components:
@@ -285,9 +276,6 @@ examples/system/sysview_tracing:
     - if: IDF_TARGET == "esp32h21"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: lack of runners
   depends_components:
     - esp_trace
     - app_trace
@@ -297,9 +285,6 @@ examples/system/sysview_tracing_heap_log:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: lack of runners
-    - if: IDF_TARGET == "esp32h4"
       temporary: true
       reason: lack of runners
   depends_components:
