@@ -37,6 +37,7 @@
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
 #include "gatt_int.h"
+#include "device/controller.h"
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
@@ -1439,6 +1440,12 @@ void L2CA_DeregisterLECoc(UINT16 psm)
 *******************************************************************************/
 UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p_cfg)
 {
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED != TRUE)
+    UNUSED(psm);
+    UNUSED(p_bd_addr);
+    UNUSED(p_cfg);
+    return 0;
+#else
     L2CAP_TRACE_API("%s PSM: 0x%04x BDA: %02x:%02x:%02x:%02x:%02x:%02x", __func__, psm,
         p_bd_addr[0], p_bd_addr[1], p_bd_addr[2], p_bd_addr[3], p_bd_addr[4], p_bd_addr[5]);
 
@@ -1446,6 +1453,17 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
     if (!BTM_IsDeviceUp())
     {
         L2CAP_TRACE_WARNING("%s BTU not ready", __func__);
+        return 0;
+    }
+
+    /* Bail out before allocating an LCB if the controller has no BLE support:
+     * l2cu_create_conn()'s !supports_ble() path returns FALSE WITHOUT releasing
+     * the LCB (it must not change its ownership contract), so allocating here and
+     * relying on that path would leak the LCB. Pre-check at the API entry as the
+     * function header of l2cu_create_conn recommends. */
+    if (!controller_get_interface()->supports_ble())
+    {
+        L2CAP_TRACE_WARNING("%s controller has no BLE support", __func__);
         return 0;
     }
 
@@ -1458,17 +1476,22 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
     }
 
     /* First, see if we already have a le link to the remote */
+    BOOLEAN lcb_allocated = FALSE;
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
     if (p_lcb == NULL)
     {
         /* No link. Get an LCB and start link establishment */
         p_lcb = l2cu_allocate_lcb(p_bd_addr, FALSE, BT_TRANSPORT_LE);
-        if ((p_lcb == NULL)
-             /* currently use BR/EDR for ERTM mode l2cap connection */
-         || (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == FALSE) )
-        {
-            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: 0x%p",
+        if (p_lcb == NULL) {
+            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: NULL",
+                __func__, psm);
+            return 0;
+        }
+        lcb_allocated = TRUE;
+        if (l2cu_create_conn(p_lcb, BT_TRANSPORT_LE) == FALSE) {
+            L2CAP_TRACE_WARNING("%s conn not started for PSM: 0x%04x  p_lcb: %p",
                 __func__, psm, p_lcb);
+            l2cu_release_lcb(p_lcb);
             return 0;
         }
     }
@@ -1478,11 +1501,21 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
     if (p_ccb == NULL)
     {
         L2CAP_TRACE_WARNING("%s no CCB, PSM: 0x%04x", __func__, psm);
+        if (lcb_allocated) {
+            l2cble_cleanup_alloc_ccb_failed_conn(p_lcb);
+        }
         return 0;
     }
 
     /* Save registration info */
     p_ccb->p_rcb = p_rcb;
+    p_ccb->le_coc_active = TRUE;
+    /* A pooled CCB reused from a released non-CoC channel keeps its stale
+     * remote_cid (l2cu_allocate_ccb does not clear it, and l2cu_release_ccb only
+     * runs cleanup_ccb for le_coc_active CCBs). Clear it now so the DCID dedup
+     * check in l2c_ble_le_coc_handle_credit_conn_res cannot false-match this
+     * channel-in-setup before its real remote_cid is assigned. */
+    p_ccb->remote_cid = 0;
 
     /* Save the configuration */
     if (p_cfg) {
@@ -1495,7 +1528,7 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
         {
             L2CAP_TRACE_DEBUG("%s LE Link is up", __func__);
-            l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, NULL);
+            l2c_ble_le_coc_connect_req(p_ccb);
         }
     }
 
@@ -1517,6 +1550,7 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
 
     /* Return the local CID as our handle */
     return p_ccb->local_cid;
+#endif /* BLE_L2CAP_COC_CLIENT_INCLUDED */
 }
 
 /*******************************************************************************
@@ -1533,6 +1567,16 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
 BOOLEAN L2CA_ConnectLECocRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 result,
                              UINT16 status, tL2CAP_LE_CFG_INFO *p_cfg)
 {
+#if (BLE_L2CAP_COC_SERVER_INCLUDED != TRUE)
+    UNUSED(p_bd_addr);
+    UNUSED(id);
+    UNUSED(lcid);
+    UNUSED(result);
+    UNUSED(status);
+    UNUSED(p_cfg);
+    return FALSE;
+#else
+    UNUSED(status);
     L2CAP_TRACE_API("%s CID: 0x%04x Result: %d Status: %d BDA: %02x:%02x:%02x:%02x:%02x:%02x",
         __func__, lcid, result, status,
         p_bd_addr[0], p_bd_addr[1], p_bd_addr[2], p_bd_addr[3], p_bd_addr[4], p_bd_addr[5]);
@@ -1566,18 +1610,77 @@ BOOLEAN L2CA_ConnectLECocRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 r
         memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
     }
 
-    if (result == L2CAP_CONN_OK)
-        l2c_csm_execute (p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
-    else
-    {
-        tL2C_CONN_INFO conn_info;
-        memcpy(conn_info.bd_addr, p_bd_addr, BD_ADDR_LEN);
-        conn_info.l2cap_result = result;
-        conn_info.l2cap_status = status;
-        l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP_NEG, &conn_info);
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+    if (p_ccb->le_ecfc_channel) {
+        /* Forward the caller's specific result so a security reject
+         * (0x0005-0x0008) reaches the peer intact (Core Spec v6.2 Vol 3 Part A
+         * 10.2 mandates the exact "insufficient authentication/encryption" code).
+         * l2c_ble_ecfc_connect_rsp records it for the aggregate 0x18 response. */
+        l2c_ble_ecfc_connect_rsp(p_ccb, result);
+        return TRUE;
     }
+#endif
+
+    /* Legacy single-channel LE CoC: forward the caller's specific result so the
+     * peer sees the real reject reason (mapped to a valid LE result code). */
+    l2c_ble_le_coc_connect_rsp(p_ccb, result);
 
     return TRUE;
+#endif /* BLE_L2CAP_COC_SERVER_INCLUDED */
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_LECocDataWrite
+**
+** Description      Write an SDU on an LE CoC channel.
+**
+** Returns          L2CAP_DW_SUCCESS, L2CAP_DW_CONGESTED, or L2CAP_DW_FAILED
+**
+*******************************************************************************/
+UINT8 L2CA_LECocDataWrite(UINT16 lcid, BT_HDR *p_data)
+{
+    L2CAP_TRACE_API("L2CA_LECocDataWrite() CID: 0x%04x", lcid);
+    return l2c_ble_le_coc_data_write(lcid, p_data);
+}
+
+BOOLEAN L2CA_LECocIsCongested(UINT16 lcid)
+{
+    return l2c_ble_le_coc_is_congested(lcid);
+}
+
+/*******************************************************************************
+**
+** Function         L2CA_LECocGiveCredits
+**
+** Description      Return RX credits to peer after processing an SDU.
+**
+** Returns          TRUE if credits were sent
+**
+*******************************************************************************/
+BOOLEAN L2CA_LECocGiveCredits(UINT16 lcid, UINT16 credits)
+{
+    L2CAP_TRACE_API("L2CA_LECocGiveCredits() CID: 0x%04x credits: %u", lcid, credits);
+    return l2c_ble_le_coc_give_credits(lcid, credits);
+}
+
+BOOLEAN L2CA_LECocSetAutoCredit(UINT16 lcid, BOOLEAN enable)
+{
+    L2CAP_TRACE_API("L2CA_LECocSetAutoCredit() CID: 0x%04x enable=%u", lcid, enable);
+    return l2c_ble_le_coc_set_auto_credit(lcid, enable);
+}
+
+/*******************************************************************************
+**
+** Description      Disconnect an LE CoC channel.
+**
+** Returns          TRUE if disconnect request was sent
+**
+*******************************************************************************/
+BOOLEAN L2CA_LECocDisconnect(UINT16 lcid)
+{
+    L2CAP_TRACE_API("L2CA_LECocDisconnect() CID: 0x%04x", lcid);
+    return l2c_ble_le_coc_disconnect(lcid);
 }
 
 /*******************************************************************************

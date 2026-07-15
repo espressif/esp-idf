@@ -480,6 +480,7 @@ void btm_ble_update_link_topology_mask(UINT8 role, BOOLEAN increase);
 /* direct connection utility */
 BOOLEAN btm_send_pending_direct_conn(void);
 void btm_ble_enqueue_direct_conn_req(void *p_param);
+void btm_ble_remove_direct_conn_req(void *p_param);
 
 /* BLE address management */
 void btm_gen_resolvable_private_addr (void *p_cmd_cplt_cback);
