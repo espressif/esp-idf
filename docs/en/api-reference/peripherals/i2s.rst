@@ -345,16 +345,9 @@ To satisfy the high quality audio requirement, following advanced APIs are provi
     The typical usage steps are:
 
     1. Create and initialize an I2S TX channel.
-    2. Call :cpp:func:`i2s_channel_config_tx_fifo_sync` to configure :cpp:type:`i2s_tx_fifo_sync_config_t`. ``ideal_cnt``
-       is the expected number of transmitted data units at each ETM synchronization check. This step can be performed while the TX channel is running, but TX FIFO synchronization must be disabled before reconfiguration. ``auto_suppl_thresh`` is
-       the automatic hardware supplement threshold and must be smaller than ``manual_suppl_thresh``.
-       ``manual_suppl_thresh`` is the threshold for triggering the callback for manual handling. If the difference
-       exceeds the automatic supplement threshold but has not reached the manual supplement threshold, hardware
-       automatically supplements or deletes the corresponding amount of data to synchronize with ``ideal_cnt``.
+    2. Call :cpp:func:`i2s_channel_config_tx_fifo_sync` to configure :cpp:type:`i2s_tx_fifo_sync_config_t`. ``ideal_cnt`` is the expected number of transmitted data units at each ETM synchronization check. This step can be performed while the TX channel is running, but TX FIFO synchronization must be disabled before reconfiguration. ``auto_suppl_thresh`` is the automatic hardware supplement threshold and must be smaller than ``manual_suppl_thresh``. ``manual_suppl_thresh`` is the threshold for triggering the callback for manual handling. If the difference exceeds the automatic supplement threshold but has not reached the manual supplement threshold, hardware automatically supplements or deletes the corresponding amount of data to synchronize with ``ideal_cnt``.
     3. To handle severe out-of-sync conditions, call :cpp:func:`i2s_channel_register_event_callback` to register a callback.
-    4. Call :cpp:func:`i2s_channel_enable_tx_fifo_sync` with ``enable`` set to ``true`` to activate both automatic
-       hardware supplementation and manual interrupt simultaneously. This call resets the TX FIFO/BCLK synchronization
-       counters, so the first ETM synchronization check uses a new count window.
+    4. Call :cpp:func:`i2s_channel_enable_tx_fifo_sync` with ``enable`` set to ``true`` to activate both automatic hardware supplementation and manual interrupt simultaneously. This call resets the TX FIFO/BCLK synchronization counters, so the first ETM synchronization check uses a new count window.
     5. Call :cpp:func:`i2s_new_etm_task` to create the ``I2S_ETM_TASK_SYNC_FIFO`` task, and connect an external ETM event to this task.
     6. Enable the ETM channel and I2S TX channel, so that ETM events periodically trigger synchronization checks.
 

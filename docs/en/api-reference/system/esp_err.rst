@@ -12,7 +12,7 @@ For the full list of error codes defined in ESP-IDF, see :doc:`Error Codes Refer
 .. _registering-error-codes:
 
 Registering Error Codes
-------------------------
+-----------------------
 
 ESP-IDF uses a composable error code registration system that automatically collects error code definitions from all components at build time. This allows :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` to look up error codes defined across the entire project without requiring manual maintenance of a central registry.
 
@@ -77,7 +77,7 @@ After building your project, calls to ``esp_err_to_name(ESP_ERR_MY_COMPONENT_INI
 
 .. note::
 
-    Most ESP-IDF components already have their error codes registered. You only need to add ``idf_define_esp_err_codes()`` for your own custom components or when adding new error codes to existing components.
+    Most ESP-IDF components already have their error codes registered. You only need to add ``idf_define_esp_err_codes()`` for your own custom components or for new error codes added to existing components.
 
 .. _esp-check-api-ref:
 

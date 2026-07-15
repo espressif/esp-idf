@@ -86,6 +86,7 @@ See :ref:`iram-safe-interrupt-handlers` for information on how to prevent an int
 
 When the cache is disabled, all CPUs should execute code and access data only from internal RAM. For differences between internal RAM (e.g., IRAM, DRAM) and flash cache, please refer to the :ref:`application memory layout <memory-layout>` documentation.
 
+
 .. _iram-safe-interrupt-handlers:
 
 IRAM-Safe Interrupt Handlers
