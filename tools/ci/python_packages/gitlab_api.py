@@ -66,7 +66,6 @@ class Gitlab:
     JOB_NAME_PATTERN = re.compile(r'(\w+)(\s+(\d+)/(\d+))?')
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
-    DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 
     def __init__(self, project_id: int | str | None = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
@@ -297,36 +296,28 @@ class Gitlab:
 
     def get_downstream_pipeline_ids(self, main_pipeline_id: int) -> list[int]:
         """
-        Retrieve the IDs of all downstream child pipelines for a given main pipeline.
+        Retrieve the IDs of all downstream child pipelines for a given main pipeline,
+        recursing through arbitrarily nested child pipelines.
 
         :param main_pipeline_id: The ID of the main pipeline to start the search.
-        :return: A list of IDs of all downstream child pipelines.
+        :return: A list of IDs of all downstream child pipelines (all levels).
         """
-        bridge_pipeline_ids = []
-        child_pipeline_ids = []
+        child_pipeline_ids: list[int] = []
 
-        main_pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
-        for bridge in main_pipeline_bridges:
+        pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
+        for bridge in pipeline_bridges:
             downstream_pipeline = bridge.attributes.get('downstream_pipeline')
             if not downstream_pipeline:
                 continue
-            bridge_pipeline_ids.append(downstream_pipeline['id'])
-
-        for bridge_pipeline_id in bridge_pipeline_ids:
-            child_pipeline_ids.append(bridge_pipeline_id)
-            bridge_pipeline = self.project.pipelines.get(bridge_pipeline_id)
-
-            if not bridge_pipeline.name == self.DEFAULT_BUILD_CHILD_PIPELINE_NAME:
+            downstream_pipeline_id = downstream_pipeline.get('id')
+            if downstream_pipeline_id is None:
                 continue
 
-            child_bridges = bridge_pipeline.bridges.list()
-            for child_bridge in child_bridges:
-                downstream_child_pipeline = child_bridge.attributes.get('downstream_pipeline')
-                if not downstream_child_pipeline:
-                    continue
-                child_pipeline_ids.append(downstream_child_pipeline.get('id'))
+            child_pipeline_ids.append(downstream_pipeline_id)
+            # recurse to collect further nested (grandchild+) pipelines
+            child_pipeline_ids.extend(self.get_downstream_pipeline_ids(downstream_pipeline_id))
 
-        return [pid for pid in child_pipeline_ids if pid is not None]
+        return child_pipeline_ids
 
     def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> list[int]:
         """
