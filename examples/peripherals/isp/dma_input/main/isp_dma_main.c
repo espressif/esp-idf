@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
 #include <assert.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -19,42 +19,15 @@
 #include "driver/isp_core.h"
 #include "driver/isp_color.h"
 
-#define EXAMPLE_WIDTH            128
-#define EXAMPLE_HEIGHT           96
+#define EXAMPLE_WIDTH            240
+#define EXAMPLE_HEIGHT           280
 #define EXAMPLE_BASE64_CHUNK_LEN 384
+#define EXAMPLE_BASE64_DELAY_MS  10
 #define EXAMPLE_DMA_ALIGN        64
-#define EXAMPLE_FRAME_COUNT      2
+#define EXAMPLE_FRAME_COUNT      1
 
-static const uint8_t s_color_bars[8][3] = {
-    {255, 255, 255}, // white
-    {255, 255,   0}, // yellow
-    {  0, 255, 255}, // cyan
-    {  0, 255,   0}, // green
-    {255,   0, 255}, // magenta
-    {255,   0,   0}, // red
-    {  0,   0, 255}, // blue
-    {  0,   0,   0}, // black
-};
-
-static void s_generate_raw8_color_bars(uint8_t *raw, uint32_t w, uint32_t h)
-{
-    for (uint32_t y = 0; y < h; y++) {
-        bool even_row = ((y & 1) == 0);
-        for (uint32_t x = 0; x < w; x++) {
-            uint32_t bar = (x * 8) / w;
-            uint8_t r = s_color_bars[bar][0];
-            uint8_t g = s_color_bars[bar][1];
-            uint8_t b = s_color_bars[bar][2];
-
-            bool even_col = ((x & 1) == 0);
-            if (even_row) {
-                raw[y * w + x] = even_col ? b : g;
-            } else {
-                raw[y * w + x] = even_col ? g : r;
-            }
-        }
-    }
-}
+extern const uint8_t sensor_raw_start[] asm("_binary_sensor_raw_start");
+extern const uint8_t sensor_raw_end[] asm("_binary_sensor_raw_end");
 
 static void *s_alloc_dma_buffer(size_t size)
 {
@@ -86,7 +59,7 @@ static void s_print_base64_payload(const unsigned char *encoded, size_t encoded_
         }
         printf("IMAGE_BASE64 %.*s\n", (int)chunk_len, (const char *)&encoded[offset]);
         fflush(stdout);
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(EXAMPLE_BASE64_DELAY_MS));
     }
     printf("IMAGE_BASE64_END\n");
     fflush(stdout);
@@ -120,6 +93,10 @@ void app_main(void)
     uint8_t *isp_out_buf = s_alloc_dma_buffer(out_size);
     assert(isp_in_buf && isp_out_buf);
 
+    size_t embedded_raw_size = sensor_raw_end - sensor_raw_start;
+    assert(embedded_raw_size == in_size);
+    memcpy(isp_in_buf, sensor_raw_start, embedded_raw_size);
+
     size_t encoded_len = 0;
     int ret = mbedtls_base64_encode(NULL, 0, &encoded_len, isp_out_buf, out_size);
     ESP_ERROR_CHECK((ret == MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL) ? ESP_OK : ESP_FAIL);
@@ -128,8 +105,6 @@ void app_main(void)
 
     printf("Feeding %d frames through ISP DMA input...\n", EXAMPLE_FRAME_COUNT);
     for (int frame = 0; frame < EXAMPLE_FRAME_COUNT; frame++) {
-        s_generate_raw8_color_bars(isp_in_buf, h_res, v_res);
-
         ESP_ERROR_CHECK(esp_cache_msync(isp_in_buf, in_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
         ESP_ERROR_CHECK(esp_isp_dma_process_frame(isp_proc, isp_out_buf, isp_in_buf, 1000));
         ESP_ERROR_CHECK(esp_cache_msync(isp_out_buf, out_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C));
