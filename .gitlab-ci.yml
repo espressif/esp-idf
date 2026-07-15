@@ -2,12 +2,14 @@
 
 include:
   - project: "ci/actions/common"
+    ref: "v2"
     file:
       - "templates/stable/default-workflow.yml"
+      - "templates/idf/pre_check.yml"
+      - "templates/idf/build.yml"
       - "templates/idf/deploy-github.yml"
       - "templates/idf/deploy-docs.yml"
       - "templates/idf/integration-test.yml"
-      - "templates/idf/pre_check.yml"
       - "templates/idf/sync-files.yml"
   - project: "ci/actions/common"
     file: "templates/idf/build-docs.yml"

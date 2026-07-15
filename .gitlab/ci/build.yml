@@ -9,7 +9,6 @@
     IDF_CCACHE_ENABLE: "1"
   dependencies: # set dependencies to null to avoid missing artifacts issue
 
-
 ########################################
 # Clang Build Apps Without Tests Cases #
 ########################################
@@ -68,62 +67,9 @@ build_clang_test_apps_riscv:
 ####################
 # Dynamic Pipeline #
 ####################
-pre_check_complete:
-  stage: build
-  image: $ESP_ENV_IMAGE
-  tags: [fast_run, shiny]
-  variables:
-    GIT_STRATEGY: none
-  cache: []
-  before_script: []
-  dependencies: []
-  script:
-    - echo "pre_check stage completed"
-
-generate_build_child_pipeline:
-  extends:
-    - .build_template
-  tags: [fast_run, shiny]
-  dependencies: # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - pipeline_variables
-    - job: baseline_manifest_sha
-      optional: true
-  artifacts:
-    paths:
-      - build_child_pipeline.yml
-      - test_related_apps.txt
-      - non_test_related_apps.txt
-    expire_in: 1 week
-    when: always
-  script:
-    - run_cmd idf-ci --debug gitlab build-child-pipeline
-      -p components
-      -p examples
-      -p tools/test_apps
-    - '[ -f test_related_apps.txt ] && shuf test_related_apps.txt -o test_related_apps.txt || echo "test_related_apps.txt not found, skipping."'
-    - '[ -f non_test_related_apps.txt ] && shuf non_test_related_apps.txt -o non_test_related_apps.txt || echo "non_test_related_apps.txt not found, skipping."'
-
-build_child_pipeline:
-  stage: build
-  needs:
-    - job: fast_build_check
-      optional: true
-      artifacts: false
-    - pipeline_variables
-    - generate_build_child_pipeline
-    - job: pre_check_complete
-      artifacts: false
-  variables:
-    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
-  # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
-  inherit:
-    variables: false
-  trigger:
-    include:
-      - artifact: build_child_pipeline.yml
-        job: generate_build_child_pipeline
-    strategy: depend
+# !!!
+# configurations moved to ci/actions/common/idf/
+# !!!
 
 # Generates a separate child-pipeline YAML for the cmakev2 build system.
 # The build_dir stays identical to cmakev1 (build_<target>_<config>); v1/v2
@@ -193,18 +139,3 @@ build_child_pipeline_buildv2:
         job: generate_build_child_pipeline_buildv2
     strategy: depend
   allow_failure: true
-
-generate_prebuild_report:
-  extends:
-    - .build_template
-  tags: [fast_run, shiny]
-  needs:
-    - pipeline_variables
-  artifacts:
-    paths:
-      - prebuild_report.html
-    expire_in: 1 week
-    when: always
-  script:
-    - run_cmd idf-ci build collect --format html -o prebuild_report.html
-    - echo "Report generated at https://${CI_PAGES_HOSTNAME}:${CI_SERVER_PORT}/-/esp-idf/-/jobs/${CI_JOB_ID}/artifacts/prebuild_report.html"
