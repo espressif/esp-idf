@@ -63,6 +63,149 @@ TEST_CASE("ana_cmpr unit install/uninstall", "[ana_cmpr]")
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 }
 
+TEST_CASE("ana_cmpr edge-specific interrupt reports correct cross direction", "[ana_cmpr]")
+{
+#if !ANALOG_CMPR_LL_SUPPORT(EDGE_SPECIFIC_INTR_MASK)
+    TEST_IGNORE_MESSAGE("target cannot distinguish cross direction");
+#else
+    test_ana_cmpr_edge_cnt_t cnt = {};
+    ana_cmpr_event_callbacks_t cbs = {
+        .on_cross = test_ana_cmpr_edge_cnt_callback,
+    };
+    ana_cmpr_internal_ref_config_t ref_cfg = {};
+    ref_cfg.ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD;
+    ana_cmpr_debounce_config_t dbc_cfg = {
+        .wait_us = 10,
+    };
+
+    /* Arm only the rising (POS) interrupt: a real rising transition must be
+     * reported as POS, and a following falling transition must not fire at
+     * all, since NEG was never armed. */
+    {
+        ana_cmpr_handle_t cmpr = NULL;
+        ana_cmpr_config_t config = {};
+        config.unit = TEST_ANA_CMPR_UNIT_ID;
+        config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+        config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+        config.cross_type = ANA_CMPR_CROSS_POS;
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+        config.resample_limit = 3;
+#else
+        config.src_chan0_gpio = GPIO_NUM_NC;
+        config.resample_limit = 0;
+#endif
+        config.ext_ref_gpio = GPIO_NUM_NC;
+        TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+
+        gpio_num_t src_chan_io = test_init_src_chan_gpio(cmpr, 0, 0);
+        TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+        TEST_ESP_OK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
+        TEST_ESP_OK(ana_cmpr_register_event_callbacks(cmpr, &cbs, &cnt));
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        // this IP version only samples/latches a crossing when a scan is triggered
+        ana_cmpr_scan_config_t scan_cfg = {
+            .scan_mode = ANA_CMPR_SCAN_MODE_FULL,
+            .poll_period_us = 2,
+        };
+        TEST_ESP_OK(ana_cmpr_set_scan_config(cmpr, &scan_cfg));
+#endif
+        TEST_ESP_OK(ana_cmpr_enable(cmpr));
+        esp_rom_delay_us(1000); // allow the comparator analog block to settle after power-up
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        // prime the internal compare state so it reflects the already-set init level,
+        // otherwise the first real level change below may not be seen as a transition
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        esp_rom_delay_us(1000);
+#endif
+
+        gpio_set_level(src_chan_io, 1); // rising: armed as POS, must fire as POS
+        esp_rom_delay_us(1000);
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        esp_rom_delay_us(1000);
+#endif
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.neg_cnt);
+
+        gpio_set_level(src_chan_io, 0); // falling: NEG never armed, must not fire
+        esp_rom_delay_us(1000);
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        esp_rom_delay_us(1000);
+#endif
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.neg_cnt);
+
+        TEST_ESP_OK(ana_cmpr_disable(cmpr));
+        TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
+    }
+
+    /* Same as above, mirrored: arm only the falling (NEG) interrupt. */
+    {
+        cnt.pos_cnt = 0;
+        cnt.neg_cnt = 0;
+        ana_cmpr_handle_t cmpr = NULL;
+        ana_cmpr_config_t config = {};
+        config.unit = TEST_ANA_CMPR_UNIT_ID;
+        config.clk_src = ANA_CMPR_CLK_SRC_DEFAULT;
+        config.ref_src = ANA_CMPR_REF_SRC_INTERNAL;
+        config.cross_type = ANA_CMPR_CROSS_NEG;
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        config.src_chan0_gpio = test_pad_gpio_num(ana_cmpr_periph[TEST_ANA_CMPR_UNIT_ID].pad_gpios[0]);
+        config.resample_limit = 3;
+#else
+        config.src_chan0_gpio = GPIO_NUM_NC;
+        config.resample_limit = 0;
+#endif
+        config.ext_ref_gpio = GPIO_NUM_NC;
+        TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+
+        gpio_num_t src_chan_io = test_init_src_chan_gpio(cmpr, 0, 1);
+        TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+        TEST_ESP_OK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
+        TEST_ESP_OK(ana_cmpr_register_event_callbacks(cmpr, &cbs, &cnt));
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        // this IP version only samples/latches a crossing when a scan is triggered
+        ana_cmpr_scan_config_t scan_cfg = {
+            .scan_mode = ANA_CMPR_SCAN_MODE_FULL,
+            .poll_period_us = 2,
+        };
+        TEST_ESP_OK(ana_cmpr_set_scan_config(cmpr, &scan_cfg));
+#endif
+        TEST_ESP_OK(ana_cmpr_enable(cmpr));
+        esp_rom_delay_us(1000); // allow the comparator analog block to settle after power-up
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        // prime the internal compare state so it reflects the already-set init level,
+        // otherwise the first real level change below may not be seen as a transition
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        esp_rom_delay_us(1000);
+#endif
+
+        gpio_set_level(src_chan_io, 0); // falling: armed as NEG, must fire as NEG
+        esp_rom_delay_us(1000);
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        esp_rom_delay_us(1000);
+#endif
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.neg_cnt);
+
+        gpio_set_level(src_chan_io, 1); // rising: POS never armed, must not fire
+        esp_rom_delay_us(1000);
+#if ANALOG_CMPR_LL_GET(IP_VERSION) > 1
+        TEST_ESP_OK(ana_cmpr_trigger_scan(cmpr));
+        esp_rom_delay_us(1000);
+#endif
+        TEST_ASSERT_EQUAL_UINT32(0, cnt.pos_cnt);
+        TEST_ASSERT_EQUAL_UINT32(1, cnt.neg_cnt);
+
+        TEST_ESP_OK(ana_cmpr_disable(cmpr));
+        TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
+    }
+#endif
+}
+
 TEST_CASE("ana_cmpr event callback", "[ana_cmpr]")
 {
     uint32_t cnt = 0;
