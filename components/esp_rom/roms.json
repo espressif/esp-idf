@@ -25,11 +25,23 @@
       "build_date_str": "Mar  1 2021"
     }
   ],
+  "esp32s31": [
+    {
+      "rev": 0,
+      "build_date_str_addr": "0x2f8488e0",
+      "build_date_str": "Dec 18 2025"
+    }
+  ],
   "esp32c2": [
     {
       "rev": 100,
       "build_date_str_addr": "0x3ff47874",
       "build_date_str": "Jan 27 2022"
+    },
+    {
+      "rev": 200,
+      "build_date_str_addr": "0x3ff469e0",
+      "build_date_str": "May 15 2024"
     }
   ],
   "esp32c3": [
@@ -54,6 +66,11 @@
       "rev": 0,
       "build_date_str_addr": "0x4004b3c4",
       "build_date_str": "Mar 29 2024"
+    },
+    {
+      "rev": 100,
+      "build_date_str_addr": "0x4004aefc",
+      "build_date_str": "Jan 21 2025"
     }
   ],
   "esp32c6": [
@@ -61,6 +78,13 @@
       "rev": 0,
       "build_date_str_addr": "0x4004a798",
       "build_date_str": "Sep 19 2022"
+    }
+  ],
+  "esp32c61": [
+    {
+      "rev": 100,
+      "build_date_str_addr": "0x4003c3cc",
+      "build_date_str": "Feb 28 2025"
     }
   ],
   "esp32h2": [
@@ -75,6 +99,11 @@
       "rev": 0,
       "build_date_str_addr": "0x4fc1d1ac",
       "build_date_str": "Aug 11 2023"
+    },
+    {
+      "rev": 300,
+      "build_date_str_addr": "0x4fc1d500",
+      "build_date_str": "Apr 30 2025"
     }
   ]
 }

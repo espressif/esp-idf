@@ -980,11 +980,11 @@
       "versions": [
         {
           "any": {
-            "sha256": "921f000164a421c7628fbfee55b173384aafaa51883adc65cd27bf9b0af9e9a9",
-            "size": 3540038,
-            "url": "https://github.com/espressif/esp-rom-elfs/releases/download/20241011/esp-rom-elfs-20241011.tar.gz"
+            "sha256": "caa463d3cbef2430a5a35847c1d9f2f152403b17a802050927ff60c8da54fe46",
+            "size": 4902355,
+            "url": "https://github.com/espressif/esp-rom-elfs/releases/download/20260528/esp-rom-elfs-20260528.tar.gz"
           },
-          "name": "20241011",
+          "name": "20260528",
           "status": "recommended"
         }
       ]
