@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,28 @@ extern "C" {
 
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_attr.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+/**
+ * @brief  Check whether a target time has expired relative to a reference time.
+ *
+ * @note   This is wrap-around safe for 32-bit timestamps: it returns true when
+ *         @p target is at or before @p now within the first half of the counter range.
+ *
+ * @param[in]  target  The target time to check.
+ * @param[in]  now     The current/reference time.
+ *
+ * @return
+ *          true  if @p target has expired (is at or before @p now).
+ *          false otherwise.
+ *
+ */
+FORCE_INLINE_ATTR bool is_target_time_expired(uint32_t target, uint32_t now)
+{
+    return (((now - target) & (1 << 31)) == 0);
+}
 
 /**
  * @brief  Start the IEEE802154 MAC internal timer0.
