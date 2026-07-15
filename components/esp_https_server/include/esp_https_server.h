@@ -132,6 +132,12 @@ struct httpd_ssl_config {
     /** Enable tls session tickets */
     bool session_tickets;
 
+    /** @deprecated No longer functional; setting this to true makes server start fail with
+     *  ESP_ERR_NOT_SUPPORTED. Use `server_key` (esp_key_config_t) together with
+     *  CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. Kept only for source
+     *  compatibility; will be removed in the next major release. */
+    bool use_secure_element;
+
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
 

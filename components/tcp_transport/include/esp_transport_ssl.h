@@ -207,6 +207,18 @@ void esp_transport_ssl_set_common_name(esp_transport_handle_t t, const char *com
 void esp_transport_ssl_set_ciphersuites_list(esp_transport_handle_t t, const int *ciphersuites_list);
 
 /**
+ * @brief      Set the ssl context to use secure element (atecc608a) for client(device) private key and certificate
+ *
+ * @deprecated No longer functional; the TLS connection will fail with ESP_ERR_NOT_SUPPORTED when
+ *             this option is set. Use esp_transport_ssl_set_client_key_config() (esp_key_config_t)
+ *             together with CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. Kept only for
+ *             source compatibility; will be removed in the next major release.
+ *
+ * @param      t     ssl transport
+ */
+void esp_transport_ssl_use_secure_element(esp_transport_handle_t t);
+
+/**
  * @brief      Set the ds_data handle in ssl context.(used for the digital signature operation)
  *
  * @param      t        ssl transport
