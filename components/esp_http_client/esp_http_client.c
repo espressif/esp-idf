@@ -474,10 +474,17 @@ esp_err_t esp_http_client_set_username(esp_http_client_handle_t client, const ch
         ESP_LOGE(TAG, "client must not be NULL");
         return ESP_ERR_INVALID_ARG;
     }
+    /* Duplicate first so that passing the current username back in (e.g. the pointer
+     * returned by esp_http_client_get_username()) is safe: the old buffer is freed only
+     * after the copy succeeds, avoiding a use-after-free on self-aliasing (CWE-416). */
+    char *new_username = username ? strdup(username) : NULL;
+    if (username != NULL && new_username == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
     if (client->connection_info.username != NULL) {
         free(client->connection_info.username);
     }
-    client->connection_info.username = username ? strdup(username) : NULL;
+    client->connection_info.username = new_username;
     return ESP_OK;
 }
 
@@ -520,11 +527,19 @@ esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const ch
         ESP_LOGE(TAG, "client must not be NULL");
         return ESP_ERR_INVALID_ARG;
     }
+    /* Duplicate first so that passing the current password back in (e.g. the pointer
+     * returned by esp_http_client_get_password()) is safe: zeroize and free the old buffer
+     * only after the copy succeeds, avoiding a use-after-free / credential corruption
+     * (CWE-416) caused by memset zeroing the source before strdup reads it. */
+    char *new_password = password ? strdup(password) : NULL;
+    if (password != NULL && new_password == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
     if (client->connection_info.password != NULL) {
         memset(client->connection_info.password, 0, strlen(client->connection_info.password));
         free(client->connection_info.password);
     }
-    client->connection_info.password = password ? strdup(password) : NULL;
+    client->connection_info.password = new_password;
     return ESP_OK;
 }
 
@@ -1720,14 +1735,17 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
             }
         }
         client->state = HTTP_STATE_CONNECTED;
-        http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
-        http_dispatch_event_to_event_loop(HTTP_EVENT_ON_CONNECTED, &client, sizeof(esp_http_client_handle_t));
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        /* Perform handle-dependent session-ticket bookkeeping before dispatching the user
+         * callback: a synchronous HTTP_EVENT_ON_CONNECTED handler is permitted to destroy
+         * the client, so dereferencing the handle afterwards would be a UAF (CWE-416). */
         if (client->session_ticket_state != SESSION_TICKET_UNUSED) {
             esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_SAVE);
             client->session_ticket_state = SESSION_TICKET_SAVED;
         }
 #endif
+        http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
+        http_dispatch_event_to_event_loop(HTTP_EVENT_ON_CONNECTED, &client, sizeof(esp_http_client_handle_t));
 
     }
     return ESP_OK;
