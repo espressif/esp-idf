@@ -66,6 +66,10 @@ if(CONFIG_SOC_DEBUG_PROBE_SUPPORTED)
     list(APPEND srcs "${target_folder}/debug_probe_periph.c")
 endif()
 
+if(CONFIG_SOC_CACHE_CNT_SUPPORTED)
+    list(APPEND srcs "${target_folder}/cache_periph.c")
+endif()
+
 if(CONFIG_SOC_MPI_SUPPORTED)
     list(APPEND srcs "${target_folder}/mpi_periph.c")
 endif()

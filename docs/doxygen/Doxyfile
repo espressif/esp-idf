@@ -236,6 +236,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
     $(PROJECT_PATH)/components/esp_hw_support/etm/include/esp_etm.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_cache_cnt.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_clk_tree.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \

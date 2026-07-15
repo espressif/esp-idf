@@ -12,6 +12,7 @@
 #include "soc/cache_reg.h"
 #include "soc/cache_struct.h"
 #include "soc/ext_mem_defs.h"
+#include "soc/cache_periph.h"
 #include "hal/cache_types.h"
 #include "hal/config.h"
 #include "hal/assert.h"
@@ -1395,6 +1396,67 @@ static inline void cache_ll_l2_clear_access_error_intr(uint32_t cache_id, uint32
 static inline uint32_t cache_ll_l2_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
 {
     return CACHE.l2_cache_acs_fail_int_st.val & mask;
+}
+
+/*----------------------------------------------------------------------------
+                    Cache Profile Counter Related
+-----------------------------------------------------------------------------*/
+#define CACHE_LL_PROFILE_CNT_L1_ENA_MASK (CACHE_L1_IBUS0_CNT_ENA | CACHE_L1_IBUS1_CNT_ENA | \
+                                         CACHE_L1_DBUS0_CNT_ENA | CACHE_L1_DBUS1_CNT_ENA)
+#define CACHE_LL_PROFILE_CNT_L1_CLR_MASK (CACHE_L1_IBUS0_CNT_CLR | CACHE_L1_IBUS1_CNT_CLR | \
+                                         CACHE_L1_DBUS0_CNT_CLR | CACHE_L1_DBUS1_CNT_CLR)
+#define CACHE_LL_PROFILE_CNT_L2_ENA_MASK (CACHE_L2_IBUS0_CNT_ENA | CACHE_L2_IBUS1_CNT_ENA | \
+                                         CACHE_L2_DBUS0_CNT_ENA | CACHE_L2_DBUS1_CNT_ENA)
+#define CACHE_LL_PROFILE_CNT_L2_CLR_MASK (CACHE_L2_IBUS0_CNT_CLR | CACHE_L2_IBUS1_CNT_CLR | \
+                                         CACHE_L2_DBUS0_CNT_CLR | CACHE_L2_DBUS1_CNT_CLR)
+
+/**
+ * @brief Enable or disable the cache profile counters
+ *
+ * @param ena  True to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void cache_ll_enable_profile_counter(bool ena)
+{
+    if (ena) {
+        REG_SET_BIT(CACHE_L1_CACHE_ACS_CNT_CTRL_REG, CACHE_LL_PROFILE_CNT_L1_ENA_MASK);
+        REG_SET_BIT(CACHE_L2_CACHE_ACS_CNT_CTRL_REG, CACHE_LL_PROFILE_CNT_L2_ENA_MASK);
+    } else {
+        REG_CLR_BIT(CACHE_L1_CACHE_ACS_CNT_CTRL_REG, CACHE_LL_PROFILE_CNT_L1_ENA_MASK);
+        REG_CLR_BIT(CACHE_L2_CACHE_ACS_CNT_CTRL_REG, CACHE_LL_PROFILE_CNT_L2_ENA_MASK);
+    }
+}
+
+/**
+ * @brief Reset all cache profile counters to zero
+ */
+__attribute__((always_inline))
+static inline void cache_ll_clear_profile_counter(void)
+{
+    /* clear bits are write-to-trigger and self-clearing */
+    REG_SET_BIT(CACHE_L1_CACHE_ACS_CNT_CTRL_REG, CACHE_LL_PROFILE_CNT_L1_CLR_MASK);
+    REG_SET_BIT(CACHE_L2_CACHE_ACS_CNT_CTRL_REG, CACHE_LL_PROFILE_CNT_L2_CLR_MASK);
+}
+
+/**
+ * @brief Read one counter of a cache profile counter unit
+ *
+ * @param unit         Unit index, 0 to SOC_CACHE_CNT_UNITS_NUM - 1
+ * @param counter      Counter to read
+ * @param[out] value   Counter value, only written if the counter exists
+ *
+ * @return True if the unit has this counter, false otherwise
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_get_profile_counter(int unit, cache_profile_counter_t counter, uint32_t *value)
+{
+    HAL_ASSERT(unit < SOC_CACHE_CNT_UNITS_NUM);
+    uint32_t reg = cache_periph_profile_counter_units[unit].counter_reg[counter];
+    if (reg == 0) {
+        return false;
+    }
+    *value = REG_READ(reg);
+    return true;
 }
 
 #ifdef __cplusplus

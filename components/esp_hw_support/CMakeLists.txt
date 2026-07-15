@@ -69,7 +69,8 @@ if(NOT non_os_build)
                      "port/${target}/esp_clk_tree.c"
                      "spi_bus_lock.c"
                      "heap_align_hw.c"
-                     "clk_utils.c")
+                     "clk_utils.c"
+                     "esp_cache_cnt.c")
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs "usb_phy/usb_phy.c")
     endif()

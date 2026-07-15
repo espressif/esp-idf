@@ -11,6 +11,7 @@ System API
     app_trace
     esp_trace
     esp_function_with_shared_stack
+    :SOC_CACHE_CNT_SUPPORTED: cache_cnt
     chip_revision
     console
     efuse
