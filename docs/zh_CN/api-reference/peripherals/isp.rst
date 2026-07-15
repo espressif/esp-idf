@@ -67,6 +67,7 @@ ISP 驱动程序提供以下服务：
 
 - :ref:`isp-resource-allocation` - 涵盖如何通过正确的配置来分配 ISP 资源，以及完成工作后如何回收资源。
 - :ref:`isp-enable-disable` - 涵盖如何启用和禁用 ISP 处理器。
+- :ref:`isp-dma-input` - 涵盖如何通过 DW-GDMA 将存储在内存中的图像帧送入 ISP。
 - :ref:`isp-af-statistics` - 涵盖如何单次或连续获取 AF 统计信息。
 - :ref:`isp-awb-statistics` - 涵盖如何单次或连续获取 AWB 白块统计信息。
 - :ref:`isp-ae-statistics` - 涵盖如何单次或连续获取 AE 统计信息。
@@ -239,6 +240,15 @@ ISP
 * 将驱动程序状态从 **init** 切换到 **enable**。
 
 调用 :cpp:func:`esp_isp_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
+
+.. _isp-dma-input:
+
+ISP DMA 输入
+~~~~~~~~~~~~
+
+除来自摄像头控制器的数据流外，ISP 还可以通过 DW-GDMA 从系统存储中读取图像帧作为输入。使用 DMA 输入时，应在 :cpp:type:`esp_isp_processor_cfg_t` 中将 :cpp:member:`esp_isp_processor_cfg_t::input_data_source` 配置为 :cpp:enumerator:`ISP_INPUT_DATA_SOURCE_DWGDMA`，并根据输入图像格式设置输入、输出格式及分辨率。
+
+DMA 输入适用于将软件生成的数据、离线保存的 RAW 图像或其他内存中的测试图像送入 ISP 进行处理。它可用于无摄像头传感器参与时验证 ISP 流水线、复现特定输入图像的问题。调用 :cpp:func:`esp_isp_dma_process_frame` 可以将一帧输入缓冲区送入 ISP，并将处理后的图像写入输出缓冲区。输入和输出缓冲区需要满足 DMA 访问要求；若使用带 cache 的内存，请在 DMA 传输前后执行必要的 cache 同步。
 
 ISP AF 控制器
 ~~~~~~~~~~~~~
@@ -958,6 +968,7 @@ Kconfig 选项 :ref:`CONFIG_ISP_CTRL_FUNC_IN_IRAM` 支持：
 --------
 
 * :example:`peripherals/isp/multi_pipelines` 演示了如何使用 ISP 流水线处理来自摄像头传感器的图像信号，并通过 DSI 外设在 LCD 屏幕上显示视频。
+* :example:`peripherals/isp/dma_input` 演示了如何通过 DW-GDMA 将内存中的 RAW8 BGGR 图像送入 ISP。``pytest_isp_dma_input.py`` 会将处理后的 RGB888 帧保存为 PPM 图片，并与示例中提交的 golden 图片进行逐像素比较。
 * `esp_video/examples <https://github.com/espressif/esp-video-components/tree/master/esp_video/examples>`_ 中包含自动启用 ISP 控制算法的一些示例。
 
 API 参考
@@ -978,5 +989,6 @@ API 参考
 .. include-build-file:: inc/isp_color.inc
 .. include-build-file:: inc/isp_crop.inc
 .. include-build-file:: inc/isp_core.inc
+.. include-build-file:: inc/isp_dma.inc
 .. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
 .. include-build-file:: inc/components/esp_hal_cam/include/hal/isp_types.inc

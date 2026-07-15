@@ -283,6 +283,14 @@ examples/peripherals/i3c/i3c_lsm6dscx:
     - esp_hal_i3c
     - soc
 
+examples/peripherals/isp/dma_input:
+  disable:
+    - if: SOC_ISP_SUPPORTED != 1
+  depends_components:
+    - esp_driver_dma
+    - esp_driver_isp
+    - soc
+
 examples/peripherals/isp/multi_pipelines:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1
