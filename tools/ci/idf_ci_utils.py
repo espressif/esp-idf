@@ -114,6 +114,17 @@ def to_list(s: t.Any) -> list[t.Any]:
 
 
 class GitlabYmlConfig:
+    # Templates defined in external project includes (ci/actions/common) that are
+    # not loaded locally. Referenced via `extends:` in local jobs, so _expand_extends
+    # must skip them instead of raising KeyError.
+    _EXTERNAL_TEMPLATE_KEYS: t.ClassVar[set[str]] = {
+        '.common_before_scripts',
+        '.common_after_scripts',
+        '.macos-settings',
+        '.windows-settings',
+        '.pre_check_template',
+    }
+
     def __init__(self, root_yml_filepath: str = os.path.join(IDF_PATH, '.gitlab-ci.yml')) -> None:
         self._config: dict[str, t.Any] = {}
         self._defaults: dict[str, t.Any] = {}
@@ -123,6 +134,9 @@ class GitlabYmlConfig:
     def _load(self, root_yml_filepath: str) -> None:
         # avoid unused import in other pre-commit hooks
         import yaml
+
+        # GitLab CI uses !reference tags which standard YAML loaders don't know about
+        yaml.add_multi_constructor('', lambda loader, tag, node: None, Loader=yaml.FullLoader)
 
         all_config = dict()
         root_yml = yaml.load(open(root_yml_filepath), Loader=yaml.FullLoader)
@@ -224,6 +238,9 @@ class GitlabYmlConfig:
         return d1
 
     def _expand_extends(self, name: str) -> dict[str, t.Any]:
+        if name in self._EXTERNAL_TEMPLATE_KEYS:
+            return {}
+
         extends = to_list(self.config[name].pop('extends', None))
         if not extends:
             return self.config[name]  # type: ignore

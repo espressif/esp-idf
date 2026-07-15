@@ -1,27 +1,27 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Check gitlab ci yaml files
 """
+
 import argparse
 import os
-import typing as t
 from functools import cached_property
 
-from idf_ci_utils import get_submodule_dirs
-from idf_ci_utils import GitlabYmlConfig
 from idf_ci_utils import IDF_PATH
+from idf_ci_utils import GitlabYmlConfig
+from idf_ci_utils import get_submodule_dirs
 
 
 class YmlLinter:
     def __init__(self, yml_config: GitlabYmlConfig) -> None:
         self.yml_config = yml_config
 
-        self._errors: t.List[str] = []
+        self._errors: list[str] = []
 
     @cached_property
-    def lint_functions(self) -> t.List[str]:
+    def lint_functions(self) -> list[str]:
         funcs = []
         for func in dir(self):
             if func.startswith('_lint_'):
@@ -90,7 +90,8 @@ class YmlLinter:
 
         undefined_templates = self.yml_config.used_templates - self.yml_config.templates.keys()
         for item in undefined_templates:
-            self._errors.append(f'Undefined template: {item}')
+            if item not in self.yml_config._EXTERNAL_TEMPLATE_KEYS:
+                self._errors.append(f'Undefined template: {item}')
 
     def _lint_dependencies_and_needs(self) -> None:
         """

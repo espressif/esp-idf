@@ -45,7 +45,6 @@
     - run_cmd idf-ci build run
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-files ${MR_MODIFIED_FILES}
 
 .dynamic_target_test_template:
   image: $TARGET_TEST_ENV_IMAGE

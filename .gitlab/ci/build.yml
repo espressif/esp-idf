@@ -101,7 +101,6 @@ generate_build_child_pipeline:
       -p components
       -p examples
       -p tools/test_apps
-      --modified-files $MR_MODIFIED_FILES
     - '[ -f test_related_apps.txt ] && shuf test_related_apps.txt -o test_related_apps.txt || echo "test_related_apps.txt not found, skipping."'
     - '[ -f non_test_related_apps.txt ] && shuf non_test_related_apps.txt -o non_test_related_apps.txt || echo "non_test_related_apps.txt not found, skipping."'
 
@@ -116,8 +115,6 @@ build_child_pipeline:
     - job: pre_check_complete
       artifacts: false
   variables:
-    MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
-    MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
@@ -187,8 +184,6 @@ build_child_pipeline_buildv2:
     - pipeline_variables
     - generate_build_child_pipeline_buildv2
   variables:
-    MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
-    MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
   inherit:
     variables: false
