@@ -2358,6 +2358,8 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
                     num_flushed1 = 0,
                     num_flushed2 = 0;
 
+    UNUSED(num_flushed1);
+
     p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
 
     if ( !p_ccb || ((p_lcb = p_ccb->p_lcb) == NULL) ) {
