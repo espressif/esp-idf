@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include "sdkconfig.h"
 #include "btdm_coex.h"
+#include "esp_attr.h"
 
 #if CONFIG_SW_COEXIST_ENABLE
 #include "private/esp_coexist_internal.h"
@@ -150,7 +151,7 @@ wr_btdm_coex_iso_stop(uint16_t handle)
 #endif /* CONFIG_SW_COEXIST_ENABLE */
 }
 
-uint16_t
+uint16_t IRAM_ATTR
 wr_btdm_coex_iso_protect_frame_thres_get(void)
 {
 #if CONFIG_SW_COEXIST_ENABLE && CONFIG_BT_LE_ISO_SUPPORT
