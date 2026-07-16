@@ -114,8 +114,13 @@ int hci_start_up(void)
     }
 
     const size_t workqueue_len[] = {HCI_HOST_TASK_WORKQUEUE0_LEN, HCI_HOST_TASK_WORKQUEUE1_LEN};
+#if (!CONFIG_BT_BLUEDROID_HCI_TASK_STACK_IN_EXT_MEM)
     hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
-                                        HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len);
+                                        HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len, false);
+#else
+    hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
+                                        HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len, true);
+#endif
     if (hci_host_thread == NULL) {
         goto error;
     }

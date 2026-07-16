@@ -43,6 +43,10 @@ struct osi_thread {
   struct work_queue **work_queues;      /*!< Point to queue array, and the priority inverse array index */
   osi_sem_t work_sem;
   osi_sem_t stop_sem;
+#if (CONFIG_BT_BLUEDROID_TASK_STACK_IN_EXT_MEM)
+  StackType_t *stack;
+  StaticTask_t *task;
+#endif
 };
 
 struct osi_thread_start_arg {
@@ -179,10 +183,9 @@ static void osi_thread_run(void *arg)
         }
     }
 
-    thread->thread_handle = NULL;
     osi_sem_give(&thread->stop_sem);
 
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 static int osi_thread_join(osi_thread_t *thread, uint32_t wait_ms)
@@ -204,14 +207,20 @@ static void osi_thread_stop(osi_thread_t *thread)
     //join
     ret = osi_thread_join(thread, 1000); //wait 1000ms
 
-    //if join failed, delete the task here
-    if (ret != 0 && thread->thread_handle) {
+    //delete the task here
+    if (thread->thread_handle) {
+        if (ret == 0) {
+            while (eTaskGetState(thread->thread_handle) != eSuspended) {
+                vTaskDelay(1);
+            }
+        }
         vTaskDelete(thread->thread_handle);
+        thread->thread_handle = NULL;
     }
 }
 
 //in linux, the stack_size, priority and core may not be set here, the code will be ignore the arguments
-osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[])
+osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[], bool in_psram)
 {
     int ret;
     struct osi_thread_start_arg start_arg = {0};
@@ -257,9 +266,32 @@ osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priorit
     if (ret != 0) {
         goto _err;
     }
-
-    if (xTaskCreatePinnedToCore(osi_thread_run, name, stack_size, &start_arg, priority, &thread->thread_handle, core) != pdPASS) {
+    if (in_psram) {
+#if (CONFIG_BT_BLUEDROID_TASK_STACK_IN_EXT_MEM)
+        thread->task = heap_caps_calloc(1, sizeof(StaticTask_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+        if (thread->task == NULL) {
+            goto _err;
+        }
+        thread->stack = heap_caps_calloc_prefer(1, stack_size * sizeof(StackType_t),
+                                                2, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT,
+                                                MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+        if (thread->stack == NULL) {
+            goto _err;
+        }
+        thread->thread_handle = xTaskCreateStaticPinnedToCore(osi_thread_run, name,
+                                                        stack_size, &start_arg,
+                                                        priority, thread->stack,
+                                                        thread->task, core);
+        if (thread->thread_handle == NULL) {
+            goto _err;
+        }
+#else
         goto _err;
+#endif
+    }else{
+        if (xTaskCreatePinnedToCore(osi_thread_run, name, stack_size, &start_arg, priority, &thread->thread_handle, core) != pdPASS) {
+            goto _err;
+        }
     }
 
     osi_sem_take(&start_arg.start_sem, OSI_SEM_MAX_TIMEOUT);
@@ -297,6 +329,16 @@ _err:
         if (thread->stop_sem) {
             osi_sem_free(&thread->stop_sem);
         }
+#if (CONFIG_BT_BLUEDROID_TASK_STACK_IN_EXT_MEM)
+        if (thread->stack) {
+            heap_caps_free(thread->stack);
+            thread->stack = NULL;
+        }
+        if (thread->task) {
+            heap_caps_free(thread->task);
+            thread->task = NULL;
+        }
+#endif
 
         osi_free(thread);
     }
@@ -330,6 +372,16 @@ void osi_thread_free(osi_thread_t *thread)
     if (thread->stop_sem) {
         osi_sem_free(&thread->stop_sem);
     }
+#if (CONFIG_BT_BLUEDROID_TASK_STACK_IN_EXT_MEM)
+    if (thread->stack) {
+        heap_caps_free(thread->stack);
+        thread->stack = NULL;
+    }
+    if (thread->task) {
+        heap_caps_free(thread->task);
+        thread->task = NULL;
+    }
+#endif
 
 
     osi_free(thread);

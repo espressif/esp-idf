@@ -1356,6 +1356,34 @@ config BT_ALLOCATION_FROM_SPIRAM_FIRST
     help
         This select can save the internal RAM if there have the PSRAM
 
+config BT_BLUEDROID_TASK_STACK_IN_EXT_MEM
+    bool "Place BT task stack in external memory"
+    depends on FREERTOS_TASK_CREATE_ALLOW_EXT_MEM && (!IDF_TARGET_ESP32 || SPIRAM_CACHE_WORKAROUND)
+    default n
+    help
+        Common prerequisites for placing Bluedroid host
+        task stacks in PSRAM.
+
+config BT_BLUEDROID_BTU_TASK_STACK_IN_EXT_MEM
+    bool "Place BTU task stack in external memory"
+    depends on BT_BLUEDROID_TASK_STACK_IN_EXT_MEM
+    default n
+    help
+        Allocate BTU_TASK stack from external SPIRAM using static task
+        allocation. TCB remains in internal DRAM.
+
+        BTU does not perform NVS operations directly.
+
+config BT_BLUEDROID_HCI_TASK_STACK_IN_EXT_MEM
+    bool "Place HCI host task stack in external memory"
+    depends on BT_BLUEDROID_TASK_STACK_IN_EXT_MEM
+    default n
+    help
+        Allocate HCI host task (hciT) stack from external SPIRAM using
+        static task allocation. TCB remains in internal DRAM.
+
+        HCI does not perform NVS operations.
+
 config BT_BLE_DYNAMIC_ENV_MEMORY
     bool "Use dynamic memory allocation in BT/BLE stack"
     depends on BT_BLUEDROID_ENABLED
