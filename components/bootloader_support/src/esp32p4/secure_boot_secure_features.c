@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,10 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
 
 #ifdef CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE);
+#endif
+
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_SHA384_EN);
 #endif
 
     esp_efuse_write_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
