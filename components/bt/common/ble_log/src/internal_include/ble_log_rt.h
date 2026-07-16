@@ -32,6 +32,9 @@
 /* INTERFACE */
 bool ble_log_rt_init();
 void ble_log_rt_deinit(void);
-void ble_log_rt_queue_trans(ble_log_prph_trans_t **trans);
+void ble_log_rt_queue_trans(ble_log_prph_trans_t *trans);
+/* True when called from the BLE Log runtime task itself. Used to forbid
+ * blocking backpressure there (it must keep draining the runtime queue). */
+bool ble_log_rt_in_self_task(void);
 
 #endif /* __BLE_LOG_RT_H__ */
