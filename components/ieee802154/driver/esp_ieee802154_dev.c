@@ -925,12 +925,19 @@ esp_err_t ieee802154_mac_init(void)
 
     ESP_RETURN_ON_FALSE(ieee802154_sleep_init() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep init failed");
 
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    esp_coex_ieee802154_force_rx_enable(true);
+#endif
+
     return ret;
 }
 
 esp_err_t ieee802154_mac_deinit(void)
 {
     esp_err_t ret = ESP_OK;
+#if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
+    esp_coex_ieee802154_force_rx_enable(false);
+#endif
     if (s_ieee802154_isr_handle) {
         ret = esp_intr_free(s_ieee802154_isr_handle);
         s_ieee802154_isr_handle = NULL;
