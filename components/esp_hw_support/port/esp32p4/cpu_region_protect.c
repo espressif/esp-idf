@@ -233,10 +233,127 @@ static void esp_cpu_configure_region_protection_rev_v3(void)
 #endif
 }
 #else
+// Default rev < 3.0 layout: flash 6-8, LP-RAM 9-12, peripheral 13. Used on a
+// v5.3/v5.4 bootloader (peripheral locked at 13) or when PSRAM protection is off.
+static void esp_cpu_configure_region_protection_rev_less_than_v3_default(void)
+{
+    __attribute__((unused)) const unsigned NONE = PMP_L;
+    __attribute__((unused)) const unsigned R    = PMP_L | PMP_R;
+    const unsigned RW      = PMP_L | PMP_R | PMP_W;
+    const unsigned RX      = PMP_L | PMP_R | PMP_X;
+    __attribute__((unused)) const unsigned RWX  = PMP_L | PMP_R | PMP_W | PMP_X;
+
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
+    extern int _instruction_reserved_end;
+    extern int _rodata_reserved_end;
+
+    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+    const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+
+    // 5. I_Cache / D_Cache (flash)
+    PMP_ENTRY_CFG_RESET(6);
+    PMP_ENTRY_CFG_RESET(7);
+    PMP_ENTRY_CFG_RESET(8);
+    PMP_ENTRY_SET(6, SOC_IROM_LOW, NONE);
+    PMP_ENTRY_SET(7, page_aligned_irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(8, page_aligned_drom_resv_end, PMP_TOR | R);
+#else
+    // 5. I_Cache / D_Cache (flash)
+    const uint32_t pmpaddr6 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_ENTRY_SET(6, pmpaddr6, PMP_NAPOT | RX);
+    _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
+#endif
+
+    // 6. LP memory
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
+    extern int _rtc_text_start;
+    extern int _rtc_text_end;
+    /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
+     * Bootloader might have given extra permissions and those won't be cleared
+     */
+    PMP_ENTRY_CFG_RESET(9);
+    PMP_ENTRY_CFG_RESET(10);
+    PMP_ENTRY_CFG_RESET(11);
+    PMP_ENTRY_CFG_RESET(12);
+    PMP_ENTRY_SET(9, SOC_RTC_IRAM_LOW, NONE);
+    // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
+    // as well as memory for ULP coprocessor
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
+    PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RWX);
+#else
+    PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RW);
+#endif
+    PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+#else
+    const uint32_t pmpaddr9 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
+    PMP_ENTRY_SET(9, pmpaddr9, PMP_NAPOT | RWX);
+    _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
+#endif
+
+    // 7. Peripheral addresses
+    const uint32_t pmpaddr13 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_PERIPHERAL_REV_LESS_THAN_V3, pmpaddr13, PMP_NAPOT | RW);
+    _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
+}
+
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+// PSRAM-protected rev < 3.0 layout: flash/ext-RAM 6-10, LP-RAM 11-14, peripheral
+// 15. Fits only when the bootloader left entry 13 free (v5.5+).
+static void esp_cpu_configure_region_protection_rev_less_than_v3_psram(void)
+{
+    const unsigned NONE    = PMP_L;
+    const unsigned R       = PMP_L | PMP_R;
+    const unsigned RW      = PMP_L | PMP_R | PMP_W;
+    const unsigned RX      = PMP_L | PMP_R | PMP_X;
+    __attribute__((unused)) const unsigned RWX  = PMP_L | PMP_R | PMP_W | PMP_X;
+
+    extern int _instruction_reserved_end;
+    extern int _rodata_reserved_end;
+    extern int _rtc_text_start;
+    extern int _rtc_text_end;
+
+    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+    const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+
+    // 5. I_Cache / D_Cache (flash) and external RAM
+    PMP_ENTRY_CFG_RESET(6);
+    PMP_ENTRY_CFG_RESET(7);
+    PMP_ENTRY_CFG_RESET(8);
+    PMP_ENTRY_CFG_RESET(9);
+    PMP_ENTRY_SET(6, SOC_EXTRAM_LOW, NONE);
+    PMP_ENTRY_SET(7, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET(8, page_aligned_irom_resv_end, PMP_TOR | RW);
+    PMP_ENTRY_SET(9, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+
+    const size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
+    PMP_ENTRY_CFG_RESET(10);
+    PMP_ENTRY_SET(10, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+
+    // 6. LP memory
+    PMP_ENTRY_CFG_RESET(11);
+    PMP_ENTRY_CFG_RESET(12);
+    PMP_ENTRY_CFG_RESET(13);
+    PMP_ENTRY_CFG_RESET(14);
+    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW, NONE);
+#if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
+    PMP_ENTRY_SET(12, (int)&_rtc_text_start, PMP_TOR | RWX);
+#else
+    PMP_ENTRY_SET(12, (int)&_rtc_text_start, PMP_TOR | RW);
+#endif
+    PMP_ENTRY_SET(13, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(14, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+
+    // 7. Peripheral addresses
+    const uint32_t pmpaddr15 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_PERIPHERAL_REV_LESS_THAN_V3_SPIRAM_MEMPROT_EN, pmpaddr15, PMP_NAPOT | RW);
+    _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
+}
+#endif
+
 static void esp_cpu_configure_region_protection_rev_less_than_v3(void)
 {
     const unsigned NONE    = PMP_L;
-    __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
     const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
@@ -285,76 +402,17 @@ static void esp_cpu_configure_region_protection_rev_less_than_v3(void)
 #endif
     }
 
-#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
-    extern int _instruction_reserved_end;
-    extern int _rodata_reserved_end;
-
-    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
-    __attribute__((unused)) const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
-
-    // 5. I_Cache / D_Cache (flash)
-#if CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
-    // We could have split CONFIG_SPIRAM_XIP_FROM_PSRAM into CONFIG_SPIRAM_FETCH_INSTRUCTIONS and CONFIG_SPIRAM_RODATA
-    // but we don't have enough PMP entries to do so thus not allowing us finer control over the memory regions
-    PMP_ENTRY_CFG_RESET(6);
-    PMP_ENTRY_CFG_RESET(7);
-    PMP_ENTRY_CFG_RESET(8);
-    PMP_ENTRY_CFG_RESET(9);
-
-    PMP_ENTRY_SET(6, SOC_EXTRAM_LOW, NONE);
-    PMP_ENTRY_SET(7, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
-    PMP_ENTRY_SET(8, page_aligned_irom_resv_end, PMP_TOR | RW);
-    PMP_ENTRY_SET(9, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
-
-    size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
-    PMP_ENTRY_CFG_RESET(10);
-    PMP_ENTRY_SET(10, ESP_ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
-#else
-    PMP_ENTRY_CFG_RESET(6);
-    PMP_ENTRY_CFG_RESET(7);
-    PMP_ENTRY_CFG_RESET(8);
-    PMP_ENTRY_SET(6, SOC_IROM_LOW, NONE);
-    PMP_ENTRY_SET(7, page_aligned_irom_resv_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(8, page_aligned_drom_resv_end, PMP_TOR | R);
-#endif /* CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
-#else
-    // 5. I_Cache / D_Cache (flash)
-    const uint32_t pmpaddr6 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
-    PMP_ENTRY_SET(6, pmpaddr6, PMP_NAPOT | RX);
-    _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
+    /* The flash, LP memory and peripheral entries have two layouts. The PSRAM
+     * layout needs all 16 entries and only fits when the bootloader left entry 13
+     * free; a v5.3/v5.4 bootloader locks the peripheral there, so fall back to the
+     * default layout (no PSRAM protection) on those devices. */
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP && CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    if (!(PMP_ENTRY_CFG_READ(PMP_ENTRY_PERIPHERAL_REV_LESS_THAN_V3) & PMP_L)) {
+        esp_cpu_configure_region_protection_rev_less_than_v3_psram();
+        return;
+    }
 #endif
-
-    // 6. LP memory
-#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMP
-    extern int _rtc_text_start;
-    extern int _rtc_text_end;
-    /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
-     * Bootloader might have given extra permissions and those won't be cleared
-     */
-    PMP_ENTRY_CFG_RESET(11);
-    PMP_ENTRY_CFG_RESET(12);
-    PMP_ENTRY_CFG_RESET(13);
-    PMP_ENTRY_CFG_RESET(14);
-    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW, NONE);
-    // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
-    // as well as memory for ULP coprocessor
-#if CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC
-    PMP_ENTRY_SET(12, (int)&_rtc_text_start, PMP_TOR | RWX);
-#else
-    PMP_ENTRY_SET(12, (int)&_rtc_text_start, PMP_TOR | RW);
-#endif
-    PMP_ENTRY_SET(13, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(14, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
-#else
-    const uint32_t pmpaddr11 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
-    PMP_ENTRY_SET(11, pmpaddr11, PMP_NAPOT | RWX);
-    _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
-#endif
-
-    // 7. Peripheral addresses
-    const uint32_t pmpaddr15 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_RESET_AND_ENTRY_SET(PMP_ENTRY_PERIPHERAL_REV_LESS_THAN_V3, pmpaddr15, PMP_NAPOT | RW);
-    _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
+    esp_cpu_configure_region_protection_rev_less_than_v3_default();
 }
 #endif
 
