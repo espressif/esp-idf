@@ -328,6 +328,7 @@ esp_err_t IRAM_ATTR esp_clk_tree_mpll_acquire(void)
         esp_ldo_channel_config_t ldo_mpll_config = {
             .chan_id = CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN,
             .voltage_mv = CONFIG_ESP_LDO_VOLTAGE_PSRAM_DOMAIN,
+            .voltage_stable_delay_us = CONFIG_ESP_LDO_VOLTAGE_STABLE_DELAY_US,
         };
         ESP_RETURN_ON_ERROR(esp_ldo_acquire_channel(&ldo_mpll_config, &s_ldo_chan), TAG, "acquire internal LDO for MPLL failed");
     }

@@ -15,6 +15,7 @@
 #include "hal/ldo_ll.h"
 #include "esp_ldo_regulator.h"
 #include "esp_private/critical_section.h"
+#include "esp_rom_sys.h"
 
 ESP_LOG_ATTR_TAG(TAG, "ldo");
 
@@ -56,6 +57,7 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
 
     bool check_adjustable_constraint_valid = true;
     bool check_voltage_constraint_valid = true;
+    bool ldo_enabled = false;
     esp_os_enter_critical(&s_spinlock);
     if (config->flags.adjustable) {
         // the user wants to adjust it
@@ -97,6 +99,7 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
             ldo_ll_enable_ripple_suppression(unit_id, true);
             ldo_ll_enable(unit_id, true);
             ldo_ll_enable_current_limit(unit_id, false);
+            ldo_enabled = true;
         }
         // update the channel attributes
         channel->ref_cnt++;
@@ -111,6 +114,10 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
                         config->voltage_mv, channel->voltage_mv);
     ESP_RETURN_ON_FALSE(check_adjustable_constraint_valid, ESP_ERR_INVALID_ARG, TAG,
                         "can't acquire the channel, already in use by others or not adjustable");
+
+    if (ldo_enabled && config->voltage_stable_delay_us > 0) {
+        esp_rom_delay_us(config->voltage_stable_delay_us);
+    }
 
     if (out_handle) {
         *out_handle = channel;

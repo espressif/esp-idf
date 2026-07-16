@@ -412,8 +412,6 @@ static void s_configure_psram_ecc(void)
 
 esp_err_t esp_psram_impl_enable(void)
 {
-    psram_ctrlr_ll_enable_power(true);
-
 #if SOC_CLK_MPLL_SUPPORTED
     // We need to use the acquire and freq_set functions directly instead of general clk_tree API for IRAM safe function
     esp_clk_tree_mpll_acquire();
