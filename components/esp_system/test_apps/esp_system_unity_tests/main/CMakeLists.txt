@@ -9,6 +9,7 @@ set(requires "unity"
 
 set(SRC  "test_app_main.c"
           "test_backtrace.c"
+          "test_freertos_tick_hooks.c"
           "test_ipc.c"
           "test_panic.c"
           "test_reset_reason.c"
