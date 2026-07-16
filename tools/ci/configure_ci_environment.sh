@@ -17,17 +17,13 @@ DEBUG_SHELL=${DEBUG_SHELL:-"0"}
 # (Depends on default options '-Wno-error=XXX' used in the IDF build system)
 
 if [ "$IDF_TOOLCHAIN" != "clang" ]; then
-    PEDANTIC_FLAGS="-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-function"
-    export PEDANTIC_CFLAGS="${PEDANTIC_FLAGS} -Wstrict-prototypes"
-    # TODO IDF-15784
-    case "$CI_JOB_NAME" in
-        test_pytest_linux|test_sockets_on_host|test_transport_on_host|test_vfs_on_host|test_pytest_macos)
-        export PEDANTIC_CFLAGS="${PEDANTIC_CFLAGS} -Werror=unused-but-set-variable"
-        ;;
-    *)
-        export PEDANTIC_CFLAGS="${PEDANTIC_CFLAGS} -Werror=unused-but-set-variable=1"
-        ;;
-    esac
+    PEDANTIC_FLAGS="-Werror \
+                    -Werror=deprecated-declarations \
+                    -Werror=unused-variable \
+                    -Werror=unused-function \
+                    -Werror=unused-but-set-variable"
+    export PEDANTIC_CFLAGS="${PEDANTIC_FLAGS} \
+                            -Wstrict-prototypes"
 else
     export PEDANTIC_CFLAGS="-Werror"
 fi

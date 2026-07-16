@@ -602,7 +602,7 @@ static void check_and_destroy_final_default(void)
 {
     _lock_acquire_recursive(&s_retention.lock);
     assert(s_retention.highpri == SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY);
-    uint32_t created_modules = 0;
+    uint32_t __attribute__((unused)) created_modules = 0;
     for (int i = 0; i < SLEEP_RETENTION_MODULE_BITMAP_SZ; i++) {
         created_modules |= s_retention.created_modules.bitmap[i];
     }

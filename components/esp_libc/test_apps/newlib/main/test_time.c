@@ -562,17 +562,6 @@ typedef uint64_t benchmark_tick_t;  /* unit: microseconds */
 #define benchmark_print_units(type, x) printf("%s us: %lu\n", type, (unsigned long)(x))
 #endif
 
-#define N 4096
-const uint32_t ro_tbl[N] = { 2 };
-uint32_t scan_tbl(const volatile uint32_t *p, size_t n)
-{
-    uint32_t sum = 0;
-    for (size_t i = 0; i < n; i++) {
-        sum += p[i];
-    }
-    return sum;
-}
-
 void test_posix_timers_clock_performance(clockid_t clock_id)
 {
     const int MEASUREMENTS = 5000;
@@ -584,14 +573,10 @@ void test_posix_timers_clock_performance(clockid_t clock_id)
     benchmark_tick_t delta;
     benchmark_tick_t delta_sum = 0;
     for (int i = 0; i < PHASE_COUNT; i++) {
-        volatile uint32_t table_sum = 0;
         if (i == PHASE_COUNT / 2) {
             printf("With table scan...\n");
         }
         for (int j = 0; j < MEASUREMENTS; j++) {
-            if (i >= PHASE_COUNT / 2) {
-                table_sum += scan_tbl(ro_tbl, N);
-            }
             start = get_start();
             clock_settime(clock_id, &ts);
             end = get_end();
