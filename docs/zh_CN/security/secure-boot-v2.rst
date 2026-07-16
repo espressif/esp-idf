@@ -723,7 +723,7 @@ Secure Boot v2 签名验证也可以在 OTA 更新期间验证数据分区镜像
 
         espsecure signature-info-v2 datafile.bin
 
-    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+    .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
 
       .. note::
 
@@ -818,7 +818,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 签名公钥/私钥的 PEM 文件。
 
         openssl dgst -sha256 -binary BINARY_FILE  > DIGEST_BINARY_FILE
 
-    .. only:: SOC_ECDSA_SUPPORT_CURVE_P384
+    .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_ECDSA_SUPPORT_CURVE_P384
 
         在使用 ECDSA-P384 签名方案的情况下，必须使用 SHA-384 来计算镜像的摘要。
 
