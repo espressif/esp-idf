@@ -588,6 +588,8 @@ menu "Security features"
         config SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
             bool "Using ECC curve NISTP384 (Recommended)"
             depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME && SOC_ECDSA_SUPPORT_CURVE_P384
+            # ESP32-P4 revisions < v3.0 do not support Secure Boot using ECDSA-P384
+            depends on !ESP32P4_SELECTS_REV_LESS_V3
 
     endchoice
 
