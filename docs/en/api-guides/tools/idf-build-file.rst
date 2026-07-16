@@ -67,6 +67,17 @@ A list of ``sdkconfig`` options. These are written to ``sdkconfig.defaults`` in 
       - CONFIG_IDF_TARGET=esp32s3
       - CONFIG_SPIRAM=y
 
+``compile_options``
+^^^^^^^^^^^^^^^^^^^
+
+A list of extra compiler options applied when compiling the source file, such as warning flags or preprocessor definitions.
+
+.. code-block:: yaml
+
+    compile_options:
+      - -Wconversion
+      - -DBUFFER_SIZE=1024
+
 ``dependencies``
 ^^^^^^^^^^^^^^^^
 

@@ -67,6 +67,17 @@
       - CONFIG_IDF_TARGET=esp32s3
       - CONFIG_SPIRAM=y
 
+``compile_options``
+^^^^^^^^^^^^^^^^^^^
+
+编译源文件时使用的额外编译器选项列表，例如警告标志或预处理器定义。
+
+.. code-block:: yaml
+
+    compile_options:
+      - -Wconversion
+      - -DBUFFER_SIZE=1024
+
 ``dependencies``
 ^^^^^^^^^^^^^^^^
 

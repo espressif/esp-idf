@@ -16,10 +16,12 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'idf_py_actions'))
 from build_file_ext import _classify_dependencies
+from build_file_ext import _cmake_quote
 from build_file_ext import _generate_container_project
 from build_file_ext import _is_bool_or_number
 from build_file_ext import _parse_frontmatter
 from build_file_ext import _write_if_changed
+from idf_py_actions.errors import FatalError
 
 IDF_PATH = os.environ.get('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..'))
 IDF_PY = os.path.join(IDF_PATH, 'tools', 'idf.py')
@@ -151,6 +153,20 @@ class TestIsBoolOrNumber:
         assert _is_bool_or_number('') is True
 
 
+class TestCmakeQuote:
+    def test_plain_flag(self) -> None:
+        assert _cmake_quote('-O2') == '"-O2"'
+
+    def test_simple_define(self) -> None:
+        assert _cmake_quote('-DFOO=BAR') == '"-DFOO=BAR"'
+
+    def test_define_with_quotes(self) -> None:
+        assert _cmake_quote('-DMSG="hello world"') == '"-DMSG=\\"hello world\\""'
+
+    def test_backslash(self) -> None:
+        assert _cmake_quote('-DPATH=a\\b') == '"-DPATH=a\\\\b"'
+
+
 class TestWriteIfChanged:
     def test_creates_new_file(self, tmp_dir: str) -> None:
         path = os.path.join(tmp_dir, 'test.txt')
@@ -256,6 +272,55 @@ class TestGenerateContainerProject:
             content = f.read()
         assert 'protocol_examples_common' in content
 
+    def test_generates_compile_options(self, tmp_dir: str) -> None:
+        src = os.path.join(tmp_dir, 'test.c')
+        with open(src, 'w') as f:
+            f.write('void app_main(void) {}\n')
+
+        frontmatter = {'compile_options': ['-O2', '-DFOO=BAR', '-DMSG="hello world"']}
+        container = os.path.join(tmp_dir, 'container')
+        _generate_container_project(src, frontmatter, container)
+
+        with open(os.path.join(container, 'main', 'CMakeLists.txt')) as f:
+            content = f.read()
+        assert 'target_compile_options(${COMPONENT_LIB} PRIVATE "-O2" "-DFOO=BAR" "-DMSG=\\"hello world\\"")' in content
+
+    def test_no_compile_options_by_default(self, tmp_dir: str) -> None:
+        src = os.path.join(tmp_dir, 'test.c')
+        with open(src, 'w') as f:
+            f.write('void app_main(void) {}\n')
+
+        container = os.path.join(tmp_dir, 'container')
+        _generate_container_project(src, {}, container)
+
+        with open(os.path.join(container, 'main', 'CMakeLists.txt')) as f:
+            content = f.read()
+        assert 'target_compile_options' not in content
+
+    def test_compile_options_removed_on_regeneration(self, tmp_dir: str) -> None:
+        src = os.path.join(tmp_dir, 'test.c')
+        with open(src, 'w') as f:
+            f.write('void app_main(void) {}\n')
+
+        container = os.path.join(tmp_dir, 'container')
+        _generate_container_project(src, {'compile_options': ['-O2']}, container)
+        _generate_container_project(src, {}, container)
+
+        with open(os.path.join(container, 'main', 'CMakeLists.txt')) as f:
+            content = f.read()
+        assert 'target_compile_options' not in content
+
+    def test_compile_options_must_be_list_of_strings(self, tmp_dir: str) -> None:
+        src = os.path.join(tmp_dir, 'test.c')
+        with open(src, 'w') as f:
+            f.write('void app_main(void) {}\n')
+
+        container = os.path.join(tmp_dir, 'container')
+        with pytest.raises(FatalError, match='compile_options'):
+            _generate_container_project(src, {'compile_options': '-O2'}, container)
+        with pytest.raises(FatalError, match='compile_options'):
+            _generate_container_project(src, {'compile_options': [['-O2']]}, container)
+
     def test_copies_source_file(self, tmp_dir: str) -> None:
         src = os.path.join(tmp_dir, 'test.c')
         with open(src, 'w') as f:
@@ -326,6 +391,42 @@ class TestBuildFileEndToEnd:
         assert 'Project build complete' in output
         # Verify size command ran (it prints memory usage)
         assert 'Total image size' in output or 'Used static' in output
+
+    def test_compile_options_reach_the_compiler(self, tmp_dir: str) -> None:
+        """Compiler flags from the frontmatter must reach the compiler with quoting intact.
+
+        The source file fails to compile unless each flag style (plain flag,
+        simple define, string define with a space) arrives exactly as written.
+        """
+        src = os.path.join(tmp_dir, 'flags.c')
+        with open(src, 'w') as f:
+            f.write(
+                '/*\n'
+                ' idf-build-file:\n'
+                '   config:\n'
+                '     - CONFIG_IDF_TARGET=esp32\n'
+                '   compile_options:\n'
+                '     - -Wall\n'
+                '     - -DANSWER=42\n'
+                '     - \'-DGREETING="hello world"\'\n'
+                ' */\n'
+                '#include <stdio.h>\n'
+                '#ifndef ANSWER\n'
+                '#error "ANSWER not defined"\n'
+                '#endif\n'
+                '#if ANSWER != 42\n'
+                '#error "ANSWER has wrong value"\n'
+                '#endif\n'
+                '/* Fails unless GREETING expands to the string literal "hello world" */\n'
+                '_Static_assert(sizeof(GREETING) == sizeof("hello world"), "GREETING has wrong value");\n'
+                'void app_main(void) { printf("%s %d\\n", GREETING, ANSWER); }\n'
+            )
+
+        result, output, container_dir = self._run_build_file(src)
+        assert result.returncode == 0, f'build with compile_options failed:\n{output}'
+        assert container_dir, f'container project dir not found in output:\n{output}'
+        with open(os.path.join(container_dir, 'main', 'CMakeLists.txt')) as f:
+            assert 'target_compile_options' in f.read()
 
     def test_config_change_takes_effect_on_rebuild(self, tmp_dir: str) -> None:
         """Changing an sdkconfig option in the frontmatter must be applied on rebuild."""

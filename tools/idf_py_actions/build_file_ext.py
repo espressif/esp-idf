@@ -106,6 +106,16 @@ def _is_bool_or_number(value: str) -> bool:
         return False
 
 
+def _cmake_quote(value: str) -> str:
+    """Quote a string as a CMake quoted argument.
+
+    Backslashes and double quotes are escaped so that the option reaches the
+    compiler exactly as written in the frontmatter, e.g. -DMSG="hello world".
+    """
+    escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+    return f'"{escaped}"'
+
+
 def _classify_dependencies(dependencies: list) -> tuple[list[str], dict[str, Any]]:
     """Split dependencies into built-in components and managed components.
 
@@ -224,6 +234,15 @@ def _generate_container_project(source_file: str, frontmatter: dict, container_d
         f'idf_component_register(SRCS "{source_basename}"\n'
         f'                    INCLUDE_DIRS "."{requires_clause})\n'
     )
+
+    # Extra compiler options from the frontmatter
+    compile_options = frontmatter.get('compile_options', [])
+    if not isinstance(compile_options, list) or not all(isinstance(opt, str) for opt in compile_options):
+        raise FatalError(f'compile_options in {source_file} frontmatter must be a list of strings')
+    if compile_options:
+        quoted_options = ' '.join(_cmake_quote(opt) for opt in compile_options)
+        main_cmake += f'target_compile_options(${{COMPONENT_LIB}} PRIVATE {quoted_options})\n'
+
     _write_if_changed(os.path.join(main_dir, 'CMakeLists.txt'), main_cmake)
 
     # sdkconfig.defaults
@@ -331,7 +350,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'Build a standalone C source file without requiring a full ESP-IDF project structure. '
                     'The source file may contain an optional YAML frontmatter in a block comment '
                     'starting with "idf-build-file:" to specify sdkconfig options, component dependencies, '
-                    'and other settings.\n\n'
+                    'compiler options, and other settings.\n\n'
                     'A container project is automatically created and cached. Subsequent builds of the '
                     'same file reuse the container project for fast incremental builds.\n\n'
                     'This command is composable with other idf.py commands. For example:\n'
