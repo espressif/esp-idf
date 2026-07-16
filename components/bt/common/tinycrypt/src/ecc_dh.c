@@ -147,11 +147,9 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	uECC_word_t _private[NUM_ECC_WORDS];
 
 	uECC_word_t tmp[NUM_ECC_WORDS];
-#if !SOC_ECC_SUPPORTED || SOC_ESP_NIMBLE_CONTROLLER
 	uECC_word_t *p2[2] = {_private, tmp};
 	uECC_word_t *initial_Z = 0;
 	uECC_word_t carry;
-#endif
 	wordcount_t num_words = curve->num_words;
 	wordcount_t num_bytes = curve->num_bytes;
 	int r;
@@ -167,11 +165,11 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 			       public_key + num_bytes,
 			       num_bytes);
 
-#if SOC_ECC_SUPPORTED && !SOC_ESP_NIMBLE_CONTROLLER
-	EccPoint_mult(_public, _public, _private, 0, curve->num_n_bits, curve);
-#else
-	/* Regularize the bitcount for the private key so that attackers cannot use a
-	 * side channel attack to learn the number of leading zeros. */
+	/*
+	 * Use the software ladder for ECDH.  Its regularized scalar is unsuitable
+	 * for the ECC peripheral, and EccPoint_mult() can otherwise silently fall
+	 * back to the software ladder with an unregularized scalar.
+	 */
 	carry = regularize_k(_private, _private, tmp, curve);
 
 	/* If an RNG function was specified, try to get a random initial Z value to
@@ -187,17 +185,14 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 
 	EccPoint_mult(_public, _public, p2[!carry], initial_Z, curve->num_n_bits + 1,
 		      curve);
-#endif
 
 	uECC_vli_nativeToBytes(secret, num_bytes, _public);
 	r = !EccPoint_isZero(_public, curve);
 
 clear_and_out:
 	/* erasing temporary buffer used to store secret: */
-#if !SOC_ECC_SUPPORTED || SOC_ESP_NIMBLE_CONTROLLER
 	memset(p2, 0, sizeof(p2));
 	__asm__ __volatile__("" :: "g"(p2) : "memory");
-#endif
 	memset(_public, 0, sizeof(_public));
 	__asm__ __volatile__("" :: "g"(_public) : "memory");
 	memset(tmp, 0, sizeof(tmp));
