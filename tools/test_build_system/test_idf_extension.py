@@ -17,6 +17,7 @@ import yaml
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import find_python
+from test_build_system_helpers import normalize_output
 from test_build_system_helpers import replace_in_file
 from test_build_system_helpers import run_idf_py
 
@@ -189,7 +190,7 @@ def test_extension_from_component(idf_py: IdfPyFunc, test_app_copy: Path) -> Non
     idf_py('reconfigure')
     ret = idf_py('--help')
     assert 'test-component-action' in ret.stdout
-    expected_info = f'INFO: Loaded component extension from "{os.path.join("components", "test_component")}"'
+    expected_info = f'Loaded component extension from "{os.path.join("components", "test_component")}"'
     assert expected_info in ret.stdout
     ret = idf_py('test-component-action')
     assert 'Test extension action executed - component extension' in ret.stdout
@@ -212,7 +213,7 @@ def test_extension_from_component_invalid_syntax(idf_py: IdfPyFunc, test_app_cop
     idf_ext_py = component_dir / 'idf_ext.py'
     idf_ext_py.write_text('def some_function()  # no ":" at the end - INVALID SYNTAX')
     ret = idf_py('--help')
-    assert 'Warning: Failed to import extension' in ret.stderr
+    assert 'Failed to import extension' in ret.stderr
 
     idf_ext_py.write_text(
         textwrap.dedent("""
@@ -221,7 +222,7 @@ def test_extension_from_component_invalid_syntax(idf_py: IdfPyFunc, test_app_cop
     """)
     )
     ret = idf_py('--help')
-    assert "has no attribute 'action_extensions'" in ret.stderr
+    assert "has no attribute 'action_extensions'" in normalize_output(ret.stderr)
 
     idf_ext_py.write_text(
         textwrap.dedent(
@@ -241,7 +242,7 @@ def test_extension_from_component_invalid_syntax(idf_py: IdfPyFunc, test_app_cop
         '\n',
     )
     ret = idf_py('--help')
-    assert 'Attribute "version" is required in custom extension.' in ret.stderr
+    assert 'Attribute "version" is required in custom extension.' in normalize_output(ret.stderr)
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -329,6 +330,7 @@ def test_extension_entrypoint_declarative_value_duplicate(
     ret = idf_py('--help')
     assert action1_name not in ret.stdout
     assert action2_name not in ret.stdout
+
     assert 'name collision detected for - duplicate_test_ext:action_extensions' in ret.stderr
     assert entry_point1_name in ret.stderr
     assert entry_point2_name in ret.stderr
@@ -353,10 +355,10 @@ def test_extension_entrypoint_default_declarative_value(
     )
 
     ret = idf_py('--help')
-    assert f'Entry point "{entry_point_name}" has declarative value "idf_ext:action_extensions"' in ret.stderr
+    stderr = normalize_output(ret.stderr)
+    assert f'Entry point "{entry_point_name}" has declarative value "idf_ext:action_extensions"' in stderr
     assert (
-        'For external components, it is recommended to use name like <<COMPONENT_NAME>>_ext:action_extensions'
-        in ret.stderr
+        'For external components, it is recommended to use name like <<COMPONENT_NAME>>_ext:action_extensions' in stderr
     )
 
 
@@ -374,8 +376,9 @@ def test_extension_entrypoint_non_existing_module(
     )
 
     ret = idf_py('--help')
-    assert f'Failed to load entry point extension "{entry_point_name}"' in ret.stderr
-    assert "No module named 'non_existing_module'" in ret.stderr
+    stderr = ret.stderr
+    assert f'Failed to load entry point extension "{entry_point_name}"' in stderr
+    assert "No module named 'non_existing_module'" in stderr
 
 
 @pytest.mark.usefixtures('test_app_copy')
@@ -406,13 +409,12 @@ def test_extension_entrypoint_conflicting_names(
     )
 
     ret = idf_py('--help')
-    assert "Action 'bootloader' already defined. External action will not be added." in ret.stderr
+    stderr = ret.stderr
+    assert "Action 'bootloader' already defined. External action will not be added." in stderr
     assert 'This action conflicts with built-in action' not in ret.stdout
-    assert (
-        "Action 'my-custom-action' has aliases ['clean'] that conflict with existing actions or aliases" in ret.stderr
-    )
+    assert "Action 'my-custom-action' has aliases ['clean'] that conflict with existing actions or aliases" in stderr
     assert 'Custom action with conflicting aliases' not in ret.stdout
-    assert "Global option ['--project-dir'] already defined. External option will not be added." in ret.stderr
+    assert "Global option ['--project-dir'] already defined. External option will not be added." in stderr
     assert 'This global option conflicts with existing one' not in ret.stdout
 
 

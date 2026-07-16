@@ -16,6 +16,8 @@ from urllib.request import urlopen
 from webbrowser import open_new_tab
 
 import rich_click as click
+from esp_pylib.logger import log
+from rich.markup import escape
 from rich_click import Context
 
 from idf_py_actions.constants import GENERATORS
@@ -33,7 +35,6 @@ from idf_py_actions.tools import get_target
 from idf_py_actions.tools import idf_version
 from idf_py_actions.tools import merge_action_lists
 from idf_py_actions.tools import run_target
-from idf_py_actions.tools import yellow_print
 
 # If a CMake preset with this name exists, it will be used by default when no '--preset' argument is given.
 DEFAULT_CMAKE_PRESET_NAME = 'default'
@@ -56,8 +57,8 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
         """
         ensure_build_directory(args, ctx.info_name)
         if buffer_size < 2048:
-            yellow_print(
-                f'WARNING: The specified buffer size {buffer_size} KB is less than the '
+            log.warn(
+                f'The specified buffer size {buffer_size} KB is less than the '
                 'recommended minimum of 2048 KB for idf.py confserver. Consider increasing it to at least 2048 KB '
                 'by setting environment variable IDF_CONFSERVER_BUFFER_SIZE=<buffer size in KB> or by calling '
                 'idf.py confserver --buffer-size <buffer size in KB>.'
@@ -99,7 +100,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
             for hint in generate_hints(stdout, stderr):
-                yellow_print(hint)
+                log.hint(escape(hint))
 
         env: dict[str, Any] = {}
 
@@ -135,7 +136,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         proj_desc = get_build_context().get('proj_desc') or {}
         if proj_desc.get('target') == 'linux':
-            print("Note: 'idf.py size' is not supported for the 'linux' target; skipping size analysis.")
+            log.note("'idf.py size' is not supported for the 'linux' target; skipping size analysis.")
             return
 
         run_target(target_name, args, env=env)
@@ -154,7 +155,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         # Compatibility with legacy names
         if style in ['aquatic', 'monochrome', 'default']:
-            print('NOTE: Legacy menuconfig styles are deprecated. Using dark style instead.')
+            log.note('Legacy menuconfig styles are deprecated. Using dark style instead.')
             style = 'textual-dark'
 
         if style:
@@ -323,7 +324,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
             except FatalError as err:
                 raise err
             except Exception as err:
-                yellow_print(f'Failed to load CMake presets from {cmakepresets_file_name}, {str(err)}')
+                log.warn(escape(f'Failed to load CMake presets from {cmakepresets_file_name}, {str(err)}'))
 
         if not config_presets_info:
             if preset_name:
@@ -334,13 +335,11 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         # Determine which preset to use
         if not preset_name and DEFAULT_CMAKE_PRESET_NAME in preset_names:
-            yellow_print(
-                f"CMake presets file found but no preset name given; using '{DEFAULT_CMAKE_PRESET_NAME}' preset"
-            )
+            log.note(f"CMake presets file found but no preset name given; using '{DEFAULT_CMAKE_PRESET_NAME}' preset")
             preset_name = DEFAULT_CMAKE_PRESET_NAME
         elif not preset_name:
             preset_name = preset_names[0]
-            yellow_print(f"CMake presets file found but no preset name given; using first preset: '{preset_name}'")
+            log.note(escape(f"CMake presets file found but no preset name given; using first preset: '{preset_name}'"))
         elif preset_name not in preset_names:
             raise FatalError(f"No preset '{preset_name}' found in CMake presets")
 
@@ -348,7 +347,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
 
         if selected_preset_info:
             if selected_preset_info.get('inherits'):
-                yellow_print(f"Preset '{preset_name}' uses inheritance, which is not yet supported.")
+                log.warn(escape(f"Preset '{preset_name}' uses inheritance, which is not yet supported."))
 
             # Set build directory from preset
             binary_dir = selected_preset_info.get('binaryDir')
@@ -357,7 +356,7 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                     binary_dir = os.path.join(args.project_dir, binary_dir)
                 args.build_dir = binary_dir
             elif not binary_dir and not args.build_dir:
-                yellow_print(f'Warning: preset {preset_name} does not specify the build directory ("binaryDir")')
+                log.warn(escape(f'preset {preset_name} does not specify the build directory ("binaryDir")'))
 
             # Set generator from preset if specified
             generator = selected_preset_info.get('generator', None)

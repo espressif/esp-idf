@@ -6,3 +6,4 @@
 # https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/idf-tools.html
 
 esp-idf-monitor[ide]
+esp-pylib[ide]

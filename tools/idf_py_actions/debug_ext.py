@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -12,6 +12,8 @@ from threading import Thread
 from typing import Any
 
 from esp_coredump import CoreDump
+from esp_pylib.logger import log
+from rich.markup import escape
 from rich_click import INT
 from rich_click import Context
 
@@ -23,7 +25,6 @@ from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import generate_hints
 from idf_py_actions.tools import get_default_serial_port
 from idf_py_actions.tools import get_sdkconfig_value
-from idf_py_actions.tools import yellow_print
 
 
 def chip_rev_to_int(chip_rev: str | None) -> int | None:
@@ -48,13 +49,11 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         if not processes['allow_hints']:
             return
 
+        # Redirect hints to stderr so stdout stays clean for the gdb console.
+        log.set_info_stream(sys.stderr)
+        sys.stdout.flush()
         for hint in generate_hints(file_name):
-            if sys.stderr.isatty():
-                yellow_print(hint)
-            else:
-                # Hints go to stderr. Flush stdout, so hints are printed last.
-                sys.stdout.flush()
-                print(hint, file=sys.stderr)
+            log.hint(escape(hint))
 
     def _check_openocd_errors(fail_if_openocd_failed: dict, target: str, ctx: Context) -> None:
         if fail_if_openocd_failed:
@@ -139,11 +138,10 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             #  The format will be determined automatically
             args.port = args.port or get_default_serial_port()
         else:
-            print(
+            log.die(
                 'Path to core dump file is not provided. '
                 "Core dump can't be read from flash since this option is not enabled in menuconfig"
             )
-            sys.exit(1)
 
         espcoredump_kwargs['port'] = args.port
         espcoredump_kwargs['parttable_off'] = get_sdkconfig_value(
@@ -320,7 +318,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             pass
 
         if not subprocess_success or completed_process.returncode != 0:
-            raise SystemExit(
+            log.die(
                 'Error occurred while starting gdbgui. Please make sure gdbgui has been installed with '
                 'pipx based on https://www.gdbgui.com/installation/ and "gdbgui --version" can be run '
                 'successfully. Gdbgui issues can be reported at https://github.com/cs01/gdbgui/issues.'
@@ -328,7 +326,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
         v = re.search(r'(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?', captured_output)
         if not v:
-            raise SystemExit(f'Error: "gdbgui --version" returned "{captured_output}"')
+            log.die(escape(f'"gdbgui --version" returned "{captured_output}"'))
         return tuple(int(i) if i else 0 for i in (v[1], v[2], v[3], v[4]))
 
     def gdbui(

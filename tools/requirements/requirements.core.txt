@@ -14,6 +14,7 @@ pyparsing
 pyelftools
 idf-component-manager>=2.2
 esp-coredump
+esp-pylib[cli]
 esptool
 esp-idf-kconfig
 esp-idf-monitor
@@ -22,11 +23,9 @@ esp-idf-size
 esp-idf-diag
 esp-idf-panic-decoder
 esp-idf-sbom
-esp-pylib[cli,ide]
 pyclang
 construct
 rich
-esp-pylib[cli]
 psutil
 
 # ble's compressed log testing tool

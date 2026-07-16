@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+from esp_pylib.logger import log
 from rich_click import Context
 
 from idf_py_actions.errors import FatalError
@@ -8,7 +9,6 @@ from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import get_sdkconfig_filename
 from idf_py_actions.tools import get_sdkconfig_value
-from idf_py_actions.tools import red_print
 from idf_py_actions.tools import run_target
 
 SOC_USB_DFU_SUPPORTED = 'CONFIG_SOC_USB_DFU_SUPPORTED'
@@ -21,7 +21,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             return True
 
         target = get_sdkconfig_value(sdkconfig_path, 'CONFIG_IDF_TARGET') or 'unknown'
-        red_print(f'DFU is not supported for this target: {target}')
+        log.err(f'DFU is not supported for this target: {target}')
         return False
 
     def dfu_target(target_name: str, ctx: Context, args: PropertyDict, part_size: str) -> None:

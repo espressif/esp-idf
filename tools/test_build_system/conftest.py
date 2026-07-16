@@ -322,6 +322,29 @@ def idf_copy(func_work_dir: Path, request: FixtureRequest) -> typing.Generator[P
             shutil.rmtree(path_to, ignore_errors=True)
 
 
+@pytest.fixture(autouse=True, scope='session')
+def idf_py_terminal_env() -> typing.Generator[None, None, None]:
+    """Set terminal env so idf.py subprocesses produce consistent output.
+
+    COLUMNS=200 raises Rich's non-TTY default of 80, preventing most line wrapping.
+    Messages with long file paths can still exceed 200 characters; use
+    normalize_output() for assertions on those.
+    """
+    keys = ('COLUMNS', 'LINES', 'NO_COLOR', 'FORCE_COLOR', 'PY_COLORS', 'TERM')
+    saved = {k: os.environ.get(k) for k in keys}
+    os.environ['COLUMNS'] = '200'
+    os.environ['LINES'] = '40'
+    os.environ['NO_COLOR'] = '1'
+    for k in ('FORCE_COLOR', 'PY_COLORS'):
+        os.environ.pop(k, None)
+    yield
+    for k, v in saved.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
+
+
 @pytest.fixture(name='default_idf_env')
 def fixture_default_idf_env() -> EnvDict:
     return get_idf_build_env(os.environ['IDF_PATH'])  # type: ignore
