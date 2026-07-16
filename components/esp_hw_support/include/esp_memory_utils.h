@@ -421,7 +421,10 @@ inline static bool esp_stack_ptr_is_sane(uint32_t sp)
         || esp_stack_ptr_in_extram(sp)
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-        || esp_ptr_in_rtc_dram_fast((void*) sp)
+        || (esp_ptr_in_rtc_dram_fast((void *)sp) && ((sp & 0xF) == 0))
+#endif
+#if SOC_MEM_SPM_SUPPORTED
+        || (esp_ptr_in_spm((void *)sp) && ((sp & 0xF) == 0))
 #endif
         ;
 }
