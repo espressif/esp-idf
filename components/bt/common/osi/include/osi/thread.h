@@ -37,9 +37,10 @@ typedef enum {
  * param priority: thread priority
  * param core: the CPU core which this thread run, OSI_THREAD_CORE_AFFINITY means unspecific CPU core
  * param work_queue_num: specify queue number, the queue[0] has highest priority, and the priority is decrease by index
+ * param in_psram: place the task in PSRAM
  * return : if create successfully, return thread handler; otherwise return NULL.
  */
-osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[]);
+osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[], bool in_psram);
 
 /*
  * brief: Destroy a thread or task

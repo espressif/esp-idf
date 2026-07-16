@@ -557,7 +557,7 @@ bt_status_t btc_init(void)
     }
 
     btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE,
-                                   BTC_TASK_WORKQUEUE_NUM, workqueue_len);
+                                   BTC_TASK_WORKQUEUE_NUM, workqueue_len, false);
     if (btc_thread == NULL) {
         osi_thread_event_deinit();
         return BT_STATUS_NOMEM;
