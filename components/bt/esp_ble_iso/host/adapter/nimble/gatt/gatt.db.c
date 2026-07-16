@@ -104,7 +104,7 @@ struct gattc_db_dsc {
     sys_snode_t node;
 };
 
-static struct gattc_db {
+static BT_ISO_EXT_RAM_BSS_ATTR struct gattc_db {
     uint16_t conn_handle;
     enum {
         DISC_IDLE = 0,
@@ -113,12 +113,7 @@ static struct gattc_db {
         DISC_FAIL,
     } status;
     sys_slist_t svc_list;       /* List of the GATT server database of the connection */
-} gattc_db[CONFIG_BT_MAX_CONN] = {
-    [0 ...(CONFIG_BT_MAX_CONN - 1)] = {
-        .conn_handle = UINT16_MAX,
-        .status = DISC_IDLE,
-    },
-};
+} gattc_db[CONFIG_BT_MAX_CONN];
 
 static struct gattc_db *gattc_db_add(uint16_t conn_handle)
 {
@@ -186,7 +181,7 @@ static void gattc_db_svc_insert(struct gattc_db *adb, const struct ble_gatt_svc 
 {
     struct gattc_db_svc *asvc;
 
-    asvc = calloc(1, sizeof(*asvc));
+    asvc = bt_le_ext_calloc(1, sizeof(*asvc));
     assert(asvc);
 
     memcpy(&asvc->svc, svc, sizeof(asvc->svc));
@@ -202,7 +197,7 @@ static void gattc_db_inc_svc_insert(struct gattc_db_svc *asvc, const struct ble_
 {
     struct gattc_db_inc_svc *ainc_svc;
 
-    ainc_svc = calloc(1, sizeof(*ainc_svc));
+    ainc_svc = bt_le_ext_calloc(1, sizeof(*ainc_svc));
     assert(ainc_svc);
 
     memcpy(&ainc_svc->svc, inc_svc, sizeof(ainc_svc->svc));
@@ -224,7 +219,7 @@ static void gattc_db_chrc_insert(sys_slist_t *chrc_list, const struct ble_gatt_c
 {
     struct gattc_db_chrc *achrc;
 
-    achrc = calloc(1, sizeof(*achrc));
+    achrc = bt_le_ext_calloc(1, sizeof(*achrc));
     assert(achrc);
 
     memcpy(&achrc->chrc, chrc, sizeof(achrc->chrc));
@@ -1474,4 +1469,26 @@ void bt_le_nimble_gattc_db_remove(uint16_t conn_handle)
     }
 
     gattc_db_del(adb);
+}
+
+/* Runtime init (not static): the array is .bss (PSRAM-eligible), so a
+ * deinit/init cycle must restart with every slot free. conn_handle 0 is a
+ * valid handle, so the free marker is UINT16_MAX. */
+void bt_le_nimble_gattc_db_init(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(gattc_db); i++) {
+        gattc_db[i].conn_handle = UINT16_MAX;
+        gattc_db[i].status = DISC_IDLE;
+        sys_slist_init(&gattc_db[i].svc_list);
+    }
+}
+
+/* Free each slot's discovery nodes on deinit so an init/deinit/re-init cycle stays
+ * leak-free (mirrors the Bluedroid bt_le_bluedroid_gatt_deinit). gattc_db_del is a
+ * safe no-op on an already-free slot. */
+void bt_le_nimble_gattc_db_deinit(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(gattc_db); i++) {
+        gattc_db_del(&gattc_db[i]);
+    }
 }

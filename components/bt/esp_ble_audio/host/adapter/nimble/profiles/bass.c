@@ -26,6 +26,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -34,8 +35,8 @@ LOG_MODULE_REGISTER(LEA_BASS, CONFIG_BT_ISO_LOG_LEVEL);
 static const ble_uuid16_t bass_uuid_control_point = BLE_UUID16_INIT(BT_UUID_BASS_CONTROL_POINT_VAL);
 static const ble_uuid16_t bass_uuid_recv_state = BLE_UUID16_INIT(BT_UUID_BASS_RECV_STATE_VAL);
 
-static uint16_t bass_control_point_handle;
-static uint16_t bass_recv_state_handle[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t bass_control_point_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t bass_recv_state_handle[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 
 static struct ble_gatt_svc_def gatt_svc_bass[] = {
     {
@@ -179,7 +180,7 @@ int bt_le_nimble_bass_init(void)
 
     LOG_DBG("[N]BassInit[%u]", chr_count);
 
-    gatt_svc_bass->characteristics = calloc(chr_count, sizeof(struct ble_gatt_chr_def));
+    gatt_svc_bass->characteristics = bt_le_ext_calloc(chr_count, sizeof(struct ble_gatt_chr_def));
     assert(gatt_svc_bass->characteristics);
 
     bass_svc_add_control_point_chr((void *)(gatt_svc_bass->characteristics + 0));

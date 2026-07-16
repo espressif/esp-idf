@@ -23,14 +23,15 @@
 #include "bluedroid/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 LOG_MODULE_REGISTER(LEA_GSRV, CONFIG_BT_ISO_LOG_LEVEL);
 
-static uint8_t svc_in_progress;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t svc_in_progress;
 
-static uint16_t inc_svc_handle;
-static uint16_t svc_handle;
-static uint16_t chrc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t inc_svc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t svc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t chrc_handle;
 
 static bool is_primary_svc(void)
 {
@@ -413,12 +414,12 @@ static uint8_t get_svc_inst_id(uint16_t svc_uuid)
      * For LE Audio, some service could have multiple instances.
      */
 
-    static uint8_t aics_count;
-    static uint8_t csis_count;
-    static uint8_t vocs_count;
-    static uint8_t mcs_count;
-    static uint8_t ots_count;
-    static uint8_t tbs_count;
+    static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t aics_count;
+    static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_count;
+    static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t vocs_count;
+    static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t mcs_count;
+    static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t ots_count;
+    static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t tbs_count;
 
     switch (svc_uuid) {
     case BT_UUID_AICS_VAL:

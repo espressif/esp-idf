@@ -28,6 +28,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -75,7 +76,7 @@ static const ble_uuid16_t csis_uuid_set_lock = BLE_UUID16_INIT(BT_UUID_CSIS_SET_
 static const ble_uuid16_t csis_uuid_rank = BLE_UUID16_INIT(BT_UUID_CSIS_RANK_VAL);
 static const ble_uuid16_t csis_uuid_set_name = BLE_UUID16_INIT(BT_UUID_CSIS_SET_NAME_VAL);
 
-static struct csis_inst {
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct csis_inst {
     struct bt_gatt_service *svc_p;
     uint16_t sirk_handle;
     uint16_t set_size_handle;
@@ -84,10 +85,10 @@ static struct csis_inst {
     uint16_t set_name_handle;
 } csis_insts[CSIS_SVC_COUNT];
 
-static uint8_t csis_svc_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_svc_count;
 
 /* Extra one for terminating the CSIS service array */
-static struct ble_gatt_svc_def gatt_svc_csis[CSIS_SVC_COUNT + 1];
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def gatt_svc_csis[CSIS_SVC_COUNT + 1];
 
 struct ble_gatt_svc_def *cas_get_included_csis(void *csis_svc_p)
 {
@@ -244,7 +245,7 @@ static void csis_svc_init(struct csis_inst *inst,
     svc->uuid = &csis_uuid_svc.u;
     svc->includes = NULL;
 
-    svc->characteristics = calloc(CSIS_CHR_COUNT, sizeof(struct ble_gatt_chr_def));
+    svc->characteristics = bt_le_ext_calloc(CSIS_CHR_COUNT, sizeof(struct ble_gatt_chr_def));
     assert(svc->characteristics);
 
     /* Build the NimBLE characteristics from the ones actually present in the Zephyr

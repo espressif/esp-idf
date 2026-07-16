@@ -25,7 +25,7 @@
 
 LOG_MODULE_REGISTER(ISO_SCAN, CONFIG_BT_ISO_LOG_LEVEL);
 
-static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t scan_cbs;
 
 _LIB_ONLY
 int bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
@@ -146,9 +146,9 @@ void bt_le_scan_recv_listener(uint16_t event_type,
     }
 }
 
-static struct bt_le_per_adv_sync per_adv_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
+static BT_ISO_EXT_RAM_BSS_ATTR struct bt_le_per_adv_sync per_adv_sync_pool[CONFIG_BT_PER_ADV_SYNC_MAX];
 
-static sys_slist_t pa_sync_cbs = SYS_SLIST_STATIC_INIT(&pa_sync_cbs);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t pa_sync_cbs;
 
 _LIB_ONLY
 int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)

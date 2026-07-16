@@ -43,15 +43,15 @@ LOG_MODULE_REGISTER(ISO_BHCI, CONFIG_BT_ISO_LOG_LEVEL);
  *
  * Concurrent safety: send_sync is serialized by callers via bt_le_host_lock,
  * so the static rsp_buf pointer / opcode latch are single-slot. */
-static struct k_sem direct_hci_sem;
+static BT_ISO_CTRL_BSS_ATTR struct k_sem direct_hci_sem;
 
 /* Set by deinit before deleting the sem. Late-arriving cb's must check
  * this before touching the sem. Residual race exists (cb past the check
  * but pre-give vs. deinit completing the delete) — accepted in practice
  * because the BTU/HCI layer offers no way to cancel an in-flight cmd. */
-static volatile bool direct_hci_shutting_down;
+static BT_ISO_EXT_RAM_BSS_ATTR volatile bool direct_hci_shutting_down;
 
-static struct {
+static BT_ISO_EXT_RAM_BSS_ATTR struct {
     uint16_t opcode;   /* expected — set by caller, verified by cb */
     uint8_t  status;   /* HCI status from Command_Complete */
 } direct_hci_rsp;
@@ -64,8 +64,8 @@ static struct {
  * teardown race. Sized for the largest payload any direct-HCI caller reads
  * back (SET_CIG: 2 + 2*cis_count, ISO_READ_TX_SYNC: 11). */
 #define DIRECT_HCI_RSP_MAX  MAX(2 + 2 * CONFIG_BT_ISO_MAX_CHAN, 11)
-static uint8_t direct_hci_rsp_data[DIRECT_HCI_RSP_MAX];
-static uint8_t direct_hci_rsp_data_len;
+static BT_ISO_EXT_RAM_BSS_ATTR uint8_t direct_hci_rsp_data[DIRECT_HCI_RSP_MAX];
+static BT_ISO_EXT_RAM_BSS_ATTR uint8_t direct_hci_rsp_data_len;
 
 static void direct_hci_complete_cb(BT_HDR *response, void *context)
 {

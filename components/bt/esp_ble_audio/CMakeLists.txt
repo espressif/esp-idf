@@ -11,6 +11,7 @@ endfunction()
 
 set(ble_audio_srcs "" PARENT_SCOPE)
 set(ble_audio_include_dirs "" PARENT_SCOPE)
+set(ble_audio_ldscripts "" PARENT_SCOPE)
 
 # API headers that are used in the docs are also compiled
 # even if CONFIG_BT_ENABLED=n as long as CONFIG_IDF_DOC_BUILD=y
@@ -176,3 +177,4 @@ endif()
 # Export the variables to the parent scope
 set(ble_audio_srcs "${ble_audio_srcs}" PARENT_SCOPE)
 set(ble_audio_include_dirs "${ble_audio_include_dirs}" PARENT_SCOPE)
+set(ble_audio_ldscripts "${CMAKE_CURRENT_LIST_DIR}/linker.lf" PARENT_SCOPE)

@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(ISO_L2CAP, CONFIG_BT_ISO_LOG_LEVEL);
 #define L2CAP_LE_PSM_DYN_END            0x00FF
 #define L2CAP_LE_PSM_IS_DYN(_psm)       (_psm >= L2CAP_LE_PSM_DYN_START && _psm <= L2CAP_LE_PSM_DYN_END)
 
-static sys_slist_t l2cap_servers = SYS_SLIST_STATIC_INIT(&l2cap_servers);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t l2cap_servers;
 
 static struct bt_l2cap_chan *l2cap_lookup_tx_cid(struct bt_conn *conn, uint16_t cid)
 {

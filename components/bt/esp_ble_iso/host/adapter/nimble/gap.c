@@ -82,7 +82,7 @@ void bt_le_nimble_gap_post_event(void *param)
     enum iso_queue_item_type q_type;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     memset(&desc, 0, sizeof(desc));
@@ -116,7 +116,7 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->ext_scan_recv.data_len = ev->ext_disc.length_data;
 
         if (qev->ext_scan_recv.data_len) {
-            qev->ext_scan_recv.data = calloc(1, qev->ext_scan_recv.data_len);
+            qev->ext_scan_recv.data = bt_le_ext_calloc(1, qev->ext_scan_recv.data_len);
             assert(qev->ext_scan_recv.data);
 
             memcpy(qev->ext_scan_recv.data, ev->ext_disc.data, qev->ext_scan_recv.data_len);
@@ -171,7 +171,7 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->pa_sync_recv.data_len = ev->periodic_report.data_length;
 
         if (qev->pa_sync_recv.data_len) {
-            qev->pa_sync_recv.data = calloc(1, qev->pa_sync_recv.data_len);
+            qev->pa_sync_recv.data = bt_le_ext_calloc(1, qev->pa_sync_recv.data_len);
             assert(qev->pa_sync_recv.data);
 
             memcpy(qev->pa_sync_recv.data, ev->periodic_report.data, qev->pa_sync_recv.data_len);

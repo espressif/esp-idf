@@ -23,18 +23,18 @@
 
 LOG_MODULE_REGISTER(ISO_CONN, CONFIG_BT_ISO_LOG_LEVEL);
 
-static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
+static BT_ISO_EXT_RAM_BSS_ATTR struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 
 /* Per-ACL LTK backing store (indexed in lockstep with acl_conns[]). conn->le.keys is
  * a bare pointer the adapters fill after bonding; point it at the matching slot so the
  * lib's CSIS sirk_encrypt can read conn->le.keys->ltk.val. */
-static struct bt_keys conn_ltk[CONFIG_BT_MAX_CONN];
+static BT_ISO_EXT_RAM_BSS_ATTR struct bt_keys conn_ltk[CONFIG_BT_MAX_CONN];
 
 extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
-static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t conn_cbs;
 
-static sys_slist_t auth_info_cbs = SYS_SLIST_STATIC_INIT(&auth_info_cbs);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t auth_info_cbs;
 
 _IDF_ONLY
 void bt_conn_get_acl_conns(struct bt_conn **conns, uint8_t *count)
