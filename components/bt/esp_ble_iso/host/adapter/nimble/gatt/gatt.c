@@ -44,7 +44,7 @@ void bt_le_nimble_gatt_post_event(void *param)
         return;
     }
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     switch (ev->type) {
@@ -78,7 +78,7 @@ void bt_le_nimble_gatt_post_event(void *param)
             uint16_t total_len = OS_MBUF_PKTLEN(ev->notify_rx.om);
             qev->gattc_notify_rx.len = total_len;
 
-            qev->gattc_notify_rx.value = calloc(1, total_len);
+            qev->gattc_notify_rx.value = bt_le_ext_calloc(1, total_len);
             assert(qev->gattc_notify_rx.value);
 
             os_mbuf_copydata(ev->notify_rx.om, 0, total_len, qev->gattc_notify_rx.value);
@@ -128,7 +128,7 @@ int bt_le_nimble_gatt_post_disc_event(uint16_t conn_handle, ble_uuid16_t *uuid,
         return -EINVAL;
     }
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_DISCOVER_EVENT;
@@ -155,7 +155,7 @@ int bt_le_nimble_gatt_post_disc_cmpl_event(uint16_t conn_handle, uint8_t status)
 
     LOG_DBG("[N]GattcDiscCmplEvtHdlr[%u][%02x]", conn_handle, status);
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_DISC_CMPL_EVENT;

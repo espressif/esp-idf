@@ -26,6 +26,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -52,9 +53,9 @@ LOG_MODULE_REGISTER(LEA_MICS, CONFIG_BT_ISO_LOG_LEVEL);
     (BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_NO_RSP | \
      BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE_ENC)
 
-static uint8_t inc_aics_svc_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t inc_aics_svc_count;
 
-static struct inc_aics_inst {
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct inc_aics_inst {
     struct bt_gatt_service *svc_p;
     uint16_t state_handle;
     uint16_t gain_handle;
@@ -64,7 +65,7 @@ static struct inc_aics_inst {
     uint16_t description_handle;
 } *inc_aics_insts;
 
-static struct ble_gatt_svc_def *gatt_svc_inc_aics;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def *gatt_svc_inc_aics;
 
 static const ble_uuid16_t inc_aics_uuid_svc = BLE_UUID16_INIT(BT_UUID_AICS_VAL);
 static const ble_uuid16_t inc_aics_uuid_state = BLE_UUID16_INIT(BT_UUID_AICS_STATE_VAL);
@@ -74,9 +75,9 @@ static const ble_uuid16_t inc_aics_uuid_status = BLE_UUID16_INIT(BT_UUID_AICS_IN
 static const ble_uuid16_t inc_aics_uuid_control = BLE_UUID16_INIT(BT_UUID_AICS_CONTROL_VAL);
 static const ble_uuid16_t inc_aics_uuid_description = BLE_UUID16_INIT(BT_UUID_AICS_DESCRIPTION_VAL);
 
-static struct ble_gatt_svc_def **mics_inc_svcs;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def **mics_inc_svcs;
 
-static uint16_t mics_mute_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t mics_mute_handle;
 
 static struct ble_gatt_svc_def gatt_svc_mics[] = {
     {
@@ -305,7 +306,7 @@ static void inc_aics_svc_init(struct inc_aics_inst *inst,
     svc->uuid = &inc_aics_uuid_svc.u;
     svc->includes = NULL;
 
-    svc->characteristics = calloc(INC_AICS_CHR_COUNT, sizeof(struct ble_gatt_chr_def));
+    svc->characteristics = bt_le_ext_calloc(INC_AICS_CHR_COUNT, sizeof(struct ble_gatt_chr_def));
     assert(svc->characteristics);
 
     /* Characteristic - Audio Input State */
@@ -369,16 +370,16 @@ int bt_le_nimble_mics_init(void *micp_inc)
         /* Extra one for terminating the included service array with NULL */
         inc_count = inc_aics_svc_count + 1;
 
-        mics_inc_svcs = calloc(inc_count, sizeof(struct ble_gatt_svc_def *));
+        mics_inc_svcs = bt_le_ext_calloc(inc_count, sizeof(struct ble_gatt_svc_def *));
         assert(mics_inc_svcs);
 
         /* MICS may include zero or more instances of AICS */
         if (inc_aics_svc_count) {
-            inc_aics_insts = calloc(inc_aics_svc_count, sizeof(struct inc_aics_inst));
+            inc_aics_insts = bt_le_ext_calloc(inc_aics_svc_count, sizeof(struct inc_aics_inst));
             assert(inc_aics_insts);
 
             /* Extra one for terminating the AICS service array */
-            gatt_svc_inc_aics = calloc(inc_aics_svc_count + 1, sizeof(struct ble_gatt_svc_def));
+            gatt_svc_inc_aics = bt_le_ext_calloc(inc_aics_svc_count + 1, sizeof(struct ble_gatt_svc_def));
             assert(gatt_svc_inc_aics);
 
             for (size_t i = 0; i < inc_aics_svc_count; i++) {

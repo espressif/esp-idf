@@ -14,6 +14,9 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
+#include "utils/iso_attr.h"
+#include "utils/mem.h"
+
 #include "common/adv.h"
 #include "common/conn.h"
 #include "common/iso.h"

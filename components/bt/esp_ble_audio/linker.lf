@@ -1,0 +1,31 @@
+# BLE Audio external-RAM (.bss -> PSRAM) link-time placement.
+#
+# The bt_extram_bss scheme and bt_bss/bt_common sections referenced below are
+# defined in the component's linker_common.lf. ldgen merges all registered
+# fragments into one model, so the cross-file reference resolves.
+
+# Prebuilt archive: EXT_RAM_BSS_ATTR can't apply at its compile time, so move
+# its .bss to SPIRAM at link time instead.
+[mapping:ble_audio]
+archive: libble_audio.a
+entries:
+    if BT_AUDIO_BSS_SEG_EXTERNAL_MEMORY = y:
+        * (bt_extram_bss)
+
+# Move the OTS objects' .bss to SPIRAM at link time (their net_buf pools can't
+# take a per-var attr). Gates mirror CMakeLists so no entry names an object
+# that isn't built.
+[mapping:ble_audio_ots]
+archive: libbt.a
+entries:
+    if BT_AUDIO_BSS_SEG_EXTERNAL_MEMORY = y && (BT_OTS = y || BT_OTS_CLIENT = y):
+        ots_l2cap (bt_extram_bss)
+    if BT_AUDIO_BSS_SEG_EXTERNAL_MEMORY = y && BT_OTS = y:
+        ots (bt_extram_bss)
+        ots_oacp (bt_extram_bss)
+        ots_obj_manager (bt_extram_bss)
+        ots_olcp (bt_extram_bss)
+    if BT_AUDIO_BSS_SEG_EXTERNAL_MEMORY = y && BT_OTS = y && BT_OTS_DIR_LIST_OBJ = y:
+        ots_dir_list (bt_extram_bss)
+    if BT_AUDIO_BSS_SEG_EXTERNAL_MEMORY = y && BT_OTS_CLIENT = y:
+        ots_client (bt_extram_bss)

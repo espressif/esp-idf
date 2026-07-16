@@ -34,39 +34,29 @@ LOG_MODULE_REGISTER(ISO_BGAT, CONFIG_BT_ISO_LOG_LEVEL);
  * module that follows this pattern. */
 #define GATTS_APP_UUID_BYTE     0x98
 
-static const tBT_UUID gatts_app_uuid = {
-    .len = LEN_UUID_128,
-    .uu.uuid128 = {
-        [0 ... 15] = GATTS_APP_UUID_BYTE,
-    },
-};
-static tBTA_GATTS_IF gatts_if;
+static BT_ISO_EXT_RAM_BSS_ATTR tBT_UUID gatts_app_uuid;
+static BT_ISO_EXT_RAM_BSS_ATTR tBTA_GATTS_IF gatts_if;
 
 /* Use UUID with a fixed pattern 0x99 for ISO & LE Audio GATT Client */
 #define GATTC_APP_UUID_BYTE     0x99
 
-static tBT_UUID gattc_app_uuid = {
-    .len = LEN_UUID_128,
-    .uu.uuid128 = {
-        [0 ... 15] = GATTC_APP_UUID_BYTE,
-    },
-};
-static tBTA_GATTC_IF gattc_if;
+static BT_ISO_EXT_RAM_BSS_ATTR tBT_UUID gattc_app_uuid;
+static BT_ISO_EXT_RAM_BSS_ATTR tBTA_GATTC_IF gattc_if;
 
-static struct gatts_svc_cb *gatts_svc_cb;
+static BT_ISO_EXT_RAM_BSS_ATTR struct gatts_svc_cb *gatts_svc_cb;
 
-static struct gatt_conn gatt_conns[CONFIG_BT_MAX_CONN];
+static BT_ISO_EXT_RAM_BSS_ATTR struct gatt_conn gatt_conns[CONFIG_BT_MAX_CONN];
 
 /* Sems block bt_le_bluedroid_gatt_init() until the BTA app registrations
  * report back. gatts_sem is also reused by the audio adapter — only one
  * gatts_svc_cb is registered at a time, so sequential reuse is safe. */
-static struct k_sem gatts_sem;
-static struct k_sem gattc_sem;
+static BT_ISO_CTRL_BSS_ATTR struct k_sem gatts_sem;
+static BT_ISO_CTRL_BSS_ATTR struct k_sem gattc_sem;
 
 /* Set by deinit before deleting the sems so a late BTA_*_REG_EVT skips the
  * give on a deleted handle. Same accepted residual race as hci.c's
  * direct_hci_shutting_down; the init-timeout window is near-unreachable. */
-static volatile bool gatt_shutting_down;
+static BT_ISO_EXT_RAM_BSS_ATTR volatile bool gatt_shutting_down;
 
 enum {
     GATTC_OP_READ,
@@ -90,7 +80,7 @@ static struct gattc_list_node *gattc_list_node_alloc(uint8_t type, void *params)
 {
     struct gattc_list_node *op;
 
-    op = calloc(1, sizeof(*op));
+    op = bt_le_ext_calloc(1, sizeof(*op));
     if (op == NULL) {
         return NULL;
     }
@@ -180,7 +170,7 @@ static struct gatts_list_node *gatts_list_node_alloc(struct bt_gatt_indicate_par
 {
     struct gatts_list_node *n;
 
-    n = calloc(1, sizeof(*n));
+    n = bt_le_ext_calloc(1, sizeof(*n));
     if (n == NULL) {
         return NULL;
     }
@@ -193,7 +183,7 @@ static struct gatts_list_node *gatts_list_node_alloc(struct bt_gatt_indicate_par
     if (ip->len > 0) {
         assert(ip->data);
 
-        n->data_copy = malloc(ip->len);
+        n->data_copy = bt_le_ext_malloc(ip->len);
         if (n->data_copy == NULL) {
             free(n);
             return NULL;
@@ -444,7 +434,7 @@ static void gattc_connect_event_handler(tBTA_GATTC_CONNECT *connect)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_CONNECT_EVENT;
@@ -467,7 +457,7 @@ static void gattc_disconnect_event_handler(tBTA_GATTC_DISCONNECT *disconnect)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_DISCONNECT_EVENT;
@@ -487,7 +477,7 @@ static void gattc_open_event_handler(tBTA_GATTC_OPEN *open)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_OPEN_EVENT;
@@ -507,7 +497,7 @@ static void gattc_mtu_event_handler(tBTA_GATTC_CFG_MTU *cfg_mtu)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_MTU_EVENT;
@@ -528,7 +518,7 @@ static void gattc_disc_cmpl_event_handler(tBTA_GATTC_DIS_CMPL *disc_cmpl)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_DISC_CMPL_EVENT;
@@ -548,7 +538,7 @@ static void gattc_read_chrc_event_handler(tBTA_GATTC_READ *read)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_READ_CHRC_EVENT;
@@ -562,7 +552,7 @@ static void gattc_read_chrc_event_handler(tBTA_GATTC_READ *read)
             read->p_value->p_value) {
         qev->gattc_read_chrc.len = read->p_value->len;
 
-        qev->gattc_read_chrc.value = calloc(1, read->p_value->len);
+        qev->gattc_read_chrc.value = bt_le_ext_calloc(1, read->p_value->len);
         assert(qev->gattc_read_chrc.value);
 
         memcpy(qev->gattc_read_chrc.value, read->p_value->p_value, read->p_value->len);
@@ -583,7 +573,7 @@ static void gattc_write_chrc_event_handler(tBTA_GATTC_WRITE *write)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_WRITE_CHRC_EVENT;
@@ -605,7 +595,7 @@ static void gatts_notify_tx_event_handler(tBTA_GATTS_REQ *req)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_NOTIFY_TX_EVENT;
@@ -632,7 +622,7 @@ static void gattc_notify_rx_event_handler(tBTA_GATTC_NOTIFY *notify)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTC_NOTIFY_RX_EVENT;
@@ -644,7 +634,7 @@ static void gattc_notify_rx_event_handler(tBTA_GATTC_NOTIFY *notify)
     if (notify->len) {
         qev->gattc_notify_rx.len = notify->len;
 
-        qev->gattc_notify_rx.value = calloc(1, notify->len);
+        qev->gattc_notify_rx.value = bt_le_ext_calloc(1, notify->len);
         assert(qev->gattc_notify_rx.value);
 
         memcpy(qev->gattc_notify_rx.value, notify->value, notify->len);
@@ -665,7 +655,7 @@ static void gatts_connect_event_handler(tBTA_GATTS_CONN *connect)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_CONNECT_EVENT;
@@ -688,7 +678,7 @@ static void gatts_disconnect_event_handler(tBTA_GATTS_CONN *disconnect)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_DISCONNECT_EVENT;
@@ -709,7 +699,7 @@ static void gatts_mtu_event_handler(tBTA_GATTS_REQ *req)
     int err;
 
     /* req->p_data is non-NULL here: BTA always passes a stack object. */
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_MTU_EVENT;
@@ -729,7 +719,7 @@ static void gatts_read_req_handler(tBTA_GATTS_REQ *req)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_READ_EVENT;
@@ -755,7 +745,7 @@ static void gatts_write_req_handler(tBTA_GATTS_REQ *req)
     int err;
 
     /* req->p_data is non-NULL here: BTA always passes a stack object. */
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_WRITE_EVENT;
@@ -771,7 +761,7 @@ static void gatts_write_req_handler(tBTA_GATTS_REQ *req)
     if (req->p_data->write_req.len) {
         qev->gatts_write.len = req->p_data->write_req.len;
 
-        qev->gatts_write.value = calloc(1, req->p_data->write_req.len);
+        qev->gatts_write.value = bt_le_ext_calloc(1, req->p_data->write_req.len);
         assert(qev->gatts_write.value);
 
         memcpy(qev->gatts_write.value, req->p_data->write_req.value, req->p_data->write_req.len);
@@ -792,7 +782,7 @@ static void gatts_exec_write_req_handler(tBTA_GATTS_REQ *req)
     struct bt_le_gatt_event_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GATTS_EXEC_WRITE_EVENT;
@@ -1378,7 +1368,7 @@ static void post_acl_connect_app_event(struct gatt_conn *gatt_conn)
     struct bt_le_gap_app_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GAP_APP_PARAM_ACL_CONNECT;
@@ -1406,7 +1396,7 @@ static void post_acl_disconnect_app_event(uint16_t conn_handle, uint8_t reason)
     struct bt_le_gap_app_param *qev;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     qev->type = BT_LE_GAP_APP_PARAM_ACL_DISCONNECT;
@@ -1982,7 +1972,7 @@ static void handle_gatts_read_event(struct bt_le_gatts_read_event *event)
     /* The tBTA_GATT_STATUS structure is too large, hence use
      * dynamic memory here to avoid stack overflow.
      */
-    rsp = calloc(1, sizeof(*(rsp)));
+    rsp = bt_le_ext_calloc(1, sizeof(*(rsp)));
     assert(rsp);
 
     rsp->attr_value.handle = event->attr_handle;
@@ -2078,7 +2068,7 @@ static void handle_gatts_prepare_write(struct bt_le_gatts_write_event *event)
 
     if (status == BTA_GATT_OK) {
         /* The prepare-write response must echo handle/offset/value. */
-        rsp = calloc(1, sizeof(*rsp));
+        rsp = bt_le_ext_calloc(1, sizeof(*rsp));
         assert(rsp);
 
         rsp->attr_value.handle = event->attr_handle;
@@ -2553,7 +2543,7 @@ static int gatts_notify_enqueue(struct bt_conn *conn, uint16_t value_handle)
         return -ENOTCONN;
     }
 
-    n = calloc(1, sizeof(*n));
+    n = bt_le_ext_calloc(1, sizeof(*n));
     if (n == NULL) {
         LOG_ERR("[B]GattsNotifyNodeAllocFail[%u]", conn->handle);
         return -ENOMEM;
@@ -3357,6 +3347,13 @@ int bt_le_bluedroid_gatt_init(void)
      *   └─ btc_transfer_context   classic app cb hops to BTC task here
      */
 
+    /* Runtime init (not static) so the UUID is restored across a deinit/init
+     * cycle; static init runs only once at boot. */
+    gatts_app_uuid = (tBT_UUID){
+        .len = LEN_UUID_128,
+        .uu.uuid128 = { [0 ... 15] = GATTS_APP_UUID_BYTE },
+    };
+
     k_sem_reset(&gatts_sem);
     BTA_GATTS_AppRegister(&gatts_app_uuid, gatts_app_cb);
 
@@ -3364,6 +3361,11 @@ int bt_le_bluedroid_gatt_init(void)
         LOG_ERR("[B]GattsRegFail");
         return -1;
     }
+
+    gattc_app_uuid = (tBT_UUID){
+        .len = LEN_UUID_128,
+        .uu.uuid128 = { [0 ... 15] = GATTC_APP_UUID_BYTE },
+    };
 
     k_sem_reset(&gattc_sem);
     BTA_GATTC_AppRegister(&gattc_app_uuid, gattc_app_cb);

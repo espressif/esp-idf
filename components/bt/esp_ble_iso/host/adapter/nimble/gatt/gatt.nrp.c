@@ -79,15 +79,11 @@ struct gatt_nrp_node {
     sys_snode_t node;
 };
 
-static struct gatt_nrp {
+static BT_ISO_EXT_RAM_BSS_ATTR struct gatt_nrp {
     uint16_t conn_handle;
 
     sys_slist_t list;   /* List of GATT need response pdu (e.g., read req, write req, indication, etc.) */
-} gatt_nrp[CONFIG_BT_MAX_CONN] = {
-    [0 ...(CONFIG_BT_MAX_CONN - 1)] = {
-        .conn_handle = UINT16_MAX,
-    },
-};
+} gatt_nrp[CONFIG_BT_MAX_CONN];
 
 static struct gatt_nrp *gatt_nrp_find(uint16_t conn_handle);
 
@@ -738,7 +734,7 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
         return -ENOMEM;
     }
 
-    nrp_node = calloc(1, sizeof(*nrp_node));
+    nrp_node = bt_le_ext_calloc(1, sizeof(*nrp_node));
     assert(nrp_node);
 
     nrp_node->type = type;
@@ -760,7 +756,7 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
         nrp_node->write_req.data_copy = NULL;
         if (wp->length > 0) {
             assert(wp->data);
-            nrp_node->write_req.data_copy = malloc(wp->length);
+            nrp_node->write_req.data_copy = bt_le_ext_malloc(wp->length);
             if (nrp_node->write_req.data_copy == NULL) {
                 LOG_ERR("[N]GattNrpWrDataAllocFail[%u]", wp->length);
                 free(nrp_node);
@@ -780,7 +776,7 @@ static int gatt_nrp_insert(struct bt_conn *conn, uint8_t type, void *params)
         nrp_node->indicate.data_copy = NULL;
         if (ip->len > 0) {
             assert(ip->data);
-            nrp_node->indicate.data_copy = malloc(ip->len);
+            nrp_node->indicate.data_copy = bt_le_ext_malloc(ip->len);
             if (nrp_node->indicate.data_copy == NULL) {
                 LOG_ERR("[N]GattNrpIndDataAllocFail[%u]", ip->len);
                 free(nrp_node);
@@ -1042,4 +1038,23 @@ void bt_le_nimble_gatt_nrp_clear(uint16_t conn_handle)
     }
 
     gatt_nrp_del(nrp);
+}
+
+/* Runtime init (not static): .bss array (PSRAM-eligible) that a deinit/init
+ * cycle must restart all-free (UINT16_MAX, since conn_handle 0 is valid). */
+void bt_le_nimble_gatt_nrp_init(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(gatt_nrp); i++) {
+        gatt_nrp[i].conn_handle = UINT16_MAX;
+        sys_slist_init(&gatt_nrp[i].list);
+    }
+}
+
+/* Free each slot's queued NRP nodes on deinit (mirrors bt_le_nimble_gattc_db_deinit);
+ * gatt_nrp_del is a safe no-op on an already-free slot. */
+void bt_le_nimble_gatt_nrp_deinit(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(gatt_nrp); i++) {
+        gatt_nrp_del(&gatt_nrp[i]);
+    }
 }

@@ -16,6 +16,7 @@
 #include "bluedroid/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -29,7 +30,7 @@ LOG_MODULE_REGISTER(LEA_MCS, CONFIG_BT_ISO_LOG_LEVEL);
 /* GMCS includes a single secondary OTS instance. Mirrors the CAS->CSIS included-
  * secondary pattern: create the secondary before the primary so the include
  * declaration in the GMCS table resolves to OTS's live handle. */
-static struct inc_svc_inst inc_ots_inst;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct inc_svc_inst inc_ots_inst;
 
 struct inc_svc_inst *gmcs_not_included_inst(void)
 {

@@ -28,23 +28,6 @@
 
 LOG_MODULE_REGISTER(ISO_UTILS, CONFIG_BT_ISO_LOG_LEVEL);
 
-struct bt_dev bt_dev;
-
-uint8_t bt_get_phy(uint8_t hci_phy)
-{
-    switch (hci_phy) {
-    case BT_HCI_LE_PHY_1M:
-        return BT_GAP_LE_PHY_1M;
-    case BT_HCI_LE_PHY_2M:
-        return BT_GAP_LE_PHY_2M;
-    case BT_HCI_LE_PHY_CODED:
-        return BT_GAP_LE_PHY_CODED;
-    default:
-        LOG_WRN("UnknownHciPhy[%u]", hci_phy);
-        return 0;
-    }
-}
-
 /* Query the active host's persistent bond store (the old local key_pool was never
  * populated, so bt_le_bond_exists() was always false). `id` ignored (single identity);
  * addresses stay in native host byte order. */

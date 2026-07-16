@@ -18,6 +18,7 @@
 #include "host/ble_gatt.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -26,7 +27,7 @@ LOG_MODULE_REGISTER(LEA_CAS, CONFIG_BT_ISO_LOG_LEVEL);
 #if CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER
 extern struct ble_gatt_svc_def *cas_get_included_csis(void *csis_svc_p);
 
-static struct bt_gatt_service *inc_csis_svc;
+static BT_AUDIO_EXT_RAM_BSS_ATTR struct bt_gatt_service *inc_csis_svc;
 
 static struct ble_gatt_svc_def *cas_inc_svcs[] = {
     NULL,

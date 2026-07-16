@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(ISO_AGAP, CONFIG_BT_ISO_LOG_LEVEL);
 
-static bt_le_gap_app_cb gap_app_cb;
+static BT_ISO_EXT_RAM_BSS_ATTR bt_le_gap_app_cb gap_app_cb;
 
 int bt_le_gap_app_cb_register(bt_le_gap_app_cb cb)
 {

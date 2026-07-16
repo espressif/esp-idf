@@ -63,7 +63,9 @@ extern void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
  * matching the NimBLE host contract; then both this tracker and the
  * synthesis below become dead code. */
 #define ISO_PA_SYNC_HANDLE_NONE     0xFFFF
-static uint16_t active_pa_sync_handle = ISO_PA_SYNC_HANDLE_NONE;
+/* Reset in bt_le_bluedroid_gap_init() (not static init) so a deinit/init cycle
+ * restarts from "no active sync"; static init runs only once at boot. */
+static BT_ISO_EXT_RAM_BSS_ATTR uint16_t active_pa_sync_handle;
 #endif /* BLE_50_EXTEND_SYNC_EN == TRUE */
 
 /* Fast-path BTA → iso-queue post.
@@ -151,7 +153,7 @@ void bt_le_bluedroid_gap_post_event(uint16_t event, void *param)
     struct bt_le_gap_app_param *qev = NULL;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     /* Only AUTH_CMPL reaches here from the application's
@@ -231,7 +233,7 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
     enum iso_queue_item_type q_type;
     int err;
 
-    qev = calloc(1, sizeof(*qev));
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
     assert(qev);
 
     switch (event) {
@@ -255,7 +257,7 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
         qev->ext_scan_recv.data_len = r->adv_data_len;
 
         if (qev->ext_scan_recv.data_len) {
-            qev->ext_scan_recv.data = calloc(1, qev->ext_scan_recv.data_len);
+            qev->ext_scan_recv.data = bt_le_ext_calloc(1, qev->ext_scan_recv.data_len);
             assert(qev->ext_scan_recv.data);
             memcpy(qev->ext_scan_recv.data, r->adv_data, qev->ext_scan_recv.data_len);
         }
@@ -344,7 +346,7 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
         qev->pa_sync_recv.data_len = r->data_length;
 
         if (qev->pa_sync_recv.data_len) {
-            qev->pa_sync_recv.data = calloc(1, qev->pa_sync_recv.data_len);
+            qev->pa_sync_recv.data = bt_le_ext_calloc(1, qev->pa_sync_recv.data_len);
             assert(qev->pa_sync_recv.data);
             memcpy(qev->pa_sync_recv.data, r->data, qev->pa_sync_recv.data_len);
         }
@@ -557,6 +559,10 @@ int bt_le_bluedroid_scan_stop(void)
 
 int bt_le_bluedroid_gap_init(void)
 {
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    active_pa_sync_handle = ISO_PA_SYNC_HANDLE_NONE;
+#endif
+
     BTM_BleGapRegisterCallback(gap_app_cb);
 
     return 0;

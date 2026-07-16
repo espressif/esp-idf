@@ -55,11 +55,13 @@ LOG_MODULE_REGISTER(ISO_CORE, CONFIG_BT_ISO_LOG_LEVEL);
 
 #define iso_chan(_iso) ((_iso)->iso.chan);
 
-struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
+/* ISO connection state, not the SDU buffers: task-context only, no ISR/DMA,
+ * so PSRAM-eligible despite the per-SDU lookups. */
+BT_ISO_EXT_RAM_BSS_ATTR struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
 /* TODO: Allow more than one server? */
 #if defined(CONFIG_BT_ISO_CENTRAL)
-struct bt_iso_cig cigs[CONFIG_BT_ISO_MAX_CIG];
+static BT_ISO_EXT_RAM_BSS_ATTR struct bt_iso_cig cigs[CONFIG_BT_ISO_MAX_CIG];
 
 static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan);
 static int hci_le_create_cis(const struct bt_iso_connect_param *param, size_t count);
@@ -67,13 +69,13 @@ static int hci_le_create_cis(const struct bt_iso_connect_param *param, size_t co
 #endif /* CONFIG_BT_ISO_CENTRAL */
 
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
-static struct bt_iso_server *iso_server;
+static BT_ISO_EXT_RAM_BSS_ATTR struct bt_iso_server *iso_server;
 
 static struct bt_conn *bt_conn_add_iso(struct bt_conn *acl);
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
-struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
+static BT_ISO_EXT_RAM_BSS_ATTR struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
@@ -2256,7 +2258,7 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 #if defined(CONFIG_BT_ISO_BROADCAST)
-static sys_slist_t iso_big_cbs = SYS_SLIST_STATIC_INIT(&iso_big_cbs);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_big_cbs;
 
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle)
 {

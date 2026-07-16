@@ -44,7 +44,7 @@ LOG_MODULE_REGISTER(ISO_SHIM, CONFIG_BT_ISO_LOG_LEVEL);
 #define ISO_PKT_COMP_SDU        (0b10)
 #define ISO_PKT_LAST_FRAG       (0b11)
 
-static sys_slist_t iso_cbs = SYS_SLIST_STATIC_INIT(&iso_cbs);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_cbs;
 
 #if CONFIG_BT_ISO_UNICAST
 static void hci_le_cis_disconnected(struct net_buf *buf);
@@ -407,13 +407,13 @@ struct iso_tx_sdu_node {
     sys_snode_t node;
 };
 
-static sys_slist_t iso_tx_sdu_list = SYS_SLIST_STATIC_INIT(&iso_tx_sdu_list);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_tx_sdu_list;
 
 static int iso_tx_sdu_insert(struct bt_iso_chan *chan, const uint8_t *sdu, uint16_t sdu_len)
 {
     struct iso_tx_sdu_node *sdu_node;
 
-    sdu_node = calloc(1, sizeof(*sdu_node));
+    sdu_node = bt_le_int_calloc(1, sizeof(*sdu_node));
     if (sdu_node == NULL) {
         LOG_ERR("IsoTxSduInsertNoMem[%u]", sizeof(*sdu_node));
         return -ENOMEM;
@@ -513,7 +513,7 @@ static int iso_tx_now(struct bt_iso_chan *chan, const uint8_t *sdu,
      * Check if ISO SDU needs to be fragmented here.
      */
 
-    pkt = malloc(4 + data_total_len);
+    pkt = bt_le_int_malloc(4 + data_total_len);
     if (pkt == NULL) {
         LOG_ERR("IsoTxNowNoMem[%u]", 4 + data_total_len);
         return -ENOMEM;
@@ -689,7 +689,7 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
 
     assert(size == sizeof(struct bt_iso_tx_cb_info));
 
-    evt = calloc(1, sizeof(*evt));
+    evt = bt_le_int_calloc(1, sizeof(*evt));
     if (evt == NULL) {
         LOG_ERR("IsoTxCompNoMem[%u]", sizeof(*evt));
         return;
@@ -743,7 +743,7 @@ int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg)
 
     ARG_UNUSED(arg);
 
-    rx_data = calloc(1, len);
+    rx_data = bt_le_int_calloc(1, len);
     if (rx_data == NULL) {
         LOG_ERR("IsoRxNoMem[%u]", len);
         return -ENOMEM;

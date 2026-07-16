@@ -104,6 +104,38 @@ if BT_ISO
 
     endif # BT_ISO_BROADCAST
 
+    config BT_ISO_BSS_SEG_EXTERNAL_MEMORY
+        bool "Place BLE ISO .bss segment in external SPIRAM"
+        depends on SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+        default n
+        help
+            Place the zero-initialized (.bss) static data of the esp_ble_iso
+            component in external SPIRAM instead of internal DRAM, to free
+            internal RAM.
+
+            Safe because the esp_ble_iso sources register no IRAM ISRs: their
+            data is only touched in task context, never while the flash cache
+            is disabled. Hot ISO data-path state that must stay internal for
+            latency is excluded at each placement site, not by this switch.
+
+            Requires SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY (which makes SPIRAM
+            mandatory at boot). Only .bss is moved; initialized (.data) statistics
+            stay internal.
+
+    config BT_ISO_HEAP_EXTERNAL_MEMORY
+        bool "Place BLE ISO heap allocations in external SPIRAM"
+        depends on SPIRAM
+        default n
+        help
+            Route esp_ble_iso runtime heap allocations (control-plane only:
+            GATT/GAP event marshalling, CIS/CIG setup params, CCC pools) to
+            external SPIRAM via heap_caps_*(MALLOC_CAP_SPIRAM) instead of the
+            internal heap.
+
+            The real-time ISO data path (TX/RX SDU packet buffers) is excluded
+            at each allocation site and stays in internal DRAM. On SPIRAM
+            exhaustion the allocation returns NULL (no internal fallback).
+
     config BT_ISO_DISPATCH_MONITOR
         bool "Monitor ISO task callback dispatch latency"
         depends on !BT_ISO_NO_LOG
