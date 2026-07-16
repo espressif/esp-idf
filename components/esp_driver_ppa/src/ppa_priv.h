@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #include "hal/ppa_types.h"
 #include "hal/ppa_hal.h"
 #include "esp_pm.h"
+#include "soc/soc_caps.h"
+#include "soc/regdma.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +83,9 @@ typedef struct ppa_blend_engine_t {
 
 typedef struct {
     ppa_engine_type_t engine;                     // Engine type
+    struct {
+        uint32_t allow_pd: 1;                     // If set, engine allows the power domain to be powered off when system enters sleep mode
+    } flags;                                      // Configuration flags
 } ppa_engine_config_t;
 
 /******************************** CLIENT *************************************/
@@ -247,7 +252,21 @@ struct ppa_platform_t {
     size_t int_mem_align;                       // Alignment requirement for the internal outgoing buffer to satisfy cache line size
     size_t ext_mem_align;                       // Alignment requirement for the external outgoing buffer to satisfy cache line size
     uint32_t dma_desc_mem_size;                 // Alignment requirement for the 2D-DMA descriptor to satisfy cache line size
+    struct {
+        uint32_t allow_pd: 1;                   // If set, driver allows the power domain to be powered off when system enters sleep mode
+    } flags;                                    // Configuration flags
 };
+
+#if SOC_PAU_SUPPORTED
+#include "soc/retention_periph_defs.h"
+typedef struct {
+    const periph_retention_module_t module;
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+} ppa_retention_desc_t;
+
+extern const ppa_retention_desc_t ppa_reg_retention_info;
+#endif // SOC_PAU_SUPPORTED
 
 #ifdef __cplusplus
 }

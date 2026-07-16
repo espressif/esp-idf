@@ -732,3 +732,7 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
 
     TEST_ESP_OK(dma2d_m2m_deinit());
 }
+
+// Note:
+// Sleep retention functionality test is not covered yet, since all basic test cases can survive with 2D-DMA registers reset to default value.
+// It shall be tested when arbiter feature is supported and its test case is added.

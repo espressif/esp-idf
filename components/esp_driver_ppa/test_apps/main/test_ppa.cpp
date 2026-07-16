@@ -20,6 +20,12 @@
 #include "ppa_performance.h"
 #include "esp_random.h"
 #include "esp_efuse.h"
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
+#include "esp_pm.h"
+#include "esp_clk_tree.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -238,7 +244,20 @@ TEST_CASE("ppa_pending_transactions_in_queue", "[PPA]")
     free(buf_2);
 }
 
-TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
+static __attribute__((unused)) void enable_pm_strategy(bool auto_light_sleep)
+{
+    uint32_t xtal_hz = 0;
+    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &xtal_hz);
+    esp_pm_config_t pm_config = {};
+    pm_config.max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
+    pm_config.min_freq_mhz = static_cast<int>(xtal_hz / 1000000);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    pm_config.light_sleep_enable = auto_light_sleep;
+#endif
+    TEST_ESP_OK(esp_pm_configure(&pm_config));
+}
+
+static void ppa_srm_basic_data_correctness_check(bool auto_light_sleep)
 {
     const uint32_t w = 4;
     const uint32_t h = 4;
@@ -276,86 +295,138 @@ TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
         0x0000,      0x0000, 0x0000, 0x0000
     };
 
+#if CONFIG_PM_ENABLE
+    enable_pm_strategy(auto_light_sleep);
+#endif
+
     ppa_client_handle_t ppa_client_handle;
     ppa_client_config_t ppa_client_config = {};
     ppa_client_config.oper_type = PPA_OPERATION_SRM;
     ppa_client_config.max_pending_trans_num = 1;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    ppa_client_config.flags.allow_pd = (auto_light_sleep ? true : false);
+#endif
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_srm_oper_config_t oper_config = {};
-    oper_config.in.buffer = in_buf;
-    oper_config.in.pic_w = w;
-    oper_config.in.pic_h = h;
-    oper_config.in.block_w = block_w;
-    oper_config.in.block_h = block_h;
-    oper_config.in.block_offset_x = in_block_offset_x;
-    oper_config.in.block_offset_y = in_block_offset_y;
-    oper_config.in.srm_cm = cm;
-    oper_config.out.buffer = out_buf;
-    oper_config.out.buffer_size = out_buf_size;
-    oper_config.out.pic_w = w;
-    oper_config.out.pic_h = h;
-    oper_config.out.block_offset_x = out_block_offset_x;
-    oper_config.out.block_offset_y = out_block_offset_y;
-    oper_config.out.srm_cm = cm;
-    oper_config.rotation_angle = rotation;
-    oper_config.scale_x = scale_x;
-    oper_config.scale_y = scale_y;
-    oper_config.rgb_swap = 0;
-    oper_config.byte_swap = 0;
-    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+#endif
 
-    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+    // loop 3 times if we are testing PPA sleep retention feature
+    int cnt = (auto_light_sleep ? 3 : 1);
+    for (int i = 0; i < cnt; i++) {
+#if SOC_LIGHT_SLEEP_SUPPORTED
+        sleep_ctx.sleep_request_result = ESP_FAIL; // set back to fail for new iteration
+        sleep_ctx.sleep_flags = 0; // clear sleep flags for new iteration
 
-    // Check result
-    for (int i = 0; i < buf_len; i++) {
-        if (i % 8 == 0) {
-            printf("\n");
+        if (auto_light_sleep) {
+            vTaskDelay(pdMS_TO_TICKS(1000)); // enter auto light sleep here if we are testing PPA sleep retention feature
+
+            // Check if the sleep happened as expected
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
+            TEST_ASSERT_EQUAL(ESP_OK, sleep_ctx.sleep_request_result);
         }
-        printf("0x%02X ", out_buf[i]);
-    }
-    printf("\n");
-    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, buf_len);
+#endif
+
+        ppa_srm_oper_config_t oper_config = {};
+        oper_config.in.buffer = in_buf;
+        oper_config.in.pic_w = w;
+        oper_config.in.pic_h = h;
+        oper_config.in.block_w = block_w;
+        oper_config.in.block_h = block_h;
+        oper_config.in.block_offset_x = in_block_offset_x;
+        oper_config.in.block_offset_y = in_block_offset_y;
+        oper_config.in.srm_cm = cm;
+        oper_config.out.buffer = out_buf;
+        oper_config.out.buffer_size = out_buf_size;
+        oper_config.out.pic_w = w;
+        oper_config.out.pic_h = h;
+        oper_config.out.block_offset_x = out_block_offset_x;
+        oper_config.out.block_offset_y = out_block_offset_y;
+        oper_config.out.srm_cm = cm;
+        oper_config.rotation_angle = rotation;
+        oper_config.scale_x = scale_x;
+        oper_config.scale_y = scale_y;
+        oper_config.rgb_swap = 0;
+        oper_config.byte_swap = 0;
+        oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+
+        TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+
+        // Check result
+        for (int i = 0; i < buf_len; i++) {
+            if (i % 8 == 0) {
+                printf("\n");
+            }
+            printf("0x%02X ", out_buf[i]);
+        }
+        printf("\n");
+        TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, buf_len);
 
 #if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-    // Test a rgb2gray color conversion
-    memset(out_buf, 0, out_buf_size);
-    esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        // Test a rgb2gray color conversion
+        memset(out_buf, 0, out_buf_size);
+        esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
-    const uint8_t r_weight = 100;
-    const uint8_t g_weight = 56;
-    const uint8_t b_weight = 100;
-    TEST_ESP_OK(ppa_set_rgb2gray_formula(r_weight, g_weight, b_weight));
-    oper_config.out.srm_cm = PPA_SRM_COLOR_MODE_GRAY8;
-    oper_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
-    uint8_t out_buf_expected_gray[16] = {};
-    for (int i = 0; i < block_w * block_h; i++) {
-        const uint16_t pix = in_buf[(i / block_w + in_block_offset_y) * w + (i % block_w + in_block_offset_x)];
-        uint8_t _r = ((pix >> 8) & 0xF8);
-        uint8_t _g = ((pix >> 3) & 0xFC);
-        uint8_t _b = ((pix << 3) & 0xF8);
-        out_buf_expected_gray[(i / block_w + out_block_offset_y) * w + (i % block_w + out_block_offset_x)] = (_r * r_weight + _g * g_weight + _b * b_weight) >> 8;
-    }
-
-    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
-
-    // Check result
-    for (int i = 0; i < w * h; i++) {
-        if (i % 4 == 0) {
-            printf("\n");
+        const uint8_t r_weight = 100;
+        const uint8_t g_weight = 56;
+        const uint8_t b_weight = 100;
+        TEST_ESP_OK(ppa_set_rgb2gray_formula(r_weight, g_weight, b_weight));
+        oper_config.out.srm_cm = PPA_SRM_COLOR_MODE_GRAY8;
+        oper_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
+        uint8_t out_buf_expected_gray[16] = {};
+        for (int i = 0; i < block_w * block_h; i++) {
+            const uint16_t pix = in_buf[(i / block_w + in_block_offset_y) * w + (i % block_w + in_block_offset_x)];
+            uint8_t _r = ((pix >> 8) & 0xF8);
+            uint8_t _g = ((pix >> 3) & 0xFC);
+            uint8_t _b = ((pix << 3) & 0xF8);
+            out_buf_expected_gray[(i / block_w + out_block_offset_y) * w + (i % block_w + out_block_offset_x)] = (_r * r_weight + _g * g_weight + _b * b_weight) >> 8;
         }
-        printf("0x%02X ", out_buf[i]);
-    }
-    printf("\n");
-    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected_gray, (void *)out_buf, w * h);
+
+        TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_handle, &oper_config));
+
+        // Check result
+        for (int i = 0; i < w * h; i++) {
+            if (i % 4 == 0) {
+                printf("\n");
+            }
+            printf("0x%02X ", out_buf[i]);
+        }
+        printf("\n");
+        TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected_gray, (void *)out_buf, w * h);
 #endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
 
+        memset(out_buf, 0, out_buf_size);
+        esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    }
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_set_sleep_context(NULL);
+#endif
+
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
+
+#if CONFIG_PM_ENABLE
+    enable_pm_strategy(false);
+#endif
 
     free(out_buf);
 }
 
-TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
+TEST_CASE("ppa_srm_basic_data_correctness_check", "[PPA]")
+{
+    ppa_srm_basic_data_correctness_check(false);
+#if CONFIG_PM_ENABLE
+#if !(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && !SOC_PM_FPU_RETENTION_BY_SW) // SRM uses FPU
+    printf("\nTest again with auto light sleep...\n");
+    ppa_srm_basic_data_correctness_check(true);
+#endif
+#endif
+}
+
+static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
 {
     const uint32_t w = 2;
     const uint32_t h = 2;
@@ -382,7 +453,7 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
         0xFF, 0xFF, 0xFF, /**/ 0x80, 0x40, 0xA0, /**/
         //                /*************************/
     };
-    uint8_t in_fg_buf[64] __attribute__((aligned(64))) = {
+    const uint8_t in_fg_buf_template[64] __attribute__((aligned(64))) = {
         0xFF, 0xFF, 0xFF, 0xFF,      0xFF, 0xFF, 0xFF, 0xFF,
         //                      /*******************************/
         0xFF, 0xFF, 0xFF, 0xFF, /**/ 0x00, 0x80, 0x80, 0xC0, /**/
@@ -390,6 +461,10 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
         //                      /*******************************/
         // remaining bytes [16 ... 63] are value-initialized to 0
     };
+    uint8_t *in_fg_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, 64, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA));
+    TEST_ASSERT_NOT_NULL(in_fg_buf);
+    memcpy(in_fg_buf, in_fg_buf_template, 64);
+    esp_cache_msync((void *)in_fg_buf, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     uint8_t *out_buf = in_fg_buf;
     // Expected blend output
     // Alpha Blending calculation:
@@ -405,54 +480,91 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
         //                      /*******************************/
     };
 
+#if CONFIG_PM_ENABLE
+    enable_pm_strategy(auto_light_sleep);
+#endif
+
     ppa_client_handle_t ppa_client_handle;
     ppa_client_config_t ppa_client_config = {};
     ppa_client_config.oper_type = PPA_OPERATION_BLEND;
     ppa_client_config.max_pending_trans_num = 1;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    ppa_client_config.flags.allow_pd = (auto_light_sleep ? true : false);
+#endif
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_blend_oper_config_t oper_config = {};
-    oper_config.in_bg.buffer = in_bg_buf;
-    oper_config.in_bg.pic_w = w;
-    oper_config.in_bg.pic_h = h;
-    oper_config.in_bg.block_w = block_w;
-    oper_config.in_bg.block_h = block_h;
-    oper_config.in_bg.block_offset_x = block_offset_x;
-    oper_config.in_bg.block_offset_y = block_offset_y;
-    oper_config.in_bg.blend_cm = in_bg_cm;
-    oper_config.in_fg.buffer = in_fg_buf;
-    oper_config.in_fg.pic_w = w;
-    oper_config.in_fg.pic_h = h;
-    oper_config.in_fg.block_w = block_w;
-    oper_config.in_fg.block_h = block_h;
-    oper_config.in_fg.block_offset_x = block_offset_x;
-    oper_config.in_fg.block_offset_y = block_offset_y;
-    oper_config.in_fg.blend_cm = in_fg_cm;
-    oper_config.out.buffer = out_buf;
-    oper_config.out.buffer_size = out_buf_size;
-    oper_config.out.pic_w = w;
-    oper_config.out.pic_h = h;
-    oper_config.out.block_offset_x = block_offset_x;
-    oper_config.out.block_offset_y = block_offset_y;
-    oper_config.out.blend_cm = out_cm;
-    oper_config.bg_alpha_update_mode = PPA_ALPHA_SCALE;
-    oper_config.bg_alpha_scale_ratio = bg_alpha_scale_ratio;
-    oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
-    oper_config.bg_ck_en = false;
-    oper_config.fg_ck_en = false;
-    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+#endif
 
-    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    // loop 3 times if we are testing PPA sleep retention feature
+    int cnt = (auto_light_sleep ? 3 : 1);
+    for (int i = 0; i < cnt; i++) {
+#if SOC_LIGHT_SLEEP_SUPPORTED
+        sleep_ctx.sleep_request_result = ESP_FAIL; // set back to fail for new iteration
+        sleep_ctx.sleep_flags = 0; // clear sleep flags for new iteration
 
-    // Check result
-    for (int i = 0; i < out_buf_len; i++) {
-        if (i % 8 == 0) {
-            printf("\n");
+        if (auto_light_sleep) {
+            vTaskDelay(pdMS_TO_TICKS(1000)); // enter auto light sleep here if we are testing PPA sleep retention feature
+
+            // Check if the sleep happened as expected
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
+            TEST_ASSERT_EQUAL(ESP_OK, sleep_ctx.sleep_request_result);
         }
-        printf("0x%02X ", out_buf[i]);
+#endif
+
+        ppa_blend_oper_config_t oper_config = {};
+        oper_config.in_bg.buffer = in_bg_buf;
+        oper_config.in_bg.pic_w = w;
+        oper_config.in_bg.pic_h = h;
+        oper_config.in_bg.block_w = block_w;
+        oper_config.in_bg.block_h = block_h;
+        oper_config.in_bg.block_offset_x = block_offset_x;
+        oper_config.in_bg.block_offset_y = block_offset_y;
+        oper_config.in_bg.blend_cm = in_bg_cm;
+        oper_config.in_fg.buffer = in_fg_buf;
+        oper_config.in_fg.pic_w = w;
+        oper_config.in_fg.pic_h = h;
+        oper_config.in_fg.block_w = block_w;
+        oper_config.in_fg.block_h = block_h;
+        oper_config.in_fg.block_offset_x = block_offset_x;
+        oper_config.in_fg.block_offset_y = block_offset_y;
+        oper_config.in_fg.blend_cm = in_fg_cm;
+        oper_config.out.buffer = out_buf;
+        oper_config.out.buffer_size = out_buf_size;
+        oper_config.out.pic_w = w;
+        oper_config.out.pic_h = h;
+        oper_config.out.block_offset_x = block_offset_x;
+        oper_config.out.block_offset_y = block_offset_y;
+        oper_config.out.blend_cm = out_cm;
+        oper_config.bg_alpha_update_mode = PPA_ALPHA_SCALE;
+        oper_config.bg_alpha_scale_ratio = bg_alpha_scale_ratio;
+        oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
+        oper_config.bg_ck_en = false;
+        oper_config.fg_ck_en = false;
+        oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+
+        TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+
+        // Check result
+        for (int i = 0; i < out_buf_len; i++) {
+            if (i % 8 == 0) {
+                printf("\n");
+            }
+            printf("0x%02X ", out_buf[i]);
+        }
+        printf("\n");
+        TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, out_buf_len);
+
+        memcpy(in_fg_buf, in_fg_buf_template, 64);
+        esp_cache_msync((void *)in_fg_buf, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     }
-    printf("\n");
-    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, out_buf_len);
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_set_sleep_context(NULL);
+#endif
 
 #if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     // Test YUV422/YUV420 blend
@@ -533,9 +645,26 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
 #endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
+
+#if CONFIG_PM_ENABLE
+    enable_pm_strategy(false);
+#endif
+
+    free(in_fg_buf);
 }
 
-TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
+TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
+{
+    ppa_blend_basic_data_correctness_check(false);
+#if CONFIG_PM_ENABLE
+#if !(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && !SOC_PM_FPU_RETENTION_BY_SW) // Blend uses FPU
+    printf("\nTest again with auto light sleep...\n");
+    ppa_blend_basic_data_correctness_check(true);
+#endif
+#endif
+}
+
+static void ppa_fill_basic_data_correctness_check(bool auto_light_sleep)
 {
     const uint32_t w = 80;
     const uint32_t h = 120;
@@ -558,53 +687,103 @@ TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
 
     memset(out_buf, 0xFF, out_buf_len);
 
+#if CONFIG_PM_ENABLE
+    enable_pm_strategy(auto_light_sleep);
+#endif
+
     ppa_client_handle_t ppa_client_handle;
     ppa_client_config_t ppa_client_config = {};
     ppa_client_config.oper_type = PPA_OPERATION_FILL;
     ppa_client_config.max_pending_trans_num = 1;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    ppa_client_config.flags.allow_pd = (auto_light_sleep ? true : false);
+#endif
     TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
 
-    ppa_fill_oper_config_t oper_config = {};
-    oper_config.out.buffer = out_buf;
-    oper_config.out.buffer_size = out_buf_size;
-    oper_config.out.pic_w = w;
-    oper_config.out.pic_h = h;
-    oper_config.out.block_offset_x = block_offset_x;
-    oper_config.out.block_offset_y = block_offset_y;
-    oper_config.out.fill_cm = out_cm;
-    oper_config.fill_block_w = block_w;
-    oper_config.fill_block_h = block_h;
-    oper_config.fill_argb_color = fill_color;
-    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+#endif
 
-    TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
+    // loop 3 times if we are testing PPA sleep retention feature
+    int cnt = (auto_light_sleep ? 3 : 1);
+    for (int i = 0; i < cnt; i++) {
+#if SOC_LIGHT_SLEEP_SUPPORTED
+        sleep_ctx.sleep_request_result = ESP_FAIL; // set back to fail for new iteration
+        sleep_ctx.sleep_flags = 0; // clear sleep flags for new iteration
 
-    // Check result
-    color_pixel_rgb565_data_t fill_pixel_expected = {};
-    fill_pixel_expected.r = fill_color.r >> 3;
-    fill_pixel_expected.g = fill_color.g >> 2;
-    fill_pixel_expected.b = fill_color.b >> 3;
-    TEST_ASSERT_EACH_EQUAL_UINT16(fill_pixel_expected.val, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h);
+        if (auto_light_sleep) {
+            vTaskDelay(pdMS_TO_TICKS(1000)); // enter auto light sleep here if we are testing PPA sleep retention feature
+
+            // Check if the sleep happened as expected
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+#endif
+            TEST_ASSERT_EQUAL(ESP_OK, sleep_ctx.sleep_request_result);
+        }
+#endif
+
+        ppa_fill_oper_config_t oper_config = {};
+        oper_config.out.buffer = out_buf;
+        oper_config.out.buffer_size = out_buf_size;
+        oper_config.out.pic_w = w;
+        oper_config.out.pic_h = h;
+        oper_config.out.block_offset_x = block_offset_x;
+        oper_config.out.block_offset_y = block_offset_y;
+        oper_config.out.fill_cm = out_cm;
+        oper_config.fill_block_w = block_w;
+        oper_config.fill_block_h = block_h;
+        oper_config.fill_argb_color = fill_color;
+        oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+
+        TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
+
+        // Check result
+        color_pixel_rgb565_data_t fill_pixel_expected = {};
+        fill_pixel_expected.r = fill_color.r >> 3;
+        fill_pixel_expected.g = fill_color.g >> 2;
+        fill_pixel_expected.b = fill_color.b >> 3;
+        TEST_ASSERT_EACH_EQUAL_UINT16(fill_pixel_expected.val, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h);
 
 #if !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-    // Test a yuv color fill
-    oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422_UYVY; // output YUV422 is with UYVY packed order
-    color_macroblock_yuv_data_t fill_yuv_color = {};
-    fill_yuv_color.y = 0xFF;
-    fill_yuv_color.u = 0x55;
-    fill_yuv_color.v = 0xAA;
-    oper_config.fill_yuv_color = fill_yuv_color;
-    out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)PPA_FILL_COLOR_MODE_YUV422_UYVY); // bits
-    TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
+        // Test a yuv color fill
+        oper_config.out.fill_cm = PPA_FILL_COLOR_MODE_YUV422_UYVY; // output YUV422 is with UYVY packed order
+        color_macroblock_yuv_data_t fill_yuv_color = {};
+        fill_yuv_color.y = 0xFF;
+        fill_yuv_color.u = 0x55;
+        fill_yuv_color.v = 0xAA;
+        oper_config.fill_yuv_color = fill_yuv_color;
+        out_pixel_depth = color_hal_pixel_format_fourcc_get_bit_depth((esp_color_fourcc_t)PPA_FILL_COLOR_MODE_YUV422_UYVY); // bits
+        TEST_ESP_OK(ppa_do_fill(ppa_client_handle, &oper_config));
 
-    // Check result (2 pixels per macro pixel)
-    const uint32_t fill_pixel_expected_yuv422 = ((fill_yuv_color.y << 24) | (fill_yuv_color.v << 16) | (fill_yuv_color.y << 8) | (fill_yuv_color.u));
-    TEST_ASSERT_EACH_EQUAL_UINT32(fill_pixel_expected_yuv422, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h / 2);
+        // Check result (2 pixels per macro pixel)
+        const uint32_t fill_pixel_expected_yuv422 = ((fill_yuv_color.y << 24) | (fill_yuv_color.v << 16) | (fill_yuv_color.y << 8) | (fill_yuv_color.u));
+        TEST_ASSERT_EACH_EQUAL_UINT32(fill_pixel_expected_yuv422, (void *)((uint32_t)out_buf + w * block_offset_y * out_pixel_depth / 8), block_w * block_h / 2);
 #endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
+
+        memset(out_buf, 0xFF, out_buf_size);
+        esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    }
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    esp_sleep_set_sleep_context(NULL);
+#endif
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
 
+#if CONFIG_PM_ENABLE
+    enable_pm_strategy(false);
+#endif
+
     free(out_buf);
+}
+
+TEST_CASE("ppa_fill_basic_data_correctness_check", "[PPA]")
+{
+    ppa_fill_basic_data_correctness_check(false);
+#if CONFIG_PM_ENABLE
+    printf("\nTest again with auto light sleep...\n");
+    ppa_fill_basic_data_correctness_check(true);
+#endif
 }
 
 /* All performance tests are tested under the following situations:
