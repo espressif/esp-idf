@@ -6,7 +6,7 @@ In this document, we review the GATT SERVER example code which implements a Blue
 
 ## Includes
 
-First, let’s take a look at the includes:
+First, let's take a look at the includes:
 
 ```c
 #include <stdio.h>
@@ -948,7 +948,7 @@ case ESP_GATTS_EXEC_WRITE_EVT:
      example_exec_write_event_env(&a_prepare_write_env, param);
      break;
 ```
-Let’s take a look at the Executive Write function:
+Let's take a look at the Executive Write function:
 
 ```c
 void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_cb_param_t *param){
