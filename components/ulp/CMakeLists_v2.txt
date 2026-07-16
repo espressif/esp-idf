@@ -266,10 +266,20 @@ if(priv_requires)
     list(REMOVE_DUPLICATES priv_requires)
 endif()
 
+set(whole_archive)
+if(__ULP_BUILD)
+    # Legacy ULP child builds added the LP-core runtime sources directly to the
+    # executable. Preserve that behavior so strong handlers such as
+    # ulp_lp_core_panic_handler are not dropped in favor of weak defaults from
+    # other runtime objects.
+    set(whole_archive WHOLE_ARCHIVE)
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        REQUIRES ${requires}
-                       PRIV_REQUIRES ${priv_requires})
+                       PRIV_REQUIRES ${priv_requires}
+                       ${whole_archive})
 
 # In the parent app build, the ulp component only provides the host-side API.
 # The executable/linker setup below is for native ULP child projects.

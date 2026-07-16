@@ -193,7 +193,7 @@ endfunction()
     with the ``PROCESS`` option, it is logical to provide only a single
     ``scriptfile`` as a template.
 #]]
-function(target_linker_script target deptype scriptfiles)
+function(target_linker_script target deptype)
     # The linker script files, templates, and their output filenames are stored
     # only as component properties. The script files are generated and added to
     # the library link interface in the idf_build_library function.
@@ -201,6 +201,10 @@ function(target_linker_script target deptype scriptfiles)
     set(one_value PROCESS FLAGS)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+    set(scriptfiles ${ARG_UNPARSED_ARGUMENTS})
+    if(NOT scriptfiles)
+        message(FATAL_ERROR "target_linker_script requires at least one linker script file")
+    endif()
     foreach(scriptfile ${scriptfiles})
         get_filename_component(scriptfile "${scriptfile}" ABSOLUTE)
         idf_msg("Adding linker script ${scriptfile}")
