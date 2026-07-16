@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,26 @@ extern "C" {
  *      - false     Don't need yield
  */
 bool test_ana_cmpr_on_cross_callback(ana_cmpr_handle_t cmpr, const ana_cmpr_cross_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Test context to count how many POS/NEG cross events were reported
+ */
+typedef struct {
+    uint32_t pos_cnt;
+    uint32_t neg_cnt;
+} test_ana_cmpr_edge_cnt_t;
+
+/**
+ * @brief Test on cross callback that tallies observed cross direction
+ *
+ * @param cmpr      Analog Comparator handle
+ * @param edata     Event data
+ * @param user_ctx  User context, need to input a `test_ana_cmpr_edge_cnt_t *`
+ * @return
+ *      - true      Need to yield
+ *      - false     Don't need yield
+ */
+bool test_ana_cmpr_edge_cnt_callback(ana_cmpr_handle_t cmpr, const ana_cmpr_cross_event_data_t *edata, void *user_ctx);
 
 /**
  * @brief Initialize Analog Comparator source channel GPIO
