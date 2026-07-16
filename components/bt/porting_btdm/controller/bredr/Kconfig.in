@@ -185,6 +185,26 @@ config BT_CTRL_BR_EDR_DTM_EN
     help
         Enable BR/EDR controller direct test mode
 
+config BT_CTRL_BR_EDR_SAM_EN
+    bool "Enable BR/EDR controller Slot Availability Mask (READ DOCS FIRST) (EXPERIMENTAL)"
+    depends on IDF_EXPERIMENTAL_FEATURES
+    default n
+    help
+        Enable BR/EDR controller Slot Availability Mask(SAM).
+
+        Note: SAM functionality is partially implemented by software and only works on ACL air time scheduling.
+
+config BT_CTRL_BR_EDR_MWS_EN
+    bool "Enable BR/EDR controller Mobile Wireless Standards coexistence (READ DOCS FIRST) (EXPERIMENTAL)"
+    depends on BT_CTRL_BR_EDR_SAM_EN
+    default n
+    help
+        Enable BR/EDR controller Mobile Wireless Standards(MWS) coexistence.
+
+        Note: MWS coexistence functionality is only partially implemented. Supported HCI Commands:
+        - HCI_Set_External_Frame_Configuration
+        - HCI_Set_MWS_PATTERN_Configuration
+
 config BT_CTRL_BR_EDR_TX_CCA_ENABLED
     bool "Enable BR/EDR TX CCA feature"
     default n
