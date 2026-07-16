@@ -1,10 +1,185 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import hashlib
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import replace_in_file
+
+FULL_PROJECT_APIS = (
+    'ulp_project_init',
+    'ulp_project_default',
+    'ulp_build_executable',
+)
+
+LEGACY_PROJECT_APIS = (
+    'ulp_apply_default_options',
+    'ulp_apply_default_sources',
+)
+
+ALL_APIS = FULL_PROJECT_APIS + LEGACY_PROJECT_APIS
+
+
+def _write_api_probe_project(project_dir: Path, entry_point: str, add_native_executable: bool) -> None:
+    native_executable = 'add_executable(${ULP_APP_NAME} main.c)' if add_native_executable else ''
+    if entry_point.endswith('ulp_project.cmake'):
+        pre_project_include = f'include({entry_point})'
+        post_project_include = ''
+    else:
+        pre_project_include = ''
+        post_project_include = f'include({entry_point})'
+
+    (project_dir / 'sdkconfig.h').write_text('', encoding='utf-8')
+    (project_dir / 'main.c').write_text('int main(void) { return 0; }\n', encoding='utf-8')
+    (project_dir / 'sdkconfig.cmake').write_text(
+        '\n'.join(
+            (
+                'set(CONFIG_ULP_COPROC_ENABLED y)',
+                'set(CONFIG_ULP_COPROC_TYPE_LP_CORE y)',
+                '',
+            )
+        ),
+        encoding='utf-8',
+    )
+    (project_dir / 'CMakeLists.txt').write_text(
+        f"""
+cmake_minimum_required(VERSION 3.22)
+
+{pre_project_include}
+project(ulp_api_probe C CXX ASM)
+{native_executable}
+
+{post_project_include}
+
+set(api_commands_file "${{CMAKE_BINARY_DIR}}/api_commands.txt")
+file(WRITE "${{api_commands_file}}" "")
+foreach(name IN ITEMS {' '.join(ALL_APIS)})
+    if(COMMAND ${{name}})
+        file(APPEND "${{api_commands_file}}" "${{name}}=1\\n")
+    else()
+        file(APPEND "${{api_commands_file}}" "${{name}}=0\\n")
+    endif()
+endforeach()
+""",
+        encoding='utf-8',
+    )
+
+
+def _read_api_commands(commands_file: Path) -> dict[str, bool]:
+    return {
+        name: value == '1'
+        for name, value in (line.split('=', 1) for line in commands_file.read_text(encoding='utf-8').splitlines())
+    }
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@pytest.mark.parametrize(
+    'entry_point,add_native_executable,expected_available,expected_unavailable',
+    (
+        (
+            '${IDF_PATH}/components/ulp/cmake/ulp_project.cmake',
+            False,
+            FULL_PROJECT_APIS,
+            LEGACY_PROJECT_APIS,
+        ),
+        (
+            'IDFULPProject',
+            True,
+            LEGACY_PROJECT_APIS,
+            FULL_PROJECT_APIS,
+        ),
+    ),
+    ids=('full_project_entry_point', 'legacy_project_entry_point'),
+)
+def test_ulp_cmake_api_availability(
+    tmp_path: Path,
+    entry_point: str,
+    add_native_executable: bool,
+    expected_available: tuple[str, ...],
+    expected_unavailable: tuple[str, ...],
+) -> None:
+    # Full ULP subprojects and generated legacy ULP child projects intentionally
+    # expose different CMake API surfaces. Configure a minimal child project
+    # through each entry point and verify that only the expected commands exist.
+    idf_path = Path(os.environ['IDF_PATH'])
+    project_dir = tmp_path / 'project'
+    build_dir = tmp_path / 'build'
+    project_dir.mkdir()
+    _write_api_probe_project(project_dir, entry_point, add_native_executable)
+
+    cmake_args = (
+        'cmake',
+        '-G',
+        'Ninja',
+        '-S',
+        str(project_dir),
+        '-B',
+        str(build_dir),
+        f'-DCMAKE_MODULE_PATH={idf_path / "components" / "ulp" / "cmake"}',
+        f'-DIDF_PATH={idf_path}',
+        '-DIDF_TARGET=esp32c6',
+        f'-DSDKCONFIG_CMAKE={project_dir / "sdkconfig.cmake"}',
+        f'-DSDKCONFIG_HEADER={project_dir / "sdkconfig.h"}',
+        '-D__ULP_BUILD=1',
+        '-DULP_APP_NAME=ulp_api_probe',
+        '-DULP_TYPE=lp_core',
+        '-DIDF_BUILD_V2=y',
+    )
+    result = subprocess.run(
+        cmake_args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout
+
+    command_availability = _read_api_commands(build_dir / 'api_commands.txt')
+    for name in expected_available:
+        assert command_availability[name], f'{name} should be available'
+    for name in expected_unavailable:
+        assert not command_availability[name], f'{name} should not be available'
+
+
+@pytest.mark.test_app_copy('components/ulp/test_apps/ulp_fsm')
+def test_ulp_embed_binary_uses_generated_legacy_project(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # Legacy ulp_embed_binary() callers should be built through a generated
+    # CMake v2 child project. The generated project references parent-owned ULP
+    # sources by path, so editing those sources must still rebuild the child
+    # artifact on the next parent build.
+    assert test_app_copy.exists()
+
+    idf_py('-DIDF_TARGET=esp32', '-DSDKCONFIG=build/sdkconfig', 'build')
+
+    generated_projects = sorted(Path('build/subprojects').glob('*/legacy_project'))
+    assert len(generated_projects) == 1
+
+    generated_project = generated_projects[0]
+    ulp_binary_dir = generated_project.parent
+    assert (generated_project / 'CMakeLists.txt').exists()
+    assert (generated_project / 'main/ulp_legacy_inputs.cmake').exists()
+    ulp_binary = ulp_binary_dir / f'{ulp_binary_dir.name}.bin'
+    assert ulp_binary.exists()
+    original_ulp_binary_hash = _sha256(ulp_binary)
+
+    ulp_source = test_app_copy / 'main/ulp/test_jumps.S'
+    ulp_source.write_text(
+        ulp_source.read_text(encoding='utf-8')
+        + '\n\t.global rebuild_dependency_probe\n'
+        + 'rebuild_dependency_probe:\n'
+        + '\t.long 0x1234\n',
+        encoding='utf-8',
+    )
+
+    idf_py('build')
+    assert _sha256(ulp_binary) != original_ulp_binary_hash
 
 
 @pytest.mark.test_app_copy('tools/test_apps/system/ulp/full_subproject/lp_core')

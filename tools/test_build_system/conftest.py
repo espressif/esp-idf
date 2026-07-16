@@ -346,8 +346,11 @@ def idf_py_terminal_env() -> typing.Generator[None, None, None]:
 
 
 @pytest.fixture(name='default_idf_env')
-def fixture_default_idf_env() -> EnvDict:
-    return get_idf_build_env(os.environ['IDF_PATH'])  # type: ignore
+def fixture_default_idf_env(request: FixtureRequest) -> EnvDict:
+    env = get_idf_build_env(os.environ['IDF_PATH'])  # type: ignore
+    if request.config.getoption('buildv2', False):
+        env['IDF_BUILD_V2'] = '1'
+    return env
 
 
 @pytest.fixture
