@@ -1239,11 +1239,19 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
             pnode = NULL;
         } else {
             pdhcps_pool = (struct dhcps_pool *)mem_calloc(1, sizeof(struct dhcps_pool));
+            if (pdhcps_pool == NULL) {
+                return 0;
+            }
 
             pdhcps_pool->ip.addr = dhcps->client_address.addr;
             memcpy(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac));
             pdhcps_pool->lease_timer = lease_timer;
             pnode = (list_node *)mem_calloc(1, sizeof(list_node));
+            if (pnode == NULL) {
+                mem_free(pdhcps_pool);
+                pdhcps_pool = NULL;
+                return 0;
+            }
 
             pnode->pnode = pdhcps_pool;
             pnode->pnext = NULL;
