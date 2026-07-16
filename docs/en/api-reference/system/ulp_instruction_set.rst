@@ -9,7 +9,7 @@ ULP FSM coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, 
 
 ULP coprocessor can access 8 K bytes of RTC_SLOW_MEM memory region. Memory is addressed in 32-bit word units. It can also access peripheral registers in ``RTC_CNTL``, ``RTC_IO``, and ``SENS`` peripherals.
 
-All instructions are 32-bit. Jump instructions, ALU instructions, peripheral register and memory access instructions are executed in 1 cycle. Instructions which work with peripherals (TSENS, ADC, I2C) take variable number of cycles, depending on peripheral operation.
+All instructions are 32-bit. Instruction execution and fetch timing depends on the instruction; see :ref:`ulp-fsm-instruction-execution-time` and the per-instruction cycle counts below.
 
 The instruction syntax is case insensitive. Upper and lower case letters can be used and intermixed arbitrarily. This is true both for register names and instruction names.
 
@@ -74,6 +74,8 @@ Note About Addressing
             ADD R1, R1, 2     // this increments address by 2 words (8 bytes)
             ST R2, R1, 0      // write value of R2 into the third array element,
                               // i.e., array[2]
+
+.. _ulp-fsm-instruction-execution-time:
 
 Note About Instruction Execution Time
 -------------------------------------
