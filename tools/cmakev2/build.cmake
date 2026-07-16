@@ -39,7 +39,12 @@ function(idf_build_set_property property value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
     if("${property}" STREQUAL MINIMAL_BUILD)
-        idf_warn("Build property 'MINIMAL_BUILD' is obsolete and will be ignored")
+        # TODO: Remove this MINIMAL_BUILD compatibility block once CMake v1 is fully deprecated.
+        # V1 compatibility shims may still set MINIMAL_BUILD; warn only for native CMake v2 projects.
+        idf_build_get_property(_v1_compat __V1_COMPAT_SHIM)
+        if(NOT _v1_compat)
+            idf_warn("Build property 'MINIMAL_BUILD' is obsolete and will be ignored")
+        endif()
     endif()
 
     set(append)
