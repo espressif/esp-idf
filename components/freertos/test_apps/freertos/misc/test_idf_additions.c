@@ -33,13 +33,6 @@ Run only these cases from the Unity menu with the [idf_additions] tag filter.
 #define OBJECT_MEMORY_CAPS      (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
 #define SPIRAM_OBJECT_MEMORY_CAPS (MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT)
 
-/* Sizes large enough to fail allocation on all supported targets */
-#define WITHCAPS_OOM_QUEUE_LEN       (0x100000U)
-#define WITHCAPS_OOM_QUEUE_ITEM_SIZE   (1024U)
-#define WITHCAPS_OOM_BUFFER_BYTES      (0x40000000U)
-#define WITHCAPS_OOM_TASK_STACK_BYTES  (0x80000000U)
-#define WITHCAPS_HEAP_LEAK_THRESHOLD   (256)
-
 static void task_with_caps(void *arg)
 {
     xTaskNotifyGive((TaskHandle_t)arg);
@@ -312,14 +305,21 @@ TEST_CASE("IDF additions: WithCaps objects functional smoke test", "[freertos][i
 
 TEST_CASE("IDF additions: WithCaps creation fails on out of memory", "[freertos][idf_additions]")
 {
+    /* Size just past the total heap for these caps so allocation must fail on every target,
+     * without fixed constants that can overflow size_t (e.g. stack_words * sizeof(StackType_t)). */
+    const size_t total_caps = heap_caps_get_total_size(OBJECT_MEMORY_CAPS);
+    const size_t oom_bytes = total_caps + 1024;
+    const UBaseType_t oom_queue_len = (UBaseType_t)((oom_bytes / sizeof(uint32_t)) + 1);
+    const configSTACK_DEPTH_TYPE oom_stack_words =
+        (configSTACK_DEPTH_TYPE)((oom_bytes / sizeof(StackType_t)) + 1);
     TaskHandle_t task_handle = NULL;
 
-    TEST_ASSERT_NULL(xQueueCreateWithCaps(WITHCAPS_OOM_QUEUE_LEN, WITHCAPS_OOM_QUEUE_ITEM_SIZE, OBJECT_MEMORY_CAPS));
-    TEST_ASSERT_NULL(xStreamBufferCreateWithCaps(WITHCAPS_OOM_BUFFER_BYTES, 1, OBJECT_MEMORY_CAPS));
-    TEST_ASSERT_NULL(xMessageBufferCreateWithCaps(WITHCAPS_OOM_BUFFER_BYTES, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NULL(xQueueCreateWithCaps(oom_queue_len, sizeof(uint32_t), OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NULL(xStreamBufferCreateWithCaps(oom_bytes, 1, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NULL(xMessageBufferCreateWithCaps(oom_bytes, OBJECT_MEMORY_CAPS));
     TEST_ASSERT_EQUAL(pdFAIL, xTaskCreatePinnedToCoreWithCaps(task_with_caps,
                                                               "oom_task",
-                                                              WITHCAPS_OOM_TASK_STACK_BYTES,
+                                                              oom_stack_words,
                                                               NULL,
                                                               UNITY_FREERTOS_PRIORITY,
                                                               &task_handle,
@@ -328,10 +328,9 @@ TEST_CASE("IDF additions: WithCaps creation fails on out of memory", "[freertos]
     TEST_ASSERT_NULL(task_handle);
 }
 
+/* Create/delete coverage for remaining WithCaps types; Unity setUp/tearDown leak check verifies heap restore. */
 TEST_CASE("IDF additions: WithCaps create delete restores heap", "[freertos][idf_additions]")
 {
-    const size_t before_free = heap_caps_get_free_size(OBJECT_MEMORY_CAPS);
-
     QueueHandle_t queue_handle = xQueueCreateWithCaps(4, sizeof(uint32_t), OBJECT_MEMORY_CAPS);
     TEST_ASSERT_NOT_NULL(queue_handle);
     vQueueDeleteWithCaps(queue_handle);
@@ -351,16 +350,13 @@ TEST_CASE("IDF additions: WithCaps create delete restores heap", "[freertos][idf
     EventGroupHandle_t evt_group_handle = xEventGroupCreateWithCaps(OBJECT_MEMORY_CAPS);
     TEST_ASSERT_NOT_NULL(evt_group_handle);
     vEventGroupDeleteWithCaps(evt_group_handle);
-
-    vTaskDelay(10);
-    const size_t after_free = heap_caps_get_free_size(OBJECT_MEMORY_CAPS);
-    TEST_ASSERT_INT_WITHIN(WITHCAPS_HEAP_LEAK_THRESHOLD, before_free, after_free);
 }
 
 #if CONFIG_SPIRAM
 
 TEST_CASE("IDF additions: WithCaps objects allocate in SPIRAM when requested", "[freertos][idf_additions]")
 {
+    /* Queue/stream Static* objects honor SPIRAM caps; task TCBs remain internal via pvPortMalloc. */
     QueueHandle_t queue_handle;
     uint8_t *queue_storage;
     StaticQueue_t *queue_obj;
