@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -333,25 +333,6 @@ typedef union {
     uint32_t val;
 } ahb_dma_out_int_clr_chn_reg_t;
 
-/** Type of ahb_test register
- *  only for test
- */
-typedef union {
-    struct {
-        /** ahb_testmode : R/W; bitpos: [2:0]; default: 0;
-         *  reserved
-         */
-        uint32_t ahb_testmode:3;
-        uint32_t reserved_3:1;
-        /** ahb_testaddr : R/W; bitpos: [5:4]; default: 0;
-         *  reserved
-         */
-        uint32_t ahb_testaddr:2;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} ahb_dma_ahb_test_reg_t;
-
 /** Type of misc_conf register
  *  reserved
  */
@@ -430,7 +411,6 @@ typedef union {
          *  2'b00: single
          *  2'b01: incr4
          *  2'b10: incr8
-         *  2'b11: incr16
          */
         uint32_t in_data_burst_mode_sel_chn:2;
         uint32_t reserved_8:24;
@@ -758,7 +738,6 @@ typedef union {
          *  2'b00: single
          *  2'b01: incr4
          *  2'b10: incr8
-         *  2'b11: incr16
          */
         uint32_t out_data_burst_mode_sel_chn:2;
         uint32_t reserved_10:22;
@@ -1070,7 +1049,8 @@ typedef union {
 typedef union {
     struct {
         /** tx_arb_weight_opt_dis_chn : R/W; bitpos: [0]; default: 0;
-         *  reserved
+         *  0: Enable
+         *  1: Disable
          */
         uint32_t tx_arb_weight_opt_dis_chn:1;
         uint32_t reserved_1:31;
@@ -1098,7 +1078,8 @@ typedef union {
 typedef union {
     struct {
         /** rx_arb_weight_opt_dis_chn : R/W; bitpos: [0]; default: 0;
-         *  reserved
+         *  0: Enable
+         *  1: Disable
          */
         uint32_t rx_arb_weight_opt_dis_chn:1;
         uint32_t reserved_1:31;
@@ -1413,8 +1394,7 @@ typedef struct {
     volatile ahb_dma_in_int_chn_reg_t in_intr[2];
     uint32_t reserved_020[4];
     volatile ahb_dma_out_int_chn_reg_t out_intr[2];
-    uint32_t reserved_050[4];
-    volatile ahb_dma_ahb_test_reg_t ahb_test;
+    uint32_t reserved_050[5];
     volatile ahb_dma_misc_conf_reg_t misc_conf;
     volatile ahb_dma_date_reg_t date;
     uint32_t reserved_06c;
