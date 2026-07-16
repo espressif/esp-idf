@@ -192,67 +192,69 @@ void _ss_wdt_hal_deinit(wdt_hal_context_t *hal)
  */
 esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
-                       esp_tee_buf_in_ree(hash, hlen) &&
-                       esp_tee_buf_in_ree(out_sign, sizeof(esp_tee_sec_storage_ecdsa_sign_t)));
-
-    if (!valid_addr) {
+    bool valid_arg = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
+                      esp_tee_buf_in_ree(hash, hlen) &&
+                      esp_tee_buf_in_ree(out_sign, sizeof(esp_tee_sec_storage_ecdsa_sign_t)) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(cfg->id));
+    if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(valid_arg);
 
     return esp_tee_sec_storage_ecdsa_sign(cfg, hash, hlen, out_sign);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg_t *cfg, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
-                       esp_tee_buf_in_ree(out_pubkey, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)));
-
-    if (!valid_addr) {
+    bool valid_arg = (esp_tee_buf_in_ree(cfg, sizeof(esp_tee_sec_storage_key_cfg_t)) &&
+                      esp_tee_buf_in_ree(out_pubkey, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(cfg->id));
+    if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(valid_arg);
 
     return esp_tee_sec_storage_ecdsa_get_pubkey(cfg, out_pubkey);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *iv, size_t iv_len, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t)) &&
-                       esp_tee_buf_in_ree(ctx->input, ctx->input_len) &&
-                       esp_tee_buf_in_ree(iv, iv_len) &&
-                       esp_tee_buf_in_ree(tag, tag_len) &&
-                       esp_tee_buf_in_ree(output, ctx->input_len));
+    bool valid_arg = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t)) &&
+                      esp_tee_buf_in_ree(ctx->input, ctx->input_len) &&
+                      esp_tee_buf_in_ree(iv, iv_len) &&
+                      esp_tee_buf_in_ree(tag, tag_len) &&
+                      esp_tee_buf_in_ree(output, ctx->input_len) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(ctx->key_id));
 
     if (ctx->aad_len != 0) {
-        valid_addr &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
+        valid_arg &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
     }
 
-    if (!valid_addr) {
+    if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(valid_arg);
 
     return esp_tee_sec_storage_aead_encrypt(ctx, iv, iv_len, tag, tag_len, output);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *iv, size_t iv_len, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    bool valid_addr = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t)) &&
-                       esp_tee_buf_in_ree(ctx->input, ctx->input_len) &&
-                       esp_tee_buf_in_ree(iv, iv_len) &&
-                       esp_tee_buf_in_ree(tag, tag_len) &&
-                       esp_tee_buf_in_ree(output, ctx->input_len));
+    bool valid_arg = (esp_tee_buf_in_ree(ctx, sizeof(esp_tee_sec_storage_aead_ctx_t)) &&
+                      esp_tee_buf_in_ree(ctx->input, ctx->input_len) &&
+                      esp_tee_buf_in_ree(iv, iv_len) &&
+                      esp_tee_buf_in_ree(tag, tag_len) &&
+                      esp_tee_buf_in_ree(output, ctx->input_len) &&
+                      !esp_tee_sec_storage_is_key_tee_owned(ctx->key_id));
 
     if (ctx->aad_len != 0) {
-        valid_addr &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
+        valid_arg &= esp_tee_buf_in_ree(ctx->aad, ctx->aad_len);
     }
 
-    if (!valid_addr) {
+    if (!valid_arg) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(valid_addr);
+    ESP_FAULT_ASSERT(valid_arg);
 
     return esp_tee_sec_storage_aead_decrypt(ctx, iv, iv_len, tag, tag_len, output);
 }

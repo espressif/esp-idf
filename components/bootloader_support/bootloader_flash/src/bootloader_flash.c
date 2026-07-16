@@ -416,8 +416,8 @@ void bootloader_munmap(const void *mapping)
         mmu_hal_unmap_all();
 #else
         cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
-        mmu_hal_unmap_region(0, FLASH_MMAP_VADDR, current_mapped_size);
         cache_hal_invalidate_addr(FLASH_MMAP_VADDR, current_mapped_size);
+        mmu_hal_unmap_region(0, FLASH_MMAP_VADDR, current_mapped_size);
         cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 #endif

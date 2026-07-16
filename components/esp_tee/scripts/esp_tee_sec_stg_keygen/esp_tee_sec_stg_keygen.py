@@ -31,6 +31,7 @@ class KeyType(Enum):
 class Flags(IntFlag):
     NONE = 0x00000000
     WRITE_ONCE = 0x00000001
+    TEE_ONLY = 0x00000002
 
 
 # === Key Generators ===
@@ -114,12 +115,20 @@ def generate_key_data(key_type: KeyType, flags: Flags, input_file: str | None) -
     default=False,
     help='make key persistent - cannot be modified or deleted once written',
 )
-def main(key_type: str, output: str, input_file: str | None, write_once: bool) -> None:
+@click.option(
+    '--tee-only',
+    is_flag=True,
+    default=False,
+    help='mark key as owned exclusively by the TEE - the REE cannot use, generate or clear it',
+)
+def main(key_type: str, output: str, input_file: str | None, write_once: bool, tee_only: bool) -> None:
     """Generate or import a cryptographic key structure for secure storage."""
     selected_type = KeyType[key_type.upper()]
     flags = Flags.NONE
     if write_once:
         flags |= Flags.WRITE_ONCE
+    if tee_only:
+        flags |= Flags.TEE_ONLY
 
     log.print(
         f'[+] Generating key of type: {selected_type.name} (value: {selected_type.value})',
@@ -130,6 +139,8 @@ def main(key_type: str, output: str, input_file: str | None, write_once: bool) -
         log.print(f'[+] Using user-provided key file: {input_file}', markup=False, soft_wrap=True)
     if write_once:
         log.print('[+] WRITE_ONCE flag is set', markup=False, soft_wrap=True)
+    if tee_only:
+        log.print('[+] TEE_ONLY flag is set', markup=False, soft_wrap=True)
 
     try:
         key_data = generate_key_data(selected_type, flags, input_file)

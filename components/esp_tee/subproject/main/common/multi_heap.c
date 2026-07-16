@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "rom_patch_tlsf.h"
 #include "esp_rom_sys.h"
 #include "tlsf_block_functions.h"
@@ -62,6 +63,9 @@ esp_err_t esp_tee_heap_init(void *start_ptr, size_t size)
     if (too_small) {
         return ESP_ERR_INVALID_SIZE;
     }
+
+    /* Zeroize the entire region before registering it as the TEE heap*/
+    memset(start_ptr, 0, size);
 
 #if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
     void *heap = tlsf_create_with_pool(start_ptr + sizeof(heap_t), usable_size);
@@ -227,7 +231,7 @@ void esp_tee_heap_dump_info(void)
 
 /* Definitions for functions from the heap component, used in files shared with ESP-IDF */
 
-void *heap_caps_malloc(size_t alignment, size_t size, uint32_t caps)
+void *heap_caps_malloc(size_t size, uint32_t caps)
 {
     (void) caps;
     return esp_tee_heap_malloc(size);
