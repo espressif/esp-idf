@@ -1,0 +1,17 @@
+# Restricting to ESP32P4
+CONFIG_IDF_TARGET="esp32p4"
+
+# Target the rev < 3.0 PMP layout (16 entries)
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=360
+
+# Enabling memory protection
+CONFIG_ESP_SYSTEM_MEMPROT=y
+
+# Enable memprot test
+CONFIG_TEST_MEMPROT=y
+
+# Enable SPIRAM to check the alignment gap's memory protection
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_USE_CAPS_ALLOC=y
+CONFIG_SPIRAM_XIP_FROM_PSRAM=y
