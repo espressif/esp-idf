@@ -576,10 +576,7 @@ esp_err_t WL_Flash::write(size_t dest_addr, const void *src, size_t size)
         return ESP_ERR_INVALID_STATE;
     }
     if (size == 0) {
-        // Nothing to do. Guard this explicitly: size is unsigned, so
-        // `size - 1` below would otherwise wrap around to SIZE_MAX and turn
-        // "count" into a huge page count, walking far past the caller's
-        // buffer (see components/wear_levelling/host_test).
+        // size==0: (size-1) unsigned underflow would OOB the caller buffer.
         return ESP_OK;
     }
     ESP_LOGD(TAG, "%s - dest_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) dest_addr, (uint32_t) size);
@@ -602,8 +599,7 @@ esp_err_t WL_Flash::read(size_t src_addr, void *dest, size_t size)
         return ESP_ERR_INVALID_STATE;
     }
     if (size == 0) {
-        // See the matching guard in WL_Flash::write() above: size==0 must
-        // not be allowed to reach the `size - 1` computation below.
+        // Same size==0 guard as write(); avoid (size-1) underflow below.
         return ESP_OK;
     }
     ESP_LOGD(TAG, "%s - src_addr= 0x%08" PRIx32 ", size= 0x%08" PRIx32 , __func__, (uint32_t) src_addr, (uint32_t) size);

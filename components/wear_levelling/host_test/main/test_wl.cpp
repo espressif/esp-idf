@@ -110,12 +110,7 @@ TEST_CASE("write and read with zero size are safe no-ops", "[wear_levelling]")
     result = wl_mount(partition, &wl_handle);
     REQUIRE(result == ESP_OK);
 
-    // wl_write()/wl_read() do not document size==0 as invalid (analogous to
-    // POSIX write()/read() with count==0), so it must not be treated as an
-    // out-of-bounds request. Previously, WL_Flash::write()/read() computed
-    // `(size - 1) / wl_page_size` without checking for size==0 first; since
-    // size is unsigned, size==0 wrapped this to a huge page count and walked
-    // far past the caller-provided buffer.
+    // Zero-length wl_write/read must be no-ops; size==0 used to underflow (size-1) and OOB the buffer.
     uint8_t dummy = 0xAA;
     result = wl_write(wl_handle, 0, &dummy, 0);
     REQUIRE(result == ESP_OK);
