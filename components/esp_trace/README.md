@@ -231,7 +231,7 @@ The `esp_trace` component supports integration of external trace libraries throu
 >
 > Encoder and transport callbacks invoked from the hot path — `write`, `flush` / `flush_nolock`, `read`, `take_lock` / `give_lock`, `panic_handler` — run from inside FreeRTOS trace hooks (and from ISR context for `traceISR_ENTER` / `traceISR_EXIT`). They are also called while the encoder's lock is held.
 >
-> Do **not** call FreeRTOS / IDF APIs that themselves trigger trace hooks from these callbacks. Anything that would emit a `trace*()` macro re-enters the tracing path: it can recurse into your own encoder, deadlock on the encoder's non-recursive spinlock, or call a task-only API from ISR context.
+> Do **not** call FreeRTOS / IDF APIs that themselves trigger trace hooks from these callbacks. Anything that would invoke a `trace*()` macro re-enters the tracing path: it can recurse into your own encoder, deadlock on the encoder's non-recursive spinlock, or call a task-only API from ISR context.
 >
 > Specifically avoid:
 > - Task APIs: `vTaskDelay`, `vTaskSuspend`, `xTaskNotify*`, anything that yields.
@@ -410,6 +410,57 @@ target_link_libraries(${esp_trace_lib} INTERFACE $<TARGET_NAME_IF_EXISTS:${COMPO
 3. **Build and run** - The adapter will be automatically registered and used when the component is linked.
 
 **Note:** External trace libraries should use `CONFIG_ESP_TRACE_LIB_EXTERNAL=y` instead of defining their own Kconfig option in the esp_trace menu. This keeps the external component independent from the esp_trace component.
+
+## Function Tracing
+
+`esp_trace` can record function entry/exit using the compiler's `-finstrument-functions` feature. The runtime and hooks live in `esp_trace`. The active encoder (e.g. SystemView) formats the events.
+
+### Enable
+
+```
+CONFIG_ESP_TRACE_FUNCTION_TRACE=y
+```
+
+### Instrument selected code
+
+Add the flag only to the components or files you want traced:
+
+```cmake
+# instrument the whole component
+target_compile_options(${COMPONENT_LIB} PRIVATE -finstrument-functions)
+```
+
+To narrow it down, exclude files or functions:
+
+```cmake
+target_compile_options(${COMPONENT_LIB} PRIVATE
+    -finstrument-functions
+    -finstrument-functions-exclude-file-list=foo.c,bar.c
+    -finstrument-functions-exclude-function-list=hot_fn,isr_handler)
+```
+
+Individual functions can also be excluded in source with `__attribute__((no_instrument_function))`.
+
+### Control from the application
+
+```c
+#include "esp_trace_function_trace.h"
+
+esp_trace_function_trace_start();
+// ...
+esp_trace_function_trace_stop();
+```
+
+Recording is active only while function tracing is started and the encoder reports it is recording (for SystemView this follows the host connecting and starting a recording over JTAG/UART).
+
+> Do not instrument `esp_trace`, encoders, transports, or SEGGER sources. They must stay free of `-finstrument-functions` to avoid recursion. The target sends addresses, not symbol names. If supported, the host viewer can resolve them from the ELF.
+
+### Limitations
+
+- No early-boot tracing. Events are recorded only after a trace session and the encoder are running.
+- The target sends addresses, not symbol strings. The host viewer can optionally resolve them from the ELF.
+- Instrumentation adds hook overhead to every traced call and increases code size and stack usage.
+- Whole-IDF instrumentation is not recommended. Instrument selected components or files only.
 
 ## Documentation
 

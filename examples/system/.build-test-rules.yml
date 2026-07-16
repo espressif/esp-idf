@@ -89,6 +89,15 @@ examples/system/flash_suspend:
       temporary: true
       reason: the other targets are not tested yet
 
+examples/system/function_tracing:
+  disable_test:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_trace
+    - app_trace
+
 examples/system/gcov:
   disable_test:
     - if: IDF_TARGET == "esp32h21"

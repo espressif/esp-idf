@@ -3737,3 +3737,5 @@ Processed 99 heap events.
 /Users/erhan/dev/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:141
 
 Found 17706 leaked bytes in 45 blocks.
+=============== FUNCTION TRACE REPORT ===============
+Processed 0 function trace events.

@@ -22,6 +22,7 @@
 #include "esp_trace_registry.h"
 #include "esp_trace.h"
 #include "esp_trace_port_transport.h"
+#include "esp_trace_internal.h"
 #include "esp_private/startup_internal.h"
 #include "esp_private/esp_sys_event_system_init.h"
 #include "esp_private/esp_sys_event_panic.h"
@@ -164,7 +165,11 @@ esp_err_t esp_trace_start(void)
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    return h->encoder.vt->start(&h->encoder);
+    esp_err_t err = h->encoder.vt->start(&h->encoder);
+    if (err == ESP_OK) {
+        esp_trace_notify_recording_state(true);
+    }
+    return err;
 }
 
 esp_err_t esp_trace_stop(void)
@@ -178,7 +183,11 @@ esp_err_t esp_trace_stop(void)
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    return h->encoder.vt->stop(&h->encoder);
+    esp_err_t err = h->encoder.vt->stop(&h->encoder);
+    if (err == ESP_OK) {
+        esp_trace_notify_recording_state(false);
+    }
+    return err;
 }
 
 esp_err_t esp_trace_flush(void)
@@ -216,6 +225,20 @@ esp_trace_link_types_t esp_trace_get_link_type(esp_trace_handle_t h)
 esp_trace_handle_t esp_trace_get_active_handle(void)
 {
     return s_active_handle;
+}
+
+esp_trace_encoder_t *esp_trace_get_active_encoder(void)
+{
+    return s_active_handle ? &s_active_handle->encoder : NULL;
+}
+
+void esp_trace_notify_recording_state(bool active)
+{
+#if CONFIG_ESP_TRACE_FUNCTION_TRACE
+    esp_trace_function_trace_notify_recording(active);
+#else
+    (void)active;
+#endif
 }
 
 void esp_trace_panic_handler(const void *info)

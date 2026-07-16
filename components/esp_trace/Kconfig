@@ -85,6 +85,57 @@ menu "ESP Trace Configuration"
 
     endmenu
 
+    menu "Function Tracing"
+        depends on ESP_TRACE_ENABLE
+
+        config ESP_TRACE_FUNCTION_TRACE
+            bool "Enable compiler-instrumented function tracing"
+            default n
+            help
+                Trace when functions are entered and exited.
+
+                When you build a component with the compiler flag
+                -finstrument-functions, the compiler inserts a call at the start
+                and end of every function in that component. These calls go to
+                hooks provided by esp_trace, which forward the events to the
+                active trace encoder (for example SystemView).
+
+                Enabling this option compiles the hook functions and the
+                function-trace runtime into the build. It does not add
+                -finstrument-functions to any code, so on its own it produces no
+                events.
+
+                To trace a component or file, add the GCC function instrumentation flag
+                from that component's CMakeLists.txt. See the Application Level Tracing
+                guide and examples/system/function_tracing for CMake examples.
+
+                Use the GCC -finstrument-functions-exclude-file-list and
+                -finstrument-functions-exclude-function-list flags to skip
+                specific files or functions.
+
+        config ESP_TRACE_FUNCTION_TRACE_AUTO_START
+            bool "Start function tracing automatically when the host starts recording"
+            depends on ESP_TRACE_FUNCTION_TRACE
+            default y
+            help
+                Controls when function tracing begins recording once a trace
+                session is active.
+
+                When enabled, function tracing follows the encoder's recording
+                state and begins as soon as the host starts the session (for
+                example OpenOCD "mon esp sysview_mcore start"), without an
+                application call.
+
+                When disabled, function-trace events are dropped until the
+                application calls esp_trace_function_trace_start(), even if a host
+                trace session is already recording. esp_trace_function_trace_stop()
+                stops recording again.
+
+                An active trace session (encoder recording) is required in both
+                cases.
+
+    endmenu
+
     choice ESP_TRACE_TIMESTAMP_SOURCE
         depends on ESP_TRACE_ENABLE
         prompt "Trace timestamp source"
