@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,9 +82,10 @@ TEST_CASE("open() with O_APPEND on FATFS works well", "[vfs][FATFS]")
     wl_handle_t test_wl_handle;
 
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-        .format_if_mount_failed = true,
         .max_files = 2
     };
+    //reformat the partition to ensure having a fresh copy for each test
+    TEST_ESP_OK(esp_vfs_fat_spiflash_format_rw_wl("/spiflash", NULL));
     TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
 
     test_append("/spiflash/file.txt");
