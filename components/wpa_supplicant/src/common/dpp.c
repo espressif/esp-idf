@@ -1820,12 +1820,14 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 	const u8 *i_capab;
 	const u8 *i_bootstrap;
 	const u8 *version;
+	const u8 *channel;
 	u16 wrapped_data_len;
 	u16 i_proto_len;
 	u16 i_nonce_len;
 	u16 i_capab_len;
 	u16 i_bootstrap_len;
 	u16 version_len;
+	u16 channel_len;
 	struct dpp_authentication *auth = NULL;
 #ifdef CONFIG_TESTING_OPTIONS
 	u64 start_us = dpp_time_us();
@@ -1870,37 +1872,30 @@ dpp_auth_req_rx(void *msg_ctx, u8 dpp_allowed_roles, int qr_mutual,
 			   auth->peer_version);
 	}
 
-#if 0
 	channel = dpp_get_attr(attr_start, attr_len, DPP_ATTR_CHANNEL,
 			       &channel_len);
 	if (channel) {
-		//int neg_freq;
-
 		if (channel_len < 2) {
 			dpp_auth_fail(auth, "Too short Channel attribute");
 			goto fail;
 		}
 
-		neg_freq = ieee80211_chan_to_freq(NULL, channel[0], channel[1]);
 		wpa_printf(MSG_DEBUG,
-			   "DPP: Initiator requested different channel for negotiation: op_class=%u channel=%u --> freq=%d",
-			   channel[0], channel[1], neg_freq);
-		if (neg_freq < 0) {
+			   "DPP: Initiator requested different channel for negotiation: op_class=%u channel=%u",
+			   channel[0], channel[1]);
+		if (!channel[0] || !channel[1]) {
 			dpp_auth_fail(auth,
 				      "Unsupported Channel attribute value");
 			goto fail;
 		}
 
-		if (auth->curr_freq != (unsigned int) neg_freq) {
+		if (auth->curr_chan != channel[1]) {
 			wpa_printf(MSG_DEBUG,
-				   "DPP: Changing negotiation channel from %u MHz to %u MHz",
-				   freq, neg_freq);
-			auth->curr_freq = neg_freq;
+				   "DPP: Changing negotiation channel from %u to %u",
+				   auth->curr_chan, channel[1]);
 		}
-		/* rename it to chan */
-		auth->curr_chan = *channel;
+		auth->curr_chan = channel[1];
 	}
-#endif
 
 	i_proto = dpp_get_attr(attr_start, attr_len, DPP_ATTR_I_PROTOCOL_KEY,
 			       &i_proto_len);

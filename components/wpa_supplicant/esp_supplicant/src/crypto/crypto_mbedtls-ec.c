@@ -1638,8 +1638,9 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
          * uncompressed format (0x04 || X || Y).
          */
 
-        // Check if buffer has a format prefix (0x04, 0x02, or 0x03)
-        if (len > 0 && (buf[0] == 0x04 || buf[0] == 0x02 || buf[0] == 0x03)) {
+        size_t coord_len = PSA_BITS_TO_BYTES(bits);
+
+        if (len > 0 && len != 2 * coord_len && (buf[0] == 0x04 || buf[0] == 0x02 || buf[0] == 0x03)) {
             // Already has format prefix (0x04, 0x02, or 0x03)
             key_buf = os_calloc(1, len);
             if (!key_buf) {
