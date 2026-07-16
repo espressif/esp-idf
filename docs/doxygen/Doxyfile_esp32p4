@@ -18,6 +18,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_ccm.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_color.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_core.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dma.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_crop.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_demosaic.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_gamma.h \

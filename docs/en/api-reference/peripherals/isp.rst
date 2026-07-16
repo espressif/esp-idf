@@ -67,6 +67,7 @@ The ISP driver offers following services:
 
 - :ref:`isp-resource-allocation` - covers how to allocate ISP resources with properly set of configurations. It also covers how to recycle the resources when they finished working.
 - :ref:`isp-enable-disable` - covers how to enable and disable an ISP processor.
+- :ref:`isp-dma-input` - covers how to feed image frames stored in memory into the ISP through DW-GDMA.
 - :ref:`isp-af-statistics` - covers how to get AF statistics one-shot or continuously.
 - :ref:`isp-awb-statistics` - covers how to get AWB white patches statistics one-shot or continuously.
 - :ref:`isp-ae-statistics` - covers how to get AE statistics one-shot or continuously.
@@ -239,6 +240,15 @@ Before doing ISP pipeline, you need to enable the ISP processor first, by callin
 * Switches the driver state from **init** to **enable**.
 
 Calling :cpp:func:`esp_isp_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-dma-input:
+
+ISP DMA Input
+~~~~~~~~~~~~~
+
+Besides image streams from camera controllers, the ISP can also read image frames from system memory through DW-GDMA. To use DMA input, set :cpp:member:`esp_isp_processor_cfg_t::input_data_source` in :cpp:type:`esp_isp_processor_cfg_t` to :cpp:enumerator:`ISP_INPUT_DATA_SOURCE_DWGDMA`, and configure the input format, output format, and resolution according to the image frame.
+
+DMA input is useful for feeding software-generated data, offline RAW images, or other test images in memory into the ISP. It can be used to validate an ISP pipeline without a camera sensor, reproduce issues with a specific input image. Call :cpp:func:`esp_isp_dma_process_frame` to send one input buffer to the ISP and write the processed image into an output buffer. The input and output buffers must be accessible by DMA; if cacheable memory is used, perform the required cache synchronization before and after the DMA transfer.
 
 ISP AF Controller
 ~~~~~~~~~~~~~~~~~
@@ -957,6 +967,7 @@ Application Examples
 --------------------
 
 * :example:`peripherals/isp/multi_pipelines` demonstrates how to use the ISP pipelines to process the image signals from camera sensors and display the video on LCD screen via DSI peripheral.
+* :example:`peripherals/isp/dma_input` demonstrates how to feed a RAW8 BGGR image in memory into the ISP through DW-GDMA. ``pytest_isp_dma_input.py`` saves the processed RGB888 frames as PPM images and compares them pixel by pixel with the checked-in golden image.
 * `esp_video/examples <https://github.com/espressif/esp-video-components/tree/master/esp_video/examples>`_ provides some examples of enabling ISP control algorithms.
 
 API Reference
@@ -977,5 +988,6 @@ API Reference
 .. include-build-file:: inc/isp_color.inc
 .. include-build-file:: inc/isp_crop.inc
 .. include-build-file:: inc/isp_core.inc
+.. include-build-file:: inc/isp_dma.inc
 .. include-build-file:: inc/components/esp_driver_isp/include/driver/isp_types.inc
 .. include-build-file:: inc/components/esp_hal_cam/include/hal/isp_types.inc
