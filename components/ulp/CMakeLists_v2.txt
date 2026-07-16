@@ -1,0 +1,183 @@
+set(srcs "")
+set(includes "")
+set(requires "")
+set(priv_requires "")
+
+if(__ULP_BUILD)
+    if(ULP_TYPE STREQUAL "riscv")
+        list(APPEND includes
+            ulp_riscv/shared/include
+            ulp_riscv/ulp_core/include)
+        list(APPEND srcs
+            "ulp_riscv/ulp_core/ulp_riscv_vectors.S"
+            "ulp_riscv/ulp_core/start.S"
+            "ulp_riscv/ulp_core/ulp_riscv_utils.c")
+        list(APPEND requires
+            riscv
+            soc)
+    elseif(ULP_TYPE STREQUAL "lp_core")
+        list(APPEND includes
+            lp_core/lp_core/include
+            lp_core/shared/include)
+        list(APPEND srcs
+            "lp_core/lp_core/start.S"
+            "lp_core/lp_core/vector.S"
+            "lp_core/lp_core/port/${target}/vector_table.S"
+            "lp_core/shared/ulp_lp_core_memory_shared.c"
+            "lp_core/lp_core/lp_core_startup.c"
+            "lp_core/lp_core/lp_core_pmp.c"
+            "lp_core/lp_core/lp_core_utils.c"
+            "lp_core/lp_core/lp_core_panic.c"
+            "lp_core/lp_core/lp_core_interrupt.c"
+            "lp_core/shared/ulp_lp_core_lp_uart_shared.c"
+            "lp_core/lp_core/lp_core_uart.c"
+            "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+            "lp_core/shared/ulp_lp_core_critical_section_shared.c")
+
+        list(APPEND requires
+            esp_common
+            esp_driver_uart
+            esp_hal_gpio
+            esp_hal_uart
+            esp_rom
+            hal
+            riscv
+            soc)
+        list(APPEND priv_requires
+            esp_hal_clock
+            esp_hal_i2s
+            esp_hal_rtc_timer
+            esp_hal_pmu
+            esp_hw_support)
+
+    elseif(ULP_TYPE STREQUAL "fsm")
+        list(APPEND includes
+            ulp_common/include
+            ulp_fsm/include
+            ulp_fsm/include/${target})
+        list(APPEND requires soc)
+    else()
+        message(FATAL_ERROR "__ULP_BUILD requires ULP_TYPE to be one of: riscv, lp_core, fsm.")
+    endif()
+else()
+    if(CONFIG_ULP_COPROC_ENABLED)
+        list(APPEND includes
+            ulp_common/include)
+        list(APPEND requires
+            esp_common
+            soc)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_FSM)
+        list(APPEND includes
+            ulp_fsm/include
+            ulp_fsm/include/${target})
+        list(APPEND srcs
+            "ulp_common/ulp_common.c"
+            "ulp_fsm/ulp.c"
+            "ulp_fsm/ulp_macro.c")
+        list(APPEND requires esp_hw_support)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_RISCV)
+        list(APPEND includes
+            ulp_riscv/include
+            ulp_riscv/shared/include
+            ulp_riscv/ulp_core/include)
+        list(APPEND srcs
+            "ulp_common/ulp_common.c"
+            "ulp_riscv/ulp_riscv.c")
+        list(APPEND requires
+            esp_hw_support
+            esp_hal_pmu)
+    endif()
+
+    if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
+        list(APPEND includes
+            lp_core/include
+            lp_core/lp_core/include
+            lp_core/shared/include)
+        list(APPEND srcs
+            "lp_core/lp_core.c"
+            "lp_core/shared/ulp_lp_core_memory_shared.c"
+            "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
+            "lp_core/shared/ulp_lp_core_critical_section_shared.c")
+        list(APPEND requires
+            esp_hw_support
+            esp_hal_clock
+            esp_hal_pmu
+            esp_hal_rtc_timer
+            esp_rom
+            hal
+            riscv
+            soc)
+    endif()
+endif()
+
+if(requires)
+    list(REMOVE_DUPLICATES requires)
+endif()
+
+if(priv_requires)
+    list(REMOVE_DUPLICATES priv_requires)
+endif()
+
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS ${includes}
+                       REQUIRES ${requires}
+                       PRIV_REQUIRES ${priv_requires})
+
+# In the parent app build, the ulp component only provides the host-side API.
+# The executable/linker setup below is for native ULP child projects.
+if(NOT __ULP_BUILD)
+    idf_define_esp_err_codes(HEADERS ulp_fsm/include/ulp_fsm_common.h)
+    return()
+endif()
+
+# Preprocessor flags shared by every ULP memory-layout template. The template
+# is a ".in" file, so the standard target_linker_script flow runs the C
+# preprocessor on it. -D__ASSEMBLER__ keeps SoC headers to their macro-only
+# form, and the component's own ld directory is available for relative
+# includes.
+set(ulp_ld_flags "-D__ASSEMBLER__ -I\"${CMAKE_CURRENT_SOURCE_DIR}/ld\"")
+
+# Select the linker template and target-specific link options used by the ULP
+# executable created in the child project. The memory-layout template is
+# registered with target_linker_script so the standard build system
+# preprocesses and attaches it; per-type FLAGS supply the include directories
+# its #include lines need.
+if(ULP_TYPE STREQUAL "riscv")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/ulp_riscv.ld.in" MEMORY
+                         FLAGS "${ulp_ld_flags}")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/${target}.peripherals.ld")
+    target_link_options(${COMPONENT_LIB} INTERFACE
+        -nostartfiles
+        -Wl,--gc-sections
+        -Wl,--no-warn-rwx-segments
+        LINKER:-u,main)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC
+        IS_ULP_COCPU
+        ULP_RISCV_REGISTER_OPS)
+elseif(ULP_TYPE STREQUAL "lp_core")
+    # lp_core_riscv.ld includes soc/soc.h and esp_common headers, which are
+    # resolved automatically from the linked component graph. It also includes
+    # the esp_system ld snippets (ld.common, ld.hp_mem_defs); those live in the
+    # component's ld/ directory, which is not a public include dir, so pass it
+    # via FLAGS.
+    idf_component_get_property(esp_system_dir esp_system COMPONENT_DIR)
+    set(lp_core_ld_flags "${ulp_ld_flags} -I\"${esp_system_dir}/ld\" -I\"${esp_system_dir}/ld/${target}\"")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/lp_core_riscv.ld.in" MEMORY
+                         FLAGS "${lp_core_ld_flags}")
+
+    target_link_options(${COMPONENT_LIB} INTERFACE
+        -nostartfiles
+        -Wl,--gc-sections
+        -Wl,--no-warn-rwx-segments
+        LINKER:-u,main)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC IS_ULP_COCPU)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough)
+elseif(ULP_TYPE STREQUAL "fsm")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "ld/ulp_fsm.ld.in" MEMORY
+                         FLAGS "${ulp_ld_flags}")
+    target_link_options(${COMPONENT_LIB} INTERFACE "SHELL:-u entry")
+endif()

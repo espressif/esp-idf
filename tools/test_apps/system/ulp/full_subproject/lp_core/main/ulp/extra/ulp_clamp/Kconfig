@@ -1,0 +1,9 @@
+menu "ULP Clamp Component"
+
+    config ULP_CLAMP_MAX_VALUE
+        int "Maximum clamp value"
+        default 255
+        help
+            The upper bound used by the ulp_clamp() function.
+
+endmenu

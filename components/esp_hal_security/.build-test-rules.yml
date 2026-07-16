@@ -8,5 +8,8 @@ components/esp_hal_security/test_apps/crypto:
     - esp_security
 
 components/esp_hal_security/test_apps/tee:
+  disable+:
+    - if: IDF_BUILD_V2 == "1"
+      reason: Legacy ULP apps are covered by CMake v1; buildv2 covers full_subproject ULP apps.
   disable:
     - if: IDF_TARGET not in ["esp32c6", "esp32h2", "esp32c5", "esp32c61", "esp32p4"]

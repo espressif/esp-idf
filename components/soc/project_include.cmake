@@ -1,3 +1,7 @@
+if(IDF_CUSTOM_TOOLCHAIN)
+    return()
+endif()
+
 if(CONFIG_IDF_TOOLCHAIN_GCC)
     # Common flags
     idf_toolchain_add_flags(LINK_OPTIONS "-nostartfiles")

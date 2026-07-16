@@ -51,7 +51,10 @@ function(__init_kconfig)
     # include(project.cmake) but before project().
     __resolve_sdkconfig_defaults()
 
-    idf_build_set_property(GENERATE_SDKCONFIG 1)
+    __get_default_value(VARIABLE GENERATE_SDKCONFIG
+                        DEFAULT 1
+                        OUTPUT generate_sdkconfig)
+    idf_build_set_property(GENERATE_SDKCONFIG "${generate_sdkconfig}")
 
     # Setup ESP-IDF root Kconfig and sdkconfig.rename files.
     idf_build_set_property(__ROOT_KCONFIG "${idf_path}/Kconfig")
@@ -992,6 +995,97 @@ function(idf_create_menuconfig executable)
             COMMENT "Running menuconfig..."
         )
     endif()
+endfunction()
+
+#[[
+.. cmakev2:function:: idf_register_menuconfig
+
+    .. code-block:: cmake
+
+        idf_register_menuconfig(NAME <human-label>
+                                TARGET <cmake-target>)
+
+    *NAME[in]*
+
+    Human-readable label shown in the dispatcher picker (e.g. ``"Main application"``,
+    ``"ULP (lp_core)"``).
+
+    *TARGET[in]*
+
+    Name of an existing CMake target that, when built, launches a menuconfig
+    session for some configuration. May be a target created by
+    ``idf_create_menuconfig`` or any other custom target (for example a proxy
+    target forwarding to a sub-project's ``menuconfig`` via
+    ``externalproject_add``).
+
+    Register a menuconfig target with the cmakev2 dispatcher. When exactly one
+    menuconfig is registered (the common case), ``idf.py menuconfig`` behaves
+    identically to today and runs that target directly. When two or more are
+    registered, ``idf.py menuconfig`` presents a small picker so the user can
+    choose which configuration to edit.
+#]]
+function(idf_register_menuconfig)
+    set(options)
+    set(one_value NAME TARGET)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
+    if(NOT DEFINED ARG_NAME)
+        idf_die("idf_register_menuconfig: NAME option is required")
+    endif()
+
+    if(NOT DEFINED ARG_TARGET)
+        idf_die("idf_register_menuconfig: TARGET option is required")
+    endif()
+
+    idf_build_get_property(names __MENUCONFIG_NAMES)
+    idf_build_get_property(targets __MENUCONFIG_TARGETS)
+    list(APPEND names "${ARG_NAME}")
+    list(APPEND targets "${ARG_TARGET}")
+    idf_build_set_property(__MENUCONFIG_NAMES "${names}")
+    idf_build_set_property(__MENUCONFIG_TARGETS "${targets}")
+endfunction()
+
+# Create the user-facing `menuconfig` target based on what has been registered
+# via idf_register_menuconfig(). With a single registration, `menuconfig` is a
+# thin alias for that target. With two or more, it runs the dispatcher.
+function(__finalize_menuconfig)
+    idf_build_get_property(names __MENUCONFIG_NAMES)
+    idf_build_get_property(targets __MENUCONFIG_TARGETS)
+    list(LENGTH names num_entries)
+
+    if(num_entries EQUAL 0)
+        return()
+    endif()
+
+    if(num_entries EQUAL 1)
+        list(GET targets 0 target)
+        add_custom_target(menuconfig)
+        add_dependencies(menuconfig ${target})
+        return()
+    endif()
+
+    # Two or more registrations: generate entries file and create dispatcher target
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(python PYTHON)
+    idf_build_get_property(idf_path IDF_PATH)
+
+    set(entries_file "${build_dir}/menuconfig_entries.txt")
+    set(content "")
+    math(EXPR last_idx "${num_entries} - 1")
+    foreach(i RANGE ${last_idx})
+        list(GET names ${i} name)
+        list(GET targets ${i} target)
+        string(APPEND content "${name}|${target}\n")
+    endforeach()
+    file(WRITE "${entries_file}" "${content}")
+
+    add_custom_target(menuconfig
+        COMMAND ${python} "${idf_path}/tools/kconfig_new/menuconfig_dispatcher.py"
+                "${entries_file}" "${build_dir}"
+        USES_TERMINAL
+        VERBATIM
+    )
 endfunction()
 
 #[[api

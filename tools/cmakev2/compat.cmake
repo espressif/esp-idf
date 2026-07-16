@@ -165,6 +165,25 @@ endfunction()
         ``linkerscript`` template. The ``linkerscript`` is processed with ldgen
         to produce the ``output``.
 
+    *FLAGS[in,opt]*
+
+        Explicit preprocessor flags for the linker script(s) registered by this
+        call, for example ``-D`` defines or extra ``-I`` include directories.
+        When given, they replace the default parent-dir==target include
+        heuristic while a ``.in`` script or template is preprocessed.
+        ``-I<config_dir>`` and the linked components' include directories are
+        always added regardless. Applies to every ``scriptfile`` in the same
+        call.
+
+    *MEMORY[opt]*
+
+        Marks the script(s) as the memory-layout base for the link. Such
+        scripts are emitted as ``-T`` before all other linker scripts, so that
+        section-placement scripts from other components can reference their
+        ``MEMORY`` regions and ``REGION_ALIAS`` names. Needed when the memory
+        layout lives in a different component than the section scripts that
+        depend on it.
+
     This function adds one or more linker scripts to the specified component
     target, incorporating the linker script into the linking process.
 
@@ -178,21 +197,74 @@ function(target_linker_script target deptype scriptfiles)
     # The linker script files, templates, and their output filenames are stored
     # only as component properties. The script files are generated and added to
     # the library link interface in the idf_build_library function.
-    set(options)
-    set(one_value PROCESS)
+    set(options MEMORY)
+    set(one_value PROCESS FLAGS)
     set(multi_value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
     foreach(scriptfile ${scriptfiles})
         get_filename_component(scriptfile "${scriptfile}" ABSOLUTE)
         idf_msg("Adding linker script ${scriptfile}")
+        __linker_script_key("${scriptfile}" script_key)
         if(ARG_PROCESS)
             get_filename_component(output "${ARG_PROCESS}" ABSOLUTE)
             idf_component_set_property("${target}" LINKER_SCRIPTS_TEMPLATE "${scriptfile}" APPEND)
-            idf_component_set_property("${target}" LINKER_SCRIPTS_GENERATED "${output}" APPEND)
+            # Key the generated output path by the template instead of keeping a
+            # second list index-aligned with LINKER_SCRIPTS_TEMPLATE.
+            idf_component_set_property("${target}" "LINKER_SCRIPT_GENERATED_${script_key}" "${output}")
         else()
-            idf_component_set_property("${target}" LINKER_SCRIPTS ${scriptfile} APPEND)
+            idf_component_set_property("${target}" LINKER_SCRIPTS "${scriptfile}" APPEND)
+        endif()
+        # Memory-layout scripts are emitted before other scripts in the link,
+        # so section-placement scripts can reference their MEMORY regions.
+        if(ARG_MEMORY)
+            idf_component_set_property("${target}" "LINKER_SCRIPT_MEMORY_${script_key}" TRUE)
+        endif()
+        # Per-script preprocessor flags, consumed by __preprocess_linker_script
+        # when a ".in" script or template is built. The "__DEFAULT__" sentinel
+        # means FLAGS was not given (use the parent-dir==target heuristic); any
+        # other value, including empty, means FLAGS was given and replaces it.
+        # This distinguishes "not given" from "given empty", which the property
+        # value alone cannot (both would read back as empty).
+        if(DEFINED ARG_FLAGS)
+            idf_component_set_property("${target}" "LINKER_SCRIPT_FLAGS_${script_key}" "${ARG_FLAGS}")
+        else()
+            idf_component_set_property("${target}" "LINKER_SCRIPT_FLAGS_${script_key}" "__DEFAULT__")
         endif()
     endforeach()
+endfunction()
+
+function(__idf_component_link_optional_requirement component target link_type req_interface output)
+    # Config-only cmakev1 components are represented by INTERFACE libraries.
+    # CMake cannot apply PRIVATE links to an INTERFACE library, so optional
+    # private requirements are ignored for those components.
+    idf_component_get_property(component_target_type "${component}" COMPONENT_REAL_TARGET_TYPE)
+    if("${component_target_type}" STREQUAL "INTERFACE_LIBRARY")
+        if("${link_type}" STREQUAL "PRIVATE")
+            set(${output} FALSE PARENT_SCOPE)
+            return()
+        endif()
+        target_link_libraries("${target}" INTERFACE "${req_interface}")
+    else()
+        target_link_libraries("${target}" "${link_type}" "${req_interface}")
+    endif()
+
+    if("${link_type}" STREQUAL "PRIVATE")
+        set(req_type PRIV_REQUIRES)
+    elseif("${link_type}" STREQUAL "PUBLIC" OR "${link_type}" STREQUAL "INTERFACE")
+        set(req_type REQUIRES)
+    else()
+        set(req_type "")
+    endif()
+
+    if(req_type)
+        idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
+        idf_component_get_property(existing "${component}" ${req_type})
+        if(NOT "${req_name}" IN_LIST existing)
+            idf_component_set_property("${component}" ${req_type} "${req_name}" APPEND)
+        endif()
+    endif()
+
+    set(${output} TRUE PARENT_SCOPE)
 endfunction()
 
 #[[
@@ -269,22 +341,10 @@ function(__idf_component_process_optional_requires)
             endif()
 
             # Link the caller's real target to the requirement's interface target.
-            target_link_libraries("${caller_target}" "${link_type}" "${req_interface}")
-
-            # Update the caller's REQUIRES or PRIV_REQUIRES property.
-            idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
-            if("${link_type}" STREQUAL "PRIVATE")
-                idf_component_get_property(existing "${caller_interface}" PRIV_REQUIRES)
-                if(NOT "${req_name}" IN_LIST existing)
-                    idf_component_set_property("${caller_interface}" PRIV_REQUIRES
-                                               "${req_name}" APPEND)
-                endif()
-            elseif("${link_type}" STREQUAL "PUBLIC" OR "${link_type}" STREQUAL "INTERFACE")
-                idf_component_get_property(existing "${caller_interface}" REQUIRES)
-                if(NOT "${req_name}" IN_LIST existing)
-                    idf_component_set_property("${caller_interface}" REQUIRES
-                                               "${req_name}" APPEND)
-                endif()
+            __idf_component_link_optional_requirement("${caller_interface}" "${caller_target}"
+                                                      "${link_type}" "${req_interface}" linked)
+            if(NOT linked)
+                continue()
             endif()
 
             # Mark this pair as done so it is not processed again for subsequent
@@ -372,24 +432,8 @@ function(idf_component_optional_requires type)
             endif()
             idf_component_include("${req}")
 
-            if("${type}" STREQUAL "PRIVATE")
-                set(req_type PRIV_REQUIRES)
-            elseif("${type}" STREQUAL "PUBLIC")
-                set(req_type REQUIRES)
-            else()
-                set(req_type "")
-            endif()
-
-            if(req_type)
-                idf_component_get_property(req_name "${req_interface}" COMPONENT_NAME)
-                idf_component_get_property(target_reqs "${COMPONENT_NAME}" ${req_type})
-                if(NOT "${req_name}" IN_LIST target_reqs)
-                    idf_component_set_property("${COMPONENT_NAME}" ${req_type} "${req_name}" APPEND)
-                    target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
-                endif()
-            else()
-                target_link_libraries(${COMPONENT_TARGET} ${type} ${req_interface})
-            endif()
+            __idf_component_link_optional_requirement("${COMPONENT_NAME}" "${COMPONENT_TARGET}"
+                                                      "${type}" "${req_interface}" linked)
         endforeach()
     endif()
 endfunction()
@@ -700,7 +744,10 @@ function(idf_component_register)
             target_include_directories("${COMPONENT_TARGET}" PRIVATE "${include_dir}")
         endforeach()
 
-        set_target_properties(${COMPONENT_TARGET} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME} LINKER_LANGUAGE C)
+        __idf_component_get_linker_language(component_linker_language)
+        set_target_properties(${COMPONENT_TARGET} PROPERTIES
+                              OUTPUT_NAME ${COMPONENT_NAME}
+                              LINKER_LANGUAGE ${component_linker_language})
 
         set(component_type LIBRARY)
 
@@ -819,6 +866,14 @@ function(idf_component_register)
     idf_component_set_property("${COMPONENT_NAME}" PRIV_REQUIRES "${__merged_priv_requires}")
     idf_component_set_property("${COMPONENT_NAME}" REQUIRED_IDF_TARGETS "${ARG_REQUIRED_IDF_TARGETS}")
     idf_component_set_property("${COMPONENT_NAME}" COMPONENT_TYPE "${component_type}")
+    idf_component_set_property("${COMPONENT_NAME}" COMPONENT_REAL_TARGET "${COMPONENT_TARGET}")
+    # Optional requirements need to know whether the backward-compatible
+    # component target is STATIC or INTERFACE before deciding how to link it.
+    if("${component_type}" STREQUAL "CONFIG_ONLY")
+        idf_component_set_property("${COMPONENT_NAME}" COMPONENT_REAL_TARGET_TYPE INTERFACE_LIBRARY)
+    else()
+        idf_component_set_property("${COMPONENT_NAME}" COMPONENT_REAL_TARGET_TYPE STATIC_LIBRARY)
+    endif()
 endfunction()
 
 #[[

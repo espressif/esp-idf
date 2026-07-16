@@ -1,0 +1,10 @@
+menu "ULP Sum Component"
+
+    config ULP_SUM_ENABLED
+        bool "Enable ULP sum function"
+        default y
+        help
+            When enabled, the ULP program will compute a sum using the
+            ulp_sum component.
+
+endmenu

@@ -88,6 +88,20 @@ function(__idf_component_get_property_unchecked variable component_interface pro
     set(${variable} ${value} PARENT_SCOPE)
 endfunction()
 
+function(__idf_component_get_linker_language variable)
+    get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(C IN_LIST enabled_languages)
+        set(language C)
+    elseif(CXX IN_LIST enabled_languages)
+        set(language CXX)
+    elseif(ASM IN_LIST enabled_languages)
+        set(language ASM)
+    else()
+        idf_die("No supported language is enabled for component targets")
+    endif()
+    set(${variable} ${language} PARENT_SCOPE)
+endfunction()
+
 #[[api
 .. cmakev2:function:: idf_component_get_property
 
@@ -1197,7 +1211,10 @@ function(idf_component_include name)
     endif()
 
     # Set the component archive file name.
-    set_target_properties(${component_real_target} PROPERTIES OUTPUT_NAME ${component_name} LINKER_LANGUAGE C)
+    __idf_component_get_linker_language(component_linker_language)
+    set_target_properties(${component_real_target} PROPERTIES
+                          OUTPUT_NAME ${component_name}
+                          LINKER_LANGUAGE ${component_linker_language})
 
     idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
     target_include_directories("${component_real_target}" BEFORE PRIVATE "${include_directories}")

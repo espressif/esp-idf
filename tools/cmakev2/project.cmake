@@ -90,6 +90,17 @@ function(__init_project_configuration)
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(project_dir PROJECT_DIR)
     idf_build_get_property(project_name PROJECT_NAME)
+    get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+
+    set(c_enabled OFF)
+    if(C IN_LIST enabled_languages)
+        set(c_enabled ON)
+    endif()
+
+    set(cxx_enabled OFF)
+    if(CXX IN_LIST enabled_languages)
+        set(cxx_enabled ON)
+    endif()
 
     # Set the LINKER_TYPE build property. Different linkers may have varying
     # options, so it's important to identify the linker type to configure the
@@ -144,38 +155,43 @@ function(__init_project_configuration)
     if(IDF_TARGET STREQUAL "linux")
         # Building for Linux target, fall back to an older version of the standard
         # if the preferred one is not supported by the compiler.
-        set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
-        set(ver_found FALSE)
-        foreach(c_version ${preferred_c_versions})
-            check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
-            if(ver_${c_version}_supported)
-                set(c_std ${c_version})
-                set(ver_found TRUE)
-                break()
+        if(c_enabled)
+            set(preferred_c_versions gnu23 gnu17 gnu11 gnu99)
+            set(ver_found FALSE)
+            foreach(c_version ${preferred_c_versions})
+                check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
+                if(ver_${c_version}_supported)
+                    set(c_std ${c_version})
+                    set(ver_found TRUE)
+                    break()
+                endif()
+            endforeach()
+            if(NOT ver_found)
+                idf_die("Failed to set C language standard to one of the supported versions: "
+                        "${preferred_c_versions}. Please upgrade the host compiler.")
             endif()
-        endforeach()
-        if(NOT ver_found)
-            idf_die("Failed to set C language standard to one of the supported versions: "
-                    "${preferred_c_versions}. Please upgrade the host compiler.")
+
+            list(APPEND c_compile_options "-std=${c_std}")
         endif()
 
-        set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
-        set(ver_found FALSE)
-        foreach(cxx_version ${preferred_cxx_versions})
-            check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
-            if(ver_${cxx_version}_supported)
-                set(cxx_std ${cxx_version})
-                set(ver_found TRUE)
-                break()
+        if(cxx_enabled)
+            set(preferred_cxx_versions gnu++26 gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
+            set(ver_found FALSE)
+            foreach(cxx_version ${preferred_cxx_versions})
+                check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
+                if(ver_${cxx_version}_supported)
+                    set(cxx_std ${cxx_version})
+                    set(ver_found TRUE)
+                    break()
+                endif()
+            endforeach()
+            if(NOT ver_found)
+                idf_die("Failed to set C++ language standard to one of the supported versions: "
+                        "${preferred_cxx_versions}. Please upgrade the host compiler.")
             endif()
-        endforeach()
-        if(NOT ver_found)
-            idf_die("Failed to set C++ language standard to one of the supported versions: "
-                    "${preferred_cxx_versions}. Please upgrade the host compiler.")
-        endif()
 
-        list(APPEND c_compile_options   "-std=${c_std}")
-        list(APPEND cxx_compile_options "-std=${cxx_std}")
+            list(APPEND cxx_compile_options "-std=${cxx_std}")
+        endif()
     else()
         # Building for chip targets: we use a known version of the toolchain.
         # Use latest supported versions.
@@ -183,8 +199,12 @@ function(__init_project_configuration)
         # function, which must be called after project().
         # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
         # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
-        list(APPEND c_compile_options   "-std=gnu23")
-        list(APPEND cxx_compile_options "-std=gnu++26")
+        if(c_enabled)
+            list(APPEND c_compile_options "-std=gnu23")
+        endif()
+        if(cxx_enabled)
+            list(APPEND cxx_compile_options "-std=gnu++26")
+        endif()
     endif()
 
     # Subprojects that handle their own compiler optimization flags can set the
@@ -215,17 +235,19 @@ function(__init_project_configuration)
         endif()
     endif()
 
-    if(CONFIG_COMPILER_CXX_EXCEPTIONS)
-        list(APPEND cxx_compile_options "-fexceptions")
-    else()
-        list(APPEND cxx_compile_options "-fno-exceptions")
-    endif()
+    if(cxx_enabled)
+        if(CONFIG_COMPILER_CXX_EXCEPTIONS)
+            list(APPEND cxx_compile_options "-fexceptions")
+        else()
+            list(APPEND cxx_compile_options "-fno-exceptions")
+        endif()
 
-    if(CONFIG_COMPILER_CXX_RTTI)
-        list(APPEND cxx_compile_options "-frtti")
-    else()
-        list(APPEND cxx_compile_options "-fno-rtti")
-        list(APPEND link_options "-fno-rtti")  # used to invoke correct multilib variant (no-rtti) during linking
+        if(CONFIG_COMPILER_CXX_RTTI)
+            list(APPEND cxx_compile_options "-frtti")
+        else()
+            list(APPEND cxx_compile_options "-fno-rtti")
+            list(APPEND link_options "-fno-rtti")  # used to invoke correct multilib variant (no-rtti) during linking
+        endif()
     endif()
 
     if(CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS)
@@ -236,10 +258,12 @@ function(__init_project_configuration)
         list(APPEND c_compile_options "-Wno-old-style-declaration")
     endif()
 
-    # TODO IDF-15784: remove in IDF v7.0 ?
-    check_c_compiler_flag("-Wunused-but-set-variable=1" compiler_supports_wunused_but_set_variable_eq_1)
-    if(compiler_supports_wunused_but_set_variable_eq_1)
-        list(APPEND compile_options "-Wunused-but-set-variable=1")
+    if(c_enabled)
+        # TODO IDF-15784: remove in IDF v7.0 ?
+        check_c_compiler_flag("-Wunused-but-set-variable=1" compiler_supports_wunused_but_set_variable_eq_1)
+        if(compiler_supports_wunused_but_set_variable_eq_1)
+            list(APPEND compile_options "-Wunused-but-set-variable=1")
+        endif()
     endif()
 
     if(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_UNINITIALIZED)
@@ -249,7 +273,7 @@ function(__init_project_configuration)
     elseif(CONFIG_COMPILER_CXX_TRIVIAL_AUTO_VAR_INIT_ZERO)
         set(compiler_cxx_trivial_auto_var_init "zero")
     endif()
-    if(compiler_cxx_trivial_auto_var_init)
+    if(NOT IDF_CUSTOM_TOOLCHAIN AND cxx_enabled AND compiler_cxx_trivial_auto_var_init)
         idf_toolchain_remove_flags(CXX_COMPILE_OPTIONS "-ftrivial-auto-var-init")
         check_cxx_compiler_flag("-ftrivial-auto-var-init=${compiler_cxx_trivial_auto_var_init}"
             compiler_supports_ftrivial_auto_var_init)
@@ -886,7 +910,10 @@ function(__project_default)
     endif()
 
     idf_create_menuconfig("${executable}"
-                          TARGET menuconfig)
+                          TARGET menuconfig-app)
+    idf_register_menuconfig(NAME "Main application"
+                            TARGET menuconfig-app)
+    __finalize_menuconfig()
 
     idf_create_confserver("${executable}"
                           TARGET confserver)

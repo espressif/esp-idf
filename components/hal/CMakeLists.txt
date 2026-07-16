@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
-set(srcs "hal_utils.c")
+set(srcs)
 set(includes "platform_port/include")
 set(priv_include)
 set(requires)
@@ -11,6 +11,18 @@ set(requires)
 list(APPEND includes "${target}/include")
 
 list(APPEND includes "include")
+
+# ULP runtime code includes generic HAL headers, for example hal/lp_core_ll.h
+# from ulp/lp_core/lp_core/lp_core_interrupt.c.
+# TODO(IDF-15953): potentially remove __ULP_BUILD handling from hal
+if(__ULP_BUILD)
+    idf_component_register(INCLUDE_DIRS ${includes}
+                           PRIV_INCLUDE_DIRS ${priv_include}
+                           REQUIRES esp_common ${requires})
+    return()
+endif()
+
+list(APPEND srcs "hal_utils.c")
 
 if(CONFIG_SOC_EFUSE_SUPPORTED)
     list(APPEND srcs "efuse_hal.c" "${target}/efuse_hal.c")
@@ -46,11 +58,13 @@ if(NOT esp_tee_build AND NOT BOOTLOADER_BUILD)
     endif()
 endif()
 
+set(ldfragments linker.lf)
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
                        REQUIRES ${requires}
-                       LDFRAGMENTS linker.lf)
+                       LDFRAGMENTS ${ldfragments})
 
 if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")

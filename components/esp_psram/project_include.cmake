@@ -1,3 +1,7 @@
+if(IDF_CUSTOM_TOOLCHAIN)
+    return()
+endif()
+
 if(CONFIG_IDF_TOOLCHAIN_GCC)
     # Remove all "-mfix-esp32-psram-cache*" from toolchain flags
     # that may have appeared during configuration changes.

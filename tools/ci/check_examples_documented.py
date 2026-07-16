@@ -125,6 +125,10 @@ KNOWN_MISSING = {
     'system/ulp/lp_core/lp_spi',
     'system/ulp/lp_core/lp_timer_interrupt',
     'system/ulp/lp_core/lp_touch',
+    'system/ulp/ulp_fsm/ulp/main/ulp',
+    'system/ulp/ulp_fsm_riscv_combined/counter/main/ulp_fsm',
+    'system/ulp/ulp_fsm_riscv_combined/counter/main/ulp_riscv',
+    'system/ulp/ulp_riscv/gpio/main/ulp',
     'system/ulp/ulp_riscv/gpio_pulse_counter',
     'system/unit_test/test',
     # TODO IDF-15382: add :example: references for peripherals examples

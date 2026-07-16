@@ -1,3 +1,9 @@
+# Sub-projects with a custom toolchain (e.g. ULP) do not use the IDF
+# toolchain response file machinery. Skip flag manipulation.
+if(IDF_CUSTOM_TOOLCHAIN)
+    return()
+endif()
+
 if(CONFIG_IDF_TOOLCHAIN_GCC)
     if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
         idf_toolchain_add_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics")

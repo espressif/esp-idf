@@ -473,8 +473,33 @@ function(idf_build_library library)
     string(MAKE_C_IDENTIFIER "_${library}" suffix)
 
     idf_library_get_property(component_interfaces_linked "${library}" LIBRARY_COMPONENT_INTERFACES_LINKED)
+
+    # Build -I arguments for the public include dirs of every component in the
+    # linked closure. These are appended to every linker-script preprocess so a
+    # template can #include any component header (e.g. the ULP memory layout
+    # including soc/soc.h) without the component having to know about it.
+    # INCLUDE_DIRS is stored relative to each component's COMPONENT_DIR.
+    set(component_include_flags "")
+    foreach(ci IN LISTS component_interfaces_linked)
+        idf_component_get_property(ci_dir "${ci}" COMPONENT_DIR)
+        idf_component_get_property(ci_includes "${ci}" INCLUDE_DIRS)
+        foreach(ci_include IN LISTS ci_includes)
+            get_filename_component(ci_include_abs "${ci_include}" ABSOLUTE BASE_DIR "${ci_dir}")
+            # Quote the path: the preprocessor invocation splits CFLAGS with
+            # separate_arguments(UNIX_COMMAND), so unquoted paths containing
+            # spaces would fall apart.
+            string(APPEND component_include_flags " -I\"${ci_include_abs}\"")
+        endforeach()
+    endforeach()
+
+    # Linker scripts marked MEMORY (the memory-layout base for the link) are
+    # emitted as -T before the rest, so section-placement scripts from any
+    # component can reference their MEMORY regions and REGION_ALIASes. Collect
+    # across all components into two ordered lists and emit memory ones first.
+    set(memory_scripts "")
+    set(other_scripts "")
+
     foreach(component_interface IN LISTS component_interfaces_linked)
-        set(scripts)
         idf_component_get_property(component_dir "${component_interface}" COMPONENT_DIR)
         idf_component_get_property(component_build_dir "${component_interface}" COMPONENT_BUILD_DIR)
         idf_component_get_property(preprocessed "${component_interface}" __LINKER_SCRIPTS_PREPROCESSED)
@@ -483,6 +508,9 @@ function(idf_build_library library)
         idf_component_get_property(scripts_static "${component_interface}" LINKER_SCRIPTS)
         __get_absolute_paths(PATHS "${scripts_static}" BASE_DIR "${component_dir}" OUTPUT scripts_static_abs)
         foreach(script IN LISTS scripts_static_abs)
+            __linker_script_key("${script}" script_key)
+            idf_component_get_property(script_is_memory "${component_interface}"
+                                       "LINKER_SCRIPT_MEMORY_${script_key}")
             if(script MATCHES "\\.in$")
                 # If the linker script file name ends with the ".in" extension,
                 # preprocess it with the C preprocessor.
@@ -492,27 +520,37 @@ function(idf_build_library library)
 
                 if(NOT preprocessed)
                     file(MAKE_DIRECTORY "${component_build_dir}/ld")
-                    __preprocess_linker_script("${script}" "${script_out}")
+                    idf_component_get_property(script_flags "${component_interface}"
+                                               "LINKER_SCRIPT_FLAGS_${script_key}")
+                    __preprocess_linker_script("${script}" "${script_out}"
+                                               "${script_flags}" "${component_include_flags}")
                     # Add a custom target for the preprocessed script.
                     add_custom_target(${script_target} DEPENDS "${script_out}")
                 endif()
                 # Add dependency for the library interface to ensure the script is
                 # generated before linking.
                 add_dependencies("${library}" ${script_target})
-                list(APPEND scripts "${script_out}")
+                set(emit_script "${script_out}")
             else()
-                list(APPEND scripts "${script}")
+                set(emit_script "${script}")
+            endif()
+            if(script_is_memory)
+                list(APPEND memory_scripts "${emit_script}")
+            else()
+                list(APPEND other_scripts "${emit_script}")
             endif()
         endforeach()
 
-        # Generate linker scripts from templates.
-        # LINKER_SCRIPTS_TEMPLATE and LINKER_SCRIPTS_GENERATED are parallel
-        # lists. The first holds the template linker script path, and the
-        # second holds the generated linker script path.
+        # Generate linker scripts from templates. The generated output path and
+        # the optional preprocessor flags for each template are stored as
+        # component properties keyed by the template, so no second list has to
+        # stay index-aligned with LINKER_SCRIPTS_TEMPLATE.
         idf_component_get_property(template_scripts "${component_interface}" LINKER_SCRIPTS_TEMPLATE)
-        idf_component_get_property(generated_scripts "${component_interface}" LINKER_SCRIPTS_GENERATED)
 
-        foreach(template script IN ZIP_LISTS template_scripts generated_scripts)
+        foreach(template IN LISTS template_scripts)
+            __linker_script_key("${template}" template_key)
+            idf_component_get_property(script "${component_interface}"
+                                       "LINKER_SCRIPT_GENERATED_${template_key}")
             if(template MATCHES "\\.in$")
                 # If the linker script file name ends with the ".in" extension,
                 # preprocess it with the C preprocessor.
@@ -520,7 +558,10 @@ function(idf_build_library library)
                 set(template_out "${component_build_dir}/ld/${template_name}")
                 if(NOT preprocessed)
                     file(MAKE_DIRECTORY "${component_build_dir}/ld")
-                    __preprocess_linker_script("${template}" "${template_out}")
+                    idf_component_get_property(template_flags "${component_interface}"
+                                               "LINKER_SCRIPT_FLAGS_${template_key}")
+                    __preprocess_linker_script("${template}" "${template_out}"
+                                               "${template_flags}" "${component_include_flags}")
                 endif()
                 set(template "${template_out}")
             endif()
@@ -529,7 +570,13 @@ function(idf_build_library library)
                                      TEMPLATE "${template}"
                                      SUFFIX "${suffix}"
                                      OUTPUT "${script}")
-            list(APPEND scripts "${script}")
+            idf_component_get_property(template_is_memory "${component_interface}"
+                                       "LINKER_SCRIPT_MEMORY_${template_key}")
+            if(template_is_memory)
+                list(APPEND memory_scripts "${script}")
+            else()
+                list(APPEND other_scripts "${script}")
+            endif()
             # Add a custom target for the generated script and include it as a
             # dependency for the library interface to ensure the script is
             # generated before linking.
@@ -545,21 +592,29 @@ function(idf_build_library library)
         # property to indicate that the linker scripts have already been
         # preprocessed.
         idf_component_set_property("${component_interface}" __LINKER_SCRIPTS_PREPROCESSED YES)
+    endforeach()
 
-        # Finally, add all preprocessed and ldgen-generated linker scripts to
-        # the library interface.
-        foreach(script IN LISTS scripts)
-            get_filename_component(script_dir "${script}" DIRECTORY)
-            get_filename_component(script_name "${script}" NAME)
-            # Add linker script directory to the linker search path.
-            target_link_directories("${library}" INTERFACE "${script_dir}")
-            # Add linker script to link. Regarding the usage of SHELL, see
-            # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
-            target_link_options("${library}" INTERFACE "SHELL:-T ${script_name}")
-            # Add the linker script as a dependency to ensure the executable is
-            # re-linked if the script changes.
-            set_property(TARGET "${library}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")
-        endforeach()
+    # Emit the collected linker scripts as -T on the library interface, with
+    # memory-layout scripts first so their MEMORY regions and REGION_ALIASes are
+    # seen before any section-placement script references them.
+    foreach(script IN LISTS memory_scripts other_scripts)
+        get_filename_component(script_dir "${script}" DIRECTORY)
+        # Add the linker script directory to the linker search path so INCLUDE
+        # directives inside a script can resolve sibling scripts by name.
+        target_link_directories("${library}" INTERFACE "${script_dir}")
+        # Add the linker script to the link by absolute path. Passing the full
+        # path (rather than a bare name resolved via -L) keeps this working for
+        # direct linker drivers such as the ULP FSM esp32ulp-elf-ld link, where
+        # the -L search directories follow the -T options on the command line
+        # and GNU ld therefore does not use them to locate the -T script.
+        # Regarding the usage of SHELL, see
+        # https://cmake.org/cmake/help/latest/command/target_link_options.html#option-de-duplication
+        # Quote the path: SHELL: strings are re-split on spaces, so an unquoted
+        # path containing spaces would fall apart.
+        target_link_options("${library}" INTERFACE "SHELL:-T \"${script}\"")
+        # Add the linker script as a dependency to ensure the executable is
+        # re-linked if the script changes.
+        set_property(TARGET "${library}" APPEND PROPERTY INTERFACE_LINK_DEPENDS "${script}")
     endforeach()
 
     # Validate components linked to this library
@@ -625,21 +680,43 @@ function(idf_build_executable executable)
         set(ARG_SUFFIX ".elf")
     endif()
 
+    get_property(enabled_languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(C IN_LIST enabled_languages)
+        set(stub_language C)
+        set(stub_extension c)
+    elseif(CXX IN_LIST enabled_languages)
+        set(stub_language CXX)
+        set(stub_extension c)
+    elseif(ASM IN_LIST enabled_languages)
+        set(stub_language ASM)
+        set(stub_extension S)
+    else()
+        message(FATAL_ERROR "idf_build_executable() requires C, CXX, or ASM to be enabled.")
+    endif()
+
     idf_build_get_property(build_dir BUILD_DIR)
 
     set(library "library_${executable}")
     idf_build_library(${library} COMPONENTS "${ARG_COMPONENTS}")
 
-    set(executable_src ${CMAKE_BINARY_DIR}/executable_${executable}.c)
+    set(executable_src ${CMAKE_BINARY_DIR}/executable_${executable}.${stub_extension})
     if(NOT EXISTS "${executable_src}")
         file(TOUCH "${executable_src}")
     endif()
+    if(stub_language STREQUAL "CXX")
+        set_source_files_properties("${executable_src}" PROPERTIES LANGUAGE CXX)
+    endif()
+
     add_executable(${executable} "${executable_src}")
 
     set_target_properties(${executable} PROPERTIES OUTPUT_NAME ${ARG_NAME})
 
     if(ARG_SUFFIX)
         set_target_properties(${executable} PROPERTIES SUFFIX ${ARG_SUFFIX})
+    endif()
+
+    if(NOT stub_language STREQUAL "C")
+        set_target_properties(${executable} PROPERTIES LINKER_LANGUAGE ${stub_language})
     endif()
 
     target_link_libraries(${executable} PRIVATE ${library})

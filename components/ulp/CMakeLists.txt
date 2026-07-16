@@ -4,6 +4,11 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+if(IDF_BUILD_V2)
+    include(${CMAKE_CURRENT_LIST_DIR}/CMakeLists_v2.txt)
+    return()
+endif()
+
 set(srcs "")
 set(includes "")
 

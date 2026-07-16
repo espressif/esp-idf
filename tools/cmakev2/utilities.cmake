@@ -1182,7 +1182,30 @@ function(fail_at_build_time target_name message_line0)
 endfunction()
 
 #[[
-    __preprocess_linker_script(<script_in> <script_out>)
+    __linker_script_key(<path> <output>)
+
+    *path[in]*
+
+        Linker script or template path.
+
+    *output[out]*
+
+        Variable set to a stable key derived from the absolute ``path``.
+
+    Compute a collision-resistant key for a linker script. It is used to store
+    per-script metadata such as the generated output path and preprocessor
+    flags as component properties. Both the producer ``target_linker_script``
+    and the consumer ``idf_build_library`` must derive the key identically, so
+    the absolute-path normalization lives here and nowhere else.
+#]]
+function(__linker_script_key path output)
+    get_filename_component(path_abs "${path}" ABSOLUTE)
+    string(MD5 hash "${path_abs}")
+    set(${output} "${hash}" PARENT_SCOPE)
+endfunction()
+
+#[[
+    __preprocess_linker_script(<script_in> <script_out> <flags> <component_includes>)
 
     *script_in[in]*
 
@@ -1192,29 +1215,47 @@ endfunction()
 
         Path where the preprocessed linker script will be saved.
 
+    *flags[in]*
+
+        Explicit preprocessor flags from ``target_linker_script``'s ``FLAGS``
+        option, or the literal ``__DEFAULT__`` when no ``FLAGS`` was given.
+        ``__DEFAULT__`` keeps comments (``-C``) and selects the parent-dir==target
+        include heuristic; any other value, including an empty string, replaces
+        that whole set, so a caller can drop ``-C``.
+
+    *component_includes[in]*
+
+        Pre-built ``-I`` arguments for the linked component graph, always
+        appended so a template can include any component header.
+
     Run the C preprocessor on ``script_in`` and store the result in
-    ``script_out``.
+    ``script_out``. The preprocessor always receives ``-I<config_dir>`` so
+    ``sdkconfig.h`` resolves, plus ``component_includes``.
 #]]
-function(__preprocess_linker_script script_in script_out)
+function(__preprocess_linker_script script_in script_out flags component_includes)
     idf_build_get_property(sdkconfig_header __SDKCONFIG_HEADER)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(config_dir CONFIG_DIR)
     idf_build_get_property(idf_target IDF_TARGET)
 
-    # This approach is not ideal, but it is the current method used in cmakev1
-    # for the esp_system component. The linker script files for specific
-    # targets within the esp_system component include the ld.common file. This
-    # adds the ld.common directory to the search path for the C preprocessor.
-    # This method works for the specific directory layout of esp_common, but if
-    # other components with different layouts adopt this approach, adjustments
-    # will be necessary. It might be better to include the files using relative
-    # paths in the linker scripts.
-    get_filename_component(script_parent_dir "${script_in}" DIRECTORY)
-    get_filename_component(script_parent_name "${script_parent_dir}" NAME)
-    set(extra_cflags "")
-    if(script_parent_name STREQUAL idf_target)
-        get_filename_component(dir_to_include "${script_parent_dir}" DIRECTORY)
-        set(extra_cflags "-I\"${dir_to_include}\"")
+    if(flags STREQUAL "__DEFAULT__")
+        # No FLAGS were given: keep comments (-C, the historical default) and
+        # apply the parent-dir==target include heuristic. esp_system's
+        # target-specific scripts live in ld/<target>/ and include the sibling
+        # ld.common file, so add the parent directory to the C preprocessor
+        # search path. Works for that layout; a component with a different
+        # layout, or one that must drop -C, should pass FLAGS instead.
+        set(base_flags "-C")
+        get_filename_component(script_parent_dir "${script_in}" DIRECTORY)
+        get_filename_component(script_parent_name "${script_parent_dir}" NAME)
+        if(script_parent_name STREQUAL idf_target)
+            get_filename_component(dir_to_include "${script_parent_dir}" DIRECTORY)
+            string(APPEND base_flags " -I\"${dir_to_include}\"")
+        endif()
+    else()
+        # Explicit FLAGS replace the whole default set, including -C. config_dir
+        # and the component include dirs are always added regardless.
+        set(base_flags "${flags}")
     endif()
 
     set(linker_script_generator "${idf_path}/tools/cmake/linker_script_preprocessor.cmake")
@@ -1225,7 +1266,7 @@ function(__preprocess_linker_script script_in script_out)
             "-DCC=${CMAKE_C_COMPILER}"
             "-DSOURCE=${script_in}"
             "-DTARGET=${script_out}"
-            "-DCFLAGS=-I\"${config_dir}\" ${extra_cflags}"
+            "-DCFLAGS=-I\"${config_dir}\" ${base_flags} ${component_includes}"
             -P "${linker_script_generator}"
         MAIN_DEPENDENCY "${script_in}"
         DEPENDS "${sdkconfig_header}"

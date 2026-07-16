@@ -7,6 +7,22 @@ set(include_dirs "include"
                  "${target_folder}/include/${target_folder}"
                  "${target_folder}")
 
+# TODO(IDF-15952): potentially remove __ULP_BUILD handling from esp_rom
+if(__ULP_BUILD)
+    # LP-core runtime and print code include ROM headers from
+    # ulp/lp_core/lp_core/lp_core_startup.c and
+    # ulp/lp_core/lp_core/lp_core_print.c.
+    idf_component_register(INCLUDE_DIRS ${include_dirs})
+    if(ULP_TYPE STREQUAL "lp_core" AND CONFIG_ESP_ROM_HAS_LP_ROM)
+        target_linker_script(${COMPONENT_LIB} INTERFACE
+            "${target_folder}/ld/${target}lp.rom.ld"
+            "${target_folder}/ld/${target}lp.rom.newlib.ld"
+            "${target_folder}/ld/${target}lp.rom.version.ld"
+            "${target_folder}/ld/${target}lp.rom.api.ld")
+    endif()
+    return()
+endif()
+
 set(private_required_comp "")
 
 set(sources "patches/esp_rom_sys.c"

@@ -1,0 +1,10 @@
+menu "ULP Math Component"
+
+    config ULP_MATH_ENABLED
+        bool "Enable ULP math multiplication"
+        default y
+        help
+            When enabled, the ULP program will compute a product using the
+            ulp_math component.
+
+endmenu

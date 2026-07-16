@@ -1,4 +1,7 @@
 examples/system/ulp/ulp_fsm_riscv_combined/counter:
+  disable:
+    - if: IDF_BUILD_V2 == "1"
+      reason: Legacy ULP apps are covered by CMake v1; buildv2 covers full_subproject ULP apps.
   enable:
     - if: SOC_ULP_FSM_SUPPORTED == 1 and SOC_RISCV_COPROC_SUPPORTED == 1 and IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: false

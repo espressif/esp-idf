@@ -21,6 +21,12 @@ endif()
 message(STATUS "Compiler supported targets: ${dump_machine}")
 
 if(NOT (${CMAKE_SYSTEM_NAME} STREQUAL "Generic" AND ${dump_machine} MATCHES xtensa))
+    # Sub-projects (e.g. ULP RISC-V on an xtensa target) may use a
+    # non-IDF toolchain provided by the parent build. Skip validation
+    # when a custom toolchain is explicitly declared.
+    if(IDF_CUSTOM_TOOLCHAIN)
+        return()
+    endif()
     message(FATAL_ERROR "Internal error, toolchain has not been set correctly by project "
         "(or an invalid CMakeCache.txt file has been generated somehow)")
 endif()
