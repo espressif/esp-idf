@@ -18,7 +18,6 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_clk_utils.h"
 #include "esp_private/esp_sleep_internal.h"
-#include "esp_private/sleep_clock_icg.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/rtc.h"
@@ -167,6 +166,10 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_clock.h"
+#endif
+
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+#include "esp_private/sleep_clock_icg.h"
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
@@ -1024,7 +1027,7 @@ static esp_err_t FORCE_IRAM_ATTR esp_sleep_start_safe(uint32_t sleep_flags, uint
     return result;
 }
 
-static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection)
+static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection, esp_sleep_extra_args_t *args)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
@@ -1165,12 +1168,18 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_m
     }
 #endif
 
+    pmu_sleep_extra_args_t sleep_extra_args = {
+        .sleep_flags = sleep_flags,
+        .clk_flags = { args->clk_flags[0], args->clk_flags[1] },
+        .adjustment = s_config.sleep_time_adjustment,
+        .slowclk_src = rtc_clk_slow_src_get(),
+        .slowclk_period = s_config.rtc_clk_cal_period,
+        .fastclk_period = s_config.fast_clk_cal_period
+    };
     pmu_sleep_config_t config;
-    pmu_sleep_clk_icg_flags_t clk_flags = deep_sleep ? 0 : esp_sleep_clock_get_clk_icg_flags();
-    pmu_sleep_init(pmu_sleep_config_default(&config, sleep_flags, clk_flags, s_config.sleep_time_adjustment,
-            rtc_clk_slow_src_get(), s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
-            deep_sleep), deep_sleep);
+    pmu_sleep_init(pmu_sleep_config_default(&config, &sleep_extra_args, deep_sleep), deep_sleep);
 #else
+    (void) args;
     rtc_sleep_config_t config;
     rtc_sleep_get_default_config(sleep_flags, &config);
     rtc_sleep_init(config);
@@ -1318,9 +1327,9 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     }
 #endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
+    esp_sleep_extra_args_t extra_args = { 0 };
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
-
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(true);
 
@@ -1371,7 +1380,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     uint32_t sleep_flags = get_sleep_flags(force_pd_flags | pd_flags, true);
     // Enter sleep
     esp_err_t err = ESP_OK;
-    if (esp_sleep_start(sleep_flags, ESP_SLEEP_MODE_DEEP_SLEEP, allow_sleep_rejection) == ESP_ERR_SLEEP_REJECT) {
+    if (esp_sleep_start(sleep_flags, ESP_SLEEP_MODE_DEEP_SLEEP, allow_sleep_rejection, &extra_args) == ESP_ERR_SLEEP_REJECT) {
         err = ESP_ERR_SLEEP_REJECT;
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
         /* Cache Resume 2: if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION is enabled, cache has been suspended in esp_sleep_start */
@@ -1425,17 +1434,19 @@ esp_err_t FORCE_IRAM_ATTR esp_deep_sleep_try_to_start(void)
  * Placed into IRAM as flash may need some time to be powered on.
  */
 static esp_err_t esp_light_sleep_inner(uint32_t sleep_flags,
-                                       uint32_t flash_enable_time_us) __attribute__((noinline));
+                                       uint32_t flash_enable_time_us,
+                                       esp_sleep_extra_args_t *args) __attribute__((noinline));
 
 static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags,
-                                       uint32_t flash_enable_time_us)
+                                       uint32_t flash_enable_time_us,
+                                       esp_sleep_extra_args_t *args)
 {
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 #endif
 
     // Enter sleep
-    esp_err_t reject = esp_sleep_start(sleep_flags, ESP_SLEEP_MODE_LIGHT_SLEEP, true);
+    esp_err_t reject = esp_sleep_start(sleep_flags, ESP_SLEEP_MODE_LIGHT_SLEEP, true, args);
 
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
     // If VDDSDIO regulator was controlled by RTC registers before sleep,
@@ -1595,6 +1606,10 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t pd_flags = get_power_down_flags();
     // Append flags to indicate the sleep sub-mode and modify the pd_flags according to sub-mode attributes.
     uint32_t sleep_flags = get_sleep_flags(pd_flags, false);
+    esp_sleep_extra_args_t extra_args = { 0 };
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+    esp_sleep_clock_get_clk_icg_flags(&extra_args.clk_flags[0], &extra_args.clk_flags[1]);
+#endif
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(false);
 
@@ -1744,7 +1759,7 @@ esp_err_t esp_light_sleep_start(void)
 #endif
     else {
         // Enter sleep, then wait for flash to be ready on wakeup
-        err = esp_light_sleep_inner(sleep_flags, flash_enable_time_us);
+        err = esp_light_sleep_inner(sleep_flags, flash_enable_time_us, &extra_args);
     }
 
     // light sleep wakeup flag only makes sense after a successful light sleep

@@ -23,8 +23,11 @@ extern "C" {
 
 /**
  * @brief Convert sleep clock ICG reference counts to PMU ICG flags for HP sleep mode
+ *
+ * @param clk_icg0_flags  ICG flags bits[31:0]
+ * @param clk_icg1_flags  ICG flags bits[63:32] (0 if the target only has 32-bit ICG)
  */
-pmu_sleep_clk_icg_flags_t esp_sleep_clock_get_clk_icg_flags(void);
+void esp_sleep_clock_get_clk_icg_flags(uint32_t *clk_icg0_flags, uint32_t *clk_icg1_flags);
 
 #endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
 

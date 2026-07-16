@@ -32,6 +32,13 @@ typedef struct {
 void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx);
 #endif
 
+/**
+ * @brief Sleep internal runtime arguments
+ */
+typedef struct {
+    uint32_t clk_flags[2];      //!< Sleep clock ICG flags.
+} esp_sleep_extra_args_t;
+
 typedef enum {
     ESP_SLEEP_RTC_USE_RC_FAST_MODE,       //!< The mode requested by RTC peripherals to keep RC_FAST clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (Will override the RC_FAST domain config by esp_sleep_pd_config)
     ESP_SLEEP_DIG_USE_RC_FAST_MODE,       //!< The mode requested by digital peripherals to keep RC_FAST clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the RC_FAST domain config by esp_sleep_pd_config)

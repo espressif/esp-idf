@@ -351,8 +351,7 @@ typedef struct {
         .c_channel       = (sleep_flags & PMU_SLEEP_PD_TOP) ? 0 : 1         \
     },                                                                      \
     .icg_func = {                                                           \
-        .clock = { PMU_SLEEP_CLK_ICG_FUNC_LO(clk_flags),                    \
-                   PMU_SLEEP_CLK_ICG_FUNC_HI(clk_flags) }                   \
+        .clock = { (clk_flags)[0], (clk_flags)[1] }                   \
     },                                                                      \
 }
 

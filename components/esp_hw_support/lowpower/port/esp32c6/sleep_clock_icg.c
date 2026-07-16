@@ -23,21 +23,19 @@
 
 static int16_t s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_MAX];
 
-SLEEP_CLOCK_ICG_FN_ATTR uint32_t esp_sleep_clock_get_clk_icg_flags(void)
+SLEEP_CLOCK_ICG_FN_ATTR void esp_sleep_clock_get_clk_icg_flags(uint32_t *clk_icg0_flags, uint32_t *clk_icg1_flags)
 {
-    uint32_t icg_flags = 0;
-
     if (s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_IOMUX] > 0) {
-        icg_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_IOMUX);
+        *clk_icg0_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_IOMUX);
     }
     if (s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_LEDC0] > 0) {
-        icg_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_LEDC0);
+        *clk_icg0_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_LEDC0);
     }
     if (s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_UART0] > 0) {
-        icg_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART0);
+        *clk_icg0_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART0);
     }
     if (s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_UART1] > 0) {
-        icg_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART1);
+        *clk_icg0_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART1);
     }
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
     /* Starting from C6ECO1 and later versions, when BLE RTC is configured to use
@@ -45,11 +43,11 @@ SLEEP_CLOCK_ICG_FN_ATTR uint32_t esp_sleep_clock_get_clk_icg_flags(void)
      * As all 32 bits of ICG_FUNC are occupied, the ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK
      * has been remapped to PMU_ICG_FUNC_ENA_RETENTION.*/
     if (s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK] > 0) {
-        icg_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_RETENTION);
+        *clk_icg0_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_RETENTION);
     }
 #endif
 
-    return icg_flags;
+    *clk_icg1_flags = 0;
 }
 
 esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option_t option)
