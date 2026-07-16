@@ -16,7 +16,6 @@ This example makes use of the hardware-based JPEG encoder. If you have multiple 
 * An Espressif development board based on a chip listed in supported targets
 * A USB cable for power supply and serial communication
 * Computer with ESP-IDF installed and configured
-* The raw picture is the only source that you need to prepare (We have an [esp1080p.rgb](https://github.com/espressif/esp-idf/tree/master/examples/peripherals/jpeg/jpeg_encode/resources/esp1080.rgb) in resources folder, you can also get it from [jpeg_decode](https://github.com/espressif/esp-idf/tree/master/examples/peripherals/jpeg/jpeg_decode) example).
 * ffmpeg can also be used to produce rgb picture. For example `ffmpeg -i input.jpg -pix_fmt rgb24 output.rgb`
 
 ### Build and Flash
@@ -33,13 +32,13 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ```bash
 I (1114) jpeg.example: Initializing SD card
-I (1114) gpio: GPIO[43]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1124) gpio: GPIO[44]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1134) gpio: GPIO[39]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1144) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1154) gpio: GPIO[41]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (1164) gpio: GPIO[42]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
-I (1414) gpio: GPIO[42]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
+I (1114) gpio: GPIO[43]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (1124) gpio: GPIO[44]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (1134) gpio: GPIO[39]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (1144) gpio: GPIO[40]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (1154) gpio: GPIO[41]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (1164) gpio: GPIO[42]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (1414) gpio: GPIO[42]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
 Name: SD64G
 Type: SDHC/SDXC
 Speed: 40.00 MHz (limit: 40.00 MHz)

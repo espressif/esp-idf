@@ -57,11 +57,11 @@ TEST_CASE("JPEG encode performance test for 480*640 RGB->YUV picture", "[jpeg]")
     };
 
     jpeg_encode_memory_alloc_cfg_t rx_mem_cfg = {
-        .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
+        .buffer_direction = JPEG_ENC_ALLOC_OUTPUT_BUFFER,
     };
 
     jpeg_encode_memory_alloc_cfg_t tx_mem_cfg = {
-        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+        .buffer_direction = JPEG_ENC_ALLOC_INPUT_BUFFER,
     };
 
     size_t rx_buffer_size = 0;
