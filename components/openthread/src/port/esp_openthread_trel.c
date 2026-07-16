@@ -64,7 +64,12 @@ static int s_trel_event_fd = -1;
 static void trel_browse_notifier(mdns_result_t *result)
 {
     while (result) {
-        if (result->addr && result->addr->addr.type == IPADDR_TYPE_V6) {
+        mdns_ip_addr_t *addr = result->addr;
+        while (addr && addr->addr.type != IPADDR_TYPE_V6) {
+            addr = addr->next;
+        }
+
+        if (addr) {
             otPlatTrelPeerInfo info;
             uint8_t *trel_txt = NULL;
             size_t trel_txt_len = 0;
@@ -104,9 +109,9 @@ static void trel_browse_notifier(mdns_result_t *result)
             info.mTxtData = trel_txt;
             info.mTxtLength = trel_txt_len;
             info.mSockAddr.mPort = result->port;
-            memcpy(info.mSockAddr.mAddress.mFields.m32, result->addr->addr.u_addr.ip6.addr, OT_IP6_ADDRESS_SIZE);
+            memcpy(info.mSockAddr.mAddress.mFields.m32, addr->addr.u_addr.ip6.addr, OT_IP6_ADDRESS_SIZE);
             info.mRemoved = (result->ttl == 0);
-            ESP_LOGI(OT_PLAT_LOG_TAG, "%s TREL peer: address: %s, port:%d", info.mRemoved ? "Remove" : "Found", ip6addr_ntoa((ip6_addr_t*)(&result->addr->addr.u_addr.ip6)), info.mSockAddr.mPort);
+            ESP_LOGI(OT_PLAT_LOG_TAG, "%s TREL peer: address: %s, port:%d", info.mRemoved ? "Remove" : "Found", ip6addr_ntoa((ip6_addr_t*)(&addr->addr.u_addr.ip6)), info.mSockAddr.mPort);
             esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
             otPlatTrelHandleDiscoveredPeerInfo(esp_openthread_get_instance(), &info);
             esp_openthread_task_switching_lock_release();
