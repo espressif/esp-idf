@@ -18,6 +18,7 @@
 #include "hal/ledc_hal.h"
 #include "driver/ledc.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/sleep_clock_icg.h"
 #include "esp_sleep.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"

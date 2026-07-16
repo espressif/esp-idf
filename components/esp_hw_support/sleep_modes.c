@@ -18,6 +18,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_clk_utils.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/sleep_clock_icg.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/rtc_clk.h"
 #include "soc/rtc.h"
@@ -281,10 +282,6 @@ typedef struct {
         int16_t     refs;
         uint16_t    reserved;   /* reserved for 4 bytes aligned */
     } domain[ESP_PD_DOMAIN_MAX];
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-    int16_t clock_icg_refs[ESP_SLEEP_CLOCK_MAX];
-    pmu_sleep_clk_icg_flags_t sleep_clk_icg_flags;
-#endif
     portMUX_TYPE lock;
     uint64_t sleep_duration;
     uint32_t wakeup_triggers;
@@ -334,10 +331,6 @@ static sleep_config_t s_config = {
             .refs = 0
         }
     },
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-    .clock_icg_refs[0 ... ESP_SLEEP_CLOCK_MAX - 1] = 0,
-    .sleep_clk_icg_flags = 0,
-#endif
     .lock = portMUX_INITIALIZER_UNLOCKED,
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
@@ -389,9 +382,6 @@ void esp_sleep_overhead_out_time_refresh(void)
 
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-static void sleep_update_clk_icg_flags(void);
-#endif
 #if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP && SOC_RTC_WDT_SUPPORTED
 static uint32_t get_sleep_rtc_wdt_timeout(uint64_t sleep_duration);
 static uint32_t calc_sleep_slow_clk_required_cycles(uint32_t timeout, uint32_t rtc_slow_clk_cal_period);
@@ -1176,7 +1166,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_m
 #endif
 
     pmu_sleep_config_t config;
-    pmu_sleep_clk_icg_flags_t clk_flags = deep_sleep ? 0 : s_config.sleep_clk_icg_flags;
+    pmu_sleep_clk_icg_flags_t clk_flags = deep_sleep ? 0 : esp_sleep_clock_get_clk_icg_flags();
     pmu_sleep_init(pmu_sleep_config_default(&config, sleep_flags, clk_flags, s_config.sleep_time_adjustment,
             rtc_clk_slow_src_get(), s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
             deep_sleep), deep_sleep);
@@ -1605,11 +1595,6 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t pd_flags = get_power_down_flags();
     // Append flags to indicate the sleep sub-mode and modify the pd_flags according to sub-mode attributes.
     uint32_t sleep_flags = get_sleep_flags(pd_flags, false);
-    // Decide which clock can be ungate during sleep
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-    sleep_update_clk_icg_flags();
-#endif
-
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(false);
 
@@ -2854,32 +2839,6 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
     return s_sleep_sub_mode_ref_cnt;
 }
 
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option_t option)
-{
-#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA && !CONFIG_PM_SLEEP_CLK_ICG_ENABLE
-    static bool warned;
-    if (!warned) {
-        warned = true;
-        ESP_LOGW(TAG, "PM_SLEEP_CLK_ICG_ENABLE is disabled. "
-                 "Clock ungate requests may not be honored during sleep.");
-    }
-#endif
-    if (clock >= ESP_SLEEP_CLOCK_MAX || option >= ESP_SLEEP_CLOCK_OPTION_MAX) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    int __attribute__((unused)) refs;
-    esp_sleep_enter_critical_safe();
-    refs = (option == ESP_SLEEP_CLOCK_OPTION_UNGATE) ? s_config.clock_icg_refs[clock]++ \
-         : (option == ESP_SLEEP_CLOCK_OPTION_GATE)   ? --s_config.clock_icg_refs[clock] \
-         : s_config.clock_icg_refs[clock];
-    esp_sleep_exit_critical_safe();
-    assert(refs >= 0);
-    return ESP_OK;
-}
-#endif
-
 /**
  * The modules in the CPU and modem power domains still depend on the top power domain.
  * To be safe, the CPU and Modem power domains must also be powered off and saved when
@@ -3195,51 +3154,6 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
 
     return sleep_flags;
 }
-
-#if SOC_PM_SUPPORT_PMU_CLK_ICG
-SLEEP_FN_ATTR static void sleep_update_clk_icg_flags(void)
-{
-    pmu_sleep_clk_icg_flags_t clk_flags = 0;
-
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_IOMUX] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_IOMUX);
-    }
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_LEDC0]  > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_LEDC0);
-    }
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART0] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART0);
-    }
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART1] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART1);
-    }
-#if SOC_UART_HP_NUM > 2
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART2] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART2);
-    }
-#endif
-#if SOC_UART_HP_NUM > 3
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART3] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART3);
-    }
-#endif
-#if SOC_UART_HP_NUM > 4
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART4] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_UART4);
-    }
-#endif
-#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
-    /* Starting from C6ECO1 and later versions, when BLE RTC is configured to use
-     * MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL,the actual slow clock source is the WiFi power clock.
-     * As all 32 bits of ICG_FUNC are occupied, the ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK
-     * has been remapped to PMU_ICG_FUNC_ENA_RETENTION.*/
-    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK] > 0) {
-        clk_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_RETENTION);
-    }
-#endif
-    s_config.sleep_clk_icg_flags = clk_flags;
-}
-#endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
 
 #if CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP && SOC_RTC_WDT_SUPPORTED
 /* TODO: PM-609 */

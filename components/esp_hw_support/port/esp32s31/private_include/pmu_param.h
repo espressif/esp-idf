@@ -328,9 +328,6 @@ typedef struct {
     struct {
         uint32_t clock[2];
     } icg_func;
-    struct {
-        uint32_t clock[2];
-    } icg_apb;
 } pmu_sleep_digital_config_t;
 
 

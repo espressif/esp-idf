@@ -289,7 +289,6 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
     const bool icg_func_enabled = (dig->icg_func.clock[0] != 0) || (dig->icg_func.clock[1] != 0);
     pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), icg_func_enabled);
     pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func.clock[0], dig->icg_func.clock[1]);
-    pmu_ll_hp_set_icg_apb(ctx->hal->dev, HP(SLEEP), dig->icg_apb.clock[0], dig->icg_apb.clock[1]);
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     pmu_ll_hp_set_hold_all_hp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.hp_pad_hold_all);
     pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.lp_pad_hold_all);
