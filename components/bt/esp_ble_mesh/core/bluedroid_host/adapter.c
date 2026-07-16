@@ -649,7 +649,9 @@ static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARC
     } else if (event == BTA_DM_INQ_CMPL_EVT) {
         BT_INFO("Scan completed, number of scan response %d", p_data->inq_cmpl.num_resps);
     } else {
-        BT_WARN("Unexpected scan result event %d", event);
+        if (event != BTA_DM_INQ_DISCARD_NUM_EVT) {
+            BT_WARN("Unexpected scan result event %d", event);
+        }
     }
 }
 #endif
