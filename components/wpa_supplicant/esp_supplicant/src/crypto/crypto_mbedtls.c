@@ -1111,7 +1111,7 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
 #if defined(MBEDTLS_PKCS5_C) && defined(MBEDTLS_MD_C)
 #include "mbedtls/private/pkcs5.h"
 
-#if defined(MBEDTLS_SHA256_C)
+#if (defined(MBEDTLS_SHA256_C) || defined(PSA_WANT_ALG_SHA_256))
 int pbkdf2_sha256(const char *passphrase, const u8 *salt, size_t salt_len,
                   int iterations, u8 *buf, size_t buflen)
 {
@@ -1128,7 +1128,7 @@ int pbkdf2_sha256(const char *passphrase, const u8 *salt, size_t salt_len,
                                         (unsigned int) iterations, (uint32_t) buflen, buf);
     return ret == 0 ? 0 : -1;
 }
-#endif /* MBEDTLS_SHA256_C */
+#endif /* MBEDTLS_SHA256_C || PSA_WANT_ALG_SHA_256 */
 
 #endif /* MBEDTLS_PKCS5_C && MBEDTLS_MD_C */
 
