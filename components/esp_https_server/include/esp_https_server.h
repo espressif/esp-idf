@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,6 +105,9 @@ struct httpd_ssl_config {
     /** Private key byte length */
     size_t prvtkey_len;
 
+    /** Unified key config. Takes precedence over prvtkey_pem when set */
+    const esp_key_config_t *server_key;
+
     /** Use ECDSA peripheral to use private key */
     bool use_ecdsa_peripheral;
 
@@ -129,7 +132,10 @@ struct httpd_ssl_config {
     /** Enable tls session tickets */
     bool session_tickets;
 
-    /** Enable secure element for server session */
+    /** @deprecated No longer functional; setting this to true makes server start fail with
+     *  ESP_ERR_NOT_SUPPORTED. Use `server_key` (esp_key_config_t) together with
+     *  CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. Kept only for source
+     *  compatibility; will be removed in the next major release. */
     bool use_secure_element;
 
     /** User callback for esp_https_server */
@@ -219,6 +225,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     HTTPD_SSL_CONFIG_CLIENT_AUTH_OPTIONAL_INIT    \
     .prvtkey_pem = NULL,                          \
     .prvtkey_len = 0,                             \
+    .server_key = NULL,                           \
     .use_ecdsa_peripheral = false,                \
     .ecdsa_key_efuse_blk = 0,                     \
     .ecdsa_key_efuse_blk_high = 0,                \
@@ -227,7 +234,6 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
     .session_tickets = false,                     \
-    .use_secure_element = false,                  \
     .user_cb = NULL,                              \
     .ssl_userdata = NULL,                         \
     .cert_select_cb = NULL,                       \

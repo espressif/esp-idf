@@ -52,6 +52,10 @@ struct esp_tls {
     mbedtls_pk_context serverkey;                                               /*!< Container for the private key of the server
                                                                                      certificate */
     };
+
+    bool opaque_key_is_external;                                                /*!< True when the opaque PSA client/server key was supplied
+                                                                                     by the caller (ESP_KEY_SOURCE_PSA). Such keys are owned
+                                                                                     externally and must never be destroyed on cleanup. */
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
     bool use_ecdsa_peripheral;                                                  /*!< Use the ECDSA peripheral for the private key operations. */
     uint8_t ecdsa_efuse_blk;                                                    /*!< The efuse block number where the ECDSA key is stored. */

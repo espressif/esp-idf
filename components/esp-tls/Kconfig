@@ -22,16 +22,6 @@ menu "ESP-TLS"
                 esp_tls_stack_ops_t interface.
     endchoice
 
-    config ESP_TLS_USE_SECURE_ELEMENT
-        bool "Use Secure Element (ATECC608A) with ESP-TLS"
-        depends on ESP_TLS_USING_MBEDTLS
-        select ATCA_MBEDTLS_ECDSA
-        select ATCA_MBEDTLS_ECDSA_SIGN
-        select ATCA_MBEDTLS_ECDSA_VERIFY
-        help
-            Enable use of Secure Element for ESP-TLS, this enables internal support for
-            ATECC608A peripheral, which can be used for TLS connection.
-
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
         depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED

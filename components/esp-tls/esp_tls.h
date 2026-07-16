@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_tls_errors.h"
+#include "esp_key_config.h"
 #include "sdkconfig.h"
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "mbedtls/ssl.h"
@@ -160,6 +161,10 @@ typedef struct esp_tls_cfg {
     const unsigned char *clientkey_pem_buf; /*!< Client key legacy name */
     };
 
+    const esp_key_config_t *client_key;     /*!< Unified key config. Must remain valid for session lifetime.
+                                                 Any PSA key referenced here remains owned by the caller; ESP-TLS does not
+                                                 destroy it on cleanup, so the application must release it with psa_destroy_key(). */
+
     union {
     unsigned int clientkey_bytes;           /*!< Size of client key pointed to by
                                                  clientkey_pem_buf
@@ -184,8 +189,12 @@ typedef struct esp_tls_cfg {
                                                  underneath socket will be configured in non
                                                  blocking mode after tls session is established */
 
-    bool use_secure_element;                /*!< Enable this option to use secure element or
-                                                 atecc608a chip */
+    bool use_secure_element;                /*!< @deprecated No longer functional; setting this to true
+                                                 makes the connection fail with ESP_ERR_NOT_SUPPORTED.
+                                                 Use `client_key` (esp_key_config_t) together with
+                                                 CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead.
+                                                 Kept only for source compatibility; will be removed in
+                                                 the next major release. */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds.
                                                  Note: If this value is not set, by default the timeout is
@@ -315,6 +324,10 @@ typedef struct esp_tls_cfg_server {
     const unsigned char *serverkey_pem_buf;     /*!< Server key legacy name */
     };
 
+    const esp_key_config_t *server_key;         /*!< Unified key config. Must remain valid for session lifetime.
+                                                     Any PSA key referenced here remains owned by the caller; ESP-TLS does not
+                                                     destroy it on cleanup, so the application must release it with psa_destroy_key(). */
+
     union {
     unsigned int serverkey_bytes;               /*!< Size of server key pointed to by
                                                      serverkey_pem_buf */
@@ -334,8 +347,12 @@ typedef struct esp_tls_cfg_server {
 
     esp_tls_ecdsa_curve_t ecdsa_curve;          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
 
-    bool use_secure_element;                    /*!< Enable this option to use secure element or
-                                                 atecc608a chip */
+    bool use_secure_element;                    /*!< @deprecated No longer functional; setting this to true
+                                                     makes the connection fail with ESP_ERR_NOT_SUPPORTED.
+                                                     Use `server_key` (esp_key_config_t) together with
+                                                     CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead.
+                                                     Kept only for source compatibility; will be removed in
+                                                     the next major release. */
 
     uint32_t tls_handshake_timeout_ms;                   /*!< TLS handshake timeout in milliseconds.
                                                     Note: If this value is not set, by default the timeout is

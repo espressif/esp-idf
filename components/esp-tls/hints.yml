@@ -3,4 +3,4 @@
     hint: "The struct 'esp_tls_t' has now been made private - its elements can be only be accessed/modified through respective getter/setter functions. Please refer to the migration guide for more information."
 -
     re: "fatal error: .*atca_mbedtls_wrap\\.h: No such file or directory"
-    hint: "To use CONFIG_ESP_TLS_USE_SECURE_ELEMENT option, please install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib'"
+    hint: "The cryptoauthlib mbedTLS wrapper (atca_mbedtls_wrap.h) is no longer used to integrate a secure element. Enable CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED, install `esp-cryptoauthlib` using 'idf.py add-dependency espressif/esp-cryptoauthlib', and provide the key via esp_key_config_t (ESP_KEY_SOURCE_PSA). Please refer to the migration guide for more information."

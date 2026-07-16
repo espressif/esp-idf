@@ -352,48 +352,56 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 #endif
     }
 
-    /* Pass on secure element boolean */
-    cfg->use_secure_element = config->use_secure_element;
-    if (!cfg->use_secure_element) {
-        if (config->use_ecdsa_peripheral) {
-#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
-            (*ssl_ctx)->tls_cfg->use_ecdsa_peripheral = config->use_ecdsa_peripheral;
-            (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk = config->ecdsa_key_efuse_blk;
-#if SOC_ECDSA_SUPPORT_CURVE_P384
-            (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk_high = config->ecdsa_key_efuse_blk_high;
-#endif
-            (*ssl_ctx)->tls_cfg->ecdsa_curve = config->ecdsa_curve;
-#else
-            ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
-            ret = ESP_ERR_NOT_SUPPORTED;
-            goto exit;
-#endif
-        } else if (config->prvtkey_pem != NULL && config->prvtkey_len > 0) {
-            cfg->serverkey_buf = malloc(config->prvtkey_len);
+    /* use_secure_element is deprecated and non-functional; it is kept only for
+     * source compatibility. */
+    if (config->use_secure_element) {
+        ESP_LOGE(TAG, "use_secure_element is no longer supported. Use server_key (esp_key_config_t) with "
+                 "CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. See the ESP-TLS migration guide.");
+        ret = ESP_ERR_NOT_SUPPORTED;
+        goto exit;
+    }
 
-            if (cfg->serverkey_buf) {
-                memcpy((char *) cfg->serverkey_buf, config->prvtkey_pem, config->prvtkey_len);
-                cfg->serverkey_bytes = config->prvtkey_len;
-            } else {
-                ESP_LOGE(TAG, "Could not allocate memory for server key");
-                ret = ESP_ERR_NO_MEM;
-                goto exit;
-            }
-        } else {
-#if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
-            if (config->cert_select_cb == NULL) {
-                ESP_LOGE(TAG, "No Server key supplied and no certificate selection hook is present");
-                ret = ESP_ERR_INVALID_ARG;
-                goto exit;
-            } else {
-                ESP_LOGW(TAG, "Server key not supplied, make sure to supply it in the certificate selection hook");
-            }
+    if (config->use_ecdsa_peripheral) {
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+        (*ssl_ctx)->tls_cfg->use_ecdsa_peripheral = config->use_ecdsa_peripheral;
+        (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk = config->ecdsa_key_efuse_blk;
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+        (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk_high = config->ecdsa_key_efuse_blk_high;
+#endif
+        (*ssl_ctx)->tls_cfg->ecdsa_curve = config->ecdsa_curve;
 #else
-            ESP_LOGE(TAG, "No Server key supplied");
+        ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
+        ret = ESP_ERR_NOT_SUPPORTED;
+        goto exit;
+#endif
+    } else if (config->server_key != NULL) {
+        /* Unified key config - pass directly to esp_tls */
+        cfg->server_key = config->server_key;
+    } else if (config->prvtkey_pem != NULL && config->prvtkey_len > 0) {
+        cfg->serverkey_buf = malloc(config->prvtkey_len);
+
+        if (cfg->serverkey_buf) {
+            memcpy((char *) cfg->serverkey_buf, config->prvtkey_pem, config->prvtkey_len);
+            cfg->serverkey_bytes = config->prvtkey_len;
+        } else {
+            ESP_LOGE(TAG, "Could not allocate memory for server key");
+            ret = ESP_ERR_NO_MEM;
+            goto exit;
+        }
+    } else {
+#if defined(CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK)
+        if (config->cert_select_cb == NULL) {
+            ESP_LOGE(TAG, "No Server key supplied and no certificate selection hook is present");
             ret = ESP_ERR_INVALID_ARG;
             goto exit;
-#endif
+        } else {
+            ESP_LOGW(TAG, "Server key not supplied, make sure to supply it in the certificate selection hook");
         }
+#else
+        ESP_LOGE(TAG, "No Server key supplied");
+        ret = ESP_ERR_INVALID_ARG;
+        goto exit;
+#endif
     }
 
     return ret;
