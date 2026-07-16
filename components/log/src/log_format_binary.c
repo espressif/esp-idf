@@ -136,13 +136,16 @@ static unsigned output_pointer(const char *ptr, pkg_info_t *pkg_info)
         // *actual* length of the caller-supplied buffer (see output_arguments() below), which
         // may legitimately be 0 (e.g. logging an empty buffer). Only fall back to strlen() when
         // no explicit length has been provided, i.e. ptr is a real NUL-terminated C string.
-        int len = (pkg_info->buffer_len != BUFFER_LEN_NOT_SET) ? pkg_info->buffer_len : (int)strlen(ptr);
-        int16_t pkg_str_len = 1 - len;
+        int data_len = (pkg_info->buffer_len != BUFFER_LEN_NOT_SET) ? pkg_info->buffer_len : (int)strlen(ptr);
+        int encoded_len = MAX(data_len, 2);
+        int16_t pkg_str_len = 1 - encoded_len;
         pkg_len = output(&pkg_str_len, sizeof(pkg_str_len), pkg_info);
-        // Emit exactly `len` bytes: previously this was MAX(len, 2), which always read at
-        // least 2 bytes even when len was 0 or 1, reading past the end of the caller's buffer.
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < data_len; i++) {
             pkg_len += output(&ptr[i], sizeof(uint8_t), pkg_info);
+        }
+        const uint8_t padding = 0;
+        for (int i = data_len; i < encoded_len; i++) {
+            pkg_len += output(&padding, sizeof(padding), pkg_info);
         }
     }
     return pkg_len;
