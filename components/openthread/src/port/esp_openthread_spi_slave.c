@@ -33,11 +33,6 @@ typedef struct {
     uint16_t input_buf_len;
 } pending_transaction_t;
 
-// DMA bounce buffer for RX — always sized to max(input, output) so MISO is
-// driven for the full output even when NcpSpi passes a small input buffer.
-#define SPI_SLAVE_RX_DMA_BUF_SIZE OPENTHREAD_CONFIG_NCP_SPI_BUFFER_SIZE
-static DRAM_ATTR uint8_t *s_rx_dma_buf = NULL;
-
 // Guards the BUSY path: only return OT_ERROR_BUSY when a transaction is truly
 // queued in the driver, so post_trans_cb is guaranteed to fire and re-queue.
 static volatile DRAM_ATTR bool s_transaction_in_flight = false;
@@ -70,11 +65,6 @@ static void IRAM_ATTR handle_spi_transaction_done(spi_slave_transaction_t *trans
         trans->trans_len = max_buf_len;
     }
 
-    // Copy RX bounce buffer back to the actual NcpSpi input buffer.
-    if (s_input_buf && s_rx_dma_buf && s_rx_dma_buf != s_input_buf) {
-        memcpy(s_input_buf, s_rx_dma_buf, pending_transaction->input_buf_len);
-    }
-
     if (s_complete_callback &&
         s_complete_callback(s_context, (void*)trans->tx_buffer, pending_transaction->output_buf_len,
                             s_input_buf, pending_transaction->input_buf_len, trans->trans_len)) {
@@ -86,7 +76,7 @@ esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_
 {
     esp_err_t ret = ESP_OK;
 
-    s_spi_config = heap_caps_malloc(sizeof(esp_openthread_spi_slave_config_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_spi_config = heap_caps_calloc(1, sizeof(esp_openthread_spi_slave_config_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_spi_config != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG,
                       "failed to allocate memory for SPI transaction on internal heap");
     memcpy(s_spi_config, &(config->host_config.spi_slave_config), sizeof(esp_openthread_spi_slave_config_t));
@@ -104,12 +94,10 @@ esp_err_t esp_openthread_host_rcp_spi_init(const esp_openthread_platform_config_
     gpio_set_pull_mode(s_spi_config->bus_config.sclk_io_num, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(s_spi_config->slave_config.spics_io_num, GPIO_PULLUP_ONLY);
 
-    s_spi_transaction = heap_caps_malloc(sizeof(spi_slave_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_spi_transaction = heap_caps_calloc(1, sizeof(spi_slave_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_spi_transaction != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG, "failed to allocate memory for SPI transaction on internal heap");
-    s_pending_transaction = heap_caps_malloc(sizeof(pending_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_pending_transaction = heap_caps_calloc(1, sizeof(pending_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(s_pending_transaction != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG, "failed to allocate memory for pending transaction on internal heap");
-    s_rx_dma_buf = heap_caps_malloc(SPI_SLAVE_RX_DMA_BUF_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    ESP_GOTO_ON_FALSE(s_rx_dma_buf != NULL, ESP_ERR_NO_MEM, err, OT_PLAT_LOG_TAG, "failed to allocate memory for RX DMA buffer on internal heap");
 
     s_spi_transaction->user = (void *)s_pending_transaction;
 
@@ -128,8 +116,6 @@ err:
     s_spi_transaction = NULL;
     heap_caps_free(s_pending_transaction);
     s_pending_transaction = NULL;
-    heap_caps_free(s_rx_dma_buf);
-    s_rx_dma_buf = NULL;
     return ret;
 }
 
@@ -141,11 +127,9 @@ void esp_openthread_spi_slave_deinit(void)
     heap_caps_free(s_spi_config);
     heap_caps_free(s_spi_transaction);
     heap_caps_free(s_pending_transaction);
-    heap_caps_free(s_rx_dma_buf);
     s_spi_config = NULL;
     s_spi_transaction = NULL;
     s_pending_transaction = NULL;
-    s_rx_dma_buf = NULL;
     return;
 }
 
@@ -162,7 +146,6 @@ otError IRAM_ATTR otPlatSpiSlavePrepareTransaction(uint8_t *aOutputBuf, uint16_t
                                                    uint16_t aInputBufLen, bool aRequestTransactionFlag)
 {
     esp_err_t trans_state = ESP_OK;
-    uint16_t trans_length = 0;
 
     if (aOutputBuf != NULL) {
         s_output_buf = aOutputBuf;
@@ -173,11 +156,6 @@ otError IRAM_ATTR otPlatSpiSlavePrepareTransaction(uint8_t *aOutputBuf, uint16_t
         s_input_len = aInputBufLen;
     }
 
-    // Use max(input, output) so MISO is driven for the full output frame;
-    // s_rx_dma_buf absorbs extra RX bytes to avoid overflowing the NcpSpi buffer.
-    uint16_t trans_data_len = (s_input_len > s_output_len) ? s_input_len : s_output_len;
-    trans_length = trans_data_len * CHAR_BIT;
-
     // In task context, return BUSY only when a transaction is already in flight
     // AND CS is asserted — ensures post_trans_cb will fire to re-queue.
     // In ISR context (post_trans_cb) we always queue unconditionally.
@@ -186,8 +164,10 @@ otError IRAM_ATTR otPlatSpiSlavePrepareTransaction(uint8_t *aOutputBuf, uint16_t
         ESP_EARLY_LOGE(SPI_SLAVE_TAG, "SPI busy");
         return OT_ERROR_BUSY;
     }
-    s_spi_transaction->length = trans_length;
-    s_spi_transaction->rx_buffer = s_rx_dma_buf;
+    s_spi_transaction->length = 0;
+    s_spi_transaction->tx_length = s_output_len * CHAR_BIT;
+    s_spi_transaction->rx_length = s_input_len * CHAR_BIT;
+    s_spi_transaction->rx_buffer = s_input_buf;
     s_spi_transaction->tx_buffer = s_output_buf;
 
     pending_transaction_t *pending_transaction = (pending_transaction_t *)s_spi_transaction->user;

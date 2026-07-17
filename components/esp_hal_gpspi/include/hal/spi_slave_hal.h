@@ -75,7 +75,8 @@ typedef struct {
      * Transaction specific (data), all these parameters will be updated to the
      * peripheral every transaction.
      */
-    uint32_t bitlen;                ///< Expected maximum length of the transaction, in bits.
+    uint32_t tx_bitlen;             ///< Expected maximum length of the tx transaction, in bits.
+    uint32_t rx_bitlen;             ///< Expected maximum length of the rx transaction, in bits.
     const void *tx_buffer;          ///< Data to be sent
     void *rx_buffer;                ///< Buffer to hold the received data.
 

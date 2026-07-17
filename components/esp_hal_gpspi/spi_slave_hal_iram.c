@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,14 +46,16 @@ void spi_slave_hal_hw_fifo_reset(spi_slave_hal_context_t *hal, bool tx_rst, bool
 void spi_slave_hal_push_tx_buffer(spi_slave_hal_context_t *hal)
 {
     if (hal->tx_buffer) {
-        spi_ll_write_buffer(hal->hw, hal->tx_buffer, hal->bitlen);
+        spi_ll_write_buffer(hal->hw, hal->tx_buffer, hal->tx_bitlen);
     }
 }
 
 void spi_slave_hal_set_trans_bitlen(spi_slave_hal_context_t *hal)
 {
-    spi_ll_slave_set_rx_bitlen(hal->hw, hal->bitlen);
-    spi_ll_slave_set_tx_bitlen(hal->hw, hal->bitlen);
+    // As full-duplex transaction, register need config to max length to ensure both TX and RX can be transferred
+    uint32_t max_bitlen = (hal->rx_bitlen > hal->tx_bitlen) ? hal->rx_bitlen : hal->tx_bitlen;
+    spi_ll_slave_set_rx_bitlen(hal->hw, max_bitlen);
+    spi_ll_slave_set_tx_bitlen(hal->hw, max_bitlen);
 }
 
 void spi_slave_hal_enable_data_line(spi_slave_hal_context_t *hal)
@@ -68,12 +70,13 @@ void spi_slave_hal_store_result(spi_slave_hal_context_t *hal)
     //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise
     //the length sent.
     hal->rcv_bitlen = spi_ll_slave_get_rcv_bitlen(hal->hw);
-    if (hal->rcv_bitlen == hal->bitlen - 1) {
+    uint32_t len_max = (hal->rx_bitlen > hal->tx_bitlen) ? hal->rx_bitlen : hal->tx_bitlen;
+    if (hal->rcv_bitlen == len_max - 1) {
         hal->rcv_bitlen++;
     }
     if (!hal->use_dma && hal->rx_buffer) {
         //Copy result out
-        spi_ll_read_buffer(hal->hw, hal->rx_buffer, (hal->rcv_bitlen > hal->bitlen) ? hal->bitlen : hal->rcv_bitlen);
+        spi_ll_read_buffer(hal->hw, hal->rx_buffer, (hal->rcv_bitlen > hal->rx_bitlen) ? hal->rx_bitlen : hal->rcv_bitlen);
     }
 }
 

@@ -103,7 +103,7 @@ void ReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
 {
     esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
     assert(s_esp_radio_spinel_callbacks[idx].receive_done);
-    uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
+    uint8_t *frame = (uint8_t *)calloc(1, aFrame->mLength + 1);
     esp_ieee802154_frame_info_t frame_info;
     if (frame) {
         frame[0] = aFrame->mLength;
@@ -123,14 +123,14 @@ void TransmitDone(otInstance *aInstance, otRadioFrame *aFrame, otRadioFrame *aAc
     esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
     assert(s_esp_radio_spinel_callbacks[idx].transmit_done && s_esp_radio_spinel_callbacks[idx].transmit_failed);
     if (aError == OT_ERROR_NONE) {
-        uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
+        uint8_t *frame = (uint8_t *)calloc(1, aFrame->mLength + 1);
         uint8_t *ack = nullptr;
         if (frame) {
             esp_ieee802154_frame_info_t ack_info;
             frame[0] = aFrame->mLength;
             memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
             if (aAckFrame) {
-                ack = (uint8_t *)malloc(aAckFrame->mLength + 1);
+                ack = (uint8_t *)calloc(1, aAckFrame->mLength + 1);
                 if (ack) {
                     ack[0] = aAckFrame->mLength;
                     memcpy((void *)(ack + 1), aAckFrame->mPsdu, ack[0]);
@@ -170,7 +170,7 @@ void TxStarted(otInstance *aInstance, otRadioFrame *aFrame)
 {
     esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
     assert(s_esp_radio_spinel_callbacks[idx].transmit_started);
-    uint8_t *frame = (uint8_t *)malloc(aFrame->mLength + 1);
+    uint8_t *frame = (uint8_t *)calloc(1, aFrame->mLength + 1);
     if (frame) {
         frame[0] = aFrame->mLength;
         memcpy((void *)(frame + 1), aFrame->mPsdu, frame[0]);
