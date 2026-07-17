@@ -25,44 +25,68 @@ except ImportError:
     from gcov_capture import get_coverage_data
 
 
+def _candidate_target_dirs(binary_path: str, component: str) -> list:
+    """Per-component CMakeFiles/<target>.dir/ directories used by either build system.
+
+    Build system v1 emits ``__idf_<component>.dir`` (double underscore); Build system
+    v2 emits ``_idf_<component>.dir`` (single underscore). Both candidates are returned
+    so the caller can probe either layout without knowing which build system produced
+    the binary.
+    """
+    parent = os.path.join(binary_path, 'esp-idf', component, 'CMakeFiles')
+    return [
+        os.path.join(parent, f'__idf_{component}.dir'),
+        os.path.join(parent, f'_idf_{component}.dir'),
+    ]
+
+
+def _resolve_gcda_path(binary_path: str, component: str, basename: str) -> str:
+    """Return the .gcda path, preferring whichever build-system layout already has the file.
+
+    Before the chip dumps, neither layout has a .gcda yet, so the chip-side FOPEN will
+    create the directory of whichever path the binary embedded. Call this again after
+    the dump to get the materialized path.
+    """
+    for d in _candidate_target_dirs(binary_path, component):
+        candidate = os.path.join(d, basename)
+        if os.path.isfile(candidate):
+            return candidate
+    # Default to v2 layout; the post-dump call will return the actual path.
+    return os.path.join(_candidate_target_dirs(binary_path, component)[1], basename)
+
+
 def get_expected_gcda_paths(dut: IdfDut) -> list:
     """Get list of expected .gcda file paths for this example."""
     return [
-        os.path.join(
-            dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir', 'gcov_example_main.c.gcda'
-        ),
-        os.path.join(
-            dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir', 'gcov_example_func.c.gcda'
-        ),
-        os.path.join(dut.app.binary_path, 'esp-idf', 'sample', 'CMakeFiles', '__idf_sample.dir', 'some_funcs.c.gcda'),
+        _resolve_gcda_path(dut.app.binary_path, 'main', 'gcov_example_main.c.gcda'),
+        _resolve_gcda_path(dut.app.binary_path, 'main', 'gcov_example_func.c.gcda'),
+        _resolve_gcda_path(dut.app.binary_path, 'sample', 'some_funcs.c.gcda'),
     ]
 
 
 def prepare_test(dut: IdfDut) -> list:
-    """Prepare test environment: create directories and clean up old .gcda files.
-
-    Returns list of expected .gcda file paths.
-    """
-    # Create the generated .gcda folders
-    # Normally created via `idf.py build`, but in CI non-related files aren't preserved
-    os.makedirs(os.path.join(dut.app.binary_path, 'esp-idf', 'main', 'CMakeFiles', '__idf_main.dir'), exist_ok=True)
-    os.makedirs(os.path.join(dut.app.binary_path, 'esp-idf', 'sample', 'CMakeFiles', '__idf_sample.dir'), exist_ok=True)
-
-    # Get expected paths and clean up old files
-    expected_gcda_paths = get_expected_gcda_paths(dut)
-    for gcda_path in expected_gcda_paths:
-        if os.path.isfile(gcda_path):
+    """Prepare test environment: create both candidate directories and clean stale .gcda."""
+    # Pre-create both build-system layouts so the chip-side FOPEN can write to whichever
+    # the binary embedded, and clean stale .gcda from either layout.
+    for component in ('main', 'sample'):
+        for d in _candidate_target_dirs(dut.app.binary_path, component):
+            os.makedirs(d, exist_ok=True)
             try:
-                os.remove(gcda_path)
-                print(f'Removed old .gcda file: {os.path.basename(gcda_path)}')
-            except OSError as e:
-                print(f'Warning: Could not remove {gcda_path}: {e}')
+                for entry in os.listdir(d):
+                    if entry.endswith('.gcda'):
+                        try:
+                            os.remove(os.path.join(d, entry))
+                            print(f'Removed old .gcda file: {entry}')
+                        except OSError as e:
+                            print(f'Warning: Could not remove {os.path.join(d, entry)}: {e}')
+            except OSError:
+                pass
 
-    return expected_gcda_paths
+    return get_expected_gcda_paths(dut)
 
 
 def _test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
-    expected_gcda_paths = prepare_test(dut)
+    prepare_test(dut)
 
     def expect_counter_output(loop: int, timeout: int = 10) -> None:
         dut.expect_exact(
@@ -95,6 +119,8 @@ def _test_gcov(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
         # Verify execution counts if expected and coverage data is available
         if expected_counts:
+            # Re-resolve gcda paths after the dump so we observe the layout the chip actually used.
+            expected_gcda_paths = get_expected_gcda_paths(dut)
             coverage = get_coverage_data(dut.app.binary_path, expected_gcda_paths)
             if coverage:  # Only verify if detailed data is available
                 print(f'Coverage data: {coverage}')
@@ -161,7 +187,7 @@ def _test_gcov_uart(dut: IdfDut) -> None:
     # Close console port to free up the port for the gcov capture
     dut.serial.close()
 
-    expected_gcda_paths = prepare_test(dut)
+    prepare_test(dut)
     log_file = os.path.join(dut.logdir, 'gcov_uart.log')
     uart_port = dut.serial.port
     baud = dut.app.sdkconfig.get('APPTRACE_UART_BAUDRATE')
@@ -178,6 +204,8 @@ def _test_gcov_uart(dut: IdfDut) -> None:
         # Verify each dump
         for dump_num, expected in enumerate(expected_counts, start=1):
             if uart_capture.wait_for_fstop(timeout=10.0):
+                # Re-resolve gcda paths after the dump so we observe the layout the chip actually used.
+                expected_gcda_paths = get_expected_gcda_paths(dut)
                 coverage = get_coverage_data(dut.app.binary_path, expected_gcda_paths)
 
                 if coverage:  # Only verify details if coverage data is available

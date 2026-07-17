@@ -128,6 +128,77 @@ build_child_pipeline:
         job: generate_build_child_pipeline
     strategy: depend
 
+# Generates a separate child-pipeline YAML for the cmakev2 build system.
+# The build_dir stays identical to cmakev1 (build_<target>_<config>); v1/v2
+# binaries are kept separate in s3 by suffixing PIPELINE_COMMIT_SHA — see
+# the python injection below — which idf-ci uses unmodified in its s3
+# prefix (project/<sha>/...). Keeping build_dir identical preserves the
+# upstream pytest matching that uses app.build_path to filter test cases.
+generate_build_child_pipeline_buildv2:
+  extends:
+    - .build_template
+    - .rules:labels:buildv2
+  tags: [fast_run, shiny]
+  variables:
+    # The build child pipeline's app list is fixed here, at generation time.
+    # Set IDF_BUILD_V2 so that manifest `disable: if IDF_BUILD_V2 == "1"` rules
+    # take effect during app discovery; otherwise those apps (e.g. kasan_test,
+    # IDF-15864) are discovered, built and target-tested even though the build
+    # jobs run with IDF_BUILD_V2 injected by patch_buildv2_child_pipeline.py.
+    IDF_BUILD_V2: "1"
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - pipeline_variables
+    - job: pre_check_complete
+      artifacts: false
+    - job: baseline_manifest_sha
+      optional: true
+  artifacts:
+    paths:
+      - buildv2_child_pipeline.yml
+      - test_related_apps.txt
+      - non_test_related_apps.txt
+    expire_in: 1 week
+    when: always
+  script:
+    - idf-ci --debug gitlab build-child-pipeline
+      -p components
+      -p examples
+      -p tools/test_apps
+      --modified-files "$MR_MODIFIED_FILES"
+      buildv2_child_pipeline.yml > idfci_buildv2_gen.log 2>&1
+    - tail -20 idfci_buildv2_gen.log
+    - shuf test_related_apps.txt -o test_related_apps.txt
+    - shuf non_test_related_apps.txt -o non_test_related_apps.txt
+    # Patch the generated yaml to activate the cmakev2 shim and route v2 build
+    # and target_test artifacts to a distinct s3 namespace. See the script
+    # docstring for the rationale.
+    - python tools/ci/dynamic_pipelines/scripts/patch_buildv2_child_pipeline.py buildv2_child_pipeline.yml
+    - 'echo "=== buildv2_child_pipeline.yml (post-injection) ==="; cat buildv2_child_pipeline.yml; echo "=== end ==="'
+
+build_child_pipeline_buildv2:
+  stage: build
+  extends:
+    - .rules:labels:buildv2
+  needs:
+    - job: fast_build_check
+      optional: true
+      artifacts: false
+    - pipeline_variables
+    - generate_build_child_pipeline_buildv2
+  variables:
+    MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
+    MR_MODIFIED_FILES: $MR_MODIFIED_FILES
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+  inherit:
+    variables: false
+  trigger:
+    include:
+      - artifact: buildv2_child_pipeline.yml
+        job: generate_build_child_pipeline_buildv2
+    strategy: depend
+  allow_failure: true
+
 generate_prebuild_report:
   extends:
     - .build_template

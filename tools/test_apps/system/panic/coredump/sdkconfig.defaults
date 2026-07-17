@@ -16,3 +16,6 @@ CONFIG_FREERTOS_USE_TRACE_FACILITY=y
 
 # Increase main task stack size
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=4096
+
+# CONFIG_VFS_SUPPORT_IO resolves to its default (y) in this test's Kconfig closure; the extra console I/O task makes the core dump header declare more bytes than are emitted, so espcoredump.py info_corefile fails to parse it in the "test_hw_stack_guard_cpu0" case. Disable it.
+CONFIG_VFS_SUPPORT_IO=n
