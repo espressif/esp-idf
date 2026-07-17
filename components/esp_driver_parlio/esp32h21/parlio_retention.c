@@ -15,7 +15,8 @@
  */
 #define PARLIO_RETENTION_REGS_CNT 8
 #define PARLIO_RETENTION_REGS_BASE (DR_REG_PARL_IO_BASE + 0x0)
-static const uint32_t parlio_regs_map[4] = {0x60457, 0x0, 0x0, 0x0};
+const uint32_t parlio_regs_map[4] = {0x60457, 0x0, 0x0, 0x0};
+const uint32_t parlio_regs_cnt = PARLIO_RETENTION_REGS_CNT;
 static const regdma_entries_config_t parlio_regs_retention[] = {
     [0] = {
         .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PARLIO_LINK(0x00), \

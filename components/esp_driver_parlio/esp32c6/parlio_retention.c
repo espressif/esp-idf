@@ -13,7 +13,8 @@
 */
 #define PARLIO_RETENTION_REGS_CNT 6
 #define PARLIO_RETENTION_REGS_BASE (DR_REG_PARL_IO_BASE + 0x0)
-static const uint32_t parlio_regs_map[4] = {0x2f, 0x0, 0x100, 0x0};
+const uint32_t parlio_regs_map[4] = {0x2f, 0x0, 0x100, 0x0};
+const uint32_t parlio_regs_cnt = PARLIO_RETENTION_REGS_CNT;
 static const regdma_entries_config_t parlio_regs_retention[] = {
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
