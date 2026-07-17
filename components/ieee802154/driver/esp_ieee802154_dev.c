@@ -27,6 +27,10 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 
+#if CONFIG_IEEE802154_MULTI_PAN_ENABLE
+#include "esp_ieee802154_multipan.h"
+#endif
+
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
