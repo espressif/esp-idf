@@ -28,9 +28,9 @@ As a USB stack, a TinyUSB component is used.
 3. USB which accesses the ESP MSC Partition is plugged-in at boot-up. After boot-up, it is ejected on Host PC manually by user.
      - Result: Host PC can't access the partition over USB MSC. Application example can perform operations (read, write) on partition.
 4. USB which accesses the ESP MSC Partition is plugged-in at boot-up. It is then unplugged(removed) from Host PC manually by user.
-     - Result: The behaviour is different for bus-powered devices and self-powered devices
+     - Result: The behavior is different for bus-powered devices and self-powered devices
           - (a) Bus-Powered devices - Both Host PC as well as application example can't access the partition over USB MSC. Here, the device will be Powered-off.
-          - (b) Self-Powered devices - Here, the device can be powered-on even after unplugging the device from Host PC. These behaviour can be further categorize in two ways:
+          - (b) Self-Powered devices - Here, the device can be powered-on even after unplugging the device from Host PC. These behavior can be further categorize in two ways:
                - (i) Self-Powered Devices without VBUS monitoring - Both Host PC as well as application example can't access the partition over USB MSC.
                - (ii) Self-Powered Devices with VBUS monitoring - Host PC can't access the partition over USB MSC. Application example can perform operations (read, write) on partition. Here, in ``tinyusb_config_t`` user must set ``self_powered`` to ``true`` and ``vbus_monitor_io`` to GPIO number (``VBUS_MONITORING_GPIO_NUM``) that will be used for VBUS monitoring.
 
@@ -47,14 +47,28 @@ See common pin assignments for USB Device examples from [upper level](../../READ
 
 Next, for Self-Powered Devices with VBUS monitoring, user must set ``self_powered`` to ``true`` and ``vbus_monitor_io`` to GPIO number (``VBUS_MONITORING_GPIO_NUM``) that will be used for VBUS monitoring.
 
-### Additional Pin assignments for ESP32-S3 for accessing SD MMC Card
+### SD MMC Card Pin Assignments
 
-On ESP32-S3, SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
+When using SD MMC Card as storage media, additional pins are required beyond the USB pins. SD MMC card support is available on ESP32-S3, ESP32-P4, and ESP32-S31.
 
-1. Using menuconfig: Run `idf.py menuconfig` in the project directory, open "USB DEV MSC Example Configuration" and select "SDMMC CARD" for "Storage Media Used".
-2. In the source code: See the initialization of ``sdmmc_slot_config_t slot_config`` structure in the example code.
+#### SD MMC Configuration
 
-The table below lists the default pin assignments.
+GPIOs and SD bus settings can be configured in two ways:
+
+1. Using menuconfig: Run `idf.py menuconfig` in the project directory, open "TinyUSB MSC Example Configuration", and:
+   - Select "SDMMC CARD" for "Storage Media Used"
+   - Select "SD/MMC bus width" — "4 lines (D0 - D3)" or "1 line (D0)" (see `CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_1`)
+   - On ESP32-S3 and ESP32-P4: set the GPIO numbers for the SD card interface
+2. Using target-specific defaults: Pin and LDO defaults for each chip are in ``sdkconfig.defaults.esp32s3``, ``sdkconfig.defaults.esp32p4``, and ``sdkconfig.defaults.esp32s31``. These are applied automatically when you set the target with ``idf.py set-target``.
+3. In the source code: See the initialization of ``sdmmc_slot_config_t slot_config`` structure in the example code.
+
+By default, this example uses 4-line SD mode, utilizing 6 pins: CLK, CMD, D0 - D3.
+
+Note that even if card's D3 line is not connected to the ESP chip, it still has to be pulled up, otherwise the card will go into SPI protocol mode.
+
+#### ESP32-S3
+
+On ESP32-S3, the SDMMC peripheral is connected to GPIO pins using the GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. The table below lists the default pin assignments.
 
 When using an ESP32-S3-USB-OTG board, this example runs without any extra modifications required. Only an SD card needs to be inserted into the slot.
 
@@ -67,18 +81,40 @@ GPIO38        | D1          | not used in 1-line SD mode; 10k pullup in 4-line m
 GPIO33        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
 GPIO34        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
 
-By default, this example uses 4 line SD mode, utilizing 6 pins: CLK, CMD, D0 - D3. It is possible to use 1-line mode (CLK, CMD, D0) by changing "SD/MMC bus width" in the example configuration menu (see `CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_1`).
+#### ESP32-P4
 
-Note that even if card's D3 line is not connected to the ESP chip, it still has to be pulled up, otherwise the card will go into SPI protocol mode.
+On ESP32-P4, Slot 1 of the SDMMC peripheral is connected to GPIO pins using the GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. The table below lists the default pin assignments.
+
+ESP32-P4 pin  | SD card pin | Notes
+--------------|-------------|------------
+GPIO43        | CLK         | 10k pullup
+GPIO44        | CMD         | 10k pullup
+GPIO39        | D0          | 10k pullup
+GPIO40        | D1          | not used in 1-line SD mode; 10k pullup in 4-line mode
+GPIO41        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
+GPIO42        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
+
+Default dedicated pins on ESP32-P4 are able to connect to an ultra high-speed SD card (UHS-I) which requires 1.8V switching (instead of the regular 3.3V). This means the user has to provide an external LDO power supply to use them, or enable and configure the internal LDO via `idf.py menuconfig` -> `TinyUSB MSC Example Configuration` -> `SDMMC powered by internal LDO` and `LDO IO`.
+
+When using different GPIO pins this is not required and the `SDMMC powered by internal LDO` setting can be disabled.
+
+#### ESP32-S31
+
+On ESP32-S31, the SDMMC peripheral is connected to specific GPIO pins using the IO MUX. GPIO pins cannot be customized. The table below lists the pin connections.
+
+ESP32-S31 pin | SD card pin | Notes
+--------------|-------------|------------
+GPIO24        | CLK         | 10k pullup
+GPIO25        | CMD         | 10k pullup
+GPIO20        | D0          | 10k pullup
+GPIO21        | D1          | not used in 1-line SD mode; 10k pullup in 4-line mode
+GPIO22        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
+GPIO23        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
 
 ### Build and Flash
 
 1. By default, the example will compile to access SPI Flash as storage media. Here, SPI Flash Wear Levelling WL_SECTOR_SIZE is set to 512 and WL_SECTOR_MODE is set to PERF in Menuconfig.
-2. In order to access SD MMC card as storage media, configuration has to be changed using `idf.py menuconfig`:
-  - i. Open "USB Dev MSC Example Configuration" and select "SDMMC CARD" for "Storage Media Used"
-  - ii. Open "SD/MMC bus width" and select between "4 lines (D0 - D3)" or "1 line (D0)"
-  - iii. Select the GPIO Pin numbers for SD Card Pin.
-  - iv. Save the configuration.
+2. In order to access SD MMC card as storage media, change the configuration as described in [SD MMC Configuration](#sd-mmc-configuration) above.
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
