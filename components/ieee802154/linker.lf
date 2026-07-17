@@ -79,9 +79,9 @@ entries:
             esp_ieee802154_util: ieee802154_channel_to_freq (noflash)
 
         if IEEE802154_MULTI_PAN_ENABLE = y:
-            esp_ieee802154: esp_ieee802154_get_multipan_extended_address (noflash)
-            esp_ieee802154: esp_ieee802154_get_multipan_panid (noflash)
-            esp_ieee802154: esp_ieee802154_get_multipan_short_address (noflash)
+            esp_ieee802154_multipan: esp_ieee802154_get_multipan_extended_address (noflash)
+            esp_ieee802154_multipan: esp_ieee802154_get_multipan_panid (noflash)
+            esp_ieee802154_multipan: esp_ieee802154_get_multipan_short_address (noflash)
             esp_ieee802154_dev: is_broadcast_addr (noflash)
             esp_ieee802154_dev: is_broadcast_panid (noflash)
             esp_ieee802154_dev: update_mpf_index (noflash)
