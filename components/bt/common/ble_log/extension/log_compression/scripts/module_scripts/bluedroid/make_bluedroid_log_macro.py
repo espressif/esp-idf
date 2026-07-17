@@ -9,6 +9,22 @@ BLUEDROID_LOG_MODE_LEVEL_GET = {
     'GATT': 'gatt_cb.trace_level',
     'SMP': 'smp_cb.trace_level',
     'APPL': 'appl_trace_level',
+    'HCI': 'HCI_INITIAL_TRACE_LEVEL',
+    'SDP': 'sdp_cb.trace_level',
+    'RFCOMM': 'rfc_cb.trace_level',
+    'BNEP': 'bnep_cb.trace_level',
+    'PAN': 'pan_cb.trace_level',
+    'A2D': 'a2d_cb.trace_level',
+    'AVDT': 'avdt_cb.trace_level',
+    'AVCT': 'avct_cb.trace_level',
+    'AVRC': 'avrc_cb.trace_level',
+    'MCA': 'mca_cb.trace_level',
+    'HIDH': 'hh_cb.trace_level',
+    'HIDD': 'hd_cb.trace_level',
+    'BTIF': 'btif_trace_level',
+    'BTC': 'BTC_INITIAL_TRACE_LEVEL',
+    'OSI': 'OSI_INITIAL_TRACE_LEVEL',
+    'BLUFI': 'BLUFI_INITIAL_TRACE_LEVEL',
 }
 
 
