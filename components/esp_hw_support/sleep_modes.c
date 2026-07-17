@@ -719,6 +719,10 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 {
     resume_timers(sleep_flags);
 #if CONFIG_ESP_ENABLE_PVT && SOC_PVT_EN_WITH_SLEEP
+    if ((sleep_flags & PMU_SLEEP_PD_CPU) && !(sleep_flags & PMU_SLEEP_PD_TOP)) {
+        /* If TOP is powered down, configuration in pvt_auto_dbias_init was already restored in wakeup retention*/
+        pvt_auto_dbias_init();
+    }
     pvt_func_enable(true);
 #endif
 

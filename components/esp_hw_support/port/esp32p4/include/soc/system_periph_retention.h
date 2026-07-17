@@ -102,7 +102,7 @@ extern const regdma_entries_config_t pau_regs_retention[PAU_RETENTION_LINK_LEN];
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define PVT_RETENTION_LINK_LEN   1
+#define PVT_RETENTION_LINK_LEN   4
 extern const regdma_entries_config_t pvt_regs_retention[PVT_RETENTION_LINK_LEN];
 
 #ifdef __cplusplus
