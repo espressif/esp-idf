@@ -249,6 +249,11 @@ typedef struct {
     bool is_valid;                              /**< True if this credential entry is valid */
 } wifi_nan_peer_creds_t;
 
+typedef struct {
+    uint8_t nan_gsp_in_sda : 1;     /**< Include GSP in SDA for Android peer compatibility */
+    uint8_t reserved       : 7;
+} wifi_nan_compat_params_t;
+
 typedef wifi_scan_channel_bitmap_t channel_bitmap_t;
 
 uint8_t *esp_wifi_ap_get_prof_pmk_internal(void);
@@ -354,5 +359,5 @@ esp_err_t esp_wifi_nan_save_own_nik(const uint8_t own_nik[ESP_WIFI_NAN_NIK_LEN])
 esp_err_t esp_wifi_nan_save_creds_for_peer(const uint8_t peer_nik[ESP_WIFI_NAN_NIK_LEN],
                                            const uint8_t npk[ESP_WIFI_NAN_NPK_LEN], const uint8_t service_hash[6]);
 esp_err_t esp_wifi_nan_erase_all_creds(void);
-
+esp_err_t esp_wifi_nan_set_params_internal(wifi_nan_compat_params_t params);
 #endif /* _ESP_WIFI_DRIVER_H_ */

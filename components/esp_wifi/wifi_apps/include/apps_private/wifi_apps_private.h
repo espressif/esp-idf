@@ -49,6 +49,26 @@ void esp_nan_action_start(esp_netif_t *nan_netif);
   */
 void esp_nan_action_stop(void);
 
+/**
+  * @brief NAN peer-platform compatibility mode
+  */
+typedef enum {
+    NAN_COMPATIBILITY_MODE_DEFAULT = 0,  /**< Default compatibility mode for Wi-Fi Aware peers */
+    NAN_COMPATIBILITY_MODE_IOS,          /**< Interoperate with iOS Wi-Fi Aware peers */
+    NAN_COMPATIBILITY_MODE_ANDROID,      /**< Interoperate with Android Wi-Fi Aware peers */
+} nan_compatibility_mode_t;
+
+/**
+  * @brief      Set NAN peer-platform compatibility mode
+  *
+  * @param      mode  Compatibility mode to target for discovery/SSI framing.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_FAIL: Invalid compatibility mode
+  */
+esp_err_t esp_nan_set_compatibility_mode_internal(nan_compatibility_mode_t mode);
+
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
 #ifdef CONFIG_ESP_WIFI_NAN_PAIRING

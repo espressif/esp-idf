@@ -61,6 +61,8 @@ bool esp_nan_verify_nira_get_own_svc(uint8_t *peer_mac, uint8_t *nira_attr,
 #if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) && defined(CONFIG_ESP_WIFI_PASN_SUPPORT)
 #include "esp_private/esp_supp_nan.h"
 #include "apps_private/wifi_apps_private.h"
+#elif defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE)
+#include "apps_private/wifi_apps_private.h"
 #endif
 
 /* NAN States */
@@ -934,8 +936,6 @@ static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *pe
     }
     NAN_DATA_UNLOCK();
 
-    ESP_LOGI(TAG, "Service matched with capabilities: 0x%04x", capab);
-
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     /* Service-match security gate, keyed by the local subscribe (sub_id):
      *   1. This subscribe was created without credentials (open subscribe) ->
@@ -968,6 +968,8 @@ static void nan_app_service_match_cb(uint8_t sub_id, struct nan_cb_peer_info *pe
         }
     }
 #endif
+
+    ESP_LOGI(TAG, "Service matched with capabilities: 0x%04x", capab);
 
     size_t evt_data_len = sizeof(wifi_event_nan_svc_match_t) + ssi_len;
     wifi_event_nan_svc_match_t *evt = (wifi_event_nan_svc_match_t *)os_zalloc(evt_data_len);
@@ -1891,6 +1893,34 @@ void esp_nan_action_stop(void)
     os_event_group_set_bits(nan_event_group, NAN_STOPPED_BIT);
 }
 
+static int nan_set_params_ipc(void *arg)
+{
+    wifi_nan_compat_params_t *params = arg;
+
+    return esp_wifi_nan_set_params_internal(*params);
+}
+
+esp_err_t esp_nan_set_compatibility_mode_internal(nan_compatibility_mode_t mode)
+{
+    wifi_ipc_config_t cfg;
+    wifi_nan_compat_params_t params = {0};
+
+    if (mode > NAN_COMPATIBILITY_MODE_ANDROID) {
+        ESP_LOGE(TAG, "Invalid compatibility mode");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (mode == NAN_COMPATIBILITY_MODE_ANDROID) {
+        params.nan_gsp_in_sda = 1;
+    }
+
+    cfg.fn = nan_set_params_ipc;
+    cfg.arg = &params;
+    cfg.arg_size = sizeof(params);
+
+    return esp_wifi_ipc_internal(&cfg, false);
+}
+
 esp_err_t esp_wifi_nan_sync_start(const wifi_nan_sync_config_t *nan_cfg)
 {
     wifi_mode_t mode;
@@ -2174,6 +2204,10 @@ uint8_t esp_wifi_nan_publish_service(const wifi_nan_publish_cfg_t *publish_cfg)
         goto fail;
     }
     memcpy(cfg, publish_cfg, sizeof(*cfg));
+    if (!cfg->security_reqd && cfg->security_cfg) {
+        ESP_LOGW(TAG, "'%s': security_cfg ignored, security_reqd not set", cfg->service_name);
+        cfg->security_cfg = NULL;
+    }
     cfg->pairing = NULL;
     if (publish_cfg->pairing) {
         cfg->pairing = os_malloc(sizeof(*cfg->pairing));
@@ -2355,6 +2389,10 @@ uint8_t esp_wifi_nan_subscribe_service(const wifi_nan_subscribe_cfg_t *subscribe
         goto fail;
     }
     memcpy(cfg, subscribe_cfg, sizeof(*cfg));
+    if (!cfg->security_reqd && cfg->security_cfg) {
+        ESP_LOGW(TAG, "'%s': security_cfg ignored, security_reqd not set", cfg->service_name);
+        cfg->security_cfg = NULL;
+    }
     cfg->pairing = NULL;
     if (subscribe_cfg->pairing) {
         cfg->pairing = os_malloc(sizeof(*cfg->pairing));
