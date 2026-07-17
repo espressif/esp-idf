@@ -724,9 +724,20 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 *******************************************************************************/
 void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 {
-    BT_HDR          *pdata = p_data->hid_cback.p_data;
-    UINT8           *data = (UINT8 *)(pdata + 1) + pdata->offset;
-    tBTA_HH_HSDATA    hs_data;
+    BT_HDR          *pdata = NULL;
+    UINT8           *data = NULL;
+    tBTA_HH_HSDATA  hs_data = {0};
+
+    if (p_cb == NULL) {
+        return;
+    }
+
+    if (p_data == NULL || (pdata = p_data->hid_cback.p_data) == NULL) {
+        APPL_TRACE_ERROR("NULL ctrl data %p,%p for w4_evt=%d", p_data, pdata, p_cb->w4_evt);
+        hs_data.status = BTA_HH_ERR;
+        hs_data.handle = p_cb->hid_handle;
+        goto _exit;
+    }
 
 #if BTA_HH_DEBUG
     APPL_TRACE_DEBUG("Ctrl DATA received w4: event[%s]",
@@ -734,15 +745,26 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 #endif
     hs_data.status  = BTA_HH_OK;
     hs_data.handle  = p_cb->hid_handle;
+    data = (UINT8 *)(pdata + 1) + pdata->offset;
 
     switch (p_cb->w4_evt) {
     case BTA_HH_GET_IDLE_EVT:
+        if (pdata->len < 1) {
+            APPL_TRACE_ERROR("GET_IDLE with insufficient length %u", pdata->len);
+            hs_data.status = BTA_HH_ERR;
+            break;
+        }
         hs_data.rsp_data.idle_rate = *data;
         break;
     case BTA_HH_GET_RPT_EVT:
         hs_data.rsp_data.p_rpt_data = pdata;
         break;
     case BTA_HH_GET_PROTO_EVT:
+        if (pdata->len < 1) {
+            APPL_TRACE_ERROR("GET_PROTO with insufficient length %u", pdata->len);
+            hs_data.status = BTA_HH_ERR;
+            break;
+        }
         /* match up BTE/BTA report/boot mode def*/
         hs_data.rsp_data.proto_mode = ((*data) == HID_PAR_PROTOCOL_REPORT) ? \
                                       BTA_HH_PROTO_RPT_MODE : BTA_HH_PROTO_BOOT_MODE;
@@ -770,6 +792,7 @@ void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
     bta_sys_idle(BTA_ID_HH, p_cb->app_id, p_cb->addr);
 
+_exit:
     (* bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH *)&hs_data);
 
     p_cb->w4_evt = 0;
