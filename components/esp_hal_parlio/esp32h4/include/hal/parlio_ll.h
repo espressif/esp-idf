@@ -74,6 +74,7 @@ static inline void parlio_ll_enable_bus_clock(int group_id, bool enable)
  *
  * @param group_id  The group id of the parlio module
  */
+__attribute__((always_inline))
 static inline void parlio_ll_reset_register(int group_id)
 {
     (void)group_id;
@@ -89,6 +90,7 @@ static inline void parlio_ll_reset_register(int group_id)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
+__attribute__((always_inline))
 static inline void parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;
