@@ -19,6 +19,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_heap_caps_init.h"
 #include "esp_psram.h"
+#include "esp_macros.h"
 #include "esp_mmu_map.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
