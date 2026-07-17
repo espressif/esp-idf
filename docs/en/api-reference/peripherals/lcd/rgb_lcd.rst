@@ -260,7 +260,7 @@ This mode allocates two "bounce buffers" from internal memory and a main frame b
 
 .. note::
 
-    This mode also faces issues due to limited PSRAM bandwidth. For instance, if your draw buffers are in PSRAM and their contents are copied to the internal frame buffer by CPU Core 1, while CPU Core 0 is performing another memory copy in the DMA EOF ISR, both CPUs will be accessing PSRAM via cache, sharing its bandwidth. This significantly increases the memory copy time in the DMA EOF ISR, causing the driver to fail in switching the bounce buffer promptly, resulting in a screen shift. Although the driver can detect this condition and restart in the LCD's VSYNC interrupt handler, you may still notice flickering on the screen.
+    This mode also faces issues due to limited PSRAM bandwidth. For instance, if your draw buffers are in PSRAM and their contents are copied to the internal frame buffer by CPU Core 1, while CPU Core 0 is performing another memory copy in the DMA EOF ISR, both CPUs will be accessing PSRAM via cache, sharing its bandwidth. This significantly increases the memory copy time in the DMA EOF ISR, causing the driver to fail in switching the bounce buffer promptly, resulting in a screen shift. On ESP32-S3, the driver can detect this condition and restart in the LCD's VSYNC interrupt handler, although you may still notice flickering on the screen.
 
 .. code:: c
 
@@ -305,10 +305,12 @@ Bounce Buffer Only
 
 This mode is similar to :ref:`bounce_buffer_with_single_psram_frame_buffer`, but there is no PSRAM frame buffer initialized by the LCD driver. Instead, the user supplies a callback function that is responsible for filling the bounce buffers. As this driver does not care where the written pixels come from, this allows for the callback doing e.g., on-the-fly conversion from a smaller, 8-bit-per-pixel PSRAM frame buffer to a 16-bit LCD, or even procedurally generated frame-buffer-less graphics. This option is selected by setting the :cpp:member:`esp_lcd_rgb_panel_config_t::no_fb` flag and supplying a :cpp:member:`esp_lcd_rgb_panel_config_t::bounce_buffer_size_px` value. And then register the :cpp:member:`esp_lcd_rgb_panel_event_callbacks_t::on_bounce_empty` callback by calling :cpp:func:`esp_lcd_rgb_panel_register_event_callbacks`.
 
-.. note::
+.. only:: esp32s3
 
-    In a well-designed embedded application, situations where the DMA cannot deliver data as fast as the LCD consumes it should be avoided. However, such scenarios can theoretically occur. In the {IDF_TARGET_NAME} hardware, this results in the LCD outputting dummy bytes while the DMA waits for data. If the DMA were to run in a continuous stream, it could cause a desynchronization between the LCD address from which the DMA reads data and the address from which the LCD peripheral outputs data, leading to a **permanently** shifted image.
-    To prevent this, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, allowing the driver to automatically restart the DMA during the VBlank interrupt, or call :cpp:func:`esp_lcd_rgb_panel_restart` to manually restart the DMA. Note that :cpp:func:`esp_lcd_rgb_panel_restart` does not restart the DMA immediately; instead, the DMA will be restarted at the next VSYNC event.
+    .. note::
+
+        In a well-designed embedded application, situations where the DMA cannot deliver data as fast as the LCD consumes it should be avoided. However, such scenarios can theoretically occur. In the {IDF_TARGET_NAME} hardware, this results in the LCD outputting dummy bytes while the DMA waits for data. If the DMA were to run in a continuous stream, it could cause a desynchronization between the LCD address from which the DMA reads data and the address from which the LCD peripheral outputs data, leading to a **permanently** shifted image.
+        To prevent this, you can either enable the :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` option, allowing the driver to automatically restart the DMA during the VBlank interrupt, or call :cpp:func:`esp_lcd_rgb_panel_restart` to manually restart the DMA. Note that :cpp:func:`esp_lcd_rgb_panel_restart` does not restart the DMA immediately; instead, the DMA will be restarted at the next VSYNC event.
 
 API Reference
 -------------

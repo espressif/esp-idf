@@ -215,6 +215,7 @@ esp_err_t esp_lcd_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq
 /**
  * @brief Restart the LCD transmission
  *
+ * @note This function is only supported on ESP32-S3.
  * @note This function can be useful when the LCD controller is out of sync with the DMA because of insufficient bandwidth.
  *       To save the screen from a permanent shift, you can call this function to restart the LCD DMA.
  * @note This function doesn't restart the DMA immediately but to set a flag internally.
@@ -225,7 +226,8 @@ esp_err_t esp_lcd_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq
  * @param[in] panel panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
  * @return
  *      - ESP_ERR_INVALID_ARG: Restart the LCD failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Restart the LCD failed because the LCD diver is working in refresh-on-demand mode
+ *      - ESP_ERR_INVALID_STATE: Restart the LCD failed because the LCD driver is working in refresh-on-demand mode
+ *      - ESP_ERR_NOT_SUPPORTED: Restarting the LCD is not supported on this target
  *      - ESP_OK: Restart the LCD successfully
  */
 esp_err_t esp_lcd_rgb_panel_restart(esp_lcd_panel_handle_t panel);
