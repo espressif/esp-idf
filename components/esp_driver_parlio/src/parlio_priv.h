@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,11 @@
 // Use retention link only when the target supports sleep retention is enabled
 #define PARLIO_USE_RETENTION_LINK  (SOC_PARLIO_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
+#if SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+extern const uint32_t parlio_regs_map[4];
+extern const uint32_t parlio_regs_cnt;
+#endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+
 #define PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
 #if defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS) // Parlio uses GDMA
@@ -142,6 +147,8 @@ typedef struct parlio_group_t {
     int                       group_id;     // group ID, index from 0
     portMUX_TYPE              spinlock;     // to protect per-group register level concurrent access
     parlio_hal_context_t      hal;          // hal layer context
+    uint32_t                  regs_map[4];  // register map for software retention
+    uint32_t                  regs_cnt;     // register count for software retention
     uint32_t                  dma_align;    // DMA buffer alignment
     parlio_unit_base_handle_t    tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
     parlio_unit_base_handle_t    rx_units[SOC_PARLIO_RX_UNITS_PER_GROUP]; // rx unit handles
@@ -225,6 +232,15 @@ esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit);
  * @param[in]  unit        The TX/RX unit base handle
  */
 void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit);
+
+/**
+ * @brief Retain the Parallel IO registers by software
+ *
+ * @param[in]  group       The parlio group handle
+ * @param[in]  reg_dump    The register dump buffer
+ * @param[in]  save        If true, save the registers; if false, restore the registers
+ */
+void parlio_sw_retention(parlio_group_t *group, uint32_t *reg_dump, bool save);
 
 #if PARLIO_USE_RETENTION_LINK
 esp_err_t parlio_create_sleep_retention_link_cb(void *arg);
