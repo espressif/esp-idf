@@ -259,7 +259,6 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
     uint32_t tab;
     uint8_t index = pattern_index / 4;
     uint8_t offset = (pattern_index % 4) * 8;
-    adc_ll_digi_pattern_table_t pattern = {0};
     uint8_t bit_width;
 
     switch (table.bit_width) {
@@ -278,17 +277,17 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
     default:
         bit_width = 0x3;
     }
-    pattern.val = (table.atten & 0x3) | ((bit_width) << 2) | ((table.channel & 0xF) << 4);
+    const uint8_t pattern = (table.atten & 0x3) | ((bit_width) << 2) | ((table.channel & 0xF) << 4);
 
     if (table.unit == ADC_UNIT_1) {
         tab = SYSCON.saradc_sar1_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
-        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        tab |= ((uint32_t)pattern << 24) >> offset; // Fill in the new data
         SYSCON.saradc_sar1_patt_tab[index] = tab;   // Write back
     } else { // adc_n == ADC_UNIT_2
         tab = SYSCON.saradc_sar2_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
-        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        tab |= ((uint32_t)pattern << 24) >> offset; // Fill in the new data
         SYSCON.saradc_sar2_patt_tab[index] = tab;   // Write back
     }
 }
