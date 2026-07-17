@@ -527,9 +527,11 @@ esp_err_t esp_lcd_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq
 esp_err_t esp_lcd_rgb_panel_restart(esp_lcd_panel_handle_t panel)
 {
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+#if !RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
+    ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "restart is not supported on this target");
+#endif
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     ESP_RETURN_ON_FALSE(rgb_panel->flags.stream_mode, ESP_ERR_INVALID_STATE, TAG, "not in stream mode");
-
     // the underlying restart job will be done in the `LCD_LL_EVENT_VSYNC_END` event handler
     portENTER_CRITICAL(&rgb_panel->spinlock);
     rgb_panel->flags.need_restart = true;
@@ -1259,7 +1261,8 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
     return ESP_OK;
 }
 
-// reset the GDMA channel every VBlank to stop permanent desyncs from happening.
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
+// Reset the GDMA channel every VBlank to stop permanent desyncs from happening.
 // Note that this fix can lead to single-frame desyncs itself, as in: if this interrupt
 // is late enough, the display will shift as the LCD controller already read out the
 // first data bytes, and resetting DMA will re-send those. However, the single-frame
@@ -1321,6 +1324,7 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
     }
 
 }
+#endif // RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
 {
@@ -1391,10 +1395,12 @@ IRAM_ATTR static void rgb_lcd_default_isr_handler(void *args)
         // check whether to update the PCLK frequency, it should be safe to update the PCLK frequency in the VSYNC interrupt
         lcd_rgb_panel_try_update_pclk(rgb_panel);
 
+#if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
         if (rgb_panel->flags.stream_mode) {
             // check whether to restart the transmission
             lcd_rgb_panel_try_restart_transmission(rgb_panel);
         }
+#endif
 
     }
     // yield if needed
