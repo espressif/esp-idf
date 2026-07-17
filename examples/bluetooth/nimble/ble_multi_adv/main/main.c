@@ -374,7 +374,7 @@ ble_multi_adv_gap_event(struct ble_gap_event *event, void *arg)
             assert(rc == 0);
             ble_multi_adv_print_conn_desc(&desc);
 
-            ble_multi_perform_gatt_proc(desc.our_id_addr);
+            ble_multi_perform_gatt_proc(desc.our_ota_addr);
         }
         MODLOG_DFLT(INFO, "\n");
         return 0;

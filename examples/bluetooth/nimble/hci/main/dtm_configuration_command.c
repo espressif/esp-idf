@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -32,7 +32,7 @@ static int dtm_set_ble_tx_power_command(int argc, char **argv)
     }
 
     ESP_LOGI(__func__, "Set tx power level '%d'", dtm_set_tx_power_cmd_args.cmd_params->ival[0]);
-    if (dtm_set_tx_power_cmd_args.cmd_params->ival[0] > 15) {
+    if (dtm_set_tx_power_cmd_args.cmd_params->ival[0] < 0 || dtm_set_tx_power_cmd_args.cmd_params->ival[0] > 15) {
         return 2;
     }
 
@@ -47,6 +47,11 @@ static int dtm_set_ble_tx_power_command(int argc, char **argv)
 static int dtm_get_ble_tx_power_command(int argc, char **argv)
 {
     esp_power_level_t power_level;
+
+    if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        esp_rom_printf("\nPlease enable BLE DTM mode first by using the command enable_ble_dtm -e 1 before sending this command.\n");
+        return 2;
+    }
 
     power_level = esp_ble_tx_power_get_enhanced(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
 
@@ -67,10 +72,18 @@ static int dtm_reconfig_uart_pins_command(int argc, char **argv)
         return 1;
     }
 
-    ESP_LOGI(__func__, "reconfig tx:'%d', rx: '%d'",
-             dtm_reconfig_uart_cmd_args.tx_pin->ival[0], dtm_reconfig_uart_cmd_args.rx_pin->ival[0]);
-    hci_uart_reconfig_pin(dtm_reconfig_uart_cmd_args.tx_pin->ival[0],
-                          dtm_reconfig_uart_cmd_args.rx_pin->ival[0], -1, -1);
+    int tx_pin = dtm_reconfig_uart_cmd_args.tx_pin->ival[0];
+    int rx_pin = dtm_reconfig_uart_cmd_args.rx_pin->ival[0];
+    if (tx_pin < 0 || rx_pin < 0) {
+        ESP_LOGE(__func__, "Invalid GPIO pin: tx=%d, rx=%d", tx_pin, rx_pin);
+        return 1;
+    }
+    ESP_LOGI(__func__, "reconfig tx:'%d', rx: '%d'", tx_pin, rx_pin);
+    int rc = hci_uart_reconfig_pin(tx_pin, rx_pin, -1, -1);
+    if (rc != 0) {
+        ESP_LOGE(__func__, "Failed to reconfig UART pins; rc=%d", rc);
+        return 1;
+    }
     return 0;
 }
 

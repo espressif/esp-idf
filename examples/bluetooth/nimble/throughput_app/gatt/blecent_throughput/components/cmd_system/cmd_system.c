@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
 */
@@ -169,8 +169,10 @@ static void register_heap(void)
 
 static int tasks_info(int argc, char **argv)
 {
-    const size_t bytes_per_task = 40; /* see vTaskList description */
-    char *task_list_buffer = malloc(uxTaskGetNumberOfTasks() * bytes_per_task);
+    /* Use a larger per-task estimate (80 bytes) plus a safety margin of 10 extra
+     * slots to absorb TOCTOU races and SMP mode affinity fields. */
+    const size_t bytes_per_task = 80;
+    char *task_list_buffer = malloc((uxTaskGetNumberOfTasks() + 10) * bytes_per_task);
     if (task_list_buffer == NULL) {
         ESP_LOGE(TAG, "failed to allocate buffer for vTaskList output");
         return 1;
@@ -218,14 +220,19 @@ static int deep_sleep(int argc, char **argv)
         return 1;
     }
     if (deep_sleep_args.wakeup_time->count) {
-        uint64_t timeout = 1000ULL * deep_sleep_args.wakeup_time->ival[0];
+        int wakeup_ms = deep_sleep_args.wakeup_time->ival[0];
+        if (wakeup_ms <= 0) {
+            ESP_LOGE(TAG, "Invalid wakeup time: %d ms (must be > 0)", wakeup_ms);
+            return 1;
+        }
+        uint64_t timeout = 1000ULL * wakeup_ms;
         ESP_LOGI(TAG, "Enabling timer wakeup, timeout=%lluus", timeout);
         ESP_ERROR_CHECK( esp_sleep_enable_timer_wakeup(timeout) );
     }
     if (deep_sleep_args.wakeup_gpio_num->count) {
         int io_num = deep_sleep_args.wakeup_gpio_num->ival[0];
-        if (!rtc_gpio_is_valid_gpio(io_num)) {
-            ESP_LOGE(TAG, "GPIO %d is not an RTC IO", io_num);
+        if (io_num < 0 || !rtc_gpio_is_valid_gpio(io_num)) {
+            ESP_LOGE(TAG, "GPIO %d is not a valid RTC IO", io_num);
             return 1;
         }
         int level = 0;
@@ -236,11 +243,13 @@ static int deep_sleep(int argc, char **argv)
                 return 1;
             }
         }
+#if SOC_PM_SUPPORT_EXT1_WAKEUP
         ESP_LOGI(TAG, "Enabling wakeup on GPIO%d, wakeup on %s level",
                  io_num, level ? "HIGH" : "LOW");
-
-#if SOC_PM_SUPPORT_EXT1_WAKEUP
         ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup_io(1ULL << io_num, level) );
+#else
+        ESP_LOGE(TAG, "GPIO wakeup from deep sleep not supported on this target");
+        return 1;
 #endif
     }
 
@@ -310,21 +319,43 @@ static int light_sleep(int argc, char **argv)
             ESP_LOGE(TAG, "Invalid wakeup level: %d", level);
             return 1;
         }
+        if (!GPIO_IS_VALID_GPIO(io_num)) {
+            ESP_LOGE(TAG, "Invalid GPIO number: %d", io_num);
+            return 1;
+        }
+        /* Configure the pin as input with a pull to avoid floating and false wakeups */
+        gpio_config_t io_conf = {
+            .pin_bit_mask = 1ULL << io_num,
+            .mode = GPIO_MODE_INPUT,
+            .pull_up_en = (level == 0) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
+            .pull_down_en = (level == 1) ? GPIO_PULLDOWN_ENABLE : GPIO_PULLDOWN_DISABLE,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        esp_err_t gpio_cfg_err = gpio_config(&io_conf);
+        if (gpio_cfg_err != ESP_OK) {
+            ESP_LOGE(TAG, "gpio_config failed for GPIO%d: %s", io_num, esp_err_to_name(gpio_cfg_err));
+            return 1;
+        }
         ESP_LOGI(TAG, "Enabling wakeup on GPIO%d, wakeup on %s level",
                  io_num, level ? "HIGH" : "LOW");
-
-        ESP_ERROR_CHECK( gpio_wakeup_enable(io_num, level ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL) );
+        esp_err_t wakeup_err = gpio_wakeup_enable(io_num, level ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL);
+        if (wakeup_err != ESP_OK) {
+            ESP_LOGE(TAG, "gpio_wakeup_enable failed for GPIO%d: %s", io_num, esp_err_to_name(wakeup_err));
+            return 1;
+        }
     }
     if (io_count > 0) {
         ESP_ERROR_CHECK( esp_sleep_enable_gpio_wakeup() );
     }
-    if (CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
+    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0 && CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
         ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);
-    uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
+    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
+        uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
+    }
     esp_light_sleep_start();
 
     uint32_t causes = esp_sleep_get_wakeup_causes();
