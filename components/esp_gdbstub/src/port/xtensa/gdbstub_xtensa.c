@@ -39,7 +39,7 @@ static void update_regfile_common(esp_gdbstub_gdb_regfile_t *dst)
     RSR(XT_REG_CONFIGID1, dst->configid1);
 }
 
-#if XCHAL_HAVE_FP
+#if XCHAL_HAVE_FP && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 /** @brief Read FPU registers to memory
 */
 static void gdbstub_read_fpu_regs(xtensa_fpu_regs_t *fpu)
@@ -168,7 +168,7 @@ static void write_fpu_regs_to_regfile(void *tcb, esp_gdbstub_gdb_regfile_t *dst)
         memcpy (&dst->fpu, fpu_save_area, sizeof(dst->fpu));
     }
 }
-#endif // XCHAL_HAVE_FP
+#endif // XCHAL_HAVE_FP && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 
 void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_gdb_regfile_t *dst)
@@ -193,10 +193,10 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
         dst->a[i] = 0xDEADBEEF;
     }
 
-#if XCHAL_HAVE_FP
+#if XCHAL_HAVE_FP && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     extern void *pxCurrentTCBs[portNUM_PROCESSORS];
     write_fpu_regs_to_regfile(pxCurrentTCBs[esp_cpu_get_core_id()], dst);
-#endif //XCHAL_HAVE_FP
+#endif // XCHAL_HAVE_FP && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 #if XCHAL_HAVE_LOOPS
     dst->lbeg = frame->lbeg;
     dst->lend = frame->lend;
@@ -240,9 +240,9 @@ void esp_gdbstub_tcb_frame_to_regfile(dummy_tcb_t *tcb, esp_gdbstub_gdb_regfile_
         dst->a[i] = 0xDEADBEEF;
     }
 
-#if XCHAL_HAVE_FP
+#if XCHAL_HAVE_FP && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     write_fpu_regs_to_regfile(tcb, dst);
-#endif // XCHAL_HAVE_FP
+#endif // XCHAL_HAVE_FP && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 #if XCHAL_HAVE_LOOPS
     dst->lbeg = frame->lbeg;
@@ -394,7 +394,7 @@ void esp_gdbstub_trigger_cpu(void)
 #endif
 }
 
-#if XCHAL_HAVE_FP
+#if XCHAL_HAVE_FP && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 static void gdbstub_set_fpu_register(uint32_t fpu_reg_index, float *value_ptr)
 {
     if (fpu_reg_index == 0) {
@@ -466,7 +466,7 @@ static void gdbstub_write_fpu_regs(esp_gdbstub_frame_t *frame, uint32_t reg_inde
         fpu_save_area[fpu_reg_index] = *value_ptr;
     }
 }
-#endif // XCHAL_HAVE_FP
+#endif // XCHAL_HAVE_FP && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 /** @brief GDB set register in frame
  * Set register in frame with address to value
@@ -481,7 +481,7 @@ void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, ui
     } else if (reg_index > 0 && (reg_index <= 27)) {
         (&frame->a0)[reg_index - 1] = value;
     }
-#if XCHAL_HAVE_FP
+#if XCHAL_HAVE_FP && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     gdbstub_write_fpu_regs(frame, reg_index, value_ptr);
-#endif // XCHAL_HAVE_FP
+#endif // XCHAL_HAVE_FP && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 }

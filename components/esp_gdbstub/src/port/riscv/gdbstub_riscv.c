@@ -99,7 +99,7 @@ static void esp_gdbstub_pie_regs_to_regfile (esp_gdbstub_gdb_regfile_t *dst)
 }
 #endif
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE) && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 static void *esp_gdbstub_coproc_saved_area(const StaticTask_t *tcb, int coproc, bool is_read) {
     /*
      * Coprocessors have lazy register saving mechanism:
@@ -181,7 +181,7 @@ static void esp_gdbstub_coproc_regs_to_regfile(const esp_gdbstub_frame_t *frame,
     }
 #endif
 }
-#endif /* SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE */
+#endif /* (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE) && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS */
 
 void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_gdb_regfile_t *dst)
 {
@@ -192,7 +192,7 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
     // See The RISC-V Instruction Set Manual Volume I: Unprivileged ISA Document Version 20191213 for more details.
     memcpy(&(dst->x[1]), &frame->ra, sizeof(uint32_t) * 31);
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE) && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     esp_gdbstub_coproc_regs_to_regfile(frame, dst);
 #endif
 }
@@ -444,7 +444,7 @@ void esp_gdbstub_set_pie_register(uint32_t reg_index, uint32_t *value_ptr)
 }
 #endif /* SOC_CPU_HAS_PIE */
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 void esp_gdbstub_set_coproc_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr) {
     const StaticTask_t *tcb = esp_gdbstub_find_tcb_by_frame(frame);
     uint32_t *csa; /* points to coprocessor registers data. */
@@ -479,7 +479,7 @@ void esp_gdbstub_set_coproc_register(esp_gdbstub_frame_t *frame, uint32_t reg_in
     }
 #endif
 }
-#endif /* SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE */
+#endif /* (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS */
 
 void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr)
 {
@@ -493,7 +493,7 @@ void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, ui
     } else if (reg_index == 32) { /* register 32 is PC  */
         frame->mepc = value;
     }
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if (SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     esp_gdbstub_set_coproc_register(frame, reg_index, value_ptr);
 #endif
 }
