@@ -236,22 +236,26 @@ ESP-IDF 二级引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_O
         I (67) boot: Partition Table:
         ...
 
-    防回滚功能
-    ^^^^^^^^^^
+    .. only:: SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED
 
-    防回滚功能可防止降级到可能存在安全漏洞的旧版引导加载程序。引导加载程序头部包含安全版本号，由 ``CONFIG_BOOTLOADER_SECURE_VERSION`` 定义。设置 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` 后，ROM 引导加载程序会将该安全版本号与 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` 中存储的值进行比对。只有版本号大于或等于 eFuse 值的引导加载程序才允许启动。
+        防回滚功能
+        ^^^^^^^^^^
 
-    - 如果设置了 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM``，ROM 引导加载程序可以更新 eFuse 中的安全版本号。
-    - 随着新引导加载程序版本的发布，安全版本号会递增，且不能降低。
-    - 如果 ROM 引导加载程序未更新 eFuse 中的安全版本号，则应用程序可以通过 :cpp:func:`esp_efuse_write_field_blob` 函数进行更新。
+        防回滚功能可防止降级到可能存在安全漏洞的旧版引导加载程序。引导加载程序头部包含安全版本号，由 ``CONFIG_BOOTLOADER_SECURE_VERSION`` 定义。设置 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` 后，ROM 引导加载程序会将该安全版本号与 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` 中存储的值进行比对。只有版本号大于或等于 eFuse 值的引导加载程序才允许启动。
+
+        - 如果设置了 ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM``，ROM 引导加载程序可以更新 eFuse 中的安全版本号。
+        - 随着新引导加载程序版本的发布，安全版本号会递增，且不能降低。
+        - 如果 ROM 引导加载程序未更新 eFuse 中的安全版本号，则应用程序可以通过 :cpp:func:`esp_efuse_write_field_blob` 函数进行更新。
 
     相关 eFuse
     ^^^^^^^^^^
 
-    - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` （12 位）：恢复引导加载程序的 flash 扇区地址。默认值为 0（禁用），设置为其他值则启用，设置为 0xFFF 时永久禁用。
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` （1 位）：在 ROM 引导加载程序中启用防回滚检查。
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` （4 位）：防回滚保护的安全版本号。该值随位数增加而递增—0x0、0x1、0x3、0x7、0xF。
-    - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` （1 位）：允许 ROM 引导加载程序更新 eFuse 中的安全版本号。
+    .. list::
+
+        - ``EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR`` （12 位）：恢复引导加载程序的 flash 扇区地址。默认值为 0（禁用），设置为其他值则启用，设置为 0xFFF 时永久禁用。
+        :SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED: - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_EN`` （1 位）：在 ROM 引导加载程序中启用防回滚检查。
+        :SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED: - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION`` （4 位）：防回滚保护的安全版本号。该值随位数增加而递增—0x0、0x1、0x3、0x7、0xF。
+        :SOC_BOOTLOADER_ANTI_ROLLBACK_SUPPORTED: - ``EFUSE_BOOTLOADER_ANTI_ROLLBACK_SECURE_VERSION_UPDATE_IN_ROM`` （1 位）：允许 ROM 引导加载程序更新 eFuse 中的安全版本号。
 
     .. note::
 
