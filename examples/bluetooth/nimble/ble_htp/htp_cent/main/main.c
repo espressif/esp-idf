@@ -63,6 +63,15 @@ ble_htp_cent_on_subscribe(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Peer not found for conn_handle=%d\n", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
+
+    if (error->status != 0) {
+        MODLOG_DFLT(ERROR, "Subscribe to temp measurement failed; status=%d\n", error->status);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
 
     dsc = peer_dsc_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
@@ -86,9 +95,7 @@ ble_htp_cent_on_subscribe(uint16_t conn_handle,
     return 0;
 err:
     /* Terminate the connection. */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-
-    return 0;
+    return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 /**
@@ -113,6 +120,15 @@ ble_htp_cent_on_write(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Peer not found for conn_handle=%d\n", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
+
+    if (error->status != 0) {
+        MODLOG_DFLT(ERROR, "Write to measurement interval failed; status=%d\n", error->status);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
 
     dsc = peer_dsc_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLE_SVC_HTP_UUID16),
@@ -137,7 +153,7 @@ ble_htp_cent_on_write(uint16_t conn_handle,
     return 0;
 err:
     /* Terminate the connection. */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 /**
@@ -155,6 +171,9 @@ ble_htp_cent_on_read(uint16_t conn_handle,
     if (error->status == 0) {
         MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
         print_mbuf(attr->om);
+    } else {
+        MODLOG_DFLT(ERROR, "Read temperature type failed; status=%d\n", error->status);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
     }
     MODLOG_DFLT(INFO, "\n");
 
@@ -319,18 +338,15 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
-    uint8_t test_addr[6];
-    uint8_t parsed_addr[6];
-    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
-            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+    uint8_t test_addr[6] = {0};
+    if (!(disc->props & BLE_HCI_ADV_CONN_MASK)) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, parsed_addr);
-        for (int i = 0; i < 6; i++) {
-            test_addr[i] = parsed_addr[5 - i];
+        if (peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr) != 6) {
+            return 0;
         }
 
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
@@ -349,9 +365,9 @@ ext_ble_htp_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             break;
         }
 
-        /* Search if HTP UUID is advertised */
+        /* Search if HTP UUID is advertised (little-endian: 0x09 0x18 = 0x1809) */
         if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x09 ) {
+            if ( disc->data[offset + 2] == 0x09 && disc->data[offset + 3] == 0x18 ) {
                 return 1;
             }
         }
@@ -369,7 +385,7 @@ ble_htp_cent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
-    uint8_t test_addr[6];
+    uint8_t test_addr[6] = {0};
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -385,7 +401,9 @@ ble_htp_cent_should_connect(const struct ble_gap_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
+        if (peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr) != 6) {
+            return 0;
+        }
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
@@ -440,6 +458,9 @@ ble_htp_cent_connect_if_interesting(void *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        ble_htp_cent_scan();
+#endif
         return;
     }
 
@@ -457,6 +478,9 @@ ble_htp_cent_connect_if_interesting(void *disc)
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
                     addr->type, addr_str(addr->val), rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        ble_htp_cent_scan();
+#endif
         return;
     }
 }
@@ -479,11 +503,13 @@ static int
 ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
 {
     struct ble_gap_conn_desc desc;
-    struct ble_hs_adv_fields fields;
     int rc;
 
     switch (event->type) {
     case BLE_GAP_EVENT_DISC:
+#if !CONFIG_EXAMPLE_EXTENDED_ADV
+        {
+        struct ble_hs_adv_fields fields;
         rc = ble_hs_adv_parse_fields(&fields, event->disc.data,
                                      event->disc.length_data);
         if (rc != 0) {
@@ -495,6 +521,8 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Try to connect to the advertiser if it looks interesting. */
         ble_htp_cent_connect_if_interesting(&event->disc);
+        }
+#endif
         return 0;
 
     case BLE_GAP_EVENT_CONNECT:
@@ -727,11 +755,14 @@ app_main(void)
     /* Initialize data structures to track connected peers. */
 #if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
-    assert(rc == 0);
 #else
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
-    assert(rc == 0);
 #endif
+    if (rc != 0) {
+        ESP_LOGE(tag, "Failed to init peer tracking; rc=%d", rc);
+        nimble_port_deinit();
+        return;
+    }
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-htp-cent");

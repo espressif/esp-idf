@@ -106,8 +106,8 @@ ext_bleprph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using configured/inferred addr type */
+    params.own_addr_type = own_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -186,9 +186,10 @@ bleprph_advertise(void)
     fields.name_is_complete = 1;
 #endif
 
-    fields.uuids16 = (ble_uuid16_t[]) {
+    static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
     };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -216,11 +217,16 @@ static void bleprph_power_control(uint16_t conn_handle)
 {
     int rc;
 
-    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
-    assert (rc == 0);
+    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_read_remote_transmit_power_level failed; rc=%d\n", rc);
+        return;
+    }
 
     rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x1, 0x1);
-    assert (rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_set_transmit_power_reporting_enable failed; rc=%d\n", rc);
+    }
 }
 #endif
 
@@ -272,7 +278,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-	bleprph_power_control(event->connect.conn_handle);
+        if (event->connect.status == 0) {
+            bleprph_power_control(event->connect.conn_handle);
+        }
 #endif
         return 0;
 
@@ -280,6 +288,13 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "disconnect; reason=%d ", event->disconnect.reason);
         bleprph_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
+
+#if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
+        bearers = 0;
+        for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
+            cids[i] = 0;
+        }
+#endif
 
         /* Connection terminated; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
@@ -491,17 +506,21 @@ bleprph_on_reset(int reason)
 static void
 ble_app_set_addr(void)
 {
-    ble_addr_t addr;
+    ble_addr_t addr = {0};
     int rc;
 
     /* generate new non-resolvable private address */
     rc = ble_hs_id_gen_rnd(0, &addr);
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "ble_hs_id_gen_rnd failed; rc=%d\n", rc);
+        return;
+    }
 
     /* set generated address */
     rc = ble_hs_id_set_rnd(addr.val);
-
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "ble_hs_id_set_rnd failed; rc=%d\n", rc);
+    }
 }
 #endif
 
@@ -621,6 +640,13 @@ app_main(void)
     /* XXX Need to have template for store */
     ble_store_config_init();
 
+#if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
+    bearers = 0;
+    for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
+        cids[i] = 0;
+    }
+#endif
+
     nimble_port_freertos_init(bleprph_host_task);
 
     /* Initialize command line interface to accept input from user */
@@ -628,11 +654,4 @@ app_main(void)
     if (rc != ESP_OK) {
         ESP_LOGE(tag, "scli_init() failed");
     }
-
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
-    bearers = 0;
-    for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
-        cids[i] = 0;
-    }
-#endif
 }

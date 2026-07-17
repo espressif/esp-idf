@@ -20,7 +20,7 @@
 
 static const char *TAG = "l2cap_coc_prph";
 
-#define L2CAP_COC_PSM       0x1002
+#define L2CAP_COC_PSM       0x0080  /* valid dynamic LE L2CAP CoC PSM (0x0080-0x00FF) */
 #define L2CAP_COC_MTU       CONFIG_EXAMPLE_L2CAP_COC_MTU
 #define COC_BUF_COUNT       (6 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 /* Block size must include mbuf headers so each SDU fits in one pool entry. */
@@ -149,7 +149,11 @@ static void prph_advertise(void)
     fields.name_len              = strlen(name);
     fields.name_is_complete      = 1;
 #endif
-    fields.uuids16               = (ble_uuid16_t[]){ BLE_UUID16_INIT(L2CAP_COC_UUID) };
+    /* Must be static: ble_gap_adv_set_fields copies the pointer, not the data.
+     * A stack compound literal becomes dangling after prph_advertise returns,
+     * causing corruption when BLE_NIMBLE_ENABLE_CONN_REATTEMPT re-uses the pointer. */
+    static const ble_uuid16_t adv_uuids16[] = { BLE_UUID16_INIT(L2CAP_COC_UUID) };
+    fields.uuids16               = adv_uuids16;
     fields.num_uuids16           = 1;
     fields.uuids16_is_complete   = 1;
 
@@ -188,7 +192,11 @@ static int prph_l2cap_coc_accept(struct ble_l2cap_chan *chan)
         return BLE_HS_ENOMEM;
     }
     int rc = ble_l2cap_recv_ready(chan, sdu_rx);
-    if (rc != 0) {
+    /* ble_l2cap_coc_recv_ready stores sdu_rx AFTER the BLE_HS_EBUSY check but
+     * BEFORE the BLE_HS_ENOENT check.  On BLE_HS_EBUSY the buffer was never
+     * stored and must be freed here; on success or BLE_HS_ENOENT the buffer is
+     * owned by chan->coc_rx.sdus[] and freed by ble_l2cap_coc_cleanup_chan. */
+    if (rc != 0 && rc != BLE_HS_ENOENT) {
         os_mbuf_free_chain(sdu_rx);
     }
     return rc;

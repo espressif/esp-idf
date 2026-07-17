@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
 static uint8_t ext_adv_pattern_1[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x03,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x03, 0x18,  /* UUID 0x1803 in little-endian */
     0x13, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'p', 'r', 'o', 'x', '-', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
@@ -80,8 +80,8 @@ ext_ble_prox_prph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using the inferred address type */
+    params.own_addr_type = ble_prox_prph_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -145,9 +145,11 @@ ble_prox_prph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     fields.name = (uint8_t *)device_name;
     fields.name_len = strlen(device_name);
     fields.name_is_complete = 1;
+#endif
 
     fields.uuids16 = (ble_uuid16_t[]) {
         BLE_UUID16_INIT(BLE_SVC_LINK_LOSS_UUID16)
@@ -301,13 +303,19 @@ void app_main(void)
     ble_hs_cfg.sm_sc = 1;
     ble_hs_cfg.sm_mitm = 1;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
+#endif
+#if MYNEWT_VAL(BLE_GATTS)
     ble_svc_gatt_init();
+#endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     int rc;
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 
     /* Start the task */
     nimble_port_freertos_init(ble_prox_prph_host_task);

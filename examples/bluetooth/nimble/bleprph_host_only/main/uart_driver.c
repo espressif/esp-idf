@@ -53,18 +53,36 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
     int len_now_read = -1;
     uint32_t len_to_read = 1;
     uint32_t len_total_read = 0;
+    uint32_t len_state_read = 0;
     uint8_t rx_st = UART_RX_TYPE;
 
     while (!s_shutdown_flag) {
-        // Use timeout instead of portMAX_DELAY to allow periodic shutdown flag check
-        len_now_read = uart_read_bytes(UART_NO, &buf[len_total_read], len_to_read, pdMS_TO_TICKS(100));
+        if (len_state_read < len_to_read) {
+            // Use timeout instead of portMAX_DELAY to allow periodic shutdown flag check
+            len_now_read = uart_read_bytes(UART_NO, &buf[len_total_read],
+                                           len_to_read - len_state_read,
+                                           pdMS_TO_TICKS(100));
 
-        // If timeout occurred, continue loop to check shutdown flag again
-        if (len_now_read == 0) {
-            continue;
+            // If timeout occurred, continue loop to check shutdown flag again
+            if (len_now_read == 0) {
+                continue;
+            }
+            if (len_now_read < 0) {
+                ESP_LOGE(TAG, "uart_read_bytes failed: %d", len_now_read);
+                rx_st = UART_RX_TYPE;
+                len_to_read = 1;
+                len_total_read = 0;
+                len_state_read = 0;
+                continue;
+            }
+
+            len_total_read += len_now_read;
+            len_state_read += len_now_read;
+            if (len_state_read < len_to_read) {
+                continue;
+            }
         }
-
-        len_total_read += len_now_read;
+        len_state_read = 0;
 
         switch (rx_st) {
         case UART_RX_TYPE: {
@@ -83,6 +101,18 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
         case UART_RX_LEN: {
             if (buf[0] == DATA_TYPE_ACL) {
                 len_to_read = buf[3] | (buf[4] << 8);
+                if (len_total_read + len_to_read > sizeof(buf)) {
+                    ESP_LOGE(TAG, "ACL packet length %lu exceeds buffer size, discarding", (unsigned long)len_to_read);
+                    /* Drain the unread payload bytes so the UART stream stays
+                     * synchronised; without this the next UART_RX_TYPE read
+                     * would pick up a payload byte, not a valid H4 type byte. */
+                    uart_flush_input(UART_NO);
+                    rx_st = UART_RX_TYPE;
+                    len_to_read = 1;
+                    len_total_read = 0;
+                    len_state_read = 0;
+                    break;
+                }
             } else if (buf[0] == DATA_TYPE_EVENT) {
                 len_to_read = buf[2];
             } else {
@@ -107,6 +137,10 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
                     ESP_LOGE(TAG, "Received HCI data length at host (%d)"
                              "exceeds maximum configured HCI event buffer size (%d).",
                              totlen, MYNEWT_VAL(BLE_TRANSPORT_EVT_SIZE));
+                    rx_st = UART_RX_TYPE;
+                    len_to_read = 1;
+                    len_total_read = 0;
+                    len_state_read = 0;
                     break;
                 }
 
@@ -121,6 +155,10 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
                     /* Skip advertising report if we're out of memory */
                     if (!evbuf) {
                         ESP_LOGE(TAG, "No buffers");
+                        rx_st = UART_RX_TYPE;
+                        len_to_read = 1;
+                        len_total_read = 0;
+                        len_state_read = 0;
                         break;
                     }
                 } else {
@@ -141,13 +179,18 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
                     rx_st = UART_RX_TYPE;
                     len_to_read = 1;
                     len_total_read = 0;
+                    len_state_read = 0;
                     break;
                 }
 
                 if ((rc = os_mbuf_append(m, &data[1], len_total_read - 1)) != 0) {
                     ESP_LOGE(TAG, "%s failed to os_mbuf_append; rc = %d", __func__, rc);
                     os_mbuf_free_chain(m);
-                    return;
+                    rx_st = UART_RX_TYPE;
+                    len_to_read = 1;
+                    len_total_read = 0;
+                    len_state_read = 0;
+                    break;
                 }
 
                 ble_transport_to_hs_acl(m);
@@ -156,6 +199,7 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
             rx_st = UART_RX_TYPE;
             len_to_read = 1;
             len_total_read = 0;
+            len_state_read = 0;
         }
         break;
 
@@ -166,7 +210,8 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
         }
 
     }
-        vTaskDelete(NULL);
+    s_rx_task_hdl = NULL;
+    vTaskDelete(NULL);
 }
 
 void hci_uart_send(uint8_t *buf, uint16_t len)
@@ -176,7 +221,10 @@ void hci_uart_send(uint8_t *buf, uint16_t len)
 
     while (len) {
         len_write = uart_write_bytes(UART_NO, p, len);
-        assert(len_write > 0);
+        if (len_write <= 0) {
+            ESP_LOGE(TAG, "uart_write_bytes failed: %d", len_write);
+            return;
+        }
         len -= len_write;
         p += len_write;
     }
@@ -216,7 +264,7 @@ int
 ble_transport_to_ll_cmd_impl(void *buf)
 {
     int len = 3 + ((uint8_t *)buf)[2] + 1;
-    uint8_t data[258];
+    uint8_t data[259];
     data[0] = HCI_H4_CMD;
     memcpy(data + 1, buf, len - 1);
     hci_uart_send(data, len);
@@ -263,7 +311,7 @@ void hci_uart_close(void)
         const int max_wait_count = 5;
         TaskHandle_t task_handle = s_rx_task_hdl;
 
-        while (wait_count < max_wait_count) {
+        while (wait_count < max_wait_count && s_rx_task_hdl == task_handle) {
             vTaskDelay(pdMS_TO_TICKS(100));
             wait_count++;
 
@@ -273,8 +321,8 @@ void hci_uart_close(void)
         if (s_rx_task_hdl == task_handle) {
             vTaskDelete(s_rx_task_hdl);
             vTaskDelay(pdMS_TO_TICKS(100));
+            s_rx_task_hdl = NULL;
         }
-        s_rx_task_hdl = NULL;
     }
 
     uart_driver_delete(UART_NO);
