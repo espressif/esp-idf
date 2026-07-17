@@ -34,6 +34,8 @@
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/psram_ctrlr_ll.h"
+#include "soc/regi2c_bias.h"
+#include "hal/regi2c_ctrl.h"
 
 ESP_LOG_ATTR_TAG(TAG, "boot.esp32s31");
 
@@ -61,6 +63,8 @@ static inline void bootloader_hardware_init(void)
     _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
     _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
     clk_ll_mpll_disable();
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
 }
 
 void bootloader_enable_cpu_reset_info(void)
@@ -105,6 +109,7 @@ static inline void bootloader_ana_reset_config(void)
 {
     //Enable BOD reset
     brownout_ll_ana_reset_enable(true);
+    bootloader_power_glitch_reset_config(true);
 }
 
 #if SOC_RTC_WDT_SUPPORTED
