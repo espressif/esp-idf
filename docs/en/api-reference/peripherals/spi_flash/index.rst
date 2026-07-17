@@ -172,6 +172,31 @@ Note that since memory mapping happens in pages, it may be possible to read data
 
     mmap is supported by cache, so it can only be used on main flash.
 
+.. only:: not esp32
+
+    .. _blocks_write_flag:
+
+    About the :cpp:enumerator:`SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE` flag
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        When flash erasing/writing happen while cache mapping exists, it often causes some cache region to be invalidated and reloaded again. To improve the performance, it is suggested to specify this flag when you are sure:
+
+        1. This mapping will end in a short time, and
+        2. Before the mapping ends, you don't need to erase or write the flash.
+
+        This flag will prevent all writes until the corresponding munmap is called. Most ESP-IDF APIs that rely on the mapping to flash internally use this flag.
+
+        .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND or SOC_SPIRAM_XIP_SUPPORTED
+
+            This flag also helps to prevent the cache being disabled when you are using following modes. See their documentation for more details.
+
+            .. list::
+
+                :SOC_SPIRAM_XIP_SUPPORTED: - :ref:`xip_from_psram`
+                :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :ref:`auto-suspend`
+
+        This flag is implemented by a lock in the SPI Flash driver. The lock is taken when :cpp:func:`spi_flash_mmap` (or mmap-like APIs) is called with the flag and released until corresponding unmap is called. There is a reference counter internally allowing concurrent mapping to the flash. Only after the last mapping to Flash with the flag is revoked (counter equals 0) can the flash erasing/writing APIs start execution.
+
 SPI Flash Implementation
 ------------------------
 

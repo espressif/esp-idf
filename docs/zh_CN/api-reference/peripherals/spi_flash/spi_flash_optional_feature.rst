@@ -40,7 +40,7 @@ flash 的可选功能
 
     支持此功能的 flash 芯片列表：
 
-    1. XM25QxxD 系列
+    1. XM25xxD 系列
     2. GD25QxxE 系列
     3. FM25Q32
 

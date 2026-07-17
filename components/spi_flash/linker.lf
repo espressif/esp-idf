@@ -49,9 +49,10 @@ entries:
             if SPI_FLASH_ROM_IMPL = n || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV = y || SPI_FLASH_FREQ_LIMIT_C5_240MHZ = y:
                 esp_flash_api: esp_flash_write_encrypted (noflash)
 
-            if SPI_FLASH_ROM_IMPL = n || SPI_FLASH_FREQ_LIMIT_C5_240MHZ = y:
-                esp_flash_api: spiflash_start_default (noflash)
-                esp_flash_api: spiflash_start_core (noflash)
+            esp_flash_api: spiflash_start_prog (noflash)
+            esp_flash_api: spiflash_start_core (noflash)
+            esp_flash_api: spiflash_start_read (noflash)
+            esp_flash_api: esp_flash_read (noflash)
 
             if SPI_FLASH_ROM_IMPL = n || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV = y:
                 esp_flash_api: flash_end_flush_cache (noflash)
@@ -65,7 +66,6 @@ entries:
                 esp_flash_api: esp_flash_set_chip_write_protect (noflash)
                 esp_flash_api: esp_flash_get_protected_region (noflash)
                 esp_flash_api: esp_flash_set_protected_region (noflash)
-                esp_flash_api: esp_flash_read (noflash)
                 esp_flash_api: esp_flash_write (noflash)
                 esp_flash_api: esp_flash_read_encrypted (noflash)
                 esp_flash_api: esp_flash_get_io_mode (noflash)

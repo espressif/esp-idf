@@ -87,7 +87,9 @@ uint32_t bootloader_mmap_get_free_pages(void);
  *
  * Call bootloader_munmap once for each successful call to bootloader_mmap.
  *
- * In esp-idf app, this function maps directly to spi_flash_mmap.
+ * In esp-idf app, this function maps directly to spi_flash_mmap with the @ref
+ * spi_flash_mmap_flag_t::SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE flag set. When XIP on PSRAM (`CONFIG_SPIRAM_XIP_FROM_PSRAM`)  enabled, flash erasing/writing
+ * will be blocked until unmap.
  *
  * @param offset - Starting flash offset to map to memory.
  * @param length - Length of data to map.

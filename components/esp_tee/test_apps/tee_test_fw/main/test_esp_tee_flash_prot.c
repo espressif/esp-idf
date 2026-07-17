@@ -91,12 +91,13 @@ static void test_esp_partition_mmap_api(void)
     const esp_partition_t *part = NULL;
     esp_partition_mmap_handle_t out_handle;
     const void *outptr = NULL;
+    uint32_t extra_flags = ESP_PARTITION_MMAP_BLOCKS_WRITE;
 
     switch (boot_count) {
     case 2:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_0, NULL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
+        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA | extra_flags, &outptr, &out_handle));
         CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
@@ -104,7 +105,7 @@ static void test_esp_partition_mmap_api(void)
     case 3:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_1, NULL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_INST, &outptr, &out_handle));
+        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_INST | extra_flags, &outptr, &out_handle));
         CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
@@ -112,7 +113,7 @@ static void test_esp_partition_mmap_api(void)
     case 4:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_OTA, NULL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
+        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA | extra_flags, &outptr, &out_handle));
         CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
@@ -120,7 +121,7 @@ static void test_esp_partition_mmap_api(void)
     case 5:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, ESP_TEE_SEC_STG_PART_LABEL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA, &outptr, &out_handle));
+        TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, ESP_PARTITION_MMAP_DATA | extra_flags, &outptr, &out_handle));
         CHECK_MMU_OP_FAIL(outptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, outptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
@@ -206,12 +207,13 @@ static void test_spi_flash_mmap_api(void)
     const esp_partition_t *part = NULL;
     spi_flash_mmap_handle_t handle;
     const void *ptr = NULL;
+    uint32_t extra_flags = SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE;
 
     switch (boot_count) {
     case 2:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_0, NULL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+        TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_DATA | extra_flags, &ptr, &handle));
         CHECK_MMU_OP_FAIL(ptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
@@ -219,7 +221,7 @@ static void test_spi_flash_mmap_api(void)
     case 3:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_TEE_1, NULL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_INST, &ptr, &handle));
+        TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_INST | extra_flags, &ptr, &handle));
         CHECK_MMU_OP_FAIL(ptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");
@@ -227,7 +229,7 @@ static void test_spi_flash_mmap_api(void)
     case 4:
         part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_TEE_OTA, NULL);
         TEST_ASSERT_NOT_NULL(part);
-        TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_DATA, &ptr, &handle));
+        TEST_ESP_OK(spi_flash_mmap(part->address, part->size, SPI_FLASH_MMAP_DATA | extra_flags, &ptr, &handle));
         CHECK_MMU_OP_FAIL(ptr);
         ESP_LOG_BUFFER_HEXDUMP(TAG, ptr, 0x20, ESP_LOG_INFO);
         TEST_FAIL_MESSAGE("System fault should have been generated");

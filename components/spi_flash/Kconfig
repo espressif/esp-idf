@@ -289,7 +289,7 @@ menu "SPI Flash driver"
     config SPI_FLASH_SHARE_SPI1_BUS
         bool  "Support other devices attached to SPI1 bus"
         default n
-        depends on IDF_TARGET_ESP32
+        depends on IDF_TARGET_ESP32 && !CONFIG_APP_BUILD_TYPE_RAM
         select SPI_MASTER_ISR_IN_IRAM
         help
             Each SPI bus needs a lock for arbitration among devices. This allows multiple
