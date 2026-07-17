@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,8 +85,8 @@ ext_bleprph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using configured/inferred addr type */
+    params.own_addr_type = own_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -155,15 +155,18 @@ bleprph_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
 
-    fields.uuids16 = (ble_uuid16_t[]) {
+    static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
     };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -191,11 +194,16 @@ static void bleprph_power_control(uint16_t conn_handle)
 {
     int rc;
 
-    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
-    assert (rc == 0);
+    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_read_remote_transmit_power_level failed; rc=%d\n", rc);
+        return;
+    }
 
     rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x1, 0x1);
-    assert (rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_set_transmit_power_reporting_enable failed; rc=%d\n", rc);
+    }
 }
 #endif
 
@@ -419,17 +427,21 @@ bleprph_on_reset(int reason)
 static void
 ble_app_set_addr(void)
 {
-    ble_addr_t addr;
+    ble_addr_t addr = {0};
     int rc;
 
     /* generate new non-resolvable private address */
     rc = ble_hs_id_gen_rnd(0, &addr);
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "ble_hs_id_gen_rnd failed; rc=%d\n", rc);
+        return;
+    }
 
     /* set generated address */
     rc = ble_hs_id_set_rnd(addr.val);
-
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "ble_hs_id_set_rnd failed; rc=%d\n", rc);
+    }
 }
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 static uint8_t ext_adv_pattern_1[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
     0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x18, 0x09,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0x09, 0x18,
     0x12, BLE_HS_ADV_TYPE_COMP_NAME, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'h', 't', 'p', '-', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
@@ -81,8 +81,8 @@ ext_ble_htp_prph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using configured addr */
+    params.own_addr_type = ble_htp_prph_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -150,9 +150,10 @@ ble_htp_prph_advertise(void)
     fields.name_len = strlen(device_name);
     fields.name_is_complete = 1;
 
-    fields.uuids16 = (ble_uuid16_t[]) {
+    static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(BLE_SVC_HTP_UUID16)
     };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -178,23 +179,16 @@ ble_htp_prph_advertise(void)
 static void
 ble_htp_prph_tx_htp_stop(void)
 {
-    xTimerStop( ble_htp_prph_tx_timer, 1000 / portTICK_PERIOD_MS );
+    xTimerStop( ble_htp_prph_tx_timer, 0 );
 }
 
 /* Reset temperature measurement */
 static void
 ble_htp_prph_tx_htp_reset(void)
 {
-    int rc;
-
-    if (xTimerReset(ble_htp_prph_tx_timer, 1000 / portTICK_PERIOD_MS ) == pdPASS) {
-        rc = 0;
-    } else {
-        rc = 1;
+    if (xTimerReset(ble_htp_prph_tx_timer, 0) != pdPASS) {
+        MODLOG_DFLT(ERROR, "Failed to reset HTP timer\n");
     }
-
-    assert(rc == 0);
-
 }
 
 /* This function notifies intermediate temperature to the client */
@@ -372,6 +366,11 @@ void app_main(void)
     /* name, period/time,  auto reload, timer ID, callback */
     ble_htp_prph_tx_timer = xTimerCreate("ble_htp_prph_tx_timer", pdMS_TO_TICKS(1000), pdTRUE,
                                          (void *)0, ble_htp_prph_tx);
+    if (ble_htp_prph_tx_timer == NULL) {
+        MODLOG_DFLT(ERROR, "Failed to create HTP TX timer\n");
+        nimble_port_deinit();
+        return;
+    }
 
 #if MYNEWT_VAL(BLE_GATTS)
     int rc;

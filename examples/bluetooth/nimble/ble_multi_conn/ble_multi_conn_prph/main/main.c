@@ -24,7 +24,7 @@ static uint8_t ext_adv_pattern_1[] = {
 #endif
 
 static const char *TAG = "ESP_MULTI_CONN_PRPH";
-static uint8_t s_ble_prph_conn_num = 0;
+static volatile uint8_t s_ble_prph_conn_num = 0;
 static SemaphoreHandle_t s_sem_restart_adv = NULL;
 
 static int ble_prph_gap_event(struct ble_gap_event *event, void *arg);
@@ -194,8 +194,9 @@ ble_prph_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_CONNECT:
         if (event->connect.status == 0) {
             /* A new connection was established. */
+            s_ble_prph_conn_num++;
             ESP_LOGI(TAG, "Connection established. Handle:%d. Total:%d", event->connect.conn_handle,
-                     ++s_ble_prph_conn_num);
+                     s_ble_prph_conn_num);
 #if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
             ble_prph_restart_adv();
 #endif //CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
@@ -206,8 +207,9 @@ ble_prph_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_DISCONNECT:
+        s_ble_prph_conn_num--;
         ESP_LOGI(TAG, "Disconnect. Handle:%d. Reason=%d. Total:%d",
-                 event->disconnect.conn.conn_handle, event->disconnect.reason, --s_ble_prph_conn_num);
+                 event->disconnect.conn.conn_handle, event->disconnect.reason, s_ble_prph_conn_num);
 
         /* Connection terminated; resume advertising. */
         ble_prph_restart_adv();
