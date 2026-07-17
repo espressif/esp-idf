@@ -23,6 +23,10 @@ LEGACY_PROJECT_APIS = (
 ALL_APIS = FULL_PROJECT_APIS + LEGACY_PROJECT_APIS
 
 
+def _cmake_path(path: Path) -> str:
+    return path.resolve().as_posix()
+
+
 def _write_api_probe_project(project_dir: Path, entry_point: str, add_native_executable: bool) -> None:
     native_executable = 'add_executable(${ULP_APP_NAME} main.c)' if add_native_executable else ''
     if entry_point.endswith('ulp_project.cmake'):
@@ -112,24 +116,27 @@ def test_ulp_cmake_api_availability(
     build_dir = tmp_path / 'build'
     project_dir.mkdir()
     _write_api_probe_project(project_dir, entry_point, add_native_executable)
+    ulp_cmake_dir = idf_path / 'components' / 'ulp' / 'cmake'
 
     cmake_args = (
         'cmake',
         '-G',
         'Ninja',
         '-S',
-        str(project_dir),
+        _cmake_path(project_dir),
         '-B',
-        str(build_dir),
-        f'-DCMAKE_MODULE_PATH={idf_path / "components" / "ulp" / "cmake"}',
-        f'-DIDF_PATH={idf_path}',
+        _cmake_path(build_dir),
+        f'-DCMAKE_MODULE_PATH={_cmake_path(ulp_cmake_dir)}',
+        f'-DCMAKE_TOOLCHAIN_FILE={_cmake_path(ulp_cmake_dir / "toolchain-lp-core-riscv.cmake")}',
+        f'-DIDF_PATH={_cmake_path(idf_path)}',
         '-DIDF_TARGET=esp32c6',
-        f'-DSDKCONFIG_CMAKE={project_dir / "sdkconfig.cmake"}',
-        f'-DSDKCONFIG_HEADER={project_dir / "sdkconfig.h"}',
+        f'-DSDKCONFIG_CMAKE={_cmake_path(project_dir / "sdkconfig.cmake")}',
+        f'-DSDKCONFIG_HEADER={_cmake_path(project_dir / "sdkconfig.h")}',
         '-D__ULP_BUILD=1',
         '-DULP_APP_NAME=ulp_api_probe',
         '-DULP_TYPE=lp_core',
         '-DIDF_BUILD_V2=y',
+        '-DIDF_CUSTOM_TOOLCHAIN=1',
     )
     result = subprocess.run(
         cmake_args,

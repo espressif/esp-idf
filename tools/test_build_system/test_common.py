@@ -72,9 +72,12 @@ def get_subdirs_absolute_paths(path: Path) -> list[str]:
 
 @pytest.mark.usefixtures('test_app_copy')
 @pytest.mark.test_app_copy('examples/get-started/blink')
-def test_compile_commands_json_updated_by_reconfigure(idf_py: IdfPyFunc) -> None:
+def test_compile_commands_json_updated_by_reconfigure(idf_py: IdfPyFunc, request: pytest.FixtureRequest) -> None:
     output = idf_py('reconfigure')
-    assert 'Building ESP-IDF components for target esp32' in output.stdout
+    if request.config.getoption('buildv2', False):
+        assert 'IDF Build System V2 (cmakev2) activated' in output.stdout
+    else:
+        assert 'Building ESP-IDF components for target esp32' in output.stdout
     snapshot_1 = get_snapshot(['build/compile_commands.json'])
     snapshot_2 = get_snapshot(['build/compile_commands.json'])
     snapshot_2.assert_same(snapshot_1)
