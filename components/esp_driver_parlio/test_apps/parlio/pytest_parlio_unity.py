@@ -11,20 +11,6 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     'config',
     [
         'cache_safe',
-    ],
-    indirect=True,
-)
-@idf_parametrize(
-    'target', soc_filtered_targets('SOC_PARLIO_SUPPORTED == 1 and IDF_TARGET not in ["esp32c5"]'), indirect=['target']
-)
-def test_parlio_cache_safe(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='!release_only')
-
-
-@pytest.mark.generic
-@pytest.mark.parametrize(
-    'config',
-    [
         'release',
     ],
     indirect=True,
@@ -51,7 +37,7 @@ def test_parlio(dut: Dut) -> None:
 )
 @pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner yet')
 def test_parlio_with_flash_encryption(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='!release_only')
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic
@@ -64,7 +50,7 @@ def test_parlio_with_flash_encryption(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c5'], indirect=['target'])
 def test_parlio_esp32c5(dut: Dut) -> None:
-    dut.run_all_single_board_cases(group='!release_only')
+    dut.run_all_single_board_cases()
 
 
 @pytest.mark.generic

@@ -53,6 +53,10 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
 #endif // PARLIO_USE_RETENTION_LINK
             // hal layer initialize
             parlio_hal_init(&group->hal);
+#if SOC_PAU_SUPPORTED && SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+            memcpy(group->regs_map, parlio_regs_map, sizeof(group->regs_map));
+            group->regs_cnt = parlio_regs_cnt;
+#endif
             group->dma_align = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
             group->dma_align = group->dma_align < 4 ? 4 : group->dma_align;
         }
@@ -196,6 +200,27 @@ void parlio_create_retention_module(parlio_group_t *group)
     _lock_release(&s_platform.mutex);
 }
 #endif // PARLIO_USE_RETENTION_LINK
+
+void parlio_sw_retention(parlio_group_t *group, uint32_t *reg_dump, bool save)
+{
+    parlio_hal_context_t *hal = &group->hal;
+    portENTER_CRITICAL_SAFE(&group->spinlock);
+    volatile uint32_t *reg_base_addr = (volatile uint32_t *)hal->regs;
+    int idx = 0;
+    for (int i = 0; i < 4; i++) {
+        for (uint32_t map = group->regs_map[i], offset = 32 * i; map; map >>= 1, offset++) {
+            if (map & 0x01) {
+                if (save) {
+                    reg_dump[idx] = reg_base_addr[offset];
+                } else {
+                    reg_base_addr[offset] = reg_dump[idx];
+                }
+                idx++;
+            }
+        }
+    }
+    portEXIT_CRITICAL_SAFE(&group->spinlock);
+}
 
 #if CONFIG_PARLIO_ENABLE_DEBUG_LOG
 __attribute__((constructor))

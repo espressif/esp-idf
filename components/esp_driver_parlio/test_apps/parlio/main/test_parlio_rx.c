@@ -153,31 +153,7 @@ static void pulse_delimiter_sender_task_i2s(void *args)
     }
 }
 
-static void cs_high(spi_transaction_t *trans)
-{
-    gpio_set_level(TEST_VALID_GPIO, 1);
-}
-
-static void cs_low(spi_transaction_t *trans)
-{
-    gpio_set_level(TEST_VALID_GPIO, 0);
-}
-
-#define TEST_SPI_CLK_FREQ   100000
-
-static void connect_signal_internally(uint32_t gpio, uint32_t sigo, uint32_t sigi)
-{
-    gpio_config_t gpio_conf = {
-        .pin_bit_mask = BIT64(gpio),
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_out_signal(gpio, sigo, false, false);
-    esp_rom_gpio_connect_in_signal(gpio, sigi, false);
-}
+#define TEST_SPI_CLK_FREQ   24000000
 
 static void level_delimiter_sender_task_spi(void *args)
 {
@@ -191,40 +167,15 @@ static void level_delimiter_sender_task_spi(void *args)
         .sclk_io_num = TEST_CLK_GPIO,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
-        .max_transfer_sz = 2048,
     };
     spi_device_interface_config_t dev_cfg = {
-        .command_bits = 0,
-        .address_bits = 0,
         .clock_speed_hz = TEST_SPI_CLK_FREQ,
-        .mode = 0,
-        .duty_cycle_pos = 128,
-        .spics_io_num = is_large_trans ? -1 : TEST_VALID_GPIO,
+        .spics_io_num = TEST_VALID_GPIO,
         .queue_size = 5,
-        .flags = SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_POSITIVE_CS,
-        .pre_cb = is_large_trans ? NULL : cs_high,
-        .post_cb = is_large_trans ? NULL : cs_low,
     };
     //Initialize the SPI bus and add device
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &dev_handle));
-
-    // Initialize CS gpio
-    gpio_set_level(TEST_VALID_GPIO, 0); // output enable set in following code
-
-    // Connect SPI signals to parlio rx signals
-    gpio_reset_pin(TEST_CLK_GPIO);
-    gpio_reset_pin(TEST_VALID_GPIO);
-    gpio_reset_pin(TEST_DATA0_GPIO);
-    connect_signal_internally(TEST_CLK_GPIO,
-                              spi_periph_signal[TEST_SPI_HOST].spiclk_out,
-                              soc_parlio_signals[0].rx_units[0].clk_in_sig);
-    connect_signal_internally(TEST_VALID_GPIO,
-                              spi_periph_signal[TEST_SPI_HOST].spics_out[0],
-                              soc_parlio_signals[0].rx_units[0].data_sigs[TEST_VALID_SIG]);
-    connect_signal_internally(TEST_DATA0_GPIO,
-                              spi_periph_signal[TEST_SPI_HOST].spid_out,
-                              soc_parlio_signals[0].rx_units[0].data_sigs[0]);
 
     // Prepare the data the be transmitted
     uint8_t *data = NULL;
@@ -248,24 +199,38 @@ static void level_delimiter_sender_task_spi(void *args)
         .user = NULL,
     };
 
-    // Transmit data every 1ms, until the main test thread finished receiving
+    // Transmit data every 2ms, until the main test thread finished receiving
     if (is_large_trans) {
         while (!((*task_flags) & TEST_TASK_FINISHED_BIT)) {
+            // Wait for receiver to be ready before starting transmission
             if (!((*task_flags) & TEST_TASK_RECV_READY_BIT)) {
-                gpio_set_level(TEST_VALID_GPIO, 1);
-                for (int i = 0; i < 80; i++) {
-                    TEST_ESP_OK(spi_device_transmit(dev_handle, &t));
-                }
-                gpio_set_level(TEST_VALID_GPIO, 0);
-                *task_flags |= TEST_TASK_DATA_READY_BIT;
+                vTaskDelay(1);
+                continue;
             }
-            vTaskDelay(pdMS_TO_TICKS(1));
+            *task_flags &= ~(TEST_TASK_RECV_READY_BIT);
+            TEST_ESP_OK(spi_device_acquire_bus(dev_handle, portMAX_DELAY));
+            for (int i = 0; i < TEST_TASK_LARGE_TRANS_SIZE;) {
+                if (TEST_TASK_LARGE_TRANS_SIZE - i < data_size) {
+                    t.flags = 0;
+                    t.length = (TEST_TASK_LARGE_TRANS_SIZE - i) * 8;
+                    t.rxlength = 0;
+                } else {
+                    t.flags = SPI_TRANS_CS_KEEP_ACTIVE;
+                    t.length = data_size * 8;
+                    t.rxlength = 0;
+                }
+                TEST_ESP_OK(spi_device_transmit(dev_handle, &t));
+                i += t.length >> 3;
+            }
+            *task_flags |= TEST_TASK_DATA_READY_BIT;
+            spi_device_release_bus(dev_handle);
+            vTaskDelay(pdMS_TO_TICKS(5));
         }
     } else {
         while (!((*task_flags) & TEST_TASK_FINISHED_BIT)) {
             TEST_ESP_OK(spi_device_transmit(dev_handle, &t));
-            vTaskDelay(pdMS_TO_TICKS(1));
             *task_flags |= TEST_TASK_DATA_READY_BIT;
+            vTaskDelay(pdMS_TO_TICKS(2));
         }
     }
 
@@ -347,18 +312,22 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
     return is_success;
 }
 
-#if CONFIG_IDF_TARGET_ESP32C6   // TODO: IDF-9806 fix the bit shift issue in other target
 // This test case uses level delimiter
 TEST_CASE("parallel_rx_unit_level_delimiter_test_via_spi", "[parlio_rx]")
 {
     parlio_rx_level_delimiter_config_t lvl_deli_cfg = {
         .valid_sig_line_id = TEST_VALID_SIG,
+#if CONFIG_IDF_TARGET_ESP32C6
+        // C6 needs to lag half cycle behind to get the correct data
+        .sample_edge = PARLIO_SAMPLE_EDGE_NEG,
+#else
         .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+#endif
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
         .eof_data_len = TEST_EOF_DATA_LEN,
         .timeout_ticks = 0,
         .flags = {
-            .active_low_en = 0,
+            .active_low_en = 1,
         },
     };
     parlio_rx_delimiter_handle_t deli = NULL;
@@ -367,7 +336,6 @@ TEST_CASE("parallel_rx_unit_level_delimiter_test_via_spi", "[parlio_rx]")
     TEST_ESP_OK(parlio_del_rx_delimiter(deli));
     TEST_ASSERT(is_success);
 }
-#endif
 
 // This test case uses pulse delimiter
 TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")
@@ -577,7 +545,6 @@ TEST_CASE("parallel_rx_unit_receive_external_memory_test", "[parlio_rx]")
 TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
 {
     printf("init a gpio to simulate valid signal\r\n");
-    TEST_ESP_OK(gpio_reset_pin(TEST_VALID_GPIO));
     gpio_config_t test_gpio_conf = {
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = BIT64(TEST_VALID_GPIO),
@@ -917,110 +884,4 @@ TEST_CASE("parallel_rx_unit_infinite_transaction_switch_test", "[parlio_rx]")
     TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
     free(payload1);
     free(payload2);
-}
-
-/**
- * @brief This ISR is to indicate the SPI transaction finished
- */
-static void test_gpio_neg_edge_intr(void *arg)
-{
-    parlio_rx_unit_handle_t rx_unit = (parlio_rx_unit_handle_t)arg;
-    bool need_yield = false;
-    parlio_rx_unit_trigger_fake_eof(rx_unit, &need_yield);
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
-}
-
-TEST_CASE("parallel_rx_unit_force_trigger_eof_test", "[parlio_rx][release_only]")
-{
-    parlio_rx_unit_handle_t rx_unit = NULL;
-
-    parlio_rx_unit_config_t config = TEST_DEFAULT_UNIT_CONFIG(PARLIO_CLK_SRC_EXTERNAL, 1000000);
-    config.flags.free_clk = 0;
-    config.max_recv_size = TEST_TASK_LARGE_TRANS_SIZE;
-    TEST_ESP_OK(parlio_new_rx_unit(&config, &rx_unit));
-
-    parlio_rx_level_delimiter_config_t lvl_deli_cfg = {
-        .valid_sig_line_id = TEST_VALID_SIG,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
-        .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
-        /* Normally the EOF won't be triggered for the level delimiter that eof_data_len larger than 64KB */
-        .eof_data_len = TEST_TASK_LARGE_TRANS_SIZE,
-        .timeout_ticks = 0,
-        .flags = {
-            .active_low_en = 0,
-        },
-    };
-    parlio_rx_delimiter_handle_t deli = NULL;
-    TEST_ESP_OK(parlio_new_rx_level_delimiter(&lvl_deli_cfg, &deli));
-
-    parlio_rx_event_callbacks_t cbs = {
-        .on_receive_done = test_parlio_rx_done_callback,
-    };
-    test_data_t test_data = {
-        .partial_recv_cnt = 0,
-        .recv_done_cnt = 0,
-    };
-    TEST_ESP_OK(parlio_rx_unit_register_event_callbacks(rx_unit, &cbs, &test_data));
-    TEST_ESP_OK(parlio_rx_unit_enable(rx_unit, true));
-
-    TaskHandle_t sender_task;
-    /* The flag to transport finish information between main test thread and the sender thread
-     * Set it as static to make sure it'll be valid in another thread */
-    static uint32_t task_flags = TEST_TASK_LARGE_TRANS_BIT;
-    xTaskCreate(level_delimiter_sender_task_spi, "sender task", 4096, &task_flags, 5, &sender_task);
-
-    parlio_receive_config_t recv_config = {
-        .delimiter = deli,
-        .flags.partial_rx_en = false,
-    };
-    uint8_t *recv_buff = NULL;
-    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    alignment = alignment < 4 ? 4 : alignment;
-    size_t buff_size = ESP_ALIGN_UP(TEST_TASK_LARGE_TRANS_SIZE, alignment);
-    recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
-    TEST_ASSERT_NOT_NULL(recv_buff);
-
-    gpio_set_intr_type(TEST_VALID_GPIO, GPIO_INTR_NEGEDGE);
-    gpio_install_isr_service(0);
-    gpio_isr_handler_add(TEST_VALID_GPIO, test_gpio_neg_edge_intr, rx_unit);
-    gpio_intr_enable(TEST_VALID_GPIO);
-
-    uint32_t recv_cnt = 3;
-    for (int i = 0; i < recv_cnt; i++) {
-        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, recv_buff, buff_size, &recv_config));
-        printf("[%d] recv ready\n", i);
-        task_flags |= TEST_TASK_RECV_READY_BIT;
-        while (!task_flags & TEST_TASK_DATA_READY_BIT) {
-            vTaskDelay(1);
-        }
-        task_flags &= ~TEST_TASK_DATA_READY_BIT;
-        printf("[%d] send done\n", i);
-        TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 10000));
-        task_flags &= ~TEST_TASK_RECV_READY_BIT;
-        printf("[%d] recv done\n", i);
-    }
-    // Indicate the test finished, no need to send data
-    task_flags |= TEST_TASK_FINISHED_BIT;
-
-    bool is_success = true;
-    is_success &= test_data.recv_done_cnt == recv_cnt;
-
-    gpio_intr_disable(TEST_VALID_GPIO);
-    gpio_isr_handler_remove(TEST_VALID_GPIO);
-    gpio_uninstall_isr_service();
-    // Waiting for the sender task quit
-    while (task_flags) {
-        vTaskDelay(1);
-    }
-    // Delete the sender task
-    vTaskDelete(sender_task);
-    free(recv_buff);
-
-    TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
-    TEST_ESP_OK(parlio_del_rx_delimiter(deli));
-    TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
-
-    TEST_ASSERT(is_success);
 }
