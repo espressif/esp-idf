@@ -31,8 +31,7 @@ static const struct ble_gatt_svc_def gatt_svr_svcs_le_phy[] = {
                 .uuid = BLE_UUID16_DECLARE(LE_PHY_CHR_UUID16),
                 .access_cb = gatt_svr_chr_access_le_phy,
                 .val_handle = &gatt_svr_chr_val_handle,
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_WRITE
-                | BLE_GATT_CHR_F_WRITE_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE,
             }, {
                 0, /* No more characteristics in this service. */
             }

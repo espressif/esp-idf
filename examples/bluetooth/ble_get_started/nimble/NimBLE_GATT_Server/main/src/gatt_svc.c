@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -164,9 +164,11 @@ error:
 /* Public functions */
 void send_heart_rate_indication(void) {
     if (heart_rate_ind_status && heart_rate_chr_conn_handle_inited) {
-        ble_gatts_indicate(heart_rate_chr_conn_handle,
-                           heart_rate_chr_val_handle);
-        ESP_LOGI(TAG, "heart rate indication sent!");
+        int rc = ble_gatts_indicate(heart_rate_chr_conn_handle,
+                                    heart_rate_chr_val_handle);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "failed to send heart rate indication, error code: %d", rc);
+        }
     }
 }
 
@@ -230,9 +232,13 @@ void gatt_svr_subscribe_cb(struct ble_gap_event *event) {
 
     /* Check attribute handle */
     if (event->subscribe.attr_handle == heart_rate_chr_val_handle) {
+        if (event->subscribe.conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+            return;
+        }
+
         /* Update heart rate subscription status */
         heart_rate_chr_conn_handle = event->subscribe.conn_handle;
-        heart_rate_chr_conn_handle_inited = true;
+        heart_rate_chr_conn_handle_inited = event->subscribe.cur_indicate;
         heart_rate_ind_status = event->subscribe.cur_indicate;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,8 +79,8 @@ ext_ble_cts_prph_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using configured addr */
+    params.own_addr_type = ble_cts_prph_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -148,9 +148,10 @@ ble_cts_prph_advertise(void)
     fields.name_len = strlen(device_name);
     fields.name_is_complete = 1;
 
-    fields.uuids16 = (ble_uuid16_t[]) {
+    static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(BLE_SVC_CTS_UUID16)
     };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 

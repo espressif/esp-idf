@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -64,6 +64,9 @@ static void start_advertising(void) {
 
     /* Set device name */
     name = ble_svc_gap_device_name();
+    if (name == NULL) {
+        name = DEVICE_NAME;
+    }
     adv_fields.name = (uint8_t *)name;
     adv_fields.name_len = strlen(name);
     adv_fields.name_is_complete = 1;
@@ -160,26 +163,29 @@ static int gap_event_handler(struct ble_gap_event *event, void *arg) {
             print_conn_desc(&desc);
             led_on();
 
-            /* Try to update connection parameters */
+            /* Try to update connection parameters.
+             * BT spec requires: supervision_timeout > (1+latency)*itvl/4
+             * Ensure the timeout satisfies this constraint when latency=3. */
+            uint16_t min_timeout = (uint16_t)(((1 + 3) * (uint32_t)desc.conn_itvl) / 4 + 1);
+            uint16_t supervision_timeout = (desc.supervision_timeout > min_timeout)
+                                           ? desc.supervision_timeout : min_timeout;
             struct ble_gap_upd_params params = {.itvl_min = desc.conn_itvl,
                                                 .itvl_max = desc.conn_itvl,
                                                 .latency = 3,
-                                                .supervision_timeout =
-                                                    desc.supervision_timeout};
+                                                .supervision_timeout = supervision_timeout};
             rc = ble_gap_update_params(event->connect.conn_handle, &params);
             if (rc != 0) {
                 ESP_LOGE(
                     TAG,
                     "failed to update connection parameters, error code: %d",
                     rc);
-                return rc;
             }
         }
         /* Connection failed, restart advertising */
         else {
             start_advertising();
         }
-        return rc;
+        return 0;
 
     /* Disconnect event */
     case BLE_GAP_EVENT_DISCONNECT:
