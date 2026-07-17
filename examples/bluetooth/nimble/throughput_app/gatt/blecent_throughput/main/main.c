@@ -71,7 +71,7 @@ static uint16_t handle;
 #define PHY_CODED_S8      3
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-static int current_phy_updated;
+static volatile int current_phy_updated;
 #endif
 
 /* State for callback-chained read throughput test */
@@ -194,8 +194,9 @@ blecent_notify(uint16_t conn_handle, uint16_t val_handle,
 
     return 0;
 err:
-    /* Terminate the connection. */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    /* Terminate the connection; return original error code so caller detects failure. */
+    ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    return rc;
 }
 
 static int blecent_write(uint16_t conn_handle, uint16_t val_handle,
@@ -599,6 +600,11 @@ read_cleanup:
             break;
 
         case NOTIFY_THROUGHPUT:
+            if (test_data[1] <= 0) {
+                ESP_LOGE(tag, "Please enter non-zero value for test time in seconds!!");
+                break;
+            }
+
             if (test_data[2] == PHY_CODED_S2) {
                 switch_conn_params(conn_handle, &conn_params_coded_s2);
             } else if (test_data[2] == PHY_CODED_S8) {
@@ -641,7 +647,7 @@ read_cleanup:
                          " can be seen on peripheral terminal after %d seconds",
                          test_data[1]);
             }
-            vTaskDelay(test_data[1]*1000 / portTICK_PERIOD_MS);
+            vTaskDelay((TickType_t)test_data[1] * 1000 / portTICK_PERIOD_MS);
 
             /* Unsubscribe so the next notify test triggers a fresh
              * BLE_GAP_EVENT_SUBSCRIBE on the peripheral (cur_notify 0→1) */
@@ -762,22 +768,17 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
-    uint8_t test_addr[6];
     uint8_t parsed_addr[6];
     uint8_t phy_uuid_found = 0;
 
-    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
-            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+    if (!(disc->props & BLE_HCI_ADV_CONN_MASK)) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
-       //  ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address */
+        /* peer_addr_parse stores address in little-endian order matching disc->addr.val;
+         * no byte reversal needed. */
         peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, parsed_addr);
-        for (int i = 0; i < 6; i++) {
-            test_addr[5 - i] = parsed_addr[i];
-        }
-        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+        if (memcmp(parsed_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -860,9 +861,13 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 
     char serv_name[] = "nimble_prph";
     if (fields.name != NULL) {
-        ESP_LOGI(tag, "Device Name = %s", (char *)fields.name);
+        /* fields.name is not null-terminated; use %.*s for safe printing */
+        ESP_LOGI(tag, "Device Name = %.*s", fields.name_len, (char *)fields.name);
 
-        if (memcmp(fields.name, serv_name, fields.name_len) == 0) {
+        /* Require exact length match to prevent prefix false-positives and
+         * avoid reading past the end of serv_name (stack over-read). */
+        if (fields.name_len == (uint8_t)strlen(serv_name) &&
+                memcmp(fields.name, serv_name, fields.name_len) == 0) {
             ESP_LOGI(tag, "central connect to `nimble_prph` success");
             return 1;
         }
@@ -912,6 +917,9 @@ blecent_connect_if_interesting(void *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         ESP_LOGE(tag, "error determining address type; rc=%d", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 
@@ -924,6 +932,9 @@ blecent_connect_if_interesting(void *disc)
         ESP_LOGE(tag, "Error: Failed to connect to device; addr_type=%d "
                  "addr=%s; rc=%d\n",
                  conn_addr.type, addr_str(conn_addr.val), rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 }
@@ -1038,7 +1049,6 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
-        vTaskDelay(200);
 
         /* Resume scanning. */
         blecent_scan();
@@ -1212,9 +1222,11 @@ app_main(void)
     assert(rc == 0);
 #endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("gattc-throughput");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
@@ -1241,32 +1253,9 @@ app_main(void)
     printf(" |                                                                                               |\n");
     printf("\n ===============================================================================================\n");
 
-    const char *prompt = LOG_COLOR_I "Throughput demo >> " LOG_RESET_COLOR;
-
-    while (true) {
-        /* Get a line using linenoise.
-         * The line is returned when ENTER is pressed.
-         */
-        char *line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
-        }
-        /* Add the command to the history */
-        linenoiseHistoryAdd(line);
-
-        /* Try to run the command */
-        int ret;
-        esp_err_t err = esp_console_run(line, &ret);
-        if (err == ESP_ERR_NOT_FOUND) {
-            printf("Unrecognized command\n");
-        } else if (err == ESP_ERR_INVALID_ARG) {
-            // command was empty
-        } else if (err == ESP_OK && ret != ESP_OK) {
-            printf("Command returned non-zero error code: 0x%x (%s)\n", ret, esp_err_to_name(ret));
-        } else if (err != ESP_OK) {
-            printf("Internal error: %s\n", esp_err_to_name(err));
-        }
-        /* linenoise allocates line buffer on the heap, so need to free it */
-        linenoiseFree(line);
-    }
+    /* Start the REPL task that was created (but left blocked) by
+     * esp_console_new_repl_uart. Without this call the task would wait
+     * forever, leaking its 4 KB stack and TCB. */
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
+    /* app_main can now return; the REPL task handles console I/O from here. */
 }

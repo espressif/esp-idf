@@ -68,16 +68,9 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
 
     rc = ble_l2cap_send(chan, sdu_rx_data);
 
-    retry = 0;
-    while (rc == BLE_HS_ESTALLED && retry < max_retry) {
-        MODLOG_DFLT(INFO, "Send stalled, waiting for credits (retry=%d)", retry);
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-        rc = ble_l2cap_send(chan, sdu_rx_data);
-        retry++;
-    }
-
     if (rc == BLE_HS_ESTALLED) {
-        MODLOG_DFLT(INFO, "Send still stalled after %d retries, returning", retry);
+        /* Stack took ownership of sdu_rx_data; wait for BLE_L2CAP_EVENT_COC_TX_UNSTALLED */
+        MODLOG_DFLT(INFO, "Send stalled, waiting for credits");
         return;
     }
 
@@ -115,7 +108,7 @@ blecent_l2cap_coc_on_disc_complete(const struct peer *peer, int status, void *ar
    rc = ble_l2cap_connect(conn_handle_coc, psm, MTU, sdu_rx, blecent_l2cap_coc_event_cb, NULL);
    if (rc != 0) {
        MODLOG_DFLT(ERROR, "L2CAP COC connect failed, rc=%d", rc);
-       os_mbuf_free_chain(sdu_rx);
+       /* sdu_rx is freed by the stack on all failure paths; do not free here */
    }
 }
 
@@ -163,6 +156,7 @@ blecent_l2cap_coc_event_cb(struct ble_l2cap_event *event, void *arg)
     case BLE_L2CAP_EVENT_COC_DISCONNECTED:
         console_printf("LE CoC disconnected, chan: %p\n",
                        event->disconnect.chan);
+        coc_chan = NULL;
         return 0;
 
     default:
@@ -266,8 +260,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     int offset = 0;
     int ad_struct_len = 0;
     uint8_t test_addr[6];
-    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
-            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+    if (!(disc->props & BLE_HCI_ADV_CONN_MASK)) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) &&
@@ -296,11 +289,11 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             break;
         }
 
-        /* AD Type (1) + UUID16 (2) requires at least 4 bytes total */
+        /* AD Type (1) + UUID16 (2) requires at least 4 bytes total; UUID 0x1812 is LE [0x12, 0x18] */
         if (ad_struct_len >= 3 &&
             disc->data[offset + 1] == 0x03 &&
-            disc->data[offset + 2] == 0x18 &&
-            disc->data[offset + 3] == 0x12) {
+            disc->data[offset + 2] == 0x12 &&
+            disc->data[offset + 3] == 0x18) {
             return 1;
         }
 
@@ -386,6 +379,9 @@ blecent_connect_if_interesting(void *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 
@@ -404,6 +400,9 @@ blecent_connect_if_interesting(void *disc)
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
                     addr->type, addr_str(addr->val), rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 }
@@ -491,6 +490,10 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
 
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
+        coc_chan = NULL;
+#endif
+
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
 
@@ -536,6 +539,9 @@ static void
 blecent_on_reset(int reason)
 {
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
+#if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) >= 1
+    coc_chan = NULL;
+#endif
 }
 
 static void

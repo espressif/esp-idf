@@ -130,23 +130,7 @@ blehr_advertise(void)
 static void
 blehr_tx_hrate_stop(void)
 {
-    xTimerStop( blehr_tx_timer, 1000 / portTICK_PERIOD_MS );
-}
-
-/* Reset heart rate measurement */
-static void
-blehr_tx_hrate_reset(void)
-{
-    int rc;
-
-    if (xTimerReset(blehr_tx_timer, 1000 / portTICK_PERIOD_MS ) == pdPASS) {
-        rc = 0;
-    } else {
-        rc = 1;
-    }
-
-    assert(rc == 0);
-
+    xTimerStop(blehr_tx_timer, 0);
 }
 
 /* This function simulates heart beat and notifies it to the client */
@@ -173,11 +157,15 @@ blehr_tx_hrate(TimerHandle_t ev)
     }
 
     om = ble_hs_mbuf_from_flat(hrm, sizeof(hrm));
+    if (om == NULL) {
+        MODLOG_DFLT(WARN, "ble_hs_mbuf_from_flat failed; out of memory\n");
+        return;
+    }
+
     rc = ble_gatts_notify_custom(conn_handle, hrs_hrm_handle, om);
-
-    assert(rc == 0);
-
-    blehr_tx_hrate_reset();
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gatts_notify_custom failed; rc=%d\n", rc);
+    }
 }
 
 static int
@@ -218,10 +206,11 @@ blehr_gap_event(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify, hrs_hrm_handle);
         if (event->subscribe.attr_handle == hrs_hrm_handle) {
             notify_state = event->subscribe.cur_notify;
-            blehr_tx_hrate_reset();
-        } else if (event->subscribe.attr_handle != hrs_hrm_handle) {
-            notify_state = event->subscribe.cur_notify;
-            blehr_tx_hrate_stop();
+            if (notify_state) {
+                xTimerStart(blehr_tx_timer, 0);
+            } else {
+                blehr_tx_hrate_stop();
+            }
         }
         ESP_LOGI("BLE_GAP_SUBSCRIBE_EVENT", "conn_handle from subscribe=%d", conn_handle);
         break;
