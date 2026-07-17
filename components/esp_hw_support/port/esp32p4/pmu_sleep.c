@@ -270,7 +270,7 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 {
     pmu_ll_hp_set_icg_sysclk_enable (ctx->hal->dev, HP(SLEEP), (dig->icg_func[0] != 0));
     pmu_ll_hp_set_icg_func          (ctx->hal->dev, HP(SLEEP), dig->icg_func[0]); /* PMU FSM clock ICG config */
-#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA && !defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#if CONFIG_PM_SLEEP_CLK_ICG_ENABLE && !defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
     pmu_sleep_clock_icg_config      (ctx->priv, dig->icg_func[1]); /* PMU REGDMA clock ICG config */
 #endif
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
