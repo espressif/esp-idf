@@ -1255,6 +1255,14 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     esp_sync_timekeeping_timers();
 
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
+    // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
+    // Must do it before stalling another core, since s_iwdt_configure_lock spinlock is acquired in
+    // esp_int_wdt_livelock_workaround, which may cause deadlock.
+    esp_int_wdt_livelock_workaround(false);
+#endif
+
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
@@ -1266,12 +1274,6 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     */
 #if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     xPortThreadSafeClaim();
-#endif
-
-#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
-    // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
-    esp_int_wdt_livelock_workaround(false);
 #endif
 
     // record current RTC time
@@ -1356,17 +1358,18 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     }
 #endif /* SOC_RTC_WDT_SUPPORTED */
 
-#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    // Configure WDT to use livelock workaround timeout after releasing other CPU
-    esp_int_wdt_livelock_workaround(true);
-#endif
-
     /* Restore port critical before unstalling other CPU */
 #if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     xPortThreadSafeDisclaim();
 #endif
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
+
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    // Configure WDT to use livelock workaround timeout after releasing other CPU
+    esp_int_wdt_livelock_workaround(true);
+#endif
+
     esp_os_exit_critical(&s_config.lock);
     return err;
 }
