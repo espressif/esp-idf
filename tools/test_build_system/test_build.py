@@ -175,11 +175,17 @@ def test_build_fail_on_build_time(idf_py: IdfPyFunc, test_app_copy: Path) -> Non
 
 @pytest.mark.usefixtures('test_app_copy')
 def test_build_dfu(idf_py: IdfPyFunc) -> None:
-    logging.info('DFU build works')
+    logging.info('DFU is rejected for targets without USB DFU support')
+    idf_py('set-target', 'esp32')
     ret = idf_py('dfu', check=False)
-    assert 'command "dfu" is not known to idf.py and is not a Ninja target' in ret.stderr, (
-        'DFU build should fail for default chip target'
+    assert ret.returncode != 0
+    assert 'DFU is not supported for this target: esp32' in ret.stderr
+    assert 'Action "dfu" cannot run in the current project configuration.' in ret.stderr
+    assert 'Adding "dfu"\'s dependency "all"' not in ret.stdout, (
+        'DFU check must fail before the "all" dependency is scheduled'
     )
+
+    logging.info('DFU build works for esp32s2')
     idf_py('set-target', 'esp32s2')
     ret = idf_py('dfu')
     assert 'build/dfu.bin" has been written. You may proceed with DFU flashing.' in ret.stdout, (

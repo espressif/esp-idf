@@ -50,6 +50,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EMAC_SUPPORTED              1
 #define SOC_USB_OTG_SUPPORTED           1
+#define SOC_USB_DFU_SUPPORTED           1
 #define SOC_WIRELESS_HOST_SUPPORTED     1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1

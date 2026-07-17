@@ -6,12 +6,23 @@ from rich_click import Context
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import ensure_build_directory
-from idf_py_actions.tools import is_target_supported
+from idf_py_actions.tools import get_sdkconfig_filename
+from idf_py_actions.tools import get_sdkconfig_value
+from idf_py_actions.tools import red_print
 from idf_py_actions.tools import run_target
+
+SOC_USB_DFU_SUPPORTED = 'CONFIG_SOC_USB_DFU_SUPPORTED'
 
 
 def action_extensions(base_actions: dict, project_path: str) -> dict:
-    SUPPORTED_TARGETS = ['esp32s2', 'esp32s3', 'esp32p4']
+    def check_dfu_supported(target_name: str, ctx: Context, args: PropertyDict, **kwargs: str) -> bool:
+        sdkconfig_path = get_sdkconfig_filename(args)
+        if get_sdkconfig_value(sdkconfig_path, SOC_USB_DFU_SUPPORTED) == 'y':
+            return True
+
+        target = get_sdkconfig_value(sdkconfig_path, 'CONFIG_IDF_TARGET') or 'unknown'
+        red_print(f'DFU is not supported for this target: {target}')
+        return False
 
     def dfu_target(target_name: str, ctx: Context, args: PropertyDict, part_size: str) -> None:
         ensure_build_directory(args, ctx.info_name)
@@ -38,6 +49,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         'actions': {
             'dfu': {
                 'callback': dfu_target,
+                'check': check_dfu_supported,
                 'short_help': 'Build the DFU binary',
                 'dependencies': ['all'],
                 'options': [
@@ -51,11 +63,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
             },
             'dfu-list': {
                 'callback': dfu_list_target,
+                'check': check_dfu_supported,
                 'short_help': 'List DFU capable devices',
                 'dependencies': [],
             },
             'dfu-flash': {
                 'callback': dfu_flash_target,
+                'check': check_dfu_supported,
                 'short_help': 'Flash the DFU binary',
                 'order_dependencies': ['dfu'],
                 'options': [
@@ -71,4 +85,4 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         }
     }
 
-    return dfu_actions if is_target_supported(project_path, SUPPORTED_TARGETS) else {}
+    return dfu_actions

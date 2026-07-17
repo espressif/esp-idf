@@ -22,7 +22,7 @@ menu "ESP-STDIO"
         config ESP_CONSOLE_USB_CDC
             bool "USB CDC"
             # && !TINY_USB is because the ROM CDC driver is currently incompatible with TinyUSB.
-            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
+            depends on SOC_USB_OTG_CONSOLE_SUPPORTED && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
             depends on SOC_USB_SERIAL_JTAG_SUPPORTED
