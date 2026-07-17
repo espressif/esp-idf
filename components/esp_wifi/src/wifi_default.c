@@ -187,8 +187,10 @@ static void wifi_default_action_nan_started(void *arg, esp_event_base_t base, in
         /* Bring the netif up before esp_netif_create_ip6_linklocal() (a no-op unless
          * netif_is_up()). esp_netif_up() is private, so use the public action handler;
          * NAN is non-DHCP, so it only calls esp_netif_up() and ignores the event args. */
+#if CONFIG_LWIP_ND6_SUPPORT_STATIC_ENTRIES
         esp_netif_action_connected(s_wifi_netifs[WIFI_IF_NAN], NULL, 0, NULL);
         esp_netif_create_ip6_linklocal(s_wifi_netifs[WIFI_IF_NAN]);
+#endif
     }
 }
 
