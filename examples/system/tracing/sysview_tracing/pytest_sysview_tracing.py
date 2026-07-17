@@ -16,18 +16,60 @@ if typing.TYPE_CHECKING:
     from conftest import OpenOCD
 
 
+STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
+
+
+def _assert_has_stop_record(segment: bytes, label: str) -> None:
+    """Assert a SysView data segment ends with a TRACE_STOP record.
+
+    A STOP record is the STOP event ID followed by a variable-length timestamp
+    delta. Walk back over the trailing continuation bytes (0x80 bit set) to find
+    the event ID, since its offset is not fixed.
+    """
+    size = len(segment)
+    assert size >= 2, f'{label}: segment too small to contain STOP record'
+    i = size - 2
+    while i >= 0 and (segment[i] & 0x80):
+        i -= 1
+    assert i >= 0 and segment[i] == STOP_EVENT_ID, f'{label}: does not end with a TRACE_STOP record'
+
+
+def _split_mcore_file(content: bytes) -> list[bytes]:
+    """Split an ``esp sysview_mcore`` combined file into per-core data segments.
+
+    Layout is an ASCII comment header followed by core0 data then core1 data::
+
+        ; ...
+        ; Offset Core0 0
+        ; Offset Core1 <size of core0 data in bytes>
+        ;
+        <core0 data><core1 data>
+
+    The header ends at the first line that does not start with ';', (the data
+    begins with the all-zero sync sequence).
+    """
+    header = re.match(rb'(?:;[^\n]*\n)*', content)
+    assert header is not None
+    pos = header.end()
+    m = re.search(rb';\s*Offset\s+Core1\s+(\d+)', content[:pos])
+    assert m is not None, 'mcore file header missing "Offset Core1"'
+    offset_core1 = int(m.group(1))
+    core0 = content[pos : pos + offset_core1]
+    core1 = content[pos + offset_core1 :]
+    return [core0, core1]
+
+
 def _validate_trace_data(trace_log: str, target: str, dual_core: bool = False, is_uart: bool = False) -> None:
     """Validate SysView trace data in a single trace log file.
 
     Args:
         trace_log: Path to the trace log file
         target: Target chip name (e.g., 'esp32', 'esp32s3')
-        dual_core: If True, expect a per-core description block for both cores
-            (the ``esp sysview_mcore`` multi-core capture embeds one per core)
+        dual_core: If True, this is an 'esp sysview_mcore' combined file that
+            embeds core0 and core1 data segments (see '_split_mcore_file');
+            each segment is validated separately.
         is_uart: If True, also validate STOP record at end of file
     """
-    STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
-
     with open(trace_log, 'rb') as f:
         content = f.read()
 
@@ -35,16 +77,13 @@ def _validate_trace_data(trace_log: str, target: str, dual_core: bool = False, i
         search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
         assert search_str in content, f'SysView core{idx} trace data not found in {trace_log}'
 
-    # The file must end with a TRACE_STOP record: the STOP event ID
-    # followed by a variable-length timestamp delta. Walk back
-    # over the trailing continuation bytes (0x80 bit set)
-    # to find the event ID, since its offset is not fixed.
-    size = len(content)
-    assert size >= 2, 'Trace file too small to contain STOP record'
-    i = size - 2
-    while i >= 0 and (content[i] & 0x80):
-        i -= 1
-    assert i >= 0 and content[i] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
+    if dual_core:
+        # Seek to each core's segment via the header offset
+        # and require each to end with its own TRACE_STOP record.
+        for idx, segment in enumerate(_split_mcore_file(content)):
+            _assert_has_stop_record(segment, f'core{idx}')
+    else:
+        _assert_has_stop_record(content, 'trace')
 
 
 def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
@@ -144,8 +183,9 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         dut.expect('example: Created task')  # dut has been restarted by gdb since the last dut.expect()
         dut_expect_task_event()
 
-        # Do a sleep while sysview samples are captured.
-        time.sleep(3)
+        # Capture sysview samples and keep reading telnet so OpenOCD's blocking log writes don't stall its
+        # main loop and leave the 'stop' below unserviced.
+        openocd.consume_output(3)
         openocd.write('esp sysview_mcore stop')
         openocd.apptrace_wait_stop()
 
