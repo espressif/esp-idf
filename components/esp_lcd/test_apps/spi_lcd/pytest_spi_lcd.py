@@ -34,8 +34,6 @@ def test_spi_lcd(dut: Dut) -> None:
 )
 @pytest.mark.temp_skip_ci(
     targets=[
-        'esp32c61',
-        'esp32h4',
         'esp32s2',
         'esp32s3',
     ],
