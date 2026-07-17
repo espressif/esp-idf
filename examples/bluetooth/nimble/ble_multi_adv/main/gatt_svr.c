@@ -109,6 +109,9 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
         MODLOG_DFLT(INFO, "Characteristic write; conn_handle=%d attr_handle=%d",
                     conn_handle, attr_handle);
+        if (OS_MBUF_PKTLEN(ctxt->om) != sizeof(gatt_svr_chr_val)) {
+            return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
+        }
         rc = os_mbuf_copydata(ctxt->om,
                               0,
                               sizeof(gatt_svr_chr_val),

@@ -154,6 +154,10 @@ blecent_on_custom_subscribe(uint16_t conn_handle,
     MODLOG_DFLT(INFO, "\n");
 
     peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(WARN, "Peer not found (conn_handle=%d), likely disconnected\n", conn_handle);
+        return 0;
+    }
     chr = peer_chr_find_uuid(peer,
                              remote_svc_uuid,
                              remote_chr_uuid);
@@ -477,9 +481,6 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-    uint32_t *addr_offset;
-#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
     uint8_t test_addr[6];
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -493,8 +494,8 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 #endif
 
 #if CONFIG_EXAMPLE_USE_CI_ADDRESS
-	addr_offset = (uint32_t *)&test_addr[1];
-        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        uint32_t addr_val = (uint32_t)atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        memcpy(&test_addr[1], &addr_val, sizeof(addr_val));
         test_addr[5] = 0xC3;
         test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
@@ -534,9 +535,6 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-    uint32_t *addr_offset;
-#endif // CONFIG_EXAMPLE_USE_CI_ADDRESS
     uint8_t test_addr[6];
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -558,8 +556,8 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         printf("peer-->  %s\n", addr_str(test_addr));
 #endif
 #if CONFIG_EXAMPLE_USE_CI_ADDRESS
-	addr_offset = (uint32_t *)&test_addr[1];
-        *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        uint32_t addr_val = (uint32_t)atoi(CONFIG_EXAMPLE_PEER_ADDR);
+        memcpy(&test_addr[1], &addr_val, sizeof(addr_val));
         test_addr[5] = 0xC3;
         test_addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
 #endif
@@ -618,6 +616,9 @@ blecent_connect_if_interesting(void *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 
@@ -636,6 +637,9 @@ blecent_connect_if_interesting(void *disc)
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
                     addr->type, addr_str(addr->val), rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 }
@@ -645,17 +649,28 @@ static void blecent_power_control(uint16_t conn_handle)
 {
     int rc;
 
-    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01 );  // Attempting on LE 1M phy
-    assert (rc == 0);
+    rc = ble_gap_read_remote_transmit_power_level(conn_handle, 0x01);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_read_remote_transmit_power_level failed; rc=%d\n", rc);
+        return;
+    }
 
     rc = ble_gap_set_transmit_power_reporting_enable(conn_handle, 0x01, 0x01);
-    assert (rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_set_transmit_power_reporting_enable failed; rc=%d\n", rc);
+        return;
+    }
 
-    rc = ble_gap_set_path_loss_reporting_param(conn_handle, 60, 10, 30, 10, 2 ); //demo values
-    assert (rc == 0);
+    rc = ble_gap_set_path_loss_reporting_param(conn_handle, 60, 10, 30, 10, 2);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_set_path_loss_reporting_param failed; rc=%d\n", rc);
+        return;
+    }
 
     rc = ble_gap_set_path_loss_reporting_enable(conn_handle, 0x01);
-    assert (rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(WARN, "ble_gap_set_path_loss_reporting_enable failed; rc=%d\n", rc);
+    }
 }
 #endif
 
@@ -936,11 +951,16 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 break;
             }
         }
+        if (i >= bearers) {
+            /* CID not found; nothing to remove */
+            return 0;
+        }
         while (i < (bearers - 1)) {
             cids[i] = cids[i + 1];
             i += 1;
         }
         cids[i] = 0;
+        bearers--;
 
         /* Now Abort */
         return 0;
@@ -1092,17 +1112,17 @@ app_main(void)
     /* XXX Need to have template for store */
     ble_store_config_init();
 
-    nimble_port_freertos_init(blecent_host_task);
-
-#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
-    stack_init_deinit();
-#endif
-
 #if MYNEWT_VAL(BLE_EATT_CHAN_NUM) > 0
     bearers = 0;
     for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
         cids[i] = 0;
     }
+#endif
+
+    nimble_port_freertos_init(blecent_host_task);
+
+#if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
+    stack_init_deinit();
 #endif
 
 }

@@ -106,7 +106,6 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
         if (disc->sid == 2 && synced == 0) {
             struct ble_gap_periodic_sync_params params = {0};
             int rc;
-            synced++;
             params.skip = 10;
             params.sync_timeout = 1000;
 
@@ -117,7 +116,11 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
             params.filter_duplicates = 1;
 #endif
             rc = ble_gap_periodic_adv_sync_create(&disc->addr, disc->sid, &params, periodic_sync_gap_event, NULL);
-            assert(rc == 0);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to create periodic sync; rc=%d\n", rc);
+            } else {
+                synced++;
+            }
         }
         return 0;
     }
@@ -151,6 +154,7 @@ static void
 periodic_sync_on_reset(int reason)
 {
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
+    synced = 0;
 }
 
 static void

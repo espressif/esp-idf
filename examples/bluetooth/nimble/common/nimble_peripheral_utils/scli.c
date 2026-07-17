@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,15 +20,19 @@
 
 static TaskHandle_t cli_task;
 static QueueHandle_t cli_handle;
-static int stop;
+static volatile int stop;
 
 static int enter_passkey_handler(int argc, char *argv[])
 {
     int key;
-    char pkey[8];
+    char pkey[8] = {0};
     int num;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cli_handle == NULL) {
         return -1;
     }
 
@@ -36,7 +40,7 @@ static int enter_passkey_handler(int argc, char *argv[])
     ESP_LOGI("You entered", "%s %s", argv[0], argv[1]);
     num = pkey[0];
 
-    if (isalpha(num)) {
+    if (isalpha((unsigned char)num)) {
         if ((strcasecmp(pkey, "Y") == 0) || (strcasecmp(pkey, "Yes") == 0)) {
             key = 1;
             xQueueSend(cli_handle, &key, 0);
@@ -56,6 +60,9 @@ static int enter_passkey_handler(int argc, char *argv[])
 
 int scli_receive_key(int *console_key)
 {
+    if (cli_handle == NULL) {
+        return pdFALSE;
+    }
     return xQueueReceive(cli_handle, console_key, BLE_RX_TIMEOUT);
 }
 
@@ -108,10 +115,8 @@ static void scli_task(void *arg)
                 }
             }
             if (event.type == UART_DATA) {
-                while (uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0)) {
-                    if (i >= sizeof(linebuf) - 1) {
-                        break;
-                    }
+                while (i < sizeof(linebuf) - 1 &&
+                       uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0)) {
                     if (linebuf[i] == '\r') {
                         uart_write_bytes(uart_num, "\r\n", 2);
                     } else {
@@ -143,12 +148,14 @@ int scli_init(void)
     /* Register CLI "key <value>" to accept input from user during pairing */
     ble_register_cli();
 
-    xTaskCreate(scli_task, "scli_cli", 4096, (void *) 0, 3, &cli_task);
-    if (cli_task == NULL) {
+    cli_handle = xQueueCreate(1, sizeof(int));
+    if (cli_handle == NULL) {
         return ESP_FAIL;
     }
-    cli_handle = xQueueCreate( 1, sizeof(int) );
-    if (cli_handle == NULL) {
+    xTaskCreate(scli_task, "scli_cli", 4096, (void *) 0, 3, &cli_task);
+    if (cli_task == NULL) {
+        vQueueDelete(cli_handle);
+        cli_handle = NULL;
         return ESP_FAIL;
     }
     return ESP_OK;

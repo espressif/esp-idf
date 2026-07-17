@@ -47,7 +47,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        if (disc->periodic_adv_itvl && fields.name_len && !memcmp(fields.name, TARGET_NAME, strlen(TARGET_NAME))) {
+        if (disc->periodic_adv_itvl && fields.name_len == strlen(TARGET_NAME) && !memcmp(fields.name, TARGET_NAME, fields.name_len)) {
             create_periodic_sync(disc);
         }
         return 0;
@@ -71,6 +71,10 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             return 0;
         }
         // create a special data for checking manually in ADV side
+        if (event->periodic_report.data == NULL || event->periodic_report.data_length == 0) {
+            os_mbuf_free_chain(data);
+            return 0;
+        }
         sub_data_pattern[0] = event->periodic_report.data[0];
         memset(sub_data_pattern + 1, event->periodic_report.subevent, BLE_PAWR_RSP_DATA_LEN - 1);
         os_mbuf_append(data, sub_data_pattern, BLE_PAWR_RSP_DATA_LEN);
@@ -190,6 +194,7 @@ static void
 on_reset(int reason)
 {
     ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
+    synced = false;
 }
 
 static void

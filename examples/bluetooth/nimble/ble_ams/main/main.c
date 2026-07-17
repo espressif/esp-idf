@@ -607,7 +607,9 @@ static void ble_ams_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
+#endif
     int rc;
 
     memset(&fields, 0, sizeof(fields));
@@ -615,10 +617,12 @@ static void ble_ams_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
 
     fields.appearance = BLE_AMS_APPEARANCE;
     fields.appearance_is_present = 1;
@@ -885,6 +889,7 @@ static void ble_ams_host_task(void *param)
 
 void app_main(void)
 {
+    int rc;
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -907,10 +912,12 @@ void app_main(void)
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC;
     ble_hs_cfg.sm_sc = 0;
 
-    int rc = ble_svc_gap_device_name_set("nimble-ams");
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
+    rc = ble_svc_gap_device_name_set("nimble-ams");
     assert(rc == 0);
     rc = ble_svc_gap_device_appearance_set(BLE_AMS_APPEARANCE);
     assert(rc == 0);
+#endif
 
     ble_store_config_init();
 

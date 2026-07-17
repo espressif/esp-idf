@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -90,9 +90,11 @@ dynamic_service_advertise(void)
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
 
-    fields.uuids16 = (ble_uuid16_t[]) {
-        BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID)
-    };
+    /* Must be static: ble_gap_adv_set_fields stores the pointer, not the data.
+     * A stack compound literal becomes dangling after this function returns,
+     * causing corruption when BLE_NIMBLE_ENABLE_CONN_REATTEMPT re-uses it. */
+    static const ble_uuid16_t adv_uuids16[] = { BLE_UUID16_INIT(GATT_SVR_SVC_ALERT_UUID) };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -143,8 +145,11 @@ dynamic_service_gap_event(struct ble_gap_event *event, void *arg)
                     event->connect.status);
         if (event->connect.status == 0) {
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-            assert(rc == 0);
-            dynamic_service_print_conn_desc(&desc);
+            if (rc != 0) {
+                MODLOG_DFLT(ERROR, "Failed to find connection; rc=%d\n", rc);
+            } else {
+                dynamic_service_print_conn_desc(&desc);
+            }
         }
         MODLOG_DFLT(INFO, "\n");
 
@@ -282,11 +287,19 @@ app_main(void)
 
 #if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Failed to init GATT server; rc=%d\n", rc);
+        nimble_port_deinit();
+        return;
+    }
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("ble-dynamic-service");
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Failed to set device name; rc=%d\n", rc);
+        nimble_port_deinit();
+        return;
+    }
 #endif
 
     nimble_port_freertos_init(dynamic_service_host_task);

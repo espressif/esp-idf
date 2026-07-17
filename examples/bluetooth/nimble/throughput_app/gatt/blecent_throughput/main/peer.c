@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,7 @@ chr_end_handle(const struct peer_svc *svc, const struct peer_chr *chr);
 int
 chr_is_empty(const struct peer_svc *svc, const struct peer_chr *chr);
 static struct peer_chr *
-peer_chr_find(const struct peer_svc *svc, uint16_t chr_def_handle,
+peer_chr_find(const struct peer_svc *svc, uint16_t chr_val_handle,
               struct peer_chr **out_prev);
 static void
 peer_disc_chrs(struct peer *peer);
@@ -168,7 +168,7 @@ peer_dsc_add(struct peer *peer, uint16_t chr_val_handle,
     if (prev == NULL) {
         SLIST_INSERT_HEAD(&chr->dscs, dsc, next);
     } else {
-        SLIST_NEXT(prev, next) = dsc;
+        SLIST_INSERT_AFTER(prev, dsc, next);
     }
 
     return 0;
@@ -197,6 +197,7 @@ peer_disc_dscs(struct peer *peer)
                                              peer_dsc_disced, peer);
                 if (rc != 0) {
                     peer_disc_complete(peer, rc);
+                    return;
                 }
 
                 peer->disc_prev_chr_val = chr->chr.val_handle;
@@ -340,7 +341,7 @@ peer_chr_add(struct peer *peer,  uint16_t svc_start_handle,
         return BLE_HS_EUNKNOWN;
     }
 
-    chr = peer_chr_find(svc, gatt_chr->def_handle, &prev);
+    chr = peer_chr_find(svc, gatt_chr->val_handle, &prev);
     if (chr != NULL) {
         /* Characteristic already discovered. */
         return 0;
@@ -408,13 +409,20 @@ peer_disc_chrs(struct peer *peer)
     struct peer_svc *svc;
     int rc;
 
-    /* Search through the list of discovered service for the first service that
-     * contains undiscovered characteristics.  Then, discover all
-     * characteristics belonging to that service.
-     */
+    /* Advance cur_svc to the next service to discover characteristics for.
+     * Starting from NULL means start from the first service in the list.
+     * This sequential approach prevents re-processing services that had no
+     * characteristics (where SLIST_EMPTY would remain true and cause an
+     * infinite loop with the old SLIST_FOREACH-from-start approach). */
+    if (peer->cur_svc == NULL) {
+        peer->cur_svc = SLIST_FIRST(&peer->svcs);
+    } else {
+        peer->cur_svc = SLIST_NEXT(peer->cur_svc, next);
+    }
 
-    SLIST_FOREACH(svc, &peer->svcs, next) {
-        if (!peer_svc_is_empty(svc) && SLIST_EMPTY(&svc->chrs)) {
+    /* Scan forward past empty services to find the next one to process */
+    for (svc = peer->cur_svc; svc != NULL; svc = SLIST_NEXT(svc, next)) {
+        if (!peer_svc_is_empty(svc)) {
             peer->cur_svc = svc;
             rc = ble_gattc_disc_all_chrs(peer->conn_handle,
                                          svc->svc.start_handle,
@@ -600,9 +608,10 @@ peer_disc_incs(struct peer *peer)
         peer->cur_svc = SLIST_NEXT(peer->cur_svc, next);
         if (peer->cur_svc == NULL) {
             if (peer->disc_prev_chr_val > 0) {
+                /* cur_svc is already NULL: peer_disc_chrs starts from first svc */
                 peer_disc_chrs(peer);
-                return;
             }
+            return;  /* Always return; don't fall through into svc processing */
         }
     }
 
@@ -613,10 +622,18 @@ peer_disc_incs(struct peer *peer)
                                      svc->svc.end_handle,
                                      peer_inc_disced, peer);
         if (rc != 0) {
+            /* Hard error: skip to characteristic discovery from beginning */
+            peer->cur_svc = NULL;
             peer_disc_chrs(peer);
         }
+    } else if (svc != NULL) {
+        /* svc is empty: advance to next service for include discovery */
+        peer_disc_incs(peer);
     } else {
-        peer_disc_chrs(peer);
+        /* cur_svc is NULL on entry: no services at all */
+        if (peer->disc_prev_chr_val > 0) {
+            peer_disc_chrs(peer);
+        }
     }
 }
 #endif
@@ -690,8 +707,12 @@ peer_svc_find_uuid(const struct peer *peer, const ble_uuid_t *uuid)
 {
     const struct peer_svc *svc;
 
+    if (peer == NULL || uuid == NULL) {
+        return NULL;
+    }
+
     SLIST_FOREACH(svc, &peer->svcs, next) {
-        if ((uuid != NULL) && (ble_uuid_cmp(&(svc->svc.uuid.u), uuid) == 0)) {
+        if (ble_uuid_cmp(&(svc->svc.uuid.u), uuid) == 0) {
             return svc;
         }
     }
@@ -726,6 +747,10 @@ peer_dsc_find_uuid(const struct peer *peer, const ble_uuid_t *svc_uuid,
 {
     const struct peer_chr *chr;
     const struct peer_dsc *dsc;
+
+    if (peer == NULL) {
+        return NULL;
+    }
 
     chr = peer_chr_find_uuid(peer, svc_uuid, chr_uuid);
     if (chr == NULL) {
@@ -816,6 +841,7 @@ peer_svc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
 #else
        /* All services discovered; start discovering characteristics. */
         if (peer->disc_prev_chr_val > 0) {
+            peer->cur_svc = NULL;
             peer_disc_chrs(peer);
         }
 #endif
@@ -920,6 +946,8 @@ peer_add(uint16_t conn_handle)
 static void
 peer_free_mem(void)
 {
+    SLIST_INIT(&peers);
+
     free(peer_mem);
     peer_mem = NULL;
 
