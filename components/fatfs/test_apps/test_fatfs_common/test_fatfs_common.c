@@ -818,6 +818,251 @@ void test_fatfs_readdir_stat(const char* dir_prefix)
     }
 }
 
+void test_fatfs_readdir_stat_dual_opendir(const char* base_prefix)
+{
+    char dir_a[128];
+    char dir_b[128];
+    char file_a[320];
+    char file_b[320];
+
+    snprintf(dir_a, sizeof(dir_a), "%s/dirA", base_prefix);
+    snprintf(dir_b, sizeof(dir_b), "%s/dirB", base_prefix);
+    snprintf(file_a, sizeof(file_a), "%s/same_name.txt", dir_a);
+    snprintf(file_b, sizeof(file_b), "%s/same_name.txt", dir_b);
+
+    unlink(file_a);
+    unlink(file_b);
+    rmdir(dir_a);
+    rmdir(dir_b);
+    rmdir(base_prefix);
+
+    TEST_ASSERT_EQUAL(0, mkdir(base_prefix, 0755));
+    TEST_ASSERT_EQUAL(0, mkdir(dir_a, 0755));
+    TEST_ASSERT_EQUAL(0, mkdir(dir_b, 0755));
+
+    test_fatfs_create_file_with_text(file_a, "AAAA");
+    test_fatfs_create_file_with_text(file_b, "BBBBBBBB");
+
+    DIR* dir_a_handle = opendir(dir_a);
+    DIR* dir_b_handle = opendir(dir_b);
+    TEST_ASSERT_NOT_NULL(dir_a_handle);
+    TEST_ASSERT_NOT_NULL(dir_b_handle);
+
+    struct dirent* de = NULL;
+    bool found = false;
+    while ((de = readdir(dir_a_handle)) != NULL) {
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) {
+            continue;
+        }
+        TEST_ASSERT_EQUAL_STRING("same_name.txt", de->d_name);
+        found = true;
+        break;
+    }
+    TEST_ASSERT_TRUE(found);
+
+    struct stat st = {0};
+    TEST_ASSERT_EQUAL(0, stat(file_b, &st));
+    TEST_ASSERT_EQUAL(8, st.st_size);
+
+    TEST_ASSERT_EQUAL(0, closedir(dir_a_handle));
+    TEST_ASSERT_EQUAL(0, closedir(dir_b_handle));
+
+    unlink(file_a);
+    unlink(file_b);
+    rmdir(dir_a);
+    rmdir(dir_b);
+    rmdir(base_prefix);
+}
+
+void test_fatfs_readdir_stat_stale_after_truncate(const char* dir_prefix)
+{
+    char filepath[320];
+
+    snprintf(filepath, sizeof(filepath), "%s/stale_truncate.txt", dir_prefix);
+
+    unlink(filepath);
+    rmdir(dir_prefix);
+
+    TEST_ASSERT_EQUAL(0, mkdir(dir_prefix, 0755));
+    test_fatfs_create_file_with_text(filepath, "0123456789");
+
+    DIR* dir = opendir(dir_prefix);
+    TEST_ASSERT_NOT_NULL(dir);
+
+    struct dirent* de = NULL;
+    bool found = false;
+    while ((de = readdir(dir)) != NULL) {
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) {
+            continue;
+        }
+        TEST_ASSERT_EQUAL_STRING("stale_truncate.txt", de->d_name);
+        found = true;
+        break;
+    }
+    TEST_ASSERT_TRUE(found);
+
+    TEST_ASSERT_EQUAL(0, truncate(filepath, 4));
+
+    struct stat st = {0};
+    TEST_ASSERT_EQUAL(0, stat(filepath, &st));
+    TEST_ASSERT_EQUAL(4, st.st_size);
+
+    TEST_ASSERT_EQUAL(0, closedir(dir));
+    unlink(filepath);
+    rmdir(dir_prefix);
+}
+
+void test_fatfs_readdir_stat_stale_after_unlink(const char* dir_prefix)
+{
+    char filepath[320];
+
+    snprintf(filepath, sizeof(filepath), "%s/stale_unlink.txt", dir_prefix);
+
+    unlink(filepath);
+    rmdir(dir_prefix);
+
+    TEST_ASSERT_EQUAL(0, mkdir(dir_prefix, 0755));
+    test_fatfs_create_file_with_text(filepath, "gone");
+
+    DIR* dir = opendir(dir_prefix);
+    TEST_ASSERT_NOT_NULL(dir);
+
+    struct dirent* de = NULL;
+    bool found = false;
+    while ((de = readdir(dir)) != NULL) {
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) {
+            continue;
+        }
+        TEST_ASSERT_EQUAL_STRING("stale_unlink.txt", de->d_name);
+        found = true;
+        break;
+    }
+    TEST_ASSERT_TRUE(found);
+
+    TEST_ASSERT_EQUAL(0, unlink(filepath));
+
+    struct stat st = {0};
+    TEST_ASSERT_EQUAL(-1, stat(filepath, &st));
+    TEST_ASSERT_EQUAL(ENOENT, errno);
+
+    TEST_ASSERT_EQUAL(0, closedir(dir));
+    rmdir(dir_prefix);
+}
+
+typedef struct {
+    const char* dir_path;
+    size_t expected_size;
+    SemaphoreHandle_t done;
+    esp_err_t result;
+} readdir_stat_task_arg_t;
+
+static void readdir_stat_task(void* param)
+{
+    readdir_stat_task_arg_t* arg = (readdir_stat_task_arg_t*) param;
+    char filepath[320];
+    struct stat st = {0};
+    struct dirent* de;
+
+    DIR* dir = opendir(arg->dir_path);
+    if (dir == NULL) {
+        arg->result = ESP_FAIL;
+        xSemaphoreGive(arg->done);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    while ((de = readdir(dir)) != NULL) {
+        if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0) {
+            continue;
+        }
+
+        snprintf(filepath, sizeof(filepath), "%s/%s", arg->dir_path, de->d_name);
+        if (stat(filepath, &st) != 0) {
+            arg->result = ESP_FAIL;
+            closedir(dir);
+            xSemaphoreGive(arg->done);
+            vTaskDelete(NULL);
+            return;
+        }
+
+        if ((size_t) st.st_size != arg->expected_size) {
+            arg->result = ESP_FAIL;
+            closedir(dir);
+            xSemaphoreGive(arg->done);
+            vTaskDelete(NULL);
+            return;
+        }
+    }
+
+    closedir(dir);
+    arg->result = ESP_OK;
+    xSemaphoreGive(arg->done);
+    vTaskDelete(NULL);
+}
+
+void test_fatfs_readdir_stat_concurrent_dual_opendir(const char* base_prefix)
+{
+    char dir_a[128];
+    char dir_b[128];
+    char file_a[320];
+    char file_b[320];
+
+    snprintf(dir_a, sizeof(dir_a), "%s/conc_dirA", base_prefix);
+    snprintf(dir_b, sizeof(dir_b), "%s/conc_dirB", base_prefix);
+    snprintf(file_a, sizeof(file_a), "%s/same_name.txt", dir_a);
+    snprintf(file_b, sizeof(file_b), "%s/same_name.txt", dir_b);
+
+    unlink(file_a);
+    unlink(file_b);
+    rmdir(dir_a);
+    rmdir(dir_b);
+    rmdir(base_prefix);
+
+    TEST_ASSERT_EQUAL(0, mkdir(base_prefix, 0755));
+    TEST_ASSERT_EQUAL(0, mkdir(dir_a, 0755));
+    TEST_ASSERT_EQUAL(0, mkdir(dir_b, 0755));
+
+    test_fatfs_create_file_with_text(file_a, "AAAA");
+    test_fatfs_create_file_with_text(file_b, "BBBBBBBB");
+
+    readdir_stat_task_arg_t args_a = {
+        .dir_path = dir_a,
+        .expected_size = 4,
+        .done = xSemaphoreCreateBinary(),
+        .result = ESP_FAIL,
+    };
+    readdir_stat_task_arg_t args_b = {
+        .dir_path = dir_b,
+        .expected_size = 8,
+        .done = xSemaphoreCreateBinary(),
+        .result = ESP_FAIL,
+    };
+    TEST_ASSERT_NOT_NULL(args_a.done);
+    TEST_ASSERT_NOT_NULL(args_b.done);
+
+    const int stack_size = 4096;
+    const int cpuid_0 = 0;
+    const int cpuid_1 = CONFIG_FREERTOS_NUMBER_OF_CORES - 1;
+
+    xTaskCreatePinnedToCore(readdir_stat_task, "readdir_stat_a", stack_size, &args_a, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(readdir_stat_task, "readdir_stat_b", stack_size, &args_b, 3, NULL, cpuid_1);
+
+    xSemaphoreTake(args_a.done, portMAX_DELAY);
+    xSemaphoreTake(args_b.done, portMAX_DELAY);
+
+    TEST_ASSERT_EQUAL(ESP_OK, args_a.result);
+    TEST_ASSERT_EQUAL(ESP_OK, args_b.result);
+
+    vSemaphoreDelete(args_a.done);
+    vSemaphoreDelete(args_b.done);
+
+    unlink(file_a);
+    unlink(file_b);
+    rmdir(dir_a);
+    rmdir(dir_b);
+    rmdir(base_prefix);
+}
+
 void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix)
 {
     char name_dir_inner_file[64];
