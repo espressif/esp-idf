@@ -212,8 +212,8 @@ const regdma_entries_config_t systimer_regs_retention[] = {
     [14] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SYSTIMER_LINK(0x0e), SYSTIMER_TARGET1_CONF_REG,   0,                                SYSTIMER_TARGET1_PERIOD_MODE_M,   1, 0), .owner = ENTRY(0) },
     [15] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SYSTIMER_LINK(0x0f), SYSTIMER_TARGET1_CONF_REG,   SYSTIMER_TARGET1_PERIOD_MODE_M,   SYSTIMER_TARGET1_PERIOD_MODE_M,   1, 0), .owner = ENTRY(0) },
     [16] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_SYSTIMER_LINK(0x10), SYSTIMER_TARGET2_CONF_REG,   0,                                SYSTIMER_TARGET2_PERIOD_MODE_M,   1, 0), .owner = ENTRY(0) },
-    [17] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SYSTIMER_LINK(0x11), SYSTIMER_CONF_REG,           SYSTIMER_CONF_REG,                1,                                0, 0), .owner = ENTRY(0) }, /* Systimer work enable */
-    [18] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SYSTIMER_LINK(0x12), SYSTIMER_INT_ENA_REG,        SYSTIMER_INT_ENA_REG,             1,                                0, 0), .owner = ENTRY(0) }  /* Systimer intr enable */
+    [17] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SYSTIMER_LINK(0x11), SYSTIMER_CONF_REG,      SYSTIMER_CONF_REG,                1,                                0, 0), .owner = ENTRY(0) }, /* Systimer work enable */
+    [18] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_SYSTIMER_LINK(0x12), SYSTIMER_INT_ENA_REG,   SYSTIMER_INT_ENA_REG,             1,                                0, 0), .owner = ENTRY(0) }  /* Systimer intr enable */
 };
 _Static_assert(ARRAY_SIZE(systimer_regs_retention) == SYSTIMER_RETENTION_LINK_LEN, "Inconsistent Systimer retention link length definitions");
 
@@ -224,9 +224,27 @@ const regdma_entries_config_t pau_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(pau_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent PAU retention link length definitions");
 
-/* PVT Registers Context */
-#define N_REGS_PVT    (((PVT_COMB_PD_SITE3_UNIT0_VT1_CONF2_REG - DR_REG_PVT_MONITOR_BASE) / 4) + 1)
+/* PVT Registers Context, only backup configs initialized in pvt_auto_dbias_init, others will be done in pvt_func_enable during wakeup process */
+#define PVT_RETENTION_REGS_CNT   11
+#define PVT_RETENTION_REGS_BASE  PVT_DBIAS_CHANNEL_SEL0_REG
+/* PVT_DBIAS_CHANNEL_SEL0_REG, PVT_DBIAS_CHANNEL0_SEL_REG, PVT_DBIAS_CHANNEL1_SEL_REG, PVT_DBIAS_CHANNEL2_SEL_REG,
+ * PVT_DBIAS_TIMER_REG
+ * PVT_DBIAS_CMD0_REG, PVT_DBIAS_CMD1_REG, PVT_DBIAS_CMD2_REG,
+ * PVT_COMB_PD_SITE3_UNIT0_VT1_CONF1_REG, PVT_COMB_PD_SITE3_UNIT1_VT1_CONF1_REG, PVT_COMB_PD_SITE3_UNIT0_VT1_CONF2_REG */
+static const uint32_t pvt_regs_map[4] = { 0x139d, 0x600000, 0x0, 0x20 };
 const regdma_entries_config_t pvt_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PVT_LINK(0x00), DR_REG_PVT_MONITOR_BASE, DR_REG_PVT_MONITOR_BASE, N_REGS_PVT, 0, 0), .owner = ENTRY(0)},
+    /* Reset PVT at first on restore */
+    [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PVT_LINK(0x00), HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_PVT_PERI_GROUP4, HP_SYS_CLKRST_REG_RST_EN_PVT_PERI_GROUP4_M, 1, 0), .owner = ENTRY(0) },
+    [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PVT_LINK(0x01), HP_SYS_CLKRST_HP_RST_EN0_REG, 0, HP_SYS_CLKRST_REG_RST_EN_PVT_PERI_GROUP4_M, 1, 0), .owner = ENTRY(0) },
+    /* Clear auto-dbias timer enable before config restore */
+    [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_PVT_LINK(0x03), PVT_DBIAS_TIMER_REG, 0, PVT_TIMER_EN_M, 1, 0), .owner = ENTRY(0) },
+    [3] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PVT_LINK(0x02),
+                                            PVT_RETENTION_REGS_BASE, PVT_RETENTION_REGS_BASE,
+                                            PVT_RETENTION_REGS_CNT, 0, 0,
+                                            pvt_regs_map[0], pvt_regs_map[1],
+                                            pvt_regs_map[2], pvt_regs_map[3]),
+        .owner = ENTRY(0),
+    },
 };
 _Static_assert(ARRAY_SIZE(pvt_regs_retention) == PVT_RETENTION_LINK_LEN, "Inconsistent PVT retention link length definitions");
