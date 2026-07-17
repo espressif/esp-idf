@@ -7,6 +7,7 @@
 #include "stdint.h"
 #include "soc/interrupt_reg.h"
 #include "soc/soc_caps.h"
+#include "esp_cpu.h"
 #include "esp_ipc_isr.h"
 #include "esp_private/esp_ipc_isr.h"
 #include "esp_private/esp_system_attr.h"
@@ -46,6 +47,15 @@ void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_record_interrupted_context(void)
 
 void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_waiting_for_finish_cmd(void* arg)
 {
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    /* The branch predictor keeps issuing speculative instruction fetches while
+     * this core spins here. Callers of esp_ipc_isr_stall_other_cpu() may
+     * suspend the external memory cache during the stall (e.g. sleep flows
+     * powering down flash), in which case a speculative fetch into cached
+     * address space raises a cache access-fail interrupt. Keep the predictor
+     * disabled until the stall is released. */
+    esp_cpu_branch_prediction_disable();
+#endif
     esp_ipc_isr_stall_fl = 1;
     while (esp_ipc_isr_stall_args.cmd == ESP_IPC_ISR_CMD_RESET_STATE) {
         if (esp_ipc_isr_stall_args.func != NULL) {
@@ -53,4 +63,7 @@ void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_waiting_for_finish_cmd(void* arg)
             esp_ipc_isr_stall_args.func = NULL;
         }
     }
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
 }

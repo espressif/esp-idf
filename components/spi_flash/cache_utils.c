@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,13 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
     uint32_t cpuid = (uint32_t) arg;
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    /* The branch predictor issues speculative cache requests while this core
+     * spins in IRAM. The flash-op core is about to suspend the (shared) cache,
+     * so speculative fetches into flash would raise a cache access-fail on
+     * this core. spi_flash_restore_cache() below re-enables prediction. */
+    esp_cpu_branch_prediction_disable();
+#endif
     // s_flash_op_complete flag is cleared on *this* CPU, otherwise the other
     // CPU may reset the flag back to false before IPC task has a chance to check it
     // (if it is preempted by an ISR taking non-trivial amount of time)
