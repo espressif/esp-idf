@@ -35,7 +35,7 @@ coex_hw_timer_set = 0x2f800c24;
 coex_schm_interval_set = 0x2f800c28;
 coex_schm_lock = 0x2f800c2c;
 coex_schm_unlock = 0x2f800c30;
-coex_status_get = 0x2f800c34;
+//coex_status_get = 0x2f800c34;
 coex_wifi_release = 0x2f800c38;
 esp_coex_ble_conn_dynamic_prio_get = 0x2f800c3c;
 /* Data (.data, .bss, .rodata) */
