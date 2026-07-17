@@ -19,7 +19,6 @@
 #endif
 
 static const char *tag = "NimBLE_PROX_CENT";
-static uint8_t link_supervision_timeout;
 static int8_t tx_pwr_lvl;
 static struct ble_prox_cent_conn_peer conn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
 static struct ble_prox_cent_link_lost_peer disconn_peer[MYNEWT_VAL(BLE_MAX_CONNECTIONS) + 1];
@@ -41,7 +40,11 @@ ble_prox_cent_on_read(uint16_t conn_handle,
     if (error->status == 0) {
         MODLOG_DFLT(INFO, " attr_handle=%d value=", attr->handle);
         print_mbuf(attr->om);
-        os_mbuf_copydata(attr->om, 0, attr->om->om_len, &tx_pwr_lvl);
+        if (attr->om->om_len != sizeof(tx_pwr_lvl)) {
+            MODLOG_DFLT(ERROR, "Unexpected TX power level length: %d\n", attr->om->om_len);
+            return 0;
+        }
+        os_mbuf_copydata(attr->om, 0, sizeof(tx_pwr_lvl), &tx_pwr_lvl);
         conn_peer[conn_handle].calc_path_loss = true;
     }
 
@@ -129,8 +132,10 @@ ble_prox_cent_read_write_subscribe(const struct peer *peer)
         goto err;
     }
 
+    /* Alert Level: 0=No Alert, 1=Mild Alert, 2=High Alert (BLE SIG LLS spec) */
+    static const uint8_t alert_level = 1;
     rc = ble_gattc_write_flat(peer->conn_handle, chr->chr.val_handle,
-                              &link_supervision_timeout, sizeof(link_supervision_timeout),
+                              &alert_level, sizeof(alert_level),
                               ble_prox_cent_on_write, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to write characteristic; rc=%d\n",
@@ -228,19 +233,13 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     int offset = 0;
     int ad_struct_len = 0;
     uint8_t test_addr[6];
-    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
-            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+    if (!(disc->props & BLE_HCI_ADV_CONN_MASK)) {
         return 0;
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address */
-        uint8_t parsed_addr[6];
-        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, parsed_addr);
-        for (int i = 0; i < 6; i++) {
-            test_addr[5 - i] = parsed_addr[i];
-        }
-
+        /* Convert string to address; peer_addr_parse outputs little-endian matching disc->addr.val */
+        peer_addr_parse(CONFIG_EXAMPLE_PEER_ADDR, test_addr);
         if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
@@ -256,9 +255,9 @@ ext_ble_prox_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
             break;
         }
 
-        /* Search if Proximity Sensor (Link loss) UUID is advertised */
+        /* Search if Proximity Sensor (Link loss) UUID 0x1803 is advertised (little-endian: [0x03, 0x18]) */
         if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
-            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x03 ) {
+            if ( disc->data[offset + 2] == 0x03 && disc->data[offset + 3] == 0x18 ) {
                 return 1;
             }
         }
@@ -347,6 +346,9 @@ ble_prox_cent_connect_if_interesting(void *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        ble_prox_cent_scan();
+#endif
         return;
     }
 
@@ -364,6 +366,9 @@ ble_prox_cent_connect_if_interesting(void *disc)
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
                     addr->type, addr_str(addr->val), rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        ble_prox_cent_scan();
+#endif
         return;
     }
 }
@@ -415,8 +420,6 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
-            link_supervision_timeout = 8 * desc.conn_itvl;
-
             /* Remember peer. */
             rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
@@ -427,7 +430,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             /* Check if this device is reconnected */
             for (int i = 0; i <= MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
                 if (disconn_peer[i].addr != NULL) {
-                    if (memcmp(disconn_peer[i].addr, &desc.peer_id_addr.val, BLE_ADDR_LEN)) {
+                    if (memcmp(disconn_peer[i].addr, &desc.peer_id_addr.val, BLE_ADDR_LEN) == 0) {
                         /* Peer reconnected. Stop alert for this peer */
                         free(disconn_peer[i].addr);
                         disconn_peer[i].addr = NULL;
@@ -500,8 +503,10 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             }
         }
         /* Stop calculating path loss, restart once connection is established again */
-        conn_peer[event->disconnect.conn.conn_handle].calc_path_loss = false;
-        conn_peer[event->disconnect.conn.conn_handle].val_handle = 0;
+        if (event->disconnect.conn.conn_handle <= MYNEWT_VAL(BLE_MAX_CONNECTIONS)) {
+            conn_peer[event->disconnect.conn.conn_handle].calc_path_loss = false;
+            conn_peer[event->disconnect.conn.conn_handle].val_handle = 0;
+        }
 
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
@@ -726,12 +731,12 @@ app_main(void)
         return;
     }
 
-    /* Initialize a task to keep checking path loss of the link */
-    ble_prox_cent_init();
     for (int i = 0; i <= MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
         disconn_peer[i].addr = NULL;
-        disconn_peer[i].link_lost = true;
+        disconn_peer[i].link_lost = false;
     }
+    /* Initialize tasks after disconn_peer array is ready */
+    ble_prox_cent_init();
 
     /* Configure the host. */
     ble_hs_cfg.reset_cb = ble_prox_cent_on_reset;

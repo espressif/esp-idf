@@ -100,7 +100,7 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             return 0;
         }
 
-        if (fields.name_len && !memcmp(fields.name, TARGET_NAME, strlen(TARGET_NAME))) {
+        if (fields.name_len == strlen(TARGET_NAME) && !memcmp(fields.name, TARGET_NAME, fields.name_len)) {
             create_periodic_sync(disc);
         }
         return 0;
@@ -229,6 +229,11 @@ start_scan(void)
     int rc;
     struct ble_gap_ext_disc_params disc_params;
 
+    /* Cancel any active scan first to reset the duplicate filter. */
+    if (ble_gap_disc_active()) {
+        ble_gap_disc_cancel();
+    }
+
     /* Perform a passive scan.  I.e., don't send follow-up scan requests to
      * each advertiser.
      */
@@ -258,6 +263,7 @@ static void
 on_reset(int reason)
 {
     ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
+    synced = false;
 }
 
 static void

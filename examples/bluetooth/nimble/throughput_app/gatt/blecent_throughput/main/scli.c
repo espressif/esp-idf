@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,7 +102,7 @@ static int conn_mtu_handler(int argc, char *argv[])
 
 static int throughput_demo_handler(int argc, char *argv[])
 {
-    char pkey[8];
+    char pkey[8] = {0};
     struct cli_msg msg = {
         .type = CLI_MSG_TYPE_THROUGHPUT,
     };
@@ -111,7 +111,15 @@ static int throughput_demo_handler(int argc, char *argv[])
         return -1;
     }
 
-    sscanf(argv[1], "%7s", pkey);
+    if (cli_handle == NULL) {
+        ESP_LOGE("CLI", "Queue not initialized");
+        return -1;
+    }
+
+    if (sscanf(argv[1], "%7s", pkey) != 1) {
+        ESP_LOGE("CLI", "Failed to parse throughput type");
+        return -1;
+    }
 
     if (strcmp(pkey, "read") == 0) {
         msg.data.key[0] = 1;
@@ -133,14 +141,17 @@ static int throughput_demo_handler(int argc, char *argv[])
 
 static int yesno_handler(int argc, char *argv[])
 {
-    char yesno[4];
+    char yesno[4] = {0};
     bool yes;
 
     if (argc != 2) {
         return -1;
     }
 
-    sscanf(argv[1], "%3s", yesno);
+    if (sscanf(argv[1], "%3s", yesno) != 1) {
+        ESP_LOGE("CLI", "Failed to parse yes/no argument");
+        return -1;
+    }
 
     if (strcmp(yesno, "Yes") == 0 || strcmp(yesno, "YES") == 0 || strcmp(yesno, "yes") == 0) {
         yes = 1;
@@ -151,23 +162,29 @@ static int yesno_handler(int argc, char *argv[])
     }
 
     ESP_LOGI("User entered", "%s %s", argv[0], yesno);
-    /* Send as 24-byte buffer to match queue item size */
-    uint8_t yesno_buf[24] = {0};
-    yesno_buf[0] = (uint8_t)yes;
+    /* Use struct cli_msg to exactly match the queue item size (sizeof(struct cli_msg))
+     * and avoid stack buffer over-read from sending undersized raw buffers. */
+    struct cli_msg msg = {
+        .type = CLI_MSG_TYPE_YESNO,
+        .data.yes = yes,
+    };
     if (cli_handle) {
-        xQueueSend(cli_handle, yesno_buf, 500 / portTICK_PERIOD_MS);
+        xQueueSend(cli_handle, &msg, 500 / portTICK_PERIOD_MS);
     }
     return 0;
 }
 
 int scli_receive_yesno(bool *console_key)
 {
-    /* Receive into temporary 24-byte buffer to match queue item size,
-     * then extract bool value to prevent buffer overflow */
-    uint8_t temp_buf[24];
-    int ret = xQueueReceive(cli_handle, temp_buf, YES_NO_PARAM);
+    struct cli_msg msg;
+    int ret;
+
+    if (cli_handle == NULL) {
+        return pdFALSE;
+    }
+    ret = xQueueReceive(cli_handle, &msg, YES_NO_PARAM);
     if (ret == pdPASS) {
-        *console_key = (bool)temp_buf[0];  /* Extract first byte as bool */
+        *console_key = msg.data.yes;
     }
     return ret;
 }
@@ -175,6 +192,9 @@ int scli_receive_yesno(bool *console_key)
 int scli_receive_key(int console_key[6])
 {
     struct cli_msg msg;
+    if (cli_handle == NULL) {
+        return 0;
+    }
     if (xQueueReceive(cli_handle, &msg, BLE_RX_PARAM) != pdTRUE) {
         return 0;
     }
@@ -198,6 +218,9 @@ int scli_receive_key(int console_key[6])
 int cli_receive_key(int console_key[6])
 {
     struct cli_msg msg;
+    if (cli_handle == NULL) {
+        return 0;
+    }
     if (xQueueReceive(cli_handle, &msg, BLE_RX_TIMEOUT) != pdTRUE) {
         return 0;
     }
