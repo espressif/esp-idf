@@ -853,6 +853,23 @@ static bool roaming_app_add_manual_blacklist_entry(const uint8_t *bssid)
     return true;
 }
 
+#if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
+static bool roaming_app_reason_is_connection_failure(uint8_t reason)
+{
+    switch (reason) {
+    case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_INVALID_PMKID:
+    case WIFI_REASON_AUTH_FAIL:
+    case WIFI_REASON_ASSOC_FAIL:
+    case WIFI_REASON_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_CONNECTION_FAIL:
+        return true;
+    default:
+        return false;
+    }
+}
+#endif
+
 static void roaming_app_record_connection_failure(const uint8_t *bssid)
 {
 #if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
@@ -1020,7 +1037,7 @@ static void roaming_app_disconnected_event_handler(void *ctx, void *data)
 
     ESP_LOGD(ROAMING_TAG, "station got disconnected reason=%d, rssi =%d", disconn->reason, disconn->rssi);
 #if CONFIG_ESP_WIFI_ROAMING_AUTO_BLACKLISTING
-    if (disconn->reason == WIFI_REASON_CONNECTION_FAIL || disconn->reason == WIFI_REASON_AUTH_FAIL) {
+    if (roaming_app_reason_is_connection_failure(disconn->reason)) {
         roaming_app_record_connection_failure(g_roaming_app.current_bss.ap.bssid);
     }
 #endif
