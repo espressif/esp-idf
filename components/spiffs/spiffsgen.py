@@ -423,7 +423,8 @@ class SpiffsFS:
         return self.remaining_blocks <= 0
 
     def create_file(self, img_path, file_path):  # type: (str, str) -> None
-        if len(img_path) > self.build_config.obj_name_len:
+        # obj_name_len includes NUL (CONFIG_SPIFFS_OBJ_NAME_LEN); max chars is obj_name_len - 1.
+        if len(img_path) > self.build_config.obj_name_len - 1:
             log.die(f"object name '{img_path}' too long")
 
         name = img_path
