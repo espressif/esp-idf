@@ -3,14 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdio.h>
-#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "unity.h"
+#include "esp_attr.h"
 #include "esp_cam_ctlr_csi.h"
 #include "esp_cam_ctlr.h"
 #include "esp_ldo_regulator.h"
-#include "sdkconfig.h"
 #include "driver/isp.h"
 #include "example_sensor_init.h"
 #include "esp_private/esp_cache_private.h"
@@ -34,6 +33,11 @@
 static int new_buffer_count = 0;
 static int trans_finished_count = 0;
 
+typedef struct {
+    SemaphoreHandle_t sem;
+    uint32_t flags;
+} test_csi_error_ctx_t;
+
 static bool IRAM_ATTR camera_get_new_buffer(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data)
 {
     esp_cam_ctlr_trans_t *new_trans = (esp_cam_ctlr_trans_t *)user_data;
@@ -47,6 +51,16 @@ static bool IRAM_ATTR camera_trans_finished(esp_cam_ctlr_handle_t handle, esp_ca
 {
     trans_finished_count++;
     return false;
+}
+
+static bool IRAM_ATTR camera_error_callback(esp_cam_ctlr_handle_t handle, const esp_cam_ctlr_error_event_data_t *edata, void *user_data)
+{
+    test_csi_error_ctx_t *ctx = (test_csi_error_ctx_t *)user_data;
+    ctx->flags = edata->csi_host_err_evts;
+
+    BaseType_t high_task_woken = pdFALSE;
+    xSemaphoreGiveFromISR(ctx->sem, &high_task_woken);
+    return high_task_woken == pdTRUE;
 }
 
 TEST_CASE("TEST esp_cam on ov5647", "[csi][camera][ov5647]")
@@ -148,4 +162,88 @@ TEST_CASE("TEST esp_cam on ov5647", "[csi][camera][ov5647]")
     example_sensor_deinit(sensor_handle);
 
     heap_caps_free(frame_buffer);
+}
+
+TEST_CASE("TEST CSI error callback on lane mismatch", "[csi][camera][ov5647]")
+{
+    size_t frame_buffer_size = TEST_MIPI_CSI_DISP_HRES *
+                               TEST_MIPI_CSI_DISP_VRES *
+                               TEST_RGB565_BITS_PER_PIXEL / 8;
+
+    esp_ldo_channel_handle_t ldo_mipi_phy = NULL;
+    esp_ldo_channel_config_t ldo_config = {
+        .chan_id   = TEST_USED_LDO_CHAN_ID,
+        .voltage_mv = TEST_USED_LDO_VOLTAGE_MV,
+    };
+    TEST_ESP_OK(esp_ldo_acquire_channel(&ldo_config, &ldo_mipi_phy));
+
+    size_t frame_buffer_alignment = 0;
+    TEST_ESP_OK(esp_cache_get_alignment(0, &frame_buffer_alignment));
+    void *frame_buffer = heap_caps_aligned_calloc(frame_buffer_alignment, 1, frame_buffer_size,
+                                                  MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(frame_buffer);
+
+    esp_cam_ctlr_trans_t trans_data = {
+        .buffer = frame_buffer,
+        .buflen = frame_buffer_size,
+    };
+
+    example_sensor_handle_t sensor_handle = {
+        .sccb_handle = NULL,
+        .i2c_bus_handle = NULL,
+    };
+    example_sensor_config_t sensor_config = {
+        .i2c_port_num  = I2C_NUM_0,
+        .i2c_sda_io_num = TEST_MIPI_CSI_CAM_SCCB_SDA_IO,
+        .i2c_scl_io_num = TEST_MIPI_CSI_CAM_SCCB_SCL_IO,
+        .port          = ESP_CAM_SENSOR_MIPI_CSI,
+        .format_name   = TEST_CAM_FORMAT,
+    };
+
+    esp_cam_ctlr_csi_config_t csi_config = {
+        .ctlr_id                = 0,
+        .h_res                  = TEST_MIPI_CSI_DISP_HRES,
+        .v_res                  = TEST_MIPI_CSI_DISP_VRES,
+        .lane_bit_rate_mbps     = TEST_MIPI_CSI_LANE_BITRATE_MBPS,
+        .input_data_color_type  = CAM_CTLR_COLOR_RAW8,
+        .output_data_color_type = CAM_CTLR_COLOR_RAW8,
+        .data_lane_num          = 1,
+        .byte_swap_en           = false,
+        .queue_items            = 1,
+    };
+    esp_cam_ctlr_handle_t cam_handle = NULL;
+    TEST_ESP_OK(esp_cam_new_csi_ctlr(&csi_config, &cam_handle));
+
+    test_csi_error_ctx_t error_ctx = {};
+    error_ctx.sem = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(error_ctx.sem);
+
+    esp_cam_ctlr_evt_cbs_t cbs = {
+        .on_trans_finished  = camera_trans_finished,
+        .on_error           = camera_error_callback,
+    };
+    TEST_ESP_OK(esp_cam_ctlr_register_event_callbacks(cam_handle, &cbs, &error_ctx));
+
+    TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(error_ctx.sem, pdMS_TO_TICKS(100)));
+
+    example_sensor_init(&sensor_config, &sensor_handle);
+
+    TEST_ESP_OK(esp_cam_ctlr_enable(cam_handle));
+    TEST_ESP_OK(esp_cam_ctlr_start(cam_handle));
+    TEST_ESP_OK(esp_cam_ctlr_receive(cam_handle, &trans_data, ESP_CAM_CTLR_MAX_DELAY));
+
+    bool error_reported = xSemaphoreTake(error_ctx.sem, pdMS_TO_TICKS(1000)) == pdTRUE;
+    uint32_t err_flags = error_ctx.flags;
+
+    TEST_ESP_OK(esp_cam_ctlr_stop(cam_handle));
+    TEST_ESP_OK(esp_cam_ctlr_disable(cam_handle));
+    TEST_ESP_OK(esp_cam_ctlr_del(cam_handle));
+
+    vSemaphoreDelete(error_ctx.sem);
+    TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
+    example_sensor_deinit(sensor_handle);
+    heap_caps_free(frame_buffer);
+
+    TEST_ASSERT_TRUE(error_reported);
+    TEST_ASSERT_NOT_EQUAL(0, err_flags);
 }
