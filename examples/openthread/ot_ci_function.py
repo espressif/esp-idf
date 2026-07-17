@@ -5,6 +5,7 @@
 import ipaddress
 import logging
 import os
+import random
 import re
 import socket
 import struct
@@ -242,7 +243,7 @@ def get_global_unicast_addr(dut: IdfDut, br: IdfDut) -> str:
     clean_buffer(br)
     omrprefix = get_omrprefix(br)
     execute_command(dut, 'ipaddr')
-    dut_adress = dut.expect(r'(%s(?:\w+:){3}\w+)\r' % str(omrprefix), timeout=5)[1].decode()
+    dut_adress = dut.expect(rf'({omrprefix}(?:\w+:){{3}}\w+)\r', timeout=5)[1].decode()
     return dut_adress
 
 
@@ -264,11 +265,20 @@ def ot_ping(
     return tx_count, rx_count
 
 
-def ping_and_check(dut: IdfDut, target: str, tx_total: int = 10, timeout: int = 6, pass_rate: float = 0.8) -> None:
+def ping_and_check(
+    dut: IdfDut,
+    target: str,
+    tx_total: int = 10,
+    timeout: int = 6,
+    pass_rate: float = 0.8,
+    size: int = 10,
+    size_range: Optional[Tuple[int, int]] = None,
+) -> None:
     tx_count = 0
     rx_count = 0
     for _ in range(tx_total):
-        tx, rx = ot_ping(dut, target, timeout=timeout, count=1, size=10, interval=6)
+        ping_size = random.randint(*size_range) if size_range else size
+        tx, rx = ot_ping(dut, target, timeout=timeout, count=1, size=ping_size, interval=6)
         tx_count += tx
         rx_count += rx
 
@@ -338,7 +348,7 @@ def get_host_interface_name() -> str:
     config_path = os.path.join(home_dir, 'config', 'env_config.yml')
     try:
         if os.path.exists(config_path):
-            with open(config_path, 'r') as file:
+            with open(config_path) as file:
                 config = yaml.safe_load(file)
             interface_name = config.get('interface_name')
             if interface_name:
@@ -362,7 +372,7 @@ def get_host_interface_name() -> str:
 
 def clean_buffer(dut: IdfDut) -> None:
     str_length = str(len(dut.expect(pexpect.TIMEOUT, timeout=0.1)))
-    dut.expect(r'[\s\S]{%s}' % str(str_length), timeout=10)
+    dut.expect(rf'[\s\S]{{{str_length}}}', timeout=10)
 
 
 def check_if_host_receive_ra(br: IdfDut) -> bool:
@@ -766,7 +776,7 @@ def create_host_tcp_server(mytcp: tcp_parameter) -> None:
         tcp_str = str(mytcp.tcp_bytes)
         logging.info(f'The tcp server has received message: {tcp_str}')
 
-    except socket.error:
+    except OSError:
         if mytcp.recv_flag:
             logging.error('The tcp server did not receive message!')
         else:
