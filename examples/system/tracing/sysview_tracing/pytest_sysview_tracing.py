@@ -16,6 +16,24 @@ if typing.TYPE_CHECKING:
     from conftest import OpenOCD
 
 
+STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
+
+
+def _assert_has_stop_record(segment: bytes, label: str) -> None:
+    """Assert a SysView data segment ends with a TRACE_STOP record.
+
+    A STOP record is the STOP event ID followed by a variable-length timestamp
+    delta. Walk back over the trailing continuation bytes (0x80 bit set) to find
+    the event ID, since its offset is not fixed.
+    """
+    size = len(segment)
+    assert size >= 2, f'{label}: segment too small to contain STOP record'
+    i = size - 2
+    while i >= 0 and (segment[i] & 0x80):
+        i -= 1
+    assert i >= 0 and segment[i] == STOP_EVENT_ID, f'{label}: does not end with a TRACE_STOP record'
+
+
 def _validate_trace_data(trace_log: list[str], target: str, is_uart: bool = False) -> None:
     """Validate SysView trace data in log file(s).
 
@@ -24,23 +42,14 @@ def _validate_trace_data(trace_log: list[str], target: str, is_uart: bool = Fals
         target: Target chip name (e.g., 'esp32', 'esp32s3')
         is_uart: If True, also validate STOP record at end of file
     """
-    STOP_EVENT_ID = 0x0B  # SYSVIEW_EVTID_TRACE_STOP
-
     for idx, log in enumerate(trace_log):
         with open(log, 'rb') as f:
             content = f.read()
-            search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
-            assert search_str in content, f'SysView trace data not found in {log}'
-            # The file must end with a TRACE_STOP record: the STOP event ID
-            # followed by a variable-length timestamp delta. Walk back
-            # over the trailing continuation bytes (0x80 bit set)
-            # to find the event ID, since its offset is not fixed.
-            size = len(content)
-            assert size >= 2, 'Trace file too small to contain STOP record'
-            i = size - 2
-            while i >= 0 and (content[i] & 0x80):
-                i -= 1
-            assert i >= 0 and content[i] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
+        search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
+        assert search_str in content, f'SysView trace data not found in {log}'
+        # Each core is captured to its own file; require each to end
+        # with its own TRACE_STOP record.
+        _assert_has_stop_record(content, f'core{idx}')
 
 
 def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
@@ -125,8 +134,9 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         dut.expect('example: Created task')  # dut has been restarted by gdb since the last dut.expect()
         dut_expect_task_event()
 
-        # Do a sleep while sysview samples are captured.
-        time.sleep(3)
+        # Capture sysview samples and keep reading telnet so OpenOCD's blocking log writes don't stall its
+        # main loop and leave the 'stop' below unserviced.
+        openocd.consume_output(3)
         openocd.write('esp sysview stop')
         openocd.apptrace_wait_stop()
 
