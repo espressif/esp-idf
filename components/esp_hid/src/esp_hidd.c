@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,6 +118,101 @@ esp_err_t esp_hidd_dev_event_handler_unregister(esp_hidd_dev_t *dev, esp_event_h
         return ESP_FAIL;
     }
     return dev->event_handler_unregister(dev->dev, callback, event);
+}
+
+/*
+ * Multi-Connection Management APIs
+ */
+
+esp_err_t esp_hidd_dev_set_active_conn(esp_hidd_dev_t *dev, uint16_t conn_id)
+{
+    if (dev == NULL) {
+        return ESP_FAIL;
+    }
+
+    // Currently only BLE transport supports multi-connection
+    if (dev->transport != ESP_HID_TRANSPORT_BLE) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
+    return esp_ble_hidd_dev_set_active_conn(dev->dev, conn_id);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_hidd_dev_get_connections(esp_hidd_dev_t *dev, esp_hidd_conn_info_t *conn_list,
+                                       size_t max_count, size_t *count)
+{
+    if (dev == NULL) {
+        return ESP_FAIL;
+    }
+
+    // Currently only BLE transport supports multi-connection
+    if (dev->transport != ESP_HID_TRANSPORT_BLE) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
+    return esp_ble_hidd_dev_get_connections(dev->dev, conn_list, max_count, count);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_hidd_dev_set_broadcast_mode(esp_hidd_dev_t *dev, bool enable)
+{
+    if (dev == NULL) {
+        return ESP_FAIL;
+    }
+
+    // Currently only BLE transport supports multi-connection
+    if (dev->transport != ESP_HID_TRANSPORT_BLE) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
+    return esp_ble_hidd_dev_set_broadcast_mode(dev->dev, enable);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_hidd_dev_get_active_conn(esp_hidd_dev_t *dev, uint16_t *conn_id)
+{
+    if (dev == NULL || conn_id == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Currently only BLE transport supports multi-connection */
+    if (dev->transport != ESP_HID_TRANSPORT_BLE) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
+    return esp_ble_hidd_dev_get_active_conn(dev->dev, conn_id);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_hidd_dev_is_broadcast_mode(esp_hidd_dev_t *dev, bool *enabled)
+{
+    if (dev == NULL || enabled == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Currently only BLE transport supports multi-connection */
+    if (dev->transport != ESP_HID_TRANSPORT_BLE) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+#if CONFIG_GATTS_ENABLE || CONFIG_BT_NIMBLE_ENABLED
+    return esp_ble_hidd_dev_is_broadcast_mode(dev->dev, enabled);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }
 
 /**
