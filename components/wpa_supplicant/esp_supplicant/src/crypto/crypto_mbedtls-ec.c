@@ -487,8 +487,8 @@ int crypto_ec_get_affine_coordinates(struct crypto_ec *e, struct crypto_ec_point
     int ret = -1;
     mbedtls_ecp_point *point = (mbedtls_ecp_point *)pt;
 
-    if (!mbedtls_ecp_is_zero(point)  && (mbedtls_mpi_cmp_int(&point->MBEDTLS_PRIVATE(Z), 1) == 0)) {
-        // Affine coordinates mean that z should be 1,
+    if (!mbedtls_ecp_is_zero(point)  && (mbedtls_mpi_cmp_int(&point->MBEDTLS_PRIVATE(Z), 1) != 0)) {
+        // For non-zero points, affine coordinates mean Z should be 1,
         wpa_printf(MSG_ERROR, "Z coordinate is neither 0 or 1");
         return -1;
     }
@@ -2375,8 +2375,7 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
         return -1;
     }
 
-    size_t key_size = hash_len / 2;
-    unsigned char signature[128];  // Max for P-521
+    unsigned char signature[PSA_SIGNATURE_MAX_SIZE];
     size_t signature_length = 0;
 
     psa_status_t status = psa_sign_hash(wrapper->key_id, PSA_ALG_DETERMINISTIC_ECDSA(PSA_ALG_SHA_256), hash, hash_len, signature, sizeof(signature), &signature_length);
@@ -2384,6 +2383,13 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
         wpa_printf(MSG_ERROR, "psa_sign_hash failed with %d", (int) status);
         return -1;
     }
+
+    if (signature_length == 0 || (signature_length % 2) != 0) {
+        wpa_printf(MSG_ERROR, "Invalid signature length: %zu", signature_length);
+        return -1;
+    }
+
+    size_t key_size = signature_length / 2;
 
     // Extract r component
     int ret = mbedtls_mpi_read_binary((mbedtls_mpi *)r, signature, key_size);
