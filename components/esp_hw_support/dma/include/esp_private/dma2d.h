@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,6 +153,29 @@ typedef struct {
 esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config_t *trans_desc, dma2d_trans_t *trans_placeholder);
 
 /**
+ * @brief Dequeue a pending 2D-DMA transaction from a 2D-DMA pool
+ *
+ * Remove a transaction that was previously enqueued by `dma2d_enqueue` but has not yet been picked up for
+ * processing (i.e. it is still waiting in the pool's pending queue). This is useful when the upper driver wants
+ * to cancel a transaction that has not started yet.
+ *
+ * @note This API only operates on transactions that are still pending. To end a transaction that is already
+ *       in-flight (its channels have been acquired), use `dma2d_force_end` instead.
+ *
+ * @note After this function returns ESP_OK, the upper driver can safely free the transaction placeholder, as the
+ *       `on_job_picked` callback of the transaction will no longer be called.
+ *
+ * @param[in] dma2d_pool 2D-DMA pool handle, allocated by `dma2d_acquire_pool`
+ * @param[in] trans Pointer to the 2D-DMA transaction context
+ * @return
+ *      - ESP_OK: Dequeue the pending 2D-DMA transaction successfully
+ *      - ESP_ERR_INVALID_ARG: Dequeue failed because of invalid argument
+ *      - ESP_ERR_NOT_FOUND: The transaction is not in the pending queue, because it has already been picked up
+ *                           for processing or it was never enqueued to this pool
+ */
+esp_err_t dma2d_dequeue(dma2d_pool_handle_t dma2d_pool, dma2d_trans_t *trans);
+
+/**
  * @brief Force end an in-flight 2D-DMA transaction
  *
  * This API is useful when the error was caused by the DMA consumer (such as JPEG). The error can only be detected
@@ -167,7 +190,7 @@ esp_err_t dma2d_enqueue(dma2d_pool_handle_t dma2d_pool, const dma2d_trans_config
  * @param[in] trans Pointer to the 2D-DMA transaction context
  * @param[out] need_yield Pointer to a status flag to record whether a task switch is needed if this API is being called in an ISR
  * @return
- *      - ESP_OK: Force end an in-flight transaction successfully
+ *      - ESP_OK: The transaction has been ended (either force-ended by this call, or it had already completed)
  *      - ESP_ERR_INVALID_ARG: Force end failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE: Force end failed because the transaction is not yet in-flight
  */
