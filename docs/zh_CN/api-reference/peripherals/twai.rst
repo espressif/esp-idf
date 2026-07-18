@@ -90,6 +90,7 @@ TWAI 是一种适用于汽车和工业应用的高可靠性的多主机实时串
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_loopback` 使能自收发模式，节点会收到自己发送的报文（如果配置了过滤器则还需要符合过滤规则），同时也会发送到总线。
     - :cpp:member:`twai_onchip_node_config_t::flags::enable_listen_only` 配置为监听模式，节点只接收，不发送任何显性位，包括 ACK 和错误帧。
     - :cpp:member:`twai_onchip_node_config_t::flags::no_receive_rtr` 使用过滤器时是否同时过滤掉符合 ID 规则的远程帧。
+    - :cpp:member:`twai_onchip_node_config_t::flags::enable_scheduled_tx` 使能定时发送。该功能必须配置非零的 :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz`。
 
 函数 :cpp:func:`twai_node_enable` 将启动 TWAI 控制器，此时 TWAI 控制器就连接到了总线，可以向总线发送报文。如果收到了总线上其他节点发送的报文，或者检测到了总线错误，也将产生相应事件。
 
@@ -175,6 +176,34 @@ TWAI 报文有多种类型，由报头指定。一个典型的数据帧报文主
 TWAI 驱动支持为每个成功接收的报文创建一个 64 位的时间戳，在创建节点时配置 :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz` 字段即可启用该功能，时间戳保存在接收报文的 :cpp:member:`twai_frame_t::header::timestamp` 字段中。
 
 节点时间继承自系统时间，即时间起点同为芯片上电启动时开始计时，期间不受驱动停止/启动/BUS_OFF 状态的影响。
+
+.. only:: SOC_TWAI_FD_SUPPORTED
+
+    定时发送
+    --------
+
+    {IDF_TARGET_NAME} TWAI 支持定时发送报文。创建节点时使能 :cpp:member:`twai_onchip_node_config_t::flags::enable_scheduled_tx` 并设置 :cpp:member:`twai_onchip_node_config_t::timestamp_resolution_hz`，然后在调用 :cpp:func:`twai_node_transmit` 前填写 :cpp:member:`twai_frame_t::header::trigger_time`。触发时间使用与接收报文 timestamp 相同的时间基准。
+
+    .. code:: c
+
+        twai_onchip_node_config_t node_config = {
+            .io_cfg.tx = 4,
+            .io_cfg.rx = 5,
+            .bit_timing.bitrate = 500000,
+            .timestamp_resolution_hz = 1000,  // 1 tick = 1 ms
+            .tx_queue_depth = 4,
+            .flags.enable_scheduled_tx = true,
+        };
+
+        twai_frame_t tx_msg = {
+            .header.id = 0x10,
+            .header.trigger_time = 2000,  // 当节点 timestamp 到达 2000 ticks 时发送
+        };
+        ESP_ERROR_CHECK(twai_node_transmit(node_hdl, &tx_msg, 0));
+
+    .. note::
+
+        如果报文准备发送时，其触发时间已经到达或已经过去，驱动会立即开始发送该报文。多个定时报文同时排队时，驱动按软件提交顺序处理，不会按照 :cpp:member:`twai_frame_t::header::trigger_time` 对队列重新排序。因此，后提交但触发时间更早的报文不会越过先提交的报文。
 
 停止和删除节点
 --------------
