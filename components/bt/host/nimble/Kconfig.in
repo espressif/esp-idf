@@ -908,6 +908,20 @@ menu "Services"
         help
             Enable the DIS PnP ID characteristic
 
+    config BT_NIMBLE_SVC_DIS_IEEE
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "IEEE"
+        default y
+        help
+            Enable the DIS IEEE characteristic
+
+    config BT_NIMBLE_SVC_DIS_UDI
+        depends on BT_NIMBLE_DIS_SERVICE
+        bool "UDI"
+        default y
+        help
+            Enable the DIS UDI characteristic
+
     config BT_NIMBLE_SVC_DIS_INCLUDED
         depends on BT_NIMBLE_DIS_SERVICE
         bool "DIS as an Included Service"
