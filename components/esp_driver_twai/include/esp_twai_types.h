@@ -33,6 +33,7 @@ typedef struct {
     twai_frame_header_t header;     /**< message attribute/metadata, exclude data buffer*/
     uint8_t *buffer;                /**< buffer address for tx and rx message data*/
     size_t buffer_len;              /**< buffer length of provided data buffer pointer, in bytes.*/
+    uint8_t tx_queue_priority;      /**< Frame priority, range [0, 255], a frame with higher priority value will be picked first from the queue */
 } twai_frame_t;
 
 /**

@@ -17,6 +17,7 @@ This example demonstrates TWAI (Two-Wire Automotive Interface) network communica
 - Event-driven message handling with callbacks
 - Message filtering using acceptance filters in listen-only mode
 - Single/Burst data transmission and reception
+- Local transmit queue prioritization for urgent frames
 - Real-time bus error and node status reporting
 
 ## Hardware Setup
@@ -55,6 +56,7 @@ Navigate to: `Example Configuration` → Configure the following:
 |----|------|-----------|------|-------------|
 | 0x7FF | Heartbeat | 1 Hz | 8 bytes | Timestamp data |
 | 0x100 | Data | Every 10s | 1000 bytes | Test data (125 frames) |
+| 0x080 | Emergency | During data burst | 0 bytes | High-priority frame inserted into the transmit queue |
 
 ## Building and Running
 
@@ -72,9 +74,10 @@ idf.py set-target esp32 build flash monitor
 ```
 ===================TWAI Sender Example Starting...===================
 I (xxx) twai_sender: TWAI Sender started successfully
-I (xxx) twai_sender: Sending messages on IDs: 0x100 (data), 0x7FF (heartbeat)
+I (xxx) twai_sender: Sending messages with IDs: 0x100 (data), 0x7FF (heartbeat)
 I (xxx) twai_sender: Sending heartbeat message: 1234567890
 I (xxx) twai_sender: Sending packet of 1000 bytes in 125 frames
+I (xxx) twai_sender: Inserting Emergency message: 0x080
 ```
 
 ### Listen-Only Monitor
@@ -101,6 +104,21 @@ Each program uses a buffer pool to handle incoming messages efficiently:
 
 - **Normal Mode** (Sender): Participates in bus communication, sends ACK frames
 - **Listen-Only Mode** (Monitor): Receives filtered messages without transmitting anything
+
+### Transmit Queue Priority
+
+The sender inserts an emergency frame while a burst of data frames is pending in the transmit queue:
+
+```c
+twai_frame_t emergency_frame = {
+    .header.id = TWAI_EMERGENCY_ID,
+    .tx_queue_priority = 10,
+};
+```
+
+The `tx_queue_priority` field controls the driver's local transmit queue. Frames with a higher priority value are dequeued before lower-priority frames, while frames with the same priority keep their enqueue order. This allows urgent frames, such as the emergency frame in this example, to be transmitted before queued burst data frames.
+
+The local queue priority is separate from TWAI bus arbitration. Once a frame is sent to the bus, arbitration is still determined by the frame ID, where lower IDs have higher bus priority.
 
 ### Message Filtering
 
@@ -133,6 +151,7 @@ Update the message ID definitions:
 ```c
 #define TWAI_DATA_ID       0x100
 #define TWAI_HEARTBEAT_ID  0x7FF
+#define TWAI_EMERGENCY_ID  0x080
 ```
 
 ## Use Cases

@@ -9,7 +9,7 @@ set(public_include "include")
 set(priv_req esp_driver_gpio esp_pm esp_timer)
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
-    list(APPEND srcs "esp_twai_onchip.c")
+    list(APPEND srcs "esp_twai_onchip.c" "twai_frame_queue.c")
 endif()
 
 idf_component_register(
