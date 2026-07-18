@@ -237,6 +237,92 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 
+#if SOC_I2S_HW_VERSION_2 && SOC_I2S_SUPPORTS_TDM
+/* Cover the relaxed lazy-duplex constitution conditions:
+ * Two channels constitute full-duplex when they share the same valid WS/BCK pins,
+ * the same BCLK/WS inversion settings and the same frame timing (sample rate + total frame bits),
+ * even if their slot layout (mode / slot number / slot bit width) or MCLK configuration differs. */
+TEST_CASE("I2S_lazy_duplex_constitution_boundary_test", "[i2s]")
+{
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    i2s_chan_info_t chan_info;
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    /* STD stereo 32-bit => 2 slots * 32 bits = 64 bits per frame */
+    i2s_std_config_t std_64bit = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+    /* TDM 4-slot 16-bit => 4 slots * 16 bits = 64 bits per frame (same frame width, different slot layout) */
+    i2s_tdm_config_t tdm_64bit = {
+        .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO, 0x0F),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+
+    /* Case 1: STD and TDM with the same frame width and identical BCLK/WS config can constitute duplex
+     *         across modes. The pair channel handle should be retrievable from either side. */
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_64bit));
+    TEST_ESP_OK(i2s_channel_init_tdm_mode(tx_handle, &tdm_64bit));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == rx_handle);
+    TEST_ASSERT_EQUAL(I2S_ROLE_SLAVE, chan_info.role);
+    TEST_ESP_OK(i2s_channel_get_info(rx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == tx_handle);
+    TEST_ASSERT_EQUAL(I2S_ROLE_MASTER, chan_info.role);
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+
+    /* Case 2: Different frame width (STD 16-bit => 32 bits vs TDM => 64 bits) must NOT constitute duplex. */
+    i2s_std_config_t std_32bit = std_64bit;
+    std_32bit.slot_cfg = (i2s_std_slot_config_t)I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO);
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_32bit));
+    TEST_ESP_OK(i2s_channel_init_tdm_mode(tx_handle, &tdm_64bit));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == NULL);
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+
+    /* Case 3: Same frame width and BCLK/WS pins but different MCLK/external clock configs can still
+     *         constitute duplex. */
+    i2s_std_config_t std_diff_mclk = std_64bit;
+    std_diff_mclk.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_384;
+    std_diff_mclk.clk_cfg.ext_clk_freq_hz = 24000000;
+    std_diff_mclk.gpio_cfg.mclk = I2S_GPIO_UNUSED;
+    std_diff_mclk.gpio_cfg.invert_flags.mclk_inv = true;
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_64bit));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_diff_mclk));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == rx_handle);
+    TEST_ESP_OK(i2s_channel_get_info(rx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == tx_handle);
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+
+    /* Case 4: WS/BCK left unused (-1) on both channels must NOT constitute duplex even if everything
+     *         else matches, because there is no shared clock line to combine. */
+    i2s_std_config_t std_no_clk_pin = std_64bit;
+    std_no_clk_pin.gpio_cfg.bclk = I2S_GPIO_UNUSED;
+    std_no_clk_pin.gpio_cfg.ws = I2S_GPIO_UNUSED;
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_no_clk_pin));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_no_clk_pin));
+    TEST_ESP_OK(i2s_channel_get_info(tx_handle, &chan_info));
+    TEST_ASSERT(chan_info.pair_chan == NULL);
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+}
+#endif // SOC_I2S_HW_VERSION_2 && SOC_I2S_SUPPORTS_TDM
+
 static volatile bool task_run_flag;
 static volatile bool read_task_success = true;
 static volatile bool write_task_success = true;
