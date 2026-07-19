@@ -237,6 +237,28 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
     const unsigned secure_boot_num_blocks = SECURE_BOOT_NUM_BLOCKS;
 #endif
 
+#if CONFIG_SECURE_BOOT_V2_MIN_SIGNATURES > 1
+_Static_assert(SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 3 && SECURE_BOOT_NUM_BLOCKS == 3,
+               "We rely on 3 keys in the trusted digests");
+    size_t validated_keys = 0;
+
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+    if (memcmp(&sig_block->block[0].key, &sig_block->block[1].key, sizeof(sig_block->block[0].key)) == 0 ||
+        memcmp(&sig_block->block[1].key, &sig_block->block[2].key, sizeof(sig_block->block[0].key)) == 0 ||
+        memcmp(&sig_block->block[2].key, &sig_block->block[0].key, sizeof(sig_block->block[0].key)) == 0) {
+        ESP_LOGE(TAG, "Signature blocks have duplicate keys");
+        return ESP_ERR_IMAGE_INVALID;
+    }
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+    if (memcmp(&sig_block->block[0].ecdsa.key, &sig_block->block[1].ecdsa.key, sizeof(sig_block->block[0].ecdsa.key)) == 0 ||
+        memcmp(&sig_block->block[1].ecdsa.key, &sig_block->block[2].ecdsa.key, sizeof(sig_block->block[0].ecdsa.key)) == 0 ||
+        memcmp(&sig_block->block[2].ecdsa.key, &sig_block->block[0].ecdsa.key, sizeof(sig_block->block[0].ecdsa.key)) == 0) {
+        ESP_LOGE(TAG, "Signature blocks have duplicate keys");
+        return ESP_ERR_IMAGE_INVALID;
+    }
+#endif
+#endif
+
     for (unsigned app_blk_idx = 0; app_blk_idx < secure_boot_num_blocks; app_blk_idx++) {
         uint8_t app_blk_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = { 0 };
         const ets_secure_boot_sig_block_t *app_blk = &sig_block->block[app_blk_idx];
@@ -279,10 +301,23 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
         ret = verify_ecdsa_signature_block(sig_block, image_digest, trusted_block);
 #endif
         if (ret == 0) {
+#if CONFIG_SECURE_BOOT_V2_MIN_SIGNATURES > 1
+            validated_keys++;
+            if (validated_keys >= CONFIG_SECURE_BOOT_V2_MIN_SIGNATURES) {
+                break;
+            }
+#else
             break;
+#endif
+        } else {
+            ESP_LOGE(TAG, "Signature block #%d verification failed.", app_blk_idx);
         }
     }
+#if CONFIG_SECURE_BOOT_V2_MIN_SIGNATURES > 1
+    return (validated_keys < CONFIG_SECURE_BOOT_V2_MIN_SIGNATURES || any_trusted_key == false) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
+#else
     return (ret != 0 || any_trusted_key == false) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
+#endif
 }
 
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
