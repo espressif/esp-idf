@@ -93,7 +93,7 @@ Detailed explanation of the backward compatibility mechanism:
 
 If the user has set any value for the old config option (e.g. old config name is used in ``sdkconfig`` or ``sdkconfig.defaults``) without ``sdkconfig.rename`` file provided, this value would be **silently ignored**. This behavior is the default of the Kconfig system and is not a bug. In the original project (configuration of the linux kernel) this behavior was desired and is still desired in many projects.
 
-This behavior is suppressed in ESP-IDF by the the configuration tool (invoked by ``idf.py menuconfig``). This tool generates compatibility statements for all the renamed options in the ``sdkconfig`` file. In more detail, the following approach is used to prevent the above mentioned situation:
+This behavior is suppressed in ESP-IDF by the configuration tool (invoked by ``idf.py menuconfig``). This tool generates compatibility statements for all the renamed options in the ``sdkconfig`` file. In more detail, the following approach is used to prevent the above mentioned situation:
 
 1. Configuration tool searches the whole ESP-IDF folder for ``sdkconfig.rename`` files. If the project target (``<chip>``) matches the last suffix of any ``sdkconfig.rename.<chip>`` file, the file will be used in the next step as well.
 

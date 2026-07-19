@@ -400,7 +400,7 @@ How to Add a New Field
 
 The number of bits not included in square brackets are free (some bits are reserved by Espressif). All fields are checked for overlapping bits.
 
-To add child fields to an existing field, :ref:`structured-efuse-fields` can be used. The following example demonstrates adding of the the fields ``SERIAL_NUMBER``, ``MODEL_NUMBER`` and ``HARDWARE_REV`` to an existing ``USER_DATA`` field by using the ``.`` operator:
+To add child fields to an existing field, :ref:`structured-efuse-fields` can be used. The following example demonstrates adding of the fields ``SERIAL_NUMBER``, ``MODEL_NUMBER`` and ``HARDWARE_REV`` to an existing ``USER_DATA`` field by using the ``.`` operator:
 
 .. code-block:: none
 
