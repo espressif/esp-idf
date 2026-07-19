@@ -172,6 +172,7 @@ const char *c_inband_ring_state_str[] = {
 };
 
 extern esp_bd_addr_t peer_addr;
+extern bool hf_client_connected;
 // If you want to connect a specific device, add it's address here
 // esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
 
@@ -302,6 +303,10 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
             memcpy(peer_addr,param->conn_stat.remote_bda,ESP_BD_ADDR_LEN);
             if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {
                 esp_pbac_connect(peer_addr);
+            } else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED) {
+                hf_client_connected = true;
+            } else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED) {
+                hf_client_connected = false;
             }
             break;
         }
