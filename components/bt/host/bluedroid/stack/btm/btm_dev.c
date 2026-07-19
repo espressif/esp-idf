@@ -303,7 +303,8 @@ BOOLEAN btm_find_sec_dev_in_list (void *p_node_data, void *context)
 	       }
 #if BLE_INCLUDED == TRUE
                // If a LE random address is looking for device record
-               if (!memcmp(p_sec_dev->ble.pseudo_addr, p_context->context.p_bd_addr, BD_ADDR_LEN)) {
+               if (memcmp(p_sec_dev->ble.pseudo_addr, bd_addr_null, BD_ADDR_LEN) != 0 &&
+                   !memcmp(p_sec_dev->ble.pseudo_addr, p_context->context.p_bd_addr, BD_ADDR_LEN)) {
                    ret = FALSE;
                }
 

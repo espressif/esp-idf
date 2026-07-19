@@ -663,7 +663,8 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
                 memcmp(p_dev_rec->ble.pseudo_addr, remote_bda, BD_ADDR_LEN) == 0) {
             *p_dev_type = p_dev_rec->device_type;
             *p_addr_type = p_dev_rec->ble.ble_addr_type;
-        } else if (memcmp(p_dev_rec->ble.pseudo_addr, remote_bda, BD_ADDR_LEN) == 0) {
+        } else if (memcmp(p_dev_rec->ble.pseudo_addr, bd_addr_null, BD_ADDR_LEN) != 0 &&
+                memcmp(p_dev_rec->ble.pseudo_addr, remote_bda, BD_ADDR_LEN) == 0) {
             *p_dev_type = BT_DEVICE_TYPE_BLE;
             *p_addr_type = p_dev_rec->ble.ble_addr_type;
         } else { /* matching static address only */
