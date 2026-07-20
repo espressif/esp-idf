@@ -3,6 +3,7 @@
 components/esp_driver_i2s/test_apps/i2s:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
+    - if: CONFIG_NAME == "flash_enc" and SOC_FLASH_ENC_SUPPORTED != 1
   depends_components:
     - esp_driver_i2s
     - esp_driver_pcnt
