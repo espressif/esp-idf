@@ -185,18 +185,6 @@ if(LOG_COMPRESSED_MODULE)
         endforeach()
         string(REPLACE "|" ";" LOG_COMPRESSED_MODULE_CODE_PATH "${MODULE_CODE_PATH}")
 
-        # Some header files of NIMBLE are not added to include_dirs,
-        # but rely on relative path searches. This will cause the header
-        # files to be found due to the change in the source code location
-        # after using the log compression scheme.
-        # Therefore, these paths are added to include_dirs here to avoid
-        # unfinished compilation errors.
-        if(CONFIG_BT_NIMBLE_ENABLED)
-            list(APPEND include_dirs
-                "host/nimble/nimble/nimble/host/src"
-                "host/nimble/nimble/nimble/host/store/config/src")
-        endif()
-
         if(BLE_COMPRESSED_LIB_LOG_BUILD)
             execute_process(COMMAND ${BLE_PYTHON_EXECUTABLE} ${PYTHON_SCRIPT}
                                 compress
