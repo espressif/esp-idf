@@ -7,9 +7,9 @@
 * The peripheral device is normally a GATT Server that exposes Services and Characteristics. The peripheral replies with a *Aux Connect Pairing Response* followed by authentication and exchange of keys. If the bonding process is also executed, the Long Term Keys are stored for subsequent connections. Finally an encrypted channel is established which can support protection against Man-In-The-Middle (MITM) attacks depending on the security configuration. 
 * The code is implemented using an Application Profile that upon registration, allows to set the local privacy configuration as events are triggered during the life time of the program. 
 
-This document only includes a description of the security aspects of the BLE5.0 Security GATT Client implementation, for the more info about extended scan , periodic scan please refer to [Periodic_Sync_Example Walkthrough] (../../periodic_sync/tutorial/Periodic_Sync_Example_Walkthrough.md).
+This document only includes a description of the security aspects of the BLE5.0 Security GATT Client implementation. For more information about extended scan and periodic scan, please refer to [Periodic Sync Example Walkthrough](../../periodic_sync/tutorial/Periodic_Sync_Example_Walkthrough.md).
 
-##include
+## Includes
 
 ```c
 #include <stdint.h>
@@ -27,7 +27,7 @@ This document only includes a description of the security aspects of the BLE5.0 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 ```
-These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gattc_api.h"`, which expose the BLE APIs required to implement this example.
 
 * `bt.h`: configures the BT controller and VHCI from the host side.
 * `esp_bt_main.h`: initializes and enables the Bluedroid stack.
