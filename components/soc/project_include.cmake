@@ -14,7 +14,8 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
            CONFIG_IDF_TARGET_ESP32H2 OR
            CONFIG_IDF_TARGET_ESP32H21)
         set(_march "rv32imac_zicsr_zifencei_zaamo_zalrsc")
-    elseif(CONFIG_IDF_TARGET_ESP32H4)
+    elseif(CONFIG_IDF_TARGET_ESP32H4 OR
+           (CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3))
         set(_march "rv32imafcb_zicsr_zifencei_zaamo_zalrsc")
     elseif(CONFIG_IDF_TARGET_ESP32P4)
         set(_march "rv32imafc_zicsr_zifencei_zaamo_zalrsc")
@@ -37,10 +38,6 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         idf_toolchain_remove_flags(COMPILE_OPTIONS "-march="
                                                    "-mno-cm-push-reverse"
                                                    "-mno-cm-popret")
-
-        if(CONFIG_SOC_CPU_HAS_ZB_EXTENSIONS)
-            set(_march "${_march}_zba_zbb_zbs")
-        endif()
 
         if((CONFIG_SOC_CPU_HAS_ZC_EXTENSIONS AND NOT CONFIG_SOC_CPU_ZCMP_WORKAROUND) OR
            CONFIG_COMPILER_ENABLE_RISCV_ZCMP)
