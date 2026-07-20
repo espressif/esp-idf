@@ -175,7 +175,6 @@ examples/peripherals/isp/dma_input:
   disable:
     - if: SOC_ISP_SUPPORTED != 1
   depends_components:
-    - esp_driver_dma
     - esp_driver_isp
     - soc
 
@@ -523,7 +522,6 @@ examples/peripherals/uart/uart_dma_ota:
     - if: SOC_UHCI_SUPPORTED != 1
   depends_components:
     - esp_driver_uart
-    - esp_driver_dma
     - app_update
     - esp_ringbuf
     - soc
