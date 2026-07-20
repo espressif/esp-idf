@@ -70,6 +70,7 @@ extern "C" {
 #define REGDMA_H264_LINK(_pri)              ((0x2A << 8) | _pri)
 #define REGDMA_PPA_LINK(_pri)               ((0x2B << 8) | _pri)
 #define REGDMA_DMA2D_LINK(_pri)             ((0x2C << 8) | _pri)
+#define REGDMA_ASRC_LINK(_pri)              ((0x2D << 8) | _pri)
 
 #define REGDMA_POWER_LINK(_pri)             ((0xFD << 8) | _pri)
 #define REGDMA_CLOCK_ICG_LINK(_pri)         ((0xFE << 8) | _pri)
@@ -108,6 +109,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_H264                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_PPA                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_DMA2D                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_ASRC                    REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,
