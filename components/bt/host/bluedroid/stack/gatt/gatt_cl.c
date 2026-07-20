@@ -571,6 +571,11 @@ void gatt_process_error_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
     STREAM_TO_UINT16(handle, p);
     STREAM_TO_UINT8(reason, p);
 
+    /* 0x00 is not a valid ATT error code; treat as unknown error. */
+    if (reason == GATT_SUCCESS) {
+        reason = GATT_UNKNOWN_ERROR;
+    }
+
     if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY) {
         gatt_proc_disc_error_rsp(p_tcb, p_clcb, opcode, handle, reason);
     } else {
@@ -579,9 +584,6 @@ void gatt_process_error_rsp(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op_code,
                 (opcode == GATT_REQ_PREPARE_WRITE) &&
                 (p_attr) &&
                 (handle == p_attr->handle)  ) {
-            if (reason == GATT_SUCCESS){
-               reason = GATT_ERROR;
-            }
             p_clcb->status = reason;
             gatt_send_queue_write_cancel(p_tcb, p_clcb, GATT_PREP_WRITE_CANCEL);
         } else if ((p_clcb->operation == GATTC_OPTYPE_READ) &&
@@ -891,7 +893,11 @@ void gatt_process_read_by_type_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 
             /* value_len is the length of current record's value; use it to avoid overread when multiple records present */
             p_clcb->counter = value_len;
             p_clcb->s_handle = handle;
-            if ( p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
+            UINT16 max_rbtype_val_len = (p_clcb->p_tcb->payload_size - 4);
+            if (max_rbtype_val_len > GATT_MAX_READ_BY_TYPE_VALUE_LEN) {
+                max_rbtype_val_len = GATT_MAX_READ_BY_TYPE_VALUE_LEN;
+            }
+            if (p_clcb->counter == max_rbtype_val_len) {
                 p_clcb->op_subtype = GATT_READ_BY_HANDLE;
                 if (!p_clcb->p_attr_buf) {
                     p_clcb->p_attr_buf = (UINT8 *)osi_malloc(GATT_MAX_ATTR_LEN);

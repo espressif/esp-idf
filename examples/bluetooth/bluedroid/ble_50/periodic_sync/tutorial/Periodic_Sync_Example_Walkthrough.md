@@ -1,12 +1,12 @@
-#Periodic Sync Example Walkthrough
+# Periodic Sync Example Walkthrough
 
 ## Introduction
-In this tutorial, the Periodic sync example code for the ESP32C3 is reviewed. The code implement Bluetooth Low Energy (BLE5.0) periodic sync , which scans for nearby peripheral which can support legacy, extended and periodic advertisement. Periodic Sync allow the advertiser to sync with scanner so that scanner and advertiser wake up at same time.
+In this tutorial, the Periodic sync example code for the ESP32C3 is reviewed. The code implement Bluetooth Low Energy (BLE5.0) periodic sync, which scans for nearby peripheral which can support legacy, extended and periodic advertisement. Periodic Sync allow the advertiser to sync with scanner so that scanner and advertiser wake up at same time.
 
 * ADV_EXT_IND is over primary advertising channels
 * AUX_ADV_IND and AUX_SYNC_IND are over secondary advertising channels
 
-Little info about the EXT_ADV_IND , AUX_ADV_IND and AUX_SYNC_IND with scanner support of periodic sync.
+Little info about the EXT_ADV_IND, AUX_ADV_IND and AUX_SYNC_IND with scanner support of periodic sync.
 
 ADV_EXT_IND is over primary advertising channels and is used to indicate that an advertisement will be sent on a secondary advertisement channel. The information in ADV_EXT_IND will inform the scanner:
 
@@ -35,7 +35,7 @@ With this information, the scanner can synchronize with the advertiser and they 
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h
+#include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -49,7 +49,7 @@ With this information, the scanner can synchronize with the advertiser and they 
 #include "freertos/semphr.h"
 ```
 
-These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gattc_api.h"`, which expose the BLE APIs required to implement this example.
 
 * `esp_bt.h`: configures the BT controller and VHCI from the host side.
 * `esp_bt_main.h`: initializes and enables the Bluedroid stack.
