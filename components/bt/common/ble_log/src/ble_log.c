@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,22 @@
 #include "ble_log_lbm.h"
 #include "ble_log_prph.h"
 #include "ble_log_util.h"
+#include "esp_log.h"
+#include "esp_system.h"
 #if CONFIG_BLE_LOG_TS_ENABLED
 #include "ble_log_ts.h"
 #endif /* CONFIG_BLE_LOG_TS_ENABLED */
 
 /* VARIABLE */
+#define TAG "ble_log"
+
 BLE_LOG_STATIC bool ble_log_inited = false;
+BLE_LOG_STATIC bool shutdown_handler_registered = false;
+
+BLE_LOG_STATIC void ble_log_shutdown_handler(void)
+{
+    ble_log_flush();
+}
 
 /* INTERFACE */
 bool ble_log_init(void)
@@ -53,6 +63,12 @@ bool ble_log_init(void)
     /* Initialization done */
     ble_log_inited = true;
     ble_log_enable(true);
+    esp_err_t ret = esp_register_shutdown_handler(ble_log_shutdown_handler);
+    if (ret == ESP_OK) {
+        shutdown_handler_registered = true;
+    } else {
+        ESP_LOGW(TAG, "Register shutdown handler failed, ret = 0x%x", ret);
+    }
 
     /* Write initialization done log */
     ble_log_info_t ble_log_info = {
@@ -69,6 +85,14 @@ exit:
 
 void ble_log_deinit(void)
 {
+    if (shutdown_handler_registered) {
+        esp_err_t ret = esp_unregister_shutdown_handler(ble_log_shutdown_handler);
+        if (ret == ESP_OK) {
+            shutdown_handler_registered = false;
+        } else {
+            ESP_LOGW(TAG, "Unregister shutdown handler failed, ret = 0x%x", ret);
+        }
+    }
     ble_log_enable(false);
     ble_log_inited = false;
 

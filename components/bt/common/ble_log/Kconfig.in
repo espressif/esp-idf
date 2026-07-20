@@ -7,6 +7,14 @@ config BLE_LOG_ENABLED
         Enable BT Log Async Output
 
 if BLE_LOG_ENABLED
+    config BLE_LOG_LBM_AUTO_FLUSH
+        bool "Enable automatic BLE Log LBM buffer flush"
+        default n
+        help
+            Periodically flush partially-filled BLE Log LBM transport buffers
+            that remain pending, reducing latency for low-volume or
+            intermittent logging.
+
     config BLE_LOG_TASK_STACK_SIZE
         int "Stack size for BLE Log Task"
         default 1024 if IDF_TARGET_ARCH_RISCV

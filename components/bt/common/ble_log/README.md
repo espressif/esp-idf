@@ -80,7 +80,7 @@ void app_main() {
     uint8_t data[] = {0x01, 0x02, 0x03, 0x04};
     ble_log_write_hex(BLE_LOG_SRC_CUSTOM, data, sizeof(data));
     
-    // Force flush buffers
+    // End session and flush buffers
     ble_log_flush();
     
     // Cleanup resources
@@ -178,9 +178,15 @@ Write hexadecimal log data.
 
 #### `void ble_log_flush(void)`
 
-Force flush all buffers and send pending logs immediately.
+End the current logging session and flush pending logs immediately.
 
-**Note**: This operation is blocking and will pause module operation until all buffers are cleared.
+This API temporarily suspends ordinary log writes, waits for in-progress
+writers to exit, emits a final statistics internal frame, flushes pending
+transport buffers, resets statistics, and then restores the enable state that
+was in effect before the call.
+
+**Note**: This operation is blocking. If BLE Log was enabled before the call,
+it remains enabled after the flush completes.
 
 #### `void ble_log_dump_to_console(void)`
 
@@ -272,7 +278,7 @@ void example_basic_logging() {
     uint8_t host_data[] = {0x02, 0x00, 0x20, 0x0B, 0x00, 0x07, 0x00, 0x04, 0x00, 0x10, 0x01, 0x00, 0xFF, 0xFF, 0x00, 0x28};
     ble_log_write_hex(BLE_LOG_SRC_HOST, host_data, sizeof(host_data));
     
-    // Force send
+    // End session and flush buffers
     ble_log_flush();
     
     // Cleanup
@@ -334,6 +340,7 @@ void example_performance_test() {
         ble_log_write_hex(BLE_LOG_SRC_CUSTOM, test_data, sizeof(test_data));
     }
     
+    // End session and flush buffers
     ble_log_flush();
     uint32_t end_time = esp_timer_get_time();
     
