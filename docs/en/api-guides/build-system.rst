@@ -1033,6 +1033,10 @@ To embed a file into a project, rather than a component, you can call the functi
 
 Place this line after the ``project()`` line in your project CMakeLists.txt file. Replace ``myproject.elf`` with your project name. The final argument can be ``TEXT`` to embed a null-terminated string, or ``BINARY`` to embed the content as-is.
 
+Use the optional ``ALIGN`` argument to align the embedded data's start symbol to a positive power of two. For example, to align binary data to 16 bytes::
+
+  target_add_binary_data(myproject.elf "main/data.bin" BINARY ALIGN 16)
+
 For an example of using this technique, see the "main" component of the file_serving example :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` - two files are loaded at build time and linked into the firmware.
 
 .. highlight:: cmake
