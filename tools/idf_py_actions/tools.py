@@ -667,18 +667,13 @@ def run_target(
 
     generator_cmd = list(GENERATORS[args.generator]['command'])
 
-    if args.generator == 'Ninja':
-        parallel_level = os.environ.get('IDF_PY_BUILD_JOBS')
-        if parallel_level:
-            try:
-                jobs = int(parallel_level)
-            except ValueError as e:
-                raise FatalError('Environment variable IDF_PY_BUILD_JOBS must be a positive integer') from e
+    # Parallel jobs from -j/--jobs (or IDF_PY_BUILD_JOBS), falling back to the generator's default.
+    jobs = getattr(args, 'jobs', None)
+    if jobs is None:
+        jobs = GENERATORS[args.generator].get('default_jobs')
 
-            if jobs <= 0:
-                raise FatalError('Environment variable IDF_PY_BUILD_JOBS must be a positive integer')
-
-            generator_cmd += ['-j', str(jobs)]
+    if jobs is not None:
+        generator_cmd += ['-j', str(jobs)]
 
     if args.verbose:
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]

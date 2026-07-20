@@ -77,7 +77,13 @@ idf.py
 
 没有必要多次运行 ``cmake``。第一次构建后，往后每次只需运行 ``ninja`` 即可。如果项目需要重新配置，``ninja`` 会自动重新调用 ``cmake``。
 
-使用 Ninja 生成器配合 ``idf.py`` 时，可以通过设置环境变量 ``IDF_PY_BUILD_JOBS`` 来限制并行构建任务数。例如：
+使用 ``idf.py`` 时，可以通过 ``-j``/``--jobs`` 选项来控制传递给底层构建工具（Ninja 或 Make）的并行构建任务数。例如：
+
+.. code-block:: bash
+
+    idf.py -j 6 build
+
+也可以通过设置环境变量 ``IDF_PY_BUILD_JOBS`` 来指定该值，当未提供 ``-j``/``--jobs`` 时，该环境变量将作为默认值使用：
 
 .. code-block:: bash
 
