@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,8 @@ extern "C" {
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_GET_UNIT(hw)     (0)
 
-#define ANALOG_CMPR_LL_NEG_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 0))
-#define ANALOG_CMPR_LL_POS_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 1))
+#define ANALOG_CMPR_LL_POS_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 0))
+#define ANALOG_CMPR_LL_NEG_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 1))
 #define ANALOG_CMPR_LL_ANY_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 2))
 
 #define ANALOG_CMPR_LL_ALL_INTR_MASK(unit)   (ANALOG_CMPR_LL_NEG_CROSS_MASK(unit) | ANALOG_CMPR_LL_POS_CROSS_MASK(unit) | ANALOG_CMPR_LL_ANY_CROSS_MASK(unit))
