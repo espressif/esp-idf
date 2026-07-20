@@ -103,9 +103,10 @@ endfunction()
 
 # target_add_binary_data adds binary data into the built target,
 # by converting it to a generated source file which is then compiled
-# to a binary object as part of the build
+# to a binary object as part of the build. ALIGN optionally sets the
+# alignment of the embedded data's start symbol.
 function(target_add_binary_data target embed_file embed_type)
-    cmake_parse_arguments(_ "" "RENAME_TO" "DEPENDS" ${ARGN})
+    cmake_parse_arguments(_ "" "RENAME_TO;ALIGN" "DEPENDS" ${ARGN})
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(idf_path IDF_PATH)
 
@@ -119,11 +120,24 @@ function(target_add_binary_data target embed_file embed_type)
         set(rename_to_arg -D "VARIABLE_BASENAME=${__RENAME_TO}")
     endif()
 
+    set(align_arg)
+    if(DEFINED __ALIGN)
+        if(NOT __ALIGN MATCHES "^[1-9][0-9]*$")
+            message(FATAL_ERROR "ALIGN must be a positive integer")
+        endif()
+        math(EXPR alignment_mask "${__ALIGN} & (${__ALIGN} - 1)")
+        if(NOT alignment_mask EQUAL 0)
+            message(FATAL_ERROR "ALIGN must be a power of two")
+        endif()
+        set(align_arg -D "DATA_ALIGNMENT=${__ALIGN}")
+    endif()
+
     add_custom_command(OUTPUT "${embed_srcfile}"
         COMMAND "${CMAKE_COMMAND}"
         -D "DATA_FILE=${embed_file}"
         -D "SOURCE_FILE=${embed_srcfile}"
         ${rename_to_arg}
+        ${align_arg}
         -D "FILE_TYPE=${embed_type}"
         -P "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake"
         MAIN_DEPENDENCY "${embed_file}"
