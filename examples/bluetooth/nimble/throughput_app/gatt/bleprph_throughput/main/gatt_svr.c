@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,8 @@
 #define  THRPT_CHR_NOTIFY                    0x000a
 #define  THRPT_LONG_CHR_READ_WRITE           0x000b
 
-#define READ_THROUGHPUT_PAYLOAD            510 /* MTU(512) - ATT read rsp header(1) - 1 (avoid Read Blob) */
-#define WRITE_THROUGHPUT_PAYLOAD           509 /* MTU(512) - ATT write cmd header(3) */
+#define READ_THROUGHPUT_PAYLOAD            497 /* 502 bytes ACL -> 2x 251 LL packets exactly (497 + 1 Read Rsp + 4 L2CAP) */
+#define WRITE_THROUGHPUT_PAYLOAD           495 /* 502 bytes ACL -> 2x 251 LL packets exactly (495 + 3 Write Cmd + 4 L2CAP) */
 
 static const char *tag = "bleprph_throughput";
 
@@ -142,6 +142,32 @@ gatt_svr_read_write_long_test(uint16_t conn_handle, uint16_t attr_handle,
 
     case THRPT_CHR_READ_WRITE:
         if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
+            uint16_t om_len = OS_MBUF_PKTLEN(ctxt->om);
+            /* If the central sends exactly 1 byte, it is a PHY control command */
+            if (om_len == 1) {
+                uint8_t requested_phy;
+                os_mbuf_copydata(ctxt->om, 0, 1, &requested_phy);
+                rc = 0;
+                if (requested_phy == 0) { /* 0 = PHY_1M */
+                    rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_1M_PREF_MASK, BLE_HCI_LE_PHY_1M_PREF_MASK, 0);
+                    ESP_LOGI(tag, "Central requested 1M PHY via GATT command");
+                } else if (requested_phy == 1) { /* 1 = PHY_2M */
+                    rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_2M_PREF_MASK, BLE_HCI_LE_PHY_2M_PREF_MASK, 0);
+                    ESP_LOGI(tag, "Central requested 2M PHY via GATT command");
+                } else if (requested_phy == 2) { /* 2 = PHY_CODED_S2 */
+                    rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x01);
+                    ESP_LOGI(tag, "Central requested S2 PHY via GATT command");
+                } else if (requested_phy == 3) { /* 3 = PHY_CODED_S8 */
+                    rc = ble_gap_set_prefered_le_phy(conn_handle, BLE_HCI_LE_PHY_CODED_PREF_MASK, BLE_HCI_LE_PHY_CODED_PREF_MASK, 0x02);
+                    ESP_LOGI(tag, "Central requested S8 PHY via GATT command");
+                }
+
+                if (rc != 0) {
+                    ESP_LOGE(tag, "Failed to set preferred LE PHY; rc=%d", rc);
+                }
+                return 0;
+            }
+
             rc = gatt_svr_chr_write(conn_handle, attr_handle,
                                     ctxt->om, 0,
                                     sizeof gatt_svr_thrpt_static_short_val,
