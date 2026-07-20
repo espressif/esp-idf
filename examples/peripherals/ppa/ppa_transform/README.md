@@ -59,7 +59,7 @@ It also compares the generated image with `golden_result.ppm` by hashing the dec
 If you want to inspect the processed image on your computer, first build the example for your target, then run pytest from the ESP-IDF root directory with the matching target and serial port:
 
 ```bash
-pytest -k test_ppa_transform --target esp32p4 --port PORT
+pytest pytest_ppa_transform.py --target esp32p4 --port PORT
 ```
 
 Replace `esp32p4` with another supported target such as `esp32s31`, and set `PORT` to your board's serial device.

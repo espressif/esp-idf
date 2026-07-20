@@ -65,7 +65,7 @@ It also compares the generated images with `golden_replace_keyed_text_with_glow.
 If you want to inspect the processed image on your computer, first build the example for your target, then run pytest from the ESP-IDF root directory with the matching target and serial port:
 
 ```bash
-pytest -k test_ppa_color_key --target esp32p4 --port PORT
+pytest pytest_ppa_color_key.py --target esp32p4 --port PORT
 ```
 
 Replace `esp32p4` with another supported target such as `esp32s31`, and set `PORT` to your board's serial device.

@@ -17,14 +17,15 @@ extern "C" {
 /**
  * @brief Process one ISP DMA frame: feed the input buffer through the ISP and wait for completion
  *
- * @note Input buffer content should be ready before calling this function. If the buffers are in
- *       cacheable memory, the caller should synchronize them around DMA access. Buffer sizes are
- *       derived from the ISP processor resolution and pixel formats. Both buffers must be 8-byte
- *       aligned. This function blocks until both input and output DMA channels finish.
+ * @note The driver synchronizes cacheable buffers before and after DMA access. Input buffers use
+ *       an unaligned cache write-back, while cacheable output buffers and their derived frame
+ *       sizes must be aligned to the cache line size.
+ * @note This function blocks until both input and output DMA channels finish. On timeout,
+ *       the output buffer may still be owned by DMA and must not be accessed.
  *
  * @param[in] proc           Processor handle
- * @param[in] output_buffer  Destination buffer for ISP output (8-byte aligned)
- * @param[in] input_buffer   Source input buffer for RAW frame data (8-byte aligned)
+ * @param[in] output_buffer  Destination buffer for ISP output
+ * @param[in] input_buffer   Source input buffer for RAW frame data
  * @param[in] timeout_ms     Timeout in milliseconds for waiting transfer completion
  *
  * @return

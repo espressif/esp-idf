@@ -248,7 +248,7 @@ ISP DMA 输入
 
 除来自摄像头控制器的数据流外，ISP 还可以通过 DW-GDMA 从系统存储中读取图像帧作为输入。使用 DMA 输入时，应在 :cpp:type:`esp_isp_processor_cfg_t` 中将 :cpp:member:`esp_isp_processor_cfg_t::input_data_source` 配置为 :cpp:enumerator:`ISP_INPUT_DATA_SOURCE_DWGDMA`，并根据输入图像格式设置输入、输出格式及分辨率。
 
-DMA 输入适用于将软件生成的数据、离线保存的 RAW 图像或其他内存中的测试图像送入 ISP 进行处理。它可用于无摄像头传感器参与时验证 ISP 流水线、复现特定输入图像的问题。调用 :cpp:func:`esp_isp_dma_process_frame` 可以将一帧输入缓冲区送入 ISP，并将处理后的图像写入输出缓冲区。输入和输出缓冲区需要满足 DMA 访问要求；若使用带 cache 的内存，请在 DMA 传输前后执行必要的 cache 同步。
+DMA 输入适用于将软件生成的数据、离线保存的 RAW 图像或其他内存中的测试图像送入 ISP 进行处理。它可用于无摄像头传感器参与时验证 ISP 流水线、复现特定输入图像的问题。调用 :cpp:func:`esp_isp_dma_process_frame` 可以将一帧输入缓冲区送入 ISP，并将处理后的图像写入输出缓冲区。输入和输出缓冲区需要满足 DMA 访问要求。驱动会自动同步带 cache 的缓冲区：输入使用允许未对齐的 cache writeback；带 cache 的输出地址及其派生帧大小必须按 cache line 大小对齐。
 
 ISP AF 控制器
 ~~~~~~~~~~~~~
