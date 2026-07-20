@@ -94,8 +94,6 @@ def _assert_strong_pm_hooks(dut: Dut) -> None:
     indirect=True,
 )
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='bringup on this module is not done')
-@pytest.mark.temp_skip_ci(targets=['esp32h21'], reason='cannot pass')  # TODO: IDF-16196
 def test_esp_pm(dut: Dut) -> None:
     _assert_strong_pm_hooks(dut)
     dut.run_all_single_board_cases()

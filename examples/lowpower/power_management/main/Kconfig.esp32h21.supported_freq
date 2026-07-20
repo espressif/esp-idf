@@ -9,6 +9,8 @@ choice EXAMPLE_PM_MAX_FREQ_MHZ
         bool "32"
     config EXAMPLE_PM_MAX_FREQ_MHZ_48
         bool "48"
+    config EXAMPLE_PM_MAX_FREQ_MHZ_64
+        bool "64"
     config EXAMPLE_PM_MAX_FREQ_MHZ_96
         bool "96"
 endchoice
@@ -19,6 +21,7 @@ config EXAMPLE_PM_MAX_FREQ
     default 16 if EXAMPLE_PM_MAX_FREQ_MHZ_16
     default 32 if EXAMPLE_PM_MAX_FREQ_MHZ_32
     default 48 if EXAMPLE_PM_MAX_FREQ_MHZ_48
+    default 64 if EXAMPLE_PM_MAX_FREQ_MHZ_64
     default 96 if EXAMPLE_PM_MAX_FREQ_MHZ_96
 
 choice EXAMPLE_PM_MIN_FREQ_MHZ
@@ -32,6 +35,8 @@ choice EXAMPLE_PM_MIN_FREQ_MHZ
         bool "32"
     config EXAMPLE_PM_MIN_FREQ_MHZ_48
         bool "48"
+    config EXAMPLE_PM_MIN_FREQ_MHZ_64
+        bool "64"
     config EXAMPLE_PM_MIN_FREQ_MHZ_96
         bool "96"
 endchoice
@@ -42,4 +47,5 @@ config EXAMPLE_PM_MIN_FREQ
     default 16 if EXAMPLE_PM_MIN_FREQ_MHZ_16
     default 32 if EXAMPLE_PM_MIN_FREQ_MHZ_32
     default 48 if EXAMPLE_PM_MIN_FREQ_MHZ_48
+    default 64 if EXAMPLE_PM_MIN_FREQ_MHZ_64
     default 96 if EXAMPLE_PM_MIN_FREQ_MHZ_96
