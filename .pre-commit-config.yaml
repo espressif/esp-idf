@@ -168,14 +168,6 @@ repos:
         language: python
         always_run: true
         require_serial: true
-      - id: gitlab-yaml-linter
-        name: Check gitlab yaml files
-        entry: tools/ci/gitlab_yaml_linter.py
-        language: python
-        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml|\.gitmodules'
-        pass_filenames: false
-        additional_dependencies:
-          - PyYAML == 5.3.1
       - id: check-wifi-remote-api
         name: Check wifi-remote API generation
         description: Runs generate_and_check.py and fails if any generated files differ from the index.

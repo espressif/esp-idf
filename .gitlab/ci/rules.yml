@@ -13,13 +13,6 @@
   - "components/**/Kconfig"
   - "components/**/CMakeLists.txt"
 
-.patterns-python-files: &patterns-python-files
-  - ".gitlab/ci/static-code-analysis.yml"
-  - "**/*.py"
-
-.patterns-sonarqube-files: &patterns-sonarqube-files
-  - "tools/ci/sonar_exclude_list.txt"
-
 .patterns-build_components: &patterns-build_components
   # components files except "test*/" "host*/" folders
   # ?? to include folders less than 4 characters
@@ -183,21 +176,12 @@
 .if-protected-check: &if-protected-check
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) || $CI_COMMIT_TAG =~ /^qa-test/'
 
-.if-protected-deploy: &if-protected-deploy
-  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "api")'
-
 .if-protected-branch-push: &if-protected-branch-push
   # rules:changes always evaluates to true for new branch pipelines or when there is no Git push event
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/) && $CI_PIPELINE_SOURCE == "push"'
 
-.if-qa-test-tag: &if-qa-test-tag
-  if: '$CI_COMMIT_TAG =~ /^qa-test/'
-
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_COMMIT_TAG !~ /^qa-test/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
-
-.if-schedule-nightly: &if-schedule-nightly
-  if: '$CI_PIPELINE_SOURCE == "schedule" && $INCLUDE_NIGHTLY_RUN == "1"'
 
 .if-schedule-test-build-system-windows: &if-schedule-test-build-system-windows
   if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULED_BUILD_SYSTEM_TEST_WIN == "true"'

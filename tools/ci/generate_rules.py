@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import inspect
@@ -12,22 +12,21 @@ from itertools import product
 
 import yaml
 from idf_ci_utils import IDF_PATH
-from idf_ci_utils import GitlabYmlConfig
 
 if t.TYPE_CHECKING:
     import pygraphviz as pgv
 
 
-def _list(str_or_list: t.Union[str, t.List]) -> t.List:
+def _list(str_or_list: str | list) -> list:
     if isinstance(str_or_list, str):
         return [str_or_list]
     elif isinstance(str_or_list, list):
         return str_or_list
     else:
-        raise ValueError('Wrong type: {}. Only supports str or list.'.format(type(str_or_list)))
+        raise ValueError(f'Wrong type: {type(str_or_list)}. Only supports str or list.')
 
 
-def _format_nested_dict(_dict: t.Dict[str, t.Dict], f_tuple: t.Tuple[str, ...]) -> t.Dict[str, t.Dict]:
+def _format_nested_dict(_dict: dict[str, dict], f_tuple: tuple[str, ...]) -> dict[str, dict]:
     res = {}
     for k, v in _dict.items():
         k = k.split('__')[0]
@@ -41,7 +40,7 @@ def _format_nested_dict(_dict: t.Dict[str, t.Dict], f_tuple: t.Tuple[str, ...]) 
     return res
 
 
-def _format_nested_list(_list: t.List[str], f_tuple: t.Tuple[str, ...]) -> t.List[str]:
+def _format_nested_list(_list: list[str], f_tuple: tuple[str, ...]) -> list[str]:
     res = []
     for item in _list:
         if isinstance(item, list):
@@ -90,7 +89,6 @@ class RulesWriter:
         self.cfg = self.expand_matrices()
         self.rules = self.expand_rules()
 
-        self.yml_config = GitlabYmlConfig()
         self.graph = None
 
     def expand_matrices(self):  # type: () -> dict
@@ -107,11 +105,11 @@ class RulesWriter:
             deploy = v.get('deploy')
             if deploy:
                 for item in _list(deploy):
-                    res['{}-{}'.format(k, item)] = v
+                    res[f'{k}-{item}'] = v
         return res
 
     @staticmethod
-    def _expand_matrix(name: str, cfg: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    def _expand_matrix(name: str, cfg: dict[str, t.Any]) -> dict[str, t.Any]:
         """
         Expand matrix into multi keys
         :param cfg: single rule dict
@@ -129,7 +127,7 @@ class RulesWriter:
             res.update(_format_nested_dict(default, comb))
         return res
 
-    def expand_rules(self) -> t.Dict[str, t.Dict[str, t.List[str]]]:
+    def expand_rules(self) -> dict[str, dict[str, list[str]]]:
         res = defaultdict(lambda: defaultdict(set))  # type: dict[str, dict[str, set]]
         for k, v in self.cfg.items():
             if not v:
@@ -155,8 +153,8 @@ class RulesWriter:
                     if 'patterns' in v:
                         for _pat in _list(v['patterns']):
                             # Patterns must be pre-defined
-                            if '.patterns-{}'.format(_pat) not in self.rules_cfg:
-                                print('WARNING: pattern {} not exists'.format(_pat))
+                            if f'.patterns-{_pat}' not in self.rules_cfg:
+                                print(f'WARNING: pattern {_pat} not exists')
                                 continue
                             res[item]['patterns'].add(_pat)
 
@@ -195,14 +193,10 @@ class RulesWriter:
             if k.startswith('pattern'):
                 continue
 
-            if '.rules:' + k not in self.yml_config.used_templates:
-                print(f'WARNING: unused rule: {k}, skipping...')
-                continue
-
             res.append(self.RULES_TEMPLATE.format(k, self._format_rule(k, v)))
         return '\n\n'.join(res)
 
-    def _format_rule(self, name: str, cfg: t.Dict[str, t.Any]) -> str:
+    def _format_rule(self, name: str, cfg: dict[str, t.Any]) -> str:
         _rules = [self.RULE_REVERT_BRANCH]
         if name.endswith('-production'):
             _rules.append(self.RULE_PROTECTED_PUSH)
@@ -216,21 +210,21 @@ class RulesWriter:
                 if f'.{specific_rule}' in self.rules_cfg:
                     _rules.append(self.SPECIFIC_RULE_TEMPLATE.format(specific_rule))
                 else:
-                    print('WARNING: specific_rule {} not exists'.format(specific_rule))
+                    print(f'WARNING: specific_rule {specific_rule} not exists')
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))
             for pattern in cfg['patterns']:
-                if '.patterns-{}'.format(pattern) in self.rules_cfg:
+                if f'.patterns-{pattern}' in self.rules_cfg:
                     _rules.append(self.RULE_PATTERN_TEMPLATE.format(pattern))
                 else:
-                    print('WARNING: pattern {} not exists'.format(pattern))
+                    print(f'WARNING: pattern {pattern} not exists')
         return '\n'.join(_rules)
 
     def update_rules_yml(self) -> bool:
         with open(self.rules_yml) as fr:
             file_str = fr.read()
 
-        auto_generate_str = '\n{}\n\n{}\n'.format(self.new_labels_str(), self.new_rules_str())
+        auto_generate_str = f'\n{self.new_labels_str()}\n\n{self.new_rules_str()}\n'
         rest, marker, old = file_str.partition(self.AUTO_GENERATE_MARKER)
         if old == auto_generate_str:
             return False
@@ -246,7 +240,7 @@ PATTERN_COLOR = 'cyan'
 RULE_COLOR = 'blue'
 
 
-def build_graph(rules_dict: t.Dict[str, t.Dict[str, t.List[str]]]) -> 'pgv.AGraph':
+def build_graph(rules_dict: dict[str, dict[str, list[str]]]) -> 'pgv.AGraph':
     from pygraphviz import pgv
 
     graph = pgv.AGraph(directed=True, rankdir='LR', concentrate=True)
@@ -263,13 +257,13 @@ def build_graph(rules_dict: t.Dict[str, t.Dict[str, t.List[str]]]) -> 'pgv.AGrap
         labels = v.get('labels')
         if labels:
             for _label in labels:
-                graph.add_node('label:{}'.format(_label), color=LABEL_COLOR)
-                graph.add_edge('label:{}'.format(_label), k, color=LABEL_COLOR)
+                graph.add_node(f'label:{_label}', color=LABEL_COLOR)
+                graph.add_edge(f'label:{_label}', k, color=LABEL_COLOR)
         patterns = v.get('patterns')
         if patterns:
             for _pat in patterns:
-                graph.add_node('pattern:{}'.format(_pat), color=PATTERN_COLOR)
-                graph.add_edge('pattern:{}'.format(_pat), k, color=PATTERN_COLOR)
+                graph.add_node(f'pattern:{_pat}', color=PATTERN_COLOR)
+                graph.add_edge(f'pattern:{_pat}', k, color=PATTERN_COLOR)
 
     return graph
 

@@ -124,35 +124,106 @@ class GitlabYmlConfig:
         # avoid unused import in other pre-commit hooks
         import yaml
 
-        all_config = dict()
-        root_yml = yaml.load(open(root_yml_filepath), Loader=yaml.FullLoader)
-
-        # expanding "include"
-        for item in root_yml.pop('include', []) or []:
-            if isinstance(item, dict):
-                if 'project' in item:
-                    continue
-                elif 'local' in item:
-                    item = item['local']
-                else:
-                    continue
-
-            all_config.update(yaml.load(open(os.path.join(IDF_PATH, item)), Loader=yaml.FullLoader))
+        merged_yaml = self._compile_via_gitlab_api(root_yml_filepath)
+        all_config = yaml.load(merged_yaml, Loader=yaml.FullLoader) or {}
 
         if 'default' in all_config:
             self._defaults = all_config.pop('default')
 
         self._config = all_config
 
-        # anchor is the string that will be reused in templates
-        self._anchor_keys: set[str] = set()
-        # template is a dict that will be extended
-        self._template_keys: set[str] = set()
-        self._used_template_keys: set[str] = set()  # tracing the used templates
-        # job is a dict that will be executed
-        self._job_keys: set[str] = set()
+    def _inline_local_includes(self, root_yml_filepath: str) -> str:
+        """
+        Recursively resolve `include: local` entries straight from disk (so uncommitted local
+        changes are always picked up -- CI runners also work off a disk checkout, so there's no
+        need to fetch a ref remotely via `ci_lint`'s `content_ref`/`ref`/`dry_run_ref` GET
+        params). `include: project` entries (including ones nested inside local files, e.g.
+        `.gitlab/ci/common.yml` including `templates/idf/common-scripts.yml`) are collected and
+        left in the final `include:` list, since those files live in another GitLab project and
+        can only be resolved remotely.
 
-        self.expand_extends()
+        A dedicated Loader/Dumper pair round-trips `!reference` tags as a marker list subclass,
+        since GitLab CI uses `!reference` which plain YAML doesn't know, and we need to parse
+        (to merge dicts, not just string-concat) then re-dump losslessly.
+
+        :param root_yml_filepath: path to the local root yml file to compile
+        :return: yml content with local includes resolved and merged
+        """
+        import yaml
+
+        class _Loader(yaml.FullLoader):
+            pass
+
+        class _Dumper(yaml.Dumper):
+            pass
+
+        class _Reference(list):
+            pass
+
+        _Loader.add_constructor(
+            '!reference', lambda loader, node: _Reference(loader.construct_sequence(t.cast(yaml.SequenceNode, node)))
+        )
+        _Dumper.add_representer(_Reference, lambda dumper, data: dumper.represent_sequence('!reference', list(data)))
+
+        def resolve(yml_filepath: str) -> tuple[dict, list]:
+            with open(yml_filepath) as fr:
+                data = yaml.load(fr, Loader=_Loader) or {}
+
+            includes = to_list(data.pop('include', None))
+
+            merged: dict = {}
+            remaining_project_includes: list = []
+            for item in includes:
+                if isinstance(item, dict):
+                    if 'project' in item:
+                        remaining_project_includes.append(item)
+                        continue
+                    elif 'local' in item:
+                        local_path = item['local']
+                    else:
+                        continue
+                elif isinstance(item, str):
+                    local_path = item
+                else:
+                    continue
+
+                sub_merged, sub_remaining = resolve(os.path.join(IDF_PATH, local_path.lstrip('/')))
+                merged.update(sub_merged)
+                remaining_project_includes.extend(sub_remaining)
+
+            # this file's own top-level keys override whatever its includes defined
+            merged.update(data)
+            return merged, remaining_project_includes
+
+        merged_config, project_includes = resolve(root_yml_filepath)
+        if project_includes:
+            merged_config['include'] = project_includes
+
+        return yaml.dump(merged_config, Dumper=_Dumper, sort_keys=False)  # type: ignore
+
+    def _compile_via_gitlab_api(self, root_yml_filepath: str) -> str:
+        """
+        Call the GitLab CI Lint API to get the fully compiled (all `include`s resolved) yml,
+        same as what `glab ci config compile` does. This replaces the old recursive local-only
+        parsing, since the project now includes configs from other projects as well.
+
+        :param root_yml_filepath: path to the local root yml file to compile
+        :return: merged (fully resolved) yml content as a string
+        """
+        sys.path.insert(0, os.path.join(IDF_PATH, 'tools', 'ci', 'python_packages'))
+        import gitlab_api
+
+        content = self._inline_local_includes(root_yml_filepath)
+
+        gitlab_inst = gitlab_api.Gitlab()
+        project_id = os.getenv('CI_PROJECT_ID') or gitlab_inst.get_project_id('esp-idf', namespace='espressif')
+        project = gitlab_inst.gitlab_inst.projects.get(project_id, lazy=True)
+
+        lint_result = project.ci_lint.create({'content': content})
+        if not lint_result.valid:
+            raise RuntimeError(f'Failed to compile {root_yml_filepath} via GitLab CI Lint API: {lint_result.errors}')
+
+        return lint_result.merged_yaml  # type: ignore
 
     @property
     def default(self) -> dict[str, t.Any]:
@@ -167,79 +238,8 @@ class GitlabYmlConfig:
         return ['default', 'include', 'workflow', 'variables', 'stages']
 
     @cached_property
-    def anchors(self) -> dict[str, t.Any]:
-        return {k: v for k, v in self.config.items() if k in self._anchor_keys}
-
-    @cached_property
     def jobs(self) -> dict[str, t.Any]:
-        return {k: v for k, v in self.config.items() if k in self._job_keys}
-
-    @cached_property
-    def templates(self) -> dict[str, t.Any]:
-        return {k: v for k, v in self.config.items() if k in self._template_keys}
-
-    @cached_property
-    def used_templates(self) -> set[str]:
-        return self._used_template_keys
-
-    def expand_extends(self) -> None:
-        """
-        expand the `extends` key in-place.
-        """
-        for k, v in self.config.items():
-            if k in self.global_keys:
-                continue
-
-            if isinstance(v, str | list):
-                self._anchor_keys.add(k)
-            elif k.startswith('.if-'):
-                self._anchor_keys.add(k)
-            elif k.startswith('.'):
-                self._template_keys.add(k)
-            elif isinstance(v, dict):
-                self._job_keys.add(k)
-            else:
-                raise ValueError(f'Unknown type for key {k} with value {v}')
-
-        # no need to expand anchor
-
-        # expand template first
-        for k in self._template_keys:
-            self._expand_extends(k)
-
-        # expand job
-        for k in self._job_keys:
-            self._expand_extends(k)
-
-    def _merge_dict(self, d1: dict[str, t.Any], d2: dict[str, t.Any]) -> t.Any:
-        for k, v in d2.items():
-            if k in d1:
-                if isinstance(v, dict) and isinstance(d1[k], dict):
-                    d1[k] = self._merge_dict(d1[k], v)
-                else:
-                    d1[k] = v
-            else:
-                d1[k] = v
-
-        return d1
-
-    def _expand_extends(self, name: str) -> dict[str, t.Any]:
-        extends = to_list(self.config[name].pop('extends', None))
-        if not extends:
-            return self.config[name]  # type: ignore
-
-        original_d = self.config[name].copy()
-        d = {}
-        while extends:
-            self._used_template_keys.update(extends)  # for tracking
-
-            for i in extends:
-                d.update(self._expand_extends(i))
-
-            extends = to_list(self.config[name].pop('extends', None))
-
-        self.config[name] = self._merge_dict(d, original_d)
-        return self.config[name]  # type: ignore
+        return {k: v for k, v in self.config.items() if not k.startswith('.') and k not in self.global_keys}
 
 
 def idf_relpath(p: str) -> str:

@@ -430,7 +430,7 @@ test_pytest_linux:
 test_pytest_macos:
   extends:
     - .host_test_template
-    - .brew-macos-settings
+    - .macos-settings
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -564,7 +564,7 @@ test_pytest_linux_buildv2:
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
-    - .brew-macos-settings
+    - .macos-settings
     - .rules:build:macos
   parallel: 3
 
@@ -574,7 +574,7 @@ pytest_build_system_minimal_cmake:
 pytest_build_system_macos_minimal_cmake:
   extends:
     - .test_build_system_minimal_cmake_template
-    - .brew-macos-settings
+    - .macos-settings
     - .rules:build:macos
   variables:
     INSTALL_EXTRA_TOOLS: ninja cmake@3.22.1
