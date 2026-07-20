@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_cache.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -54,6 +55,17 @@ static dw_gdma_burst_items_t s_isp_dma_burst_len_to_items(uint32_t burst_len)
     case 8:  return DW_GDMA_BURST_ITEMS_8;
     default: return DW_GDMA_BURST_ITEMS_8;
     }
+}
+
+static esp_err_t s_isp_dma_sync_cacheable_buffer(void *buffer, size_t size, int flags, const char *buffer_name)
+{
+    size_t cache_line_size = esp_cache_get_line_size_by_addr(buffer);
+    if (cache_line_size == 0) {
+        return ESP_OK;
+    }
+
+    ESP_RETURN_ON_ERROR(esp_cache_msync(buffer, size, flags), TAG, "sync %s buffer cache failed", buffer_name);
+    return ESP_OK;
 }
 
 static void s_isp_dma_frame_ctx_destroy(struct esp_isp_dma_frame_ctx_t *ctx)
@@ -243,6 +255,21 @@ esp_err_t esp_isp_dma_process_frame(isp_proc_handle_t proc, void *output_buffer,
     ESP_RETURN_ON_FALSE((((uintptr_t)input_buffer) % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "input buffer not 8-byte aligned");
 
     esp_isp_dma_frame_ctx_t *ctx = proc->dma_frame_ctx;
+    size_t input_frame_size = ctx->input_frame_size_64bit * sizeof(uint64_t);
+    size_t output_frame_size = ctx->output_frame_size_64bit * sizeof(uint64_t);
+
+    ESP_RETURN_ON_ERROR(s_isp_dma_sync_cacheable_buffer((void *)input_buffer, input_frame_size,
+                                                        ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED,
+                                                        "input"),
+                        TAG, "sync input buffer cache failed");
+    /*
+     * Discard dirty CPU cache lines before DMA writes the frame. Otherwise a
+     * later cache write-back could overwrite data produced by the ISP.
+     */
+    ESP_RETURN_ON_ERROR(s_isp_dma_sync_cacheable_buffer(output_buffer, output_frame_size,
+                                                        ESP_CACHE_MSYNC_FLAG_DIR_M2C, "output"),
+                        TAG, "sync output buffer cache failed");
+
     ctx->dma_out_trans.dst.addr = (uint32_t)output_buffer;
     ctx->dma_in_trans.src.addr = (uint32_t)input_buffer;
 
