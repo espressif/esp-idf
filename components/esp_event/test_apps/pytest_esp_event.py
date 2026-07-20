@@ -42,7 +42,6 @@ def test_esp_event_qemu(dut: Dut) -> None:
             dut._run_normal_case(case)
 
 
-@pytest.mark.host_test
 @idf_parametrize('target', ['linux'], indirect=['target'])
 @pytest.mark.parametrize(
     'config',

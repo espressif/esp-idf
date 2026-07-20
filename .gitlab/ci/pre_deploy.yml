@@ -1,7 +1,7 @@
 .pre_deploy_template:
   stage: pre_deploy
   image: $ESP_ENV_IMAGE
-
+  dependencies: []
 
 check_submodule_sync:
   extends:
