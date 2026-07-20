@@ -1,0 +1,26 @@
+
+menuconfig BLE_HOST_COMPRESSED_LOG_ENABLE
+    bool "Enable BLE Host log compression(Preview)"
+    depends on BLE_COMPRESSED_LOG_ENABLE
+    depends on BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
+    default n
+    help
+            Apply compression to host logs. Requires
+            base BLE compression to be enabled. Specifically optimizes log
+            storage and transmission.
+
+            Note: This library depends on additional Python packages. It will
+            function correctly only after these dependencies are installed;
+            refer to:
+            "components/bt/common/ble_log/log_compression/README.en.md"
+            for installation instructions.
+
+config BLE_HOST_COMPRESSED_LOG_BUFFER_LEN
+    int "Host log buffer length"
+    depends on BLE_HOST_COMPRESSED_LOG_ENABLE
+    default 300
+    help
+                Maximum output length for a single log
+
+source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/host/Kconfig.host.bluedroid.in"
+source "$IDF_PATH/components/bt/common/ble_log/extension/log_compression/host/Kconfig.host.nimble.in"
