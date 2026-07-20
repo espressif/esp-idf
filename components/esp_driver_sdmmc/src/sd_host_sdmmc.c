@@ -226,7 +226,9 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
 #if SOC_SDMMC_UHS_I_SUPPORTED
     ESP_RETURN_ON_FALSE(config->delayline < (SOC_SDMMC_DELAY_PHASE_NUM + 1), ESP_ERR_INVALID_ARG, TAG, "invalid delay line");
 #else
-    ESP_LOGW(TAG, "input line delay not supported, fallback to 0 delay");
+    if (config->delayline != SDMMC_DELAY_LINE_DISABLED) {
+        ESP_LOGW(TAG, "input line delay not supported, fallback to 0 delay");
+    }
 #endif
 
 #if !SDMMC_LL_SDR104_SUPPORTED
@@ -276,7 +278,7 @@ static esp_err_t sd_host_slot_sdmmc_configure(sd_host_slot_handle_t slot, const 
 #endif
         slot_ctx->delay_phase.delay_phase_state = SD_HOST_SLOT_STATE_READY;
     }
-    if (config->delayline != 0) {
+    if (config->delayline != SDMMC_DELAY_LINE_DISABLED) {
 #if SOC_SDMMC_UHS_I_SUPPORTED
         slot_ctx->delay_line.delayline = config->delayline;
 #else
