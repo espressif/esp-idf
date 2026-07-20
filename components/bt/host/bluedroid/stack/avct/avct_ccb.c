@@ -92,7 +92,9 @@ void avct_ccb_dealloc(tAVCT_CCB *p_ccb, UINT8 event, UINT16 result, BD_ADDR bd_a
 #endif
 
     if (event != AVCT_NO_EVT) {
-        (*p_cback)(avct_ccb_to_idx(p_ccb), event, result, bd_addr);
+        if (p_cback) {
+            (*p_cback)(avct_ccb_to_idx(p_ccb), event, result, bd_addr);
+        }
     }
 }
 
