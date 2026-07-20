@@ -52,7 +52,7 @@ char *esp_log_system_timestamp(void)
         _lock_acquire(&bufferLock);
         unsigned msec = tv.tv_usec / 1000;
         snprintf(buffer, sizeof(buffer),
-                 "%02d:%02d:%02d.%03d",
+                 "%02d:%02d:%02d.%03u",
                  timeinfo.tm_hour,
                  timeinfo.tm_min,
                  timeinfo.tm_sec,
