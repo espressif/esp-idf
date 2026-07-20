@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include "esp_rom_sys.h"
-#include "esp_private/periph_ctrl.h"
 #include "soc/soc_caps.h"
 #include "hal/riscv_trace_hal.h"
 #include "hal/assert.h"
@@ -33,14 +32,8 @@ _Static_assert(RISCV_TRACE_INTR_MEM_FULL == TRACE_MEM_FULL_INTR_ENA,
 
 static void riscv_trace_hal_enable_clock_and_reset(int core_id, trace_dev_t *dev)
 {
-#if SOC_CPU_CORES_NUM > 1
-    PERIPH_RCC_ATOMIC()
-#endif
-    {
-        riscv_trace_ll_enable_bus_clock(true);
-        riscv_trace_ll_reset_register(core_id);
-    }
-
+    riscv_trace_ll_enable_bus_clock(true);
+    riscv_trace_ll_reset_register(core_id);
     riscv_trace_ll_enable_module_clock(dev, true);
 }
 

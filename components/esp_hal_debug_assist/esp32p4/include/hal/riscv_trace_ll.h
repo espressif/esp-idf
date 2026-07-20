@@ -30,19 +30,14 @@ static inline trace_dev_t *riscv_trace_ll_get_hw(int core)
  *--------------------------------------------------------------------------*/
 
 /** @brief Enable or disable the common TRACE CPU and system clocks. */
-static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
+static inline void riscv_trace_ll_enable_bus_clock(bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_cpu_clk_en = enable;
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_sys_clk_en = enable;
 }
 
-#define riscv_trace_ll_enable_bus_clock(...) do { \
-    (void)__DECLARE_RCC_ATOMIC_ENV; \
-    _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
-} while (0)
-
 /** @brief Assert and release the reset of the given encoder core. */
-static inline void _riscv_trace_ll_reset_register(int core)
+static inline void riscv_trace_ll_reset_register(int core)
 {
     if (core == 0) {
         HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_coretrace0 = 1;
@@ -52,11 +47,6 @@ static inline void _riscv_trace_ll_reset_register(int core)
         HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_coretrace1 = 0;
     }
 }
-
-#define riscv_trace_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        _riscv_trace_ll_reset_register(__VA_ARGS__); \
-    } while (0)
 
 /** @brief Enable the per-module register clock gate. */
 static inline void riscv_trace_ll_enable_module_clock(trace_dev_t *hw, bool enable)

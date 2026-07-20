@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
-#include <stdlib.h>
 
+#include <stdint.h>
 #include "soc/dport_reg.h"
 #include "soc/tracemem_config.h"
 

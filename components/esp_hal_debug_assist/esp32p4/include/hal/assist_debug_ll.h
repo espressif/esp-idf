@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for DEBUG_ASSIST peripheral
-
 #pragma once
 
 #include "soc/assist_debug_reg.h"
+
 #define ASSIST_DEBUG_SP_SPILL_BITS      (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
 #define ASSIST_DEBUG_CORE_0_MONITOR_REG  ASSIST_DEBUG_CORE_0_INTR_ENA_REG
 #define ASSIST_DEBUG_CORE_1_MONITOR_REG  ASSIST_DEBUG_CORE_1_INTR_ENA_REG
@@ -17,7 +16,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "esp_attr.h"
 #include "hal/assert.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/soc_caps.h"
@@ -61,62 +59,74 @@ extern "C" {
 /* These functions are optimized and designed for internal usage.
  * So, the API may differ from general ll layer pattern */
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_monitor_enable(uint32_t core_id)
 {
     REG_SET_BIT(core_id ? ASSIST_DEBUG_CORE_1_INTR_ENA_REG : ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_disable(uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_monitor_disable(uint32_t core_id)
 {
     REG_CLR_BIT(core_id ? ASSIST_DEBUG_CORE_1_INTR_ENA_REG : ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_enable(uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_interrupt_enable(uint32_t core_id)
 {
     REG_SET_BIT(core_id ? ASSIST_DEBUG_CORE_1_INTR_RLS_REG : ASSIST_DEBUG_CORE_0_INTR_RLS_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_disable(uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_interrupt_disable(uint32_t core_id)
 {
     REG_CLR_BIT(core_id ? ASSIST_DEBUG_CORE_1_INTR_RLS_REG : ASSIST_DEBUG_CORE_0_INTR_RLS_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR bool assist_debug_ll_sp_spill_is_fired(uint32_t core_id)
+__attribute__((always_inline))
+static inline bool assist_debug_ll_sp_spill_is_fired(uint32_t core_id)
 {
     return REG_READ(core_id ? ASSIST_DEBUG_CORE_1_INTR_RAW_REG : ASSIST_DEBUG_CORE_0_INTR_RAW_REG) & ASSIST_DEBUG_SP_SPILL_BITS;
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_clear(uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_interrupt_clear(uint32_t core_id)
 {
     REG_WRITE(core_id ? ASSIST_DEBUG_CORE_1_INTR_CLR_REG : ASSIST_DEBUG_CORE_0_INTR_CLR_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_set_min(uint32_t core_id, uint32_t min)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_set_min(uint32_t core_id, uint32_t min)
 {
     REG_WRITE(core_id ? ASSIST_DEBUG_CORE_1_SP_MIN_REG : ASSIST_DEBUG_CORE_0_SP_MIN_REG, min);
 }
 
-FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_min(uint32_t core_id)
+__attribute__((always_inline))
+static inline uint32_t assist_debug_ll_sp_spill_get_min(uint32_t core_id)
 {
     return REG_READ(core_id ? ASSIST_DEBUG_CORE_1_SP_MIN_REG : ASSIST_DEBUG_CORE_0_SP_MIN_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_set_max(uint32_t core_id, uint32_t max)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_set_max(uint32_t core_id, uint32_t max)
 {
     REG_WRITE(core_id ? ASSIST_DEBUG_CORE_1_SP_MAX_REG : ASSIST_DEBUG_CORE_0_SP_MAX_REG, max);
 }
 
-FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_max(uint32_t core_id)
+__attribute__((always_inline))
+static inline uint32_t assist_debug_ll_sp_spill_get_max(uint32_t core_id)
 {
     return REG_READ(core_id ? ASSIST_DEBUG_CORE_1_SP_MAX_REG : ASSIST_DEBUG_CORE_0_SP_MAX_REG);
 }
 
-FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(uint32_t core_id)
+__attribute__((always_inline))
+static inline uint32_t assist_debug_ll_sp_spill_get_pc(uint32_t core_id)
 {
     return REG_READ(core_id ? ASSIST_DEBUG_CORE_1_SP_PC_REG : ASSIST_DEBUG_CORE_0_SP_PC_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_enable_pc_recording(uint32_t core_id, bool enable)
+__attribute__((always_inline))
+static inline void assist_debug_ll_enable_pc_recording(uint32_t core_id, bool enable)
 {
     uint32_t reg = core_id ? ASSIST_DEBUG_CORE_1_RCD_EN_REG : ASSIST_DEBUG_CORE_0_RCD_EN_REG;
     uint32_t bits = ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_0_RCD_RECORDEN;
@@ -128,7 +138,8 @@ FORCE_INLINE_ATTR void assist_debug_ll_enable_pc_recording(uint32_t core_id, boo
     }
 }
 
-FORCE_INLINE_ATTR void _assist_debug_ll_enable_bus_clock(__attribute__((unused)) uint32_t core_id, bool enable)
+__attribute__((always_inline))
+static inline void _assist_debug_ll_enable_bus_clock(__attribute__((unused)) uint32_t core_id, bool enable)
 {
     HP_SYS_CLKRST.soc_clk_ctrl0.reg_busmon_cpu_clk_en = enable;
     REG_SET_FIELD(ASSIST_DEBUG_CLOCK_GATE_REG, ASSIST_DEBUG_CLK_EN, enable);
@@ -136,7 +147,8 @@ FORCE_INLINE_ATTR void _assist_debug_ll_enable_bus_clock(__attribute__((unused))
 #define assist_debug_ll_enable_bus_clock(...) \
     (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_enable_bus_clock(__VA_ARGS__)
 
-FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void _assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
 {
     /* esp32p4 has no assist_debug reset register: disable & clear interrupts manually.  */
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
@@ -149,7 +161,8 @@ FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(__attribute__((unused)) u
 #define assist_debug_ll_reset_register(...) \
     (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_reset_register(__VA_ARGS__)
 
-FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+__attribute__((always_inline))
+static inline bool assist_debug_ll_is_debugger_active(void)
 {
     return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }

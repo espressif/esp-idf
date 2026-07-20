@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer for DEBUG_ASSIST peripheral
-
 #pragma once
 
 #include "soc/assist_debug_reg.h"
+
 #define BUS_MONITOR_SP_SPILL_BITS      (BUS_MONITOR_CORE_0_SP_SPILL_MIN_ENA | BUS_MONITOR_CORE_0_SP_SPILL_MAX_ENA)
 #define BUS_MONITOR_CORE_0_MONITOR_REG  BUS_MONITOR_CORE_0_MONTR_ENA_REG
 // Compatible alias
@@ -19,7 +18,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "esp_attr.h"
 #include "hal/assert.h"
 #include "soc/pcr_struct.h"
 
@@ -61,77 +59,92 @@ extern "C" {
 /* These functions are optimized and designed for internal usage.
  * So, the API may differ from general ll layer pattern */
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_monitor_enable(__attribute__((unused)) uint32_t core_id)
 {
     REG_SET_BIT(BUS_MONITOR_CORE_0_MONTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_disable(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_monitor_disable(__attribute__((unused)) uint32_t core_id)
 {
     REG_CLR_BIT(BUS_MONITOR_CORE_0_MONTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_enable(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_interrupt_enable(__attribute__((unused)) uint32_t core_id)
 {
     REG_SET_BIT(BUS_MONITOR_CORE_0_INTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_disable(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_interrupt_disable(__attribute__((unused)) uint32_t core_id)
 {
     REG_CLR_BIT(BUS_MONITOR_CORE_0_INTR_ENA_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR bool assist_debug_ll_sp_spill_is_fired(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline bool assist_debug_ll_sp_spill_is_fired(__attribute__((unused)) uint32_t core_id)
 {
     return REG_READ(BUS_MONITOR_CORE_0_INTR_RAW_REG) & BUS_MONITOR_SP_SPILL_BITS;
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_clear(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_interrupt_clear(__attribute__((unused)) uint32_t core_id)
 {
     REG_WRITE(BUS_MONITOR_CORE_0_INTR_CLR_REG, BUS_MONITOR_SP_SPILL_BITS);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_set_min(__attribute__((unused)) uint32_t core_id, uint32_t min)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_set_min(__attribute__((unused)) uint32_t core_id, uint32_t min)
 {
     REG_WRITE(BUS_MONITOR_CORE_0_SP_MIN_REG, min);
 }
 
-FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_min(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline uint32_t assist_debug_ll_sp_spill_get_min(__attribute__((unused)) uint32_t core_id)
 {
     return REG_READ(BUS_MONITOR_CORE_0_SP_MIN_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_set_max(__attribute__((unused)) uint32_t core_id, uint32_t max)
+__attribute__((always_inline))
+static inline void assist_debug_ll_sp_spill_set_max(__attribute__((unused)) uint32_t core_id, uint32_t max)
 {
     REG_WRITE(BUS_MONITOR_CORE_0_SP_MAX_REG, max);
 }
 
-FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_max(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline uint32_t assist_debug_ll_sp_spill_get_max(__attribute__((unused)) uint32_t core_id)
 {
     return REG_READ(BUS_MONITOR_CORE_0_SP_MAX_REG);
 }
 
-FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline uint32_t assist_debug_ll_sp_spill_get_pc(__attribute__((unused)) uint32_t core_id)
 {
     return REG_READ(BUS_MONITOR_CORE_0_SP_PC_REG);
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_enable_pc_recording(uint32_t core_id, bool enable)
+__attribute__((always_inline))
+static inline void assist_debug_ll_enable_pc_recording(uint32_t core_id, bool enable)
 {
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(__attribute__((unused)) uint32_t core_id, bool enable)
+__attribute__((always_inline))
+static inline void assist_debug_ll_enable_bus_clock(__attribute__((unused)) uint32_t core_id, bool enable)
 {
     PCR.assist_conf.assist_clk_en = enable;
 }
 
-FORCE_INLINE_ATTR void assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
+__attribute__((always_inline))
+static inline void assist_debug_ll_reset_register(__attribute__((unused)) uint32_t core_id)
 {
     PCR.assist_conf.assist_rst_en = true;
     PCR.assist_conf.assist_rst_en = false;
 }
 
-FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+__attribute__((always_inline))
+static inline bool assist_debug_ll_is_debugger_active(void)
 {
     return REG_GET_BIT(BUS_MONITOR_CORE_0_DEBUG_MODE_REG, BUS_MONITOR_CORE_0_DEBUG_MODULE_ACTIVE);
 }
