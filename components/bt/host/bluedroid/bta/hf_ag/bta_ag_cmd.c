@@ -917,13 +917,16 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
                 val.value = BTA_AG_HF_DIAL_NUM;
             }
             if (event != 0) {
-                while ((val.str[dst] = p_arg[src]) != '\0') {
+                while (dst < BTA_AG_AT_MAX_LEN && (val.str[dst] = p_arg[src]) != '\0') {
                     if (val.str[dst] == ';') {
                         val.str[dst] = '\0';
                         break;
                     }
                     src++;
                     dst++;
+                }
+                if (dst >= BTA_AG_AT_MAX_LEN) {
+                    val.str[BTA_AG_AT_MAX_LEN] = '\0';
                 }
             }
             break;

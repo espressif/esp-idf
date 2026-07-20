@@ -662,6 +662,9 @@ INT32 BTA_DmPcmResample (void *p_src, UINT32 in_bytes, void *p_dst)
     APPL_TRACE_DEBUG("bta_pcm_resample : insamples  %d",  (in_bytes  / p_bta_dm_pcm_cb->divisor));
 #endif
     if (p_bta_dm_pcm_cb->can_be_filtered) {
+        if (in_bytes < BTA_DM_PCM_OVERLAP_SIZE * 2) {
+            return 0;
+        }
         out_sample = (*p_bta_dm_pcm_cb->filter) (p_src, p_dst, (in_bytes  / p_bta_dm_pcm_cb->divisor),
                                               p_bta_dm_pcm_cb->src_sps, (INT32 *) &(p_bta_dm_pcm_cb->cur_pos), p_bta_dm_pcm_cb->overlap_area);
     } else {
