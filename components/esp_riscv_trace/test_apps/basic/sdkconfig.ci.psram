@@ -1,0 +1,4 @@
+CONFIG_SPIRAM=y
+CONFIG_ESP_RISCV_TRACE_BUFFER_IN_EXTERNAL=y
+# PSRAM is slower than internal RAM, so stall the CPU on FIFO-full to avoid losing trace coverage.
+CONFIG_ESP_RISCV_TRACE_STALL_CPU_ENABLE=y

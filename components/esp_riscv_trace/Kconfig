@@ -1,0 +1,223 @@
+menu "RISC-V Trace Encoder Configurations"
+    depends on SOC_RISCV_TRACE_SUPPORTED
+
+    config ESP_RISCV_TRACE_ENABLE
+        bool "Enable ESP RISC-V trace encoder"
+        default n
+        help
+            Build the ESP RISC-V trace encoder driver and expose its runtime API.
+
+    if ESP_RISCV_TRACE_ENABLE
+
+        config ESP_RISCV_TRACE_BUFFER_SIZE
+            int "Trace buffer size (bytes)"
+            default 2048
+            help
+                Size in bytes of the trace buffer allocated by the driver.
+
+        choice ESP_RISCV_TRACE_BUFFER_MEM_SELECT
+            prompt "Trace buffer memory placement"
+            default ESP_RISCV_TRACE_BUFFER_IN_INTERNAL
+            help
+                Where the driver allocates the trace buffer. The encoder writes the buffer over
+                its AHB master, which can reach both internal and external PSRAM.
+
+                Internal RAM is fastest and always usable. PSRAM frees internal RAM and allows
+                much larger buffers, but is slower (higher risk of FIFO overflow at high trace
+                rates) and is inaccessible while the cache is disabled (e.g. during flash writes).
+
+            config ESP_RISCV_TRACE_BUFFER_IN_INTERNAL
+                bool "Internal RAM"
+            config ESP_RISCV_TRACE_BUFFER_IN_EXTERNAL
+                bool "External RAM (PSRAM)"
+                depends on SPIRAM
+        endchoice
+
+        config ESP_RISCV_TRACE_BUFFER_MEM
+            int
+            default 0 if ESP_RISCV_TRACE_BUFFER_IN_INTERNAL
+            default 1 if ESP_RISCV_TRACE_BUFFER_IN_EXTERNAL
+
+        choice ESP_RISCV_TRACE_CORE_SELECT
+            prompt "Cores to trace"
+            default ESP_RISCV_TRACE_BOTH_CORES if SOC_HP_CPU_HAS_MULTIPLE_CORES && !FREERTOS_UNICORE
+            default ESP_RISCV_TRACE_CORE_0
+            help
+                Select which RISC-V core(s) the trace encoder is set up for. Each traced core
+                gets its own encoder instance and trace buffer, so tracing both cores doubles
+                the memory used.
+
+            config ESP_RISCV_TRACE_CORE_0
+                bool "Core 0 only"
+            config ESP_RISCV_TRACE_CORE_1
+                bool "Core 1 only"
+                depends on SOC_HP_CPU_HAS_MULTIPLE_CORES && !FREERTOS_UNICORE
+            config ESP_RISCV_TRACE_BOTH_CORES
+                bool "Both cores"
+                depends on SOC_HP_CPU_HAS_MULTIPLE_CORES && !FREERTOS_UNICORE
+        endchoice
+
+        config ESP_RISCV_TRACE_CORE_MASK
+            hex
+            default 0x1 if ESP_RISCV_TRACE_CORE_0
+            default 0x2 if ESP_RISCV_TRACE_CORE_1
+            default 0x3 if ESP_RISCV_TRACE_BOTH_CORES
+
+        choice ESP_RISCV_TRACE_ADDRESS_MODE_SELECT
+            prompt "Instruction address encoding"
+            depends on SOC_RISCV_TRACE_HAS_CONFIG_REG
+            default ESP_RISCV_TRACE_ADDRESS_MODE_DELTA
+            help
+                How instruction addresses are encoded in the trace stream.
+
+            config ESP_RISCV_TRACE_ADDRESS_MODE_DELTA
+                bool "Delta addresses"
+            config ESP_RISCV_TRACE_ADDRESS_MODE_FULL
+                bool "Full addresses"
+        endchoice
+
+        config ESP_RISCV_TRACE_ADDRESS_MODE
+            int
+            default 0 if ESP_RISCV_TRACE_ADDRESS_MODE_DELTA
+            default 1 if ESP_RISCV_TRACE_ADDRESS_MODE_FULL
+            default 0
+
+        choice ESP_RISCV_TRACE_MEM_MODE_SELECT
+            prompt "Trace buffer memory mode"
+            default ESP_RISCV_TRACE_MEM_MODE_LOOP
+            help
+                Behaviour of the trace buffer when it becomes full.
+
+            config ESP_RISCV_TRACE_MEM_MODE_NON_LOOP
+                bool "Stop when buffer is full"
+            config ESP_RISCV_TRACE_MEM_MODE_LOOP
+                bool "Wrap around (loop)"
+        endchoice
+
+        config ESP_RISCV_TRACE_MEM_MODE
+            int
+            default 0 if ESP_RISCV_TRACE_MEM_MODE_NON_LOOP
+            default 1 if ESP_RISCV_TRACE_MEM_MODE_LOOP
+
+        config ESP_RISCV_TRACE_AUTO_RESTART_ENABLE
+            bool "Auto-restart encoder after a FIFO overflow"
+            default n
+            help
+                A FIFO overflow stops the encoder. When enabled, it restarts automatically once
+                the FIFO is empty again.
+
+        config ESP_RISCV_TRACE_AUTO_RESTART
+            int
+            default 1 if ESP_RISCV_TRACE_AUTO_RESTART_ENABLE
+            default 0
+
+        config ESP_RISCV_TRACE_STALL_CPU_ENABLE
+            bool "Stall CPU on FIFO full"
+            depends on SOC_RISCV_TRACE_HAS_CONFIG_REG
+            default n
+            help
+                Stall the CPU instead of dropping packets when the FIFO is full.
+
+        config ESP_RISCV_TRACE_STALL_CPU
+            int
+            default 1 if ESP_RISCV_TRACE_STALL_CPU_ENABLE
+            default 0
+
+        config ESP_RISCV_TRACE_HALT_ENABLE
+            bool "Report hart halt in the trace"
+            depends on SOC_RISCV_TRACE_HAS_CONFIG_REG
+            default n
+            help
+                When the hart halts, report the address of the last instruction before the halt;
+                tracing resumes with a synchronization packet when the hart continues.
+
+        config ESP_RISCV_TRACE_HALT
+            int
+            default 1 if ESP_RISCV_TRACE_HALT_ENABLE
+            default 0
+
+        config ESP_RISCV_TRACE_RESET_ENABLE
+            bool "Report hart reset in the trace"
+            depends on SOC_RISCV_TRACE_HAS_CONFIG_REG
+            default n
+            help
+                When the hart enters reset, report the address of the last instruction before the
+                reset. Tracing resumes with a synchronization packet afterwards.
+
+        config ESP_RISCV_TRACE_RESET
+            int
+            default 1 if ESP_RISCV_TRACE_RESET_ENABLE
+            default 0
+
+        config ESP_RISCV_TRACE_DEBUG_TRIGGER_ENABLE
+            bool "Enable Debug Module trigger input"
+            depends on SOC_RISCV_TRACE_HAS_CONFIG_REG
+            default n
+            help
+                Enable the Debug Module trigger input to the trace encoder.
+
+        config ESP_RISCV_TRACE_DEBUG_TRIGGER
+            int
+            default 1 if ESP_RISCV_TRACE_DEBUG_TRIGGER_ENABLE
+            default 0
+
+        choice ESP_RISCV_TRACE_RESYNC_MODE_SELECT
+            prompt "Resynchronization mode"
+            default ESP_RISCV_TRACE_RESYNC_MODE_DISABLED
+            help
+                Periodic resynchronization mode of the trace encoder.
+
+            config ESP_RISCV_TRACE_RESYNC_MODE_DISABLED
+                bool "Disabled"
+            config ESP_RISCV_TRACE_RESYNC_MODE_PACKET
+                bool "By packet count"
+            config ESP_RISCV_TRACE_RESYNC_MODE_CYCLE
+                bool "By cycle count"
+        endchoice
+
+        config ESP_RISCV_TRACE_RESYNC_MODE
+            int
+            default 0 if ESP_RISCV_TRACE_RESYNC_MODE_DISABLED
+            default 2 if ESP_RISCV_TRACE_RESYNC_MODE_PACKET
+            default 3 if ESP_RISCV_TRACE_RESYNC_MODE_CYCLE
+
+        config ESP_RISCV_TRACE_RESYNC_THRESHOLD
+            int "Resync threshold" if !ESP_RISCV_TRACE_RESYNC_MODE_DISABLED
+            default 128
+            help
+                Threshold (packet or cycle count) used by the selected resynchronization mode.
+
+        choice ESP_RISCV_TRACE_AHB_BURST_SELECT
+            prompt "AHB burst type"
+            depends on SOC_RISCV_TRACE_AHB_CONFIGURABLE
+            default ESP_RISCV_TRACE_AHB_BURST_SINGLE
+            help
+                AHB burst type used by the trace write master.
+
+            config ESP_RISCV_TRACE_AHB_BURST_SINGLE
+                bool "Single transfer"
+            config ESP_RISCV_TRACE_AHB_BURST_INCR
+                bool "Incrementing (undefined length)"
+            config ESP_RISCV_TRACE_AHB_BURST_INCR4
+                bool "4-beat incrementing"
+            config ESP_RISCV_TRACE_AHB_BURST_INCR8
+                bool "8-beat incrementing"
+        endchoice
+
+        config ESP_RISCV_TRACE_AHB_BURST
+            int
+            default 0 if ESP_RISCV_TRACE_AHB_BURST_SINGLE
+            default 1 if ESP_RISCV_TRACE_AHB_BURST_INCR
+            default 2 if ESP_RISCV_TRACE_AHB_BURST_INCR4
+            default 4 if ESP_RISCV_TRACE_AHB_BURST_INCR8
+            default 0
+
+        config ESP_RISCV_TRACE_AHB_MAX_INCR
+            int "Max INCR burst beats" if SOC_RISCV_TRACE_AHB_CONFIGURABLE
+            default 0
+            help
+                Maximum number of beats for an undefined-length INCR burst.
+
+    endif # ESP_RISCV_TRACE_ENABLE
+
+endmenu
