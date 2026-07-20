@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 from typing import Callable
@@ -12,11 +12,11 @@ from pytest_embedded_idf.utils import idf_parametrize
 SAVE_BIN_SIZE_TH = {
     'disable_sae_h2e': {
         'esp32': 16700,
-        'esp32c2': 19700,
+        'esp32c2': 19450,
         'esp32c3': 19600,
-        'esp32c5': 19650,
-        'esp32c6': 19650,
-        'esp32c61': 19700,
+        'esp32c5': 19400,
+        'esp32c6': 19400,
+        'esp32c61': 19450,
         'esp32s2': 16600,
         'esp32s3': 16550,
         'default': 16000,
