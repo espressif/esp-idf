@@ -636,11 +636,11 @@ void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)
             return;
         }
     }
-    osi_mutex_unlock(&bta_alarm_lock);
 
     alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
         APPL_TRACE_ERROR("%s unable to create alarm.", __func__);
+        osi_mutex_unlock(&bta_alarm_lock);
         return;
     }
 
@@ -648,6 +648,7 @@ void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)
     p_tle->ticks = timeout_ms;
     //osi_alarm_set(alarm, (period_ms_t)timeout_ms, bta_alarm_cb, p_tle);
     osi_alarm_set(alarm, (period_ms_t)timeout_ms);
+    osi_mutex_unlock(&bta_alarm_lock);
 }
 
 bool hash_iter_ro_cb(hash_map_entry_t *hash_map_entry, void *context)
@@ -682,12 +683,12 @@ BOOLEAN bta_sys_timer_is_active(TIMER_LIST_ENT *p_tle)
 {
     assert(p_tle != NULL);
 
+    osi_mutex_lock(&bta_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
-    if (alarm != NULL && osi_alarm_is_active(alarm)) {
-        return TRUE;
-    }
+    BOOLEAN active = (alarm != NULL && osi_alarm_is_active(alarm));
+    osi_mutex_unlock(&bta_alarm_lock);
 
-    return FALSE;
+    return active;
 }
 
 /*******************************************************************************
@@ -703,12 +704,15 @@ void bta_sys_stop_timer(TIMER_LIST_ENT *p_tle)
 {
     assert(p_tle != NULL);
 
+    osi_mutex_lock(&bta_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
         APPL_TRACE_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
+        osi_mutex_unlock(&bta_alarm_lock);
         return;
     }
     osi_alarm_cancel(alarm);
+    osi_mutex_unlock(&bta_alarm_lock);
 }
 
 /*******************************************************************************
@@ -724,13 +728,16 @@ void bta_sys_free_timer(TIMER_LIST_ENT *p_tle)
 {
     assert(p_tle != NULL);
 
+    osi_mutex_lock(&bta_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
         APPL_TRACE_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
+        osi_mutex_unlock(&bta_alarm_lock);
         return;
     }
     osi_alarm_cancel(alarm);
     hash_map_erase(bta_alarm_hash_map, p_tle);
+    osi_mutex_unlock(&bta_alarm_lock);
 }
 
 /*******************************************************************************

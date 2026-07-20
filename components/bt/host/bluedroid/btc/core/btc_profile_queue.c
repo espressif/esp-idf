@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -144,7 +144,11 @@ bt_status_t btc_queue_connect_next(void)
     }
 
     p_head->busy = true;
-    return p_head->connect_cb(&p_head->bda, p_head->uuid);
+    bt_status_t status = p_head->connect_cb(&p_head->bda, p_head->uuid);
+    if (status != BT_STATUS_SUCCESS) {
+        btc_queue_advance();
+    }
+    return status;
 }
 
 

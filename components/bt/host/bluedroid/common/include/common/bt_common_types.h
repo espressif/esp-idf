@@ -14,7 +14,7 @@
 #include "common/bt_defs.h"
 #include "osi/thread.h"
 
-typedef void (* bluedroid_init_done_cb_t)(void);
+typedef void (* bluedroid_init_done_cb_t)(bt_status_t status);
 
 typedef struct {
     uint8_t client_if;

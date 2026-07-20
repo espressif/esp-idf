@@ -69,4 +69,5 @@ void btc_deinit_bluetooth(future_t *future);
 #endif
 
 void btc_main_call_handler(btc_msg_t *msg);
+void btc_cleanup_partial_init(void);
 #endif /* __BTC_BT_MAIN_H__ */

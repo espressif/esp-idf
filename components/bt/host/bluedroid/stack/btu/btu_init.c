@@ -148,10 +148,10 @@ void btu_free_core(void)
 **                  NOTE: Must be called before creating any tasks
 **                      (RPC, BTU, HCIT, APPL, etc.)
 **
-** Returns          void
+** Returns          true for success, otherwise false
 **
 ******************************************************************************/
-void BTU_StartUp(void)
+bool BTU_StartUp(void)
 {
 #if BTU_DYNAMIC_MEMORY
     btu_cb_ptr = (tBTU_CB *)osi_malloc(sizeof(tBTU_CB));
@@ -194,11 +194,12 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    return;
+    return true;
 
 error_exit:;
     LOG_ERROR("%s Unable to allocate resources for bt_workqueue", __func__);
     BTU_ShutDown();
+    return false;
 }
 
 /*****************************************************************************
