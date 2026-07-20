@@ -83,7 +83,7 @@ Unlike Vanilla FreeRTOS, users of FreeRTOS in ESP-IDF **must never call** :cpp:f
 Background Tasks
 ^^^^^^^^^^^^^^^^
 
-During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple tasks that run in the background (listed in the the table below).
+During startup, ESP-IDF and the FreeRTOS kernel automatically create multiple tasks that run in the background (listed in the table below).
 
 .. list-table:: List of Tasks Created During Startup
     :widths: 10 75 5 5 5

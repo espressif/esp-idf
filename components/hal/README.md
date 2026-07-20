@@ -8,7 +8,7 @@ In a broad sense, the HAL layer consists of two sub-layers: HAL (upper) and Low-
 
 ## Low-Level (`hal/<periph>_ll.h`)
 
-Functions defined in the file must be static inlined. The first argument of an LL function is usually a pointer to the peripheral's base address [^1]. At the moment, each ESP target has its own set of Low-Level drivers. They're located under path e.g. `components/hal/<target>/include/hal/<periph>_ll.h`. We wish the the low-level functions could be as independent as possible, so that the caller doesn't need to worry about conflict between different sub-modules. For example, when resetting the driver of module A, the module B is also reset by accident. However, the digital design is not perfect, coupling happens from time to time.
+Functions defined in the file must be static inlined. The first argument of an LL function is usually a pointer to the peripheral's base address [^1]. At the moment, each ESP target has its own set of Low-Level drivers. They're located under path e.g. `components/hal/<target>/include/hal/<periph>_ll.h`. We wish the low-level functions could be as independent as possible, so that the caller doesn't need to worry about conflict between different sub-modules. For example, when resetting the driver of module A, the module B is also reset by accident. However, the digital design is not perfect, coupling happens from time to time.
 
 ### Handling Shared Registers
 
