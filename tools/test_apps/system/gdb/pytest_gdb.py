@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import re
+import time
 import typing
 
 import pexpect
@@ -21,13 +22,19 @@ def _test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     # Don't need to have output from UART anymore
     dut.serial.stop_redirect_thread()
 
-    with openocd_dut.run(), open(os.path.join(dut.logdir, 'gdb.txt'), 'w') as gdb_log, pexpect.spawn(
-        f'idf.py -B {dut.app.binary_path} gdb --batch',
-        timeout=60,
-        logfile=gdb_log,
-        encoding='utf-8',
-        codec_errors='ignore',
-    ) as p:
+    time.sleep(1)  # Wait for the USJ port to be ready
+
+    with (
+        openocd_dut.run(),
+        open(os.path.join(dut.logdir, 'gdb.txt'), 'w') as gdb_log,
+        pexpect.spawn(
+            f'idf.py -B {dut.app.binary_path} gdb --batch',
+            timeout=60,
+            logfile=gdb_log,
+            encoding='utf-8',
+            codec_errors='ignore',
+        ) as p,
+    ):
         p.expect(re.compile(r'add symbol table from file.*bootloader.elf'))
         p.expect(
             re.compile(r'add symbol table from file.*rom.elf')
@@ -43,5 +50,6 @@ def test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 
 @pytest.mark.usb_serial_jtag
 @idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_idf_gdb_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_idf_gdb(openocd_dut, dut)

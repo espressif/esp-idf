@@ -31,13 +31,16 @@ def _validate_trace_data(trace_log: list[str], target: str, is_uart: bool = Fals
             content = f.read()
             search_str = f'N=FreeRTOS Application,D={target},C=core{idx},O=FreeRTOS'.encode()
             assert search_str in content, f'SysView trace data not found in {log}'
-
-            # For UART transport, validate STOP record at end of file
-            # TODO: Adapt this to JTAG as well.
-            if is_uart:
-                size = len(content)
-                assert size >= 2, 'Trace file too small to contain STOP record'
-                assert content[-2] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
+            # The file must end with a TRACE_STOP record: the STOP event ID
+            # followed by a variable-length timestamp delta. Walk back
+            # over the trailing continuation bytes (0x80 bit set)
+            # to find the event ID, since its offset is not fixed.
+            size = len(content)
+            assert size >= 2, 'Trace file too small to contain STOP record'
+            i = size - 2
+            while i >= 0 and (content[i] & 0x80):
+                i -= 1
+            assert i >= 0 and content[i] == STOP_EVENT_ID, 'STOP record does not start with STOP eventID'
 
 
 def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
@@ -64,13 +67,13 @@ def _capture_sysview_trace(ser: serial.Serial, trace_log_path: str) -> None:
             except serial.SerialTimeoutException:
                 assert False, 'Timeout reached while reading from serial port, exiting...'
 
-        # Wait some time to let data accumulate in target's ring buffer
+        # Give pending trace data a short window to reach the host before requesting STOP.
         time.sleep(0.2)
 
         # Send Stop command
         ser.write(STOP_CMD)
 
-        # Capture until target flushed data or timeout (3 seconds)
+        # Capture the final data produced by STOP and the transport flush.
         end_time = time.time() + 3.0
         last_data_time = time.time()
         while time.time() < end_time and (time.time() - last_data_time) <= 1.0:
@@ -125,6 +128,7 @@ def _test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         # Do a sleep while sysview samples are captured.
         time.sleep(3)
         openocd.write('esp sysview stop')
+        openocd.apptrace_wait_stop()
 
     _validate_trace_data(trace_log, dut.target)
 
@@ -141,6 +145,7 @@ def test_sysview_tracing_jtag(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
 @idf_parametrize(
     'target', ['esp32s3', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
 )
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_sysview_tracing_usj(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     _test_sysview_tracing_jtag(openocd_dut, dut)
 
@@ -164,6 +169,7 @@ def test_sysview_tracing_uart(dut: IdfDut) -> None:
 @pytest.mark.usb_serial_jtag
 @idf_parametrize('target', soc_filtered_targets('SOC_USB_SERIAL_JTAG_SUPPORTED == 1'), indirect=['target'])
 @pytest.mark.parametrize('config', [pytest.param('sysview_usj')], indirect=True)
+@idf_parametrize('port', ['/dev/serial_ports/ttyUSB-esp32'], indirect=['port'])
 def test_sysview_tracing_usj_serial(dut: IdfDut) -> None:
     time.sleep(1)  # wait for USJ port to be ready
     usj_port = '/dev/serial_ports/ttyACM-esp32'
