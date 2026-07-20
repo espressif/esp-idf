@@ -9,6 +9,7 @@
 
 #include "esp_err.h"
 #include "esp_bt_defs.h"
+#include "esp_gap_bt_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,13 +43,13 @@ Due to certain limitations, do not use these mask modes:
 2. ESP_SPP_SEC_MODE4_LEVEL4
 3. ESP_SPP_SEC_MITM
 */
-#define ESP_SPP_SEC_NONE            0x0000    /*!< No security. */
-#define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) */
-#define ESP_SPP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required. */
-#define ESP_SPP_SEC_ENCRYPT         0x0024    /*!< Encryption required. */
-#define ESP_SPP_SEC_MODE4_LEVEL4    0x0040    /*!< Mode 4 level 4 service, i.e. incoming/outgoing MITM and P-256 encryption. */
-#define ESP_SPP_SEC_MITM            0x3000    /*!< Man-In-The-Middle protection. */
-#define ESP_SPP_SEC_IN_16_DIGITS    0x4000    /*!< Min 16 digit for pin code. */
+#define ESP_SPP_SEC_NONE            ESP_BT_SEC_NONE             /*!< No security. */
+#define ESP_SPP_SEC_AUTHORIZE       ESP_BT_SEC_AUTHORIZE        /*!< Authorization required (only needed for out going connection ) */
+#define ESP_SPP_SEC_AUTHENTICATE    ESP_BT_SEC_AUTHENTICATE     /*!< Authentication required. */
+#define ESP_SPP_SEC_ENCRYPT         ESP_BT_SEC_ENCRYPT          /*!< Encryption required. */
+#define ESP_SPP_SEC_MODE4_LEVEL4    ESP_BT_SEC_MODE4_LEVEL4     /*!< Mode 4 level 4 service, i.e. incoming/outgoing MITM and P-256 encryption. */
+#define ESP_SPP_SEC_MITM            ESP_BT_SEC_MITM             /*!< Man-In-The-Middle protection. */
+#define ESP_SPP_SEC_IN_16_DIGITS    ESP_BT_SEC_IN_16_DIGITS     /*!< Min 16 digit for pin code. */
 typedef uint16_t esp_spp_sec_t;               /*!< SPP security type */
 
 /**

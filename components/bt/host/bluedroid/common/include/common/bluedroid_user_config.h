@@ -194,6 +194,25 @@
 #define UC_BT_PAN_ENABLED                   FALSE
 #endif
 
+//OPP
+#ifdef CONFIG_BT_OPP_ENABLED
+#define UC_BT_OPP_ENABLED                   CONFIG_BT_OPP_ENABLED
+#else
+#define UC_BT_OPP_ENABLED                   FALSE
+#endif
+
+#ifdef CONFIG_BT_OPP_SERVER_ENABLED
+#define UC_BT_OPP_SERVER_ENABLED            CONFIG_BT_OPP_SERVER_ENABLED
+#else
+#define UC_BT_OPP_SERVER_ENABLED            FALSE
+#endif
+
+#ifdef CONFIG_BT_OPP_CLIENT_ENABLED
+#define UC_BT_OPP_CLIENT_ENABLED            CONFIG_BT_OPP_CLIENT_ENABLED
+#else
+#define UC_BT_OPP_CLIENT_ENABLED            FALSE
+#endif
+
 #ifdef CONFIG_BT_PBAC_SUPPORTED_FEAT
 #define UC_BT_PBAC_SUPPORTED_FEAT           CONFIG_BT_PBAC_SUPPORTED_FEAT
 #else
@@ -211,6 +230,13 @@
 #define UC_BT_GOEPC_ENABLED           	    CONFIG_BT_GOEPC_ENABLED
 #else
 #define UC_BT_GOEPC_ENABLED           	    FALSE
+#endif
+
+//GOEPS (BT)
+#ifdef CONFIG_BT_GOEPS_ENABLED
+#define UC_BT_GOEPS_ENABLED           	    CONFIG_BT_GOEPS_ENABLED
+#else
+#define UC_BT_GOEPS_ENABLED           	    FALSE
 #endif
 
 //BLE
@@ -903,6 +929,12 @@
 #define UC_BT_LOG_AVRC_TRACE_LEVEL          CONFIG_BT_LOG_AVRC_TRACE_LEVEL
 #else
 #define UC_BT_LOG_AVRC_TRACE_LEVEL          UC_TRACE_LEVEL_WARNING
+#endif
+
+#ifdef CONFIG_BT_LOG_GOEPS_TRACE_LEVEL
+#define UC_BT_LOG_GOEPS_TRACE_LEVEL         CONFIG_BT_LOG_GOEPS_TRACE_LEVEL
+#else
+#define UC_BT_LOG_GOEPS_TRACE_LEVEL         UC_TRACE_LEVEL_WARNING
 #endif
 
 #ifdef CONFIG_BT_LOG_MCA_TRACE_LEVEL

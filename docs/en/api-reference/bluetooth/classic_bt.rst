@@ -9,6 +9,7 @@ The Bluetooth Classic API provides the following main features:
 
 - Core protocol support (**GAP**, **L2CAP**, and **SDP**)
 - Serial data communication (**SPP**)
+- Object push (**OPP**)
 - High-quality audio streaming (**A2DP**)
 - Media playback control (**AVRCP**)
 - Hands-free calling support (**HFP**)
@@ -33,11 +34,15 @@ The Bluetooth Classic API in ESP-IDF is organized into the following parts:
 
   **Service Discovery Protocol (SDP):** Discovers remote device services and attributes
 
-**Communication Profile**
+**Communication Profiles**
 
 - :doc:`Bluetooth SPP <esp_spp>`
 
   **Serial Port Profile (SPP):** Emulates a serial communication channel over Bluetooth for data exchange
+
+- :doc:`Bluetooth OPP <esp_opp>`
+
+  **Object Push Profile (OPP):** Pushes objects such as vCards and files between Bluetooth devices
 
 **Audio and Media Profiles**
 
@@ -75,6 +80,7 @@ Each part typically includes an **Overview**, **Application Examples**, and **AP
    Bluetooth L2CAP <esp_l2cap_bt>
    Bluetooth SDP <esp_sdp>
    Bluetooth SPP <esp_spp>
+   Bluetooth OPP <esp_opp>
    Bluetooth A2DP <esp_a2dp>
    Bluetooth AVRCP <esp_avrc>
    Bluetooth HFP Define <esp_hf_defs>

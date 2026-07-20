@@ -1,0 +1,9 @@
+menu "OPP Example Configuration"
+
+    config EXAMPLE_PEER_DEVICE_NAME
+        string "Target device name"
+        default "ESP_OPP_SERVER"
+        help
+            Bluetooth device name of the OPP server to connect.
+
+endmenu

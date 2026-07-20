@@ -333,6 +333,18 @@ typedef struct {
     uint8_t bredr_acl_link_num;              /*!< Number of bredr link connections */
 } esp_bt_gap_profile_status_t;
 
+/**
+ * @brief Classic Bluetooth Security Setting Mask
+ */
+#define ESP_BT_SEC_NONE            0x0000       /*!< No security. */
+#define ESP_BT_SEC_AUTHORIZE       0x0001       /*!< Authorization required. */
+#define ESP_BT_SEC_AUTHENTICATE    0x0012       /*!< Authentication required. */
+#define ESP_BT_SEC_ENCRYPT         0x0024       /*!< Encryption required. */
+#define ESP_BT_SEC_MODE4_LEVEL4    0x0040       /*!< Mode 4 level 4 service, i.e. incoming/outgoing MITM and P-256 encryption */
+#define ESP_BT_SEC_MITM            0x3000       /*!< Man-In-The-Middle protection */
+#define ESP_BT_SEC_IN_16_DIGITS    0x4000       /*!< Min 16 digit for pin code */
+typedef uint16_t esp_bt_sec_t;                  /*!< Security type */
+
 /// GAP state callback parameters
 typedef union {
     /**

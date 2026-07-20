@@ -397,6 +397,7 @@ void  obex_tl_l2cap_config_ind(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
             msg.conn_income.peer_mtu = p_ccb->peer_mtu;
             msg.conn_income.our_mtu = p_ccb->our_mtu;
             msg.conn_income.svr_hdl = p_scb->allocated << 8;
+            bdcpy(msg.conn_income.addr, p_ccb->addr);
             obex_tl_l2cap_cb.callback(OBEX_TL_CONN_INCOME_EVT, &msg);
         }
     }
@@ -463,6 +464,7 @@ void obex_tl_l2cap_config_cfm(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
             msg.conn_income.peer_mtu = p_ccb->peer_mtu;
             msg.conn_income.our_mtu = p_ccb->our_mtu;
             msg.conn_income.svr_hdl = p_scb->allocated << 8;
+            bdcpy(msg.conn_income.addr, p_ccb->addr);
             obex_tl_l2cap_cb.callback(OBEX_TL_CONN_INCOME_EVT, &msg);
         }
     }

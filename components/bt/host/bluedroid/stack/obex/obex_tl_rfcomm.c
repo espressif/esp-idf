@@ -231,6 +231,7 @@ static void rfcomm_server_mgmt_callback(UINT32 code, UINT16 rfc_handle, void* da
         msg.conn_income.peer_mtu = p_ccb->mtu;
         msg.conn_income.our_mtu = p_ccb->mtu;
         msg.conn_income.svr_hdl = (p_scb->allocated << 8);
+        bdcpy(msg.conn_income.addr, p_ccb->addr);
         obex_tl_rfcomm_cb.callback(OBEX_TL_CONN_INCOME_EVT, &msg);
     }
     else {

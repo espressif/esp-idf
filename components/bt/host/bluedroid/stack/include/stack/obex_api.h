@@ -200,6 +200,7 @@ typedef union {
         UINT16 svr_handle;
         UINT16 peer_mtu;
         UINT16 our_mtu;
+        BD_ADDR addr;               /* peer bluetooth device address */
     } conn_income;
 
     struct {

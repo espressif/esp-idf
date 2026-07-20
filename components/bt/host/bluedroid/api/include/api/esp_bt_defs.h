@@ -21,6 +21,7 @@ extern "C" {
     }
 
 #define ESP_BT_STATUS_BASE_FOR_HCI_ERR           0X0100  /* base for converting HCI error code to ESP status */
+#define ESP_BT_STATUS_BASE_FOR_OPP_ERR           0X0200  /* base for OPP-specific error codes */
 
 /* See [Vol 1] Part F, Controller Error Codes for a list of error codes and descriptions */
 

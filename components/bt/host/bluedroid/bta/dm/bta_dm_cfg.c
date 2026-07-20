@@ -140,7 +140,21 @@ tBTA_DM_RM *const p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
 #  define BTA_DM_NUM_PM_PBC_ENTRY     0
 #endif
 
-#define BTA_DM_NUM_PM_ENTRY           (BTA_DM_NUM_PM_ENTRY_BASE + BTA_DM_NUM_PM_PAN_ENTRY + BTA_DM_NUM_PM_PBC_ENTRY)
+#if (BTA_OPP_CLIENT_INCLUDED == TRUE)
+#  define BTA_DM_NUM_PM_OPC_ENTRY     1
+#else
+#  define BTA_DM_NUM_PM_OPC_ENTRY     0
+#endif
+
+#if (BTA_OPP_SERVER_INCLUDED == TRUE)
+#  define BTA_DM_NUM_PM_OPS_ENTRY     1
+#else
+#  define BTA_DM_NUM_PM_OPS_ENTRY     0
+#endif
+
+#define BTA_DM_NUM_PM_ENTRY           (BTA_DM_NUM_PM_ENTRY_BASE + BTA_DM_NUM_PM_PAN_ENTRY + \
+                                       BTA_DM_NUM_PM_PBC_ENTRY + BTA_DM_NUM_PM_OPC_ENTRY + \
+                                       BTA_DM_NUM_PM_OPS_ENTRY)
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
 
@@ -165,6 +179,12 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY + 1] 
 #endif
 #if (BTA_PBA_CLIENT_INCLUDED == TRUE)
     , {BTA_ID_PBC, BTA_ALL_APP_ID, 2}  /* pbc reuses ftc/opc spec table */
+#endif
+#if (BTA_OPP_CLIENT_INCLUDED == TRUE)
+    , {BTA_ID_OPC, BTA_ALL_APP_ID, 2}  /* opc reuses ftc spec table */
+#endif
+#if (BTA_OPP_SERVER_INCLUDED == TRUE)
+    , {BTA_ID_OPS, BTA_ALL_APP_ID, 3}  /* ops reuses fts spec table */
 #endif
 };
 

@@ -44,6 +44,7 @@ typedef union {
         UINT16 peer_mtu;
         UINT16 our_mtu;
         UINT16 svr_hdl;
+        BD_ADDR addr;               /* peer bluetooth device address */
     } conn_income;
 
     /* struct for OBEX_TL_MTU_CHANGE_EVT */

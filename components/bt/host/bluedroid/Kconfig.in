@@ -216,6 +216,35 @@ config BT_SDP_ATTR_LEN
         Any attributes that exceed this size are truncated.
         The default value is 300.
 
+menuconfig BT_OPP_ENABLED
+    bool "OPP (Object Push Profile)"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the Object Push Profile over GOEP (OBEX/RFCOMM) for sending
+        and receiving in-memory objects.
+        Currently, only Object Push is supported.
+
+if BT_OPP_ENABLED
+
+    config BT_OPP_SERVER_ENABLED
+        bool "OPP Server"
+        default y
+        select BT_GOEPS_ENABLED
+        help
+            Enable OPP server role (BTA_ID_OPS). Registers a GOEP server over RFCOMM
+            and publishes an OPP SDP record for incoming object push.
+
+    config BT_OPP_CLIENT_ENABLED
+        bool "OPP Client"
+        default y
+        select BT_GOEPC_ENABLED
+        help
+            Enable OPP client role (BTA_ID_OPC). Supports SDP discovery and GOEP PUT
+            to push in-memory objects to a remote OPP server.
+
+endif # BT_OPP_ENABLED
+
 menuconfig BT_HFP_ENABLE
     bool "Hands Free/Handset Profile"
     depends on BT_CLASSIC_ENABLED
@@ -333,6 +362,13 @@ config BT_GOEPC_ENABLED
     default n
     help
         This enables the BT GOEP Profile Client role
+
+config BT_GOEPS_ENABLED
+    bool
+    depends on BT_CLASSIC_ENABLED
+    default n
+    help
+        This enables the BT GOEP Profile Server role
 
 config BT_BLE_ENABLED
     bool "Bluetooth Low Energy"
@@ -1175,6 +1211,41 @@ menu "BT DEBUG LOG LEVEL"
         default 4 if BT_LOG_AVRC_TRACE_LEVEL_EVENT
         default 5 if BT_LOG_AVRC_TRACE_LEVEL_DEBUG
         default 6 if BT_LOG_AVRC_TRACE_LEVEL_VERBOSE
+        default 2
+
+    choice BT_LOG_GOEPS_TRACE_LEVEL
+        prompt "GOEPS layer"
+        default BT_LOG_GOEPS_TRACE_LEVEL_WARNING
+        depends on BT_BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+        help
+            Define BT trace level for GOEPS layer
+
+        config BT_LOG_GOEPS_TRACE_LEVEL_NONE
+            bool "NONE"
+        config BT_LOG_GOEPS_TRACE_LEVEL_ERROR
+            bool "ERROR"
+        config BT_LOG_GOEPS_TRACE_LEVEL_WARNING
+            bool "WARNING"
+        config BT_LOG_GOEPS_TRACE_LEVEL_API
+            bool "API"
+        config BT_LOG_GOEPS_TRACE_LEVEL_EVENT
+            bool "EVENT"
+        config BT_LOG_GOEPS_TRACE_LEVEL_DEBUG
+            bool "DEBUG"
+        config BT_LOG_GOEPS_TRACE_LEVEL_VERBOSE
+            bool "VERBOSE"
+    endchoice
+
+    config BT_LOG_GOEPS_TRACE_LEVEL
+        int
+        depends on BT_BLUEDROID_ENABLED
+        default 0 if BT_LOG_GOEPS_TRACE_LEVEL_NONE
+        default 1 if BT_LOG_GOEPS_TRACE_LEVEL_ERROR
+        default 2 if BT_LOG_GOEPS_TRACE_LEVEL_WARNING
+        default 3 if BT_LOG_GOEPS_TRACE_LEVEL_API
+        default 4 if BT_LOG_GOEPS_TRACE_LEVEL_EVENT
+        default 5 if BT_LOG_GOEPS_TRACE_LEVEL_DEBUG
+        default 6 if BT_LOG_GOEPS_TRACE_LEVEL_VERBOSE
         default 2
 
     choice BT_LOG_MCA_TRACE_LEVEL
