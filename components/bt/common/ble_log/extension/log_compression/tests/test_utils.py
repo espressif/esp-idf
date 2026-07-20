@@ -141,7 +141,8 @@ class PipelineContext:
         return str(rel_path)
 
     def run_compression(self, src_list: list[str]) -> dict[str, list[tuple[int, str]]]:
-        """Run prepare + compress + header generation. Returns generated macros."""
+        """Run mirror + prepare + compress + header generation. Returns generated macros."""
+        self.compressor.mirror_local_includes()
         self.compressor.prepare_source_files(src_list)
 
         files_to_process = []
