@@ -52,9 +52,6 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
     tAVRC_APP_SETTING       *p_app_set;
 
     /* Check the vendor data */
-    if (p_msg->vendor_len == 0) {
-        return AVRC_STS_NO_ERROR;
-    }
     if ((p_msg->p_vendor_data == NULL) || (p_msg->vendor_len < AVRC_CMD_FIXED_SIZE)) {
         return AVRC_STS_INTERNAL_ERR;
     }
