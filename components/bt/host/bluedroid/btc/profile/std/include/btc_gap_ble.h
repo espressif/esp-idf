@@ -147,6 +147,26 @@ typedef enum {
     BTC_GAP_BLE_READ_MONITOR_ADV_LIST_SIZE,
     BTC_GAP_BLE_ENABLE_MONITOR_ADV,
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    BTC_GAP_BLE_SET_DECISION_DATA,
+    BTC_GAP_BLE_SET_DECISION_INSTRUCTIONS,
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    BTC_GAP_BLE_FRAME_SPACE_UPDATE,
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    BTC_GAP_BLE_READ_ALL_LOCAL_SUPP_FEAT,
+    BTC_GAP_BLE_READ_ALL_REMOTE_FEAT,
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    BTC_GAP_BLE_CONNECTION_RATE_REQUEST,
+    BTC_GAP_BLE_SET_DEFAULT_RATE_PARAMETERS,
+    BTC_GAP_BLE_READ_MIN_SUPP_CONN_INTERVAL,
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    BTC_GAP_BLE_ENABLE_UTP_OTA_MODE,
+    BTC_GAP_BLE_UTP_SEND,
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
     BTC_GAP_BLE_READ_CHANNEL_MAP,
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     BTC_GAP_BLE_SET_PA_SUBEVT_DATA,
@@ -167,6 +187,10 @@ typedef enum {
     BTC_GAP_BLE_CS_SET_PROCEDURE_PARAMS,
     BTC_GAP_BLE_CS_PROCEDURE_ENABLE,
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    BTC_GAP_BLE_CS_SET_SECURITY_REQUIREMENTS,
+    BTC_GAP_BLE_CS_SET_DEFAULT_SECURITY_REQUIREMENTS,
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 #if (BT_GATTS_KEY_MATERIAL_CHAR == TRUE)
     BTC_GAP_BLE_ACT_SET_KEY_MATERIAL,
 #endif
@@ -588,6 +612,69 @@ typedef union {
         uint8_t enable;
     } enable_monitor_adv;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
+#if (BLE_FEAT_DBAF == TRUE)
+    struct set_decision_data_args {
+        uint8_t adv_handle;
+        uint8_t decision_type_flags;
+        uint8_t data_len;
+        uint8_t *data;
+    } set_decision_data;
+    struct set_decision_instructions_args {
+        uint8_t num_tests;
+        uint8_t *test_flags;
+        uint8_t *test_fields;
+        uint8_t *test_params;
+    } set_decision_instructions;
+#endif // #if (BLE_FEAT_DBAF == TRUE)
+#if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+    struct frame_space_update_args {
+        uint16_t conn_handle;
+        uint16_t frame_space_min;
+        uint16_t frame_space_max;
+        uint8_t phys;
+        uint16_t spacing_types;
+    } frame_space_update;
+#endif // #if (BLE_FEAT_FRAME_SPACE_UPDATE == TRUE)
+#if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+    struct read_all_remote_feat_args {
+        uint16_t conn_handle;
+        uint8_t page_requested;
+    } read_all_remote_feat;
+#endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    struct connection_rate_request_args {
+        uint16_t conn_handle;
+        uint16_t conn_interval_min;
+        uint16_t conn_interval_max;
+        uint16_t subrate_min;
+        uint16_t subrate_max;
+        uint16_t max_latency;
+        uint16_t continuation_number;
+        uint16_t supervision_timeout;
+        uint16_t min_ce_len;
+        uint16_t max_ce_len;
+    } connection_rate_request;
+    struct set_default_rate_parameters_args {
+        uint16_t conn_interval_min;
+        uint16_t conn_interval_max;
+        uint16_t subrate_min;
+        uint16_t subrate_max;
+        uint16_t max_latency;
+        uint16_t continuation_number;
+        uint16_t supervision_timeout;
+        uint16_t min_ce_len;
+        uint16_t max_ce_len;
+    } set_default_rate_parameters;
+#endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+#if (BLE_FEAT_LE_UTP == TRUE)
+    struct enable_utp_ota_mode_args {
+        uint8_t enable;
+    } enable_utp_ota_mode;
+    struct utp_send_args {
+        uint8_t data_len;
+        uint8_t *data;
+    } utp_send;
+#endif // #if (BLE_FEAT_LE_UTP == TRUE)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
     // BTC_GAP_BLE_SET_PA_SUBEVT_DATA
     struct per_adv_subevent_data_params_args {
@@ -715,6 +802,16 @@ typedef union {
         uint8_t enable;
     } cs_procedure_enable_params;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+#if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
+    struct cs_set_security_requirements_params_args {
+        uint16_t conn_handle;
+        uint64_t cs_security_requirements;
+    } cs_set_security_requirements_params;
+
+    struct cs_set_default_security_requirements_params_args {
+        uint64_t cs_security_requirements;
+    } cs_set_default_security_requirements_params;
+#endif // (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
