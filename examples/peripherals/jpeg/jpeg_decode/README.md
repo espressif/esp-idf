@@ -60,8 +60,7 @@ The test writes the `PPM` file and compares it with `golden_output.ppm`. This ma
 To run the pytest helper locally on hardware, build the example for your target first, then invoke the test script with the target and serial port:
 
 ```bash
-idf.py set-target esp32p4 build
-pytest --target esp32p4 --port PORT pytest_jpeg_decode.py
+pytest pytest_jpeg_decode.py --target esp32p4 --port PORT
 ```
 
 Replace `esp32p4` with another supported target such as `esp32s31` when needed.
