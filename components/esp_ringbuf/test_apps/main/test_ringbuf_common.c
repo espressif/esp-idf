@@ -10,6 +10,7 @@
  */
 
 #include "sdkconfig.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,7 @@
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
 #include "unity.h"
+#include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_task.h"
 
@@ -175,6 +177,85 @@ void receive_check_and_return_item_byte_buffer(RingbufHandle_t handle, const uin
     } else {
         TEST_ASSERT_MESSAGE(item_size == expected_size, "Item size is incorrect");
     }
+}
+
+static void check_too_small_ringbuffer_send_rejected(RingbufferType_t buffer_type)
+{
+    const size_t too_small_size = ITEM_HDR_SIZE;
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+
+    RingbufHandle_t handle = xRingbufferCreate(too_small_size, buffer_type);
+    BaseType_t ret = pdFALSE;
+    if (handle != NULL) {
+        if (buffer_type == RINGBUF_TYPE_NOSPLIT) {
+            void *item = NULL;
+            ret = xRingbufferSendAcquire(handle, &item, SMALL_ITEM_SIZE, 0);
+            if (ret == pdTRUE) {
+                memcpy(item, small_item, SMALL_ITEM_SIZE);
+            }
+        } else {
+            ret = xRingbufferSend(handle, small_item, SMALL_ITEM_SIZE, 0);
+        }
+    }
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+    TEST_ASSERT_EQUAL(pdFALSE, ret);
+
+    if (handle != NULL && ret == pdFALSE) {
+        vRingbufferDelete(handle);
+    }
+}
+
+static void check_too_small_static_ringbuffer_rejected(RingbufferType_t buffer_type)
+{
+    static StaticRingbuffer_t ringbuffer_struct;
+    //Aligned so the no-split/allow-split alignment assert is satisfied and only the size guard rejects
+    static uint8_t ringbuffer_storage[ITEM_HDR_SIZE] __attribute__((aligned(sizeof(size_t))));
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+
+    RingbufHandle_t handle = xRingbufferCreateStatic(sizeof(ringbuffer_storage), buffer_type,
+                                                     ringbuffer_storage, &ringbuffer_struct);
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+    TEST_ASSERT_NULL(handle);
+}
+
+static void check_too_small_ringbuffer_with_caps_rejected(RingbufferType_t buffer_type)
+{
+    const size_t too_small_size = ITEM_HDR_SIZE;
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+
+    //The size guard rejects before any allocation, so the specific caps are irrelevant here
+    RingbufHandle_t handle = xRingbufferCreateWithCaps(too_small_size, buffer_type, MALLOC_CAP_8BIT);
+
+    TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
+    TEST_ASSERT_NULL(handle);
+}
+
+TEST_CASE("Ringbuffer prevents heap corruption when size can underflow max item size", "[esp_ringbuf]")
+{
+    check_too_small_ringbuffer_send_rejected(RINGBUF_TYPE_NOSPLIT);
+    check_too_small_ringbuffer_send_rejected(RINGBUF_TYPE_ALLOWSPLIT);
+
+    check_too_small_static_ringbuffer_rejected(RINGBUF_TYPE_NOSPLIT);
+    check_too_small_static_ringbuffer_rejected(RINGBUF_TYPE_ALLOWSPLIT);
+
+    check_too_small_ringbuffer_with_caps_rejected(RINGBUF_TYPE_NOSPLIT);
+    check_too_small_ringbuffer_with_caps_rejected(RINGBUF_TYPE_ALLOWSPLIT);
+
+    RingbufHandle_t byte_buffer = xRingbufferCreate(ITEM_HDR_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_NOT_NULL(byte_buffer);
+    vRingbufferDelete(byte_buffer);
+}
+
+TEST_CASE("Ringbuffer fixed-size no-split creation rejects size overflow", "[esp_ringbuf][linux]")
+{
+    const size_t overflowing_item_count = (SIZE_MAX / SMALL_ITEM_SIZE) + 2;
+
+    TEST_ASSERT_NULL(xRingbufferCreateNoSplit(SMALL_ITEM_SIZE, overflowing_item_count));
 }
 
 /* ----------------- Basic ring buffer behavior tests cases --------------------
