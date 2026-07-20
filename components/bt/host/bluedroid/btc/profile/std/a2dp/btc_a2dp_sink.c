@@ -539,8 +539,16 @@ static void btc_a2dp_sink_handle_inc_media(tBT_SBC_HDR *p_msg)
     UINT32 pcmBytes, availPcmBytes;
     OI_INT16 *pcmDataPointer = a2dp_sink_local_param.pcmData; /*Will be overwritten on next packet receipt*/
     OI_STATUS status;
-    int num_sbc_frames = p_msg->num_frames_to_be_processed;
-    UINT32 sbc_frame_len = p_msg->len - 1;
+    int num_sbc_frames;
+    UINT32 sbc_frame_len;
+
+    if (p_msg->len < 1) {
+        return;
+    }
+
+    sbc_start_frame = ((UINT8 *)(p_msg + 1) + p_msg->offset + 1);
+    num_sbc_frames = p_msg->num_frames_to_be_processed;
+    sbc_frame_len = (UINT32)p_msg->len - 1U;
     availPcmBytes = sizeof(a2dp_sink_local_param.pcmData);
 
     /* XXX: Check if the below check is correct, we are checking for peer to be sink when we are sink */
