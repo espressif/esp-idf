@@ -234,6 +234,9 @@ void avct_l2c_config_cfm_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
     if ((p_lcb = avct_lcb_by_lcid(lcid)) != NULL) {
         AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d, res: %d",
                          lcid, p_lcb->ch_state, p_cfg->result);
+        if (p_lcb->conflict_lcid == lcid) {
+            return;
+        }
         /* if in correct state */
         if (p_lcb->ch_state == AVCT_CH_CFG) {
             /* if result successful */
@@ -294,6 +297,10 @@ void avct_l2c_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
         p_cfg->result = L2CAP_CFG_OK;
         L2CA_ConfigRsp(lcid, p_cfg);
 
+        if (p_lcb->conflict_lcid == lcid) {
+            return;
+        }
+
         /* if first config ind */
         if ((p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) == 0) {
             /* update flags */
@@ -322,7 +329,7 @@ void avct_l2c_config_ind_cback(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
 void avct_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
 {
     tAVCT_LCB       *p_lcb;
-    UINT16          result = AVCT_RESULT_FAIL;
+    tAVCT_LCB_EVT   evt;
 
     /* look up lcb for this channel */
     if ((p_lcb = avct_lcb_by_lcid(lcid)) != NULL) {
@@ -332,7 +339,13 @@ void avct_l2c_disconnect_ind_cback(UINT16 lcid, BOOLEAN ack_needed)
             L2CA_DisconnectRsp(lcid);
         }
 
-        avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, (tAVCT_LCB_EVT *) &result);
+        if (p_lcb->conflict_lcid == lcid) {
+            p_lcb->conflict_lcid = 0;
+            return;
+        }
+
+        evt.result = AVCT_RESULT_FAIL;
+        avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &evt);
         AVCT_TRACE_DEBUG("ch_state di: %d ", p_lcb->ch_state);
     }
 }
@@ -356,6 +369,10 @@ void avct_l2c_disconnect_cfm_cback(UINT16 lcid, UINT16 result)
     if ((p_lcb = avct_lcb_by_lcid(lcid)) != NULL) {
         AVCT_TRACE_DEBUG("avct_l2c_disconnect_cfm_cback: 0x%x, ch_state: %d, res: %d",
                          lcid, p_lcb->ch_state, result);
+        if (p_lcb->conflict_lcid == lcid) {
+            p_lcb->conflict_lcid = 0;
+            return;
+        }
         /* result value may be previously stored */
         res = (p_lcb->ch_result != 0) ? p_lcb->ch_result : result;
         p_lcb->ch_result = 0;
