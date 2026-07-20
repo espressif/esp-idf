@@ -107,7 +107,7 @@ The new API requires you to create the :cpp:type:`esp_tls_t` structure using :cp
 Unified Private Key Interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``use_secure_element`` field has been removed from :cpp:type:`esp_tls_cfg`, :cpp:type:`esp_tls_cfg_server`, and :cpp:type:`httpd_ssl_config`. The ATECC608A secure element and all other hardware-backed key sources (DS peripheral, ECDSA peripheral, Key Manager) are now accessed through a unified :cpp:type:`esp_key_config_t` interface via PSA Crypto key IDs.
+The ``use_secure_element`` field in :cpp:type:`esp_tls_cfg`, :cpp:type:`esp_tls_cfg_server`, and :cpp:type:`httpd_ssl_config` is deprecated and no longer functional: setting it to ``true`` makes the connection (or server start) fail with ``ESP_ERR_NOT_SUPPORTED``. The field is kept only for source compatibility and will be removed in the next major release. The ATECC608A secure element and all other hardware-backed key sources (DS peripheral, ECDSA peripheral, Key Manager) are now accessed through a unified :cpp:type:`esp_key_config_t` interface via PSA Crypto key IDs.
 
 **Migration Steps**
 
@@ -115,7 +115,7 @@ The ``use_secure_element`` field has been removed from :cpp:type:`esp_tls_cfg`, 
 
 2. The ``atcab_init()`` call is no longer performed internally by ESP-TLS. Applications using the ATECC608A must ensure the secure element is initialized at the application level before use. Refer to the `esp-cryptoauthlib documentation <https://github.com/espressif/esp-cryptoauthlib>`_ for details.
 
-3. The ``esp_transport_ssl_use_secure_element()`` function has been removed from ``tcp_transport``. Use ``esp_transport_ssl_set_client_key_config()`` instead.
+3. The ``esp_transport_ssl_use_secure_element()`` function in ``tcp_transport`` is deprecated and no longer functional (the connection will fail with ``ESP_ERR_NOT_SUPPORTED``). Use ``esp_transport_ssl_set_client_key_config()`` instead.
 
 4. The Kconfig options for the secure element driver have been consolidated from ``CONFIG_MBEDTLS_ATCA_HW_ECDSA_SIGN`` / ``CONFIG_MBEDTLS_ATCA_HW_ECDSA_VERIFY`` into a single ``CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED``. The old names are automatically mapped via ``sdkconfig.rename``.
 

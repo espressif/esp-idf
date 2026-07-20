@@ -189,6 +189,13 @@ typedef struct esp_tls_cfg {
                                                  underneath socket will be configured in non
                                                  blocking mode after tls session is established */
 
+    bool use_secure_element;                /*!< @deprecated No longer functional; setting this to true
+                                                 makes the connection fail with ESP_ERR_NOT_SUPPORTED.
+                                                 Use `client_key` (esp_key_config_t) together with
+                                                 CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead.
+                                                 Kept only for source compatibility; will be removed in
+                                                 the next major release. */
+
     int timeout_ms;                         /*!< Network timeout in milliseconds.
                                                  Note: If this value is not set, by default the timeout is
                                                  set to 10 seconds. If you wish that the session should wait
@@ -339,6 +346,13 @@ typedef struct esp_tls_cfg_server {
     uint8_t ecdsa_key_efuse_blk_high;           /*!< The high efuse block for ECDSA key (used only for SECP384R1 curve). If not set (0), only ecdsa_key_efuse_blk is used. */
 
     esp_tls_ecdsa_curve_t ecdsa_curve;          /*!< ECDSA curve to use (SECP256R1 or SECP384R1) */
+
+    bool use_secure_element;                    /*!< @deprecated No longer functional; setting this to true
+                                                     makes the connection fail with ESP_ERR_NOT_SUPPORTED.
+                                                     Use `server_key` (esp_key_config_t) together with
+                                                     CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead.
+                                                     Kept only for source compatibility; will be removed in
+                                                     the next major release. */
 
     uint32_t tls_handshake_timeout_ms;                   /*!< TLS handshake timeout in milliseconds.
                                                     Note: If this value is not set, by default the timeout is

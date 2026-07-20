@@ -348,6 +348,15 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
 #endif
     }
 
+    /* use_secure_element is deprecated and non-functional; it is kept only for
+     * source compatibility. */
+    if (config->use_secure_element) {
+        ESP_LOGE(TAG, "use_secure_element is no longer supported. Use server_key (esp_key_config_t) with "
+                 "CONFIG_MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED instead. See the ESP-TLS migration guide.");
+        ret = ESP_ERR_NOT_SUPPORTED;
+        goto exit;
+    }
+
     if (config->use_ecdsa_peripheral) {
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
         (*ssl_ctx)->tls_cfg->use_ecdsa_peripheral = config->use_ecdsa_peripheral;
