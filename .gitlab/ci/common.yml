@@ -69,9 +69,6 @@ variables:
   ESP_IDF_DOC_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.1-docs:1"
   TARGET_TEST_ENV_IMAGE: "${CI_REGISTRY}/ci/images/idf-v6.1-target-test:1"
 
-  # cache python dependencies
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-
   # Set this variable to the branch of idf-constraints repo in order to test a custom Python constraint file. The
   # branch name must be without the remote part ("origin/"). Keep the variable empty in order to use the constraint
   # file from https://dl.espressif.com/dl/esp-idf.
@@ -136,12 +133,6 @@ default:
   cache:
     # pull only for most of the use cases since it's cache dir.
     # Only set "push" policy for "upload_cache" stage jobs
-    - key: pip-cache-${LATEST_GIT_TAG}
-      fallback_keys:
-        - pip-cache
-      paths:
-        - .cache/pip
-      policy: pull
     - key: submodule-cache-${LATEST_GIT_TAG}
       fallback_keys:
         - submodule-cache
