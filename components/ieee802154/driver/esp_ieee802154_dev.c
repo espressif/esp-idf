@@ -32,13 +32,15 @@
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
-#include "esp_private/sleep_modem.h"
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG
 #define IEEE802154_LINK_OWNER  ENTRY(3)
 #else
 #define IEEE802154_LINK_OWNER  ENTRY(0) | ENTRY(2)
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
 #endif // CONFIG_PM_ENABLE
+#if CONFIG_PM_ENABLE || SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#include "esp_private/sleep_modem.h"
+#endif // CONFIG_PM_ENABLE || SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 
 static bool s_rf_closed = true;
 #define CCA_DETECTION_TIME 8
@@ -916,24 +918,37 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_txon_delay_set();
 
     memset(s_rx_frame, 0, sizeof(s_rx_frame));
-
     ieee802154_set_state(IEEE802154_STATE_IDLE);
 
     // TODO: Add flags for IEEE802154 ISR allocating. TZ-102
     ret = esp_intr_alloc(ieee802154_periph.irq_id, 0, ieee802154_isr, NULL, &s_ieee802154_isr_handle);
     ESP_RETURN_ON_FALSE(ret == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC init failed");
 
-    ESP_RETURN_ON_FALSE(ieee802154_sleep_init() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep init failed");
+    ret = ieee802154_sleep_init();
+    if (unlikely(ret != ESP_OK)) {
+        ESP_LOGE(IEEE802154_TAG, "%s(%d): IEEE802154 MAC sleep init failed", __FUNCTION__, __LINE__);
+        if (esp_intr_free(s_ieee802154_isr_handle) != ESP_OK) {
+            ESP_LOGE(IEEE802154_TAG, "%s(%d): IEEE802154 MAC ISR deinit failed", __FUNCTION__, __LINE__);
+        }
+        s_ieee802154_isr_handle = NULL;
+        return ret;
+    }
 
 #if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
     esp_coex_ieee802154_force_rx_enable(true);
 #endif
 
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+    esp_phy_modem_init(SLEEP_MODEM_IEEE802154);
+#endif
     return ret;
 }
 
 esp_err_t ieee802154_mac_deinit(void)
 {
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+    esp_phy_modem_deinit(SLEEP_MODEM_IEEE802154);
+#endif
     esp_err_t ret = ESP_OK;
 #if CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE
     esp_coex_ieee802154_force_rx_enable(false);
@@ -941,7 +956,9 @@ esp_err_t ieee802154_mac_deinit(void)
     if (s_ieee802154_isr_handle) {
         ret = esp_intr_free(s_ieee802154_isr_handle);
         s_ieee802154_isr_handle = NULL;
-        ESP_RETURN_ON_FALSE(ret == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC ISR deinit failed");
+        if (unlikely(ret != ESP_OK)) {
+            ESP_LOGE(IEEE802154_TAG, "%s(%d): IEEE802154 MAC ISR deinit failed", __FUNCTION__, __LINE__);
+        }
     }
     ESP_RETURN_ON_FALSE(ieee802154_sleep_deinit() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep deinit failed");
     return ret;

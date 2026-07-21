@@ -568,11 +568,13 @@
 
 #define SOC_PM_PAU_LINK_NUM                 (5)
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
-#define SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC  (4) // The range of values for the link index is [0, SOC_PM_PAU_LINK_NUM)
+#define SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY (1)
+#define SOC_PM_PAU_REGDMA_LINK_IDX_PHY      (4) // The range of values for the link index is [0, SOC_PM_PAU_LINK_NUM)
 /** Workaround: software-triggered modem PHY retention uses dedicated WiFi MAC REGDMA, not entry link_sel */
 #define SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND (1)
 
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
+#define SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY        (1)
 #define SOC_PM_SUPPORT_PMU_MODEM_STATE             (1)
 #define MAC_SUPPORT_PMU_MODEM_STATE                SOC_PM_SUPPORT_PMU_MODEM_STATE
 /* Since SOC APB and MODEM APB on ESP32-S31 are decoupled, XTAL can be used as SOC clock in modem state */

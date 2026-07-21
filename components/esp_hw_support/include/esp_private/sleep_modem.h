@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,23 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_sleep.h"
+#include "esp_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+#define SLEEP_MODEM_SKIP_I2C_MST_CLK_RETENTION    (BIT(0))
+#define SLEEP_MODEM_SKIP_WIFI_RETENTION           (BIT(1))
+#define SLEEP_MODEM_RESET_RETENTION               (0)
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+typedef enum {
+    SLEEP_MODEM_WIFI       = 1,
+    SLEEP_MODEM_BT         = 2,
+    SLEEP_MODEM_IEEE802154 = 4,
+} sleep_modem_type_t;
+#define SLEEP_MODEM_MAX_CNT 3
 
 /**
  * @file sleep_modem.h
@@ -77,31 +90,36 @@ void sleep_modem_mac_bb_power_down_prepare(void);
 void sleep_modem_mac_bb_power_up_prepare(void);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+/**
+ * @brief Phy retention completes
+ *
+ */
+void sleep_modem_phy_retention_complete(void);
 
 /**
- * @brief The retention action in the modem state of WiFi PHY module
+ * @brief The retention action of PHY module
  *
  * @param restore  true for restore the PHY context, false for backup the PHY context
- * @param wifimac_link_is_sel  true to trigger REGDMA via WiFi MAC link
+ * @param flags Configure flags for phy link
  */
-void sleep_modem_wifi_do_phy_retention(bool restore, bool wifimac_link_is_sel);
+void sleep_modem_do_phy_retention(bool restore, bool wifimac_link_is_sel, uint8_t flags);
 
 /**
- * @brief Get WiFi modem state
+ * @brief Get phy link state
  *
- * @return true or false for WiFi modem state is enabled or disabled
+ * @return true or false for phy link is enabled or disabled
  */
-bool sleep_modem_wifi_modem_state_enabled(void);
+bool sleep_modem_phy_link_enabled(void);
 
 /**
- * @brief Get WiFi modem link done state
+ * @brief Get phy link done state
  *
- * @return true or false for WiFi modem link can be used to enable RF by REGDMA or can not be used
+ * @return true or false for phy link can be used to enable RF by REGDMA or can not be used
  */
-bool sleep_modem_wifi_modem_link_done(void);
+bool sleep_modem_phy_link_done(void);
 
-#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 /**
  * @brief Whether the current target allows Modem or the TOP power domain to be powered off during light sleep
@@ -199,23 +217,36 @@ void esp_pm_register_light_sleep_default_params_config_callback(update_light_sle
  */
 void esp_pm_unregister_light_sleep_default_params_config_callback(void);
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 /**
- * @brief Init Wi-Fi modem state.
+ * @brief Init phy link.
  *
- * This function init wifi modem state.
-  * @return
-  *   - ESP_OK on success
-  *   - ESP_ERR_NO_MEM if no memory for link
+ * This function init phy link.
+ *
+ * @param modem_mask bit mask of modems
+ * @return
+ *    - ESP_OK on success
+ *    - ESP_ERR_NO_MEM if no memory for link
  */
-esp_err_t sleep_modem_wifi_modem_state_init(void);
+esp_err_t sleep_modem_phy_init(sleep_modem_type_t modem_mask);
 
 /**
- * @brief  Deinit Wi-Fi modem state.
+ * @brief Deinit phy link.
  *
- * This function deinit wifi modem state.
+ * This function deinit phy link.
+ *
+ * @param modem_mask bit mask of modems
  */
-void sleep_modem_wifi_modem_state_deinit(void);
+void sleep_modem_phy_deinit(sleep_modem_type_t modem_mask);
+
+/**
+ * @brief Check if Wi-Fi modem state is enabled
+ *
+ * @return
+ *  - true Wi-Fi modem state is enabled
+ *  - false Wi-Fi modem state is disabled
+ */
+bool sleep_modem_wifi_modem_state_is_enabled(void);
 
 /**
  * @brief Function to check Wi-Fi modem state to skip light sleep.
@@ -228,33 +259,33 @@ void sleep_modem_wifi_modem_state_deinit(void);
 bool sleep_modem_wifi_modem_state_skip_light_sleep(void);
 
 /**
- * @brief Function to initialize and create the modem state phy link
- * @param link_head the pointer that point to the head of the created phy link
+ * @brief Function to initialize and create the phy link
+ * @param link_context PHY link regdma description conteoxt pointer
  * @return
  *   - ESP_OK on success
  *   - ESP_ERR_NO_MEM if no memory for link
  *   - ESP_ERR_INVALID_ARG if value is out of range
  *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
  */
-esp_err_t sleep_modem_state_phy_link_init(void **link_head);
+esp_err_t sleep_phy_link_init(void **link_context);
 
 /**
- * @brief Function to destroy and de-initialize modem state phy link
- * @param link_head the phy link head will be destroyed
+ * @brief Function to destroy and de-initialize phy link
+ * @param link_context PHY link regdma description conteoxt pointer
  * @return
  *   - ESP_OK on success
  *   - ESP_ERR_INVALID_ARG if value is out of range
  *   - ESP_ERR_INVALID_STATE if the phy module retention state is invalid
  */
-esp_err_t sleep_modem_state_phy_link_deinit(void *link_head);
+esp_err_t sleep_phy_link_deinit(void *link_context);
 
 /**
  * @brief Function to configure PHY link regdma description at runtime
  * @param link_context PHY link regdma description conteoxt pointer
  * @param flags A bitmap to indicate the PHY link regdma description configuration flag
  */
-void sleep_modem_state_phy_link_config(void *link_context, uint32_t flags);
-#endif
+void sleep_phy_link_config(void *link_context, uint32_t flags);
+#endif /* SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY */
 
 #ifdef __cplusplus
 }

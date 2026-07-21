@@ -1535,7 +1535,11 @@ config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
 
-config SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
+config SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_LINK_IDX_PHY
     int
     default 4
 
@@ -1544,6 +1548,10 @@ config SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
     default y
 
 config SOC_PM_MODEM_RETENTION_BY_REGDMA
+    bool
+    default y
+
+config SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
     bool
     default y
 

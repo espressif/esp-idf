@@ -1327,8 +1327,8 @@ void IRAM_ATTR sleep_retention_do_system_retention(bool backup_or_restore)
 }
 #endif
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
-void IRAM_ATTR sleep_retention_do_phy_retention(bool backup_or_restore, bool wifimac_link_is_sel)
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+void IRAM_ATTR sleep_retention_do_phy_retention(bool backup_or_restore, bool wifimac_link_is_sel, bool blocking)
 {
 /* since the PHY link and other module links are within the sleep-retention entry (4) context，
 *  add mutex protection to avoid data race.
@@ -1339,24 +1339,35 @@ void IRAM_ATTR sleep_retention_do_phy_retention(bool backup_or_restore, bool wif
     if (backup_or_restore) {
 #if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
         if (wifimac_link_is_sel) {
-            pau_regdma_trigger_wifimac_link_backup();
+            pau_regdma_trigger_wifimac_link_backup(blocking);
         } else
 #endif
         {
-            pau_regdma_trigger_modem_link_backup();
+            pau_regdma_trigger_modem_link_backup(blocking);
         }
     } else {
 #if SOC_PM_PAU_REGDMA_MODEM_WIFIMAC_WORKAROUND
         if (wifimac_link_is_sel) {
-            pau_regdma_trigger_wifimac_link_restore();
+            pau_regdma_trigger_wifimac_link_restore(blocking);
         } else
 #endif
         {
-            pau_regdma_trigger_modem_link_restore();
+            pau_regdma_trigger_modem_link_restore(blocking);
         }
     }
 #if SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
     _lock_release_recursive(&s_retention.lock);
 #endif
 }
-#endif /*SOC_PM_SUPPORT_PMU_MODEM_STATE */
+
+void IRAM_ATTR sleep_retention_phy_retention_complete(void)
+{
+#if SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
+    _lock_acquire_recursive(&s_retention.lock);
+#endif
+    pau_regdma_modem_link_complete();
+#if SOC_PM_PAU_REGDMA_COMMON_PHY_LINK_ENTRY
+    _lock_release_recursive(&s_retention.lock);
+#endif
+}
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
