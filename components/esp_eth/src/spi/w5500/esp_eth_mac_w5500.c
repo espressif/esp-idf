@@ -679,10 +679,14 @@ static esp_err_t emac_w5500_alloc_recv_buf(emac_w5500_t *emac, uint8_t **buf, ui
         // read head
         ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, &rx_len, sizeof(rx_len), offset), err, TAG, "read frame header failed");
         rx_len = __builtin_bswap16(rx_len) - 2; // data size includes 2 bytes of header
+        // Runt frames are not forwarded by W5500 (tested on target) and it does not support jumbo
+        // frames either, so a length outside the standard Ethernet range means the chip header was
+        // corrupted (e.g. glitched on the SPI bus). Check both bounds since runt and jumbo are
+        // distinct conditions.
+        ESP_GOTO_ON_FALSE(rx_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN && rx_len <= ETH_MAX_PACKET_SIZE,
+                          ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %" PRIu16, rx_len);
         // frames larger than expected will be truncated
         copy_len = rx_len > *length ? *length : rx_len;
-        // runt frames are not forwarded by W5500 (tested on target), but check the length anyway since it could be corrupted at SPI bus
-        ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %" PRIu32, copy_len);
         *buf = malloc(copy_len);
         if (*buf != NULL) {
             emac_w5500_auto_buf_info_t *buff_info = (emac_w5500_auto_buf_info_t *)*buf;
@@ -784,6 +788,20 @@ err:
     return ret;
 }
 
+static esp_err_t emac_w5500_reset_rx_buffer(emac_w5500_t *emac)
+{
+    esp_err_t ret = ESP_OK;
+    uint16_t rx_wr = 0;
+
+    ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_RX_WR(0), &rx_wr, sizeof(rx_wr)), err, TAG, "read RX WR failed");
+    // RX_RD and RX_WR are big-endian; forward the read value as-is
+    ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_RX_RD(0), &rx_wr, sizeof(rx_wr)), err, TAG, "write RX RD failed");
+    ESP_GOTO_ON_ERROR(w5500_send_command(emac, W5500_SCR_RECV, 100), err, TAG, "issue RECV command failed");
+    emac->packets_remain = false;
+err:
+    return ret;
+}
+
 IRAM_ATTR static void w5500_isr_handler(void *arg)
 {
     emac_w5500_t *emac = (emac_w5500_t *)arg;
@@ -854,6 +872,9 @@ static void emac_w5500_task(void *arg)
                 } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");
                     emac_w5500_flush_recv_frame(emac);
+                } else if (ret == ESP_ERR_INVALID_SIZE) {
+                    ESP_LOGE(TAG, "RX buffer corruption detected, resetting");
+                    emac_w5500_reset_rx_buffer(emac);
                 } else {
                     ESP_LOGE(TAG, "unexpected error 0x%x", ret);
                 }
