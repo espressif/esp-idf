@@ -360,11 +360,31 @@ RTC_SLOW_ATTR
 #endif
 static int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 
-void esp_sleep_overhead_out_time_refresh(void)
+void esp_sleep_enter_critical(void)
 {
     esp_os_enter_critical(&s_config.lock);
-    s_config.overhead_out_need_remeasure = true;
+}
+
+void esp_sleep_exit_critical(void)
+{
     esp_os_exit_critical(&s_config.lock);
+}
+
+void esp_sleep_enter_critical_safe(void)
+{
+    esp_os_enter_critical_safe(&s_config.lock);
+}
+
+void esp_sleep_exit_critical_safe(void)
+{
+    esp_os_exit_critical_safe(&s_config.lock);
+}
+
+void esp_sleep_overhead_out_time_refresh(void)
+{
+    esp_sleep_enter_critical();
+    s_config.overhead_out_need_remeasure = true;
+    esp_sleep_exit_critical();
 }
 
 static uint32_t get_power_down_flags(void);
@@ -521,28 +541,28 @@ esp_err_t esp_deep_sleep_try(uint64_t time_in_us)
 
 static esp_err_t s_sleep_hook_register(esp_deep_sleep_cb_t new_cb, esp_deep_sleep_cb_t s_cb_array[MAX_DSLP_HOOKS])
 {
-    esp_os_enter_critical(&s_config.lock);
+    esp_sleep_enter_critical();
     for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
         if (s_cb_array[n]==NULL || s_cb_array[n]==new_cb) {
             s_cb_array[n]=new_cb;
-            esp_os_exit_critical(&s_config.lock);
+            esp_sleep_exit_critical();
             return ESP_OK;
         }
     }
-    esp_os_exit_critical(&s_config.lock);
+    esp_sleep_exit_critical();
     ESP_LOGE(TAG, "Registered deepsleep callbacks exceeds MAX_DSLP_HOOKS");
     return ESP_ERR_NO_MEM;
 }
 
 static void s_sleep_hook_deregister(esp_deep_sleep_cb_t old_cb, esp_deep_sleep_cb_t s_cb_array[MAX_DSLP_HOOKS])
 {
-    esp_os_enter_critical(&s_config.lock);
+    esp_sleep_enter_critical();
     for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
         if(s_cb_array[n] == old_cb) {
             s_cb_array[n] = NULL;
         }
     }
-    esp_os_exit_critical(&s_config.lock);
+    esp_sleep_exit_critical();
 }
 
 esp_err_t esp_deep_sleep_register_hook(esp_deep_sleep_cb_t new_dslp_cb)
@@ -1277,7 +1297,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
-    esp_os_enter_critical(&s_config.lock);
+    esp_sleep_enter_critical();
 #if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     esp_ipc_isr_stall_other_cpu();
 #else
@@ -1392,7 +1412,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     esp_int_wdt_livelock_workaround(true);
 #endif
 
-    esp_os_exit_critical(&s_config.lock);
+    esp_sleep_exit_critical();
     return err;
 }
 
@@ -1530,7 +1550,7 @@ esp_err_t esp_light_sleep_start(void)
     s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_GOTO_SLEEP, (void *)0);
 
-    esp_os_enter_critical(&s_config.lock);
+    esp_sleep_enter_critical();
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint32_t ccount_at_sleep_start = esp_cpu_get_cycle_count();
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_TIME_START, (void *)0);
@@ -1545,7 +1565,7 @@ esp_err_t esp_light_sleep_start(void)
 
 #if !CONFIG_FREERTOS_UNICORE
     if (sleep_smp_cpu_sleep_prepare() != ESP_OK) {
-        esp_os_exit_critical(&s_config.lock);
+        esp_sleep_exit_critical();
         return ESP_ERR_SLEEP_REJECT;
     }
 #endif
@@ -1814,7 +1834,7 @@ esp_err_t esp_light_sleep_start(void)
         s_config.overhead_out_need_remeasure = false;
     }
 
-    esp_os_exit_critical(&s_config.lock);
+    esp_sleep_exit_critical();
     return err;
 }
 
@@ -1935,10 +1955,10 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
         return ESP_ERR_INVALID_ARG;
     }
 #endif
-    esp_os_enter_critical(&s_config.lock);
+    esp_sleep_enter_critical();
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
-    esp_os_exit_critical(&s_config.lock);
+    esp_sleep_exit_critical();
     return ESP_OK;
 }
 
@@ -2729,7 +2749,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t err = ESP_OK;
-    esp_os_enter_critical_safe(&s_config.lock);
+    esp_sleep_enter_critical_safe();
     int refs = 0;
     if (s_config.domain[domain].pd_option == ESP_PD_OPTION_AUTO) {
         // If domain is currently in auto mode, transition to the new mode directly
@@ -2768,7 +2788,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
             }
         }
     }
-    esp_os_exit_critical_safe(&s_config.lock);
+    esp_sleep_exit_critical_safe();
     if (err == ESP_ERR_INVALID_STATE) {
         ESP_LOGE(TAG, "Domain is already in ESP_PD_OPTION_OFF state, please check whether the domain pd_option is managed symmetrically.");
     }
@@ -2796,7 +2816,7 @@ esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_os_enter_critical_safe(&s_config.lock);
+    esp_sleep_enter_critical_safe();
     if (activate) {
         s_sleep_sub_mode_ref_cnt[mode]++;
     } else {
@@ -2806,7 +2826,7 @@ esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
         ESP_EARLY_LOGW(TAG, "%s disabled multiple times!! (If this log appears only once after OTA upgrade, it can be ignored.)", s_submode2str[mode]);
         s_sleep_sub_mode_ref_cnt[mode] = 0;
     }
-    esp_os_exit_critical_safe(&s_config.lock);
+    esp_sleep_exit_critical_safe();
     return ESP_OK;
 }
 
@@ -2816,9 +2836,9 @@ esp_err_t esp_sleep_sub_mode_force_disable(esp_sleep_sub_mode_t mode)
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_os_enter_critical_safe(&s_config.lock);
+    esp_sleep_enter_critical_safe();
     s_sleep_sub_mode_ref_cnt[mode] = 0;
-    esp_os_exit_critical_safe(&s_config.lock);
+    esp_sleep_exit_critical_safe();
     return ESP_OK;
 }
 
@@ -2850,11 +2870,11 @@ esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option
     }
 
     int __attribute__((unused)) refs;
-    esp_os_enter_critical_safe(&s_config.lock);
+    esp_sleep_enter_critical_safe();
     refs = (option == ESP_SLEEP_CLOCK_OPTION_UNGATE) ? s_config.clock_icg_refs[clock]++ \
          : (option == ESP_SLEEP_CLOCK_OPTION_GATE)   ? --s_config.clock_icg_refs[clock] \
          : s_config.clock_icg_refs[clock];
-    esp_os_exit_critical_safe(&s_config.lock);
+    esp_sleep_exit_critical_safe();
     assert(refs >= 0);
     return ESP_OK;
 }

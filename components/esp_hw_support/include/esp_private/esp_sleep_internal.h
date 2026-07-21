@@ -213,6 +213,33 @@ void esp_deep_sleep_deregister_phy_hook(esp_deep_sleep_cb_t old_dslp_cb);
  */
 void esp_sleep_overhead_out_time_refresh(void);
 
+
+/**
+ * @brief Enter the sleep configuration critical section (task context only)
+ *
+ * Protects sleep configuration state. Must be paired with esp_sleep_exit_critical().
+ * Do not call from ISR; use esp_sleep_enter_critical_safe() instead.
+ */
+void esp_sleep_enter_critical(void);
+
+/**
+ * @brief Exit the sleep configuration critical section entered by esp_sleep_enter_critical()
+ */
+void esp_sleep_exit_critical(void);
+
+/**
+ * @brief Enter the sleep configuration critical section (safe for task or ISR context)
+ *
+ * Protects sleep configuration state (e.g. power domain options, sub-mode refs, clk icg refs...).
+ * Must be paired with esp_sleep_exit_critical_safe().
+ */
+void esp_sleep_enter_critical_safe(void);
+
+/**
+ * @brief Exit the sleep configuration critical section entered by esp_sleep_enter_critical_safe()
+ */
+void esp_sleep_exit_critical_safe(void);
+
 #ifdef __cplusplus
 }
 #endif
