@@ -586,7 +586,8 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
                 vTaskDelay(1); // when the host is in spi mode
             }
             size_t successfully_written_blocks = 0;
-            if (sdmmc_send_cmd_num_of_written_blocks(card, &successfully_written_blocks) == ESP_OK) {
+            err = sdmmc_send_cmd_num_of_written_blocks(card, &successfully_written_blocks);
+            if (err == ESP_OK) {
                 ESP_LOGD(TAG, "%s: successfully wrote %zu blocks out of %zu", __func__, successfully_written_blocks, block_count);
             } else {
                 ESP_LOGE(TAG, "%s: sdmmc_send_cmd_num_of_written_blocks returned 0x%x", __func__, err);
@@ -602,7 +603,8 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
 
     /* SD mode: wait for the card to become idle based on R1 status */
     if (!host_is_spi(card)) {
-        switch (sdmmc_wait_for_idle(card, status)) {
+        err = sdmmc_wait_for_idle(card, status);
+        switch (err) {
             case ESP_OK:
                 break;
             case ESP_ERR_TIMEOUT:
@@ -748,7 +750,8 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
 
     /* SD mode: wait for the card to become idle based on R1 status */
     if (!host_is_spi(card)) {
-        switch (sdmmc_wait_for_idle(card, status)) {
+        err = sdmmc_wait_for_idle(card, status);
+        switch (err) {
             case ESP_OK:
                 break;
             case ESP_ERR_TIMEOUT:
