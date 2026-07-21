@@ -11,6 +11,7 @@ stages:
   - target_test
   - host_test
   - test_deploy
+  - pre_deploy
   - deploy
   - post_deploy
 
