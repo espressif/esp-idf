@@ -16,28 +16,7 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
-
-#if CONFIG_EXAMPLE_USE_CI_ADDRESS
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define TEST_CI_ADDRESS_CHIP_OFFSET (0)
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define TEST_CI_ADDRESS_CHIP_OFFSET (1)
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define TEST_CI_ADDRESS_CHIP_OFFSET (2)
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define TEST_CI_ADDRESS_CHIP_OFFSET (3)
-#elif CONFIG_IDF_TARGET_ESP32C5
-#define TEST_CI_ADDRESS_CHIP_OFFSET (4)
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define TEST_CI_ADDRESS_CHIP_OFFSET (5)
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define TEST_CI_ADDRESS_CHIP_OFFSET (6)
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define TEST_CI_ADDRESS_CHIP_OFFSET (7)
-#elif CONFIG_IDF_TARGET_ESP32C61
-#define TEST_CI_ADDRESS_CHIP_OFFSET (8)
-#endif
-#endif
+#include "soc/rtc.h"
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
@@ -531,7 +510,7 @@ bleprph_on_sync(void)
         uint32_t *offset = (uint32_t *)&addr[1];
         *offset = atoi(CONFIG_EXAMPLE_CI_ADDRESS_OFFSET);
         addr[5] = 0xC3;
-        addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
+        addr[0] = CONFIG_IDF_FIRMWARE_CHIP_ID;
         rc = ble_hs_id_set_rnd(addr);
         assert(rc == 0);
     }
@@ -595,8 +574,8 @@ app_main(void)
     // maximum and minimum frequencies are set in sdkconfig,
     // automatic light sleep is enabled if tickless idle support is enabled.
     esp_pm_config_t pm_config = {
-            .max_freq_mhz = CONFIG_EXAMPLE_MAX_CPU_FREQ_MHZ,
-            .min_freq_mhz = CONFIG_EXAMPLE_MIN_CPU_FREQ_MHZ,
+            .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+            .min_freq_mhz = rtc_clk_xtal_freq_get(),
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
             .light_sleep_enable = true
 #endif
