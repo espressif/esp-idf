@@ -175,7 +175,6 @@ menu "BT Logs"
     menuconfig BT_LOG_CRITICAL_ONLY
         bool "Enable bandwidth-optimized log mode (critical logs only)"
         default n
-        depends on !BT_STACK_NO_LOG
         select BLE_LOG_ENABLED
         help
             Enable bandwidth-optimized logging for the BLE Log Async Output
