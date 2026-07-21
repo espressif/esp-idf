@@ -11,8 +11,8 @@
 #include "ble_log_ts.h"
 
 /* VARIABLE */
-BLE_LOG_STATIC bool ts_inited = false;
-BLE_LOG_STATIC ble_log_ts_info_t *ts_info = NULL;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool ts_inited = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_ts_info_t *ts_info = NULL;
 
 /* INTERFACE */
 bool ble_log_ts_init(void)
