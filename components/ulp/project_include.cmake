@@ -6,88 +6,8 @@ endif()
 #
 # Create ULP binary and embed into the application.
 
-# Generate a minimal CMake v2 ULP project in the parent build directory for
-# legacy ulp_embed_binary() callers. This lets the v2 ULP component graph build
-# legacy source lists without writing into the application source tree.
-function(__ulp_write_legacy_project project_dir sources component_dir)
-    set(template_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake/legacy_project")
-    set(main_dir "${project_dir}/main")
-    file(MAKE_DIRECTORY "${main_dir}")
-
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-        "${template_dir}/CMakeLists.txt.in"
-        "${template_dir}/main/CMakeLists.txt.in"
-        "${template_dir}/main/ulp_legacy_inputs.cmake.in")
-
-    file(GENERATE OUTPUT "${project_dir}/CMakeLists.txt"
-                  INPUT "${template_dir}/CMakeLists.txt.in")
-    file(GENERATE OUTPUT "${main_dir}/CMakeLists.txt"
-                  INPUT "${template_dir}/main/CMakeLists.txt.in")
-
-    set(ULP_LEGACY_SOURCES)
-    foreach(source IN LISTS sources)
-        string(APPEND ULP_LEGACY_SOURCES "    [=[${source}]=]\n")
-    endforeach()
-
-    set(ULP_LEGACY_INCLUDE_DIR_CANDIDATES)
-    if(DEFINED COMPONENT_NAME)
-        set(legacy_include_components "${COMPONENT_NAME}")
-        foreach(require_property IN ITEMS REQUIRES PRIV_REQUIRES)
-            idf_component_get_property(component_requires "${COMPONENT_NAME}" ${require_property})
-            list(APPEND legacy_include_components ${component_requires})
-        endforeach()
-        list(REMOVE_DUPLICATES legacy_include_components)
-
-        foreach(component IN LISTS legacy_include_components)
-            if(component STREQUAL "ulp")
-                continue()
-            endif()
-            idf_component_get_property(include_component_dir "${component}" COMPONENT_DIR)
-            set(include_properties INCLUDE_DIRS)
-            if(component STREQUAL COMPONENT_NAME)
-                list(APPEND include_properties PRIV_INCLUDE_DIRS)
-            endif()
-            foreach(include_property IN LISTS include_properties)
-                idf_component_get_property(component_includes "${component}" ${include_property})
-                foreach(include IN LISTS component_includes)
-                    if(IS_ABSOLUTE "${include}")
-                        string(APPEND ULP_LEGACY_INCLUDE_DIR_CANDIDATES "    [=[${include}]=]\n")
-                    elseif(include_component_dir)
-                        string(APPEND ULP_LEGACY_INCLUDE_DIR_CANDIDATES
-                            "    [=[${include_component_dir}/${include}]=]\n")
-                    endif()
-                endforeach()
-            endforeach()
-        endforeach()
-    endif()
-    if(component_dir)
-        string(APPEND ULP_LEGACY_INCLUDE_DIR_CANDIDATES "    [=[${component_dir}]=]\n")
-    endif()
-
-    set(ULP_LEGACY_PARENT_SDKCONFIG_HEADER)
-    if(SDKCONFIG_HEADER AND EXISTS "${SDKCONFIG_HEADER}")
-        set(ULP_LEGACY_PARENT_SDKCONFIG_HEADER "${main_dir}/ulp_parent_sdkconfig.h")
-        file(STRINGS "${SDKCONFIG_HEADER}" parent_sdkconfig_lines)
-        set(parent_sdkconfig_content
-            "/* Generated from the parent project sdkconfig for legacy ULP sources. */\n")
-        foreach(parent_sdkconfig_line IN LISTS parent_sdkconfig_lines)
-            if(parent_sdkconfig_line MATCHES "^#define CONFIG_IDF_TOOLCHAIN(_[A-Z]+)?[ \t]")
-                continue()
-            endif()
-            string(APPEND parent_sdkconfig_content "${parent_sdkconfig_line}\n")
-        endforeach()
-        file(GENERATE OUTPUT "${ULP_LEGACY_PARENT_SDKCONFIG_HEADER}"
-                      CONTENT "${parent_sdkconfig_content}")
-    endif()
-
-    file(READ "${template_dir}/main/ulp_legacy_inputs.cmake.in" inputs_template)
-    string(CONFIGURE "${inputs_template}" inputs_content @ONLY)
-    file(GENERATE OUTPUT "${main_dir}/ulp_legacy_inputs.cmake"
-                  CONTENT "${inputs_content}")
-endfunction()
-
 function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name type binary_names
-                             legacy_project s_sources exp_dep_srcs)
+                             s_sources exp_dep_srcs)
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         set(ulp_cmake_dir "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/cmake")
@@ -218,6 +138,7 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 -D__ULP_BUILD=1
                 -DIDF_PARENT_BUILD_DIR=${build_dir}
                 -DULP_PREFIX_APPEND_BIN_NAME=${prefix_append_bin_name}
+                -DULP_PARENT_SDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                 -DSDKCONFIG=${sdkconfig}
                 -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                 -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
@@ -229,27 +150,21 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 # share more of the normal IDF app toolchain response-file
                 # setup, but keep them under IDF_CUSTOM_TOOLCHAIN for now.
                 -DIDF_CUSTOM_TOOLCHAIN=1)
-            if(legacy_project)
-                set(generated_project_dir "${ulp_binary_dir}/legacy_project")
-                __ulp_write_legacy_project("${generated_project_dir}" "${sources}" "${COMPONENT_DIR}")
-                set(project_path "${generated_project_dir}")
-            elseif(s_sources)
+            if(s_sources)
                 list(APPEND ulp_project_args
                     -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>)
             endif()
-            if(NOT legacy_project)
-                if(DEFINED COMPONENT_TARGET AND TARGET ${COMPONENT_TARGET})
-                    # Backward compatibility for existing ULP subprojects that
-                    # include headers from the parent component. New full
-                    # subprojects should declare their own component include
-                    # directories and dependencies instead.
-                    list(APPEND ulp_project_args
-                        -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
-                endif()
-                if(COMPONENT_DIR)
-                    list(APPEND ulp_project_args
-                        -DCOMPONENT_DIR=${COMPONENT_DIR})
-                endif()
+            if(DEFINED COMPONENT_TARGET AND TARGET ${COMPONENT_TARGET})
+                # Backward compatibility for existing ULP subprojects that
+                # include headers from the parent component. New full
+                # subprojects should declare their own component include
+                # directories and dependencies instead.
+                list(APPEND ulp_project_args
+                    -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
+            endif()
+            if(COMPONENT_DIR)
+                list(APPEND ulp_project_args
+                    -DCOMPONENT_DIR=${COMPONENT_DIR})
             endif()
         else()
             list(APPEND ulp_project_args
@@ -300,10 +215,8 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
             endforeach()
         endif()
 
-        # Only the CMake v1 path reads this property when passing ULP_S_SOURCES
-        # to the child project. Leaving it set for v2 is harmless and keeps the
-        # post-ExternalProject artifact wiring common. Can be dropped when
-        # v1 support is dropped.
+        # Both build system versions pass ULP_S_SOURCES to the child project
+        # through this property; see the generator expression above.
         set_property(TARGET ${app_name} PROPERTY ULP_SOURCES "${sources}")
 
         spaces2list(exp_dep_srcs)
@@ -377,7 +290,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
     __setup_ulp_project("${app_name}" "${ulp_cmake_dir}"
                         "${ULP_PREFIX}" FALSE "${ULP_TYPE}"
                         "${app_name}"
-                        TRUE "${s_sources}" "${exp_dep_srcs}")
+                        "${s_sources}" "${exp_dep_srcs}")
 endfunction()
 
 function(ulp_add_project app_name project_path)
@@ -402,5 +315,5 @@ function(ulp_add_project app_name project_path)
     endif()
 
     __setup_ulp_project("${app_name}" "${project_path}" "${ULP_PREFIX}"
-                        "${ULP_PREFIX_APPEND_BIN_NAME}" "${ULP_TYPE}" "${ULP_BINARIES}" FALSE "" "")
+                        "${ULP_PREFIX_APPEND_BIN_NAME}" "${ULP_TYPE}" "${ULP_BINARIES}" "" "")
 endfunction()

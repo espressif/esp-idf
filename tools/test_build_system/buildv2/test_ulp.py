@@ -108,9 +108,9 @@ def test_ulp_cmake_api_availability(
     expected_available: tuple[str, ...],
     expected_unavailable: tuple[str, ...],
 ) -> None:
-    # Full ULP subprojects and generated legacy ULP child projects intentionally
-    # expose different CMake API surfaces. Configure a minimal child project
-    # through each entry point and verify that only the expected commands exist.
+    # Full ULP subprojects and legacy ULP child projects intentionally expose
+    # different CMake API surfaces. Configure a minimal child project through
+    # each entry point and verify that only the expected commands exist.
     idf_path = Path(os.environ['IDF_PATH'])
     project_dir = tmp_path / 'project'
     build_dir = tmp_path / 'build'
@@ -156,22 +156,19 @@ def test_ulp_cmake_api_availability(
 
 
 @pytest.mark.test_app_copy('components/ulp/test_apps/ulp_fsm')
-def test_ulp_embed_binary_uses_generated_legacy_project(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
-    # Legacy ulp_embed_binary() callers should be built through a generated
-    # CMake v2 child project. The generated project references parent-owned ULP
+def test_ulp_embed_binary_builds_v2_child_project(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # Legacy ulp_embed_binary() callers are built through the builtin ULP child
+    # project as a CMake v2 subproject. The child references parent-owned ULP
     # sources by path, so editing those sources must still rebuild the child
     # artifact on the next parent build.
     assert test_app_copy.exists()
 
     idf_py('-DIDF_TARGET=esp32', '-DSDKCONFIG=build/sdkconfig', 'build')
 
-    generated_projects = sorted(Path('build/subprojects').glob('*/legacy_project'))
-    assert len(generated_projects) == 1
+    ulp_binary_dirs = sorted(p for p in Path('build/subprojects').glob('*') if p.is_dir())
+    assert len(ulp_binary_dirs) == 1
 
-    generated_project = generated_projects[0]
-    ulp_binary_dir = generated_project.parent
-    assert (generated_project / 'CMakeLists.txt').exists()
-    assert (generated_project / 'main/ulp_legacy_inputs.cmake').exists()
+    ulp_binary_dir = ulp_binary_dirs[0]
     ulp_binary = ulp_binary_dir / f'{ulp_binary_dir.name}.bin'
     assert ulp_binary.exists()
     original_ulp_binary_hash = _sha256(ulp_binary)
@@ -187,6 +184,16 @@ def test_ulp_embed_binary_uses_generated_legacy_project(idf_py: IdfPyFunc, test_
 
     idf_py('build')
     assert _sha256(ulp_binary) != original_ulp_binary_hash
+
+
+@pytest.mark.test_app_copy('examples/system/ulp/ulp_riscv/interrupts')
+def test_ulp_embed_binary_uses_parent_project_config(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    # Legacy ulp_embed_binary() sources are compiled as part of the builtin ULP
+    # child project, but still rely on project-local CONFIG_* symbols from the
+    # parent app's Kconfig.projbuild.
+    assert test_app_copy.exists()
+
+    idf_py('-DIDF_TARGET=esp32s2', '-DSDKCONFIG=build/sdkconfig', 'build')
 
 
 @pytest.mark.test_app_copy('tools/test_apps/system/ulp/full_subproject/lp_core')

@@ -170,11 +170,6 @@ function(__component_validation_run_checks)
 
     # Run validation checks for each component
     foreach(component_interface ${component_interfaces})
-        __idf_component_get_property_unchecked(skip_path_ownership_validation ${component_interface}
-                                               __SKIP_COMPONENT_PATH_OWNERSHIP_VALIDATION)
-        if(skip_path_ownership_validation)
-            continue()
-        endif()
         __component_validation_check_sources(${component_interface})
         __component_validation_check_include_dirs(${component_interface})
     endforeach()
