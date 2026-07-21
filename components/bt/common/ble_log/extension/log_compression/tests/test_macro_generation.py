@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """Tests for compressed macro generation (bluedroid and mesh module scripts)."""
-
 import sys
 import types
 import unittest

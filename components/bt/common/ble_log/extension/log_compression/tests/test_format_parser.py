@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """Tests for c_format_parse.py: FormatToken NamedTuple and parse_format_string."""
-
 import unittest
 
 import test_utils  # noqa: F401 — must be first to set up sys.path

@@ -11,7 +11,6 @@ This runs the compression pipeline on each fixture C source file and copies
 the generated header to fixtures/expected/. The output should be reviewed
 for correctness before committing.
 """
-
 import shutil
 import sys
 import tempfile
