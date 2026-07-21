@@ -171,7 +171,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     char drv[3] = {(char)('0' + pdrv), ':', 0};
     ESP_GOTO_ON_ERROR(ff_diskio_register_wl_partition(pdrv, *wl_handle), fail, TAG, "ff_diskio_register_wl_partition failed pdrv=%i, error - 0x(%x)", pdrv, ret);
 
-    FATFS *fs;
+    FATFS *fs = NULL;
     esp_vfs_fat_conf_t conf = {
         .base_path = base_path,
         .fat_drive = drv,
@@ -366,7 +366,7 @@ esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     char drv[3] = {(char)('0' + pdrv), ':', 0};
     ESP_GOTO_ON_ERROR(ff_diskio_register_raw_partition(pdrv, data_partition), fail, TAG, "ff_diskio_register_raw_partition failed pdrv=%i, error - 0x(%x)", pdrv, ret);
 
-    FATFS *fs;
+    FATFS *fs = NULL;
     esp_vfs_fat_conf_t conf = {
         .base_path = base_path,
         .fat_drive = drv,
