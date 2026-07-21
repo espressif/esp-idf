@@ -640,7 +640,7 @@ static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARC
         if (bt_mesh_scan_dev_found_cb) {
             bt_mesh_scan_dev_found_cb(&adv_rpt);
 
-            if (p_data->inq_res.scan_rsp_len) {
+            if (p_data->inq_res.scan_rsp_len && bt_mesh_scan_dev_found_cb) {
                 adv_rpt.adv_type = BLE_MESH_ADV_SCAN_RSP;
                 net_buf_simple_init_with_data(&adv_rpt.adv_data, p_data->inq_res.p_eir + p_data->inq_res.adv_data_len, p_data->inq_res.scan_rsp_len);
                 bt_mesh_scan_dev_found_cb(&adv_rpt);
@@ -1165,7 +1165,7 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         uint8_t index = BLE_MESH_GATT_GET_CONN_ID(p_data->req_data.conn_id);
         tBTA_GATTS_RSP rsp = {0};
         uint8_t buf[100] = {0};
-        uint16_t len = 0;
+        ssize_t len = 0;
 
         BT_DBG("gatts read, handle %d", p_data->req_data.p_data->read_req.handle);
 
@@ -1187,7 +1187,7 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     case BTA_GATTS_WRITE_EVT: {
         struct bt_mesh_gatt_attr *attr = bt_mesh_gatts_find_attr_by_handle(p_data->req_data.p_data->write_req.handle);
         uint8_t index = BLE_MESH_GATT_GET_CONN_ID(p_data->req_data.conn_id);
-        uint16_t len = 0;
+        ssize_t len = 0;
 
         BT_DBG("gatts write, handle %d, len %d, data %s", p_data->req_data.p_data->write_req.handle,
                p_data->req_data.p_data->write_req.len,

@@ -380,7 +380,7 @@ void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
     psa_status_t status;
     size_t key_len;
 
-    BT_DBG("Privkey:%s", bt_hex(pri_key, PRIV_KEY_SIZE));
+    // BT_DBG("Privkey:%s", bt_hex(pri_key, PRIV_KEY_SIZE));
 
     /* Destroy any existing key */
     if (dh_pair.priv_key_id != PSA_KEY_ID_NULL) {
@@ -414,7 +414,7 @@ void bt_mesh_set_private_key_raw(const uint8_t pri_key[32])
         return;
     }
 
-    BT_DBG("Pubkey:%s", bt_hex(&dh_pair.public_key[1], PUB_KEY_SIZE));
+    // BT_DBG("Pubkey:%s", bt_hex(&dh_pair.public_key[1], PUB_KEY_SIZE));
     dh_pair.is_ready = true;
     psa_reset_key_attributes(&attributes);
 }
