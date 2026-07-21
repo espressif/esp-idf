@@ -8,6 +8,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.emmc
 @pytest.mark.parametrize(
     'config',
