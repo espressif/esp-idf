@@ -208,7 +208,6 @@ typedef struct pmu_hp_hw_regmap_t{
     pmu_hp_xtal_reg_t          xtal;
 } pmu_hp_hw_regmap_t;
 
-/** */
 typedef union {
     struct {
         uint32_t reserved0: 21;
