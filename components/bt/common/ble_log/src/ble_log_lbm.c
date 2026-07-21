@@ -27,12 +27,12 @@
 #define TAG "ble_log"
 #define BLE_LOG_LBM_WAIT_TIMEOUT_MS (1000)
 
-BLE_LOG_STATIC volatile uint32_t lbm_ref_count = 0;
-BLE_LOG_STATIC bool lbm_inited = false;
-BLE_LOG_STATIC bool lbm_enabled = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR volatile uint32_t lbm_ref_count = 0;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool lbm_inited = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool lbm_enabled = false;
 BLE_LOG_STATIC volatile bool flush_in_progress = false;
-BLE_LOG_STATIC ble_log_lbm_ctx_t *lbm_ctx = NULL;
-BLE_LOG_STATIC ble_log_stat_mgr_t *stat_mgr_ctx[BLE_LOG_SRC_MAX] = {0};
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_lbm_ctx_t *lbm_ctx = NULL;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR ble_log_stat_mgr_t *stat_mgr_ctx[BLE_LOG_SRC_MAX] = {0};
 
 /* PRIVATE FUNCTION DECLARATION */
 BLE_LOG_STATIC
