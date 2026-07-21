@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -45,6 +45,12 @@ void app_main(void)
         .max_glitch_ns = 1000,
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
+
+#if CONFIG_EXAMPLE_ENABLE_INTERNAL_PULL_UPS
+    ESP_LOGI(TAG, "enable internal pull-up resistors");
+    ESP_ERROR_CHECK(gpio_pullup_en(EXAMPLE_EC11_GPIO_A));
+    ESP_ERROR_CHECK(gpio_pullup_en(EXAMPLE_EC11_GPIO_B));
+#endif
 
     ESP_LOGI(TAG, "install pcnt channels");
     pcnt_chan_config_t chan_a_config = {
