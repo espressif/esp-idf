@@ -94,6 +94,7 @@ if(CONFIG_HEAP_TRACING)
     set(WRAP_FUNCTIONS
         heap_caps_realloc_base
         heap_caps_malloc_base
+        heap_caps_calloc_base
         heap_caps_aligned_alloc_base
         heap_caps_free)
 
