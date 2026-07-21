@@ -219,10 +219,7 @@ TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
 
 TEST_CASE("lcd_rgb_panel_restart", "[lcd]")
 {
-#if CONFIG_IDF_TARGET_ESP32S31 // IDF-15960
-    TEST_IGNORE_MESSAGE("Known issue: lcd_rgb_panel_restart underruns on flash-encrypted runners");
-#endif // CONFIG_IDF_TARGET_ESP32S31
-
+#if CONFIG_IDF_TARGET_ESP32S3
     uint8_t *img = malloc(TEST_IMG_SIZE);
     TEST_ASSERT_NOT_NULL(img);
 
@@ -244,6 +241,12 @@ TEST_CASE("lcd_rgb_panel_restart", "[lcd]")
     printf("delete RGB panel\r\n");
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     free(img);
+#else
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, LCD_COLOR_FMT_RGB565, 0, LCD_CLK_SRC_DEFAULT, false, false, NULL, NULL);
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, esp_lcd_rgb_panel_restart(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+#endif
 }
 
 TEST_CASE("lcd_rgb_panel_rotate", "[lcd]")
