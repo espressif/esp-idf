@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,10 +52,10 @@ static _lock_t s_crypto_ecdsa_lock;
 #endif /* SOC_ECDSA_USES_MPI */
 #endif /* SOC_ECDSA_SUPPORTED */
 
-#ifdef SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 /* Lock for Key Manager peripheral */
 static _lock_t s_crypto_key_manager_lock;
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 
 #ifdef SOC_HMAC_SUPPORTED
 void esp_crypto_hmac_lock_acquire(void)
@@ -159,7 +159,7 @@ void esp_crypto_ecdsa_lock_release(void)
 }
 #endif /* SOC_ECDSA_SUPPORTED */
 
-#ifdef SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 void esp_crypto_key_manager_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_key_manager_lock);
@@ -169,7 +169,7 @@ void esp_crypto_key_manager_lock_release(void)
 {
     _lock_release(&s_crypto_key_manager_lock);
 }
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 #else /* NON_OS_BUILD */
 #ifdef SOC_HMAC_SUPPORTED
 void esp_crypto_hmac_lock_acquire(void) {}
@@ -213,9 +213,9 @@ void esp_crypto_ecdsa_lock_acquire(void) {}
 void esp_crypto_ecdsa_lock_release(void) {}
 #endif /* SOC_ECDSA_SUPPORTED */
 
-#ifdef SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 void esp_crypto_key_manager_lock_acquire(void) {}
 
 void esp_crypto_key_manager_lock_release(void) {}
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 #endif /* !NON_OS_BUILD */
