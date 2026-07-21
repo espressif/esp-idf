@@ -176,7 +176,8 @@ esp_err_t esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_s
 /**
  * @brief Set the extended address.
  *
- * @param[in]  ext_address  The extended address.
+ * @param[in]  ext_address  The extended address in IEEE 802.15.4 EUI-64 byte order
+ *                          (MSB first, same as the address display format).
  * @param[in]  idx          The index of 802.15.4 related protocol stack.
  *
  * @return
@@ -184,7 +185,7 @@ esp_err_t esp_radio_spinel_set_short_address(uint16_t short_address, esp_radio_s
  *      - ESP_FAIL on failures
  *
  */
-esp_err_t esp_radio_spinel_set_extended_address(uint8_t *ext_address, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_set_extended_address(const uint8_t *ext_address, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Set the coordinator mode.
@@ -254,6 +255,19 @@ esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, e
 esp_err_t esp_radio_spinel_clear_short_entries(esp_radio_spinel_idx_t idx);
 
 /**
+ * @brief Clear a short address from the source address match table.
+ *
+ * @param[in]  short_address    The short address to be cleared.
+ * @param[in]  idx              The index of 802.15.4 related protocol stack.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
+ */
+esp_err_t esp_radio_spinel_clear_short_entry(uint16_t short_address, esp_radio_spinel_idx_t idx);
+
+/**
  * @brief Add a short address to the source address match table.
  *
  * @param[in]  short_address    The short address to be added.
@@ -279,9 +293,25 @@ esp_err_t esp_radio_spinel_add_short_entry(uint16_t short_address, esp_radio_spi
 esp_err_t esp_radio_spinel_clear_extended_entries(esp_radio_spinel_idx_t idx);
 
 /**
+ * @brief Clear an extended address from the source address match table.
+ *
+ * @param[in]  ext_address  The extended address in IEEE 802.15.4 EUI-64 byte order
+ *                          (MSB first, same as the address display format).
+ * @param[in]  idx          The index of 802.15.4 related protocol stack.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL on failures
+ *
+
+ */
+esp_err_t esp_radio_spinel_clear_extended_entry(const uint8_t *ext_address, esp_radio_spinel_idx_t idx);
+
+/**
  * @brief Add an extended address to the source address match table.
  *
- * @param[in]  ext_address  The extended address to be added.
+ * @param[in]  ext_address  The extended address in IEEE 802.15.4 EUI-64 byte order
+ *                          (MSB first, same as the address display format).
  * @param[in]  idx          The index of 802.15.4 related protocol stack.
  *
  * @return
@@ -289,7 +319,7 @@ esp_err_t esp_radio_spinel_clear_extended_entries(esp_radio_spinel_idx_t idx);
  *      - ESP_FAIL on failures
  *
  */
-esp_err_t esp_radio_spinel_add_extended_entry(uint8_t *ext_address, esp_radio_spinel_idx_t idx);
+esp_err_t esp_radio_spinel_add_extended_entry(const uint8_t *ext_address, esp_radio_spinel_idx_t idx);
 
 /**
  * @brief Sets the status of promiscuous mode.
