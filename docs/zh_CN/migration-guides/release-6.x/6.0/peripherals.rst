@@ -261,6 +261,11 @@ UART
 
     旧版的 PCNT 驱动 ``driver/pcnt.h`` 在 5.0 的版本中就已经被弃用 （参考 :ref:`deprecate_pcnt_legacy_driver`）。从 6.0 版本开始，旧版驱动被完全移除。新驱动位于 :component:`esp_driver_pcnt` 组件中，头文件引用路径为 ``driver/pulse_cnt.h``。
 
+    PCNT GPIO 上下拉配置
+    ----------------------
+
+    新版 PCNT 驱动不再对边沿信号、电平信号或清零信号所使用的 GPIO 自动使能或关闭内部上拉/下拉电阻。如果输入信号需要确定的空闲电平，请调用相应的 GPIO API 显式配置 GPIO 的上下拉模式。
+
 .. only:: SOC_RMT_SUPPORTED
 
     旧版 RMT 驱动被移除

@@ -110,7 +110,7 @@ If a previously created PCNT channel is no longer needed, it is recommended to r
 
 .. note::
 
-    In PCNT, the GPIOs involved can be reconfigured for pull-up or pull-down after initializing PCNT using functions such as :cpp:func:`gpio_pullup_en` and :cpp:func:`gpio_pullup_dis`.
+    The PCNT driver does not configure internal pull-up or pull-down resistors for the edge or level signal GPIOs. If your signal source needs a defined idle level, configure the GPIO pull mode explicitly with functions such as :cpp:func:`gpio_set_pull_mode`, :cpp:func:`gpio_pullup_en`, and :cpp:func:`gpio_pullup_dis`.
 
 .. _pcnt-setup-channel-actions:
 
@@ -256,8 +256,12 @@ This function should be called when the unit is in the init state. Otherwise, it
 
     The PCNT unit can receive a clear signal from the GPIO. The parameters that can be configured for the clear signal are listed in :cpp:type:`pcnt_clear_signal_config_t`:
 
-        -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` specify the GPIO numbers used by **clear** signal. The default active level is high, and the input mode is pull-down enabled.
-        -  :cpp:member:`pcnt_clear_signal_config_t::flags::invert_clear_signal` is used to decide whether to invert the input signal before it going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware. The input mode is pull-up enabled when the input signal is inverted.
+        -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` specifies the GPIO number used by the **clear** signal. The default active level is high.
+        -  :cpp:member:`pcnt_clear_signal_config_t::flags::invert_clear_signal` is used to decide whether to invert the input signal before it goes into PCNT hardware. The inversion is done by the GPIO matrix instead of PCNT hardware.
+
+    .. note::
+
+        The PCNT driver does not configure internal pull-up or pull-down resistors for the clear signal GPIO. If the clear signal requires a defined idle level, configure the GPIO pull mode explicitly with GPIO APIs.
 
     This signal acts in the same way as calling :cpp:func:`pcnt_unit_clear_count`, but is not subject to software latency, and is suitable for use in situations with low latency requirements. Also please note, the flip frequency of this signal can not be too high.
 

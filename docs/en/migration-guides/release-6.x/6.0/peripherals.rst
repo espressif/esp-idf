@@ -261,6 +261,11 @@ The legacy timer group driver ``driver/timer.h`` is deprecated since version 5.0
 
     The legacy PCNT driver ``driver/pcnt.h`` is deprecated since version 5.0 (see :ref:`deprecate_pcnt_legacy_driver`). Starting from version 6.0, the legacy driver is completely removed. The new driver is placed in the :component:`esp_driver_pcnt`, and the header file path is ``driver/pulse_cnt.h``.
 
+    PCNT GPIO Pull-up/Pull-down Configuration
+    -----------------------------------------
+
+    The new PCNT driver no longer enables or disables internal pull-up/pull-down resistors on the GPIOs used for edge, level, or clear signals. If the input signal requires a defined idle level, configure the GPIO pull mode explicitly by calling the corresponding GPIO APIs.
+
 .. only:: SOC_RMT_SUPPORTED
 
     Legacy RMT Driver is Removed
