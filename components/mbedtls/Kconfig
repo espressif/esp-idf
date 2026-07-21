@@ -1420,7 +1420,7 @@ menu "mbedTLS"
 
             config MBEDTLS_CONSTANT_TIME_PRIME_GEN
                 bool "Constant-time prime generation"
-                default y
+                default n
                 help
                     Use mbedtls' constant-time small-factor test (a
                     constant-time GCD against the product of all odd primes up
@@ -1437,9 +1437,9 @@ menu "mbedTLS"
 
                     If disabled, the variable-time trial division that mbedtls
                     used before versions 3.6.7/4.1.1 is used instead,
-                    restoring key generation performance. Only consider
-                    disabling this if no untrusted code running on the device
-                    could observe the timing of key generation operations.
+                    restoring key generation performance.
+
+                    Please see issue: https://github.com/Mbed-TLS/mbedtls/issues/10830
 
         endmenu # Security hardening
 
