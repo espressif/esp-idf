@@ -24,3 +24,4 @@ ESP-IDF 6.x Migration Guide
 
     release-6.x/6.0/index
     release-6.x/6.1/index
+    release-6.x/6.2/index
