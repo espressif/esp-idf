@@ -169,9 +169,6 @@ The characteristic is binded with `led_chr_access` callback function, in which t
 ``` C
 static int led_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                           struct ble_gatt_access_ctxt *ctxt, void *arg) {
-    /* Local variables */
-    int rc;
-
     /* Handle access events */
     /* Note: LED characteristic is write only */
     switch (ctxt->op) {
@@ -203,7 +200,7 @@ static int led_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             } else {
                 goto error;
             }
-            return rc;
+            return 0;
         }
         goto error;
 

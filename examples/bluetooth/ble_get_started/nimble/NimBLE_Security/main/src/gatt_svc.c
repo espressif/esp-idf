@@ -117,9 +117,6 @@ error:
 
 static int led_chr_access(uint16_t conn_handle, uint16_t attr_handle,
                           struct ble_gatt_access_ctxt *ctxt, void *arg) {
-    /* Local variables */
-    int rc = 0;
-
     /* Handle access events */
     /* Note: LED characteristic is write only */
     switch (ctxt->op) {
@@ -151,7 +148,7 @@ static int led_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             } else {
                 goto error;
             }
-            return rc;
+            return 0;
         }
         goto error;
 
