@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,7 +122,7 @@ void esp_crypto_ecdsa_lock_acquire(void);
 void esp_crypto_ecdsa_lock_release(void);
 #endif /* SOC_ECDSA_SUPPORTED */
 
-#ifdef SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 /**
  * @brief Acquire lock for Key Manager peripheral
  *
@@ -134,7 +134,7 @@ void esp_crypto_key_manager_lock_acquire(void);
  *
  */
 void esp_crypto_key_manager_lock_release(void);
-#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT */
 
 #ifdef __cplusplus
 }
