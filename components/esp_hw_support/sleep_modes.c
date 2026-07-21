@@ -1182,15 +1182,6 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
     esp_sync_timekeeping_timers();
 
-    // Must acquire all spinlocks which may be acquired during sleep process before stalling other core,
-    // otherwise deadlock may occur.
-    esp_os_enter_critical(&s_config.lock);
-#if !CONFIG_FREERTOS_UNICORE
-    extern portMUX_TYPE rtc_spinlock;
-    esp_os_enter_critical_safe(&rtc_spinlock); // Maybe acquired from temp_sensor_get_raw_value by phy_close_rf callback
-    esp_clk_private_lock(); // Maybe acquired from esp_clk_slowclk_cal_set
-#endif
-
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
     // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
@@ -1198,10 +1189,21 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // esp_int_wdt_livelock_workaround, which may cause deadlock.
     esp_int_wdt_livelock_workaround(false);
 #endif
+
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
      */
-    esp_ipc_isr_stall_other_cpu();
+    esp_os_enter_critical(&s_config.lock);
+
+    /* Retry with the lock held on success. Drop the lock on failure so the other
+     * CPU can leave its critical section (and to avoid deadlock on s_config.lock).
+     */
+    while (esp_ipc_isr_stall_other_cpu_safe() != ESP_OK) {
+        esp_os_exit_critical(&s_config.lock);
+        esp_rom_delay_us(portTICK_PERIOD_MS * 1000 / 10);
+        esp_os_enter_critical(&s_config.lock);
+    }
+
     esp_ipc_isr_stall_pause();
 
     // record current RTC time
@@ -1275,10 +1277,6 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     // Configure WDT to use livelock workaround timeout after releasing other CPU
     esp_int_wdt_livelock_workaround(true);
-#endif
-#if !CONFIG_FREERTOS_UNICORE
-    esp_clk_private_unlock();
-    esp_os_exit_critical_safe(&rtc_spinlock);
 #endif
     esp_os_exit_critical(&s_config.lock);
     return err;
