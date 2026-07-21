@@ -16,6 +16,7 @@
 #include "soc/pmu_struct.h"
 #include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/sleep_clock_icg.h"
 #include "pmu_param.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
@@ -150,7 +151,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, p
     config->param = *pmu_sleep_param_config_default(&param_default, &power_default, args);
 
     if (dslp) {
-        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, args->clk_flags);
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags);
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
@@ -206,11 +207,12 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
 
 static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig, bool dslp)
 {
-    pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), (dig->icg_func != 0));
-    pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func);
+    pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), (dig->sleep_icg_func != 0));
+    pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->sleep_icg_func);
     pmu_ll_hp_set_pause_watchdog(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pause_wdt);
     if (!dslp) {
-        pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+        pmu_ll_hp_set_dig_pad_slp_sel(ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+        pmu_sleep_retention_clock_icg_config(ctx->priv, ctx);
     }
 }
 

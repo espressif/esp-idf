@@ -15,7 +15,6 @@
 #include "driver/uart_wakeup.h"
 #include "hal/uart_hal.h"
 #include "esp_private/esp_sleep_internal.h"
-#include "esp_private/sleep_clock_icg.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_log.h"
 

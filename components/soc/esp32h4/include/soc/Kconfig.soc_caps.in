@@ -1167,6 +1167,10 @@ config SOC_PM_SUPPORT_PMU_CLK_ICG
     bool
     default y
 
+config SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG
+    bool
+    default y
+
 config SOC_PM_SUPPORT_MODEM_CLOCK_DOMAIN_ICG
     bool
     default y

@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <esp_types.h>
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
 
@@ -53,6 +55,7 @@ extern "C" {
 
 uint32_t get_act_hp_drvb(void);
 uint32_t get_act_lp_dbias(void);
+
 
 typedef struct {
     pmu_hp_dig_power_reg_t  dig_power;
@@ -108,7 +111,20 @@ typedef struct {
 
 const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_mode_t mode);
 
+/* Enabled when this chip needs any pmu_sleep_data_t priv slot; conditions differ per chip. */
+#define PMU_SLEEP_PRIV_ENABLED (SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG)
+#if PMU_SLEEP_PRIV_ENABLED
+enum {
+#if SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG
+    PMU_SLEEP_PRIV_HW_RETENTION_ICG_CLK,
+#endif
+    PMU_SLEEP_PRIV_MAX,
+};
 
+typedef struct {
+    void *func[PMU_SLEEP_PRIV_MAX];
+} pmu_sleep_data_t;
+#endif
 
 /* Following software configuration instance type from pmu_struct.h used for the PMU state machine in sleep flow*/
 typedef union {
@@ -348,7 +364,7 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
-    uint32_t                icg_func;
+    uint32_t                sleep_icg_func;
 } pmu_sleep_digital_config_t;
 
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
@@ -356,15 +372,15 @@ typedef struct {
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
-    .icg_func = (clk_flags)[0]                                   \
+    .sleep_icg_func = (uint32_t)((clk_flags)[0]),                       \
 }
 
-#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 1,                                           \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
-    .icg_func = 0                                                       \
+    .sleep_icg_func = 0,                                                \
 }
 
 

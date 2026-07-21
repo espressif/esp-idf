@@ -23,7 +23,7 @@
 
 static int16_t s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_MAX];
 
-SLEEP_CLOCK_ICG_FN_ATTR void esp_sleep_clock_get_clk_icg_flags(uint32_t *clk_icg0_flags, uint32_t *clk_icg1_flags)
+SLEEP_CLOCK_ICG_FN_ATTR void sleep_clock_icg_get_icg_flags(uint32_t *clk_icg0_flags, uint32_t *clk_icg1_flags)
 {
     if (s_sleep_clock_icg_refs[ESP_SLEEP_CLOCK_IOMUX] > 0) {
         *clk_icg0_flags |= PMU_SLEEP_CLK_ICG_BIT(PMU_ICG_FUNC_ENA_IOMUX);
@@ -47,7 +47,7 @@ SLEEP_CLOCK_ICG_FN_ATTR void esp_sleep_clock_get_clk_icg_flags(uint32_t *clk_icg
     }
 #endif
 
-    *clk_icg1_flags = 0;
+    (void)clk_icg1_flags;
 }
 
 esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option_t option)

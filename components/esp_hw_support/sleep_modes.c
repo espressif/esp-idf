@@ -1608,7 +1608,7 @@ esp_err_t esp_light_sleep_start(void)
     uint32_t sleep_flags = get_sleep_flags(pd_flags, false);
     esp_sleep_extra_args_t extra_args = { 0 };
 #if SOC_PM_SUPPORT_PMU_CLK_ICG
-    esp_sleep_clock_get_clk_icg_flags(&extra_args.clk_flags[0], &extra_args.clk_flags[1]);
+    sleep_clock_icg_get_icg_flags(&extra_args.clk_flags[0], &extra_args.clk_flags[1]);
 #endif
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(false);
