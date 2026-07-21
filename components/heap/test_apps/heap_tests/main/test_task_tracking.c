@@ -6,11 +6,14 @@
 #include "unity.h"
 #include "stdio.h"
 #include <string.h>
+#include <stdint.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
 #include "esp_heap_task_info.h"
+
+extern void set_leak_threshold(int threshold);
 
 // This test only apply when task tracking is enabled
 #if defined(CONFIG_HEAP_TASK_TRACKING) && defined(CONFIG_HEAP_TRACK_DELETED_TASKS)
@@ -246,6 +249,137 @@ TEST_CASE("heap task tracking check alloc arrays and get info on specific task",
 
     // delete the task.
     vTaskDelete(test_task_handle);
+}
+
+typedef struct {
+    void *ptr;
+    TaskHandle_t task;
+} handle_reuse_allocation_t;
+
+#define NUM_HANDLE_REUSE_ATTEMPTS 500
+
+static volatile handle_reuse_allocation_t s_handle_reuse_allocations[NUM_HANDLE_REUSE_ATTEMPTS];
+static volatile bool s_handle_reuse_found = false;
+static volatile TaskHandle_t s_reused_task_handle = NULL;
+static volatile bool s_alloc_task_done = false;
+
+static bool task_usage_underflowed(size_t usage)
+{
+    /* size_t underflow looks negative when printed with %d (e.g. -16 -> 0xFFFFFFF0). */
+    return usage > ((size_t)INT32_MAX);
+}
+
+static void assert_no_underflow_for_reused_handle(TaskHandle_t handle)
+{
+    heap_all_tasks_stat_t tasks_stat;
+    esp_err_t ret_val = heap_caps_alloc_all_task_stat_arrays(&tasks_stat);
+    TEST_ASSERT_EQUAL(ESP_OK, ret_val);
+    ret_val = heap_caps_get_all_task_stat(&tasks_stat);
+    TEST_ASSERT_EQUAL(ESP_OK, ret_val);
+
+    size_t matching = 0;
+    for (size_t task_index = 0; task_index < tasks_stat.task_count; task_index++) {
+        task_stat_t task_stat = tasks_stat.stat_arr[task_index];
+        if (task_stat.handle != handle) {
+            continue;
+        }
+
+        matching++;
+        TEST_ASSERT_FALSE_MESSAGE(task_usage_underflowed(task_stat.overall_current_usage),
+                                  "overall_current_usage underflowed");
+        for (size_t heap_index = 0; heap_index < task_stat.heap_count; heap_index++) {
+            TEST_ASSERT_FALSE_MESSAGE(task_usage_underflowed(task_stat.heap_stat[heap_index].current_usage),
+                                      "heap current_usage underflowed");
+        }
+    }
+
+    TEST_ASSERT_GREATER_THAN(0, matching);
+    heap_caps_free_all_task_stat_arrays(&tasks_stat);
+}
+
+static void realloc_then_free(void *ptr, size_t size)
+{
+    void *new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT);
+    if (new_ptr != NULL) {
+        ptr = new_ptr;
+    }
+    heap_caps_free(ptr);
+}
+
+static void handle_reuse_dummy_task(void *args)
+{
+    (void)args;
+    while (1) {
+        taskYIELD();
+    }
+}
+
+static void handle_reuse_alloc_task(void *args)
+{
+    TaskHandle_t handle = xTaskGetCurrentTaskHandle();
+    size_t i = (size_t)args;
+
+    s_handle_reuse_allocations[i].ptr = heap_caps_malloc(10, MALLOC_CAP_DEFAULT);
+    if (s_handle_reuse_allocations[i].ptr == NULL) {
+        abort();
+    }
+    s_handle_reuse_allocations[i].task = handle;
+
+    for (size_t j = 0; j < i; j++) {
+        if (s_handle_reuse_allocations[j].task == handle) {
+            /* Same TaskHandle_t as a previously deleted task: exercise the realloc path. */
+            realloc_then_free(s_handle_reuse_allocations[i].ptr, 20);
+            realloc_then_free(s_handle_reuse_allocations[j].ptr, 20);
+            s_handle_reuse_allocations[i].ptr = NULL;
+            s_handle_reuse_allocations[j].ptr = NULL;
+
+            s_handle_reuse_found = true;
+            s_reused_task_handle = handle;
+            s_alloc_task_done = true;
+            vTaskDelete(NULL);
+            return;
+        }
+    }
+
+    s_alloc_task_done = true;
+    vTaskDelete(NULL);
+}
+
+/* Reproduce the scenario from GoeBachmann/esp-idf (heap-tracking-bug branch),
+ * examples/system/heap_task_tracking/basic: create many short-lived tasks until
+ * a new task reuses a deleted task's TaskHandle_t, then realloc/free allocations
+ * from both lifetimes. Without the fix, overall_current_usage underflows and
+ * appears negative in logs.
+ */
+TEST_CASE("heap task tracking realloc with reused TaskHandle does not underflow usage", "[heap]")
+{
+    TaskHandle_t dummy_task_handle = NULL;
+
+    set_leak_threshold(-50000);
+
+    s_handle_reuse_found = false;
+    s_reused_task_handle = NULL;
+    memset((void *)s_handle_reuse_allocations, 0, sizeof(s_handle_reuse_allocations));
+
+    xTaskCreate(&handle_reuse_dummy_task, "dummy_task", 3072, NULL, 0, &dummy_task_handle);
+
+    for (size_t i = 0; i < NUM_HANDLE_REUSE_ATTEMPTS; i++) {
+        s_alloc_task_done = false;
+        xTaskCreate(&handle_reuse_alloc_task, "alloc_task", 3072, (void *)i, 5, NULL);
+        while (!s_alloc_task_done) {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+
+        if (s_handle_reuse_found) {
+            break;
+        }
+    }
+
+    TEST_ASSERT_TRUE_MESSAGE(s_handle_reuse_found,
+                             "Could not force TaskHandle reuse within iteration limit");
+    assert_no_underflow_for_reused_handle(s_reused_task_handle);
+
+    vTaskDelete(dummy_task_handle);
 }
 
 #endif // CONFIG_HEAP_TASK_TRACKING
