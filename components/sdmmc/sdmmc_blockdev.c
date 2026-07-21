@@ -1,34 +1,37 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <inttypes.h>
 #include "esp_private/sdmmc_common.h"
+#include "esp_private/sdmmc_blockdev.h"
 #include "esp_blockdev.h"
 #include "sdmmc_cmd.h"
 
-static esp_err_t calculate_start_sector_num_and_sector_count(size_t sector_size, uint64_t addr, size_t data_len, size_t* out_start_sector_num, size_t* out_num_of_sectors)
+esp_err_t sdmmc_blockdev_calculate_sectors(size_t sector_size, uint64_t addr, size_t data_len,
+                                           size_t *out_start_sector_num, size_t *out_num_of_sectors)
 {
-    size_t offset_in_start_sector = (size_t) addr % sector_size;
-    size_t offset_in_end_sector = (size_t) data_len % sector_size;
-
-    // Has to be aligned to sector boundaries
-    if (offset_in_start_sector != 0 || offset_in_end_sector != 0) {
+    if (sector_size == 0 || addr % sector_size != 0 || data_len % sector_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (data_len > UINT64_MAX - addr) {
+        return ESP_ERR_INVALID_SIZE;
+    }
 
-    size_t start_sector_num = (size_t) addr / sector_size;
-    size_t last_byte_addr = (size_t) (addr + data_len - 1); // Address of the last accessed byte
-    size_t end_sector_num = last_byte_addr / sector_size;
+    uint64_t start_sector_num = addr / sector_size;
+    size_t num_of_sectors = data_len / sector_size;
+    if (start_sector_num > SIZE_MAX || num_of_sectors > SIZE_MAX - start_sector_num) {
+        return ESP_ERR_INVALID_SIZE;
+    }
 
     if (out_start_sector_num) {
-        *out_start_sector_num = start_sector_num;
+        *out_start_sector_num = (size_t) start_sector_num;
     }
 
     if (out_num_of_sectors) {
-        *out_num_of_sectors = end_sector_num - start_sector_num + 1;
+        *out_num_of_sectors = num_of_sectors;
     }
 
     return ESP_OK;
@@ -41,7 +44,7 @@ static esp_err_t sdmmc_blockdev_read(esp_blockdev_handle_t handle, uint8_t* dst_
     }
     sdmmc_card_t* card = (sdmmc_card_t*) handle->ctx;
     size_t start_sector_num, num_of_sectors;
-    esp_err_t err = calculate_start_sector_num_and_sector_count((size_t) card->csd.sector_size, src_addr, data_read_len, &start_sector_num, &num_of_sectors);
+    esp_err_t err = sdmmc_blockdev_calculate_sectors((size_t) card->csd.sector_size, src_addr, data_read_len, &start_sector_num, &num_of_sectors);
     if (err != ESP_OK) {
         return err;
     }
@@ -56,7 +59,7 @@ static esp_err_t sdmmc_blockdev_write(esp_blockdev_handle_t handle, const uint8_
     }
     sdmmc_card_t* card = (sdmmc_card_t*) handle->ctx;
     size_t start_sector_num, num_of_sectors;
-    esp_err_t err = calculate_start_sector_num_and_sector_count((size_t) card->csd.sector_size, dst_addr, data_write_len, &start_sector_num, &num_of_sectors);
+    esp_err_t err = sdmmc_blockdev_calculate_sectors((size_t) card->csd.sector_size, dst_addr, data_write_len, &start_sector_num, &num_of_sectors);
     if (err != ESP_OK) {
         return err;
     }
@@ -71,7 +74,7 @@ static esp_err_t sdmmc_blockdev_erase(esp_blockdev_handle_t handle, uint64_t sta
     }
     sdmmc_card_t* card = (sdmmc_card_t*) handle->ctx;
     size_t start_sector_num, num_of_sectors;
-    esp_err_t err = calculate_start_sector_num_and_sector_count((size_t) card->csd.sector_size, start_addr, erase_len, &start_sector_num, &num_of_sectors);
+    esp_err_t err = sdmmc_blockdev_calculate_sectors((size_t) card->csd.sector_size, start_addr, erase_len, &start_sector_num, &num_of_sectors);
     if (err != ESP_OK) {
         return err;
     }
