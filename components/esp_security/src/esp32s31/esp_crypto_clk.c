@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_crypto_clk.h"
 #include "soc/clk_tree_defs.h"
@@ -23,8 +24,6 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(s_crypto_common_clk_mux);
 #define CRYPTO_CLK_UNLOCK()
 #endif
 
-static int s_crypto_common_clk_ref_cnt;
-
 static void esp_crypto_pll_f240m_enable(bool enable)
 {
 #if !NON_OS_BUILD
@@ -41,6 +40,10 @@ FORCE_INLINE_ATTR void esp_crypto_periph_clk_enable(bool enable)
     HP_SYS_CLKRST.crypto_ctrl0.reg_crypto_sec_clk_en = enable;
 }
 
+#if CONFIG_ESP_CRYPTO_CLK_ON_DEMAND
+
+static int s_crypto_common_clk_ref_cnt;
+
 void esp_crypto_common_clk_enable(bool enable)
 {
     CRYPTO_CLK_LOCK();
@@ -56,3 +59,28 @@ void esp_crypto_common_clk_enable(bool enable)
     }
     CRYPTO_CLK_UNLOCK();
 }
+
+#else /* !CONFIG_ESP_CRYPTO_CLK_ON_DEMAND */
+
+static bool s_crypto_clk_always_on_done;
+
+static void esp_crypto_clk_always_on(void)
+{
+    CRYPTO_CLK_LOCK();
+    if (!s_crypto_clk_always_on_done) {
+        esp_crypto_pll_f240m_enable(true);
+        esp_crypto_periph_clk_enable(true);
+        s_crypto_clk_always_on_done = true;
+    }
+    CRYPTO_CLK_UNLOCK();
+}
+
+void esp_crypto_common_clk_enable(bool enable)
+{
+    /* Keep clocks always on: enable once, ignore disable. */
+    if (enable) {
+        esp_crypto_clk_always_on();
+    }
+}
+
+#endif /* CONFIG_ESP_CRYPTO_CLK_ON_DEMAND */

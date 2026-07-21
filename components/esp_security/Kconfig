@@ -1,5 +1,22 @@
 menu "ESP Security Specific"
 
+    config ESP_CRYPTO_CLK_ON_DEMAND
+        bool "Enable on-demand crypto clock management"
+        depends on IDF_TARGET_ESP32S31
+        default y if PM_ENABLE
+        default n
+        help
+            When enabled, crypto/security peripheral clocks and their parent
+            (PLL_F240M) are enabled only while crypto operations are in
+            progress and disabled afterwards, reducing power consumption.
+
+            Enabling and disabling these clocks has a noticeable performance
+            cost for crypto operations. When this option is disabled (default),
+            crypto clocks remain always on after initialization for better
+            crypto performance.
+
+            Defaults to enabled when Power Management (CONFIG_PM_ENABLE) is on.
+
     menu "Crypto DPA Protection"
         depends on SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
         config ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
