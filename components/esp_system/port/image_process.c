@@ -127,6 +127,12 @@ static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_
     data->image_len = sizeof(esp_image_header_t);
     ESP_EARLY_LOGD(TAG, "reading image header=0x%"PRIx32" image_len=0x%"PRIx32" image.segment_count=0x%x", data->start_addr, data->image_len, data->image.segment_count);
 
+    ESP_RETURN_ON_FALSE_ISR(data->image.magic == ESP_IMAGE_HEADER_MAGIC, ESP_ERR_IMAGE_INVALID, TAG,
+                            "image at 0x%"PRIx32" has invalid magic byte", data->start_addr);
+    ESP_RETURN_ON_FALSE_ISR(data->image.segment_count <= ESP_IMAGE_MAX_SEGMENTS, ESP_ERR_IMAGE_INVALID, TAG,
+                            "image at 0x%"PRIx32" segment count %d exceeds max %d",
+                            data->start_addr, data->image.segment_count, ESP_IMAGE_MAX_SEGMENTS);
+
     return ESP_OK;
 }
 #endif
