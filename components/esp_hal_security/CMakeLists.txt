@@ -72,8 +72,11 @@ elseif(NOT BOOTLOADER_BUILD)
 endif()
 
 # Key Manager and HUK HAL (available in both bootloader and app builds)
-if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
+if(CONFIG_SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT)
     list(APPEND srcs "key_mgr_hal.c")
+endif()
+
+if(CONFIG_SOC_HUK_SUPPORTED)
     list(APPEND srcs "huk_hal.c")
 endif()
 

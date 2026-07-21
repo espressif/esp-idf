@@ -48,7 +48,7 @@ elseif(esp_tee_build)
 else()  # BOOTLOADER_BUILD
     list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
 
-    if(CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY)
+    if(CONFIG_SOC_KEY_MANAGER_SUPPORTED AND CONFIG_SOC_KEY_MANAGER_FE_KEY_DEPLOY)
         list(APPEND srcs "src/esp_key_mgr.c")
     endif()
 endif()
