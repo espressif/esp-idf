@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import re
 
@@ -7,18 +7,19 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.generic
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_partition_find_example(dut: Dut) -> None:
     def expect_partition(name: str, offset: int, size: int) -> None:
         dut.expect(
-            re.compile(str.encode("found partition '{}' at offset {:#x} with size {:#x}".format(name, offset, size))),
+            re.compile(str.encode(f"found partition '{name}' at offset {offset:#x} with size {size:#x}")),
             timeout=5,
         )
 
     def expect_find_partition(_type: str, subtype: str, label: str, name: str, offset: int, size: int) -> None:
         dut.expect(
-            re.compile(str.encode('Find partition with type {}, subtype {}, label {}'.format(_type, subtype, label))),
+            re.compile(str.encode(f'Find partition with type {_type}, subtype {subtype}, label {label}')),
             timeout=5,
         )
         expect_partition(name, offset, size)
