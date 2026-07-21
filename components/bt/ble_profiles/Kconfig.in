@@ -5,3 +5,7 @@
 #
 
 source "$IDF_PATH/components/bt/ble_profiles/common/Kconfig.in"
+
+if BT_NIMBLE_ENABLED
+    source "$IDF_PATH/components/bt/ble_profiles/nimble/Kconfig.in"
+endif

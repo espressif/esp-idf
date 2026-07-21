@@ -1,0 +1,9 @@
+# NimBLE profile cores: the list of profiles built on top of the NimBLE host.
+#
+# Only sourced when BT_NIMBLE_ENABLED is set (see ../Kconfig.in). Each profile
+# owns its own enable switch, so it contributes menu entries only when the user
+# turns it on, and plugging a new one in is a single source line here.
+#
+
+# Object Transfer Service
+source "$IDF_PATH/components/bt/ble_profiles/nimble/ble_ots/Kconfig.in"

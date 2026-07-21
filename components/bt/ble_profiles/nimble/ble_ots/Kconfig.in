@@ -1,0 +1,128 @@
+menu "Object Transfer Service (OTS) (EXPERIMENTAL)"
+
+    config BLE_OTS_ENABLED
+        bool "Enable Object Transfer Service (OTS) (EXPERIMENTAL)"
+        depends on BT_NIMBLE_ENABLED && (BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1)
+        depends on IDF_EXPERIMENTAL_FEATURES
+        default n
+        help
+            Build the Object Transfer Service profile core on top of the NimBLE
+            host. The client and server roles are selected separately below, so a
+            device only pays for the role it actually implements.
+            Object contents are transferred over an L2CAP connection oriented
+            channel, so BT_NIMBLE_L2CAP_COC_MAX_NUM must be set to at least 1.
+
+            Note: this profile is experimental. Its public API, Kconfig option
+            names and event layout may change without notice in future releases,
+            and it is not recommended for production use yet. Enable
+            IDF_EXPERIMENTAL_FEATURES to make this option selectable.
+
+    menu "OTS Client"
+
+        config BLE_OTS_CLIENT_ENABLED
+            bool "Enable OTS Client"
+            default n
+            depends on BLE_OTS_ENABLED
+            help
+                Enable the Object Transfer Service Client component.
+                When disabled, no OTS client code is compiled in, saving
+                flash and RAM on devices that act only as OTS servers.
+
+        config BLE_OTS_CLIENT_OACP_TIMEOUT_MS
+            int "OACP response timeout (ms)"
+            default 30000
+            depends on BLE_OTS_CLIENT_ENABLED
+            range 1000 120000
+            help
+                Maximum time in milliseconds to wait for an OACP
+                control-point response indication (T_OACP) before
+                reporting a CP_TIMEOUT event. Increase this value on
+                links with high latency or when the server performs
+                slow storage operations.
+
+        config BLE_OTS_CLIENT_OLCP_TIMEOUT_MS
+            int "OLCP response timeout (ms)"
+            default 30000
+            depends on BLE_OTS_CLIENT_ENABLED
+            range 1000 120000
+            help
+                Maximum time in milliseconds to wait for an OLCP
+                control-point response indication (T_OLCP) before
+                reporting a CP_TIMEOUT event. Increase this value if
+                the server's object list is very large and sorting or
+                filtering takes significant time.
+
+        config BLE_OTS_CLIENT_TRANSFER_TIMEOUT_MS
+            int "Transfer inactivity timeout (ms)"
+            default 30000
+            depends on BLE_OTS_CLIENT_ENABLED
+            range 1000 120000
+            help
+                Inactivity timeout in milliseconds for the Object
+                Transfer Channel. If no data is sent or received within
+                this period a TRANSFER_TIMEOUT event is raised. Raise
+                this value for very large objects over slow links.
+
+        config BLE_OTS_CLIENT_MAX_NAME_LEN
+            int "Maximum Object Name length (octets)"
+            default 120
+            depends on BLE_OTS_CLIENT_ENABLED
+            range 1 512
+            help
+                Maximum length of an Object Name string in octets.
+                This controls the size of internal buffers used when
+                reading or writing the Object Name characteristic.
+                The Bluetooth specification allows up to 120 octets;
+                increase only if the server uses a vendor extension.
+
+    endmenu
+
+    menu "OTS Server"
+
+        config BLE_OTS_SERVER_ENABLED
+            bool "Enable OTS Server"
+            default n
+            depends on BLE_OTS_ENABLED
+            help
+                Enable the Object Transfer Service Server component.
+                When disabled, no OTS server code is compiled in, saving
+                flash and RAM on devices that act only as OTS clients.
+
+        config BLE_OTS_SERVER_MAX_OBJECTS
+            int "Maximum number of objects"
+            default 10
+            depends on BLE_OTS_SERVER_ENABLED
+            range 1 255
+            help
+                Maximum number of objects the server can store in its
+                internal database at the same time. Each object slot
+                consumes RAM for metadata and content storage. Lower
+                this value on memory-constrained devices.
+
+        config BLE_OTS_SERVER_MAX_CONCURRENCY
+            int "Maximum concurrent client connections"
+            default 1
+            depends on BLE_OTS_SERVER_ENABLED
+            range 1 16
+            help
+                Maximum number of client connections that can perform
+                object operations concurrently. Each concurrent slot
+                allocates per-connection state (current object, filters,
+                transfer context). Set this to the expected peak number
+                of simultaneous BLE connections.
+
+        config BLE_OTS_SERVER_TRANSFER_TIMEOUT_SEC
+            int "Transfer inactivity timeout (seconds)"
+            default 30
+            depends on BLE_OTS_SERVER_ENABLED
+            range 1 300
+            help
+                Inactivity timeout in seconds for object read and write
+                transfers over the Object Transfer Channel. If no data
+                is exchanged within this period the transfer is aborted
+                and the object lock is released. Increase for very large
+                objects or slow links.
+
+    endmenu
+
+endmenu
