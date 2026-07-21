@@ -5,7 +5,6 @@
 Verifies that FormatToken.conv_char and FormatToken.length are used correctly
 to determine ARG_SIZE_TYPE (the fix for the off-by-one bug).
 """
-
 import re
 import shutil
 import tempfile

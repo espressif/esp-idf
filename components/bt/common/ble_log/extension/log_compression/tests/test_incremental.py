@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """Tests for incremental compression: caching, re-runs, config changes."""
-
 import shutil
 import tempfile
 import unittest

@@ -1,15 +1,14 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """End-to-end pipeline tests: .c input -> .h output with golden file comparison."""
-
 import re
 import shutil
 import tempfile
 import unittest
 
+from test_utils import assert_header_matches_golden
 from test_utils import FIXTURE_DIR
 from test_utils import PipelineContext
-from test_utils import assert_header_matches_golden
 
 
 class _E2ETestCase(unittest.TestCase):

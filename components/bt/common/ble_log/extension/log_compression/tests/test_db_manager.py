@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """Tests for LogDBManager: state persistence, incremental logic, file tracking."""
-
 import shutil
 import tempfile
 import unittest
