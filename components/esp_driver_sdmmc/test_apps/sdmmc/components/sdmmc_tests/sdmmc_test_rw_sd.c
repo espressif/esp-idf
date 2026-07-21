@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include "unity.h"
+#include "esp_psram.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
 #include "sdmmc_test_rw_common.h"
@@ -135,6 +136,10 @@ static void do_one_sdmmc_rw_test_psram_dma_buffer(int slot, int width)
     int freq_khz = SDMMC_FREQ_HIGHSPEED;
 #if !CONFIG_SPIRAM
     TEST_IGNORE_MESSAGE("PSRAM is not enabled");
+#else
+    if (!esp_psram_is_initialized()) {
+        TEST_IGNORE_MESSAGE("PSRAM is not available");
+    }
 #endif
     sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, NO_DDR, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, 0, &card);
