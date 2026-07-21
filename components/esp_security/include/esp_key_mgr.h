@@ -8,7 +8,7 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 
 #ifdef __cplusplus
 extern "C" {

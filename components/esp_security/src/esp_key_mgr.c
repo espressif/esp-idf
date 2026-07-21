@@ -23,7 +23,6 @@
 #include "rom/key_mgr.h"
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
 static const char *TAG = "esp_key_mgr";
 
 static _lock_t s_key_mgr_ecdsa_key_lock;
@@ -905,4 +904,3 @@ cleanup:
     esp_key_mgr_release_hardware(true);
     return esp_ret;
 }
-#endif
