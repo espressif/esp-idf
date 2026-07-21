@@ -31,7 +31,7 @@
 #endif /* BLE_LOG_PRPH_UART_DMA_REDIR */
 
 /* VARIABLE */
-BLE_LOG_STATIC bool prph_inited = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool prph_inited = false;
 BLE_LOG_STATIC uhci_controller_handle_t dev_handle = NULL;
 #if BLE_LOG_PRPH_UART_DMA_REDIR
 BLE_LOG_STATIC bool uart_driver_inited = false;
