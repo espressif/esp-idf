@@ -17,6 +17,7 @@ TEST_CASE("test psram no boot init", "[psram_no_boot_init]")
 #endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
 
     TEST_ESP_OK(esp_psram_init());
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_psram_init());
 
 #if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
     size_t final_psram_heap = esp_psram_get_heap_size_to_protect();
