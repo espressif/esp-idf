@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -374,6 +374,13 @@ static bool parlio_rx_default_desc_done_callback(gdma_channel_handle_t dma_chan,
     /* Get the finished node from the current node */
     void *finished_buffer = gdma_link_get_buffer(rx_unit->dma_link, rx_unit->curr_node_id);
     size_t finished_length = gdma_link_get_length(rx_unit->dma_link, rx_unit->curr_node_id);
+    if (finished_buffer == NULL || finished_length == 0) {
+        ESP_EARLY_LOGW(TAG, "finished buffer is NULL or length is 0");
+        /* Should not happen unless the force EOF is triggered, keep software tracking synchronized */
+        rx_unit->curr_node_id++;
+        rx_unit->curr_node_id %= rx_unit->node_num;
+        return false;
+    }
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     esp_err_t ret = ESP_OK;
     size_t sync_size = finished_length;
@@ -1153,8 +1160,9 @@ esp_err_t parlio_rx_unit_trigger_fake_eof(parlio_rx_unit_handle_t rx_unit, bool 
 
     parlio_hal_context_t *hal = &rx_unit->base.group->hal;
     portENTER_CRITICAL_SAFE(&s_rx_spinlock);
-    /* Save the current register values */
-    parl_io_dev_t save_curr_regs = *(parl_io_dev_t *)hal->regs;
+    /* Retain the current register values by the software */
+    uint32_t reg_dump[rx_unit->base.group->regs_cnt];
+    parlio_sw_retention(rx_unit->base.group, reg_dump, true);
     /* Reset the hardware FSM of the parlio module */
     PERIPH_RCC_ATOMIC() {
         parlio_ll_reset_register(rx_unit->base.group->group_id);
@@ -1164,8 +1172,8 @@ esp_err_t parlio_rx_unit_trigger_fake_eof(parlio_rx_unit_handle_t rx_unit, bool 
         parlio_ll_rx_set_clock_source(hal->regs, PARLIO_CLK_SRC_DEFAULT);
     }
     portEXIT_CRITICAL_SAFE(&s_rx_spinlock);
-    /* Restore the register values and clock source*/
-    memcpy(hal->regs, &save_curr_regs, sizeof(parl_io_dev_t));
+    /* Restore the register values and clock source */
+    parlio_sw_retention(rx_unit->base.group, reg_dump, false);
     parlio_ll_rx_update_config(hal->regs);
     PERIPH_RCC_ATOMIC() {
         parlio_ll_rx_set_clock_source(hal->regs, rx_unit->clk_src);
