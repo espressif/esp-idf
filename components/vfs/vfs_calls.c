@@ -656,8 +656,13 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         const vfs_entry_t *vfs = get_vfs_for_index(i);
         fds_triple_t *item = &vfs_fds_triple[i];
 
-        if (vfs == NULL || vfs->vfs->select == NULL || vfs->vfs->select->start_select == NULL) {
-            ESP_LOGD(TAG, "start_select function callback for this vfs (s_vfs[%d]) is not defined", vfs->offset);
+        if (vfs == NULL) {
+            ESP_LOGD(TAG, "start_select callback not defined: vfs is NULL at index %u", (unsigned)i);
+            continue;
+        }
+
+        if (vfs->vfs == NULL || vfs->vfs->select == NULL || vfs->vfs->select->start_select == NULL) {
+            ESP_LOGD(TAG, "start_select callback not defined for VFS offset %d", vfs->offset);
             continue;
         }
 
