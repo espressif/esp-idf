@@ -830,6 +830,12 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     // Drop existing posts on the queue
     esp_event_post_instance_t post;
     while (xQueueReceive(loop->queue, &post, 0) == pdTRUE) {
+        if (post.base == esp_event_handler_cleanup) {
+            esp_event_remove_handler_context_t* ctx = (esp_event_remove_handler_context_t*)post.data.ptr;
+            if (ctx->legacy) {
+                free(ctx->handler_ctx);
+            }
+        }
         post_instance_delete(&post);
     }
 

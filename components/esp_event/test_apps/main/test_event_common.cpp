@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -181,6 +181,30 @@ TEST_CASE("registering event twice with same handler yields updated handler arg"
 
     TEST_ASSERT_EQUAL(1, count_first);
     TEST_ASSERT_EQUAL(1, count_second);
+}
+
+static void self_unregister_legacy_handler(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    esp_event_loop_handle_t loop = (esp_event_loop_handle_t) event_handler_arg;
+    TEST_ESP_OK(esp_event_handler_unregister_with(loop, event_base, event_id, self_unregister_legacy_handler));
+}
+
+/* A legacy handler unregistering itself defers removal via an internal cleanup event
+ * left on the queue. Deleting the loop must drain it without leaking. */
+TEST_CASE("deleting loop with queued legacy cleanup event does not leak", "[event][linux]")
+{
+    EV_LoopFix loop_fix;
+
+    TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                self_unregister_legacy_handler,
+                                                loop_fix.loop));
+
+    TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+
+    /* ZERO_DELAY runs a single event, leaving the deferred cleanup event queued. */
+    TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 }
 
 TEST_CASE("registering event handler instance twice works", "[event][linux]")
