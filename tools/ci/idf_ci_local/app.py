@@ -10,8 +10,7 @@ from idf_build_apps import CMakeApp
 from idf_build_apps.constants import BuildStatus
 from idf_build_apps.utils import rmdir
 from idf_ci_utils import APP_EXTRA_S3_ARTIFACT_TYPE
-from idf_ci_utils import idf_relpath
-from metrics.size_metrics import collect_build_metrics
+
 
 _SIZE_METRICS_CONFIG_PATH = Path(__file__).parent.parent / 'metrics' / 'size_metrics' / 'size_metrics_config.yml'
 
