@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
 #include "soc/hwcrypto_periph.h"
 #include "ecc_impl.h"
 #include "hal/ecc_ll.h"
@@ -118,8 +117,10 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
 
     mbedtls_platform_zeroize((void *)&point, sizeof(ecc_point_t));
 
-    memcpy(&point.x, pt->MBEDTLS_PRIVATE(X).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&pt->MBEDTLS_PRIVATE(X)));
-    memcpy(&point.y, pt->MBEDTLS_PRIVATE(Y).MBEDTLS_PRIVATE(p), mbedtls_mpi_size(&pt->MBEDTLS_PRIVATE(Y)));
+    if (mbedtls_mpi_write_binary_le(&pt->MBEDTLS_PRIVATE(X), point.x, sizeof(point.x)) != 0 ||
+        mbedtls_mpi_write_binary_le(&pt->MBEDTLS_PRIVATE(Y), point.y, sizeof(point.y)) != 0) {
+        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
 
     point.len = grp->pbits / 8;
 
