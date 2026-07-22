@@ -1,4 +1,6 @@
 preserve_non_test_related_apps = false
+filter_non_test_related_apps_by_modified_files = true
+filter_apps_by_component_target = true
 exclude_dirs = [
     'tools/test_mkdfu',
     'tools/test_idf_size',
@@ -20,6 +22,7 @@ IDF_CI_BUILD = "1"
 
 [gitlab.build_pipeline]
 workflow_name = "build_child_pipeline"
+runs_per_job = 30
 
 job_tags = ['build', 'shiny']
 job_template_name = '.dynamic_build_template'
@@ -107,6 +110,7 @@ patterns = [
 bucket = "idf-artifacts"
 patterns = [
     '**/XUNIT_RESULT_*.xml',
+    '**/build_summary_*.xml',
 ]
 
 [gitlab.artifacts.s3.configs.env]

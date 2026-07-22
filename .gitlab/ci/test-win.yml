@@ -1,6 +1,6 @@
 .host_test_win_template:
   extends:
-    - .brew-windows-settings
+    - .windows-settings
     - .rules:test:host_test
   stage: host_test
   dependencies: # set dependencies to null to avoid missing artifacts issue
@@ -50,7 +50,7 @@ test_tools_win:
   script:
     - cd tools\test_idf_py
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 # Build tests
 .test_build_system_template_win:
@@ -67,42 +67,18 @@ test_tools_win:
   script:
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_build_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
   parallel: 6
-  needs:
-    - job: manual_gate
-      optional: true
-  tags: [windows-build, brew]
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
-    when: always
 
 pytest_build_system_win_minimal_cmake:
   extends:
     - .test_build_system_template_win
     - .rules:labels:windows_pytest_build_system
-  needs:
-    - job: manual_gate
-      optional: true
-  tags: [windows-build, brew]
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
-    when: always
   variables:
     MINIMAL_CMAKE_VERSION: "3.22.1"
   script:
@@ -116,25 +92,13 @@ pytest_build_system_win_minimal_cmake:
       }
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
-    - pytest -k cmake --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+    - pytest -k cmake --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_buildv2_system_win:
   extends:
     - .test_build_system_template_win
     - .rules:labels:buildv2
   parallel: 2
-  needs:
-    - job: manual_gate
-      optional: true
-  tags: [windows-build, brew]
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
-    when: always
   script:
     - cd tools\test_build_system
     - idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
@@ -142,5 +106,5 @@ pytest_buildv2_system_win:
       --buildv2
       --parallel-count ${CI_NODE_TOTAL}
       --parallel-index ${CI_NODE_INDEX}
-      --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+      --junitxml ${CI_PROJECT_DIR}\XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
