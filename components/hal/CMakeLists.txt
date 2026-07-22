@@ -56,10 +56,6 @@ if(NOT esp_tee_build AND NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_MODEM_CLOCK_IS_INDEPENDENT AND CONFIG_SOC_MODEM_CLOCK_SUPPORTED)
         list(APPEND srcs "${target}/modem_clock_hal.c")
     endif()
-
-    if(CONFIG_SOC_RISCV_TRACE_SUPPORTED)
-        list(APPEND srcs "riscv_trace_hal.c")
-    endif()
 endif()
 
 set(ldfragments linker.lf)

@@ -18,10 +18,10 @@ endif()
 # used by ulp/lp_core/lp_core/lp_core_pmp.c and vector.S.
 
 if(BOOTLOADER_BUILD)
-    set(priv_requires soc hal)
+    set(priv_requires soc hal esp_hal_debug_assist)
     set(srcs "rv_utils.c")
 elseif(esp_tee_build)
-    set(priv_requires soc hal)
+    set(priv_requires soc hal esp_hal_debug_assist)
     set(srcs "rv_utils.c")
     if(CONFIG_SOC_INT_PLIC_SUPPORTED)
         list(APPEND srcs "interrupt_plic.c")
@@ -29,7 +29,7 @@ elseif(esp_tee_build)
         list(APPEND srcs "interrupt_clic.c")
     endif()
 else()
-    set(priv_requires soc hal)
+    set(priv_requires soc hal esp_hal_debug_assist)
     set(srcs
         "instruction_decode.c"
         "interrupt.c"

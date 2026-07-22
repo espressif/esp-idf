@@ -13,12 +13,14 @@
 extern "C" {
 #endif
 
+__attribute__((always_inline))
 static inline void trace_ll_mem_enable(int cpu, bool enable)
 {
     int reg[] = {DPORT_PRO_TRACEMEM_ENA_REG, DPORT_APP_TRACEMEM_ENA_REG};
     DPORT_WRITE_PERI_REG(reg[cpu], enable);
 }
 
+__attribute__((always_inline))
 static inline void trace_ll_set_mode(int mode)
 {
     DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, mode);

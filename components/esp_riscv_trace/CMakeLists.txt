@@ -9,12 +9,15 @@ endif()
 
 if(${target} STREQUAL "linux")
     set(priv_requires "")
+    set(requires "")
 else()
     set(priv_requires esp_mm)
+    set(requires esp_hal_debug_assist)
 endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_INCLUDE_DIRS "src"
+                       REQUIRES "${requires}"
                        PRIV_REQUIRES "${priv_requires}"
                        )
