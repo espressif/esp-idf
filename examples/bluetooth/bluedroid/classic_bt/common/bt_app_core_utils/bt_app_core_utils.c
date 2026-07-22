@@ -7,8 +7,11 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <inttypes.h>
+#include <stdlib.h>
 
 #include "esp_log.h"
+#include "esp_system.h"
 
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
@@ -45,6 +48,7 @@ static TaskHandle_t s_bt_app_task_handle = NULL;  /* handle of application task 
 static bool bt_app_send_msg(bt_app_msg_t *msg)
 {
     if (msg == NULL || s_bt_app_task_queue == NULL) {
+        ESP_LOGE(BT_APP_CORE_TAG, "%s failed: msg=%p, queue=%p", __func__, msg, s_bt_app_task_queue);
         return false;
     }
 
@@ -126,6 +130,11 @@ bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, i
             }
             return true;
         }
+        ESP_LOGE(BT_APP_CORE_TAG, "%s malloc failed, event: 0x%x, param_len: %d, free_heap: %" PRIu32,
+                 __func__, event, param_len, esp_get_free_heap_size());
+    } else {
+        ESP_LOGE(BT_APP_CORE_TAG, "%s invalid args, event: 0x%x, p_params: %p, param_len: %d",
+                 __func__, event, p_params, param_len);
     }
 
     return false;
