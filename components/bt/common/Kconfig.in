@@ -21,6 +21,21 @@ config BT_BLE_HOST_ALLOW_SUB_SPEC_MIN_CONN_INT
         this mode; use the Controller's own configuration instead of toggling
         this host symbol manually.
 
+menu "OSAL (OS abstraction layer)"
+    depends on BT_ENABLED
+
+    config BT_OSAL_USE_ESP_TIMER
+        bool "Use esp_timer to implement the OSAL callout"
+        default y
+        help
+            Use esp_timer instead of the FreeRTOS software timer to implement the OSAL
+            callout. esp_timer offers higher precision and runs its callbacks in a
+            dedicated high-priority task rather than the shared FreeRTOS timer task.
+
+            Disable to fall back to the FreeRTOS software timer.
+
+endmenu
+
 choice BT_SMP_CRYPTO_STACK
     prompt "SMP cryptographic stack"
     depends on (BT_BLE_SMP_ENABLE || BT_SMP_ENABLE || BT_NIMBLE_SECURITY_ENABLE || BT_LE_SECURITY_ENABLE || \
