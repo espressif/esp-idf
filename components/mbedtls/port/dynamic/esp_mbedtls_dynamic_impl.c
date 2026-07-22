@@ -362,6 +362,66 @@ exit:
     return ret;
 }
 
+/*
+ * Decide how many content bytes the RX buffer must hold for the record whose
+ * 5-byte header has just been peeked into msg_head.
+ *
+ * The dynamic buffer is normally sized to this single record. That is unsafe
+ * whenever mbedtls pulls more than the peeked record into the same buffer:
+ *   - a handshake message fragmented across records is reassembled in place,
+ *     so the buffer must hold the whole message; and
+ *   - a TLS 1.3 middlebox-compat CCS (RFC 8446 D.4) is skipped and the
+ *     following, larger record is read into the same buffer.
+ */
+static int rx_reassembly_content_len(mbedtls_ssl_context *ssl,
+                                     const unsigned char *msg_head,
+                                     int *content_len)
+{
+    int in_msgtype = ssl->MBEDTLS_PRIVATE(in_msgtype);
+    size_t in_msglen = ssl->MBEDTLS_PRIVATE(in_msglen);
+    bool encrypted = ssl->MBEDTLS_PRIVATE(transform_in) != NULL;
+
+    *content_len = (int)in_msglen;
+
+    if (mbedtls_ssl_is_handshake_over(ssl)) {
+        return 0;
+    }
+
+    if (in_msgtype == MBEDTLS_SSL_MSG_HANDSHAKE && !encrypted && in_msglen >= 4) {
+        size_t hdr = mbedtls_ssl_in_hdr_len(ssl);
+        int ret = mbedtls_ssl_fetch_input(ssl, hdr + 4);
+        if (ret != 0) {
+            return ret;
+        }
+        /* Handshake header (type[1] + length[3]) sits just past the record
+         * header; its length field covers the whole (possibly fragmented)
+         * message, independent of how it is split across records. */
+        const unsigned char *hs = msg_head + hdr;
+        size_t hslen = 4 + ((size_t)hs[1] << 16 | (size_t)hs[2] << 8 | hs[3]);
+        if (hslen > in_msglen) {
+            *content_len = hslen < MBEDTLS_SSL_IN_CONTENT_LEN
+                               ? (int)hslen : MBEDTLS_SSL_IN_CONTENT_LEN;
+            ESP_LOGD(TAG, "fragmented handshake message: sizing RX for %d bytes",
+                     *content_len);
+        }
+        return 0;
+    }
+
+    /* Reassembled / following-record size is not knowable here for an encrypted
+     * handshake record or a TLS 1.3 dummy CCS: size for the maximum record. */
+    if (encrypted && (in_msgtype == MBEDTLS_SSL_MSG_HANDSHAKE ||
+                      in_msgtype == MBEDTLS_SSL_MSG_APPLICATION_DATA)) {
+        *content_len = MBEDTLS_SSL_IN_CONTENT_LEN;
+    }
+#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
+    else if (in_msgtype == MBEDTLS_SSL_MSG_CHANGE_CIPHER_SPEC &&
+             ssl->MBEDTLS_PRIVATE(tls_version) == MBEDTLS_SSL_VERSION_TLS1_3) {
+        *content_len = MBEDTLS_SSL_IN_CONTENT_LEN;
+    }
+#endif
+    return 0;
+}
+
 int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 {
     /*
@@ -372,10 +432,10 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     int cached = 0;
     int ret = 0;
-    int buffer_len;
+    int buffer_len, content_len = 0;
     struct esp_mbedtls_ssl_buf *esp_buf;
     unsigned char cache_buf[16];
-    unsigned char msg_head[5];
+    unsigned char msg_head[9];
     size_t in_msglen, in_left;
 
     ESP_LOGV(TAG, "--> add rx");
@@ -409,24 +469,13 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     esp_mbedtls_parse_record_header(ssl);
 
+    if ((ret = rx_reassembly_content_len(ssl, msg_head, &content_len)) != 0) {
+        goto exit;
+    }
+    buffer_len = tx_buffer_len(ssl, content_len);
+
     in_left = ssl->MBEDTLS_PRIVATE(in_left);
     in_msglen = ssl->MBEDTLS_PRIVATE(in_msglen);
-    buffer_len = tx_buffer_len(ssl, in_msglen);
-
-#if defined(MBEDTLS_SSL_PROTO_TLS1_3)
-    /* In TLS 1.3 middlebox-compat mode (RFC 8446 D.4) a 1-byte dummy CCS
-     * record may precede a handshake record. mbedtls silently skips the CCS
-     * and, in the same read loop, reads the (larger) record that follows into
-     * this same RX buffer. The header peek above only saw the 1-byte CCS, so
-     * whenever the peeked record is such a CCS, size for the max record
-     * instead to avoid overflowing the buffer when the next record is read. */
-    if (ssl->MBEDTLS_PRIVATE(tls_version) == MBEDTLS_SSL_VERSION_TLS1_3 &&
-        ssl->MBEDTLS_PRIVATE(in_msgtype) == MBEDTLS_SSL_MSG_CHANGE_CIPHER_SPEC) {
-        buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_CONTENT_LEN);
-        ESP_LOGV(TAG, "TLS 1.3 CCS peeked: allocating max RX buffer %d bytes",
-                 buffer_len);
-    }
-#endif
 
     ESP_LOGV(TAG, "message length is %d RX buffer length should be %d left is %d",
                 (int)in_msglen, (int)buffer_len, (int)ssl->MBEDTLS_PRIVATE(in_left));
