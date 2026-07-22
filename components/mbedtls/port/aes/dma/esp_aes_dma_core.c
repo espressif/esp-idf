@@ -73,7 +73,7 @@ static esp_pm_lock_handle_t s_pm_sleep_lock;
 #endif
 #endif
 #else
-extern bool intr_flag;
+extern volatile bool intr_flag;
 #endif
 
 static const char *TAG = "esp-aes";
