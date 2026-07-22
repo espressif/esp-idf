@@ -14,9 +14,11 @@
 #include "esp_check.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/startup_internal.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_cpu.h"
 #include "soc/soc_caps.h"
 #include "hal/riscv_trace_hal.h"
+#include "hal/riscv_trace_ll.h"
 #include "esp_riscv_trace.h"
 #include "esp_riscv_trace_priv.h"
 
@@ -386,6 +388,12 @@ ESP_SYSTEM_INIT_FN(esp_riscv_trace_early_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CO
 {
     int core_id = esp_cpu_get_core_id();
     esp_riscv_trace_config_t config = esp_riscv_trace_get_user_config(core_id);
+
+    // Enable the clocks and reset the encoder core before accessing its registers.
+    PERIPH_RCC_ATOMIC() {
+        riscv_trace_ll_enable_bus_clock(true);
+        riscv_trace_ll_reset_register(core_id);
+    }
 
     if (!is_valid_core_mask(config.core_mask)) {
         ESP_EARLY_LOGE(TAG, "invalid core mask");

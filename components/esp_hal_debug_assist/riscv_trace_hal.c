@@ -30,13 +30,6 @@ _Static_assert(RISCV_TRACE_INTR_FIFO_OVERFLOW == TRACE_FIFO_OVERFLOW_INTR_ENA,
 _Static_assert(RISCV_TRACE_INTR_MEM_FULL == TRACE_MEM_FULL_INTR_ENA,
                "RISCV_TRACE_INTR_MEM_FULL does not match TRACE_MEM_FULL_INTR_ENA");
 
-static void riscv_trace_hal_enable_clock_and_reset(int core_id, trace_dev_t *dev)
-{
-    riscv_trace_ll_enable_bus_clock(true);
-    riscv_trace_ll_reset_register(core_id);
-    riscv_trace_ll_enable_module_clock(dev, true);
-}
-
 void riscv_trace_hal_init(int core_id, const riscv_trace_hal_config_t *config, riscv_trace_hal_context_t *ctx)
 {
     HAL_ASSERT(ctx != NULL && config != NULL);
@@ -44,8 +37,6 @@ void riscv_trace_hal_init(int core_id, const riscv_trace_hal_config_t *config, r
 
     ctx->dev = riscv_trace_ll_get_hw(core_id);
     ctx->core_id = core_id;
-
-    riscv_trace_hal_enable_clock_and_reset(core_id, ctx->dev);
 
     /* Memory configuration */
     riscv_trace_ll_set_mem_start_addr(ctx->dev, config->mem_start_addr);
@@ -118,7 +109,6 @@ void riscv_trace_hal_deinit(riscv_trace_hal_context_t *ctx)
     riscv_trace_ll_set_restart_ena(ctx->dev, false);
     riscv_trace_ll_trigger_off(ctx->dev);
     riscv_trace_ll_set_intr_ena(ctx->dev, 0);
-    riscv_trace_ll_enable_module_clock(ctx->dev, false);
 }
 
 uint32_t riscv_trace_hal_read_fifo_status(riscv_trace_hal_context_t *ctx)
