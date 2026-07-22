@@ -110,7 +110,7 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
 
 .. note::
 
-    PCNT 中涉及到的 GPIO 都可以在初始化完 PCNT 后, 通过 :cpp:func:`gpio_pullup_en` 和 :cpp:func:`gpio_pullup_dis` 等函数，重新进行上下拉等配置。
+    PCNT 驱动不会为边沿信号或电平信号对应的 GPIO 配置内部上拉或下拉电阻。如果信号源需要确定的空闲电平，请使用 :cpp:func:`gpio_set_pull_mode`、:cpp:func:`gpio_pullup_en` 和 :cpp:func:`gpio_pullup_dis` 等函数显式配置 GPIO 上下拉模式。
 
 .. _pcnt-setup-channel-actions:
 
@@ -256,8 +256,12 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
     PCNT 单元的可以接收来自 GPIO 的清零信号，:cpp:type:`pcnt_clear_signal_config_t` 中列出了清零信号的配置参数：
 
-        -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高，使能下拉输入。
-        -  :cpp:member:`pcnt_clear_signal_config_t::flags::invert_clear_signal` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵 (不是 PCNT 单元) 执行。驱动会使能上拉输入，以确保信号在未连接时保持高电平。
+        -  :cpp:member:`pcnt_clear_signal_config_t::clear_signal_gpio_num` 用于指定 **清零** 信号对应的 GPIO 编号。默认有效电平为高。
+        -  :cpp:member:`pcnt_clear_signal_config_t::flags::invert_clear_signal` 用于确定信号在输入 PCNT 之前是否需要被翻转，信号翻转由 GPIO 矩阵（不是 PCNT 单元）执行。
+
+    .. note::
+
+        PCNT 驱动不会为清零信号对应的 GPIO 配置内部上拉或下拉电阻。如果清零信号需要确定的空闲电平，请使用 GPIO API 显式配置 GPIO 上下拉模式。
 
     该输入信号的作用与调用 :cpp:func:`pcnt_unit_clear_count` 函数相同，但它不受软件延迟的限制，更适用于需要低延迟的场合。请注意，该信号的翻转频率不能太高。
 

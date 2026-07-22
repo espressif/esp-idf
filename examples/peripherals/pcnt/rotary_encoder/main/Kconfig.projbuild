@@ -1,4 +1,12 @@
 menu "Example Configuration"
+    config EXAMPLE_ENABLE_INTERNAL_PULL_UPS
+        bool "Enable internal pull-up resistors"
+        default "n"
+        help
+            Enable the internal pull-up resistors for the EC11 A/B signal GPIOs.
+            It is recommended to provide external pull-up resistors on the PCB.
+            Enable this option only when external pull-up resistors are not available.
+
     config EXAMPLE_WAKE_UP_LIGHT_SLEEP
         bool "Configure the EC11 to wake up light sleep"
         default "n"
