@@ -86,6 +86,22 @@ The open mode parameter controls the access level and security behavior:
 
     Namespaces with the same name in different NVS partitions are considered as separate namespaces.
 
+C++ API
+^^^^^^^
+
+In addition to the C API described above, NVS provides a C++ class interface in :component_file:`nvs_flash/include/nvs_handle.hpp` (namespace ``nvs``).
+
+Use ``nvs::open_nvs_handle()`` or ``nvs::open_nvs_handle_from_partition()`` to open a namespace. These functions return a ``std::unique_ptr<nvs::NVSHandle>``. The handle is closed automatically when the unique pointer is destroyed (RAII), so there is no need to call a separate close function.
+
+``nvs::NVSHandle`` provides methods that mirror the C API, including:
+
+- ``set_item`` / ``get_item`` — typed get/set for integral, floating-point, and enum types
+- ``set_string`` / ``get_string`` — string values
+- ``set_blob`` / ``get_blob`` — binary blob values
+- ``commit``, ``erase_item``, ``erase_all``, ``purge_all``, ``find_key``, and related helpers
+
+Open modes (``NVS_READONLY``, ``NVS_READWRITE``, ``NVS_READWRITE_PURGE``) and key/namespace constraints are the same as for the C API. See the :ref:`API Reference <nvs-api-reference>` below for full class and function documentation, and :example:`storage/nvs/nvs_rw_value_cxx` for a complete example.
+
 NVS Iterators
 ^^^^^^^^^^^^^
 
@@ -264,7 +280,7 @@ You can find code examples in the :example:`storage/nvs` directory of ESP-IDF ex
 
 :example:`storage/nvs/nvs_rw_value_cxx`
 
-  This example does exactly the same as :example:`storage/nvs/nvs_rw_value`, except that it uses the C++ NVS handle class.
+  This example does exactly the same as :example:`storage/nvs/nvs_rw_value`, except that it uses the C++ NVS handle class (``nvs::NVSHandle`` via ``nvs::open_nvs_handle()``).
 
 :example:`storage/nvs/nvs_statistics`
 
@@ -552,9 +568,13 @@ At build time the mode NVS will use for accessing its underlying storage can be 
 
 
 
+.. _nvs-api-reference:
+
 API Reference
 -------------
 
 .. include-build-file:: inc/nvs_flash.inc
 
 .. include-build-file:: inc/nvs.inc
+
+.. include-build-file:: inc/nvs_handle.inc
