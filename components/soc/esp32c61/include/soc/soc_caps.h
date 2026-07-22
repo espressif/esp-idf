@@ -44,7 +44,7 @@
 #define SOC_I2C_SUPPORTED               1
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_SYSTIMER_SUPPORTED          1
-//  \#define SOC_SUPPORT_COEXISTENCE         1
+#define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
