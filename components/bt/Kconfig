@@ -115,6 +115,11 @@ menu "Bluetooth"
         help
             Enable this to allow the BT stack to send diagnostic events.
 
+    menu "BLE Profiles"
+        depends on BT_ENABLED
+        source "$IDF_PATH/components/bt/ble_profiles/Kconfig.in"
+    endmenu
+
 endmenu
 
 menuconfig BLE_MESH

@@ -1,0 +1,7 @@
+# BLE profiles: aggregation point for the host-agnostic profile cores and the
+# shared profile infrastructure they build on. Each profile (and the shared
+# infrastructure in common/) contributes its own Kconfig.in here, so the
+# top-level bt/Kconfig only ever needs to source this file.
+#
+
+source "$IDF_PATH/components/bt/ble_profiles/common/Kconfig.in"
