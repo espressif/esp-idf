@@ -13,7 +13,7 @@
 
 /* VARIABLE */
 #ifndef UNIT_TEST
-portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
+BLE_LOG_DRAM_ATTR portMUX_TYPE ble_log_spin_lock = portMUX_INITIALIZER_UNLOCKED;
 #endif /* !UNIT_TEST */
 
 /* INTERNAL INTERFACE */
