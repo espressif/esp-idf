@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
+import copy
 import logging
 import os
 import re
@@ -258,17 +259,31 @@ class Gitlab:
         return self.decompress_archive(temp_file.name, destination)
 
     @staticmethod
+    def _to_win32_long_path(path: str) -> str:
+        normalized_path = os.path.normpath(os.path.abspath(path))
+        if normalized_path.startswith('\\\\?\\'):
+            return normalized_path
+        if normalized_path.startswith('\\\\'):
+            return '\\\\?\\UNC\\' + normalized_path[2:]
+        return '\\\\?\\' + normalized_path
+
+    @staticmethod
     def decompress_archive(path: str, destination: str) -> str:
         full_destination = os.path.abspath(destination)
-        # By default max path length is set to 260 characters
-        # Prefix `\\?\` extends it to 32,767 characters
-        if sys.platform == 'win32':
-            full_destination = '\\\\?\\' + full_destination
 
         try:
             with tarfile.open(path, 'r') as archive_file:
-                root_name = archive_file.getnames()[0]
-                archive_file.extractall(full_destination)
+                members = archive_file.getmembers()
+                root_name = members[0].name
+                if sys.platform == 'win32':
+                    # tarfile keeps archive member names in POSIX form. Normalize them before
+                    # combining with a long-path-prefixed destination to avoid invalid mixed separators.
+                    full_destination = Gitlab._to_win32_long_path(full_destination)
+                    members = [copy.copy(member) for member in members]
+                    for member in members:
+                        member.name = member.name.replace('/', '\\')
+                        member.linkname = member.linkname.replace('/', '\\')
+                archive_file.extractall(full_destination, members=members)
         except tarfile.TarError as e:
             logging.error(f'Error while decompressing archive {path}')
             raise e
