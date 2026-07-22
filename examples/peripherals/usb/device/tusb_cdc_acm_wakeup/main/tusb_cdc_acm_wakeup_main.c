@@ -109,11 +109,6 @@ void tud_resume_cb(void)
     ESP_LOGI(TAG, "USB resumed");
 }
 
-void tud_reset_cb(void)
-{
-    ESP_LOGI(TAG, "USB reset");
-}
-
 void app_main(void)
 {
     // Create FreeRTOS primitives
