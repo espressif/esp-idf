@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,7 @@ TEST_CASE("Test ipc_isr blocking IPC function calls get_cycle_count_other_cpu", 
 }
 
 static bool volatile s_stop;
+static bool volatile s_other_cpu_in_critical_section;
 
 static void task_asm(void *arg)
 {
@@ -102,5 +103,134 @@ TEST_CASE("Test ipc_isr two tasks use IPC function calls", "[ipc]")
 
     vSemaphoreDelete(exit_sema[0]);
     vSemaphoreDelete(exit_sema[1]);
+}
+
+static bool volatile s_cmd_other_cpu_exit_critical_section;
+
+static void other_cpu_task_spinlock(void *arg)
+{
+    printf("other_cpu_task_spinlock start, taking critical section...\n");
+
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL(&spinlock);
+    s_other_cpu_in_critical_section = true;
+    while (s_cmd_other_cpu_exit_critical_section == false) { }
+    s_other_cpu_in_critical_section = false;
+    portEXIT_CRITICAL(&spinlock);
+
+    printf("other_cpu_task_spinlock end, exited critical section.\n");
+    xSemaphoreGive(*(SemaphoreHandle_t *) arg);
+    vTaskDelete(NULL);
+}
+
+static void other_cpu_task_task_critical(void *arg)
+{
+    printf("other_cpu_task_task_critical start, taking critical section...\n");
+
+#if CONFIG_FREERTOS_SMP
+    taskENTER_CRITICAL();
+#else
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    taskENTER_CRITICAL(&spinlock);
+#endif
+    s_other_cpu_in_critical_section = true;
+    while (s_cmd_other_cpu_exit_critical_section == false) { }
+    s_other_cpu_in_critical_section = false;
+#if CONFIG_FREERTOS_SMP
+    taskEXIT_CRITICAL();
+#else
+    taskEXIT_CRITICAL(&spinlock);
+#endif
+
+    printf("other_cpu_task_task_critical end, exited critical section.\n");
+    xSemaphoreGive(*(SemaphoreHandle_t *) arg);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test stall other CPU safe", "[ipc]")
+{
+    SemaphoreHandle_t other_cpu_task_finished = xSemaphoreCreateBinary();
+    printf("Test start\n");
+
+    s_cmd_other_cpu_exit_critical_section = false;
+    s_other_cpu_in_critical_section = false;
+    xTaskCreatePinnedToCore(other_cpu_task_spinlock, "other_cpu_task", 4096, &other_cpu_task_finished, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    while (!s_other_cpu_in_critical_section) {
+        vTaskDelay(1);
+    }
+
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_ALLOWED, esp_ipc_isr_stall_other_cpu_safe());
+    s_cmd_other_cpu_exit_critical_section = true;
+    while (esp_ipc_isr_stall_other_cpu_safe() != ESP_OK) {
+        vTaskDelay(1);
+    }
+    TEST_ASSERT_TRUE(esp_ipc_isr_is_other_cpu_stalled());
+    int stalled_core_id = -1;
+    esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_other_core_id, &stalled_core_id);
+    TEST_ASSERT_EQUAL(1, stalled_core_id);
+    esp_ipc_isr_release_other_cpu();
+
+    xSemaphoreTake(other_cpu_task_finished, portMAX_DELAY);
+    printf("Test end\n");
+    vSemaphoreDelete(other_cpu_task_finished);
+}
+
+TEST_CASE("Test nested stall other CPU release", "[ipc]")
+{
+    printf("Test start\n");
+
+    esp_ipc_isr_stall_other_cpu();
+    TEST_ASSERT_TRUE(esp_ipc_isr_is_other_cpu_stalled());
+
+    esp_ipc_isr_stall_other_cpu();
+    TEST_ASSERT_TRUE(esp_ipc_isr_is_other_cpu_stalled());
+
+    esp_ipc_isr_release_other_cpu();
+    TEST_ASSERT_TRUE(esp_ipc_isr_is_other_cpu_stalled());
+
+    int stalled_core_id = -1;
+    esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_other_core_id, &stalled_core_id);
+    TEST_ASSERT_EQUAL(1, stalled_core_id);
+
+    esp_ipc_isr_release_other_cpu();
+    TEST_ASSERT_FALSE(esp_ipc_isr_is_other_cpu_stalled());
+
+    printf("Test end\n");
+}
+
+TEST_CASE("Test stall other CPU safe with callbacks", "[ipc]")
+{
+    SemaphoreHandle_t other_cpu_task_finished = xSemaphoreCreateBinary();
+    printf("Test start\n");
+
+    s_cmd_other_cpu_exit_critical_section = false;
+    s_other_cpu_in_critical_section = false;
+    xTaskCreatePinnedToCore(other_cpu_task_task_critical, "other_cpu_task", 4096, &other_cpu_task_finished, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    while (!s_other_cpu_in_critical_section) {
+        vTaskDelay(1);
+    }
+
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_ALLOWED, esp_ipc_isr_stall_other_cpu_safe());
+    s_cmd_other_cpu_exit_critical_section = true;
+    while (esp_ipc_isr_stall_other_cpu_safe() != ESP_OK) {
+        vTaskDelay(1);
+    }
+    TEST_ASSERT_TRUE(esp_ipc_isr_is_other_cpu_stalled());
+
+    int original_val = 0x12345678;
+    int expected_val = 0xa5a5;
+    int val = original_val;
+    esp_ipc_isr_call(esp_test_ipc_isr_callback, &val);
+    while (val != expected_val) {}
+
+    val = original_val;
+    esp_ipc_isr_call_blocking(esp_test_ipc_isr_callback, &val);
+    TEST_ASSERT_EQUAL_HEX(expected_val, val);
+
+    esp_ipc_isr_release_other_cpu();
+
+    xSemaphoreTake(other_cpu_task_finished, portMAX_DELAY);
+    printf("Test end\n");
+    vSemaphoreDelete(other_cpu_task_finished);
 }
 #endif /* CONFIG_ESP_IPC_ISR_ENABLE */
