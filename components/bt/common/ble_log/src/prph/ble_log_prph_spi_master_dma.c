@@ -27,7 +27,7 @@
 /* VARIABLE */
 BLE_LOG_STATIC bool prph_inited = false;
 BLE_LOG_STATIC spi_device_handle_t dev_handle = NULL;
-BLE_LOG_STATIC uint32_t last_tx_done_ts = 0;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR uint32_t last_tx_done_ts = 0;
 
 /* PRIVATE FUNCTION DECLARATION */
 BLE_LOG_STATIC void spi_master_dma_tx_done_cb(spi_transaction_t *spi_trans);
