@@ -73,6 +73,22 @@ open mode 参数控制访问级别和安全行为：
 
     在不同的 NVS 分区中，同名的的命名空间被视为相互独立的命名空间。
 
+C++ API
+^^^^^^^
+
+除上文所述的 C API 外，NVS 还在 :component_file:`nvs_flash/include/nvs_handle.hpp` 中提供了 C++ 类接口（命名空间 ``nvs``）。
+
+使用 ``nvs::open_nvs_handle()`` 或 ``nvs::open_nvs_handle_from_partition()`` 打开命名空间。这些函数返回 ``std::unique_ptr<nvs::NVSHandle>``。当该智能指针被销毁时，句柄会自动关闭（RAII），因此无需另行调用关闭函数。
+
+``nvs::NVSHandle`` 提供与 C API 对应的方法，包括：
+
+- ``set_item`` / ``get_item`` — 面向整型、浮点型和枚举类型的类型化读写
+- ``set_string`` / ``get_string`` — 字符串值
+- ``set_blob`` / ``get_blob`` — 二进制 blob 值
+- ``commit``、``erase_item``、``erase_all``、``purge_all``、``find_key`` 及相关辅助方法
+
+打开模式（``NVS_READONLY``、``NVS_READWRITE``、``NVS_READWRITE_PURGE``）以及键名/命名空间约束与 C API 相同。完整的类与函数说明见下文 :ref:`API 参考 <nvs-api-reference>`，完整示例见 :example:`storage/nvs/nvs_rw_value_cxx`。
+
 NVS 迭代器
 ^^^^^^^^^^^^^
 
@@ -251,7 +267,7 @@ ESP-IDF :example:`storage/nvs` 目录下提供了数个代码示例：
 
 :example:`storage/nvs/nvs_rw_value_cxx`
 
-  这个例子与 :example:`storage/nvs/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类。
+  这个例子与 :example:`storage/nvs/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类（通过 ``nvs::open_nvs_handle()`` 获取 ``nvs::NVSHandle``）。
 
 :example:`storage/nvs/nvs_statistics`
 
@@ -514,9 +530,13 @@ NVS 正常运行所需的默认最小空间为 12 KiB (``0x3000``)，即至少�
 
 
 
+.. _nvs-api-reference:
+
 API 参考
 -------------
 
 .. include-build-file:: inc/nvs_flash.inc
 
 .. include-build-file:: inc/nvs.inc
+
+.. include-build-file:: inc/nvs_handle.inc
