@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,17 @@ int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_
     uint16_t len = point->len;
     ecc_mode_t work_mode = verify_first ? ECC_MODE_VERIFY_THEN_POINT_MUL : ECC_MODE_POINT_MUL;
 
+    /* len is used as the HW read/write byte count for the fixed-size ecc_point_t buffers;
+     * reject any value that is not a supported curve length before touching hardware. On the
+     * TEE secure-service path this field is attacker-controlled (CWE-20 -> OOB read/write). */
+    if (len != P192_LEN && len != P256_LEN
+#if SOC_ECC_SUPPORT_CURVE_P384
+            && len != P384_LEN
+#endif
+       ) {
+        return -1;
+    }
+
     esp_ecc_acquire_hardware();
 
     ecc_hal_write_mul_param(scalar, point->x, point->y, len);
@@ -64,6 +75,18 @@ int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_
 int esp_ecc_point_verify(const ecc_point_t *point)
 {
     int result;
+
+    /* point->len drives a fixed-stride MMIO write loop in the HAL; an unvalidated oversized
+     * value (attacker-controlled via the TEE secure service) walks past the ECC register block
+     * and can reach other peripheral registers (CWE-787). Reject non-curve lengths up front and
+     * return 0 (point not verified) -- the fail-safe value for this routine. */
+    if (point->len != P192_LEN && point->len != P256_LEN
+#if SOC_ECC_SUPPORT_CURVE_P384
+            && point->len != P384_LEN
+#endif
+       ) {
+        return 0;
+    }
 
     esp_ecc_acquire_hardware();
     ecc_hal_write_verify_param(point->x, point->y, point->len);

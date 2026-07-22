@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -201,11 +201,18 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
         if (rc < 0) {
             ESP_LOGE(TAG, "asprintf() returned: %d", rc);
             ret = ESP_FAIL;
+            free(auth_str);
+            auth_str = NULL;
             goto _digest_exit;
         }
+        /* http_utils_append_string() realloc()s auth_str; on failure it returns NULL
+         * without freeing the original buffer, so keep a handle to free it here. */
+        char *prev_auth_str = auth_str;
         auth_str = http_utils_append_string(&auth_str, temp_auth_str, strlen(temp_auth_str));
         if (!auth_str) {
             ret = ESP_FAIL;
+            free(prev_auth_str);
+            free(temp_auth_str);
             goto _digest_exit;
         }
         free(temp_auth_str);
