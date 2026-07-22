@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -357,7 +357,8 @@ esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, con
 
     const uint8_t* dst = reinterpret_cast<const uint8_t*>(data);
     size_t left = item.varLength.dataSize;
-    uint32_t accumulatedCRC32;
+    // Seed matches Item::calculateCrc32 default so empty values (span==1, loop never runs) stay valid.
+    uint32_t accumulatedCRC32 = 0xffffffff;
     size_t initial_index = index + 1;
 
     for (size_t i = initial_index; i < index + item.span; ++i) {
@@ -372,9 +373,7 @@ esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, con
             return ESP_ERR_NVS_CONTENT_DIFFERS;
         }
 
-        // Calculate the crc32 of the actual ditem.rawData buffer. Do not pass accumulatedCRC32 in the first call.
-        // In the first call, calculateCrc32 will use its default. In the subsequent calls, accumulatedCRC32 is the crc32 of the previous buffer.
-        accumulatedCRC32 = Item::calculateCrc32(ditem.rawData, willCopy, (i == initial_index) ? nullptr : &accumulatedCRC32);
+        accumulatedCRC32 = Item::calculateCrc32(ditem.rawData, willCopy, &accumulatedCRC32);
 
         left -= willCopy;
         dst += willCopy;
