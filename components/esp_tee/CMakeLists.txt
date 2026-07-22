@@ -9,7 +9,7 @@ idf_build_get_property(target IDF_TARGET)
 # ESP-TEE is currently supported only on the ESP32-C6, H2, C5 and C61 SoCs
 set(SUPPORTED_TARGETS "esp32c6" "esp32h2" "esp32c5" "esp32c61")
 if(NOT target IN_LIST SUPPORTED_TARGETS)
-    message(STATUS "ESP-TEE is currently supported only on the ${SUPPORTED_TARGETS} SoCs")
+    # ESP-TEE Kconfig is gated on the supported targets; nothing to register elsewhere.
     return()
 endif()
 

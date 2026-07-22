@@ -37,6 +37,8 @@
 #define AES256_KEY_LEN                      32
 #define AES256_KEY_BITS                     (AES256_KEY_LEN * 8)
 #define AES256_GCM_IV_LEN                   12
+#define AES256_GCM_TAG_LEN_MIN             12   /* NIST SP800-38D general-use minimum (96-bit tag) */
+#define AES256_GCM_TAG_LEN_MAX             16   /* full GCM tag (128-bit) */
 #define ECDSA_SECP384R1_KEY_LEN             48
 #define ECDSA_SECP256R1_KEY_LEN             32
 
@@ -283,6 +285,29 @@ static esp_err_t secure_storage_write(const char *key_id, const void *data, size
 static esp_err_t secure_storage_read(const char *key_id, void *data, size_t *len)
 {
     return nvs_get_blob(tee_nvs_hdl, key_id, data, len);
+}
+
+bool esp_tee_sec_storage_is_key_tee_owned(const char *key_id)
+{
+    if (key_id == NULL) {
+        return false;
+    }
+
+    bool is_att_key = false, is_tee_only = false;
+    esp_err_t err = ESP_FAIL;
+
+#if CONFIG_SECURE_TEE_ATTESTATION
+    is_att_key = (strncmp(key_id, CONFIG_SECURE_TEE_ATT_KEY_STR_ID, NVS_KEY_NAME_MAX_SIZE) == 0);
+#endif
+
+    sec_stg_key_t keyctx = {};
+    size_t keyctx_len = sizeof(keyctx);
+
+    err = secure_storage_read(key_id, (void *)&keyctx, &keyctx_len);
+    is_tee_only = (err == ESP_OK) && ((keyctx.flags & SEC_STORAGE_FLAG_TEE_ONLY) != 0);
+    mbedtls_platform_zeroize(&keyctx, sizeof(keyctx));
+
+    return (is_att_key || is_tee_only);
 }
 
 /* ---------------------------------------------- Interface APIs ------------------------------------------------- */
@@ -658,8 +683,16 @@ static esp_err_t tee_sec_storage_crypt_common(const char *key_id, const uint8_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len == 0 || tag_len == 0 || iv_len == 0) {
-        ESP_LOGE(TAG, "Invalid input/tag/iv length");
+    if (len == 0) {
+        ESP_LOGE(TAG, "Invalid input length");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    /* Enforce standard AES-GCM parameters */
+    if (iv_len != AES256_GCM_IV_LEN ||
+            tag_len < AES256_GCM_TAG_LEN_MIN || tag_len > AES256_GCM_TAG_LEN_MAX) {
+        ESP_LOGE(TAG, "Non-standard GCM iv_len(%u)/tag_len(%u) rejected",
+                 (unsigned)iv_len, (unsigned)tag_len);
         return ESP_ERR_INVALID_SIZE;
     }
 
