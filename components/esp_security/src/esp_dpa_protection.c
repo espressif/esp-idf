@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,10 @@
 
 static inline void esp_crypto_dpa_set_level(esp_crypto_dpa_sec_level_t level)
 {
-    assert(level >= ESP_CRYPTO_DPA_SEC_LEVEL_LOW && level <= ESP_CRYPTO_DPA_SEC_LEVEL_HIGH);
+    if (level < ESP_CRYPTO_DPA_SEC_LEVEL_OFF || level > ESP_CRYPTO_DPA_SEC_LEVEL_HIGH) {
+        // Out of range, clamp to highest level
+        level = ESP_CRYPTO_DPA_SEC_LEVEL_HIGH;
+    }
     REG_SET_BIT(HP_SYSTEM_SEC_DPA_CONF_REG, HP_SYSTEM_SEC_DPA_CFG_SEL);
     REG_SET_FIELD(HP_SYSTEM_SEC_DPA_CONF_REG, HP_SYSTEM_SEC_DPA_LEVEL, level);
 }

@@ -42,6 +42,9 @@
 #include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #endif
+#include "esp_log.h"
+
+#define TAG "esp_ds"
 
 /**
  * The vtask delay \c esp_ds_sign() is using while waiting for completion of the signing operation.
@@ -346,8 +349,9 @@ esp_err_t esp_ds_start_sign(const void *message,
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
     if (key_id == HMAC_KEY_KM) {
         if (!key_mgr_ll_is_supported()) {
+            ESP_LOGE(TAG, "HMAC_KEY_KM requested but Key Manager peripheral is not supported on this chip");
             ds_disable_release();
-            assert(false && "Key manager is not supported");
+            return ESP_ERR_NOT_SUPPORTED;
         }
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_OWN_KEY);
         ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);
@@ -407,6 +411,14 @@ bool esp_ds_is_busy(void)
     return ds_hal_busy();
 }
 
+static void esp_ds_zeroize(void *buf, size_t len)
+{
+    volatile uint8_t *p = (volatile uint8_t *)buf;
+    for (size_t i = 0; i < len; i++) {
+        *p++ = 0;
+    }
+}
+
 esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
 {
     if (!signature || !esp_ds_ctx) {
@@ -423,10 +435,12 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
     esp_err_t return_value = ESP_OK;
 
     if (sig_check_result == DS_SIGNATURE_MD_FAIL || sig_check_result == DS_SIGNATURE_PADDING_AND_MD_FAIL) {
+        esp_ds_zeroize(signature, rsa_len);
         return_value = ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST;
     }
 
     if (sig_check_result == DS_SIGNATURE_PADDING_FAIL) {
+        esp_ds_zeroize(signature, rsa_len);
         return_value = ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING;
     }
 
