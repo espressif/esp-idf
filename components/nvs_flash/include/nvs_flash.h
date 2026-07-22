@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -139,6 +139,10 @@ esp_err_t nvs_flash_init_partition_bdl(const char* partition_label, esp_blockdev
  *
  * Default NVS partition is the partition with "nvs" label in the partition table.
  *
+ * @note Prefer closing all open handles with nvs_close() before deinitializing.
+ *       Any handles still open for this partition are closed and freed here;
+ *       using them afterwards is invalid (nvs_close() on such a handle is a no-op).
+ *
  * @return
  *      - ESP_OK on success (storage was deinitialized)
  *      - ESP_ERR_NVS_NOT_INITIALIZED if the storage was not initialized prior to this call
@@ -149,6 +153,10 @@ esp_err_t nvs_flash_deinit(void);
  * @brief Deinitialize NVS storage for the given NVS partition
  *
  * @param[in]  partition_label   Label of the partition
+ *
+ * @note Prefer closing all open handles with nvs_close() before deinitializing.
+ *       Any handles still open for this partition are closed and freed here;
+ *       using them afterwards is invalid (nvs_close() on such a handle is a no-op).
  *
  * @return
  *      - ESP_OK on success
