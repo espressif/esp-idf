@@ -17,7 +17,6 @@
 #include "esp_cache.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
-#include "soc/lldesc.h"
 #include "soc/soc_caps.h"
 #include "soc/spi_periph.h"
 #include "soc/soc_memory_layout.h"
@@ -602,14 +601,14 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_transmit(spi_host_device_t host, spi_slave_tr
 static void SPI_SLAVE_ISR_ATTR s_spi_slave_dma_prepare_data(spi_dma_ctx_t *dma_ctx, spi_slave_hal_context_t *hal)
 {
     if (hal->rx_buffer) {
-        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_rx, hal->rx_buffer, (hal->rx_bitlen + 7) / 8, true);
+        spicommon_dma_desc_setup_link(dma_ctx, 0, hal->rx_buffer, (hal->rx_bitlen + 7) / 8, true);
 
         spi_dma_reset(dma_ctx->rx_dma_chan);
         spi_slave_hal_hw_prepare_rx(hal->hw);
         spi_dma_start(dma_ctx->rx_dma_chan, dma_ctx->dmadesc_rx);
     }
     if (hal->tx_buffer) {
-        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, hal->tx_buffer, (hal->tx_bitlen + 7) / 8, false);
+        spicommon_dma_desc_setup_link(dma_ctx, 0, hal->tx_buffer, (hal->tx_bitlen + 7) / 8, false);
 
         spi_dma_reset(dma_ctx->tx_dma_chan);
         spi_slave_hal_hw_prepare_tx(hal->hw);

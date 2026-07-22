@@ -14,6 +14,7 @@
 
 #include "hal/spi_types.h"
 #include "hal/spi_ll.h"
+#include "soc/lldesc.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/adc_dma.h"
 

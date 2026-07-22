@@ -105,8 +105,6 @@ typedef struct {
 
     /* address of the hardware */
     spi_dev_t                       *dev;                   ///< Beginning address of the peripheral registers.
-    bool                            dma_enabled;            ///< DMA enabled or not
-    bool                            append_mode;            ///< True for DMA append mode, false for segment mode
     uint32_t                        dma_desc_num;           ///< Number of the available DMA descriptors. Calculated from ``bus_max_transfer_size``.
     uint32_t                        current_eof_addr;
     spi_slave_hd_hal_desc_append_t  *tx_cur_desc;           ///< Current TX DMA descriptor that could be linked (set up).
@@ -194,14 +192,6 @@ void spi_slave_hd_hal_enable_event_intr(spi_slave_hd_hal_context_t* hal, spi_eve
 void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal);
 
 /**
- * @brief Get the length of total received data
- *
- * @param hal       Context of the HAL layer
- * @return          The received length
- */
-int spi_slave_hd_hal_rxdma_seg_get_len(spi_slave_hd_hal_context_t *hal);
-
-/**
  * @brief Prepare hardware for a new dma rx trans
  *
  * @param hal       Context of the HAL layer
@@ -265,64 +255,6 @@ int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal);
  * @return          The address of last transaction
  */
 int spi_slave_hd_hal_get_last_addr(spi_slave_hd_hal_context_t *hal);
-
-////////////////////////////////////////////////////////////////////////////////
-// Append Mode
-////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief Return the finished TX transaction
- *
- * @note This API is based on this assumption: the hardware behaviour of current transaction completion is only modified by the its own caller layer.
- * This means if some other code changed the hardware behaviour (e.g. clear intr raw bit), or the caller call this API without noticing the HW behaviour,
- * this API will go wrong.
- *
- * @param hal            Context of the HAL layer
- * @param out_trans      Pointer to the caller-defined transaction
- * @param real_buff_addr Actually data buffer head the HW used
- * @return               1: Transaction is finished; 0: Transaction is not finished
- */
-bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, void **real_buff_addr);
-
-/**
- * @brief Return the finished RX transaction
- *
- * @note This API is based on this assumption: the hardware behaviour of current transaction completion is only modified by the its own caller layer.
- * This means if some other code changed the hardware behaviour (e.g. clear intr raw bit), or the caller call this API without noticing the HW behaviour,
- * this API will go wrong.
- *
- * @param hal            Context of the HAL layer
- * @param out_trans      Pointer to the caller-defined transaction
- * @param real_buff_addr Actually data buffer head the HW used
- * @param out_len        Actual number of bytes of received data
- * @return               1: Transaction is finished; 0: Transaction is not finished
- */
-bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, void **real_buff_addr, size_t *out_len);
-
-/**
- * @brief Load the TX DMA descriptors without stopping the DMA
- *
- * @param hal            Context of the HAL layer
- * @param data           Buffer of the transaction data
- * @param len            Length of the data
- * @param arg            Pointer used by the caller to indicate the transaction. Will be returned by ``spi_slave_hd_hal_get_tx_finished_trans`` when transaction is finished
- * @return
- *        - ESP_OK: on success
- *        - ESP_ERR_INVALID_STATE: Function called in invalid state.
- */
-esp_err_t spi_slave_hd_hal_txdma_append(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len, void *arg);
-
-/**
- * @brief Load the RX DMA descriptors without stopping the DMA
- *
- * @param hal            Context of the HAL layer
- * @param data           Buffer of the transaction data
- * @param len            Length of the data
- * @param arg            Pointer used by the caller to indicate the transaction. Will be returned by ``spi_slave_hd_hal_get_rx_finished_trans`` when transaction is finished
- * @return
- *        - ESP_OK: on success
- *        - ESP_ERR_INVALID_STATE: Function called in invalid state.
- */
-esp_err_t spi_slave_hd_hal_rxdma_append(spi_slave_hd_hal_context_t *hal, uint8_t *data, size_t len, void *arg);
 
 #endif  //#if SOC_GPSPI_SUPPORTED
 

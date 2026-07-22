@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include <string.h>
 #include <stdlib.h> //for abs()
 #include "esp_types.h"
-#include "esp32/rom/lldesc.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/dport_reg.h"
@@ -1159,7 +1158,7 @@ static inline void spi_ll_dma_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
  * @param addr    Address of the beginning DMA descriptor.
  */
 __attribute__((always_inline))
-static inline void spi_ll_dma_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
+static inline void spi_ll_dma_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, void *addr)
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
     dma_in->dma_in_link.start = 1;
@@ -1224,7 +1223,7 @@ static inline void spi_ll_dma_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
  * @param addr    Address of the beginning DMA descriptor.
  */
 __attribute__((always_inline))
-static inline void spi_ll_dma_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
+static inline void spi_ll_dma_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, void *addr)
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;
     dma_out->dma_out_link.start = 1;

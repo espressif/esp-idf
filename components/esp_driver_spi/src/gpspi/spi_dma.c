@@ -79,8 +79,8 @@ void SPI_DMA_ISR_ATTR spi_dma_start(spi_dma_chan_handle_t chan_handle, void *add
     spi_dma_dev_t *spi_dma = SPI_LL_GET_HW(chan_handle.host_id);
 
     if (chan_handle.dir == DMA_CHANNEL_DIRECTION_TX) {
-        spi_ll_dma_tx_start(spi_dma, chan_handle.chan_id, (lldesc_t *)addr);
+        spi_ll_dma_tx_start(spi_dma, chan_handle.chan_id, addr);
     } else {
-        spi_ll_dma_rx_start(spi_dma, chan_handle.chan_id, (lldesc_t *)addr);
+        spi_ll_dma_rx_start(spi_dma, chan_handle.chan_id, addr);
     }
 }
