@@ -487,7 +487,7 @@ static void btc_hh_init(void)
     } while (0);
 
     if (ret != ESP_HIDH_OK) {
-        esp_hidh_cb_param_t param;
+        esp_hidh_cb_param_t param = {0};
         param.init.status = ret;
         btc_hh_cb_to_app(ESP_HIDH_INIT_EVT, &param);
     }
@@ -513,6 +513,12 @@ static void btc_hh_deinit(void)
             break;
         }
 
+        if (btc_hh_cb.status == BTC_HH_DISABLING) {
+            BTC_TRACE_ERROR("%s HH is during deiniting!", __func__);
+            ret = ESP_HIDH_ERR;
+            break;
+        }
+
         // close all connections
         for (uint8_t i = 0; i < BTC_HH_MAX_HID; i++) {
             if(btc_hh_cb.devices[i].dev_status == ESP_HIDH_CONN_STATE_CONNECTED){
@@ -525,7 +531,7 @@ static void btc_hh_deinit(void)
     } while (0);
 
     if (ret != ESP_HIDH_OK) {
-        esp_hidh_cb_param_t param;
+        esp_hidh_cb_param_t param = {0};
         param.deinit.status = ret;
         btc_hh_cb_to_app(ESP_HIDH_DEINIT_EVT, &param);
     }
@@ -546,7 +552,9 @@ static void btc_hh_connect(btc_hidh_args_t *arg)
     esp_hidh_status_t ret = ESP_HIDH_OK;
     btc_hh_added_device_t* added_dev = NULL;
     btc_hh_device_t* dev = NULL;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
+
+    param.open.handle = BTA_HH_INVALID_HANDLE;
 
     do {
         if (!is_hidh_init()) {
@@ -570,6 +578,7 @@ static void btc_hh_connect(btc_hidh_args_t *arg)
             BTC_TRACE_WARNING("%s Device[%s] already connected", __func__,
                               bdaddr_to_string((const bt_bdaddr_t *)arg->connect.bd_addr, bdstr, sizeof(bdstr)));
             param.open.conn_status = ESP_HIDH_CONN_STATE_CONNECTED;
+            param.open.handle = dev->dev_handle;
             break;
         }
 
@@ -606,7 +615,6 @@ static void btc_hh_connect(btc_hidh_args_t *arg)
         param.open.conn_status = ESP_HIDH_CONN_STATE_DISCONNECTED;
     }
     param.open.status = ret;
-    param.open.handle = BTA_HH_INVALID_HANDLE;
     memcpy(param.open.bd_addr, arg->connect.bd_addr, BD_ADDR_LEN);
     param.open.is_orig = true;
     btc_hh_cb_to_app(ESP_HIDH_OPEN_EVT, &param);
@@ -626,7 +634,7 @@ static void btc_hh_disconnect(btc_hidh_args_t *arg)
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
     btc_hh_device_t *p_dev;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
 
     do {
         if (!is_hidh_init()) {
@@ -669,7 +677,7 @@ static void btc_hh_virtual_unplug(btc_hidh_args_t *arg)
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
     btc_hh_device_t *p_dev;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
 
     do {
         if (!is_hidh_init()) {
@@ -729,8 +737,8 @@ static void btc_hh_set_info(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
-    tBTA_HH_DEV_DSCP_INFO dscp_info;
+    esp_hidh_cb_param_t param = {0};
+    tBTA_HH_DEV_DSCP_INFO dscp_info = {0};
 
     if (!arg->set_info.hid_info) {
         ret = ESP_HIDH_ERR;
@@ -756,20 +764,24 @@ static void btc_hh_set_info(btc_hidh_args_t *arg)
         dscp_info.ctry_code = arg->set_info.hid_info->ctry_code;
 
         dscp_info.descriptor.dl_len = arg->set_info.hid_info->dl_len;
-        dscp_info.descriptor.dsc_list = (uint8_t *)osi_malloc(dscp_info.descriptor.dl_len);
-        if (dscp_info.descriptor.dsc_list == NULL) {
-            BTC_TRACE_ERROR("%s malloc dsc_list failed!", __func__);
-            ret = ESP_HIDH_ERR_NO_RES;
-            break;
+        if (dscp_info.descriptor.dl_len > 0) {
+            dscp_info.descriptor.dsc_list = (uint8_t *)osi_malloc(dscp_info.descriptor.dl_len);
+            if (dscp_info.descriptor.dsc_list == NULL) {
+                BTC_TRACE_ERROR("%s malloc dsc_list failed!", __func__);
+                ret = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
+            memcpy(dscp_info.descriptor.dsc_list, arg->set_info.hid_info->dsc_list, dscp_info.descriptor.dl_len);
+        } else {
+            dscp_info.descriptor.dsc_list = NULL;
         }
-        memcpy(dscp_info.descriptor.dsc_list, arg->set_info.hid_info->dsc_list, dscp_info.descriptor.dl_len);
 
         if (btc_hh_add_added_dev(arg->set_info.bd_addr, arg->set_info.hid_info->attr_mask)) {
             btc_hh_cb.add_event = BTC_HH_SET_INFO_EVT;
             BTA_HhAddDev(arg->set_info.bd_addr, arg->set_info.hid_info->attr_mask, arg->set_info.hid_info->sub_class,
                          arg->set_info.hid_info->app_id, dscp_info);
         } else {
-            BTC_TRACE_ERROR("%s malloc dsc_list failed!", __func__);
+            BTC_TRACE_ERROR("%s add added device failed!", __func__);
             ret = ESP_HIDH_ERR;
             break;
         }
@@ -798,7 +810,7 @@ static void btc_hh_get_protocol(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
     btc_hh_device_t *p_dev;
 
     do {
@@ -837,7 +849,7 @@ static void btc_hh_set_protocol(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
     btc_hh_device_t *p_dev;
 
     do {
@@ -880,7 +892,7 @@ static void btc_hh_get_report(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
     btc_hh_device_t *p_dev;
 
     do {
@@ -954,8 +966,8 @@ static void btc_hh_set_report(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
-    btc_hh_device_t *p_dev;
+    esp_hidh_cb_param_t param = {0};
+    btc_hh_device_t *p_dev = NULL;
 
     do {
         if (!is_hidh_init()) {
@@ -989,7 +1001,11 @@ static void btc_hh_set_report(btc_hidh_args_t *arg)
     } while(0);
 
     if (ret != ESP_HIDH_OK) {
-        param.set_rpt.handle = BTA_HH_INVALID_HANDLE;
+        if (p_dev == NULL) {
+            param.set_rpt.handle = BTA_HH_INVALID_HANDLE;
+        } else {
+            param.set_rpt.handle = p_dev->dev_handle;
+        }
         param.set_rpt.status = ret;
         btc_hh_cb_to_app(ESP_HIDH_SET_RPT_EVT, &param);
     }
@@ -1008,7 +1024,7 @@ static void btc_hh_send_data(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
     btc_hh_device_t *p_dev;
 
     do {
@@ -1059,7 +1075,7 @@ static void btc_hh_get_idle_time(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
     btc_hh_device_t *p_dev;
 
     do {
@@ -1099,7 +1115,7 @@ static void btc_hh_set_idle_time(btc_hidh_args_t *arg)
 {
     BTC_TRACE_API("%s", __func__);
     esp_hidh_status_t ret = ESP_HIDH_OK;
-    esp_hidh_cb_param_t param;
+    esp_hidh_cb_param_t param = {0};
     btc_hh_device_t *p_dev;
 
     do {
@@ -1233,9 +1249,16 @@ bool btc_hh_copy_hid_info(tBTA_HH_DEV_DSCP_INFO *dest, tBTA_HH_DEV_DSCP_INFO *sr
 
 bool btc_hh_cb_copy_hid_info(esp_hidh_cb_param_t *param, tBTA_HH_DEV_DSCP_INFO *src)
 {
+    if ((src->descriptor.dl_len > 0) && (src->descriptor.dsc_list == NULL)) {
+        return false;
+    }
+
     param->dscp.dl_len = 0;
     if (src->descriptor.dl_len > 0) {
         param->dscp.dsc_list = (uint8_t *)osi_malloc(src->descriptor.dl_len);
+        if (!param->dscp.dsc_list) {
+            return false;
+        }
     }
     if (param->dscp.dsc_list) {
         memcpy(param->dscp.dsc_list, src->descriptor.dsc_list, src->descriptor.dl_len);
@@ -1357,7 +1380,7 @@ void btc_hh_cb_handler(btc_msg_t *msg)
             }
 
             if (btc_hh_add_added_dev(p_dev->bd_addr, p_dev->attr_mask)) {
-                tBTA_HH_DEV_DSCP_INFO dscp_info;
+                tBTA_HH_DEV_DSCP_INFO dscp_info = {0};
                 bt_status_t ret;
                 btc_hh_copy_hid_info(&dscp_info, &p_data->dscp_info);
                 btc_hh_cb.add_event = BTC_HH_CONNECT_EVT;
@@ -1382,7 +1405,9 @@ void btc_hh_cb_handler(btc_msg_t *msg)
                 BTC_TRACE_WARNING("%s: Device already added ", __func__);
                 param.dscp.added = true;
             }
-            btc_hh_cb_copy_hid_info(&param, &p_data->dscp_info);
+            if (!btc_hh_cb_copy_hid_info(&param, &p_data->dscp_info)) {
+                param.dscp.status = ESP_HIDH_ERR;
+            }
             param.dscp.handle = p_dev->dev_handle;
         } while(0);
         btc_hh_cb_to_app(ESP_HIDH_GET_DSCP_EVT, &param);
