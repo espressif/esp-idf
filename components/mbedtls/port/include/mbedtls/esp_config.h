@@ -215,7 +215,7 @@
 /* mbedtls 3.6.7 made the small-factor test used in prime generation
  * constant-time, which slows RSA key generation down roughly tenfold and
  * starves the idle task (the computation never yields the CPU). The
- * constant-time variant is the default; when it is explicitly disabled,
+ * non constant-time variant is the default; when it is disabled,
  * fall back to the variable-time trial division from earlier releases. See
  * MBEDTLS_MPI_PRIME_SIEVE_VARIABLE_TIME in library/bignum.c.
  */
