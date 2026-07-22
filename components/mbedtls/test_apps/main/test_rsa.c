@@ -3,7 +3,7 @@
  * Focus on testing functionality where we use ESP32 hardware
  * accelerated crypto features
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -562,6 +562,12 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
 }
 
 
+/* With constant-time prime generation the RSA-2048 key generation below takes
+ * over a minute on most targets (~86 s on ESP32-S3), exceeding the test
+ * timeout and starving the task watchdog, so only run it with the faster
+ * variable-time implementation.
+ */
+#if !CONFIG_MBEDTLS_CONSTANT_TIME_PRIME_GEN
 TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
 {
 
@@ -599,5 +605,6 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
 #endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
 
 }
+#endif // !CONFIG_MBEDTLS_CONSTANT_TIME_PRIME_GEN
 
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI
