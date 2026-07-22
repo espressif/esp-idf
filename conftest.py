@@ -598,7 +598,7 @@ def pytest_unconfigure(config: Config) -> None:
         config.pluginmanager.unregister(idf_local_plugin)
 
 
-dut_artifacts_url = []
+dut_artifacts_url: t.List[str] = []
 
 
 @pytest.hookimpl(hookwrapper=True)

@@ -401,7 +401,7 @@ test_pytest_linux:
 test_pytest_macos:
   extends:
     - .host_test_template
-    - .brew-macos-settings
+    - .macos-settings
   artifacts:
     paths:
       - XUNIT_RESULT.xml
@@ -476,6 +476,8 @@ test_pytest_macos:
     - pytest
       -k cmake
       --cleanup-idf-copy
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
       --work-dir ${CI_PROJECT_DIR}/test_build_system
       --junitxml ${CI_PROJECT_DIR}/XUNIT_RESULT.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
@@ -487,7 +489,7 @@ pytest_build_system:
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
-    - .brew-macos-settings
+    - .macos-settings
     - .rules:build:macos
   parallel: 3
 
@@ -497,7 +499,7 @@ pytest_build_system_minimal_cmake:
 pytest_build_system_macos_minimal_cmake:
   extends:
     - .test_build_system_minimal_cmake_template
-    - .brew-macos-settings
+    - .macos-settings
     - .rules:build:macos
   variables:
     INSTALL_EXTRA_TOOLS: ninja cmake@3.16.3

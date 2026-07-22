@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import logging
@@ -52,9 +52,11 @@ def retry(func: TR) -> TR:
                     raise e  # get out of the loop
                 else:
                     logging.warning(
-                        'Network failure in {}, retrying ({})'.format(getattr(func, '__name__', '(unknown callable)'),
-                                                                      retried))
-                    time.sleep(2 ** retried)  # wait a bit more after each retry
+                        'Network failure in {}, retrying ({})'.format(
+                            getattr(func, '__name__', '(unknown callable)'), retried
+                        )
+                    )
+                    time.sleep(2**retried)  # wait a bit more after each retry
                     continue
             else:
                 break
@@ -67,7 +69,6 @@ class Gitlab(object):
     JOB_NAME_PATTERN = re.compile(r'(\w+)(\s+(\d+)/(\d+))?')
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
-    DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 
     def __init__(self, project_id: Union[int, str, None] = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
@@ -117,7 +118,7 @@ class Gitlab(object):
         :param namespace: namespace to match when we have multiple project with same name
         :return: project ID
         """
-        projects = self.gitlab_inst.projects.list(search=name)
+        projects = self.gitlab_inst.projects.list(search=name, get_all=True)
         res = []
         for project in projects:
             if namespace is None:
@@ -152,7 +153,9 @@ class Gitlab(object):
             archive_file.extractall(destination)
 
     @retry
-    def download_artifact(self, job_id: int, artifact_path: List[str], destination: Optional[str] = None) -> List[bytes]:
+    def download_artifact(
+        self, job_id: int, artifact_path: List[str], destination: Optional[str] = None
+    ) -> List[bytes]:
         """
         download specific path of job artifacts and extract to destination.
 
@@ -208,8 +211,9 @@ class Gitlab(object):
         return job_id_list
 
     @retry
-    def download_archive(self, ref: str, destination: str, project_id: Optional[int] = None,
-                         cache_dir: Optional[str] = None) -> str:
+    def download_archive(
+        self, ref: str, destination: str, project_id: Optional[int] = None, cache_dir: Optional[str] = None
+    ) -> str:
         """
         Download archive of certain commit of a repository and extract to destination path
 
@@ -235,8 +239,11 @@ class Gitlab(object):
                     except gitlab.GitlabGetError as e:
                         logging.error('Failed to archive from project {}'.format(project_id))
                         raise e
-                logging.info('Downloaded archive size: {:.03f}MB'.format(
-                    float(os.path.getsize(local_archive_file)) / (1024 * 1024)))
+                logging.info(
+                    'Downloaded archive size: {:.03f}MB'.format(
+                        float(os.path.getsize(local_archive_file)) / (1024 * 1024)
+                    )
+                )
 
             return self.decompress_archive(local_archive_file, destination)
 
@@ -248,7 +255,9 @@ class Gitlab(object):
                 logging.error('Failed to archive from project {}'.format(project_id))
                 raise e
 
-        logging.info('Downloaded archive size: {:.03f}MB'.format(float(os.path.getsize(temp_file.name)) / (1024 * 1024)))
+        logging.info(
+            'Downloaded archive size: {:.03f}MB'.format(float(os.path.getsize(temp_file.name)) / (1024 * 1024))
+        )
 
         return self.decompress_archive(temp_file.name, destination)
 
@@ -282,36 +291,28 @@ class Gitlab(object):
 
     def get_downstream_pipeline_ids(self, main_pipeline_id: int) -> List[int]:
         """
-        Retrieve the IDs of all downstream child pipelines for a given main pipeline.
+        Retrieve the IDs of all downstream child pipelines for a given main pipeline,
+        recursing through arbitrarily nested child pipelines.
 
         :param main_pipeline_id: The ID of the main pipeline to start the search.
-        :return: A list of IDs of all downstream child pipelines.
+        :return: A list of IDs of all downstream child pipelines (all levels).
         """
-        bridge_pipeline_ids = []
-        child_pipeline_ids = []
+        child_pipeline_ids: List[int] = []
 
-        main_pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
-        for bridge in main_pipeline_bridges:
+        pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
+        for bridge in pipeline_bridges:
             downstream_pipeline = bridge.attributes.get('downstream_pipeline')
             if not downstream_pipeline:
                 continue
-            bridge_pipeline_ids.append(downstream_pipeline['id'])
-
-        for bridge_pipeline_id in bridge_pipeline_ids:
-            child_pipeline_ids.append(bridge_pipeline_id)
-            bridge_pipeline = self.project.pipelines.get(bridge_pipeline_id)
-
-            if not bridge_pipeline.name == self.DEFAULT_BUILD_CHILD_PIPELINE_NAME:
+            downstream_pipeline_id = downstream_pipeline.get('id')
+            if downstream_pipeline_id is None:
                 continue
 
-            child_bridges = bridge_pipeline.bridges.list()
-            for child_bridge in child_bridges:
-                downstream_child_pipeline = child_bridge.attributes.get('downstream_pipeline')
-                if not downstream_child_pipeline:
-                    continue
-                child_pipeline_ids.append(downstream_child_pipeline.get('id'))
+            child_pipeline_ids.append(downstream_pipeline_id)
+            # recurse to collect further nested (grandchild+) pipelines
+            child_pipeline_ids.extend(self.get_downstream_pipeline_ids(downstream_pipeline_id))
 
-        return [pid for pid in child_pipeline_ids if pid is not None]
+        return child_pipeline_ids
 
     def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> List[int]:
         """

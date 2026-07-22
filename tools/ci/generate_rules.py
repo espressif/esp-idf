@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import inspect
@@ -12,7 +12,6 @@ from itertools import product
 
 import yaml
 from idf_ci_utils import IDF_PATH
-from idf_ci_utils import GitlabYmlConfig
 
 if t.TYPE_CHECKING:
     import pygraphviz as pgv
@@ -90,7 +89,6 @@ class RulesWriter:
         self.cfg = self.expand_matrices()
         self.rules = self.expand_rules()
 
-        self.yml_config = GitlabYmlConfig()
         self.graph = None
 
     def expand_matrices(self):  # type: () -> dict
@@ -193,10 +191,6 @@ class RulesWriter:
         res = []
         for k, v in sorted(self.rules.items()):
             if k.startswith('pattern'):
-                continue
-
-            if '.rules:' + k not in self.yml_config.used_templates:
-                print(f'WARNING: unused rule: {k}, skipping...')
                 continue
 
             res.append(self.RULES_TEMPLATE.format(k, self._format_rule(k, v)))
