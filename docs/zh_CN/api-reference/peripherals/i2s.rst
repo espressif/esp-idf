@@ -849,6 +849,10 @@ STD RX 模式
 
 请注意，一个句柄只能代表一个通道，因此仍然需要对 TX 和 RX 通道逐个进行声道和时钟配置。
 
+.. note::
+
+    全双工模式下只能有一个通道作为 master 生成 BCLK 和 WS。如果配对的两个句柄都配置为 ``I2S_ROLE_MASTER``，后初始化的句柄会被自动切换为 ``I2S_ROLE_SLAVE``。
+
 驱动支持两种分配全双工通道的方法：
 
 1. 在调用 :cpp:func:`i2s_new_channel` 函数时，同时分配 TX 和 RX 通道两个通道。
@@ -866,7 +870,7 @@ STD RX 模式
     /* 同时分配给 TX 和 RX 通道，使其进入全双工模式。 */
     i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle);
 
-    /* 配置两个通道，因为在全双工模式下，TX 和 RX 通道必须相同。 */
+    /* 配置两个通道。全双工模式要求 BCLK/WS 与帧时序匹配。 */
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -891,7 +895,7 @@ STD RX 模式
 
     ...
 
-2. 调用两次 :cpp:func:`i2s_new_channel` 函数分别分配 TX 和 RX 通道，但使用相同配置初始化 TX 和 RX 通道。
+2. 调用两次 :cpp:func:`i2s_new_channel` 函数分别分配 TX 和 RX 通道，并使用兼容配置初始化 TX 和 RX 通道。
 
 .. code-block:: c
 
@@ -906,7 +910,7 @@ STD RX 模式
     /* 分别分配给 TX 和 RX 通道 */
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
 
-    /* 为两个通道设置完全相同的配置，TX 和 RX 将自动组成全双工模式 */
+    /* 为两个通道设置兼容配置，TX 和 RX 将自动组成全双工模式 */
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(32000),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
@@ -931,6 +935,16 @@ STD RX 模式
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
 
     ...
+
+.. only:: SOC_I2S_HW_VERSION_2
+
+    当 TX 和 RX 通道分别分配时（即上述第二种方法），二者无需配置得完全相同即可组成全双工。只要满足以下条件，驱动就会让它们共享 BCLK 和 WS 信号线：
+
+    - 两个通道使用相同且有效的 ``bclk`` 和 ``ws`` 管脚；
+    - 两个通道使用相同的 BCLK/WS 反相配置；
+    - 二者产生相同的帧时序，即 ``sample_rate_hz`` 相同且每帧总位数（``total_slot * slot_bit_width``）相同。
+
+    时钟源、外部时钟频率（``ext_clk_freq_hz``）以及 MCLK 相关配置不作为组成全双工的判据，MCLK 相关配置包括 ``mclk`` 管脚、``mclk_multiple`` 和 MCLK 反相配置。槽（slot）布局本身也可以不同。例如，一个 STD 通道与一个 TDM 通道，或者 2 槽/32 位通道与 4 槽/16 位通道配对，只要每帧的位数相同，仍可组成全双工。一旦组成了一对全双工通道，便可通过 :cpp:func:`i2s_channel_get_info` 返回的 :cpp:type:`i2s_chan_info_t`::pair_chan 获取配对通道的句柄。
 
 .. only:: SOC_I2S_HW_VERSION_1
 
