@@ -45,6 +45,9 @@ version = "0.1.0"
 
 [project.entry-points.idf_extension]
 {entry_point_name} = "{declarative_value}"
+
+[tool.setuptools]
+packages = ["test_extension_package_{suffix}"]
 """
 
 
