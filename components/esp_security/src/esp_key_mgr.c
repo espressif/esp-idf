@@ -20,7 +20,6 @@
 #include "hal/huk_hal.h"
 #include "rom/key_mgr.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
 static const char *TAG = "esp_key_mgr";
 
 ESP_STATIC_ASSERT(sizeof(esp_key_mgr_key_recovery_info_t) == sizeof(struct huk_key_block), "Size of esp_key_mgr_key_recovery_info_t should match huk_key_block (from ROM)");
@@ -1072,4 +1071,3 @@ cleanup:
     esp_key_mgr_release_hardware(true);
     return esp_ret;
 }
-#endif

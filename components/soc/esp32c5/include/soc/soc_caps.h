@@ -86,7 +86,7 @@
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_RNG_SUPPORTED               1
-#define SOC_KEY_MANAGER_SUPPORTED       1
+#define SOC_KEY_MANAGER_SUPPORTED       0
 #define SOC_HUK_SUPPORTED               1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_REGI2C_SUPPORTED            1

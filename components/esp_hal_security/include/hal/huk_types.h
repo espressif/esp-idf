@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+#if SOC_HUK_SUPPORTED
 
 #include "esp_assert.h"
 #include "rom/km.h"

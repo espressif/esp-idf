@@ -46,8 +46,11 @@ menu "Test App Configuration"
         bool
         default n if IDF_TARGET_ESP32P4 && ESP32P4_SELECTS_REV_LESS_V3
         default y
-        depends on SOC_KEY_MANAGER_SUPPORTED
+        depends on SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
         help
             A hidden config to determine if the Key Manager tests should be included.
+            The tests build the esp_key_mgr driver from source so that the Key Manager
+            hardware stays covered by CI even on targets where IDF does not support
+            the Key Manager (SOC_KEY_MANAGER_SUPPORTED = 0).
 
 endmenu

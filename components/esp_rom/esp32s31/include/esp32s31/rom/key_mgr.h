@@ -7,7 +7,6 @@
 
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
 #include <stdint.h>
 #include "esp_attr.h"
 #include "ets_sys.h"
@@ -108,5 +107,4 @@ struct km_deploy_ops {
 
 #if __cplusplus
 }
-#endif
 #endif

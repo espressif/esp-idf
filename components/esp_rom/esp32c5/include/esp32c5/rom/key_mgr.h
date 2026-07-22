@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
 
 #include "rom/ets_sys.h"
 #include "esp_attr.h"
@@ -111,5 +110,4 @@ struct km_deploy_ops {
 
 #if __cplusplus
 }
-#endif
 #endif

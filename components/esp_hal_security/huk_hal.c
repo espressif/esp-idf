@@ -14,7 +14,7 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+#if SOC_HUK_SUPPORTED
 esp_huk_state_t huk_hal_get_state(void)
 {
     return huk_ll_get_state();
