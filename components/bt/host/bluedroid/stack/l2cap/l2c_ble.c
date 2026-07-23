@@ -312,6 +312,9 @@ void l2cble_notify_le_connection (BD_ADDR bda)
         /* update l2cap link status and send callback */
         p_lcb->link_state = LST_CONNECTED;
         l2cu_process_fixed_chnl_resp (p_lcb);
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        l2c_ble_le_coc_on_link_up(p_lcb);
+#endif
     }
 }
 
@@ -493,6 +496,9 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     if (!HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(controller_get_interface()->get_features_ble()->as_array)) {
         p_lcb->link_state = LST_CONNECTED;
         l2cu_process_fixed_chnl_resp (p_lcb);
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        l2c_ble_le_coc_on_link_up(p_lcb);
+#endif
     }
 
     /* when adv and initiating are both active, cancel the direct connection */
@@ -738,8 +744,55 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         return;
     }
 
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+    if (cmd_code >= L2CAP_CMD_BLE_ENHANCED_CONN_REQ &&
+        cmd_code <= L2CAP_CMD_BLE_CREDIT_RECONFIG_RSP) {
+        L2CAP_TRACE_DEBUG("LE_ECFC sig rx cmd=0x%02x id=%u len=%u link_st=%u role=%u",
+                          cmd_code, id, cmd_len, p_lcb->link_state, p_lcb->link_role);
+    }
+#endif
+
     switch (cmd_code) {
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+    case L2CAP_CMD_REJECT: {
+        UINT16 rej_reason = 0;
+
+        if (cmd_len < 2) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
+        STREAM_TO_UINT16(rej_reason, p);
+        L2CAP_TRACE_DEBUG("LE_ECFC rx CMD_REJECT sig_id=%u reason=%u", id, rej_reason);
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+        /* Peer explicitly rejected the request: "no/unsupported PSM" is the
+         * closest generic reason to report to the application. A CMD_REJECT may
+         * answer either an ECFC (0x18) or a base LE CoC (0x14) client request, so
+         * try both aborts; each only acts on its own matching pending state. */
+        l2c_ble_ecfc_abort_cl_txn(p_lcb, id, L2CAP_CONN_NO_PSM);
+        l2c_ble_le_coc_abort_conn_req(p_lcb, id, L2CAP_CONN_NO_PSM);
+#endif
+        /* Reconfiguration is compiled in regardless of the client/server flag,
+         * so a CMD_REJECT may be answering a pending reconfigure request. Abort
+         * it here too, otherwise its txn slot leaks (never freed). */
+        l2c_ble_ecfc_abort_reconfig_txn(p_lcb, id);
+        break;
+    }
+#endif
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED != TRUE)
     case L2CAP_CMD_REJECT:
+        if (cmd_len < 2) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            return;
+        }
+        L2CAP_TRACE_DEBUG("LE rx CMD_REJECT sig_id=%u", id);
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+        /* A CMD_REJECT may be answering a pending base LE CoC (0x14) client
+         * request; fail it now instead of waiting out the connect RTX timer. */
+        l2c_ble_le_coc_abort_conn_req(p_lcb, id, L2CAP_CONN_NO_PSM);
+#endif
+        p += 2;
+        break;
+#endif
     case L2CAP_CMD_ECHO_RSP:
     case L2CAP_CMD_INFO_RSP:
         if (cmd_len < 2) {
@@ -816,8 +869,12 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         break;
     }
     case L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ: {
+#if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
+        l2c_ble_le_coc_handle_credit_conn_req(p_lcb, p, id, cmd_len);
+#elif (BLE_L2CAP_COC_INCLUDED != TRUE)
         if (cmd_len < 10) {
             L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS);
             return;
         }
         tL2C_CCB *p_ccb = NULL;
@@ -833,6 +890,11 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16(mps, p);
         STREAM_TO_UINT16(credits, p);
         L2CAP_TRACE_DEBUG("%s spsm %x, scid %x", __func__, spsm, scid);
+
+        if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_INVALID_PARAMETERS);
+            break;
+        }
 
         p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, scid);
         if (p_ccb) {
@@ -855,17 +917,35 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         p_ccb->remote_id = id;
         p_ccb->p_rcb = p_rcb;
         p_ccb->remote_cid = scid;
-        p_ccb->local_conn_cfg.mtu = mtu;
-        p_ccb->local_conn_cfg.mps = controller_get_interface()->get_acl_data_size_ble();
-        p_ccb->local_conn_cfg.credits = credits;
+        /* Peer request fields describe peer receive capability */
         p_ccb->peer_conn_cfg.mtu = mtu;
         p_ccb->peer_conn_cfg.mps = mps;
         p_ccb->peer_conn_cfg.credits = credits;
+        /* Response must advertise our receive capability, not peer's */
+        p_ccb->local_conn_cfg.mtu = L2CAP_LE_DEFAULT_MTU;
+        p_ccb->local_conn_cfg.mps = controller_get_interface()->get_acl_data_size_ble();
+        p_ccb->local_conn_cfg.credits = L2CAP_LE_DEFAULT_CREDIT;
 
         l2cu_send_peer_ble_credit_based_conn_res(p_ccb, L2CAP_LE_RESULT_CONN_OK);
+#else
+        if (cmd_len < 10) {
+            L2CAP_TRACE_WARNING ("L2CAP - LE - short cmd: %d", cmd_len);
+            l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS);
+            return;
+        }
+        l2cu_reject_ble_connection(p_lcb, id, L2CAP_LE_RESULT_NO_RESOURCES);
+#endif
         break;
     }
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+    case L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES:
+        l2c_ble_le_coc_handle_credit_conn_res(p_lcb, p, id, cmd_len);
+        break;
+#endif
     case L2CAP_CMD_BLE_FLOW_CTRL_CREDIT: {
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        l2c_ble_le_coc_handle_flow_ctrl_credit(p_lcb, p, cmd_len);
+#else
         if (cmd_len < L2CAP_CMD_BLE_FLOW_CTRL_CREDIT_LEN) {
             L2CAP_TRACE_WARNING ("L2CAP - LE - flow ctrl credit too short: %d", cmd_len);
             return;
@@ -891,6 +971,7 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                                p_ccb->peer_conn_cfg.credits, lcid);
             l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
         }
+#endif
         break;
     }
     case L2CAP_CMD_DISC_REQ: {
@@ -905,6 +986,12 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         STREAM_TO_UINT16(rcid, p);
 
         p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        if (p_ccb && p_ccb->le_coc_active) {
+            l2c_ble_le_coc_handle_disc_req(p_ccb, p_lcb, id, lcid, rcid);
+            break;
+        }
+#endif
         if (p_ccb) {
             p_ccb->remote_id = id;
             l2cu_send_peer_disc_rsp(p_lcb, id, lcid, rcid);
@@ -914,12 +1001,74 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         }
         break;
     }
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    case L2CAP_CMD_DISC_RSP:
+        l2c_ble_le_coc_handle_disc_rsp(p_lcb, p, id, cmd_len);
+        break;
+#endif
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+#if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
+    case L2CAP_CMD_BLE_ENHANCED_CONN_REQ:
+        l2c_ble_ecfc_handle_conn_req(p_lcb, p, id, cmd_len);
+        break;
+#else
+    case L2CAP_CMD_BLE_ENHANCED_CONN_REQ: {
+        /* ECFC compiled without a server role (e.g. GATTS disabled): we still
+         * understand the ECFC command set (RECONFIG_REQ/RSP are handled below),
+         * so reply with a proper all-refused ECFC connection response instead of
+         * a CMD_REJECT "not understood". Mirrors the 0x14 #else path above. */
+        if (cmd_len >= L2CAP_CMD_BLE_ENHANCED_CONN_REQ_BASE_LEN + sizeof(UINT16)) {
+            UINT16 n_scids = (UINT16)((cmd_len - L2CAP_CMD_BLE_ENHANCED_CONN_REQ_BASE_LEN) / sizeof(UINT16));
+            /* The reject must carry one DCID per requested SCID (Core Spec v6.2
+             * Vol 3 Part A 4.26: 1:1 positional mapping); do NOT clamp to the
+             * local channel budget as that desyncs the DCID count. Cap at 255
+             * only to fit the UINT8 API argument. Mirror the server path
+             * (l2c_ble_ecfc_handle_conn_req): >5 SCIDs is malformed
+             * (INVALID_PARAMETERS), otherwise a plain resource refusal. */
+            UINT8 reject_scids = (n_scids > 255) ? 255 : (UINT8)n_scids;
+            UINT16 reason = (n_scids > 5) ? L2CAP_LE_RESULT_INVALID_PARAMETERS
+                                          : L2CAP_LE_RESULT_NO_RESOURCES;
+            l2cu_reject_ble_enhanced_connection(p_lcb, id, reason, reject_scids);
+        } else {
+            /* Too short to parse the SCID list, but the peer still expects a
+             * response; mirror the server path (l2c_ble_ecfc_handle_conn_req) and
+             * reject with n_scids=1 so the peer does not hang until its signalling
+             * timer expires. */
+            L2CAP_TRACE_WARNING("L2CAP - LE - short ECFC conn req: %d", cmd_len);
+            l2cu_reject_ble_enhanced_connection(p_lcb, id, L2CAP_LE_RESULT_INVALID_PARAMETERS, 1);
+        }
+        break;
+    }
+#endif
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+    case L2CAP_CMD_BLE_ENHANCED_CONN_RES:
+        l2c_ble_ecfc_handle_conn_res(p_lcb, p, id, cmd_len);
+        break;
+#endif
+    case L2CAP_CMD_BLE_CREDIT_RECONFIG_REQ:
+        l2c_ble_ecfc_handle_reconfig_req(p_lcb, p, id, cmd_len);
+        break;
+    case L2CAP_CMD_BLE_CREDIT_RECONFIG_RSP:
+        l2c_ble_ecfc_handle_reconfig_res(p_lcb, p, id, cmd_len);
+        break;
+#endif
     default:
         L2CAP_TRACE_WARNING ("L2CAP - LE - unknown cmd code: %d", cmd_code);
         l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
         return;
     }
 }
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+static void l2cble_abort_direct_conn_init(tL2C_LCB *p_lcb)
+{
+    btu_stop_timer(&p_lcb->timer_entry);
+    l2cb.is_ble_connecting = FALSE;
+    memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
+    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    p_lcb->link_state = LST_DISCONNECTED;
+}
+#endif // (BLE_50_FEATURE_SUPPORT == TRUE)
 
 /*******************************************************************************
 **
@@ -928,6 +1077,9 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 ** Description      This function is to initiate a direct connection
 **
 ** Returns          TRUE connection initiated, FALSE otherwise.
+**
+** Note             On failure the LCB is not released; the caller must call
+**                  l2cu_release_lcb (see l2cu_create_conn contract in l2c_link.c).
 **
 *******************************************************************************/
 BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
@@ -952,6 +1104,10 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     /* There can be only one BLE connection request outstanding at a time */
     if (p_dev_rec == NULL) {
         L2CAP_TRACE_WARNING ("unknown device, can not initiate connection");
+        /* The caller allocated this LCB and expects this function to release it
+         * on failure (as the other error paths do); free it to avoid leaking the
+         * LCB and its queues / num_ble_links_active count. */
+        l2cu_release_lcb (p_lcb);
         return (FALSE);
     }
 
@@ -1012,7 +1168,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #if (BLE_TOPOLOGY_CHECK == TRUE)
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
-        l2cu_release_lcb (p_lcb);
         L2CAP_TRACE_ERROR("initiate direct connection fail, topology limitation");
         return FALSE;
     }
@@ -1077,7 +1232,6 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
                                                     p_dev_rec->conn_params.min_ce_len : BLE_CE_LEN_MIN), /* UINT16 min_ce_len */
                                             (UINT16) ((p_dev_rec->conn_params.max_ce_len != BTM_BLE_CONN_PARAM_UNDEF) ?
                                                     p_dev_rec->conn_params.max_ce_len : BLE_CE_LEN_MIN) /* UINT16 max_ce_len */)) {
-            l2cu_release_lcb (p_lcb);
             L2CAP_TRACE_ERROR("initiate direct connection fail, no resources");
             return (FALSE);
         } else {
@@ -1135,10 +1289,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #if (BT_BLE_FEAT_PAWR_EN == TRUE)
         if (p_lcb->is_pawr_synced) {
             if(!btsnd_hcic_ble_create_ext_conn_v2(&aux_conn)) {
-                l2cb.is_ble_connecting = FALSE;
-                memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
-                btm_ble_set_conn_st (BLE_CONN_IDLE);
-                l2cu_release_lcb (p_lcb);
+                l2cble_abort_direct_conn_init(p_lcb);
                 L2CAP_TRACE_ERROR("initiate pawr sync connection failed, no resources");
                 return (FALSE);
             }
@@ -1146,16 +1297,12 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
         {
             if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
-                l2cb.is_ble_connecting = FALSE;
-                memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
-                btm_ble_set_conn_st (BLE_CONN_IDLE);
-                l2cu_release_lcb (p_lcb);
+                l2cble_abort_direct_conn_init(p_lcb);
                 L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
                 return (FALSE);
             }
         }
 #else
-    l2cu_release_lcb (p_lcb);
     L2CAP_TRACE_ERROR("BLE 5.0 not support!\n");
     return (FALSE);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -1192,6 +1339,50 @@ BOOLEAN l2cble_create_conn (tL2C_LCB *p_lcb)
         rt = TRUE;
     }
     return rt;
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_cleanup_alloc_ccb_failed_conn
+**
+** Description      Clean up after LE CoC setup fails to allocate a CCB. If a
+**                  direct HCI connection is in progress, cancel it and update
+**                  BTM state; otherwise drop a queued direct-connect request.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_cleanup_alloc_ccb_failed_conn (tL2C_LCB *p_lcb)
+{
+    if (p_lcb == NULL) {
+        return;
+    }
+
+    if (p_lcb->link_state == LST_CONNECTING) {
+        if (!L2CA_CancelBleConnectReq(p_lcb->remote_bd_addr)) {
+            L2CAP_TRACE_ERROR("%s: cancel direct connect failed", __func__);
+            l2cu_release_lcb(p_lcb);
+            memset(l2cb.ble_connecting_bda, 0, BD_ADDR_LEN);
+            btm_ble_set_conn_st(BLE_CONN_IDLE);
+        }
+    } else {
+        l2cble_remove_pending_direct_conn(p_lcb);
+        l2cu_release_lcb(p_lcb);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         l2cble_remove_pending_direct_conn
+**
+** Description      Drop a queued direct-connection attempt for this LCB.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cble_remove_pending_direct_conn (tL2C_LCB *p_lcb)
+{
+    btm_ble_remove_direct_conn_req(p_lcb);
 }
 
 /*******************************************************************************
@@ -1675,7 +1866,43 @@ void l2cble_send_peer_disc_req(tL2C_CCB *p_ccb)
     return;
 }
 
-#if (SMP_INCLUDED == TRUE)
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         l2c_ble_coc_sec_status_to_result
+**
+** Description      Translate a BTM security failure into the LE CoC/ECFC L2CAP
+**                  result code that best matches it, so a rejected peer learns
+**                  the real reason instead of always "insufficient
+**                  authentication" (Core Spec v6.2 Vol 3 Part A 4.26/10.2 make
+**                  0x0005-0x0008 mandatory per failure type).
+**
+** Returns          One of L2CAP_LE_RESULT_INSUFFICIENT_* (0x0005-0x0008)
+**
+*******************************************************************************/
+UINT16 l2c_ble_coc_sec_status_to_result(BD_ADDR bd_addr, tBTM_STATUS status)
+{
+    UINT8 sec_flags = 0;
+
+    if (status == BTM_NOT_AUTHORIZED) {
+        return L2CAP_LE_RESULT_INSUFFICIENT_AUTHORIZATION;   /* 0x0006 */
+    }
+
+    /* If the link is not encrypted, tell the peer to encrypt (0x0008) rather
+     * than re-authenticate; only fall back to insufficient authentication
+     * (0x0005) when encryption is present but the required level was not met.
+     * Key-size (0x0007) needs the actual key length, which the flags API does
+     * not expose, so it is intentionally not distinguished here. */
+    if (BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flags, BT_TRANSPORT_LE) &&
+        !(sec_flags & BTM_SEC_FLAG_ENCRYPTED)) {
+        return L2CAP_LE_RESULT_INSUFFICIENT_ENCRY;           /* 0x0008 */
+    }
+
+    return L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION;      /* 0x0005 */
+}
+#endif /* BLE_L2CAP_COC_INCLUDED == TRUE */
+
+#if (SMP_INCLUDED == TRUE) && (BLE_L2CAP_COC_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cble_sec_comp
@@ -1764,6 +1991,53 @@ void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, 
 
 /*******************************************************************************
 **
+** Function         l2ble_sec_flush_pending_req
+**
+** Description      Drop any queued LE security requests whose p_ref_data matches
+**                  |p_ref_data| (typically a CCB being released). Without this,
+**                  l2cble_sec_comp() would later invoke the stored callback with
+**                  a dangling or reused pointer once SMP completes.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2ble_sec_flush_pending_req(tL2C_LCB *p_lcb, void *p_ref_data)
+{
+    if (p_lcb == NULL || p_lcb->le_sec_pending_q == NULL || p_ref_data == NULL) {
+        return;
+    }
+
+    /* Removing mutates the underlying list, so re-scan from the head after each
+     * hit until no queued request references p_ref_data anymore. */
+    for (;;) {
+        list_t *list = fixed_queue_get_list(p_lcb->le_sec_pending_q);
+        tL2CAP_SEC_DATA *match = NULL;
+        list_node_t *node;
+
+        for (node = list_begin(list); node != list_end(list); node = list_next(node)) {
+            tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA *)list_node(node);
+            if (p_buf != NULL && p_buf->p_ref_data == p_ref_data) {
+                match = p_buf;
+                break;
+            }
+        }
+        if (match == NULL) {
+            break;
+        }
+        /* Only free once the node is actually detached. If removal fails (item
+         * gone / could not acquire the dequeue semaphore), freeing it here would
+         * leave a dangling node in the list, so the next scan would dereference
+         * freed memory (use-after-free) and could loop forever. Abort instead. */
+        if (fixed_queue_try_remove_from_queue(p_lcb->le_sec_pending_q, match) != NULL) {
+            osi_free(match);
+        } else {
+            break;
+        }
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         l2ble_sec_access_req
 **
 ** Description      This function is called by LE COC link to meet the
@@ -1810,7 +2084,7 @@ BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
 
     return status;
 }
-#endif /* #if (SMP_INCLUDED == TRUE) */
+#endif /* (SMP_INCLUDED == TRUE) && (BLE_L2CAP_COC_INCLUDED == TRUE) */
 #endif /* (BLE_INCLUDED == TRUE) */
 /*******************************************************************************
 **
