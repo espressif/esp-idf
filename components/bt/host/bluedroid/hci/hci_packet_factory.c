@@ -162,7 +162,7 @@ static BT_HDR *make_ble_read_buffer_size(void)
 #if (BLE_FEAT_ISO_EN == TRUE)
 static BT_HDR *make_ble_read_buffer_size_v2(void)
 {
-    return make_command_no_params(HCI_BLE_READ_BUFFER_SZIE_V2);
+    return make_command_no_params(HCI_BLE_READ_BUFFER_SIZE_V2);
 }
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 

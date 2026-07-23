@@ -2510,11 +2510,6 @@
 #define GAP_INCLUDED                TRUE
 #endif
 
-/* This is set to enable posting event for data write */
-#ifndef GAP_CONN_POST_EVT_INCLUDED
-#define GAP_CONN_POST_EVT_INCLUDED  FALSE
-#endif
-
 /* The maximum number of simultaneous GAP L2CAP connections. */
 #ifndef GAP_MAX_CONNECTIONS
 #define GAP_MAX_CONNECTIONS         10 // 30

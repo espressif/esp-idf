@@ -253,8 +253,8 @@ tBTA_HH_CB  *bta_hh_cb_ptr;
 ** Static functions
 *****************************************************************************/
 #if BTA_HH_DEBUG == TRUE
-static char *bta_hh_evt_code(tBTA_HH_INT_EVT evt_code);
-static char *bta_hh_state_code(tBTA_HH_STATE state_code);
+static const char *bta_hh_evt_code(tBTA_HH_INT_EVT evt_code);
+static const char *bta_hh_state_code(tBTA_HH_STATE state_code);
 #endif
 
 /*******************************************************************************
@@ -447,7 +447,9 @@ BOOLEAN bta_hh_hdl_event(BT_HDR *p_msg)
             index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA *)p_msg)->addr);
             uint8_t hdl = BTA_HH_IDX_INVALID;
             if (HID_HostGetDev(((tBTA_HH_CBACK_DATA *)p_msg)->addr, &hdl) == HID_SUCCESS && hdl != BTA_HH_IDX_INVALID) {
-                bta_hh_cb.cb_index[hdl] = bta_hh_cb.kdev[index].index;
+                if (index != BTA_HH_IDX_INVALID) {
+                    bta_hh_cb.cb_index[hdl] = bta_hh_cb.kdev[index].index;
+                }
             }
         } else {
             index = bta_hh_dev_handle_to_cb_idx((UINT8)p_msg->layer_specific);
@@ -478,7 +480,7 @@ BOOLEAN bta_hh_hdl_event(BT_HDR *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
-static char *bta_hh_evt_code(tBTA_HH_INT_EVT evt_code)
+static const char *bta_hh_evt_code(tBTA_HH_INT_EVT evt_code)
 {
     switch (evt_code) {
     case BTA_HH_API_DISABLE_EVT:
@@ -543,11 +545,11 @@ static char *bta_hh_evt_code(tBTA_HH_INT_EVT evt_code)
 ** Returns          void
 **
 *******************************************************************************/
-static char *bta_hh_state_code(tBTA_HH_STATE state_code)
+static const char *bta_hh_state_code(tBTA_HH_STATE state_code)
 {
     switch (state_code) {
     case BTA_HH_NULL_ST:
-        return"BTA_HH_NULL_ST";
+        return "BTA_HH_NULL_ST";
     case BTA_HH_IDLE_ST:
         return "BTA_HH_IDLE_ST";
     case BTA_HH_W4_CONN_ST:
