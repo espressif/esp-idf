@@ -6,3 +6,6 @@ CONFIG_COMPILER_OPTIMIZATION_NONE=y
 CONFIG_ESP_IPC_TASK_STACK_SIZE=2048
 # silent the error check, as the error string are stored in rodata, causing RTL check failure
 CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT=y
+
+# ESP32-P4 PSRAM halfsleep code/data is placed in SPM, which overflows with -O0 in this config.
+CONFIG_PM_SLP_SPIRAM_HALFSLEEP_ENABLED=n

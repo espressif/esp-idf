@@ -282,8 +282,8 @@ TEST_CASE("test slave using external ram", "[spi]")
 {
     custom_setup((TEST_SPI_PERIPH_NUM >= 2) ? TEST_SLAVE_HOST : 0, TEST_SPI_HOST);
 
-    uint8_t *slave_ext_tx = heap_caps_aligned_calloc(32, 1, PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM);
-    uint8_t *slave_ext_rx = heap_caps_aligned_calloc(32, 1, PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM);
+    uint8_t *slave_ext_tx = heap_caps_calloc(1, PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    uint8_t *slave_ext_rx = heap_caps_calloc(1, PSRAM_TRANS_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
     uint8_t *master_tx = heap_caps_malloc(PSRAM_TRANS_LEN, MALLOC_CAP_DMA);
     uint8_t *master_rx = heap_caps_malloc(PSRAM_TRANS_LEN, MALLOC_CAP_DMA);
 

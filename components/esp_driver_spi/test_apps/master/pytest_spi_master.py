@@ -57,6 +57,27 @@ def test_master_single_dev_esp32c5_rev1(case_tester) -> None:  # type: ignore
         case_tester.run_normal_case(case=case, reset=True)
 
 
+def get_runner_psram_marks(target: str) -> tuple[pytest.MarkDecorator, ...]:
+    if target == 'esp32s3':
+        return (pytest.mark.flash_encryption_f8r8,)
+    return (pytest.mark.flash_encryption,)
+
+
+@pytest.mark.parametrize(
+    'config, target',
+    [
+        pytest.param('flash_enc', target, marks=get_runner_psram_marks(target))
+        for target in soc_filtered_targets('SOC_PSRAM_DMA_CAPABLE == 1 and SOC_GPSPI_SUPPORTED == 1')
+    ],
+    indirect=True,
+)
+def test_spi_master_flash_encryption(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'test_env' in case.attributes:
+            continue  # If `test_env` is defined, should not run on generic runner
+        case_tester.run_normal_case(case=case, reset=True)
+
+
 # Job for test_env `external_flash` just for esp32 only
 @pytest.mark.flash_multi
 @pytest.mark.parametrize(

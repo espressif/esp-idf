@@ -2160,7 +2160,7 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
         printf("\n==== %s ====\n", i ? "EDMA" : "Auto Malloc");
         trans_cfg.flags = i ? SPI_TRANS_DMA_USE_PSRAM : 0;
         uint32_t before = esp_get_free_heap_size();
-        spi_device_polling_start(dev_handle, &trans_cfg, portMAX_DELAY);
+        TEST_ESP_OK(spi_device_polling_start(dev_handle, &trans_cfg, portMAX_DELAY));
         uint32_t after = esp_get_free_heap_size();
         printf("mem_diff: %ld, trans_len: %d\n", after - before, TEST_EDMA_TRANS_LEN);
 #if !CONFIG_SECURE_FLASH_ENC_ENABLED
