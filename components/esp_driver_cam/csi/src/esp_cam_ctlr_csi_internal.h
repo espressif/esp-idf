@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,13 +8,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <esp_types.h>
+#include <stddef.h>
 #include "sdkconfig.h"
-#include "esp_attr.h"
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_intr_alloc.h"
 #include "esp_cam_ctlr_csi.h"
 #include "hal/mipi_csi_hal.h"
 #include "hal/mipi_csi_types.h"
@@ -66,6 +63,7 @@ struct csi_controller_t {
     void                        *cbs_user_data;     //callback userdata
     dw_gdma_channel_handle_t    dma_chan;           //dwgdma channel handle
     size_t                      csi_transfer_size;  //csi transfer size for dwgdma
+    intr_handle_t               intr_handle;        //csi host error interrupt handle
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t        pm_lock;            //Power management lock
 #endif
