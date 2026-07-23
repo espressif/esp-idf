@@ -94,7 +94,7 @@ For detailed command syntax and options, refer to the ``esp sysview`` command ab
 Data Visualization
 ------------------
 
-After trace data are collected, users can use a special tool to visualize the results and inspect behavior of the program.
+After trace data are collected, use a special tool to visualize the results and inspect behavior of the program.
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
@@ -114,7 +114,7 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    Configure Impulse for Dual Core Traces
+    Configure Impulse for Dual-Core Traces
     """"""""""""""""""""""""""""""""""""""
 
     After installing Impulse and ensuring that it can successfully load trace files for each core in separate tabs, users can add special Multi Adapter port and load both files into one view. To do this, users need to do the following steps in Eclipse:

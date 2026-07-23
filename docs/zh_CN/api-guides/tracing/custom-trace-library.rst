@@ -12,7 +12,7 @@
 - 一个 **编码器适配器**，通过 ``ESP_TRACE_REGISTER_ENCODER()`` 注册，用于将跟踪数据格式化为该记录器的协议。
 - 一个 ``esp_trace_freertos_impl.h`` 头文件，用于定义记录器所需的 FreeRTOS 跟踪钩子。
 
-编码器独立于主机链路。它可以使用任何已注册的 :doc:`传输 <transports>`，例如 JTAG/UART 上的 apptrace、USB Serial JTAG 或自定义传输。
+编码器独立于主机链路。它可以使用任何已注册的 :doc:`传输 <transports>`，例如 JTAG 或 UART 上的 apptrace、USB Serial JTAG 或自定义传输。
 
 编码器端口
 ----------
@@ -57,14 +57,14 @@
 - 流缓冲区和消息缓冲区 API
 - 可能获取内部互斥量的堆分配
 
-在运行时回调中，应使用无锁或仅自旋锁的原语（``esp_trace_lock_*``、``esp_trace_rb_*``）、底层寄存器访问、原子操作以及 ``esp_rom_*`` 辅助函数。较重的工作（例如 FreeRTOS API 调用或内存分配）只应在 ``init()`` 中、跟踪开始前完成。
+在运行时回调中，应使用无锁或仅自旋锁的原语（``esp_trace_lock_*``、``esp_trace_rb_*``）、底层寄存器访问、原子操作以及 ``esp_rom_*`` 辅助函数。较重的操作（例如 FreeRTOS API 调用或内存分配）应仅在跟踪开始前的 ``init()`` 中执行。
 
 对于需要复杂驱动或网络协议栈的传输，运行时回调应只作为生产者使用。将跟踪数据复制到预分配且适合跟踪路径使用的缓冲区中，例如 ``esp_trace_rb_*`` 环形缓冲区，然后尽快返回。由 ``init()`` 创建的工作任务从该缓冲区取出数据，并在跟踪回调路径和编码器锁之外调用 SPI master、socket、StreamBuffer 或其他 FreeRTOS API。由于回调不能阻塞，也不能通过会让出的 API 唤醒任务，工作任务应轮询缓冲区（或在传输层事件上唤醒）；当缓冲区已满时应丢弃数据，而不是把背压传导回回调。
 
 FreeRTOS 跟踪钩子
 -----------------
 
-为捕获 FreeRTOS 事件，外部组件需提供 ``esp_trace_freertos_impl.h`` 头文件，其中定义所需的跟踪宏（``traceTASK_SWITCHED_IN()``、``traceISR_ENTER()`` 等）。当 ``CONFIG_ESP_TRACE_LIB_EXTERNAL=y`` 时，``esp_trace`` 会包含该头文件。所需的 CMake 配置（用于适配器注册的 ``WHOLE_ARCHIVE``，以及使头文件对 ``esp_trace`` 可见）参见 :component_file:`esp_trace 组件 README <esp_trace/README.md>`。
+为捕获 FreeRTOS 事件，外部组件需提供 ``esp_trace_freertos_impl.h`` 头文件，其中定义所需的跟踪宏（``traceTASK_SWITCHED_IN()``、``traceISR_ENTER()`` 等）。启用 :ref:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` 时，``esp_trace`` 会包含该头文件。
 
 应用示例
 --------
