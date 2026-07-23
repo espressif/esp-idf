@@ -81,7 +81,6 @@ def test_dma_weighted_arbitration(dut: Dut) -> None:
     ),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32c61'], reason='no runner yet')
 def test_dma_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 

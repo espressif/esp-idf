@@ -35,7 +35,6 @@ def test_parlio(dut: Dut) -> None:
     soc_filtered_targets('SOC_PARLIO_SUPPORTED == 1 and SOC_PSRAM_DMA_CAPABLE == 1 and SOC_FLASH_ENC_SUPPORTED == 1'),
     indirect=['target'],
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='no runner yet')
 def test_parlio_with_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
