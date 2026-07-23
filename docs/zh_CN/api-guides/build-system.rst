@@ -70,7 +70,7 @@ idf.py
 
     mkdir -p build
     cd build
-    cmake .. -G Ninja   # 或者 'Unix Makefiles'
+    cmake .. -DIDF_TARGET={IDF_TARGET_PATH_NAME} -G Ninja   # 或者 'Unix Makefiles'
     ninja
 
 在上面的命令列表中，``cmake`` 命令对项目进行配置，并生成用于最终构建工具的构建文件。在这个例子中，最终构建工具是 Ninja_: 运行 ``ninja`` 来构建项目。
