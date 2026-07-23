@@ -37,7 +37,7 @@ int  wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
         return wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
     } else if (wpa_ie_len >=1 && wpa_ie[0] == WLAN_EID_RSNX){
         return wpa_parse_wpa_ie_rsnxe(wpa_ie, wpa_ie_len, data);
-    } else if (wpa_ie[0] == WLAN_EID_WAPI) {
+    } else if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_WAPI) {
         return 0;
     }
 
