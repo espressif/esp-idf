@@ -2477,7 +2477,19 @@ static esp_err_t esp_dpp_start_net_intro_protocol_internal(uint8_t *bssid)
         return ESP_ERR_INVALID_STATE;
     }
     os_memcpy(config_store->peer_mac_addr, bssid, ETH_ALEN);
-    curr_chan = config->curr_chan;
+
+    curr_chan = esp_wifi_sta_get_bss_channel_internal(bssid);
+    if (curr_chan == 0) {
+        curr_chan = config->curr_chan;
+        wpa_printf(MSG_WARNING,
+                   "DPP: AP channel unknown for " MACSTR ", using provisioning channel %d",
+                   MAC2STR(bssid), curr_chan);
+    } else if (curr_chan != config->curr_chan) {
+        wpa_printf(MSG_INFO,
+                   "DPP: Peer Discovery on AP operating channel %d (provisioning channel %d)",
+                   curr_chan, config->curr_chan);
+    }
+
     buf = dpp_build_peer_disc_req(config_store, config);
 
     if (!buf) {
