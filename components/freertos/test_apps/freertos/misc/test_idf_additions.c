@@ -15,6 +15,7 @@
 #include "freertos/idf_additions.h"
 #include "freertos/freertos_debug.h"
 #include "esp_memory_utils.h"
+#include "esp_heap_caps.h"
 #include "unity.h"
 #include "test_utils.h"
 #include <stdio.h>
@@ -30,6 +31,7 @@ Run only these cases from the Unity menu with the [idf_additions] tag filter.
  */
 
 #define OBJECT_MEMORY_CAPS      (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+#define SPIRAM_OBJECT_MEMORY_CAPS (MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT)
 
 static void task_with_caps(void *arg)
 {
@@ -99,6 +101,8 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
             TEST_ASSERT_EQUAL(pdPASS, xTaskCreateWithCaps(task_with_caps_self_delete, "task", 4096, NULL, UNITY_FREERTOS_PRIORITY, &task_handle[i], MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
             // Get the task's memory
             TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle[i], &puxStackBuffer, &pxTaskBuffer));
+            TEST_ASSERT(esp_ptr_external_ram(puxStackBuffer));
+            TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
         }
 
         for (int i = 0; i < TEST_NUM_TASKS; i++) {
@@ -252,6 +256,131 @@ TEST_CASE("IDF additions: Event group creation with memory caps", "[freertos][id
     // Free the event group
     vEventGroupDeleteWithCaps(evt_group_handle);
 }
+
+TEST_CASE("IDF additions: WithCaps objects functional smoke test", "[freertos][idf_additions]")
+{
+    QueueHandle_t queue_handle;
+    uint32_t send_val = 0xA5A5A5A5;
+    uint32_t recv_val = 0;
+
+    queue_handle = xQueueCreateWithCaps(4, sizeof(uint32_t), OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(queue_handle);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(queue_handle, &send_val, 0));
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(queue_handle, &recv_val, 0));
+    TEST_ASSERT_EQUAL(send_val, recv_val);
+    vQueueDeleteWithCaps(queue_handle);
+
+    SemaphoreHandle_t sem_handle = xSemaphoreCreateBinaryWithCaps(OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(sem_handle);
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(sem_handle));
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem_handle, 0));
+    vSemaphoreDeleteWithCaps(sem_handle);
+
+    StreamBufferHandle_t stream_buffer_handle;
+    uint8_t stream_tx[] = {0x01, 0x02, 0x03};
+    uint8_t stream_rx[sizeof(stream_tx)] = {0};
+
+    stream_buffer_handle = xStreamBufferCreateWithCaps(32, 1, OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(stream_buffer_handle);
+    TEST_ASSERT_EQUAL(sizeof(stream_tx), xStreamBufferSend(stream_buffer_handle, stream_tx, sizeof(stream_tx), 0));
+    TEST_ASSERT_EQUAL(sizeof(stream_rx), xStreamBufferReceive(stream_buffer_handle, stream_rx, sizeof(stream_rx), 0));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(stream_tx, stream_rx, sizeof(stream_tx));
+    vStreamBufferDeleteWithCaps(stream_buffer_handle);
+
+    MessageBufferHandle_t msg_buffer_handle;
+
+    msg_buffer_handle = xMessageBufferCreateWithCaps(32, OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(msg_buffer_handle);
+    TEST_ASSERT_EQUAL(sizeof(stream_tx), xMessageBufferSend(msg_buffer_handle, stream_tx, sizeof(stream_tx), 0));
+    TEST_ASSERT_EQUAL(sizeof(stream_rx), xMessageBufferReceive(msg_buffer_handle, stream_rx, sizeof(stream_rx), 0));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(stream_tx, stream_rx, sizeof(stream_tx));
+    vMessageBufferDeleteWithCaps(msg_buffer_handle);
+
+    EventGroupHandle_t evt_group_handle = xEventGroupCreateWithCaps(OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(evt_group_handle);
+    TEST_ASSERT_BITS(BIT0, BIT0, xEventGroupSetBits(evt_group_handle, BIT0));
+    TEST_ASSERT_BITS(BIT0, BIT0, xEventGroupWaitBits(evt_group_handle, BIT0, pdTRUE, pdFALSE, 0));
+    vEventGroupDeleteWithCaps(evt_group_handle);
+}
+
+TEST_CASE("IDF additions: WithCaps creation fails on out of memory", "[freertos][idf_additions]")
+{
+    /* Size just past the total heap for these caps so allocation must fail on every target,
+     * without fixed constants that can overflow size_t (e.g. stack_words * sizeof(StackType_t)). */
+    const size_t total_caps = heap_caps_get_total_size(OBJECT_MEMORY_CAPS);
+    const size_t oom_bytes = total_caps + 1024;
+    const UBaseType_t oom_queue_len = (UBaseType_t)((oom_bytes / sizeof(uint32_t)) + 1);
+    const configSTACK_DEPTH_TYPE oom_stack_words =
+        (configSTACK_DEPTH_TYPE)((oom_bytes / sizeof(StackType_t)) + 1);
+    TaskHandle_t task_handle = NULL;
+
+    TEST_ASSERT_NULL(xQueueCreateWithCaps(oom_queue_len, sizeof(uint32_t), OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NULL(xStreamBufferCreateWithCaps(oom_bytes, 1, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NULL(xMessageBufferCreateWithCaps(oom_bytes, OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_EQUAL(pdFAIL, xTaskCreatePinnedToCoreWithCaps(task_with_caps,
+                                                              "oom_task",
+                                                              oom_stack_words,
+                                                              NULL,
+                                                              UNITY_FREERTOS_PRIORITY,
+                                                              &task_handle,
+                                                              UNITY_FREERTOS_CPU,
+                                                              OBJECT_MEMORY_CAPS));
+    TEST_ASSERT_NULL(task_handle);
+}
+
+/* Create/delete coverage for remaining WithCaps types; Unity setUp/tearDown leak check verifies heap restore. */
+TEST_CASE("IDF additions: WithCaps create delete restores heap", "[freertos][idf_additions]")
+{
+    QueueHandle_t queue_handle = xQueueCreateWithCaps(4, sizeof(uint32_t), OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(queue_handle);
+    vQueueDeleteWithCaps(queue_handle);
+
+    SemaphoreHandle_t sem_handle = xSemaphoreCreateMutexWithCaps(OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(sem_handle);
+    vSemaphoreDeleteWithCaps(sem_handle);
+
+    StreamBufferHandle_t stream_buffer_handle = xStreamBufferCreateWithCaps(16, 1, OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(stream_buffer_handle);
+    vStreamBufferDeleteWithCaps(stream_buffer_handle);
+
+    MessageBufferHandle_t msg_buffer_handle = xMessageBufferCreateWithCaps(16, OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(msg_buffer_handle);
+    vMessageBufferDeleteWithCaps(msg_buffer_handle);
+
+    EventGroupHandle_t evt_group_handle = xEventGroupCreateWithCaps(OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(evt_group_handle);
+    vEventGroupDeleteWithCaps(evt_group_handle);
+}
+
+#if CONFIG_SPIRAM
+
+TEST_CASE("IDF additions: WithCaps objects allocate in SPIRAM when requested", "[freertos][idf_additions]")
+{
+    /* Queue/stream Static* objects honor SPIRAM caps; task TCBs remain internal via pvPortMalloc. */
+    QueueHandle_t queue_handle;
+    uint8_t *queue_storage;
+    StaticQueue_t *queue_obj;
+
+    queue_handle = xQueueCreateWithCaps(4, sizeof(uint32_t), SPIRAM_OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(queue_handle);
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueGetStaticBuffers(queue_handle, &queue_storage, &queue_obj));
+    TEST_ASSERT(esp_ptr_external_ram(queue_storage));
+    TEST_ASSERT(esp_ptr_external_ram(queue_obj));
+    vQueueDeleteWithCaps(queue_handle);
+
+    StreamBufferHandle_t stream_buffer_handle;
+    uint8_t *stream_buffer_storage;
+    StaticStreamBuffer_t *stream_buffer_obj;
+
+    stream_buffer_handle = xStreamBufferCreateWithCaps(16, 1, SPIRAM_OBJECT_MEMORY_CAPS);
+    TEST_ASSERT_NOT_NULL(stream_buffer_handle);
+    TEST_ASSERT_EQUAL(pdTRUE, xStreamBufferGetStaticBuffers(stream_buffer_handle, &stream_buffer_storage, &stream_buffer_obj));
+    TEST_ASSERT(esp_ptr_external_ram(stream_buffer_storage));
+    TEST_ASSERT(esp_ptr_external_ram(stream_buffer_obj));
+    vStreamBufferDeleteWithCaps(stream_buffer_handle);
+}
+
+#endif /* CONFIG_SPIRAM */
 
 /* ---------------------------------------------------------------------------------------------------------------------
  * Task utility API tests (xTaskGetCoreID, xTaskGetStackStart, per-core handle helpers, etc.)
