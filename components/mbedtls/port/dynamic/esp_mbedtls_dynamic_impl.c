@@ -47,6 +47,10 @@ static esp_mbedtls_ssl_buf_states esp_mbedtls_get_buf_state(unsigned char *buf)
 
 void esp_mbedtls_free_buf(unsigned char *buf)
 {
+    if (buf == NULL) {
+        return;
+    }
+
     struct esp_mbedtls_ssl_buf *temp = __containerof(buf, struct esp_mbedtls_ssl_buf, buf[0]);
     ESP_LOGV(TAG, "free buffer @ %p", temp);
     mbedtls_free(temp);
@@ -159,8 +163,6 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
 
 esp_err_t esp_mbedtls_dynamic_set_rx_buf_static(mbedtls_ssl_context *ssl)
 {
-    /* Public API: guard against being called with no RX buffer allocated
-     * (e.g. before setup or after free) to avoid a NULL dereference below. */
     if (ssl == NULL || ssl->MBEDTLS_PRIVATE(in_buf) == NULL) {
         return ESP_ERR_INVALID_STATE;
     }
