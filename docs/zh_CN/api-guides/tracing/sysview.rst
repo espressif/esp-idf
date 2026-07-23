@@ -23,7 +23,7 @@ SystemView 功能由托管组件 ``espressif/esp_sysview`` 提供。完成以下
 
 2. 在 menuconfig 中选择外部库：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``。
 
-之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 配置 SystemView。该菜单可用于选择时间戳源 (:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`)、单独启用或禁用 SystemView 事件集合 (``CONFIG_SEGGER_SYSVIEW_EVT_XXX``)，以及在使用 UART 目标时选择要跟踪的 CPU。
+之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 配置 SystemView。该菜单可用于选择时间戳源 (:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`)、单独启用或禁用 SystemView 事件收集 (``CONFIG_SEGGER_SYSVIEW_EVT_XXX``)，以及在使用 UART 目标时选择要跟踪的 CPU。
 
 .. note::
 
@@ -94,7 +94,7 @@ Start 子命令语法：
 数据可视化
 ----------
 
-收集到跟踪数据后，用户可以使用特殊的工具对结果进行可视化并分析程序行为。
+收集到跟踪数据后，可以使用特殊的工具对结果进行可视化并分析程序行为。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
@@ -106,7 +106,7 @@ Start 子命令语法：
 
     对于旧版本的 SystemView，在不同的实例中分别分析每个核的数据可能较为不便。另一个选择是使用名为 *Impulse* 的 Eclipse 插件，该插件可同时加载多个跟踪文件，实现在同一视图中检查来自两个核心的事件。与 SystemView 免费版相比，此插件还不受 100 万事件数量的限制。
 
-关于如何安装、配置 Impulse 并使用它来可视化来自单个核心的跟踪数据，请参阅 `官方教程 <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_ 。
+关于如何安装、配置 Impulse 并使用它来可视化来自单个核心的跟踪数据，请参阅 `官方教程 <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_。
 
 .. note::
 
@@ -121,13 +121,13 @@ Start 子命令语法：
 
     1. 打开 ``Signal Ports`` 视图，前往 ``Windows`` > ``Show View`` > ``Other`` 菜单，在 Impulse 文件夹中找到 ``Signal Ports`` 视图并双击。
     2. 在 ``Signal Ports`` 视图中，右键 ``Ports`` 并选择 ``Add``，然后选择 ``New Multi Adapter Port``。
-    3. 在打开的对话框中按下 ``add`` 按钮，选择 ``New Pipe/File``。
+    3. 在打开的对话框中按下 ``Add`` 按钮，选择 ``New Pipe/File``。
     4. 在打开的对话框中选择 ``SystemView Serializer`` 并设置 PRO CPU 跟踪文件的路径，按下 ``OK`` 保存设置。
     5. 对 APP CPU 的跟踪文件重复步骤 3 和 4。
     6. 双击创建的端口，会打开此端口的视图。
     7. 单击 ``Start/Stop Streaming`` 按钮，数据将会被加载。
     8. 使用 ``Zoom Out``，``Zoom In`` 和 ``Zoom Fit`` 按钮来查看数据。
-    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <https://toem.de/index.php/products/impulse>`_ 。
+    9. 有关设置测量光标和其他的功能，请参阅 `Impulse 官方文档 <https://toem.de/index.php/products/impulse>`_。
 
     .. note::
 
