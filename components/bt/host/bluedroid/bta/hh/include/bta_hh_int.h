@@ -28,6 +28,8 @@
 #include "bta/bta_sys.h"
 #include "bta/utl.h"
 #include "bta/bta_hh_api.h"
+#include "osi/pkt_queue.h"
+#include "osi/thread.h"
 
 //#if BTA_HH_LE_INCLUDED == TRUE
 #include "bta/bta_gatt_api.h"
@@ -82,7 +84,7 @@ typedef UINT16 tBTA_HH_INT_EVT;         /* HID host internal events */
 #define BTA_HH_FST_TRANS_CB_EVT         BTA_HH_GET_RPT_EVT
 #define BTA_HH_FST_BTE_TRANS_EVT        HID_TRANS_GET_REPORT
 
-/* sub event code used for device maintainence API call */
+/* sub event code used for device maintenance API call */
 #define BTA_HH_ADD_DEV          0
 #define BTA_HH_REMOVE_DEV       1
 
@@ -201,7 +203,7 @@ typedef struct {
 
 #define BTA_HH_LE_PROTO_MODE_BIT        0x01
 #define BTA_HH_LE_CP_BIT                0x02
-    UINT8                   option_char; /* control point char exisit or not */
+    UINT8                   option_char; /* control point char exist or not */
 
     BOOLEAN                 expl_incl_srvc;
     UINT8                   incl_srvc_inst; /* assuming only one included service : battery service */

@@ -307,6 +307,7 @@ void print_uuid(esp_bt_uuid_t *uuid)
                        uuid->uuid.uuid128[13], uuid->uuid.uuid128[14], uuid->uuid.uuid128[15]);
     }
 }
+#endif /* !CONFIG_BT_NIMBLE_ENABLED */
 
 #if CONFIG_BT_HID_HOST_ENABLED
 static void handle_bt_device_result(struct disc_res_param *disc_res)
@@ -654,7 +655,6 @@ static void ble_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
         break;
     }
 }
-#endif
 
 static esp_err_t init_ble_gap(void)
 {
