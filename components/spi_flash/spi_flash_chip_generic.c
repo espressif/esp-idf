@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -606,7 +606,7 @@ esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *
         esp_flash_encryption->flash_encryption_data_prepare(address, (uint32_t *)data_bytes, block_size);
         err = chip->chip_drv->set_chip_write_protect(chip, false);
         if (err != ESP_OK) {
-            return err;
+            goto err_out;
         }
         // Waiting for encrypting buffer to finish and making result visible for SPI1
         esp_flash_encryption->flash_encryption_done();
@@ -617,11 +617,11 @@ esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *
 
         err = chip->chip_drv->write(chip, (uint32_t *)data_bytes, address, length);
         if (err != ESP_OK) {
-            return err;
+            goto err_out;
         }
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
         if (err != ESP_OK) {
-            return err;
+            goto err_out;
         }
 
         // Note: we don't wait for idle status here, because this way
@@ -635,6 +635,11 @@ esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *
         address += block_size;
     }
 
+    esp_flash_encryption->flash_encryption_disable();
+    return err;
+
+err_out:
+    esp_flash_encryption->flash_encryption_destroy();
     esp_flash_encryption->flash_encryption_disable();
     return err;
 }
