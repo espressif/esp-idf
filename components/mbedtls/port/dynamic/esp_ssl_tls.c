@@ -395,6 +395,8 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
 
 void __wrap_mbedtls_ssl_free(mbedtls_ssl_context *ssl)
 {
+    esp_mbedtls_free_bio(ssl);
+
     if (ssl->MBEDTLS_PRIVATE(out_buf)) {
         esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
         ssl->MBEDTLS_PRIVATE(out_buf) = NULL;

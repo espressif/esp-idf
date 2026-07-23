@@ -164,7 +164,7 @@ esp_err_t esp_mbedtls_dynamic_set_rx_buf_static(mbedtls_ssl_context *ssl)
     esp_mbedtls_reset_free_rx_buffer(ssl);
 
     struct esp_mbedtls_ssl_buf *esp_buf;
-    int buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_BUFFER_LEN);
+    int buffer_len = tx_buffer_len(ssl, MBEDTLS_SSL_IN_CONTENT_LEN);
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
     if (!esp_buf) {
         ESP_LOGE(TAG, "rx buf alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
@@ -434,6 +434,129 @@ static int rx_reassembly_content_len(mbedtls_ssl_context *ssl,
     return 0;
 }
 
+/* Boxes the application's BIO callbacks so the RX trampolines can bounds-check
+ * against in_buf while the send path keeps the app's original p_bio. */
+struct esp_ssl_bio {
+    mbedtls_ssl_context *ssl;
+    void *p_bio;
+    mbedtls_ssl_send_t *f_send;
+    mbedtls_ssl_recv_t *f_recv;
+    mbedtls_ssl_recv_timeout_t *f_recv_timeout;
+};
+
+/* True if reading `len` bytes to `buf` would overrun the dynamic RX buffer.
+ * Destinations outside it (stack header-peek, unallocated, DTLS) return false. */
+static bool rx_read_rejected(mbedtls_ssl_context *ssl,
+                             const unsigned char *buf, size_t len)
+{
+    unsigned char *in_buf = ssl->MBEDTLS_PRIVATE(in_buf);
+
+#if defined(MBEDTLS_SSL_PROTO_DTLS)
+    /* DTLS legitimately fetches up to the full buffer; only guard streams. */
+    if (ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(transport)
+            != MBEDTLS_SSL_TRANSPORT_STREAM) {
+        return false;
+    }
+#endif
+    if (in_buf == NULL || buf < in_buf) {
+        return false;
+    }
+
+    struct esp_mbedtls_ssl_buf *esp_buf =
+        __containerof(in_buf, struct esp_mbedtls_ssl_buf, buf[0]);
+    unsigned char *end = in_buf + esp_buf->len;
+
+    if (buf >= end || (size_t)(end - buf) >= len) {
+        return false;                       /* outside the buffer, or it fits */
+    }
+
+    ESP_LOGE(TAG, "RX overflow prevented: peer needs %u bytes, %u available",
+             (unsigned)len, (unsigned)(end - buf));
+    return true;
+}
+
+static int esp_ssl_bio_recv(void *ctx, unsigned char *buf, size_t len)
+{
+    struct esp_ssl_bio *bio = ctx;
+
+    if (rx_read_rejected(bio->ssl, buf, len)) {
+        return MBEDTLS_ERR_SSL_BAD_INPUT_DATA;
+    }
+    return bio->f_recv(bio->p_bio, buf, len);
+}
+
+static int esp_ssl_bio_recv_timeout(void *ctx, unsigned char *buf,
+                                    size_t len, uint32_t timeout)
+{
+    struct esp_ssl_bio *bio = ctx;
+
+    if (rx_read_rejected(bio->ssl, buf, len)) {
+        return MBEDTLS_ERR_SSL_BAD_INPUT_DATA;
+    }
+    return bio->f_recv_timeout(bio->p_bio, buf, len, timeout);
+}
+
+static int esp_ssl_bio_send(void *ctx, const unsigned char *buf, size_t len)
+{
+    struct esp_ssl_bio *bio = ctx;
+
+    return bio->f_send(bio->p_bio, buf, len);
+}
+
+/* Interpose the overflow-checking trampolines on the app's BIO callbacks.
+ * Idempotent; no-op until the app has configured the callbacks. */
+static void esp_mbedtls_install_bio(mbedtls_ssl_context *ssl)
+{
+    if (ssl->MBEDTLS_PRIVATE(f_recv) == esp_ssl_bio_recv ||
+        ssl->MBEDTLS_PRIVATE(f_recv_timeout) == esp_ssl_bio_recv_timeout) {
+        return;                             /* already installed */
+    }
+    if (ssl->MBEDTLS_PRIVATE(f_recv) == NULL &&
+        ssl->MBEDTLS_PRIVATE(f_recv_timeout) == NULL) {
+        return;                             /* BIO not configured yet */
+    }
+
+    struct esp_ssl_bio *bio = mbedtls_calloc(1, sizeof(*bio));
+    if (bio == NULL) {
+        ESP_LOGD(TAG, "BIO interpose alloc failed; overflow check disabled");
+        return;                             /* degrade gracefully */
+    }
+
+    bio->ssl = ssl;
+    bio->p_bio = ssl->MBEDTLS_PRIVATE(p_bio);
+    bio->f_send = ssl->MBEDTLS_PRIVATE(f_send);
+    bio->f_recv = ssl->MBEDTLS_PRIVATE(f_recv);
+    bio->f_recv_timeout = ssl->MBEDTLS_PRIVATE(f_recv_timeout);
+
+    ssl->MBEDTLS_PRIVATE(p_bio) = bio;
+    if (bio->f_send) {
+        ssl->MBEDTLS_PRIVATE(f_send) = esp_ssl_bio_send;
+    }
+    if (bio->f_recv) {
+        ssl->MBEDTLS_PRIVATE(f_recv) = esp_ssl_bio_recv;
+    }
+    if (bio->f_recv_timeout) {
+        ssl->MBEDTLS_PRIVATE(f_recv_timeout) = esp_ssl_bio_recv_timeout;
+    }
+}
+
+void esp_mbedtls_free_bio(mbedtls_ssl_context *ssl)
+{
+    if (ssl->MBEDTLS_PRIVATE(f_recv) != esp_ssl_bio_recv &&
+        ssl->MBEDTLS_PRIVATE(f_recv_timeout) != esp_ssl_bio_recv_timeout) {
+        return;                             /* nothing installed */
+    }
+
+    struct esp_ssl_bio *bio = ssl->MBEDTLS_PRIVATE(p_bio);
+
+    /* Restore the application's callbacks; guards against a double free. */
+    ssl->MBEDTLS_PRIVATE(p_bio) = bio->p_bio;
+    ssl->MBEDTLS_PRIVATE(f_send) = bio->f_send;
+    ssl->MBEDTLS_PRIVATE(f_recv) = bio->f_recv;
+    ssl->MBEDTLS_PRIVATE(f_recv_timeout) = bio->f_recv_timeout;
+    mbedtls_free(bio);
+}
+
 int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 {
     /*
@@ -441,6 +564,9 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
      * and skip dynamic buffer allocation logic below
      */
     ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
+
+    /* Interpose the overflow-checking BIO trampolines before any network read. */
+    esp_mbedtls_install_bio(ssl);
 
     int cached = 0;
     int ret = 0;
