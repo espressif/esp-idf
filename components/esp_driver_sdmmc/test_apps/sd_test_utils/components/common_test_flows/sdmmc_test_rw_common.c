@@ -14,6 +14,7 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "esp_memory_utils.h"
 #include "unity.h"
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
@@ -294,4 +295,65 @@ void sdmmc_test_rw_unaligned_buffer_multiblock(sdmmc_card_t* card, size_t chunk_
     }
 
     free(buffer);
+}
+
+void sdmmc_test_rw_psram_buffer(sdmmc_card_t *card)
+{
+#if !CONFIG_SPIRAM
+    /* The PSRAM-disabled skip is intentionally NOT done here via TEST_IGNORE.
+     * This function runs after the slot/controller has been initialized, and
+     * TEST_IGNORE would longjmp out before the caller's *_end() cleanup runs,
+     * leaking the slot. Callers must skip before initializing the hardware.
+     */
+    (void)card;
+#else
+    const size_t block_size = card->csd.sector_size;
+    const size_t block_count = 8;
+    const size_t buffer_size = block_size * block_count;
+
+    /* Allocate buffer in PSRAM */
+    uint8_t *psram_buf = heap_caps_malloc(buffer_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED);
+    TEST_ASSERT_NOT_NULL_MESSAGE(psram_buf, "Failed to allocate PSRAM buffer; is PSRAM enabled?");
+    TEST_ASSERT_MESSAGE(esp_ptr_external_ram(psram_buf), "Buffer not in PSRAM");
+
+    /* Also allocate a reference buffer in internal RAM for comparison */
+    uint8_t *internal_buf = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED);
+    TEST_ASSERT_NOT_NULL(internal_buf);
+
+    /* A PSRAM buffer can be transferred directly only if the host reports it as
+     * usable; otherwise the protocol layer transparently bounce-buffers it. This
+     * test verifies correctness for both cases. */
+    bool host_can_use_psram_directly =
+        card->host.check_buffer_alignment(card->host.slot, psram_buf, buffer_size);
+    printf("Testing PSRAM buffer R/W: %d blocks, host can use PSRAM directly=%s\n",
+           (int)block_count, host_can_use_psram_directly ? "true" : "false");
+
+    /* Test A: Write from PSRAM buffer, read back to internal buffer, verify */
+    const uint32_t seed_a = 0xABCD1234;
+    fill_buffer(seed_a, psram_buf, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, psram_buf, 0, block_count));
+    memset(internal_buf, 0xcc, buffer_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, internal_buf, 0, block_count));
+    check_buffer(seed_a, internal_buf, buffer_size / sizeof(uint32_t));
+
+    /* Test B: Write from internal buffer, read back to PSRAM buffer, verify */
+    const uint32_t seed_b = 0x5678EFAB;
+    fill_buffer(seed_b, internal_buf, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, internal_buf, 0, block_count));
+    memset(psram_buf, 0xcc, buffer_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, psram_buf, 0, block_count));
+    check_buffer(seed_b, psram_buf, buffer_size / sizeof(uint32_t));
+
+    /* Test C: Both write and read from PSRAM buffer */
+    const uint32_t seed_c = 0xDEAD9876;
+    fill_buffer(seed_c, psram_buf, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, psram_buf, 0, block_count));
+    memset(psram_buf, 0xcc, buffer_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, psram_buf, 0, block_count));
+    check_buffer(seed_c, psram_buf, buffer_size / sizeof(uint32_t));
+
+    free(psram_buf);
+    free(internal_buf);
+    printf("PSRAM buffer R/W test passed\n");
+#endif  // CONFIG_SPIRAM
 }

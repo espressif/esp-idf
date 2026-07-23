@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,23 +9,42 @@
 #include <inttypes.h>
 #include "unity.h"
 #include "unity_fixture.h"
+#include "unity_test_utils.h"
 #include "sd_protocol_defs.h"
 #include "sdmmc_cmd.h"
 #include "sdmmc_test_begin_end_sd.h"
 #include "sdmmc_test_rw_common.h"
 #include "esp_blockdev.h"
+#include "esp_private/sdmmc_blockdev.h"
 
-TEST_GROUP(sdmmc);
+#define TEST_MEMORY_LEAK_THRESHOLD (200)
 
-TEST_SETUP(sdmmc)
+TEST_CASE("sdmmc blockdev converts byte ranges to sectors", "[sdmmc]")
 {
+    size_t start_sector;
+    size_t sector_count;
+
+    TEST_ESP_OK(sdmmc_blockdev_calculate_sectors(512, UINT64_C(0x100000000), 1024,
+                                                 &start_sector, &sector_count));
+    TEST_ASSERT_EQUAL_UINT32(8388608, start_sector);
+    TEST_ASSERT_EQUAL_UINT32(2, sector_count);
+
+    TEST_ESP_OK(sdmmc_blockdev_calculate_sectors(512, UINT64_C(0x100000000), 0,
+                                                 &start_sector, &sector_count));
+    TEST_ASSERT_EQUAL_UINT32(8388608, start_sector);
+    TEST_ASSERT_EQUAL_UINT32(0, sector_count);
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      sdmmc_blockdev_calculate_sectors(512, 1, 512, NULL, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      sdmmc_blockdev_calculate_sectors(512, 0, 1, NULL, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
+                      sdmmc_blockdev_calculate_sectors(0, 0, 512, NULL, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE,
+                      sdmmc_blockdev_calculate_sectors(512, UINT64_MAX - 511, 512, NULL, NULL));
 }
 
-TEST_TEAR_DOWN(sdmmc)
-{
-}
-
-TEST(sdmmc, test_bdl_interface)
+TEST_CASE("sdmmc extra, bdl interface test", "[sdcard]")
 {
     sdmmc_card_t card;
     int slot = 1;
@@ -70,7 +89,7 @@ TEST(sdmmc, test_bdl_interface)
     sdmmc_test_sd_end(&card);
 }
 
-TEST(sdmmc, test_multiblock_unaligned_rw)
+TEST_CASE("sdmmc extra, multiblock unaligned rw test", "[sdcard]")
 {
     sdmmc_card_t card;
     int slot = 1;
@@ -82,13 +101,17 @@ TEST(sdmmc, test_multiblock_unaligned_rw)
     sdmmc_test_sd_end(&card);
 }
 
-TEST_GROUP_RUNNER(sdmmc)
+void setUp(void)
 {
-    RUN_TEST_CASE(sdmmc, test_bdl_interface)
-    RUN_TEST_CASE(sdmmc, test_multiblock_unaligned_rw)
+    unity_utils_record_free_mem();
+}
+
+void tearDown(void)
+{
+    unity_utils_evaluate_leaks_direct(TEST_MEMORY_LEAK_THRESHOLD);
 }
 
 void app_main(void)
 {
-    UNITY_MAIN(sdmmc);
+    unity_run_menu();
 }

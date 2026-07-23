@@ -10,4 +10,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 @idf_parametrize('config', ['default'], indirect=['config'])
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_sdmmc_extra(dut: Dut) -> None:
-    dut.expect_unity_test_output()
+    dut.run_all_single_board_cases()
