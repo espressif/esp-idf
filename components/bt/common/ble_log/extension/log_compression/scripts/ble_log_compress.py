@@ -20,6 +20,7 @@ This script processes Bluetooth source files to compress logging statements.
 import argparse
 import enum
 import importlib.util
+import json
 import logging
 import os
 import re
@@ -127,6 +128,10 @@ FUNC_MACROS = {'__func__', '__FUNCTION__'}
 LINE_MACROS = {
     '__LINE__',
 }
+
+MIRRORED_INCLUDE_SUFFIXES = frozenset({'.h', '.inc'})
+MIRRORED_INCLUDE_MANIFEST = '.mirrored_includes.json'
+MIRRORED_INCLUDE_MANIFEST_VERSION = 1
 
 
 class ARG_SIZE_TYPE(enum.IntEnum):
@@ -685,6 +690,151 @@ class LogCompressor:
 
         return generated_macros
 
+    @staticmethod
+    def _require_path_within(path: Path, root: Path, label: str) -> None:
+        try:
+            path.relative_to(root)
+        except ValueError as error:
+            raise ValueError(f'{label} escapes allowed root {root}: {path}') from error
+
+    def _validated_mirror_destination(self, relative: Path) -> Path:
+        if relative.is_absolute() or '..' in relative.parts or relative.suffix not in MIRRORED_INCLUDE_SUFFIXES:
+            raise ValueError(f'Invalid mirrored include path: {relative}')
+
+        mirror_root = self.bt_compressed_srcs_path.resolve(strict=True)
+        destination = self.bt_compressed_srcs_path / relative
+        resolved_destination = destination.resolve(strict=False)
+        self._require_path_within(resolved_destination, mirror_root, 'Mirrored include destination')
+        return destination
+
+    def _discover_local_includes(self) -> dict[Path, Path]:
+        try:
+            code_base = self.code_base_path.resolve(strict=True)
+        except (FileNotFoundError, NotADirectoryError) as error:
+            raise ValueError(f'Invalid CODE_BASE_PATH: {self.code_base_path}') from error
+
+        if not code_base.is_dir():
+            raise ValueError(f'Invalid CODE_BASE_PATH: {code_base}')
+
+        includes: dict[Path, Path] = {}
+        for info in self.module_info.values():
+            for configured_path in info['code_path']:
+                candidate = Path(configured_path)
+                if not candidate.is_absolute():
+                    candidate = code_base / candidate
+                try:
+                    module_root = candidate.resolve(strict=True)
+                except (FileNotFoundError, NotADirectoryError) as error:
+                    raise ValueError(f'Invalid module code path: {configured_path}') from error
+                if not module_root.is_dir():
+                    raise ValueError(f'Invalid module code path: {configured_path}')
+                try:
+                    module_root.relative_to(code_base)
+                except ValueError as error:
+                    raise ValueError(f'Module code path escapes CODE_BASE_PATH: {module_root}') from error
+
+                for source in module_root.rglob('*'):
+                    if source.suffix not in MIRRORED_INCLUDE_SUFFIXES or not source.is_file():
+                        continue
+                    resolved_source = source.resolve(strict=True)
+                    self._require_path_within(resolved_source, module_root, 'Local include source')
+                    relative = source.relative_to(code_base)
+                    includes[relative] = source
+        return includes
+
+    def _load_mirrored_include_manifest(self) -> set[Path]:
+        manifest_path = self.bt_compressed_srcs_path / MIRRORED_INCLUDE_MANIFEST
+        if manifest_path.is_symlink():
+            raise ValueError(f'Invalid mirrored include manifest: {manifest_path}')
+        if not manifest_path.exists():
+            return set()
+        if not manifest_path.is_file():
+            raise ValueError(f'Invalid mirrored include manifest: {manifest_path}')
+
+        try:
+            payload = json.loads(manifest_path.read_text(encoding='utf-8'))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError(f'Invalid mirrored include manifest: {manifest_path}') from error
+        if (
+            not isinstance(payload, dict)
+            or payload.get('version') != MIRRORED_INCLUDE_MANIFEST_VERSION
+            or not isinstance(payload.get('files'), list)
+        ):
+            raise ValueError(f'Invalid mirrored include manifest: {manifest_path}')
+
+        relative_paths: set[Path] = set()
+        for value in payload['files']:
+            if not isinstance(value, str):
+                raise ValueError(f'Invalid mirrored include manifest entry: {value!r}')
+            relative = Path(value)
+            self._validated_mirror_destination(relative)
+            relative_paths.add(relative)
+        return relative_paths
+
+    def _remove_empty_mirror_parents(self, destination: Path) -> None:
+        mirror_root = self.bt_compressed_srcs_path.resolve(strict=True)
+        parent = destination.parent
+        while parent != mirror_root:
+            try:
+                parent.rmdir()
+            except OSError:
+                break
+            parent = parent.parent
+
+    def _remove_stale_mirrored_includes(self, stale_paths: set[Path]) -> None:
+        for relative in sorted(stale_paths, key=lambda path: len(path.parts), reverse=True):
+            destination = self._validated_mirror_destination(relative)
+            if destination.is_dir():
+                raise ValueError(f'Managed mirrored include is a directory: {destination}')
+            if destination.exists() or destination.is_symlink():
+                destination.unlink()
+                LOGGER.info(f'Removed stale mirrored include: {destination}')
+            self._remove_empty_mirror_parents(destination)
+
+    def _write_mirrored_include_manifest(self, relative_paths: set[Path]) -> None:
+        manifest_path = self.bt_compressed_srcs_path / MIRRORED_INCLUDE_MANIFEST
+        temporary_path = manifest_path.with_name(f'{manifest_path.name}.tmp')
+        if manifest_path.is_symlink() or (manifest_path.exists() and not manifest_path.is_file()):
+            raise ValueError(f'Invalid mirrored include manifest path: {manifest_path}')
+        if temporary_path.is_symlink() or temporary_path.exists():
+            if temporary_path.is_dir():
+                raise ValueError(f'Invalid manifest temporary path: {temporary_path}')
+            temporary_path.unlink()
+
+        payload = {
+            'version': MIRRORED_INCLUDE_MANIFEST_VERSION,
+            'files': sorted(path.as_posix() for path in relative_paths),
+        }
+        try:
+            temporary_path.write_text(f'{json.dumps(payload, indent=2)}\n', encoding='utf-8')
+            os.replace(temporary_path, manifest_path)
+        finally:
+            if temporary_path.exists() or temporary_path.is_symlink():
+                temporary_path.unlink()
+
+    def mirror_local_includes(self) -> None:
+        """Mirror unchanged local headers for generated C source include lookup."""
+        self.bt_compressed_srcs_path.mkdir(parents=True, exist_ok=True)
+        previous_paths = self._load_mirrored_include_manifest()
+        includes = self._discover_local_includes()
+        current_paths = set(includes)
+        newly_created_paths: set[Path] = set()
+        try:
+            for relative, source in sorted(includes.items(), key=lambda item: item[0].as_posix()):
+                destination = self._validated_mirror_destination(relative)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if not destination.exists() and not destination.is_symlink():
+                    newly_created_paths.add(relative)
+                shutil.copy2(source, destination)
+                LOGGER.info(f'Mirrored local include: {source} -> {destination}')
+            self._remove_stale_mirrored_includes(previous_paths - current_paths)
+            self._write_mirrored_include_manifest(current_paths)
+        except Exception:
+            # Do not leave newly introduced headers unowned by the preserved
+            # manifest when copying, cleanup, or manifest replacement fails.
+            self._remove_stale_mirrored_includes(newly_created_paths)
+            raise
+
     def prepare_source_files(self, srcs: list[str]) -> None:
         """
         Prepare source files for processing.
@@ -881,6 +1031,9 @@ class LogCompressor:
         modules = args.module.split(';')
         config_path = self.build_dir / 'ble_log/module_info.yml'
         self.load_config(str(config_path), modules)
+
+        # Preserve local quoted-include semantics for generated C sources.
+        self.mirror_local_includes()
 
         # Initialize database
         db_path = self.build_dir / self.config.get('db_path', 'log_db')

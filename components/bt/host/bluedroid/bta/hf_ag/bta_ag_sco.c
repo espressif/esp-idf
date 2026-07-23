@@ -251,10 +251,10 @@ static void bta_ag_sco_disc_cback(UINT16 sco_idx)
 
     APPL_TRACE_DEBUG ("bta_ag_sco_disc_cback(): sco_idx: 0x%x  p_cur_scb: 0x%08x  sco.state: %d", (unsigned int)sco_idx, (unsigned int)bta_ag_cb.sco.p_curr_scb, (unsigned int)bta_ag_cb.sco.state);
 
-    APPL_TRACE_DEBUG ("bta_ag_sco_disc_cback(): scb[0] addr: 0x%08x  in_use: %u  sco_idx: 0x%x  sco state: %u",
-                       (unsigned int) &bta_ag_cb.scb[0], (unsigned int)bta_ag_cb.scb[0].in_use, (unsigned int)bta_ag_cb.scb[0].sco_idx, (unsigned int)bta_ag_cb.scb[0].state);
-    APPL_TRACE_DEBUG ("bta_ag_sco_disc_cback(): scb[1] addr: 0x%08x  in_use: %u  sco_idx: 0x%x  sco state: %u",
-                       (unsigned int) &bta_ag_cb.scb[1], (unsigned int) bta_ag_cb.scb[1].in_use, (unsigned int) bta_ag_cb.scb[1].sco_idx, (unsigned int) bta_ag_cb.scb[1].state);
+    for (int i = 0; i < BTA_AG_NUM_SCB; i++) {
+        APPL_TRACE_DEBUG ("bta_ag_sco_disc_cback(): scb[%d] addr: 0x%08x  in_use: %u  sco_idx: 0x%x  sco state: %u", i,
+                          (unsigned int) &bta_ag_cb.scb[i], (unsigned int)bta_ag_cb.scb[i].in_use, (unsigned int)bta_ag_cb.scb[i].sco_idx, (unsigned int)bta_ag_cb.scb[i].state);
+    }
 
     /* match callback to scb */
     if (bta_ag_cb.sco.p_curr_scb != NULL && bta_ag_cb.sco.p_curr_scb->in_use)
