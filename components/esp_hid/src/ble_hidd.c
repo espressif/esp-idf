@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -826,17 +826,15 @@ static esp_err_t esp_ble_hidd_dev_battery_set(void *devp, uint8_t level)
     }
     dev->bat_level = level;
 
-    if (!dev->connected || dev->bat_ccc.value == 0) {
+    if (!dev->connected) {
         //if we are not yet connected, that is not an error
         return ESP_OK;
     }
 
-    if (dev->bat_ccc.notify_enable) {
-        ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if, dev->conn_id, dev->bat_level_handle, 1, &dev->bat_level, false);
-        if (ret) {
-            ESP_LOGE(TAG, "esp_ble_gatts_send_notify failed: %d", ret);
-            return ESP_FAIL;
-        }
+    ret = esp_ble_gatts_send_indicate(dev->bat_svc.gatt_if, dev->conn_id, dev->bat_level_handle, 1, &dev->bat_level, false);
+    if (ret) {
+        ESP_LOGE(TAG, "esp_ble_gatts_send_notify failed: %d", ret);
+        return ESP_FAIL;
     }
 
     return ESP_OK;
@@ -860,7 +858,7 @@ static esp_err_t esp_ble_hidd_dev_input_set(void *devp, size_t index, size_t id,
         return ESP_FAIL;
     }
 
-    if ((p_rpt = get_report_by_id_and_type(dev, id, ESP_HID_REPORT_TYPE_INPUT)) != NULL && p_rpt->ccc.value) {
+    if ((p_rpt = get_report_by_id_and_type(dev, id, ESP_HID_REPORT_TYPE_INPUT)) != NULL) {
         esp_err_t err = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if, dev->conn_id, p_rpt->handle, length, data, p_rpt->ccc.indicate_enable);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Send Input Indicate Failed: %d", err);
@@ -900,7 +898,7 @@ static esp_err_t esp_ble_hidd_dev_feature_set(void *devp, size_t index, size_t i
             return ESP_FAIL;
         }
         WAIT_CB(dev);
-        if (dev->connected && p_rpt->ccc.value) {
+        if (dev->connected) {
             ret = esp_ble_gatts_send_indicate(dev->devices[index].hid_svc.gatt_if, dev->conn_id, p_rpt->handle, length, data, p_rpt->ccc.indicate_enable);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Send Feature Indicate Failed: %d", ret);
