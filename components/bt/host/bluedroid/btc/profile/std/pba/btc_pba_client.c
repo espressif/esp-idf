@@ -67,6 +67,18 @@ static void bte_pba_client_evt(tBTA_PBA_CLIENT_EVT event, tBTA_PBA_CLIENT *p_dat
     status = btc_transfer_context(&msg, p_data, param_len, NULL, NULL);
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("context transfer failed");
+        switch (event) {
+        case BTA_PBA_CLIENT_PULL_PHONE_BOOK_RSP_EVT:
+        case BTA_PBA_CLIENT_SET_PHONE_BOOK_RSP_EVT:
+        case BTA_PBA_CLIENT_PULL_VCARD_LISTING_RSP_EVT:
+        case BTA_PBA_CLIENT_PULL_VCARD_ENTRY_RSP_EVT:
+            if (p_data != NULL && p_data->response.pkt != NULL) {
+                osi_free(p_data->response.pkt);
+            }
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -93,7 +105,12 @@ static void btc_pba_client_init(void)
 static void btc_pba_client_deinit(void)
 {
     if (s_btc_pba_client_init) {
-        s_btc_pba_client_init = false;
+        for (int i = 0; i < BTC_PBA_CLIENT_MAX_CONN_NUM; ++i) {
+            if (btc_pba_client_cb.ccb[i].path) {
+                osi_free(btc_pba_client_cb.ccb[i].path);
+                btc_pba_client_cb.ccb[i].path = NULL;
+            }
+        }
         /* deregister sdp record */
         BTA_PbaClientDeregister();
         /* disable pba client */
@@ -118,7 +135,9 @@ static bt_status_t connect_int(bt_bdaddr_t *bd_addr, uint16_t uuid)
         return BT_STATUS_BUSY;
     }
 
-    BTA_PbaClientOpen(bd_addr->address, BTC_PBA_CLIENT_SECURITY, (uint32_t)BTC_PBA_SUPPORTED_FEAT, (uint16_t)BTC_PBA_PREFERRED_MTU);
+    if (BTA_PbaClientOpen(bd_addr->address, BTC_PBA_CLIENT_SECURITY, (uint32_t)BTC_PBA_SUPPORTED_FEAT, (uint16_t)BTC_PBA_PREFERRED_MTU) != BTA_SUCCESS) {
+        return BT_STATUS_NOMEM;
+    }
 
     return BT_STATUS_SUCCESS;
 }
@@ -159,6 +178,8 @@ static bool btc_pba_client_pull_phone_book(uint16_t handle, char *name, bool inc
     bt_status_t err = BT_STATUS_FAIL;
     uint8_t *app_param_buff = NULL;
     uint16_t app_param_len = 0;
+    btc_pba_client_ccb_t *p_ccb = NULL;
+    bool busy_set = false;
 
     do {
         if (!s_btc_pba_client_init) {
@@ -173,7 +194,7 @@ static bool btc_pba_client_pull_phone_book(uint16_t handle, char *name, bool inc
             break;
         }
 
-        btc_pba_client_ccb_t *p_ccb = &btc_pba_client_cb.ccb[handle - 1];
+        p_ccb = &btc_pba_client_cb.ccb[handle - 1];
         if (p_ccb->handle != handle) {
             /* not connect */
             err = BT_STATUS_PARM_INVALID;
@@ -243,12 +264,19 @@ static bool btc_pba_client_pull_phone_book(uint16_t handle, char *name, bool inc
         }
 
         p_ccb->busy = true;
-        BTA_PbaClientPullPhoneBook(handle, name, app_param_buff, app_param_len);
-        err = BT_STATUS_SUCCESS;
+        busy_set = true;
+        err = (BTA_PbaClientPullPhoneBook(handle, name, app_param_buff, app_param_len) == BTA_SUCCESS) ? BT_STATUS_SUCCESS : BT_STATUS_NOMEM;
     } while (0);
 
     if (err != BT_STATUS_SUCCESS) {
-        BTC_TRACE_WARNING("%s failed, handle: %d, reason: %d", __FUNCTION__, handle, err);
+        BTC_TRACE_WARNING("failed, handle: %d, reason: %d", handle, err);
+        if (busy_set) {
+            p_ccb->busy = false;
+        }
+        /* BTA did not take ownership on failure */
+        if (app_param_buff != NULL) {
+            osi_free(app_param_buff);
+        }
         return false;
     }
 
@@ -258,6 +286,8 @@ static bool btc_pba_client_pull_phone_book(uint16_t handle, char *name, bool inc
 static bool btc_pba_client_set_phone_book(uint16_t handle, uint8_t flags, char *name)
 {
     bt_status_t err = BT_STATUS_FAIL;
+    btc_pba_client_ccb_t *p_ccb = NULL;
+    bool busy_set = false;
 
     do {
         if (!s_btc_pba_client_init) {
@@ -272,7 +302,7 @@ static bool btc_pba_client_set_phone_book(uint16_t handle, uint8_t flags, char *
             break;
         }
 
-        btc_pba_client_ccb_t *p_ccb = &btc_pba_client_cb.ccb[handle - 1];
+        p_ccb = &btc_pba_client_cb.ccb[handle - 1];
         if (p_ccb->handle != handle) {
             /* not connect */
             err = BT_STATUS_PARM_INVALID;
@@ -286,12 +316,15 @@ static bool btc_pba_client_set_phone_book(uint16_t handle, uint8_t flags, char *
         }
 
         p_ccb->busy = true;
-        BTA_PbaClientSetPhoneBook(handle, flags, (char *)name);
-        err = BT_STATUS_SUCCESS;
+        busy_set = true;
+        err = (BTA_PbaClientSetPhoneBook(handle, flags, (char *)name) == BTA_SUCCESS) ? BT_STATUS_SUCCESS : BT_STATUS_NOMEM;
     } while (0);
 
     if (err != BT_STATUS_SUCCESS) {
-        BTC_TRACE_WARNING("%s failed, handle: %d, reason: %d", __FUNCTION__, handle, err);
+        BTC_TRACE_WARNING("failed, handle: %d, reason: %d", handle, err);
+        if (busy_set) {
+            p_ccb->busy = false;
+        }
         return false;
     }
 
@@ -301,6 +334,10 @@ static bool btc_pba_client_set_phone_book(uint16_t handle, uint8_t flags, char *
 static bool btc_pba_client_set_phone_book2(uint16_t handle, char *path)
 {
     bt_status_t err = BT_STATUS_FAIL;
+    btc_pba_client_ccb_t *p_ccb = NULL;
+    bool busy_set = false;
+    char *empty_name = NULL;
+    bool path_empty_root = false;
 
     do {
         if (!s_btc_pba_client_init) {
@@ -315,7 +352,7 @@ static bool btc_pba_client_set_phone_book2(uint16_t handle, char *path)
             break;
         }
 
-        btc_pba_client_ccb_t *p_ccb = &btc_pba_client_cb.ccb[handle - 1];
+        p_ccb = &btc_pba_client_cb.ccb[handle - 1];
         if (p_ccb->handle != handle) {
             /* not connect */
             err = BT_STATUS_PARM_INVALID;
@@ -329,6 +366,7 @@ static bool btc_pba_client_set_phone_book2(uint16_t handle, char *path)
         }
 
         p_ccb->busy = true;
+        busy_set = true;
         if (path != NULL) {
             p_ccb->path_len = strlen(path) + 1;
             /* ignore the first slash */
@@ -342,26 +380,39 @@ static bool btc_pba_client_set_phone_book2(uint16_t handle, char *path)
             if (p_ccb->path_len == p_ccb->path_pos + 1) {
                 p_ccb->path_len = 0;
                 p_ccb->path_pos = 0;
-                osi_free(path);
-                path = NULL;
+                path_empty_root = true;
             }
             else {
                 p_ccb->path = path;
             }
         }
         /* anyway, go to ROOT first */
-        char *empty_name = osi_malloc(1);
+        empty_name = osi_malloc(1);
         assert(empty_name != NULL);
         *empty_name = '\0';
-        BTA_PbaClientSetPhoneBook(handle, ESP_PBAC_SET_PHONE_BOOK_FLAGS_ROOT, empty_name);
-        err = BT_STATUS_SUCCESS;
+        err = (BTA_PbaClientSetPhoneBook(handle, ESP_PBAC_SET_PHONE_BOOK_FLAGS_ROOT, empty_name) == BTA_SUCCESS) ? BT_STATUS_SUCCESS : BT_STATUS_NOMEM;
     } while (0);
 
     if (err != BT_STATUS_SUCCESS) {
-        BTC_TRACE_WARNING("%s failed, handle: %d, reason: %d", __FUNCTION__, handle, err);
+        BTC_TRACE_WARNING("failed, handle: %d, reason: %d", handle, err);
+        if (busy_set) {
+            p_ccb->busy = false;
+            p_ccb->path_len = 0;
+            p_ccb->path_pos = 0;
+            /* drop ccb path ownership so deep_free can free the arg buffer */
+            p_ccb->path = NULL;
+        }
+        /* BTA did not take ownership on failure */
+        if (empty_name != NULL) {
+            osi_free(empty_name);
+        }
         return false;
     }
 
+    /* success: empty "/" path is not kept on ccb; free it here (no deep_free on success) */
+    if (path_empty_root && path != NULL) {
+        osi_free(path);
+    }
     return true;
 }
 
@@ -370,6 +421,8 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
     bt_status_t err = BT_STATUS_FAIL;
     uint8_t *app_param_buff = NULL;
     uint16_t app_param_len = 0;
+    btc_pba_client_ccb_t *p_ccb = NULL;
+    bool busy_set = false;
 
     do {
         if (!s_btc_pba_client_init) {
@@ -384,7 +437,7 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
             break;
         }
 
-        btc_pba_client_ccb_t *p_ccb = &btc_pba_client_cb.ccb[handle - 1];
+        p_ccb = &btc_pba_client_cb.ccb[handle - 1];
         if (p_ccb->handle != handle) {
             /* not connect */
             err = BT_STATUS_PARM_INVALID;
@@ -479,12 +532,19 @@ static bool btc_pba_client_pull_vcard_listing(uint16_t handle, char *name, bool 
         }
 
         p_ccb->busy = true;
-        BTA_PbaClientPullvCardListing(handle, (char *)name, app_param_buff, app_param_len);
-        err = BT_STATUS_SUCCESS;
+        busy_set = true;
+        err = (BTA_PbaClientPullvCardListing(handle, (char *)name, app_param_buff, app_param_len) == BTA_SUCCESS) ? BT_STATUS_SUCCESS : BT_STATUS_NOMEM;
     } while (0);
 
     if (err != BT_STATUS_SUCCESS) {
-        BTC_TRACE_WARNING("%s failed, handle: %d, reason: %d", __FUNCTION__, handle, err);
+        BTC_TRACE_WARNING("failed, handle: %d, reason: %d", handle, err);
+        if (busy_set) {
+            p_ccb->busy = false;
+        }
+        /* BTA did not take ownership on failure */
+        if (app_param_buff != NULL) {
+            osi_free(app_param_buff);
+        }
         return false;
     }
 
@@ -496,6 +556,8 @@ static bool btc_pba_client_pull_vcard_entry(uint16_t handle, char *name, bool in
     bt_status_t err = BT_STATUS_FAIL;
     uint8_t *app_param_buff = NULL;
     uint16_t app_param_len = 0;
+    btc_pba_client_ccb_t *p_ccb = NULL;
+    bool busy_set = false;
 
     do {
         if (!s_btc_pba_client_init) {
@@ -510,7 +572,7 @@ static bool btc_pba_client_pull_vcard_entry(uint16_t handle, char *name, bool in
             break;
         }
 
-        btc_pba_client_ccb_t *p_ccb = &btc_pba_client_cb.ccb[handle - 1];
+        p_ccb = &btc_pba_client_cb.ccb[handle - 1];
         if (p_ccb->handle != handle) {
             /* not connect */
             err = BT_STATUS_PARM_INVALID;
@@ -555,12 +617,19 @@ static bool btc_pba_client_pull_vcard_entry(uint16_t handle, char *name, bool in
         }
 
         p_ccb->busy = true;
-        BTA_PbaClientPullvCardEntry(handle, (char *)name, app_param_buff, app_param_len);
-        err = BT_STATUS_SUCCESS;
+        busy_set = true;
+        err = (BTA_PbaClientPullvCardEntry(handle, (char *)name, app_param_buff, app_param_len) == BTA_SUCCESS) ? BT_STATUS_SUCCESS : BT_STATUS_NOMEM;
     } while (0);
 
     if (err != BT_STATUS_SUCCESS) {
-        BTC_TRACE_WARNING("%s failed, handle: %d, reason: %d", __FUNCTION__, handle, err);
+        BTC_TRACE_WARNING("failed, handle: %d, reason: %d", handle, err);
+        if (busy_set) {
+            p_ccb->busy = false;
+        }
+        /* BTA did not take ownership on failure */
+        if (app_param_buff != NULL) {
+            osi_free(app_param_buff);
+        }
         return false;
     }
 
@@ -1028,7 +1097,17 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
                 memcpy(dir_name, p_ccb->path + p_ccb->path_pos, dir_name_len);
                 dir_name[dir_name_len] = '\0';
                 p_ccb->path_pos += dir_name_len + 1;
-                BTA_PbaClientSetPhoneBook(p_data->response.handle, ESP_PBAC_SET_PHONE_BOOK_FLAGS_DOWN, dir_name);
+                if (BTA_PbaClientSetPhoneBook(p_data->response.handle, ESP_PBAC_SET_PHONE_BOOK_FLAGS_DOWN, dir_name) != BTA_SUCCESS) {
+                    osi_free(dir_name);
+                    p_ccb->path_len = 0;
+                    p_ccb->path_pos = 0;
+                    osi_free(p_ccb->path);
+                    p_ccb->path = NULL;
+                    p_ccb->busy = false;
+                    param.set_phone_book_rsp.handle = p_data->response.handle;
+                    param.set_phone_book_rsp.result = BTA_FAILURE;
+                    btc_pba_client_callback_to_app(ESP_PBAC_SET_PHONE_BOOK_RESPONSE_EVT, &param);
+                }
                 /* break here, don't report event to upper */
                 break;
             }
@@ -1086,6 +1165,7 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         break;
     case BTA_PBA_CLIENT_DISABLE_EVT:
         /* deinit process: Deregister -> Disable */
+        s_btc_pba_client_init = false;
         btc_pba_client_callback_to_app(ESP_PBAC_DEINIT_EVT, NULL);
         break;
     default:
