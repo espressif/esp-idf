@@ -215,6 +215,16 @@ menu "BT Logs"
                 Enable mesh log encoding via the async transport.
                 The per-level compression options are configured in:
                 Settings of BLE Log Compression → BLE Mesh log compression.
+
+        config BT_LOG_CRITICAL_ONLY_ISO
+            bool "ISO: bandwidth-optimized logging"
+            depends on BT_ISO
+            select BLE_ISO_COMPRESSED_LOG_ENABLE
+            default y
+            help
+                Enable BLE Audio/ISO log encoding via the async transport.
+                The per-level compression options are configured in:
+                Settings of BLE Log Compression → BLE Audio/ISO log compression.
     endif # BT_LOG_CRITICAL_ONLY
 
     source "$IDF_PATH/components/bt/common/ble_log/Kconfig.in"

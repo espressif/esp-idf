@@ -1983,7 +1983,7 @@ static void handle_gatts_read_event(struct bt_le_gatts_read_event *event)
          * values larger than one PDU (e.g. a BASS Broadcast Receive State). */
         ret = attr->read(conn, attr, (void *)rsp, GATT_MAX_ATTR_LEN, event->offset);
         if (ret < 0) {
-            LOG_DBG("[B]GattsRdEvtErr[%u][%d]", event->attr_handle, ret);
+            LOG_WRN("[B]GattsRdEvtErr[%u][%d]", event->attr_handle, ret);
 
             status = BT_GATT_ERR(ret);
         }
@@ -2178,7 +2178,7 @@ static void handle_gatts_write_event(struct bt_le_gatts_write_event *event)
         } else {
             ret = attr->write(conn, attr, event->value, event->len, 0, 0);
             if (ret < 0) {
-                LOG_DBG("[B]GattsWrEvtErr[%u][%d]", event->attr_handle, ret);
+                LOG_WRN("[B]GattsWrEvtErr[%u][%d]", event->attr_handle, ret);
 
                 status = BT_GATT_ERR(ret);
             }
@@ -2239,7 +2239,7 @@ static void handle_gatts_exec_write_event(struct bt_le_gatts_exec_write_event *e
             } else {
                 ret = attr->write(conn, attr, gatt_conn->prep_buf, gatt_conn->prep_len, 0, 0);
                 if (ret < 0) {
-                    LOG_DBG("[B]GattsExecWrErr[%u][%d]", gatt_conn->prep_attr_handle, (int)ret);
+                    LOG_WRN("[B]GattsExecWrErr[%u][%d]", gatt_conn->prep_attr_handle, (int)ret);
                     status = BT_GATT_ERR(ret);
                 }
             }

@@ -119,7 +119,7 @@ static enum bt_gatt_ots_olcp_res_code olcp_goto_proc_execute(
     struct bt_gatt_ots_object *id_obj;
 
     if (!BT_OTS_VALID_OBJ_ID(id)) {
-        LOG_DBG("Invalid object ID 0x%016llx", id);
+        LOG_WRN("OtsOlcpInvObjId[%016llx]", id);
 
         return BT_GATT_OTS_OLCP_RES_INVALID_PARAMETER;
     }
@@ -139,7 +139,7 @@ static enum bt_gatt_ots_olcp_res_code olcp_goto_proc_execute(
 static enum bt_gatt_ots_olcp_res_code olcp_proc_execute(
     struct bt_ots *ots, struct bt_gatt_ots_olcp_proc *proc)
 {
-    LOG_DBG("Executing OLCP procedure with 0x%02X Op Code", proc->type);
+    LOG_DBG("OtsOlcpExecProc[%02x]", proc->type);
 
     switch (proc->type) {
     case BT_GATT_OTS_OLCP_PROC_FIRST:
@@ -200,7 +200,7 @@ static void olcp_ind_cb(struct bt_conn *conn,
                         struct bt_gatt_indicate_params *params,
                         uint8_t err)
 {
-    LOG_DBG("Received OLCP Indication ACK with status: 0x%04X", err);
+    LOG_DBG("OtsOlcpRecvIndAck[%04x]", err);
 }
 
 static void olcp_ind_send(const struct bt_gatt_attr *olcp_attr,
@@ -227,7 +227,7 @@ static void olcp_ind_send(const struct bt_gatt_attr *olcp_attr,
     ots->olcp_ind.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif /* CONFIG_BT_EATT */
 
-    LOG_DBG("Sending OLCP indication");
+    LOG_DBG("OtsOlcpSendInd");
 
     k_work_submit(&ots->olcp_ind.work);
 }
@@ -243,20 +243,20 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
     struct bt_gatt_ots_olcp_proc olcp_proc;
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
 
-    LOG_DBG("Object List Control Point GATT Write Operation");
+    LOG_DBG("OtsOlcpGattWr");
 
     if (!ots->olcp_ind.is_enabled) {
-        LOG_WRN("OLCP indications not enabled");
+        LOG_WRN("OtsOlcpIndNotEnabled");
         return BT_GATT_ERR(BT_ATT_ERR_CCC_IMPROPER_CONF);
     }
 
     if (offset != 0) {
-        LOG_ERR("Invalid offset of OLCP Write Request");
+        LOG_WRN("OtsOlcpWrReqInvOft");
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
     if (k_work_is_pending(&ots->olcp_ind.work)) {
-        LOG_ERR("OLCP Write received before indication sent");
+        LOG_WRN("OtsOlcpWrBeforeIndSent");
         return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
     }
 
@@ -267,14 +267,13 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
     case 0:
         olcp_status = olcp_proc_execute(ots, &olcp_proc);
         if (olcp_status != BT_GATT_OTS_OLCP_RES_SUCCESS) {
-            LOG_WRN("OLCP Write error status: 0x%02X", olcp_status);
+            LOG_WRN("OtsOlcpWrErrStatus[%02x]", olcp_status);
         } else if (old_obj != ots->cur_obj) {
             char id[BT_OTS_OBJ_ID_STR_LEN];
 
             bt_ots_obj_id_to_str(ots->cur_obj->id, id,
                                  sizeof(id));
-            LOG_DBG("Selecting a new Current Object with id: %s",
-                    id);
+            LOG_DBG("OtsOlcpSelNewCurObj[%s]", id);
 
             if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
                 bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager,
@@ -288,17 +287,16 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
         break;
     case -ENOTSUP:
         olcp_status = BT_GATT_OTS_OLCP_RES_PROC_NOT_SUP;
-        LOG_WRN("OLCP unsupported procedure type: 0x%02X", olcp_proc.type);
+        LOG_WRN("OtsOlcpUnsuppProcType[%02x]", olcp_proc.type);
         break;
     case -EBADMSG:
-        LOG_ERR("Invalid length of OLCP Write Request for 0x%02X "
-                "Op Code", olcp_proc.type);
+        LOG_WRN("OtsOlcpWrReqInvLen[%02x]", olcp_proc.type);
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
     case -ENODATA:
-        LOG_ERR("Invalid size of OLCP Write Request");
+        LOG_WRN("OtsOlcpWrReqNoData");
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
     default:
-        LOG_ERR("Invalid return code from olcp_command_decode: %d", decode_status);
+        LOG_ERR("OtsOlcpDecodeInvRc[%d]", decode_status);
         return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
     }
 
@@ -313,7 +311,7 @@ void bt_gatt_ots_olcp_cfg_changed(const struct bt_gatt_attr *attr,
         CONTAINER_OF((struct bt_gatt_ccc_managed_user_data *) attr->user_data,
                      struct bt_gatt_ots_indicate, ccc);
 
-    LOG_DBG("Object List Control Point CCCD value: 0x%04X", value);
+    LOG_DBG("OtsOlcpCccd[%04x]", value);
 
     olcp_ind->is_enabled = false;
     if (value == BT_GATT_CCC_INDICATE) {

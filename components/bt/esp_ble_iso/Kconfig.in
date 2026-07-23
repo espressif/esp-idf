@@ -189,6 +189,8 @@ if BT_ISO
 
         choice BT_ISO_LOG_LEVEL
             prompt "BLE_ISO_LOG_LEVEL"
+            default BT_ISO_LOG_LEVEL_INFO if BT_LOG_CRITICAL_ONLY_ISO
+            default BT_ISO_LOG_LEVEL_DEBUG if BLE_COMPRESSED_LOG_ENABLE
             default BT_ISO_LOG_LEVEL_WARNING
             depends on !BT_ISO_NO_LOG
             help

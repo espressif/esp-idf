@@ -151,6 +151,8 @@ menu "BLE Audio Lib Debug Log Level"
 
     choice BT_AUDIO_LOG_LEVEL
         prompt "BLE_AUDIO_LIB_LOG_LEVEL"
+        default BT_AUDIO_LOG_LEVEL_INFO if BT_LOG_CRITICAL_ONLY_ISO
+        default BT_AUDIO_LOG_LEVEL_DEBUG if BLE_COMPRESSED_LOG_ENABLE
         default BT_AUDIO_LOG_LEVEL_WARNING
         depends on !BT_AUDIO_NO_LOG
         help
