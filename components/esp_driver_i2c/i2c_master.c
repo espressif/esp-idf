@@ -923,11 +923,12 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             }
             bus_handle = NULL;
         }
-
-        free(i2c_master);
     } else {
-        free(i2c_master);
+        // Non-OK here means interrupt teardown did not complete, so the ISR
+        // may still reference i2c_slave and its wrapper-owned resources.
+        return err;
     }
+    free(i2c_master);
 
     return ESP_OK;
 }
