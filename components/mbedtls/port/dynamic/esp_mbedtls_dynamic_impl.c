@@ -346,17 +346,21 @@ int esp_mbedtls_free_tx_buffer(mbedtls_ssl_context *ssl)
         goto exit;
     }
 
+    /* Allocate the replacement idle buffer before freeing the current one, so
+     * an allocation failure leaves out_buf (and its counter/IV) intact and the
+     * context usable, instead of stranding it with out_buf == NULL. */
+    esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + TX_IDLE_BUFFER_SIZE);
+    if (!esp_buf) {
+        ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + TX_IDLE_BUFFER_SIZE);
+        ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
+        goto exit;
+    }
+
     memcpy(buf, ssl->MBEDTLS_PRIVATE(out_ctr), COUNTER_SIZE);
     memcpy(buf + COUNTER_SIZE, ssl->MBEDTLS_PRIVATE(out_iv), CACHE_IV_SIZE);
 
     esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
     init_tx_buffer(ssl, NULL);
-
-    esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + TX_IDLE_BUFFER_SIZE);
-    if (!esp_buf) {
-        ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + TX_IDLE_BUFFER_SIZE);
-        return MBEDTLS_ERR_SSL_ALLOC_FAILED;
-    }
 
     esp_mbedtls_init_ssl_buf(esp_buf, TX_IDLE_BUFFER_SIZE);
     memcpy(esp_buf->buf, buf, CACHE_BUFFER_SIZE);
@@ -696,18 +700,21 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
         goto exit;
     }
 
-    memcpy(buf, ssl->MBEDTLS_PRIVATE(in_ctr), 8);
-    memcpy(buf + 8, ssl->MBEDTLS_PRIVATE(in_iv), 8);
-
-    esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
-    init_rx_buffer(ssl, NULL);
-
+    /* Allocate the replacement cache buffer before freeing the current one, so
+     * an allocation failure leaves in_buf (and its counter/IV) intact and the
+     * context usable, instead of stranding it with in_buf == NULL. */
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + 16);
     if (!esp_buf) {
         ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + 16);
         ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
         goto exit;
     }
+
+    memcpy(buf, ssl->MBEDTLS_PRIVATE(in_ctr), 8);
+    memcpy(buf + 8, ssl->MBEDTLS_PRIVATE(in_iv), 8);
+
+    esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
+    init_rx_buffer(ssl, NULL);
 
     esp_mbedtls_init_ssl_buf(esp_buf, 16);
     memcpy(esp_buf->buf, buf, 16);
