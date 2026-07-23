@@ -91,6 +91,7 @@ static void protocomm_ble_reset_prepare_write(void)
 }
 
 // config adv data
+#if SIMPLE_BLE_LEGACY_ADV
 static esp_ble_adv_data_t adv_config = {
     .set_scan_rsp = false,
     .include_txpower = true,
@@ -121,6 +122,71 @@ static esp_ble_adv_params_t adv_params = {
     .channel_map         = ADV_CHNL_ALL,
     .adv_filter_policy   = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
+#elif SIMPLE_BLE_EXT_ADV
+#define PROTOCOMM_BLE_RAW_AD_MAX  ESP_BLE_ADV_DATA_LEN_MAX
+
+static uint8_t s_raw_adv_data[PROTOCOMM_BLE_RAW_AD_MAX];
+static uint8_t s_raw_scan_rsp_data[PROTOCOMM_BLE_RAW_AD_MAX];
+static uint32_t s_raw_adv_data_len;
+static uint32_t s_raw_scan_rsp_data_len;
+
+static esp_err_t protocomm_ble_build_raw_adv_data(const uint8_t *service_uuid)
+{
+    uint32_t offset = 0;
+
+    if (offset + 3 > PROTOCOMM_BLE_RAW_AD_MAX) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    s_raw_adv_data[offset++] = 2;
+    s_raw_adv_data[offset++] = ESP_BLE_AD_TYPE_FLAG;
+    s_raw_adv_data[offset++] = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT);
+
+    if (offset + 2 + ESP_UUID_LEN_128 > PROTOCOMM_BLE_RAW_AD_MAX) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    s_raw_adv_data[offset++] = 1 + ESP_UUID_LEN_128;
+    s_raw_adv_data[offset++] = ESP_BLE_AD_TYPE_128SRV_CMPL;
+    memcpy(&s_raw_adv_data[offset], service_uuid, ESP_UUID_LEN_128);
+    offset += ESP_UUID_LEN_128;
+
+    s_raw_adv_data_len = offset;
+    return ESP_OK;
+}
+
+static esp_err_t protocomm_ble_build_raw_scan_rsp_data(const char *name,
+                                                      const uint8_t *mfg_data,
+                                                      size_t mfg_len)
+{
+    uint32_t offset = 0;
+    size_t name_len = (name != NULL) ? strlen(name) : 0;
+
+    if (name_len > 0) {
+        if (name_len > ESP_BLE_ADV_NAME_LEN_MAX) {
+            name_len = ESP_BLE_ADV_NAME_LEN_MAX;
+        }
+        if (offset + 2 + name_len > PROTOCOMM_BLE_RAW_AD_MAX) {
+            return ESP_ERR_INVALID_SIZE;
+        }
+        s_raw_scan_rsp_data[offset++] = 1 + (uint8_t)name_len;
+        s_raw_scan_rsp_data[offset++] = ESP_BLE_AD_TYPE_NAME_CMPL;
+        memcpy(&s_raw_scan_rsp_data[offset], name, name_len);
+        offset += name_len;
+    }
+
+    if (mfg_data != NULL && mfg_len > 0) {
+        if (offset + 2 + mfg_len > PROTOCOMM_BLE_RAW_AD_MAX) {
+            return ESP_ERR_INVALID_SIZE;
+        }
+        s_raw_scan_rsp_data[offset++] = 1 + (uint8_t)mfg_len;
+        s_raw_scan_rsp_data[offset++] = ESP_BLE_AD_MANUFACTURER_SPECIFIC_TYPE;
+        memcpy(&s_raw_scan_rsp_data[offset], mfg_data, mfg_len);
+        offset += mfg_len;
+    }
+
+    s_raw_scan_rsp_data_len = offset;
+    return ESP_OK;
+}
+#endif
 
 static char *protocomm_ble_device_name = NULL;
 static uint8_t *protocomm_ble_mfg_data = NULL;
@@ -720,8 +786,10 @@ static void protocomm_ble_cleanup(void)
             free(protoble_internal->service_uuid);
             protoble_internal->service_uuid = NULL;
         }
+#if SIMPLE_BLE_LEGACY_ADV
         adv_config.p_service_uuid = NULL;
         adv_config.service_uuid_len = 0;
+#endif
         if (protoble_internal->g_nu_lookup) {
             for (size_t i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
                 if (protoble_internal->g_nu_lookup[i].name) {
@@ -854,6 +922,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     protoble_internal->ble_notify = config->ble_notify;
 
     // Config adv data
+#if SIMPLE_BLE_LEGACY_ADV
     adv_config.service_uuid_len = ESP_UUID_LEN_128;
     protoble_internal->service_uuid = (uint8_t *)malloc(ESP_UUID_LEN_128);
     if (protoble_internal->service_uuid == NULL) {
@@ -867,6 +936,30 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     // Config scan response data
     scan_rsp_config.manufacturer_len = protocomm_ble_mfg_data_len;
     scan_rsp_config.p_manufacturer_data = (uint8_t *) protocomm_ble_mfg_data;
+#elif SIMPLE_BLE_EXT_ADV
+    protoble_internal->service_uuid = (uint8_t *)malloc(ESP_UUID_LEN_128);
+    if (protoble_internal->service_uuid == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for service UUID");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(protoble_internal->service_uuid, config->service_uuid, ESP_UUID_LEN_128);
+
+    esp_err_t raw_ret = protocomm_ble_build_raw_adv_data(protoble_internal->service_uuid);
+    if (raw_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to build raw advertising data");
+        protocomm_ble_cleanup();
+        return raw_ret;
+    }
+    raw_ret = protocomm_ble_build_raw_scan_rsp_data(protocomm_ble_device_name,
+                                                    protocomm_ble_mfg_data,
+                                                    protocomm_ble_mfg_data_len);
+    if (raw_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to build raw scan response data");
+        protocomm_ble_cleanup();
+        return raw_ret;
+    }
+#endif
 
     simple_ble_cfg_t *ble_config = simple_ble_init();
     if (ble_config == NULL) {
@@ -884,10 +977,17 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->set_mtu_fn      = transport_simple_ble_set_mtu;
 
     /* Set parameters required for advertising */
+#if SIMPLE_BLE_LEGACY_ADV
     ble_config->adv_params      = adv_params;
 
     ble_config->adv_data_p      = &adv_config;
     ble_config->scan_rsp_data_p = &scan_rsp_config;
+#elif SIMPLE_BLE_EXT_ADV
+    ble_config->raw_adv_data_p        = s_raw_adv_data;
+    ble_config->raw_adv_data_len      = s_raw_adv_data_len;
+    ble_config->raw_scan_rsp_data_p   = s_raw_scan_rsp_data;
+    ble_config->raw_scan_rsp_data_len = s_raw_scan_rsp_data_len;
+#endif
 
     ble_config->device_name     = protocomm_ble_device_name;
     ble_config->gatt_db_count   = populate_gatt_db(&ble_config->gatt_db);
