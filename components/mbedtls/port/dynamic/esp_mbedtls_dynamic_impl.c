@@ -159,6 +159,12 @@ static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
 
 esp_err_t esp_mbedtls_dynamic_set_rx_buf_static(mbedtls_ssl_context *ssl)
 {
+    /* Public API: guard against being called with no RX buffer allocated
+     * (e.g. before setup or after free) to avoid a NULL dereference below. */
+    if (ssl == NULL || ssl->MBEDTLS_PRIVATE(in_buf) == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     unsigned char cache_buf[16];
     memcpy(cache_buf, ssl->MBEDTLS_PRIVATE(in_buf), 16);
     esp_mbedtls_reset_free_rx_buffer(ssl);
