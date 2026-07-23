@@ -1,17 +1,33 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "esp_tls_wolfssl.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
+#if defined(CONFIG_ESP_TLS_USING_MBEDTLS) || (CONFIG_ESP_TLS_USING_MBEDTLS != 0)
+    #error  "mbedTLS enabled for wolfSSL file"
+#endif
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
+#ifdef CONFIG_ESP_TLS_USING_WOLFSSL
+
+#include <wolfssl/wolfcrypt/settings.h>
+#ifndef WOLFSSL_ESPIDF
+    #warning "WOLFSSL_ESPIDF not defined! Check build system."
+#endif
+#include <wolfssl/openssl/x509.h>
+#include <wolfssl/ssl.h>
+#include <wolfssl/version.h>
+#ifdef LIBWOLFSSL_VERSION_HEX
+    #if LIBWOLFSSL_VERSION_HEX < 0x05007002
+        #warning "wolfSSL 5.7.2 or newer is recommended."
+        #warning "Managed Components recommended. See: https://components.espressif.com/components/wolfssl/wolfssl"
+    #endif
+#else
+    #warning "Unknown wolfSSL version. Check build system."
+#endif
+
+#include <wolfssl/wolfcrypt/port/Espressif/esp_crt_bundle.h>
 
 #include <http_parser.h>
 #include "esp_tls_wolfssl.h"
@@ -19,12 +35,73 @@
 #include <errno.h>
 #include "esp_log.h"
 
+#if defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE) && \
+    defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE_DEFAULT_NONE) && \
+    (CONFIG_WOLFSSL_CERTIFICATE_BUNDLE_DEFAULT_NONE == 0)
+
+/* Only define the extern cert bundle data when using a bundle
+ * other than the "none" selection.
+ *
+ * NOTICE: These wolfSSL certs are loaded from
+ * [WOLFSSL_ROOT]/wolfcrypt/src/port/Espressif/esp_crt_bundle
+ *   and *NOT*
+ * [ESP-IDF root]/components/mbedtls/esp_crt_bundle */
+
+extern const uint8_t x509_crt_imported_bundle_wolfssl_bin_start[]
+                     asm("_binary_x509_crt_bundle_wolfssl_start");
+
+extern const uint8_t x509_crt_imported_bundle_wolfssl_bin_end[]
+                     asm("_binary_x509_crt_bundle_wolfssl_end");
+#endif
+
+/* Bundle debug may come from user_settings.h and/or sdkconfig.h */
+#if defined(CONFIG_WOLFSSL_DEBUG_CERT_BUNDLE) || \
+    defined(       WOLFSSL_DEBUG_CERT_BUNDLE)
+    /* Only display certificate bundle debugging messages when enabled: */
+    #define ESP_LOGCBI ESP_LOGI
+    #define ESP_LOGCBW ESP_LOGW
+#else
+    /* Only display certificate bundle messages for most verbosee setting.
+     * Note that the delays will likely cause TLS connection failures. */
+    #define ESP_LOGCBI ESP_LOGV
+    #define ESP_LOGCBW ESP_LOGV
+    #define ESP_LOGCBV ESP_LOGV
+#endif
+#if defined(WOLFSSL_EXAMPLE_VERBOSITY)
+    #define ESP_LOGXI ESP_LOGI
+    #define ESP_LOGXW ESP_LOGW
+    #define ESP_LOGXV ESP_LOGW
+#else
+    #define ESP_LOGXI ESP_LOGV
+    #define ESP_LOGXI ESP_LOGV
+    #define ESP_LOGXI ESP_LOGV
+#endif
+
+/* WOLFSSL_NO_CONF_COMPATIBILITY is not defined;
+ * assumes compatibility with existing Espressif "conf" parameters. */
+
+static const char *TAG = "esp-tls-wolfssl";
+
 static unsigned char *global_cacert = NULL;
 static unsigned int global_cacert_pem_bytes = 0;
-static const char *TAG = "esp-tls-wolfssl";
+
+inline void esp_wolfssl_net_init(esp_tls_t *tls)
+{
+    ESP_LOGV(TAG, "esp_wolfssl_net_init");
+    if ((tls == NULL) || (tls->priv_ssl == NULL)){
+        /* nothing to do */
+    }
+    else {
+        if (wolfSSL_set_fd((WOLFSSL*)&tls->priv_ssl, -1) != SSL_SUCCESS) {
+            ESP_LOGE(TAG, "Failed to initialize socket file descriptor");
+        }
+    }
+}
+
 
 /* Prototypes for the static functions */
 static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls);
+static int ShowCiphers(WOLFSSL* ssl);
 
 #if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
 #include "freertos/semphr.h"
@@ -44,15 +121,21 @@ static uint8_t psk_key_array[PSK_MAX_KEY_LEN];
 static uint8_t psk_key_max_len = 0;
 #endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
 
+#ifdef CONFIG_ESP_TLS_SERVER
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
+#endif /* CONFIG_ESP_TLS_SERVER */
 
 
 /* This function shall return the error message when appropriate log level has been set otherwise this function shall do nothing */
 static void wolfssl_print_error_msg(int error)
 {
-#if (CONFIG_LOG_DEFAULT_LEVEL_DEBUG || CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
+#if defined(DEBUG_WOLFSSL) || (CONFIG_LOG_DEFAULT_LEVEL_DEBUG || CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
     static char error_buf[100];
+#if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
     ESP_LOGE(TAG, "(%d) : %s", error, ERR_error_string(error, error_buf));
+#else
+    ESP_LOGE(TAG, "Error: (%d)", error);
+#endif
 #endif
 }
 
@@ -122,7 +205,14 @@ void *esp_wolfssl_get_ssl_context(esp_tls_t *tls)
     return (void*)tls->priv_ssl;
 }
 
-esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void *server_params)
+static int _is_wolfssl_init = 0;
+
+/* ESP-IDF v5.3 introduced a new parameter: server_params */
+#if defined(ESP_IDF_VERSION) && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0))
+    esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void *server_params)
+#else
+    esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
+#endif
 {
 #ifdef CONFIG_ESP_DEBUG_WOLFSSL
     wolfSSL_Debugging_ON();
@@ -132,9 +222,18 @@ esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const 
     assert(tls != NULL);
 
     esp_err_t esp_ret = ESP_FAIL;
-    int ret;
+    int ret = WOLFSSL_SUCCESS;
 
-    ret = wolfSSL_Init();
+
+    if (_is_wolfssl_init == 0) {
+        ESP_LOGXI(TAG, "wolfSSL_Init");
+        ret = wolfSSL_Init();
+      //  _is_wolfssl_init = 1;
+    }
+    else {
+        ESP_LOGXI(TAG, "skipping wolfSSL_Init");
+    }
+
     if (ret != WOLFSSL_SUCCESS) {
         ESP_LOGE(TAG, "Init wolfSSL failed: 0x%04X", ret);
         wolfssl_print_error_msg(ret);
@@ -144,17 +243,24 @@ esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const 
     }
 
     if (tls->role == ESP_TLS_CLIENT) {
+        ESP_LOGXI(TAG, "Set set_client_config");
         esp_ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
+        ESP_LOGXI(TAG, "Set set_client_config done!");
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set client configurations, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
             goto exit;
         }
     } else if (tls->role == ESP_TLS_SERVER) {
+#ifdef CONFIG_ESP_TLS_SERVER
         esp_ret = set_server_config((esp_tls_cfg_server_t *) cfg, tls);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set server configurations, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
             goto exit;
         }
+#else
+        ESP_LOGE(TAG, "ESP_TLS_SERVER Not enabled in menuconfig");
+        goto exit;
+#endif
     }
     else {
         ESP_LOGE(TAG, "tls->role is not valid");
@@ -163,19 +269,83 @@ esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const 
 
     return ESP_OK;
 exit:
+    ESP_LOGE(TAG, "Error exit");
     esp_wolfssl_cleanup(tls);
     return esp_ret;
 }
+
+int my_verify_callback(int preverify_ok, WOLFSSL_X509_STORE_CTX* store) {
+    // You can add custom verification logic here
+    // For now, just return the result passed to the callback
+    ESP_LOGW(TAG, "my_verify_callback");
+    return preverify_ok;
+}
+
+#ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+/* Some functions such as those used in esp-tls Certificate Bundles
+ * expect a `conf` property of the tls. Keep them in sync with the
+ * actual values (tls->priv_ctx) and (tls->priv_ssl):
+ *
+ * example:
+ *     tls->sync((void*)&tls);
+ *
+ * In all cases, it is preferred to use the non-conf-prefixed values.
+ *
+ * Once all instances of compatibility have been updated, this feature
+ * will likely be permanently removed. */
+static void sync_tls_conf_values(struct esp_tls *tls) {
+    if (tls) {
+        tls->conf.priv_ctx = tls->priv_ctx;
+        tls->conf.priv_ssl = tls->priv_ssl;
+    }
+}
+#endif
 
 static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
     int ret = WOLFSSL_FAILURE;
 
-#ifdef WOLFSSL_TLS13
+    assert(cfg != NULL);
+    assert(tls != NULL);
+
+#if defined(CONFIG_WOLFSSL_ALLOW_TLS13) && defined(CONFIG_WOLFSSL_ALLOW_TLS12)
+    ESP_LOGXI(TAG, "Set Client Config for ANY TLS version");
+    tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfSSLv23_client_method());
+#elif defined(CONFIG_WOLFSSL_ALLOW_TLS13) & defined(WOLFSSL_TLS13)
+    ESP_LOGXI(TAG, "Set Client Config for TLS1.3 Only");
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_3_client_method());
-#else
+#elif defined(CONFIG_WOLFSSL_ALLOW_TLS13)
+    #error "CONFIG_WOLFSSL_ALLOW_TLS13 configured without WOLFSSL_TLS13?"
+#elif defined(CONFIG_WOLFSSL_ALLOW_TLS12)
+    ESP_LOGXI(TAG, "Set Client Config for TLS1.2 Only");
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+#else
+    ESP_LOGW(TAG, "No TLS enabled!");
+    #warning "No TLS enabled!"
 #endif
+
+#if defined(CONFIG_WOLFSSL_ALLOW_TLS13) || defined(CONFIG_WOLFSSL_ALLOW_TLS12)
+    if (tls == NULL) {
+        ESP_LOGE(TAG, "Failed to create wolfSSL TLS Client Method");
+        return ESP_ERR_INVALID_STATE;
+    }
+    else {
+    #ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+        tls->conf.priv_ctx = tls->priv_ctx;
+        tls->conf.priv_ssl = tls->priv_ssl;
+        tls->sync = sync_tls_conf_values;
+    #endif
+    }
+
+#if defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE) && \
+    defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE_DEFAULT_NONE) && \
+    (CONFIG_WOLFSSL_CERTIFICATE_BUNDLE_DEFAULT_NONE == 0)
+    esp_crt_bundle_init(x509_crt_imported_bundle_wolfssl_bin_start,
+                        x509_crt_imported_bundle_wolfssl_bin_end - x509_crt_imported_bundle_wolfssl_bin_start,
+                        tls);
+    ESP_LOGXI(TAG, "No Certificate Bundle Selected.");
+#endif /* Some certificate bundle other than "none" */
+#endif /* CONFIG_WOLFSSL_ALLOW_[TLS12 or TLS13] */
 
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
@@ -183,20 +353,34 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
     }
 
+    /* Optionally call crt_bundle_attach */
     if (cfg->crt_bundle_attach != NULL) {
-        ESP_LOGE(TAG,"use_crt_bundle not supported in wolfssl");
-        return ESP_FAIL;
-    }
+#ifdef CONFIG_WOLFSSL_CERTIFICATE_BUNDLE
+        ESP_LOGD(TAG, "Use certificate bundle");
+        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, my_verify_callback);
+        cfg->crt_bundle_attach(&tls->conf); /* callback is also set here */
+    #ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+        tls->conf.priv_ctx = tls->priv_ctx;
+        tls->conf.priv_ssl = tls->priv_ssl;
+    #endif
 
-    if (cfg->use_global_ca_store == true) {
+#else /* CONFIG_WOLFSSL_CERTIFICATE_BUNDLE */
+        ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig:"
+                      "Please enable CONFIG_WOLFSSL_CERTIFICATE_BUNDLE option");
+        return ESP_ERR_INVALID_STATE;
+#endif
+        /* cfg->crt_bundle_attach != NULL */
+    } else if (cfg->use_global_ca_store == true) {
+        WOLFSSL_MSG("Using Global CA Store in esp_tls_wolfssl");
         if ((esp_load_wolfssl_verify_buffer(tls, global_cacert, global_cacert_pem_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
             int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
             ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
             wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
-        }
+        } /* esp_load_wolfssl_verify_buffer */
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
     } else if (cfg->cacert_buf != NULL) {
+        WOLFSSL_MSG("set_client_config found cert_buf");
         if ((esp_load_wolfssl_verify_buffer(tls, cfg->cacert_buf, cfg->cacert_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
             int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
             ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
@@ -204,8 +388,10 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
-    } else if (cfg->psk_hint_key) {
+        /* end  (cfg->cacert_buf != NULL) */
+    }
 #if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+    else if (cfg->psk_hint_key) {
         /*** PSK encryption mode is configured only if no certificate supplied and psk pointer not null ***/
         if(cfg->psk_hint_key->key == NULL || cfg->psk_hint_key->hint == NULL || cfg->psk_hint_key->key_size <= 0) {
             ESP_LOGE(TAG, "Please provide appropriate key, keysize and hint to use PSK");
@@ -216,7 +402,7 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
             ESP_LOGE(TAG, "tls_conn_lock could not be obtained in specified time");
             return -1;
         }
-        ESP_LOGI(TAG, "setting psk configurations");
+        ESP_LOGXI(TAG, "setting psk configurations");
         if((cfg->psk_hint_key->key_size > PSK_MAX_KEY_LEN) || (strlen(cfg->psk_hint_key->hint) > PSK_MAX_ID_LEN)) {
             ESP_LOGE(TAG, "psk key length should be <= %d and identity hint length should be <= %d", PSK_MAX_KEY_LEN, PSK_MAX_ID_LEN);
             return ESP_ERR_INVALID_ARG;
@@ -230,17 +416,19 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         if(esp_wolfssl_set_cipher_list( (WOLFSSL_CTX *)tls->priv_ctx) != ESP_OK) {
             ESP_LOGE(TAG, "error in setting cipher-list");
             return ESP_FAIL;
-        }
 #else
+     else if (1) {
         ESP_LOGE(TAG, "psk_hint_key configured but not enabled in menuconfig: Please enable ESP_TLS_PSK_VERIFICATION option");
         return ESP_ERR_INVALID_STATE;
-#endif
+#endif /* end (cfg->psk_hint_key) */
     } else {
+        /* Not using Global CA Store, the cfg->cacert_buf is NULL, no PSK Hint Key */
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
-        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL);
+        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL); /* */
 #else
-        ESP_LOGE(TAG, "No server verification option set in esp_tls_cfg_t structure. Check esp_tls API reference");
-        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
+        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
+        ESP_LOGW(TAG, "No server verification option set in esp_tls_cfg_t structure. Check esp_tls API reference");
+        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED; /* TODO: really? */
 #endif
     }
 
@@ -263,6 +451,7 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     }
 
     tls->priv_ssl =(void *)wolfSSL_new( (WOLFSSL_CTX *)tls->priv_ctx);
+    tls->conf.priv_ssl = tls->priv_ssl;
     if (!tls->priv_ssl) {
         ESP_LOGE(TAG, "Create wolfSSL failed");
         int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
@@ -270,6 +459,7 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
     }
 
+    /* Reminder: name check occurs after wolfSSL priv_ctx and priv_ssl init. */
     if (!cfg->skip_common_name) {
         char *use_host = NULL;
         if (cfg->common_name != NULL) {
@@ -280,6 +470,9 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         if (use_host == NULL) {
             return ESP_ERR_NO_MEM;
         }
+        else {
+            ESP_LOGXI(TAG, "Using host for wolfSSL Check Domain: %s", use_host);
+        }
         /* Hostname set here should match CN in server certificate */
         if ((ret = (wolfSSL_check_domain_name( (WOLFSSL *)tls->priv_ssl, use_host))) != WOLFSSL_SUCCESS) {
             int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
@@ -289,15 +482,17 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
             return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
         }
         /* Mimic the semantics of mbedtls_ssl_set_hostname() */
+#ifdef HAVE_SNI
         if ((ret = wolfSSL_CTX_UseSNI(tls->priv_ctx, WOLFSSL_SNI_HOST_NAME, use_host, strlen(use_host))) != WOLFSSL_SUCCESS) {
             ESP_LOGE(TAG, "wolfSSL_CTX_UseSNI failed, returned %d", ret);
             return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
         }
+#endif
         free(use_host);
     }
 
     if (cfg->alpn_protos) {
-#ifdef CONFIG_WOLFSSL_HAVE_ALPN
+#if defined(CONFIG_WOLFSSL_HAVE_ALPN) && defined(HAVE_ALPN)
         char **alpn_list = (char **)cfg->alpn_protos;
         for (; *alpn_list != NULL; alpn_list ++) {
             ESP_LOGD(TAG, "alpn protocol is %s", *alpn_list);
@@ -337,20 +532,38 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     }
 #endif /* CONFIG_WOLFSSL_HAVE_OCSP */
 
-    wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
+    ret = wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
+    if (ret == WOLFSSL_SUCCESS) {
+        ESP_LOGXI(TAG, "Attach wolfSSL to the socket success!");
+    }
+    else {
+        ESP_LOGE(TAG, "ERROR: failed wolfSSL_set_fd. Error: %d\n", ret);
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 
+#ifdef CONFIG_ESP_TLS_SERVER
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
     int ret = WOLFSSL_FAILURE;
 
-#ifdef WOLFSSL_TLS13
+#if defined(CONFIG_WOLFSSL_ALLOW_TLS13) && defined(CONFIG_WOLFSSL_ALLOW_TLS12)
+    WOLFSSL_MSG("Set Server Config for any TLS version");
+    tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfSSLv23_server_method());
+#elif defined(CONFIG_WOLFSSL_ALLOW_TLS13)
+    WOLFSSL_MSG("Set Server Config for TLS1.3 Only");
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_3_server_method());
-#else
+#elif defined(CONFIG_WOLFSSL_ALLOW_TLS12)
+    WOLFSSL_MSG("Set Server Config for TLS1.2 Only");
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_server_method());
-#endif
+#else
+    #warning "No TLS enabled!"
+#endif /* TLS Version */
 
+#ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+    tls->sync((void*)&tls);
+#endif
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
@@ -397,13 +610,51 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return ESP_OK;
 }
+#endif
+int ShowCiphers(WOLFSSL* ssl)
+{
+    #define CLIENT_TLS_MAX_CIPHER_LENGTH 4096
+    char ciphers[CLIENT_TLS_MAX_CIPHER_LENGTH];
+    const char* cipher_used;
+    int ret = 0;
 
+    if (ssl == NULL) {
+        ESP_LOGXI(TAG, "WOLFSSL* ssl is NULL, so no cipher in use");
+        ret = wolfSSL_get_ciphers(ciphers, (int)sizeof(ciphers));
+        if (ret == WOLFSSL_SUCCESS) {
+            for (int i = 0; i < CLIENT_TLS_MAX_CIPHER_LENGTH; i++) {
+                if (ciphers[i] == ':') {
+                    ciphers[i] = '\n';
+                }
+            }
+            ESP_LOGXI(TAG, "Available Ciphers:\n%s\n", ciphers);
+        }
+        else {
+            ESP_LOGE(TAG, "Failed to call wolfSSL_get_ciphers. Error %d", ret);
+        }
+    }
+    else {
+        cipher_used = wolfSSL_get_cipher_name(ssl);
+        ESP_LOGXI(TAG, "WOLFSSL* ssl using %s", cipher_used);
+    }
+
+    return ret;
+}
 int esp_wolfssl_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
 {
     int ret;
+
+    #ifdef DEBUG_WOLFSSL
+        wolfSSL_Debugging_ON();
+    #endif
+    ESP_LOGCBI(TAG, "Begin esp-tls esp_wolfssl_handshake");
     ret = wolfSSL_connect( (WOLFSSL *)tls->priv_ssl);
+#ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+    tls->conf.priv_ssl = tls->priv_ssl;
+#endif
     if (ret == WOLFSSL_SUCCESS) {
         tls->conn_state = ESP_TLS_DONE;
+        ShowCiphers((WOLFSSL *)tls->priv_ssl);
         return 1;
     } else {
         int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
@@ -413,7 +664,7 @@ int esp_wolfssl_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED);
             if (cfg->crt_bundle_attach != NULL || cfg->cacert_buf != NULL || cfg->use_global_ca_store == true) {
-                /* This is to check whether handshake failed due to invalid certificate*/
+                /* This is to check whether handshake failed due to invalid certificate */
                 esp_wolfssl_verify_certificate(tls);
             }
             tls->conn_state = ESP_TLS_FAIL;
@@ -464,11 +715,21 @@ ssize_t esp_wolfssl_write(esp_tls_t *tls, const char *data, size_t datalen)
 void esp_wolfssl_verify_certificate(esp_tls_t *tls)
 {
     int flags;
-    if ((flags = wolfSSL_get_verify_result( (WOLFSSL *)tls->priv_ssl)) != X509_V_OK) {
+    if ((flags = wolfSSL_get_verify_result( (WOLFSSL *)tls->priv_ssl)) != WOLFSSL_SUCCESS) {
         ESP_LOGE(TAG, "Failed to verify peer certificate , returned %d", flags);
+#ifdef WOLFSSL_ALT_CERT_CHAINS
+        ESP_LOGW(TAG, "WOLFSSL_ALT_CERT_CHAINS is defined");
+#else
+        /* wolfSSL is considerably more strict with certificates by default. */
+    #if defined(CONFIG_WOLFSSL_CERTIFICATE_BUNDLE) && CONFIG_WOLFSSL_CERTIFICATE_BUNDLE
+        ESP_LOGW(TAG, "Consider changing the certificates loaded and/or defining WOLFSSL_ALT_CERT_CHAINS to relax certificate check. (1)");
+    #else
+        ESP_LOGW(TAG, "Consider enabling CONFIG_WOLFSSL_CERTIFICATE_BUNDLE.");
+    #endif
+#endif
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS, flags);
     } else {
-        ESP_LOGI(TAG, "Certificate verified.");
+        ESP_LOGXI(TAG, "Certificate verified.");
     }
 }
 
@@ -483,6 +744,7 @@ ssize_t esp_wolfssl_get_bytes_avail(esp_tls_t *tls)
 
 void esp_wolfssl_conn_delete(esp_tls_t *tls)
 {
+    ESP_LOGCBW(TAG, "esp_wolfssl_conn_delete");
     if (tls != NULL) {
         esp_wolfssl_cleanup(tls);
     }
@@ -490,17 +752,37 @@ void esp_wolfssl_conn_delete(esp_tls_t *tls)
 
 void esp_wolfssl_cleanup(esp_tls_t *tls)
 {
+    ESP_LOGCBW(TAG, "esp_wolfssl_cleanup");
     if (!tls) {
         return;
     }
 #ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
     xSemaphoreGive(tls_conn_lock);
 #endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
+
+#ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+	if ((tls->priv_ssl != tls->conf.priv_ssl) && (tls->conf.priv_ssl != NULL)) {
+    	/* priv_ssl may have been already cleanup up when connection closed. */
+    	ESP_LOGE(TAG, "tls->priv_ssl != tls->conf.priv_ssl inconsistency!");
+	}
+	if (tls->priv_ctx != tls->conf.priv_ctx) {
+    	ESP_LOGE(TAG, "tls->priv_ctx != tls->conf.priv_ctx inconsistency!");
+	}
+#endif
     wolfSSL_shutdown( (WOLFSSL *)tls->priv_ssl);
     wolfSSL_free( (WOLFSSL *)tls->priv_ssl);
     tls->priv_ssl = NULL;
     wolfSSL_CTX_free( (WOLFSSL_CTX *)tls->priv_ctx);
     tls->priv_ctx = NULL;
+
+#ifndef WOLFSSL_NO_CONF_COMPATIBILITY
+    /* The same addresses, but for clarity: */
+    tls->conf.priv_ssl = NULL;
+    tls->conf.priv_ctx = NULL;
+#endif
+#ifdef CONFIG_WOLFSSL_CERTIFICATE_BUNDLE
+    wolfSSL_bundle_cleanup();
+#endif
     wolfSSL_Cleanup();
 }
 
@@ -515,8 +797,14 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     tls->role = ESP_TLS_SERVER;
     tls->sockfd = sockfd;
     esp_tls_server_params_t server_params = {};
-    server_params.set_server_cfg = &set_server_config;
+    // server_params.set_server_cfg = &set_server_config;
+    // TODO
+
+#if defined(ESP_IDF_VERSION) && (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 3, 0))
     esp_err_t esp_ret = esp_create_wolfssl_handle(NULL, 0, cfg, tls, &server_params);
+#else
+    esp_err_t esp_ret = esp_create_wolfssl_handle(NULL, 0, cfg, tls);
+#endif
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "create_ssl_handle failed, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
@@ -542,23 +830,26 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
 /**
  * @brief       Close the server side TLS/SSL connection and free any allocated resources.
  */
-void esp_wolfssl_server_session_delete(esp_tls_t *tls)
+int esp_wolfssl_server_session_delete(esp_tls_t *tls)
 {
     if (tls != NULL) {
         esp_wolfssl_cleanup(tls);
         esp_tls_internal_event_tracker_destroy(tls->error_handle);
         free(tls);
     }
+    return ESP_OK;
 }
 
 esp_err_t esp_wolfssl_init_global_ca_store(void)
 {
     /* This function is just to provide consistency between function calls of esp_tls.h and wolfssl */
+    ESP_LOGW(TAG, "NOT implemented: esp_wolfssl_init_global_ca_store");
     return ESP_OK;
 }
 
 esp_err_t esp_wolfssl_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes)
 {
+    ESP_LOGXI(TAG, "Enter esp_wolfssl_set_global_ca_store");
     if (cacert_pem_buf == NULL) {
         ESP_LOGE(TAG, "cacert_pem_buf is null");
         return ESP_ERR_INVALID_ARG;
@@ -640,3 +931,5 @@ static inline unsigned int esp_wolfssl_psk_client_cb(WOLFSSL* ssl, const char* h
     /* return length of key in octets or 0 or for error */
 }
 #endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
+
+#endif /* CONFIG_ESP_TLS_USING_WOLFSSL */
