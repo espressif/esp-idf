@@ -39,4 +39,4 @@
 应用示例
 --------
 
-- :example:`system/function_tracing` 演示编译器插桩的函数进入/退出跟踪，以及如何控制对哪些代码进行插桩。
+- :example:`system/function_tracing` 演示编译器插桩的函数进入或退出跟踪，以及如何控制对哪些代码进行插桩。

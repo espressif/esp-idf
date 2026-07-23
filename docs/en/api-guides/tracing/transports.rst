@@ -35,7 +35,7 @@ The library supports two modes of operation:
 
 **Post-mortem mode:** This is the default mode. The mode does not need interaction with the host side. In this mode, tracing module does not check whether the host has read all the data from *HW UP BUFFER*, but directly overwrites old data with the new ones. This mode is useful when only the latest trace data is interesting to the user, e.g., for analyzing program's behavior just before the crash. The host can read the data later on upon user request, e.g., via special OpenOCD command in case of working via JTAG interface.
 
-**Streaming mode:** Tracing module enters this mode when the host connects to {IDF_TARGET_NAME}. In this mode, before writing new data to *HW UP BUFFER*, the tracing module checks that whether there is enough space in it and if necessary, waits for the host to read data and free enough memory. Maximum waiting time is controlled via timeout values passed by users to corresponding API routines. So when application tries to write data to the trace buffer using the finite value of the maximum waiting time, it is possible that this data will be dropped. This is especially true for tracing from time critical code (ISRs, OS scheduler code, etc.) where infinite timeouts can lead to system malfunction.
+**Streaming mode:** Tracing module enters this mode when the host connects to {IDF_TARGET_NAME}. In this mode, before writing new data to *HW UP BUFFER*, the tracing module checks that whether there is enough space in it and if necessary, waits for the host to read data and free enough memory. Maximum waiting time is controlled via timeout values passed by users to corresponding API routines. So when application tries to write data to the trace buffer using the finite value of the maximum waiting time, it is possible that this data will be dropped. This is especially true for tracing from time-critical code (ISRs, OS scheduler code, etc.) where infinite timeouts can lead to system malfunction.
 
 
 Configuration Options and Dependencies
@@ -53,7 +53,7 @@ Using of this feature depends on two components:
 
 There are some additional menuconfig options not mentioned above:
 
-1. *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In this mode, trace data is exposed to the host in 16 KB blocks. In post-mortem mode, when one block is filled, it is exposed to the host and the previous one becomes unavailable. In other words, the trace data is overwritten in 16 KB granularity. On panic, the latest data from the current input block is exposed to the host and the host can read them for post-analysis. System panic may occur when a very small amount of data are not exposed to the host yet. In this case, the previous 16 KB of collected data will be lost and the host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of apanic. For example, users can decide that it needs no less than 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic, they will not be flushed and will not overwrite the previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
+1. *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In this mode, trace data is exposed to the host in 16 KB blocks. In post-mortem mode, when one block is filled, it is exposed to the host and the previous one becomes unavailable. In other words, the trace data is overwritten in 16 KB granularity. On panic, the latest data from the current input block is exposed to the host and the host can read them for post-analysis. System panic may occur when a very small amount of data are not exposed to the host yet. In this case, the previous 16 KB of collected data will be lost and the host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of apanic. For example, you can decide that it needs no less than 512 bytes of the recent trace data, so if there is less than 512 bytes of pending data at the moment of panic, they will not be flushed and will not overwrite the previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
 
 2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and it controls the maximum time that the tracing module will wait for the host to read the last data in case of panic.
 
@@ -67,7 +67,7 @@ There are some additional menuconfig options not mentioned above:
 How to Use This Library
 -----------------------
 
-This library provides APIs for transferring arbitrary data between the host and {IDF_TARGET_NAME}. When enabled in menuconfig, the application tracing module is automatically initialized during system startup using configuration from menuconfig. Users can then call corresponding APIs to send, receive, or flush the data.
+This library provides APIs for transferring arbitrary data between the host and {IDF_TARGET_NAME}. When enabled in menuconfig, the application tracing module is automatically initialized during system startup using configuration from menuconfig. You can then call corresponding APIs to send, receive, or flush the data.
 
 Optionally, users can override the default configuration by implementing the weak callback function :cpp:func:`esp_apptrace_get_user_params()`. This callback will be active when there is no selected trace library, meaning the Application Level Tracing library (``app_trace`` component) will be working standalone. Otherwise, :cpp:func:`esp_trace_get_user_params()` will be used for overriding the configuration.
 
@@ -110,7 +110,7 @@ Quick Start Summary
 Application Specific Tracing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In general, users should decide what type of data should be transferred in every direction and how these data must be interpreted (processed). The following steps must be performed to transfer data between the target and the host:
+In general, you should decide what type of data should be transferred in every direction and how these data must be interpreted (processed). The following steps must be performed to transfer data between the target and the host:
 
 1. **Configuration:** Application tracing is automatically initialized during system startup using configuration from menuconfig. If you need to override the default configuration at runtime (e.g., to use custom UART pins), implement the :cpp:func:`esp_apptrace_get_user_params()` callback:
 
@@ -167,7 +167,7 @@ In general, users should decide what type of data should be transferred in every
             return res;
         }
 
-    Also according to his needs, the user may want to receive data from the host. Piece of code below shows an example on how to do this.
+    If you need to receive data from the host. Piece of code below shows an example on how to do this.
 
     .. code-block:: c
 
@@ -264,7 +264,7 @@ Sub-commands:
 ``status``
     Get tracing status.
 ``dump``
-    Dump all data from  (post-mortem dump).
+    Dump all data from (post-mortem dump).
 
 
 Start command syntax:
@@ -344,7 +344,7 @@ By default, ESP-IDF's logging library uses vprintf-like function to write format
 
 Though the implementation of the vprintf-like function can be optimized to a certain level, all steps above have to be performed in any case and every step takes some time (especially item 3). So it frequently occurs that with additional log added to the program to identify the problem, the program behavior is changed and the problem cannot be reproduced. And in the worst cases, the program cannot work normally at all and ends up with an error or even hangs.
 
-Possible ways to overcome this problem are to use higher UART bitrates (or another faster interface) and/or to move string formatting procedure to the host.
+Possible ways to overcome this problem are to use higher UART bitrates (or another faster interface) and to move string formatting procedure to the host.
 
 The application level tracing feature can be used to transfer log information to the host using ``esp_apptrace_vprintf`` function. This function does not perform full parsing of the format string and arguments. Instead, it just calculates the number of arguments passed and sends them along with the format string address to the host. On the host, log data is processed and printed out by a special Python script.
 
@@ -360,10 +360,10 @@ Current implementation of logging over JTAG has some limitations:
 4. The maximum number of printf arguments is 256.
 
 
-How To Use It
+How to Use It
 """""""""""""
 
-In order to use logging via trace module, users need to perform the following steps:
+In order to use logging via trace module, you need to perform the following steps:
 
 1. Enable application tracing in menuconfig by going to ``Component config`` > ``ESP Trace Configuration`` > ``Trace transport`` and selecting ``ESP-IDF apptrace``. After that, configuration can be done at ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing``.
 2. On the target side, the special vprintf-like function :cpp:func:`esp_apptrace_vprintf` needs to be installed. It sends log data to the host. An example is ``esp_log_set_vprintf(esp_apptrace_vprintf);``. To send log data to UART again, use ``esp_log_set_vprintf(vprintf);``.

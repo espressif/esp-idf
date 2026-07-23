@@ -69,7 +69,7 @@ Transport Port
 
 The transport port interface (:component_file:`esp_trace_port_transport.h <esp_trace/include/esp_trace_port_transport.h>`) defines how encoded trace data leaves the target. A transport writes bytes to a host-facing link and handles link-specific operations such as flushing, host-connection checks, and panic-time output. ``esp_trace`` provides built-in apptrace over JTAG/UART and USB Serial JTAG transport adapters. See :doc:`transports`.
 
-Each trace session pairs one encoder with one transport. The encoder can pass encoded trace data to the transport selected for the session, and trace writes do not allocate memory while they are running.
+Each trace session pairs one encoder with one transport. The encoder can pass encoded trace data to the transport selected for the session, and runtime trace writes do not allocate memory.
 
 Initialization
 --------------

@@ -47,7 +47,7 @@ The trace format and the transport are selected independently. Pick the host lin
 
 .. list::
 
-    - **apptrace over JTAG**: Highest throughput and host-initiated control (start / stop / dump). Requires a JTAG adapter and OpenOCD on the host. Best for SystemView and on-demand Gcov dumps.
+    - **apptrace over JTAG**: Highest throughput and host-initiated control (start, stop, or dump). Requires a JTAG adapter and OpenOCD on the host. Best for SystemView and on-demand Gcov dumps.
     - **apptrace over UART**: Uses a spare UART instead of a debug probe, at lower throughput than JTAG. Pick a UART that is not used by the console.
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - **USB Serial JTAG**: Uses the chip's built-in USB peripheral over a single USB cable, with no external adapter. Trace data flows over the peripheral's serial (CDC) interface, not its JTAG interface. Available when USB Serial JTAG is not already taken by the console.
 

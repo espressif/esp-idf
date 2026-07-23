@@ -6,7 +6,7 @@ ESP 跟踪
 概述
 ----
 
-ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。它允许用户以较小开销从 {IDF_TARGET_NAME} 收集运行时数据，并将数据发送到主机。
+ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。以较小开销从 {IDF_TARGET_NAME} 收集运行时数据，并将数据发送到主机。
 
 该系统以 **esp_trace** 组件为中心。它提供公共跟踪 API，管理活动跟踪会话，并将跟踪编码器与跟踪传输连接起来。SEGGER SystemView、Gcov 和 apptrace 传输等跟踪功能都接入这一模型。
 
@@ -47,7 +47,7 @@ ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。它允
 
 .. list::
 
-    - **apptrace（JTAG）**：吞吐量最高，并支持由主机发起的控制（start / stop / dump）。需要 JTAG 适配器以及主机上运行的 OpenOCD。适用于 SystemView 以及按需的 Gcov 转储。
+    - **apptrace（JTAG）**：吞吐量最高，并支持由主机发起的控制（start、stop 或 dump）。需要 JTAG 适配器以及主机上运行的 OpenOCD。适用于 SystemView 以及按需的 Gcov 转储。
     - **apptrace（UART）**：使用空闲的 UART 而非调试探针，吞吐量低于 JTAG。请选择未被控制台占用的 UART。
     :SOC_USB_SERIAL_JTAG_SUPPORTED: - **USB Serial JTAG**：使用芯片内置的 USB 外设，仅需一根 USB 线，无需外部适配器。跟踪数据通过该外设的串行（CDC）接口传输，而非其 JTAG 接口。当 USB Serial JTAG 未被控制台占用时可用。
 
