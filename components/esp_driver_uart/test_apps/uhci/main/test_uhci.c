@@ -8,9 +8,12 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "test_utils.h"
+#include "unity_test_utils_cache.h"
+#include "esp_rom_sys.h"
 #include "driver/uart.h"
 #include "driver/uhci.h"
 #include "hal/gdma_periph.h"
+#include "hal/uart_ll.h"
 
 #define DATA_LENGTH 1024
 #define EX_UART_NUM 1
@@ -240,6 +243,10 @@ TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
     TEST_ESP_OK(uart_param_config(EX_UART_NUM, &uart_config));
     // Connect TX and RX together for testing self send-receive
     TEST_ESP_OK(uart_set_pin(EX_UART_NUM, UART_TX_IO, UART_TX_IO, -1, -1));
+    // Tying TX to RX through the GPIO matrix can latch a spurious byte into the RX FIFO. Let the
+    // line settle then drop it, otherwise it prepends a bogus 0x00 to the received data.
+    vTaskDelay(pdMS_TO_TICKS(20));
+    uart_ll_rxfifo_rst(UART_LL_GET_HW(EX_UART_NUM));
 
     uhci_controller_config_t uhci_cfg = {
         .uart_port = EX_UART_NUM,
@@ -286,6 +293,10 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
     TEST_ESP_OK(uart_param_config(EX_UART_NUM, &uart_config));
     // Connect TX and RX together for testing self send-receive
     TEST_ESP_OK(uart_set_pin(EX_UART_NUM, UART_TX_IO, UART_TX_IO, -1, -1));
+    // Tying TX to RX through the GPIO matrix can latch a spurious byte into the RX FIFO. Let the
+    // line settle then drop it, otherwise it prepends a bogus 0x00 to the received data.
+    vTaskDelay(pdMS_TO_TICKS(20));
+    uart_ll_rxfifo_rst(UART_LL_GET_HW(EX_UART_NUM));
 
     uhci_controller_config_t uhci_cfg = {
         .uart_port = EX_UART_NUM,
@@ -322,6 +333,260 @@ static void uhci_fill_pattern(uint8_t *buf, size_t len, uint8_t start)
     for (size_t i = 0; i < len; i++) {
         buf[i] = (uint8_t)(start + i);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Re-arm uhci_receive() from the RX-done callback (ISR context)
+// ---------------------------------------------------------------------------
+
+#define REARM_BURST_SIZE  64
+#define REARM_BURST_COUNT 4
+
+typedef struct {
+    QueueHandle_t evt_queue;    // carries the index of the just-filled buffer
+    uint8_t *bufs[2];           // double buffer, alternately armed
+    size_t buf_size;
+    int cur;                    // buffer index currently armed
+    int done;                   // number of completed receptions
+} uhci_rearm_ctx_t;
+
+typedef struct {
+    int buf_idx;
+    size_t size;
+    const uint8_t *data;    // actual DMA data pointer (may be cache-line aligned inside the buffer)
+} rearm_evt_t;
+
+// This callback runs in ISR context. On EOF it immediately re-arms reception with the
+// other buffer (so RX never idles) and hands the filled buffer to the task for processing.
+IRAM_ATTR static bool s_uhci_rx_rearm_cbs(uhci_controller_handle_t uhci_ctrl, const uhci_rx_event_data_t *edata, void *user_ctx)
+{
+    uhci_rearm_ctx_t *ctx = (uhci_rearm_ctx_t *)user_ctx;
+    BaseType_t xTaskWoken = pdFALSE;
+
+    if (edata->flags.totally_received) {
+        rearm_evt_t evt = { .buf_idx = ctx->cur, .size = edata->recv_size, .data = edata->data };
+        // Re-arm with the alternate buffer from ISR (except after the last expected burst, so the
+        // controller can be deleted cleanly), then let the task consume the just-filled one.
+        if (++ctx->done < REARM_BURST_COUNT) {
+            ctx->cur ^= 1;
+            uhci_receive(uhci_ctrl, ctx->bufs[ctx->cur], ctx->buf_size);
+        }
+        xQueueSendFromISR(ctx->evt_queue, &evt, &xTaskWoken);
+    }
+    return xTaskWoken == pdTRUE;
+}
+
+static void uhci_rearm_receive_test(void *arg)
+{
+    void **args = (void **)arg;
+    uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t)args[0];
+    SemaphoreHandle_t exit_sema = (SemaphoreHandle_t)args[1];
+
+    uhci_rearm_ctx_t *ctx = heap_caps_calloc(1, sizeof(uhci_rearm_ctx_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    assert(ctx);
+    ctx->evt_queue = xQueueCreate(REARM_BURST_COUNT + 2, sizeof(rearm_evt_t));
+    assert(ctx->evt_queue);
+    ctx->buf_size = DATA_LENGTH / 4;
+    for (int i = 0; i < 2; i++) {
+        ctx->bufs[i] = heap_caps_calloc(1, ctx->buf_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        assert(ctx->bufs[i]);
+    }
+
+    uhci_event_callbacks_t uhci_cbs = {
+        .on_rx_trans_event = s_uhci_rx_rearm_cbs,
+    };
+    TEST_ESP_OK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, ctx));
+
+    // Arm the first buffer from task context; subsequent re-arms happen inside the ISR callback.
+    ctx->cur = 0;
+    TEST_ESP_OK(uhci_receive(uhci_ctrl, ctx->bufs[0], ctx->buf_size));
+
+    rearm_evt_t evt;
+    for (int i = 0; i < REARM_BURST_COUNT; i++) {
+        TEST_ASSERT(xQueueReceive(ctx->evt_queue, &evt, portMAX_DELAY) == pdTRUE);
+        printf("burst %d filled buffer %d, size %d\n", i, evt.buf_idx, (int)evt.size);
+        TEST_ASSERT_EQUAL(REARM_BURST_SIZE, evt.size);
+        for (int j = 0; j < evt.size; j++) {
+            TEST_ASSERT(evt.data[j] == (uint8_t)j);
+        }
+    }
+
+    vQueueDelete(ctx->evt_queue);
+    for (int i = 0; i < 2; i++) {
+        free(ctx->bufs[i]);
+    }
+    free(ctx);
+    xSemaphoreGive(exit_sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("UHCI re-arm receive from ISR callback", "[uhci]")
+{
+    uart_config_t uart_config = {
+        .baud_rate = 2 * 1000 * 1000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_XTAL,
+    };
+    TEST_ESP_OK(uart_param_config(EX_UART_NUM, &uart_config));
+    // Connect TX and RX together for testing self send-receive
+    TEST_ESP_OK(uart_set_pin(EX_UART_NUM, UART_TX_IO, UART_TX_IO, -1, -1));
+    // Tying TX to RX through the GPIO matrix can latch a spurious byte into the RX FIFO. Let the
+    // line settle then drop it, otherwise it becomes a bogus 1-byte "frame 0" ahead of the real data.
+    vTaskDelay(pdMS_TO_TICKS(20));
+    uart_ll_rxfifo_rst(UART_LL_GET_HW(EX_UART_NUM));
+
+    uhci_controller_config_t uhci_cfg = {
+        .uart_port = EX_UART_NUM,
+        .tx_trans_queue_depth = 30,
+        .max_receive_internal_mem = 10 * 1024,
+        .max_transmit_size = 10 * 1024,
+        .dma_burst_size = 32,
+        .rx_eof_flags.idle_eof = 1,
+    };
+
+    uhci_controller_handle_t uhci_ctrl;
+    SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
+    TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
+
+    void *args[] = { uhci_ctrl, exit_sema };
+    xTaskCreate(uhci_rearm_receive_test, "uhci_rearm_receive_test", 4096 * 2, args, 5, NULL);
+    // Give the receiver task time to arm the first buffer before transmitting.
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    uint8_t data_wr[REARM_BURST_SIZE];
+    for (int i = 0; i < REARM_BURST_SIZE; i++) {
+        data_wr[i] = i;
+    }
+
+    // Each burst is followed by an idle gap so the RX side generates an idle EOF and the
+    // ISR callback re-arms reception with the next buffer.
+    for (int i = 0; i < REARM_BURST_COUNT; i++) {
+        TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, REARM_BURST_SIZE));
+        uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    xSemaphoreTake(exit_sema, portMAX_DELAY);
+    vTaskDelay(2);
+    TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
+    vSemaphoreDelete(exit_sema);
+}
+
+// ---------------------------------------------------------------------------
+// Continuous reception: arm once with uhci_start_receive_continuous(), the driver keeps the DMA running
+// across EOFs and each frame lands in the next slot of the ring, no re-arm between frames.
+// ---------------------------------------------------------------------------
+#define CONT_BURST_SIZE  600  // larger than a single RX DMA node, so each frame spans several nodes
+#define CONT_BURST_COUNT 6    // > RX DMA node count, so the ring wraps at least once
+
+typedef struct {
+    QueueHandle_t done_queue;   // carries the reassembled frame length
+    uint8_t *reasm;             // linear reassembly buffer for the current frame
+    size_t reasm_len;           // bytes accumulated so far for the current frame
+} cont_ctx_t;
+
+// Runs in ISR context. A frame larger than one DMA node arrives as several node-sized "partial"
+// events (totally_received == false) followed by the EOF event, so copy every chunk into a linear
+// buffer to reassemble the frame in order (also covers frames crossing the ring wrap-around).
+IRAM_ATTR static bool s_uhci_rx_continuous_cbs(uhci_controller_handle_t uhci_ctrl, const uhci_rx_event_data_t *edata, void *user_ctx)
+{
+    cont_ctx_t *ctx = (cont_ctx_t *)user_ctx;
+    BaseType_t xTaskWoken = pdFALSE;
+
+    if (ctx->reasm_len + edata->recv_size <= DATA_LENGTH) {
+        memcpy(ctx->reasm + ctx->reasm_len, edata->data, edata->recv_size);
+        // Only count bytes actually copied so the reported length stays consistent with the buffer.
+        ctx->reasm_len += edata->recv_size;
+    }
+    if (edata->flags.totally_received) {
+        size_t total = ctx->reasm_len;
+        ctx->reasm_len = 0;
+        xQueueSendFromISR(ctx->done_queue, &total, &xTaskWoken);
+    }
+    return xTaskWoken == pdTRUE;
+}
+
+TEST_CASE("UHCI continuous receive keeps DMA running across frames", "[uhci]")
+{
+    uart_config_t uart_config = {
+        .baud_rate = 2 * 1000 * 1000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_XTAL,
+    };
+    TEST_ESP_OK(uart_param_config(EX_UART_NUM, &uart_config));
+    // Connect TX and RX together for testing self send-receive
+    TEST_ESP_OK(uart_set_pin(EX_UART_NUM, UART_TX_IO, UART_TX_IO, -1, -1));
+    // Tying TX to RX through the GPIO matrix can latch a spurious byte into the RX FIFO (seen when
+    // this test re-runs). Let the line settle then drop it, otherwise it becomes a bogus 1-byte
+    // "frame 0" ahead of the real data.
+    vTaskDelay(pdMS_TO_TICKS(20));
+    uart_ll_rxfifo_rst(UART_LL_GET_HW(EX_UART_NUM));
+
+    uhci_controller_config_t uhci_cfg = {
+        .uart_port = EX_UART_NUM,
+        .tx_trans_queue_depth = 30,
+        .max_receive_internal_mem = 10 * 1024,
+        .max_transmit_size = 10 * 1024,
+        .dma_burst_size = 32,
+        .rx_eof_flags.idle_eof = 1,
+    };
+
+    uhci_controller_handle_t uhci_ctrl;
+    TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
+
+    cont_ctx_t ctx = {0};
+    ctx.done_queue = xQueueCreate(CONT_BURST_COUNT + 2, sizeof(size_t));
+    TEST_ASSERT_NOT_NULL(ctx.done_queue);
+    // Sized to the whole ring so a buggy over-long frame can't overflow it.
+    ctx.reasm = heap_caps_calloc(1, DATA_LENGTH, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(ctx.reasm);
+
+    uhci_event_callbacks_t uhci_cbs = {
+        .on_rx_trans_event = s_uhci_rx_continuous_cbs,
+    };
+    TEST_ESP_OK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, &ctx));
+
+    // A single ring buffer, split across the RX DMA nodes. Each frame is larger than one node so it
+    // spans several, and consecutive frames wrap the ring around.
+    uint8_t *ring = heap_caps_calloc(1, DATA_LENGTH, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(ring);
+
+    // Arm continuous reception ONCE. Note: no uhci_receive() call between frames below.
+    TEST_ESP_OK(uhci_start_receive_continuous(uhci_ctrl, ring, DATA_LENGTH));
+
+    uint8_t data_wr[CONT_BURST_SIZE];
+    for (int i = 0; i < CONT_BURST_COUNT; i++) {
+        // Distinct content per frame so we can verify ordering and correctness.
+        for (int j = 0; j < CONT_BURST_SIZE; j++) {
+            data_wr[j] = (uint8_t)(i + j);
+        }
+        TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, CONT_BURST_SIZE));
+        uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+        // Idle gap so the RX side raises an idle EOF for this frame.
+        vTaskDelay(pdMS_TO_TICKS(50));
+
+        // The whole frame must arrive (reassembled from its node chunks) though RX was never re-armed.
+        size_t total = 0;
+        TEST_ASSERT(xQueueReceive(ctx.done_queue, &total, pdMS_TO_TICKS(1000)) == pdTRUE);
+        printf("frame %d received, size %d\n", i, (int)total);
+        TEST_ASSERT_EQUAL(CONT_BURST_SIZE, total);
+        for (int j = 0; j < CONT_BURST_SIZE; j++) {
+            TEST_ASSERT_EQUAL_HEX8((uint8_t)(i + j), ctx.reasm[j]);
+        }
+    }
+
+    TEST_ESP_OK(uhci_stop_receive(uhci_ctrl));
+    vTaskDelay(2);
+    TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
+    free(ring);
+    free(ctx.reasm);
+    vQueueDelete(ctx.done_queue);
 }
 
 TEST_CASE("UHCI single buffer and multi buffer transmit interleaved", "[uhci]")
