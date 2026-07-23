@@ -2755,7 +2755,8 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_
         ie = wpa_bss_get_ie(bss, WLAN_EID_MOBILITY_DOMAIN);
         if (ie && ie[1] >= MOBILITY_DOMAIN_ID_LEN)
                 md = ie + 2;
-        if (os_memcmp(md, sm->mobility_domain, MOBILITY_DOMAIN_ID_LEN) != 0) {
+        if (md == NULL ||
+            os_memcmp(md, sm->mobility_domain, MOBILITY_DOMAIN_ID_LEN) != 0) {
             /* Reset Auth IE here */
             esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
             esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_REQ);

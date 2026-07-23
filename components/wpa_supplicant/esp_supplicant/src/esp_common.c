@@ -347,7 +347,7 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
     ie += sizeof(struct wpa_bss);
 #ifdef CONFIG_RRM
     ieee802_11_parse_elems(ie, bss->ie_len, &elems, 0);
-    if (elems.rrm_enabled_len > 0 && elems.rrm_enabled != NULL) {
+    if (elems.rrm_enabled && elems.rrm_enabled_len >= 5) {
         os_memcpy(wpa_s->rrm_ie, elems.rrm_enabled, 5);
         wpa_s->rrm.rrm_used = true;
     }
