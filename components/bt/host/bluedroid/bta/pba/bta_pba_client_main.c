@@ -39,6 +39,7 @@ enum {
     BTA_PBA_CLIENT_GOEP_DISCONNECT,
     BTA_PBA_CLIENT_FORCE_DISCONNECT,
     BTA_PBA_CLIENT_FREE_RESPONSE,
+    BTA_PBA_CLIENT_FREE_REQ,
     BTA_PBA_CLIENT_NUM_ACTIONS
 };
 
@@ -49,18 +50,19 @@ typedef void (*tBTA_PBA_CLIENT_ACTION)(tBTA_PBA_CLIENT_CCB *p_ccb, tBTA_PBA_CLIE
 
 /* action functions table, indexed with action enum */
 const tBTA_PBA_CLIENT_ACTION bta_pba_client_action[] = {
-    /* BTA_PBA_CLIENT_API_OPEN */      bta_pba_client_api_open,
-    /* BTA_PBA_CLIENT_API_CLOSE */    bta_pba_client_api_close,
-    /* BTA_PBA_CLIENT_API_REQ */   bta_pba_client_api_req,
-    /* BTA_PBA_CLIENT_DO_CONNECT */  bta_pba_client_do_connect,
-    /* BTA_PBA_CLIENT_AUTHENTICATE */   bta_pba_client_authenticate,
-    /* BTA_PBA_CLIENT_CONNECT */    bta_pba_client_connect,
-    /* BTA_PBA_CLIENT_RESPONSE */  bta_pba_client_response,
-    /* BTA_PBA_CLIENT_RESPONSE_FINAL */    bta_pba_client_response_final,
-    /* BTA_PBA_CLIENT_GOEP_CONNECT */ bta_pba_client_goep_connect,
-    /* BTA_PBA_CLIENT_GOEP_DISCONNECT*/ bta_pba_client_goep_disconnect,
-    /* BTA_PBA_CLIENT_FORCE_DISCONNECT */      bta_pba_client_force_disconnect,
-    /* BTA_PBA_CLIENT_FREE_RESPONSE */     bta_pba_client_free_response,
+    /* BTA_PBA_CLIENT_API_OPEN */         bta_pba_client_api_open,
+    /* BTA_PBA_CLIENT_API_CLOSE */        bta_pba_client_api_close,
+    /* BTA_PBA_CLIENT_API_REQ */          bta_pba_client_api_req,
+    /* BTA_PBA_CLIENT_DO_CONNECT */       bta_pba_client_do_connect,
+    /* BTA_PBA_CLIENT_AUTHENTICATE */     bta_pba_client_authenticate,
+    /* BTA_PBA_CLIENT_CONNECT */          bta_pba_client_connect,
+    /* BTA_PBA_CLIENT_RESPONSE */         bta_pba_client_response,
+    /* BTA_PBA_CLIENT_RESPONSE_FINAL */   bta_pba_client_response_final,
+    /* BTA_PBA_CLIENT_GOEP_CONNECT */     bta_pba_client_goep_connect,
+    /* BTA_PBA_CLIENT_GOEP_DISCONNECT*/   bta_pba_client_goep_disconnect,
+    /* BTA_PBA_CLIENT_FORCE_DISCONNECT */ bta_pba_client_force_disconnect,
+    /* BTA_PBA_CLIENT_FREE_RESPONSE */    bta_pba_client_free_response,
+    /* BTA_PBA_CLIENT_FREE_REQ */         bta_pba_client_free_req,
 };
 
 /* state table information */
@@ -72,7 +74,7 @@ const uint8_t bta_pba_client_st_init[][BTA_PBA_CLIENT_NUM_COLS] = {
     /* Event                                    Action                              Next state */
     /* BTA_PBA_CLIENT_API_OPEN_EVT */           {BTA_PBA_CLIENT_API_OPEN,           BTA_PBA_CLIENT_OPENING_ST},
     /* BTA_PBA_CLIENT_API_CLOSE_EVT */          {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_INIT_ST},
-    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_INIT_ST},
+    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_FREE_REQ,           BTA_PBA_CLIENT_INIT_ST},
     /* BTA_PBA_CLIENT_DISC_RES_EVT */           {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_INIT_ST},
     /* BTA_PBA_CLIENT_AUTHENTICATE_EVT */       {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_INIT_ST},
     /* BTA_PBA_CLIENT_CONNECT_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_INIT_ST},
@@ -86,7 +88,7 @@ const uint8_t bta_pba_client_st_opening[][BTA_PBA_CLIENT_NUM_COLS] = {
     /* Event                                    Action                              Next state */
     /* BTA_PBA_CLIENT_API_OPEN_EVT */           {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_OPENING_ST},
     /* BTA_PBA_CLIENT_API_CLOSE_EVT */          {BTA_PBA_CLIENT_FORCE_DISCONNECT,   BTA_PBA_CLIENT_INIT_ST},
-    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_OPENING_ST},
+    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_FREE_REQ,           BTA_PBA_CLIENT_OPENING_ST},
     /* BTA_PBA_CLIENT_DISC_RES_EVT */           {BTA_PBA_CLIENT_DO_CONNECT,         BTA_PBA_CLIENT_OPENING_ST},
     /* BTA_PBA_CLIENT_AUTHENTICATE_EVT */       {BTA_PBA_CLIENT_AUTHENTICATE,       BTA_PBA_CLIENT_OPENING_ST},
     /* BTA_PBA_CLIENT_CONNECT_EVT */            {BTA_PBA_CLIENT_CONNECT,            BTA_PBA_CLIENT_OPENED_ST},
@@ -114,7 +116,7 @@ const uint8_t bta_pba_client_st_getting[][BTA_PBA_CLIENT_NUM_COLS] = {
     /* Event                                    Action                              Next state */
     /* BTA_PBA_CLIENT_API_OPEN_EVT */           {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_REQUESTING_ST},
     /* BTA_PBA_CLIENT_API_CLOSE_EVT */          {BTA_PBA_CLIENT_FORCE_DISCONNECT,   BTA_PBA_CLIENT_INIT_ST},
-    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_REQUESTING_ST},
+    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_FREE_REQ,           BTA_PBA_CLIENT_REQUESTING_ST},
     /* BTA_PBA_CLIENT_DISC_RES_EVT */           {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_REQUESTING_ST},
     /* BTA_PBA_CLIENT_AUTHENTICATE_EVT */       {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_REQUESTING_ST},
     /* BTA_PBA_CLIENT_CONNECT_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_REQUESTING_ST},
@@ -128,7 +130,7 @@ const uint8_t bta_pba_client_st_closing[][BTA_PBA_CLIENT_NUM_COLS] = {
     /* Event                                    Action                              Next state */
     /* BTA_PBA_CLIENT_API_OPEN_EVT */           {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_CLOSING_ST},
     /* BTA_PBA_CLIENT_API_CLOSE_EVT */          {BTA_PBA_CLIENT_FORCE_DISCONNECT,   BTA_PBA_CLIENT_INIT_ST},
-    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_CLOSING_ST},
+    /* BTA_PBA_CLIENT_API_REQ_EVT */            {BTA_PBA_CLIENT_FREE_REQ,           BTA_PBA_CLIENT_CLOSING_ST},
     /* BTA_PBA_CLIENT_DISC_RES_EVT */           {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_CLOSING_ST},
     /* BTA_PBA_CLIENT_AUTHENTICATE_EVT */       {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_CLOSING_ST},
     /* BTA_PBA_CLIENT_CONNECT_EVT */            {BTA_PBA_CLIENT_IGNORE,             BTA_PBA_CLIENT_CLOSING_ST},

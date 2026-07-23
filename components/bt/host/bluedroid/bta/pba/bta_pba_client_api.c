@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,10 +32,9 @@ void BTA_PbaClientEnable(tBTA_PBA_CLIENT_CBACK *p_cback)
         return;
     }
 
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_PBC, &bta_pba_client_reg);
-
     if ((p_buf = (tBTA_PBA_CLIENT_API_ENABLE *)osi_malloc(sizeof(tBTA_PBA_CLIENT_API_ENABLE))) != NULL) {
+        /* register with BTA system manager */
+        bta_sys_register(BTA_ID_PBC, &bta_pba_client_reg);
         p_buf->hdr.event = BTA_PBA_CLIENT_API_ENABLE_EVT;
         p_buf->p_cback = p_cback;
         bta_sys_sendmsg(p_buf);
@@ -73,11 +72,13 @@ void BTA_PbaClientDeregister(void)
     }
 }
 
-void BTA_PbaClientOpen(BD_ADDR bd_addr, tBTA_SEC sec_mask, UINT32 supported_feat, UINT16 mtu)
+tBTA_STATUS BTA_PbaClientOpen(BD_ADDR bd_addr, tBTA_SEC sec_mask, UINT32 supported_feat, UINT16 mtu)
 {
     tBTA_PBA_CLIENT_API_OPEN *p_buf;
 
-    if ((p_buf = (tBTA_PBA_CLIENT_API_OPEN *)osi_malloc(sizeof(tBTA_PBA_CLIENT_API_OPEN))) != NULL) {
+    if ((p_buf = (tBTA_PBA_CLIENT_API_OPEN *)osi_malloc(sizeof(tBTA_PBA_CLIENT_API_OPEN))) == NULL) {
+        return BTA_FAILURE;
+    } else {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_OPEN_EVT;
         p_buf->sec_mask = sec_mask;
         p_buf->supported_feat = supported_feat;
@@ -85,6 +86,7 @@ void BTA_PbaClientOpen(BD_ADDR bd_addr, tBTA_SEC sec_mask, UINT32 supported_feat
         bdcpy(p_buf->bd_addr, bd_addr);
         bta_sys_sendmsg(p_buf);
     }
+    return BTA_SUCCESS;
 }
 
 void BTA_PbaClientClose(UINT16 handle)
@@ -98,11 +100,13 @@ void BTA_PbaClientClose(UINT16 handle)
     }
 }
 
-void BTA_PbaClientPullPhoneBook(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len)
+tBTA_STATUS BTA_PbaClientPullPhoneBook(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len)
 {
     tBTA_PBA_CLIENT_API_REQ *p_buf;
 
-    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) != NULL) {
+    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) == NULL) {
+        return BTA_FAILURE;
+    } else {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_REQ_EVT;
         p_buf->hdr.layer_specific = handle;
         p_buf->operation = BTA_PBA_CLIENT_OP_PULL_PHONE_BOOK;
@@ -111,13 +115,16 @@ void BTA_PbaClientPullPhoneBook(UINT16 handle, char *name, UINT8 *app_param, UIN
         p_buf->app_param_len = app_param_len;
         bta_sys_sendmsg(p_buf);
     }
+    return BTA_SUCCESS;
 }
 
-void BTA_PbaClientSetPhoneBook(UINT16 handle, UINT8 flags, char *name)
+tBTA_STATUS BTA_PbaClientSetPhoneBook(UINT16 handle, UINT8 flags, char *name)
 {
     tBTA_PBA_CLIENT_API_REQ *p_buf;
 
-    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) != NULL) {
+    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) == NULL) {
+        return BTA_FAILURE;
+    } else {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_REQ_EVT;
         p_buf->hdr.layer_specific = handle;
         p_buf->operation = BTA_PBA_CLIENT_OP_SET_PHONE_BOOK;
@@ -127,13 +134,16 @@ void BTA_PbaClientSetPhoneBook(UINT16 handle, UINT8 flags, char *name)
         p_buf->app_param_len = 0;
         bta_sys_sendmsg(p_buf);
     }
+    return BTA_SUCCESS;
 }
 
-void BTA_PbaClientPullvCardListing(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len)
+tBTA_STATUS BTA_PbaClientPullvCardListing(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len)
 {
     tBTA_PBA_CLIENT_API_REQ *p_buf;
 
-    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) != NULL) {
+    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) == NULL) {
+        return BTA_FAILURE;
+    } else {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_REQ_EVT;
         p_buf->hdr.layer_specific = handle;
         p_buf->operation = BTA_PBA_CLIENT_OP_PULL_VCARD_LISTING;
@@ -142,13 +152,16 @@ void BTA_PbaClientPullvCardListing(UINT16 handle, char *name, UINT8 *app_param, 
         p_buf->app_param_len = app_param_len;
         bta_sys_sendmsg(p_buf);
     }
+    return BTA_SUCCESS;
 }
 
-void BTA_PbaClientPullvCardEntry(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len)
+tBTA_STATUS BTA_PbaClientPullvCardEntry(UINT16 handle, char *name, UINT8 *app_param, UINT16 app_param_len)
 {
     tBTA_PBA_CLIENT_API_REQ *p_buf;
 
-    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) != NULL) {
+    if ((p_buf = (tBTA_PBA_CLIENT_API_REQ *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REQ))) == NULL) {
+        return BTA_FAILURE;
+    } else {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_REQ_EVT;
         p_buf->hdr.layer_specific = handle;
         p_buf->operation = BTA_PBA_CLIENT_OP_PULL_VCARD_ENTRY;
@@ -157,6 +170,7 @@ void BTA_PbaClientPullvCardEntry(UINT16 handle, char *name, UINT8 *app_param, UI
         p_buf->app_param_len = app_param_len;
         bta_sys_sendmsg(p_buf);
     }
+    return BTA_SUCCESS;
 }
 
 #endif
