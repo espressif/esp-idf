@@ -1114,6 +1114,12 @@ tBTM_STATUS BTM_BleExtendedScan(BOOLEAN enable, UINT16 duration, UINT16 period)
     if ((err = btsnd_hcic_ble_ext_scan_enable(enable, extend_adv_cb.scan_duplicate, duration, period)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE ES En=%d: cmd err=0x%x", enable, err);
         status = BTM_HCI_ERROR | err;
+    } else {
+        if (enable) {
+            btm_cb.ble_ctr_cb.inq_var.state |= BTM_BLE_SCANNING;
+        } else {
+            btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
+        }
     }
 
 end:
@@ -1266,6 +1272,7 @@ void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params)
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void btm_ble_scan_timeout_evt(void)
 {
+    btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT, NULL);
 }
 #endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
