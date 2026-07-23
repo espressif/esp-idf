@@ -121,11 +121,23 @@ LOG_MODULE_REGISTER(LEA_NINIT, CONFIG_BT_ISO_LOG_LEVEL);
 #define OTS_CCCD_COUNT                          0
 #endif /* CONFIG_BT_OTS */
 
+#if CONFIG_BT_TBS
+/* GTBS + one discrete bearer (NimBLE maps a single discrete instance). */
+#define TBS_CCCD_COUNT                          (12 + (CONFIG_BT_TBS_BEARER_COUNT > 0 ? 12 : 0))
+#else /* CONFIG_BT_TBS */
+#define TBS_CCCD_COUNT                          0
+#endif /* CONFIG_BT_TBS */
+
+#if CONFIG_BT_MCS
+/* GMCS + CONFIG_BT_MCS_INSTANCE_COUNT discrete instances, all sharing 11 chars. */
+#define MCS_CCCD_COUNT                          (11 * (1 + CONFIG_BT_MCS_INSTANCE_COUNT))
+#else /* CONFIG_BT_MCS */
+#define MCS_CCCD_COUNT                          0
+#endif /* CONFIG_BT_MCS */
+
 /* 6 is reserved for other GATT services.
  * TODO:
  * - OTS
- * - MCS (GMCS is used for now)
- * - TBS (GTBS is used for now)
  */
 #define TOTAL_CCCDS_COUNT   (6 + \
                              (IS_ENABLED(CONFIG_BT_ASCS) ? (1 + ASCS_ASE_SNK_CCCD_COUNT + \
@@ -134,12 +146,12 @@ LOG_MODULE_REGISTER(LEA_NINIT, CONFIG_BT_ISO_LOG_LEVEL);
                                                             PAC_SRC_CCCD_COUNT + PAC_SRC_LOC_CCCD_COUNT + \
                                                             1 + PACS_SUPPORTED_CONTEXT_CCCD_COUNT) : 0) + \
                              (IS_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR) ? SCAN_DELEGATOR_RECV_STATE_CCCD_COUNT : 0) + \
-                             (IS_ENABLED(CONFIG_BT_MCS) ? 11 : 0) + \
+                             MCS_CCCD_COUNT + \
                              (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER) ? (CSIP_SET_MEMBER_CCCD_COUNT + 2) : 0) + \
                              (IS_ENABLED(CONFIG_BT_VCP_VOL_REND) ? (1 + VCP_VOL_REND_VOL_FLAGS_CCCD_COUNT) : 0) + \
                              VOCS_CCCD_COUNT + \
                              AICS_CCCD_COUNT + \
-                             (IS_ENABLED(CONFIG_BT_TBS) ? 12 : 0) + \
+                             TBS_CCCD_COUNT + \
                              (IS_ENABLED(CONFIG_BT_HAS) ? (HAS_FEATURES_CCCD_COUNT + \
                                                            HAS_PRESET_CONTROL_POINT_CCCD_COUNT + \
                                                            HAS_ACTIVE_PRESET_INDEX_CCCD_COUNT) : 0) + \
@@ -192,6 +204,11 @@ int bt_le_nimble_audio_init(void)
 
 #if CONFIG_BT_TBS
     err = bt_le_nimble_gtbs_init();
+    if (err) {
+        return err;
+    }
+
+    err = bt_le_nimble_tbs_init();
     if (err) {
         return err;
     }
@@ -273,10 +290,20 @@ static int nimble_gatt_attr_handle_set(void)
     if (err) {
         return err;
     }
+
+    err = bt_le_nimble_mcs_attr_handle_set();
+    if (err) {
+        return err;
+    }
 #endif /* CONFIG_BT_MCS */
 
 #if CONFIG_BT_TBS
     err = bt_le_nimble_gtbs_attr_handle_set();
+    if (err) {
+        return err;
+    }
+
+    err = bt_le_nimble_tbs_attr_handle_set();
     if (err) {
         return err;
     }
@@ -288,6 +315,13 @@ static int nimble_gatt_attr_handle_set(void)
         return err;
     }
 #endif /* CONFIG_BT_HAS */
+
+#if CONFIG_BT_GMAP
+    err = bt_le_nimble_gmas_attr_handle_set();
+    if (err) {
+        return err;
+    }
+#endif /* CONFIG_BT_GMAP */
 
     return err;
 }
@@ -343,15 +377,24 @@ static int nimble_gatt_csis_init(struct bt_le_audio_start_info *info,
 #if CONFIG_BT_MCS
 int bt_le_nimble_media_proxy_pl_init(void)
 {
+    int err;
+
     /* Note:
      * Currently the existence of some characteristics within GMCS
      * are determined by the enabling of OTS.
      */
 #if CONFIG_BT_OTS
-    return bt_le_nimble_gmcs_init(true);
+    err = bt_le_nimble_gmcs_init(true);
 #else /* CONFIG_BT_OTS */
-    return bt_le_nimble_gmcs_init(false);
+    err = bt_le_nimble_gmcs_init(false);
 #endif /* CONFIG_BT_OTS */
+    if (err) {
+        return err;
+    }
+
+    /* No GMCS rollback on mcs_init failure: it's committed to the NimBLE DB and
+       referenced until ble_gatts_start; freeing it here would dangle that entry. */
+    return bt_le_nimble_mcs_init();
 }
 #endif /* CONFIG_BT_MCS */
 
@@ -446,6 +489,15 @@ int bt_le_nimble_audio_start(void *info)
     }
 #endif /* CONFIG_BT_MICP_MIC_DEV */
 #endif /* (BLE_AUDIO_SVC_DEFERRED_ADD == 0) */
+
+#if CONFIG_BT_GMAP
+    /* Register GMAS before ble_gatts_start: its role-dependent table is filled
+     * only at esp_ble_audio_gmap_register, which runs before this start phase. */
+    err = bt_le_nimble_gmas_init();
+    if (err) {
+        return err;
+    }
+#endif /* CONFIG_BT_GMAP */
 
     err = ble_gatts_start();
     if (err) {

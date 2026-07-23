@@ -18,6 +18,10 @@ int bt_le_bluedroid_gtbs_init(void);
 
 int bt_le_bluedroid_gtbs_start(void);
 
+int bt_le_bluedroid_tbs_init(void);
+
+int bt_le_bluedroid_tbs_start(void);
+
 #ifdef __cplusplus
 }
 #endif

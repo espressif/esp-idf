@@ -225,10 +225,9 @@ void bap_broadcast_pa_sync(esp_ble_audio_gap_app_event_t *event)
 {
     int err;
 
-    pa_syncing = false; /* Mark PA sync as completed */
-
     if (event->pa_sync.status) {
         ESP_LOGE(TAG, "PA sync failed, status %d", event->pa_sync.status);
+        pa_syncing = false; /* attempt failed; let a fresh scan report retry */
         return;
     }
 
@@ -260,6 +259,7 @@ void bap_broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event)
                  sync_handle, event->pa_sync_lost.reason);
 
         sync_handle = PA_SYNC_HANDLE_INIT;
+        pa_syncing = false; /* allow the rescan below to sync a fresh broadcaster */
 
         if (broadcast_sink != NULL) {
             esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);

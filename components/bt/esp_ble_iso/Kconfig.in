@@ -80,7 +80,7 @@ if BT_ISO
 
         config BT_ISO_MAX_CIG
             int "Maximum number of Connected Isochronous Groups (CIGs) to support"
-            range 1 1 if BT_BLUEDROID_ENABLED
+            range 1 2 if BT_BLUEDROID_ENABLED
             range 1 BT_NIMBLE_ISO_CIG if BT_NIMBLE_ENABLED
             default 1 if BT_BLUEDROID_ENABLED
             default BT_NIMBLE_ISO_CIG if BT_NIMBLE_ENABLED
@@ -94,7 +94,7 @@ if BT_ISO
 
         config BT_ISO_MAX_BIG
             int "Maximum number of Broadcast Isochronous Groups (BIGs) to support"
-            range 1 1 if BT_BLUEDROID_ENABLED
+            range 1 2 if BT_BLUEDROID_ENABLED
             range 1 BT_NIMBLE_ISO_BIG if BT_NIMBLE_ENABLED
             default 1 if BT_BLUEDROID_ENABLED
             default BT_NIMBLE_ISO_BIG if BT_NIMBLE_ENABLED

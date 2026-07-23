@@ -25,6 +25,11 @@ LOG_MODULE_REGISTER(ISO_CONN, CONFIG_BT_ISO_LOG_LEVEL);
 
 static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 
+/* Per-ACL LTK backing store (indexed in lockstep with acl_conns[]). conn->le.keys is
+ * a bare pointer the adapters fill after bonding; point it at the matching slot so the
+ * lib's CSIS sirk_encrypt can read conn->le.keys->ltk.val. */
+static struct bt_keys conn_ltk[CONFIG_BT_MAX_CONN];
+
 extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
 static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
@@ -386,6 +391,33 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
     return (conn ? 0 : -ENOMEM);
 }
 
+/* Point conn->le.keys at this ACL connection's LTK slot, filled with the bonded
+ * LTK the adapter captured. Used as key K by the lib's CSIS SIRK encryption. */
+_IDF_ONLY
+void bt_conn_le_set_ltk(struct bt_conn *conn, const uint8_t *ltk)
+{
+    size_t idx;
+
+    if (conn == NULL || ltk == NULL) {
+        LOG_ERR("ConnSetLtkBadArg");
+        return;
+    }
+
+    /* Only ACL (LE) connections carry an LTK; the pool tracks acl_conns[]. */
+    if (conn < acl_conns || conn >= &acl_conns[ARRAY_SIZE(acl_conns)]) {
+        LOG_WRN("ConnSetLtkNotAcl");
+        return;
+    }
+
+    idx = (size_t)(conn - acl_conns);
+
+    memset(&conn_ltk[idx], 0, sizeof(conn_ltk[idx]));
+    memcpy(conn_ltk[idx].ltk.val, ltk, sizeof(conn_ltk[idx].ltk.val));
+    conn->le.keys = &conn_ltk[idx];
+
+    LOG_INF("ConnSetLtk[%u][%s]", conn->handle, bt_hex(ltk, 16));
+}
+
 _IDF_ONLY
 int bt_le_acl_conn_delete(uint16_t conn_handle)
 {
@@ -399,6 +431,10 @@ int bt_le_acl_conn_delete(uint16_t conn_handle)
         LOG_ERR("AclConnDelNotDisc[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
+
+    /* Wipe this connection's LTK slot (key hygiene); the memset below then nulls
+     * conn->le.keys. */
+    memset(&conn_ltk[conn - acl_conns], 0, sizeof(conn_ltk[0]));
 
     memset(conn, 0, sizeof(struct bt_conn));
 
@@ -684,6 +720,10 @@ int bt_le_acl_conn_bond_deleted_listener(uint8_t id, const bt_addr_le_t *peer)
             listener->bond_deleted(id, peer);
         }
     }
+
+    /* Profiles above cleared their own per-client state; also drop the peer's
+     * retained server CCC cfg, which is only kept while the bond exists. */
+    bt_le_acl_conn_bond_deleted_gatt_listener(id, peer);
 
     return 0;
 }

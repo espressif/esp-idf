@@ -53,6 +53,8 @@ int bt_le_tmas_init(void);
 
 int bt_le_gtbs_init(void);
 
+int bt_le_tbs_init(void);
+
 int bt_le_has_init(void);
 
 int bt_le_media_proxy_pl_init(void);
@@ -63,10 +65,10 @@ int bt_le_micp_mic_dev_init(void);
 
 int bt_le_audio_start(void *info);
 
-void ble_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...);
+void bt_le_audio_lib_compressed_out(uint8_t log_level, uint32_t log_index, size_t arg_cnt, ...);
 
-void ble_audio_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx,
-                                      const uint8_t *buf, size_t len);
+void bt_le_audio_lib_compressed_buf_out(uint8_t log_level, uint32_t log_index, uint8_t buf_idx,
+                                        const uint8_t *buf, size_t len);
 
 #ifdef __cplusplus
 }

@@ -400,6 +400,17 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
         assert(err == 0);
     }
 
+    /* Point conn->le.keys at the bonded LTK the adapter captured, so the lib's
+     * CSIS SIRK encryption can read it. conn exists here (found or just made). */
+    if (param->security_change.ltk_present) {
+        conn = bt_le_acl_conn_find(event.security_change.conn_handle);
+        if (conn != NULL) {
+            bt_conn_le_set_ltk(conn, param->security_change.ltk);
+        } else {
+            LOG_WRN("SecChgLtkNoConn[%u]", event.security_change.conn_handle);
+        }
+    }
+
     err = bt_le_acl_conn_security_changed_listener(event.security_change.conn_handle,
                                                    event.security_change.sec_level);
     assert(err == 0);

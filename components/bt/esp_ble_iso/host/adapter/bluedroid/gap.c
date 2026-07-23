@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/common/bt_str.h>
 
 #include <../host/hci_core.h>
 #include <../host/iso_internal.h>
@@ -104,6 +105,46 @@ static void gap_app_cb(tBTA_DM_BLE_5_GAP_EVENT event, tBTA_DM_BLE_5_GAP_CB_PARAM
     btc_ble_5_gap_callback(event, params);
 }
 
+/* Copy this peer's bonded LTK (16B) into out_ltk; true if found. Used on AUTH_CMPL as
+ * the CSIS SIRK key. The store exposes only PENC, but under LE SC PENC==LENC==link LTK.
+ * esp_ble_get_bond_device_list reads btc_storage synchronously — safe in this callback. */
+static bool bd_read_bonded_ltk(const uint8_t *addr, uint8_t out_ltk[16])
+{
+    esp_ble_bond_dev_t *list;
+    bool found = false;
+    int num;
+
+    num = esp_ble_get_bond_device_num();
+    if (num <= 0) {
+        return false;
+    }
+
+    list = calloc(num, sizeof(*list));
+    if (list == NULL) {
+        LOG_ERR("[B]LtkListAllocFail[%d]", num);
+        return false;
+    }
+
+    if (esp_ble_get_bond_device_list(&num, list) == ESP_OK) {
+        for (int i = 0; i < num; i++) {
+            if (memcmp(list[i].bd_addr, addr, sizeof(esp_bd_addr_t)) == 0) {
+                /* Identity-only bonds carry no LTK; penc_key would be zeroed. */
+                if (list[i].bond_key.key_mask & ESP_BLE_ENC_KEY_MASK) {
+                    memcpy(out_ltk, list[i].bond_key.penc_key.ltk, 16);
+                    found = true;
+                }
+                break;
+            }
+        }
+    }
+
+    if (list != NULL) {
+        free(list);
+    }
+
+    return found;
+}
+
 void bt_le_bluedroid_gap_post_event(uint16_t event, void *param)
 {
     const esp_ble_gap_cb_param_t *p = param;
@@ -157,7 +198,16 @@ void bt_le_bluedroid_gap_post_event(uint16_t event, void *param)
 
             qev->security_change.sec_level = sec_level;
             qev->security_change.bonded = (a->auth_mode & ESP_LE_AUTH_BOND) ? 1 : 0;
+
+            /* Attach the bonded LTK (CSIS SIRK-encryption key K). */
+            if (bd_read_bonded_ltk(a->bd_addr, qev->security_change.ltk)) {
+                qev->security_change.ltk_present = 1;
+                LOG_INF("[B]LtkFromStore[%u]", qev->security_change.conn_handle);
+            } else {
+                LOG_WRN("[B]NoLtkForEnc[%u]", qev->security_change.conn_handle);
+            }
         }
+
         break;
     }
 
@@ -237,7 +287,8 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
                 LOG_WRN("[B]PaSyncEstabOverwrite[%04x->%04x]",
                         active_pa_sync_handle, e->sync_handle);
             } else {
-                LOG_INF("[B]PaSyncEstab[%04x]", e->sync_handle);
+                LOG_INF("[B]PaSyncEstab[%04x][%s]",
+                        e->sync_handle, bt_hex(e->adv_addr, BT_ADDR_SIZE));
             }
             active_pa_sync_handle = e->sync_handle;
         }

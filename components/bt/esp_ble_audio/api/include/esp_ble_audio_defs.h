@@ -341,6 +341,8 @@ typedef enum bt_audio_assisted_listening_stream             esp_ble_audio_assist
 #define ESP_BLE_AUDIO_UUID_CSIS_SET_LOCK_VAL                BT_UUID_CSIS_SET_LOCK_VAL
 /*!< Rank value */
 #define ESP_BLE_AUDIO_UUID_CSIS_RANK_VAL                    BT_UUID_CSIS_RANK_VAL
+/*!< Coordinated Set Name value */
+#define ESP_BLE_AUDIO_UUID_CSIS_SET_NAME_VAL                BT_UUID_CSIS_SET_NAME_VAL
 
 /*!< Gaming Audio Profile Role UUID value */
 #define ESP_BLE_AUDIO_UUID_GMAP_ROLE_VAL                    BT_UUID_GMAP_ROLE_VAL

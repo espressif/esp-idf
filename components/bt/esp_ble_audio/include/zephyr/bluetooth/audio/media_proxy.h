@@ -1604,6 +1604,24 @@ int bt_media_proxy_pl_register_safe(struct media_proxy_pl_calls *pl_calls);
 int bt_media_proxy_pl_init_safe(void);
 
 /**
+ * @brief Set the player name and notify it
+ *
+ * @param name The new player name (caller-owned, must outlive later reads)
+ *
+ * @return 0 if success, errno on failure
+ */
+int bt_media_proxy_pl_set_player_name_safe(char *name);
+
+/**
+ * @brief Set the current track title and notify it
+ *
+ * @param title The new track title (caller-owned, must outlive later reads)
+ *
+ * @return 0 if success, errno on failure
+ */
+int bt_media_proxy_pl_set_track_title_safe(char *title);
+
+/**
  * @brief Get the pointer of the Object Transfer Service used by the Media Control Service
  *
  * TODO: Find best location for this call, and move this one also

@@ -498,7 +498,9 @@ esp_err_t esp_ble_audio_cap_handover_unregister_cb(const esp_ble_audio_cap_hando
  * esp_ble_audio_bap_broadcast_assistant_discover() must have been successfully perform for
  * all members in @p param before starting this procedure.
  *
- * @param   param   The parameters for the handover.
+ * @param   param   The parameters for the handover. Its @c ext_adv field is resolved
+ *                  internally from @c param->adv_handle, so the caller sets adv_handle
+ *                  and leaves ext_adv NULL.
  *
  * @return  ESP_OK on success, or an error code on failure.
  */

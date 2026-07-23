@@ -4154,6 +4154,15 @@ struct bt_uuid_128 {
 #define BT_UUID_CSIS_RANK \
     BT_UUID_DECLARE_16(BT_UUID_CSIS_RANK_VAL)
 /**
+ *  @brief Coordinated Set Name value (CSIS v1.1)
+ */
+#define BT_UUID_CSIS_SET_NAME_VAL 0x2c1a
+/**
+ *  @brief Coordinated Set Name
+ */
+#define BT_UUID_CSIS_SET_NAME \
+    BT_UUID_DECLARE_16(BT_UUID_CSIS_SET_NAME_VAL)
+/**
  *  @brief GATT Characteristic Encrypted Data Key Material UUID Value
  */
 #define BT_UUID_GATT_EDKM_VAL 0x2b88

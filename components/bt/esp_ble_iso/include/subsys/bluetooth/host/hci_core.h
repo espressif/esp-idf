@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <zephyr/bluetooth/addr.h>
+
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
     /** The application either explicitly or implicitly instructed the stack to scan
@@ -45,6 +47,12 @@ enum {
 struct bt_le_ext_adv {
     /* Advertising handle */
     uint8_t handle;
+
+    /* Advertising address */
+    bt_addr_le_t addr;
+
+    /* Advertising SID */
+    uint8_t sid;
 
     ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 };

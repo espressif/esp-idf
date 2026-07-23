@@ -827,6 +827,14 @@ int bt_le_bluedroid_iso_cmd_send_sync(uint16_t opcode,
     return bluedroid_err_to_errno(rc);
 }
 
+/* Strip the BTM_HCI_ERROR (0x80) flag Bluedroid ORs into tBTM_STATUS for controller
+ * HCI errors; the Zephyr host expects a raw HCI code. No-op on success. (Else a CIS
+ * failure surfaces as e.g. 0x9E instead of the real 0x1E.) */
+static inline uint8_t iso_hci_status(uint8_t btm_status)
+{
+    return btm_status & ~(uint8_t)BTM_HCI_ERROR;
+}
+
 static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *params)
 {
     enum iso_queue_item_type q_type;
@@ -870,7 +878,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         qdata = calloc(1, qdata_len);
         assert(qdata);
 
-        ev.status = params->btm_cis_established_evt.status;
+        ev.status = iso_hci_status(params->btm_cis_established_evt.status);
         ev.conn_handle = params->btm_cis_established_evt.conn_handle;
         sys_put_le24(params->btm_cis_established_evt.cig_sync_delay, ev.cig_sync_delay);
         sys_put_le24(params->btm_cis_established_evt.cis_sync_delay, ev.cis_sync_delay);
@@ -920,7 +928,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         qdata = calloc(1, qdata_len);
         assert(qdata);
 
-        ev.status = params->btm_big_cmpl.status;
+        ev.status = iso_hci_status(params->btm_big_cmpl.status);
         ev.big_handle = params->btm_big_cmpl.big_handle;
         sys_put_le24(params->btm_big_cmpl.big_sync_delay, ev.sync_delay);
         sys_put_le24(params->btm_big_cmpl.transport_latency, ev.latency);
@@ -968,7 +976,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         qdata = calloc(1, qdata_len);
         assert(qdata);
 
-        ev.status = params->btm_big_sync_estab.status;
+        ev.status = iso_hci_status(params->btm_big_sync_estab.status);
         ev.big_handle = params->btm_big_sync_estab.big_handle;
         sys_put_le24(params->btm_big_sync_estab.transport_latency_big, ev.latency);
         ev.nse = params->btm_big_sync_estab.nse;

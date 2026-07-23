@@ -1594,6 +1594,25 @@ int bt_bap_unicast_server_config_ase_safe(struct bt_conn *conn, struct bt_bap_st
                                           struct bt_audio_codec_cfg *codec_cfg,
                                           const struct bt_bap_qos_cfg_pref *qos_pref);
 
+/**
+ * @brief Initialize and configure a new ASE of a specific direction.
+ *
+ * Like bt_bap_unicast_server_config_ase(), but configures the first free ASE of
+ * the requested direction so a server can initiate a config on a source ASE.
+ *
+ * @param conn Connection object
+ * @param stream Configured stream object to be attached to the ASE
+ * @param codec_cfg Codec configuration
+ * @param qos_pref Audio Stream Quality of Service Preference
+ * @param dir ASE direction to configure (sink or source)
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_unicast_server_config_ase_with_dir(struct bt_conn *conn, struct bt_bap_stream *stream,
+                                              struct bt_audio_codec_cfg *codec_cfg,
+                                              const struct bt_bap_qos_cfg_pref *qos_pref,
+                                              enum bt_audio_dir dir);
+
 /** @} */ /* End of group bt_bap_unicast_server */
 
 /**

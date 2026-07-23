@@ -461,7 +461,7 @@ int example_audio_tx_scheduler_start(example_audio_tx_scheduler_t *scheduler,
     assert(scheduler);
     assert(period_us > 0);
 
-    return k_work_schedule_periodic(&scheduler->timer, (uint32_t)(period_us / 1000));
+    return k_work_schedule_periodic_us(&scheduler->timer, period_us);
 }
 
 int example_audio_tx_scheduler_stop(example_audio_tx_scheduler_t *scheduler)

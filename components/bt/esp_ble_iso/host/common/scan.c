@@ -12,6 +12,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -199,7 +200,7 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
 
     assert(adv_addr);
 
-    LOG_DBG("PaSyncLookupAddr[%s][%u]", bt_addr_le_str(adv_addr), sid);
+    LOG_INF("PaSyncLookupAddr[%s][%u]", bt_addr_le_str(adv_addr), sid);
 
     for (size_t i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
         if (atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_SYNCED) &&
@@ -275,7 +276,7 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
 {
     struct bt_le_per_adv_sync *per_adv_sync;
 
-    LOG_DBG("PaSyncNew[%u][%u][%u][%u][%u]",
+    LOG_INF("PaSyncNew[%u][%u][%u][%u][%u]",
             sync_handle, sid, phy, interval, conn_handle);
 
     if (addr_type > BT_ADDR_LE_RANDOM_ID || addr == NULL) {
@@ -301,9 +302,16 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
     per_adv_sync->interval = interval;
     per_adv_sync->conn_handle = conn_handle;
     per_adv_sync->addr.type = addr_type;
+#if CONFIG_BT_BLUEDROID_ENABLED
+    /* Bluedroid delivers the advertiser address MSB-first, but the lib compares in
+     * on-air/LSB-first order (bt_addr_le_t.a.val). NimBLE already supplies on-air
+     * order, so reverse only here. */
+    sys_memcpy_swap(per_adv_sync->addr.a.val, addr, BT_ADDR_SIZE);
+#else
     memcpy(per_adv_sync->addr.a.val, addr, BT_ADDR_SIZE);
+#endif
 
-    LOG_DBG("Addr[%s]", bt_addr_le_str(&per_adv_sync->addr));
+    LOG_INF("PaSyncAddr[%s]", bt_addr_le_str(&per_adv_sync->addr));
 
     if (out_sync) {
         *out_sync = per_adv_sync;
