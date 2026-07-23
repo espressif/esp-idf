@@ -52,6 +52,16 @@ The accompanying pytest script captures the `IMAGE_META` and `IMAGE_BASE64` outp
 
 It also compares the generated result with `golden_result.ppm` by hashing the decoded RGB pixel content. This turns the example into a regression test as well as a visual demo: the image must both render correctly for a human and match the stored golden output for CI.
 
+### Viewing The Result Locally
+
+Build and flash the example for your target, then run the pytest script from this example's directory:
+
+```bash
+pytest pytest_async_color_convert.py --target esp32p4 --port PORT
+```
+
+Replace `esp32p4` with another supported target and `PORT` with the board's serial device. Pytest prints the artifact directory after the test completes; open `async_color_convert_result.ppm` from that directory with a PPM-compatible image viewer.
+
 ## Replacing The Embedded UYVY Asset
 
 The example embeds `main/assets/sample_96x64_uyvy.yuv`.

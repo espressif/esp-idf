@@ -1033,6 +1033,10 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 并将这行代码放在项目 CMakeLists.txt 的 ``project()`` 命令之后，修改 ``myproject.elf`` 为你自己的项目名。如果最后一个参数是 ``TEXT``，那么构建系统会嵌入以 null 结尾的字符串，如果最后一个参数被设置为 ``BINARY``，则将文件内容按照原样嵌入。
 
+可选的 ``ALIGN`` 参数用于将嵌入数据的起始符号对齐到指定的正整数 2 的幂。例如，将二进制数据按 16 字节对齐::
+
+  target_add_binary_data(myproject.elf "main/data.bin" BINARY ALIGN 16)
+
 有关使用此技术的示例，请查看 file_serving 示例 :example_file:`protocols/http_server/file_serving/main/CMakeLists.txt` 中的 main 组件，两个文件会在编译时加载并链接到固件中。
 
 .. highlight:: cmake

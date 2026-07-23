@@ -5,19 +5,18 @@
 
 ## Overview
 
-This example embeds a 240 x 280 RAW8 Bayer image of a real scene in flash, copies it into a DMA-capable PSRAM input buffer, feeds it into the ISP through DW-GDMA, and prints the RGB888 output as base64. The pytest script decodes the output into a PPM image and compares it with the checked-in golden image.
+This example embeds a 240 x 280 RAW8 Bayer image of a real scene in flash, feeds it directly into the ISP through DW-GDMA, and prints the RGB888 output as base64. The ISP driver synchronizes the DMA buffers' cache automatically. The pytest script decodes the output into a PPM image and compares it with the checked-in golden image.
 
 The data flow is:
 
-1. The embedded BGGR RAW8 image is copied from flash into the ISP DMA input buffer.
-2. The image is transferred into the ISP via `DW-GDMA → ISP DMA input`.
-3. The ISP processes the data (demosaic, color adjustment) and outputs RGB888 (BGR24 byte layout).
-4. The RGB888 frame is base64-encoded and printed with machine-parseable markers.
-5. pytest decodes the payload, swaps BGR→RGB, saves one PPM file per frame, and compares it with the golden image.
+1. The embedded 16-byte-aligned BGGR RAW8 image is transferred from mapped flash into the ISP via `DW-GDMA → ISP DMA input`.
+2. The ISP processes the data (demosaic, color adjustment) and outputs RGB888 (BGR24 byte layout).
+3. The RGB888 frame is base64-encoded and printed with machine-parseable markers.
+4. pytest decodes the payload, swaps BGR→RGB, saves one PPM file per frame, and compares it with the golden image.
 
 ## Hardware Required
 
-- An ESP32-P4 devkit with PSRAM (this example allocates the ISP DMA input/output buffers from PSRAM).
+- An ESP32-P4 devkit with PSRAM (this example allocates the ISP output buffer from PSRAM).
 
 ## How to Use
 
@@ -43,7 +42,3 @@ IMAGE_BASE64_END
 Frame 0 done
 ISP DMA visual demo done.
 ```
-
-## Reference
-
-- [ESP-IDF: Image Signal Processor](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/isp.html)
