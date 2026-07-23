@@ -369,7 +369,9 @@ exit:
  * The dynamic buffer is normally sized to this single record. That is unsafe
  * whenever mbedtls pulls more than the peeked record into the same buffer:
  *   - a handshake message fragmented across records is reassembled in place,
- *     so the buffer must hold the whole message; and
+ *     so the buffer must hold the whole message;
+ *   - a non-fatal alert makes mbedtls skip it and read the following record
+ *     into the same buffer; and
  *   - a TLS 1.3 middlebox-compat CCS (RFC 8446 D.4) is skipped and the
  *     following, larger record is read into the same buffer.
  */
@@ -407,10 +409,20 @@ static int rx_reassembly_content_len(mbedtls_ssl_context *ssl,
         return 0;
     }
 
-    /* Reassembled / following-record size is not knowable here for an encrypted
-     * handshake record or a TLS 1.3 dummy CCS: size for the maximum record. */
+    /* For records that make mbedtls pull a further, unknown-size record into
+     * this same buffer, the total is not knowable from the peeked header, so
+     * size for the maximum record:
+     *   - an encrypted handshake record (its plaintext length is not visible);
+     *   - an alert: a non-fatal one makes mbedtls_ssl_handle_message_type()
+     *     return MBEDTLS_ERR_SSL_NON_FATAL, so the loop reads the next record;
+     *   - a TLS 1.3 middlebox-compat CCS, which is skipped and followed by a
+     *     (larger) record.
+     * Ordinary handshake messages are sized exactly above, so per-message
+     * dynamic sizing is preserved for them. */
     if (encrypted && (in_msgtype == MBEDTLS_SSL_MSG_HANDSHAKE ||
                       in_msgtype == MBEDTLS_SSL_MSG_APPLICATION_DATA)) {
+        *content_len = MBEDTLS_SSL_IN_CONTENT_LEN;
+    } else if (in_msgtype == MBEDTLS_SSL_MSG_ALERT) {
         *content_len = MBEDTLS_SSL_IN_CONTENT_LEN;
     }
 #if defined(MBEDTLS_SSL_PROTO_TLS1_3)
