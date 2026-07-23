@@ -76,3 +76,38 @@ def test_i2s_esp32c5_rev1(dut: Dut) -> None:
 )
 def test_i2s_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.flash_encryption_f4r8
+@pytest.mark.parametrize(
+    'config',
+    [
+        'flash_enc',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_i2s_with_flash_encryption_esp32s3_f4r8(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'flash_enc',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        'SOC_I2S_SUPPORTED == 1 and '
+        'SOC_PSRAM_DMA_CAPABLE == 1 and '
+        'SOC_FLASH_ENC_SUPPORTED == 1 and '
+        'IDF_TARGET not in ["esp32s3"]'
+    ),
+    indirect=['target'],
+)
+def test_i2s_with_flash_encryption(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
