@@ -368,7 +368,12 @@ static int esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_d
     if (os_memcmp(rx_param->sa, auth->peer_mac_addr, ETH_ALEN) != 0) {
         wpa_printf(MSG_DEBUG, "DPP: MAC address mismatch (expected "
                    MACSTR ") - drop", MAC2STR(auth->peer_mac_addr));
-        return ESP_ERR_DPP_FAILURE;
+        return ESP_OK;
+    }
+
+    if (auth->auth_success || !auth->waiting_auth_conf) {
+        wpa_printf(MSG_DEBUG, "DPP: Not waiting for Auth Confirm - drop");
+        return ESP_OK;
     }
 
     eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
@@ -401,7 +406,8 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
     uint8_t *buf;
 
     if (!dc) {
-        return ESP_ERR_DPP_FAILURE;
+        wpa_printf(MSG_DEBUG, "DPP: No config store for Peer Discovery Response - drop");
+        return ESP_OK;
     }
     const uint8_t *trans_id;
     uint16_t trans_id_len;
@@ -411,6 +417,11 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
 
     if (os_memcmp(dc->peer_mac_addr, rx_param->sa, ETH_ALEN) != 0) {
         wpa_printf(MSG_DEBUG, "DPP: Not expecting Peer Discovery response from " MACSTR, MAC2STR(rx_param->sa));
+        return ESP_OK;
+    }
+
+    if (s_dpp_ctx.peer_disc_resp_received) {
+        wpa_printf(MSG_DEBUG, "DPP: Peer Discovery Response already processed - drop");
         return ESP_OK;
     }
 
@@ -425,6 +436,10 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
         wpa_printf(MSG_DEBUG, "DPP: Ignore frame with unexpected Transaction ID %u", trans_id[0]);
         return ESP_OK;
     }
+
+    eloop_cancel_timeout(peer_disc_timeout, ELOOP_ALL_CTX, ELOOP_ALL_CTX);
+    eloop_cancel_timeout(esp_dpp_peer_disc_retry, NULL, NULL);
+    s_dpp_ctx.peer_disc_resp_received = true;
 
     const uint8_t *status_val;
     uint16_t status_len;
@@ -460,10 +475,6 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
         ret = ESP_ERR_DPP_INVALID_ATTR;
         goto out;
     }
-
-    /* peer_disc_timeout handles timeout in Enrollee role */
-    eloop_cancel_timeout(peer_disc_timeout, NULL, s_dpp_ctx.dpp_auth);
-    s_dpp_ctx.peer_disc_resp_received = true;
 
     if (!conf->connector || !conf->net_access_key || !conf->c_sign_key) {
         wpa_printf(MSG_ERROR, "DPP: Incomplete config for network introduction");
