@@ -18,6 +18,12 @@
 /* Number of elements in service class id list. */
 #define BTA_PBA_CLIENT_NUM_SVC_ELEMS        1
 
+/* Cookie passed as SDP user_data so a stale callback can be detected after CCB reuse */
+typedef struct {
+    tBTA_PBA_CLIENT_CCB *p_ccb;
+    UINT8               sdp_seq;
+} tBTA_PBA_CLIENT_SDP_CB_DATA;
+
 /*******************************************************************************
 **
 ** Function         bta_pba_client_sdp_cback
@@ -31,12 +37,24 @@
 static void bta_pba_client_sdp_cback(UINT16 status, void *user_data)
 {
     tBTA_PBA_CLIENT_DISC_RESULT *p_buf;
-    tBTA_PBA_CLIENT_CCB *p_ccb = (tBTA_PBA_CLIENT_CCB *)user_data;
+    tBTA_PBA_CLIENT_SDP_CB_DATA *p_cb_data = (tBTA_PBA_CLIENT_SDP_CB_DATA *)user_data;
+    tBTA_PBA_CLIENT_CCB *p_ccb;
+    UINT8 sdp_seq;
 
     APPL_TRACE_DEBUG("bta_pba_client_sdp_cback status:0x%x", status);
 
-    if (p_ccb == NULL || p_ccb->allocated == 0) {
-        APPL_TRACE_ERROR("bta_pba_client_sdp_cback EINVAL CCB");
+    if (p_cb_data == NULL) {
+        return;
+    }
+
+    p_ccb = p_cb_data->p_ccb;
+    sdp_seq = p_cb_data->sdp_seq;
+    osi_free(p_cb_data);
+
+    /* Drop callbacks for freed/reused CCBs or cancelled SDP searches */
+    if (p_ccb == NULL || p_ccb->allocated == 0 ||
+            p_ccb->sdp_seq != sdp_seq || p_ccb->p_disc_db == NULL) {
+        APPL_TRACE_WARNING("bta_pba_client_sdp_cback stale or invalid CCB");
         return;
     }
 
@@ -45,6 +63,20 @@ static void bta_pba_client_sdp_cback(UINT16 status, void *user_data)
         p_buf->hdr.layer_specific = p_ccb->allocated;
         p_buf->status = status;
         bta_sys_sendmsg(p_buf);
+    } else {
+        /* report connection closed event */
+        tBTA_PBA_CLIENT_CONN conn;
+        conn.handle = p_ccb->allocated;
+        conn.error = BTA_PBA_CLIENT_NO_RESOURCE;
+        bdcpy(conn.bd_addr, p_ccb->bd_addr);
+
+        /* free ccb */
+        bta_pba_client_free_db(p_ccb);
+        sdp_seq = p_ccb->sdp_seq;
+        memset(p_ccb, 0, sizeof(tBTA_PBA_CLIENT_CCB));
+        p_ccb->sdp_seq = sdp_seq;
+
+        bta_pba_client_cb.p_cback(BTA_PBA_CLIENT_CONN_CLOSE_EVT, (tBTA_PBA_CLIENT *)&conn);
     }
 }
 
@@ -102,6 +134,10 @@ void bta_pba_client_create_record(const char *p_service_name)
     /* add sdp record if not already registered */
     if (bta_pba_client_cb.sdp_handle == 0) {
         bta_pba_client_cb.sdp_handle = SDP_CreateRecord();
+        if (bta_pba_client_cb.sdp_handle == 0) {
+            APPL_TRACE_ERROR("SDP_CreateRecord failed");
+            return;
+        }
         bta_pba_client_add_record(p_service_name, bta_pba_client_cb.sdp_handle);
         bta_sys_add_uuid(UUID_SERVCLASS_PBAP_PCE);
     }
@@ -224,6 +260,7 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
     UINT16          attr_list[6];
     UINT8           num_attr = 6;
     BOOLEAN         db_inited = FALSE;
+    tBTA_PBA_CLIENT_SDP_CB_DATA *p_cb_data = NULL;
 
     /* get proto list and features */
     attr_list[0] = ATTR_ID_SERVICE_CLASS_ID_LIST;
@@ -250,13 +287,23 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
     }
 
     if (db_inited) {
-        /*start service discovery */
-        /* todo: avoid p_ccb being free during sdp */
-        db_inited = SDP_ServiceSearchAttributeRequest2(p_ccb->bd_addr, p_ccb->p_disc_db,
-                                                      bta_pba_client_sdp_cback, p_ccb);
+        p_cb_data = (tBTA_PBA_CLIENT_SDP_CB_DATA *) osi_malloc(sizeof(tBTA_PBA_CLIENT_SDP_CB_DATA));
+        if (p_cb_data == NULL) {
+            db_inited = FALSE;
+        } else {
+            /* New generation for this SDP request; must match in callback */
+            p_ccb->sdp_seq++;
+            p_cb_data->p_ccb = p_ccb;
+            p_cb_data->sdp_seq = p_ccb->sdp_seq;
+            db_inited = SDP_ServiceSearchAttributeRequest2(p_ccb->bd_addr, p_ccb->p_disc_db,
+                                                          bta_pba_client_sdp_cback, p_cb_data);
+        }
     }
 
     if (!db_inited) {
+        if (p_cb_data != NULL) {
+            osi_free(p_cb_data);
+        }
         /*free discover db */
         bta_pba_client_free_db(p_ccb);
         APPL_TRACE_ERROR("%s start service discovery failed", __FUNCTION__);
@@ -278,6 +325,9 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
 void bta_pba_client_free_db(tBTA_PBA_CLIENT_CCB *p_ccb)
 {
     if (p_ccb->p_disc_db != NULL) {
+        /* Bump seq before cancel so a sync/async SDP callback is treated as stale */
+        p_ccb->sdp_seq++;
+        SDP_CancelServiceSearch(p_ccb->p_disc_db);
         osi_free(p_ccb->p_disc_db);
         p_ccb->p_disc_db = NULL;
     }

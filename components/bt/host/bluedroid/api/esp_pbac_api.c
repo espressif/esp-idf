@@ -208,6 +208,9 @@ esp_err_t esp_pbac_pull_vcard_listing(esp_pbac_conn_hdl_t handle, const char *na
     args.pull_vcard_listing.handle = handle;
     args.pull_vcard_listing.name = (char *)name;
     if (app_param != NULL) {
+        if (app_param->include_search_value && app_param->search_value == NULL) {
+            return ESP_ERR_INVALID_ARG;
+        }
         args.pull_vcard_listing.include_app_param = true;
         memcpy(&args.pull_vcard_listing.app_param, app_param, sizeof(esp_pbac_pull_vcard_listing_app_param_t));
     }
