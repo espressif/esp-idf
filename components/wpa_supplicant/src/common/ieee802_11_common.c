@@ -281,8 +281,10 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 		switch (id) {
 #ifdef CONFIG_RRM
 		case WLAN_EID_RRM_ENABLED_CAPABILITIES:
-			os_memcpy(wpa_s->rrm_ie, pos, 5);
-			wpa_s->rrm.rrm_used = true;
+			if (elem->datalen >= 5) {
+				os_memcpy(wpa_s->rrm_ie, pos, 5);
+				wpa_s->rrm.rrm_used = true;
+			}
 			break;
 #endif
 #ifdef CONFIG_SAE_PK
