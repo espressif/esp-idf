@@ -52,7 +52,7 @@ You should see the app start up and create a task. Whatever trace bytes your enc
 ## Project Layout
 
 ```
-esp_trace/
+esp_trace_custom_library/
 ├── CMakeLists.txt
 ├── sdkconfig.defaults
 ├── main/
@@ -147,7 +147,7 @@ The example defaults to USB Serial JTAG. To use a different transport, edit `sdk
 | Transport | Config | Notes |
 | --- | --- | --- |
 | USB Serial JTAG | `CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG=y` | Default. Requires `ESP_CONSOLE_SECONDARY_NONE=y`. |
-| apptrace over JTAG | `CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y` + `CONFIG_APPTRACE_DEST_JTAG=y` | Needs OpenOCD on the host to drain the buffer. |
+| apptrace over JTAG | `CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y` + `CONFIG_APPTRACE_DEST_JTAG=y` | Needs OpenOCD on the host to read out the buffer. |
 | apptrace over UART | `CONFIG_ESP_TRACE_TRANSPORT_APPTRACE=y` + `CONFIG_APPTRACE_DEST_UART=y` | Pick a UART different from the console. |
 | External transport | `CONFIG_ESP_TRACE_TRANSPORT_EXTERNAL=y` | Another component must register a transport with `ESP_TRACE_REGISTER_TRANSPORT(...)`. |
 | None | `CONFIG_ESP_TRACE_TRANSPORT_NONE=y` | Useful if your library streams data over its own channel and just needs the FreeRTOS hooks. |
@@ -183,7 +183,7 @@ Because the transport is USB-Serial-JTAG and the console is on UART (`CONFIG_ESP
 esp_trace_start();    // resume emission (also resets the delta baseline)
 // ... do stuff ...
 esp_trace_stop();     // pause emission
-esp_trace_flush();    // drain transport buffers
+esp_trace_flush();    // flush transport buffers
 ```
 
 In this example the library boots with `s_enabled = false`, so nothing is emitted until `app_main()` calls `esp_trace_start()`. The trailing pair `esp_trace_flush(); esp_trace_stop();` makes sure the last events reach the host before the trace channel goes silent. Adapter wiring lives in [`adapter_encoder_ext_trace_lib.c`](components/ext_trace_lib/src/adapter_encoder_ext_trace_lib.c) (`start` / `stop` / `flush` callbacks); flush forwards to the transport's `flush_nolock`.

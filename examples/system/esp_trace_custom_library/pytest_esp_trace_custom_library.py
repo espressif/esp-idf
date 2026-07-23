@@ -86,7 +86,7 @@ def _capture_trace(ser: serial.Serial, trace_log_path: str, capture_s: float = 5
             except serial.SerialTimeoutException:
                 assert False, 'Timeout reached while reading from serial port, exiting...'
 
-        # Drain anything still in flight after the capture window.
+        # Read out anything still in flight after the capture window.
         time.sleep(0.2)
         end_time = time.time() + 1.0
         last_data_time = time.time()

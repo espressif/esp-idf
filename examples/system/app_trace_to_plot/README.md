@@ -5,9 +5,9 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to use the [Application Level Tracing Library](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#) (henceforth referred to as **App Trace**) to send and plot dummy sensor data to a host via JTAG instead of the normal method of logging via UART.
+This example demonstrates how to use the [Application Level Tracing Library](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/transports.html) (henceforth referred to as **App Trace**) to send and plot dummy sensor data to a host via JTAG instead of the normal method of logging via UART.
 
-UART logs are time consuming and can significantly slow down the function that calls it. Therefore, it is generally a bad idea to use UART logs in time-critical functions. Logging to host via JTAG is significantly faster and can be used in time-critical functions. For more details regarding logging to host via JTAG, refer to the [Logging to Host Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#app-trace-logging-to-host).
+UART logs are time consuming and can significantly slow down the function that calls it. Therefore, it is generally a bad idea to use UART logs in time-critical functions. Logging to host via JTAG is significantly faster and can be used in time-critical functions. For more details regarding logging to host via JTAG, refer to the [Logging to Host Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/transports.html#app-trace-logging-to-host).
 
 ### Hardware Required
 
@@ -65,7 +65,7 @@ idf.py openocd --openocd-commands "-f board/esp32-wrover-kit-3.3v.cfg -c 'init;r
 
 **Note:** data.json file is an example for plot config file. It can be changed or modified.
 
-**Note:** For more details on OpenOCD commands regarding App Trace, refer to the [OpenOCD Application Level Tracing Commands](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#openocd-application-level-tracing-commands)
+**Note:** For more details on OpenOCD commands regarding App Trace, refer to the [OpenOCD Application Level Tracing Commands](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/transports.html#openocd-application-level-tracing-commands)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

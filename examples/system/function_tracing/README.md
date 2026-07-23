@@ -130,7 +130,7 @@ The IDs are not chosen by the application: SystemView assigns each registered mo
 
 Function tracing is configured under **Component config → ESP Trace Configuration → Function Tracing** in `menuconfig`. Each option has built-in help. This example enables it and relies on the default `CONFIG_ESP_TRACE_FUNCTION_TRACE_AUTO_START` so recording follows the host session. File/function exclusion uses the `-finstrument-functions-exclude-*` compile flags (see [Instrumenting your code](#instrumenting-your-code)).
 
-For the full feature description and option reference, see the *Compiler-Instrumented Function Tracing* section of the [Application Level Tracing guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#compiler-instrumented-function-tracing).
+For the full feature description and option reference, see the [Compiler-Instrumented Function Tracing guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/function-tracing.html).
 
 ## Limitations
 

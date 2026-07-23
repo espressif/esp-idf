@@ -4,7 +4,7 @@
 
 This test code shows how to perform system-wide behavioral analysis of the program using [SEGGER SystemView tool](https://www.segger.com/products/development-tools/systemview/).
 
-For description of [SystemView tracing](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#system-behaviour-analysis-with-segger-systemview) please refer to **ESP32 Programming Guide**, section **Application Level Tracing library**. The following example provides practical implementation of this functionality.
+For description of [SystemView tracing](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tracing/sysview.html) please refer to **ESP32 Programming Guide**, section **Application Level Tracing library**. The following example provides practical implementation of this functionality.
 
 
 ## Use Case
