@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 370" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="370" fill="#ffffff" rx="8"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-size="14" fill="#333" font-weight="700">Up-Down Counting Timer Timing Diagram</text>
+  <line x1="180" y1="40" x2="720" y2="40" stroke="#ddd" stroke-width="1"/>
+
+  <g transform="translate(50, 55)">
+    <!-- ===== Parameters ===== -->
+    <!-- X-axis: 0 to 500px = 50 ticks (10px per tick) -->
+    <!-- Peak at 25: 50 ticks total, up 0→25 (250px), down 25→0 (250px) -->
+
+    <!-- Clock signal -->
+    <text x="-8" y="72" text-anchor="end" font-size="11" fill="#333" font-weight="600">clk</text>
+    <g transform="translate(0, 60)">
+      <polyline points="0,20 0,0 10,0 10,20 20,20 20,0 30,0 30,20 40,20 40,0 50,0 50,20 60,20 60,0 70,0 70,20 80,20 80,0 90,0 90,20 100,20 100,0 110,0 110,20 120,20 120,0 130,0 130,20 140,20 140,0 150,0 150,20 160,20 160,0 170,0 170,20 180,20 180,0 190,0 190,20 200,20 200,0 210,0 210,20 220,20 220,0 230,0 230,20 240,20 240,0 250,0 250,20 260,20 260,0 270,0 270,20 280,20 280,0 290,0 290,20 300,20 300,0 310,0 310,20 320,20 320,0 330,0 330,20 340,20 340,0 350,0 350,20 360,20 360,0 370,0 370,20 380,20 380,0 390,0 390,20 400,20 400,0 410,0 410,20 420,20 420,0 430,0 430,20 440,20 440,0 450,0 450,20 460,20 460,0 470,0 470,20 480,20 480,0 490,0 490,20 500,20 500,0" fill="none" stroke="#666" stroke-width="1.5"/>
+    </g>
+
+    <!-- ===== Count Bus (decimal values, up then down) ===== -->
+    <text x="-8" y="112" text-anchor="end" font-size="11" fill="#333" font-weight="600">count</text>
+    <g transform="translate(0, 90)">
+      <!-- Rising segment: 0 → 25 -->
+      <rect x="-8" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="0" y="20" text-anchor="middle" font-size="10" fill="#1565c0">0</text>
+
+      <rect x="42" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="50" y="20" text-anchor="middle" font-size="10" fill="#1565c0">5</text>
+
+      <rect x="92" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="100" y="20" text-anchor="middle" font-size="10" fill="#1565c0">10</text>
+
+      <rect x="142" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="150" y="20" text-anchor="middle" font-size="10" fill="#1565c0">15</text>
+
+      <rect x="192" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="200" y="20" text-anchor="middle" font-size="10" fill="#1565c0">20</text>
+
+      <!-- Peak: count reaches 25 -->
+      <rect x="242" y="0" width="16" height="30" fill="#fff3e0" stroke="#ffb74d" stroke-width="1.5" rx="2"/>
+      <text x="250" y="20" text-anchor="middle" font-size="10" fill="#e65100" font-weight="700">25</text>
+
+      <!-- Falling segment: 20 → 0 -->
+      <rect x="292" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="300" y="20" text-anchor="middle" font-size="10" fill="#1565c0">20</text>
+
+      <rect x="342" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="350" y="20" text-anchor="middle" font-size="10" fill="#1565c0">15</text>
+
+      <rect x="392" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="400" y="20" text-anchor="middle" font-size="10" fill="#1565c0">10</text>
+
+      <rect x="442" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="450" y="20" text-anchor="middle" font-size="10" fill="#1565c0">5</text>
+
+      <!-- End of cycle: back to 0, then the next cycle counts up again -->
+      <rect x="492" y="0" width="16" height="30" fill="#e8f5e9" stroke="#81c784" stroke-width="1.5" rx="2"/>
+      <text x="500" y="20" text-anchor="middle" font-size="10" fill="#2e7d32">0</text>
+    </g>
+
+    <!-- ===== TEZ Signal ===== -->
+    <text x="-8" y="152" text-anchor="end" font-size="11" fill="#333" font-weight="600">TEZ</text>
+    <g transform="translate(0, 130)">
+      <line x1="0" y1="20" x2="500" y2="20" stroke="#e53935" stroke-width="1.5"/>
+      <!-- Pulse at cycle start (count = 0) -->
+      <polyline points="0,20 0,0 10,0 10,20" fill="none" stroke="#e53935" stroke-width="1.5"/>
+      <!-- Pulse at cycle end (count returns to 0) -->
+      <polyline points="490,20 490,0 500,0 500,20" fill="none" stroke="#e53935" stroke-width="1.5"/>
+    </g>
+
+    <!-- ===== TEP Signal ===== -->
+    <text x="-8" y="192" text-anchor="end" font-size="11" fill="#333" font-weight="600">TEP</text>
+    <g transform="translate(0, 170)">
+      <line x1="0" y1="20" x2="500" y2="20" stroke="#1e88e5" stroke-width="1.5"/>
+      <!-- Pulse at peak (count = 25) -->
+      <polyline points="240,20 240,0 260,0 260,20" fill="none" stroke="#1e88e5" stroke-width="1.5"/>
+    </g>
+
+    <!-- ===== Waveform (triangle) ===== -->
+    <text x="-8" y="232" text-anchor="end" font-size="11" fill="#333" font-weight="600">wave</text>
+    <g transform="translate(0, 210)">
+      <!-- Triangle: rise 0 -> 25, fall 25 -> 0, then rise again for the next cycle -->
+      <polyline points="0,20 250,0 500,20 630,10" fill="none" stroke="#8e24aa" stroke-width="2"/>
+    </g>
+
+    <!-- ===== Period bracket ===== -->
+    <g transform="translate(0, 250)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#999" stroke-width="1"/>
+      <line x1="500" y1="0" x2="500" y2="12" stroke="#999" stroke-width="1"/>
+      <line x1="0" y1="6" x2="500" y2="6" stroke="#999" stroke-width="1"/>
+      <text x="250" y="30" text-anchor="middle" font-size="12" fill="#555">auto-reload period = 50 ticks (peak = 25)</text>
+    </g>
+
+    <!-- ===== Annotation: relation lines ===== -->
+    <g transform="translate(0, 0)">
+      <!-- Count=0 → TEZ -->
+      <line x1="0" y1="120" x2="0" y2="150" stroke="#e53935" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="500" y1="120" x2="500" y2="150" stroke="#e53935" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- Count=25 → TEP -->
+      <line x1="250" y1="120" x2="250" y2="190" stroke="#1e88e5" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- Peak marker -->
+      <line x1="250" y1="60" x2="250" y2="250" stroke="#ffb74d" stroke-width="1" stroke-dasharray="6,4" opacity="0.5"/>
+      <text x="250" y="50" text-anchor="middle" font-size="9" fill="#e65100">peak</text>
+    </g>
+
+    <!-- Signal labels on the right -->
+    <g transform="translate(545, 0)">
+      <text x="0" y="75" font-size="9" fill="#888">Timer clock source</text>
+      <text x="0" y="115" font-size="9" fill="#888">Counter value (decimal), up then down</text>
+      <text x="0" y="155" font-size="9" fill="#888">Pulse when counter = 0</text>
+      <text x="0" y="195" font-size="9" fill="#888">Pulse when counter = peak</text>
+      <text x="0" y="235" font-size="9" fill="#888">Triangle: count 0 to 25, back to 0</text>
+    </g>
+  </g>
+</svg>

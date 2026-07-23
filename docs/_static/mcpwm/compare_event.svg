@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="'DejaVu Sans Mono', 'Consolas', 'Liberation Mono', monospace">
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0,0 8,3 0,6" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="420" fill="#ffffff" rx="8"/>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" font-size="14" fill="#333" font-weight="700">Compare Event: Timer + Comparator + Generator</text>
+  <line x1="180" y1="40" x2="720" y2="40" stroke="#ddd" stroke-width="1"/>
+
+  <g transform="translate(64, 55)">
+    <!-- X-axis: 0 to 500px = 50 ticks (10px per tick) -->
+
+    <!-- Clock signal -->
+    <text x="-8" y="72" text-anchor="end" font-size="11" fill="#333" font-weight="600">clk</text>
+    <g transform="translate(0, 60)">
+      <polyline points="0,20 0,0 10,0 10,20 20,20 20,0 30,0 30,20 40,20 40,0 50,0 50,20 60,20 60,0 70,0 70,20 80,20 80,0 90,0 90,20 100,20 100,0 110,0 110,20 120,20 120,0 130,0 130,20 140,20 140,0 150,0 150,20 160,20 160,0 170,0 170,20 180,20 180,0 190,0 190,20 200,20 200,0 210,0 210,20 220,20 220,0 230,0 230,20 240,20 240,0 250,0 250,20 260,20 260,0 270,0 270,20 280,20 280,0 290,0 290,20 300,20 300,0 310,0 310,20 320,20 320,0 330,0 330,20 340,20 340,0 350,0 350,20 360,20 360,0 370,0 370,20 380,20 380,0 390,0 390,20 400,20 400,0 410,0 410,20 420,20 420,0 430,0 430,20 440,20 440,0 450,0 450,20 460,20 460,0 470,0 470,20 480,20 480,0 490,0 490,20 500,20 500,0" fill="none" stroke="#666" stroke-width="1.5"/>
+    </g>
+
+    <!-- Count Bus (decimal values every 5 ticks) -->
+    <text x="-8" y="112" text-anchor="end" font-size="11" fill="#333" font-weight="600">count</text>
+    <g transform="translate(0, 90)">
+      <rect x="-8" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="0" y="20" text-anchor="middle" font-size="10" fill="#1565c0">0</text>
+
+      <rect x="42" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="50" y="20" text-anchor="middle" font-size="10" fill="#1565c0">5</text>
+
+      <rect x="92" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="100" y="20" text-anchor="middle" font-size="10" fill="#1565c0">10</text>
+
+      <!-- Compare match at tick 15 -->
+      <rect x="142" y="0" width="16" height="30" fill="#fff3e0" stroke="#ff9800" stroke-width="2" rx="2"/>
+      <text x="150" y="20" text-anchor="middle" font-size="10" fill="#e65100" font-weight="700">15</text>
+
+      <rect x="192" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="200" y="20" text-anchor="middle" font-size="10" fill="#1565c0">20</text>
+
+      <rect x="242" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="250" y="20" text-anchor="middle" font-size="10" fill="#1565c0">25</text>
+
+      <rect x="292" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="300" y="20" text-anchor="middle" font-size="10" fill="#1565c0">30</text>
+
+      <rect x="342" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="350" y="20" text-anchor="middle" font-size="10" fill="#1565c0">35</text>
+
+      <rect x="392" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="400" y="20" text-anchor="middle" font-size="10" fill="#1565c0">40</text>
+
+      <rect x="442" y="0" width="16" height="30" fill="#e3f2fd" stroke="#90caf9" stroke-width="1" rx="2"/>
+      <text x="450" y="20" text-anchor="middle" font-size="10" fill="#1565c0">45</text>
+
+      <!-- Peak: count reaches 50, then reload -->
+      <rect x="492" y="0" width="16" height="30" fill="#fff3e0" stroke="#ffb74d" stroke-width="1.5" rx="2"/>
+      <text x="500" y="20" text-anchor="middle" font-size="10" fill="#e65100" font-weight="700">50</text>
+    </g>
+
+    <!-- cmp_match signal -->
+    <text x="-8" y="155" text-anchor="end" font-size="10" fill="#333" font-weight="600">cmp_match</text>
+    <g transform="translate(0, 135)">
+      <line x1="0" y1="20" x2="500" y2="20" stroke="#ff9800" stroke-width="1.5"/>
+      <!-- Pulse at tick 15 -->
+      <polyline points="150,20 150,0 160,0 160,20" fill="none" stroke="#ff9800" stroke-width="1.5"/>
+    </g>
+
+    <!-- TEZ signal -->
+    <text x="-8" y="195" text-anchor="end" font-size="11" fill="#333" font-weight="600">TEZ</text>
+    <g transform="translate(0, 175)">
+      <line x1="0" y1="20" x2="500" y2="20" stroke="#e53935" stroke-width="1.5"/>
+      <!-- Pulse at count = 0 -->
+      <polyline points="0,20 0,0 10,0 10,20" fill="none" stroke="#e53935" stroke-width="1.5"/>
+      <!-- Pulse on reload (count returns to 0) -->
+      <polyline points="500,20 500,0 510,0 510,20" fill="none" stroke="#e53935" stroke-width="1.5"/>
+    </g>
+
+    <!-- TEP signal -->
+    <text x="-8" y="235" text-anchor="end" font-size="11" fill="#333" font-weight="600">TEP</text>
+    <g transform="translate(0, 215)">
+      <line x1="0" y1="20" x2="500" y2="20" stroke="#1e88e5" stroke-width="1.5"/>
+      <polyline points="480,20 480,0 500,0 500,20" fill="none" stroke="#1e88e5" stroke-width="1.5"/>
+    </g>
+
+    <!-- PWM Output -->
+    <text x="-8" y="275" text-anchor="end" font-size="11" fill="#333" font-weight="600">PWM</text>
+    <g transform="translate(0, 255)">
+      <!-- Action: set high on TEZ, set low on compare match -->
+      <!-- tick 0-15: high, tick 15-50: low, tick 50: high again -->
+      <polyline points="0,0 150,0" fill="none" stroke="#43a047" stroke-width="1.5"/>
+      <polyline points="150,0 150,20" fill="none" stroke="#43a047" stroke-width="1.5"/>
+      <polyline points="150,20 500,20" fill="none" stroke="#43a047" stroke-width="1.5"/>
+      <polyline points="500,20 500,0" fill="none" stroke="#43a047" stroke-width="1.5"/>
+    </g>
+
+    <!-- Period bracket -->
+    <g transform="translate(0, 320)">
+      <line x1="0" y1="0" x2="0" y2="12" stroke="#999" stroke-width="1"/>
+      <line x1="500" y1="0" x2="500" y2="12" stroke="#999" stroke-width="1"/>
+      <line x1="0" y1="6" x2="500" y2="6" stroke="#999" stroke-width="1"/>
+      <text x="250" y="30" text-anchor="middle" font-size="12" fill="#555">period = 50 ticks</text>
+    </g>
+
+    <!-- Relation lines -->
+    <g transform="translate(0, 0)">
+      <!-- Compare match at tick 15 → cmp_match pulse → PWM falling edge -->
+      <line x1="150" y1="100" x2="150" y2="135" stroke="#ff9800" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="150" y1="155" x2="150" y2="255" stroke="#ff9800" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- TEZ → PWM rising edge -->
+      <line x1="0" y1="195" x2="0" y2="255" stroke="#e53935" stroke-width="1" stroke-dasharray="4,4"/>
+      <!-- TEZ on reload → PWM rising edge -->
+      <line x1="500" y1="195" x2="500" y2="255" stroke="#e53935" stroke-width="1" stroke-dasharray="4,4"/>
+
+      <!-- Duty cycle annotation: PWM high from tick 0 to tick 15 -->
+      <line x1="0" y1="284" x2="0" y2="292" stroke="#43a047" stroke-width="1"/>
+      <line x1="150" y1="284" x2="150" y2="292" stroke="#43a047" stroke-width="1"/>
+      <line x1="0" y1="288" x2="150" y2="288" stroke="#43a047" stroke-width="1"/>
+      <text x="75" y="308" text-anchor="middle" font-size="11" fill="#43a047" font-weight="600">duty = 15 ticks (30 %)</text>
+
+      <!-- Cmp threshold annotation -->
+      <line x1="160" y1="128" x2="200" y2="128" stroke="#ff9800" stroke-width="1"/>
+      <text x="210" y="132" font-size="11" fill="#e65100">cmp_ticks = 15</text>
+    </g>
+
+    <!-- Signal labels -->
+    <g transform="translate(580, 0)">
+      <text x="0" y="75" font-size="9" fill="#888">Timer clock source</text>
+      <text x="0" y="115" font-size="9" fill="#888">Counter value (decimal)</text>
+      <text x="0" y="153" font-size="9" fill="#888">Pulse when count = cmp_ticks</text>
+      <text x="0" y="193" font-size="9" fill="#888">Pulse when counter = 0</text>
+      <text x="0" y="233" font-size="9" fill="#888">Pulse when counter = peak</text>
+      <text x="0" y="273" font-size="9" fill="#888">PWM: set high on TEZ,</text>
+      <text x="0" y="283" font-size="9" fill="#888">set low on cmp_match</text>
+    </g>
+  </g>
+</svg>

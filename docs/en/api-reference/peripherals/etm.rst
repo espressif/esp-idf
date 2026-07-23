@@ -70,7 +70,7 @@ Other Peripheral Events
     :SOC_SYSTIMER_SUPPORT_ETM: - Refer to :doc:`/api-reference/system/esp_timer` for how to get the ETM event handle from esp_timer.
     :SOC_TIMER_SUPPORT_ETM: - Refer to :ref:`gptimer-etm-event-and-task` for how to get the ETM event handle from GPTimer.
     :SOC_GDMA_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/async_memcpy` for how to get the ETM event handle from async memcpy.
-    :SOC_MCPWM_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/mcpwm` for how to get the ETM event handle from MCPWM.
+    :SOC_MCPWM_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/mcpwm/mcpwm_etm` for how to get the ETM event handle from MCPWM.
     :SOC_ANA_CMPR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/ana_cmpr` for how to get the ETM event handle from analog comparator.
     :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/temp_sensor` for how to get the ETM event handle from temperature sensor.
     :SOC_I2S_SUPPORTS_ETM:  - Refer to :doc:`/api-reference/peripherals/i2s` for how to get the ETM event handle from I2S.

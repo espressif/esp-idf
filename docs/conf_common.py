@@ -145,7 +145,18 @@ SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst']
 
 SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst', 'api-reference/protocols/esp_sdio_slave_protocol.rst']
 
-MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
+MCPWM_DOCS = [
+    'api-reference/peripherals/mcpwm/index.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_advanced.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_cap.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_cmpr.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_etm.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_fault.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_gen.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_operator.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_sync.rst',
+    'api-reference/peripherals/mcpwm/mcpwm_timer.rst',
+]
 
 DEDIC_GPIO_DOCS = ['api-reference/peripherals/dedic_gpio.rst']
 

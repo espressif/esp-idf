@@ -16,6 +16,7 @@ api-reference/ethernet/esp_eth                  api-reference/network/esp_eth
 api-reference/mesh/index                        api-reference/network/index
 api-reference/mesh/esp_mesh                     api-reference/network/esp_mesh
 api-reference/peripherals/can                   api-reference/peripherals/twai
+api-reference/peripherals/mcpwm                api-reference/peripherals/mcpwm/index
 api-reference/peripherals/usb                   "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/introduction.html"
 api-reference/peripherals/usb_device            "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_device.html"
 api-reference/peripherals/usb_host              "https://docs.espressif.com/projects/esp-usb/en/latest/{IDF_TARGET_PATH_NAME}/usb_host.html"

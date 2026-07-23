@@ -397,7 +397,7 @@ LCD
     Legacy MCPWM Driver is Deprecated
     ---------------------------------
 
-    MCPWM driver was redesigned (see :doc:`MCPWM <../../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated.
+    MCPWM driver was redesigned (see :doc:`MCPWM </api-reference/peripherals/mcpwm/index>`), meanwhile, the legacy driver is deprecated.
 
     The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users.
 
