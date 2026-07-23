@@ -26,10 +26,47 @@ static const char *TAG = "simple_ble";
 static simple_ble_cfg_t *g_ble_cfg_p;
 static uint16_t *g_gatt_table_map;
 
-static uint8_t adv_config_done;
+static uint8_t adv_config_pending_mask;
 static esp_bd_addr_t s_cached_remote_bda = {0x0,};
-#define adv_config_flag      (1 << 0)
-#define scan_rsp_config_flag (1 << 1)
+#if SIMPLE_BLE_LEGACY_ADV
+#define ADV_CONFIG_FLAG      (1 << 0)
+#define SCAN_RSP_CONFIG_FLAG (1 << 1)
+#elif SIMPLE_BLE_EXT_ADV
+#define SIMPLE_BLE_EXT_ADV_INSTANCE    0
+#define EXT_ADV_PARAMS_CONFIG_FLAG     (1 << 0)
+#define EXT_ADV_DATA_CONFIG_FLAG       (1 << 1)
+#define EXT_SCAN_RSP_CONFIG_FLAG       (1 << 2)
+#define EXT_ADV_RAND_ADDR_CONFIG_FLAG  (1 << 3)
+
+static esp_ble_gap_ext_adv_params_t s_ext_adv_params = {
+    .type = ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND,
+    .interval_min = 0x100,
+    .interval_max = 0x100,
+    .channel_map = ADV_CHNL_ALL,
+    .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
+    .filter_policy = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
+    .tx_power = EXT_ADV_TX_PWR_NO_PREFERENCE,
+    .primary_phy = ESP_BLE_GAP_PHY_1M,
+    .max_skip = 0,
+    .secondary_phy = ESP_BLE_GAP_PHY_1M,
+    .sid = 0,
+    .scan_req_notif = false,
+};
+
+static const esp_ble_gap_ext_adv_t s_ext_adv = {
+    .instance = SIMPLE_BLE_EXT_ADV_INSTANCE,
+    .duration = 0,
+    .max_events = 0,
+};
+
+static void simple_ble_ext_adv_start(void)
+{
+    esp_err_t err = esp_ble_gap_ext_adv_start(1, &s_ext_adv);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "ext_adv_start failed, error code = 0x%x", err);
+    }
+}
+#endif
 
 uint8_t get_keep_ble_on()
 {
@@ -59,6 +96,7 @@ const uint8_t *simple_ble_get_uuid128(uint16_t handle)
     return NULL;
 }
 
+#if SIMPLE_BLE_LEGACY_ADV
 static void simple_ble_set_random_addr_if_configured(void)
 {
     if (g_ble_cfg_p->ble_addr == NULL) {
@@ -72,6 +110,7 @@ static void simple_ble_set_random_addr_if_configured(void)
         ESP_LOGW(TAG, "Failed to set random address, using configured address type");
     }
 }
+#endif
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
@@ -80,24 +119,83 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
     }
 
     switch (event) {
+#if SIMPLE_BLE_LEGACY_ADV
     case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-        adv_config_done &= (~adv_config_flag);
+        if (param->adv_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(TAG, "adv_data_set failed, status %d", param->adv_data_cmpl.status);
+            break;
+        }
+        adv_config_pending_mask &= (~ADV_CONFIG_FLAG);
 
         simple_ble_set_random_addr_if_configured();
 
-        if (adv_config_done == 0) {
+        if (adv_config_pending_mask == 0) {
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
         }
         break;
     case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
-        adv_config_done &= (~scan_rsp_config_flag);
+        if (param->scan_rsp_data_cmpl.status != ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGE(TAG, "scan_rsp_data_set failed, status %d", param->scan_rsp_data_cmpl.status);
+            break;
+        }
+        adv_config_pending_mask &= (~SCAN_RSP_CONFIG_FLAG);
 
         simple_ble_set_random_addr_if_configured();
 
-        if (adv_config_done == 0) {
+        if (adv_config_pending_mask == 0) {
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
         }
         break;
+#elif SIMPLE_BLE_EXT_ADV
+    case ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT:
+        if (param->ext_adv_set_params.status != ESP_BT_STATUS_SUCCESS ||
+                param->ext_adv_set_params.instance != SIMPLE_BLE_EXT_ADV_INSTANCE) {
+            ESP_LOGE(TAG, "ext_adv_set_params failed, status %d, instance %d",
+                     param->ext_adv_set_params.status, param->ext_adv_set_params.instance);
+            break;
+        }
+        adv_config_pending_mask &= (~EXT_ADV_PARAMS_CONFIG_FLAG);
+        if (adv_config_pending_mask == 0) {
+            simple_ble_ext_adv_start();
+        }
+        break;
+    case ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT:
+        if (param->ext_adv_set_rand_addr.status != ESP_BT_STATUS_SUCCESS ||
+                param->ext_adv_set_rand_addr.instance != SIMPLE_BLE_EXT_ADV_INSTANCE) {
+            ESP_LOGE(TAG, "ext_adv_set_rand_addr failed, status %d, instance %d",
+                     param->ext_adv_set_rand_addr.status, param->ext_adv_set_rand_addr.instance);
+            break;
+        }
+        adv_config_pending_mask &= (~EXT_ADV_RAND_ADDR_CONFIG_FLAG);
+        if (adv_config_pending_mask == 0) {
+            simple_ble_ext_adv_start();
+        }
+        break;
+    case ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT:
+        if (param->ext_adv_data_set.status != ESP_BT_STATUS_SUCCESS ||
+                param->ext_adv_data_set.instance != SIMPLE_BLE_EXT_ADV_INSTANCE) {
+            ESP_LOGE(TAG, "ext_adv_data_set failed, status %d, instance %d",
+                     param->ext_adv_data_set.status, param->ext_adv_data_set.instance);
+            break;
+        }
+        adv_config_pending_mask &= (~EXT_ADV_DATA_CONFIG_FLAG);
+        if (adv_config_pending_mask == 0) {
+            simple_ble_ext_adv_start();
+        }
+        break;
+    case ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT:
+        if (param->scan_rsp_set.status != ESP_BT_STATUS_SUCCESS ||
+                param->scan_rsp_set.instance != SIMPLE_BLE_EXT_ADV_INSTANCE) {
+            ESP_LOGE(TAG, "ext_scan_rsp_data_set failed, status %d, instance %d",
+                     param->scan_rsp_set.status, param->scan_rsp_set.instance);
+            break;
+        }
+        adv_config_pending_mask &= (~EXT_SCAN_RSP_CONFIG_FLAG);
+        if (adv_config_pending_mask == 0) {
+            simple_ble_ext_adv_start();
+        }
+        break;
+#endif
     case ESP_GAP_BLE_SEC_REQ_EVT:
         esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
         break;
@@ -145,18 +243,65 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGE(TAG, "set device name failed, error code = 0x%x", ret);
             return;
         }
+#if SIMPLE_BLE_LEGACY_ADV
         ret = esp_ble_gap_config_adv_data(g_ble_cfg_p->adv_data_p);
         if (ret) {
             ESP_LOGE(TAG, "config raw adv data failed, error code = 0x%x ", ret);
             return;
         }
-        adv_config_done |= adv_config_flag;
+        adv_config_pending_mask |= ADV_CONFIG_FLAG;
         ret = esp_ble_gap_config_adv_data(g_ble_cfg_p->scan_rsp_data_p);
         if (ret) {
             ESP_LOGE(TAG, "config raw scan rsp data failed, error code = 0x%x", ret);
             return;
         }
-        adv_config_done |= scan_rsp_config_flag;
+        adv_config_pending_mask |= SCAN_RSP_CONFIG_FLAG;
+#elif SIMPLE_BLE_EXT_ADV
+        s_ext_adv_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+        if (g_ble_cfg_p->ble_addr != NULL) {
+            s_ext_adv_params.own_addr_type = BLE_ADDR_TYPE_RANDOM;
+        }
+
+        /* Pre-set all expected flags before the first async call. */
+        adv_config_pending_mask = EXT_ADV_PARAMS_CONFIG_FLAG |
+                                  EXT_ADV_DATA_CONFIG_FLAG |
+                                  EXT_SCAN_RSP_CONFIG_FLAG;
+        if (g_ble_cfg_p->ble_addr != NULL) {
+            adv_config_pending_mask |= EXT_ADV_RAND_ADDR_CONFIG_FLAG;
+        }
+
+        ret = esp_ble_gap_ext_adv_set_params(SIMPLE_BLE_EXT_ADV_INSTANCE, &s_ext_adv_params);
+        if (ret) {
+            ESP_LOGE(TAG, "ext_adv_set_params failed, error code = 0x%x", ret);
+            return;
+        }
+
+        if (g_ble_cfg_p->ble_addr != NULL) {
+            esp_bd_addr_t rand_addr;
+            memcpy(rand_addr, g_ble_cfg_p->ble_addr, sizeof(esp_bd_addr_t));
+            ret = esp_ble_gap_ext_adv_set_rand_addr(SIMPLE_BLE_EXT_ADV_INSTANCE, rand_addr);
+            if (ret) {
+                ESP_LOGE(TAG, "ext_adv_set_rand_addr failed, error code = 0x%x", ret);
+                return;
+            }
+        }
+
+        ret = esp_ble_gap_config_ext_adv_data_raw(SIMPLE_BLE_EXT_ADV_INSTANCE,
+                                                   g_ble_cfg_p->raw_adv_data_len,
+                                                   g_ble_cfg_p->raw_adv_data_p);
+        if (ret) {
+            ESP_LOGE(TAG, "config_ext_adv_data_raw failed, error code = 0x%x", ret);
+            return;
+        }
+
+        ret = esp_ble_gap_config_ext_scan_rsp_data_raw(SIMPLE_BLE_EXT_ADV_INSTANCE,
+                                                        g_ble_cfg_p->raw_scan_rsp_data_len,
+                                                        g_ble_cfg_p->raw_scan_rsp_data_p);
+        if (ret) {
+            ESP_LOGE(TAG, "config_ext_scan_rsp_data_raw failed, error code = 0x%x", ret);
+            return;
+        }
+#endif
         break;
     case ESP_GATTS_READ_EVT:
         if (g_ble_cfg_p && g_ble_cfg_p->read_fn) {
@@ -207,7 +352,11 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         }
         memset(s_cached_remote_bda, 0, sizeof(esp_bd_addr_t));
         if (g_ble_cfg_p) {
+#if SIMPLE_BLE_LEGACY_ADV
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
+#elif SIMPLE_BLE_EXT_ADV
+            simple_ble_ext_adv_start();
+#endif
         }
         break;
     case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
