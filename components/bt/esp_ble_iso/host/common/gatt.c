@@ -307,7 +307,7 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 
     /* Match attribute user_data if set */
     if (attr_data && attr_data != attr->user_data) {
-        LOG_DBG("GattForeachIterMismatchData");
+        LOG_DBG("GattForeachIterSkipData");
         return BT_GATT_ITER_CONTINUE;
     }
 

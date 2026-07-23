@@ -61,11 +61,10 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
     };
 
     bt_uuid_to_str(&param.type.uuid, str, BT_UUID_STR_LEN);
-    LOG_DBG("Validating Create procedure with size: 0x%08X and "
-            "type: %s", param.size, str);
+    LOG_DBG("OtsOacpValCreate[%08x][%s]", param.size, str);
 
     if (!BT_OTS_OACP_GET_FEAT_CREATE(ots->features.oacp)) {
-        LOG_DBG("Create Procedure is not supported.");
+        LOG_DBG("OtsOacpCreateNotSupp");
         return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
     }
 
@@ -76,21 +75,21 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
 
     /* Verify Initialization Metadata */
     if (strlen(obj->metadata.name) > 0) {
-        LOG_ERR("Object name shall be a zero length string after object creation.");
+        LOG_ERR("OtsOacpObjNameNotEmpty");
         (void)bt_ots_obj_delete(ots, obj->id);
         err = -ECANCELED;
         goto exit;
     }
 
     if (obj->metadata.size.cur > 0) {
-        LOG_ERR("Object current size must be 0.");
+        LOG_ERR("OtsOacpObjCurSizeNotZero");
         (void)bt_ots_obj_delete(ots, obj->id);
         err = -ECANCELED;
         goto exit;
     }
 
     if (!BT_OTS_OBJ_GET_PROP_WRITE(obj->metadata.props)) {
-        LOG_ERR("Created object must have write property.");
+        LOG_ERR("OtsOacpObjNoWrProp");
         (void)bt_ots_obj_delete(ots, obj->id);
         err = -ECANCELED;
         goto exit;
@@ -99,7 +98,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
     ots->cur_obj = obj;
     ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 
-    LOG_DBG("Create procedure is complete");
+    LOG_DBG("OtsOacpCreateComp");
 
 exit:
     switch (err) {
@@ -127,27 +126,27 @@ static enum bt_gatt_ots_oacp_res_code oacp_delete_proc_validate(
     int err;
 
     if (!BT_OTS_OACP_GET_FEAT_DELETE(ots->features.oacp)) {
-        LOG_DBG("Delete Procedure is not supported.");
+        LOG_DBG("OtsOacpDeleteNotSupp");
         return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
     }
 
     if (!ots->cur_obj) {
-        LOG_DBG("No object is selected.");
+        LOG_DBG("OtsOacpNoObjSel");
         return BT_GATT_OTS_OACP_RES_INV_OBJ;
     }
 
     if (!BT_OTS_OBJ_GET_PROP_DELETE(ots->cur_obj->metadata.props)) {
-        LOG_DBG("Object properties do not permit deletion.");
+        LOG_DBG("OtsOacpDeleteNotPermitted");
         return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
     }
 
     err = bt_ots_obj_delete(ots, ots->cur_obj->id);
     if (err) {
-        LOG_ERR("Deleting object during Delete procedure failed: %d", err);
+        LOG_ERR("OtsOacpDeleteObjFail[%d]", err);
         goto exit;
     }
 
-    LOG_DBG("Delete procedure is complete");
+    LOG_DBG("OtsOacpDeleteComp");
 
 exit:
     switch (err) {
@@ -173,8 +172,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_checksum_proc_validate(
     int err;
     uint32_t checksum;
 
-    LOG_DBG("Validating Checksum procedure with offset: 0x%08X and "
-            "length: 0x%08X", params->offset, params->len);
+    LOG_DBG("OtsOacpValChecksum[%08x][%08x]", params->offset, params->len);
 
     if (!ots->cur_obj) {
         return BT_GATT_OTS_OACP_RES_INV_OBJ;
@@ -201,8 +199,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_checksum_proc_validate(
 
         checksum = bt_ots_client_calc_checksum((const uint8_t *)obj_data, params->len);
         net_buf_simple_add_le32(resp_param, checksum);
-        LOG_DBG("Calculate from offset %u len %u checksum 0x%08x", params->offset,
-                params->len, checksum);
+        LOG_DBG("OtsOacpChecksumCalc[%u][%u][%08x]", params->offset, params->len, checksum);
         return BT_GATT_OTS_OACP_RES_SUCCESS;
     } else {
         return BT_GATT_OTS_OACP_RES_OPER_FAILED;
@@ -217,8 +214,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 {
     const struct bt_gatt_ots_oacp_read_params *params = &proc->read_params;
 
-    LOG_DBG("Validating Read procedure with offset: 0x%08X and "
-            "length: 0x%08X", params->offset, params->len);
+    LOG_DBG("OtsOacpValRd[%08x][%08x]", params->offset, params->len);
 
     if (!ots->cur_obj) {
         return BT_GATT_OTS_OACP_RES_INV_OBJ;
@@ -246,7 +242,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
     memcpy(&ots->cur_obj->state.read_op.oacp_params, &proc->read_params,
            sizeof(ots->cur_obj->state.read_op.oacp_params));
 
-    LOG_DBG("Read procedure is accepted");
+    LOG_DBG("OtsOacpRdAccepted");
 
     return BT_GATT_OTS_OACP_RES_SUCCESS;
 }
@@ -259,15 +255,14 @@ static enum bt_gatt_ots_oacp_res_code oacp_write_proc_validate(
 {
     struct bt_gatt_ots_oacp_write_params *params = &proc->write_params;
 
-    LOG_DBG("Validating Write procedure with offset: 0x%08X and "
-            "length: 0x%08X", params->offset, params->len);
+    LOG_DBG("OtsOacpValWr[%08x][%08x]", params->offset, params->len);
 
     if (!ots->cur_obj) {
         return BT_GATT_OTS_OACP_RES_INV_OBJ;
     }
 
     if (!BT_OTS_OACP_GET_FEAT_WRITE(ots->features.oacp)) {
-        LOG_DBG("Write Procedure is not supported.");
+        LOG_DBG("OtsOacpWrNotSupp");
         return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
     }
 
@@ -318,7 +313,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_write_proc_validate(
     memcpy(&ots->cur_obj->state.write_op.oacp_params, params,
            sizeof(ots->cur_obj->state.write_op.oacp_params));
 
-    LOG_DBG("Write procedure is accepted");
+    LOG_DBG("OtsOacpWrAccepted");
 
     return BT_GATT_OTS_OACP_RES_SUCCESS;
 }
@@ -463,14 +458,14 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
     ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
 
     if (!ots->cur_obj) {
-        LOG_ERR("OTS Read operation failed: no current object");
+        LOG_ERR("OtsOacpRdNoCurObj");
         return;
     }
 
     if (ots->cb->obj_read == NULL &&
             !(IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST)) {
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
-        LOG_ERR("OTS Read operation failed: there is no OTS Read callback");
+        LOG_ERR("OtsOacpRdNoCb");
 
         return;
     }
@@ -479,10 +474,10 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
     offset  = read_op->oacp_params.offset + read_op->sent_len;
 
     if (read_op->sent_len >= read_op->oacp_params.len) {
-        LOG_DBG("OACP Read Op over L2CAP is completed");
+        LOG_DBG("OtsOacpRdL2capComp");
 
         if (read_op->sent_len > read_op->oacp_params.len) {
-            LOG_WRN("More bytes sent that the client requested");
+            LOG_WRN("OtsOacpSentMoreThanReq");
         }
 
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
@@ -508,7 +503,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
     }
 
     if (len < 0) {
-        LOG_ERR("OCAP Read Op failed with error: %zd", len);
+        LOG_ERR("OtsOacpRdOpFail[%zd]", len);
 
         bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
@@ -520,8 +515,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
     ots->l2cap.closed = oacp_l2cap_closed;
     err = bt_gatt_ots_l2cap_send(&ots->l2cap, obj_chunk, len);
     if (err) {
-        LOG_ERR("L2CAP CoC error: %d while trying to execute OACP "
-                "Read procedure", err);
+        LOG_WRN("OtsOacpL2capErr[%d]", err);
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
     } else {
         read_op->sent_len += len;
@@ -534,14 +528,13 @@ static void oacp_read_proc_execute(struct bt_ots *ots,
     struct bt_gatt_ots_oacp_read_params *params;
 
     if (!ots->cur_obj) {
-        LOG_ERR("Invalid Current Object on OACP Read procedure");
+        LOG_ERR("OtsOacpRdInvCurObj");
         return;
     }
 
     params = &ots->cur_obj->state.read_op.oacp_params;
 
-    LOG_DBG("Executing Read procedure with offset: 0x%08X and "
-            "length: 0x%08X", params->offset, params->len);
+    LOG_DBG("OtsOacpExecRd[%08x][%08x]", params->offset, params->len);
 
     oacp_read_proc_cb(&ots->l2cap, conn);
 }
@@ -560,13 +553,12 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
     ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
 
     if (!ots->cur_obj) {
-        LOG_ERR("Invalid Current Object on OACP Write procedure");
+        LOG_ERR("OtsOacpWrInvCurObj");
         return -ENODEV;
     }
 
     if (!ots->cb->obj_write) {
-        LOG_ERR("OTS Write operation failed: "
-                "there is no OTS Write callback");
+        LOG_ERR("OtsOacpWrNoCb");
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
         return -ENODEV;
     }
@@ -575,7 +567,7 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
     offset = write_op->oacp_params.offset + write_op->recv_len;
     len = buf->len;
     if (write_op->recv_len + len > write_op->oacp_params.len) {
-        LOG_WRN("More bytes received than the client indicated");
+        LOG_WRN("OtsOacpRecvMoreThanInd");
         len = write_op->oacp_params.len - write_op->recv_len;
     }
     rem = write_op->oacp_params.len - (write_op->recv_len + len);
@@ -591,24 +583,24 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
          * released by the l2cap layer. This is an unsupported use case at the moment.
          */
         if (rc == -EINPROGRESS) {
-            LOG_ERR("Unsupported error code %zd returned by object write callback", rc);
+            LOG_ERR("OtsOacpWrCbUnsuppRc[%zd]", rc);
         }
 
-        LOG_ERR("OTS Write operation failed with error: %zd", rc);
+        LOG_ERR("OtsOacpWrOpFail[%zd]", rc);
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
     } else {
         /* Return -EIO as an error if all of data was not written */
         if (rc != len) {
             len = 0;
             rc = -EIO;
-            LOG_ERR("OTS Write operation partially failed");
+            LOG_ERR("OtsOacpWrPartialFail");
             ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
         }
     }
 
     write_op->recv_len += len;
     if (write_op->recv_len == write_op->oacp_params.len) {
-        LOG_DBG("OACP Write Op over L2CAP is completed");
+        LOG_DBG("OtsOacpWrL2capComp");
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
     }
 
@@ -626,10 +618,10 @@ static void oacp_ind_cb(struct bt_conn *conn,
 {
     struct bt_ots *ots = (struct bt_ots *) params->attr->user_data;
 
-    LOG_DBG("Received OACP Indication ACK with status: 0x%04X", err);
+    LOG_DBG("OtsOacpRecvIndAck[%04x]", err);
 
     if (!ots->cur_obj) {
-        LOG_DBG("There is no object associated with this ACK");
+        LOG_DBG("OtsOacpNoObjForAck");
         return;
     }
 
@@ -644,7 +636,7 @@ static void oacp_ind_cb(struct bt_conn *conn,
         /* procedure is not in progress and was already completed */
         break;
     default:
-        LOG_ERR("Unsupported OTS state: %d", ots->cur_obj->state.type);
+        LOG_ERR("OtsOacpUnsuppState[%d]", ots->cur_obj->state.type);
         break;
     }
 }
@@ -664,7 +656,7 @@ static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
     oacp_res[oacp_res_len++] = oacp_status;
 
     if (oacp_proc.type == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC &&
-        oacp_status == BT_GATT_OTS_OACP_RES_SUCCESS) {
+            oacp_status == BT_GATT_OTS_OACP_RES_SUCCESS) {
         sys_put_le32(net_buf_simple_pull_le32(resp_param), (oacp_res + oacp_res_len));
         oacp_res_len += sizeof(uint32_t);
     }
@@ -677,7 +669,7 @@ static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
     ots->oacp_ind.params.data = oacp_res;
     ots->oacp_ind.params.len  = oacp_res_len;
 
-    LOG_DBG("Sending OACP indication");
+    LOG_DBG("OtsOacpSendInd");
 
     k_work_submit(&ots->oacp_ind.work);
 }
@@ -693,20 +685,20 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
     struct bt_ots *ots = (struct bt_ots *) attr->user_data;
     NET_BUF_SIMPLE_DEFINE(resp_param, sizeof(uint32_t));
 
-    LOG_DBG("Object Action Control Point GATT Write Operation");
+    LOG_DBG("OtsOacpGattWr");
 
     if (!ots->oacp_ind.is_enabled) {
-        LOG_WRN("OACP indications not enabled");
+        LOG_WRN("OtsOacpIndNotEnabled");
         return BT_GATT_ERR(BT_ATT_ERR_CCC_IMPROPER_CONF);
     }
 
     if (offset != 0) {
-        LOG_ERR("Invalid offset of OACP Write Request");
+        LOG_WRN("OtsOacpWrReqInvOft");
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
     if (k_work_is_pending(&ots->oacp_ind.work)) {
-        LOG_ERR("OACP Write received before indication sent");
+        LOG_WRN("OtsOacpWrBeforeIndSent");
         return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
     }
 
@@ -715,22 +707,21 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
     case 0:
         oacp_status = oacp_proc_validate(conn, ots, &oacp_proc, &resp_param);
         if (oacp_status != BT_GATT_OTS_OACP_RES_SUCCESS) {
-            LOG_WRN("OACP Write error status: 0x%02X", oacp_status);
+            LOG_WRN("OtsOacpWrErrStatus[%02x]", oacp_status);
         }
         break;
     case -ENOTSUP:
         oacp_status = BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
-        LOG_WRN("OACP unsupported procedure type: 0x%02X", oacp_proc.type);
+        LOG_WRN("OtsOacpUnsuppProcType[%02x]", oacp_proc.type);
         break;
     case -EBADMSG:
-        LOG_ERR("Invalid length of OACP Write Request for 0x%02X "
-                "Op Code", oacp_proc.type);
+        LOG_WRN("OtsOacpWrReqInvLen[%02x]", oacp_proc.type);
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
     case -ENODATA:
-        LOG_ERR("Invalid length of OACP Write Request");
+        LOG_WRN("OtsOacpWrReqNoData");
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
     default:
-        LOG_ERR("Invalid return code from oacp_command_decode: %d", decode_status);
+        LOG_ERR("OtsOacpDecodeInvRc[%d]", decode_status);
         return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
     }
 
@@ -745,7 +736,7 @@ void bt_gatt_ots_oacp_cfg_changed(const struct bt_gatt_attr *attr,
         CONTAINER_OF((struct bt_gatt_ccc_managed_user_data *) attr->user_data,
                      struct bt_gatt_ots_indicate, ccc);
 
-    LOG_DBG("Object Action Control Point CCCD value: 0x%04X", value);
+    LOG_DBG("OtsOacpCccd[%04x]", value);
 
     oacp_ind->is_enabled = false;
     if (value == BT_GATT_CCC_INDICATE) {
