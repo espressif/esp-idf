@@ -85,12 +85,56 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
  * The return from the function doesn't mean a finished receive. You need to register corresponding
  * callback function to get notification.
  *
+ * @note This function can be called from the RX-done callback (i.e. ISR context), e.g. to re-arm
+ * reception with a new buffer and minimize the RX gap. To call it while the cache is disabled,
+ * enable CONFIG_UHCI_RECV_FUNC_IN_IRAM so this function is placed in IRAM.
+ *
  * @return
  * - `ESP_OK`: The driver is ready for data reception.
  * - `ESP_ERR_INVALID_STATE`: The controller is not in enable state.
  * - `ESP_ERR_INVALID_ARG`: Invalid arguments (e.g., invalid controller handle, null buffer, invalid buffer size).
  */
 esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer, size_t buffer_size);
+
+/**
+ * @brief Start the receive continuously.
+ *
+ * Unlike `uhci_receive()` (which stops the DMA after one frame and must be re-armed), this keeps
+ * the GDMA running across EOFs. `read_buffer` is split across the DMA nodes and used as a circular
+ * ring: each finished frame (UART idle/length EOF) is delivered through the registered
+ * `on_rx_trans_event` callback with `flags.totally_received = true`, and the following frame lands
+ * in the next buffer without any re-arm. Call `uhci_stop_receive()` to end the session.
+ *
+ * @param[in] uhci_ctrl   Handle to the UHCI controller.
+ * @param[in] read_buffer Caller-provided storage buffer to receive into. Must stay valid until `uhci_stop_receive()`.
+ * @param[in] buffer_size The size of the storage buffer, in bytes.
+ *
+ * @note The callback delivers a pointer into the storage buffer (zero-copy). The application must
+ * consume the data before the DMA wraps around and overwrites it, so size the storage buffer for the
+ * expected throughput and consumer latency. Overrun protection is not provided in this version.
+ *
+ * @return
+ * - `ESP_OK`: Continuous reception started.
+ * - `ESP_ERR_INVALID_ARG`: Invalid arguments (e.g., null buffer or invalid controller handle).
+ * - `ESP_ERR_INVALID_STATE`: A reception is already in progress.
+ */
+esp_err_t uhci_start_receive_continuous(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer, size_t buffer_size);
+
+/**
+ * @brief Stop an ongoing reception.
+ *
+ * Stops the RX DMA and returns the controller to the idle state so it can be re-armed with
+ * `uhci_receive()` / `uhci_start_receive_continuous()` or deleted with `uhci_del_controller()`. Mainly
+ * used to end a `uhci_start_receive_continuous()` session; it is a no-op if no reception is in progress.
+ *
+ * @param[in] uhci_ctrl Handle to the UHCI controller.
+ *
+ * @return
+ * - `ESP_OK`: Reception stopped (or already idle).
+ * - `ESP_ERR_INVALID_ARG`: The provided `uhci_ctrl` handle is invalid or null.
+ * - `ESP_ERR_INVALID_STATE`: A reception is concurrently being armed; retry after it completes.
+ */
+esp_err_t uhci_stop_receive(uhci_controller_handle_t uhci_ctrl);
 
 /**
  * @brief Transmit data using the UHCI controller.
