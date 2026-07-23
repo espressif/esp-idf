@@ -223,7 +223,7 @@ extern void HID_HostDeinit(void);
 **
 ** Returns         tHID_STATUS
 *******************************************************************************/
-extern tHID_STATUS HID_HostSetSecurityLevel( char serv_name[], UINT8 sec_lvl );
+extern tHID_STATUS HID_HostSetSecurityLevel( const char *serv_name, UINT8 sec_lvl );
 
 /*******************************************************************************
 **

@@ -309,8 +309,14 @@ static void hci_packet_complete(BT_HDR *packet){
     uint16_t num_packets = 1;
     uint8_t *stream = packet->data + packet->offset;
 
+    if (packet->len < 1) {
+        return;
+    }
     STREAM_TO_UINT8(type, stream);
     if (type == DATA_TYPE_ACL/* || type == DATA_TYPE_SCO*/) {
+        if (packet->len < 3) {
+            return;
+        }
         STREAM_TO_UINT16(handle, stream);
         handle = handle & HCI_DATA_HANDLE_MASK;
         btsnd_hcic_host_num_xmitted_pkts(1, &handle, &num_packets);
@@ -480,6 +486,10 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     hci_packet_complete(packet);
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
+    if (packet->len < 1) {
+        osi_free(packet);
+        return;
+    }
     STREAM_TO_UINT8(type, stream);
     packet->offset++;
     packet->len--;

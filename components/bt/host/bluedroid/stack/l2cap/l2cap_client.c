@@ -112,7 +112,11 @@ l2cap_client_t *l2cap_client_new(const l2cap_client_callbacks_t *callbacks, void
         goto error;
     }
 
-    list_append(l2cap_clients, ret);
+    if (!list_append(l2cap_clients, ret)) {
+        list_free(ret->outbound_fragments);
+        osi_free(ret);
+        return NULL;
+    }
 
     return ret;
 
@@ -131,6 +135,11 @@ void l2cap_client_free(l2cap_client_t *client)
     l2cap_client_disconnect(client);
     list_free(client->outbound_fragments);
     osi_free(client);
+
+    if (l2cap_clients && list_is_empty(l2cap_clients)) {
+        list_free(l2cap_clients);
+        l2cap_clients = NULL;
+    }
 }
 
 bool l2cap_client_connect(l2cap_client_t *client, const bt_bdaddr_t *remote_bdaddr, uint16_t psm)
@@ -150,7 +159,12 @@ bool l2cap_client_connect(l2cap_client_t *client, const bt_bdaddr_t *remote_bdad
         return false;
     }
 
-    L2CA_SetConnectionCallbacks(client->local_channel_id, &l2cap_callbacks);
+    if (!L2CA_SetConnectionCallbacks(client->local_channel_id, &l2cap_callbacks)) {
+        L2CA_DisconnectReq(client->local_channel_id);
+        client->local_channel_id = 0;
+        return false;
+    }
+
     return true;
 }
 
@@ -192,8 +206,16 @@ bool l2cap_client_write(l2cap_client_t *client, buffer_t *packet)
         return false;
     }
 
+    uint16_t cid = client->local_channel_id;
+
     fragment_packet(client, packet);
     dispatch_fragments(client);
+
+    client = find(cid);
+    if (!client || !l2cap_client_is_connected(client)) {
+        return false;
+    }
+
     return true;
 }
 
@@ -261,7 +283,9 @@ static void config_request_cb(uint16_t local_channel_id, tL2CAP_CFG_INFO *reques
     }
 
     // If we've configured both endpoints, let the listener know we've connected.
-    client->configured_peer = true;
+    if (response.result == L2CAP_CFG_OK) {
+        client->configured_peer = true;
+    }
     if (l2cap_client_is_connected(client)) {
         client->callbacks.connected(client, client->context);
     }
@@ -355,7 +379,8 @@ static void congestion_cb(uint16_t local_channel_id, bool is_congested)
         // Once that's done, if we're still decongested, notify the listener so it
         // can start writing again.
         dispatch_fragments(client);
-        if (!client->is_congested) {
+        client = find(local_channel_id);
+        if (client && !client->is_congested && l2cap_client_is_connected(client)) {
             client->callbacks.write_ready(client, client->context);
         }
     }
@@ -368,6 +393,12 @@ static void read_ready_cb(uint16_t local_channel_id, BT_HDR *packet)
     l2cap_client_t *client = find(local_channel_id);
     if (!client) {
         L2CAP_TRACE_ERROR("%s unable to find L2CAP client matching LCID 0x%04x.\n", __func__, local_channel_id);
+        osi_free(packet);
+        return;
+    }
+
+    if (packet->len == 0) {
+        L2CAP_TRACE_ERROR("%s zero packet length\n", __func__);
         osi_free(packet);
         return;
     }
@@ -399,8 +430,10 @@ static void fragment_packet(l2cap_client_t *client, buffer_t *packet)
     assert(client != NULL);
     assert(packet != NULL);
 
+    bool ret = false;
     // TODO(sharvil): eliminate copy into BT_HDR.
     BT_HDR *bt_packet = osi_malloc(sizeof(BT_HDR) + buffer_length(packet) + L2CAP_MIN_OFFSET);
+    assert(bt_packet != NULL);
     bt_packet->offset = L2CAP_MIN_OFFSET;
     bt_packet->len = buffer_length(packet);
     memcpy(bt_packet->data + bt_packet->offset, buffer_ptr(packet), buffer_length(packet));
@@ -408,7 +441,8 @@ static void fragment_packet(l2cap_client_t *client, buffer_t *packet)
     for (;;) {
         if (bt_packet->len <= client->remote_mtu) {
             if (bt_packet->len > 0) {
-                list_append(client->outbound_fragments, bt_packet);
+                ret = list_append(client->outbound_fragments, bt_packet);
+                assert(ret);
             } else {
                 osi_free(bt_packet);
             }
@@ -416,11 +450,13 @@ static void fragment_packet(l2cap_client_t *client, buffer_t *packet)
         }
 
         BT_HDR *fragment = osi_malloc(sizeof(BT_HDR) + client->remote_mtu + L2CAP_MIN_OFFSET);
+        assert(fragment != NULL);
         fragment->offset = L2CAP_MIN_OFFSET;
         fragment->len = client->remote_mtu;
         memcpy(fragment->data + fragment->offset, bt_packet->data + bt_packet->offset, client->remote_mtu);
 
-        list_append(client->outbound_fragments, fragment);
+        ret = list_append(client->outbound_fragments, fragment);
+        assert(ret);
 
         bt_packet->offset += client->remote_mtu;
         bt_packet->len -= client->remote_mtu;
@@ -444,6 +480,7 @@ static void dispatch_fragments(l2cap_client_t *client)
         case L2CAP_DW_FAILED:
             L2CAP_TRACE_ERROR("%s error writing data to L2CAP connection LCID 0x%04x; disconnecting.", __func__, client->local_channel_id);
             l2cap_client_disconnect(client);
+            client->callbacks.disconnected(client, client->context);
             return;
 
         case L2CAP_DW_SUCCESS:
@@ -455,6 +492,10 @@ static void dispatch_fragments(l2cap_client_t *client)
 static l2cap_client_t *find(uint16_t local_channel_id)
 {
     assert(local_channel_id != 0);
+
+    if (!l2cap_clients) {
+        return NULL;
+    }
 
     for (const list_node_t *node = list_begin(l2cap_clients); node != list_end(l2cap_clients); node = list_next(node)) {
         l2cap_client_t *client = (l2cap_client_t *)list_node(node);
