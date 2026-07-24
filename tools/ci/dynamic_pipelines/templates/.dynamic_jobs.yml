@@ -52,7 +52,7 @@
     # set while generating the pipeline
     nodes: ""
     INSTALL_EXTRA_TOOLS: "xtensa-esp-elf-gdb riscv32-esp-elf-gdb openocd-esp32 esp-rom-elfs"
-    PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER} --capture=fd --verbosity=0 --unity-test-report-mode merge"
+    PYTEST_EXTRA_FLAGS: "--capture=fd --verbosity=0 --unity-test-report-mode merge"
   needs:
     - pipeline: $PARENT_PIPELINE_ID
       job: pipeline_variables
@@ -77,7 +77,6 @@
     - run_cmd python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # CI specific options start from "--known-failure-cases-file xxx". could ignore when running locally
     - run_cmd pytest $nodes
-      --pipeline-id $PARENT_PIPELINE_ID
       --junitxml=XUNIT_RESULT_${CI_JOB_ID}.xml
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --parallel-count ${CI_NODE_TOTAL:-1}

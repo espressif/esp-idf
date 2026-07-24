@@ -12,6 +12,11 @@ import sys
 import unittest
 from pathlib import Path
 from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 # Add scripts/ to sys.path so test modules can import the production code
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent / 'scripts'
@@ -61,11 +66,11 @@ def make_compressor() -> Any:
 
 def write_yaml_config(
     tmp_dir: str,
-    tags: list[str],
-    script_path: str | Path,
+    tags: List[str],
+    script_path: Union[str, Path],
     module_name: str = 'BLE_HOST',
     log_index_file: str = 'test_log_index.h',
-    tags_with_preserve: list[str] | None = None,
+    tags_with_preserve: Optional[List[str]] = None,
 ) -> Path:
     """Write a module_info.yml and return its path."""
     import yaml
@@ -140,9 +145,8 @@ class PipelineContext:
         shutil.copy2(src, dst)
         return str(rel_path)
 
-    def run_compression(self, src_list: list[str]) -> dict[str, list[tuple[int, str]]]:
-        """Run mirror + prepare + compress + header generation. Returns generated macros."""
-        self.compressor.mirror_local_includes()
+    def run_compression(self, src_list: List[str]) -> Dict[str, List[Tuple[int, str]]]:
+        """Run prepare + compress + header generation. Returns generated macros."""
         self.compressor.prepare_source_files(src_list)
 
         files_to_process = []
@@ -150,7 +154,7 @@ class PipelineContext:
             files_to_process.extend([(module, path) for path in info['files_to_process']])
         files_to_process.sort(key=lambda x: x[1])
 
-        all_macros: dict[str, list[tuple[int, str]]] = {}
+        all_macros: Dict[str, List[Tuple[int, str]]] = {}
         for file_info in files_to_process:
             file_macros = self.compressor.compress_file(file_info)
             for module, log_id, macro in file_macros:
@@ -186,8 +190,8 @@ class PipelineContext:
 
 def assert_header_matches_golden(
     test_case: unittest.TestCase,
-    generated_path: str | Path,
-    golden_path: str | Path,
+    generated_path: Union[str, Path],
+    golden_path: Union[str, Path],
 ) -> None:
     """Compare generated header to golden file, normalizing copyright year."""
     gen_text = Path(generated_path).read_text()

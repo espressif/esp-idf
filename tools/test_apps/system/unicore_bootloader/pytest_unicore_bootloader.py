@@ -4,7 +4,6 @@ import os
 import re
 
 import pytest
-from idf_ci_utils import IDF_PATH
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
@@ -19,12 +18,12 @@ def test_multicore_app_and_unicore_bootloader(dut: Dut, app_downloader, config) 
 
     assert 'multicore' in config
     app_config = config.replace('multicore', 'unicore')
+    build_dir = f'build_{dut.target}_{app_config}'
 
-    path_to_unicore_build = os.path.join(dut.app.app_path, f'build_{dut.target}_{app_config}')
     if app_downloader:
-        app_downloader.download_app(os.path.relpath(path_to_unicore_build, IDF_PATH), 'flash')
+        app_downloader.download_app(dut.app.app_path, build_dir, 'flash')
 
-    dut.serial.bootloader_flash(path_to_unicore_build)
+    dut.serial.bootloader_flash(os.path.join(dut.app.app_path, build_dir))
     dut.expect('Unicore bootloader')
     dut.expect('Multicore app')
     if 'psram' in config:
@@ -43,12 +42,12 @@ def test_unicore_app_and_multicore_bootloader(dut: Dut, app_downloader, config) 
 
     assert 'unicore' in config
     app_config = config.replace('unicore', 'multicore')
+    build_dir = f'build_{dut.target}_{app_config}'
 
-    path_to_multicore_build = os.path.join(dut.app.app_path, f'build_{dut.target}_{app_config}')
     if app_downloader:
-        app_downloader.download_app(os.path.relpath(path_to_multicore_build, IDF_PATH), 'flash')
+        app_downloader.download_app(dut.app.app_path, build_dir, 'flash')
 
-    dut.serial.bootloader_flash(path_to_multicore_build)
+    dut.serial.bootloader_flash(os.path.join(dut.app.app_path, build_dir))
     dut.expect('Multicore bootloader')
     dut.expect('Unicore app')
     if 'psram' in config:

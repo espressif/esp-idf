@@ -27,9 +27,9 @@ except ImportError:
     import idf
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-idf_py_path = os.path.join(current_dir, '..', 'idf.py')
+idf_py_path = os.path.normpath(os.path.join(current_dir, '..', 'idf.py'))
 extension_path = os.path.join(current_dir, 'test_idf_extensions', 'test_ext')
-py_actions_path = os.path.join(current_dir, '..', 'idf_py_actions')
+py_actions_path = os.path.normpath(os.path.join(current_dir, '..', 'idf_py_actions'))
 link_path = os.path.join(py_actions_path, 'test_ext')
 
 

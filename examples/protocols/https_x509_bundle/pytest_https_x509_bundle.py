@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -52,7 +52,6 @@ def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
 
 
 @pytest.mark.qemu
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'config',
     [

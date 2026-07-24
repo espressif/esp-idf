@@ -6,7 +6,6 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize('config', ['secure_update_with_fe'], indirect=True)
 @idf_parametrize('target', ['esp32c3'], indirect=['target'])
