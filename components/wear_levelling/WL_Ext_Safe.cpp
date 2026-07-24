@@ -63,16 +63,16 @@ esp_err_t WL_Ext_Safe::config(WL_Config_s *cfg, Flash_Access *partition)
     return ESP_OK;
 }
 
-esp_err_t WL_Ext_Safe::init()
+esp_err_t WL_Ext_Safe::init(bool allow_formatting)
 {
     esp_err_t result = ESP_OK;
     ESP_LOGV(TAG, "%s", __func__);
 
-    result = WL_Ext_Perf::init();
+    result = WL_Ext_Perf::init(allow_formatting);
     WL_EXT_RESULT_CHECK(result);
 
     //check if any buffer write operation was pending and recover data if needed
-    result = this->recover();
+    result = this->recover(allow_formatting);
     return result;
 }
 
@@ -82,7 +82,7 @@ size_t WL_Ext_Safe::get_flash_size()
     return WL_Ext_Perf::get_flash_size() - 2 * this->flash_sector_size;
 }
 
-esp_err_t WL_Ext_Safe::recover()
+esp_err_t WL_Ext_Safe::recover(bool allow_formatting)
 {
     esp_err_t result = ESP_OK;
 
@@ -94,6 +94,10 @@ esp_err_t WL_Ext_Safe::recover()
 
     // check if we have any incomplete transaction pending.
     if (state.sector_restore_sign == WL_EXT_SAFE_OK) {
+        // A pending transaction requires writes to complete. In no-format mode leave flash untouched.
+        if (!allow_formatting) {
+            return ESP_ERR_NOT_FOUND;
+        }
 
         // recover data from dump_addr and store it to temporary storage sector_buffer.
         result = this->read(this->dump_addr, this->sector_buffer, this->flash_sector_size);

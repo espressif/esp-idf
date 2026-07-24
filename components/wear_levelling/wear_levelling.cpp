@@ -49,6 +49,8 @@ static wl_instance_t s_instances[MAX_WL_HANDLES];
 static _lock_t s_instances_lock;
 static const char *TAG = "wear_levelling";
 
+static esp_err_t wl_unmount_internal(wl_handle_t handle, bool flush);
+
 static esp_err_t check_handle(wl_handle_t handle, const char *func)
 {
     if (handle == WL_INVALID_HANDLE) {
@@ -66,7 +68,7 @@ static esp_err_t check_handle(wl_handle_t handle, const char *func)
     return ESP_OK;
 }
 
-esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
+static esp_err_t wl_mount_internal(const esp_partition_t *partition, wl_handle_t *out_handle, bool formatting_allowed)
 {
     // Initialize variables before the first jump to cleanup label
     void *wl_flash_ptr = NULL;
@@ -156,9 +158,13 @@ esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
     }
 
     // Initialise sectors used by WL layer for respective flash driver
-    result = wl_flash->init();
+    result = wl_flash->init(formatting_allowed);
     if (ESP_OK != result) {
-        ESP_LOGE(TAG, "%s: init instance=0x%08" PRIx32 ", result=0x%x", __func__, *out_handle, result);
+        if (result == ESP_ERR_NOT_FOUND && !formatting_allowed) {
+            ESP_LOGD(TAG, "%s: no valid WL instance, instance=0x%08" PRIx32, __func__, *out_handle);
+        } else {
+            ESP_LOGE(TAG, "%s: init instance=0x%08" PRIx32 ", result=0x%x", __func__, *out_handle, result);
+        }
         goto out;
     }
 
@@ -183,7 +189,28 @@ out:
     return result;
 }
 
-esp_err_t wl_unmount(wl_handle_t handle)
+esp_err_t wl_mount(const esp_partition_t *partition, wl_handle_t *out_handle)
+{
+    return wl_mount_internal(partition, out_handle, true);
+}
+
+esp_err_t wl_mount_no_format(const esp_partition_t *partition, wl_handle_t *out_handle)
+{
+    return wl_mount_internal(partition, out_handle, false);
+}
+
+esp_err_t wl_probe(const esp_partition_t *partition)
+{
+    wl_handle_t handle = WL_INVALID_HANDLE;
+    esp_err_t result = wl_mount_no_format(partition, &handle);
+    if (result == ESP_OK) {
+        // Unmount without flushing, so probing does not advance the WL state
+        result = wl_unmount_internal(handle, false);
+    }
+    return result;
+}
+
+static esp_err_t wl_unmount_internal(wl_handle_t handle, bool flush)
 {
     _lock_acquire(&s_instances_lock);
 
@@ -193,7 +220,7 @@ esp_err_t wl_unmount(wl_handle_t handle)
         // running outside the global lock.
         _lock_acquire(&s_instances[handle].lock);
         Flash_Access *part = s_instances[handle].instance->get_part();
-        if (!part->is_readonly()) {
+        if (flush && !part->is_readonly()) {
             result = s_instances[handle].instance->flush();
         }
         part->~Flash_Access();
@@ -207,6 +234,11 @@ esp_err_t wl_unmount(wl_handle_t handle)
 
     _lock_release(&s_instances_lock);
     return result;
+}
+
+esp_err_t wl_unmount(wl_handle_t handle)
+{
+    return wl_unmount_internal(handle, true);
 }
 
 esp_err_t wl_erase_range(wl_handle_t handle, size_t start_addr, size_t size)

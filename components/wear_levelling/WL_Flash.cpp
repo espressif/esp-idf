@@ -107,7 +107,7 @@ esp_err_t WL_Flash::config(wl_config_t *cfg, Flash_Access *partition)
     return ESP_OK;
 }
 
-esp_err_t WL_Flash::init()
+esp_err_t WL_Flash::init(bool allow_formatting)
 {
     esp_err_t result = ESP_OK;
     if (this->configured == false) {
@@ -139,6 +139,12 @@ esp_err_t WL_Flash::init()
              this->state.wl_dummy_sec_move_count);
 
     ESP_LOGD(TAG, "%s starts: crc1= 0x%08" PRIx32 ", crc2 = 0x%08" PRIx32 ", this->state.crc= 0x%08" PRIx32 ", state_copy->crc= 0x%08" PRIx32 ", version=%" PRIu32 ", read_version=%" PRIu32, __func__, crc1, crc2, this->state.crc32, state_copy->crc32, this->cfg.version, this->state.version);
+    // Non-destructive mount: only a pristine, in-sync, current-version instance can be
+    // mounted without any write. Any other state needs a format or a recovery/upgrade
+    // write, so refuse and leave the flash untouched.
+    if (!allow_formatting && !((crc1 == this->state.crc32) && (crc2 == state_copy->crc32) && (crc1 == crc2) && (this->state.version == this->cfg.version))) {
+        return ESP_ERR_NOT_FOUND;
+    }
     if ((crc1 == this->state.crc32) && (crc2 == state_copy->crc32)) {
         // The state is OK. Check the ID
         if (this->state.version != this->cfg.version) {
