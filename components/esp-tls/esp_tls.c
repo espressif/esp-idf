@@ -317,6 +317,16 @@ static esp_err_t esp_tls_set_socket_options(int fd, const esp_tls_cfg_t *cfg)
             return ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
         }
 
+#if CONFIG_ESP_TLS_ENABLE_TCP_NODELAY
+        /* Disable Nagle's algorithm. Small control-plane writes (e.g. MQTT PUBLISH/PUBACK/PINGREQ)
+         * otherwise interact with the peer's delayed-ACK and stall ~40-200 ms until its timer fires.
+         * Non-fatal: a latency hint, not required for a correct connection (unlike the timeouts). */
+        int nodelay = 1;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) != 0) {
+            ESP_LOGW(TAG, "Fail to setsockopt TCP_NODELAY (non-fatal)");
+        }
+#endif
+
         if (cfg->keep_alive_cfg && cfg->keep_alive_cfg->keep_alive_enable) {
             int keep_alive_enable = 1;
             int keep_alive_idle = cfg->keep_alive_cfg->keep_alive_idle;
