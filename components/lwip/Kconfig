@@ -895,6 +895,53 @@ menu "LWIP"
             help
                 Enable checksum checking for received ICMP messages
 
+        config LWIP_CHECKSUM_CHECK_TCP
+            bool "Enable LWIP TCP checksum checking"
+            default y
+            help
+                Enable checksum checking for received TCP segments.
+
+                Can be disabled when the network interface hardware verifies
+                TCP checksums and drops corrupted frames (e.g. the internal
+                EMAC checksum offload engine on ESP32-S31). Do not disable
+                on interfaces without hardware checksum validation.
+
+        config LWIP_CHECKSUM_GEN_IP
+            bool "Generate IP checksums in software"
+            default y
+            help
+                Generate checksums in software for outgoing IP packets.
+
+                Can be disabled when the network interface hardware inserts
+                IP header checksums on transmit (checksum offload).
+
+        config LWIP_CHECKSUM_GEN_UDP
+            bool "Generate UDP checksums in software"
+            default y
+            help
+                Generate checksums in software for outgoing UDP datagrams.
+
+                Can be disabled when the network interface hardware inserts
+                UDP checksums on transmit (checksum offload).
+
+        config LWIP_CHECKSUM_GEN_TCP
+            bool "Generate TCP checksums in software"
+            default y
+            help
+                Generate checksums in software for outgoing TCP segments.
+
+                Can be disabled when the network interface hardware inserts
+                TCP checksums on transmit (checksum offload).
+
+        config LWIP_CHECKSUM_GEN_ICMP
+            bool "Generate ICMP checksums in software"
+            default y
+            help
+                Generate checksums in software for outgoing ICMP messages.
+
+                Can be disabled when the network interface hardware inserts
+                ICMP checksums on transmit (checksum offload).
+
     endmenu # Checksums
 
     config LWIP_TCPIP_TASK_STACK_SIZE
