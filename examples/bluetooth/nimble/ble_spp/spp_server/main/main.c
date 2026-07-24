@@ -411,7 +411,11 @@ static void ble_spp_uart_init(void)
         .source_clk = UART_SCLK_DEFAULT,
     };
     //Install UART driver, and get the queue.
-    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    esp_err_t err = uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE("SPP_SERVER", "uart_driver_install failed: %d", err);
+        return;
+    }
     //Set UART parameters
     uart_param_config(UART_NUM_0, &uart_config);
     //Set UART pins

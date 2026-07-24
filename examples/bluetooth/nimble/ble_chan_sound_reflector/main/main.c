@@ -71,13 +71,17 @@ void print_cs_event(const struct ble_cs_event *event)
             MODLOG_DFLT(INFO, "subev_result.num_antenna_paths = %u\n", event->subev_result.num_antenna_paths);
             MODLOG_DFLT(INFO, "subev_result.num_steps_reported = %u\n", event->subev_result.num_steps_reported);
 
-            for (int i = 0; i < event->subev_result.num_steps_reported; i++) {
-                const struct cs_steps_data *step = &event->subev_result.steps[i];
-                MODLOG_DFLT(INFO, "steps[%d]: mode=%u, channel=%u, data_len=%u, data=", i, step->mode, step->channel, step->data_len);
-                for (int j = 0; j < step->data_len; j++) {
-                    esp_rom_printf("%02x ", step->data[j]);
+            {
+                const uint8_t *p = (const uint8_t *)event->subev_result.steps;
+                for (int i = 0; i < event->subev_result.num_steps_reported; i++) {
+                    const struct cs_steps_data *step = (const struct cs_steps_data *)p;
+                    MODLOG_DFLT(INFO, "steps[%d]: mode=%u, channel=%u, data_len=%u, data=", i, step->mode, step->channel, step->data_len);
+                    for (int j = 0; j < step->data_len; j++) {
+                        esp_rom_printf("%02x ", step->data[j]);
+                    }
+                    esp_rom_printf("\n");
+                    p += sizeof(struct cs_steps_data) + step->data_len;
                 }
-                esp_rom_printf("\n");
             }
             break;
         case BLE_CS_EVENT_SUBEVET_RESULT_CONTINUE:
@@ -89,13 +93,17 @@ void print_cs_event(const struct ble_cs_event *event)
             MODLOG_DFLT(INFO, "subev_result_continue.num_antenna_paths = %u\n", event->subev_result_continue.num_antenna_paths);
             MODLOG_DFLT(INFO, "subev_result_continue.num_steps_reported = %u\n", event->subev_result_continue.num_steps_reported);
 
-            for (int i = 0; i < event->subev_result_continue.num_steps_reported; i++) {
-                const struct cs_steps_data *step = &event->subev_result_continue.steps[i];
-                MODLOG_DFLT(INFO, "steps[%d]: mode=%u, channel=%u, data_len=%u, data=", i, step->mode, step->channel, step->data_len);
-                for (int j = 0; j < step->data_len; j++) {
-                    esp_rom_printf("%02x ", step->data[j]);
+            {
+                const uint8_t *p = (const uint8_t *)event->subev_result_continue.steps;
+                for (int i = 0; i < event->subev_result_continue.num_steps_reported; i++) {
+                    const struct cs_steps_data *step = (const struct cs_steps_data *)p;
+                    MODLOG_DFLT(INFO, "steps[%d]: mode=%u, channel=%u, data_len=%u, data=", i, step->mode, step->channel, step->data_len);
+                    for (int j = 0; j < step->data_len; j++) {
+                        esp_rom_printf("%02x ", step->data[j]);
+                    }
+                    esp_rom_printf("\n");
+                    p += sizeof(struct cs_steps_data) + step->data_len;
                 }
-                esp_rom_printf("\n");
             }
 
             break;
@@ -124,6 +132,7 @@ static int blecs_gap_event(struct ble_cs_event *event, void *arg)
                 if (idx==1) {
                     most_recent_local_ranging_counter=event->subev_result.procedure_counter;
                 }
+                ble_gatts_store_ranging_data(ranging_subevent);
                 MODLOG_DFLT(INFO, "LE CS Subevent Result , status: Partial, procedure counter %d\n", event->subev_result.procedure_counter);
             } else {
                 MODLOG_DFLT(INFO, "LE CS Subevent Result , status: Unknown\n");
@@ -135,16 +144,19 @@ static int blecs_gap_event(struct ble_cs_event *event, void *arg)
                 MODLOG_DFLT(INFO, "LE CS Subevent Result Continue , status: Aborted\n");
             } else if ( event->subev_result_continue.procedure_done_status == BLE_HCI_LE_CS_SUBEVENT_DONE_STATUS_COMPLETE) {
                 MODLOG_DFLT(INFO, "LE CS Subevent Result Continue , status: Complete\n");
-                ranging_subevent.type = BLE_CS_EVENT_SUBEVET_RESULT_CONTINUE;
-                ranging_subevent.subev_result_continue = event->subev_result_continue;
                 /* To
                 * Get total number of CS procedure from CS enable event and then accordigly indicate to most recent ranging counter
                 Currently we are considering only one CS procedure
                 */
                ind ++;
                if (ind==1) {
-                ble_gatts_store_ranging_data(ranging_subevent);
+                struct ble_cs_event continue_event;
+                continue_event.type = BLE_CS_EVENT_SUBEVET_RESULT_CONTINUE;
+                continue_event.subev_result_continue = event->subev_result_continue;
+                ble_gatts_store_ranging_data(continue_event);
                 ble_gatts_indicate_ranging_data_ready(most_recent_local_ranging_counter);
+                idx = 0;
+                ind = 0;
                }
             }
 
@@ -226,6 +238,9 @@ ext_bleprph_advertise(void)
 
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error starting extended advertisement; rc=%d\n", rc);
+    }
 }
 #else
 /**
@@ -266,9 +281,10 @@ bleprph_advertise(void)
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
 #endif
-    fields.uuids16 = (ble_uuid16_t[]) {
+    static const ble_uuid16_t uuids16[] = {
         BLE_UUID16_INIT(BLE_UUID_RANGING_SERVICE_VAL)
     };
+    fields.uuids16 = uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
     rc = ble_gap_adv_set_fields(&fields);
@@ -335,6 +351,9 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "disconnect; reason=%d ", event->disconnect.reason);
         bleprph_print_conn_desc(&event->disconnect.conn);
         MODLOG_DFLT(INFO, "\n");
+        idx = 0;
+        ind = 0;
+        most_recent_local_ranging_counter = -1;
         /* Connection terminated; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
         ext_bleprph_advertise();
@@ -381,7 +400,6 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                     event->notify_tx.indication);
 
         if (event->notify_tx.status == BLE_HS_EDONE) {
-            vTaskDelay(4000 / portTICK_PERIOD_MS);
             ble_gatts_indicate_control_point_response(event->notify_tx.attr_handle,most_recent_local_ranging_counter);
         }
         return 0;
@@ -409,6 +427,9 @@ static void
 bleprph_on_reset(int reason)
 {
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
+    idx = 0;
+    ind = 0;
+    most_recent_local_ranging_counter = -1;
 }
 
 static void

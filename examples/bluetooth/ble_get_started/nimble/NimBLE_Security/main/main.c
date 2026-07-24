@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -59,7 +59,7 @@ static void nimble_host_task(void *param) {
     nimble_port_run();
 
     /* Clean up at exit */
-    vTaskDelete(NULL);
+    nimble_port_freertos_deinit();
 }
 
 static void heart_rate_task(void *param) {
@@ -123,6 +123,7 @@ void app_main(void) {
     rc = gap_init();
     if (rc != 0) {
         ESP_LOGE(TAG, "failed to initialize GAP service, error code: %d", rc);
+        nimble_port_deinit();
         return;
     }
 #endif
@@ -131,6 +132,7 @@ void app_main(void) {
     rc = gatt_svc_init();
     if (rc != 0) {
         ESP_LOGE(TAG, "failed to initialize GATT server, error code: %d", rc);
+        nimble_port_deinit();
         return;
     }
 
@@ -138,7 +140,12 @@ void app_main(void) {
     nimble_host_config_init();
 
     /* Start NimBLE host task thread and return */
-    xTaskCreate(nimble_host_task, "NimBLE Host", 4*1024, NULL, 5, NULL);
-    xTaskCreate(heart_rate_task, "Heart Rate", 4*1024, NULL, 5, NULL);
+    nimble_port_freertos_init(nimble_host_task);
+
+    rc = xTaskCreate(heart_rate_task, "Heart Rate", 4 * 1024, NULL, 5, NULL);
+    if (rc != pdPASS) {
+        ESP_LOGE(TAG, "failed to create heart rate task");
+        return;
+    }
     return;
 }

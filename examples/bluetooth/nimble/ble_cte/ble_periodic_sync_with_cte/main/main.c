@@ -173,7 +173,7 @@ static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
                 memcpy(dev_name, &adv_data[index + 2], name_len);
                 dev_name[name_len] = '\0';
 
-                if (strcmp(dev_name, CONFIG_SYNC_TARGET_DEVNAME) == 0) {
+                if (strcmp(dev_name, CONFIG_EXAMPLE_SYNC_TARGET_DEVNAME) == 0) {
                     should_sync = true;
                     break;
                 }
@@ -184,7 +184,7 @@ static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
 #else
     #error "Please select EXAMPLE_SYNC_BY_SID or EXAMPLE_SYNC_BY_NAME in menuconfig"
 #endif
-        if (should_sync) {
+        if (should_sync && disc->periodic_adv_itvl != 0) {
             ble_addr_t addr;
             memcpy(&addr, &disc->addr, sizeof(ble_addr_t));
 
@@ -249,6 +249,7 @@ static int periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
 static void periodic_sync_on_reset(int reason)
 {
     ESP_LOGE(TAG, "Resetting state; reason=%d", reason);
+    is_synced = 0;
 }
 
 static void periodic_sync_on_sync(void)
