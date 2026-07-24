@@ -1271,7 +1271,18 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
      * to RTC memory while we calculate RTC memory CRC.
      */
     esp_os_enter_critical(&s_config.lock);
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     esp_ipc_isr_stall_other_cpu();
+#else
+    /* Retry with the lock held on success. Drop the lock on failure so the other
+     * CPU can leave its critical section (and to avoid deadlock on s_config.lock).
+     */
+    while (esp_ipc_isr_stall_other_cpu_safe() != ESP_OK) {
+        esp_os_exit_critical(&s_config.lock);
+        esp_rom_delay_us(portTICK_PERIOD_MS * 1000 / 10);
+        esp_os_enter_critical(&s_config.lock);
+    }
+#endif
     esp_ipc_isr_stall_pause();
     /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
        critical section to avoid deadlocks and fastup the sleep process.
