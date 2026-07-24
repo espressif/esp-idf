@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,9 +71,8 @@ int fetch_current_time(struct ble_svc_cts_curr_time *ctime) {
         ctime->et_256.d_d_t.d_t.seconds = timeinfo.tm_sec;
 
         /* day of week */
-        /* time gives day range of [0, 6], current_time_sevice
-           has day range of [1,7] */
-        ctime->et_256.d_d_t.day_of_week = timeinfo.tm_wday + 1;
+        /* tm_wday: 0=Sunday..6=Saturday; CTS: 1=Monday..7=Sunday */
+        ctime->et_256.d_d_t.day_of_week = (timeinfo.tm_wday == 0) ? 7 : timeinfo.tm_wday;
 
         /* fractions_256 */
         ctime->et_256.fractions_256 = (((uint64_t)tv_now.tv_usec * 256L )/ 1000000L);
@@ -108,7 +107,9 @@ int set_current_time(struct ble_svc_cts_curr_time ctime) {
     timeinfo.tm_hour = ctime.et_256.d_d_t.d_t.hours;
     timeinfo.tm_min = ctime.et_256.d_d_t.d_t.minutes;
     timeinfo.tm_sec = ctime.et_256.d_d_t.d_t.seconds;
-    timeinfo.tm_wday = ctime.et_256.d_d_t.day_of_week - 1;
+    /* CTS day_of_week: 1=Monday..7=Sunday; tm_wday: 0=Sunday..6=Saturday */
+    timeinfo.tm_wday = (ctime.et_256.d_d_t.day_of_week == 7) ? 0 : ctime.et_256.d_d_t.day_of_week;
+    timeinfo.tm_isdst = -1;
     now = mktime(&timeinfo);
     if (now == (time_t)-1) {
         ESP_LOGE(TAG, "Failed to convert current time");
@@ -137,6 +138,7 @@ int set_local_time_info(struct ble_svc_cts_local_time_info info) {
     local_info.timezone = info.timezone;
     local_info.dst_offset = info.dst_offset;
     gettimeofday(&last_updated, NULL);
+    adjust_reason = (CHANGE_OF_DST_MASK | CHANGE_OF_TIME_ZONE_MASK);
     return 0;
 }
 int fetch_reference_time_info(struct ble_svc_cts_reference_time_info *info) {
@@ -160,8 +162,6 @@ int fetch_reference_time_info(struct ble_svc_cts_reference_time_info *info) {
         hours_since_update = (tv_now.tv_sec % 86400L) / 3600;
         info->hours_since_update = hours_since_update;
     }
-    adjust_reason = (CHANGE_OF_DST_MASK | CHANGE_OF_TIME_ZONE_MASK);
-
     return 0;
 }
 int

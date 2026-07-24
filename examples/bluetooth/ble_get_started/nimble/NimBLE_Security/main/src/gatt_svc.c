@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -24,7 +24,7 @@ static uint8_t heart_rate_chr_val[2] = {0};
 static uint16_t heart_rate_chr_val_handle;
 static const ble_uuid16_t heart_rate_chr_uuid = BLE_UUID16_INIT(0x2A37);
 
-static uint16_t heart_rate_chr_conn_handle = 0;
+static uint16_t heart_rate_chr_conn_handle = BLE_HS_CONN_HANDLE_NONE;
 static bool heart_rate_chr_conn_handle_inited = false;
 static bool heart_rate_ind_status = false;
 
@@ -165,6 +165,12 @@ error:
 }
 
 /* Public functions */
+void gatt_svr_reset_heart_rate_subscription(void) {
+    heart_rate_chr_conn_handle_inited = false;
+    heart_rate_ind_status = false;
+    heart_rate_chr_conn_handle = BLE_HS_CONN_HANDLE_NONE;
+}
+
 void send_heart_rate_indication(void) {
     /* Check if connection handle is initialized */
     if (!heart_rate_chr_conn_handle_inited) {
@@ -230,10 +236,19 @@ void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg) {
 int gatt_svr_subscribe_cb(struct ble_gap_event *event) {
     /* Check attribute handle */
     if (event->subscribe.attr_handle == heart_rate_chr_val_handle) {
+        if (event->subscribe.conn_handle == BLE_HS_CONN_HANDLE_NONE) {
+            return 0;
+        }
+
+        if (!event->subscribe.cur_indicate) {
+            gatt_svr_reset_heart_rate_subscription();
+            return 0;
+        }
+
         /* Update heart rate subscription status */
         heart_rate_chr_conn_handle = event->subscribe.conn_handle;
         heart_rate_chr_conn_handle_inited = true;
-        heart_rate_ind_status = event->subscribe.cur_indicate;
+        heart_rate_ind_status = true;
 
         /* Check security status */
         if (!is_connection_encrypted(event->subscribe.conn_handle)) {

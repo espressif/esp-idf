@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -150,9 +150,11 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
                                 sizeof(gatt_svr_chr_val),
                                 sizeof(gatt_svr_chr_val),
                                 &gatt_svr_chr_val, NULL);
-            ble_gatts_chr_updated(attr_handle);
-            MODLOG_DFLT(INFO, "Notification/Indication scheduled for "
-                        "all subscribed peers.\n");
+            if (rc == 0) {
+                ble_gatts_chr_updated(attr_handle);
+                MODLOG_DFLT(INFO, "Notification/Indication scheduled for "
+                            "all subscribed peers.\n");
+            }
             return rc;
         }
         goto unknown;
@@ -169,7 +171,7 @@ gatt_svc_access(uint16_t conn_handle, uint16_t attr_handle,
         if (ble_uuid_cmp(uuid, &gatt_svr_dsc_uuid.u) == 0) {
             rc = os_mbuf_append(ctxt->om,
                                 &gatt_svr_dsc_val,
-                                sizeof(gatt_svr_chr_val));
+                                sizeof(gatt_svr_dsc_val));
             return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
         }
         goto unknown;

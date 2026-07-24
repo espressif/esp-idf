@@ -35,6 +35,9 @@ static void start_advertising(void) {
 
     /* Set device name */
     name = ble_svc_gap_device_name();
+    if (name == NULL) {
+        name = DEVICE_NAME;
+    }
     adv_fields.name = (uint8_t *)name;
     adv_fields.name_len = strlen(name);
     adv_fields.name_is_complete = 1;

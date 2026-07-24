@@ -17,22 +17,19 @@
 
 static uint8_t ext_adv_pattern_1M[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xF2, 0xAB,
     0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', '1', 'M',
 };
 
 static uint8_t ext_adv_pattern_2M[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xF2, 0xAB,
     0x0e, BLE_HS_ADV_TYPE_COMP_NAME, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', '2', 'M',
 };
 
 static uint8_t ext_adv_pattern_coded[] = {
     0x02, BLE_HS_ADV_TYPE_FLAGS, 0x06,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xab, 0xcd,
-    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xAB, 0xF2,
+    0x03, BLE_HS_ADV_TYPE_COMP_UUIDS16, 0xF2, 0xAB,
     0x11, BLE_HS_ADV_TYPE_COMP_NAME, 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'p', 'h', 'y', '-', 'c', 'o', 'd', 'e',
     'd',
 };
@@ -239,7 +236,10 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "connection updated; status=%d ",
                     event->conn_update.status);
         rc = ble_gap_conn_find(event->conn_update.conn_handle, &desc);
-        assert(rc == 0);
+        if (rc != 0) {
+            MODLOG_DFLT(ERROR, "ble_gap_conn_find failed; rc=%d\n", rc);
+            return 0;
+        }
         bleprph_print_conn_desc(&desc);
         MODLOG_DFLT(INFO, "\n");
         return 0;
@@ -352,9 +352,11 @@ app_main(void)
     assert(rc == 0);
 #endif
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("bleprph-phy");
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
