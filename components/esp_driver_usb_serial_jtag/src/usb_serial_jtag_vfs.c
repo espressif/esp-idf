@@ -183,7 +183,7 @@ static int usb_serial_jtag_rx_char_no_driver(int fd)
 static ssize_t usb_serial_jtag_write(__attribute__((unused)) void *ctx, int fd, const void * data, size_t size)
 {
     if (!usb_serial_jtag_is_connected()) {
-        // TODO: IDF-14303
+        errno = EIO;
         return -1;
     }
     const char *data_c = (const char *)data;
@@ -231,7 +231,7 @@ static void usb_serial_jtag_return_char(int fd, int c)
 static ssize_t usb_serial_jtag_read(__attribute__((unused)) void *ctx, int fd, void* data, size_t size)
 {
     if (!usb_serial_jtag_is_connected()) {
-        // TODO: IDF-14303
+        errno = EIO;
         return -1;
     }
     assert(fd == USJ_LOCAL_FD);
@@ -358,7 +358,7 @@ static int usb_serial_jtag_wait_tx_done_no_driver(int fd)
 static int usb_serial_jtag_fsync(__attribute__((unused)) void *ctx, int fd)
 {
     if (!usb_serial_jtag_is_connected()) {
-        // TODO: IDF-14303
+        errno = EIO;
         return -1;
     }
     _lock_acquire_recursive(&s_ctx.write_lock);
