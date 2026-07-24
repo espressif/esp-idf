@@ -67,10 +67,17 @@ ext_get_data(uint8_t ext_adv_pattern[], int size)
     int rc;
 
     data = os_msys_get_pkthdr(size, 0);
-    assert(data);
+    if (!data) {
+        ESP_LOGE(tag, "ext_get_data: mbuf alloc failed");
+        return NULL;
+    }
 
     rc = os_mbuf_append(data, ext_adv_pattern, size);
-    assert(rc == 0);
+    if (rc != 0) {
+        ESP_LOGE(tag, "ext_get_data: mbuf_append failed; rc=%d", rc);
+        os_mbuf_free_chain(data);
+        return NULL;
+    }
 
     return data;
 }
@@ -146,13 +153,16 @@ ext_bleprph_advertise(void)
     /*enable connectable advertising for all Phy*/
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* Use dynamically inferred address type (set in gatts_on_sync via ble_hs_id_infer_auto) */
+    params.own_addr_type = gatts_addr_type;
 
     /* Set current phy; get mbuf for scan rsp data; fill mbuf with scan rsp data */
     params.primary_phy = BLE_HCI_LE_PHY_1M_PREF_MASK ;
     params.secondary_phy = BLE_HCI_LE_PHY_2M_PREF_MASK ;
     data = ext_get_data(ext_adv_pattern, sizeof(ext_adv_pattern));
+    if (!data) {
+        return;
+    }
     params.sid = 0;
 
     params.itvl_min = BLE_GAP_ADV_FAST_INTERVAL1_MIN;
@@ -281,7 +291,11 @@ notify_task(void *arg)
                             /* Memory not available for mbuf, yield briefly */
                             vTaskDelay(1);
                         }
-                    } while (om == NULL);
+                    } while (om == NULL && notify_state);
+                    if (om == NULL) {
+                        /* notify_state went false while waiting; stop test */
+                        break;
+                    }
 
                     rc = ble_gatts_notify_custom(conn_handle, notify_handle, om);
                     if (rc != 0) {
@@ -347,12 +361,14 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
         }
 
         if (event->connect.status != 0) {
-            /* Connection failed; resume advertising */
+            /* Connection failed; resume advertising. Skip HCI/conn_handle
+             * updates since the connection handle is invalid on failure. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
             ext_bleprph_advertise();
 #else
             gatts_advertise();
 #endif
+            break;
         }
 
         rc = ble_hs_hci_util_set_data_len(event->connect.conn_handle,
@@ -418,10 +434,15 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
                 }
             } else {
                 ESP_LOGI(tag, "Notifications disabled");
+                /* Wake up notify_task so it can exit the test loop cleanly;
+                 * without this the task would block forever on ulTaskNotifyTake. */
+                if (notify_task_handle) {
+                    xTaskNotifyGive(notify_task_handle);
+                }
             }
-        } else if (event->subscribe.attr_handle != notify_handle) {
-            notify_state = event->subscribe.cur_notify;
         }
+        /* Do NOT modify notify_state for other characteristics: that would
+         * corrupt the throughput test state while it is running. */
         break;
 
     case BLE_GAP_EVENT_NOTIFY_TX:
@@ -532,7 +553,8 @@ void app_main(void)
     BaseType_t task_rc = xTaskCreate(notify_task, "notify_task", 4096, NULL, 10, &notify_task_handle);
     if (task_rc != pdPASS) {
         ESP_LOGE(tag, "Failed to create notify_task (rc=%d)", task_rc);
-        return ;
+        nimble_port_deinit();
+        return;
     }
 #if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();

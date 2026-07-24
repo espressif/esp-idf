@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 * SPDX-License-Identifier: Unlicense OR CC0-1.0
 */
 
@@ -79,6 +79,10 @@ int blecent_on_subscribe(uint16_t conn_handle,
             param.cb_arg=NULL;
             ble_cs_initiator_procedure_start(&param);
         }
+    } else {
+        MODLOG_DFLT(ERROR, "Subscription failed; status=%d conn_handle=%d\n",
+                    error->status, conn_handle);
+        ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
     }
 
     return 0;
@@ -180,6 +184,7 @@ blecent_on_custom_read(uint16_t conn_handle,
             rc = ble_chan_ras_subsribe_by_uuid(BLE_UUID16_DECLARE(BLE_UUID_RAS_REALTIME_RD_VAL), peer, conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Error: Peer doesn't support the RAS on demand raging data or fail to subscribe \n");
+                ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
                 return -1;
             } else {
                 MODLOG_DFLT(INFO, "Subscribed to the RAS Realtime Ranging Data characteristic\n");
@@ -189,6 +194,7 @@ blecent_on_custom_read(uint16_t conn_handle,
             rc = ble_chan_ras_subsribe_by_uuid(BLE_UUID16_DECLARE(BLE_UUID_RAS_ONDEMAND_RD_VAL), peer, conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Error: Peer doesn't support the RAS on demand ranging data or fail to subscribe \n");
+                ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
                 return -1;
             } else {
                 MODLOG_DFLT(INFO, "Subscribed to the RAS On Demand Ranging Data characteristic\n");
@@ -197,7 +203,11 @@ blecent_on_custom_read(uint16_t conn_handle,
         ble_chan_ras_subscribe(peer, conn_handle);
     } else if (error->status == BLE_ATT_ERR_INSUFFICIENT_AUTHEN) {
         MODLOG_DFLT(INFO, "Error: Insufficient authentication to read the characteristic\n");
+        ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
         return -1;
+    } else {
+        MODLOG_DFLT(ERROR, "Error: Failed to read RAS Features; status=%d\n", error->status);
+        ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
     }
     return 0;
 }
@@ -279,6 +289,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
                         blecent_on_custom_read, (void *)peer);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "2 Error: Failed to read the custom subscribable characteristic; ""rc=%d\n", rc);
+        ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
     }
 }
 
@@ -289,7 +300,7 @@ static void
 blecent_scan(void)
 {
     uint8_t own_addr_type;
-    struct ble_gap_disc_params disc_params;
+    struct ble_gap_disc_params disc_params = {0};
     int rc;
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -351,15 +362,17 @@ blecent_connect_if_interesting(void *disc)
     adv_data_len = d->length_data;
 #endif
 
-    for (int i = 1; i < adv_data_len - 1; i++) {
-        if (adv_data[i-1] == 0x03 && adv_data[i] == 0x5b && adv_data[i+1] == 0x18) {
-            found = 1;
-            MODLOG_DFLT(DEBUG, "Found 0x5b18 at index %d\n", i);
-            break;
+    struct ble_hs_adv_fields adv_fields;
+    if (ble_hs_adv_parse_fields(&adv_fields, adv_data, adv_data_len) == 0) {
+        for (int i = 0; i < adv_fields.num_uuids16; i++) {
+            if (adv_fields.uuids16[i].value == BLE_UUID_RANGING_SERVICE_VAL) {
+                found = 1;
+                break;
+            }
         }
     }
     if (!found) {
-        MODLOG_DFLT(DEBUG, "0x5b18 not found in adv_data, skipping connect.\n");
+        MODLOG_DFLT(DEBUG, "Ranging Service UUID not found in adv_data, skipping connect.\n");
         return;
     }
 #if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
@@ -374,12 +387,18 @@ blecent_connect_if_interesting(void *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
     rc = ble_gap_connect(own_addr_type, addr, 30000, NULL,
                         blecent_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Connection failed.\n");
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        blecent_scan();
+#endif
         return;
     }
 }
@@ -577,18 +596,19 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 rc = ble_gattc_write_no_rsp_flat(event->notify_rx.conn_handle, ble_svc_ras_cp_val_handle, &value, sizeof value);
             } else if( value[0] == RASCP_RSP_OPCODE_RSP_CODE) {
                 MODLOG_DFLT(INFO, "Sucssefully completed the Ranging procedure\n");
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
-
             }
         }
         else if(ble_svc_ras_rd_val_handle == event->notify_rx.attr_handle){
             MODLOG_DFLT(INFO, "Received Ranging Data Ready Indication\n");
+            if (OS_MBUF_PKTLEN(event->notify_rx.om) < sizeof(uint16_t)) {
+                MODLOG_DFLT(ERROR, "Error: Invalid Ranging Data Ready Indication length\n");
+                return 0;
+            }
             uint16_t ranging_counter;
             os_mbuf_copydata(event->notify_rx.om, 0, sizeof(uint16_t), &ranging_counter);
-            most_recent_peer_ranging_counter=ranging_counter;
-            most_recent_local_ranging_counter= ranging_counter;
+            most_recent_peer_ranging_counter = ranging_counter;
 
-            if (most_recent_peer_ranging_counter!=most_recent_local_ranging_counter) {
+            if (most_recent_peer_ranging_counter != most_recent_local_ranging_counter) {
                MODLOG_DFLT(INFO, "Ranging counter mismatch : %" PRId32 " , %" PRId32,
 	                          most_recent_peer_ranging_counter,most_recent_local_ranging_counter);
                 return 0;

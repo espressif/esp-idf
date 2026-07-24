@@ -17,16 +17,16 @@ static uint8_t own_addr_type;
 static int blecoex_gap_event(struct ble_gap_event *event, void *arg);
 void ble_coex_advertise(void);
 void ble_coex_scan(void);
-static bool client_connect = 0;
+static uint8_t client_connect = 0;
 
 static int gatt_svr_access_cb(uint16_t conn_handle, uint16_t attr_handle,
                               struct ble_gatt_access_ctxt *ctxt, void *arg) {
     int rc = 0;
     if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
         static uint8_t data[1] = {42};  // Example value
-        os_mbuf_append(ctxt->om, data, sizeof(data));
+        rc = os_mbuf_append(ctxt->om, data, sizeof(data));
         if (rc != 0) {
-            return rc;
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
         }
     } else if (ctxt->op == BLE_GATT_ACCESS_OP_READ_DSC) {
         static uint8_t dsc_data[1] = {0x01};  // Example descriptor value
@@ -192,6 +192,10 @@ blecent_on_write(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Peer not found for conn_handle=%d\n", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
 
     dsc = peer_dsc_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLECOEX_SVC_ALERT_UUID),
@@ -216,7 +220,7 @@ blecent_on_write(uint16_t conn_handle,
     return 0;
 err:
     /* Terminate the connection. */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 
@@ -241,6 +245,10 @@ blecent_on_read(uint16_t conn_handle,
     uint8_t value[2];
     int rc;
     const struct peer *peer = peer_find(conn_handle);
+    if (peer == NULL) {
+        MODLOG_DFLT(ERROR, "Peer not found for conn_handle=%d\n", conn_handle);
+        return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    }
 
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(BLECOEX_SVC_ALERT_UUID),
@@ -263,7 +271,7 @@ blecent_on_read(uint16_t conn_handle,
     return 0;
 err:
     /* Terminate the connection. */
-    return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+    return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
 
@@ -369,23 +377,40 @@ blecoex_gap_event(struct ble_gap_event *event, void *arg)
 	    MODLOG_DFLT(INFO, "%02x:%02x:%02x:%02x:%02x:%02x",
                 u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
 
-	}
+            if (client_connect == 1) {
+                client_connect = 2;
 
-	if (client_connect == 1 ) {
-	    client_connect = 2;
+                /* Remember peer. */
+                rc = peer_add(event->connect.conn_handle);
+                if (rc != 0) {
+                    MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
+                    rc = ble_gap_terminate(event->connect.conn_handle,
+                                           BLE_ERR_REM_USER_CONN_TERM);
+                    if (rc != 0) {
+                        MODLOG_DFLT(ERROR, "Failed to terminate connection; rc=%d\n", rc);
+                        restart_coex();
+                    }
+                    return 0;
+                }
 
-            /* Remember peer. */
-            rc = peer_add(event->connect.conn_handle);
-            if (rc != 0) {
-                MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
-                restart_coex();
+                /* Perform service discovery */
+                rc = peer_disc_all(event->connect.conn_handle,
+                            blecent_on_disc_complete, NULL);
+                if(rc != 0) {
+                    MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+                    peer_delete(event->connect.conn_handle);
+                    rc = ble_gap_terminate(event->connect.conn_handle,
+                                           BLE_ERR_REM_USER_CONN_TERM);
+                    if (rc != 0) {
+                        MODLOG_DFLT(ERROR, "Failed to terminate connection; rc=%d\n", rc);
+                        restart_coex();
+                    }
+                    return 0;
+                }
             }
-
-            /* Perform service discovery */
-            rc = peer_disc_all(event->connect.conn_handle,
-                        blecent_on_disc_complete, NULL);
-            if(rc != 0) {
-                MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
+	} else {
+            if (client_connect == 1) {
+                MODLOG_DFLT(ERROR, "Client connection failed; status=%d\n", event->connect.status);
                 restart_coex();
             }
 	}
@@ -393,6 +418,7 @@ blecoex_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_DISCONNECT:
         MODLOG_DFLT(INFO, "Disconnect \n");
+        peer_delete(event->disconnect.conn.conn_handle);
 	restart_coex();
         return 0;
 
@@ -497,9 +523,10 @@ ble_coex_advertise(void)
         fields.name_is_complete = 1;
     }
 
-    fields.uuids16 = (ble_uuid16_t[]) {
+    static const ble_uuid16_t adv_uuids16[] = {
         BLE_UUID16_INIT(BLECOEX_SVC_ALERT_UUID)
     };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -569,11 +596,17 @@ void app_main(void)
     }
 
     ble_hs_cfg.sync_cb = on_sync;
+    int rc;
 #if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
-    peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
 #else
-    peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
 #endif
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Failed to init peer tracking; rc=%d\n", rc);
+        nimble_port_deinit();
+        return;
+    }
 
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
@@ -585,8 +618,18 @@ void app_main(void)
     ble_svc_ans_init();
 #endif
 
-    ble_gatts_count_cfg(gatt_svr_svcs);
-    ble_gatts_add_svcs(gatt_svr_svcs);
+    rc = ble_gatts_count_cfg(gatt_svr_svcs);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "ble_gatts_count_cfg failed; rc=%d\n", rc);
+        nimble_port_deinit();
+        return;
+    }
+    rc = ble_gatts_add_svcs(gatt_svr_svcs);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "ble_gatts_add_svcs failed; rc=%d\n", rc);
+        nimble_port_deinit();
+        return;
+    }
 
     nimble_port_freertos_init(ble_hs_task);
 }

@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "esp_err.h"
 #include "esp_log.h"
 #include "driver/spi_slave.h"
 #include "driver/gpio.h"
@@ -101,12 +102,17 @@ void app_main(void)
         t.length = 1024 * 8;
         t.tx_buffer = NULL;
         t.rx_buffer = recvbuf;
+        t.flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
 
         /* This call enables the SPI slave interface to receive to the recvbuf. The transaction is
          * initialized by the SPI master, however, so it will not actually happen until the master starts a hardware transaction
          * by pulling CS low and pulsing the clock etc.
          */
         ret = spi_slave_transmit(RCV_HOST, &t, portMAX_DELAY);
+        if (ret != ESP_OK) {
+            ESP_LOGE("SPI_SLAVE", "spi_slave_transmit failed: %s", esp_err_to_name(ret));
+            continue;
+        }
 
         /* Get the actual number of bytes received */
         int rcv_bytes = t.trans_len / 8;

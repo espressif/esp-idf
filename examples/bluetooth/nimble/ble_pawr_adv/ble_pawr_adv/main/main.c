@@ -42,11 +42,20 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
                   event->periodic_adv_subev_data_req.subevent_data_count);
 
         sent_num = event->periodic_adv_subev_data_req.subevent_data_count;
+        if (sent_num > BLE_PAWR_NUM_SUBEVTS) {
+            ESP_LOGE(TAG, "subevent_data_count %d exceeds max %d", sent_num, BLE_PAWR_NUM_SUBEVTS);
+            sent_num = BLE_PAWR_NUM_SUBEVTS;
+        }
+        uint8_t actual_sent = 0;
         for (uint8_t i = 0; i < sent_num; i++) {
             data = os_msys_get_pkthdr(BLE_PAWR_SUB_DATA_LEN, 0);
             if (!data) {
                 ESP_LOGE(TAG, "No memory, %d", i);
-                break;
+                for (uint8_t j = 0; j < i; j++) {
+                    os_mbuf_free_chain(sub_data_params[j].data);
+                    sub_data_params[j].data = NULL;
+                }
+                return 0;
             }
             sub = (i + event->periodic_adv_subev_data_req.subevent_start) % BLE_PAWR_NUM_SUBEVTS;
             memset(&sub_data_pattern[1], sub, BLE_PAWR_SUB_DATA_LEN - 1);
@@ -56,10 +65,11 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             sub_data_params[i].response_slot_count = BLE_PAWR_NUM_RSP_SLOTS;
             sub_data_params[i].data = data;
             sub_data_pattern[0]++;
+            actual_sent++;
         }
 
         rc = ble_gap_set_periodic_adv_subev_data(event->periodic_adv_subev_data_req.adv_handle,
-                                                 sent_num, sub_data_params);
+                                                 actual_sent, sub_data_params);
         if (rc) {
             ESP_LOGE(TAG, "Failed to set Subevent Data, rc = 0x%x", rc);
         }
@@ -72,7 +82,9 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
                         event->periodic_adv_response.response_slot,
                         event->periodic_adv_response.data_length);
             const uint8_t *data = event->periodic_adv_response.data;
-            ESP_LOGI(TAG, "data: 0x%0x, 0x%0x", data[0], data[1]);
+            if (data != NULL && event->periodic_adv_response.data_length >= 2) {
+                ESP_LOGI(TAG, "data: 0x%0x, 0x%0x", data[0], data[1]);
+            }
         } else {
             ESP_LOGE(TAG, "[Response] subevent:%d, response_slot:%d, rsp_data status:%d",
                         event->periodic_adv_response.subevent,
@@ -102,8 +114,7 @@ start_periodic_adv(uint8_t own_addr_type)
 #endif
 
     /* Get the local address. */
-    uint8_t addr_type = own_addr_type == BLE_OWN_ADDR_RANDOM ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
-    rc = ble_hs_id_copy_addr(addr_type, addr, NULL);
+    rc = ble_hs_id_copy_addr(own_addr_type, addr, NULL);
     assert (rc == 0);
 
     ESP_LOGI(TAG, "Device Address %02x:%02x:%02x:%02x:%02x:%02x", addr[5], addr[4], addr[3],

@@ -140,8 +140,8 @@ enc_adv_data_prph_ext_advertise(void)
     /* enable connectable advertising */
     params.connectable = 1;
 
-    /* advertise using random addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    /* advertise using configured addr */
+    params.own_addr_type = own_addr_type;
 
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
@@ -163,6 +163,10 @@ enc_adv_data_prph_ext_advertise(void)
 
     /* get mbuf with adv data */
     temp = malloc(sizeof(ext_adv_pattern) + 2 + encrypted_adv_data_len);
+    if (temp == NULL) {
+        MODLOG_DFLT(ERROR, "Failed to allocate temp buffer for ext adv data");
+        return;
+    }
     memcpy(temp, ext_adv_pattern, sizeof(ext_adv_pattern));
     temp[sizeof(ext_adv_pattern)] = 1 + encrypted_adv_data_len;
     temp[sizeof(ext_adv_pattern) + 1] = BLE_GAP_ENC_ADV_DATA;
@@ -194,8 +198,11 @@ enc_adv_data_prph_advertise(void)
     struct ble_hs_adv_fields fields;
     int rc;
 
-    const unsigned encrypted_adv_data_len = BLE_EAD_ENCRYPTED_PAYLOAD_SIZE(sizeof(unencrypted_adv_pattern));
-    uint8_t encrypted_adv_data[encrypted_adv_data_len];
+    static const ble_uuid16_t adv_uuids16[] = {
+        BLE_UUID16_INIT(0x2C01) /** For the central to recognise this device */
+    };
+    static uint8_t encrypted_adv_data[BLE_EAD_ENCRYPTED_PAYLOAD_SIZE(sizeof(unencrypted_adv_pattern))];
+    const unsigned encrypted_adv_data_len = sizeof(encrypted_adv_data);
     memset(encrypted_adv_data, 0, encrypted_adv_data_len);
 
     /* First check if any instance is already active */
@@ -206,8 +213,6 @@ enc_adv_data_prph_advertise(void)
     /* use defaults for non-set params */
     memset (&params, 0, sizeof(params));
     memset (&fields, 0, sizeof(fields));
-
-    own_addr_type = BLE_OWN_ADDR_PUBLIC;
 
     /* enable connectable advertising */
     params.conn_mode = BLE_GAP_CONN_MODE_UND;
@@ -222,9 +227,7 @@ enc_adv_data_prph_advertise(void)
     fields.name_len = 3;
     fields.name_is_complete = 1;
 
-    fields.uuids16 = (ble_uuid16_t[]) {
-        BLE_UUID16_INIT(0x2C01) /** For the central to recognise this device */
-    };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -397,17 +400,22 @@ enc_adv_data_prph_on_reset(int reason)
 static void
 ble_app_set_addr(void)
 {
-    ble_addr_t addr;
+    ble_addr_t addr = {0};
     int rc;
 
     /* generate new non-resolvable private address */
     rc = ble_hs_id_gen_rnd(0, &addr);
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Failed to generate random address; rc=%d\n", rc);
+        return;
+    }
 
     /* set generated address */
     rc = ble_hs_id_set_rnd(addr.val);
-
-    assert(rc == 0);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "Failed to set random address; rc=%d\n", rc);
+        return;
+    }
 }
 #endif
 

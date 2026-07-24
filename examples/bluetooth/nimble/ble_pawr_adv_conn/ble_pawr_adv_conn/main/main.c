@@ -147,6 +147,10 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
             event->periodic_adv_response.response_slot,
             event->periodic_adv_response.data_length);
             const uint8_t *data = event->periodic_adv_response.data;
+            if (data == NULL || event->periodic_adv_response.data_length < 10) {
+                ESP_LOGE(TAG, "Invalid response data: NULL or too short (%d)", event->periodic_adv_response.data_length);
+                return 0;
+            }
             ESP_LOGI(TAG, "data: 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x",
                     data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
 
@@ -161,10 +165,10 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
                 rc = ble_gap_connect_with_synced(own_addr_type,adv_handle,subevent,&peer_addr,30000,phy_mask,NULL,NULL,NULL,gap_event_cb,NULL);
                 if (rc != 0 ) {
                     ESP_LOGI(TAG,"Error: Failed to connect to device , rc = %d\n",rc);
-                }else {
+                } else {
                     ESP_LOGI(TAG,"Connection create sent, adv handle = %d, subevent = %d", adv_handle, subevent);
+                    conn = 1;
                 }
-                conn = 1;
             }
         } else {
             ESP_LOGE(TAG, "[Response] subevent:%d, response_slot:%d, rsp_data status:%d",
@@ -265,6 +269,7 @@ static void
 on_reset(int reason)
 {
     ESP_LOGE(TAG, "Resetting state; reason=%d\n", reason);
+    conn = 0;
 }
 
 static void
