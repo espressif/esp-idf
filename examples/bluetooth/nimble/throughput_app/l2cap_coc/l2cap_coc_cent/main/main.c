@@ -22,7 +22,7 @@
 
 static const char *TAG = "l2cap_coc_cent";
 
-#define L2CAP_COC_PSM       0x1002
+#define L2CAP_COC_PSM       0x0080  /* valid dynamic LE L2CAP CoC PSM (0x0080-0x00FF) */
 #define L2CAP_COC_MTU       CONFIG_EXAMPLE_L2CAP_COC_MTU
 #define COC_BUF_COUNT       (6 * MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM))
 /* Block size must include mbuf headers so each SDU fits in one pool entry. */
@@ -130,12 +130,9 @@ static void cent_l2cap_coc_connect(uint16_t conn_handle)
     if (rc != 0) {
         ESP_LOGE(TAG, "L2CAP COC connect failed; rc=%d", rc);
         l2cap_connecting = false;
-        /* EINVAL: NimBLE returns before chan alloc, sdu_rx not consumed — free it.
-         * ENOTCONN: NimBLE frees sdu_rx on all ENOTCONN paths (early !conn check
-         * and late TX failure via ble_l2cap_coc_cleanup_chan). Do not free here. */
-        if (rc == BLE_HS_EINVAL) {
-            os_mbuf_free_chain(sdu_rx);
-        }
+        /* NimBLE takes ownership of sdu_rx on ALL error paths from ble_l2cap_connect
+         * (freed via ble_l2cap_chan_free → ble_l2cap_coc_cleanup_chan or directly in
+         * ble_l2cap_sig_coc_connect validation). Never free here to avoid double-free. */
     }
 }
 
@@ -713,6 +710,8 @@ void app_main(void)
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "nimble_port_init failed; rc=%d", ret);
+        vEventGroupDelete(coc_event_group);
+        coc_event_group = NULL;
         return;
     }
 
@@ -731,6 +730,9 @@ void app_main(void)
 
     if (xTaskCreate(cent_send_task, "cent_send_task", 4096, NULL, 5, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create cent_send_task");
+        nimble_port_deinit();
+        vEventGroupDelete(coc_event_group);
+        coc_event_group = NULL;
         return;
     }
 

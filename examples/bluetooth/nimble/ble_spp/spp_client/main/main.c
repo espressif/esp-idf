@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -69,14 +69,16 @@ static void
 ble_spp_client_set_handle(const struct peer *peer)
 {
     const struct peer_chr *chr;
-    const struct peer_dsc *dsc;
-    uint8_t value[2];
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
 
     if (chr == NULL) {
         MODLOG_DFLT(ERROR, "Error: Peer lacks SPP characteristic\n");
+        return;
+    }
+    if (peer->conn_handle > CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+        MODLOG_DFLT(ERROR, "Error: conn_handle %d out of range\n", peer->conn_handle);
         return;
     }
     if (g_attr_handle_mutex != NULL) {
@@ -88,19 +90,6 @@ ble_spp_client_set_handle(const struct peer *peer)
         xSemaphoreGive(g_attr_handle_mutex);
     }
 
-    dsc = peer_dsc_find_uuid(peer,
-                             BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
-                             BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID),
-                             BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
-    if (dsc == NULL) {
-        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characteristic\n");
-	return;
-    }
-
-    value[0] = 1;
-    value[1] = 0;
-    ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
-                            value, sizeof(value), NULL, NULL);
 }
 
 /**
@@ -247,6 +236,9 @@ ble_spp_client_connect_if_interesting(const struct ble_gap_disc_desc *disc)
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        ble_spp_client_scan();
+#endif
         return;
     }
 
@@ -260,6 +252,9 @@ ble_spp_client_connect_if_interesting(const struct ble_gap_disc_desc *disc)
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
                     disc->addr.type, addr_str(disc->addr.val), rc);
+#if !(MYNEWT_VAL(BLE_HOST_ALLOW_CONNECT_WITH_SCAN))
+        ble_spp_client_scan();
+#endif
         return;
     }
 }
@@ -346,13 +341,15 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "\n");
 
         /* Forget about peer. */
-        memset(&connected_addr[event->disconnect.conn.conn_handle].val, 0, PEER_ADDR_VAL_SIZE);
-        if (g_attr_handle_mutex != NULL) {
-            xSemaphoreTake(g_attr_handle_mutex, portMAX_DELAY);
-        }
-        attribute_handle[event->disconnect.conn.conn_handle] = 0;
-        if (g_attr_handle_mutex != NULL) {
-            xSemaphoreGive(g_attr_handle_mutex);
+        if (event->disconnect.conn.conn_handle <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS) {
+            memset(&connected_addr[event->disconnect.conn.conn_handle].val, 0, PEER_ADDR_VAL_SIZE);
+            if (g_attr_handle_mutex != NULL) {
+                xSemaphoreTake(g_attr_handle_mutex, portMAX_DELAY);
+            }
+            attribute_handle[event->disconnect.conn.conn_handle] = 0;
+            if (g_attr_handle_mutex != NULL) {
+                xSemaphoreGive(g_attr_handle_mutex);
+            }
         }
         peer_delete(event->disconnect.conn.conn_handle);
 
@@ -499,7 +496,11 @@ static void ble_spp_uart_init(void)
     };
 
     //Install UART driver, and get the queue.
-    uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    esp_err_t err = uart_driver_install(UART_NUM_0, 4096, 8192, 10, &spp_common_uart_queue, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(tag, "uart_driver_install failed: %d", err);
+        return;
+    }
     //Set UART parameters
     uart_param_config(UART_NUM_0, &uart_config);
     //Set UART pins
@@ -528,6 +529,7 @@ app_main(void)
     g_attr_handle_mutex = xSemaphoreCreateMutex();
     if (g_attr_handle_mutex == NULL) {
         ESP_LOGE(tag, "Failed to create attribute handle mutex");
+        nimble_port_deinit();
         return;
     }
 

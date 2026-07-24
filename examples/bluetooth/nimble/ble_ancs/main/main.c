@@ -344,7 +344,7 @@ ext_ble_ancs_advertise(void)
     params.connectable = 1;
 
     /* advertise using configured addr */
-    params.own_addr_type = BLE_OWN_ADDR_PUBLIC;
+    params.own_addr_type = own_addr_type;
     params.primary_phy = BLE_HCI_LE_PHY_1M;
     params.secondary_phy = BLE_HCI_LE_PHY_2M;
     params.tx_power = 127;
@@ -411,11 +411,15 @@ ble_ancs_advertise(void)
     fields.tx_pwr_lvl_is_present = 1;
     fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
     fields.name_len = strlen(name);
     fields.name_is_complete = 1;
+#endif
 
+    static const ble_uuid16_t adv_uuids16[] = { BLE_UUID16_INIT(0x1811) };
+    fields.uuids16 = adv_uuids16;
     fields.num_uuids16 = 1;
     fields.uuids16_is_complete = 1;
 
@@ -483,6 +487,7 @@ ble_ancs_gap_event(struct ble_gap_event *event, void *arg)
 #else
             ble_ancs_advertise();
 #endif
+            return 0;
         }
 
         /** Initiate security - It will perform
@@ -542,7 +547,11 @@ ble_ancs_gap_event(struct ble_gap_event *event, void *arg)
         assert(rc == 0);
         ble_ancs_print_conn_desc(&desc);
         MODLOG_DFLT(INFO, "\n");
-        rc = ble_gattc_disc_svc_by_uuid(event->connect.conn_handle, &APPLE_NC_UUID.u,
+        if (event->enc_change.status != 0) {
+            MODLOG_DFLT(ERROR, "encryption failed; status=%d\n", event->enc_change.status);
+            return 0;
+        }
+        rc = ble_gattc_disc_svc_by_uuid(event->enc_change.conn_handle, &APPLE_NC_UUID.u,
                                     ancs_service_discovered_cb, NULL);
         if (rc != 0) {
             return rc;
@@ -561,6 +570,10 @@ ble_ancs_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_NOTIFY_RX:
     /* Peer sent us a notification or indication. */
         if (event->notify_rx.attr_handle == notification_source_handle) {
+            if (event->notify_rx.om == NULL || event->notify_rx.om->om_len < 8) {
+                MODLOG_DFLT(ERROR, "NOTIFY_RX: short or NULL notification source packet\n");
+                return 0;
+            }
             ble_receive_apple_notification_source(event->notify_rx.om->om_data, event->notify_rx.om->om_len);
             uint8_t *notificationUID = &event->notify_rx.om->om_data[4];
             if (event->notify_rx.om->om_data[0] == EventIDNotificationAdded &&
@@ -770,6 +783,13 @@ app_main(void)
 
     /* XXX Need to have template for store */
     ble_store_config_init();
+
+    ret = esp_timer_create(&periodic_timer_args, &periodic_timer);
+    if (ret != ESP_OK) {
+        ESP_LOGE(tag, "Failed to create periodic timer: %d", ret);
+        nimble_port_deinit();
+        return;
+    }
 
     nimble_port_freertos_init(ble_ancs_host_task);
 
