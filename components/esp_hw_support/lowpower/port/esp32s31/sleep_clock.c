@@ -52,6 +52,7 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
         [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MODEMSYSCON_LINK(0), 0x20109c30, 0xf, 0xffffffff, 1, 0), .owner = ENTRY(0) | ENTRY(1) },
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(1), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, 12, 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0), MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
+        [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0x3d, 1, 0), .owner = ENTRY(1)},
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
