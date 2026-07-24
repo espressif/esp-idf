@@ -15,7 +15,7 @@
 
 static const char *manuf_name = "ESP32 devkitC";
 static const char *model_num = "HTP Sensor demo";
-static const char *system_id = "HTP1";
+static const uint8_t system_id[8] = { 'H', 'T', 'P', '1' };
 static int
 gatt_svr_chr_access_device_info(uint16_t conn_handle, uint16_t attr_handle,
                                 struct ble_gatt_access_ctxt *ctxt, void *arg);
@@ -72,7 +72,7 @@ gatt_svr_chr_access_device_info(uint16_t conn_handle, uint16_t attr_handle,
     }
 
     if (uuid == GATT_DIS_CHR_UUID16_SYS_ID) {
-        rc = os_mbuf_append(ctxt->om, system_id, strlen(system_id));
+        rc = os_mbuf_append(ctxt->om, system_id, sizeof(system_id));
         return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
     }
 

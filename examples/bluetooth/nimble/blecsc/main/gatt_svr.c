@@ -245,7 +245,20 @@ gatt_svr_chr_access_sc_control_point(uint16_t conn_handle,
         break;
     }
 
-    /* Append response value */
+    /* Append Response Op Code, Request Op Code, and Response Value */
+    uint8_t rsp_op = SC_CP_OP_RESPONSE;
+    rc = os_mbuf_append(om_indication, &rsp_op, sizeof(rsp_op));
+    if (rc != 0) {
+        os_mbuf_free_chain(om_indication);
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+
+    rc = os_mbuf_append(om_indication, &op_code, sizeof(op_code));
+    if (rc != 0) {
+        os_mbuf_free_chain(om_indication);
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
+    }
+
     rc = os_mbuf_append(om_indication, &response, sizeof(response));
 
     if (rc != 0){
@@ -267,14 +280,7 @@ gatt_svr_chr_access_sc_control_point(uint16_t conn_handle,
 
     rc = ble_gatts_indicate_custom(conn_handle, csc_control_point_handle,
                                    om_indication);
-    if (rc != 0) {
-        goto done;
-    }
-
-    return rc;
-
-done:
-    os_mbuf_free_chain(om_indication);
+    /* om_indication is consumed (freed) by ble_gatts_indicate_custom regardless of result */
     return rc;
 }
 
@@ -328,6 +334,9 @@ gatt_svr_chr_notify_csc_measurement(uint16_t conn_handle)
 #endif
 
     om = ble_hs_mbuf_from_flat(data_buf, data_offset);
+    if (om == NULL) {
+        return BLE_HS_ENOMEM;
+    }
 
     rc = ble_gatts_notify_custom(conn_handle, csc_measurement_handle, om);
     return rc;

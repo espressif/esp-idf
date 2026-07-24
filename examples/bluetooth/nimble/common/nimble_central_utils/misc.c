@@ -12,12 +12,20 @@
 int
 peer_addr_parse(const char *addr_str, uint8_t addr[PEER_ADDR_VAL_SIZE])
 {
+    unsigned int tmp[6] = {0};
+    int rc;
+    int i;
+
     if (addr_str == NULL) {
         return 0;
     }
-    return sscanf(addr_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
-                  &addr[5], &addr[4], &addr[3],
-                  &addr[2], &addr[1], &addr[0]);
+    rc = sscanf(addr_str, "%x:%x:%x:%x:%x:%x",
+                &tmp[5], &tmp[4], &tmp[3],
+                &tmp[2], &tmp[1], &tmp[0]);
+    for (i = 0; i < PEER_ADDR_VAL_SIZE; i++) {
+        addr[i] = (uint8_t)tmp[i];
+    }
+    return rc;
 }
 
 /**
@@ -98,7 +106,7 @@ print_conn_desc(const struct ble_gap_conn_desc *desc)
 }
 
 #if MYNEWT_VAL(BLE_EXT_ADV)
-void
+static void
 print_addr(const void *addr, const char *name)
 {
     const uint8_t *u8p;
@@ -254,11 +262,9 @@ print_adv_fields(const struct ble_hs_adv_fields *fields)
 
     if (fields->device_addr_is_present) {
         MODLOG_DFLT(DEBUG, "    device_addr=");
-	u8p = fields->device_addr;
-	MODLOG_DFLT(DEBUG, "%s ", addr_str(u8p));
-
-	u8p += BLE_HS_ADV_PUBLIC_TGT_ADDR_ENTRY_LEN;
-	MODLOG_DFLT(DEBUG, "addr_type %d ", *u8p);
+        u8p = fields->device_addr;
+        MODLOG_DFLT(DEBUG, "%s addr_type %d ", addr_str(u8p),
+                    fields->device_addr_type);
     }
 
     if (fields->le_role_is_present) {
