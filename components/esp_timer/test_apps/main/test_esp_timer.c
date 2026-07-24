@@ -1066,6 +1066,62 @@ TEST_CASE("one-shot esp_timer can be restarted", "[esp_timer]")
     vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
+#if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD && !CONFIG_IDF_TARGET_LINUX
+IRAM_ATTR static void restart_expiry_race_timer_cb(void* arg)
+{
+    ++(*(volatile uint32_t*)arg);
+}
+
+TEST_CASE("one-shot timer expiry racing with restart", "[esp_timer]")
+{
+    volatile uint32_t callback_count = 0;
+    size_t restart_wins_count = 0;
+    size_t expiry_wins_count = 0;
+    esp_timer_handle_t timer;
+
+    const esp_timer_create_args_t create_args = {
+        .callback = restart_expiry_race_timer_cb,
+        .arg = (void*) &callback_count,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "restart_expiry_race",
+    };
+    TEST_ESP_OK(esp_timer_create(&create_args, &timer));
+
+    const size_t iterations = 1000;
+    for (size_t i = 0; i < iterations; ++i) {
+        uint32_t previous_callback_count = callback_count;
+        TEST_ESP_OK(esp_timer_start_once(timer, 100));
+
+        uint64_t expiry;
+        TEST_ESP_OK(esp_timer_get_expiry_time(timer, &expiry));
+
+        while (esp_timer_get_time() + 1 < expiry) { };
+
+        /* The esp_timer_restart() and timer ISR race for the timer-list lock.
+         * - If restart() gets the lock first, it reschedules the armed timer and the old
+         * callback must not run, leaving callback_count unchanged.
+         * - If the ISR gets it first, it removes the expired one-shot timer.
+         * Restart then sees it unarmed and fails; the ISR subsequently invokes
+         * the callback, incrementing callback_count. */
+        esp_err_t result = esp_timer_restart(timer, SEC);
+        if (result == ESP_OK) {
+            ++restart_wins_count;
+            esp_rom_delay_us(50);
+            TEST_ASSERT_EQUAL_UINT32(previous_callback_count, callback_count);
+            TEST_ESP_OK(esp_timer_stop(timer));
+        } else {
+            ++expiry_wins_count;
+            TEST_ESP_ERR(ESP_ERR_INVALID_STATE, result);
+            esp_rom_delay_us(200);
+            TEST_ASSERT_NOT_EQUAL(previous_callback_count, callback_count);
+        }
+    }
+
+    printf("restart_wins_count=%zu, expiry_wins_count=%zu\n", restart_wins_count, expiry_wins_count);
+    TEST_ESP_OK(esp_timer_delete(timer));
+}
+#endif
+
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 static int64_t old_time[2];
 
