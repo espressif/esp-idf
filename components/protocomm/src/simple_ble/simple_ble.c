@@ -26,7 +26,9 @@ static const char *TAG = "simple_ble";
 static simple_ble_cfg_t *g_ble_cfg_p;
 static uint16_t *g_gatt_table_map;
 
+#if SIMPLE_BLE_LEGACY_ADV || SIMPLE_BLE_EXT_ADV
 static uint8_t adv_config_pending_mask;
+#endif
 static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 #if SIMPLE_BLE_LEGACY_ADV
 #define ADV_CONFIG_FLAG      (1 << 0)
