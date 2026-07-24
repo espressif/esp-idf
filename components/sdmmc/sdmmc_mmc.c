@@ -98,7 +98,7 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     card->ext_csd.sec_feature = ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT];
 
 out:
-    free(ext_csd);
+    heap_caps_free(ext_csd);
     return err;
 }
 
@@ -194,7 +194,7 @@ esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd)
         out_csd->read_block_len = MMC_CSD_READ_BL_LEN(response);
     } else {
         ESP_LOGE(TAG, "unknown MMC CSD structure version 0x%x", out_csd->csd_ver);
-        return 1;
+        return ESP_ERR_NOT_SUPPORTED;
     }
     int read_bl_size = 1 << out_csd->read_block_len;
     out_csd->sector_size = MIN(read_bl_size, 512);
@@ -292,7 +292,7 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
     }
 
 out:
-    free(ext_csd);
+    heap_caps_free(ext_csd);
     return err;
 }
 

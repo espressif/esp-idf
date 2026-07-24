@@ -120,7 +120,7 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
     // read SD status register
     err = sdmmc_send_app_cmd(card, &cmd);
     if (err != ESP_OK) {
-        free(sd_ssr);
+        heap_caps_free(sd_ssr);
         ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
         return err;
     }
@@ -129,7 +129,7 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: error sdmmc_decode_ssr returned 0x%x", __func__, err);
     }
-    free(sd_ssr);
+    heap_caps_free(sd_ssr);
     return err;
 }
 
@@ -320,7 +320,7 @@ esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card)
     }
 
 out:
-    free(response);
+    heap_caps_free(response);
     return err;
 }
 
@@ -515,7 +515,7 @@ esp_err_t sdmmc_select_driver_strength(sdmmc_card_t *card, sdmmc_driver_strength
     ESP_GOTO_ON_FALSE(supported_mask == driver_strength, ESP_ERR_INVALID_ARG, out, TAG, "fail to switch to type 0x%x", driver_strength);
 
 out:
-    free(response);
+    heap_caps_free(response);
     return ret;
 }
 
@@ -622,7 +622,7 @@ esp_err_t sdmmc_select_current_limit(sdmmc_card_t *card, sdmmc_current_limit_t c
     ESP_GOTO_ON_FALSE(supported_mask == current_limit, ESP_ERR_INVALID_ARG, out, TAG, "fail to switch to type 0x%x", current_limit);
 
 out:
-    free(response);
+    heap_caps_free(response);
     return ret;
 }
 
