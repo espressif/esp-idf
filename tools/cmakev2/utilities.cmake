@@ -803,7 +803,8 @@ endfunction()
 
 #[[
     target_add_binary_data(<target> <embed_file> <embed_type>
-                           [RENAME_TO <symbol>])
+                           [RENAME_TO <symbol>]
+                           [ALIGN <alignment>]
                            [DEPENDS <dependency>...])
 
     *target[in]*
@@ -823,6 +824,11 @@ endfunction()
         Use the given symbol name for the embedded data. If no symbol name is
         provided, the embed_file file name will be used instead.
 
+    *ALIGN[in,opt]*
+
+        Align the embedded data's start symbol to the given positive power
+        of two.
+
     *DEPENDS[in,opt]*
 
         List of additional dependencies for the generated file containing
@@ -833,7 +839,7 @@ endfunction()
     build process.
 #]]
 function(target_add_binary_data target embed_file embed_type)
-    cmake_parse_arguments(_ "" "RENAME_TO" "DEPENDS" ${ARGN})
+    cmake_parse_arguments(_ "" "RENAME_TO;ALIGN" "DEPENDS" ${ARGN})
     idf_build_get_property(build_dir BUILD_DIR)
     idf_build_get_property(idf_path IDF_PATH)
 
@@ -847,11 +853,24 @@ function(target_add_binary_data target embed_file embed_type)
         set(rename_to_arg -D "VARIABLE_BASENAME=${__RENAME_TO}")
     endif()
 
+    set(align_arg)
+    if(DEFINED __ALIGN)
+        if(NOT __ALIGN MATCHES "^[1-9][0-9]*$")
+            message(FATAL_ERROR "ALIGN must be a positive integer")
+        endif()
+        math(EXPR alignment_mask "${__ALIGN} & (${__ALIGN} - 1)")
+        if(NOT alignment_mask EQUAL 0)
+            message(FATAL_ERROR "ALIGN must be a power of two")
+        endif()
+        set(align_arg -D "DATA_ALIGNMENT=${__ALIGN}")
+    endif()
+
     add_custom_command(OUTPUT "${embed_srcfile}"
         COMMAND "${CMAKE_COMMAND}"
         -D "DATA_FILE=${embed_file}"
         -D "SOURCE_FILE=${embed_srcfile}"
         ${rename_to_arg}
+        ${align_arg}
         -D "FILE_TYPE=${embed_type}"
         -P "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake"
         MAIN_DEPENDENCY "${embed_file}"
