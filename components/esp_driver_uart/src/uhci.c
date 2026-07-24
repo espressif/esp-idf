@@ -6,7 +6,6 @@
 
 #include <string.h>
 #include <stdint.h>
-#include "esp_intr_alloc.h"
 #if CONFIG_UHCI_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
@@ -601,15 +600,11 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
     };
     uhci_ll_set_seper_chr(uhci_ctrl->hal.dev, &seper_chr);
 
-    if (config->rx_eof_flags.idle_eof) {
-        uhci_ll_rx_set_eof_mode(uhci_ctrl->hal.dev, UHCI_RX_IDLE_EOF);
-    }
+    uhci_ll_rx_enable_eof_modes(uhci_ctrl->hal.dev, UHCI_RX_IDLE_EOF, config->rx_eof_flags.idle_eof);
+    uhci_ll_rx_enable_eof_modes(uhci_ctrl->hal.dev, UHCI_RX_LEN_EOF, config->rx_eof_flags.length_eof);
+    uhci_ll_rx_enable_eof_modes(uhci_ctrl->hal.dev, UHCI_RX_BREAK_CHR_EOF, config->rx_eof_flags.rx_brk_eof);
     if (config->rx_eof_flags.length_eof) {
-        uhci_ll_rx_set_eof_mode(uhci_ctrl->hal.dev, UHCI_RX_LEN_EOF);
         uhci_ll_rx_set_packet_threshold(uhci_ctrl->hal.dev, config->max_packet_receive);
-    }
-    if (config->rx_eof_flags.rx_brk_eof) {
-        uhci_ll_rx_set_eof_mode(uhci_ctrl->hal.dev, UHCI_RX_BREAK_CHR_EOF);
     }
 
     esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &uhci_ctrl->ext_mem_cache_line_size);

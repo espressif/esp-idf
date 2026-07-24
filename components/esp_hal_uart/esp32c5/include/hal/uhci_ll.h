@@ -138,16 +138,16 @@ static inline uint32_t uhci_ll_get_intr(uhci_dev_t *hw)
     return hw->int_st.val;
 }
 
-static inline void uhci_ll_rx_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
+static inline void uhci_ll_rx_enable_eof_modes(uhci_dev_t *hw, uint32_t eof_modes, bool en)
 {
-    if (eof_mode & UHCI_RX_BREAK_CHR_EOF) {
-        hw->conf0.uart_rx_brk_eof_en = 1;
+    if (eof_modes & UHCI_RX_BREAK_CHR_EOF) {
+        hw->conf0.uart_rx_brk_eof_en = en;
     }
-    if (eof_mode & UHCI_RX_IDLE_EOF) {
-        hw->conf0.uart_idle_eof_en = 1;
+    if (eof_modes & UHCI_RX_IDLE_EOF) {
+        hw->conf0.uart_idle_eof_en = en;
     }
-    if (eof_mode & UHCI_RX_LEN_EOF) {
-        hw->conf0.len_eof_en = 1;
+    if (eof_modes & UHCI_RX_LEN_EOF) {
+        hw->conf0.len_eof_en = en;
     }
 }
 
