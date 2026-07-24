@@ -30,6 +30,44 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
+```text
+Loading embedded BGR24 image from flash...
+Embedded raw image size: 2764800 bytes
+Encoding BGR24(raw) -> JPEG...
+Encoded JPEG size: 30795 bytes
+JPEG_META width=1280 height=720 format=JPEG encoding=base64 size=30795
+JPEG_BASE64_BEGIN
+JPEG_BASE64 ...
+JPEG_BASE64 ...
+JPEG_BASE64_END
+JPEG encode demo done.
+```
+
+## Pytest Visual Check
+
+The accompanying `pytest_jpeg_encode.py` script captures the `JPEG_META` and `JPEG_BASE64` output, reconstructs the encoded JPEG, and saves it as:
+
+- `dut.logdir/jpeg_encode_result.jpeg`
+
+It also compares the generated JPEG with `golden_output.jpeg`. This turns the example into both a functional regression test and a host-side artifact generator that makes the encoded result easy to inspect.
+
+## Running Pytest Locally And Viewing The Image
+
+To run the pytest helper locally on hardware, build the example for your target first, then invoke the test script with the target and serial port:
+
+```bash
+idf.py set-target esp32p4 build
+pytest --target esp32p4 --port PORT pytest_jpeg_encode.py
+```
+
+Replace `esp32p4` with another supported target such as `esp32s31` when needed.
+
+`pytest-embedded` stores per-test logs under `$IDF_PATH/pytest-embedded/`. The script writes the reconstructed image to `jpeg_encode_result.jpeg` inside that test log directory, so after the test finishes you can open the generated JPEG locally with any image viewer to inspect the encoded output.
+
+## Replacing The Embedded RGB Asset
+
+If you want to regenerate a compatible raw frame from another input image, one simple workflow is:
+
 ```bash
 I (1114) jpeg.example: Initializing SD card
 I (1114) gpio: GPIO[43]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0

@@ -17,15 +17,18 @@ JPEG 常用于数字图像，尤其是数码摄影图像的有损压缩。压缩
 
 本文档包含以下几部分内容：
 
-- `资源分配 <#resource-allocation>`__，包括如何正确地设置配置来分配 JPEG 资源、如何在完成工作时回收资源。
-- `有限状态机 <#finite-state-machine>`__，涵盖了 JPEG 的工作流程，介绍了 JPEG 驱动程序的软件流程，以及是如何使用内部资源的。
-- `JPEG 解码器引擎 <#jpeg_decoder_engine>`__，包括 JPEG 解码器引擎的行为。介绍了如何使用解码器引擎函数为图像解码（从 jpg 格式到 raw 格式）。
-- `JPEG 编码器引擎 <#jpeg_encoder_engine>`__，包括 JPEG 编码器引擎的行为。介绍了如何使用编码器引擎函数为图像编码（从 raw 格式到 jpg 格式）。
-- `性能概览 <#performance-overview>`__，介绍了编码器和解码器的性能。
-- `不同颜色格式的像素存储布局 <#pixel-storage-layout-for-different-color-formats>`__，涵盖了 JPEG 解码器和编码器所需的颜色空间顺序。
-- `线程安全性 <#thread-safety>`__， 列出了驱动程序能保证线程安全的 API。
-- `电源管理 <#power-management>`__，描述了影响 JPEG 驱动程序功耗的因素。
-- `Kconfig 选项 <#kconfig-options>`__，列出了支持的 Kconfig 选项，可以为驱动程序带来不同的效果。
+- :ref:`jpeg-resource-allocation`，包括如何正确地设置配置来分配 JPEG 资源、如何在完成工作时回收资源。
+- :ref:`jpeg-finite-state-machine`，涵盖了 JPEG 的工作流程，介绍了 JPEG 驱动程序的软件流程，以及是如何使用内部资源的。
+- :ref:`jpeg-decoder-engine`，包括 JPEG 解码器引擎的行为。介绍了如何使用解码器引擎函数为图像解码（从 jpg 格式到 raw 格式）。
+- :ref:`jpeg-encoder-engine`，包括 JPEG 编码器引擎的行为。介绍了如何使用编码器引擎函数为图像编码（从 raw 格式到 jpg 格式）。
+- :ref:`jpeg-performance-overview`，介绍了编码器和解码器的性能。
+- :ref:`jpeg-pixel-storage-layout`，涵盖了 JPEG 解码器和编码器所需的颜色空间顺序。
+- :ref:`jpeg-thread-safety`，列出了驱动程序能保证线程安全的 API。
+- :ref:`jpeg-power-management`，描述了影响 JPEG 驱动程序功耗的因素。
+- :ref:`jpeg-flash-encryption`，介绍了在 flash/PSRAM 加密场景下如何正确使用 JPEG 编解码器。
+- :ref:`jpeg-kconfig-options`，列出了支持的 Kconfig 选项，可以为驱动程序带来不同的效果。
+
+.. _jpeg-resource-allocation:
 
 资源分配
 ^^^^^^^^
@@ -85,6 +88,8 @@ JPEG 编码器引擎的配置需要由 :cpp:type:`jpeg_encode_engine_cfg_t` 指�
 
     ESP_ERROR_CHECK(jpeg_del_encoder_engine(encoder_engine));
 
+.. _jpeg-finite-state-machine:
+
 有限状态机
 ^^^^^^^^^^
 
@@ -95,6 +100,8 @@ JPEG 驱动程序对硬件资源的使用情况及其处理流程如下图所示
     :alt: JPEG 有限状态机
 
     JPEG 有限状态机
+
+.. _jpeg-decoder-engine:
 
 JPEG 解码器引擎
 ^^^^^^^^^^^^^^^
@@ -130,18 +137,13 @@ JPEG 解码器引擎
         .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
-    size_t tx_buffer_size;
     size_t rx_buffer_size;
 
     jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
         .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
     };
 
-    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
-        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
-    };
-
-    uint8_t *bit_stream = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size, &tx_mem_cfg, &tx_buffer_size);
+    const uint8_t *bit_stream = embedded_jpeg_start;
     uint8_t *out_buf = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1088 * 3, &rx_mem_cfg, &rx_buffer_size);
 
     jpeg_decode_picture_info_t header_info;
@@ -152,11 +154,13 @@ JPEG 解码器引擎
 
 参考以下提示，可以更准确地使用该驱动程序：
 
-1. 在上述代码中，应确保 `bit_stream` 和 `out_buf` 按照一定的规则对齐。可以通过 :cpp:func:`jpeg_alloc_decoder_mem` 函数来分配一个在大小和地址上都对齐的缓冲区。
+1. 在上述代码中，应确保输出缓冲区 `out_buf` 满足驱动的对齐要求。可以通过 :cpp:func:`jpeg_alloc_decoder_mem` 函数来分配一个在大小和地址上都对齐的缓冲区。
 
-2. 在 :cpp:func:`jpeg_decoder_process` 返回前， `bit_stream` 缓冲区的内容不应有更改。
+2. 在 :cpp:func:`jpeg_decoder_process` 返回前， `bit_stream` 指向的输入内容不应有更改。该输入缓冲区既可以直接来自映射到 flash 的嵌入式数据，也可以来自其他在整个调用期间保持可读的内存区域。
 
-3. 如果原始图片以 YUV420 或 YUV422 格式压缩，则输出图片的宽度和高度将会以 16 字节对齐。例如，如果输入图片大小为 1080*1920，则输出图片大小为 1088*1920。这是 jpeg 协议的限制，所以请准备足够的输出缓冲区内存。
+3. 如果源 JPEG 使用 YUV420 或 YUV422 采样方式，解码后的输出图像尺寸可能会被补齐到 16 像素边界。例如，当可见图像大小为 1080*1920 时，解码器可能需要按 1088*1920 像素来分配输出缓冲区。这来自 JPEG 的块布局限制，因此请按补齐后的图像尺寸而不是仅按可见宽高准备足够的输出缓冲区内存。
+
+.. _jpeg-encoder-engine:
 
 JPEG 编码器引擎
 ^^^^^^^^^^^^^^^
@@ -178,40 +182,46 @@ JPEG 编码器引擎
       - GRAY
 
 
-可参考以下代码，为 1080*1920 大小的图片编码：
+可参考以下代码，将一张嵌入到固件中的 1280x720 原始图片编码为 JPEG：
 
 .. code:: c
 
-    int raw_size_1080p = 0;/* Your raw image size */
+    size_t raw_size_720p = EXAMPLE_WIDTH * EXAMPLE_HEIGHT * 3; /* 1280x720 bgr24 帧 */
     jpeg_encode_cfg_t enc_config = {
         .src_type = JPEG_ENCODE_IN_FORMAT_RGB888,
         .sub_sample = JPEG_DOWN_SAMPLING_YUV422,
         .image_quality = 80,
-        .width = 1920,
-        .height = 1080,
+        .width = 1280,
+        .height = 720,
         .pixel_reverse = false, // 是否反转输入图像的像素顺序，或像素顺序细节请参考技术参考手册
     };
 
-    uint8_t *raw_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p);
-    if (raw_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc 1080p tx buffer error");
-        return;
-    }
-    uint8_t *jpg_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p / 10); // Assume that compression ratio of 10 to 1
-    if (jpg_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc jpg_buf_1080p error");
+    jpeg_encode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_ENC_ALLOC_OUTPUT_BUFFER,
+    };
+    size_t jpg_buffer_size = 0;
+    uint8_t *jpg_buf_720p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_720p / 10, &rx_mem_cfg, &jpg_buffer_size);
+    if (jpg_buf_720p == NULL) {
+        ESP_LOGE(TAG, "alloc jpg_buf_720p error");
         return;
     }
 
-    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, &jpg_size_1080p););
+    /* 当前 JPEG 编码输入路径下，JPEG_ENCODE_IN_FORMAT_RGB888 实际要求
+     * 原始字节按 BGR24 风格排列。只要数据在本次调用返回前保持可读，
+     * 就可以直接从 flash 中映射出来的嵌入资源读取。 */
+    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, embedded_bgr24_start, raw_size_720p, jpg_buf_720p, jpg_buffer_size, &jpg_size_720p));
 
 参考以下提示，可以更准确地使用该驱动程序：
 
-1. 在上述代码中，应调用 :cpp:func:`jpeg_alloc_encoder_mem` 函数，确保 `raw_buf_1080p` 和 `jpg_buf_1080p` 对齐。
+1. 在上述代码中，应调用 :cpp:func:`jpeg_alloc_encoder_mem` 函数来分配 `jpg_buf_720p`，因为 JPEG 输出码流缓冲区需要满足驱动的对齐要求。
 
-2. 在 :cpp:func:`jpeg_encoder_process` 返回前， `raw_buf_1080p` 缓冲区的内容不应有更改。
+2. 在 :cpp:func:`jpeg_encoder_process` 返回前， `embedded_bgr24_start` 所指向的输入内容不应有更改。该输入缓冲区既可以来自嵌入到 flash 中的映射资源，也可以来自其他在整个调用期间保持可读的内存区域。
 
-3. 压缩比取决于所选择的 `image_quality` 和图像本身的内容。一般来说， `image_quality` 值越高，图像质量越好，相应的压缩比就越小。至于图像内容，则很难给出具体的指导方针，因此本文也就不再讨论。基准 JPEG 压缩比通常从 40:1 到 10:1 不等，请依实际情况而定。
+3. 对于 :cpp:enumerator:`JPEG_ENCODE_IN_FORMAT_RGB888`，当前驱动实际要求原始输入字节按 BGR24 风格排列。如果直接提供 RGB24 原始数据，则编码后的 JPEG 会出现红蓝通道互换。
+
+4. 压缩比取决于所选择的 `image_quality` 和图像本身的内容。一般来说， `image_quality` 值越高，图像质量越好，相应的压缩比就越小。至于图像内容，则很难给出具体的指导方针，因此本文也就不再讨论。基准 JPEG 压缩比通常从 40:1 到 10:1 不等，请依实际情况而定。
+
+.. _jpeg-performance-overview:
 
 性能概述
 ^^^^^^^^
@@ -344,6 +354,8 @@ JPEG 编码器性能
 .. [#] 原图格式
 .. [#] 下采样法
 
+.. _jpeg-pixel-storage-layout:
+
 不同颜色格式的像素存储布局
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -420,10 +432,14 @@ YUV420
 
     YUV420 像素顺序
 
+.. _jpeg-thread-safety:
+
 线程安全性
 ^^^^^^^^^^
 
 驱动程序能保证工厂函数 :cpp:func:`jpeg_new_decoder_engine`， :cpp:func:`jpeg_decoder_get_info`， :cpp:func:`jpeg_decoder_process`，以及 :cpp:func:`jpeg_del_decoder_engine` 是线程安全的，这意味着无需额外的锁保护，也可以从不同的 RTOS 任务中调用这些函数。
+
+.. _jpeg-power-management:
 
 电源管理
 ^^^^^^^^
@@ -431,6 +447,26 @@ YUV420
 当启用电源管理（即设置了 :ref:`CONFIG_PM_ENABLE`）时，系统需要调整或停止 JPEG 的源时钟以进入 Light-sleep 模式，这可能会改变 JPEG 解码器/编码器的处理过程，也可能会导致硬件计算出现意外。为防止以上问题出现，当 JPEG 编码器/解码器工作时，无法进入 Light-sleep 模式。
 
 每当用户通过 JPEG 进行解码或编码（即调用 :cpp:func:`jpeg_encoder_process` 或 :cpp:func:`jpeg_decoder_process`）时，驱动程序会将电源管理设定为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_CPU_FREQ_MAX`，确保获取电源管理锁。一旦编码或解码完成，驱动程序将释放锁，则系统可以进入 Light-sleep 模式。
+
+.. _jpeg-flash-encryption:
+
+加密场景下的使用
+^^^^^^^^^^^^^^^^
+
+JPEG 编解码器通过 2D-DMA 搬运数据，而 JPEG 编解码器 **无法处理已加密的数据**。因此在开启 PSRAM 加密时，需要让 JPEG 的输入/输出缓冲区位于非加密的内存区域，否则编解码会失败。
+
+为支持加密场景，驱动程序做了如下处理：
+
+- 当启用 ``CONFIG_SPIRAM_ENC_EXEMPT`` 时， :cpp:func:`jpeg_alloc_decoder_mem` 和 :cpp:func:`jpeg_alloc_encoder_mem` 会自动从非加密 PSRAM 区域（``MALLOC_CAP_SPIRAM_NO_ENC``）分配缓冲区。
+- 分配的缓冲区会同时满足 cache 行对齐与 2D-DMA 的字节对齐要求。
+
+使用时请注意：
+
+1. 建议始终通过 :cpp:func:`jpeg_alloc_encoder_mem` / :cpp:func:`jpeg_alloc_decoder_mem` 分配缓冲区，以保证对齐与内存区域正确。
+
+2. 非加密区的大小由 ``CONFIG_SPIRAM_ENC_EXEMPT_SIZE`` 决定。由于 JPEG 缓冲区大小取决于图像分辨率，无法自动预测，需根据实际处理的最大图像自行配置。若该区域不足，分配会失败并打印错误日志，提示增大 ``CONFIG_SPIRAM_ENC_EXEMPT_SIZE``；同时注意该值不能大于等于实际 PSRAM 容量，否则非加密区会被禁用。
+
+.. _jpeg-kconfig-options:
 
 Kconfig 选项
 ^^^^^^^^^^^^
@@ -451,9 +487,9 @@ Kconfig 选项
 应用程序示例
 ------------
 
-- :example:`peripherals/jpeg/jpeg_decode` 演示了如何使用 JPEG 硬件解码器将不同大小的 JPEG 图片（1080p 和 720p）解码为 RGB 格式，展示了硬件解码的速度和灵活性。
+- :example:`peripherals/jpeg/jpeg_decode` 演示了如何使用 JPEG 硬件解码器解析一张嵌入式 JPEG，将其解码为 RGB888，通过 UART 输出 base64 原始结果，并使用 pytest 做回归校验。
 
-- :example:`peripherals/jpeg/jpeg_encode` 演示了如何使用 JPEG 硬件编码器编码一张 1080p 的图像，即将 `*.rgb` 文件转换为 `*.jpg` 文件。
+- :example:`peripherals/jpeg/jpeg_encode` 演示了如何使用 JPEG 硬件编码器对一张嵌入式 720p 原始图像进行编码，并通过 UART 输出 base64 JPEG，再用 pytest 做结果校验。
 
 
 API 参考
