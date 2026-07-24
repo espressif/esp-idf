@@ -215,6 +215,29 @@ esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_
 esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uint8_t *write_buffer, size_t write_size, uint8_t *read_buffer, size_t read_size, int xfer_timeout_ms);
 
 /**
+ * @brief Perform a multi-write-read transaction on the I2C bus.
+ *        This function transmits multiple buffers of data and then reads.
+ *        The transaction will be undergoing until it finishes or it reaches
+ *        the timeout provided.
+ *
+ * @note If a callback was registered with `i2c_master_register_event_callbacks`, the transaction will be asynchronous, and thus, this function will return directly, without blocking.
+ *       You will get finish information from callback. Besides, data buffer should always be completely prepared when callback is registered, otherwise, the data will get corrupt.
+ *
+ * @param[in] i2c_dev I2C master device handle that created by `i2c_master_bus_add_device`.
+ * @param[in] buffer_info_array Pointer to buffer information array.
+ * @param[in] array_size size of buffer information array.
+ * @param[out] read_buffer Data bytes received from i2c bus.
+ * @param[in] read_size Size, in bytes, of the read buffer.
+ * @param[in] xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever.
+ * @return
+ *      - ESP_OK: I2C master transmit-receive success.
+ *      - ESP_ERR_INVALID_RESPONSE: I2C master transmit-receive receives NACK.
+ *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid.
+ *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
+ */
+esp_err_t i2c_master_multi_buffer_transmit_receive(i2c_master_dev_handle_t i2c_dev, i2c_master_transmit_multi_buffer_info_t *buffer_info_array, size_t array_size, uint8_t *read_buffer, size_t read_size, int xfer_timeout_ms);
+
+/**
  * @brief Perform a read transaction on the I2C bus.
  *        The transaction will be undergoing until it finishes or it reaches
  *        the timeout provided.
