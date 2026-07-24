@@ -173,7 +173,7 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.rmt_ctrl0, reg_rmt_clk_div_numerator, divider_numerator);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.rmt_ctrl0, reg_rmt_clk_div_denominator, divider_denominator);
     switch (src) {
-    case RMT_CLK_SRC_PLL_F80M:
+    case RMT_CLK_SRC_REF_F80M:
         HP_SYS_CLKRST.rmt_ctrl0.reg_rmt_clk_src_sel = 2;
         break;
     case RMT_CLK_SRC_RC_FAST:

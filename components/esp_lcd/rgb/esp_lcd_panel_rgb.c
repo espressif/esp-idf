@@ -170,6 +170,9 @@ struct esp_rgb_panel_t {
         uint32_t fb_behind_cache: 1;     // Whether the frame buffer is behind the cache
         uint32_t bb_behind_cache: 1;     // Whether the bounce buffer is behind the cache
         uint32_t user_fb: 1;             // Whether the frame buffer is provided by user
+#if CONFIG_IDF_TARGET_ESP32S31
+        uint32_t pll_f120m_enabled: 1;   // Whether PLL_F120M was enabled for this panel instance
+#endif
     } flags;
 };
 
@@ -257,6 +260,12 @@ static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
     PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     }
+#if CONFIG_IDF_TARGET_ESP32S31
+    if (rgb_panel->flags.pll_f120m_enabled) {
+        esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, false);
+        rgb_panel->flags.pll_f120m_enabled = 0;
+    }
+#endif
     if (rgb_panel->clk_src) {
         esp_clk_tree_enable_src(rgb_panel->clk_src, false);
     }
@@ -405,6 +414,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     lcd_hal_init(&rgb_panel->hal, panel_id);
     lcd_hal_context_t *hal = &rgb_panel->hal;
     // enable clock
+#if CONFIG_IDF_TARGET_ESP32S31
+    // PLL 120M was selected in esp_perip_clk_init on esp32s31.
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, true), err, TAG, "clock source enable failed");
+    rgb_panel->flags.pll_f120m_enabled = 1;
+#endif
     PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(hal->dev, true);
     }

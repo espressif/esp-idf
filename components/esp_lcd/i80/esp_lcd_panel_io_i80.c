@@ -124,6 +124,9 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
 {
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
+#if CONFIG_IDF_TARGET_ESP32S31
+    bool pll_f120m_enabled = false;
+#endif
     ESP_RETURN_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     // although LCD_CAM can support up to 24 data lines, we restrict users to only use 8 or 16 bit width
     ESP_RETURN_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG,
@@ -185,6 +188,11 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
 #endif // I80_USE_RETENTION_LINK
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
+#if CONFIG_IDF_TARGET_ESP32S31
+    // PLL 120M was selected in esp_perip_clk_init on esp32s31.
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, true), err, TAG, "clock source enable failed");
+    pll_f120m_enabled = true;
+#endif
     PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(bus->hal.dev, true);
     }
@@ -268,6 +276,11 @@ err:
             esp_clk_tree_enable_src(bus->clk_src, false);
             bus->clk_src = SOC_MOD_CLK_INVALID;
         }
+#if CONFIG_IDF_TARGET_ESP32S31
+        if (pll_f120m_enabled) {
+            esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, false);
+        }
+#endif
 #if CONFIG_PM_ENABLE
         if (bus->pm_lock) {
             esp_pm_lock_delete(bus->pm_lock);
@@ -291,6 +304,9 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
         esp_clk_tree_enable_src(bus->clk_src, false);
         bus->clk_src = SOC_MOD_CLK_INVALID;
     }
+#if CONFIG_IDF_TARGET_ESP32S31
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, false), err, TAG, "clock source disable failed");
+#endif
 #if I80_USE_RETENTION_LINK
     const periph_retention_module_t module_id = lcd_i80_reg_retention_info[bus_id].retention_module;
     sleep_retention_module_detach(module_id);

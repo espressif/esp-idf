@@ -6,7 +6,9 @@
 #include "sdkconfig.h"
 
 #include <string.h>
+#include "hal/sec_ll.h"
 #include "esp_core_dump_types.h"
+#include "esp_crypto_periph_clk.h"
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_sha";
 
@@ -44,6 +46,9 @@ static void core_dump_sha256_finish(core_dump_sha_ctx_t *sha_ctx)
 
 static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 {
+    /* Back to always on clock source since the crypto clock source selected in
+       esp_crypto_clk_init may be disabled */
+    sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_XTAL);
     /* Enable SHA hardware */
     ets_sha_enable();
     ets_sha_init(&sha_ctx->ctx, SHA2_256);

@@ -167,7 +167,7 @@ static inline void twai_ll_set_clock_source(uint8_t twai_id, twai_clock_source_t
     case TWAI_CLK_SRC_XTAL:
         clk_sel = 0;
         break;
-    case TWAI_CLK_SRC_PLL_F80M:
+    case TWAI_CLK_SRC_REF_F80M:
         clk_sel = 2;
         break;
     default:

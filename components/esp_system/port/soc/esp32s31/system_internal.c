@@ -26,6 +26,7 @@
 #endif
 #include "esp_private/cache_err_int.h"
 #include "hal/uart_ll.h"
+#include "hal/sec_ll.h"
 #include "esp_memory_utils.h"
 
 extern int _bss_end;
@@ -50,6 +51,9 @@ void esp_system_reset_modules_on_exit(void)
 
     CLEAR_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_EN);
     SET_PERI_REG_MASK(HP_SYSTEM_ECC_MEM_LP_CTRL_REG, HP_SYSTEM_ECC_MEM_LP_FORCE_CTRL);
+    // Reset the clock source selection to an always-on source (XTAL), otherwise if the clock source
+    // is disabled, will get stuck in ROM encryption related ops.
+    sec_ll_crypto_clk_src_sel(SOC_MOD_CLK_XTAL);
 }
 
 static void IRAM_ATTR __attribute__((noinline, noreturn)) esp_restart_noos_inner(void)

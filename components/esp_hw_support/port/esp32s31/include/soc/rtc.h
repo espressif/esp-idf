@@ -88,6 +88,10 @@ typedef struct {
     uint32_t slow_clk_dcap : 8;                //!< RC_SLOW clock adjustment parameter (higher value leads to lower frequency)
     uint32_t clk_8m_dfreq : 8;                 //!< RC_FAST clock adjustment parameter (higher value leads to higher frequency)
     uint32_t rc32k_dfreq : 10;                 //!< Internal RC32K clock adjustment parameter (higher value leads to higher frequency)
+    uint32_t disable_apll : 1;                 //!< Whether to disable APLL  in rtc_clk_init
+    uint32_t disable_mpll : 1;                 //!< Whether to disable MPLL  in rtc_clk_init
+    uint32_t disable_cpll : 1;                 //!< Whether to disable CPLL  in rtc_clk_init
+    uint32_t disable_bbpll : 1;                //!< Whether to disable BBPLL in rtc_clk_init
 } rtc_clk_config_t;
 
 /**
@@ -103,6 +107,10 @@ typedef struct {
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
     .rc32k_dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT, \
+    .disable_apll = 1, \
+    .disable_mpll = 1, \
+    .disable_cpll = 0, \
+    .disable_bbpll = 1, \
 }
 
 /**
