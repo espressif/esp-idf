@@ -140,12 +140,18 @@ esp_err_t ESP_TIMER_IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (!is_initialized() || !timer_armed(timer)) {
+    if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
 
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     timer_list_lock(dispatch_method);
+
+    /* The timer may expire while this task is waiting for the list lock. */
+    if (!timer_armed(timer)) {
+        timer_list_unlock(dispatch_method);
+        return ESP_ERR_INVALID_STATE;
+    }
 
     const int64_t now = esp_timer_impl_get_time();
     const uint64_t period = timer->period;
