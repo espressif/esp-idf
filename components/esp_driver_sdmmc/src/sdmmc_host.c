@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1286,13 +1286,38 @@ esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
     return ESP_OK;
 }
 
+static bool sdmmc_dma_accessible(const void *ptr)
+{
+    if (esp_ptr_external_ram(ptr)) {
+#if SOC_SDMMC_PSRAM_DMA_CAPABLE
+        return esp_ptr_dma_ext_capable(ptr);
+#else
+        return false;
+#endif
+    }
+
+    return esp_ptr_dma_capable(ptr);
+}
+
 bool sdmmc_host_check_buffer_alignment(int slot, const void *buf, size_t size)
 {
     //for future-proof
     (void)slot;
 
     if (!buf || !size) {
-        return ESP_FAIL;
+        return false;
+    }
+
+    uintptr_t start = (uintptr_t)buf;
+    if (size - 1 > UINTPTR_MAX - start) {
+        return false;
+    }
+    const void *end = (const void *)(start + size - 1);
+
+    bool not_dma_accessible = !sdmmc_dma_accessible(buf) || !sdmmc_dma_accessible(end);
+    bool different_memory_types = esp_ptr_external_ram(buf) != esp_ptr_external_ram(end);
+    if (not_dma_accessible || different_memory_types) {
+        return false;
     }
 
     esp_err_t ret = ESP_FAIL;
