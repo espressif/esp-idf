@@ -3,11 +3,11 @@
 
 # L2CAP COC Throughput Central Example
 
-`l2cap_coc_cent` demonstrates the central (initiator) side of an L2CAP Connection-Oriented Channel (COC) throughput test using NimBLE on ESP32. It passively scans for a peripheral advertising UUID 0x1812, establishes a GAP connection, enables Data Length Extension (DLE), then opens an L2CAP COC channel over PSM 0x1002 and continuously sends SDUs to measure TX throughput.
+`l2cap_coc_cent` demonstrates the central (initiator) side of an L2CAP Connection-Oriented Channel (COC) throughput test using NimBLE on ESP32. It passively scans for a peripheral advertising UUID 0x1812, establishes a GAP connection, enables Data Length Extension (DLE), then opens an L2CAP COC channel over PSM 0x0080 and continuously sends SDUs to measure TX throughput.
 
-The central automatically cycles through all enabled PHYs (1M, 2M, Coded S2, Coded S8) in sequence, printing a throughput summary box after each test interval. It must be used together with the `l2cap_coc_prph` example which acts as the receiving side.
+The central automatically cycles through all enabled PHYs (1M, 2M, Coded S2, Coded S8) in sequence, printing a throughput summary box after each test interval. Only the PHY is changed during the test; the connection parameters selected during connection setup are preserved. It must be used together with the `l2cap_coc_prph` example which acts as the receiving side.
 
-It uses ESP32's Bluetooth controller and NimBLE stack based BLE host.
+It uses the ESP Bluetooth controller with the NimBLE-based BLE host.
 
 ## How to Use Example
 
@@ -36,10 +36,10 @@ In the `L2CAP COC Throughput Configuration` menu:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `EXAMPLE_L2CAP_COC_MTU` | 2048 | L2CAP CoC SDU MTU size in bytes (central receive buffer). Data flows cent → prph in this test, so throughput is governed by the peripheral's MTU. This value only limits how much the peripheral can send back and does not affect TX throughput. |
-| `EXAMPLE_EXTENDED_ADV` | y (BLE 5.0 chips) | Enable extended scanning to find peripherals using extended advertising. Required for Coded PHY testing on ESP32-C6/H2. |
-| `EXAMPLE_TEST_PHY_1M` | n | Enable throughput test on 1M PHY. |
-| `EXAMPLE_TEST_PHY_2M` | y | Enable throughput test on 2M PHY (BLE 5.0 chips only). |
+| `EXAMPLE_L2CAP_COC_MTU` | 2048 | Central L2CAP CoC SDU MTU size in bytes. The TX SDU size is limited by the smaller MTU negotiated between central and peripheral. |
+| `EXAMPLE_EXTENDED_ADV` | y (BLE 5.0 chips) | Enable extended scanning to find peripherals using extended advertising. |
+| `EXAMPLE_TEST_PHY_1M` | y on ESP32, n on BLE 5.0 chips | Enable throughput test on 1M PHY. |
+| `EXAMPLE_TEST_PHY_2M` | y on BLE 5.0 chips | Enable throughput test on 2M PHY (BLE 5.0 chips only). |
 | `EXAMPLE_TEST_PHY_CODED_S2` | n | Enable throughput test on Coded PHY S2 (500 kbps, BLE 5.0 chips only). |
 | `EXAMPLE_TEST_PHY_CODED_S8` | n | Enable throughput test on Coded PHY S8 (125 kbps, BLE 5.0 chips only). |
 | `EXAMPLE_TEST_DURATION_1M` | 8 | Test duration in seconds for 1M PHY. |
@@ -68,6 +68,7 @@ I (xxx) l2cap_coc_cent: L2CAP COC connected, chan=0xxxxxxxxx
 I (xxx) l2cap_coc_cent: L2CAP COC Throughput — TX side (central sends to peripheral)
 I (xxx) l2cap_coc_cent: Number of enabled PHYs: x
 I (xxx) l2cap_coc_cent: PHY updated: tx=2 rx=2 status=0
+I (xxx) l2cap_coc_cent: 2M: preserving CI=xx
 I (xxx) l2cap_coc_cent: [2M PHY] Sending for 8 s
 I (xxx) l2cap_coc_cent: +-------------------------------------------------+
 I (xxx) l2cap_coc_cent: | PHY    : 2M                                    |
@@ -77,6 +78,7 @@ I (xxx) l2cap_coc_cent: | Time   : 8     s                                |
 I (xxx) l2cap_coc_cent: +-------------------------------------------------+
 I (xxx) l2cap_coc_cent: Cycle complete. Looping back to first PHY...
 I (xxx) l2cap_coc_cent: PHY updated: tx=2 rx=2 status=0
+I (xxx) l2cap_coc_cent: 2M: preserving CI=xx
 I (xxx) l2cap_coc_cent: [2M PHY] Sending for 8 s
 I (xxx) l2cap_coc_cent: +-------------------------------------------------+
 I (xxx) l2cap_coc_cent: | PHY    : 2M                                    |
@@ -87,7 +89,7 @@ I (xxx) l2cap_coc_cent: +-------------------------------------------------+
 I (xxx) l2cap_coc_cent: Cycle complete. Looping back to first PHY...
 ```
 
-> **Note:** The above output was captured on ESP32-H2 with only 2M PHY enabled. With additional PHYs enabled (1M, Coded S2, Coded S8), the central cycles through each in sequence before looping back.
+> **Note:** The above output shows only 2M PHY enabled. With additional PHYs enabled (1M, Coded S2, Coded S8), the central cycles through each in sequence before looping back. A small app-level tag is placed in each SDU so the peripheral can split summaries for Coded S2 and Coded S8, which are both reported as Coded PHY by GAP.
 
 ## Troubleshooting
 
