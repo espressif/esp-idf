@@ -159,17 +159,17 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         adv_config_done |= scan_rsp_config_flag;
         break;
     case ESP_GATTS_READ_EVT:
-        if (g_ble_cfg_p) {
+        if (g_ble_cfg_p && g_ble_cfg_p->read_fn) {
             g_ble_cfg_p->read_fn(event, gatts_if, param);
         }
         break;
     case ESP_GATTS_WRITE_EVT:
-        if (g_ble_cfg_p) {
+        if (g_ble_cfg_p && g_ble_cfg_p->write_fn) {
             g_ble_cfg_p->write_fn(event, gatts_if, param);
         }
         break;
     case ESP_GATTS_EXEC_WRITE_EVT:
-        if (g_ble_cfg_p) {
+        if (g_ble_cfg_p && g_ble_cfg_p->exec_write_fn) {
             g_ble_cfg_p->exec_write_fn(event, gatts_if, param);
         }
         break;
@@ -187,7 +187,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_CONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
-        if (g_ble_cfg_p) {
+        if (g_ble_cfg_p && g_ble_cfg_p->connect_fn) {
             g_ble_cfg_p->connect_fn(event, gatts_if, param);
         }
         esp_ble_conn_update_params_t conn_params = {0};
@@ -202,7 +202,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
-        if (g_ble_cfg_p) {
+        if (g_ble_cfg_p && g_ble_cfg_p->disconnect_fn) {
             g_ble_cfg_p->disconnect_fn(event, gatts_if, param);
         }
         memset(s_cached_remote_bda, 0, sizeof(esp_bd_addr_t));
@@ -263,7 +263,6 @@ esp_err_t simple_ble_deinit(void)
     simple_ble_cfg_t *ble_cfg = g_ble_cfg_p;
     g_ble_cfg_p = NULL;
     if (ble_cfg) {
-        free(ble_cfg->gatt_db);
         ble_cfg->gatt_db = NULL;
         free(ble_cfg);
     }

@@ -74,6 +74,7 @@ typedef struct _protocomm_ble {
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
+static esp_gatts_attr_db_t *s_gatt_db;
 
 static bool protocomm_ble_transport_active(void)
 {
@@ -715,6 +716,8 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
 static void protocomm_ble_cleanup(void)
 {
     protocomm_ble_reset_prepare_write();
+    free(s_gatt_db);
+    s_gatt_db = NULL;
     if (protoble_internal) {
         if (protoble_internal->service_uuid) {
             free(protoble_internal->service_uuid);
@@ -891,6 +894,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     ble_config->device_name     = protocomm_ble_device_name;
     ble_config->gatt_db_count   = populate_gatt_db(&ble_config->gatt_db);
+    s_gatt_db = ble_config->gatt_db;
 
     ble_config->ble_bonding = config->ble_bonding;
     ble_config->ble_sm_sc   = config->ble_sm_sc;
@@ -904,7 +908,9 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     if (ble_config->gatt_db_count == -1) {
         ESP_LOGE(TAG, "Invalid GATT database count");
-        free(ble_config->gatt_db);
+        free(s_gatt_db);
+        s_gatt_db = NULL;
+        ble_config->gatt_db = NULL;
         free(ble_config);
         protocomm_ble_cleanup();
         return ESP_ERR_INVALID_STATE;
