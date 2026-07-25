@@ -1242,10 +1242,15 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
 #ifdef CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
     /* Keep BLE host running after provisioning; leave resources intact */
 #ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
-    rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
-    if (rc) {
-        ESP_LOGI(TAG, "Error in terminating connection rc = %d", rc);
-    }
+	/* Keep BT stack on, but terminate the connection after provisioning */
+	rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+	if (rc) {
+	    ESP_LOGI(TAG, "Error in terminating connection rc = %d",rc);
+	}
+	free_gatt_ble_misc_memory(ble_cfg_p);
+       ble_callbacks_active = false;
+#else
+       ESP_LOGD(TAG, "Keeping BLE stack running after protocomm stop");
 #endif // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
     ESP_LOGD(TAG, "Keeping BLE stack running after protocomm stop");
 #else
