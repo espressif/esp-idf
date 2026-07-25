@@ -3,11 +3,11 @@
 
 # L2CAP COC Throughput Peripheral Example
 
-`l2cap_coc_prph` demonstrates the peripheral side of an L2CAP Connection-Oriented Channel (COC) throughput test using NimBLE on ESP32. It advertises with UUID 0x1812, accepts an incoming GAP connection from `l2cap_coc_cent`, registers an L2CAP COC server on PSM 0x1002, and measures RX throughput as the central sends SDUs.
+`l2cap_coc_prph` demonstrates the peripheral side of an L2CAP Connection-Oriented Channel (COC) throughput test using NimBLE on ESP32. It advertises with UUID 0x1812, accepts an incoming GAP connection from `l2cap_coc_cent`, registers an L2CAP COC server on PSM 0x0080, and measures RX throughput as the central sends SDUs.
 
-The peripheral tracks throughput per PHY — each time the central switches PHY, the peripheral prints a per-PHY throughput summary box and resets its counters. A background stats task also prints a live per-second RX rate while data is flowing. It must be used together with the `l2cap_coc_cent` example which acts as the sending side.
+The peripheral tracks RX throughput while the central sends data. A background stats task prints a live per-second RX rate while data is flowing. When more than one PHY is enabled on the central, the peripheral also prints a summary box at each test-segment boundary. It must be used together with the `l2cap_coc_cent` example which acts as the sending side.
 
-It uses ESP32's Bluetooth controller and NimBLE stack based BLE host.
+It uses the ESP Bluetooth controller with the NimBLE-based BLE host.
 
 ## How to Use Example
 
@@ -37,9 +37,9 @@ In the `L2CAP COC Throughput Configuration` menu:
 | Option | Default | Description |
 |---------|---------|-------------|
 | `EXAMPLE_L2CAP_COC_MTU` | `16384` | Peripheral L2CAP CoC SDU MTU size in bytes. |
-| `EXAMPLE_EXTENDED_ADV` | `y` (BLE 5.0 chips) | Enable extended advertising for BLE 5.0 capable devices. Required for Coded PHY testing on ESP32-C6 and ESP32-H2. |
+| `EXAMPLE_EXTENDED_ADV` | `y` (BLE 5.0 chips) | Enable extended advertising for BLE 5.0 capable devices. |
 
-> **Note:** Throughput in the central → peripheral direction is primarily determined by the peripheral MTU. With the default configuration (`MTU=16384`, `MPS=247`), NimBLE grants approximately 67 initial credits to the central sender, allowing multiple packets to remain in flight and maximizing link throughput.
+> **Note:** Throughput in the central → peripheral direction is affected by the MTU negotiated between the central and peripheral. With the default peripheral MTU, enough initial credits are granted to keep multiple packets in flight and maintain high link utilization.
 
 ### Build and Flash
 
@@ -70,7 +70,7 @@ I (xxx) l2cap_coc_prph: | RX : xxxx   kbps |
 I (xxx) l2cap_coc_prph: | RX : xxxx   kbps |
 ```
 
-> **Note:** The peripheral prints one RX line per second. The central controls PHY selection and test duration; the peripheral tracks and displays throughput continuously as long as data is flowing.
+> **Note:** The peripheral prints one RX line per second. Summary boxes are printed when the next test segment starts, so they appear when two or more PHYs are enabled on the central. If only one PHY is enabled, the peripheral continues printing live RX throughput, while the central prints the per-interval summary.
 
 ## Troubleshooting
 
