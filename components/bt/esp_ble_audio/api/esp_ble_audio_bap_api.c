@@ -6,11 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include "esp_ble_audio_bap_api.h"
 
 #if CONFIG_BT_BAP_UNICAST_SERVER
 esp_err_t esp_ble_audio_bap_unicast_server_register(const esp_ble_audio_bap_unicast_server_register_param_t *param)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
     if (param == NULL ||
@@ -20,20 +23,26 @@ esp_err_t esp_ble_audio_bap_unicast_server_register(const esp_ble_audio_bap_unic
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_bap_unicast_server_register_safe(param);
+    bt_le_host_lock();
+
+    err = bt_bap_unicast_server_register(param);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_ascs_init();
     if (err) {
-        bt_bap_unicast_server_unregister_safe();
-        return ESP_FAIL;
+        bt_bap_unicast_server_unregister();
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_bap_unicast_server_unregister(void)
@@ -150,6 +159,8 @@ esp_err_t esp_ble_audio_bap_unicast_group_reconfig(esp_ble_audio_bap_unicast_gro
     int err;
 
     if (unicast_group == NULL || param == NULL ||
+            param->params == NULL ||
+            param->params_count == 0 ||
             param->params_count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -727,22 +738,29 @@ esp_err_t esp_ble_audio_bap_broadcast_sink_delete(esp_ble_audio_bap_broadcast_si
 #if CONFIG_BT_BAP_SCAN_DELEGATOR
 esp_err_t esp_ble_audio_bap_scan_delegator_register(esp_ble_audio_bap_scan_delegator_cb_t *cb)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
-    err = bt_bap_scan_delegator_register_safe(cb);
+    bt_le_host_lock();
+
+    err = bt_bap_scan_delegator_register(cb);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_bass_init();
     if (err) {
-        bt_bap_scan_delegator_unregister_safe();
-        return ESP_FAIL;
+        bt_bap_scan_delegator_unregister();
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_bap_scan_delegator_unregister(void)
@@ -798,7 +816,8 @@ esp_err_t esp_ble_audio_bap_scan_delegator_add_src(const esp_ble_audio_bap_scan_
             param->sid > BT_GAP_SID_MAX ||
             param->pa_state > ESP_BLE_AUDIO_BAP_PA_STATE_NO_PAST ||
             param->encrypt_state > ESP_BLE_AUDIO_BAP_BIG_ENC_STATE_BAD_CODE ||
-            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS ||
+            (param->num_subgroups > 0 && param->subgroups == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -818,7 +837,8 @@ esp_err_t esp_ble_audio_bap_scan_delegator_mod_src(const esp_ble_audio_bap_scan_
 
     if (param == NULL ||
             param->broadcast_id > ESP_BLE_AUDIO_BROADCAST_ID_MAX ||
-            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS ||
+            (param->num_subgroups > 0 && param->subgroups == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -959,7 +979,8 @@ esp_err_t esp_ble_audio_bap_broadcast_assistant_add_src(uint16_t conn_handle,
             param->broadcast_id > ESP_BLE_AUDIO_BROADCAST_ID_MAX ||
             param->addr.type > BT_ADDR_LE_RANDOM ||
             param->adv_sid > BT_GAP_SID_MAX ||
-            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS ||
+            (param->num_subgroups > 0 && param->subgroups == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -989,7 +1010,8 @@ esp_err_t esp_ble_audio_bap_broadcast_assistant_mod_src(uint16_t conn_handle,
     int err;
 
     if (param == NULL ||
-            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+            param->num_subgroups > CONFIG_BT_BAP_BASS_MAX_SUBGROUPS ||
+            (param->num_subgroups > 0 && param->subgroups == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1288,7 +1310,7 @@ esp_err_t esp_ble_audio_bap_base_foreach_subgroup(const esp_ble_audio_bap_base_t
     }
 
     err = bt_bap_base_foreach_subgroup(base, func, user_data);
-    if (err) {
+    if (err && err != -ECANCELED) {
         return ESP_FAIL;
     }
 
@@ -1411,7 +1433,7 @@ esp_err_t esp_ble_audio_bap_base_subgroup_foreach_bis(const esp_ble_audio_bap_ba
     }
 
     err = bt_bap_base_subgroup_foreach_bis(subgroup, func, user_data);
-    if (err) {
+    if (err && err != -ECANCELED) {
         return ESP_FAIL;
     }
 

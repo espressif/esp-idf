@@ -15,6 +15,8 @@
 
 #include "esp_log.h"
 
+#include "utils/assert.h"
+
 /* esp_ble_iso, esp_ble_audio and any future ISO consumer are compiled
  * under the unified BLE_ISO compression channel and share one
  * iso_log_index.h with one monotonic log-id counter — no per-consumer
@@ -112,13 +114,13 @@ extern "C" {
 #define NET_BUF_WARN(fmt, args...)          /* TBD */
 #define NET_BUF_INFO(fmt, args...)          /* TBD */
 #define NET_BUF_DBG(fmt, args...)           /* TBD */
-#define NET_BUF_ASSERT                      assert
+#define NET_BUF_ASSERT                      BT_LE_ASSERT
 
 #define NET_BUF_SIMPLE_ERR(fmt, args...)    /* TBD */
 #define NET_BUF_SIMPLE_WARN(fmt, args...)   /* TBD */
 #define NET_BUF_SIMPLE_INFO(fmt, args...)   /* TBD */
 #define NET_BUF_SIMPLE_DBG(fmt, args...)    /* TBD */
-#define NET_BUF_SIMPLE_ASSERT               assert
+#define NET_BUF_SIMPLE_ASSERT               BT_LE_ASSERT
 
 #ifdef __cplusplus
 }

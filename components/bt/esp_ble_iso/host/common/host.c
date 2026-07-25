@@ -40,7 +40,7 @@ void bt_le_host_lock(void)
     if (err) {
         /* K_MUTEX_SHORT wait failed: the host stack is wedged. k_mutex_lock has
          * already logged self/holder task names. Use libc abort() rather
-         * than assert(0) — assert is a no-op under NDEBUG, which would
+         * than BT_LE_ASSERT(0) — assert is a no-op under NDEBUG, which would
          * let the caller enter the critical section without the mutex
          * held and cause races. abort() halts in every build.
          */
@@ -82,22 +82,15 @@ int bt_le_host_init(void)
         goto delete_mutex;
     }
 
-#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
-    err = bt_le_l2cap_init();
-    if (err) {
-        goto deinit_scan;
-    }
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
-
 #if CONFIG_BT_BLUEDROID_ENABLED
     err = bt_le_bluedroid_gap_init();
     if (err) {
-        goto deinit_l2cap;
+        goto deinit_scan;
     }
 
     err = bt_le_bluedroid_gatt_init();
     if (err) {
-        goto deinit_bluedroid_gatt;
+        goto deinit_gatt;
     }
 #else
     /* nimble: reset the per-conn GATT cache/NRP arrays (now .bss/PSRAM, no
@@ -108,7 +101,7 @@ int bt_le_host_init(void)
 
     err = bt_le_iso_init();
     if (err) {
-        goto deinit_bluedroid_gatt;
+        goto deinit_gatt;
     }
 
     err = bt_le_iso_task_init();
@@ -120,15 +113,11 @@ int bt_le_host_init(void)
 
 deinit_iso:
     bt_le_iso_deinit();
-deinit_bluedroid_gatt:
+deinit_gatt:
 #if CONFIG_BT_BLUEDROID_ENABLED
     bt_le_bluedroid_gatt_deinit();
-deinit_l2cap:
+deinit_scan:
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
-#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
-    bt_le_l2cap_deinit();
-deinit_scan:    /* only reachable when OTS path is compiled in */
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
     bt_le_scan_deinit();
 delete_mutex:
     k_mutex_delete(&host_mutex);
@@ -148,9 +137,6 @@ void bt_le_host_deinit(void)
     bt_le_nimble_gattc_db_deinit();
     bt_le_nimble_gatt_nrp_deinit();
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
-#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
-    bt_le_l2cap_deinit();
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
     bt_le_scan_deinit();
 
     k_mutex_delete(&host_mutex);

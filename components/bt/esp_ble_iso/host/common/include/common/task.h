@@ -60,6 +60,7 @@ enum iso_queue_item_type {
     ISO_QUEUE_ITEM_TYPE_TIMER_EVENT,
     ISO_QUEUE_ITEM_TYPE_GAP_EVENT,
     ISO_QUEUE_ITEM_TYPE_GATT_EVENT,
+    ISO_QUEUE_ITEM_TYPE_L2CAP_EVENT,
     ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT,
 
     /* floodable: high-volume best-effort reports, posted non-blocking, newest

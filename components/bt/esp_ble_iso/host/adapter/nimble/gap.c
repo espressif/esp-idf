@@ -83,7 +83,7 @@ void bt_le_nimble_gap_post_event(void *param)
     int err;
 
     qev = bt_le_ext_calloc(1, sizeof(*qev));
-    assert(qev);
+    BT_LE_ASSERT(qev);
 
     memset(&desc, 0, sizeof(desc));
     ev = param;
@@ -117,7 +117,7 @@ void bt_le_nimble_gap_post_event(void *param)
 
         if (qev->ext_scan_recv.data_len) {
             qev->ext_scan_recv.data = bt_le_ext_calloc(1, qev->ext_scan_recv.data_len);
-            assert(qev->ext_scan_recv.data);
+            BT_LE_ASSERT(qev->ext_scan_recv.data);
 
             memcpy(qev->ext_scan_recv.data, ev->ext_disc.data, qev->ext_scan_recv.data_len);
         }
@@ -172,7 +172,7 @@ void bt_le_nimble_gap_post_event(void *param)
 
         if (qev->pa_sync_recv.data_len) {
             qev->pa_sync_recv.data = bt_le_ext_calloc(1, qev->pa_sync_recv.data_len);
-            assert(qev->pa_sync_recv.data);
+            BT_LE_ASSERT(qev->pa_sync_recv.data);
 
             memcpy(qev->pa_sync_recv.data, ev->periodic_report.data, qev->pa_sync_recv.data_len);
         }
@@ -184,7 +184,7 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->acl_connect.status = ev->connect.status;
         if (qev->acl_connect.status == 0) {
             err = ble_gap_conn_find(ev->connect.conn_handle, &desc);
-            assert(err == 0);
+            BT_LE_ASSERT(err == 0);
 
             qev->acl_connect.conn_handle = desc.conn_handle;
             qev->acl_connect.role = desc.role;
@@ -206,7 +206,7 @@ void bt_le_nimble_gap_post_event(void *param)
         qev->security_change.status = ev->enc_change.status;
         if (qev->security_change.status == 0) {
             err = ble_gap_conn_find(ev->enc_change.conn_handle, &desc);
-            assert(err == 0);
+            BT_LE_ASSERT(err == 0);
 
             qev->security_change.conn_handle = ev->enc_change.conn_handle;
             qev->security_change.role = desc.role;
@@ -325,8 +325,14 @@ int bt_le_nimble_scan_stop(void)
     LOG_DBG("[N]ScanStop");
 
     rc = ble_gap_disc_cancel();
-    if (rc) {
+    if (rc && rc != BLE_HS_EALREADY) {
         LOG_ERR("[N]ScanStopFail[%d]", rc);
+    }
+
+    /* EALREADY (not scanning, e.g. after privacy preemption): treat as success
+     * so bt_le_scan_stop clears a stale BT_DEV_SCANNING instead of locking out. */
+    if (rc == BLE_HS_EALREADY) {
+        rc = 0;
     }
 
     return nimble_err_to_errno(rc);

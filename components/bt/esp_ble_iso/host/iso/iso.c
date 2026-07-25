@@ -86,7 +86,7 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
     struct bt_iso_chan *chan = iso->iso.chan;
     struct bt_iso_chan_ops *ops;
 
-    assert(chan != NULL && "NUllConnForISOSentCb");
+    BT_LE_ASSERT(chan != NULL && "NUllConnForISOSentCb");
 
     ops = chan->ops;
 
@@ -135,7 +135,6 @@ void hci_iso(struct net_buf *buf)
     iso(buf)->index = bt_conn_index(iso);
 
     bt_iso_recv(iso, buf, flags);
-    bt_conn_unref(iso);
 }
 
 static void iso_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t *cb,
@@ -288,6 +287,14 @@ static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, ui
         return -EINVAL;
     }
 
+    /* LE Setup ISO Data Path is one HCI command (251B usable in the 255B pool):
+     * sizeof(cp)+cc_len must fit, else uint8 param_len wraps and overflows. */
+    CHECKIF(path->cc_len > 251 - sizeof(struct bt_hci_cp_le_setup_iso_path)) {
+        LOG_ERR("InvCcLenTooLarge[%u]", path->cc_len);
+
+        return -EINVAL;
+    }
+
     return 0;
 }
 
@@ -432,14 +439,14 @@ void bt_iso_connected(struct bt_conn *iso)
 
     bt_iso_chan_set_state(chan, BT_ISO_STATE_CONNECTED);
 
-    if (chan->ops->connected) {
+    if (chan->ops && chan->ops->connected) {
         chan->ops->connected(chan);
     }
 }
 
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-    assert(chan->iso != NULL && "NullConnForIsoChan");
+    BT_LE_ASSERT(chan->iso != NULL && "NullConnForIsoChan");
 
     const uint8_t conn_type = chan->iso->iso.info.type;
 
@@ -452,12 +459,12 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
      * the callback and to be more similar to the ACL disconnected callback. This also means
      * that the channel cannot be reused or memset in the callback
      */
-    if (chan->ops->disconnected) {
+    if (chan->ops && chan->ops->disconnected) {
         chan->ops->disconnected(chan, reason);
     }
 
     /* The peripheral does not have the concept of a CIG, so once a CIS
-     * disconnects it is completely freed by unref'ing it
+     * disconnects it is completely freed.
      */
     if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
             (conn_type == BT_ISO_CHAN_TYPE_CENTRAL || conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL)) {
@@ -466,7 +473,6 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
         if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
             /* Release iso conn slot back to the pool. */
             chan->iso->type = BT_CONN_TYPE_NONE;
-            bt_conn_unref(chan->iso);
             chan->iso = NULL;
 #if defined(CONFIG_BT_ISO_CENTRAL)
         } else {
@@ -476,7 +482,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
             /* Update CIG state */
             cig = get_cig(chan);
-            assert(cig != NULL && "CigNull");
+            BT_LE_ASSERT(cig != NULL && "CigNull");
 
             is_chan_connected = false;
             SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis_chan, node) {
@@ -679,7 +685,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
     chan = iso_chan(iso);
     if (chan == NULL) {
         LOG_ERR("NoChanForIsoRecv");
-    } else if (chan->ops->recv != NULL) {
+    } else if (chan->ops && chan->ops->recv) {
         chan->ops->recv(chan, &iso_info, buf->data, buf->len);
     }
 }
@@ -854,12 +860,22 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 
 void bt_iso_cleanup_acl(struct bt_conn *iso)
 {
-    LOG_DBG("IsoCleanupAcl[%u]", iso->iso.acl ? iso->iso.acl->handle : UINT16_MAX);
+    struct bt_conn *acl = iso->iso.acl;
 
-    if (iso->iso.acl) {
-        bt_conn_unref(iso->iso.acl);
-        iso->iso.acl = NULL;
+    LOG_INF("IsoCleanupAcl[%u]", acl ? acl->handle : UINT16_MAX);
+
+    if (acl == NULL) {
+        return;
     }
+
+    iso->iso.acl = NULL;
+
+#if CONFIG_BT_ISO_UNICAST
+    /* Finalize deferred ACL wipe once no CIS still points at it. */
+    if (acl->state == BT_CONN_DISCONNECTED) {
+        (void)bt_le_acl_conn_delete(acl->handle);
+    }
+#endif /* CONFIG_BT_ISO_UNICAST */
 }
 
 static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, struct bt_conn *iso)
@@ -1009,6 +1025,10 @@ static void store_cis_info_v2(const struct bt_hci_evt_le_cis_established_v2 *evt
     LOG_DBG("StoreCisInfoV2");
 
     chan = iso_conn->chan;
+    if (chan == NULL || chan->qos == NULL) {
+        LOG_ERR("CisChanOrQosNullV2[%p]", chan);
+        return;
+    }
     rx = chan->qos->rx;
     tx = chan->qos->tx;
 
@@ -1085,8 +1105,6 @@ void hci_le_cis_established(struct net_buf *buf)
         iso->err = evt->status;
         bt_iso_disconnected(iso);
     } /* else we wait for disconnect event */
-
-    bt_conn_unref(iso);
 }
 
 void hci_le_cis_established_v2(struct net_buf *buf)
@@ -1127,8 +1145,6 @@ void hci_le_cis_established_v2(struct net_buf *buf)
         iso->err = evt->status;
         bt_iso_disconnected(iso);
     } /* else we wait for disconnect event */
-
-    bt_conn_unref(iso);
 }
 
 #if defined(CONFIG_BT_ISO_PERIPHERAL)
@@ -1286,7 +1302,6 @@ void hci_le_cis_req(struct net_buf *buf)
     if (iso) {
         LOG_ERR("InvCisHdl[%u]", cis_handle);
         hci_le_reject_cis(cis_handle, BT_HCI_ERR_CONN_LIMIT_EXCEEDED);
-        bt_conn_unref(iso);
         return;
     }
 
@@ -1300,8 +1315,6 @@ void hci_le_cis_req(struct net_buf *buf)
 
     /* Add ISO connection */
     iso = bt_conn_add_iso(acl);
-
-    bt_conn_unref(acl);
 
     if (!iso) {
         LOG_ERR("AddCisToAclFail[%u]", acl_handle);
@@ -1318,7 +1331,8 @@ void hci_le_cis_req(struct net_buf *buf)
     if (err) {
         LOG_INF("AppRejectedCis[%d]", err);
         bt_iso_cleanup_acl(iso);
-        bt_conn_unref(iso);
+        /* Release the ISO slot back to the pool. */
+        iso->type = BT_CONN_TYPE_NONE;
         hci_le_reject_cis(cis_handle, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
         return;
     }
@@ -1329,8 +1343,10 @@ void hci_le_cis_req(struct net_buf *buf)
 
     err = hci_le_accept_cis(cis_handle);
     if (err) {
-        bt_iso_cleanup_acl(iso);
-        bt_conn_unref(iso);
+        /* iso_accept already bound the app's chan: full teardown so it isn't left
+           CONNECTING with a dangling chan->iso once the slot is released. */
+        iso->err = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+        bt_iso_disconnected(iso);
         hci_le_reject_cis(cis_handle, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
         return;
     }
@@ -1347,7 +1363,7 @@ static struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
         return NULL;
     }
 
-    iso->iso.acl = bt_conn_ref(acl);
+    iso->iso.acl = acl;
 
     return iso;
 }
@@ -1651,7 +1667,7 @@ static struct bt_iso_cig *get_cig(const struct bt_iso_chan *iso_chan)
         return NULL;
     }
 
-    assert(iso_chan->iso->iso.info.unicast.cig_id < ARRAY_SIZE(cigs) && "InvCIGID");
+    BT_LE_ASSERT(iso_chan->iso->iso.info.unicast.cig_id < ARRAY_SIZE(cigs) && "InvCIGID");
 
     return &cigs[iso_chan->iso->iso.info.unicast.cig_id];
 }
@@ -1726,7 +1742,6 @@ static void cleanup_cig(struct bt_iso_cig *cig)
         if (cis->iso != NULL) {
             /* Release iso conn slot back to the pool. */
             cis->iso->type = BT_CONN_TYPE_NONE;
-            bt_conn_unref(cis->iso);
             cis->iso = NULL;
         }
 
@@ -1759,6 +1774,27 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
         LOG_ERR("TooLargeNumCis[%u][%u]",
                 param->num_cis, MAX(CONFIG_BT_ISO_MAX_CHAN, BT_ISO_MAX_GROUP_ISO_COUNT));
         return false;
+    }
+
+    /* Built in the 255B HCI cmd pool (hci.c): BT_BUF_RESERVE + the 3B cmd header
+     * eat into it first, and test params cost 14B per CIS instead of 9B, so
+     * 31 CIS (spec max) never fits. Cap num_cis to the real budget. */
+    {
+        const size_t avail = 255U - BT_BUF_RESERVE - BT_HCI_CMD_HDR_SIZE;
+        size_t hdr_sz = sizeof(struct bt_hci_cp_le_set_cig_params);
+        size_t cis_sz = sizeof(struct bt_hci_cis_params);
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+        if (advanced) {
+            hdr_sz = sizeof(struct bt_hci_cp_le_set_cig_params_test);
+            cis_sz = sizeof(struct bt_hci_cis_params_test);
+        }
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+        if (param->num_cis > (avail - hdr_sz) / cis_sz) {
+            LOG_ERR("TooLargeNumCisForHciCmd[%u][%u]", param->num_cis, advanced);
+            return false;
+        }
     }
 
     for (uint8_t i = 0; i < param->num_cis; i++) {
@@ -1991,7 +2027,8 @@ static void restore_cig(struct bt_iso_cig *cig, uint8_t existing_num_cis)
          * bt_iso_cig_reconfigure was called
          */
         if (cis->iso != NULL && cis->iso->iso.info.unicast.cis_id >= existing_num_cis) {
-            bt_conn_unref(cis->iso);
+            /* Release the ISO slot back to the pool. */
+            cis->iso->type = BT_CONN_TYPE_NONE;
             cis->iso = NULL;
 
             sys_slist_remove(&cig->cis_channels, prev, &cis->node);
@@ -2243,12 +2280,12 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
         struct bt_iso_chan *iso_chan = param[i].iso_chan;
         struct bt_iso_cig *cig;
 
-        iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
+        iso_chan->iso->iso.acl = param[i].acl;
         bt_conn_set_state(iso_chan->iso, BT_CONN_INITIATING);
         bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 
         cig = get_cig(iso_chan);
-        assert(cig && "CigNull");
+        BT_LE_ASSERT(cig && "CigNull");
         cig->state = BT_ISO_CIG_STATE_ACTIVE;
     }
 
@@ -2313,7 +2350,6 @@ static void cleanup_big(struct bt_iso_big *big)
         if (bis->iso != NULL) {
             /* Release iso conn slot back to the pool. */
             bis->iso->type = BT_CONN_TYPE_NONE;
-            bt_conn_unref(bis->iso);
             bis->iso = NULL;
         }
 
@@ -2428,7 +2464,7 @@ static int hci_le_create_big(struct bt_le_ext_adv *padv, struct bt_iso_big *big,
     }
 
     bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
-    assert(bis != NULL && "BisNull");
+    BT_LE_ASSERT(bis != NULL && "BisNull");
 
     /* All BIS will share the same QOS */
     qos = bis->qos->tx;
@@ -2491,7 +2527,7 @@ static int hci_le_create_big_test(const struct bt_le_ext_adv *padv, struct bt_is
     }
 
     bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
-    assert(bis != NULL && "BisNull");
+    BT_LE_ASSERT(bis != NULL && "BisNull");
 
     /* All BIS will share the same QOS */
     qos = bis->qos;
@@ -2972,7 +3008,7 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
     }
 
     bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
-    assert(bis != NULL && "BisNull");
+    BT_LE_ASSERT(bis != NULL && "BisNull");
 
     if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
             bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER) {

@@ -41,7 +41,6 @@
 #endif /* CONFIG_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER */
 
 #define CONFIG_BT_MAX_CONN                          CONFIG_BT_ACL_CONNECTIONS
-#define CONFIG_BT_SMP                               CONFIG_BT_BLE_SMP_ENABLE
 #define CONFIG_BT_MAX_PAIRED                        CONFIG_BT_SMP_MAX_BONDS
 
 #if CONFIG_BT_ISO_UNICAST && CONFIG_BT_ISO_BROADCAST
@@ -57,7 +56,6 @@ _Static_assert(CONFIG_BT_ISO_MAX_CHAN == 0, "Too large ISO channels");
 #else /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #define CONFIG_BT_MAX_CONN                          CONFIG_BT_NIMBLE_MAX_CONNECTIONS
-#define CONFIG_BT_SMP                               CONFIG_BT_NIMBLE_SECURITY_ENABLE
 #define CONFIG_BT_MAX_PAIRED                        CONFIG_BT_NIMBLE_MAX_BONDS
 
 #if CONFIG_BT_NIMBLE_MAX_EXT_ADV_INSTANCES

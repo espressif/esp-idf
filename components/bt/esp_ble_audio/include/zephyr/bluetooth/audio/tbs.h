@@ -591,6 +591,7 @@ struct bt_tbs_register_param {
  *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT})
  * @retval -ENOEXEC The service failed to be registered
  */
+int bt_tbs_register_bearer(const struct bt_tbs_register_param *param);
 int bt_tbs_register_bearer_safe(const struct bt_tbs_register_param *param);
 
 /**
@@ -611,6 +612,7 @@ int bt_tbs_register_bearer_safe(const struct bt_tbs_register_param *param);
  *                 registered.
  * @retval -ENOEXEC The service failed to be unregistered
  */
+int bt_tbs_unregister_bearer(uint8_t bearer_index);
 int bt_tbs_unregister_bearer_safe(uint8_t bearer_index);
 
 /** @brief Prints all calls of all services to the debug log */

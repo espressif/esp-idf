@@ -12,6 +12,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/common/bt_str.h>
 
 #include <../host/keys.h>
@@ -53,9 +54,10 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 
     ARG_UNUSED(id);
 
-    assert(conn && peer);
+    BT_LE_ASSERT(conn && peer);
 
-    /* Check against conn dst address as it may be the identity address */
+    /* TODO(privacy): also match init/resp or resolved identity; dst may stay RPA. */
+
     if (bt_addr_le_eq(peer, &conn->le.dst)) {
         return true;
     }
@@ -63,24 +65,12 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
     return false;
 }
 
-_LIB_IDF
-struct bt_conn *bt_conn_ref(struct bt_conn *conn)
-{
-    return conn;
-}
-
-_LIB_IDF
-void bt_conn_unref(struct bt_conn *conn)
-{
-    ARG_UNUSED(conn);
-}
-
 _LIB_ONLY
 void bt_conn_foreach(enum bt_conn_type type,
                      void (*func)(struct bt_conn *conn, void *data),
                      void *data)
 {
-    assert(type == BT_CONN_TYPE_LE);
+    BT_LE_ASSERT(type == BT_CONN_TYPE_LE);
 
     for (size_t i = 0; i < ARRAY_SIZE(acl_conns); i++) {
         struct bt_conn *conn = &acl_conns[i];
@@ -95,7 +85,7 @@ void bt_conn_foreach(enum bt_conn_type type,
 _LIB_ONLY
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 {
-    assert(conn);
+    BT_LE_ASSERT(conn);
 
     return &conn->le.dst;
 }
@@ -105,19 +95,19 @@ uint8_t bt_conn_index(const struct bt_conn *conn)
 {
     ptrdiff_t index = 0;
 
-    assert(conn);
+    BT_LE_ASSERT(conn);
 
     switch (conn->type) {
     case BT_CONN_TYPE_LE:
         index = conn - acl_conns;
-        assert(index >= 0 && index < ARRAY_SIZE(acl_conns));
+        BT_LE_ASSERT(index >= 0 && index < ARRAY_SIZE(acl_conns));
         break;
     case BT_CONN_TYPE_ISO:
         index = conn - iso_conns;
-        assert(index >= 0 && index < ARRAY_SIZE(iso_conns));
+        BT_LE_ASSERT(index >= 0 && index < ARRAY_SIZE(iso_conns));
         break;
     default:
-        assert(0);
+        BT_LE_ASSERT(0);
         break;
     }
 
@@ -125,19 +115,6 @@ uint8_t bt_conn_index(const struct bt_conn *conn)
 
     return (uint8_t)index;
 }
-
-#if CONFIG_BT_SMP
-_IDF_ONLY
-int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
-{
-    /* This function is used by CIS to set security level,
-     * currently always return failure here to make sure
-     * that before creating CIS, the ACL connection is
-     * encrypted.
-     */
-    return -ENOTSUP;
-}
-#endif /* CONFIG_BT_SMP */
 
 static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
 {
@@ -152,7 +129,7 @@ static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
     case BT_CONN_DISCONNECTING:
         return BT_CONN_STATE_DISCONNECTING;
     default:
-        assert(0);
+        BT_LE_ASSERT(0);
         return 0;
     }
 }
@@ -160,7 +137,10 @@ static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
 _LIB_ONLY
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
-    assert(conn && info);
+    BT_LE_ASSERT(conn && info);
+
+    /* Callers today only pass ACL (BT_CONN_TYPE_LE). ISO would need
+     * info->le.* from conn->iso.acl (union); not implemented until needed. */
 
     info->type = conn->type;
     info->role = conn->role;
@@ -218,7 +198,6 @@ int bt_conn_cb_register_safe(struct bt_conn_cb *cb)
     return err;
 }
 
-_NOT_USED
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
     LOG_DBG("ConnCbUnreg");
@@ -234,6 +213,16 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb)
     }
 
     return 0;
+}
+
+_IDF_ONLY
+int bt_conn_cb_unregister_safe(struct bt_conn_cb *cb)
+{
+    int err;
+    bt_le_host_lock();
+    err = bt_conn_cb_unregister(cb);
+    bt_le_host_unlock();
+    return err;
 }
 
 _LIB_ONLY
@@ -277,7 +266,7 @@ int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 _IDF_ONLY
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 {
-    assert(conns);
+    BT_LE_ASSERT(conns);
 
     for (size_t i = 0; i < size; i++) {
         struct bt_conn *conn = &conns[i];
@@ -322,7 +311,7 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type)
 {
     struct bt_conn *conn = NULL;
 
-    assert(type == BT_CONN_TYPE_LE || type == BT_CONN_TYPE_ISO);
+    BT_LE_ASSERT(type == BT_CONN_TYPE_LE || type == BT_CONN_TYPE_ISO);
 
     /* LOG_DBG("ConnLookupHdl[%u][%u]", handle, type); */
 
@@ -337,11 +326,20 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type)
 
 struct bt_conn *bt_conn_lookup_index(uint8_t index)
 {
+    struct bt_conn *conn;
+
     if (index >= ARRAY_SIZE(acl_conns)) {
         return NULL;
     }
 
-    return bt_conn_ref(&acl_conns[index]);
+    conn = &acl_conns[index];
+
+    /* Free/wiped slots are type NONE after acl_conn_delete. */
+    if (conn->type == BT_CONN_TYPE_NONE) {
+        return NULL;
+    }
+
+    return conn;
 }
 
 _IDF_ONLY
@@ -353,17 +351,6 @@ struct bt_conn *bt_le_acl_conn_find(uint16_t conn_handle)
 }
 
 _IDF_ONLY
-struct bt_conn *bt_le_acl_conn_find_safe(uint16_t conn_handle)
-{
-    struct bt_conn *conn = NULL;
-    /* LOG_DBG("AclConnFind[%u]", conn_handle); */
-    bt_le_host_lock();
-    conn = bt_conn_lookup_handle(conn_handle, BT_CONN_TYPE_LE);
-    bt_le_host_unlock();
-    return conn;
-}
-
-_IDF_ONLY
 int bt_le_acl_conn_new(uint16_t conn_handle,
                        uint8_t role,
                        bt_addr_le_t *dst,
@@ -371,7 +358,7 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
 {
     struct bt_conn *conn;
 
-    assert(dst);
+    BT_LE_ASSERT(dst);
 
     LOG_DBG("AclNew[%u][%u][%u][%s]",
             conn_handle, role, sec_level, bt_addr_le_str(dst));
@@ -383,6 +370,10 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
         conn->role = role;
         conn->state = BT_CONN_CONNECTED;
         conn->sec_level = sec_level;
+        /* AUTH-before-ACL-slot path may create with L2+ directly. */
+        if (sec_level > BT_SECURITY_L1) {
+            conn->encrypt = 1;
+        }
         memcpy(&conn->le.dst, dst, sizeof(conn->le.dst));
     } else {
         LOG_ERR("NoFreeConn[%u]", conn_handle);
@@ -418,6 +409,20 @@ void bt_conn_le_set_ltk(struct bt_conn *conn, const uint8_t *ltk)
     LOG_INF("ConnSetLtk[%u][%s]", conn->handle, bt_hex(ltk, 16));
 }
 
+#if CONFIG_BT_ISO_UNICAST
+/* Defer ACL slot wipe while a CIS still holds iso.acl. */
+static bool bt_iso_acl_has_cis(const struct bt_conn *acl)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(iso_conns); i++) {
+        if (iso_conns[i].type == BT_CONN_TYPE_ISO && iso_conns[i].iso.acl == acl) {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif /* CONFIG_BT_ISO_UNICAST */
+
 _IDF_ONLY
 int bt_le_acl_conn_delete(uint16_t conn_handle)
 {
@@ -430,6 +435,27 @@ int bt_le_acl_conn_delete(uint16_t conn_handle)
     if (conn == NULL || conn->state != BT_CONN_DISCONNECTED) {
         LOG_ERR("AclConnDelNotDisc[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
+    }
+
+#if CONFIG_BT_ISO_UNICAST
+    if (bt_iso_acl_has_cis(conn)) {
+        LOG_INF("AclConnDelDeferred[%u]", conn_handle);
+        return 0;
+    }
+#endif /* CONFIG_BT_ISO_UNICAST */
+
+    /* OTS CoC (and any L2CAP) keep chan->conn on this list. Wipe without
+     * detaching leaves dangling pointers if ACL slot is reused. */
+    {
+        struct bt_l2cap_chan *chan, *tmp;
+
+        SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, tmp, node) {
+            sys_slist_find_and_remove(&conn->channels, &chan->node);
+            if (chan->ops != NULL && chan->ops->disconnected != NULL) {
+                chan->ops->disconnected(chan);
+            }
+            chan->conn = NULL;
+        }
     }
 
     /* Wipe this connection's LTK slot (key hygiene); the memset below then nulls
@@ -461,8 +487,8 @@ int bt_le_acl_conn_update(uint16_t conn_handle,
     }
 
     if (conn->sec_level < sec_level) {
-        /* No encryption to encryption */
-        if (conn->encrypt == 0 && conn->sec_level == BT_SECURITY_L1) {
+        /* Mark encrypted on first step into L2+ (not only from L1). */
+        if (conn->encrypt == 0 && sec_level > BT_SECURITY_L1) {
             conn->encrypt = 1;
 
             if (encrypted) {
@@ -519,8 +545,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
     bt_conn_state_t old_state;
 
-    assert(conn);
-    assert(conn->type == BT_CONN_TYPE_LE || conn->type == BT_CONN_TYPE_ISO);
+    BT_LE_ASSERT(conn);
+    BT_LE_ASSERT(conn->type == BT_CONN_TYPE_LE || conn->type == BT_CONN_TYPE_ISO);
 
     LOG_DBG("ConnSetState[%u][%u]", conn->state, state);
 
@@ -556,7 +582,7 @@ static int iso_disconnect(struct bt_conn *conn, uint8_t reason)
 _IDF_ONLY
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-    assert(conn);
+    BT_LE_ASSERT(conn);
 
     LOG_DBG("ConnDisconnect[%u][%u][%02x]", conn->state, conn->type, reason);
 
@@ -567,10 +593,14 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
         }
 
         if (conn->type == BT_CONN_TYPE_ISO) {
-            return iso_disconnect(conn, reason);
+            int err = iso_disconnect(conn, reason);
+            if (err == 0) {
+                bt_conn_set_state(conn, BT_CONN_DISCONNECTING);
+            }
+            return err;
         }
 
-        assert(0);
+        BT_LE_ASSERT(0);
     case BT_CONN_DISCONNECTING:
         return 0;
     case BT_CONN_DISCONNECTED:
@@ -627,9 +657,8 @@ int bt_le_acl_conn_disconnected_listener(uint16_t conn_handle, uint8_t reason)
         }
     }
 
-#if CONFIG_BT_ISO_UNICAST
+    /* GATT sub/CCC cleanup is ACL-scoped, not ISO-unicast. */
     bt_le_acl_conn_disconnected_gatt_listener(conn_handle);
-#endif /* CONFIG_BT_ISO_UNICAST */
 
     return 0;
 }
@@ -675,6 +704,8 @@ int bt_le_acl_conn_identity_resolved_listener(uint16_t conn_handle,
         LOG_ERR("AclConnIdResolvedListenerNotConn[%u][%u]", conn_handle, BT_CONN_STATE_GET(conn));
         return -ENOTCONN;
     }
+
+    /* TODO(privacy): copy identity into conn->le.dst once adapters post resolve. */
 
     SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, listener, _node) {
         if (listener->identity_resolved) {

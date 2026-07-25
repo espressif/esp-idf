@@ -9,7 +9,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <assert.h>
 #include <errno.h>
 
 #include <zephyr/sys/slist.h>
@@ -20,6 +19,8 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "toolchain.h"
+
+#include "utils/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,17 +37,17 @@ struct k_mutex {
 
 static inline void k_mutex_create(struct k_mutex *mutex)
 {
-    assert(mutex);
-    assert(mutex->handle == NULL);
+    BT_LE_ASSERT(mutex);
+    BT_LE_ASSERT(mutex->handle == NULL);
 
     mutex->handle = xSemaphoreCreateRecursiveMutex();
-    assert(mutex->handle);
+    BT_LE_ASSERT(mutex->handle);
 }
 
 static inline void k_mutex_delete(struct k_mutex *mutex)
 {
-    assert(mutex);
-    assert(mutex->handle);
+    BT_LE_ASSERT(mutex);
+    BT_LE_ASSERT(mutex->handle);
 
     vSemaphoreDelete(mutex->handle);
     mutex->handle = NULL;
@@ -65,8 +66,8 @@ static inline void k_mutex_delete(struct k_mutex *mutex)
 
 static inline int k_mutex_lock(struct k_mutex *mutex, uint32_t timeout)
 {
-    assert(mutex);
-    assert(mutex->handle);
+    BT_LE_ASSERT(mutex);
+    BT_LE_ASSERT(mutex->handle);
 
     if (xSemaphoreTakeRecursive(mutex->handle, timeout) == pdTRUE) {
         return 0;
@@ -89,8 +90,8 @@ static inline int k_mutex_lock(struct k_mutex *mutex, uint32_t timeout)
 
 static inline int k_mutex_unlock(struct k_mutex *mutex)
 {
-    assert(mutex);
-    assert(mutex->handle);
+    BT_LE_ASSERT(mutex);
+    BT_LE_ASSERT(mutex->handle);
 
     if (xSemaphoreGiveRecursive(mutex->handle) != pdTRUE) {
         K_MUTEX_LOG_ERR("UnlockFail");
@@ -112,18 +113,18 @@ struct k_sem {
 
 static inline void k_sem_create(struct k_sem *sem)
 {
-    assert(sem);
-    assert(sem->handle == NULL);
+    BT_LE_ASSERT(sem);
+    BT_LE_ASSERT(sem->handle == NULL);
 
     sem->handle = xSemaphoreCreateBinary();
-    assert(sem->handle);
+    BT_LE_ASSERT(sem->handle);
     sem->result = 0;
 }
 
 static inline void k_sem_delete(struct k_sem *sem)
 {
-    assert(sem);
-    assert(sem->handle);
+    BT_LE_ASSERT(sem);
+    BT_LE_ASSERT(sem->handle);
 
     vSemaphoreDelete(sem->handle);
     sem->handle = NULL;
@@ -141,8 +142,8 @@ static inline void k_sem_delete(struct k_sem *sem)
 
 static inline int k_sem_take(struct k_sem *sem, uint32_t timeout)
 {
-    assert(sem);
-    assert(sem->handle);
+    BT_LE_ASSERT(sem);
+    BT_LE_ASSERT(sem->handle);
 
     /* Do NOT touch sem->result here. The producer may have already written
      * it and called k_sem_give before this take ran (BTU/HCI cb on a
@@ -164,8 +165,8 @@ static inline int k_sem_take(struct k_sem *sem, uint32_t timeout)
 
 static inline int k_sem_give(struct k_sem *sem)
 {
-    assert(sem);
-    assert(sem->handle);
+    BT_LE_ASSERT(sem);
+    BT_LE_ASSERT(sem->handle);
 
     if (xSemaphoreGive(sem->handle) != pdTRUE) {
         K_SEM_LOG_ERR("GiveFail");
@@ -181,12 +182,19 @@ static inline int k_sem_give(struct k_sem *sem)
  * caller would see uninitialized response data. */
 static inline void k_sem_reset(struct k_sem *sem)
 {
-    assert(sem);
-    assert(sem->handle);
+    BT_LE_ASSERT(sem);
+    BT_LE_ASSERT(sem->handle);
 
     xQueueReset(sem->handle);
     sem->result = 0;
 }
+
+/* Queue */
+
+/* Bounded wait for a reliable-tier task-queue post instead of portMAX_DELAY,
+ * so a wedged consumer can't freeze an external producer (esp_timer / host
+ * task) and stall the ISO data path. */
+#define K_QUEUE_SHORT       (1000 / portTICK_PERIOD_MS)
 
 /* Timer */
 
@@ -202,6 +210,10 @@ typedef uint32_t k_timeout_t;
 #define K_MINUTES(m)    K_SECONDS((m) * 60)
 #define K_HOURS(h)      K_MINUTES((h) * 60)
 
+/* Defer work onto iso_task. In this port K_NO_WAIT runs the handler INLINE
+ * (timer.c), which fires e.g. GATT indications before the CP write response. */
+#define K_NO_WAIT_ASYNC K_MSEC(1)
+
 struct k_work;
 
 typedef void (*k_work_handler_t)(struct k_work *work);
@@ -211,6 +223,8 @@ struct k_work {
     k_work_handler_t handler;
     int64_t timeout_us;
     void *user_data;
+    uint32_t gen;   /* Bumped on (re)schedule/cancel/deinit so a timer event
+                     * queued before the change is skipped (see timer.c). */
 };
 
 struct k_work_sync {

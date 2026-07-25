@@ -29,6 +29,11 @@ enum broadcast_flag {
     FLAG_BROADCAST_SYNCING,
     FLAG_BROADCAST_SYNCED,
     FLAG_BROADCAST_RESYNC_PENDING,
+    /* Set when the last BIS stream stops; cleared in stopped_cb.
+     * Bridges the window where EPs are IDLE but big_stopped has not yet cleared
+     * BASS bis_sync — pa_lost must not rem_src/delete during that window.
+     */
+    FLAG_BROADCAST_STOP_PENDING,
     FLAG_BASE_RECEIVED,
     FLAG_PA_SYNCING,
     FLAG_PA_SYNCED,
@@ -201,6 +206,7 @@ static void broadcast_sink_reset(void)
     flag_clear(FLAG_BROADCAST_CODE_RECEIVED);
     flag_clear(FLAG_BROADCAST_SYNC_REQUESTED);
     flag_clear(FLAG_BROADCAST_RESYNC_PENDING);
+    flag_clear(FLAG_BROADCAST_STOP_PENDING);
     flag_clear(FLAG_SCANNING);
 
 #if CONFIG_EXAMPLE_SCAN_SELF
@@ -330,8 +336,6 @@ static void broadcast_stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 
 static void broadcast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
 {
-    esp_err_t err;
-
     ESP_LOGI(TAG, "[SNK #%u] Stream stopped, reason 0x%02x",
              broadcast_stream_idx(stream), reason);
 
@@ -349,21 +353,14 @@ static void broadcast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint
 
     flag_clear(FLAG_BROADCAST_SYNCING);
     flag_clear(FLAG_BROADCAST_SYNCED);
+    /* Mark BIG teardown in progress until stopped_cb runs
+     * (after update_recv_state_big_cleared). Do not delete here — that
+     * races rem_src while bis_sync is still non-zero.
+     */
+    flag_set(FLAG_BROADCAST_STOP_PENDING);
 
     if (flag_test(FLAG_PA_SYNCED) == false) {
-        /* Both PA and BIS are gone — no path to recover BIGInfo, so the
-         * sink can no longer drive a new BIG sync. Delete it and clear all
-         * state.
-         */
-        if (broadcast_sink.sink) {
-            err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink.sink);
-            if (err) {
-                ESP_LOGE(TAG, "Failed to delete broadcast sink, err %d", err);
-                return;
-            }
-        }
-
-        broadcast_sink_reset();
+        /* Both PA and BIS are gone — stopped_cb deletes. */
         return;
     }
 
@@ -376,6 +373,35 @@ static void broadcast_stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint
         flag_clear(FLAG_BROADCAST_RESYNC_PENDING);
         check_sync_broadcast();
     }
+}
+
+static void stopped_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
+                                      uint8_t reason)
+{
+    esp_err_t err;
+
+    ESP_LOGI(TAG, "Broadcast sink stopped, reason 0x%02x", reason);
+
+    flag_clear(FLAG_BROADCAST_STOP_PENDING);
+
+    /* Keep the sink when PA is still synced (assistant pause, BIS bitmap
+     * resync, or spontaneous BIG drop with PA alive).
+     */
+    if (flag_test(FLAG_PA_SYNCED)) {
+        return;
+    }
+
+    if (broadcast_sink.sink == NULL) {
+        return;
+    }
+
+    err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink.sink);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to delete broadcast sink, err %d", err);
+        return;
+    }
+
+    broadcast_sink_reset();
 }
 
 static void broadcast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
@@ -740,14 +766,15 @@ void broadcast_pa_lost(uint16_t sync_handle)
     flag_clear(FLAG_PA_SYNCED);
     flag_clear(FLAG_PA_SYNCING);
 
-    /* BIS still active → BIG keeps running per § 3.2.1.9, leave the sink;
-     * stream_stopped_cb will tear it down when BIS eventually stops.
+    /* BIS still active or BIG teardown pending → leave the sink;
+     * stopped_cb will tear it down when bis_sync is clear.
      * Otherwise the sink is bound to a dead PA handle and its cached
      * BASE / BIGInfo are stale: delete the sink and clear the PA-derived
      * flags so the next PA sync creates a fresh sink and lets the lib
      * redeliver BASE / BIGInfo.
      */
-    if (flag_test(FLAG_BROADCAST_SYNCING) || flag_test(FLAG_BROADCAST_SYNCED)) {
+    if (flag_test(FLAG_BROADCAST_SYNCING) || flag_test(FLAG_BROADCAST_SYNCED) ||
+            flag_test(FLAG_BROADCAST_STOP_PENDING)) {
         return;
     }
 
@@ -789,6 +816,7 @@ int cap_acceptor_broadcast_init(void)
         static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
             .base_recv = base_recv_cb,
             .syncable  = syncable_cb,
+            .stopped   = stopped_cb,
         };
         static esp_ble_audio_bap_stream_ops_t broadcast_stream_ops = {
             .started = broadcast_stream_started_cb,

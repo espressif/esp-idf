@@ -59,6 +59,12 @@ static size_t configured_sink_stream_count;
 static size_t configured_source_stream_count;
 #define configured_stream_count (configured_sink_stream_count + configured_source_stream_count)
 
+/* Number of streams that have entered codec-configured (ops.configured).
+ * CP config ACK can arrive while the EP is still idle; QoS must wait for this.
+ */
+static size_t codec_configured_count;
+static bool all_config_acked;
+
 static struct stream_pair_state {
     esp_ble_audio_bap_stream_t *sink_stream;
     esp_ble_audio_bap_stream_t *source_stream;
@@ -147,6 +153,8 @@ static void reset_stream_state(void)
 {
     configured_sink_stream_count = 0;
     configured_source_stream_count = 0;
+    codec_configured_count = 0;
+    all_config_acked = false;
 
     reset_stream_pair_state();
 
@@ -386,6 +394,51 @@ static int set_stream_qos(void)
     }
 
     return 0;
+}
+
+static void try_create_group_and_qos(void)
+{
+    uint8_t stream_count = 0;
+    int err;
+
+    /* Wait until every successful Config CP has a matching ASE state
+     * notification (ops.configured → EP codec-configured). Calling
+     * qos from config_cb alone races the last stream still in idle.
+     */
+    if (!all_config_acked || unicast_group != NULL) {
+        return;
+    }
+
+    if (configured_stream_count == 0) {
+        ESP_LOGW(TAG, "No streams were configured");
+        return;
+    }
+
+    if (codec_configured_count < configured_stream_count) {
+        return;
+    }
+
+    for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
+        if (sinks[i].configured == ASCS_RSP_SUCCESS) {
+            streams[stream_count++] = &sinks[i].stream;
+        }
+    }
+
+    for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
+        if (sources[i].configured == ASCS_RSP_SUCCESS) {
+            streams[stream_count++] = &sources[i].stream;
+        }
+    }
+
+    err = create_group();
+    if (err) {
+        return;
+    }
+
+    err = set_stream_qos();
+    if (err) {
+        return;
+    }
 }
 
 static void stream_qos_set(esp_ble_audio_bap_stream_t *stream, bool success)
@@ -682,18 +735,35 @@ static void stream_configured_cb(esp_ble_audio_bap_stream_t *stream,
     ESP_LOGI(TAG, "[%s #%d] Stream configured, QoS preference:",
              stream_dir_str(stream), stream_index(stream));
     example_print_qos_pref(TAG, pref);
+
+    codec_configured_count++;
+
+    try_create_group_and_qos();
 }
 
 static void stream_qos_set_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    /* QoS set is also reported by qos_cb; skip the duplicate log here. */
-    (void)stream;
+    /* ASE entered qos-configured — safe to enable. */
+    stream_qos_set(stream, true);
+
+    if (is_all_stream_qos_set()) {
+        enable_stream();
+    }
 }
 
 static void stream_enabled_cb(esp_ble_audio_bap_stream_t *stream)
 {
-    /* Enabled is also reported by enable_cb; skip the duplicate log here. */
-    (void)stream;
+    bool ret;
+
+    /* ASE entered enabling — safe to connect after all enables complete. */
+    stream_enabled(stream, true);
+
+    ret = enable_stream();
+    if (ret == false) {
+        return;
+    }
+
+    connect_stream();
 }
 
 static void stream_connected_cb(esp_ble_audio_bap_stream_t *stream)
@@ -843,9 +913,7 @@ static void config_cb(esp_ble_audio_bap_stream_t *stream,
                       esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                       esp_ble_audio_bap_ascs_reason_t reason)
 {
-    uint8_t stream_count;
     bool ret;
-    int err;
 
     log_rsp("Config", stream, rsp_code, reason);
 
@@ -856,34 +924,9 @@ static void config_cb(esp_ble_audio_bap_stream_t *stream,
         return;
     }
 
-    if (configured_stream_count == 0) {
-        ESP_LOGW(TAG, "No streams were configured");
-        return;
-    }
+    all_config_acked = true;
 
-    stream_count = 0;
-
-    for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
-        if (sinks[i].configured == ASCS_RSP_SUCCESS) {
-            streams[stream_count++] = &sinks[i].stream;
-        }
-    }
-
-    for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
-        if (sources[i].configured == ASCS_RSP_SUCCESS) {
-            streams[stream_count++] = &sources[i].stream;
-        }
-    }
-
-    err = create_group();
-    if (err) {
-        return;
-    }
-
-    err = set_stream_qos();
-    if (err) {
-        return;
-    }
+    try_create_group_and_qos();
 }
 
 static void qos_cb(esp_ble_audio_bap_stream_t *stream,
@@ -892,10 +935,14 @@ static void qos_cb(esp_ble_audio_bap_stream_t *stream,
 {
     log_rsp("QoS", stream, rsp_code, reason);
 
-    stream_qos_set(stream, rsp_code == ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS);
-
-    if (is_all_stream_qos_set()) {
-        enable_stream();
+    /* Mark failure from CP reject. Success waits for ops.qos_set (ASE
+     * qos-configured) — enabling on CP ACK alone races codec-configured.
+     */
+    if (rsp_code != ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS) {
+        stream_qos_set(stream, false);
+        if (is_all_stream_qos_set()) {
+            enable_stream();
+        }
     }
 }
 
@@ -903,18 +950,19 @@ static void enable_cb(esp_ble_audio_bap_stream_t *stream,
                       esp_ble_audio_bap_ascs_rsp_code_t rsp_code,
                       esp_ble_audio_bap_ascs_reason_t reason)
 {
-    bool ret;
-
     log_rsp("Enable", stream, rsp_code, reason);
 
-    stream_enabled(stream, rsp_code == ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS);
+    /* Same as QoS: connect needs ENABLING from ASE state ntf (ops.enabled). */
+    if (rsp_code != ESP_BLE_AUDIO_BAP_ASCS_RSP_CODE_SUCCESS) {
+        bool ret;
 
-    ret = enable_stream();
-    if (ret == false) {
-        return;
+        stream_enabled(stream, false);
+
+        ret = enable_stream();
+        if (ret) {
+            connect_stream();
+        }
     }
-
-    connect_stream();
 }
 
 static void start_cb(esp_ble_audio_bap_stream_t *stream,

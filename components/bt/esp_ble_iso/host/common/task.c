@@ -36,7 +36,14 @@ static BT_ISO_CTRL_BSS_ATTR QueueSetHandle_t iso_queue_set;
 
 static BT_ISO_CTRL_BSS_ATTR TaskHandle_t iso_task_handle;
 
-extern void bt_le_timer_handle_event(void *arg);
+extern void bt_le_timer_handle_event(void *arg, size_t gen);
+
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+/* Defined in esp_ble_audio (ots/adapter/l2cap.c) - the only L2CAP consumer is
+ * OTS, so the shim lives there. Declared instead of included to keep esp_ble_iso
+ * free of audio headers; both live in the bt component, so the link resolves. */
+extern void bt_le_l2cap_handle_event(void *data, size_t data_len);
+#endif
 
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
 /* Per-type dispatch timing, indexed by iso_queue_item_type. Written only by
@@ -94,7 +101,7 @@ static void iso_dispatch_item(const struct iso_queue_item *item)
 
     switch (item->type) {
     case ISO_QUEUE_ITEM_TYPE_TIMER_EVENT:
-        bt_le_timer_handle_event(item->data);
+        bt_le_timer_handle_event(item->data, item->data_len);
         break;
     case ISO_QUEUE_ITEM_TYPE_GAP_EVENT:
     case ISO_QUEUE_ITEM_TYPE_EXT_ADV_REPORT:
@@ -104,6 +111,11 @@ static void iso_dispatch_item(const struct iso_queue_item *item)
     case ISO_QUEUE_ITEM_TYPE_GATT_EVENT:
         bt_le_gatt_handle_event(item->data, item->data_len);
         break;
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+    case ISO_QUEUE_ITEM_TYPE_L2CAP_EVENT:
+        bt_le_l2cap_handle_event(item->data, item->data_len);
+        break;
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
     case ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT:
     case ISO_QUEUE_ITEM_TYPE_BIGINFO_ADV_REPORT:
         bt_le_iso_handle_hci_event(item->data, item->data_len);
@@ -118,7 +130,7 @@ static void iso_dispatch_item(const struct iso_queue_item *item)
         if (item->data) {
             free(item->data);
         }
-        assert(0);
+        BT_LE_ASSERT(0);
         break;
     }
 
@@ -188,9 +200,13 @@ int bt_le_iso_task_post(enum iso_queue_item_type type,
         wait = 0;
         break;
     default:
-        /* Timer / GATT / HCI / GAP lifecycle: reliable, block until space. */
+        /* Timer / GATT / HCI / GAP lifecycle. A self-post from iso_task must
+         * not block (it is the sole consumer -> blocking on its own full queue
+         * deadlocks); external producers get a bounded wait, not portMAX_DELAY,
+         * so a wedged iso_task can't freeze esp_timer / the host task and stall
+         * the ISO data path. */
         queue = iso_normal_queue;
-        wait = portMAX_DELAY;
+        wait = (xTaskGetCurrentTaskHandle() == iso_task_handle) ? 0 : K_QUEUE_SHORT;
         break;
     }
 

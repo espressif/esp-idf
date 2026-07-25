@@ -126,7 +126,7 @@ typedef struct {
  * @param   type    Event type.
  * @param   param   Event parameters.
  */
-void esp_ble_audio_gap_app_post_event(uint8_t type, void *param);
+void esp_ble_audio_gap_app_post_event(uint16_t type, void *param);
 
 #if !CONFIG_BT_BLUEDROID_ENABLED
 /**

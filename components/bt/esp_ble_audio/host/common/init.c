@@ -44,12 +44,17 @@
 #include <../host/conn_internal.h>
 #include <../host/hci_core.h>
 
+#include "utils/assert.h"
 #include "utils/mem.h"
 
 #if CONFIG_BT_BLUEDROID_ENABLED
 #include "bluedroid/init.h"
 #else
 #include "nimble/init.h"
+#endif
+
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+#include "ots/adapter/l2cap.h"
 #endif
 
 #include "../../../lib/include/audio.h"
@@ -180,7 +185,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260724)
+#define LEA_VERSION     (0x20260802)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -1205,29 +1210,13 @@ static void log_error(const char *format, ...)
 #endif /* (CONFIG_BT_AUDIO_LOG_LEVEL >= BT_ISO_LOG_ERROR) */
 }
 
-/* Fatal assert handler registered into lib_ext_funcs._assert.
- * Always logged (no LOG_LEVEL gate) — this is the last message before
- * abort, and the user needs the context to diagnose.
- */
-static void assert_fatal(const char *tag, size_t info,
-                         const char *file, int line, const char *func)
-{
-    esp_log_write(ESP_LOG_ERROR, LEA_TAG,
-                  BT_ISO_LOG_COLOR_E
-                  "E (%lu) %s: LibAssert[%s][info=%u][%s:%d][%s]"
-                  BT_ISO_LOG_RESET_COLOR "\n",
-                  esp_log_timestamp(), LEA_TAG,
-                  tag, (unsigned)info, file, line, func);
-    abort();
-}
-
 static const struct lib_ext_funcs ext_funcs = {
     ._log_dbg = (void *)log_debug,
     ._log_inf = (void *)log_info,
     ._log_wrn = (void *)log_warn,
     ._log_err = (void *)log_error,
 
-    ._assert = (void *)assert_fatal,
+    ._assert = (void *)bt_le_assert,
 
 #if CONFIG_BT_AUDIO_HEAP_EXTERNAL_MEMORY
     ._malloc = (void *)bt_le_ext_malloc,
@@ -1319,8 +1308,6 @@ static const struct lib_ext_funcs ext_funcs = {
     ._conn_index = (void *)bt_conn_index,
     ._conn_lookup_index = (void *)bt_conn_lookup_index,
     ._conn_get_dst = (void *)bt_conn_get_dst,
-    ._conn_ref = (void *)bt_conn_ref,
-    ._conn_unref = (void *)bt_conn_unref,
 
     ._gatt_svc_register = (void *)bt_gatt_service_register,
     ._gatt_svc_unregister = (void *)bt_gatt_service_unregister,
@@ -2128,10 +2115,32 @@ int bt_le_audio_init(void)
         return err;
     }
 
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+    err = bt_le_l2cap_ots_init();
+    if (err) {
+        return err;
+    }
+#endif
+
 #if CONFIG_BT_BLUEDROID_ENABLED
-    return bt_le_bluedroid_audio_init();
+    err = bt_le_bluedroid_audio_init();
 #else
-    return bt_le_nimble_audio_init();
+    err = bt_le_nimble_audio_init();
+#endif
+    if (err) {
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+        bt_le_l2cap_ots_deinit();
+#endif
+        return err;
+    }
+
+    return 0;
+}
+
+void bt_le_audio_deinit(void)
+{
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+    bt_le_l2cap_ots_deinit();
 #endif
 }
 

@@ -59,7 +59,7 @@ For `esp32s31`, replace the chip overlay accordingly.
 5. On `PA_SYNC` success, cancel scanning, log the sync handle, and create the broadcast sink for the sync handle and broadcast ID.
 6. The `base_recv` callback extracts the BIS index bitfield masked by the available stream count; the `syncable` callback then calls `esp_ble_audio_bap_broadcast_sink_sync` with the stream pointer array.
 7. Per-stream `started` callback resets RX metrics; `recv` callback feeds each SDU into `example_audio_rx_metrics_on_recv` (tracking valid/error/lost/zero-length counts); `stopped` logs the reason.
-8. On `PA_SYNC_LOST` matching the active sync handle, delete the broadcast sink and re-enter scanning.
+8. On `PA_SYNC_LOST` matching the active sync handle, the sink is deleted — by `broadcast_sink_stopped_cb` once BASS clears `bis_sync` (deleting from `stream_stopped_cb` races `rem_src` while `bis_sync` is still set), or directly here if the sink never reached BIG sync — and scanning resumes.
 
 ## Expected Log
 
@@ -90,6 +90,7 @@ I (xxx) TMAP_BMR: [SNK #0] Stream started
 Stop / sync loss:
 ```
 I (xxx) TMAP_BMR: [SNK #0] Stream stopped, reason 0x..
+I (xxx) TMAP_BMR: Broadcast sink stopped, reason 0x..
 I (xxx) TMAP_BMR: PA sync lost: sync_handle .. reason 0x..
 I (xxx) TMAP_BMR: PA sync .. lost with reason ..
 ```

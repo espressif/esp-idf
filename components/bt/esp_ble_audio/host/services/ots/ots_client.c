@@ -2,6 +2,7 @@
  *  @brief Bluetooth Object Transfer Client
  *
  * SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,6 +132,7 @@ static void read_next_metadata(struct bt_conn *conn,
 static int read_attr(struct bt_conn *conn,
                      struct bt_otc_internal_instance_t *inst,
                      uint16_t handle, bt_gatt_read_func_t cb);
+static void oacp_clr_cur_inst(struct bt_otc_internal_instance_t *inst);
 
 /* L2CAP callbacks */
 static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -177,6 +179,7 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
     }
 
     const uint32_t offset = cur_inst->rcvd_size;
+    uint32_t len = buf->len;
     bool is_complete = false;
     const struct bt_ots_obj_metadata *cur_object =
             &cur_inst->otc_inst->cur_object;
@@ -184,19 +187,24 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
     LOG_DBG("OtsCliL2capRecv[%u][%u]", buf->len, offset);
 
-    cur_inst->rcvd_size += buf->len;
-
-    if (cur_inst->rcvd_size >= cur_object->size.cur) {
-        is_complete = true;
+    if (offset >= cur_object->size.cur) {
+        LOG_WRN("OtsCliRecvPastEnd[%u][%u]", offset, cur_object->size.cur);
+        (void)bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
+        cur_inst = NULL;
+        return -EMSGSIZE;
     }
 
-    if (cur_inst->rcvd_size > cur_object->size.cur) {
-        LOG_WRN("OtsCliRecvExceedMax[%u][%u]", cur_inst->rcvd_size, cur_object->size.cur);
+    if (offset + len > cur_object->size.cur) {
+        LOG_WRN("OtsCliRecvExceedMax[%u][%u]", offset + len, cur_object->size.cur);
+        len = cur_object->size.cur - offset;
     }
+
+    cur_inst->rcvd_size = offset + len;
+    is_complete = (cur_inst->rcvd_size >= cur_object->size.cur);
 
     if (cur_inst->otc_inst->cb != NULL && cur_inst->otc_inst->cb->obj_data_read != NULL) {
         cb_ret = cur_inst->otc_inst->cb->obj_data_read(cur_inst->otc_inst, conn, offset,
-                                                       buf->len, buf->data,
+                                                       len, buf->data,
                                                        is_complete);
     } else {
         LOG_ERR("OtsCliObjDataRdCbNull");
@@ -234,10 +242,15 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
                         struct bt_conn *conn)
 {
+    struct bt_otc_internal_instance_t *inst =
+        CONTAINER_OF(l2cap_ctx, struct bt_otc_internal_instance_t, l2cap_ctx);
+
+    ARG_UNUSED(conn);
+
     LOG_DBG("OtsCliL2capClosed");
-    if (cur_inst) {
-        cur_inst = NULL;
-    }
+
+    /* Only release if this channel belonged to the active transfer. */
+    oacp_clr_cur_inst(inst);
 }
 /* End L2CAP callbacks */
 
@@ -318,7 +331,9 @@ static void olcp_ind_handler(struct bt_conn *conn,
     enum bt_gatt_ots_olcp_proc_type op_code;
     struct net_buf_simple net_buf;
 
-    if (length < sizeof(op_code)) {
+    /* Op Code is 1 byte on the wire; sizeof(enum) is 4 here and would reject
+     * every valid 3-byte response. */
+    if (length < sizeof(uint8_t)) {
         LOG_WRN("OtsCliInvIndLen[%u]", length);
         return;
     }
@@ -387,18 +402,29 @@ static void olcp_ind_handler(struct bt_conn *conn,
     }
 }
 
+static void oacp_clr_cur_inst(struct bt_otc_internal_instance_t *inst)
+{
+    if (cur_inst == inst) {
+        cur_inst = NULL;
+    }
+}
+
 static void oacp_ind_handler(struct bt_conn *conn,
-                             struct bt_ots_client *otc_inst,
+                             struct bt_otc_internal_instance_t *inst,
                              const void *data, uint16_t length)
 {
+    struct bt_ots_client *otc_inst = inst->otc_inst;
     enum bt_gatt_ots_oacp_proc_type op_code;
     enum bt_gatt_ots_oacp_proc_type req_opcode;
     enum bt_gatt_ots_oacp_res_code result_code;
     uint32_t checksum;
     struct net_buf_simple net_buf;
 
-    if (length < sizeof(op_code)) {
+    /* Op Code is 1 byte on the wire; sizeof(enum) is 4 here and would reject
+     * every valid 3-byte response. */
+    if (length < sizeof(uint8_t)) {
         LOG_WRN("OtsCliInvIndLen[%u]", length);
+        oacp_clr_cur_inst(inst);
         return;
     }
 
@@ -409,11 +435,12 @@ static void oacp_ind_handler(struct bt_conn *conn,
     LOG_DBG("OtsCliOacpInd");
 
     if (op_code == BT_GATT_OTS_OACP_PROC_RESP) {
-        if (net_buf.len >= (sizeof(req_opcode) + sizeof(result_code))) {
+        if (net_buf.len >= (sizeof(uint8_t) + sizeof(uint8_t))) {
             req_opcode = net_buf_simple_pull_u8(&net_buf);
             result_code = net_buf_simple_pull_u8(&net_buf);
         } else {
             LOG_WRN("OtsCliInvIndDataLen[%u]", net_buf.len);
+            oacp_clr_cur_inst(inst);
             return;
         }
 
@@ -427,13 +454,22 @@ static void oacp_ind_handler(struct bt_conn *conn,
                 }
             } else {
                 LOG_WRN("OtsCliInvChecksumLen[%u]", net_buf.len);
-                return;
             }
+            /* Checksum never uses L2CAP; always release cur_inst. */
+            oacp_clr_cur_inst(inst);
+        } else if ((req_opcode == BT_GATT_OTS_OACP_PROC_READ ||
+                    req_opcode == BT_GATT_OTS_OACP_PROC_WRITE) &&
+                   result_code != BT_GATT_OTS_OACP_RES_SUCCESS) {
+            /* Read/Write SUCCESS still waits on L2CAP (rx/tx_done/closed). */
+            LOG_DBG("OtsCliOacpFailClr[%02x][%02x]", req_opcode, result_code);
+            oacp_clr_cur_inst(inst);
+            (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
         }
 
         print_oacp_response(req_opcode, result_code);
     } else {
         LOG_WRN("OtsCliInvIndOpcode[%u]", op_code);
+        oacp_clr_cur_inst(inst);
     }
 }
 
@@ -465,7 +501,7 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
         if (handle == inst->otc_inst->olcp_handle) {
             olcp_ind_handler(conn, inst->otc_inst, data, length);
         } else if (handle == inst->otc_inst->oacp_handle) {
-            oacp_ind_handler(conn, inst->otc_inst, data, length);
+            oacp_ind_handler(conn, inst, data, length);
         }
     }
     return BT_GATT_ITER_CONTINUE;
@@ -511,8 +547,50 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
     return BT_GATT_ITER_STOP;
 }
 
+/* Disconnect fires no subscription callback, so the OLCP/OACP indication that
+ * releases busy never arrives — an in-flight procedure would strand -EBUSY. */
+static void ots_client_conn_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+    ARG_UNUSED(conn);
+    ARG_UNUSED(reason);
+
+    for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
+        struct bt_otc_internal_instance_t *inst = &otc_insts[i];
+
+        if (inst->otc_inst == NULL || !inst->busy) {
+            continue;
+        }
+
+        LOG_WRN("OtsCliDisconnBusy[%d]", i);
+
+        inst->busy = false;
+        oacp_clr_cur_inst(inst);
+    }
+}
+
+BT_CONN_CB_DEFINE(client_conn_callbacks) = {
+    .disconnected = ots_client_conn_disconnected,
+};
+
+int bt_gatt_ots_client_conn_cb_register(void)
+{
+    return bt_conn_cb_register_safe((void *)&bt_conn_cb_client_conn_callbacks);
+}
+
+void bt_gatt_ots_client_conn_cb_unregister(void)
+{
+    (void)bt_conn_cb_unregister_safe((void *)&bt_conn_cb_client_conn_callbacks);
+}
+
 int bt_ots_client_register(struct bt_ots_client *otc_inst)
 {
+    /* A NULL inst would leave the slot marked free after registering its
+     * L2CAP node, so the next call re-appends the same node and self-links it. */
+    if (otc_inst == NULL) {
+        LOG_ERR("OtsCliInvInst");
+        return -EINVAL;
+    }
+
     for (int i = 0; i < ARRAY_SIZE(otc_insts); i++) {
         int err;
 
@@ -534,18 +612,32 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
     return -ENOMEM;
 }
 
+__attribute__((unused))
 int bt_ots_client_unregister(uint8_t index)
 {
-    if (index < ARRAY_SIZE(otc_insts)) {
-        bt_gatt_ots_l2cap_unregister(&otc_insts[index].l2cap_ctx);
-        memset(&otc_insts[index], 0, sizeof(otc_insts[index]));
-    } else {
+    int err;
+
+    if (index >= ARRAY_SIZE(otc_insts)) {
         return -EINVAL;
     }
+
+    err = bt_gatt_ots_l2cap_unregister(&otc_insts[index].l2cap_ctx);
+    if (err) {
+        LOG_WRN("OtsCliL2capUnregFail[%d]", err);
+        return err;
+    }
+
+    if (cur_inst == &otc_insts[index]) {
+        LOG_DBG("OtsCliUnregClrCurInst[%u]", index);
+        cur_inst = NULL;
+    }
+
+    memset(&otc_insts[index], 0, sizeof(otc_insts[index]));
 
     return 0;
 }
 
+__attribute__((unused))
 int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
                                struct bt_conn *conn)
 {
@@ -602,7 +694,15 @@ static void write_olcp_cb(struct bt_conn *conn, uint8_t err,
         return;
     }
 
-    inst->busy = false;
+    /* Keep busy until OLCP indication; only release on write failure.
+     * Notify the app — without an indication, obj_selected would never fire.
+     */
+    if (err) {
+        LOG_WRN("OtsCliOlcpWrFail[%02x]", err);
+        inst->busy = false;
+        on_object_selected(conn, BT_GATT_OTS_OLCP_RES_OPERATION_FAILED,
+                           inst->otc_inst);
+    }
 }
 
 static int write_olcp(struct bt_otc_internal_instance_t *inst,
@@ -633,6 +733,7 @@ static int write_olcp(struct bt_otc_internal_instance_t *inst,
     return err;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
                             struct bt_conn *conn,
                             uint64_t obj_id)
@@ -679,6 +780,7 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
                                struct bt_conn *conn)
 {
@@ -713,6 +815,7 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
                               struct bt_conn *conn)
 {
@@ -748,6 +851,7 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
                               struct bt_conn *conn)
 {
@@ -782,6 +886,7 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
     return -EOPNOTSUPP;
 }
 
+__attribute__((unused))
 int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
                               struct bt_conn *conn)
 {
@@ -1040,6 +1145,7 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
             date_time_decode(
                 &net_buf,
                 &inst->otc_inst->cur_object.first_created);
+            BT_OTS_SET_METADATA_REQ_CREATED(inst->metadata_read);
         } else {
             LOG_WRN("OtsCliInvLen[%u][%u]", length, BT_OTS_DATE_TIME_FIELD_SIZE);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -1079,6 +1185,7 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
         if (length == BT_OTS_DATE_TIME_FIELD_SIZE) {
             date_time_decode(&net_buf,
                              &inst->otc_inst->cur_object.modified);
+            BT_OTS_SET_METADATA_REQ_MODIFIED(inst->metadata_read);
         } else {
             LOG_WRN("OtsCliInvLen[%u][%u]", length, BT_OTS_DATE_TIME_FIELD_SIZE);
             err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -1102,8 +1209,9 @@ static int read_attr(struct bt_conn *conn,
                      uint16_t handle, bt_gatt_read_func_t cb)
 {
     if (!handle) {
+        /* Characteristic not discovered — skip without poisoning metadata_err. */
         LOG_DBG("OtsCliHdlNotSet");
-        return -EINVAL;
+        return -ENOENT;
     } else if (cb == NULL) {
         LOG_ERR("OtsCliCbNull");
         return -EINVAL;
@@ -1138,22 +1246,24 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 
     if (err) {
         LOG_WRN("OtsCliMetaRdErr[%02x]", err);
-    } else if (data && length == OTS_PROPERTIES_LEN) {
-        struct bt_ots_obj_metadata *cur_object =
-                &inst->otc_inst->cur_object;
+    } else if (data) {
+        if (length != OTS_PROPERTIES_LEN) {
+            LOG_WRN("OtsCliInvLen[%u][%u]", length, OTS_PROPERTIES_LEN);
+            cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+        } else {
+            struct bt_ots_obj_metadata *cur_object =
+                    &inst->otc_inst->cur_object;
 
-        cur_object->props = net_buf_simple_pull_le32(&net_buf);
+            cur_object->props = net_buf_simple_pull_le32(&net_buf);
 
-        LOG_INF("OtsCliObjPropsRaw[%x]", cur_object->props);
+            LOG_INF("OtsCliObjPropsRaw[%x]", cur_object->props);
 
-        if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->props)) {
-            LOG_WRN("OtsCliObjRdNotSupp");
+            if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->props)) {
+                LOG_WRN("OtsCliObjRdNotSupp");
+            }
+
+            BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read);
         }
-
-        BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read);
-    } else {
-        LOG_WRN("OtsCliInvLen[%u][%u]", length, OTS_PROPERTIES_LEN);
-        cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
     }
 
     if (cb_err) {
@@ -1181,7 +1291,14 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
         return;
     }
 
-    inst->busy = false;
+    /* Keep busy until OACP indication; only release on write failure. */
+    if (err) {
+        LOG_WRN("OtsCliOacpWrFail[%02x]", err);
+        inst->busy = false;
+        oacp_clr_cur_inst(inst);
+        /* oacp_read may already have connected L2CAP before the GATT write. */
+        (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
+    }
 }
 
 static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
@@ -1201,6 +1318,7 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
         LOG_WRN("OtsCliOacpWrReqFail[%02x]", err);
         inst->busy = false;
         cur_inst = NULL;
+        (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
         return;
     }
 
@@ -1210,6 +1328,7 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
     if (err) {
         LOG_WRN("OtsCliL2capSendErr[%d]", err);
         cur_inst = NULL;
+        (void)bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
     }
 
     inst->busy = false;
@@ -1236,6 +1355,7 @@ static int oacp_read(struct bt_conn *conn,
      * transfer?
      */
 
+    l2cap = &inst->l2cap_ctx;
     err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
     if (err) {
         LOG_WRN("OtsCliL2capConnectFail[%d]", err);
@@ -1269,6 +1389,8 @@ static int oacp_read(struct bt_conn *conn,
     if (!err) {
         inst->busy = true;
         cur_inst = inst;
+    } else {
+        (void)bt_gatt_ots_l2cap_disconnect(l2cap);
     }
 
     inst->rcvd_size = 0;
@@ -1292,6 +1414,7 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
         return -EBUSY;
     }
 
+    l2cap = &inst->l2cap_ctx;
     err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
     if (err) {
         LOG_WRN("OtsCliL2capConnectFail[%d]", err);
@@ -1328,6 +1451,8 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
     if (!err) {
         inst->busy = true;
         cur_inst = inst;
+    } else {
+        (void)bt_gatt_ots_l2cap_disconnect(l2cap);
     }
 
     inst->rcvd_size = 0;
@@ -1405,6 +1530,7 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
     return oacp_read(conn, inst);
 }
 
+__attribute__((unused))
 int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
                                     struct bt_conn *conn, const void *buf, size_t len,
                                     off_t offset, enum bt_ots_oacp_write_op_mode mode)
@@ -1472,6 +1598,7 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
     return oacp_write(conn, inst, buf, (uint32_t)len, (uint32_t)offset, mode);
 }
 
+__attribute__((unused))
 int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_conn *conn,
                                       off_t offset, size_t len)
 {
@@ -1569,6 +1696,10 @@ static void read_next_metadata(struct bt_conn *conn,
 
     if (err) {
         LOG_INF("OtsCliMetaRdFailTryNext[%d]", err);
+        /* -ENOENT: handle not discovered, skip. Other errors: keep first. */
+        if (err != -ENOENT && !inst->metadata_err) {
+            inst->metadata_err = err;
+        }
         read_next_metadata(conn, inst);
     }
 }
@@ -1756,6 +1887,7 @@ static int decode_record(struct net_buf_simple *buf,
     return rec->len;
 }
 
+__attribute__((unused))
 int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
                                     bt_ots_client_dirlisting_cb cb)
 {
@@ -1771,6 +1903,9 @@ int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
 
     while (net_buf.len) {
         int ret;
+
+        /* Optional fields written only when flagged; clear between records. */
+        memset(&record, 0, sizeof(record));
 
         count++;
 

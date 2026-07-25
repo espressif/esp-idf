@@ -6,6 +6,9 @@
 
 config BT_AUDIO
     bool # hidden
+    # esp_ble_audio needs esp_ble_iso's headers (<zephyr/*>) and symbols
+    # (bt_gatt_*/bt_conn_*/k_*), and both are gated on BT_ISO.
+    select BT_ISO
     help
         This option enables Bluetooth Audio support. The specific
         features that are available may depend on other features

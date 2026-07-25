@@ -35,6 +35,8 @@ void bt_le_scan_recv_listener(uint16_t event_type,
                               uint8_t data_len,
                               uint8_t *data);
 
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_find(uint16_t sync_handle);
+
 struct bt_le_per_adv_sync *bt_le_per_adv_sync_find_safe(uint16_t sync_handle);
 
 int bt_le_per_adv_sync_new(uint16_t sync_handle,

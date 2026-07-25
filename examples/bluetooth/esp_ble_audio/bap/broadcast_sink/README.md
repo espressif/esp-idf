@@ -64,7 +64,7 @@ For `esp32s31`, replace the chip overlay accordingly.
 6. `ESP_BLE_AUDIO_GAP_EVENT_PA_SYNC` clears `pa_syncing`, cancels discovery, stores `sync_handle`, and calls `esp_ble_audio_bap_broadcast_sink_create()`.
 7. `base_recv_cb` extracts the subgroup count and BIS index bitfield (masked by `bis_index_mask`); when no Broadcast Assistant is connected, `requested_bis_sync` defaults to `ESP_BLE_AUDIO_BAP_BIS_SYNC_NO_PREF`.
 8. `syncable_cb` AND-masks the BASE bitfield with the requested mask, copies `TARGET_BROADCAST_CODE` if the BIG is encrypted (unless BASS already supplied one), and calls `esp_ble_audio_bap_broadcast_sink_sync()` with the chosen mask and `streams_p`.
-9. `stream_started_cb` resets per-stream RX metrics and increments `stream_count_started`; `stream_recv_cb` updates metrics via `example_audio_rx_metrics_on_recv()`. When all streams have stopped, `stream_stopped_cb` deletes the broadcast sink. `pa_sync_lost()` clears the cached `req_recv_state`, deletes any sink, and restarts the scanner.
+9. `stream_started_cb` resets per-stream RX metrics and increments `stream_count_started`; `stream_recv_cb` updates metrics via `example_audio_rx_metrics_on_recv()`. When all streams have stopped, `stream_stopped_cb` clears `stream_started`; the sink itself is deleted from `broadcast_sink_stopped_cb` (the `stopped` sink callback), which runs once BASS has cleared `bis_sync` — deleting from `stream_stopped_cb` would race `rem_src` while `bis_sync` is still non-zero. `pa_sync_lost()` clears the cached `req_recv_state`, deletes any sink, and restarts the scanner.
 
 ## Expected Log
 
@@ -92,6 +92,7 @@ On teardown / sync loss:
 
 ```
 I (xxx) BAP_BSNK: [SNK #0] Stream stopped, reason 0x... (.../...)
+I (xxx) BAP_BSNK: Broadcast sink stopped, reason 0x...
 I (xxx) BAP_BSNK: PA sync lost: sync_handle ... reason 0x...
 I (xxx) BAP_BSNK: PA sync terminated
 ```
@@ -105,4 +106,4 @@ Run [broadcast_source](../broadcast_source/) on a second board. Expected interac
 3. Source's BIGInfo advertises the BIG as encrypted (broadcast code `"1234"`); sink reports `BIG encrypted`.
 4. Source starts the BIG and the two BIS streams (`FRONT_LEFT`, `FRONT_RIGHT`); sink calls `esp_ble_audio_bap_broadcast_sink_sync()` with the chosen BIS bitfield and the matching broadcast code.
 5. Source's TX scheduler keeps pushing SDUs at `preset_active.qos.interval`; sink stream `recv` callbacks deliver the data and update RX metrics.
-6. Stopping the source (or losing PA sync) triggers `stream_stopped_cb` on the sink, which deletes the broadcast sink and resumes scanning.
+6. Stopping the source (or losing PA sync) tears down the BIG; `broadcast_sink_stopped_cb` then deletes the sink (after BASS clears `bis_sync`) and scanning resumes.

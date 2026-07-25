@@ -102,6 +102,12 @@ int stream_tx_register(esp_ble_audio_bap_stream_t *stream)
     }
 
     for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
+        if (tx_streams[i].stream == stream) {
+            return 0; /* already armed */
+        }
+    }
+
+    for (size_t i = 0; i < ARRAY_SIZE(tx_streams); i++) {
         if (tx_streams[i].stream == NULL) {
             if (stream->qos == NULL || stream->qos->sdu == 0) {
                 ESP_LOGE(TAG, "[SNK #%zu] Invalid QoS", i);
