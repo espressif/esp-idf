@@ -548,6 +548,17 @@ TEST_CASE("test posix_timers clock_... functions", "[newlib]")
     test_posix_timers_clock();
 }
 
+TEST_CASE("timespec_get returns UTC time", "[newlib]")
+{
+    struct timespec ts = {0};
+
+    TEST_ASSERT_EQUAL_INT(TIME_UTC, timespec_get(&ts, TIME_UTC));
+    TEST_ASSERT_GREATER_OR_EQUAL_INT64(0, ts.tv_sec);
+    TEST_ASSERT_GREATER_OR_EQUAL_INT32(0, ts.tv_nsec);
+    TEST_ASSERT_LESS_THAN_INT32(1000000000L, ts.tv_nsec);
+    TEST_ASSERT_EQUAL_INT(0, timespec_get(&ts, -1));
+}
+
 #define TEST_USE_CPU_CYCLES 1
 #if TEST_USE_CPU_CYCLES && CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #include "esp_cpu.h"
