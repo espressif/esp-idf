@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,16 +201,23 @@ static void olcp_ind_cb(struct bt_conn *conn,
                         struct bt_gatt_indicate_params *params,
                         uint8_t err)
 {
+    struct bt_ots *ots = (struct bt_ots *) params->attr->user_data;
+
     LOG_DBG("OtsOlcpRecvIndAck[%04x]", err);
+
+    ots->olcp_ind.ind_in_flight = false;
+    ots->olcp_ind.conn = NULL;
 }
 
-static void olcp_ind_send(const struct bt_gatt_attr *olcp_attr,
+static void olcp_ind_send(struct bt_conn *conn,
+                          const struct bt_gatt_attr *olcp_attr,
                           enum bt_gatt_ots_olcp_proc_type req_op_code,
                           enum bt_gatt_ots_olcp_res_code olcp_status)
 {
     struct bt_ots *ots = (struct bt_ots *) olcp_attr->user_data;
     uint8_t *olcp_res = ots->olcp_ind.res;
     uint16_t olcp_res_len = 0;
+    int err;
 
     /* Encode OLCP Response */
     olcp_res[olcp_res_len++] = BT_GATT_OTS_OLCP_PROC_RESP;
@@ -219,7 +227,7 @@ static void olcp_ind_send(const struct bt_gatt_attr *olcp_attr,
     /* Prepare indication parameters */
     memset(&ots->olcp_ind.params, 0, sizeof(ots->olcp_ind.params));
     memcpy(&ots->olcp_ind.attr, olcp_attr, sizeof(ots->olcp_ind.attr));
-    ots->olcp_ind.params.attr = olcp_attr;
+    ots->olcp_ind.params.attr = &ots->olcp_ind.attr;
     ots->olcp_ind.params.func = olcp_ind_cb;
     ots->olcp_ind.params.data = olcp_res;
     ots->olcp_ind.params.len  = olcp_res_len;
@@ -227,9 +235,16 @@ static void olcp_ind_send(const struct bt_gatt_attr *olcp_attr,
     ots->olcp_ind.params.chan_opt = BT_ATT_CHAN_OPT_NONE;
 #endif /* CONFIG_BT_EATT */
 
-    LOG_DBG("OtsOlcpSendInd");
+    LOG_DBG("OtsOlcpSendInd[%u]", conn->handle);
 
-    k_work_submit(&ots->olcp_ind.work);
+    ots->olcp_ind.conn = conn;
+    ots->olcp_ind.ind_in_flight = true;
+    err = k_work_schedule(&ots->olcp_ind.work, K_NO_WAIT_ASYNC);
+    if (err < 0) {
+        LOG_ERR("OtsOlcpSchIndFail[%u][%d]", conn->handle, err);
+        ots->olcp_ind.ind_in_flight = false;
+        ots->olcp_ind.conn = NULL;
+    }
 }
 
 ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
@@ -255,8 +270,15 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
-    if (k_work_is_pending(&ots->olcp_ind.work)) {
+    if (ots->olcp_ind.ind_in_flight ||
+            k_work_is_pending(&ots->olcp_ind.work.work)) {
         LOG_WRN("OtsOlcpWrBeforeIndSent");
+        return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
+    }
+
+    if (ots->cur_obj &&
+            ots->cur_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+        LOG_WRN("OtsOlcpWrObjBusy[%d]", ots->cur_obj->state.type);
         return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
     }
 
@@ -300,7 +322,7 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
         return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
     }
 
-    olcp_ind_send(attr, olcp_proc.type, olcp_status);
+    olcp_ind_send(conn, attr, olcp_proc.type, olcp_status);
     return len;
 }
 
@@ -316,5 +338,10 @@ void bt_gatt_ots_olcp_cfg_changed(const struct bt_gatt_attr *attr,
     olcp_ind->is_enabled = false;
     if (value == BT_GATT_CCC_INDICATE) {
         olcp_ind->is_enabled = true;
+    } else {
+        LOG_DBG("OtsOlcpIndClrOnCcc");
+        (void)k_work_cancel_delayable(&olcp_ind->work);
+        olcp_ind->ind_in_flight = false;
+        olcp_ind->conn = NULL;
     }
 }

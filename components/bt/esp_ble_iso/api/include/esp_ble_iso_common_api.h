@@ -583,7 +583,7 @@ typedef struct {
  * @param   type    Event type.
  * @param   param   Event parameters.
  */
-void esp_ble_iso_gap_app_post_event(uint8_t type, void *param);
+void esp_ble_iso_gap_app_post_event(uint16_t type, void *param);
 
 /**
  * @brief   Initialize ISO common functionality.

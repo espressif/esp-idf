@@ -69,7 +69,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
     LOG_DBG("HciCmdCreate[%04x][%u]", opcode, param_len);
 
     buf = net_buf_alloc(&hci_cmd_pool, K_NO_WAIT);
-    assert(buf);
+    BT_LE_ASSERT(buf);
 
     net_buf_reserve(buf, BT_BUF_RESERVE);
 

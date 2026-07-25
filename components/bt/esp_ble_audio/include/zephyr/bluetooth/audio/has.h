@@ -392,6 +392,7 @@ struct bt_has_preset_register_param {
  *
  * @return 0 if success, errno on failure.
  */
+int bt_has_register(const struct bt_has_features_param *features);
 int bt_has_register_safe(const struct bt_has_features_param *features);
 
 /**

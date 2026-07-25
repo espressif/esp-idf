@@ -42,7 +42,7 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_UCI_VAL),
@@ -56,21 +56,21 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_URI_LIST_VAL),
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_SIGNAL_STRENGTH_VAL),
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_SIGNAL_INTERVAL_VAL),
@@ -86,7 +86,7 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_CCID_VAL),
@@ -100,21 +100,21 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_INCOMING_URI_VAL),
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_CALL_STATE_VAL),
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_CALL_CONTROL_POINT_VAL),
@@ -122,7 +122,7 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
                 .flags = BLE_GATT_CHR_F_WRITE_NO_RSP | BLE_GATT_CHR_F_WRITE | \
-                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC,
+                BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_OPTIONAL_OPCODES_VAL),
@@ -136,21 +136,21 @@ static const struct ble_gatt_svc_def gatt_svc_gtbs[] =  {
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_NOTIFY,
+                .flags = BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_INCOMING_CALL_VAL),
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 .uuid = BLE_UUID16_DECLARE(BT_UUID_TBS_FRIENDLY_NAME_VAL),
                 .access_cb = bt_le_nimble_gatts_access_cb_safe,
                 .arg = NULL,
                 .descriptors = NULL,    /* NULL if no descriptors. Do not include CCCD */
-                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC,
+                .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
                 .min_key_size = 16,
             }, {
                 0, /* No more characteristics in this service. */
@@ -233,7 +233,7 @@ static int gtbs_svc_check(void)
         for (size_t i = 0; i < gtbs_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(gtbs_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -328,7 +328,7 @@ static int tbs_svc_check(void)
         for (size_t i = 0; i < tbs_list[0].attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(tbs_list[0].attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;

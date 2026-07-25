@@ -60,7 +60,7 @@ static void has_svc_add_features_chr(struct ble_gatt_chr_def *chr)
     chr->arg = NULL;
     chr->descriptors = NULL;    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_HAS_FEATURES_NOTIFIABLE
-    chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC;
+    chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
 #else /* CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
     chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_READ_ENC;
 #endif /* CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
@@ -78,9 +78,9 @@ static void has_svc_add_control_point_chr(struct ble_gatt_chr_def *chr)
     chr->descriptors = NULL;    /* NULL if no descriptors. Do not include CCCD */
 #if CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE
     chr->flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE |
-                 BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY;
+                 BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
 #else /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
-    chr->flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE | BLE_GATT_CHR_F_WRITE_ENC;
+    chr->flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_INDICATE | BLE_GATT_CHR_F_WRITE_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
 #endif /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
     chr->min_key_size = 16;
     chr->val_handle = &has_control_point_handle;
@@ -97,7 +97,7 @@ static void has_svc_add_preset_index_chr(struct ble_gatt_chr_def *chr)
     chr->access_cb = bt_le_nimble_gatts_access_cb_safe;
     chr->arg = NULL;
     chr->descriptors = NULL;    /* NULL if no descriptors. Do not include CCCD */
-    chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC;
+    chr->flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_READ_ENC | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC;
     chr->min_key_size = 16;
     chr->val_handle = &has_preset_index_handle;
 }
@@ -125,9 +125,15 @@ int bt_le_nimble_has_attr_handle_set(void)
         LOG_ERR("[N]HasSvcGetFail");
         return -ENODEV;
     }
-    assert(has_svc->attr_count > 0);
+    BT_LE_ASSERT(has_svc->attr_count > 0);
 
-    end_handle = start_handle + has_svc->attr_count - 1;
+#if CONFIG_BT_HAS_ACTIVE_PRESET_INDEX
+    BT_LE_ASSERT(has_preset_index_handle >= 2);
+    end_handle = has_preset_index_handle + 1; /* cccd attr handle */
+#else
+    BT_LE_ASSERT(has_control_point_handle >= 2);
+    end_handle = has_control_point_handle + 1; /* cccd attr handle */
+#endif
 
     LOG_DBG("[N]HasAttrHdlSet[%u][%u][%u]",
             start_handle, end_handle, has_svc->attr_count);
@@ -175,7 +181,7 @@ static int has_svc_check(void)
         for (size_t i = 0; i < has_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(has_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;
@@ -193,6 +199,7 @@ static int has_svc_check(void)
 
 int bt_le_nimble_has_init(void)
 {
+    bool has_added = false;
     uint8_t chr_count;
     int rc;
 
@@ -206,7 +213,7 @@ int bt_le_nimble_has_init(void)
     LOG_DBG("[N]HasInit[%u]", chr_count);
 
     gatt_svc_has->characteristics = bt_le_ext_calloc(chr_count, sizeof(struct ble_gatt_chr_def));
-    assert(gatt_svc_has->characteristics);
+    BT_LE_ASSERT(gatt_svc_has->characteristics);
 
     has_svc_add_features_chr((void *)(gatt_svc_has->characteristics + 0));
 
@@ -227,6 +234,7 @@ int bt_le_nimble_has_init(void)
         LOG_ERR("[N]HasAddSvcsFail[%d]", rc);
         goto free;
     }
+    has_added = true;
 
     rc = has_svc_check();
     if (rc) {
@@ -236,7 +244,12 @@ int bt_le_nimble_has_init(void)
     return 0;
 
 free:
-    free((void *)gatt_svc_has->characteristics);
-    gatt_svc_has->characteristics = NULL;
+    /* Once ble_gatts_add_svcs() succeeds NimBLE keeps the svc_def pointer and
+     * offers no per-service unregister, so an added service must be leaked
+     * rather than freed into a dangling entry of its global list. */
+    if (!has_added) {
+        free((void *)gatt_svc_has->characteristics);
+        gatt_svc_has->characteristics = NULL;
+    }
     return rc;
 }

@@ -28,6 +28,7 @@ struct net_buf;
 struct bt_le_iso_cb {
     void (*cis_dis)(struct net_buf *buf);
     void (*cis_est)(struct net_buf *buf);
+    void (*cis_est_v2)(struct net_buf *buf);
     void (*cis_req)(struct net_buf *buf);
     void (*big_create)(struct net_buf *buf);
     void (*big_term)(struct net_buf *buf);

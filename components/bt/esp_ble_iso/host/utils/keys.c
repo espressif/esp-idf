@@ -24,6 +24,8 @@
 #else
 #include "host/ble_gap.h"
 #include "host/ble_store.h"
+
+#include "utils/assert.h"
 #endif
 
 LOG_MODULE_REGISTER(ISO_UTILS, CONFIG_BT_ISO_LOG_LEVEL);
@@ -40,7 +42,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
     int num = esp_ble_get_bond_device_num();
     esp_ble_bond_dev_t *list;
 
-    assert(func);
+    BT_LE_ASSERT(func);
     (void)id;
 
     LOG_DBG("[B]ForeachBond[%d]", num);
@@ -135,7 +137,7 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
     ble_addr_t peers[CONFIG_BT_MAX_PAIRED];
     int num = 0;
 
-    assert(func);
+    BT_LE_ASSERT(func);
     (void)id;
 
     if (ble_store_util_bonded_peers(peers, &num, ARRAY_SIZE(peers)) != 0) {

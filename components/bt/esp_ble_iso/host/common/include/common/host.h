@@ -14,13 +14,13 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
+#include "utils/assert.h"
 #include "utils/iso_attr.h"
 #include "utils/mem.h"
 
 #include "common/adv.h"
 #include "common/conn.h"
 #include "common/iso.h"
-#include "common/l2cap.h"
 #include "common/scan.h"
 #include "common/gatt.h"
 #include "common/task.h"

@@ -1294,6 +1294,8 @@ int bt_iso_big_terminate_safe(struct bt_iso_big *big);
  *
  * @return 0 in case of success or negative value in case of error.
  */
+int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
+                    struct bt_iso_big **out_big);
 int bt_iso_big_sync_safe(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
                          struct bt_iso_big **out_big);
 

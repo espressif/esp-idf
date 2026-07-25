@@ -94,27 +94,30 @@ static bool valid_gmap_features(esp_ble_audio_gmap_role_t role,
     if ((role & ESP_BLE_AUDIO_GMAP_ROLE_UGG) != 0) {
         esp_ble_audio_gmap_ugg_feat_t ugg_feat = features.ugg_feat;
 
+        /* UGG TX (multiplex / 96kbps source) configures peer Sink ASEs → ASE_SNK.
+         * UGG RX (multisink) configures peer Source ASEs → ASE_SRC.
+         * (BT_AUDIO_TX/RX: client ASE_SNK = TX, ASE_SRC = RX.) */
         if ((ugg_feat & ESP_BLE_AUDIO_GMAP_UGG_FEAT_MULTIPLEX) != 0 &&
-                CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT == 0) {
+                CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT == 0) {
             /* Cannot support ESP_BLE_AUDIO_GMAP_UGG_FEAT_MULTIPLEX with
-             * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT == 0.
+             * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT == 0.
              */
             return false;
         }
 
         if ((ugg_feat & ESP_BLE_AUDIO_GMAP_UGG_FEAT_96KBPS_SOURCE) != 0 &&
-                CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT == 0) {
+                CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT == 0) {
             /* Cannot support ESP_BLE_AUDIO_GMAP_UGG_FEAT_96KBPS_SOURCE with
-             * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT == 0.
+             * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT == 0.
              */
             return false;
         }
 
         if ((ugg_feat & ESP_BLE_AUDIO_GMAP_UGG_FEAT_MULTISINK) != 0 &&
-                (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT < 2 ||
+                (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT < 2 ||
                  CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT < 2)) {
             /* Cannot support ESP_BLE_AUDIO_GMAP_UGG_FEAT_MULTISINK with
-             * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT or
+             * CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT or
              * CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT < 2.
              */
             return false;

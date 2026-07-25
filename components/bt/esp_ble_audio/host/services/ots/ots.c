@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -310,6 +311,16 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
     struct bt_gatt_ots_object *new_obj;
     struct bt_ots_obj_created_desc created_desc;
 
+    /* Directory listing Object Type is 16- or 128-bit only (same as OACP Create). */
+    switch (param->type.uuid.type) {
+    case BT_UUID_TYPE_16:
+    case BT_UUID_TYPE_128:
+        break;
+    default:
+        LOG_ERR("OtsObjAddInvType[%u]", param->type.uuid.type);
+        return -EINVAL;
+    }
+
     if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list &&
             !bt_ots_dir_list_is_idle(ots->dir_list)) {
         LOG_DBG("OtsDirListBusy");
@@ -330,6 +341,9 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
         if (err) {
             (void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
 
+            if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+                bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+            }
             return err;
         }
 
@@ -359,11 +373,19 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
         LOG_ERR("OtsObjCreatedCbNotSet");
 
         (void)bt_gatt_ots_obj_manager_obj_delete(new_obj);
+
+        if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+            bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+        }
         return -EINVAL;
     }
 
     new_obj->metadata.type = param->type;
-    new_obj->metadata.name = created_desc.name;
+    /* Own the name: a client name write copies into metadata.name, and the
+     * application's buffer may be read-only or shorter than the max name. */
+    strncpy(new_obj->metadata.name_c, created_desc.name, CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
+    new_obj->metadata.name_c[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN] = '\0';
+    new_obj->metadata.name = new_obj->metadata.name_c;
     new_obj->metadata.size = created_desc.size;
     new_obj->metadata.props = created_desc.props;
 
@@ -448,6 +470,11 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
         return err;
     }
 
+    if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+        /* Object removed from the list: drop stale anchor and refresh size. */
+        bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+    }
+
     if (ots->cur_obj == obj) {
         ots->cur_obj = NULL;
     }
@@ -464,18 +491,48 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots)
 
 static void oacp_indicate_work_handler(struct k_work *work)
 {
-    struct bt_gatt_ots_indicate *ind = CONTAINER_OF(work, struct bt_gatt_ots_indicate, work);
+    struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+    struct bt_gatt_ots_indicate *ind =
+        CONTAINER_OF(dwork, struct bt_gatt_ots_indicate, work);
     struct bt_ots *ots = CONTAINER_OF(ind, struct bt_ots, oacp_ind);
+    int err;
 
-    bt_gatt_indicate(NULL, &ots->oacp_ind.params);
+    if (!ind->conn) {
+        LOG_WRN("OtsOacpIndNoConn");
+        ots->oacp_ind.ind_in_flight = false;
+        return;
+    }
+
+    LOG_INF("OtsOacpInd[%04x]", ind->conn->handle);
+
+    err = bt_gatt_indicate(ind->conn, &ots->oacp_ind.params);
+    if (err) {
+        LOG_ERR("OtsOacpIndFail[%04x][%d]", ind->conn->handle, err);
+        ots->oacp_ind.ind_in_flight = false;
+    }
 }
 
 static void olcp_indicate_work_handler(struct k_work *work)
 {
-    struct bt_gatt_ots_indicate *ind = CONTAINER_OF(work, struct bt_gatt_ots_indicate, work);
+    struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+    struct bt_gatt_ots_indicate *ind =
+        CONTAINER_OF(dwork, struct bt_gatt_ots_indicate, work);
     struct bt_ots *ots = CONTAINER_OF(ind, struct bt_ots, olcp_ind);
+    int err;
 
-    bt_gatt_indicate(NULL, &ots->olcp_ind.params);
+    if (!ind->conn) {
+        LOG_WRN("OtsOlcpIndNoConn");
+        ots->olcp_ind.ind_in_flight = false;
+        return;
+    }
+
+    LOG_INF("OtsOlcpInd[%04x]", ind->conn->handle);
+
+    err = bt_gatt_indicate(ind->conn, &ots->olcp_ind.params);
+    if (err) {
+        LOG_ERR("OtsOlcpIndFail[%04x][%d]", ind->conn->handle, err);
+        ots->olcp_ind.ind_in_flight = false;
+    }
 }
 
 int bt_ots_init(struct bt_ots *ots,
@@ -531,7 +588,11 @@ int bt_ots_init(struct bt_ots *ots,
 
     err = bt_gatt_service_register(ots->service);
     if (err) {
-        bt_gatt_ots_l2cap_unregister(&ots->l2cap);
+        int unreg_err = bt_gatt_ots_l2cap_unregister(&ots->l2cap);
+
+        if (unreg_err) {
+            LOG_ERR("OtsL2capUnregFail[%d]", unreg_err);
+        }
 
         return err;
     }
@@ -540,8 +601,8 @@ int bt_ots_init(struct bt_ots *ots,
         bt_ots_dir_list_init(&ots->dir_list, ots->obj_manager);
     }
 
-    k_work_init(&ots->oacp_ind.work, oacp_indicate_work_handler);
-    k_work_init(&ots->olcp_ind.work, olcp_indicate_work_handler);
+    k_work_init_delayable(&ots->oacp_ind.work, oacp_indicate_work_handler);
+    k_work_init_delayable(&ots->olcp_ind.work, olcp_indicate_work_handler);
 
     LOG_DBG("OtsInit");
 
@@ -616,6 +677,7 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
     char id_str[BT_OTS_OBJ_ID_STR_LEN];
     struct bt_gatt_ots_object *obj;
     struct bt_gatt_ots_object *next_obj;
+    bool deleted = false;
     int err;
 
     err = bt_gatt_ots_obj_manager_first_obj_get(ots->obj_manager, &next_obj);
@@ -638,9 +700,34 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
             if (bt_gatt_ots_obj_manager_obj_delete(obj)) {
                 LOG_ERR("OtsObjMgrDelFail[%s]",
                         id_str);
+            } else {
+                deleted = true;
             }
         }
     }
+
+    /* Refresh once after the loop: while empty-name objects are being deleted
+     * the manager still holds not-yet-removed ones, and dir_list_update_size
+     * would assert (name_len > 0) on them.
+     */
+    if (deleted && IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list) {
+        bt_ots_dir_list_content_changed(ots->dir_list, ots->obj_manager);
+    }
+}
+
+static void ots_ind_on_disconnect(struct bt_gatt_ots_indicate *ind, struct bt_conn *conn)
+{
+    if (ind->conn != conn) {
+        LOG_INF("OtsIndSkipDisc[%04x][%04x]",
+                ind->conn ? ind->conn->handle : 0xFFFF, conn->handle);
+        return;
+    }
+
+    LOG_INF("OtsIndClrOnDisc[%04x]", conn->handle);
+
+    (void)k_work_cancel_delayable(&ind->work);
+    ind->ind_in_flight = false;
+    ind->conn = NULL;
 }
 
 static void ots_conn_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -653,6 +740,9 @@ static void ots_conn_disconnected(struct bt_conn *conn, uint8_t reason)
             instance++, index++) {
 
         LOG_DBG("OtsInstDisconnect[%u]", index);
+
+        ots_ind_on_disconnect(&instance->oacp_ind, conn);
+        ots_ind_on_disconnect(&instance->olcp_ind, conn);
 
         if (instance->cur_obj != NULL) {
             __ASSERT(instance->cur_obj->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE,
@@ -678,7 +768,7 @@ struct bt_ots *bt_ots_free_instance_get(void)
     return &BT_GATT_OTS_INSTANCE_LIST_START[instance_cnt++];
 }
 
-static int bt_gatt_ots_instances_prepare(void)
+int bt_gatt_ots_instances_prepare(void)
 {
     uint32_t index;
     struct bt_ots *instance;
@@ -709,10 +799,12 @@ static int bt_gatt_ots_instances_prepare(void)
     return 0;
 }
 
-SYS_INIT(bt_gatt_ots_instances_prepare, APPLICATION,
-         CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
 int bt_gatt_ots_conn_cb_register(void)
 {
     return bt_conn_cb_register_safe((void *)&bt_conn_cb_conn_callbacks);
+}
+
+void bt_gatt_ots_conn_cb_unregister(void)
+{
+    (void)bt_conn_cb_unregister_safe((void *)&bt_conn_cb_conn_callbacks);
 }

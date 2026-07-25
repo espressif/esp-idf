@@ -173,15 +173,14 @@ static void inc_svc_add_cb(uint16_t service_id, uint16_t attr_id, uint8_t status
     int result = status;
 
     if (service_id != svc_handle) {
+        /* Stale after timeout; take already failed — ignore without give. */
         LOG_ERR("[B]IncSvcAddMismatch[%u][%u][%u]",
                 svc_in_progress, service_id, svc_handle);
-        result = -1;
-        goto end;
+        return;
     }
 
     inc_svc_handle = attr_id;
 
-end:
     bt_le_bluedroid_gatts_sem_give(result);
 }
 
@@ -190,9 +189,8 @@ static void chrc_add_cb(uint16_t service_id, uint16_t attr_id,
 {
     int result = status;
 
-    if (service_id != svc_handle || ((tBT_UUID *)uuid)->len != 2) {
-        /* uuid16 is only meaningful when len == 2; for 32/128-bit UUIDs the
-         * union access would log the first 2 bytes of a wider value. */
+    if (service_id != svc_handle) {
+        /* Stale after timeout; take already failed — ignore without give. */
         if (((tBT_UUID *)uuid)->len == 2) {
             LOG_ERR("[B]ChrcAddMismatch[%u][%u][%u][2][0x%04x]",
                     svc_in_progress, service_id, svc_handle,
@@ -202,6 +200,13 @@ static void chrc_add_cb(uint16_t service_id, uint16_t attr_id,
                     svc_in_progress, service_id, svc_handle,
                     ((tBT_UUID *)uuid)->len);
         }
+        return;
+    }
+
+    if (((tBT_UUID *)uuid)->len != 2) {
+        LOG_ERR("[B]ChrcAddMismatch[%u][%u][%u][%u][nonU16]",
+                svc_in_progress, service_id, svc_handle,
+                ((tBT_UUID *)uuid)->len);
         result = -1;
         goto end;
     }
@@ -214,14 +219,13 @@ end:
 
 static void svc_start_cb(uint16_t service_id, uint8_t status)
 {
-    int result = status;
-
     if (service_id != svc_handle) {
+        /* Stale after timeout; take already failed — ignore without give. */
         LOG_ERR("[B]SvcStartMismatch[%u][%u]", service_id, svc_handle);
-        result = -1;
+        return;
     }
 
-    bt_le_bluedroid_gatts_sem_give(result);
+    bt_le_bluedroid_gatts_sem_give(status);
 }
 
 static struct gatts_svc_cb svc_cb = {
@@ -456,7 +460,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
     uint8_t inst_id;
     tBT_UUID uuid;
 
-    assert(svc);
+    BT_LE_ASSERT(svc);
 
     for (size_t i = 0; i < svc->attr_count; i++) {
         curr_attr = &svc->attrs[i];
@@ -470,7 +474,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
                 return -1;
             }
 
-            assert(curr_attr->user_data);
+            BT_LE_ASSERT(curr_attr->user_data);
 
             bt_le_bluedroid_gatt_uuid_convert(curr_attr->user_data, &uuid);
             inst_id = get_svc_inst_id(uuid.uu.uuid16);
@@ -496,7 +500,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
                 return -1;
             }
 
-            assert(curr_attr->user_data);
+            BT_LE_ASSERT(curr_attr->user_data);
 
             bt_le_bluedroid_gatt_uuid_convert(curr_attr->user_data, &uuid);
             inst_id = get_svc_inst_id(uuid.uu.uuid16);
@@ -561,7 +565,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
             next_attr = &svc->attrs[i + 1];
             perm = bt_le_bluedroid_gatt_perm_convert(next_attr->perm);
 
-            assert(curr_attr->user_data);
+            BT_LE_ASSERT(curr_attr->user_data);
 
             chrc = curr_attr->user_data;
             bt_le_bluedroid_gatt_uuid_convert(chrc->uuid, &uuid);
@@ -612,7 +616,7 @@ int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc)
 
 int bt_le_bluedroid_svc_start(struct bt_gatt_service *svc)
 {
-    assert(svc);
+    BT_LE_ASSERT(svc);
 
     svc_handle = svc->attrs[0].handle;
 

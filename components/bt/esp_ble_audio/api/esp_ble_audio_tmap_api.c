@@ -11,24 +11,31 @@
 #if CONFIG_BT_TMAP
 esp_err_t esp_ble_audio_tmap_register(esp_ble_audio_tmap_role_t role)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
-    err = bt_tmap_register_safe(role);
+    bt_le_host_lock();
+
+    err = bt_tmap_register(role);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_tmas_init();
     if (err) {
-        /* TODO: rollback register_safe once lib exposes an unregister API;
+        /* TODO: rollback register once lib exposes an unregister API;
          * retry will hit -EALREADY. Only reachable on GATT alloc failure.
          */
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_tmap_discover(uint16_t conn_handle,
@@ -37,6 +44,10 @@ esp_err_t esp_ble_audio_tmap_discover(uint16_t conn_handle,
     esp_err_t ret = ESP_OK;
     void *conn;
     int err;
+
+    if (tmap_cb == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bt_le_host_lock();
 

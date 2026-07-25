@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,13 +38,16 @@ static void oacp_l2cap_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
     ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
 
+    /* Always drop procedure sinks — cur_obj may already be cleared (e.g.
+     * deleted while idle after a failed send that left callbacks set). */
+    l2cap_ctx->rx_done = NULL;
+    l2cap_ctx->tx_done = NULL;
+
     if (!ots->cur_obj) {
         return;
     }
 
     ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
-    l2cap_ctx->rx_done = NULL;
-    l2cap_ctx->tx_done = NULL;
 }
 
 #if defined(CONFIG_BT_OTS_OACP_CREATE_SUPPORT)
@@ -66,6 +70,12 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
     if (!BT_OTS_OACP_GET_FEAT_CREATE(ots->features.oacp)) {
         LOG_DBG("OtsOacpCreateNotSupp");
         return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
+    }
+
+    if (ots->cur_obj &&
+            ots->cur_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE) {
+        LOG_DBG("OtsOacpCreateObjLocked");
+        return BT_GATT_OTS_OACP_RES_OBJ_LOCKED;
     }
 
     err = bt_ots_obj_add_internal(ots, conn, &param, &obj);
@@ -216,6 +226,11 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 
     LOG_DBG("OtsOacpValRd[%08x][%08x]", params->offset, params->len);
 
+    if (!BT_OTS_OACP_GET_FEAT_READ(ots->features.oacp)) {
+        LOG_DBG("OtsOacpRdNotSupp");
+        return BT_GATT_OTS_OACP_RES_OPCODE_NOT_SUP;
+    }
+
     if (!ots->cur_obj) {
         return BT_GATT_OTS_OACP_RES_INV_OBJ;
     }
@@ -297,8 +312,9 @@ static enum bt_gatt_ots_oacp_res_code oacp_write_proc_validate(
         return BT_GATT_OTS_OACP_RES_INV_PARAM;
     }
 
-    /* append is not supported */
-    if ((params->offset + (uint64_t) params->len) > ots->cur_obj->metadata.size.cur) {
+    /* Growing the object is allowed (see the size.cur update in
+     * oacp_write_proc_cb), but never past what the application allocated. */
+    if ((params->offset + (uint64_t) params->len) > ots->cur_obj->metadata.size.alloc) {
         return BT_GATT_OTS_OACP_RES_INV_PARAM;
     }
 
@@ -511,11 +527,31 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
         return;
     }
 
+    /* Early EOF while bytes remain: do not L2CAP-send len 0 (tx_done would
+     * re-enter with sent_len unchanged → busy loop).
+     */
+    if (len == 0) {
+        LOG_WRN("OtsOacpRdEofEarly[%u][%u]", read_op->sent_len,
+                read_op->oacp_params.len);
+
+        bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
+        ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+
+        if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
+                ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
+            return;
+        }
+
+        ots->cb->obj_read(ots, conn, ots->cur_obj->id, NULL, 0, offset);
+        return;
+    }
+
     ots->l2cap.tx_done = oacp_read_proc_cb;
     ots->l2cap.closed = oacp_l2cap_closed;
     err = bt_gatt_ots_l2cap_send(&ots->l2cap, obj_chunk, len);
     if (err) {
         LOG_WRN("OtsOacpL2capErr[%d]", err);
+        bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
     } else {
         read_op->sent_len += len;
@@ -557,9 +593,17 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
         return -ENODEV;
     }
 
+    /* Reading state.write_op while another procedure owns the union would
+     * confuse recv_len with the read op's fields and underflow len below. */
+    if (ots->cur_obj->state.type != BT_GATT_OTS_OBJECT_WRITE_OP_STATE) {
+        LOG_ERR("OtsOacpWrInvState[%d]", ots->cur_obj->state.type);
+        return -EINVAL;
+    }
+
     if (!ots->cb->obj_write) {
         LOG_ERR("OtsOacpWrNoCb");
         ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+        l2cap_ctx->rx_done = NULL;
         return -ENODEV;
     }
 
@@ -608,6 +652,13 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
         ots->cur_obj->metadata.size.cur = offset + len;
     }
 
+    /* Back to idle means this write is over (completed or failed above). The
+     * CoC stays open, so drop the sink or a later procedure's inbound data
+     * would still land here. */
+    if (ots->cur_obj->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE) {
+        l2cap_ctx->rx_done = NULL;
+    }
+
     return rc;
 }
 #endif
@@ -620,8 +671,25 @@ static void oacp_ind_cb(struct bt_conn *conn,
 
     LOG_DBG("OtsOacpRecvIndAck[%04x]", err);
 
+    ots->oacp_ind.ind_in_flight = false;
+    ots->oacp_ind.conn = NULL;
+
     if (!ots->cur_obj) {
         LOG_DBG("OtsOacpNoObjForAck");
+        return;
+    }
+
+    if (err) {
+        /* Client did not ACK the OACP response — do not start L2CAP I/O.
+         * Leave READ/WRITE would permanently OBJ_LOCKED. */
+        LOG_WRN("OtsOacpIndFail[%02x][%d]", err, ots->cur_obj->state.type);
+        if (ots->cur_obj->state.type == BT_GATT_OTS_OBJECT_READ_OP_STATE ||
+                ots->cur_obj->state.type == BT_GATT_OTS_OBJECT_WRITE_OP_STATE) {
+            ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+            ots->l2cap.rx_done = NULL;
+            ots->l2cap.tx_done = NULL;
+            (void)bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
+        }
         return;
     }
 
@@ -641,7 +709,8 @@ static void oacp_ind_cb(struct bt_conn *conn,
     }
 }
 
-static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
+static void oacp_ind_send(struct bt_conn *conn,
+                          const struct bt_gatt_attr *oacp_attr,
                           struct bt_gatt_ots_oacp_proc oacp_proc,
                           enum bt_gatt_ots_oacp_res_code oacp_status,
                           struct net_buf_simple *resp_param)
@@ -649,6 +718,7 @@ static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
     struct bt_ots *ots = (struct bt_ots *) oacp_attr->user_data;
     uint8_t *oacp_res = ots->oacp_ind.res;
     uint16_t oacp_res_len = 0;
+    int err;
 
     /* Encode OACP Response */
     oacp_res[oacp_res_len++] = BT_GATT_OTS_OACP_PROC_RESP;
@@ -669,9 +739,16 @@ static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
     ots->oacp_ind.params.data = oacp_res;
     ots->oacp_ind.params.len  = oacp_res_len;
 
-    LOG_DBG("OtsOacpSendInd");
+    LOG_DBG("OtsOacpSendInd[%u]", conn->handle);
 
-    k_work_submit(&ots->oacp_ind.work);
+    ots->oacp_ind.conn = conn;
+    ots->oacp_ind.ind_in_flight = true;
+    err = k_work_schedule(&ots->oacp_ind.work, K_NO_WAIT_ASYNC);
+    if (err < 0) {
+        LOG_ERR("OtsOacpSchIndFail[%u][%d]", conn->handle, err);
+        ots->oacp_ind.ind_in_flight = false;
+        ots->oacp_ind.conn = NULL;
+    }
 }
 
 ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
@@ -697,7 +774,8 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
         return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
     }
 
-    if (k_work_is_pending(&ots->oacp_ind.work)) {
+    if (ots->oacp_ind.ind_in_flight ||
+            k_work_is_pending(&ots->oacp_ind.work.work)) {
         LOG_WRN("OtsOacpWrBeforeIndSent");
         return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
     }
@@ -725,7 +803,7 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
         return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
     }
 
-    oacp_ind_send(attr, oacp_proc, oacp_status, &resp_param);
+    oacp_ind_send(conn, attr, oacp_proc, oacp_status, &resp_param);
     return len;
 }
 
@@ -741,5 +819,10 @@ void bt_gatt_ots_oacp_cfg_changed(const struct bt_gatt_attr *attr,
     oacp_ind->is_enabled = false;
     if (value == BT_GATT_CCC_INDICATE) {
         oacp_ind->is_enabled = true;
+    } else {
+        LOG_DBG("OtsOacpIndClrOnCcc");
+        (void)k_work_cancel_delayable(&oacp_ind->work);
+        oacp_ind->ind_in_flight = false;
+        oacp_ind->conn = NULL;
     }
 }

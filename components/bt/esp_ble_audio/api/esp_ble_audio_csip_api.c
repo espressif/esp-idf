@@ -276,7 +276,7 @@ esp_err_t esp_ble_audio_csip_set_coordinator_lock(const esp_ble_audio_csip_set_c
 {
     int err;
 
-    if (members == NULL || count > CONFIG_BT_MAX_CONN || set_info == NULL) {
+    if (members == NULL || count == 0 || count > CONFIG_BT_MAX_CONN || set_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -294,7 +294,7 @@ esp_err_t esp_ble_audio_csip_set_coordinator_release(const esp_ble_audio_csip_se
 {
     int err;
 
-    if (members == NULL || count > CONFIG_BT_MAX_CONN || set_info == NULL) {
+    if (members == NULL || count == 0 || count > CONFIG_BT_MAX_CONN || set_info == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,8 +47,9 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
     len = MIN(l2cap_ctx->ot_chan.tx.mtu, CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU);
     len = MIN(len, l2cap_ctx->tx.len - l2cap_ctx->tx.len_sent);
 
-    /* Prepare buffer for sending. */
-    buf = net_buf_alloc(&ot_chan_tx_pool, K_FOREVER);
+    /* Single-buffer pool, and iso_task is both the only allocator and the only
+     * path that releases it, so waiting here would self-deadlock. */
+    buf = net_buf_alloc(&ot_chan_tx_pool, K_NO_WAIT);
     if (buf == NULL) {
         LOG_ERR("OtsL2capTxBufAllocFail");
         return -ENOMEM;
@@ -77,7 +79,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
     LOG_DBG("OtsL2capAllocBuf");
 
-    return net_buf_alloc(&ot_chan_rx_pool, K_FOREVER);
+    return net_buf_alloc(&ot_chan_rx_pool, K_NO_WAIT);
 }
 #endif
 
@@ -93,12 +95,11 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
     /* Ongoing TX - sending next chunk. */
     if (l2cap_ctx->tx.len != l2cap_ctx->tx.len_sent) {
         if (ots_l2cap_send(l2cap_ctx)) {
-            /* Send failed - clean up TX state to unblock channel. */
+            /* Do not call tx_done: it means success to upper layers
+             * (oacp_read would skip unread bytes; write_obj_tx_done
+             * would report a full write). Abort via disconnect → closed. */
             LOG_WRN("OtsL2capTxAbort");
-            memset(&l2cap_ctx->tx, 0, sizeof(l2cap_ctx->tx));
-            if (l2cap_ctx->tx_done) {
-                l2cap_ctx->tx_done(l2cap_ctx, chan->conn);
-            }
+            (void)bt_l2cap_chan_disconnect(chan);
         }
 
         return;
@@ -155,6 +156,12 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
     if (l2cap_ctx->closed) {
         l2cap_ctx->closed(l2cap_ctx, chan->conn);
     }
+
+    /* Contexts are reused via find_free_l2cap_ctx; drop procedure hooks
+     * so a later accept/connect cannot invoke stale callbacks. */
+    l2cap_ctx->closed = NULL;
+    l2cap_ctx->rx_done = NULL;
+    l2cap_ctx->tx_done = NULL;
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
@@ -216,7 +223,7 @@ static struct bt_l2cap_server l2cap_server = {
     .accept = l2cap_accept,
 };
 
-static int bt_gatt_ots_l2cap_init(void)
+int bt_gatt_ots_l2cap_init(void)
 {
     int err;
 
@@ -268,6 +275,10 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 int bt_gatt_ots_l2cap_register(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
+    if (sys_slist_find(&channels, &l2cap_ctx->node, NULL)) {
+        return -EALREADY;
+    }
+
     sys_slist_append(&channels, &l2cap_ctx->node);
 
     return 0;
@@ -275,6 +286,11 @@ int bt_gatt_ots_l2cap_register(struct bt_gatt_ots_l2cap *l2cap_ctx)
 
 int bt_gatt_ots_l2cap_unregister(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
+    if (l2cap_ctx->ot_chan.chan.conn) {
+        LOG_WRN("OtsL2capUnregBusy");
+        return -EBUSY;
+    }
+
     sys_slist_find_and_remove(&channels, &l2cap_ctx->node);
 
     return 0;
@@ -297,11 +313,21 @@ int bt_gatt_ots_l2cap_connect(struct bt_conn *conn,
         return -EINVAL;
     }
 
+    /* Callers owning a context pass it in, so the context they later use in
+     * their callbacks is the one actually connected. The global free-list
+     * lookup would otherwise hand out another instance's (or the server's)
+     * context whenever more than one is registered. */
+    ctx = *l2cap_ctx;
     *l2cap_ctx = NULL;
 
-    ctx = find_free_l2cap_ctx();
     if (!ctx) {
-        return -ENOMEM;
+        ctx = find_free_l2cap_ctx();
+        if (!ctx) {
+            return -ENOMEM;
+        }
+    } else if (ctx->ot_chan.chan.conn) {
+        LOG_WRN("OtsL2capCtxAlreadyConnected");
+        return -EBUSY;
     }
 
     l2cap_chan_init(&ctx->ot_chan);
@@ -323,6 +349,3 @@ int bt_gatt_ots_l2cap_disconnect(struct bt_gatt_ots_l2cap *l2cap_ctx)
 {
     return bt_l2cap_chan_disconnect(&l2cap_ctx->ot_chan.chan);
 }
-
-SYS_INIT(bt_gatt_ots_l2cap_init, APPLICATION,
-         CONFIG_APPLICATION_INIT_PRIORITY);

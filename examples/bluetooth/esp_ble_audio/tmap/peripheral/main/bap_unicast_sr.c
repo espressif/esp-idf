@@ -33,7 +33,11 @@ static uint8_t codec_meta[] =
 static const esp_ble_audio_codec_cap_t lc3_codec_cap =
     ESP_BLE_AUDIO_CODEC_CAP_LC3(codec_data, codec_meta);
 
-static esp_ble_audio_pacs_cap_t cap = {
+static esp_ble_audio_pacs_cap_t cap_sink = {
+    .codec_cap = &lc3_codec_cap,
+};
+
+static esp_ble_audio_pacs_cap_t cap_source = {
     .codec_cap = &lc3_codec_cap,
 };
 
@@ -502,7 +506,7 @@ int bap_unicast_sr_init(void)
 
 #if CONFIG_BT_PAC_SNK
     /* Register CT required capabilities */
-    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SINK, &cap);
+    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SINK, &cap_sink);
     if (err) {
         ESP_LOGE(TAG, "Failed to register pacs capabilities, err %d", err);
         return err;
@@ -529,7 +533,7 @@ int bap_unicast_sr_init(void)
 
 #if CONFIG_BT_PAC_SRC
     /* Register CT required capabilities */
-    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SOURCE, &cap);
+    err = esp_ble_audio_pacs_cap_register(ESP_BLE_AUDIO_DIR_SOURCE, &cap_source);
     if (err) {
         ESP_LOGE(TAG, "Failed to register pacs capabilities, err %d", err);
         return err;

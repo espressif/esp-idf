@@ -101,6 +101,7 @@ struct bt_tmap_cb {
  *
  * @return 0 on success or negative error value on failure.
  */
+int bt_tmap_register(enum bt_tmap_role role);
 int bt_tmap_register_safe(enum bt_tmap_role role);
 
 /**

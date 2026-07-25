@@ -175,7 +175,7 @@ static void handle_pa_sync_event_safe(struct bt_le_gap_app_param *param)
     }
 
     err = bt_le_per_adv_sync_establish_listener(event.pa_sync.sync_handle);
-    assert(err == 0);
+    BT_LE_ASSERT(err == 0);
 
 end:
     bt_le_host_unlock();
@@ -203,6 +203,29 @@ static void handle_pa_sync_past_event_safe(struct bt_le_gap_app_param *param)
 
     bt_le_host_lock();
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    /* See handle_security_change_event_safe: the producer runs on BTU and cannot
+     * read gatt_conns[], so it sends src_addr and the handle is resolved here.
+     * HCI identifies the PAST sender by handle and gives no address for it, so
+     * btu_hcif recovers the BDA from the LCB without its type - match on value. */
+    {
+        struct gatt_conn *gatt_conn;
+
+        gatt_conn = bt_le_bluedroid_find_gatt_conn_with_addr(0,
+                                                             param->pa_sync_past.src_addr.val,
+                                                             true);
+        if (gatt_conn == NULL) {
+            /* ACL disconnected between PAST enqueue and host processing (scan.c
+             * names this race). Keep the sync connection-less, like the non-PAST
+             * path and NimBLE — synced cb fires with conn=NULL. */
+            LOG_WRN("GapPastUnknownSrc");
+            event.pa_sync_past.conn_handle = BT_CONN_HANDLE_INVALID;
+        } else {
+            event.pa_sync_past.conn_handle = gatt_conn->conn_handle;
+        }
+    }
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
     if (event.pa_sync_past.status) {
         goto end;
     }
@@ -220,7 +243,7 @@ static void handle_pa_sync_past_event_safe(struct bt_le_gap_app_param *param)
     }
 
     err = bt_le_per_adv_sync_establish_listener(event.pa_sync_past.sync_handle);
-    assert(err == 0);
+    BT_LE_ASSERT(err == 0);
 
 end:
     bt_le_host_unlock();
@@ -246,7 +269,7 @@ static void handle_pa_sync_lost_event_safe(struct bt_le_gap_app_param *param)
     }
 
     err = bt_le_per_adv_sync_delete(event.pa_sync_lost.sync_handle);
-    assert(err == 0);
+    BT_LE_ASSERT(err == 0);
 
 end:
     bt_le_host_unlock();
@@ -321,7 +344,7 @@ static void handle_acl_connect_event_safe(struct bt_le_gap_app_param *param)
     }
 
     err = bt_le_acl_conn_connected_listener(event.acl_connect.conn_handle);
-    assert(err == 0);
+    BT_LE_ASSERT(err == 0);
 
 end:
     bt_le_host_unlock();
@@ -348,7 +371,7 @@ static void handle_acl_disconnect_event_safe(struct bt_le_gap_app_param *param)
     }
 
     err = bt_le_acl_conn_delete(event.acl_disconnect.conn_handle);
-    assert(err == 0);
+    BT_LE_ASSERT(err == 0);
 
 end:
     bt_le_host_unlock();
@@ -378,6 +401,27 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
 
     bt_le_host_lock();
 
+#if CONFIG_BT_BLUEDROID_ENABLED
+    /* Bluedroid's AUTH_CMPL arrives on BTC, which carries no conn_handle and may
+     * not read gatt_conns[] (iso_task mutates it under this lock). So the producer
+     * sends dst only and the identity is resolved here instead. NimBLE gets both
+     * from its own event and fills them at post time. */
+    {
+        struct gatt_conn *gatt_conn;
+
+        gatt_conn = bt_le_bluedroid_find_gatt_conn_with_addr(event.security_change.dst.type,
+                                                             event.security_change.dst.val,
+                                                             false);
+        if (gatt_conn == NULL) {
+            LOG_ERR("GapSecChgUnknownDev");
+            goto end;
+        }
+
+        event.security_change.conn_handle = gatt_conn->conn_handle;
+        event.security_change.role = gatt_conn->role;
+    }
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
+
     if (event.security_change.status) {
         goto end;
     }
@@ -393,11 +437,16 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
         if (err) {
             goto end;
         }
+
+        /* Created already encrypted — mirror update()'s *encrypted out-param. */
+        if (event.security_change.sec_level > BT_SECURITY_L1) {
+            encrypted = true;
+        }
     } else {
         err = bt_le_acl_conn_update(event.security_change.conn_handle,
                                     event.security_change.sec_level,
                                     &encrypted);
-        assert(err == 0);
+        BT_LE_ASSERT(err == 0);
     }
 
     /* Point conn->le.keys at the bonded LTK the adapter captured, so the lib's
@@ -413,12 +462,11 @@ static void handle_security_change_event_safe(struct bt_le_gap_app_param *param)
 
     err = bt_le_acl_conn_security_changed_listener(event.security_change.conn_handle,
                                                    event.security_change.sec_level);
-    assert(err == 0);
+    BT_LE_ASSERT(err == 0);
 
     if (encrypted) {
         /* TODO: check if bonded or not */
-        err = bt_le_acl_conn_pairing_completed_listener(event.security_change.conn_handle, true);
-        assert(err == 0);
+        (void)bt_le_acl_conn_pairing_completed_listener(event.security_change.conn_handle, true);
     }
 
 end:
@@ -483,7 +531,7 @@ void bt_le_gap_handle_event(uint8_t *data, size_t data_len)
 {
     struct bt_le_gap_app_param *param;
 
-    assert(data && data_len);
+    BT_LE_ASSERT(data && data_len);
 
     param = (struct bt_le_gap_app_param *)data;
 
@@ -519,14 +567,14 @@ void bt_le_gap_handle_event(uint8_t *data, size_t data_len)
         handle_bond_delete_event_safe(param);
         break;
     default:
-        assert(0);
+        BT_LE_ASSERT(0);
         break;
     }
 
     free(data);
 }
 
-void bt_le_gap_app_post_event(uint8_t type, void *param)
+void bt_le_gap_app_post_event(uint16_t type, void *param)
 {
 #if CONFIG_BT_BLUEDROID_ENABLED
     /* For Bluedroid, post the typed event to the ISO task instead. */

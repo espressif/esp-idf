@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020-2022 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@ extern "C" {
 #endif
 
 #include <zephyr/types.h>
+#include <../host/conn_internal.h>
 #include "ots_l2cap_internal.h"
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
@@ -122,7 +124,11 @@ struct bt_gatt_ots_indicate {
     struct bt_gatt_attr attr;
     struct bt_gatt_ccc_managed_user_data ccc;
     bool is_enabled;
-    struct k_work work;
+    /* True from schedule until indication confirm (or indicate submit fail). */
+    bool ind_in_flight;
+    /* Peer that wrote the control point; indication must target this conn only. */
+    struct bt_conn *conn;
+    struct k_work_delayable work;
     uint8_t res[OACP_OLCP_RES_MAX_SIZE];
 };
 

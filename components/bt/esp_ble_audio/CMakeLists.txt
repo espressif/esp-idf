@@ -161,12 +161,24 @@ endif()
 
 if(CONFIG_BT_OTS OR CONFIG_BT_OTS_CLIENT)
     list(APPEND ble_audio_include_dirs
+        "${CMAKE_CURRENT_LIST_DIR}/host/services"
         "${CMAKE_CURRENT_LIST_DIR}/host/services/ots"
     )
 
     list(APPEND ble_audio_srcs
         "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/ots_l2cap.c"
+        "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/adapter/l2cap.c"
     )
+
+    if(CONFIG_BT_NIMBLE_ENABLED)
+        list(APPEND ble_audio_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/adapter/nimble/l2cap.c"
+        )
+    else()
+        list(APPEND ble_audio_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/host/services/ots/adapter/bluedroid/l2cap.c"
+        )
+    endif()
 
     if(CONFIG_BT_OTS)
         list(APPEND ble_audio_srcs

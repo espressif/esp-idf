@@ -69,7 +69,7 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
     uint16_t conn_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -89,7 +89,7 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
         tx_sync.packet_seq_num = sys_get_le16(rsp_buf + 2);
         tx_sync.tx_time_stamp  = sys_get_le32(rsp_buf + 4);
         tx_sync.time_offset    = sys_get_le24(rsp_buf + 8) & 0xFFFFFF;
-        assert(tx_sync.conn_handle == conn_handle);
+        BT_LE_ASSERT(tx_sync.conn_handle == conn_handle);
     }
 #else /* USE_DIRECT_HCI */
     bt_le_host_lock();
@@ -100,7 +100,7 @@ static int hci_cmd_read_iso_tx_sync(struct net_buf *buf, struct net_buf **rsp)
         LOG_ERR("[B]RdIsoTxSyncRspTimeout[0x%03x]", conn_handle);
         status = BTM_ERR_PROCESSING;
     } else {
-        assert(tx_sync.conn_handle == conn_handle);
+        BT_LE_ASSERT(tx_sync.conn_handle == conn_handle);
         status = tx_sync.status;
     }
     bt_le_host_unlock();
@@ -134,7 +134,7 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     uint8_t cis_count;
     uint8_t cig_id;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     cig_id    = buf->data[3];
     cis_count = buf->data[17];
@@ -162,8 +162,8 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
         for (uint8_t i = 0; i < rsp_cis_count; i++) {
             set_cig_params.cis_handle[i] = sys_get_le16(rsp_buf + 2 + i * 2);
         }
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
     }
 #else /* USE_DIRECT_HCI */
     struct ble_hci_le_cis_params *cis_params;
@@ -184,7 +184,7 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     mtl_p_to_c          = sys_get_le16(buf->data + 15);
 
     cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
-    assert(cis_params);
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_id         = buf->data[18 + i * sizeof(struct ble_hci_le_cis_params)];
@@ -213,8 +213,8 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
         LOG_ERR("[B]SetCigParamsRspTimeout[%u]", cig_id);
         status = BTM_ERR_PROCESSING;
     } else {
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
         status = set_cig_params.status;
         if (status) {
             LOG_ERR("[B]SetCigParamsCtrlFail[%u][%02x]", cig_id, status);
@@ -250,7 +250,7 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     uint8_t cis_count;
     uint8_t cig_id;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     cig_id    = buf->data[3];
     cis_count = buf->data[17];
@@ -278,8 +278,8 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
         for (uint8_t i = 0; i < rsp_cis_count; i++) {
             set_cig_params.cis_handle[i] = sys_get_le16(rsp_buf + 2 + i * 2);
         }
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
     }
 #else /* USE_DIRECT_HCI */
     struct ble_hci_le_cis_params_test *cis_params;
@@ -302,7 +302,7 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     framing             = buf->data[16];
 
     cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
-    assert(cis_params);
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_id         = buf->data[18 + i * sizeof(struct ble_hci_le_cis_params_test)];
@@ -335,8 +335,8 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
         LOG_ERR("[B]SetCigParamsTestRspTimeout[%u]", cig_id);
         status = BTM_ERR_PROCESSING;
     } else {
-        assert(set_cig_params.cig_id == cig_id);
-        assert(set_cig_params.cis_count == cis_count);
+        BT_LE_ASSERT(set_cig_params.cig_id == cig_id);
+        BT_LE_ASSERT(set_cig_params.cis_count == cis_count);
         status = set_cig_params.status;
         if (status) {
             LOG_ERR("[B]SetCigParamsTestCtrlFail[%u][%02x]", cig_id, status);
@@ -377,7 +377,7 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
     cis_count = buf->data[3];
 
     cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_cis_hdls));
-    assert(cis_params);
+    BT_LE_ASSERT(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
         cis_params[i].cis_hdl  = sys_get_le16(buf->data + 4 + i * sizeof(struct ble_hci_cis_hdls));
@@ -629,7 +629,7 @@ static int hci_cmd_big_terminate_sync(struct net_buf *buf, struct net_buf **rsp)
     uint8_t big_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     big_handle = buf->data[3];
 
@@ -661,7 +661,7 @@ static int hci_cmd_setup_iso_data_path(struct net_buf *buf, struct net_buf **rsp
     uint16_t conn_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -721,7 +721,7 @@ static int hci_cmd_remove_iso_data_path(struct net_buf *buf, struct net_buf **rs
     uint16_t conn_handle;
     tBTM_STATUS status;
 
-    assert(rsp);
+    BT_LE_ASSERT(rsp);
 
     conn_handle = sys_get_le16(buf->data + 3);
 
@@ -859,7 +859,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + sizeof(ev);
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.status = 0x00;
         ev.handle = params->btm_cis_disconnectd_evt.cis_handle;
@@ -876,7 +876,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev);
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.status = iso_hci_status(params->btm_cis_established_evt.status);
         ev.conn_handle = params->btm_cis_established_evt.conn_handle;
@@ -907,7 +907,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev);
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.acl_handle = params->btm_cis_request_evt.acl_handle;
         ev.cis_handle = params->btm_cis_request_evt.cis_handle;
@@ -926,7 +926,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev) + params->btm_big_cmpl.num_bis * 2;
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.status = iso_hci_status(params->btm_big_cmpl.status);
         ev.big_handle = params->btm_big_cmpl.big_handle;
@@ -957,7 +957,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev);
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.big_handle = params->btm_big_term.big_handle;
         ev.reason = params->btm_big_term.reason;
@@ -974,7 +974,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev) + params->btm_big_sync_estab.num_bis * 2;
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.status = iso_hci_status(params->btm_big_sync_estab.status);
         ev.big_handle = params->btm_big_sync_estab.big_handle;
@@ -1003,7 +1003,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev);
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.big_handle = params->btm_big_sync_lost.big_handle;
         ev.reason = params->btm_big_sync_lost.reason;
@@ -1020,7 +1020,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
 
         qdata_len = 2 + 1 + sizeof(ev);
         qdata = bt_le_ext_calloc(1, qdata_len);
-        assert(qdata);
+        BT_LE_ASSERT(qdata);
 
         ev.sync_handle = params->btm_biginfo_report.sync_handle;
         ev.num_bis = params->btm_biginfo_report.num_bis;
@@ -1275,7 +1275,7 @@ int bt_le_bluedroid_iso_init(void)
     err = iso_enable_cis();
     if (err) {
         /* Roll back local init so a retry doesn't trip k_sem_create's
-         * assert(handle == NULL). Reverse order of init, skipping the
+         * BT_LE_ASSERT(handle == NULL). Reverse order of init, skipping the
          * disable_cis step since enable never took effect. */
 #if CONFIG_BT_ISO_RX
         ble_host_register_rx_iso_data_cb(NULL);

@@ -66,19 +66,19 @@ enum bt_gmap_ugg_feat {
     /**
      * @brief Support transmitting multiple LC3 codec frames per block in an SDU
      *
-     * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT} > 0
+     * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT} > 0
      */
     BT_GMAP_UGG_FEAT_MULTIPLEX = BIT(0),
     /**
      * @brief 96 kbps source support
      *
-     * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT} > 0
+     * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT} > 0
      */
     BT_GMAP_UGG_FEAT_96KBPS_SOURCE = BIT(1),
     /**
      * @brief Support for receiving at least two channels of audio, each in a separate CIS
      *
-     * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT} > 1 and
+     * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT} > 1 and
      * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT} > 1
      */
     BT_GMAP_UGG_FEAT_MULTISINK = BIT(2),

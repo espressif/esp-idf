@@ -288,7 +288,8 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_set_next_track_id(esp_ble_audio_media_p
 {
     int err;
 
-    if (player == NULL || ESP_BLE_AUDIO_MCS_VALID_OBJ_ID(id) == false) {
+    if (player == NULL || (IS_ENABLED(CONFIG_BT_MCTL_LOCAL_PLAYER_LOCAL_CONTROL) &&
+                           ESP_BLE_AUDIO_MCS_VALID_OBJ_ID(id) == false)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -415,12 +416,19 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_get_media_state(esp_ble_audio_media_pla
     return ESP_OK;
 }
 
+#define MCS_VALID_OP(opcode) \
+        (IN_RANGE((opcode), ESP_BLE_AUDIO_MCS_OPC_PLAY, ESP_BLE_AUDIO_MCS_OPC_STOP) || \
+         (opcode == ESP_BLE_AUDIO_MCS_OPC_MOVE_RELATIVE) || \
+         IN_RANGE((opcode), ESP_BLE_AUDIO_MCS_OPC_PREV_SEGMENT, ESP_BLE_AUDIO_MCS_OPC_GOTO_SEGMENT) || \
+         IN_RANGE((opcode), ESP_BLE_AUDIO_MCS_OPC_PREV_TRACK, ESP_BLE_AUDIO_MCS_OPC_GOTO_TRACK) || \
+         IN_RANGE((opcode), ESP_BLE_AUDIO_MCS_OPC_PREV_GROUP, ESP_BLE_AUDIO_MCS_OPC_GOTO_GROUP))
+
 esp_err_t esp_ble_audio_media_proxy_ctrl_send_command(esp_ble_audio_media_player_t *player,
                                                       const esp_ble_audio_mpl_cmd_t *command)
 {
     int err;
 
-    if (player == NULL || command == NULL) {
+    if (player == NULL || command == NULL || MCS_VALID_OP(command->opcode) == false) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -453,7 +461,9 @@ esp_err_t esp_ble_audio_media_proxy_ctrl_send_search(esp_ble_audio_media_player_
 {
     int err;
 
-    if (player == NULL || search == NULL) {
+    if (player == NULL || search == NULL ||
+            IN_RANGE(search->len, ESP_BLE_AUDIO_SEARCH_LEN_MIN,
+                     ESP_BLE_AUDIO_SEARCH_LEN_MAX) == false) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -561,24 +571,31 @@ esp_err_t esp_ble_audio_media_proxy_pl_register(esp_ble_audio_media_proxy_pl_cal
 
 esp_err_t esp_ble_audio_media_proxy_pl_init(void)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
-    err = bt_media_proxy_pl_init_safe();
+    bt_le_host_lock();
+
+    err = bt_media_proxy_pl_init();
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if CONFIG_BT_MCS && BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_media_proxy_pl_init();
     if (err) {
-        /* TODO: rollback pl_init_safe once lib exposes an undo API;
+        /* TODO: rollback pl_init once lib exposes an undo API;
          * retry will hit -EALREADY. Only reachable on GATT alloc failure.
          */
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* CONFIG_BT_MCS && BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_media_proxy_pl_set_player_name(char *name)

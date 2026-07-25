@@ -45,7 +45,7 @@ void bt_le_nimble_gatt_post_event(void *param)
     }
 
     qev = bt_le_ext_calloc(1, sizeof(*qev));
-    assert(qev);
+    BT_LE_ASSERT(qev);
 
     switch (ev->type) {
     case BLE_GAP_EVENT_MTU:
@@ -79,7 +79,7 @@ void bt_le_nimble_gatt_post_event(void *param)
             qev->gattc_notify_rx.len = total_len;
 
             qev->gattc_notify_rx.value = bt_le_ext_calloc(1, total_len);
-            assert(qev->gattc_notify_rx.value);
+            BT_LE_ASSERT(qev->gattc_notify_rx.value);
 
             os_mbuf_copydata(ev->notify_rx.om, 0, total_len, qev->gattc_notify_rx.value);
         }
@@ -129,7 +129,7 @@ int bt_le_nimble_gatt_post_disc_event(uint16_t conn_handle, ble_uuid16_t *uuid,
     }
 
     qev = bt_le_ext_calloc(1, sizeof(*qev));
-    assert(qev);
+    BT_LE_ASSERT(qev);
 
     qev->type = BT_LE_GATTC_DISCOVER_EVENT;
 
@@ -156,7 +156,7 @@ int bt_le_nimble_gatt_post_disc_cmpl_event(uint16_t conn_handle, uint8_t status)
     LOG_DBG("[N]GattcDiscCmplEvtHdlr[%u][%02x]", conn_handle, status);
 
     qev = bt_le_ext_calloc(1, sizeof(*qev));
-    assert(qev);
+    BT_LE_ASSERT(qev);
 
     qev->type = BT_LE_GATTC_DISC_CMPL_EVENT;
 
@@ -299,7 +299,7 @@ void bt_le_nimble_gatt_handle_event(uint8_t *data, size_t data_len)
         break;
 
     default:
-        assert(0);
+        BT_LE_ASSERT(0);
         break;
     }
 
@@ -317,16 +317,19 @@ ssize_t bt_le_nimble_gatts_attr_read(struct bt_conn *conn, const struct bt_gatt_
                                      void *buf, uint16_t buf_len, uint16_t offset,
                                      const void *value, uint16_t value_len)
 {
-    uint16_t len;
+    ssize_t len;
 
     if (buf_len == UINT16_MAX) {
         /* TODO: A better solution for using a variable for the cb pointer */
         struct bt_le_nimble_gatt_read_cb *cb = buf;
-        assert(cb->read_cb);
+        BT_LE_ASSERT(cb->read_cb);
 
         len = cb->read_cb(cb->read_arg, offset, value, value_len);
+        if (len < 0) {
+            return len;
+        }
     } else {
-        assert(attr);
+        BT_LE_ASSERT(attr);
 
         LOG_DBG("[N]Hdl[%u]", attr->handle);
 
@@ -339,7 +342,7 @@ ssize_t bt_le_nimble_gatts_attr_read(struct bt_conn *conn, const struct bt_gatt_
         memcpy(buf, (uint8_t *)value + offset, len);
     }
 
-    LOG_DBG("[N]GattsAttrRd[%u]", len);
+    LOG_DBG("[N]GattsAttrRd[%u]", (unsigned)len);
 
     return len;
 }
@@ -375,7 +378,7 @@ static int gatts_notify(struct bt_conn *conn, struct bt_gatt_notify_params *para
     if (bt_uuid_cmp(data.attr->uuid, BT_UUID_GATT_CHRC) == 0) {
         struct bt_gatt_chrc *chrc;
 
-        assert(data.attr->user_data);
+        BT_LE_ASSERT(data.attr->user_data);
         chrc = data.attr->user_data;
 
         if ((chrc->properties & BT_GATT_CHRC_NOTIFY) == 0) {
@@ -486,7 +489,7 @@ int bt_le_nimble_gattc_discover(struct bt_conn *conn, struct bt_gatt_discover_pa
         return bt_le_nimble_gattc_db_disc_all_chrs(conn, params);
 
     case BT_GATT_DISCOVER_DESCRIPTOR:
-        assert(params->uuid);
+        BT_LE_ASSERT(params->uuid);
 
         /* Only descriptors can be filtered */
         if (bt_uuid_cmp(params->uuid, BT_UUID_GATT_PRIMARY) == 0 ||

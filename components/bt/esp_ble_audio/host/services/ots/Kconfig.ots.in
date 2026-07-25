@@ -7,6 +7,8 @@
 config BT_OTS
     bool "Object Transfer Service (OTS) [EXPERIMENTAL]"
     select BT_OTS_SECONDARY_SVC
+    # BT_GATTS_ENABLE over BT_BLUEDROID_ENABLED: it implies the full dependency chain.
+    select BT_BLE_L2CAP_COC_ENABLED if BT_GATTS_ENABLE
     help
         Enable Object Transfer Service.
 
@@ -69,6 +71,8 @@ endif # BT_OTS
 
 config BT_OTS_CLIENT
     bool "Object Transfer Service Client [Experimental]"
+    # BT_GATTC_ENABLE over BT_BLUEDROID_ENABLED: it implies the full dependency chain.
+    select BT_BLE_L2CAP_COC_ENABLED if BT_GATTC_ENABLE
     help
         This option enables support for the Object Transfer Service Client.
 

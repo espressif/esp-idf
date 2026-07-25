@@ -77,7 +77,10 @@ struct bt_le_gatts_notify_tx_event {
     uint16_t conn_handle;
     uint16_t conn_id;
     uint16_t attr_handle;
-    uint8_t  status;
+    /* int, not uint8_t: NimBLE reports BLE_HS_ERR_ATT_BASE(0x100)+att_code for a
+     * failed indication; uint8_t truncates 0x10e -> 0x0e == BLE_HS_EDONE (success),
+     * masking the failure as confirmation. */
+    int      status;
 };
 
 /* Bluedroid-side adapter events. NimBLE produces ACL connect/disconnect via

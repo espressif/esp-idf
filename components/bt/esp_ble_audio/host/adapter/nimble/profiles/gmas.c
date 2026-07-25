@@ -50,7 +50,7 @@ static int gmas_build_svc(struct bt_gatt_service *gmas_svc)
     for (size_t i = 0; i < gmas_svc->attr_count; i++) {
         const struct bt_uuid_16 *u = (const struct bt_uuid_16 *)gmas_svc->attrs[i].uuid;
 
-        if (u->uuid.type != BT_UUID_TYPE_16) {
+        if (!u || u->uuid.type != BT_UUID_TYPE_16) {
             prev_decl = false;
             continue;
         }
@@ -147,7 +147,7 @@ static int gmas_svc_check(void)
         for (size_t i = 0; i < gmas_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(gmas_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;

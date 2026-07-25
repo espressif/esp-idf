@@ -11,8 +11,6 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/atomic.h>
 
-#define SYS_INIT(init_fn, level, prio)  int init_fn ## _v2(void) { return init_fn(); }
-
 #ifndef BUILD_ASSERT
 #define BUILD_ASSERT(EXPR, MSG...)      _Static_assert(EXPR, ## MSG)
 #endif

@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,7 +186,7 @@ int bt_gatt_ots_obj_manager_obj_add(
 
         if (!cur_obj->is_allocated) {
             cur_obj->is_allocated = true;
-            /* TODO: do we need to reset cur_obj->val to 0 here? */
+            (void)memset(&cur_obj->val, 0, sizeof(cur_obj->val));
             cur_obj->val.id = obj_index_to_id(i);
             sys_dlist_append(&obj_manager->list, &cur_obj->dnode);
 
