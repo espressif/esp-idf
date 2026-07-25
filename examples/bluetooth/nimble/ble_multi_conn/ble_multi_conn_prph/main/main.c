@@ -94,7 +94,9 @@ ble_prph_advertise(void)
 #else
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
+#endif
 
     if (ble_gap_adv_active()) {
         return;

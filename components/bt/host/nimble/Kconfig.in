@@ -359,6 +359,14 @@ menu "GAP"
             Required when the host delays CONNECT so applications never receive other
             events before CONNECT event.
 
+    config BT_NIMBLE_UNHANDLED_HCI_EVENT
+        bool "Post unhandled HCI events to GAP"
+        depends on BT_NIMBLE_ENABLED
+        default n
+        help
+            For events that are not handled by stack, they would be directly posted to application
+            Application is responsible for handling such events.
+
 endmenu #GAP
 
 menu "GATT / ATT"

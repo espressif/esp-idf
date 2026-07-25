@@ -523,9 +523,11 @@ app_main(void)
     rc = gatt_svr_init();
     assert(rc == 0);
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("enc_adv_data_prph");
     assert(rc == 0);
+#endif
 #endif
 
     /* Set the session key and initialization vector */
