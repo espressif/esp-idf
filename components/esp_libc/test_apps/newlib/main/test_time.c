@@ -465,7 +465,8 @@ TEST_CASE("test posix_timers clock_... functions", "[newlib]")
     test_posix_timers_clock();
 }
 
-TEST_CASE("timespec_get returns UTC time", "[newlib]")
+#if CONFIG_LIBC_PICOLIBC
+TEST_CASE("timespec_get returns UTC time", "[picolibc]")
 {
     struct timespec ts = {0};
 
@@ -475,6 +476,7 @@ TEST_CASE("timespec_get returns UTC time", "[newlib]")
     TEST_ASSERT_LESS_THAN_INT32(1000000000L, ts.tv_nsec);
     TEST_ASSERT_EQUAL_INT(0, timespec_get(&ts, -1));
 }
+#endif
 
 #ifndef _USE_LONG_TIME_T
 
