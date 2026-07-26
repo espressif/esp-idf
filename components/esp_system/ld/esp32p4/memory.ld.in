@@ -163,6 +163,15 @@ MEMORY
 
   /* PSRAM seg */
   extern_ram_seg(RWX) :        org = 0x48000000, len = IDROM_SEG_SIZE
+
+#if CONFIG_SPIRAM_XIP_FROM_PSRAM
+  /**
+   * Distinct region overlapping `drom_seg` at the same origin, so `.ext_ram.dummy`
+   * gets its own location counter and `.ext_ram.bss` can reclaim the space of
+   * NOLOAD rodata (e.g. `.rodata_wlog_*`).
+   */
+  ext_ram_xip_seg(RWX) :       org = 0x48000020, len = IDROM_SEG_SIZE - 0x20
+#endif // CONFIG_SPIRAM_XIP_FROM_PSRAM
 }
 
 /* Heap ends at top of dram0_0_seg */
@@ -212,7 +221,7 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_SPIRAM_XIP_FROM_PSRAM
-  REGION_ALIAS("ext_ram_seg", drom_seg);
+  REGION_ALIAS("ext_ram_seg", ext_ram_xip_seg);
 #else
   REGION_ALIAS("ext_ram_seg", extern_ram_seg);
 #endif //#if CONFIG_SPIRAM_XIP_FROM_PSRAM
