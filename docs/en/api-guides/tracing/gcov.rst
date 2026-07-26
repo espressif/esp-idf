@@ -23,4 +23,4 @@ Coverage data can be dumped either at a hard-coded point in your application (ov
 Application Example
 -------------------
 
-- :example:`system/gcov` demonstrates how to add code coverage to a project and collect coverage data over JTAG.
+- :example:`system/tracing/gcov` demonstrates how to add code coverage to a project and collect coverage data over JTAG.

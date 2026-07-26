@@ -39,4 +39,4 @@ The ``-i func`` option selects the function-trace event stream. The script uses 
 Application Example
 -------------------
 
-- :example:`system/function_tracing` demonstrates compiler-instrumented function entry/exit tracing and how to control which code is instrumented.
+- :example:`system/tracing/function_tracing` demonstrates compiler-instrumented function entry/exit tracing and how to control which code is instrumented.

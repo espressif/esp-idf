@@ -23,4 +23,4 @@ Gcov 使用跟踪基础设施进行主机数据传输，但尚未完全遵循 :d
 应用示例
 --------
 
-- :example:`system/gcov` 演示如何为项目添加代码覆盖率，并通过 JTAG 收集覆盖率数据。
+- :example:`system/tracing/gcov` 演示如何为项目添加代码覆盖率，并通过 JTAG 收集覆盖率数据。

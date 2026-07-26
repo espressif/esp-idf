@@ -3,7 +3,7 @@
 
 # ESP Trace External Library Integration Example
 
-This example shows the **minimal** set of files and configuration needed to plug a third-party trace library into the [`esp_trace`](../../../components/esp_trace) component using the public `CONFIG_ESP_TRACE_LIB_EXTERNAL` extension point. It is meant as a copy-paste starting point for vendors and users who want to integrate their own trace recorder (e.g. Percepio TraceRecorder, a custom CTF emitter, a printf-style logger, …) without patching ESP-IDF itself.
+This example shows the **minimal** set of files and configuration needed to plug a third-party trace library into the [`esp_trace`](../../../../components/esp_trace) component using the public `CONFIG_ESP_TRACE_LIB_EXTERNAL` extension point. It is meant as a copy-paste starting point for vendors and users who want to integrate their own trace recorder (e.g. Percepio TraceRecorder, a custom CTF emitter, a printf-style logger, …) without patching ESP-IDF itself.
 
 The example covers:
 
@@ -94,7 +94,7 @@ esp_trace_custom_library/
 
 ### 2. Providing the FreeRTOS trace hooks
 
-`esp_trace`'s public header [`esp_trace_freertos.h`](../../../components/esp_trace/include/esp_trace_freertos.h) is included from `FreeRTOSConfig.h`. When `CONFIG_ESP_TRACE_LIB_EXTERNAL=y` is set, it pulls in **your** `esp_trace_freertos_impl.h`:
+`esp_trace`'s public header [`esp_trace_freertos.h`](../../../../components/esp_trace/include/esp_trace_freertos.h) is included from `FreeRTOSConfig.h`. When `CONFIG_ESP_TRACE_LIB_EXTERNAL=y` is set, it pulls in **your** `esp_trace_freertos_impl.h`:
 
 ```c
 #if CONFIG_ESP_TRACE_LIB_EXTERNAL
@@ -177,7 +177,7 @@ Because the transport is USB-Serial-JTAG and the console is on UART (`CONFIG_ESP
 
 ## Runtime Control — `esp_trace_start` / `_stop` / `_flush`
 
-[`esp_trace.h`](../../../components/esp_trace/include/esp_trace.h) exposes three generic lifecycle calls that dispatch to the active encoder's vtable. The application uses only the public API — it never reaches into the external library:
+[`esp_trace.h`](../../../../components/esp_trace/include/esp_trace.h) exposes three generic lifecycle calls that dispatch to the active encoder's vtable. The application uses only the public API — it never reaches into the external library:
 
 ```c
 esp_trace_start();    // resume emission (also resets the delta baseline)
@@ -194,7 +194,7 @@ In this example the library boots with `s_enabled = false`, so nothing is emitte
 
 ## Other `esp_trace` Helpers
 
-Beyond what this example uses, [`esp_trace.h`](../../../components/esp_trace/include/esp_trace.h) and [`esp_trace_util.h`](../../../components/esp_trace/include/esp_trace_util.h) also expose:
+Beyond what this example uses, [`esp_trace.h`](../../../../components/esp_trace/include/esp_trace.h) and [`esp_trace_util.h`](../../../../components/esp_trace/include/esp_trace_util.h) also expose:
 
 * `esp_trace_is_host_connected()` — gate expensive work when no host is listening.
 * `esp_trace_get_link_type()` — returns `ESP_TRACE_LINK_DEBUG_PROBE`, `_UART`, or `_USB_SERIAL_JTAG`.
@@ -203,5 +203,5 @@ Beyond what this example uses, [`esp_trace.h`](../../../components/esp_trace/inc
 
 ## See Also
 
-* [`components/esp_trace/README.md`](../../../components/esp_trace/README.md) — full architecture overview and adapter API reference.
+* [`components/esp_trace/README.md`](../../../../components/esp_trace/README.md) — full architecture overview and adapter API reference.
 * [`examples/system/sysview_tracing`](../sysview_tracing) — a production-grade integration of SEGGER SystemView built on the same extension points.
