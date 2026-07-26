@@ -202,6 +202,72 @@ menu "Security (SMP)"
                 Enabling this option will delete the pairing of the device and stack will NOT post any event
                 to application. If this option is disabled, application will get BLE_GAP_EVENT_REPEAT_PAIRING
                 event.
+
+        config BT_NIMBLE_SMP_HARDENED_REPAIRING
+            bool "Reject re-pairing that weakens an existing bond"
+            default y
+            help
+                When a bond already exists, refuse a new pairing that would lower MITM
+                protection, drop Secure Connections, or shorten the encryption key.
+                Also enforce that a Pairing Response keeps the MITM/SC bits announced
+                in a preceding Security Request.
+
+                Same-level re-pairing (peer deleted its own bond and pairs again at the
+                same strength) is still allowed. A peer that must legitimately re-pair at
+                a lower level has to be unpaired first (ble_gap_unpair / NVS clear).
+
+                Matches Bluedroid BT_BLE_SMP_HARDENED_REPAIRING. Disable only if a peer
+                must downgrade and the application cannot unbond it beforehand.
+
+        config BT_NIMBLE_SMP_REQUIRE_ENC_BEFORE_REPAIR
+            bool "Require encryption before re-pairing with a bonded peer"
+            default n
+            help
+                When enabled, a bonded peer cannot start SMP pairing on an unencrypted
+                link. The stack replies with Pairing Failed and disconnects. This is
+                stricter than the Bluetooth Core Spec and stricter than Bluedroid; it
+                blocks same-level recovery when the peer deleted its bond and sends a
+                Pairing Request before encryption.
+
+                Default is disabled so existing apps and one-sided bond-deletion
+                recovery keep working. Enable for maximum hardening against
+                unauthenticated re-pairing (BLERP V1/V2 style).
+
+        config BT_NIMBLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL
+            bool "Remove the stored bond when pairing fails as Central"
+            default y
+            help
+                Erase NVS bonding keys when pairing or encryption fails while the local
+                device is Central (link-layer master). Historical Central behaviour and
+                the default: recovers when the peer deleted the bond and answers
+                encryption with Key Missing.
+
+                A downgrade refused by BT_NIMBLE_SMP_HARDENED_REPAIRING never erases
+                the bond, regardless of this option.
+
+        config BT_NIMBLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_PRPH
+            bool "Remove the stored bond when pairing fails as Peripheral"
+            default n
+            help
+                Erase NVS bonding keys when pairing or encryption fails while the local
+                device is Peripheral (link-layer slave). Default is disabled so a failed
+                pairing does not drop the bond; unbond explicitly from the app if needed.
+
+                A downgrade refused by BT_NIMBLE_SMP_HARDENED_REPAIRING never erases
+                the bond, regardless of this option.
+
+        config BT_NIMBLE_SMP_UNBOND_ON_KEY_MISSING
+            bool "Drop the local LE keys when the peer reports it has no key"
+            default n
+            help
+                As Central, an encryption attempt using the stored LTK can fail with
+                "PIN or Key Missing" when the peer deleted the bond. When enabled, the
+                local keys are discarded so re-pairing can proceed on the same link.
+
+                Default is disabled: the bond is kept and the link is dropped, so a peer
+                cannot strip the stored security level by refusing to encrypt. With the
+                default, BT_NIMBLE_SMP_REMOVE_BOND_ON_PAIR_FAIL_AS_CENTRAL still recovers
+                Central-side Key Missing by erasing on the failure path.
     endif
 endmenu #SMP
 
