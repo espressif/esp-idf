@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "esp_rom_caps.h"
 #include "esp_rom_regi2c.h"
+#include "hal/config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,15 @@ void _regi2c_impl_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t
  * @brief Write internal register with mask
  */
 void _regi2c_impl_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data);
+
+#if HAL_CONFIG(ENV_FPGA)
+// No REGI2C can be performed on FPGA, skip
+#define regi2c_impl_read(...)              (0)
+#define regi2c_impl_read_mask(...)         (0)
+#define regi2c_impl_write(...)
+#define regi2c_impl_write_mask(...)
+
+#else // !HAL_CONFIG(ENV_FPGA)
 
 #if NON_OS_BUILD
 
@@ -85,7 +95,9 @@ void _regi2c_impl_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, ui
         _regi2c_impl_write_mask(__VA_ARGS__); \
     } while(0)
 
-#endif
+#endif // NON_OS_BUILD
+
+#endif // HAL_CONFIG(ENV_FPGA)
 
 #ifdef __cplusplus
 }
