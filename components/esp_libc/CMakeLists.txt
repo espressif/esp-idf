@@ -26,6 +26,7 @@ set(srcs
     "src/termios.c"
     "src/stdatomic.c"
     "src/time.c"
+    "src/timespec_get.c"
     "src/timekeeping.c"
     "src/sysconf.c"
     "src/realpath.c"
