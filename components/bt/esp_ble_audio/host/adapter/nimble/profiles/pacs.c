@@ -24,27 +24,28 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
 LOG_MODULE_REGISTER(LEA_PACS, CONFIG_BT_ISO_LOG_LEVEL);
 
 #if CONFIG_BT_PAC_SNK
-static uint16_t pacs_snk_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_snk_handle;
 #if CONFIG_BT_PAC_SNK_LOC
-static uint16_t pacs_snk_loc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_snk_loc_handle;
 #endif /* CONFIG_BT_PAC_SNK_LOC */
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if CONFIG_BT_PAC_SRC
-static uint16_t pacs_src_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_src_handle;
 #if CONFIG_BT_PAC_SRC_LOC
-static uint16_t pacs_src_loc_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_src_loc_handle;
 #endif /* CONFIG_BT_PAC_SRC_LOC */
 #endif /* CONFIG_BT_PAC_SRC */
 
-static uint16_t pacs_ava_ctx_handle;
-static uint16_t pacs_sup_ctx_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_ava_ctx_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t pacs_sup_ctx_handle;
 
 static const struct ble_gatt_svc_def gatt_svc_pacs[] = {
     {

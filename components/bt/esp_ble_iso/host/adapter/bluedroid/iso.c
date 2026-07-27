@@ -47,9 +47,9 @@ LOG_MODULE_REGISTER(ISO_BISO, CONFIG_BT_ISO_LOG_LEVEL);
  * zero would yield bogus packet_seq_num / cis_handle to the lib).
  * K_SEM_SHORT must exceed the worst-case BTU dispatch chain. */
 
-static struct k_sem iso_sem;
+static BT_ISO_CTRL_BSS_ATTR struct k_sem iso_sem;
 
-static struct {
+static BT_ISO_EXT_RAM_BSS_ATTR struct {
     uint8_t  status;
     uint16_t conn_handle;
     uint16_t packet_seq_num;
@@ -57,7 +57,7 @@ static struct {
     uint32_t time_offset;
 } tx_sync;
 
-static struct {
+static BT_ISO_EXT_RAM_BSS_ATTR struct {
     uint8_t  status;
     uint8_t  cig_id;
     uint8_t  cis_count;
@@ -183,7 +183,7 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
     mtl_c_to_p          = sys_get_le16(buf->data + 13);
     mtl_p_to_c          = sys_get_le16(buf->data + 15);
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
     assert(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
@@ -301,7 +301,7 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
     packing             = buf->data[15];
     framing             = buf->data[16];
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
     assert(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
@@ -376,7 +376,7 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
 
     cis_count = buf->data[3];
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_cis_hdls));
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_cis_hdls));
     assert(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
@@ -858,7 +858,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_disconn_complete ev = {0};
 
         qdata_len = 2 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.status = 0x00;
@@ -875,7 +875,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_cis_established ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.status = iso_hci_status(params->btm_cis_established_evt.status);
@@ -906,7 +906,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_cis_req ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.acl_handle = params->btm_cis_request_evt.acl_handle;
@@ -925,7 +925,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_complete ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev) + params->btm_big_cmpl.num_bis * 2;
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.status = iso_hci_status(params->btm_big_cmpl.status);
@@ -956,7 +956,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_terminate ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.big_handle = params->btm_big_term.big_handle;
@@ -973,7 +973,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_sync_established ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev) + params->btm_big_sync_estab.num_bis * 2;
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.status = iso_hci_status(params->btm_big_sync_estab.status);
@@ -1002,7 +1002,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_big_sync_lost ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.big_handle = params->btm_big_sync_lost.big_handle;
@@ -1019,7 +1019,7 @@ static void iso_evt_handler(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *pa
         struct bt_hci_evt_le_biginfo_adv_report ev = {0};
 
         qdata_len = 2 + 1 + sizeof(ev);
-        qdata = calloc(1, qdata_len);
+        qdata = bt_le_ext_calloc(1, qdata_len);
         assert(qdata);
 
         ev.sync_handle = params->btm_biginfo_report.sync_handle;

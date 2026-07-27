@@ -44,6 +44,8 @@
 #include <../host/conn_internal.h>
 #include <../host/hci_core.h>
 
+#include "utils/mem.h"
+
 #if CONFIG_BT_BLUEDROID_ENABLED
 #include "bluedroid/init.h"
 #else
@@ -1227,8 +1229,13 @@ static const struct lib_ext_funcs ext_funcs = {
 
     ._assert = (void *)assert_fatal,
 
+#if CONFIG_BT_AUDIO_HEAP_EXTERNAL_MEMORY
+    ._malloc = (void *)bt_le_ext_malloc,
+    ._calloc = (void *)bt_le_ext_calloc,
+#else
     ._malloc = (void *)malloc,
     ._calloc = (void *)calloc,
+#endif
     ._free = (void *)free,
 
     ._rand = (void *)bt_rand,

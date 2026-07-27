@@ -105,12 +105,12 @@ static int hci_cmd_set_cig_params(struct net_buf *buf, struct net_buf **rsp)
 
     /* The cis_count can be 0 */
     if (cis_count) {
-        cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
+        cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params));
         assert(cis_params);
     }
 
     rp_len = sizeof(struct ble_hci_le_set_cig_params_rp) + cis_count * 2;
-    rp = calloc(1, rp_len);
+    rp = bt_le_ext_calloc(1, rp_len);
     assert(rp);
 
     for (size_t i = 0; i < cis_count; i++) {
@@ -199,12 +199,12 @@ static int hci_cmd_set_cig_params_test(struct net_buf *buf, struct net_buf **rsp
 
     /* The cis_count can be 0 */
     if (cis_count) {
-        cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
+        cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_cis_params_test));
         assert(cis_params);
     }
 
     rp_len = sizeof(struct ble_hci_le_set_cig_params_test_rp) + cis_count * 2;
-    rp = calloc(1, rp_len);
+    rp = bt_le_ext_calloc(1, rp_len);
     assert(rp);
 
     for (size_t i = 0; i < cis_count; i++) {
@@ -276,7 +276,7 @@ static int hci_cmd_create_cis(struct net_buf *buf, struct net_buf **rsp)
 
     assert(buf->len >= 4 + cis_count * sizeof(struct ble_hci_le_create_cis_params));
 
-    cis_params = calloc(1, cis_count * sizeof(struct ble_hci_le_create_cis_params));
+    cis_params = bt_le_ext_calloc(1, cis_count * sizeof(struct ble_hci_le_create_cis_params));
     assert(cis_params);
 
     for (size_t i = 0; i < cis_count; i++) {
@@ -792,7 +792,7 @@ static void iso_evt_rx(uint8_t event, const void *data,
 
     qdata_len = len + 2;
 
-    qdata = calloc(1, qdata_len);
+    qdata = bt_le_ext_calloc(1, qdata_len);
     assert(qdata);
 
     qdata[0] = le_meta;

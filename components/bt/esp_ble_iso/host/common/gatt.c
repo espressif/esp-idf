@@ -25,9 +25,9 @@
 
 LOG_MODULE_REGISTER(ISO_GATT, CONFIG_BT_ISO_LOG_LEVEL);
 
-static sys_slist_t gatt_db = SYS_SLIST_STATIC_INIT(&gatt_db);
+static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t gatt_db;
 
-static struct gattc_sub subscriptions[CONFIG_BT_MAX_CONN];
+static BT_ISO_EXT_RAM_BSS_ATTR struct gattc_sub subscriptions[CONFIG_BT_MAX_CONN];
 
 /* Each CCC descriptor's cfg is a heap pool (depth BT_GATT_CCC_MAX = bonded peers +
  * active conn), allocated here at registration; freed in gatts_free_svc_ccc_cfg. */
@@ -44,7 +44,7 @@ static int gatts_alloc_svc_ccc_cfg(struct bt_gatt_service *svc)
         }
 
         ccc = attr->user_data;
-        ccc->cfg = calloc(BT_GATT_CCC_MAX, sizeof(struct bt_gatt_ccc_cfg));
+        ccc->cfg = bt_le_ext_calloc(BT_GATT_CCC_MAX, sizeof(struct bt_gatt_ccc_cfg));
         if (ccc->cfg == NULL) {
             return -ENOMEM;
         }

@@ -123,7 +123,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
                 return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
             }
 
-            data = calloc(1, alloc_len);
+            data = bt_le_ext_calloc(1, alloc_len);
             assert(data);
 
             rc = os_mbuf_copydata(ctx->om, 0, OS_MBUF_PKTLEN(ctx->om), data);
@@ -136,7 +136,7 @@ static int gatts_access_cb(uint16_t conn_handle, uint16_t attr_handle,
         } else {
             LOG_DBG("[N]Wr[%u]", OS_MBUF_PKTLEN(ctx->om));
 
-            data = calloc(1, OS_MBUF_PKTLEN(ctx->om));
+            data = bt_le_ext_calloc(1, OS_MBUF_PKTLEN(ctx->om));
             assert(data);
 
             rc = os_mbuf_copydata(ctx->om, 0, OS_MBUF_PKTLEN(ctx->om), data);

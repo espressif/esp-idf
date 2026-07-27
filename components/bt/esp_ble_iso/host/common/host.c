@@ -20,11 +20,13 @@
 #if CONFIG_BT_BLUEDROID_ENABLED
 #include "bluedroid/gap.h"
 #include "bluedroid/gatt.h"
+#else
+#include "nimble/gatt.h"
 #endif
 
 LOG_MODULE_REGISTER(ISO_HOST, CONFIG_BT_ISO_LOG_LEVEL);
 
-static struct k_mutex host_mutex;
+static BT_ISO_CTRL_BSS_ATTR struct k_mutex host_mutex;
 
 #if HOST_LOCK_DEBUG
 void bt_le_host_lock_debug(const char *func, int line)
@@ -97,6 +99,11 @@ int bt_le_host_init(void)
     if (err) {
         goto deinit_bluedroid_gatt;
     }
+#else
+    /* nimble: reset the per-conn GATT cache/NRP arrays (now .bss/PSRAM, no
+     * static init) so this init - and any later deinit/re-init - starts clean. */
+    bt_le_nimble_gattc_db_init();
+    bt_le_nimble_gatt_nrp_init();
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
     err = bt_le_iso_init();
@@ -137,6 +144,9 @@ void bt_le_host_deinit(void)
     bt_le_iso_deinit();
 #if CONFIG_BT_BLUEDROID_ENABLED
     bt_le_bluedroid_gatt_deinit();
+#else
+    bt_le_nimble_gattc_db_deinit();
+    bt_le_nimble_gatt_nrp_deinit();
 #endif /* CONFIG_BT_BLUEDROID_ENABLED */
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     bt_le_l2cap_deinit();

@@ -29,19 +29,19 @@ LOG_MODULE_REGISTER(ISO_TASK, CONFIG_BT_ISO_LOG_LEVEL);
  * critical before normal before floodable, so a flood of GAP reports cannot
  * delay the latency-critical ISO data path. See common/task.h for the mapping.
  */
-static QueueHandle_t iso_critical_queue;
-static QueueHandle_t iso_normal_queue;
-static QueueHandle_t iso_floodable_queue;
-static QueueSetHandle_t iso_queue_set;
+static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_critical_queue;
+static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_normal_queue;
+static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_floodable_queue;
+static BT_ISO_CTRL_BSS_ATTR QueueSetHandle_t iso_queue_set;
 
-static TaskHandle_t iso_task_handle;
+static BT_ISO_CTRL_BSS_ATTR TaskHandle_t iso_task_handle;
 
 extern void bt_le_timer_handle_event(void *arg);
 
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
 /* Per-type dispatch timing, indexed by iso_queue_item_type. Written only by
  * iso_task (single writer); read by bt_le_iso_dispatch_stats_dump. */
-static struct iso_dispatch_stats {
+static BT_ISO_CTRL_BSS_ATTR struct iso_dispatch_stats {
     int64_t  max_us;
     uint32_t count;
     uint32_t slow_count;

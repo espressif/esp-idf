@@ -32,11 +32,11 @@ _Static_assert(CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM && "At least one L2CAP coc sha
 #define OTS_L2CAP_BUF_COUNT     (3 * CONFIG_BT_NIMBLE_L2CAP_COC_MAX_NUM)
 #define OTS_L2CAP_MEM_SIZE      OS_MEMPOOL_SIZE(OTS_L2CAP_BUF_COUNT, L2CAP_LE_OTS_MTU * 2)
 
-static os_membuf_t ots_mem[OTS_L2CAP_MEM_SIZE];
-static struct os_mempool ots_mbuf_mempool;
-static struct os_mbuf_pool ots_mbuf_pool;
+static BT_ISO_EXT_RAM_BSS_ATTR os_membuf_t ots_mem[OTS_L2CAP_MEM_SIZE];
+static BT_ISO_EXT_RAM_BSS_ATTR struct os_mempool ots_mbuf_mempool;
+static BT_ISO_EXT_RAM_BSS_ATTR struct os_mbuf_pool ots_mbuf_pool;
 
-static struct ble_l2cap_chan *ots_chan;
+static BT_ISO_EXT_RAM_BSS_ATTR struct ble_l2cap_chan *ots_chan;
 
 static int ots_l2cap_recv_ready(struct ble_l2cap_chan *chan)
 {
@@ -158,7 +158,7 @@ static int ots_l2cap_event_cb(struct ble_l2cap_event *event, void *arg)
 
         sdu_len = OS_MBUF_PKTLEN(event->receive.sdu_rx);
 
-        sdu = calloc(1, sdu_len);
+        sdu = bt_le_ext_calloc(1, sdu_len);
         assert(sdu);
 
         err = os_mbuf_copydata(event->receive.sdu_rx, 0, sdu_len, sdu);

@@ -26,6 +26,7 @@
 #include "nimble/server.h"
 
 #include "common/host.h"
+#include "common/audio_attr.h"
 
 #include "../../../lib/include/audio.h"
 
@@ -35,9 +36,9 @@ static const ble_uuid16_t ascs_uuid_ase_cp = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_CP
 static const ble_uuid16_t ascs_uuid_ase_snk = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_SNK_VAL);
 static const ble_uuid16_t ascs_uuid_ase_src = BLE_UUID16_INIT(BT_UUID_ASCS_ASE_SRC_VAL);
 
-static uint16_t ase_control_point_handle;
-static uint16_t ase_snk_handle[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
-static uint16_t ase_src_handle[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ase_control_point_handle;
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ase_snk_handle[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT];
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint16_t ase_src_handle[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static struct ble_gatt_svc_def gatt_svc_ascs[] = {
     {
@@ -209,7 +210,7 @@ int bt_le_nimble_ascs_init(void)
 
     LOG_DBG("[N]AscsInit[%u]", chr_count);
 
-    gatt_svc_ascs[0].characteristics = calloc(chr_count, sizeof(struct ble_gatt_chr_def));
+    gatt_svc_ascs[0].characteristics = bt_le_ext_calloc(chr_count, sizeof(struct ble_gatt_chr_def));
     assert(gatt_svc_ascs[0].characteristics);
 
     ascs_svc_add_ase_cp_chr((void *)(gatt_svc_ascs[0].characteristics + 0));
