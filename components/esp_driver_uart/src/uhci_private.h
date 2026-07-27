@@ -44,6 +44,7 @@ typedef enum {
     UHCI_TX_FSM_ENABLE,      /**< FSM is enabling the UHCI system. */
     UHCI_TX_FSM_RUN_WAIT,    /**< FSM is waiting to transition to the running state. */
     UHCI_TX_FSM_RUN,         /**< FSM is in the running state, actively handling UHCI operations. */
+    UHCI_TX_FSM_DELETE,      /**< FSM is claimed by uhci_del_controller() for teardown, no new transaction is accepted. */
 } uhci_tx_fsm_t;
 
 typedef enum {
@@ -58,6 +59,7 @@ typedef enum {
     UHCI_RX_FSM_ENABLE,      /**< FSM is enabling the UHCI system. */
     UHCI_RX_FSM_RUN_WAIT,    /**< FSM is waiting to transition to the running state. */
     UHCI_RX_FSM_RUN,         /**< FSM is in the running state, actively handling UHCI operations. */
+    UHCI_RX_FSM_DELETE,      /**< FSM is claimed by uhci_del_controller() for teardown, no new transaction is accepted. */
 } uhci_rx_fsm_t;
 
 typedef struct {
