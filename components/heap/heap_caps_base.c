@@ -40,6 +40,10 @@
  * The ordering is intentional: user underflows must hit the left redzone
  * before they can reach the task-tracking block-owner word.
  *
+ * For heap_caps_aligned_alloc(), the tlsf align offset must be
+ * (block-owner size + KASAN_RZ) so the *user* pointer (after both shifts)
+ * satisfies the requested alignment.
+ *
  * Pointer arithmetic macros live in heap_kasan_layout.h.
  */
 
@@ -183,6 +187,8 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
     }
 
     const size_t alloc_size = KASAN_ADD_RZ(size);
+    /* Align the eventual user pointer (after block-owner + left redzone). */
+    const size_t align_offset = MULTI_HEAP_BLOCK_OWNER_SIZE() + KASAN_RZ;
 
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
@@ -205,7 +211,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
                         ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(alloc_size) + 4,
-                                                        alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());  // int overflow checked above
+                                                        alignment, align_offset);  // int overflow checked above
                         if (ret != NULL) {
 #if CONFIG_HEAP_TASK_TRACKING
                             heap_caps_update_per_task_info_alloc(heap,
@@ -224,7 +230,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                     } else {
                         //Just try to alloc, nothing special.
                         ret = aligned_or_unaligned_alloc(heap->heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(alloc_size),
-                                                        alignment, MULTI_HEAP_BLOCK_OWNER_SIZE());
+                                                        alignment, align_offset);
                         if (ret != NULL) {
 #if CONFIG_HEAP_TASK_TRACKING
                             heap_caps_update_per_task_info_alloc(heap,
