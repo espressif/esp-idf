@@ -14,6 +14,7 @@
 #include "freertos/semphr.h"
 #include "esp_private/dma2d.h"
 #include "hal/dma2d_types.h"
+#include "hal/dma2d_ll.h"
 #include "hal/ppa_types.h"
 #include "hal/ppa_hal.h"
 #include "esp_pm.h"
