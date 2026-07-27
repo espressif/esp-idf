@@ -33,7 +33,7 @@
  */
 
 #if CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS
-PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x22e0 );
+PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x32e0 );
 #else
 PROVIDE ( esp_tee_app_config        = SRAM_REE_SEG_START + 0x2e0 );
 #endif
