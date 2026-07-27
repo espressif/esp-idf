@@ -81,6 +81,10 @@ gas_build_req(u8 action, u8 dialog_token, size_t size)
 {
     struct wpabuf *buf;
 
+    /* IEEE 802.11 reserves Dialog Token value 0 for GAS Public Action frames. */
+    if (!dialog_token)
+        return NULL;
+
     buf = wpabuf_alloc(100 + size);
     if (buf == NULL)
         return NULL;
@@ -1461,7 +1465,10 @@ struct wpabuf * dpp_build_conf_req(struct dpp_authentication *auth,
 		return NULL;
 	}
 
-	dialog_token = os_random() & 0xff;
+	/* IEEE 802.11 requires the GAS Dialog Token to be nonzero; 0 is reserved. */
+	do {
+		dialog_token = os_random() & 0xff;
+	} while (!dialog_token);
 	auth->gas_dialog_token = dialog_token;
 
 	buf = gas_build_initial_req(dialog_token, 10 + 2 + wpabuf_len(conf_req));
