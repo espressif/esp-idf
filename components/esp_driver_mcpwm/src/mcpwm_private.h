@@ -285,7 +285,7 @@ struct mcpwm_cap_channel_t {
     void *user_data;                  // user data which would be passed to the capture callback
 };
 
-mcpwm_group_t *mcpwm_acquire_group_handle(int group_id);
+esp_err_t mcpwm_acquire_group_handle(int group_id, soc_module_clk_t clk_src, mcpwm_group_t **ret_group);
 void mcpwm_release_group_handle(mcpwm_group_t *group);
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src);
 esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale);
