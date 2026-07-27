@@ -91,6 +91,38 @@ Mode detailed information about command parameters is given below -
 >nan> ndp -T -d 5
 >d - NDP id
 
+## NAN Security (Encrypted NDP)
+
+Security is configured directly on each `publish` or `subscribe` service. There is no global security command or shared security state, so open and secured services can be configured independently. Supplying `-p`/`--passphrase` or `-k`/`--pmk` makes that service secure.
+
+>nan> publish -n TEST -p password
+>nan> subscribe -n TEST -p password
+
+The security parameters available on both commands are:
+
+| Short | Long | Argument | Description |
+|-------|------|----------|-------------|
+| `-p` | `--passphrase` | `<text>` | Add an NCS-SK-128 passphrase credential |
+| `-k` | `--pmk` | `<hex>` | Add a raw 32-byte PMK (64 hexadecimal characters) |
+| `-a` | `--add-passphrase` | `<text>` | Add another passphrase credential |
+| `-A` | `--add-pmk` | `<hex>` | Add another raw PMK credential |
+| `-d` | `--group-data-prot` | `<0\|1>` | Enable or disable ND-GTK group-data protection |
+| `-m` | `--group-mgmt-prot` | `<0\|1>` | Enable or disable group-management frame protection |
+
+Up to four credentials can be attached to one service. Additional credentials and group-protection options require a primary `--passphrase` or `--pmk`. Both peers must configure a matching credential on the corresponding service.
+
+For example, enable all security protection flags:
+
+>nan> publish -n TEST -p password -d 1 -m 1
+>nan> subscribe -n TEST -p password -d 1 -m 1
+
+An open service needs no security arguments:
+
+>nan> publish -n OPEN
+>nan> subscribe -n OPEN
+
+>**Note:** Only `WIFI_NAN_CSID_NCS_SK_128` is currently supported. NAN Security requires `CONFIG_ESP_WIFI_NAN_SECURITY=y`, enabled by this example's `sdkconfig.defaults`.
+
 ## NAN Datapath Example Output using defaults
 Device 1 : Publish a service with default configuration -
 
