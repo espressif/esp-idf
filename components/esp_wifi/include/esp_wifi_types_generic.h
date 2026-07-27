@@ -595,7 +595,25 @@ typedef struct {
     uint32_t vht_su_beamformee_disabled: 1;                       /**< Whether to disable support for operation as an VHT SU beamformee. */
     uint32_t vht_mu_beamformee_disabled: 1;                       /**< Whether to disable support for operation as an VHT MU beamformee. */
     uint32_t vht_mcs8_enabled: 1;                                 /**< Whether to support VHT-MCS8. The default value is 0. */
-    uint32_t reserved2: 19;                                       /**< Reserved for future feature set */
+    uint32_t max_bandwidth_negotiation_enabled_2g: 1;             /**< Whether to enable maximum bandwidth negotiation for the 2.4GHz band.
+                                                                        In STA-only mode, when enabled, the negotiated bandwidth depends on the negotiated protocol:
+                                                                        (1) If the negotiated protocol is 802.11ax, the negotiated bandwidth is 20 MHz.
+                                                                        (2) If the negotiated protocol is 802.11n, the negotiated bandwidth is determined by the maximum bandwidth supported by both AP and STA.
+                                                                        (3) For other negotiated protocols, the negotiated bandwidth is 20 MHz.
+                                                                        SoftAP + STA coexistence is subject to the following hardware limitations:
+                                                                        - If SoftAP is configured to 802.11ax, STA bandwidth is capped at 20 MHz.
+                                                                        - If STA is connected at 40 MHz, SoftAP cannot be configured to 802.11ax/802.11ac.
+                                                                        The default value is 0 (disabled). */
+    uint32_t max_bandwidth_negotiation_enabled_5g: 1;             /**< Whether to enable maximum bandwidth negotiation for the 5GHz band.
+                                                                        In STA-only mode, when enabled, the negotiated bandwidth depends on the negotiated protocol:
+                                                                        (1) If the negotiated protocol is 802.11ax/802.11ac, the negotiated bandwidth is 20 MHz.
+                                                                        (2) If the negotiated protocol is 802.11n/802.11an, the negotiated bandwidth is determined by the maximum bandwidth supported by both AP and STA.
+                                                                        (3) For other negotiated protocols, the negotiated bandwidth is 20 MHz.
+                                                                        SoftAP + STA coexistence is subject to the following hardware limitations:
+                                                                        - If SoftAP is configured to 802.11ax/802.11ac, STA bandwidth is capped at 20 MHz.
+                                                                        - If STA is connected at 40 MHz, SoftAP cannot be configured to 802.11ax/802.11ac.
+                                                                        The default value is 0 (disabled). */
+    uint32_t reserved2: 17;                                       /**< Reserved for future feature set */
     uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];           /**< Password identifier for H2E. Strings null-terminated (length < SAE_H2E_IDENTIFIER_LEN) or non-null terminated (length = SAE_H2E_IDENTIFIER_LEN) are accepted. Non-null terminated string with 0xFF for full length of SAE_H2E_IDENTIFIER_LEN is not considered a valid identifier */
 } wifi_sta_config_t;
 
