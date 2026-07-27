@@ -146,7 +146,7 @@ static int bt_ots_dir_list_search_forward(struct bt_ots_dir_list *dir_list, void
     size_t rec_len = dir_list_object_record_size(obj);
 
     bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
-    LOG_DBG("Searching forward for offset %ld starting at %ld with object ID %s",
+    LOG_DBG("OtsDirListSrchFwd[%ld][%ld][%s]",
             (long)offset, (long)dir_list->anchor_offset, id_str);
 
     while (dir_list->anchor_offset + rec_len <= offset) {
@@ -173,7 +173,7 @@ static int bt_ots_dir_list_search_backward(struct bt_ots_dir_list *dir_list, voi
     struct bt_gatt_ots_object *obj = dir_list->anchor_object;
 
     bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
-    LOG_DBG("Searching backward for offset %ld starting at %ld with object ID %s",
+    LOG_DBG("OtsDirListSrchBwd[%ld][%ld][%s]",
             (long)offset, (long)dir_list->anchor_offset, id_str);
 
     while (dir_list->anchor_offset > offset) {
@@ -208,7 +208,7 @@ static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_ma
         } else {
             size_t rec_len;
 
-            LOG_DBG("Offset %ld is closer to %zu than %ld, start from end",
+            LOG_DBG("OtsDirListSrchFromEnd[%ld][%zu][%ld]",
                     (long)offset, last, (long)dir_list->anchor_offset);
             err = bt_gatt_ots_obj_manager_last_obj_get(obj_manager, &dir_list->anchor_object);
             if (err) {
@@ -222,7 +222,7 @@ static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_ma
         const size_t mid = dir_list->anchor_offset / 2;
 
         if (offset < mid) {
-            LOG_DBG("Offset %ld is closer to 0 than %ld, start from beginning",
+            LOG_DBG("OtsDirListSrchFromStart[%ld][%ld]",
                     (long)offset, (long)dir_list->anchor_offset);
             bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
             err = bt_ots_dir_list_search_forward(dir_list, obj_manager, offset);
@@ -236,7 +236,7 @@ static int bt_ots_dir_list_search(struct bt_ots_dir_list *dir_list, void *obj_ma
     }
 
     bt_ots_obj_id_to_str(dir_list->anchor_object->id, id_str, sizeof(id_str));
-    LOG_DBG("Found offset %ld starting at %ld in object with ID %s",
+    LOG_DBG("OtsDirListFoundOft[%ld][%ld][%s]",
             (long)offset, (long)dir_list->anchor_offset, id_str);
 
     return 0;
@@ -259,7 +259,7 @@ static void dir_list_update_size(struct bt_ots_dir_list *dir_list, void *obj_man
         err = bt_gatt_ots_obj_manager_next_obj_get(obj_manager, obj, &obj);
     } while (!err);
 
-    LOG_DBG("Update directory listing current size to 0x%zx", len);
+    LOG_DBG("OtsDirListUpdCurSize[%zx]", len);
     dir_list->dir_list_obj->metadata.size.cur = len;
 }
 
