@@ -13,6 +13,9 @@ from pathlib import Path
 
 IDF_PATH: str = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
+# S3 artifact type for app-dir files outside build_*
+APP_EXTRA_S3_ARTIFACT_TYPE = 'app_extra'
+
 
 def get_submodule_dirs(full_path: bool = False) -> t.List[str]:
     """
