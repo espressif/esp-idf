@@ -1226,3 +1226,7 @@ config SOC_PHY_COMBO_MODULE
 config SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT
     bool
     default y
+
+config SOC_DEBUG_HAVE_OCD_STUB_BINS
+    bool
+    default y

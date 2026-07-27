@@ -683,3 +683,6 @@
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_ETM                   (1)
 // temperature sensor on esp32s31 in under low power domain.
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION       (1)
+
+/*------------------------------------- DEBUG CAPS -------------------------------------*/
+#define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)

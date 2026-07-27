@@ -494,3 +494,6 @@
 #define SOC_BLE_CTE_SUPPORTED           (1)    /*!< Support Bluetooth LE Constant Tone Extension (CTE) */
 #define SOC_BLE_SUBRATE_SUPPORTED       (1)    /*!< Support Bluetooth LE Connection Subrating */
 #define SOC_BLE_PERIODIC_ADV_WITH_RESPONSE  (1)    /*!< Support Bluetooth LE Periodic Advertising with Response (PAwR) */
+
+/*------------------------------------- DEBUG CAPS -------------------------------------*/
+#define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)

@@ -564,5 +564,8 @@
 #define SOC_USB_OTG_PERIPH_NUM          (1U)
 #define SOC_USB_FSLS_PHY_NUM            (1U)
 
+/*------------------------------------- DEBUG CAPS -------------------------------------*/
+#define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)
+
 /*---------------------------------- ASRC CAPS ----------------------------------*/
 #define SOC_ASRC_SUPPORTED (1)

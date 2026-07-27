@@ -496,5 +496,8 @@
 #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/
 #define SOC_PHY_CALIBRATION_CLOCK_IS_INDEPENDENT (1)
 
+/*------------------------------------- DEBUG CAPS -------------------------------------*/
+#define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)
+
 /*------------------------------------- No Reset CAPS -------------------------------------*/
 //  \#define SOC_CAPS_NO_RESET_BY_ANA_BOD           (1)   //TODO: [ESP32C61] IDF-9254

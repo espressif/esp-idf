@@ -739,6 +739,9 @@
 #define SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE          (1) /*!< LP core requests sleep, PMU clears both HP and LP wakeup causes */
 #define SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED   (1) /*!< LP UART wakeup source is kept triggered */
 
+/*------------------------------------- DEBUG CAPS -------------------------------------*/
+#define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)
+
 /*-------------------------- RISC-V TRACE CAPS ------------------------------*/
 #define SOC_RISCV_TRACE_HAS_CONFIG_REG              (1) /*!< Has the encoder config register */
 #define SOC_RISCV_TRACE_AHB_CONFIGURABLE            (1) /*!< AHB write master is configurable */
