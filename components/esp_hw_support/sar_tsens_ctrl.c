@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_sleep.h"
 
 #if SOC_TEMP_SENSOR_SUPPORTED
 #include "hal/temperature_sensor_ll.h"
@@ -53,6 +54,9 @@ void temperature_sensor_power_acquire(void)
         // Initialize HAL layer with the same tsens_idx
         temperature_sensor_hal_init();
         timer1 = esp_timer_get_time();
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && !SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+#endif
     }
     esp_os_exit_critical(&rtc_spinlock);
 }
@@ -75,6 +79,9 @@ void temperature_sensor_power_release(void)
         adc_apb_periph_free();
 #endif
         regi2c_saradc_disable();
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && !SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+#endif
     }
     esp_os_exit_critical(&rtc_spinlock);
 }

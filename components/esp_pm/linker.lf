@@ -49,6 +49,8 @@ entries:
             sar_tsens_ctrl:temperature_sensor_power_acquire (noflash)
             sar_tsens_ctrl:temperature_sensor_power_release (noflash)
             sar_tsens_ctrl:temp_sensor_get_raw_value (noflash)
+            if (SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION = y) && (SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN = n):
+                sleep_modes:esp_sleep_pd_config (noflash)
         sar_periph_ctrl_common:regi2c_saradc_enable (noflash)
         sar_periph_ctrl_common:regi2c_saradc_disable (noflash)
         if SOC_ADC_SUPPORTED = y:
