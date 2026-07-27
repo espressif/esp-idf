@@ -166,7 +166,6 @@ def test_examples_security_secure_boot_ecdsa(dut: Dut) -> None:
 
 # Test secure boot flow.
 # Correctly signed bootloader + correctly signed app should work
-@pytest.mark.host_test
 @pytest.mark.qemu
 @pytest.mark.parametrize(
     'qemu_extra_args',

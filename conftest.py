@@ -44,6 +44,7 @@ from idf_pytest.plugin import IDF_LOCAL_PLUGIN_KEY
 from idf_pytest.plugin import IdfLocalPlugin
 from idf_pytest.plugin import requires_elf_or_map
 from idf_pytest.utils import format_case_id
+from pytest_embedded.plugin import _request_param_or_config_option_or_default
 from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded.utils import to_bytes
 from pytest_embedded.utils import to_str
@@ -127,7 +128,7 @@ class AppDownloader:
         self.commit_sha = commit_sha
         self.pipeline_id = pipeline_id
 
-    def download_app(self, app_build_path: str, artifact_type: t.Optional[str] = None) -> None:
+    def download_app(self, app_dir: str, build_dir: str, artifact_type: t.Optional[str] = None) -> None:
         args = [
             'idf-ci',
             'gitlab',
@@ -137,15 +138,26 @@ class AppDownloader:
         ]
         if artifact_type:
             args.extend(['--type', artifact_type])
+
         if self.pipeline_id:
             args.extend(['--pipeline-id', self.pipeline_id])
-        args.append(app_build_path)
 
-        subprocess.run(
-            args,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
+        args.extend(
+            [
+                app_dir,
+                '--build-dir',
+                build_dir,
+            ]
         )
+        result = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            cwd=IDF_PATH,
+        )
+        logging.info(result.stdout)
+        if result.stderr:
+            logging.info(result.stderr)
 
     def download_app_extra(self, app_dir: str) -> None:
         """Download app-dir artifacts defined under app_extra in .idf_ci.toml."""
@@ -348,12 +360,13 @@ def build_dir(
         downloader = app_downloader
 
     if downloader:
+        app_dir = idf_relpath(app_path)
+        build_dir = f'build_{target}_{config}'
         # somehow hardcoded...
-        app_build_path = os.path.join(idf_relpath(app_path), f'build_{target}_{config}')
         if requires_elf_or_map(case):
-            downloader.download_app(app_build_path)
+            downloader.download_app(app_dir, build_dir)
         else:
-            downloader.download_app(app_build_path, 'flash')
+            downloader.download_app(app_dir, build_dir, 'flash')
         check_dirs = [f'build_{target}_{config}']
     else:
         check_dirs = []
@@ -537,12 +550,12 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str, idf_path: str) -> t.Cal
 
 @pytest.fixture(scope='session')
 def dev_password(request: FixtureRequest) -> str:
-    return request.config.getoption('dev_passwd') or ''
+    return _request_param_or_config_option_or_default(request, 'dev_password', '')  # type: ignore
 
 
 @pytest.fixture(scope='session')
 def dev_user(request: FixtureRequest) -> str:
-    return request.config.getoption('dev_user') or ''
+    return _request_param_or_config_option_or_default(request, 'dev_user', '')  # type: ignore
 
 
 ##################
@@ -585,7 +598,7 @@ def pytest_unconfigure(config: Config) -> None:
         config.pluginmanager.unregister(idf_local_plugin)
 
 
-dut_artifacts_url = []
+dut_artifacts_url: t.List[str] = []
 
 
 @pytest.hookimpl(hookwrapper=True)

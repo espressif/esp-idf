@@ -9,7 +9,6 @@ import typing as t
 from collections import defaultdict
 from pathlib import Path
 
-import yaml
 from idf_build_apps import App
 from idf_build_apps import find_apps
 from idf_build_apps.constants import SUPPORTED_TARGETS
@@ -39,6 +38,14 @@ USUAL_TO_FORMAL = {
 }
 
 FORMAL_TO_USUAL = {v: k for k, v in USUAL_TO_FORMAL.items()}
+
+# Targets under bringup: suppress check-test-scripts warnings for these.
+# Reset to [] once bringup is complete.
+BYPASS_CHECK_TEST_TARGETS: t.List[str] = [
+    'esp32h21',
+    'esp32h4',
+    'esp32c5',
+]
 
 
 def print_diff_table(
@@ -299,21 +306,9 @@ if __name__ == '__main__':
 
     readme_parser = action.add_parser('check-readmes')
     readme_parser.add_argument('paths', nargs='+', help='check under paths')
-    readme_parser.add_argument(
-        '-c',
-        '--config',
-        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
-        help='config file',
-    )
 
     test_parser = action.add_parser('check-test-scripts')
     test_parser.add_argument('paths', nargs='+', help='check under paths')
-    test_parser.add_argument(
-        '-c',
-        '--config',
-        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'default-build-test-rules.yml'),
-        help='config file',
-    )
     arg = parser.parse_args()
 
     check_dirs = set()
@@ -344,14 +339,6 @@ if __name__ == '__main__':
         os.path.join(IDF_PATH, 'tools', 'cmakev2', 'test'),
     ]
 
-    _bypass_targets: t.List[str] = []
-    if arg.config:
-        with open(arg.config) as fr:
-            configs = yaml.safe_load(fr)
-
-        if configs:
-            _bypass_targets = configs.get('bypass_check_test_targets') or []
-
     os.environ.update(
         {
             'IDF_PATH': IDF_PATH,
@@ -369,5 +356,5 @@ if __name__ == '__main__':
         check_test_scripts(
             list(check_dirs),
             _exclude_dirs,
-            bypass_targets=_bypass_targets,
+            bypass_targets=BYPASS_CHECK_TEST_TARGETS,
         )

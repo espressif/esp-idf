@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
+import copy
 import logging
 import os
 import re
@@ -52,9 +53,11 @@ def retry(func: TR) -> TR:
                     raise e  # get out of the loop
                 else:
                     logging.warning(
-                        'Network failure in {}, retrying ({})'.format(getattr(func, '__name__', '(unknown callable)'),
-                                                                      retried))
-                    time.sleep(2 ** retried)  # wait a bit more after each retry
+                        'Network failure in {}, retrying ({})'.format(
+                            getattr(func, '__name__', '(unknown callable)'), retried
+                        )
+                    )
+                    time.sleep(2**retried)  # wait a bit more after each retry
                     continue
             else:
                 break
@@ -67,7 +70,6 @@ class Gitlab(object):
     JOB_NAME_PATTERN = re.compile(r'(\w+)(\s+(\d+)/(\d+))?')
 
     DOWNLOAD_ERROR_MAX_RETRIES = 3
-    DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 
     def __init__(self, project_id: Union[int, str, None] = None):
         config_data_from_env = os.getenv('PYTHON_GITLAB_CONFIG')
@@ -117,7 +119,7 @@ class Gitlab(object):
         :param namespace: namespace to match when we have multiple project with same name
         :return: project ID
         """
-        projects = self.gitlab_inst.projects.list(search=name)
+        projects = self.gitlab_inst.projects.list(search=name, get_all=True)
         res = []
         for project in projects:
             if namespace is None:
@@ -152,7 +154,9 @@ class Gitlab(object):
             archive_file.extractall(destination)
 
     @retry
-    def download_artifact(self, job_id: int, artifact_path: List[str], destination: Optional[str] = None) -> List[bytes]:
+    def download_artifact(
+        self, job_id: int, artifact_path: List[str], destination: Optional[str] = None
+    ) -> List[bytes]:
         """
         download specific path of job artifacts and extract to destination.
 
@@ -208,8 +212,9 @@ class Gitlab(object):
         return job_id_list
 
     @retry
-    def download_archive(self, ref: str, destination: str, project_id: Optional[int] = None,
-                         cache_dir: Optional[str] = None) -> str:
+    def download_archive(
+        self, ref: str, destination: str, project_id: Optional[int] = None, cache_dir: Optional[str] = None
+    ) -> str:
         """
         Download archive of certain commit of a repository and extract to destination path
 
@@ -235,8 +240,11 @@ class Gitlab(object):
                     except gitlab.GitlabGetError as e:
                         logging.error('Failed to archive from project {}'.format(project_id))
                         raise e
-                logging.info('Downloaded archive size: {:.03f}MB'.format(
-                    float(os.path.getsize(local_archive_file)) / (1024 * 1024)))
+                logging.info(
+                    'Downloaded archive size: {:.03f}MB'.format(
+                        float(os.path.getsize(local_archive_file)) / (1024 * 1024)
+                    )
+                )
 
             return self.decompress_archive(local_archive_file, destination)
 
@@ -248,22 +256,38 @@ class Gitlab(object):
                 logging.error('Failed to archive from project {}'.format(project_id))
                 raise e
 
-        logging.info('Downloaded archive size: {:.03f}MB'.format(float(os.path.getsize(temp_file.name)) / (1024 * 1024)))
+        logging.info(
+            'Downloaded archive size: {:.03f}MB'.format(float(os.path.getsize(temp_file.name)) / (1024 * 1024))
+        )
 
         return self.decompress_archive(temp_file.name, destination)
 
     @staticmethod
+    def _to_win32_long_path(path: str) -> str:
+        normalized_path = os.path.normpath(os.path.abspath(path))
+        if normalized_path.startswith('\\\\?\\'):
+            return normalized_path
+        if normalized_path.startswith('\\\\'):
+            return '\\\\?\\UNC\\' + normalized_path[2:]
+        return '\\\\?\\' + normalized_path
+
+    @staticmethod
     def decompress_archive(path: str, destination: str) -> str:
         full_destination = os.path.abspath(destination)
-        # By default max path length is set to 260 characters
-        # Prefix `\\?\` extends it to 32,767 characters
-        if sys.platform == 'win32':
-            full_destination = '\\\\?\\' + full_destination
 
         try:
             with tarfile.open(path, 'r') as archive_file:
-                root_name = archive_file.getnames()[0]
-                archive_file.extractall(full_destination)
+                members = archive_file.getmembers()
+                root_name = members[0].name
+                if sys.platform == 'win32':
+                    # tarfile keeps archive member names in POSIX form. Normalize them before
+                    # combining with a long-path-prefixed destination to avoid invalid mixed separators.
+                    full_destination = Gitlab._to_win32_long_path(full_destination)
+                    members = [copy.copy(member) for member in members]
+                    for member in members:
+                        member.name = member.name.replace('/', '\\')
+                        member.linkname = member.linkname.replace('/', '\\')
+                archive_file.extractall(full_destination, members=members)
         except tarfile.TarError as e:
             logging.error(f'Error while decompressing archive {path}')
             raise e
@@ -282,36 +306,28 @@ class Gitlab(object):
 
     def get_downstream_pipeline_ids(self, main_pipeline_id: int) -> List[int]:
         """
-        Retrieve the IDs of all downstream child pipelines for a given main pipeline.
+        Retrieve the IDs of all downstream child pipelines for a given main pipeline,
+        recursing through arbitrarily nested child pipelines.
 
         :param main_pipeline_id: The ID of the main pipeline to start the search.
-        :return: A list of IDs of all downstream child pipelines.
+        :return: A list of IDs of all downstream child pipelines (all levels).
         """
-        bridge_pipeline_ids = []
-        child_pipeline_ids = []
+        child_pipeline_ids: List[int] = []
 
-        main_pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
-        for bridge in main_pipeline_bridges:
+        pipeline_bridges = self.project.pipelines.get(main_pipeline_id).bridges.list()
+        for bridge in pipeline_bridges:
             downstream_pipeline = bridge.attributes.get('downstream_pipeline')
             if not downstream_pipeline:
                 continue
-            bridge_pipeline_ids.append(downstream_pipeline['id'])
-
-        for bridge_pipeline_id in bridge_pipeline_ids:
-            child_pipeline_ids.append(bridge_pipeline_id)
-            bridge_pipeline = self.project.pipelines.get(bridge_pipeline_id)
-
-            if not bridge_pipeline.name == self.DEFAULT_BUILD_CHILD_PIPELINE_NAME:
+            downstream_pipeline_id = downstream_pipeline.get('id')
+            if downstream_pipeline_id is None:
                 continue
 
-            child_bridges = bridge_pipeline.bridges.list()
-            for child_bridge in child_bridges:
-                downstream_child_pipeline = child_bridge.attributes.get('downstream_pipeline')
-                if not downstream_child_pipeline:
-                    continue
-                child_pipeline_ids.append(downstream_child_pipeline.get('id'))
+            child_pipeline_ids.append(downstream_pipeline_id)
+            # recurse to collect further nested (grandchild+) pipelines
+            child_pipeline_ids.extend(self.get_downstream_pipeline_ids(downstream_pipeline_id))
 
-        return [pid for pid in child_pipeline_ids if pid is not None]
+        return child_pipeline_ids
 
     def retry_failed_jobs(self, pipeline_id: int, retry_allowed_failures: bool = False) -> List[int]:
         """

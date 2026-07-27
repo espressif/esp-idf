@@ -120,6 +120,52 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 关于测试函数，使用了一个 ``dut`` fixture。在单一 DUT 测试用例中，``dut`` fixture 是 ``IdfDut`` 类的一个实例，对于多个 DUT 测试用例，它是 ``IdfDut`` 实例的一个元组。有关 ``IdfDut`` 类的更多详细信息，请参阅 `pytest-embedded IdfDut API 参考 <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__。
 
+在 Linux 上运行测试
+^^^^^^^^^^^^^^^^^^^^
+
+要在 Linux 主机上执行 pytest 测试用例，请将 ``target`` 设置为 ``linux``。
+
+.. code-block:: python
+
+    @idf_parametrize('target', ['linux'], indirect=['target'])
+    def test_hello_world_linux(dut) -> None:
+        dut.expect('Hello world!')
+
+这是在 Linux 主机上运行与物理硬件相同测试流程的最简单方式。
+
+对于简单的纯 Linux 测试，只需将 ``target`` 设置为 ``linux``，系统会自动选择 ``idf`` 对应的 embedded services。``pytest.mark.host_test`` marker 不再需要。
+
+对于混合运行环境矩阵，则需要为每个用例手动指定 ``embedded_services``。更复杂的示例请参阅 :ref:`在不同运行环境中运行相同的应用程序 <pytest-same-app-different-running-environments>` 小节。
+
+.. only:: TARGET_SUPPORT_QEMU
+
+    在 QEMU 中运行测试
+    ^^^^^^^^^^^^^^^^^^^^^
+
+    要在 QEMU 中执行 pytest 测试用例，请将 ``@pytest.mark.qemu`` 添加到测试函数上。
+
+    .. code-block:: python
+
+        @pytest.mark.qemu
+        @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
+        def test_hello_world_qemu(dut) -> None:
+            dut.expect('Hello world!')
+
+    这是在 QEMU 中运行与物理硬件相同测试流程的最简单方式。
+
+    对于简单的纯 QEMU 测试，只需添加 ``pytest.mark.qemu``，系统会自动选择 ``idf,qemu`` 对应的 embedded services。
+
+    对于混合运行环境矩阵，则需要为每个用例手动指定 ``embedded_services``。更复杂的示例请参阅本指南后面的对应小节。
+
+    有关 QEMU 的安装和配置，请参阅页面 :doc:`../api-guides/tools/qemu`。
+
+``pytest.mark.host_test`` 的弃用说明
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``pytest.mark.host_test`` 已不再需要，也不应再添加到新的测试用例中。
+
+对于 Linux target 测试用例和 QEMU 测试用例，相关行为会由测试框架动态处理。尤其是在简单的纯 Linux 或纯 QEMU 场景下，embedded services 会被自动选择。
+
 使用不同的 sdkconfig 文件运行相同的应用程序
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -207,6 +253,49 @@ ESP-IDF 在主机端使用 pytest 框架（以及一些 pytest 插件）来自�
 
 * ``esp32.foo.test_foo_bar``
 * ``esp32s2.bar.test_foo_bar``
+
+.. _pytest-same-app-different-running-environments:
+
+在不同运行环境中运行相同的应用程序
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+有时，同一个应用程序需要在不同的运行环境中进行验证，例如在 Linux target 的主机上、真实硬件上，或在 QEMU 中运行。如果单独使用 ``@pytest.mark.qemu`` 测试还不够，可以在一个 ``idf_parametrize`` 装饰器中组合 ``target``、``config`` 和 ``embedded_services``，并为每种情况附加所需的 marker。
+
+下面的示例改编自 :idf_file:`components/console/test_apps/console/pytest_console.py`：
+
+.. code-block:: python
+
+    @idf_parametrize(
+        'target,config,embedded_services,markers',
+        [
+            ('linux', 'defaults', 'idf', ()),
+            ('esp32', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+            ('esp32c3', 'defaults', 'esp,idf', (pytest.mark.generic,)),
+            ('esp32', 'defaults', 'idf,qemu', (pytest.mark.qemu,)),
+        ],
+        indirect=['target', 'config', 'embedded_services'],
+    )
+    def test_console_repl(dut) -> None:
+        dut.expect_exact('Press ENTER to see the list of tests')
+
+这会为同一个应用程序生成 4 个测试用例：
+
+* 在 Linux 主机上使用 ``idf`` service 运行
+* 在 ESP32 硬件上使用 ``esp,idf`` services 运行
+* 在 ESP32-C3 硬件上使用 ``esp,idf`` services 运行
+* 在 QEMU 中以 ESP32 为目标，使用 ``idf,qemu`` services 运行
+
+在本地运行时，可以按需只选择某一种运行环境：
+
+.. code-block:: shell
+
+    $ pytest --target linux
+    $ pytest -m qemu
+    $ pytest -m qemu --target esp32
+
+``pytest --target linux`` 只选择 Linux target 的测试用例。``pytest -m qemu`` 选择所有带有 QEMU marker 的测试用例。``pytest -m qemu --target esp32`` 会进一步把范围限制为目标芯片为 ESP32 的 QEMU 测试用例。
+
+当测试逻辑相同，但执行环境不同的时候，可使用此模式。
 
 测试串行输出
 ^^^^^^^^^^^^^^^^

@@ -146,7 +146,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.13
+          - idf-build-apps~=2.16
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -167,14 +167,6 @@ repos:
         language: python
         always_run: true
         require_serial: true
-      - id: gitlab-yaml-linter
-        name: Check gitlab yaml files
-        entry: tools/ci/gitlab_yaml_linter.py
-        language: python
-        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml|\.gitmodules'
-        pass_filenames: false
-        additional_dependencies:
-          - PyYAML == 5.3.1
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
@@ -229,7 +221,7 @@ repos:
       - id: check-kconfig-files
       - id: check-deprecated-kconfig-options
   - repo: https://github.com/espressif/idf-ci
-    rev: v1.0.0b4
+    rev: v1.2.1
     hooks:
       - id: check-tests-missing-config
         files: 'pytest_.*\.py$|sdkconfig(\..*)?$'

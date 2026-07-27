@@ -1,0 +1,11 @@
+# This file defines extra dependencies for ESP-IDF
+# the dependencies defined here will be downloaded to
+# $IDF_TOOLS_PATH/root_managed_components
+# Each major.minor version of ESP-IDF can have its own subdirectory
+# For example, for ESP-IDF v6.0, the dependencies will be installed to
+# $IDF_TOOLS_PATH/root_managed_components/idf6.0
+
+# The syntax is defined in:
+# https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html#dependencies
+
+#dependencies:

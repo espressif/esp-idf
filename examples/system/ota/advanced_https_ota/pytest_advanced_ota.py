@@ -1110,7 +1110,6 @@ def test_examples_protocol_advanced_https_ota_example_openssl_aligned_bin(dut: D
 
 @pytest.mark.qemu
 @pytest.mark.nightly_run
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [
@@ -1166,7 +1165,6 @@ def test_examples_protocol_advanced_https_ota_example_verify_min_chip_revision(d
 
 @pytest.mark.qemu
 @pytest.mark.nightly_run
-@pytest.mark.host_test
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [

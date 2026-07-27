@@ -661,6 +661,21 @@ macro(idf_build_process target)
         endif()
     endif()
 
+    idf_build_get_property(prefix __PREFIX)
+
+    file(GLOB root_dep_component_dirs
+        ${IDF_TOOLS_PATH}/root_managed_components/idf${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH}/*)
+    list(SORT root_dep_component_dirs)
+    foreach(component_dir ${root_dep_component_dirs})
+        # A potential component must be a directory
+        if(IS_DIRECTORY ${component_dir})
+            __component_dir_quick_check(is_component ${component_dir})
+            if(is_component)
+                __component_add(${component_dir} ${prefix} "idf_managed_components")
+            endif()
+        endif()
+    endforeach()
+
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
