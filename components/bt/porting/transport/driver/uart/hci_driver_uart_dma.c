@@ -461,8 +461,8 @@ static void hci_driver_uart_dma_install(void)
     gdma_register_tx_event_callbacks(s_tx_channel, &tx_cbs, NULL);
     // configure UHCI
     uhci_ll_init((uhci_dev_t *)s_uhci_hw);
-    // uhci_ll_rx_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_LEN_EOF);
-    uhci_ll_rx_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_IDLE_EOF);
+    // uhci_ll_rx_enable_eof_modes((uhci_dev_t *)s_uhci_hw, UHCI_RX_LEN_EOF, true);
+    uhci_ll_rx_enable_eof_modes((uhci_dev_t *)s_uhci_hw, UHCI_RX_IDLE_EOF, true);
     // disable software flow control
     s_uhci_hw->escape_conf.val = 0;
     uhci_ll_attach_uart_port((uhci_dev_t *)s_uhci_hw, s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port);

@@ -662,14 +662,14 @@ static inline void lcd_ll_set_dc_level(lcd_cam_dev_t *dev, bool idle_phase, bool
 }
 
 /**
- * @brief Set cycle of delay for DC line
+ * @brief Set delay mode for DC line
  *
  * @param dev LCD register base address
- * @param delay Ticks of delay
+ * @param mode Delay mode, 0: no delay, 1: delay on LCD_CLK rising edge, 2: delay on LCD_CLK falling edge
  */
-static inline void lcd_ll_set_dc_delay_ticks(lcd_cam_dev_t *dev, uint32_t delay)
+static inline void lcd_ll_set_dc_delay_mode(lcd_cam_dev_t *dev, uint32_t mode)
 {
-    dev->lcd_dly_mode_cfg1.lcd_cd_mode = delay;
+    dev->lcd_dly_mode_cfg1.lcd_cd_mode = mode;
 }
 
 /**
@@ -789,18 +789,38 @@ static inline void lcd_ll_set_idle_level(lcd_cam_dev_t *dev, bool hsync_idle_lev
 }
 
 /**
- * @brief Set extra delay for HSYNC, VSYNC, and DE signals
+ * @brief Set delay mode for HSYNC, VSYNC, and DE signals
  *
  * @param dev LCD register base address
- * @param hsync_delay HSYNC delay
- * @param vsync_delay VSYNC delay
- * @param de_delay DE delay
+ * @param hsync_mode HSYNC delay mode, 0: no delay, 1: delay on LCD_CLK rising edge, 2: delay on LCD_CLK falling edge
+ * @param vsync_mode VSYNC delay mode, 0: no delay, 1: delay on LCD_CLK rising edge, 2: delay on LCD_CLK falling edge
+ * @param de_mode DE delay mode, 0: no delay, 1: delay on LCD_CLK rising edge, 2: delay on LCD_CLK falling edge
  */
-static inline void lcd_ll_set_delay_ticks(lcd_cam_dev_t *dev, uint32_t hsync_delay, uint32_t vsync_delay, uint32_t de_delay)
+static inline void lcd_ll_set_delay_mode(lcd_cam_dev_t *dev, uint32_t hsync_mode, uint32_t vsync_mode, uint32_t de_mode)
 {
-    dev->lcd_dly_mode_cfg1.lcd_hsync_mode = hsync_delay;
-    dev->lcd_dly_mode_cfg1.lcd_vsync_mode = vsync_delay;
-    dev->lcd_dly_mode_cfg1.lcd_de_mode = de_delay;
+    dev->lcd_dly_mode_cfg1.lcd_hsync_mode = hsync_mode;
+    dev->lcd_dly_mode_cfg1.lcd_vsync_mode = vsync_mode;
+    dev->lcd_dly_mode_cfg1.lcd_de_mode = de_mode;
+}
+
+/**
+ * @brief Set delay mode for all data lines
+ *
+ * @param dev LCD register base address
+ * @param mode Data line delay mode, 0: no delay, 1: delay on LCD_CLK rising edge, 2: delay on LCD_CLK falling edge
+ */
+static inline void lcd_ll_set_data_delay_mode(lcd_cam_dev_t *dev, uint32_t mode)
+{
+    uint32_t reg_val = 0;
+    for (int i = 0; i < 16; i++) {
+        reg_val |= (mode & 0x03) << (2 * i);
+    }
+    dev->lcd_dly_mode_cfg2.val = reg_val;
+    reg_val = 0;
+    for (int i = 0; i < 8; i++) {
+        reg_val |= (mode & 0x03) << (2 * i);
+    }
+    dev->lcd_dly_mode_cfg1.val = (dev->lcd_dly_mode_cfg1.val & 0xFFFF0000) | reg_val;
 }
 
 /**

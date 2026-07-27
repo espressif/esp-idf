@@ -129,30 +129,6 @@ static inline void cam_ll_select_clk_src(int group_id, cam_clock_source_t src)
     } while(0)
 
 /**
- * @brief  Get the CAM source clock type
- *
- * @param dev CAM register base address
- * @param src The pointer to accept the CAM source clock type
- */
-static inline void cam_ll_get_clk_src(lcd_cam_dev_t *dev, cam_clock_source_t *src)
-{
-    switch (HP_SYS_CLKRST.peri_clk_ctrl119.reg_cam_clk_src_sel) {
-    case 0:
-        *src = CAM_CLK_SRC_XTAL;
-        break;
-    case 1:
-        *src = CAM_CLK_SRC_PLL160M;
-        break;
-    case 2:
-        *src = CAM_CLK_SRC_APLL;
-        break;
-    default:
-        HAL_ASSERT(false);
-        break;
-    }
-}
-
-/**
  * @brief Set clock coefficient of CAM peripheral
  *
  * @param group_id Group ID
