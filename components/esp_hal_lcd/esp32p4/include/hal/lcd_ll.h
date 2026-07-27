@@ -122,11 +122,12 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 /**
  * @brief Select clock source for LCD peripheral
  *
- * @param dev LCD register base address
+ * @param group_id Group ID
  * @param src Clock source
  */
-static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t src)
+static inline void lcd_ll_select_clk_src(int group_id, lcd_clock_source_t src)
 {
+    (void)group_id;
     switch (src) {
     case LCD_CLK_SRC_XTAL:
         HP_SYS_CLKRST.peri_clk_ctrl19.reg_lcd_clk_src_sel = 0;
@@ -154,14 +155,15 @@ static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t 
 /**
  * @brief Set clock coefficient of LCD peripheral
  *
- * @param dev LCD register base address
+ * @param group_id Group ID
  * @param div_num Integer part of the divider
  * @param div_a denominator of the divider
  * @param div_b numerator of the divider
  */
 __attribute__((always_inline))
-static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num, int div_a, int div_b)
+static inline void lcd_ll_set_group_clock_coeff(int group_id, int div_num, int div_a, int div_b)
 {
+    (void)group_id;
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
     HAL_ASSERT(div_num > 0 && div_num <= LCD_LL_CLK_FRAC_DIV_N_MAX);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_num, div_num - 1);

@@ -164,14 +164,6 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
         HP_SYS_CLKRST.timergrp1_ctrl0.reg_timergrp1_t0_clk_en = 0;
         HP_SYS_CLKRST.timergrp1_ctrl0.reg_timergrp1_t1_clk_en = 0;
         HP_SYS_CLKRST.timergrp1_ctrl0.reg_timergrp1_wdt_clk_en = 0;
-        // LCDCAM
-        /*
-         * Default lcdcam_lcdcam_ctrl0:
-         *   reg_lcdcam_clk_src_sel: 1 (BBPLL 120 MHz path, shared by LCD and CAM)
-         *   reg_lcdcam_clk_div_num: 1 (divide by 2 → 60 MHz)
-         */
-        HP_SYS_CLKRST.lcdcam_lcdcam_ctrl0.reg_lcdcam_clk_src_sel = 1;
-        HP_SYS_CLKRST.lcdcam_lcdcam_ctrl0.reg_lcdcam_clk_div_num = 1;
         // ASRC
         HP_SYS_CLKRST.ahb_asrc_ctrl0.reg_ahb_asrc_sys_clk_en = 0;
         // Flash

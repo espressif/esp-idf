@@ -125,7 +125,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
 #if CONFIG_IDF_TARGET_ESP32S31
-    bool pll_f120m_enabled = false;
+    bool core_clk_enabled = false;
 #endif
     ESP_RETURN_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     // although LCD_CAM can support up to 24 data lines, we restrict users to only use 8 or 16 bit width
@@ -163,6 +163,10 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
         if (ref_count == 0) {
             lcd_ll_enable_bus_clock(bus_id, true);
             lcd_ll_reset_register(bus_id);
+#if CONFIG_IDF_TARGET_ESP32S31
+            lcd_ll_select_core_clk_src(bus_id, LCD_CORE_CLK_SRC_DEFAULT);
+            lcd_ll_set_core_clock_divider(bus_id, 2, 0, 0);
+#endif
         }
     }
 #if I80_USE_RETENTION_LINK
@@ -189,9 +193,8 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
 #if CONFIG_IDF_TARGET_ESP32S31
-    // PLL 120M was selected in esp_perip_clk_init on esp32s31.
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, true), err, TAG, "clock source enable failed");
-    pll_f120m_enabled = true;
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT, true), err, TAG, "core clock source enable failed");
+    core_clk_enabled = true;
 #endif
     PERIPH_RCC_ATOMIC() {
         lcd_ll_enable_clock(bus->hal.dev, true);
@@ -277,8 +280,8 @@ err:
             bus->clk_src = SOC_MOD_CLK_INVALID;
         }
 #if CONFIG_IDF_TARGET_ESP32S31
-        if (pll_f120m_enabled) {
-            esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, false);
+        if (core_clk_enabled) {
+            esp_clk_tree_enable_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT, false);
         }
 #endif
 #if CONFIG_PM_ENABLE
@@ -305,7 +308,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
         bus->clk_src = SOC_MOD_CLK_INVALID;
     }
 #if CONFIG_IDF_TARGET_ESP32S31
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, false), err, TAG, "clock source disable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT, false), err, TAG, "core clock source disable failed");
 #endif
 #if I80_USE_RETENTION_LINK
     const periph_retention_module_t module_id = lcd_i80_reg_retention_info[bus_id].retention_module;
@@ -667,9 +670,9 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");
     PERIPH_RCC_ATOMIC() {
-        lcd_ll_select_clk_src(bus->hal.dev, clk_src);
+        lcd_ll_select_clk_src(bus->bus_id, clk_src);
         // force to use integer division, as fractional division might lead to clock jitter
-        lcd_ll_set_group_clock_coeff(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
+        lcd_ll_set_group_clock_coeff(bus->bus_id, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
     }
 
     // save the resolution of the i80 bus
