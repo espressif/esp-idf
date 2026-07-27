@@ -13,6 +13,7 @@
 */
 
 #include <errno.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,6 +55,12 @@ typedef struct {
     struct arg_str *name;
     struct arg_int *type;
     struct arg_str *filter;
+    struct arg_str *passphrase;
+    struct arg_str *pmk;
+    struct arg_str *add_passphrase;
+    struct arg_str *add_pmk;
+    struct arg_int *group_data_prot;
+    struct arg_int *group_mgmt_prot;
     struct arg_lit *cancel;
     struct arg_int *id;
     struct arg_end *end;
@@ -66,6 +73,12 @@ typedef struct {
     struct arg_str *name;
     struct arg_int *type;
     struct arg_str *filter;
+    struct arg_str *passphrase;
+    struct arg_str *pmk;
+    struct arg_str *add_passphrase;
+    struct arg_str *add_pmk;
+    struct arg_int *group_data_prot;
+    struct arg_int *group_mgmt_prot;
     struct arg_lit *cancel;
     struct arg_int *id;
     struct arg_end *end;
@@ -283,6 +296,127 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
     return 0;
 }
 
+static bool decode_hex_string(const char *hex, uint8_t *out, size_t out_len)
+{
+    if (!hex || !out || strlen(hex) != out_len * 2) {
+        return false;
+    }
+
+    for (size_t i = 0; i < out_len; i++) {
+        const char high = hex[2 * i];
+        const char low = hex[2 * i + 1];
+        unsigned int byte;
+
+        if (!isxdigit((unsigned char)high) || !isxdigit((unsigned char)low) ||
+                sscanf(hex + 2 * i, "%2x", &byte) != 1) {
+            return false;
+        }
+        out[i] = (uint8_t)byte;
+    }
+    return true;
+}
+
+static bool add_passphrase_credential(wifi_nan_discovery_security_params_t *security_cfg,
+                                      const char *passphrase)
+{
+    if (security_cfg->num_credentials >= ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+        ESP_LOGE(TAG, "Too many security credentials (max %d)", ESP_WIFI_NAN_MAX_CREDS_PER_SVC);
+        return false;
+    }
+    if (!passphrase || !passphrase[0] || strlen(passphrase) >= MAX_PASSPHRASE_LEN) {
+        ESP_LOGE(TAG, "Invalid passphrase (1..%d characters)", MAX_PASSPHRASE_LEN - 1);
+        return false;
+    }
+
+    wifi_nan_credential_t *credential =
+        &security_cfg->creds[security_cfg->num_credentials++];
+    credential->csid = WIFI_NAN_CSID_NCS_SK_128;
+    credential->use_pmk = false;
+    strlcpy(credential->passphrase, passphrase, sizeof(credential->passphrase));
+    return true;
+}
+
+static bool add_pmk_credential(wifi_nan_discovery_security_params_t *security_cfg,
+                               const char *pmk_hex)
+{
+    if (security_cfg->num_credentials >= ESP_WIFI_NAN_MAX_CREDS_PER_SVC) {
+        ESP_LOGE(TAG, "Too many security credentials (max %d)", ESP_WIFI_NAN_MAX_CREDS_PER_SVC);
+        return false;
+    }
+
+    wifi_nan_credential_t *credential =
+        &security_cfg->creds[security_cfg->num_credentials];
+    credential->csid = WIFI_NAN_CSID_NCS_SK_128;
+    credential->use_pmk = true;
+    if (!decode_hex_string(pmk_hex, credential->pmk, sizeof(credential->pmk))) {
+        ESP_LOGE(TAG, "Invalid PMK: expected %d hexadecimal characters",
+                 ESP_WIFI_NAN_NDP_PMK_LEN * 2);
+        memset(credential, 0, sizeof(*credential));
+        return false;
+    }
+    security_cfg->num_credentials++;
+    return true;
+}
+
+static int configure_service_security(struct arg_str *passphrase,
+                                      struct arg_str *pmk,
+                                      struct arg_str *add_passphrase,
+                                      struct arg_str *add_pmk,
+                                      struct arg_int *group_data_prot,
+                                      struct arg_int *group_mgmt_prot,
+                                      wifi_nan_discovery_security_params_t *security_cfg)
+{
+    bool has_primary_credential = passphrase->count || pmk->count;
+
+    /* Always zero-init so the struct is valid even on the open (no-security)
+     * path, where the caller skips setting security_reqd/security_cfg. */
+    memset(security_cfg, 0, sizeof(*security_cfg));
+
+    if (!has_primary_credential) {
+        if (add_passphrase->count || add_pmk->count ||
+                group_data_prot->count || group_mgmt_prot->count) {
+            ESP_LOGE(TAG, "Security options require -p/--passphrase or -k/--pmk");
+            return -1;
+        }
+        return 0;
+    }
+
+    if (group_data_prot->count) {
+        if (group_data_prot->ival[0] < 0 || group_data_prot->ival[0] > 1) {
+            ESP_LOGE(TAG, "--group-data-prot must be 0 or 1");
+            return -1;
+        }
+        security_cfg->group_data_prot = group_data_prot->ival[0];
+    }
+    if (group_mgmt_prot->count) {
+        if (group_mgmt_prot->ival[0] < 0 || group_mgmt_prot->ival[0] > 1) {
+            ESP_LOGE(TAG, "--group-mgmt-prot must be 0 or 1");
+            return -1;
+        }
+        security_cfg->group_mgmt_prot = group_mgmt_prot->ival[0];
+    }
+
+    if (passphrase->count &&
+            !add_passphrase_credential(security_cfg, passphrase->sval[0])) {
+        return -1;
+    }
+    if (pmk->count && !add_pmk_credential(security_cfg, pmk->sval[0])) {
+        return -1;
+    }
+    if (add_passphrase->count &&
+            !add_passphrase_credential(security_cfg, add_passphrase->sval[0])) {
+        return -1;
+    }
+    if (add_pmk->count && !add_pmk_credential(security_cfg, add_pmk->sval[0])) {
+        return -1;
+    }
+
+    ESP_LOGI(TAG, "Service security: credentials=%u group_data_prot=%u group_mgmt_prot=%u",
+             security_cfg->num_credentials, security_cfg->group_data_prot,
+             security_cfg->group_mgmt_prot);
+    return 1;
+}
+
 static int wifi_cmd_nan_publish(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &pub_args);
@@ -307,6 +441,7 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
         .type = NAN_PUBLISH_UNSOLICITED,
         .single_replied_event = 1,
     };
+    wifi_nan_discovery_security_params_t security_cfg;
 
     if (pub_args.name->count) {
         strlcpy(publish.service_name, pub_args.name->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
@@ -318,6 +453,19 @@ static int wifi_cmd_nan_publish(int argc, char **argv)
 
     if (pub_args.filter->count) {
         strlcpy(publish.matching_filter, pub_args.filter->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
+    }
+
+    int security_enabled = configure_service_security(
+        pub_args.passphrase, pub_args.pmk,
+        pub_args.add_passphrase, pub_args.add_pmk,
+        pub_args.group_data_prot, pub_args.group_mgmt_prot, &security_cfg);
+    if (security_enabled < 0) {
+        return 1;
+    }
+    if (security_enabled) {
+        publish.security_reqd = 1;
+        publish.datapath_reqd = 1;
+        publish.security_cfg = &security_cfg;
     }
 
     if (!esp_wifi_nan_publish_service(&publish)) {
@@ -351,6 +499,7 @@ static int wifi_cmd_nan_subscribe(int argc, char **argv)
         .type = NAN_SUBSCRIBE_PASSIVE,
         .single_match_event = true,
     };
+    wifi_nan_discovery_security_params_t security_cfg;
 
     if (sub_args.name->count) {
         strlcpy(subscribe.service_name, sub_args.name->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
@@ -362,6 +511,19 @@ static int wifi_cmd_nan_subscribe(int argc, char **argv)
 
     if (sub_args.filter->count) {
         strlcpy(subscribe.matching_filter, sub_args.filter->sval[0], ESP_WIFI_MAX_SVC_NAME_LEN);
+    }
+
+    int security_enabled = configure_service_security(
+        sub_args.passphrase, sub_args.pmk,
+        sub_args.add_passphrase, sub_args.add_pmk,
+        sub_args.group_data_prot, sub_args.group_mgmt_prot, &security_cfg);
+    if (security_enabled < 0) {
+        return 1;
+    }
+    if (security_enabled) {
+        subscribe.security_reqd = 1;
+        subscribe.datapath_reqd = 1;
+        subscribe.security_cfg = &security_cfg;
     }
 
     if (!esp_wifi_nan_subscribe_service(&subscribe)) {
@@ -507,10 +669,16 @@ void register_nan(void)
     pub_args.name = arg_str0("n", "name", "<name>", "Name for the service");
     pub_args.type = arg_int0("t", "type", "<0/1>", "0 - Unsolicited(Default), 1 - Solicited");
     pub_args.filter = arg_str0("f", "filter", "<filter>", "Comma separated Matching Filter");
+    pub_args.passphrase = arg_str0("p", "passphrase", "<text>", "Service security passphrase");
+    pub_args.pmk = arg_str0("k", "pmk", "<hex>", "Service security PMK (64 hex characters)");
+    pub_args.add_passphrase = arg_str0("a", "add-passphrase", "<text>", "Additional service passphrase");
+    pub_args.add_pmk = arg_str0("A", "add-pmk", "<hex>", "Additional service PMK");
+    pub_args.group_data_prot = arg_int0("d", "group-data-prot", "<0|1>", "Protect group-addressed datapath traffic");
+    pub_args.group_mgmt_prot = arg_int0("m", "group-mgmt-prot", "<0|1>", "Protect group-addressed management frames");
     /* NAN Publish cancel parameters */
     pub_args.cancel = arg_lit0("C", "cancel", "Cancel a service");
     pub_args.id = arg_int0("i", "id", "<0-255>", "Publish service id");
-    pub_args.end = arg_end(1);
+    pub_args.end = arg_end(4);
 
     const esp_console_cmd_t pub_cmd = {
         .command = "publish",
@@ -526,10 +694,16 @@ void register_nan(void)
     sub_args.name = arg_str0("n", "name", "<name>", "Name for the service");
     sub_args.type = arg_int0("t", "type", "<0/1>", "0 - Passive(Default), 1 - Active");
     sub_args.filter = arg_str0("f", "filter", "<filter>", "Comma separated Matching Filter");
+    sub_args.passphrase = arg_str0("p", "passphrase", "<text>", "Service security passphrase");
+    sub_args.pmk = arg_str0("k", "pmk", "<hex>", "Service security PMK (64 hex characters)");
+    sub_args.add_passphrase = arg_str0("a", "add-passphrase", "<text>", "Additional service passphrase");
+    sub_args.add_pmk = arg_str0("A", "add-pmk", "<hex>", "Additional service PMK");
+    sub_args.group_data_prot = arg_int0("d", "group-data-prot", "<0|1>", "Protect group-addressed datapath traffic");
+    sub_args.group_mgmt_prot = arg_int0("m", "group-mgmt-prot", "<0|1>", "Protect group-addressed management frames");
     /* NAN Subscribe cancel parameters */
     sub_args.cancel = arg_lit0("C", "cancel", "Cancel a service");
     sub_args.id = arg_int0("i", "id", "<0-255>", "Subscribe service id");
-    sub_args.end = arg_end(1);
+    sub_args.end = arg_end(4);
 
     const esp_console_cmd_t sub_cmd = {
         .command = "subscribe",
@@ -632,6 +806,11 @@ void app_main(void)
     printf(" |  1. Subscriber can initiate datapath using 'ndp -I -p [pub_id]'  |\n");
     printf(" |  2. After NDP setup, use 'ping [Peer's IPv6]' to test datapath   |\n");
     printf(" |  3. Terminate the NDP using 'ndp -T'                             |\n");
+    printf(" |                                                                  |\n");
+    printf(" |  # NAN Security (per service) -                                 |\n");
+    printf(" |  1. Secure publish: publish -n TEST -p password                 |\n");
+    printf(" |  2. Secure subscribe: subscribe -n TEST -p password             |\n");
+    printf(" |  3. Add '-d 1 -m 1' to enable group data/mgmt protection       |\n");
     printf(" |                                                                  |\n");
     printf(" ====================================================================\n\n");
 
