@@ -650,6 +650,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
         goto err_deinit_port;
     }
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set device name, configure response data to be sent while advertising */
     rc = ble_svc_gap_device_name_set(cfg->device_name);
     if (rc != 0) {
@@ -663,6 +664,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
         resp_data.name_len = strlen(ble_svc_gap_device_name());
         resp_data.name_is_complete = 1;
     }
+#endif
 #endif
 
     /* Set manufacturer data if protocomm_ble_mfg_data points to valid data */

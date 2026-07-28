@@ -1002,7 +1002,7 @@ int ble_uart_install(const ble_uart_config_t *cfg)
         ble_hs_cfg.sm_mitm           = 0;
     }
 
-#if NIMBLE_BLE_CONNECT
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
 #endif
     ble_svc_gatt_init();
@@ -1018,12 +1018,14 @@ int ble_uart_install(const ble_uart_config_t *cfg)
 
         /* Best-effort: also set in the GAP service for peer reads.
          * Returns -1 on the stub path — fine, we already cached locally. */
-        rc = ble_svc_gap_device_name_set(s_dev_name);
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
+	rc = ble_svc_gap_device_name_set(s_dev_name);
         if (rc != 0) {
             ESP_LOGI(TAG, "ble_svc_gap_device_name_set rc=%d (GAP service stubbed?)",
                      rc);
             rc = 0;
         }
+#endif
     } else {
         s_dev_name[0] = '\0';
     }

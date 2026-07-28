@@ -215,6 +215,7 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
         os_mbuf_free_chain(m);
         return;
     }
+    /* Host path may block on the NimBLE event queue; must not run inside OS critical. */
     ble_transport_to_hs_acl(m);
 }
 #endif

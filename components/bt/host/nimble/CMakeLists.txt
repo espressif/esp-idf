@@ -170,6 +170,12 @@ else()
     endif()
 endif()
 
+if(CONFIG_BT_DUAL_MODE_ARCH AND CONFIG_BT_CONTROLLER_ENABLED)
+    list(APPEND nimble_host_srcs
+        "${CMAKE_CURRENT_LIST_DIR}/../../porting/mem/bt_osi_mem.c"
+    )
+endif()
+
 # Reuse the code from the controller to reduce flash usage
 if(CONFIG_BT_CONTROLLER_DISABLED OR NOT CONFIG_SOC_ESP_NIMBLE_CONTROLLER)
     list(APPEND nimble_host_srcs
@@ -179,9 +185,16 @@ if(CONFIG_BT_CONTROLLER_DISABLED OR NOT CONFIG_SOC_ESP_NIMBLE_CONTROLLER)
         "${CMAKE_CURRENT_LIST_DIR}/nimble/porting/nimble/src/mem.c"
         "${CMAKE_CURRENT_LIST_DIR}/nimble/porting/nimble/src/os_mbuf.c"
         "${CMAKE_CURRENT_LIST_DIR}/nimble/porting/nimble/src/os_msys_init.c"
-        "${CMAKE_CURRENT_LIST_DIR}/nimble/porting/npl/freertos/src/npl_os_freertos.c"
+        "${CMAKE_CURRENT_LIST_DIR}/../../porting/mem/bt_osi_mem.c"
     )
+    if(NOT CONFIG_BT_DUAL_MODE_ARCH)
+        list(APPEND nimble_host_srcs
+            "${CMAKE_CURRENT_LIST_DIR}/nimble/porting/npl/freertos/src/npl_os_freertos.c"
+        )
+    endif()
 endif()
+
+list(REMOVE_DUPLICATES nimble_host_srcs)
 
 list(APPEND nimble_host_include_dirs
     ${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/host/include
@@ -209,6 +222,7 @@ list(APPEND nimble_host_include_dirs
 
     ${CMAKE_CURRENT_LIST_DIR}/nimble/porting/nimble/include
     ${CMAKE_CURRENT_LIST_DIR}/port/include
+    ${CMAKE_CURRENT_LIST_DIR}/../../porting/include
     ${CMAKE_CURRENT_LIST_DIR}/nimble/nimble/transport/include
 )
 
@@ -218,12 +232,16 @@ if(CONFIG_BT_CONTROLLER_DISABLED)
     )
 endif()
 
-if(CONFIG_BT_CONTROLLER_DISABLED OR NOT CONFIG_SOC_ESP_NIMBLE_CONTROLLER)
+# Add NPL include directories based on which NPL implementation is being used
+if(CONFIG_BT_DUAL_MODE_ARCH)
+    # esp-idf NPL include already added above
+else()
+    # freertos NPL include needed for non-dual-mode targets
     list(APPEND nimble_host_include_dirs
-        ${CMAKE_CURRENT_LIST_DIR}/../../porting/include
         ${CMAKE_CURRENT_LIST_DIR}/nimble/porting/npl/freertos/include
     )
 endif()
+
 
 # BLE NIMBLE MESH (Deprecated)
 if(CONFIG_BT_NIMBLE_MESH)

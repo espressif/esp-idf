@@ -11,13 +11,20 @@ list(APPEND porting_priv_include_dirs
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# Memory functions are needed for all NIMBLE builds
 list(APPEND porting_srcs
     "${CMAKE_CURRENT_SOURCE_DIR}/mem/bt_osi_mem.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/mem/os_msys_init.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/mem/os_mempool.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/npl/freertos/src/npl_os_freertos.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/transport/src/hci_transport.c"
 )
+
+# NPL and transport are only for ESP NIMBLE controller targets
+if(CONFIG_SOC_ESP_NIMBLE_CONTROLLER)
+    list(APPEND porting_srcs
+        "${CMAKE_CURRENT_SOURCE_DIR}/npl/freertos/src/npl_os_freertos.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/transport/src/hci_transport.c"
+    )
+endif()
 
 if(CONFIG_BT_LE_HCI_INTERFACE_USE_RAM)
     if(CONFIG_BT_NIMBLE_ENABLED)

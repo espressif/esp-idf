@@ -28,6 +28,9 @@
 #include "services/dis/ble_svc_dis.h"
 #include "services/sps/ble_svc_sps.h"
 
+void ble_hs_lock(void);
+void ble_hs_unlock(void);
+
 #if CONFIG_BT_NIMBLE_HID_SERVICE
 
 static const char *TAG = "NIMBLE_HIDD";
@@ -231,7 +234,6 @@ static int nimble_hid_stop_gatts(esp_ble_hidd_dev_t *dev)
     ble_gatts_stop();
 
     ble_svc_hid_deinit();
-    ble_svc_hid_reset();
     ble_svc_dis_deinit();
     ble_svc_bas_deinit();
     ble_svc_sps_deinit();

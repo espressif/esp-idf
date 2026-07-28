@@ -289,9 +289,11 @@ void app_main(void)
     rc = gatt_svr_init();
     assert(rc == 0);
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name */
     rc = ble_svc_gap_device_name_set(device_name);
     assert(rc == 0);
+#endif
 #endif
 
     /* Start the task */

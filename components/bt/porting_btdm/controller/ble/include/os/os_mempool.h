@@ -180,9 +180,24 @@ typedef __uint128_t os_membuf_t;
 #endif /* OS_ALIGNMENT == * */
 #define OS_MEMPOOL_SIZE(n,blksize)      ((((blksize) + ((OS_ALIGNMENT)-1)) / (OS_ALIGNMENT)) * (n))
 
-/** Calculates the number of bytes required to initialize a memory pool. */
+/**
+ * Calculates the number of bytes required to initialize a memory pool.
+ * When OS_MEMPOOL_GUARD is enabled, one extra os_membuf_t word per block is
+ * included for the guard pattern written by os_mempool_init; the buffer passed
+ * to os_mempool_init must be at least this size.
+ */
+#if CONFIG_BT_NIMBLE_ENABLED
+#if MYNEWT_VAL(OS_MEMPOOL_GUARD)
+#define OS_MEMPOOL_BYTES(n,blksize)     \
+    (sizeof (os_membuf_t) * (OS_MEMPOOL_SIZE((n), (blksize)) + (n)))
+#else
 #define OS_MEMPOOL_BYTES(n,blksize)     \
     (sizeof (os_membuf_t) * OS_MEMPOOL_SIZE((n), (blksize)))
+#endif
+#else
+#define OS_MEMPOOL_BYTES(n,blksize)     \
+    (sizeof (os_membuf_t) * OS_MEMPOOL_SIZE((n), (blksize)))
+#endif
 
 #if SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED
 /**

@@ -150,13 +150,15 @@ static int blecs_gap_event(struct ble_cs_event *event, void *arg)
                 */
                ind ++;
                if (ind==1) {
-                struct ble_cs_event continue_event;
-                continue_event.type = BLE_CS_EVENT_SUBEVET_RESULT_CONTINUE;
-                continue_event.subev_result_continue = event->subev_result_continue;
-                ble_gatts_store_ranging_data(continue_event);
-                ble_gatts_indicate_ranging_data_ready(most_recent_local_ranging_counter);
-                idx = 0;
-                ind = 0;
+#if MYNEWT_VAL(BLE_GATTS) && CONFIG_BT_NIMBLE_RAS_SERVICE
+	           struct ble_cs_event continue_event;
+                   continue_event.type = BLE_CS_EVENT_SUBEVET_RESULT_CONTINUE;
+                   continue_event.subev_result_continue = event->subev_result_continue;
+                   ble_gatts_store_ranging_data(continue_event);
+                   ble_gatts_indicate_ranging_data_ready(most_recent_local_ranging_counter);
+                   idx = 0;
+                   ind = 0;
+#endif
                }
             }
 
@@ -253,7 +255,9 @@ bleprph_advertise(void)
 {
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
+#endif
     int rc;
     /**
      *  Set the advertisement data included in our advertisements:
@@ -400,7 +404,10 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                     event->notify_tx.indication);
 
         if (event->notify_tx.status == BLE_HS_EDONE) {
+#if MYNEWT_VAL(BLE_GATTS) && CONFIG_BT_NIMBLE_RAS_SERVICE
+    	    vTaskDelay(4000 / portTICK_PERIOD_MS);
             ble_gatts_indicate_control_point_response(event->notify_tx.attr_handle,most_recent_local_ranging_counter);
+#endif
         }
         return 0;
     case BLE_GAP_EVENT_SUBSCRIBE:
@@ -489,7 +496,9 @@ app_main(void)
     /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = bleprph_on_reset;
     ble_hs_cfg.sync_cb = bleprph_on_sync;
+#if MYNEWT_VAL(BLE_GATTS) && CONFIG_BT_NIMBLE_RAS_SERVICE
     ble_hs_cfg.gatts_register_cb = custom_gatt_svr_register_cb;
+#endif
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
     ble_hs_cfg.sm_io_cap = 0x03;
 #ifdef CONFIG_EXAMPLE_BONDING

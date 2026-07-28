@@ -8,6 +8,7 @@
 #define __ESP_NIMBLE_MEM_H__
 
 #include <stdlib.h>
+#include "bt_osi_mem.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,7 +102,9 @@ uint32_t nimble_mem_dbg_get_max_size_section(uint8_t index);
     void *p;                                                    \
     do {                                                        \
         p = nimble_mem_malloc(size);                            \
-        nimble_mem_dbg_record(p, size, __func__, __LINE__);     \
+        if (p) {                                                \
+            nimble_mem_dbg_record(p, size, __func__, __LINE__); \
+        }                                                       \
     } while (0);                                                \
     p;                                                          \
 })
@@ -111,7 +114,9 @@ uint32_t nimble_mem_dbg_get_max_size_section(uint8_t index);
     void *p;                                                    \
     do {                                                        \
         p = nimble_mem_calloc(count, size);                     \
-        nimble_mem_dbg_record(p, (count) * (size), __func__, __LINE__); \
+        if (p) {                                                \
+            nimble_mem_dbg_record(p, (count) * (size), __func__, __LINE__); \
+        }                                                       \
     } while (0);                                                \
     p;                                                          \
 })

@@ -54,7 +54,9 @@ static void print_conn_desc(struct ble_gap_conn_desc *desc) {
 static void start_advertising(void) {
     /* Local variables */
     int rc = 0;
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     const char *name;
+#endif
     struct ble_hs_adv_fields adv_fields = {0};
     struct ble_hs_adv_fields rsp_fields = {0};
     struct ble_gap_adv_params adv_params = {0};
@@ -62,6 +64,7 @@ static void start_advertising(void) {
     /* Set advertising flags */
     adv_fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set device name */
     name = ble_svc_gap_device_name();
     if (name == NULL) {
@@ -70,6 +73,7 @@ static void start_advertising(void) {
     adv_fields.name = (uint8_t *)name;
     adv_fields.name_len = strlen(name);
     adv_fields.name_is_complete = 1;
+#endif
 
     /* Set device tx power */
     adv_fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
@@ -364,6 +368,7 @@ int gap_init(void) {
     /* Local variables */
     int rc = 0;
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Call NimBLE GAP initialization API */
     ble_svc_gap_init();
 
@@ -374,5 +379,6 @@ int gap_init(void) {
                  DEVICE_NAME, rc);
         return rc;
     }
+#endif
     return rc;
 }
