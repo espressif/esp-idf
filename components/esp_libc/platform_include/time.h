@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@ extern "C" {
 #endif
 #ifndef CLOCK_BOOTTIME
 #define CLOCK_BOOTTIME (clockid_t)4
+#endif
+
+#ifndef TIME_UTC
+#define TIME_UTC 1
 #endif
 
 int clock_settime(clockid_t clock_id, const struct timespec *tp);
