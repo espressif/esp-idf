@@ -2345,6 +2345,11 @@
 #define AVDT_NUM_SEPS               UC_BT_A2DP_SEP_NUM_MAX
 #endif
 
+/* Maximum number of peer SEPs accepted in AVDTP Discover results. */
+#ifndef AVDT_DIS_RES_MAX_NUM_SEPS
+#define AVDT_DIS_RES_MAX_NUM_SEPS    32
+#endif
+
 /* Number of transport channels setup per media stream(audio or video) */
 #ifndef AVDT_NUM_CHANNELS
 
