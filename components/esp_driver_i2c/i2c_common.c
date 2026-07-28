@@ -210,7 +210,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
                 i2c_bus->pm_lock = NULL;
             }
 #endif
-            esp_clk_tree_enable_src(clk_src, false);
+            esp_clk_tree_release_src(clk_src);
 #if I2C_USE_RETENTION_LINK
             if (i2c_bus->is_lp_i2c == false) {
                 if (i2c_bus->retention_link_created) {
@@ -266,7 +266,7 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
     ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_STATE, TAG,
                         "group clock conflict, already is %d but attempt to %d", handle->clk_src, clk_src);
 
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), TAG, "clock source clock enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(clk_src), TAG, "clock source clock enable failed");
 
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &periph_src_clk_hz), TAG, "i2c get clock frequency error");
 

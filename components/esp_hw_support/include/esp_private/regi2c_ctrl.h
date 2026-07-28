@@ -33,7 +33,11 @@ extern "C" {
 
 static inline __attribute__((always_inline)) void ANA_I2C_SRC_CLOCK_ENABLE(bool enable) {
 #if SOC_CLK_ANA_I2C_MST_DEPENDS_ON_MODEM_APB
-    esp_clk_tree_enable_src(SOC_MOD_CLK_MODEM_APB, enable);
+    if (enable) {
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_MODEM_APB);
+    } else {
+        esp_clk_tree_release_src(SOC_MOD_CLK_MODEM_APB);
+    }
 #endif
 }
 

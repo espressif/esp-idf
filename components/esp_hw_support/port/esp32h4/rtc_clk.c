@@ -288,7 +288,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
         bool need_configure = false;
         if (!s_is_pll_acquired) {
             need_configure = !esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_BBPLL);
-            esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, true);
+            esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
             s_is_pll_acquired = true;
         }
         if (need_configure || (s_cur_pll_freq != (int)new_src_freq_mhz)) {
@@ -296,7 +296,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
         }
     } else if (new_src == SOC_CPU_CLK_SRC_XTAL_X2) {
         if (!s_is_xtal_x2_acquired) {
-            esp_clk_tree_enable_src(SOC_MOD_CLK_XTAL_X2, true);
+            esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2);
             s_is_xtal_x2_acquired = true;
         }
     }
@@ -308,14 +308,14 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t 
 {
     if ((old_src == SOC_CPU_CLK_SRC_PLL) && !s_bbpll_digi_consumers_ref_count) {
         assert(s_is_pll_acquired);
-        esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, false);
+        esp_clk_tree_release_src(SOC_MOD_CLK_BBPLL);
         s_is_pll_acquired = false;
         if (!esp_clk_tree_is_power_on(SOC_ROOT_CIRCUIT_CLK_BBPLL)) {
             s_cur_pll_freq = 0;
         }
     } else if (old_src == SOC_CPU_CLK_SRC_XTAL_X2) {
         assert(s_is_xtal_x2_acquired);
-        esp_clk_tree_enable_src(SOC_MOD_CLK_XTAL_X2, false);
+        esp_clk_tree_release_src(SOC_MOD_CLK_XTAL_X2);
         s_is_xtal_x2_acquired = false;
     }
 }

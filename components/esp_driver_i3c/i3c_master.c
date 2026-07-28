@@ -478,7 +478,7 @@ static esp_err_t i3c_master_bus_destroy(i3c_master_bus_handle_t bus_handle)
     }
 
     if (bus_handle->clock_source) {
-        esp_clk_tree_enable_src((soc_module_clk_t)bus_handle->clock_source, false);
+        esp_clk_tree_release_src((soc_module_clk_t)bus_handle->clock_source);
     }
 
 #if CONFIG_PM_ENABLE
@@ -743,7 +743,7 @@ esp_err_t i3c_new_master_bus(const i3c_master_bus_config_t *bus_config, i3c_mast
     uint32_t periph_src_clk_hz = 0;
     i3c_master_handle->clock_source = bus_config->clock_source;
 
-    esp_clk_tree_enable_src((soc_module_clk_t)i3c_master_handle->clock_source, true);
+    esp_clk_tree_acquire_src((soc_module_clk_t)i3c_master_handle->clock_source);
     PERIPH_RCC_ATOMIC() {
         i3c_master_ll_set_source_clk(i3c_master_handle->hal.dev, i3c_master_handle->clock_source);
     }

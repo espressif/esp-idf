@@ -11,7 +11,7 @@
 
 bool periph_rtc_dig_clk8m_enable(void)
 {
-    return esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, true) == ESP_OK;
+    return esp_clk_tree_acquire_src(SOC_MOD_CLK_RC_FAST) == ESP_OK;
 }
 
 uint32_t periph_rtc_dig_clk8m_get_freq(void)
@@ -25,18 +25,18 @@ uint32_t periph_rtc_dig_clk8m_get_freq(void)
 
 void periph_rtc_dig_clk8m_disable(void)
 {
-    (void)esp_clk_tree_enable_src(SOC_MOD_CLK_RC_FAST, false);
+    (void)esp_clk_tree_release_src(SOC_MOD_CLK_RC_FAST);
 }
 
 #if SOC_CLK_APLL_SUPPORTED
 void periph_rtc_apll_acquire(void)
 {
-    (void)esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
+    (void)esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL);
 }
 
 void periph_rtc_apll_release(void)
 {
-    (void)esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, false);
+    (void)esp_clk_tree_release_src(SOC_MOD_CLK_APLL);
 }
 
 esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz)
@@ -48,13 +48,13 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz
 #if SOC_CLK_MPLL_SUPPORTED
 esp_err_t IRAM_ATTR periph_rtc_mpll_acquire(void)
 {
-    // For IRAM compatibility, we do not use esp_clk_tree_enable_src here
+    // For IRAM compatibility, we do not use esp_clk_tree_acquire_src here
     return esp_clk_tree_mpll_acquire();
 }
 
 void periph_rtc_mpll_release(void)
 {
-    // For IRAM compatibility, we do not use esp_clk_tree_enable_src here
+    // For IRAM compatibility, we do not use esp_clk_tree_release_src here
     (void)esp_clk_tree_mpll_release();
 }
 

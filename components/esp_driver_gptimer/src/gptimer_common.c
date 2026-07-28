@@ -91,7 +91,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     uint32_t counter_src_hz = 0;
     int timer_id = timer->timer_id;
     int group_id = timer->group->group_id;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src(src_clk, true), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(src_clk), TAG, "clock source enable failed");
     timer->clk_src = src_clk;
 
     // get clock source frequency

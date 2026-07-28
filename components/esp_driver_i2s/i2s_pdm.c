@@ -88,7 +88,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     i2s_hal_clock_info_t clk_info;
     // Calculate clock parameters before enabling clock source
     ESP_RETURN_ON_ERROR(i2s_pdm_tx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), TAG, "clock source enable failed");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
@@ -120,7 +120,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     return ret;
 
 err:
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    esp_clk_tree_release_src((soc_module_clk_t)clk_src);
     return ret;
 }
 
@@ -301,7 +301,7 @@ esp_err_t i2s_channel_reconfig_pdm_tx_clock(i2s_chan_handle_t handle, const i2s_
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
 
     // disable old clock source after new clock is successfully configured
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
     if (old_clk_src != clk_cfg->clk_src) {
@@ -359,7 +359,7 @@ esp_err_t i2s_channel_reconfig_pdm_tx_slot(i2s_chan_handle_t handle, const i2s_p
 #endif
         ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "update clock failed");
         // disable old clock source after new clock is successfully configured
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
+        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
     }
 
     xSemaphoreGive(handle->mutex);
@@ -461,7 +461,7 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
      * can be set while ref_cnt is still < 2 (which is the threshold for freq change) */
     ESP_RETURN_ON_ERROR(i2s_pdm_rx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
 
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), TAG, "clock source enable failed");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
@@ -488,7 +488,7 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
     return ret;
 
 err:
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    esp_clk_tree_release_src((soc_module_clk_t)clk_src);
     return ret;
 }
 
@@ -670,7 +670,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
 
     // disable old clock source after new clock is successfully configured
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
     if (old_clk_src != clk_cfg->clk_src) {
@@ -728,7 +728,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_p
 #endif
         ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "update clock failed");
         // disable old clock source after new clock is successfully configured
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
+        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
     }
 
     xSemaphoreGive(handle->mutex);

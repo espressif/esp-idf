@@ -35,7 +35,7 @@ static esp_err_t gpio_filter_destroy(gpio_pin_glitch_filter_t *filter)
         io_mux_release_clock_source(filter->clk_src);
     }
     if (filter->clk_src != SOC_MOD_CLK_INVALID) {
-        esp_clk_tree_enable_src(filter->clk_src, false);
+        esp_clk_tree_release_src(filter->clk_src);
     }
 
 #if CONFIG_PM_ENABLE
@@ -103,7 +103,7 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
     filter->io_mux_clk_acquired = false;
 
     soc_module_clk_t clk_src = config->clk_src ? config->clk_src : GLITCH_FILTER_CLK_SRC_DEFAULT;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), err, TAG, "enable IOMUX clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable IOMUX clock source failed");
     filter->clk_src = clk_src;
     ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IOMUX clock source failed");
     filter->io_mux_clk_acquired = true;

@@ -57,7 +57,7 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
 
     /* Acquire the generator clock and resolve its frequency */
     uint32_t clk_freq = 0;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)handle->cfg.clk_src, true), err_handle, TAG, "enable clock failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)handle->cfg.clk_src), err_handle, TAG, "enable clock failed");
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)handle->cfg.clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq),
                       err_clk, TAG, "get clock frequency failed");
 
@@ -101,7 +101,7 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
 err_dereg:
     dac_priv_channel_deregister(cos_cfg->chan_id);
 err_clk:
-    esp_clk_tree_enable_src((soc_module_clk_t)handle->cfg.clk_src, false);
+    esp_clk_tree_release_src((soc_module_clk_t)handle->cfg.clk_src);
 err_handle:
     free(handle);
     return ret;
@@ -118,7 +118,7 @@ esp_err_t dac_cosine_del_channel(dac_cosine_handle_t handle)
     ESP_RETURN_ON_ERROR(dac_priv_channel_deregister(handle->cfg.chan_id), TAG,
                         "deregister dac channel %d failed", handle->cfg.chan_id);
     ESP_RETURN_ON_ERROR(dac_priv_sintx_release(), TAG, "release dac sintx generator failed");
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)handle->cfg.clk_src, false), TAG, "disable clock failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)handle->cfg.clk_src), TAG, "disable clock failed");
     free(handle);
 
     return ESP_OK;

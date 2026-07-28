@@ -108,7 +108,7 @@ static void test_timer_init(int mode, int priority, test_intr_args_ctx_t *arg)
 
     // Select clock source and enable module clock
     // Enable the default clock source PLL_F80M
-    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F80M, true);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F80M);
     TIMER_RCC_ATOMIC() {
         timer_ll_set_clock_source(group_id, timer_id, GPTIMER_CLK_SRC_DEFAULT);
         timer_ll_enable_clock(group_id, timer_id, true);

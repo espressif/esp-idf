@@ -21,7 +21,7 @@ extern "C" {
  *
  * @return true: success for enable the RC_FAST clock, false: RC_FAST clock enable failed
  */
-bool periph_rtc_dig_clk8m_enable(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
+bool periph_rtc_dig_clk8m_enable(void) __attribute__((deprecated("Please use esp_clk_tree_acquire_src instead")));
 
 /**
  * @brief This function is used to disable the digital RC_FAST clock, which should be called
@@ -30,7 +30,7 @@ bool periph_rtc_dig_clk8m_enable(void) __attribute__((deprecated("Please use esp
  * @note If this function is called a number of times, the `periph_rtc_dig_clk8m_disable`
  *       function needs to be called same times to disable.
  */
-void periph_rtc_dig_clk8m_disable(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
+void periph_rtc_dig_clk8m_disable(void) __attribute__((deprecated("Please use esp_clk_tree_release_src instead")));
 
 /**
  * @brief This function is used to get the real clock frequency value of RC_FAST clock
@@ -43,12 +43,12 @@ uint32_t periph_rtc_dig_clk8m_get_freq(void) __attribute__((deprecated("Please u
 /**
  * @brief Enable APLL power if it has not enabled
  */
-void periph_rtc_apll_acquire(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
+void periph_rtc_apll_acquire(void) __attribute__((deprecated("Please use esp_clk_tree_acquire_src instead")));
 
 /**
  * @brief Shut down APLL power if no peripherals using APLL
  */
-void periph_rtc_apll_release(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
+void periph_rtc_apll_release(void) __attribute__((deprecated("Please use esp_clk_tree_release_src instead")));
 
 /**
  * @brief Calculate and set APLL coefficients by given frequency
@@ -76,12 +76,12 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq_hz, uint32_t *real_freq_hz
 /**
  * @brief Enable MPLL power if it has not enabled
  */
-esp_err_t periph_rtc_mpll_acquire(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
+esp_err_t periph_rtc_mpll_acquire(void) __attribute__((deprecated("Please use esp_clk_tree_acquire_src instead")));
 
 /**
  * @brief Shut down MPLL power if no peripherals using APLL
  */
-void periph_rtc_mpll_release(void) __attribute__((deprecated("Please use esp_clk_tree_enable_src instead")));
+void periph_rtc_mpll_release(void) __attribute__((deprecated("Please use esp_clk_tree_release_src instead")));
 
 /**
  * @brief Configure MPLL frequency

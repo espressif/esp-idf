@@ -289,7 +289,7 @@ static uint32_t init_gpspi_clock(esp_flash_t *chip, const esp_flash_spi_device_c
     uint32_t clk_src_freq = 0;
     spi_clock_source_t clk_src = config->clock_source ? config->clock_source : SPI_CLK_SRC_DEFAULT;
 
-    esp_clk_tree_enable_src(clk_src, true);
+    esp_clk_tree_acquire_src(clk_src);
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq);
 
     // Enable GPSPI clock
@@ -354,7 +354,7 @@ static void deinit_gpspi_clock(esp_flash_t *chip)
     }
 
     // Disable the clock source
-    esp_clk_tree_enable_src(chip->clock_source, false);
+    esp_clk_tree_release_src(chip->clock_source);
 #endif // !CONFIG_IDF_TARGET_ESP32
 }
 

@@ -402,7 +402,7 @@ end:
  * change.
  *
  * Public API entry points:
- *   - `esp_clk_tree_enable_src(clk, true/false)`     -> acquire / release
+ *   - `esp_clk_tree_acquire_src/release(clk)`       -> acquire / release
  *   - `esp_clk_tree_src_select_upstream(clk, src)`   -> mux selection
  *   - `esp_clk_tree_src_set_freq_hz(clk, hz, &real)` -> divider selection
  * The engine functions below are the internal targets the per-target

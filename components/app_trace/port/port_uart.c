@@ -227,7 +227,7 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
         uint32_t sclk_hz;
         esp_clk_tree_src_get_freq_hz(UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_hz);
         /* Enable the default clock source */
-        esp_clk_tree_enable_src(UART_SCLK_DEFAULT, true);
+        esp_clk_tree_acquire_src(UART_SCLK_DEFAULT);
 
         /* Initialize UART HAL (sets default 8N1 mode) */
         uart_hal_init(&uart_data->hal_ctx, uart_config->uart_num);
@@ -297,7 +297,7 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
 err_alloc_msg_buff:
     heap_caps_free(uart_data->tx_ring.buffer);
 err_init_ring_buff:
-    esp_clk_tree_enable_src(UART_SCLK_DEFAULT, false);
+    esp_clk_tree_release_src(UART_SCLK_DEFAULT);
     PERIPH_RCC_ATOMIC() {
         uart_ll_sclk_disable(uart_data->hal_ctx.dev);
     }

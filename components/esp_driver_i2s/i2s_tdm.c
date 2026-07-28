@@ -96,7 +96,7 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     i2s_hal_clock_info_t clk_info;
     // Calculate clock parameters before enabling clock source
     ESP_RETURN_ON_ERROR(i2s_tdm_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
-    ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), TAG, "clock source enable failed");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
@@ -126,7 +126,7 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     return ret;
 
 err:
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, false);
+    esp_clk_tree_release_src((soc_module_clk_t)clk_src);
     return ret;
 }
 
@@ -394,7 +394,7 @@ esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
 
     // disable old clock source after new clock is successfully configured
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
 
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
@@ -453,7 +453,7 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
 #endif
         ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "update clock failed");
         // disable old clock source after new clock is successfully configured
-        ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)old_clk_src, false), err, TAG, "clock source disable failed");
+        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
     }
 
     /* Reset queue (skip when no GDMA path is in use) */

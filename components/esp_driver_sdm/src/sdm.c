@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -172,7 +172,7 @@ static esp_err_t sdm_group_install(sdm_group_t *group, soc_module_clk_t clk_src)
     }
 #endif // SDM_USE_RETENTION_LINK
 
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(clk_src, true), err, TAG, "enable clock source failed for group %d", group_id);
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable clock source failed for group %d", group_id);
     group->clk_src = clk_src;
     // SDM clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well
     ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IO MUX clock source failed for group %d", group_id);
@@ -212,7 +212,7 @@ err:
         group->io_mux_clk_acquired = false;
     }
     if (group->clk_src != SOC_MOD_CLK_INVALID) {
-        esp_clk_tree_enable_src(group->clk_src, false);
+        esp_clk_tree_release_src(group->clk_src);
         group->clk_src = SOC_MOD_CLK_INVALID;
     }
     _lock_release(&s_platform.mutex);
@@ -231,7 +231,7 @@ static void sdm_group_uninstall(sdm_group_t *group)
         group->io_mux_clk_acquired = false;
     }
     if (group->clk_src != SOC_MOD_CLK_INVALID) {
-        esp_clk_tree_enable_src(group->clk_src, false);
+        esp_clk_tree_release_src(group->clk_src);
         group->clk_src = SOC_MOD_CLK_INVALID;
     }
 

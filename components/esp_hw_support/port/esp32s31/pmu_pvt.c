@@ -17,6 +17,7 @@
 #include "pmu_param.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "soc/regi2c_dig_reg.h"
 #include "regi2c_ctrl.h"
 #include "soc/rtc.h"
@@ -162,7 +163,7 @@ void pvt_auto_dbias_enable(bool enable)
             if (pvt_enable_flag == true) {
                 return;
             }
-            esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, true);
+            esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
             pvt_auto_dbias_init();
             charge_pump_init();
             pvt_func_enable(true);
@@ -174,7 +175,7 @@ void pvt_auto_dbias_enable(bool enable)
             }
             charge_pump_enable(false);
             pvt_func_enable(false);
-            esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, false);
+            esp_clk_tree_release_src(SOC_MOD_CLK_BBPLL);
             pvt_enable_flag = false;
         }
     }

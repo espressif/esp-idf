@@ -164,7 +164,7 @@ esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq
     s_ddp->periph_dev = (void *)SPI_LL_GET_HW(DAC_DMA_PERIPH_SPI_HOST);
 
     /* Configure clock source and frequency */
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), err, TAG, "enable DAC digital clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), err, TAG, "enable DAC digital clock source failed");
     s_ddp->clk_src = clk_src;
     /* When transmit alternately, twice frequency is needed to guarantee the convert frequency in one channel */
     uint32_t trans_freq_hz = freq_hz * (is_alternate ? 2 : 1);
@@ -212,7 +212,7 @@ esp_err_t dac_priv_dma_deinit(void)
 
     if (s_ddp->clk_src) {
         dac_ll_dma_clk_inv(false);
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)s_ddp->clk_src, false), TAG, "disable DAC digital clock source failed");
+        ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)s_ddp->clk_src), TAG, "disable DAC digital clock source failed");
         s_ddp->clk_src = 0;
     }
 

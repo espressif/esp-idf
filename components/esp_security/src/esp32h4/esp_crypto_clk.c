@@ -25,7 +25,11 @@ DEFINE_CRIT_SECTION_LOCK_STATIC(s_crypto_common_clk_mux);
 static void esp_crypto_pll_f96m_enable(bool enable)
 {
 #if !NON_OS_BUILD
-    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F96M, enable);
+    if (enable) {
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F96M);
+    } else {
+        esp_clk_tree_release_src(SOC_MOD_CLK_PLL_F96M);
+    }
 #else
     /* Bootloader: no esp_clk_tree; toggle the ref gate directly. */
     _clk_gate_ll_ref_96m_clk_en(enable);

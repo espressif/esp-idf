@@ -1091,7 +1091,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "invalid src_clk");
 
     // Enable the newly selected clock source
-    esp_clk_tree_enable_src(uart_sclk_sel, true);
+    esp_clk_tree_acquire_src(uart_sclk_sel);
 
     bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -1123,12 +1123,12 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
     // Disable the previously selected clock source, and update the new source in context
     soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
-    esp_clk_tree_enable_src(uart_old_sclk_sel, false);
+    esp_clk_tree_release_src(uart_old_sclk_sel);
     if (success) {
         uart_context[uart_num].sclk_sel = uart_sclk_sel;
     } else {
         uart_context[uart_num].sclk_sel = -1;
-        esp_clk_tree_enable_src(uart_sclk_sel, false);
+        esp_clk_tree_release_src(uart_sclk_sel);
         ESP_LOGE(UART_TAG, "baud rate unachievable");
         return ESP_FAIL;
     }
@@ -2090,7 +2090,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
             default_sclk = LP_UART_SCLK_DEFAULT;
         }
 #endif
-        esp_clk_tree_enable_src(default_sclk, true);
+        esp_clk_tree_acquire_src(default_sclk);
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
         if (uart_num < SOC_UART_HP_NUM) {
             PERIPH_RCC_ATOMIC() {
@@ -2143,7 +2143,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     p_uart_obj[uart_num] = NULL;
 
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-        esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
+        esp_clk_tree_release_src(uart_context[uart_num].sclk_sel);
         uart_context[uart_num].sclk_sel = -1;
     }
 
@@ -2344,7 +2344,7 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
         uart_sclk_sel = (soc_module_clk_t)((config->source_clk) ? config->source_clk : UART_SCLK_DEFAULT); // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
         uint32_t sclk_freq = 0;
         ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), err, UART_TAG, "invalid source_clk");
-        esp_clk_tree_enable_src(uart_sclk_sel, true);
+        esp_clk_tree_acquire_src(uart_sclk_sel);
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
         PERIPH_RCC_ATOMIC() {
             uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
@@ -2427,7 +2427,7 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     if (deinit) { // release the port
         uart_release_pin(uart_num, true, true, true, true, true, true);
         if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-            esp_clk_tree_enable_src(uart_context[uart_num].sclk_sel, false);
+            esp_clk_tree_release_src(uart_context[uart_num].sclk_sel);
             uart_context[uart_num].sclk_sel = -1;
         }
         uart_module_disable(uart_num);

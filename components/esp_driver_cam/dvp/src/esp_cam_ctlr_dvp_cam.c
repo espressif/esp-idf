@@ -347,7 +347,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
     }
 
 #if CONFIG_IDF_TARGET_ESP32S31
-    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)CAM_CORE_CLK_SRC_DEFAULT, true));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)CAM_CORE_CLK_SRC_DEFAULT));
 #endif
 
     PERIPH_RCC_ACQUIRE_ATOMIC(cam_periph_signals.buses[ctlr_id].module, ref_count) {
@@ -361,7 +361,7 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
         }
     }
 
-    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src));
     s_dvp_clk_src[ctlr_id] = (soc_module_clk_t)clk_src;
     PERIPH_RCC_ATOMIC() {
         cam_ll_enable_clk(ctlr_id, true);
@@ -468,12 +468,12 @@ esp_err_t esp_cam_ctlr_dvp_deinit(int ctlr_id)
     }
 
     if (s_dvp_clk_src[ctlr_id]) {
-        esp_clk_tree_enable_src(s_dvp_clk_src[ctlr_id], false);
+        esp_clk_tree_release_src(s_dvp_clk_src[ctlr_id]);
         s_dvp_clk_src[ctlr_id] = 0;
     }
 
 #if CONFIG_IDF_TARGET_ESP32S31
-    esp_clk_tree_enable_src((soc_module_clk_t)CAM_CORE_CLK_SRC_DEFAULT, false);
+    esp_clk_tree_release_src((soc_module_clk_t)CAM_CORE_CLK_SRC_DEFAULT);
 #endif
 
     return ESP_OK;

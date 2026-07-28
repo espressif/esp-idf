@@ -598,7 +598,7 @@ static esp_err_t parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
         parlio_unregister_unit_from_group(&rx_unit->base);
     }
     if (rx_unit->clk_src) {
-        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)rx_unit->clk_src, false), TAG, "clock source disable failed");
+        ESP_RETURN_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)rx_unit->clk_src), TAG, "clock source disable failed");
     }
     /* Free the RX unit */
     free(rx_unit);
@@ -673,7 +673,7 @@ esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_un
     }
     parlio_ll_rx_start(hal->regs, false);
     /* parlio_ll_clock_source_t and parlio_clock_source_t are binary compatible if the clock source is from internal */
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(config->clk_src), true), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(config->clk_src)), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
     /* Set the data width */
     parlio_ll_rx_set_bus_width(hal->regs, config->data_width);

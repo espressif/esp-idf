@@ -113,7 +113,7 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
 #endif //CONFIG_PM_ENABLE
 
     sdmmc_hal_init(&ctlr->hal);
-    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src(SDMMC_CLK_SRC_DEFAULT, true), err, TAG, "failed to acquire clk");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(SDMMC_CLK_SRC_DEFAULT), err, TAG, "failed to acquire clk");
     uint32_t src_freq_hz = 0;
     esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_freq_hz);
     ESP_EARLY_LOGI(TAG, "src_freq_hz: %d", src_freq_hz);
@@ -441,7 +441,7 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
 #endif
 
 #if SDMMC_LL_MPLL_SUPPORTED
-    esp_clk_tree_enable_src(SOC_MOD_CLK_MPLL, false);
+    esp_clk_tree_release_src(SOC_MOD_CLK_MPLL);
 #endif
 
     if (ctlr_ctx->mutex) {
@@ -1096,7 +1096,7 @@ static esp_err_t sd_host_reset(sd_host_sdmmc_ctlr_t *ctlr)
  */
 static void sd_host_set_clk_div(sd_host_sdmmc_ctlr_t *ctlr, soc_periph_sdmmc_clk_src_t src, int div)
 {
-    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)src, true));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)src));
     PERIPH_RCC_ATOMIC() {
         sdmmc_ll_set_clock_div(ctlr->hal.dev, div);
         sdmmc_ll_select_clk_source(ctlr->hal.dev, src);
