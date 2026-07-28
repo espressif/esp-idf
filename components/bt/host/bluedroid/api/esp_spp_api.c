@@ -24,7 +24,7 @@ esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_profile_cb_set(BTC_PID_SPP, callback);
@@ -45,8 +45,8 @@ esp_err_t esp_spp_init(esp_spp_mode_t mode)
 
 esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (!cfg || (cfg->mode == ESP_SPP_MODE_VFS && (cfg->tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE ||
@@ -68,7 +68,7 @@ esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 
 esp_err_t esp_spp_deinit(void)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -81,10 +81,14 @@ esp_err_t esp_spp_deinit(void)
 
 esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     tSDP_UUID sdp_uuid;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     sdp_uuid.len = 16;
     memcpy(sdp_uuid.uu.uuid128, UUID_SPP, sizeof(sdp_uuid.uu.uuid128));
@@ -104,9 +108,13 @@ esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr)
 esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
                           esp_spp_role_t role, uint8_t remote_scn, esp_bd_addr_t peer_bd_addr)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (peer_bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (sec_mask != ESP_SPP_SEC_NONE &&
         sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
@@ -129,8 +137,8 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
 
 esp_err_t esp_spp_disconnect(uint32_t handle)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -157,8 +165,8 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
 
 esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (cfg == NULL || cfg->name == NULL || strlen(cfg->name) > ESP_SPP_SERVER_NAME_MAX) {
@@ -194,8 +202,8 @@ esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg)
 
 esp_err_t esp_spp_stop_srv(void)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -208,8 +216,8 @@ esp_err_t esp_spp_stop_srv(void)
 
 esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
 {
-    btc_msg_t msg;
-    btc_spp_args_t arg;
+    btc_msg_t msg = {0};
+    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if ((scn == 0) || (scn >= PORT_MAX_RFC_PORTS)) {
@@ -240,7 +248,7 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
 
 esp_err_t esp_spp_vfs_register(void)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -252,7 +260,7 @@ esp_err_t esp_spp_vfs_register(void)
 
 esp_err_t esp_spp_vfs_unregister(void)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;

@@ -109,6 +109,7 @@ tHID_STATUS hidh_conn_reg (void)
     }
 
     for (xx = 0; xx < HID_HOST_MAX_DEVICES; xx++) {
+        memset(&hh_cb.devices[xx], 0, sizeof(tHID_HOST_DEV_CTB));
         hh_cb.devices[xx].in_use = FALSE ;
         hh_cb.devices[xx].delay_remove = FALSE;
         hh_cb.devices[xx].conn.conn_state = HID_CONN_STATE_UNUSED;
@@ -515,7 +516,7 @@ static void hidh_l2cif_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     }
 
     if (p_hcon == NULL) {
-        HIDH_TRACE_WARNING ("HID-Host Rcvd L2CAP cfg ind, unknown CID: 0x%x", l2cap_cid);
+        HIDH_TRACE_WARNING ("HID-Host Rcvd L2CAP cfg cfm, unknown CID: 0x%x", l2cap_cid);
         return;
     }
 
@@ -833,6 +834,7 @@ static void hidh_l2cif_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
 tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
                                 UINT16 data, UINT8 report_id, BT_HDR *buf)
 {
+    tHID_STATUS rc = HID_SUCCESS;
     tHID_CONN   *p_hcon = &hh_cb.devices[dhandle].conn;
     BT_HDR      *p_buf;
     UINT8       *p_out;
@@ -845,17 +847,13 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
     BOOLEAN     blank_datc = FALSE;
 
     if (!BTM_IsAclConnectionUp(hh_cb.devices[dhandle].addr, BT_TRANSPORT_BR_EDR)) {
-        if (buf) {
-            osi_free ((void *)buf);
-        }
-        return ( HID_ERR_NO_CONNECTION );
+        rc = HID_ERR_NO_CONNECTION;
+        goto error;
     }
 
     if (p_hcon->conn_flags & HID_CONN_FLAGS_CONGESTED) {
-        if (buf) {
-            osi_free ((void *)buf);
-        }
-        return ( HID_ERR_CONGESTED );
+        rc = HID_ERR_CONGESTED;
+        goto error;
     }
 
     switch ( trans_type ) {
@@ -874,7 +872,8 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
         buf_size = HID_INTERRUPT_BUF_SIZE;
         break;
     default:
-        return (HID_ERR_INVALID_PARAM) ;
+        rc = HID_ERR_INVALID_PARAM;
+        goto error;
     }
 
     if ( trans_type == HID_TRANS_SET_IDLE ) {
@@ -886,7 +885,8 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
     do {
         if ( buf == NULL || blank_datc ) {
             if ((p_buf = (BT_HDR *)osi_malloc(buf_size)) == NULL) {
-                return (HID_ERR_NO_RESOURCES);
+                rc = HID_ERR_NO_RESOURCES;
+                goto error;
             }
 
             p_buf->offset = L2CAP_MIN_OFFSET;
@@ -896,7 +896,8 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
             blank_datc = FALSE;
         } else if ( (buf->len > (p_hcon->rem_mtu_size - 1))) {
             if ((p_buf = (BT_HDR *)osi_malloc(buf_size)) == NULL) {
-                return (HID_ERR_NO_RESOURCES);
+                rc = HID_ERR_NO_RESOURCES;
+                goto error;
             }
 
             p_buf->offset = L2CAP_MIN_OFFSET;
@@ -904,11 +905,13 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
             data_size = buf->len;
             bytes_copied = p_hcon->rem_mtu_size - 1;
         } else {
-            p_buf = buf ;
+            p_buf = buf;
             p_buf->offset -= 1;
             seg_req = FALSE;
             data_size = buf->len;
             bytes_copied = buf->len;
+            // The ownership of buf has been handed over to p_buf
+            buf = NULL;
         }
 
         p_out         = (UINT8 *)(p_buf + 1) + p_buf->offset;
@@ -937,7 +940,8 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
 
         /* Send the buffer through L2CAP */
         if (L2CA_DataWrite(cid, p_buf) == L2CAP_DW_FAILED) {
-            return (HID_ERR_CONGESTED);
+            rc = HID_ERR_CONGESTED;
+            goto error;
         }
 
         if (data_size) {
@@ -950,6 +954,12 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
     } while ((data_size != 0) || blank_datc ) ;
 
     return (HID_SUCCESS);
+
+error:
+    if (buf) {
+        osi_free ((void *)buf);
+    }
+    return rc;
 }
 /*******************************************************************************
 **
@@ -1018,7 +1028,7 @@ BOOLEAN hidh_conn_is_orig(UINT8 dhandle)
 **
 ** Description      This function finds a connection control block based on CID
 **
-** Returns          address of control block, or NULL if not found
+** Returns          index of connection, or HID_HOST_MAX_DEVICES if not found
 **
 *******************************************************************************/
 static UINT8 find_conn_by_cid (UINT16 cid)

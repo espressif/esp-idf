@@ -451,6 +451,10 @@ static void hidd_l2cif_disconnect_cfm(uint16_t cid, uint16_t result)
     }
     if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
         HIDD_TRACE_EVENT("%s: INTR and CTRL disconnected", __func__);
+        if (hd_cb.pending_data) {
+            osi_free(hd_cb.pending_data);
+            hd_cb.pending_data = NULL;
+        }
         hd_cb.device.state = HIDD_DEV_NO_CONN;
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
         if (hd_cb.pending_vc_unplug) {
@@ -667,6 +671,7 @@ tHID_STATUS hidd_conn_initiate(void)
     if ((p_dev->conn.ctrl_cid = L2CA_ConnectReq(HID_PSM_CONTROL, p_dev->addr)) == 0) {
         HIDD_TRACE_WARNING("%s: could not start L2CAP connection", __func__);
         hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, HID_ERR_L2CAP_FAILED, NULL);
+        return HID_ERR_L2CAP_FAILED;
     } else {
         p_dev->conn.conn_state = HID_CONN_STATE_CONNECTING_CTRL;
     }
