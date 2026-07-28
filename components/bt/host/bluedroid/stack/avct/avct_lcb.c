@@ -364,7 +364,7 @@ void avct_lcb_dealloc(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 
     AVCT_TRACE_DEBUG("%s Freeing LCB", __func__);
     osi_free(p_lcb->p_rx_msg);
-    fixed_queue_free(p_lcb->tx_q, NULL);
+    fixed_queue_free(p_lcb->tx_q, osi_free_func);
     memset(p_lcb, 0, sizeof(tAVCT_LCB));
 }
 

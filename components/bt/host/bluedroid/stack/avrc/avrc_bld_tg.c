@@ -87,15 +87,17 @@ static tAVRC_STS avrc_bld_get_capability_rsp (tAVRC_GET_CAPS_RSP *p_rsp, BT_HDR 
         }
         len += count * 3;
     } else {
+        UINT8 valid_count = 0;
         p_event_id = p_rsp->param.event_id;
-        *p_count = 0;
+        *p_count -= count;
         for (xx = 0; xx < count; xx++) {
             if (AVRC_IS_VALID_EVENT_ID(p_event_id[xx])) {
-                (*p_count)++;
+                valid_count++;
                 UINT8_TO_BE_STREAM(p_data, p_event_id[xx]);
             }
         }
-        len += (*p_count);
+        *p_count += valid_count;
+        len += valid_count;
     }
     UINT16_TO_BE_STREAM(p_len, len);
     p_pkt->len = (p_data - p_start);
@@ -314,12 +316,6 @@ static tAVRC_STS avrc_bld_app_setting_text_rsp (tAVRC_GET_APP_ATTR_TXT_RSP *p_rs
     p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     p_data = p_len = p_start + 2; /* pdu + rsvd */
 
-    /*
-     * NOTE: The buffer is allocated within avrc_bld_init_rsp_buffer(), and is
-     * always of size BT_DEFAULT_BUFFER_SIZE.
-     */
-    len_left = BT_DEFAULT_BUFFER_SIZE - BT_HDR_SIZE - p_pkt->offset - p_pkt->len;
-
     BE_STREAM_TO_UINT16(len, p_data);
     p_count = p_data;
 
@@ -331,6 +327,7 @@ static tAVRC_STS avrc_bld_app_setting_text_rsp (tAVRC_GET_APP_ATTR_TXT_RSP *p_rs
     }
 
     for (xx = 0; xx < p_rsp->num_attr; xx++) {
+        len_left = (UINT16)(((UINT8 *)p_pkt + BT_DEFAULT_BUFFER_SIZE) - p_data);
         if  (len_left < (p_rsp->p_attrs[xx].str_len + 4)) {
             AVRC_TRACE_ERROR("avrc_bld_app_setting_text_rsp out of room %d(str_len:%d, left:%d)",
                              xx, p_rsp->p_attrs[xx].str_len, len_left);
@@ -925,6 +922,10 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
         break;
     case AVRC_PDU_SET_ABSOLUTE_VOLUME:          /*        0x50 */
         status = avrc_bld_set_absolute_volume_rsp(&p_rsp->volume, p_pkt);
+        break;
+
+    default:
+        status = AVRC_STS_BAD_PARAM;
         break;
     }
 
