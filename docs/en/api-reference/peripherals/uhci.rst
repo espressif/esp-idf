@@ -52,7 +52,7 @@ If the configurations in :cpp:type:`uhci_controller_config_t` is specified, user
     uhci_controller_config_t uhci_cfg = {
         .uart_port = EX_UART_NUM,                 // Connect uart port to UHCI hardware.
         .tx_trans_queue_depth = 30,               // Queue depth of transaction queue.
-        .max_receive_internal_mem = 10 * 1024,    // internal memory usage, for more information, please refer to API reference.
+        .max_receive_internal_mem = 10 * 1024,    // Expected max uhci_receive() buffer size; also sizes the RX DMA descriptor chain. For large transfers, configure it so that at least two descriptors are available for ping-pong operation.
         .max_transmit_size = 10 * 1024,           // Maximum transfer size in one transaction, in bytes.
         .dma_burst_size = 32,                     // Burst size.
         .rx_eof_flags.idle_eof = 1,               // When to trigger a end of frame event, you can choose `idle_eof`, `rx_brk_eof`, `length_eof`, for more information, please refer to API reference.
@@ -165,7 +165,7 @@ Data can be received via UHCI as follows:
         }
     }
 
-In the API :cpp:func:`uhci_receive` interface, the parameter `read_buffer` is a buffer that must be provided by the user, and parameter `buffer_size` represents the size of the buffer supplied by the user. In the configuration structure of the UHCI controller, the parameter :cpp:member:`uhci_controller_config_t::max_receive_internal_mem` specifies the desired size of the internal DMA working space. The software allocates a certain number of DMA nodes based on this working space size. These nodes form a circular linked list.
+In the API :cpp:func:`uhci_receive` interface, the parameter ``read_buffer`` is a buffer that must be provided by the user, and parameter ``buffer_size`` represents the size of the buffer supplied by the user. ``buffer_size`` should generally not exceed :cpp:member:`uhci_controller_config_t::max_receive_internal_mem`.
 
 When a node is filled, but the reception has not yet completed, the event :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` will be triggered, accompanied by :cpp:member:`uhci_rx_event_data_t::flags::totally_received` set to 0. When all the data has been fully received, the :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` event will be triggered again with :cpp:member:`uhci_rx_event_data_t::flags::totally_received` set to 1.
 
@@ -173,7 +173,7 @@ This mechanism allows the user to achieve continuous and fast reception using a 
 
 .. note::
 
-    The parameter `read_buffer` of :cpp:func:`uhci_receive` cannot be freed until receive finishes.
+    The parameter ``read_buffer`` of :cpp:func:`uhci_receive` cannot be freed until receive finishes.
 
 Uninstall UHCI controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^

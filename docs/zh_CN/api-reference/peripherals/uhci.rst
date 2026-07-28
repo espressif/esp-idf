@@ -52,8 +52,8 @@ UHCI 控制器需要通过 :cpp:type:`uhci_controller_config_t` 进行配置。
     uhci_controller_config_t uhci_cfg = {
         .uart_port = EX_UART_NUM,                 // 将指定 UART 端口连接到 UHCI 硬件
         .tx_trans_queue_depth = 30,               // 发送队列的队列深度
-        .max_receive_internal_mem = 10 * 1024,    // 内部接收内存大小，更多信息请参考 API 注释。
-        .max_transmit_size = 10 * 1024,           // 单次传输的最大传输量，单位是字节
+        .max_receive_internal_mem = 10 * 1024,    // uhci_receive() 期望的最大缓冲区大小，同时决定 RX DMA 描述符链长度。对于较大的传输，建议将该值配置为至少会分配两个描述符，以便进行乒乓操作。
+        .max_transmit_size = 10 * 1024,           // 一次传输事务中的最大总字节数
         .dma_burst_size = 32,                     // 突发传输大小
         .rx_eof_flags.idle_eof = 1,               // 结束帧的条件，用户可以选择 `idle_eof`, `rx_brk_eof` 和 `length_eof`, 关于更多信息请参考 API 注释.
     };
@@ -165,9 +165,9 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
         }
     }
 
-在 API :cpp:func:`uhci_receive` 接口中，参数 ``read_buffer`` 是用户必须提供的缓冲区，参数 ``buffer_size`` 表示用户提供的缓冲区大小。在 UHCI 控制器的配置结构中，参数 :cpp:member:`uhci_controller_config_t::max_receive_internal_mem` 指定了内部 DMA 工作空间的期望大小。软件将根据此工作空间大小分配一定数量的 DMA 节点，这些节点形成一个循环链表。
+在 API :cpp:func:`uhci_receive` 接口中，参数 ``read_buffer`` 是用户必须提供的缓冲区，参数 ``buffer_size`` 表示用户提供的缓冲区大小。``buffer_size`` 一般不得超过 :cpp:member:`uhci_controller_config_t::max_receive_internal_mem`。
 
-当一个节点被填满，但接收尚未完成时，将触发 :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` 事件，且 :cpp:member:`uhci_rx_event_data_t::flags::totally_received` 的值为 0。 当所有数据接收完成时，该事件将再次被触发，并且 :cpp:member:`uhci_rx_event_data_t::flags::totally_received` 的值为 1。
+当一个节点被填满，但接收尚未完成时，将触发 :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` 事件，且 :cpp:member:`uhci_rx_event_data_t::flags::totally_received` 的值为 0。当所有数据接收完成时，该事件将再次被触发，并且 :cpp:member:`uhci_rx_event_data_t::flags::totally_received` 的值为 1。
 
 此机制允许用户使用相对较小的缓冲区实现连续且快速的接收，而无需分配与接收总数据量相等大小的缓冲区。
 
