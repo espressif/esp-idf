@@ -107,20 +107,20 @@ BOOLEAN bta_dm_co_get_compress_memory(tBTA_SYS_ID id, UINT8 **memory_p, UINT32 *
 **
 ** Parameters       bt_io_cap  - IO capabilities
 **
-** @return          - ESP_BT_STATUS_SUCCESS : success
+** @return          - ESP_OK : success
 **                  - other  : failed
 **
 *******************************************************************************/
 #if (CLASSIC_BT_INCLUDED == TRUE)
 esp_err_t bta_dm_co_bt_set_io_cap(UINT8 bt_io_cap)
 {
-    esp_err_t ret = ESP_BT_STATUS_SUCCESS;
+    esp_err_t ret = ESP_OK;
 
     if(bt_io_cap < BTM_IO_CAP_MAX ) {
         btm_cb.devcb.loc_io_caps = bt_io_cap;
-        ret = ESP_BT_STATUS_SUCCESS;
+        ret = ESP_OK;
     } else {
-        ret = ESP_BT_STATUS_FAIL;
+        ret = ESP_FAIL;
         APPL_TRACE_ERROR("%s error:Invalid io cap value.",__func__);
     }
 

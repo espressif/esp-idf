@@ -63,15 +63,14 @@ void BTA_HhEnable(tBTA_SEC sec_mask, tBTA_HH_CBACK *p_cback)
 {
     tBTA_HH_API_ENABLE *p_buf;
 
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_HH, &bta_hh_reg);
-
     APPL_TRACE_API("%s sec_mask:0x%x p_cback:%p", __func__, sec_mask, p_cback);
+
     p_buf = (tBTA_HH_API_ENABLE *)osi_malloc(sizeof(tBTA_HH_API_ENABLE));
-
     if (p_buf != NULL) {
-        memset(p_buf, 0, sizeof(tBTA_HH_API_ENABLE));
+        /* register with BTA system manager */
+        bta_sys_register(BTA_ID_HH, &bta_hh_reg);
 
+        memset(p_buf, 0, sizeof(tBTA_HH_API_ENABLE));
         p_buf->hdr.event = BTA_HH_API_ENABLE_EVT;
         p_buf->p_cback = p_cback;
         p_buf->sec_mask = sec_mask;
@@ -308,6 +307,7 @@ void BTA_HhSendData(UINT8 dev_handle, BD_ADDR dev_bda, BT_HDR  *p_data)
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
     if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT) {
         APPL_TRACE_ERROR("ERROR! Wrong report type! Write Command only valid for output report!");
+        utl_freebuf((void **)&p_data);
         return;
     }
 #endif
@@ -327,8 +327,8 @@ void BTA_HhGetDscpInfo(UINT8 dev_handle)
 {
     BT_HDR    *p_buf;
 
-    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR))) != NULL) {
-        memset(p_buf, 0, sizeof(BT_HDR));
+    if ((p_buf = (BT_HDR *)osi_malloc(sizeof(tBTA_HH_DATA))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_HH_DATA));
         p_buf->event            = BTA_HH_API_GET_DSCP_EVT;
         p_buf->layer_specific   = (UINT16) dev_handle;
 

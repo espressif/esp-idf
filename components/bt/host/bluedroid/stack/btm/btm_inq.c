@@ -213,11 +213,11 @@ tBTM_STATUS BTM_SetDiscoverability (UINT16 inq_mode, UINT16 window, UINT16 inter
             memcpy (temp_lap[0], limited_inq_lap, LAP_LEN);
             memcpy (temp_lap[1], general_inq_lap, LAP_LEN);
 
-            if (!btsnd_hcic_write_cur_iac_lap (2, (LAP * const) temp_lap)) {
+            if (!btsnd_hcic_write_cur_iac_lap (2, temp_lap)) {
                 return (BTM_NO_RESOURCES);    /* Cannot continue */
             }
         } else {
-            if (!btsnd_hcic_write_cur_iac_lap (1, (LAP * const) &general_inq_lap)) {
+            if (!btsnd_hcic_write_cur_iac_lap (1, &general_inq_lap)) {
                 return (BTM_NO_RESOURCES);    /* Cannot continue */
             }
         }
@@ -290,7 +290,8 @@ tBTM_STATUS BTM_SetInquiryScanType (UINT16 scan_type)
     }
 
     /* whatever app wants if device is not 1.2 scan type should be STANDARD */
-    if (!controller_get_interface()->supports_interlaced_inquiry_scan()) {
+    if ((scan_type == BTM_SCAN_TYPE_INTERLACED) &&
+        !controller_get_interface()->supports_interlaced_inquiry_scan()) {
         return (BTM_MODE_UNSUPPORTED);
     }
 
@@ -329,7 +330,8 @@ tBTM_STATUS BTM_SetPageScanType (UINT16 scan_type)
     }
 
     /* whatever app wants if device is not 1.2 scan type should be STANDARD */
-    if (!controller_get_interface()->supports_interlaced_inquiry_scan()) {
+    if ((scan_type == BTM_SCAN_TYPE_INTERLACED) &&
+        !controller_get_interface()->supports_interlaced_page_scan()) {
         return (BTM_MODE_UNSUPPORTED);
     }
 
@@ -368,6 +370,10 @@ tBTM_STATUS BTM_SetInquiryMode (UINT8 mode)
 {
     const controller_t *controller = controller_get_interface();
     BTM_TRACE_API ("BTM_SetInquiryMode\n");
+    if (!BTM_IsDeviceUp()) {
+        return (BTM_WRONG_MODE);
+    }
+
     if (mode == BTM_INQ_RESULT_STANDARD) {
         /* mandatory mode */
     } else if (mode == BTM_INQ_RESULT_WITH_RSSI) {
@@ -380,10 +386,6 @@ tBTM_STATUS BTM_SetInquiryMode (UINT8 mode)
         }
     } else {
         return (BTM_ILLEGAL_VALUE);
-    }
-
-    if (!BTM_IsDeviceUp()) {
-        return (BTM_WRONG_MODE);
     }
 
     if (!btsnd_hcic_write_inquiry_mode (mode)) {
@@ -519,7 +521,7 @@ tBTM_STATUS BTM_SetPeriodicInquiryMode (tBTM_INQ_PARMS *p_inqparms, UINT16 max_d
         /* If set filter command is not successful reset the state */
         p_inq->p_inq_results_cb = NULL;
         p_inq->state = BTM_INQ_INACTIVE_STATE;
-
+        p_inq->inq_active = BTM_INQUIRY_INACTIVE;
     }
 
     return (status);
@@ -631,11 +633,11 @@ tBTM_STATUS BTM_SetConnectability (UINT16 page_mode, UINT16 window, UINT16 inter
 
     if ((window != p_inq->page_scan_window) ||
             (interval != p_inq->page_scan_period)) {
-        p_inq->page_scan_window = window;
-        p_inq->page_scan_period = interval;
         if (!btsnd_hcic_write_pagescan_cfg (interval, window)) {
             return (BTM_NO_RESOURCES);
         }
+        p_inq->page_scan_window = window;
+        p_inq->page_scan_period = interval;
     }
 
     /* Keep the inquiry scan as previouosly set */
@@ -804,10 +806,8 @@ tBTM_STATUS BTM_StartInquiry (tBTM_INQ_PARMS *p_inqparms, tBTM_INQ_RESULTS_CB *p
     /* Only one active inquiry is allowed in this implementation.
        Also do not allow an inquiry if the inquiry filter is being updated */
     if (p_inq->inq_active || p_inq->inqfilt_active) {
-        {
-            return (BTM_BUSY);
-            BTM_TRACE_API("BTM_StartInquiry: return BUSY\n");
-        }
+        BTM_TRACE_API("BTM_StartInquiry: return BUSY\n");
+        return (BTM_BUSY);
     } else {
         p_inq->scan_type = INQ_GENERAL;
     }
@@ -911,8 +911,9 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb
     /* Use the remote device's clock offset if it is in the local inquiry database */
     if ((p_i = btm_inq_db_find (remote_bda)) != NULL) {
         p_cur = &p_i->inq_info;
+    } else {
+        BTM_TRACE_API ("no device found in inquiry db\n");
     }
-    BTM_TRACE_API ("no device found in inquiry db\n");
 
 #if (BLE_INCLUDED == TRUE)
     if (transport == BT_TRANSPORT_LE) {
@@ -1049,7 +1050,7 @@ tBTM_INQ_INFO *BTM_InqDbNext (tBTM_INQ_INFO *p_cur)
             }
         }
 
-        /* If here, more entries found */
+        /* If here, no entries found */
         return ((tBTM_INQ_INFO *)NULL);
     } else {
         return (BTM_InqDbFirst());
@@ -1194,9 +1195,9 @@ tBTM_STATUS BTM_WriteInquiryTxPower(INT8 tx_power, tBTM_CMPL_CB *p_cb)
 *******************************************************************************/
 void btm_inq_db_reset (void)
 {
-    tBTM_REMOTE_DEV_NAME     rem_name;
+    tBTM_REMOTE_DEV_NAME     rem_name = {0};
+    tBTM_INQUIRY_CMPL        cmpl_param = {0};
     tBTM_INQUIRY_VAR_ST     *p_inq = &btm_cb.btm_inq_vars;
-    UINT8                    num_responses;
     UINT8                    temp_inq_active;
     tBTM_STATUS              status;
 
@@ -1212,16 +1213,18 @@ void btm_inq_db_reset (void)
         if (temp_inq_active == BTM_LIMITED_INQUIRY_ACTIVE ||
                 temp_inq_active == BTM_GENERAL_INQUIRY_ACTIVE) {
             if (p_inq->p_inq_cmpl_cb) {
-                num_responses = 0;
-                (*p_inq->p_inq_cmpl_cb)(&num_responses);
+                cmpl_param.status = BTM_SUCCESS;
+                cmpl_param.num_resp = 0;
+                (*p_inq->p_inq_cmpl_cb)(&cmpl_param);
             }
         }
     }
 
     /* Cancel a remote name request if active, and notify the caller (if waiting) */
-    if (p_inq->remname_active ) {
+    if (p_inq->remname_active) {
         btu_stop_timer (&p_inq->rmt_name_timer_ent);
         p_inq->remname_active = FALSE;
+        memcpy(rem_name.bd_addr, p_inq->remname_bda, BD_ADDR_LEN);
         memset(p_inq->remname_bda, 0, BD_ADDR_LEN);
 
         if (p_inq->p_remname_cmpl_cb) {
@@ -1560,13 +1563,12 @@ static tBTM_STATUS btm_set_inq_event_filter (UINT8 filter_cond_type,
         return (BTM_ILLEGAL_VALUE);     /* Bad parameter was passed in */
     }
 
-    btm_cb.btm_inq_vars.inqfilt_active = TRUE;
-
     /* Filter the inquiry results for the specified condition type and value */
     if (btsnd_hcic_set_event_filter(HCI_FILTER_INQUIRY_RESULT, filter_cond_type,
                                     p_cond, condition_length))
 
     {
+        btm_cb.btm_inq_vars.inqfilt_active = TRUE;
         return (BTM_CMD_STARTED);
     } else {
         return (BTM_NO_RESOURCES);
@@ -1734,7 +1736,7 @@ static void btm_initiate_inquiry (tBTM_INQUIRY_VAR_ST *p_inq)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_process_inq_results (UINT8 *p, UINT8 inq_res_mode)
+void btm_process_inq_results (UINT8 *p, UINT16 evt_len, UINT8 inq_res_mode)
 {
     UINT8            num_resp, xx;
     BD_ADDR          bda;
@@ -1752,6 +1754,7 @@ void btm_process_inq_results (UINT8 *p, UINT8 inq_res_mode)
     DEV_CLASS        dc;
     UINT16           clock_offset;
     UINT8            *p_eir_data = NULL;
+    UINT16           remain_len = evt_len;
 
 #if (BTM_INQ_DEBUG == TRUE)
     BTM_TRACE_DEBUG ("btm_process_inq_results inq_active:0x%x state:%d inqfilt_active:%d inq_res_mode=%d\n",
@@ -1762,23 +1765,45 @@ void btm_process_inq_results (UINT8 *p, UINT8 inq_res_mode)
         return;
     }
 
+    if (remain_len < 1) {
+        return;
+    }
     STREAM_TO_UINT8 (num_resp, p);
+    remain_len -= 1;
 
     for (xx = 0; xx < num_resp; xx++) {
         update = FALSE;
+        is_new = TRUE;
+
+        if (remain_len < 8) {
+            return;
+        }
         /* Extract inquiry results */
         STREAM_TO_BDADDR   (bda, p);
         STREAM_TO_UINT8    (page_scan_rep_mode, p);
         STREAM_TO_UINT8    (page_scan_per_mode, p);
+        remain_len -= 8;
 
         if (inq_res_mode == BTM_INQ_RESULT_STANDARD) {
+            if (remain_len < 1) {
+                return;
+            }
             STREAM_TO_UINT8(page_scan_mode, p);
+            remain_len -= 1;
         }
 
+        if (remain_len < 5) {
+            return;
+        }
         STREAM_TO_DEVCLASS (dc, p);
         STREAM_TO_UINT16   (clock_offset, p);
+        remain_len -= 5;
         if (inq_res_mode != BTM_INQ_RESULT_STANDARD) {
+            if (remain_len < 1) {
+                return;
+            }
             STREAM_TO_UINT8(rssi, p);
+            remain_len -= 1;
         }
 
         p_i = btm_inq_db_find (bda);
@@ -2101,13 +2126,6 @@ tBTM_STATUS btm_initiate_rem_name (BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur,
         if (p_inq->remname_active) {
             return (BTM_BUSY);
         } else {
-            /* If there is no remote name request running,call the callback function and start timer */
-            p_inq->p_remname_cmpl_cb = p_cb;
-            memcpy(p_inq->remname_bda, remote_bda, BD_ADDR_LEN);
-            btu_start_timer (&p_inq->rmt_name_timer_ent,
-                             BTU_TTYPE_BTM_RMT_NAME,
-                             timeout);
-
             /* If the database entry exists for the device, use its clock offset */
             if (p_cur) {
                 cmd_ok = btsnd_hcic_rmt_name_req (remote_bda,
@@ -2120,6 +2138,10 @@ tBTM_STATUS btm_initiate_rem_name (BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur,
                                                   HCI_MANDATARY_PAGE_SCAN_MODE, 0);
             }
             if (cmd_ok) {
+                /* If there is no remote name request running,call the callback function and start timer */
+                p_inq->p_remname_cmpl_cb = p_cb;
+                memcpy(p_inq->remname_bda, remote_bda, BD_ADDR_LEN);
+                btu_start_timer (&p_inq->rmt_name_timer_ent, BTU_TTYPE_BTM_RMT_NAME, timeout);
                 p_inq->remname_active = TRUE;
                 return BTM_CMD_STARTED;
             } else {
@@ -2144,7 +2166,7 @@ tBTM_STATUS btm_initiate_rem_name (BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur,
 *******************************************************************************/
 void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hci_status)
 {
-    tBTM_REMOTE_DEV_NAME    rem_name;
+    tBTM_REMOTE_DEV_NAME    rem_name = {0};
     tBTM_INQUIRY_VAR_ST    *p_inq = &btm_cb.btm_inq_vars;
     tBTM_CMPL_CB           *p_cb = p_inq->p_remname_cmpl_cb;
     UINT8                  *p_n1;
@@ -2250,36 +2272,36 @@ void btm_inq_rmt_name_failed (void)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_read_iscan_tx_power_complete(UINT8 *p)
+void btm_read_iscan_tx_power_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_CMPL_CB                *p_cb = btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb;
     tBTM_READ_TX_PWR_LVL_RESULTS results;
 
     memset(&results, 0, sizeof(results));
     results.type = BTM_TX_PWR_LVL_ISCAN;
+    results.status = BTM_ERR_PROCESSING;
 
     btu_stop_timer (&btm_cb.devcb.read_iscan_txpwer_timer);
     /* If there was a callback registered for read inq tx power, call it */
     btm_cb.devcb.p_read_iscan_txpwer_cmpl_cb = NULL;
 
-    if (p_cb) {
-        if (p) {
-            STREAM_TO_UINT8  (results.hci_status, p);
+    if (!p_cb) {
+        return;
+    }
 
+    if (p) {
+        if (evt_len >= 2) {
+            STREAM_TO_UINT8 (results.hci_status, p);
             if (results.hci_status == HCI_SUCCESS) {
                 results.status = BTM_SUCCESS;
-
                 STREAM_TO_UINT8 (results.tx_power, p);
                 BTM_TRACE_EVENT ("BTM INQ TX POWER Complete: tx_power %d, hci status 0x%02x\n",
                                 results.tx_power, results.hci_status);
-            } else {
-                results.status = BTM_ERR_PROCESSING;
             }
-        } else {
-            results.status = BTM_ERR_PROCESSING;
         }
-        (*p_cb)(&results);
     }
+
+    (*p_cb)(&results);
 }
 
 /*******************************************************************************
@@ -2291,26 +2313,31 @@ void btm_read_iscan_tx_power_complete(UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_write_inq_tx_power_complete(UINT8 *p)
+void btm_write_inq_tx_power_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_write_inq_txpwer_cmpl_cb;
-    tBTM_WRITE_TX_PWR_LVL_RESULTS results;
+    tBTM_WRITE_TX_PWR_LVL_RESULTS results = {0};
 
-    memset(&results, 0, sizeof(results));
     results.type = BTM_TX_PWR_LVL_INQ;
+    results.status = BTM_ERR_PROCESSING;
 
     btu_stop_timer(&btm_cb.devcb.write_inq_txpwer_timer);
     btm_cb.devcb.p_write_inq_txpwer_cmpl_cb = NULL;
 
-    if (p_cb) {
-        if (p) {
-            STREAM_TO_UINT8(results.hci_status, p);
-            results.status = (results.hci_status == HCI_SUCCESS) ? BTM_SUCCESS : BTM_ERR_PROCESSING;
-        } else {
-            results.status = BTM_ERR_PROCESSING;
-        }
-        (*p_cb)(&results);
+    if (!p_cb) {
+        return;
     }
+
+    if (p) {
+        if (evt_len >= 1) {
+            STREAM_TO_UINT8(results.hci_status, p);
+            if (results.hci_status == HCI_SUCCESS) {
+                results.status = BTM_SUCCESS;
+            }
+        }
+    }
+
+    (*p_cb)(&results);
 }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
@@ -2326,19 +2353,25 @@ void btm_write_inq_tx_power_complete(UINT8 *p)
 **
 ** Returns          BTM_SUCCESS  - if successful
 **                  BTM_MODE_UNSUPPORTED - if local device cannot support it
+**                  BTM_NO_RESOURCES - if command failed to issue
 **
 *******************************************************************************/
 tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff, BOOLEAN fec_required)
 {
+    tBTM_STATUS status = BTM_SUCCESS;
     if (controller_get_interface()->supports_extended_inquiry_response()) {
         BTM_TRACE_API("Write Extended Inquiry Response to controller\n");
-        btsnd_hcic_write_ext_inquiry_response (p_buff, fec_required);
-        osi_free(p_buff);
-        return BTM_SUCCESS;
+        if (!btsnd_hcic_write_ext_inquiry_response (p_buff, fec_required)) {
+            status = BTM_NO_RESOURCES;
+        }
     } else {
-        osi_free(p_buff);
-        return BTM_MODE_UNSUPPORTED;
+        status = BTM_MODE_UNSUPPORTED;
     }
+    if (p_buff) {
+        osi_free(p_buff);
+        p_buff = NULL;
+    }
+    return status;
 }
 
 /*******************************************************************************
@@ -2357,17 +2390,11 @@ tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff, BOOLEAN fec_required)
 UINT8 *BTM_CheckEirData( UINT8 *p_eir, UINT8 type, UINT8 *p_length )
 {
     UINT8 *p = p_eir;
-    UINT8 *p_data_length = p_length;
+    UINT8 temp_length = 0;
+    UINT8 *p_data_length = (p_length ? p_length : &temp_length);
     UINT8 length;
     UINT8 eir_type;
     BTM_TRACE_API("BTM_CheckEirData type=0x%02X\n", type);
-
-    if (!p_length) {
-        if ((p_data_length = (UINT8 *)osi_malloc(sizeof(UINT8))) == NULL) {
-            BTM_TRACE_ERROR("%s: Memory allocation failed.", __func__);
-            return NULL;
-        }
-    }
 
     STREAM_TO_UINT8(length, p);
     while ( length ) {
@@ -2398,9 +2425,6 @@ UINT8 *BTM_CheckEirData( UINT8 *p_eir, UINT8 type, UINT8 *p_length )
     p = NULL;
 
 exit:
-    if (!p_length) {
-        osi_free(p_data_length);
-    }
     return p;
 }
 

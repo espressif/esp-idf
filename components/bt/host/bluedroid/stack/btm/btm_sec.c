@@ -135,7 +135,7 @@ static const BOOLEAN btm_sec_io_map [BTM_IO_CAP_MAX][BTM_IO_CAP_MAX] = {
 #if (SMP_INCLUDED == TRUE)
 static BOOLEAN btm_dev_authenticated (tBTM_SEC_DEV_REC *p_dev_rec)
 {
-    if (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED) {
+    if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) {
         return (TRUE);
     }
     return (FALSE);
@@ -292,6 +292,12 @@ BOOLEAN  BTM_SecAddRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
     int i;
 
     for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
+        if (btm_cb.p_rmt_name_callback[i] == p_callback) {
+            return FALSE;
+        }
+    }
+
+    for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
         if (btm_cb.p_rmt_name_callback[i] == NULL) {
             btm_cb.p_rmt_name_callback[i] = p_callback;
             return (TRUE);
@@ -316,6 +322,10 @@ BOOLEAN  BTM_SecDeleteRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
 {
     int i;
 
+    if (p_callback == NULL) {
+        return FALSE;
+    }
+
     for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
         if (btm_cb.p_rmt_name_callback[i] == p_callback) {
             btm_cb.p_rmt_name_callback[i] = NULL;
@@ -338,6 +348,10 @@ BOOLEAN  BTM_SecDeleteRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
 BOOLEAN BTM_GetSecurityFlags (BD_ADDR bd_addr, UINT8 *p_sec_flags)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
+
+    if (!bd_addr || !p_sec_flags) {
+        return FALSE;
+    }
 
     if ((p_dev_rec = btm_find_dev (bd_addr)) != NULL) {
         *p_sec_flags = (UINT8) p_dev_rec->sec_flags;
@@ -365,6 +379,10 @@ BOOLEAN BTM_GetSecurityFlagsByTransport (BD_ADDR bd_addr, UINT8 *p_sec_flags,
         tBT_TRANSPORT transport)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
+
+    if (!bd_addr || !p_sec_flags) {
+        return FALSE;
+    }
 
     if ((p_dev_rec = btm_find_dev (bd_addr)) != NULL) {
         if (transport == BT_TRANSPORT_BR_EDR) {
@@ -396,8 +414,8 @@ BOOLEAN BTM_GetSecurityFlagsByTransport (BD_ADDR bd_addr, UINT8 *p_sec_flags,
 *******************************************************************************/
 void BTM_SetPinType (UINT8 pin_type, PIN_CODE pin_code, UINT8 pin_code_len)
 {
-    BTM_TRACE_API ("BTM_SetPinType: pin type %d [variable-0, fixed-1], code %s, length %d\n",
-                   pin_type, (char *) pin_code, pin_code_len);
+    BTM_TRACE_API ("BTM_SetPinType: pin type %d [variable-0, fixed-1], code %.*s, length %d\n",
+                   pin_type, pin_code_len, (char *) pin_code, pin_code_len);
 
     /* If device is not up security mode will be set as a part of startup */
     if ( (btm_cb.cfg.pin_type != pin_type)
@@ -757,6 +775,9 @@ UINT8 BTM_SecClrService (UINT8 service_id)
 #if (L2CAP_UCD_INCLUDED == TRUE)
             p_srec->ucd_security_flags = 0;
 #endif
+            if (btm_cb.p_out_serv == p_srec) {
+                btm_cb.p_out_serv = NULL;
+            }
             num_freed++;
         }
     }
@@ -793,6 +814,9 @@ UINT8 btm_sec_clr_service_by_psm (UINT16 psm)
         if ((p_srec->security_flags & BTM_SEC_IN_USE) && (p_srec->psm == psm) ) {
             BTM_TRACE_API("BTM_SEC_CLR[%d]: id %d\n", i, p_srec->service_id);
             p_srec->security_flags = 0;
+#if (L2CAP_UCD_INCLUDED == TRUE)
+            p_srec->ucd_security_flags = 0;
+#endif
             num_freed++;
         }
     }
@@ -883,12 +907,11 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
             /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed event */
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
             btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
-
-            btsnd_hcic_pin_code_neg_reply (bd_addr);
         } else {
             p_dev_rec->security_required = BTM_SEC_NONE;
             btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
         }
+        btsnd_hcic_pin_code_neg_reply (bd_addr);
         return;
     }
     if (trusted_mask) {
@@ -1025,7 +1048,8 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
     if (p_pin && (pin_len <= PIN_CODE_LEN) && (pin_len != 0)) {
         btm_cb.pin_code_len = pin_len;
         p_dev_rec->pin_code_length = pin_len;
-        memcpy (btm_cb.pin_code, p_pin, PIN_CODE_LEN);
+        memset (btm_cb.pin_code, 0, PIN_CODE_LEN);
+        memcpy (btm_cb.pin_code, p_pin, pin_len);
     }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
@@ -1324,8 +1348,8 @@ tBTM_STATUS BTM_SecGetDeviceLinkKey (BD_ADDR bd_addr, LINK_KEY link_key)
 **                  BTM_UNKNOWN_ADDR if Security Manager does not know about
 **                  the device or device record does not contain link key info
 **
-** Returns          BTM_LKEY_TYPE_IGNORE if link key is unknown, link type
-**                  otherwise.
+** Returns          Link key type for the specified device, or BTM_LKEY_TYPE_IGNORE
+**                  if no valid link key is available.
 **
 *******************************************************************************/
 tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType (BD_ADDR bd_addr)
@@ -1403,7 +1427,6 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
 
         return (BTM_SUCCESS);
     }
-    p_dev_rec->enc_init_by_we = TRUE;
     /* enqueue security request if security is active */
     if (p_dev_rec->p_callback || (p_dev_rec->sec_state != BTM_SEC_STATE_IDLE)) {
         BTM_TRACE_WARNING ("Security Manager: BTM_SetEncryption busy, enqueue request\n");
@@ -1418,6 +1441,11 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
         }
     }
 
+    UINT16  old_security_required = p_dev_rec->security_required;
+    BOOLEAN old_is_originator     = p_dev_rec->is_originator;
+    BOOLEAN old_enc_init_by_we    = p_dev_rec->enc_init_by_we;
+
+    p_dev_rec->enc_init_by_we    = TRUE;
     p_dev_rec->p_callback        = p_callback;
     p_dev_rec->p_ref_data        = p_ref_data;
     p_dev_rec->security_required |= (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT);
@@ -1443,9 +1471,17 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
     }
 
     if (rc != BTM_CMD_STARTED && rc != BTM_BUSY) {
-        if (p_callback) {
+        if (rc != BTM_SUCCESS) {
+            p_dev_rec->p_callback        = NULL;
+            p_dev_rec->p_ref_data        = NULL;
+            p_dev_rec->security_required = old_security_required;
+            p_dev_rec->is_originator     = old_is_originator;
+            p_dev_rec->enc_init_by_we    = old_enc_init_by_we;
+        } else {
             p_dev_rec->p_callback = NULL;
-            (*p_callback) (bd_addr, transport, p_dev_rec->p_ref_data, rc);
+        }
+        if (p_callback) {
+            (*p_callback) (bd_addr, transport, p_ref_data, rc);
         }
     }
 
@@ -1493,14 +1529,16 @@ static tBTM_STATUS btm_sec_send_hci_disconnect (tBTM_SEC_DEV_REC *p_dev_rec, UIN
         break;
     }
 
+#if BTM_DISC_DURING_RS == TRUE
     /* If a role switch is in progress, delay the HCI Disconnect to avoid controller problem */
     if (p_dev_rec->rs_disc_pending == BTM_SEC_RS_PENDING && p_dev_rec->hci_handle == conn_handle) {
         BTM_TRACE_DEBUG("RS in progress - Set DISC Pending flag in btm_sec_send_hci_disconnect to delay disconnect\n");
         p_dev_rec->rs_disc_pending = BTM_SEC_DISC_PENDING;
         status = BTM_SUCCESS;
-    }
+    } else
     /* Tear down the HCI link */
-    else if (!btsnd_hcic_disconnect (conn_handle, reason)) {
+#endif
+    if (!btsnd_hcic_disconnect (conn_handle, reason)) {
         /* could not send disconnect. restore old state */
         p_dev_rec->sec_state = old_state;
         status = BTM_NO_RESOURCES;
@@ -1637,7 +1675,9 @@ void BTM_SendKeypressNotif(BD_ADDR bd_addr, tBTM_SP_KEY_TYPE type)
 {
     /* This API only make sense between PASSKEY_REQ and SP complete */
     if (btm_cb.pairing_state == BTM_PAIR_STATE_KEY_ENTRY) {
-        btsnd_hcic_send_keypress_notif (bd_addr, type);
+        if (bd_addr) {
+            btsnd_hcic_send_keypress_notif (bd_addr, type);
+        }
     }
 }
 #endif  /* (CLASSIC_BT_INCLUDED == TRUE) */
@@ -1959,7 +1999,7 @@ void BTM_SetOutService(BD_ADDR bd_addr, UINT8 service_id, UINT32 mx_chan_id)
     tBTM_SEC_DEV_REC *p_dev_rec;
     tBTM_SEC_SERV_REC *p_serv_rec = &btm_cb.sec_serv_rec[0];
 
-    btm_cb.p_out_serv = p_serv_rec;
+    btm_cb.p_out_serv = NULL;
     p_dev_rec = btm_find_dev (bd_addr);
 
     for (int i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_serv_rec++) {
@@ -2017,6 +2057,7 @@ static BOOLEAN btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC  *p_dev_rec, BOOLEAN
                 /* has unauthenticated
                 link key */
                 && (p_dev_rec->rmt_io_caps < BTM_IO_CAP_MAX)  /* a valid peer IO cap */
+                && (btm_cb.devcb.loc_io_caps < BTM_IO_CAP_MAX)  /* a valid local IO cap */
                 && (btm_sec_io_map[p_dev_rec->rmt_io_caps][btm_cb.devcb.loc_io_caps]))
             /* authenticated
             link key is possible */
@@ -2129,6 +2170,12 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
 
     /* Find or get oldest record */
     p_dev_rec = btm_find_or_alloc_dev (bd_addr);
+    if (!p_dev_rec) {
+        if (p_callback) {
+            (*p_callback) (bd_addr, transport, p_ref_data, BTM_NO_RESOURCES);
+        }
+        return BTM_NO_RESOURCES;
+    }
 
     p_dev_rec->hci_handle = handle;
 
@@ -2464,6 +2511,12 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
     BTM_TRACE_DEBUG ("%s() is_originator: %d\n", __func__, is_originator);
     /* Find or get oldest record */
     p_dev_rec = btm_find_or_alloc_dev (bd_addr);
+    if (!p_dev_rec) {
+        if (p_callback) {
+            (*p_callback)(bd_addr, transport, p_ref_data, BTM_NO_RESOURCES);
+        }
+        return BTM_NO_RESOURCES;
+    }
 
     /* Find the service record for the PSM */
     p_serv_rec = btm_sec_find_mx_serv (is_originator, psm, mx_proto_id, mx_chan_id);
@@ -2550,8 +2603,14 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
         }
         if (rc == BTM_CMD_STARTED) {
             BTM_TRACE_EVENT("%s: call btm_sec_queue_mx_request\n", __FUNCTION__);
-            btm_sec_queue_mx_request (bd_addr, psm,  is_originator, mx_proto_id,
-                                      mx_chan_id, p_callback, p_ref_data);
+            BOOLEAN ret = btm_sec_queue_mx_request (bd_addr, psm,  is_originator, mx_proto_id,
+                                                    mx_chan_id, p_callback, p_ref_data);
+            if (!ret) {
+                rc = BTM_NO_RESOURCES;
+                if (p_callback) {
+                    (*p_callback) (bd_addr, transport, p_ref_data, (UINT8)rc);
+                }
+            }
         } else { /* rc == BTM_SUCCESS */
             /* access granted */
             if (p_callback) {
@@ -2903,7 +2962,7 @@ void btm_sec_dev_reset (void)
         /* set the default IO capabilities */
         btm_cb.devcb.loc_io_caps = BTM_LOCAL_IO_CAPS;
         /* add mx service to use no security */
-        BTM_SetSecurityLevel(FALSE, "RFC_MUX\n", BTM_SEC_SERVICE_RFC_MUX,
+        BTM_SetSecurityLevel(FALSE, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX,
                              BTM_SEC_NONE, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);
     } else {
         btm_cb.security_mode = BTM_SEC_MODE_SERVICE;
@@ -3024,7 +3083,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     if (p_bd_addr) {
         p_dev_rec = btm_find_dev (p_bd_addr);
     } else {
-	list_node_t *p_node = NULL;
+        list_node_t *p_node = NULL;
         for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
             p_dev_rec = list_node(p_node);
             if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
@@ -3032,20 +3091,18 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
                 p_bd_addr = p_dev_rec->bd_addr;
                 break;
             }
-	}
+        }
         if (!p_bd_addr) {
-	    p_dev_rec = NULL;
-	}
+            p_dev_rec = NULL;
+        }
     }
 
-
-    /* Commenting out trace due to obf/compilation problems.
-    */
-#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     if (!p_bd_name) {
         p_bd_name = (UINT8 *)"";
     }
-
+    /* Commenting out trace due to obf/compilation problems.
+    */
+#if (BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE)
     if (p_dev_rec) {
         BTM_TRACE_EVENT ("Security Manager: rmt_name_complete PairState: %s  RemName: %s  status: %d State:%d  p_dev_rec: %p \n",
                          btm_pair_state_descr (btm_cb.pairing_state), p_bd_name,
@@ -3264,6 +3321,10 @@ void btm_sec_rmt_host_support_feat_evt (UINT8 *p)
 
     STREAM_TO_BDADDR (bd_addr, p);
     p_dev_rec = btm_find_or_alloc_dev (bd_addr);
+    if (!p_dev_rec) {
+        BTM_TRACE_ERROR("Unable to allocate or find device record for remote features event");
+        return;
+    }
 
     BTM_TRACE_EVENT ("btm_sec_rmt_host_support_feat_evt  sm4: 0x%x  p[0]: 0x%x\n", p_dev_rec->sm4, p[0]);
 
@@ -3309,6 +3370,11 @@ void btm_io_capabilities_req (UINT8 *p)
     BTM_TRACE_EVENT("%s: State: %s\n", __FUNCTION__, btm_pair_state_descr(btm_cb.pairing_state));
 #endif  ///BT_USE_TRACES == TRUE && SMP_INCLUDED == TRUE
     p_dev_rec = btm_find_or_alloc_dev (evt_data.bd_addr);
+    if (!p_dev_rec) {
+        BTM_TRACE_ERROR("%s: unable to allocate device record", __func__);
+        btsnd_hcic_io_cap_req_neg_reply(evt_data.bd_addr, HCI_ERR_HOST_REJECT_RESOURCES);
+        return;
+    }
 
     BTM_TRACE_DEBUG("%s:Security mode: %d, Num Read Remote Feat pages: %d\n", __FUNCTION__,
                     btm_cb.security_mode, p_dev_rec->num_read_pages);
@@ -3667,10 +3733,14 @@ void btm_proc_sp_req_evt (tBTM_SP_EVT event, UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void  btm_keypress_notif_evt (UINT8 *p)
+void  btm_keypress_notif_evt (UINT8 *p, UINT16 evt_len)
 {
     tBTM_SP_KEYPRESS    evt_data;
     UINT8 *p_bda;
+
+    if (evt_len < 7) {
+        return;
+    }
 
     /* parse & report BTM_SP_KEYPRESS_EVT */
     if (btm_cb.api.p_sp_callback) {
@@ -3693,12 +3763,16 @@ void  btm_keypress_notif_evt (UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_simple_pair_complete (UINT8 *p)
+void btm_simple_pair_complete (UINT8 *p, UINT16 evt_len)
 {
     tBTM_SP_COMPLT  evt_data;
     tBTM_SEC_DEV_REC *p_dev_rec;
     UINT8           status;
     BOOLEAN         disc = FALSE;
+
+    if (evt_len < 7) {
+        return;
+    }
 
     status = *p++;
     STREAM_TO_BDADDR (evt_data.bd_addr, p);
@@ -4287,6 +4361,10 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
     btm_cb.sec_collision_tle.param = 0;
     btm_cb.p_collided_dev_rec = 0;
 
+    if (!p_dev_rec) {
+        return;
+    }
+
     if (btm_sec_dd_create_conn(p_dev_rec) != BTM_CMD_STARTED) {
         BTM_TRACE_WARNING ("Security Manager: btm_sec_connect_after_reject_timeout: failed to start connection\n");
 
@@ -4412,8 +4490,6 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 #if BTM_DISC_DURING_RS == TRUE
     p_dev_rec->rs_disc_pending   = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
 #endif
-
-    p_dev_rec->rs_disc_pending   = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
 
     if ( (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)
             && (memcmp (btm_cb.pairing_bda, bda, BD_ADDR_LEN) == 0) ) {
@@ -4550,7 +4626,7 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
 
         btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
 
-        if ( res ) {
+        if (res && (p_dev_rec != NULL)) {
             /* Let l2cap start bond timer */
             l2cu_update_lcb_4_bonding (p_dev_rec->bd_addr, TRUE);
         }
@@ -4629,8 +4705,8 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 
     /* In some weird race condition we may not have a record */
     if (!p_dev_rec) {
-        btsnd_hcic_disconnect (handle, reason);
-        return (BTM_SUCCESS);
+        BOOLEAN ret = btsnd_hcic_disconnect (handle, reason);
+        return (ret ? BTM_SUCCESS : BTM_NO_RESOURCES);
     }
 
     /* If we are in the process of bonding we need to tell client that auth failed */
@@ -4676,8 +4752,6 @@ BOOLEAN btm_sec_disconnected (UINT16 handle, UINT8 reason)
     }
     p_dev_rec->enc_init_by_we = FALSE;
     transport  = (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
-
-    p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
 
 #if BTM_DISC_DURING_RS == TRUE
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
@@ -4780,6 +4854,10 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
     }
     /* If connection was made to do bonding restore link security if changed */
     btm_restore_mode();
+
+    if (p_dev_rec == NULL) {
+        return;
+    }
 
     /* Store the previous state of secure connection as current state. Since
      * this is the first encounter with the remote device, whatever the remote
@@ -4927,6 +5005,7 @@ void btm_sec_link_key_request (UINT8 *p_bda)
 
     if ( (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_PIN_REQ) &&
             (btm_cb.collision_start_time != 0) &&
+            (btm_cb.p_collided_dev_rec != NULL) &&
             (memcmp (btm_cb.p_collided_dev_rec->bd_addr, p_bda, BD_ADDR_LEN) == 0) ) {
         BTM_TRACE_EVENT ("btm_sec_link_key_request() rejecting link key req "
                          "State: %d START_TIMEOUT : %d\n",
@@ -4969,7 +5048,7 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
     tBTM_AUTH_REQ   auth_req = BTM_AUTH_AP_YES;
 #endif
 #endif
-    UINT8   name[2];
+    tBTM_BD_NAME   name = {0};
     UNUSED(p_tle);
 
     p_cb->pairing_tle.param = 0;
@@ -5141,6 +5220,12 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
     }
 
     p_dev_rec = btm_find_or_alloc_dev (p_bda);
+    if (!p_dev_rec) {
+        BTM_TRACE_ERROR ("btm_sec_pin_code_request no device record available\n");
+        btsnd_hcic_pin_code_neg_reply (p_bda);
+        return;
+    }
+
     /* received PIN code request. must be non-sm4 */
     p_dev_rec->sm4 = BTM_SM4_KNOWN;
 
@@ -5491,7 +5576,7 @@ static BOOLEAN btm_sec_start_encryption (tBTM_SEC_DEV_REC *p_dev_rec)
 *******************************************************************************/
 static UINT8 btm_sec_start_authorization (tBTM_SEC_DEV_REC *p_dev_rec)
 {
-    UINT8    result;
+    UINT8    result = BTM_SUCCESS;
     UINT8   *p_service_name = NULL;
     UINT8    service_id;
 
@@ -5543,7 +5628,9 @@ static UINT8 btm_sec_start_authorization (tBTM_SEC_DEV_REC *p_dev_rec)
         }
         return (result);
     }
-    btm_sec_start_get_name (p_dev_rec);
+    if (!btm_sec_start_get_name (p_dev_rec)) {
+        return BTM_NO_RESOURCES;
+    }
     return (BTM_CMD_STARTED);
 }
 #endif  ///SMP_INCLUDED == TRUE
@@ -5697,6 +5784,10 @@ static void btm_sec_collision_timeout (TIMER_LIST_ENT *p_tle)
     BTM_TRACE_EVENT ("%s()\n", __func__);
     btm_cb.sec_collision_tle.param = 0;
 
+    if (!btm_cb.p_collided_dev_rec) {
+        return;
+    }
+
     tBTM_STATUS status = btm_sec_execute_procedure (btm_cb.p_collided_dev_rec);
 
     /* If result is pending reply from the user or from the device is pending */
@@ -5763,15 +5854,17 @@ UINT32 *BTM_ReadTrustedMask (BD_ADDR bd_addr)
 static void btm_restore_mode(void)
 {
     if (btm_cb.security_mode_changed) {
-        btm_cb.security_mode_changed = FALSE;
         BTM_TRACE_DEBUG("%s() Auth enable -> %d\n", __func__, (btm_cb.security_mode == BTM_SEC_MODE_LINK));
-        btsnd_hcic_write_auth_enable ((UINT8)(btm_cb.security_mode == BTM_SEC_MODE_LINK));
+        if (btsnd_hcic_write_auth_enable ((UINT8)(btm_cb.security_mode == BTM_SEC_MODE_LINK))) {
+            btm_cb.security_mode_changed = FALSE;
+        }
     }
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     if (btm_cb.pin_type_changed) {
-        btm_cb.pin_type_changed = FALSE;
-        btsnd_hcic_write_pin_type (btm_cb.cfg.pin_type);
+        if (btsnd_hcic_write_pin_type (btm_cb.cfg.pin_type)) {
+            btm_cb.pin_type_changed = FALSE;
+        }
     }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
@@ -5794,7 +5887,7 @@ tBTM_SEC_DEV_REC *btm_sec_find_dev_by_sec_state (UINT8 state)
     list_node_t *p_node = NULL;
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev_rec = list_node(p_node);
-	if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
+        if ((p_dev_rec->sec_flags & BTM_SEC_IN_USE)
                 && (p_dev_rec->sec_state == state)) {
             return (p_dev_rec);
         }
@@ -5945,9 +6038,14 @@ static BOOLEAN btm_sec_queue_mx_request (BD_ADDR bd_addr,  UINT16 psm,  BOOLEAN 
         BTM_TRACE_EVENT ("%s() PSM: 0x%04x  Is_Orig: %u  mx_proto_id: %u  mx_chan_id: %u\n",
                          __func__, psm, is_orig, mx_proto_id, mx_chan_id);
 
-    fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT);
+        if (fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT)) {
+            return (TRUE);
+        }
+    }
 
-        return (TRUE);
+    if (p_e) {
+        osi_free(p_e);
+        p_e = NULL;
     }
 
     return (FALSE);
@@ -5958,7 +6056,6 @@ static BOOLEAN btm_sec_check_prefetch_pin (tBTM_SEC_DEV_REC  *p_dev_rec)
 #if (CLASSIC_BT_INCLUDED == TRUE)
     UINT8 major = (UINT8)(p_dev_rec->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK);
     UINT8 minor = (UINT8)(p_dev_rec->dev_class[2] & BTM_COD_MINOR_CLASS_MASK);
-    rv = TRUE;
 
     if ((major == BTM_COD_MAJOR_AUDIO)
             &&  ((minor == BTM_COD_MINOR_CONFM_HANDSFREE) || (minor == BTM_COD_MINOR_CAR_AUDIO)) ) {
@@ -5974,30 +6071,30 @@ static BOOLEAN btm_sec_check_prefetch_pin (tBTM_SEC_DEV_REC  *p_dev_rec)
                 btsnd_hcic_write_auth_enable (TRUE);
             }
         }
-    } else {
-        btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_LOCAL_PIN);
-
-        /* If we got a PIN, use that, else try to get one */
-        if (btm_cb.pin_code_len) {
-            BTM_PINCodeReply (p_dev_rec->bd_addr, BTM_SUCCESS, btm_cb.pin_code_len, btm_cb.pin_code, p_dev_rec->trusted_mask);
-        } else {
-            /* pin was not supplied - pre-fetch pin code now */
-            if (btm_cb.api.p_pin_callback && ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_PIN_REQD) == 0)) {
-                BTM_TRACE_DEBUG("%s() PIN code callback called\n", __func__);
-                if (btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR) == NULL) {
-                    btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
-                }
-                (btm_cb.api.p_pin_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class,
-                                             p_dev_rec->sec_bd_name, (p_dev_rec->p_cur_service == NULL) ? FALSE
-                                             : (p_dev_rec->p_cur_service->security_flags
-                                                & BTM_SEC_IN_MIN_16_DIGIT_PIN));
-            }
-        }
-
         rv = TRUE;
+    } else if (btm_cb.pin_code_len) {
+        btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_LOCAL_PIN);
+        BTM_PINCodeReply (p_dev_rec->bd_addr, BTM_SUCCESS, btm_cb.pin_code_len, btm_cb.pin_code, p_dev_rec->trusted_mask);
+        rv = TRUE;
+    } else if (btm_cb.api.p_pin_callback) {
+        btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_LOCAL_PIN);
+        /* pin was not supplied - pre-fetch pin code now */
+        if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_PIN_REQD) == 0) {
+            BTM_TRACE_DEBUG("%s() PIN code callback called\n", __func__);
+            if (btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR) == NULL) {
+                btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
+            }
+            (btm_cb.api.p_pin_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class,
+                                         p_dev_rec->sec_bd_name, (p_dev_rec->p_cur_service == NULL) ? FALSE
+                                         : (p_dev_rec->p_cur_service->security_flags
+                                            & BTM_SEC_IN_MIN_16_DIGIT_PIN));
+        }
+        rv = TRUE;
+    } else {
+        BTM_TRACE_WARNING ("%s() cannot prefetch PIN: no PIN supplied and no callback registered\n", __func__);
     }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-#
+
     return rv;
 }
 
@@ -6015,6 +6112,10 @@ static BOOLEAN btm_sec_check_prefetch_pin (tBTM_SEC_DEV_REC  *p_dev_rec)
 void btm_sec_auth_payload_tout (UINT8 *p, UINT16 hci_evt_len)
 {
     UINT16 handle;
+
+    if (hci_evt_len < 2) {
+        return;
+    }
 
     STREAM_TO_UINT16 (handle, p);
     handle = HCID_GET_HANDLE (handle);
@@ -6053,10 +6154,15 @@ static BOOLEAN btm_sec_queue_encrypt_request (BD_ADDR bd_addr, tBT_TRANSPORT tra
         }
         p_e->transport  = transport;
         memcpy(p_e->bd_addr, bd_addr, BD_ADDR_LEN);
-        fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT);
-        return TRUE;
+        if (fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT)) {
+            return TRUE;
+        }
     }
 
+    if (p_e) {
+        osi_free(p_e);
+        p_e = NULL;
+    }
     return FALSE;
 }
 
@@ -6187,7 +6293,7 @@ static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRA
                     (*p_e->p_callback) (p_dev_rec->bd_addr, transport, p_e->p_ref_data, res);
                 }
 
-				fixed_queue_try_remove_from_queue(btm_cb.sec_pending_q, (void *)p_e);
+                osi_free(fixed_queue_try_remove_from_queue(btm_cb.sec_pending_q, (void *)p_e));
             }
         }
     }
