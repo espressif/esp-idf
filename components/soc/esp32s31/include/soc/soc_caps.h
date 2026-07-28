@@ -193,6 +193,8 @@
 
 #define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
 
+#define SOC_CPU_HAS_ZC_EXTENSIONS       1
+
 /*-------------------------- DMA Common CAPS ----------------------------------------*/
 #define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
 
