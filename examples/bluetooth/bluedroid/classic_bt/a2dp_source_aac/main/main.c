@@ -338,7 +338,7 @@ static void bt_app_register_a2dp_src_seps(void)
     mcc_aac.cie.m24_info.br1 = 0x02 & ESP_A2D_M24_CIE_BR1_MSK;
     mcc_aac.cie.m24_info.br2 = 0x71 & ESP_A2D_M24_CIE_BR2_MSK;
     mcc_aac.cie.m24_info.br3 = 0x00 & ESP_A2D_M24_CIE_BR3_MSK;
-    esp_a2d_source_register_stream_endpoint(0, &mcc_aac);
+    ESP_ERROR_CHECK(esp_a2d_source_register_stream_endpoint(0, &mcc_aac));
 
     esp_a2d_mcc_t mcc_sbc = {0};
     mcc_sbc.type = ESP_A2D_MCT_SBC;
@@ -358,7 +358,28 @@ static void bt_app_register_a2dp_src_seps(void)
     mcc_sbc.cie.sbc_info.alloc_mthd = ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR | ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS;
     mcc_sbc.cie.sbc_info.min_bitpool = 2;
     mcc_sbc.cie.sbc_info.max_bitpool = 250;
-    esp_a2d_source_register_stream_endpoint(1, &mcc_sbc);
+    ESP_ERROR_CHECK(esp_a2d_source_register_stream_endpoint(1, &mcc_sbc));
+}
+
+static void bt_app_a2d_prof_hdl(uint16_t event, void *param)
+{
+    esp_a2d_cb_param_t *a2d = (esp_a2d_cb_param_t *)param;
+
+    switch (event) {
+    /* when a2dp init or deinit completed, this event comes */
+    case ESP_A2D_PROF_STATE_EVT: {
+        if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
+            bt_app_register_a2dp_src_seps();
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Deinit Complete");
+        }
+        break;
+    }
+    default:
+        ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
+        break;
+    }
 }
 
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
@@ -377,8 +398,6 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
         esp_a2d_source_init();
         esp_a2d_register_callback(&bt_app_a2d_cb);
-
-        bt_app_register_a2dp_src_seps();
 
         /* Avoid the state error of s_a2d_state caused by the connection initiated by the peer device. */
         esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
@@ -407,7 +426,16 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
 static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 {
-    bt_app_work_dispatch(bt_app_av_sm_hdlr, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
+    switch (event) {
+    case ESP_A2D_PROF_STATE_EVT: {
+        bt_app_work_dispatch(bt_app_a2d_prof_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
+        break;
+    }
+    default: {
+        bt_app_work_dispatch(bt_app_av_sm_hdlr, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
+        break;
+    }
+    }
 }
 
 static void bt_app_a2d_heart_beat(TimerHandle_t arg)

@@ -369,7 +369,7 @@ static void bt_app_register_a2dp_sink_seps(void)
     mcc_aac.cie.m24_info.br1 = 0x7F & ESP_A2D_M24_CIE_BR1_MSK;
     mcc_aac.cie.m24_info.br2 = 0xFF & ESP_A2D_M24_CIE_BR2_MSK;
     mcc_aac.cie.m24_info.br3 = 0xFF & ESP_A2D_M24_CIE_BR3_MSK;
-    esp_a2d_sink_register_stream_endpoint(0, &mcc_aac);
+    ESP_ERROR_CHECK(esp_a2d_sink_register_stream_endpoint(0, &mcc_aac));
 
     esp_a2d_mcc_t mcc_sbc = {0};
     mcc_sbc.type = ESP_A2D_MCT_SBC;
@@ -389,7 +389,7 @@ static void bt_app_register_a2dp_sink_seps(void)
     mcc_sbc.cie.sbc_info.alloc_mthd = ESP_A2D_SBC_CIE_ALLOC_MTHD_SNR | ESP_A2D_SBC_CIE_ALLOC_MTHD_LOUDNESS;
     mcc_sbc.cie.sbc_info.min_bitpool = 2;
     mcc_sbc.cie.sbc_info.max_bitpool = 250;
-    esp_a2d_sink_register_stream_endpoint(1, &mcc_sbc);
+    ESP_ERROR_CHECK(esp_a2d_sink_register_stream_endpoint(1, &mcc_sbc));
 }
 
 static void bt_app_dev_cb(esp_bt_dev_cb_event_t event, esp_bt_dev_cb_param_t *param)
@@ -407,7 +407,18 @@ static void bt_app_a2d_hdl(uint16_t event, void *param)
     esp_a2d_cb_param_t *a2d = (esp_a2d_cb_param_t *)param;
 
     switch (event) {
-    case ESP_A2D_PROF_STATE_EVT:
+    case ESP_A2D_PROF_STATE_EVT: {
+        if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
+            bt_app_register_a2dp_sink_seps();
+
+            /* Get the default value of the delay value */
+            esp_a2d_sink_get_delay_value();
+        } else {
+            ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Deinit Complete");
+        }
+        break;
+    }
     case ESP_A2D_SNK_PSC_CFG_EVT:
     case ESP_A2D_SNK_SET_DELAY_VALUE_EVT:
     case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
@@ -504,11 +515,8 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_a2d_register_callback(&bt_app_a2d_cb);
         assert(esp_a2d_sink_init() == ESP_OK);
 
-        bt_app_register_a2dp_sink_seps();
         esp_a2d_sink_register_audio_data_callback(bt_app_a2d_audio_data_cb);
 
-        /* Get the default value of the delay value */
-        esp_a2d_sink_get_delay_value();
         /* Get local device name */
         esp_bt_gap_get_device_name();
 
