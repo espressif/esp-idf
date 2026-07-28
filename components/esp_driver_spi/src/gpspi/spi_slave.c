@@ -413,7 +413,7 @@ static void SPI_SLAVE_ISR_ATTR spi_slave_uninstall_priv_trans(spi_host_device_t 
         if (trans->tx_buffer && (trans->tx_buffer != priv_trans->tx_buffer)) {
             free(priv_trans->tx_buffer);
         }
-        if (trans->rx_buffer && (trans->rx_buffer != priv_trans->rx_buffer)) {
+        if (priv_trans->rx_buffer && (trans->rx_buffer != priv_trans->rx_buffer)) {
             size_t compatible_len = trans->rx_length ? trans->rx_length : trans->length;
             memcpy(trans->rx_buffer, priv_trans->rx_buffer, (MIN(compatible_len, trans->trans_len) + 7) / 8);
             free(priv_trans->rx_buffer);
