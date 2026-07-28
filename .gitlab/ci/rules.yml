@@ -134,6 +134,9 @@
 
   - "tools/ci/test_soc_headers_load_in_idf_build_apps.py"
 
+  - "tools/ci/dynamic_pipelines/scripts/patch_buildv2_child_pipeline.py"
+  - "tools/ci/dynamic_pipelines/tests/**/*"
+
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
 
