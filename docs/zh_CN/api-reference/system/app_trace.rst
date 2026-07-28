@@ -17,9 +17,9 @@ ESP-IDF 支持用于程序行为分析的 **应用级追踪** 功能。在 menuc
 应用示例
 ---------------
 
-- :example:`system/app_trace_to_plot` 演示了如何使用应用层跟踪库通过 JTAG 发送并绘制虚拟传感器数据到主机上，提供了比通过 UART 记录更快的替代方案。
+- :example:`system/tracing/app_trace_to_plot` 演示了如何使用应用层跟踪库通过 JTAG 发送并绘制虚拟传感器数据到主机上，提供了比通过 UART 记录更快的替代方案。
 
-- :example:`system/app_trace_basic` 演示了如何使用应用层跟踪库通过 JTAG 向主机记录消息，提供了比 UART 记录更快的替代方案。
+- :example:`system/tracing/app_trace_basic` 演示了如何使用应用层跟踪库通过 JTAG 向主机记录消息，提供了比 UART 记录更快的替代方案。
 
 API 参考
 -------------

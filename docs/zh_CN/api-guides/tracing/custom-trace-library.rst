@@ -69,4 +69,4 @@ FreeRTOS 跟踪钩子
 应用示例
 --------
 
-- :example:`system/esp_trace_custom_library` 是一个最简模板，演示如何接入外部编码器、说明 FreeRTOS 跟踪钩子头文件的包含链，以及通过编码器锁实现多核序列化。
+- :example:`system/tracing/esp_trace_custom_library` 是一个最简模板，演示如何接入外部编码器、说明 FreeRTOS 跟踪钩子头文件的包含链，以及通过编码器锁实现多核序列化。

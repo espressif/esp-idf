@@ -104,9 +104,9 @@ Related Documentation
 Examples
 --------
 
-- :example:`system/app_trace_basic`: Basic application tracing
-- :example:`system/sysview_tracing`: SystemView tracing example
-- :example:`system/sysview_tracing_heap_log`: Heap tracing with SystemView
-- :example:`system/gcov`: Source code coverage over JTAG
-- :example:`system/function_tracing`: Compiler-instrumented function entry/exit tracing
-- :example:`system/esp_trace_custom_library`: External trace library integration template
+- :example:`system/tracing/app_trace_basic`: Basic application tracing
+- :example:`system/tracing/sysview_tracing`: SystemView tracing example
+- :example:`system/tracing/sysview_tracing_heap_log`: Heap tracing with SystemView
+- :example:`system/tracing/gcov`: Source code coverage over JTAG
+- :example:`system/tracing/function_tracing`: Compiler-instrumented function entry/exit tracing
+- :example:`system/tracing/esp_trace_custom_library`: External trace library integration template

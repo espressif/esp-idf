@@ -1,7 +1,7 @@
 {
   "//data.json": "Apptrace plotting config file for 'read_trace.py'",
   "//Summary and usage": "This file is used for apptrace plotting. You can use this json file with '--plot-config' parameter of the 'read_trace.py' file is to configure graphs for visualizing sensor data",
-  "//More information": "To get more information about apptrace plotting and configuration file, please check 'app_trace_to_plot' example in '../examples/system' and 'read_trace.py' file",
+  "//More information": "To get more information about apptrace plotting and configuration file, please check 'app_trace_to_plot' example in '../examples/system/tracing' and 'read_trace.py' file",
   "Temperature sensors": {
     "data_streams" : {
       "Outside temperature": {
@@ -27,7 +27,7 @@
       }
     },
     "xaxis_title": "Timestamp",
-    "yaxis_title": "Temperature in Celcius"
+    "yaxis_title": "Temperature in Celsius"
   },
   "Altitude sensors": {
     "data_streams" : {

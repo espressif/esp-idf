@@ -107,7 +107,7 @@ menu "ESP Trace Configuration"
 
                 To trace a component or file, add the GCC function instrumentation flag
                 from that component's CMakeLists.txt. See the Application Level Tracing
-                guide and examples/system/function_tracing for CMake examples.
+                guide and examples/system/tracing/function_tracing for CMake examples.
 
                 Use the GCC -finstrument-functions-exclude-file-list and
                 -finstrument-functions-exclude-function-list flags to skip

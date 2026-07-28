@@ -178,6 +178,7 @@
 /docs/**/api-guides/esp-wifi-mesh.rst              @esp-idf-codeowners/wifi
 /docs/**/api-guides/file-system-considerations.rst @esp-idf-codeowners/storage
 /docs/en/api-guides/jtag-debugging/                @esp-idf-codeowners/debugging
+/docs/**/api-guides/tracing/                       @esp-idf-codeowners/debugging
 /docs/**/api-reference/bluetooth/                  @esp-idf-codeowners/bluetooth
 /docs/**/api-reference/network/                    @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /docs/**/api-reference/peripherals/                @esp-idf-codeowners/peripherals
@@ -211,6 +212,7 @@
 /examples/storage/            @esp-idf-codeowners/storage
 /examples/system/             @esp-idf-codeowners/system
 /examples/system/ota/         @esp-idf-codeowners/app-utilities
+/examples/system/tracing/     @esp-idf-codeowners/debugging
 /examples/wifi/               @esp-idf-codeowners/wifi
 /examples/zigbee/             @esp-idf-codeowners/ieee802154
 
