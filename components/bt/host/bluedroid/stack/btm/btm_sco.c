@@ -655,7 +655,7 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
                                 temp_pkt_types);
 
                 /* Return error if no packet types left */
-                if ((temp_pkt_types & BTM_SCO_SUPPORTED_PKTS_MASK) == 0) {
+                if (temp_pkt_types == BTM_SCO_EXCEPTION_PKTS_MASK) {
                     BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",__FUNCTION__);
                     return (BTM_WRONG_MODE);
                 }
