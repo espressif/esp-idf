@@ -201,6 +201,24 @@
 
 #endif /* ( !CONFIG_FREERTOS_SMP && ( configNUM_CORES > 1 ) ) */
 
+#if CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
+
+/*
+ * Reconcile the given core's OS-tick accounting against the free-running counter while its
+ * OS-tick interrupt is still masked.
+ *
+ * Updates s_handled_systicks using the same accounting as SysTickIsrHandler(), so
+ * re-enabling the alarm afterwards will not reprocess suppressed ticks. The caller should
+ * restore the OS-tick interrupt and then advance the RTOS tick by the returned amount.
+ *
+ * @param cpu_id Core whose suppressed OS-tick accounting should be reconciled.
+ *
+ * @return Number of whole OS-tick periods that elapsed while masked.
+ */
+    uint32_t xPortSysTickClaimElapsedTicks( int cpu_id );
+
+#endif /* CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER */
+
 /*------------------------------------------------------------------------------
  * TASK UTILITIES (PRIVATE)
  *----------------------------------------------------------------------------*/

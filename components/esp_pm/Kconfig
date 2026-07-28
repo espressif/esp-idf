@@ -78,6 +78,20 @@ menu "Power Management"
             This feature is intended to be used when lower power consumption is needed
             while there is enough place in IRAM to place source code.
 
+    config PM_TICKLESS_IDLE_WAITI
+        bool "Enable tickless idle without entering light sleep"
+        depends on PM_ENABLE
+        depends on FREERTOS_USE_TICKLESS_IDLE
+        depends on FREERTOS_SYSTICK_USES_SYSTIMER
+        depends on SOC_RTC_TIMER_SUPPORTED
+        default n
+        help
+            When enabled, tickless idle also applies when the system does not enter
+            light sleep. This includes DFS-only configurations (light sleep disabled),
+            and cases where light sleep is enabled but not taken (for example when
+            blocked by ESP_PM_NO_LIGHT_SLEEP or other PM locks). This can reduce idle
+            power consumption in those situations.
+
     config PM_SLP_DISABLE_GPIO
         bool "Disable all GPIO when chip at sleep"
         depends on FREERTOS_USE_TICKLESS_IDLE

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,18 @@ FORCE_INLINE_ATTR void rtc_timer_ll_set_wakeup_time(uint8_t timer_id, uint64_t t
 
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
     SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
+}
+
+/**
+ * @brief Clear/disarm the wakeup timer alarm enabled by rtc_timer_ll_set_wakeup_time()
+ *
+ * @param timer_id Timer ID (ignored for V1 hardware, only one timer supported)
+ */
+FORCE_INLINE_ATTR void rtc_timer_ll_clear_wakeup_time(uint8_t timer_id)
+{
+    (void)timer_id; // V1 hardware only supports one timer
+    CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
+    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
 }
 
 /**

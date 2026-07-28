@@ -114,6 +114,9 @@ void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_reconfigure_ticks(uint32_t stage0_ticks, u
 
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
 volatile bool int_wdt_cpu1_ticked = false;
+/* Set while CPU1 is intentionally idle (e.g. tickless idle) and therefore not ticking. The CPU1
+ * liveness requirement is bypassed so CPU0 keeps feeding the watchdog (and stays protected). */
+static volatile bool s_int_wdt_cpu1_idle = false;
 #endif
 
 static void ESP_SYSTEM_IRAM_ATTR tick_hook(void)
@@ -125,7 +128,7 @@ static void ESP_SYSTEM_IRAM_ATTR tick_hook(void)
         return;
     }
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
-    if (int_wdt_cpu1_ticked) {
+    if (int_wdt_cpu1_ticked || s_int_wdt_cpu1_idle) {
         int_wdt_cpu1_ticked = false;
     } else {
         return;
@@ -190,5 +193,27 @@ void esp_int_wdt_cpu_init(void)
 #endif
     esp_intr_enable_source(ETS_INT_WDT_INUM);
 }
+
+void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_pause(void)
+{
+    wdt_hal_write_protect_disable(&iwdt_context);
+    wdt_hal_disable(&iwdt_context);
+    wdt_hal_write_protect_enable(&iwdt_context);
+}
+
+void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_resume(void)
+{
+    wdt_hal_write_protect_disable(&iwdt_context);
+    wdt_hal_feed(&iwdt_context);
+    wdt_hal_enable(&iwdt_context);
+    wdt_hal_write_protect_enable(&iwdt_context);
+}
+
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
+void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_pause_cpu1_checking(bool pause)
+{
+    s_int_wdt_cpu1_idle = pause;
+}
+#endif // CONFIG_ESP_INT_WDT_CHECK_CPU1
 
 #endif // CONFIG_ESP_INT_WDT

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -35,6 +36,35 @@ void esp_int_wdt_init(void);
  * @note esp_int_wdt_init() must be called first before calling this function
  */
 void esp_int_wdt_cpu_init(void);
+
+#if CONFIG_ESP_INT_WDT
+/**
+ * @brief Pause (disable) the interrupt watchdog.
+ *
+ * @note Must be balanced by esp_int_wdt_resume(). Not nestable.
+ */
+void esp_int_wdt_pause(void);
+
+/**
+ * @brief Resume (re-enable and feed) the interrupt watchdog previously paused with esp_int_wdt_pause().
+ */
+void esp_int_wdt_resume(void);
+
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
+/**
+ * @brief Pause or resume INT WDT CPU1 liveness checking.
+ *
+ * Distinct from esp_int_wdt_pause(): this does not disable the watchdog.
+ * With ESP_INT_WDT_CHECK_CPU1 enabled, CPU0 only feeds the watchdog after CPU1 has also ticked.
+ * When CPU1 is intentionally idle and no longer ticks (e.g. tickless WAITI).
+ * Call with pause=true so CPU0 can keep feeding (and stay protected).
+ * Call with pause=false when CPU1 is active again.
+ *
+ * @param pause true to pause the CPU1 liveness check, false to resume it
+ */
+void esp_int_wdt_pause_cpu1_checking(bool pause);
+#endif // CONFIG_ESP_INT_WDT_CHECK_CPU1
+#endif // CONFIG_ESP_INT_WDT
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 /**

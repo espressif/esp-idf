@@ -102,7 +102,6 @@ static void assert_alarm_interrupt_round_trip(uint8_t timer_id)
     uint64_t delay_ticks = rtc_time_us_to_slowclk(RTC_TIMER_ALARM_DELAY_US, period);
     const uint32_t raw_mask = get_alarm_intr_mask(timer_id);
 
-    rtc_timer_ll_set_target_enable(&LP_TIMER, timer_id, false);
     rtc_timer_ll_alarm_intr_enable(&LP_TIMER, timer_id, false);
     rtc_timer_ll_clear_alarm_intr_status(&LP_TIMER, timer_id);
     TEST_ASSERT_EQUAL_HEX32(0, rtc_timer_ll_get_intr_raw(&LP_TIMER, timer_id) & raw_mask);

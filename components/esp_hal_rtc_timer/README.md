@@ -14,6 +14,7 @@ The component consolidates timer functionality from two different hardware imple
 
 ### Unified HAL API (All Chips)
 - Wakeup timer configuration via `rtc_timer_hal_set_wakeup_time()`
+- Wakeup timer clear/disarm via `rtc_timer_hal_clear_wakeup_time()`
 - RTC time reading via `rtc_timer_hal_get_cycle_count()`
 
 ### Hardware-Specific LL API

@@ -40,8 +40,16 @@ void esp_vApplicationTickHook(void)
 
 void esp_vApplicationIdleHook(void)
 {
-    bool can_go_idle = true;
     int core = xPortGetCoreID();
+
+#if CONFIG_PM_TICKLESS_IDLE_WAITI
+    /* Two-phase WAITI: plan is armed in vApplicationSleep(); execute it here (kernel lock free). */
+    if (esp_pm_impl_tickless_waiti()) {
+        return;
+    }
+#endif
+
+    bool can_go_idle = true;
     for (int n = 0; n < MAX_HOOKS; n++) {
         if (idle_cb[core][n] != NULL && !idle_cb[core][n]()) {
             can_go_idle = false;

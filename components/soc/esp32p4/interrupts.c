@@ -9,8 +9,8 @@
 const char *const esp_isr_names[] = {
     [ETS_LP_RTC_INTR_SOURCE]             = "LP_RTC",
     [ETS_LP_WDT_INTR_SOURCE]             = "LP_WDT",
-    [ETS_LP_TIMER_REG0_INTR_SOURCE]      = "LP_TIMER_REG0",
-    [ETS_LP_TIMER_REG1_INTR_SOURCE]      = "LP_TIMER_REG1",
+    [ETS_LP_TIMER_REG_0_INTR_SOURCE]     = "LP_TIMER_REG0",
+    [ETS_LP_TIMER_REG_1_INTR_SOURCE]     = "LP_TIMER_REG1",
     [ETS_MB_HP_INTR_SOURCE]              = "MB_HP",
     [ETS_MB_LP_INTR_SOURCE]              = "MB_LP",
     [ETS_PMU_0_INTR_SOURCE]              = "PMU_0",
