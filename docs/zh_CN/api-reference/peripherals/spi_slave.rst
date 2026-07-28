@@ -88,6 +88,10 @@ SPI 传输事务
 
     请注意该功能共享 MSPI 总线带宽（总线频率 * 总线位宽），因此主机对该设备的传输带宽应小于 PSRAM 带宽，否则 **可能会丢失传输数据**，此时 ``spi_slave_transmit`` 函数将会返回 :c:macro:`ESP_ERR_INVALID_STATE` 错误。
 
+    .. note::
+
+        当开启加密功能时，使用 PSRAM Buffer 的传输有更严格的对齐要求，通常为仅支持 16 字节对齐的传输。对于不对齐的传输，会返回 :c:macro:`ESP_ERR_INVALID_ARG` 错误。
+
 使用驱动程序
 ------------
 

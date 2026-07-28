@@ -88,6 +88,10 @@ As not every transaction requires both writing and reading data, you can choose 
 
     Note that this feature shares the MSPI bus bandwidth (bus frequency * bus width), so the transmission bandwidth of the host to this device should be less than the PSRAM bandwidth, otherwise **data may be lost**, and the ``spi_slave_transmit`` function will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
+    .. note::
+
+        When encryption is enabled, there are stricter alignment requirements for PSRAM buffer transfers, usually only supporting 16-byte alignment. For unaligned transfers, :c:macro:`ESP_ERR_INVALID_ARG` error will be returned.
+
 Driver Usage
 ------------
 

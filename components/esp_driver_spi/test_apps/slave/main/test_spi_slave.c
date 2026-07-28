@@ -300,7 +300,9 @@ TEST_CASE("test slave using external ram", "[spi]")
 
     for (int i = 0; i < 6; i ++) {
         test_fill_random_to_buffers_dualboard(7 + i, master_tx, slave_ext_tx, PSRAM_TRANS_LEN);
+#if !CONFIG_SECURE_FLASH_ENC_ENABLED    // encrypted chip don't support unaligned psram transfer
         slave_tans.length -= i * 8;
+#endif
         master_tans.length = slave_tans.length;
         master_tans.rxlength = slave_tans.length;
         ESP_LOGI(SLAVE_TAG, "Test freq: %ld, tx: %p, rx: %p, len: %d", master_tans.override_freq_hz, slave_tans.tx_buffer, slave_tans.rx_buffer, slave_tans.length / 8);
@@ -315,7 +317,9 @@ TEST_CASE("test slave using external ram", "[spi]")
         spi_master_trans_impl_gpio(buscfg, PIN_NUM_CS, 0, (uint8_t *)master_tans.tx_buffer, master_tans.rx_buffer, master_tans.length / 8, false);
 #endif
         ESP_LOGI(SLAVE_TAG, "slave malloc: %ld", after - before);
+#if !CONFIG_SECURE_FLASH_ENC_ENABLED
         TEST_ASSERT(i ? (before - after) > PSRAM_TRANS_LEN : (before - after) < PSRAM_TRANS_LEN);
+#endif
         TEST_ESP_OK(spi_slave_get_trans_result(TEST_SPI_HOST, &out_trans, portMAX_DELAY));
 
         TEST_ASSERT_EQUAL(master_tans.length, slave_tans.trans_len);

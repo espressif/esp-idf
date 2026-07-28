@@ -2097,7 +2097,7 @@ TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
 
 #if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
 #define TEST_EDMA_PSRAM_TRANS_NUM    5
-#define TEST_EDMA_TRANS_LEN          20000
+#define TEST_EDMA_TRANS_LEN          20480
 #define TEST_EDMA_BUFFER_SZ          (TEST_EDMA_PSRAM_TRANS_NUM * TEST_EDMA_TRANS_LEN)
 
 void test_spi_psram_trans(spi_device_handle_t dev_handle, void *tx, void *rx)
@@ -2109,6 +2109,9 @@ void test_spi_psram_trans(spi_device_handle_t dev_handle, void *tx, void *rx)
 
     int trans_len = TEST_EDMA_TRANS_LEN - TEST_EDMA_PSRAM_TRANS_NUM / 2;
     for (uint8_t cnt = 0; cnt < TEST_EDMA_PSRAM_TRANS_NUM; cnt ++) {
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+        trans_len = TEST_EDMA_TRANS_LEN;    // encrypted chip don't support unaligned psram transfer
+#endif
         trans_cfg.length = trans_len * 8;
         trans_cfg.rxlength = trans_len * 8;
         trans_cfg.flags = (cnt % 2) ? 0 : SPI_TRANS_DMA_USE_PSRAM;
@@ -2160,8 +2163,10 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
         spi_device_polling_start(dev_handle, &trans_cfg, portMAX_DELAY);
         uint32_t after = esp_get_free_heap_size();
         printf("mem_diff: %ld, trans_len: %d\n", after - before, TEST_EDMA_TRANS_LEN);
+#if !CONFIG_SECURE_FLASH_ENC_ENABLED
         // rx buffer still potential re-malloc from psram even if SPI_TRANS_DMA_USE_PSRAM is set
         TEST_ASSERT(i ? (before - after) < 2 * TEST_EDMA_TRANS_LEN : (before - after) > 2 * TEST_EDMA_TRANS_LEN);
+#endif
         spi_device_polling_end(dev_handle, portMAX_DELAY);
         printf("TX fail: %d, RX fail: %d\n", !!(trans_cfg.flags & SPI_TRANS_DMA_TX_FAIL), !!(trans_cfg.flags & SPI_TRANS_DMA_RX_FAIL));
         if (!i) { // data should be correct if using auto malloc

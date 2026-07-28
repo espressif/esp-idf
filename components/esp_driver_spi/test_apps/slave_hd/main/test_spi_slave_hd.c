@@ -1095,7 +1095,7 @@ static esp_err_t (*hd_get_trans_res[2])(spi_host_device_t host_id, spi_slave_cha
     spi_slave_hd_get_trans_res, spi_slave_hd_get_append_trans_res
 };
 
-#define TEST_PSRAM_TRANS_LEN 1000
+#define TEST_PSRAM_TRANS_LEN 1600
 TEST_CASE("test slave hd edma segment and append mode", "[spi]")
 {
     uint8_t *mst_tx = heap_caps_malloc(TEST_PSRAM_TRANS_LEN, MALLOC_CAP_DEFAULT);
@@ -1105,6 +1105,9 @@ TEST_CASE("test slave hd edma segment and append mode", "[spi]")
     spi_slave_hd_data_t *ret_trans, tx_data = {
         .data = slv_tx,
         .len = TEST_PSRAM_TRANS_LEN,
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,  // encrypted chip has different alignment
+#endif
     }, rx_data = {
         .data = slv_rx,
         .len = TEST_PSRAM_TRANS_LEN,

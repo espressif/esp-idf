@@ -430,12 +430,14 @@ static esp_err_t SPI_SLAVE_ATTR spi_slave_setup_priv_trans(spi_host_device_t hos
     }
 
     bool auto_malloc = (trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO);
-    esp_err_t ret = spicommon_dma_setup_priv_buffer(spihost[host]->id, (uint32_t *)trans->tx_buffer, ((trans->length ? trans->length : trans->tx_length) + 7) / 8, true, true, auto_malloc, &priv_trans->tx_buffer);
+    size_t tx_bytes_len = ((trans->length ? trans->length : trans->tx_length) + 7) / 8;
+    size_t rx_bytes_len = ((trans->length ? trans->length : trans->rx_length) + 7) / 8;
+    esp_err_t ret = spicommon_dma_setup_priv_buffer(spihost[host]->id, (uint32_t *)trans->tx_buffer, tx_bytes_len, true, true, auto_malloc, &priv_trans->tx_buffer);
     if (ret != ESP_OK) {
         spi_slave_uninstall_priv_trans(host, priv_trans);
         return ret;
     }
-    ret = spicommon_dma_setup_priv_buffer(spihost[host]->id, (uint32_t *)trans->rx_buffer, ((trans->length ? trans->length : trans->rx_length) + 7) / 8, false, true, auto_malloc, &priv_trans->rx_buffer);
+    ret = spicommon_dma_setup_priv_buffer(spihost[host]->id, (uint32_t *)trans->rx_buffer, rx_bytes_len, false, true, auto_malloc, &priv_trans->rx_buffer);
     if (ret != ESP_OK) {
         spi_slave_uninstall_priv_trans(host, priv_trans);
     }

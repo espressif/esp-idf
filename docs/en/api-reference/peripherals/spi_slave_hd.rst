@@ -71,6 +71,10 @@ To send data to the master through the sending DMA channel, the application shou
 
     Note that this feature shares the MSPI bus bandwidth (bus frequency * bus width), so the transmission bandwidth of the host to this device should be less than the PSRAM bandwidth, otherwise **data may be lost**, and then getting the transmission result will return the :c:macro:`ESP_ERR_INVALID_STATE` error.
 
+    .. note::
+
+        When encryption is enabled, there are stricter alignment requirements for PSRAM buffer transfers, usually only supporting 16-byte alignment. For unaligned transfers, :c:macro:`ESP_ERR_INVALID_ARG` error will be returned.
+
 The application should check the result of data sending by calling :cpp:func:`spi_slave_hd_get_trans_res` with the channel set as :cpp:enumerator:`SPI_SLAVE_CHAN_TX`. This function blocks until the transaction with the command ``Rd_DMA`` from the master successfully completes (or timeout). The ``out_trans`` argument of the function outputs the pointer of the data descriptor which is just finished, providing information about the sending.
 
 Receiving data from the master through the receiving DMA channel is quite similar. The application calls :cpp:func:`spi_slave_hd_queue_trans` with proper data descriptor and the channel argument of :cpp:enumerator:`SPI_SLAVE_CHAN_RX`. And the application calls the :cpp:func:`spi_slave_hd_get_trans_res` later to get the descriptor to the receiving buffer before it handles the data in the receiving buffer.
