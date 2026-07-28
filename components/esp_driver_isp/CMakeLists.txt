@@ -6,10 +6,16 @@ set(public_include "include")
 
 set(priv_requires "esp_driver_gpio")
 
-set(requires)
+
+if(${target} STREQUAL "linux")
+    set(requires "")
+else()
+    set(requires "esp_hw_support" "esp_mm")
+endif()
 
 if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "src/isp_core.c"
+                     "src/isp_dma.c"
                      "src/isp_af.c"
                      "src/isp_ccm.c"
                      "src/isp_awb.c"

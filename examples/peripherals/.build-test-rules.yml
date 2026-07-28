@@ -171,6 +171,13 @@ examples/peripherals/i2s/i2s_recorder:
     - esp_driver_spi
     - esp_driver_i2s
 
+examples/peripherals/isp/dma_input:
+  disable:
+    - if: SOC_ISP_SUPPORTED != 1
+  depends_components:
+    - esp_driver_isp
+    - soc
+
 examples/peripherals/isp/multi_pipelines:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1
@@ -515,7 +522,6 @@ examples/peripherals/uart/uart_dma_ota:
     - if: SOC_UHCI_SUPPORTED != 1
   depends_components:
     - esp_driver_uart
-    - esp_driver_dma
     - app_update
     - esp_ringbuf
     - soc
