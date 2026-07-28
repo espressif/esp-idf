@@ -98,3 +98,7 @@ config ESP_ROM_BOOTLOADER_OFFSET_FLASH
 config ESP_ROM_CACHE_WRITEBACK_NEEDS_SYNC_TWICE_MAP
     bool
     default y
+
+config ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+    bool
+    default y
