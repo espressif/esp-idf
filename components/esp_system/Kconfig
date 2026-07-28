@@ -406,17 +406,24 @@ menu "ESP System Settings"
             which does some useful debugging stuff, e.g. GCOV data dump.
 
     config ESP_DEBUG_INCLUDE_OCD_STUB_BINS
-        bool "Preload OpenOCD stub binaries to speed up debugging. 8K memory will be reserved"
+        bool "Preload OpenOCD stub binaries to speed up debugging. 12K memory will be reserved"
         default n
         depends on SOC_DEBUG_HAVE_OCD_STUB_BINS
+        depends on !IDF_TARGET_ESP32P4 || ESP32P4_SELECTS_REV_LESS_V3 || CACHE_L2_CACHE_512KB
         help
             OpenOCD uses stub code to access flash during programming or when inserting and removing
             SW flash breakpoints.
             To execute stub code, OpenOCD allocates memory on the target device, backs up the existing memory,
             loads the stub binary, runs the binary, and then restores the original memory.
             This process can be time-consuming, especially when using USB serial JTAG.
-            By enabling this option, 8K of memory in RAM will be preallocated with the stub code,
+            By enabling this option, 12K of memory in RAM will be preallocated with the stub code,
             eliminating the need to back up and restore the memory region.
+
+            The stub binaries are prebuilt and linked to run at the start of IRAM (_iram_start).
+            On ESP32-P4 rev >= v3, _iram_start is 0x4FF00000 + L2 cache size, so it only matches the
+            stub's link address (0x4FF80000) when the L2 cache is 512KB. This option is therefore
+            only available on ESP32-P4 rev >= v3 when CACHE_L2_CACHE_512KB is selected. Earlier P4
+            revisions and other targets place _iram_start at a fixed address and are not affected.
 
     config ESP_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"

@@ -1367,6 +1367,10 @@ config SOC_USB_FSLS_PHY_NUM
     int
     default 1
 
+config SOC_DEBUG_HAVE_OCD_STUB_BINS
+    bool
+    default y
+
 config SOC_ASRC_SUPPORTED
     bool
     default y
