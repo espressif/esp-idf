@@ -564,6 +564,16 @@ class LogCompressor:
             with open(file_path, 'rb') as f:
                 content = f.read()
 
+            # Normalize CRLF/CR to LF. On Windows the IDF sources are checked out
+            # with CRLF line endings (core.autocrlf=true). Without normalization the
+            # '\r' survives into generated log macros as '\' + '\r' + '\n' inside
+            # multi-line argument expressions, breaking the backslash
+            # line-continuation and producing syntax errors when the header is
+            # compiled. Normalizing once, right after the read, keeps every
+            # downstream step (tree-sitter parse, byte-offset tag replacement,
+            # generated macros) on consistent LF offsets.
+            content = content.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+
             new_content = bytearray(content)
             logs = self.extract_log_calls(content, self.module_info[module]['tags'])
             LOGGER.info(f'Processing {file_path} - found {len(logs)} logs')
@@ -887,7 +897,13 @@ class LogCompressor:
 
             header_content += f'#endif // __{module.upper()}_INTERNAL_LOG_INDEX_H\n'
 
-            with open(header_path, 'w') as f:
+            # newline='' disables newline translation so the generated header is
+            # written with LF on every platform. On Windows the default text-mode
+            # write turns '\n' into '\r\n', which breaks the macro line-continuations
+            # below: a backslash must be followed immediately by '\n', but with CRLF
+            # it is followed by '\r' and the continuation (and hence the macro) is
+            # split, producing a flood of syntax errors when the header is compiled.
+            with open(header_path, 'w', newline='', encoding='utf-8') as f:
                 f.write(header_content)
         else:
             append_content = ''
@@ -913,7 +929,7 @@ class LogCompressor:
             else:
                 raise RuntimeError('#endif not found')
             lines.insert(idx, append_content)
-            with open(header_path, 'w', encoding='utf-8') as f:
+            with open(header_path, 'w', encoding='utf-8', newline='') as f:
                 f.writelines(lines)
         LOGGER.info(f'Generated log index header: {header_path}')
 
@@ -983,7 +999,15 @@ class LogCompressor:
         )
 
         # Load configuration
-        modules = args.module.split(';')
+        # Strip surrounding quote chars before splitting. CMakeLists.txt wraps the
+        # semicolon-separated list in single quotes ("'${MODULES}'") to protect the
+        # ';' from POSIX shells, which strip them. cmd.exe on Windows does NOT treat
+        # single quotes as quoting characters, so args.module arrives literally as
+        # 'BLE_MESH;BLE_HOST' and the bare split(';') would yield "'BLE_MESH" /
+        # "BLE_HOST'" — which never match the YAML keys and every module gets
+        # skipped. Stripping is a no-op on Linux/macOS where the shell already
+        # removed the quotes.
+        modules = args.module.strip("'\"").split(';')
         config_path = self.build_dir / 'ble_log/module_info.yml'
         self.load_config(str(config_path), modules)
 
@@ -1001,7 +1025,9 @@ class LogCompressor:
         self.db_manager = db_manager
 
         # Prepare source files
-        src_list = args.srcs.split(';')
+        # Same quote-stripping rationale as args.module above (cmd.exe passes the
+        # CMakeLists single quotes through literally on Windows).
+        src_list = args.srcs.strip("'\"").split(';')
         self.prepare_source_files(src_list)
 
         # Collect files to process
