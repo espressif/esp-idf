@@ -1180,22 +1180,28 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
     uint32_t* rcv_ptr = (trans_desc->flags & SPI_TRANS_USE_RXDATA) ? (uint32_t *)trans_desc->rx_data : (uint32_t *)trans_desc->rx_buffer;
     // tx memory assign
     uint32_t *send_ptr = (trans_desc->flags & SPI_TRANS_USE_TXDATA) ? (uint32_t *)trans_desc->tx_data : (uint32_t *)trans_desc->tx_buffer;
+    // clean_up below calls uninstall_priv_desc(), which reads both fields, so keep them
+    // valid from the start and re-point them only once a temporary buffer is allocated.
+    priv_desc->buffer_to_send = send_ptr;
+    priv_desc->buffer_to_rcv = rcv_ptr;
+
     if (!bus_attr->dma_enabled) {
-        priv_desc->buffer_to_send = send_ptr;
-        priv_desc->buffer_to_rcv = rcv_ptr;
         return ESP_OK;
     }
 
     bool use_psram = trans_desc->flags & SPI_TRANS_DMA_USE_PSRAM;
     bool auto_malloc = !(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL);
-    esp_err_t ret = spicommon_dma_setup_priv_buffer(host->id, send_ptr, (trans_desc->length + 7) / 8, true, use_psram, auto_malloc, (void *)&priv_desc->buffer_to_send);
+    esp_err_t ret = spicommon_dma_setup_priv_buffer(host->id, send_ptr, (trans_desc->length + 7) / 8, true, use_psram, auto_malloc, &send_ptr);
     if (ret != ESP_OK) {
         goto clean_up;
     }
-    ret = spicommon_dma_setup_priv_buffer(host->id, rcv_ptr, (trans_desc->rxlength + 7) / 8, false, use_psram, auto_malloc, &priv_desc->buffer_to_rcv);
+    priv_desc->buffer_to_send = send_ptr;
+
+    ret = spicommon_dma_setup_priv_buffer(host->id, rcv_ptr, (trans_desc->rxlength + 7) / 8, false, use_psram, auto_malloc, &rcv_ptr);
     if (ret != ESP_OK) {
         goto clean_up;
     }
+    priv_desc->buffer_to_rcv = rcv_ptr;
     return ret;
 
 clean_up:
