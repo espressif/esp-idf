@@ -5,6 +5,7 @@
  */
 
 #include "string.h"
+#include <stdint.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -243,7 +244,9 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 #ifdef BOOTLOADER_BUILD
     #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
 #if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
-    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR - ESP_SECURE_BOOT_DIGEST_LEN;
+    /* ROM stores the verified image digest in the last ESP_SECURE_BOOT_DIGEST_LEN
+     * bytes of LP/RTC RAM on deep-sleep wake. Keep retain mem below that region. */
+    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)((uintptr_t)RTC_RETAIN_MEM_ADDR - ESP_SECURE_BOOT_DIGEST_LEN);
 #else
     static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 #endif
