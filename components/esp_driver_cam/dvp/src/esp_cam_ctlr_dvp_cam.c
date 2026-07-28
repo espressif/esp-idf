@@ -347,14 +347,17 @@ esp_err_t esp_cam_ctlr_dvp_init(int ctlr_id, cam_clock_source_t clk_src, const e
     }
 
 #if CONFIG_IDF_TARGET_ESP32S31
-    // PLL 120M was selected in esp_perip_clk_init on esp32s31.
-    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, true));
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)CAM_CORE_CLK_SRC_DEFAULT, true));
 #endif
 
     PERIPH_RCC_ACQUIRE_ATOMIC(cam_periph_signals.buses[ctlr_id].module, ref_count) {
         if (ref_count == 0) {
             cam_ll_enable_bus_clock(ctlr_id, true);
             cam_ll_reset_register(ctlr_id);
+#if CONFIG_IDF_TARGET_ESP32S31
+            cam_ll_select_core_clk_src(ctlr_id, CAM_CORE_CLK_SRC_DEFAULT);
+            cam_ll_set_core_clock_divider(ctlr_id, 2, 0, 0);
+#endif
         }
     }
 
@@ -470,7 +473,7 @@ esp_err_t esp_cam_ctlr_dvp_deinit(int ctlr_id)
     }
 
 #if CONFIG_IDF_TARGET_ESP32S31
-    esp_clk_tree_enable_src((soc_module_clk_t)SOC_MOD_CLK_PLL_F120M, false);
+    esp_clk_tree_enable_src((soc_module_clk_t)CAM_CORE_CLK_SRC_DEFAULT, false);
 #endif
 
     return ESP_OK;
