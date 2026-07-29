@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #define IEEE802154_RSSI_COMPENSATION_VALUE 0
+#define IEEE802154_RX_SENSITIVITY -104
 
 static inline uint32_t ieee802154_ll_get_rx_filter_not_work_cnt(void)
 {
