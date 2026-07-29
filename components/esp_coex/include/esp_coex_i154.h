@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef __COEXIST_I154_H__
 #define __COEXIST_I154_H__
+
+#include <stdbool.h>
 
 /**
  * @brief 802.15.4 coex event
@@ -62,5 +64,11 @@ void esp_coex_ieee802154_status_enable(void);
  * @brief Disable the 802.15.4 status for coexistence
  */
 void esp_coex_ieee802154_status_disable(void);
+
+/**
+ * @brief Configure the 802.15.4 force Rx state
+ * @param enable true to enable, false to disable
+ */
+void esp_coex_ieee802154_force_rx_enable(bool enable);
 
 #endif
