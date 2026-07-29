@@ -58,6 +58,10 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         idf_toolchain_remove_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics")
     endif()
 
+    idf_toolchain_remove_flags(COMPILE_OPTIONS "-specs=.*picolibc.*")
+    idf_toolchain_remove_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
+    # TODO GCC-495:remove
+    idf_toolchain_remove_flags(COMPILE_OPTIONS "-D__PICOLIBC_ERRNO_FUNCTION=__errno")
     if(CONFIG_LIBC_PICOLIBC)
         # TODO GCC-464:
         # The original picolibc.specs file cannot be used directly in the build
@@ -69,11 +73,11 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         # --gc-sections option.
         get_picolibc_specs_path(picolibc_specs_path)
         idf_toolchain_add_flags(COMPILE_OPTIONS "\"-specs=${picolibc_specs_path}\"")
+        # TODO GCC-495:remove
+        idf_toolchain_add_flags(COMPILE_OPTIONS "-D__PICOLIBC_ERRNO_FUNCTION=__errno")
         if(LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
             idf_toolchain_add_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
         endif()
-    else()
-        idf_toolchain_remove_flags(COMPILE_OPTIONS "-specs=.*picolibc.*")
     endif()
 
     if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
