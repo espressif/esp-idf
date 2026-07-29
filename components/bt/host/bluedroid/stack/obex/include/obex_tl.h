@@ -85,7 +85,7 @@ typedef union
 typedef void (tOBEX_TL_CBACK)(tOBEX_TL_EVT evt, tOBEX_TL_MSG *msg);
 
 typedef struct {
-    void (*init)(tOBEX_TL_CBACK *callback);
+    UINT16 (*init)(tOBEX_TL_CBACK *callback);
     void (*deinit)(void);
     UINT16 (*connect)(tOBEX_TL_SVR_INFO *server);
     void (*disconnect)(UINT16 tl_hdl);

@@ -278,6 +278,7 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
 void bta_pba_client_free_db(tBTA_PBA_CLIENT_CCB *p_ccb)
 {
     if (p_ccb->p_disc_db != NULL) {
+        SDP_CancelServiceSearch(p_ccb->p_disc_db);
         osi_free(p_ccb->p_disc_db);
         p_ccb->p_disc_db = NULL;
     }
