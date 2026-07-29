@@ -32,11 +32,7 @@ extern "C" {
    Can be compiled as part of app or bootloader code.
 */
 
-#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
-#define ESP_SECURE_BOOT_DIGEST_LEN 48
-#else /* !CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
-#define ESP_SECURE_BOOT_DIGEST_LEN 32
-#endif /* CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS */
+#define ESP_SECURE_BOOT_DIGEST_LEN CONFIG_SECURE_BOOT_IMAGE_DIGEST_LEN
 
 /* SHA-256 length of the public key digest */
 #define ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN 32
