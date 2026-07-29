@@ -55,9 +55,11 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
                 if(CONFIG_SOC_CPU_ZCMP_PUSH_REVERSED)
                     idf_toolchain_add_flags(COMPILE_OPTIONS "-mno-cm-push-reverse")
                 endif()
-                if(CONFIG_SOC_CPU_ZCMP_POPRET_ISSUE)
+                # TODO GCC-493: uncomment when the issue is resolved
+                # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=126454
+                # if(CONFIG_SOC_CPU_ZCMP_POPRET_ISSUE)
                     idf_toolchain_add_flags(COMPILE_OPTIONS "-mno-cm-popret")
-                endif()
+                # endif()
             endif()
         endif()
 
