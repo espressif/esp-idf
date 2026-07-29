@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "esp_riscv_trace.h"
 
 #ifdef __cplusplus
@@ -22,6 +23,9 @@ extern "C" {
 #define TRACE_PACKET_MIN_LEN         4    /* prefix (3) + >=1 payload byte */
 #define TRACE_PACKET_MAX_LEN         13   /* prefix (3) + <=10 payload bytes */
 #define TRACE_SYNC_PAYLOAD_BYTES     5
+/* Sync payload layout: format(2) + subformat(2) + branch(1) + privilege(N) + address(31), where N
+ * is the encoder's privilege_width_p. Targets with supervisor mode push the address up one bit. */
+#define TRACE_SYNC_ADDR_BIT_OFFSET   (2 + 2 + 1 + SOC_RISCV_TRACE_PRIV_WIDTH)
 #define TRACE_ANCHOR_ZERO_RUN_BYTES  14   /* an anchor tag is >=14 zero bytes */
 #define TRACE_TEST_STOP_TIMEOUT_US   1000000
 

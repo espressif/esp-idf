@@ -39,9 +39,10 @@ the buffer before a stop has completed its cache synchronization.
 ## Buffer and Trace Stream Notes
 
 The trace buffer must be reachable by the trace encoder AHB master. Driver
-allocated buffers are cache-line aligned and placed in internal RAM or PSRAM
-according to configuration. Caller-provided buffers are validated for reachable
-memory and cache-line alignment.
+allocated buffers are placed in internal RAM or PSRAM according to
+configuration, and are cache-line aligned when that memory is reached through a
+data cache. Caller-provided buffers are validated for reachable memory and
+cache-line alignment.
 
 In loop memory mode, wrapped buffers need periodic resynchronization packets to
 remain decodable after the original start sync has been overwritten.

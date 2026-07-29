@@ -492,6 +492,8 @@ typedef struct {
     volatile trace_date_reg_t date;
 } trace_dev_t;
 
+extern trace_dev_t TRACE0;
+extern trace_dev_t TRACE1;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(trace_dev_t) == 0x400, "Invalid size of trace_dev_t structure");

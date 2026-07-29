@@ -16,12 +16,12 @@ bool decode_sync_pc(const uint8_t *payload, size_t payload_len, uint32_t *pc)
     if ((payload[0] & 0x3) != 3 || ((payload[0] >> 2) & 0x3) != 0) {
         return false;
     }
-    /* Address is 31 bits starting at payload bit 6; byte address is addr << 1. */
+    /* Address is 31 bits starting at TRACE_SYNC_ADDR_BIT_OFFSET; byte address is addr << 1. */
     uint64_t v = 0;
     for (int i = 0; i < TRACE_SYNC_PAYLOAD_BYTES; i++) {
         v |= (uint64_t)payload[i] << (8 * i);
     }
-    *pc = (uint32_t)((v >> 6) & 0x7FFFFFFFu) << 1;
+    *pc = (uint32_t)((v >> TRACE_SYNC_ADDR_BIT_OFFSET) & 0x7FFFFFFFu) << 1;
     return true;
 }
 

@@ -163,7 +163,7 @@ void riscv_trace_hal_set_filter(riscv_trace_hal_context_t *ctx, const riscv_trac
 
     riscv_trace_ll_set_filter_control(ctx->dev, config->match_comparators, config->match_privilege,
                                       config->match_ecause, config->match_interrupt);
-    riscv_trace_ll_set_filter_match_control(ctx->dev, config->privilege_machine,
+    riscv_trace_ll_set_filter_match_control(ctx->dev, config->privilege,
                                             config->interrupt_itype2, config->ecause);
 
     riscv_trace_ll_set_p_comparator(ctx->dev, config->primary.input, config->primary.function,

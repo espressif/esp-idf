@@ -6,8 +6,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_cache.h"
@@ -27,7 +29,7 @@
 #define ESP_RISCV_TRACE_BUFFER_CAPS_INTERNAL  (MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #define ESP_RISCV_TRACE_BUFFER_CAPS_EXTERNAL  (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
 
-#define ALIGN_UP(num, align)                  (((num) + ((align) - 1)) & ~((align) - 1))
+#define ESP_RISCV_TRACE_BUFFER_ALIGNMENT      4
 
 static const char *TAG = "esp_riscv_trace";
 
@@ -38,13 +40,15 @@ static uint8_t *alloc_aligned_buffer(size_t requested, uint32_t caps, size_t *ou
 {
     *out_size = 0;
 
-    size_t cache_line = 0;
-    ESP_RETURN_ON_FALSE(esp_cache_get_alignment(caps, &cache_line) == ESP_OK, NULL, TAG,
+    size_t cache_alignment = 0;
+    ESP_RETURN_ON_FALSE(esp_cache_get_alignment(caps, &cache_alignment) == ESP_OK, NULL, TAG,
                         "failed to get buffer alignment");
-    ESP_RETURN_ON_FALSE(requested <= SIZE_MAX - (cache_line - 1), NULL, TAG,
+    size_t alignment = MAX(cache_alignment, ESP_RISCV_TRACE_BUFFER_ALIGNMENT);
+
+    ESP_RETURN_ON_FALSE(requested <= SIZE_MAX - (alignment - 1), NULL, TAG,
                         "trace buffer size too large");
-    size_t size = ALIGN_UP(requested, cache_line);
-    uint8_t *buf = heap_caps_calloc(1, size, caps | MALLOC_CAP_CACHE_ALIGNED);
+    size_t size = ESP_ALIGN_UP(requested, alignment);
+    uint8_t *buf = heap_caps_aligned_calloc(alignment, 1, size, caps);
     ESP_RETURN_ON_FALSE(buf != NULL, NULL, TAG, "failed to allocate buffer");
     *out_size = size;
     return buf;
@@ -140,8 +144,11 @@ static esp_err_t validate_filter_config(const esp_riscv_trace_filter_config_t *c
     }
     if (config->match_privilege) {
         ESP_RETURN_ON_FALSE(config->privilege == ESP_RISCV_TRACE_FILTER_PRIV_USER ||
+                            config->privilege == ESP_RISCV_TRACE_FILTER_PRIV_SUPERVISOR ||
                             config->privilege == ESP_RISCV_TRACE_FILTER_PRIV_MACHINE,
                             ESP_ERR_INVALID_ARG, TAG, "invalid filter privilege");
+        ESP_RETURN_ON_FALSE(riscv_trace_ll_priv_is_supported((uint32_t)config->privilege),
+                            ESP_ERR_NOT_SUPPORTED, TAG, "filter privilege not supported on this target");
     }
     if (config->match_ecause) {
         ESP_RETURN_ON_FALSE(config->ecause <= 0x3F, ESP_ERR_INVALID_ARG, TAG, "filter ecause out of range");
@@ -349,7 +356,7 @@ esp_err_t esp_riscv_trace_set_filter(esp_riscv_trace_core_t core_id, const esp_r
             hal_filter.match_mode = (uint32_t)config->mode;
         }
         if (config->match_privilege) {
-            hal_filter.privilege_machine = (config->privilege == ESP_RISCV_TRACE_FILTER_PRIV_MACHINE);
+            hal_filter.privilege = (uint32_t)config->privilege;
         }
         if (config->match_ecause) {
             hal_filter.ecause = config->ecause;

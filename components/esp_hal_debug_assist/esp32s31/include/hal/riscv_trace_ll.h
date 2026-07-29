@@ -30,34 +30,30 @@ static inline trace_dev_t *riscv_trace_ll_get_hw(int core)
  * Clock and reset
  *--------------------------------------------------------------------------*/
 
-/** @brief Enable or disable the common TRACE CPU and system clocks. */
 static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_cpu_clk_en = enable;
-    HP_SYS_CLKRST.soc_clk_ctrl0.reg_trace_sys_clk_en = enable;
+    HP_SYS_CLKRST.trace_ctrl0.reg_trace_cpu_clk_en = enable;
+    HP_SYS_CLKRST.trace_ctrl0.reg_trace_sys_clk_en = enable;
 }
-
 #define riscv_trace_ll_enable_bus_clock(...) do { \
     (void)__DECLARE_RCC_ATOMIC_ENV; \
     _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
 } while (0)
 
-/** @brief Assert and release the reset of the given encoder core. */
 static inline void _riscv_trace_ll_reset_register(int core)
 {
     if (core == 0) {
-        HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_coretrace0 = 1;
-        HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_coretrace0 = 0;
+        HP_SYS_CLKRST.trace_ctrl0.reg_trace0_rst_en = 1;
+        HP_SYS_CLKRST.trace_ctrl0.reg_trace0_rst_en = 0;
     } else {
-        HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_coretrace1 = 1;
-        HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_coretrace1 = 0;
+        HP_SYS_CLKRST.trace_ctrl0.reg_trace1_rst_en = 1;
+        HP_SYS_CLKRST.trace_ctrl0.reg_trace1_rst_en = 0;
     }
 }
-
 #define riscv_trace_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        _riscv_trace_ll_reset_register(__VA_ARGS__); \
-    } while (0)
+    (void)__DECLARE_RCC_ATOMIC_ENV; \
+    _riscv_trace_ll_reset_register(__VA_ARGS__); \
+} while (0)
 
 /** @brief Enable the per-module register clock gate. */
 static inline void riscv_trace_ll_enable_module_clock(trace_dev_t *hw, bool enable)
@@ -220,13 +216,15 @@ static inline void riscv_trace_ll_set_filter_control(trace_dev_t *hw, bool match
 
 static inline bool riscv_trace_ll_priv_is_supported(uint32_t priv)
 {
-    return priv == RISCV_TRACE_PRIV_USER || priv == RISCV_TRACE_PRIV_MACHINE;
+    return priv == RISCV_TRACE_PRIV_USER || priv == RISCV_TRACE_PRIV_SUPERVISOR ||
+           priv == RISCV_TRACE_PRIV_MACHINE;
 }
 
 static inline void riscv_trace_ll_set_filter_match_control(trace_dev_t *hw, uint32_t priv_choice,
                                                            bool intr_value, uint32_t ecause_choice)
 {
-    hw->filter_match_control.match_choice_privilege = (priv_choice == RISCV_TRACE_PRIV_MACHINE);
+    // This target implements the full architectural encoding, so no narrowing is needed.
+    hw->filter_match_control.match_choice_privilege = priv_choice;
     hw->filter_match_control.match_value_interrupt = intr_value;
     hw->filter_match_control.match_choice_ecause = ecause_choice;
 }
