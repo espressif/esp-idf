@@ -113,6 +113,7 @@ void IRAM_ATTR syscall_exit_tee(void)
  * 'errno' is defined in the TDATA section. The linker script ensures that
  * it is positioned at the beginning of the TDATA segment.
  */
+#undef errno
 __thread int errno __attribute__((section(".tdata.errno"))) = 0;
 
 int *__errno(void)

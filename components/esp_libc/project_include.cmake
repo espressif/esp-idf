@@ -58,22 +58,13 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         idf_toolchain_remove_flags(COMPILE_OPTIONS "-mdisable-hardware-atomics")
     endif()
 
+    idf_toolchain_remove_flags(COMPILE_OPTIONS "-specs=picolibc.specs")
+    idf_toolchain_remove_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
     if(CONFIG_LIBC_PICOLIBC)
-        # TODO GCC-464:
-        # The original picolibc.specs file cannot be used directly in the build
-        # system because it contains the --gc-sections linker flag. This flag
-        # causes CMake's compiler detection checks to incorrectly drop required
-        # data during configuration.
-        #
-        # Workaround: Copy picolibc.specs to the working directory with removed
-        # --gc-sections option.
-        get_picolibc_specs_path(picolibc_specs_path)
-        idf_toolchain_add_flags(COMPILE_OPTIONS "\"-specs=${picolibc_specs_path}\"")
+        idf_toolchain_add_flags(COMPILE_OPTIONS "-specs=picolibc.specs")
         if(LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
             idf_toolchain_add_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
         endif()
-    else()
-        idf_toolchain_remove_flags(COMPILE_OPTIONS "-specs=.*picolibc.*")
     endif()
 
     if(CONFIG_LIBC_NEWLIB_NANO_FORMAT)
