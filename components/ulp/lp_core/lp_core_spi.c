@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,10 @@ static esp_err_t lp_spi_config_io(gpio_num_t pin, rtc_gpio_mode_t direction, uin
     /* Initialize LP_IO */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(pin), LP_SPI_TAG, "LP IO Init failed for GPIO %d", pin);
 
-    /* Connect this LP_IO to the LP SPI pad-out and pad-in indices on the LP IO Matrix. */
+    /* Set LP_IO direction */
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(pin, direction), LP_SPI_TAG, "LP IO Set direction failed for %d", pin);
+
+    /* Connect the LP SPI signals to the LP_IO Matrix */
     ESP_RETURN_ON_ERROR(lp_gpio_connect_out_signal(pin, out_pad_idx, 0, 0), LP_SPI_TAG, "LP IO Matrix connect out signal failed for %d", pin);
     ESP_RETURN_ON_ERROR(lp_gpio_connect_in_signal(pin, in_pad_idx, 0), LP_SPI_TAG, "LP IO Matrix connect in signal failed for %d", pin);
 
@@ -89,6 +92,20 @@ static void lp_spi_enable_clock_gate(void)
         (void)__DECLARE_RCC_ATOMIC_ENV; // Avoid warnings for unused variable __DECLARE_RCC_ATOMIC_ENV
         lp_peri_dev->clk_en.ck_en_lp_spi = 1;
     }
+}
+
+static void lp_spi_module_reset(void)
+{
+    /* Module-level reset of the LP SPI peripheral: all registers return to
+     * their power-on defaults.
+     */
+    lpperi_dev_t *lp_peri_dev = &LPPERI;
+    lp_peri_dev->reset_en.rst_en_lp_spi = 1;
+    /* Read-back fence: ensure the reset assertion propagates through the
+     * bus before de-asserting.
+     */
+    (void)lp_peri_dev->reset_en.rst_en_lp_spi;
+    lp_peri_dev->reset_en.rst_en_lp_spi = 0;
 }
 
 static esp_err_t lp_spi_clock_init(const lp_spi_device_config_t *dev_config)
@@ -249,6 +266,9 @@ esp_err_t lp_core_lp_spi_bus_initialize(lp_spi_host_t host_id, const lp_spi_bus_
         return ESP_ERR_INVALID_ARG;
     }
 
+    /* Reset the LP SPI peripheral to a known state */
+    lp_spi_module_reset();
+
     /* Connect the LP SPI peripheral to a "bus", i.e. a set of
      * GPIO pins defined in the bus_config structure.
      */
@@ -300,4 +320,24 @@ esp_err_t lp_core_lp_spi_slave_initialize(lp_spi_host_t host_id, const lp_spi_sl
     lp_spi_slave_setup_device(slave_config);
 
     return ret;
+}
+
+esp_err_t lp_core_lp_spi_bus_deinit(lp_spi_host_t host_id, const lp_spi_bus_config_t *bus_config)
+{
+    (void)host_id;
+
+    /* Disconnect and deinit LP GPIO pins that were used for SPI signals */
+    if (bus_config != NULL) {
+        if (bus_config->miso_io_num != -1) {
+            rtc_gpio_deinit(bus_config->miso_io_num);
+        }
+        if (bus_config->mosi_io_num != -1) {
+            rtc_gpio_deinit(bus_config->mosi_io_num);
+        }
+        if (bus_config->sclk_io_num != -1) {
+            rtc_gpio_deinit(bus_config->sclk_io_num);
+        }
+    }
+
+    return ESP_OK;
 }
