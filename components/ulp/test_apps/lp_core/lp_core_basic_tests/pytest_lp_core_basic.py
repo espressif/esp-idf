@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -58,6 +58,22 @@ def test_lp_vad(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_lp_core_multi_device(case_tester) -> None:  # type: ignore
     case_tester.run_all_multi_dev_cases(reset=True)
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_lp_spi_multi_device(case_tester: CaseTester) -> None:
+    spi_cases = [case for case in case_tester.test_menu if 'lp_core_spi' in case.groups]
+    for case in spi_cases:
+        case_tester.run_multi_dev_case(case=case, reset=True)
 
 
 @pytest.mark.generic_multi_device
