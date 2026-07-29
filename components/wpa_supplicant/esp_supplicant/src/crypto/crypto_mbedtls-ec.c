@@ -299,8 +299,8 @@ int crypto_ec_get_affine_coordinates(struct crypto_ec *e, struct crypto_ec_point
     int ret = -1;
     mbedtls_ecp_point *point = (mbedtls_ecp_point *)pt;
 
-    if (!mbedtls_ecp_is_zero(point)  && (mbedtls_mpi_cmp_int(&point->MBEDTLS_PRIVATE(Z), 1) == 0)) {
-        // Affine coordinates mean that z should be 1,
+    if (!mbedtls_ecp_is_zero(point)  && (mbedtls_mpi_cmp_int(&point->MBEDTLS_PRIVATE(Z), 1) != 0)) {
+        // For non-zero points, affine coordinates mean Z should be 1,
         wpa_printf(MSG_ERROR, "Z coordinate is neither 0 or 1");
         return -1;
     }
@@ -1652,7 +1652,7 @@ int crypto_ecdsa_get_sign(unsigned char *hash,
         goto fail;
     }
     ret = mbedtls_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), (mbedtls_mpi *)r, (mbedtls_mpi *)s,
-                             &ctx->MBEDTLS_PRIVATE(d), hash, SHA256_MAC_LEN, mbedtls_esp_random, NULL);
+                             &ctx->MBEDTLS_PRIVATE(d), hash, hash_len, mbedtls_esp_random, NULL);
 
 fail:
     mbedtls_ecdsa_free(ctx);
