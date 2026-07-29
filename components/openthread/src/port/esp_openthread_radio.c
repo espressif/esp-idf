@@ -10,7 +10,6 @@
 #include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_ieee802154.h"
-#include "esp_ieee802154_types.h"
 #include "esp_mac.h"
 #include "esp_openthread_common.h"
 #include "esp_openthread_common_macro.h"
@@ -36,7 +35,6 @@
 #include "esp_coex_i154.h"
 #endif
 
-#define ESP_RECEIVE_SENSITIVITY -120
 #define ESP_OPENTHREAD_XTAL_ACCURACY CONFIG_OPENTHREAD_XTAL_ACCURACY
 #define ESP_OPENTHREAD_CSL_ACCURACY CONFIG_OPENTHREAD_CSL_ACCURACY
 #define ESP_OPENTHREAD_CSL_UNCERTAIN CONFIG_OPENTHREAD_CSL_UNCERTAIN
@@ -459,7 +457,7 @@ otError otPlatRadioSetCcaEnergyDetectThreshold(otInstance *aInstance, int8_t aTh
 
 int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
 {
-    return ESP_RECEIVE_SENSITIVITY;
+    return esp_ieee802154_get_receive_sensitivity();
 }
 
 #if CONFIG_OPENTHREAD_DIAG
