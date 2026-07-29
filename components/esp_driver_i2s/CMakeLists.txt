@@ -8,8 +8,8 @@ set(srcs)
 set(include "include")
 set(priv_requires esp_driver_gpio esp_driver_dma esp_pm esp_mm esp_hal_clock)
 
-# TODO(IDF-15984): potentially remove __ULP_BUILD handling from esp_driver_i2s
-if(__ULP_BUILD)
+# TODO(IDF-15984): potentially remove __ULP_BUILDV2 handling from esp_driver_i2s
+if(__ULP_BUILDV2)
     # LP-core VAD shared code includes driver/lp_i2s_vad.h from
     # ulp/lp_core/shared/include/ulp_lp_core_lp_vad_shared.h.
     idf_component_register(INCLUDE_DIRS ${include}

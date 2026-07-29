@@ -9,8 +9,8 @@ set(public_include "include" "${target}/include")
 # targets, so CMake v2 builds need esp_hal_regi2c explicitly.
 set(requires soc hal esp_rom esp_hal_regi2c)
 
-# TODO(IDF-15949): potentially remove __ULP_BUILD handling from esp_hal_pmu
-if(__ULP_BUILD)
+# TODO(IDF-15949): potentially remove __ULP_BUILDV2 handling from esp_hal_pmu
+if(__ULP_BUILDV2)
     # LP-core runtime code includes hal/pmu_ll.h from
     # ulp/lp_core/lp_core/lp_core_utils.c. Some target brownout/VBAT headers
     # include hal/regi2c_ctrl.h.

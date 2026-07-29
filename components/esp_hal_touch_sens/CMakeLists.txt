@@ -12,8 +12,8 @@ endif()
 # "include" should be behind "${target}/include", because `include_next` has sequence requirement
 list(APPEND includes "include")
 
-# TODO(IDF-15989): potentially remove __ULP_BUILD handling from esp_hal_touch_sens
-if(__ULP_BUILD)
+# TODO(IDF-15989): potentially remove __ULP_BUILDV2 handling from esp_hal_touch_sens
+if(__ULP_BUILDV2)
     # ULP touch support includes touch sensor HAL headers from
     # ulp/ulp_riscv/ulp_core/ulp_riscv_touch.c and
     # ulp/lp_core/lp_core/lp_core_touch.c.

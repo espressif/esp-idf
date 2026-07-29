@@ -2,19 +2,19 @@ idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
-# TODO(IDF-15955): potentially remove __ULP_BUILD handling from riscv
-if(NOT "${arch}" STREQUAL "riscv" AND NOT (__ULP_BUILD AND "${ULP_TYPE}" STREQUAL "riscv"))
+# TODO(IDF-15955): potentially remove __ULP_BUILDV2 handling from riscv
+if(NOT "${arch}" STREQUAL "riscv" AND NOT (__ULP_BUILDV2 AND "${ULP_TYPE}" STREQUAL "riscv"))
     return()
 endif()
 
-if(__ULP_BUILD AND "${ULP_TYPE}" STREQUAL "riscv")
+if(__ULP_BUILDV2 AND "${ULP_TYPE}" STREQUAL "riscv")
     # RISC-V ULP interrupt support includes riscv/interrupt.h from
     # ulp/ulp_riscv/ulp_core/include/ulp_riscv_interrupt.h.
     idf_component_register(INCLUDE_DIRS "include")
     return()
 endif()
 
-# When __ULP_BUILD and ULP_TYPE is lp_core, keep the normal RISC-V helper sources for headers
+# When __ULP_BUILDV2 and ULP_TYPE is lp_core, keep the normal RISC-V helper sources for headers
 # used by ulp/lp_core/lp_core/lp_core_pmp.c and vector.S.
 
 if(BOOTLOADER_BUILD)

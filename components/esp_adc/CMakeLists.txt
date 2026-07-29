@@ -6,8 +6,8 @@ endif()
 
 set(includes "include" "interface" "${target}/include")
 
-# TODO(IDF-15983): potentially remove __ULP_BUILD handling from esp_adc
-if(__ULP_BUILD)
+# TODO(IDF-15983): potentially remove __ULP_BUILDV2 handling from esp_adc
+if(__ULP_BUILDV2)
     # LP-core ADC shared code includes esp_adc/adc_oneshot.h from
     # ulp/lp_core/shared/include/ulp_lp_core_lp_adc_shared.h.
     idf_component_register(INCLUDE_DIRS ${includes}

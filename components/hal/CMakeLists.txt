@@ -14,8 +14,8 @@ list(APPEND includes "include")
 
 # ULP runtime code includes generic HAL headers, for example hal/lp_core_ll.h
 # from ulp/lp_core/lp_core/lp_core_interrupt.c.
-# TODO(IDF-15953): potentially remove __ULP_BUILD handling from hal
-if(__ULP_BUILD)
+# TODO(IDF-15953): potentially remove __ULP_BUILDV2 handling from hal
+if(__ULP_BUILDV2)
     idf_component_register(INCLUDE_DIRS ${includes}
                            PRIV_INCLUDE_DIRS ${priv_include}
                            REQUIRES esp_common ${requires})

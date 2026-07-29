@@ -1,4 +1,4 @@
-if(IDF_BUILD_V2 AND __ULP_BUILD)
+if(IDF_BUILD_V2 AND __ULP_BUILDV2)
     return()
 endif()
 
@@ -134,8 +134,9 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 -DULP_APP_NAME=${app_name}
                 -DIDF_BUILD_V2=y
                 -DCMAKE_MODULE_PATH=${ulp_cmake_dir}
-                # Internal marker for the ULP child project component graph.
-                -D__ULP_BUILD=1
+                # Internal marker for ULP child component graphs. Only the
+                # IDF_BUILD_V2 path sets it for now.
+                -D__ULP_BUILDV2=1
                 -DIDF_PARENT_BUILD_DIR=${build_dir}
                 -DULP_PREFIX_APPEND_BIN_NAME=${prefix_append_bin_name}
                 -DULP_PARENT_SDKCONFIG_HEADER=${SDKCONFIG_HEADER}

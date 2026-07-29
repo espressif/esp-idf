@@ -132,7 +132,7 @@ def test_ulp_cmake_api_availability(
         '-DIDF_TARGET=esp32c6',
         f'-DSDKCONFIG_CMAKE={_cmake_path(project_dir / "sdkconfig.cmake")}',
         f'-DSDKCONFIG_HEADER={_cmake_path(project_dir / "sdkconfig.h")}',
-        '-D__ULP_BUILD=1',
+        '-D__ULP_BUILDV2=1',
         '-DULP_APP_NAME=ulp_api_probe',
         '-DULP_TYPE=lp_core',
         '-DIDF_BUILD_V2=y',

@@ -9,7 +9,8 @@
 include(${IDF_PATH}/tools/cmakev2/idf.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/IDFULPProjectCommon.cmake)
 
-if(__ULP_BUILD)
+# __ULP_BUILDV2 is only set by the IDF_BUILD_V2 ULP child path for now.
+if(__ULP_BUILDV2)
     set(NON_OS_BUILD 1)
     # Clearing common components below only prevents automatic app-component closure.
     # Explicitly included ULP dependencies still read NON_OS_BUILD to select their no-OS shape.

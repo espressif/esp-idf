@@ -3,7 +3,7 @@ set(includes "")
 set(requires "")
 set(priv_requires "")
 
-if(__ULP_BUILD)
+if(__ULP_BUILDV2)
     if(ULP_TYPE STREQUAL "riscv")
         list(APPEND includes
             ulp_common/include
@@ -117,7 +117,7 @@ if(__ULP_BUILD)
             ulp_fsm/include/${target})
         list(APPEND requires soc)
     else()
-        message(FATAL_ERROR "__ULP_BUILD requires ULP_TYPE to be one of: riscv, lp_core, fsm.")
+        message(FATAL_ERROR "__ULP_BUILDV2 requires ULP_TYPE to be one of: riscv, lp_core, fsm.")
     endif()
 else()
     # TODO(IDF-15993): Keep esp_driver_gpio and esp_adc public for compatibility
@@ -267,7 +267,7 @@ if(priv_requires)
 endif()
 
 set(whole_archive)
-if(__ULP_BUILD)
+if(__ULP_BUILDV2)
     # Legacy ULP child builds added the LP-core runtime sources directly to the
     # executable. Preserve that behavior so strong handlers such as
     # ulp_lp_core_panic_handler are not dropped in favor of weak defaults from
@@ -283,7 +283,7 @@ idf_component_register(SRCS ${srcs}
 
 # In the parent app build, the ulp component only provides the host-side API.
 # The executable/linker setup below is for native ULP child projects.
-if(NOT __ULP_BUILD)
+if(NOT __ULP_BUILDV2)
     idf_define_esp_err_codes(HEADERS ulp_fsm/include/ulp_fsm_common.h)
     return()
 endif()

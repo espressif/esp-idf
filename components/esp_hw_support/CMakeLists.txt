@@ -30,8 +30,8 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/port/${target}/include")
     )
 endif()
 
-# TODO(IDF-15951): potentially remove __ULP_BUILD handling from esp_hw_support
-if(__ULP_BUILD)
+# TODO(IDF-15951): potentially remove __ULP_BUILDV2 handling from esp_hw_support
+if(__ULP_BUILDV2)
     # ULP headers and LP-core runtime include esp_intr_alloc.h and esp_cpu.h from
     # ulp/ulp_riscv/include/ulp_riscv.h and
     # ulp/lp_core/lp_core/lp_core_ubsan.c.

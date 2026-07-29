@@ -11,8 +11,8 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
 
-# TODO(IDF-15950): potentially remove __ULP_BUILD handling from esp_hal_regi2c
-if(__ULP_BUILD)
+# TODO(IDF-15950): potentially remove __ULP_BUILDV2 handling from esp_hal_regi2c
+if(__ULP_BUILDV2)
     # ULP ADC support reaches REGI2C headers through ADC HAL includes used by
     # ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c.
     idf_component_register(INCLUDE_DIRS ${includes}

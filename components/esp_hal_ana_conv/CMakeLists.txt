@@ -17,8 +17,8 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
 
-# TODO(IDF-15985): potentially remove __ULP_BUILD handling from esp_hal_ana_conv
-if(__ULP_BUILD)
+# TODO(IDF-15985): potentially remove __ULP_BUILDV2 handling from esp_hal_ana_conv
+if(__ULP_BUILDV2)
     # ULP ADC code includes ADC HAL headers from
     # ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c and
     # ulp/lp_core/shared/include/ulp_lp_core_lp_adc_shared.h. Some target

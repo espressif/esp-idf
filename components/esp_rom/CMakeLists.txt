@@ -7,8 +7,8 @@ set(include_dirs "include"
                  "${target_folder}/include/${target_folder}"
                  "${target_folder}")
 
-# TODO(IDF-15952): potentially remove __ULP_BUILD handling from esp_rom
-if(__ULP_BUILD)
+# TODO(IDF-15952): potentially remove __ULP_BUILDV2 handling from esp_rom
+if(__ULP_BUILDV2)
     # LP-core runtime and print code include ROM headers from
     # ulp/lp_core/lp_core/lp_core_startup.c and
     # ulp/lp_core/lp_core/lp_core_print.c.

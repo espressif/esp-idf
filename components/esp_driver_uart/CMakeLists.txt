@@ -3,8 +3,8 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs)
 set(public_include "include")
 
-# TODO(IDF-15946): potentially remove __ULP_BUILD handling from esp_driver_uart
-if(__ULP_BUILD)
+# TODO(IDF-15946): potentially remove __ULP_BUILDV2 handling from esp_driver_uart
+if(__ULP_BUILDV2)
     # LP-core UART wakeup shared code includes driver/uart_wakeup.h from
     # ulp/lp_core/shared/include/ulp_lp_core_lp_uart_shared.h.
     set(ulp_srcs)
