@@ -47,8 +47,6 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/spi_types.h"
-#include "hal/dma_types.h"
-#include "hal/gdma_types.h"
 #if SOC_GPSPI_SUPPORTED
 #include "hal/spi_ll.h"
 #endif
@@ -58,26 +56,6 @@ extern "C" {
 #endif
 
 #if SOC_GPSPI_SUPPORTED
-
-//NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol
-#if !defined(SOC_GDMA_TRIG_PERIPH_SPI2_BUS)
-typedef dma_descriptor_align4_t spi_dma_desc_t;
-#else
-#if defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
-typedef dma_descriptor_align8_t spi_dma_desc_t;
-#elif defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB)
-typedef dma_descriptor_align4_t spi_dma_desc_t;
-#endif
-#endif
-
-/**
- * @brief Type of dma descriptor with appended members
- *        this structure inherits DMA descriptor, with a pointer to the transaction descriptor passed from users.
- */
-typedef struct {
-    spi_dma_desc_t  *desc;                            ///< DMA descriptor
-    void            *arg;                             ///< This points to the transaction descriptor user passed in
-} spi_slave_hd_hal_desc_append_t;
 
 /// Configuration of the HAL
 typedef struct {
@@ -99,22 +77,8 @@ typedef struct {
 
 /// Context of the HAL, initialized by :cpp:func:`spi_slave_hd_hal_init`.
 typedef struct {
-    /* These two need to be malloced by the driver first */
-    spi_slave_hd_hal_desc_append_t  *dmadesc_tx;            ///< Head of the TX DMA descriptors.
-    spi_slave_hd_hal_desc_append_t  *dmadesc_rx;            ///< Head of the RX DMA descriptors.
-
     /* address of the hardware */
     spi_dev_t                       *dev;                   ///< Beginning address of the peripheral registers.
-    uint32_t                        dma_desc_num;           ///< Number of the available DMA descriptors. Calculated from ``bus_max_transfer_size``.
-    uint32_t                        current_eof_addr;
-    spi_slave_hd_hal_desc_append_t  *tx_cur_desc;           ///< Current TX DMA descriptor that could be linked (set up).
-    spi_slave_hd_hal_desc_append_t  *tx_dma_head;           ///< Head of the linked TX DMA descriptors which are not used by hardware
-    spi_slave_hd_hal_desc_append_t  *tx_dma_tail;           ///< Tail of the linked TX DMA descriptors which are not used by hardware
-    uint32_t                        tx_used_desc_cnt;       ///< Number of the TX descriptors that have been setup
-    spi_slave_hd_hal_desc_append_t  *rx_cur_desc;           ///< Current RX DMA descriptor that could be linked (set up).
-    spi_slave_hd_hal_desc_append_t  *rx_dma_head;           ///< Head of the linked RX DMA descriptors which are not used by hardware
-    spi_slave_hd_hal_desc_append_t  *rx_dma_tail;           ///< Tail of the linked RX DMA descriptors which are not used by hardware
-    uint32_t                        rx_used_desc_cnt;       ///< Number of the RX descriptors that have been setup
 
     /* Internal status used by the HAL implementation, initialized as 0. */
     uint32_t                        intr_not_triggered;

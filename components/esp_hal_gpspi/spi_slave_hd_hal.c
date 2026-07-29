@@ -19,10 +19,6 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
 {
     spi_dev_t *hw = spi_periph_signal[hal_config->host_id].hw;
     hal->dev = hw;
-    hal->tx_cur_desc = hal->dmadesc_tx;
-    hal->rx_cur_desc = hal->dmadesc_rx;
-    hal->tx_dma_head = hal->dmadesc_tx + hal->dma_desc_num - 1;
-    hal->rx_dma_head = hal->dmadesc_rx + hal->dma_desc_num - 1;
 
     spi_ll_slave_hd_init(hw);
     spi_ll_set_addr_bitlen(hw, hal_config->address_bits);
