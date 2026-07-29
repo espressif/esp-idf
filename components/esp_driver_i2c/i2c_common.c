@@ -170,15 +170,24 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
 
 esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
 {
+    esp_err_t ret = ESP_OK;
     int port_num = i2c_bus->port_num;
     i2c_clock_source_t clk_src = i2c_bus->clk_src;
     bool do_deinitialize = false;
     _lock_acquire(&s_i2c_platform.mutex);
     if (s_i2c_platform.buses[port_num]) {
-        s_i2c_platform.count[port_num]--;
-        if (s_i2c_platform.count[port_num] == 0) {
+        if (s_i2c_platform.count[port_num] > 1) {
+            s_i2c_platform.count[port_num]--;
+        } else {
             do_deinitialize = true;
-            s_i2c_platform.buses[port_num] = NULL;
+            if (i2c_bus->intr_handle) {
+                ESP_GOTO_ON_ERROR(esp_intr_free(i2c_bus->intr_handle), err, TAG, "delete interrupt service failed");
+                i2c_bus->intr_handle = NULL;
+            }
+            if (i2c_bus->pm_lock) {
+                esp_pm_lock_delete(i2c_bus->pm_lock);
+                i2c_bus->pm_lock = NULL;
+            }
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
             if (i2c_bus->is_lp_i2c == false) {
                 esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(port_num));
@@ -187,12 +196,8 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
                 }
             }
 #endif
-            if (i2c_bus->intr_handle) {
-                ESP_RETURN_ON_ERROR(esp_intr_free(i2c_bus->intr_handle), TAG, "delete interrupt service failed");
-            }
-            if (i2c_bus->pm_lock) {
-                ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_bus->pm_lock), TAG, "delete pm_lock failed");
-            }
+            s_i2c_platform.count[port_num] = 0;
+            s_i2c_platform.buses[port_num] = NULL;
             // Disable I2C module
             if (!i2c_bus->is_lp_i2c) {
                 I2C_RCC_ATOMIC() {
@@ -224,9 +229,11 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
     if (do_deinitialize) {
         ESP_LOGD(TAG, "delete bus %d", port_num);
     }
-
-    ESP_RETURN_ON_FALSE(s_i2c_platform.count[port_num] == 0, ESP_ERR_INVALID_STATE, TAG, "Bus not freed entirely");
     return ESP_OK;
+
+err:
+    _lock_release(&s_i2c_platform.mutex);
+    return ret;
 }
 
 esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_src)
