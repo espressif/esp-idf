@@ -68,14 +68,28 @@ void esp_btbb_enable(void)
     if (s_btbb_access_ref == 0) {
         bt_bb_v2_init_cmplx(BTBB_ENABLE_VERSION_PRINT);
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+        esp_err_t err = ESP_OK;
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+        err = esp_phy_fe_sleep_data_init();
+        if (err != ESP_OK) {
+            _lock_release(&s_btbb_access_lock);
+            return;
+        }
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
         sleep_retention_module_init_param_t init_param = {
             .cbs     = { .create = { .handle = btbb_sleep_retention_init, .arg = NULL } },
             .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
         };
-        esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+        init_param.depends.bitmap[SLEEP_RETENTION_MODULE_PHY_FE >> 5] |= BIT(SLEEP_RETENTION_MODULE_PHY_FE % 32);
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
+        err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BT_BB, &init_param);
         if (err == ESP_OK) {
             err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BT_BB);
             if (err != ESP_OK) {
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+                esp_phy_fe_sleep_data_deinit();
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
                 ESP_LOGW(TAG, "failed to allocate sleep retention linked list for btbb retention");
             }
         } else {
@@ -93,6 +107,9 @@ void esp_btbb_disable(void)
     if (s_btbb_access_ref && (--s_btbb_access_ref == 0)) {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
         btbb_sleep_retention_deinit();
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+        esp_phy_fe_sleep_data_deinit();
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
 #endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     }
     _lock_release(&s_btbb_access_lock);
