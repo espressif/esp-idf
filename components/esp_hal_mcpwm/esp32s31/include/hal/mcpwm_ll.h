@@ -181,7 +181,7 @@ static inline void mcpwm_ll_group_set_clock_source(int group_id, soc_module_clk_
     case SOC_MOD_CLK_XTAL:
         clk_id = 0;
         break;
-    case SOC_MOD_CLK_PLL_F20M:
+    case SOC_MOD_CLK_RC_FAST:
         clk_id = 1;
         break;
     case SOC_MOD_CLK_PLL_F160M:
