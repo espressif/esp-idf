@@ -74,7 +74,7 @@ MEMORY
  *
  *  +-----------------------------+ 0x50001000 (LP RAM end)
  *  | Secure Boot Image Digest    |
- *  | for fast wake secure boot.  | ( For ROM using, must keep it at the end 32 bytes of LP RAM)
+ *  | for fast wake secure boot.  | ( For ROM using, must keep it at the end CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE bytes of LP RAM)
  *  |(only if CONFIG_SECURE_BOOT) |
  *  |- - - - - - - - - - - - - - -|
  *  | bootloader_data_rtc_mem     |
