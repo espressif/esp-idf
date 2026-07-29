@@ -17,6 +17,7 @@
 #include "esp_private/phy.h"
 #include "esp_phy.h"
 #include "esp_attr.h"
+#include "freertos/FreeRTOS.h"
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
 #include "hal/temperature_sensor_ll.h"
@@ -388,6 +389,10 @@ void phy_wakeup_from_modem_state_extra_init(void)
 
 __attribute__((weak)) void phy_wait_freq_hw_hop_done(void)
 {
-    ESP_LOGD(TAG, "phy_wait_freq_hw_hop_done is not implemented");
+    if (xPortInIsrContext()) {
+        ESP_EARLY_LOGD(TAG, "phy_wait_freq_hw_hop_done is not implemented");
+    } else {
+        ESP_LOGD(TAG, "phy_wait_freq_hw_hop_done is not implemented");
+    }
     return;
 }
