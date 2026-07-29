@@ -219,6 +219,7 @@ static esp_err_t check_valid(const adc_cali_curve_fitting_config_t *config)
 {
     ESP_RETURN_ON_FALSE(config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC unit");
     ESP_RETURN_ON_FALSE(config->atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC attenuation");
+    ESP_RETURN_ON_FALSE(config->chan < SOC_ADC_CHANNEL_NUM(config->unit_id), ESP_ERR_INVALID_ARG, TAG, "invalid ADC channel");
 
     bool available_oneshot_bitwidth = (config->bitwidth >= SOC_ADC_RTC_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_RTC_MAX_BITWIDTH);
     bool available_dma_bitwidth = (config->bitwidth >= SOC_ADC_DIGI_MIN_BITWIDTH && config->bitwidth <= SOC_ADC_DIGI_MAX_BITWIDTH);
