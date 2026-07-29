@@ -53,7 +53,8 @@ UHCI 控制器需要通过 :cpp:type:`uhci_controller_config_t` 进行配置。
         .uart_port = EX_UART_NUM,                 // 将指定 UART 端口连接到 UHCI 硬件
         .tx_trans_queue_depth = 30,               // 发送队列的队列深度
         .max_receive_internal_mem = 10 * 1024,    // 内部接收内存大小，更多信息请参考 API 注释。
-        .max_transmit_size = 10 * 1024,           // 单次传输的最大传输量，单位是字节
+        .max_transmit_size = 10 * 1024,           // 一次传输事务中的最大总字节数（包含该次传入的所有缓冲区）
+        .max_transmit_buffer_count = 1,           // 一次传输事务中的最大缓冲区数量。设为 0 或 1 表示只使用单缓冲区传输。
         .dma_burst_size = 32,                     // 突发传输大小
         .rx_eof_flags.idle_eof = 1,               // 结束帧的条件，用户可以选择 `idle_eof`, `rx_brk_eof` 和 `length_eof`, 关于更多信息请参考 API 注释.
     };
@@ -111,6 +112,30 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
     ESP_ERROR_CHECK(uhci_transmit(uhci_ctrl, data_wr, DATA_LENGTH));
     // 等待所有传输完成
     ESP_ERROR_CHECK(uhci_wait_all_tx_transaction_done(uhci_ctrl, -1));
+
+如果待发送的数据分散在多个独立的缓冲区中，可以使用 :cpp:func:`uhci_multi_buffer_transmit` 将它们作为一次事务发送，而无需先拷贝到一块连续的缓冲区中。各缓冲区段通过一个 :cpp:type:`uhci_transmit_buffer_info_t` 数组描述，并按给定顺序作为一条连续的 UART 数据流发送（在内部，这些段会被组装成一条 DMA 链表，只有最后一段被标记为事务结束）。要使用该功能，需要在创建控制器时把 :cpp:member:`uhci_controller_config_t::max_transmit_buffer_count` 设为你在单次调用中打算发送的最大段数。
+
+需要满足以下约束：
+
+- ``array_size`` 不得超过 :cpp:member:`uhci_controller_config_t::max_transmit_buffer_count`。
+- 所有缓冲区的总字节数不得超过 :cpp:member:`uhci_controller_config_t::max_transmit_size`。
+- 与 :cpp:func:`uhci_transmit` 一样，每个缓冲区段在传输完成前都必须保持有效。
+
+.. code:: c
+
+    uint8_t header[8];
+    uint8_t payload[DATA_LENGTH];
+    // ... 填充 header 和 payload ...
+    uhci_transmit_buffer_info_t buffer_info[] = {
+        { .write_buffer = header,  .buffer_size = sizeof(header) },
+        { .write_buffer = payload, .buffer_size = sizeof(payload) },
+    };
+    ESP_ERROR_CHECK(uhci_multi_buffer_transmit(uhci_ctrl, buffer_info, 2));
+    ESP_ERROR_CHECK(uhci_wait_all_tx_transaction_done(uhci_ctrl, -1));
+
+.. note::
+
+    当通过 :cpp:func:`uhci_multi_buffer_transmit` 提交的事务包含多个段时，“传输完成”回调中的 :cpp:member:`uhci_tx_done_event_data_t::buffer` 只指向第一个段，应把它当作该事务的标识句柄，而不是一段长度为 ``sent_size`` 字节的连续内存的起始地址。:cpp:member:`uhci_tx_done_event_data_t::sent_size` 是所有段大小之和。
 
 启动 UHCI 接收
 ^^^^^^^^^^^^^^^^^^^^^^^^^
