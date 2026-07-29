@@ -49,8 +49,14 @@
 #
 # Entries below define the apps that publish size metrics:
 
-examples/get-started/hello_world:
+tools/test_apps/size_metrics/minimal_baseline:
   libs: all
   bootloader: true
   configs:
     - default
+
+components/esp_timer/test_apps/size_metrics:
+  libs: all
+  configs:
+    - minimal
+    - full

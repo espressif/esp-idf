@@ -27,7 +27,7 @@ else()
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       PRIV_INCLUDE_DIRS "../../private_include" "../include"
+                       PRIV_INCLUDE_DIRS "../../../private_include" "../../include"
                        PRIV_REQUIRES "${priv_requires}"
                        WHOLE_ARCHIVE)
 

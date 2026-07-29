@@ -1,0 +1,2 @@
+# App-specific defaults for esp_timer size metrics
+CONFIG_ESP_TIMER_PROFILING=n

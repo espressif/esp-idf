@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_timer/test_apps:
+components/esp_timer/test_apps/esp_timer_tests:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
       reason: run existing default build targets and include Linux
@@ -14,3 +14,10 @@ components/esp_timer/test_apps:
       reason: The test requires the XTAL32K clock to measure the esp_timer timing accuracy
     - if: CONFIG_NAME == "dfs" and SOC_PM_SUPPORTED != 1
       reason: The test requires the PM functionality
+
+components/esp_timer/test_apps/size_metrics:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c6"]
+      reason: Size metrics tracked on one RISC-V (esp32c6) and one Xtensa (esp32) target
+  depends_components:
+    - esp_timer

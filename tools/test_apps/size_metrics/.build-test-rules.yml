@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/size_metrics/minimal_baseline:
+  disable_test:
+    - if: IDF_TARGET == "linux"
+      temporary: true
+      reason: Not a real hardware target
