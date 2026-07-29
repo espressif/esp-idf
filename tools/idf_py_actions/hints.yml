@@ -469,3 +469,8 @@
 -
     re: "spi_hal: The clock_speed_hz should less than"
     hint: "When operating in full-duplex mode at high frequencies, the device may not read data correctly.\nTry using IOMUX pins to increase the frequency limit or switch to half-duplex mode.\nNote that the SPI master can only operate at divisors of 80 MHz, and the driver always selects the closest available frequency to your configuration.\nSpecify SPI_DEVICE_NO_DUMMY to bypass this check. This allows higher output speeds but may result in unreliable data reads."
+
+-
+    re: "errno: TLS reference in ([^ ]+\\.a)\\([^)]*\\) mismatches non-TLS definition"
+    hint: "The library '{}' accessed errno as a TLS symbol, which is incompatible with CONFIG_LIBC_NEWLIB=y (errno via __errno()). Contact the library maintainer to rebuild it with the latest ESP-IDF, or pass -D__PICOLIBC_ERRNO_FUNCTION=__errno if the library is built outside ESP-IDF. Alternatively keep CONFIG_LIBC_PICOLIBC=y, which still provides the TLS errno symbol for older prebuilts."
+    match_to_output: True
