@@ -19,3 +19,12 @@ def test_lp_core_multi_device(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
             case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_lp_spi_multi_device(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'lp_core_spi' in case.groups:
+            case_tester.run_multi_dev_case(case=case, reset=True)
