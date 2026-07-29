@@ -1,0 +1,45 @@
+config BT_PRF_TASK_ENABLED
+    bool "Enable the shared BLE profile task (event queue worker)"
+    depends on BT_ENABLED
+    default n
+    help
+        Build the shared BLE profile task: a single process-wide event queue
+        served by one dedicated FreeRTOS task, onto which BLE profiles post
+        short, non-blocking handlers instead of each spawning its own task.
+
+        Host-agnostic (depends only on the BT OSAL and FreeRTOS), so both the
+        Bluedroid and NimBLE hosts can use it. A profile that relies on the
+        shared task should "select BT_PRF_TASK_ENABLED" in its own Kconfig.
+
+config BT_PRF_TASK_STACK_SIZE
+    int "Shared BLE profile task stack size (bytes)"
+    depends on BT_PRF_TASK_ENABLED
+    range 2048 16384
+    default 3072
+    help
+        Stack size, in bytes, of the shared BLE profile task. It must be large
+        enough for the deepest profile handler posted to the queue; raise it if
+        a handler needs more stack.
+
+config BT_PRF_TASK_PRIORITY
+    int "Shared BLE profile task priority"
+    depends on BT_PRF_TASK_ENABLED
+    range 1 24
+    default 5
+    help
+        FreeRTOS priority of the shared BLE profile task. Keep it below the BLE
+        host task so profile handling never starves the protocol stack.
+
+config BT_PRF_TASK_CORE_ID
+    int "Shared BLE profile task core affinity"
+    depends on BT_PRF_TASK_ENABLED
+    range -1 0 if FREERTOS_UNICORE
+    range -1 1
+    default 0
+    help
+        Core the shared BLE profile task is pinned to: 0 for CPU0, 1 for CPU1,
+        or -1 to leave it unpinned so the scheduler may run it on either core.
+
+        On a single-core target the only valid values are 0 and -1. Pinning the
+        task to the core that does not run the BLE host can keep profile
+        handlers from competing with the protocol stack for CPU time.

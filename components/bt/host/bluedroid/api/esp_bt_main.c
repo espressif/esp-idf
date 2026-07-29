@@ -17,6 +17,8 @@
 #include "config/stack_config.h"
 #include "hci_log/bt_hci_log.h"
 #include "bt_common.h"
+#include "bt_osal.h"
+#include "bt_prf_task.h"
 
 static esp_bluedroid_status_t s_bt_host_state = ESP_BLUEDROID_STATUS_UNINITIALIZED;
 
@@ -218,6 +220,17 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
 
+    /* Bring up the host-agnostic bt_osal function table */
+    bt_osal_freertos_funcs_init();
+
+#if CONFIG_BT_PRF_TASK_ENABLED
+    /* Start the shared BLE profile task now that the bt_osal table is up, so
+     * profiles can post work without spawning their own tasks. */
+    if (bt_prf_task_init() != BT_OSAL_OK) {
+        LOG_WARN("bt_prf_task_init failed");
+    }
+#endif
+
     s_bt_host_state = ESP_BLUEDROID_STATUS_INITIALIZED;
 
     return ESP_OK;
@@ -273,6 +286,15 @@ esp_err_t esp_bluedroid_deinit(void)
 #if HEAP_MEMORY_STATS
     osi_mem_deinit();
 #endif
+
+#if CONFIG_BT_PRF_TASK_ENABLED
+    /* Stop the shared BLE profile task while the bt_osal table is still up,
+     * symmetrically with the init in esp_bluedroid_init_with_cfg(). */
+    bt_prf_task_deinit();
+#endif
+
+    /* Release the bt_osal function table set up in esp_bluedroid_init_with_cfg(). */
+    bt_osal_freertos_funcs_deinit();
 
     s_bt_host_state = ESP_BLUEDROID_STATUS_UNINITIALIZED;
     return ESP_OK;
