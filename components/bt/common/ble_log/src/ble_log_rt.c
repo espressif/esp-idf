@@ -14,11 +14,11 @@
 #include "ble_log_lbm.h"
 
 /* VARIABLE */
-BLE_LOG_STATIC bool rt_inited = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_inited = false;
 BLE_LOG_STATIC TaskHandle_t rt_task_handle = NULL;
-BLE_LOG_STATIC QueueHandle_t rt_queue_handle = NULL;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR QueueHandle_t rt_queue_handle = NULL;
 #if CONFIG_BLE_LOG_TS_ENABLED
-BLE_LOG_STATIC bool rt_ts_enabled = false;
+BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool rt_ts_enabled = false;
 #if CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER
 BLE_LOG_STATIC esp_timer_handle_t rt_ts_timer = NULL;
 #endif /* CONFIG_BLE_LOG_TS_TRIGGER_ESP_TIMER */
