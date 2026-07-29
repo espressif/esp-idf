@@ -27,6 +27,7 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     twaifd_ll_set_mode(hal_ctx->dev, config->enable_listen_only, config->enable_self_test, config->enable_loopback);
     twaifd_ll_set_tx_retrans_limit(hal_ctx->dev, config->retry_cnt);
     twaifd_ll_filter_drop_rtr(hal_ctx->dev, config->no_receive_rtr);
+    twaifd_ll_enable_time_trig_trans_mode(hal_ctx->dev, config->enable_time_trigger_tx);
     twaifd_ll_enable_filter_mode(hal_ctx->dev, true);  // each filter still has independent enable control
     twaifd_ll_enable_fd_mode(hal_ctx->dev, true);      // fd frame still controlled by `header.fdf`
     twaifd_ll_enable_bus_off_tx_fail_mode(hal_ctx->dev, true); // all buffers go to "TX failed" state upon bus-off
