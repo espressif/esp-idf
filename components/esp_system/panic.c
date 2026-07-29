@@ -380,7 +380,7 @@ void esp_panic_handler(panic_info_t *info)
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
 #if CONFIG_ESP_DEBUG_OCDAWARE
-    if (esp_cpu_dbgr_is_attached()) {
+    if (esp_cpu_dbgr_is_attached() && g_panic_entry_count[esp_cpu_get_core_id()] <= 1) {
         char *panic_reason_str = NULL;
         if (info->pseudo_excause) {
             panic_reason_str = (char *)info->reason;
