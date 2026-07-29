@@ -40,6 +40,14 @@ esp_err_t esp_ieee802154_enable(void);
 esp_err_t esp_ieee802154_disable(void);
 
 /**
+ * @brief  Get the receive sensitivity.
+ *
+ * @return The receive sensitivity in dBm.
+ *
+ */
+int8_t esp_ieee802154_get_receive_sensitivity(void);
+
+/**
  * @brief  Get the operational channel.
  *
  * @return The channel number (11~26).

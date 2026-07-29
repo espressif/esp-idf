@@ -20,7 +20,6 @@
 #include "esp_ieee802154_util.h"
 #include "esp_log.h"
 #include "esp_coex_i154.h"
-#include "hal/ieee802154_ll.h"
 #include "hal/ieee802154_common_ll.h"
 
 esp_err_t esp_ieee802154_event_callback_list_register(esp_ieee802154_event_cb_list_t cb_list)
@@ -47,6 +46,11 @@ esp_err_t esp_ieee802154_disable(void)
     ieee802154_rf_disable();
     ieee802154_disable();
     return ieee802154_mac_deinit();
+}
+
+int8_t esp_ieee802154_get_receive_sensitivity(void)
+{
+    return IEEE802154_RX_SENSITIVITY;
 }
 
 uint8_t esp_ieee802154_get_channel(void)
