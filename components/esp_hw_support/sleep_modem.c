@@ -254,7 +254,7 @@ uint32_t sleep_modem_reject_triggers(void)
 {
     uint32_t reject_triggers = 0;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-    reject_triggers = (s_sleep_modem.phy_link != NULL) ? BIT(16) : 0;
+    reject_triggers = sleep_modem_wifi_modem_state_is_enabled() ? BIT(16) : 0;
 #endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
     return reject_triggers;
 }
