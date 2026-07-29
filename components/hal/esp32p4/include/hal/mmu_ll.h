@@ -291,7 +291,7 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
 
     REG_WRITE(index_reg, entry_id);
     REG_WRITE(content_reg, mmu_val);
-
+#if !BOOTLOADER_BUILD
     // Anti-FI check to confirm the encryption status for PSRAM entry.
     // This avoids a potential FI attacks to keep PSRAM unencrypted and
     // hence read out plaintext in execute from PSRAM model.
@@ -300,6 +300,7 @@ __attribute__((always_inline)) static inline void mmu_ll_write_entry(uint32_t mm
     } else {
         ESP_FAULT_ASSERT(!(mmu_ll_cache_encryption_enabled() && target == MMU_TARGET_PSRAM0));
     }
+#endif // !BOOTLOADER_BUILD
 }
 
 #if SOC_PSRAM_ENCRYPTION_PAGE_CONFIGURABLE
