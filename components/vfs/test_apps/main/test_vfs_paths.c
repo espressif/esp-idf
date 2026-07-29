@@ -10,11 +10,13 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/fcntl.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include "esp_vfs.h"
 #include "esp_vfs_ops.h"
 #include "unity.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 
 /* Dummy VFS implementation to check if VFS is called or not with expected path
  */
@@ -453,3 +455,109 @@ TEST_CASE("vfs survives repeated register/unregister cycles", "[vfs]")
         }
     }
 }
+
+#if CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
+
+/* Count how many times a directory entry with the given name is returned by readdir().
+ * Other mount points may be registered by the system, so a listing is checked by looking
+ * for the expected entries rather than by asserting an exact entry count.
+ */
+static int count_dir_entries(const char* path, const char* name)
+{
+    DIR* dir = opendir(path);
+    TEST_ASSERT_NOT_NULL(dir);
+    int count = 0;
+    struct dirent* de;
+    while ((de = readdir(dir)) != NULL) {
+        TEST_ASSERT_EQUAL(DT_DIR, de->d_type);
+        if (strcmp(de->d_name, name) == 0) {
+            ++count;
+        }
+    }
+    closedir(dir);
+    return count;
+}
+
+TEST_CASE("vfs lists synthetic parent directories", "[vfs]")
+{
+    dummy_vfs_t inst = { .match_path = "", .called = false };
+    TEST_ESP_OK( esp_vfs_register_fs("/foo", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst) );
+    TEST_ESP_OK( esp_vfs_register_fs("/dev/aaa", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst) );
+    TEST_ESP_OK( esp_vfs_register_fs("/dev/bbb", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst) );
+
+    /* The root lists the first path component of every mount, and mounts sharing a
+     * component (/dev/aaa and /dev/bbb both yield "dev") are listed only once. */
+    TEST_ASSERT_EQUAL(1, count_dir_entries("/", "foo"));
+    TEST_ASSERT_EQUAL(1, count_dir_entries("/", "dev"));
+
+    /* An intermediate directory lists the mounts directly underneath it. */
+    TEST_ASSERT_EQUAL(1, count_dir_entries("/dev", "aaa"));
+    TEST_ASSERT_EQUAL(1, count_dir_entries("/dev", "bbb"));
+
+    /* A trailing separator is accepted, just as it is for real mounts. */
+    TEST_ASSERT_EQUAL(1, count_dir_entries("/dev/", "aaa"));
+
+    /* Synthetic directories can be stat()ed as read-only directories. */
+    struct stat st;
+    TEST_ASSERT_EQUAL(0, stat("/", &st));
+    TEST_ASSERT_EQUAL(S_IFDIR, st.st_mode & S_IFMT);
+    TEST_ASSERT_EQUAL(0, stat("/dev", &st));
+    TEST_ASSERT_EQUAL(S_IFDIR, st.st_mode & S_IFMT);
+
+    /* A path with no mount underneath it is not a directory. */
+    TEST_ASSERT_EQUAL(-1, stat("/nonexistent", &st));
+
+    /* telldir()/seekdir() return to the same entry, and rewinddir() restarts the listing. */
+    DIR* dir = opendir("/dev");
+    TEST_ASSERT_NOT_NULL(dir);
+    TEST_ASSERT_NOT_NULL(readdir(dir));
+    long pos = telldir(dir);
+    char name_at_pos[sizeof(((struct dirent*)0)->d_name)];
+    struct dirent* de = readdir(dir);
+    TEST_ASSERT_NOT_NULL(de);
+    strlcpy(name_at_pos, de->d_name, sizeof(name_at_pos));
+    seekdir(dir, pos);
+    de = readdir(dir);
+    TEST_ASSERT_NOT_NULL(de);
+    TEST_ASSERT_EQUAL_STRING(name_at_pos, de->d_name);
+    rewinddir(dir);
+    TEST_ASSERT_NOT_NULL(readdir(dir));
+    closedir(dir);
+
+    TEST_ESP_OK( esp_vfs_unregister("/foo") );
+    TEST_ESP_OK( esp_vfs_unregister("/dev/aaa") );
+    TEST_ESP_OK( esp_vfs_unregister("/dev/bbb") );
+}
+
+TEST_CASE("vfs synthetic dirs defer to a fallback filesystem", "[vfs]")
+{
+    /* A fallback VFS (empty prefix) owns every otherwise-unmatched path, including "/" and
+     * the parents of other mounts, so the synthetic listing must not shadow it. */
+    dummy_vfs_t fallback = { .match_path = "", .called = false };
+    TEST_ESP_OK( esp_vfs_register_fs("", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &fallback) );
+    dummy_vfs_t dev = { .match_path = "", .called = false };
+    TEST_ESP_OK( esp_vfs_register_fs("/dev/aaa", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &dev) );
+
+    /* opendir("/") is routed to the fallback, not synthesized. */
+    fallback.match_path = "/";
+    fallback.called = false;
+    DIR* dir = opendir("/");
+    TEST_ASSERT_TRUE(fallback.called);
+    if (dir) {
+        closedir(dir);
+    }
+
+    /* An intermediate parent ("/dev") is likewise routed to the fallback. */
+    fallback.match_path = "/dev";
+    fallback.called = false;
+    dir = opendir("/dev");
+    TEST_ASSERT_TRUE(fallback.called);
+    if (dir) {
+        closedir(dir);
+    }
+
+    TEST_ESP_OK( esp_vfs_unregister("") );
+    TEST_ESP_OK( esp_vfs_unregister("/dev/aaa") );
+}
+
+#endif // CONFIG_VFS_SUPPORT_SYNTHETIC_ROOT
