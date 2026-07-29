@@ -298,6 +298,25 @@ function(__dump_library_properties libraries)
     endforeach()
 endfunction()
 
+function(__idf_build_link_whole_archive target scope library)
+    idf_build_get_property(linker_type LINKER_TYPE)
+    if(linker_type STREQUAL "GNU")
+        set(link_option "SHELL:-Wl,--whole-archive $<TARGET_FILE:${library}> -Wl,--no-whole-archive")
+    elseif(linker_type STREQUAL "Darwin")
+        set(link_option "SHELL:-Wl,-force_load $<TARGET_FILE:${library}>")
+    elseif(linker_type STREQUAL "ULP_FSM")
+        set(link_option "SHELL:--whole-archive $<TARGET_FILE:${library}> --no-whole-archive")
+    else()
+        target_link_libraries(${target} ${scope} ${library})
+        return()
+    endif()
+
+    # ARGN may contain BEFORE to place the archive ahead of existing link options.
+    # Also link the target normally so CMake tracks its build and relink dependencies.
+    target_link_options(${target} ${ARGN} ${scope} "${link_option}")
+    target_link_libraries(${target} ${scope} ${library})
+endfunction()
+
 #[[api
 .. cmakev2:function:: idf_build_library
 
