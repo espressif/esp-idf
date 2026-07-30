@@ -6,6 +6,15 @@ endif()
 
 set(includes "include" "interface" "${target}/include")
 
+# TODO(IDF-15983): potentially remove __ULP_BUILDV2 handling from esp_adc
+if(__ULP_BUILDV2)
+    # LP-core ADC shared code includes esp_adc/adc_oneshot.h from
+    # ulp/lp_core/shared/include/ulp_lp_core_lp_adc_shared.h.
+    idf_component_register(INCLUDE_DIRS ${includes}
+                           REQUIRES esp_hal_ana_conv)
+    return()
+endif()
+
 set(srcs)
 
 if(CONFIG_SOC_ADC_SUPPORTED)

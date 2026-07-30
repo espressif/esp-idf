@@ -14,5 +14,4 @@ endif()
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS "."
                        PRIV_REQUIRES unity esp_pm ulp esp_timer esp_psram esp_driver_gptimer vfs esp_hal_gpio
-                                     esp_driver_gpio
                        WHOLE_ARCHIVE)

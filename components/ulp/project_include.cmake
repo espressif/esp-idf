@@ -1,4 +1,4 @@
-if(IDF_BUILD_V2 AND __ULP_BUILD)
+if(IDF_BUILD_V2 AND __ULP_BUILDV2)
     return()
 endif()
 
@@ -131,11 +131,15 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 # subprojects). Do not warn about the ones a given child ignores.
                 --no-warn-unused-cli
                 -DIDF_DEFAULT_PROJECT_NAME=${app_name}
+                -DULP_APP_NAME=${app_name}
                 -DIDF_BUILD_V2=y
-                # Internal marker for the ULP child project component graph.
-                -D__ULP_BUILD=1
+                -DCMAKE_MODULE_PATH=${ulp_cmake_dir}
+                # Internal marker for ULP child component graphs. Only the
+                # IDF_BUILD_V2 path sets it for now.
+                -D__ULP_BUILDV2=1
                 -DIDF_PARENT_BUILD_DIR=${build_dir}
                 -DULP_PREFIX_APPEND_BIN_NAME=${prefix_append_bin_name}
+                -DULP_PARENT_SDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                 -DSDKCONFIG=${sdkconfig}
                 -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                 -DSDKCONFIG_CMAKE=${SDKCONFIG_CMAKE}
@@ -196,10 +200,24 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
             BUILD_ALWAYS 1
             )
 
-        # Only the CMake v1 path reads this property when passing ULP_S_SOURCES
-        # to the child project. Leaving it set for v2 is harmless and keeps the
-        # post-ExternalProject artifact wiring common. Can be dropped when
-        # v1 support is dropped.
+        if(IDF_BUILD_V2)
+            foreach(binary_name IN LISTS binary_names)
+                set(ulp_compat_dir "${CMAKE_CURRENT_BINARY_DIR}/${binary_name}")
+                foreach(extension IN ITEMS bin ld h map sym elf)
+                    set(ulp_compat_artifact "${ulp_compat_dir}/${binary_name}.${extension}")
+                    set(ulp_source_artifact "${ulp_binary_dir}/${binary_name}.${extension}")
+                    add_custom_command(OUTPUT "${ulp_compat_artifact}"
+                        COMMAND ${CMAKE_COMMAND} -E make_directory "${ulp_compat_dir}"
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                                "${ulp_source_artifact}" "${ulp_compat_artifact}"
+                        DEPENDS "${ulp_source_artifact}"
+                        VERBATIM)
+                endforeach()
+            endforeach()
+        endif()
+
+        # Both build system versions pass ULP_S_SOURCES to the child project
+        # through this property; see the generator expression above.
         set_property(TARGET ${app_name} PROPERTY ULP_SOURCES "${sources}")
 
         spaces2list(exp_dep_srcs)

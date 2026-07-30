@@ -31,8 +31,8 @@ else()
     endif()
 endif()
 
-# TODO(IDF-15956): potentially remove __ULP_BUILD handling from soc
-if(__ULP_BUILD)
+# TODO(IDF-15956): potentially remove __ULP_BUILDV2 handling from soc
+if(__ULP_BUILDV2)
     idf_component_register(INCLUDE_DIRS ${includes}
                            REQUIRES esp_common)
 

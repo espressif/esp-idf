@@ -1,0 +1,69 @@
+# CMake v2 default ULP project for ulp_embed_binary() callers. The ULP runtime
+# is built from the ulp component graph, and the legacy source list is attached
+# directly to the executable, matching the CMake v1 link semantics.
+include(${CMAKE_CURRENT_LIST_DIR}/ulp_project.cmake)
+
+if("${ULP_TYPE}" STREQUAL "fsm")
+    project(${ULP_APP_NAME} ASM)
+else()
+    project(${ULP_APP_NAME} C CXX ASM)
+endif()
+
+ulp_project_init()
+
+# A single executable is built, so DEFERRED optional-requires resolution is
+# safe and keeps the linked component set minimal.
+idf_build_set_property(IDF_COMPONENT_OPTIONAL_REQUIRES_MODE DEFERRED)
+
+# CMake v1 linked the ulp_embed_binary() call-site sources before the ULP runtime.
+# In CMake v2 the runtime's WHOLE_ARCHIVE is emitted as a link option, before
+# executable objects, so attaching these sources directly would reverse that
+# order. Keep them in a separate archive that can be placed before the runtime,
+# preserving legacy code placement and strong-over-weak symbol resolution.
+function(__ulp_embed_binary_add_legacy_sources executable)
+    set(legacy_sources_lib "${executable}_legacy_sources")
+    add_library(${legacy_sources_lib} STATIC ${ULP_S_SOURCES})
+    target_link_libraries(${legacy_sources_lib} PRIVATE "library_${executable}")
+    if(ADD_PICOLIBC_SPECS)
+        target_compile_options(${legacy_sources_lib} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU>:-specs=picolibc.specs>)
+        target_compile_options(${legacy_sources_lib} PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-specs=picolibcpp.specs>)
+    endif()
+
+    if(ULP_PARENT_SDKCONFIG_HEADER)
+        # Legacy ulp_embed_binary() sources are authored against the parent app's
+        # sdkconfig, including project-local Kconfig.projbuild symbols.
+        get_filename_component(parent_sdkconfig_dir "${ULP_PARENT_SDKCONFIG_HEADER}" DIRECTORY)
+        target_include_directories(${legacy_sources_lib} BEFORE PRIVATE "${parent_sdkconfig_dir}")
+    endif()
+    if(COMPONENT_INCLUDES)
+        target_include_directories(${legacy_sources_lib} PRIVATE ${COMPONENT_INCLUDES})
+    endif()
+    # CMake v1 exposed COMPONENT_DIR only to the FSM assembly preprocessing, not to
+    # the compilation of ULP C sources. The v2 FSM toolchain preprocesses inside
+    # the compile rule, which takes its include flags from the target, so keep the
+    # directory on the target for FSM builds only.
+    if(BUILD_FSM AND COMPONENT_DIR)
+        target_include_directories(${legacy_sources_lib} PRIVATE ${COMPONENT_DIR})
+    endif()
+
+    __idf_build_link_whole_archive(${executable} PRIVATE ${legacy_sources_lib} BEFORE)
+endfunction()
+
+set(executable_args COMPONENTS ulp)
+if(NOT BUILD_FSM)
+    list(APPEND executable_args MAPFILE_TARGET ${ULP_APP_NAME}_mapfile)
+endif()
+ulp_build_executable(${ULP_APP_NAME} ${executable_args})
+__ulp_embed_binary_add_legacy_sources(${ULP_APP_NAME})
+
+if(DEFINED ULP_VAR_PREFIX AND NOT "${ULP_VAR_PREFIX}" STREQUAL "")
+    ulp_build_binary(${ULP_APP_NAME} PREFIX ${ULP_VAR_PREFIX})
+else()
+    ulp_build_binary(${ULP_APP_NAME})
+endif()
+
+idf_build_generate_metadata(EXECUTABLE ${ULP_APP_NAME})
+if(TARGET "${ULP_APP_NAME}_mapfile")
+    idf_create_size_report("${ULP_APP_NAME}_mapfile" TARGET size)
+endif()
+idf_build_generate_depgraph("${ULP_APP_NAME}")

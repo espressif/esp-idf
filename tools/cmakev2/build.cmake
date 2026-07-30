@@ -39,7 +39,12 @@ function(idf_build_set_property property value)
     cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
 
     if("${property}" STREQUAL MINIMAL_BUILD)
-        idf_warn("Build property 'MINIMAL_BUILD' is obsolete and will be ignored")
+        # TODO: Remove this MINIMAL_BUILD compatibility block once CMake v1 is fully deprecated.
+        # V1 compatibility shims may still set MINIMAL_BUILD; warn only for native CMake v2 projects.
+        idf_build_get_property(_v1_compat __V1_COMPAT_SHIM)
+        if(NOT _v1_compat)
+            idf_warn("Build property 'MINIMAL_BUILD' is obsolete and will be ignored")
+        endif()
     endif()
 
     set(append)
@@ -291,6 +296,25 @@ function(__dump_library_properties libraries)
             idf_msg("   ${property}: ${value}")
         endforeach()
     endforeach()
+endfunction()
+
+function(__idf_build_link_whole_archive target scope library)
+    idf_build_get_property(linker_type LINKER_TYPE)
+    if(linker_type STREQUAL "GNU")
+        set(link_option "SHELL:-Wl,--whole-archive $<TARGET_FILE:${library}> -Wl,--no-whole-archive")
+    elseif(linker_type STREQUAL "Darwin")
+        set(link_option "SHELL:-Wl,-force_load $<TARGET_FILE:${library}>")
+    elseif(linker_type STREQUAL "ULP_FSM")
+        set(link_option "SHELL:--whole-archive $<TARGET_FILE:${library}> --no-whole-archive")
+    else()
+        target_link_libraries(${target} ${scope} ${library})
+        return()
+    endif()
+
+    # ARGN may contain BEFORE to place the archive ahead of existing link options.
+    # Also link the target normally so CMake tracks its build and relink dependencies.
+    target_link_options(${target} ${ARGN} ${scope} "${link_option}")
+    target_link_libraries(${target} ${scope} ${library})
 endfunction()
 
 #[[api

@@ -14,8 +14,8 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
 
-# TODO(IDF-15947): potentially remove __ULP_BUILD handling from esp_hal_clock
-if(__ULP_BUILD)
+# TODO(IDF-15947): potentially remove __ULP_BUILDV2 handling from esp_hal_clock
+if(__ULP_BUILDV2)
     # LP-core timer shared code includes hal/clk_tree_ll.h from
     # ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c. Some target
     # clk_tree_ll.h headers include hal/regi2c_ctrl.h.

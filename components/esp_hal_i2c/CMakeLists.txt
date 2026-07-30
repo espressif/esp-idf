@@ -8,6 +8,16 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
 endif()
 list(APPEND includes "include")
 
+# TODO(IDF-15987): potentially remove __ULP_BUILDV2 handling from esp_hal_i2c
+if(__ULP_BUILDV2)
+    # ULP I2C code includes hal/i2c_ll.h and hal/i2c_types.h from
+    # ulp/ulp_riscv/ulp_core/ulp_riscv_i2c.c and
+    # ulp/lp_core/lp_core/lp_core_i2c.c.
+    idf_component_register(INCLUDE_DIRS ${includes}
+                           REQUIRES soc hal esp_common)
+    return()
+endif()
+
 set(target_folder "${target}")
 
 # I2C related source files

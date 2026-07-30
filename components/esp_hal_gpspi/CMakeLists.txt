@@ -7,6 +7,15 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
 
+# TODO(IDF-15986): potentially remove __ULP_BUILDV2 handling from esp_hal_gpspi
+if(__ULP_BUILDV2)
+    # LP-core SPI code includes SPI HAL headers from
+    # ulp/lp_core/lp_core/lp_core_spi.c.
+    idf_component_register(INCLUDE_DIRS ${includes}
+                           REQUIRES soc hal esp_hal_dma)
+    return()
+endif()
+
 if(CONFIG_SOC_GPSPI_SUPPORTED)
     list(APPEND srcs
         "${target}/spi_periph.c"
