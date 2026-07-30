@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ static bool IRAM_ATTR test_timer_on_alarm_cb(gptimer_handle_t timer, const gptim
     return true;
 }
 
-static void test_timer_init(volatile uint32_t *arg)
+static void test_timer_init_with_cb(gptimer_alarm_cb_t on_alarm, void *arg)
 {
     /* Select and initialize basic parameters of the timer */
     gptimer_config_t timer_config = {
@@ -45,9 +45,9 @@ static void test_timer_init(volatile uint32_t *arg)
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
 
     gptimer_event_callbacks_t cbs = {
-        .on_alarm = test_timer_on_alarm_cb,
+        .on_alarm = on_alarm,
     };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, (void *)arg));
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, arg));
 
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
 
@@ -58,6 +58,11 @@ static void test_timer_init(volatile uint32_t *arg)
     };
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config2));
     ESP_ERROR_CHECK(gptimer_start(gptimer));
+}
+
+static void test_timer_init(volatile uint32_t *arg)
+{
+    test_timer_init_with_cb(test_timer_on_alarm_cb, (void *)arg);
 }
 
 static void test_timer_deinit(void)
@@ -111,6 +116,53 @@ TEST_CASE("Test REE interrupt in TEE", "[basic]")
 
     mode = esp_cpu_get_curr_privilege_level();
     TEST_ASSERT_MESSAGE((mode == ESP_CPU_NS_MODE), "Incorrect privilege mode!");
+}
+
+typedef struct {
+    volatile uint32_t intr_count;
+    volatile uint32_t accepted_count;
+} test_nested_svc_call_ctx_t;
+
+static bool IRAM_ATTR test_nested_svc_call_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
+{
+    test_nested_svc_call_ctx_t *ctx = (test_nested_svc_call_ctx_t *)user_data;
+
+    /* Issued while the preempted service call sits parked inside the TEE */
+    uint32_t ret = esp_tee_service_call(3, SS_ESP_TEE_TEST_SERVICE_ADD, 200, 100);
+    if (ret != UINT32_MAX) {
+        ctx->accepted_count = ctx->accepted_count + 1;
+    }
+    ctx->intr_count = ctx->intr_count + 1;
+
+    esp_rom_printf("[mode: %d] Nested service call from ISR (%d) returned 0x%x\n",
+                   esp_cpu_get_curr_privilege_level(), ctx->intr_count, ret);
+    return true;
+}
+
+TEST_CASE("Test nested secure service call from an REE interrupt", "[basic]")
+{
+    TEST_ASSERT_EQUAL(ESP_CPU_NS_MODE, esp_cpu_get_curr_privilege_level());
+
+    static test_nested_svc_call_ctx_t ctx;
+    ctx.intr_count = 0;
+    ctx.accepted_count = 0;
+
+    test_timer_init_with_cb(test_nested_svc_call_cb, &ctx);
+
+    /* Runs in the TEE until the ISR above has fired ESP_TEE_TEST_INTR_ITER times */
+    uint32_t val = esp_tee_service_call(2, SS_ESP_TEE_TEST_REE_INTR_IN_TEE, &ctx.intr_count);
+    TEST_ASSERT_EQUAL_UINT32(0, val);
+
+    test_timer_deinit();
+
+    /* Every call made from the ISR should have been rejected by the TEE */
+    TEST_ASSERT_EQUAL_UINT32(0, ctx.accepted_count);
+
+    /* The parked call resumed and completed, so the TEE takes calls again */
+    val = esp_tee_service_call(3, SS_ESP_TEE_TEST_SERVICE_ADD, 200, 100);
+    TEST_ASSERT_EQUAL_UINT32(300, val);
+
+    TEST_ASSERT_EQUAL(ESP_CPU_NS_MODE, esp_cpu_get_curr_privilege_level());
 }
 
 TEST_CASE("Test TEE interrupt in REE", "[basic]")
