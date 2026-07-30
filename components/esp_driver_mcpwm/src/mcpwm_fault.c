@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,10 @@ static esp_err_t mcpwm_del_soft_fault(mcpwm_fault_handle_t fault);
 
 static esp_err_t mcpwm_gpio_fault_register_to_group(mcpwm_gpio_fault_t *fault, int group_id)
 {
-    mcpwm_group_t *group = mcpwm_acquire_group_handle(group_id);
-    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+    mcpwm_group_t *group = NULL;
+    esp_err_t ret = ESP_OK;
 
+    ESP_GOTO_ON_ERROR(mcpwm_acquire_group_handle(group_id, 0, &group), err, TAG, "acquire group failed");
     int fault_id = -1;
     portENTER_CRITICAL(&group->spinlock);
     for (int i = 0; i < MCPWM_LL_GET(GPIO_FAULTS_PER_GROUP); i++) {
@@ -29,15 +30,17 @@ static esp_err_t mcpwm_gpio_fault_register_to_group(mcpwm_gpio_fault_t *fault, i
         }
     }
     portEXIT_CRITICAL(&group->spinlock);
-    if (fault_id < 0) {
-        mcpwm_release_group_handle(group);
-        group = NULL;
-    } else {
-        fault->base.group = group;
-        fault->fault_id = fault_id;
-    }
-    ESP_RETURN_ON_FALSE(fault_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free gpio fault in group (%d)", group_id);
+    ESP_GOTO_ON_FALSE(fault_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free gpio fault in group (%d)", group_id);
+
+    fault->base.group = group;
+    fault->fault_id = fault_id;
     return ESP_OK;
+
+err:
+    if (group) {
+        mcpwm_release_group_handle(group);
+    }
+    return ret;
 }
 
 static void mcpwm_gpio_fault_unregister_from_group(mcpwm_gpio_fault_t *fault)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,9 +105,10 @@ static esp_err_t mcpwm_del_timer_sync_src(mcpwm_sync_t *sync_src)
 
 static esp_err_t mcpwm_gpio_sync_src_register_to_group(mcpwm_gpio_sync_src_t *gpio_sync_src, int group_id)
 {
-    mcpwm_group_t *group = mcpwm_acquire_group_handle(group_id);
-    ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", group_id);
+    mcpwm_group_t *group = NULL;
+    esp_err_t ret = ESP_OK;
 
+    ESP_GOTO_ON_ERROR(mcpwm_acquire_group_handle(group_id, 0, &group), err, TAG, "acquire group failed");
     int sync_id = -1;
     portENTER_CRITICAL(&group->spinlock);
     for (int i = 0; i < MCPWM_LL_GET(GPIO_SYNCHROS_PER_GROUP); i++) {
@@ -119,16 +120,17 @@ static esp_err_t mcpwm_gpio_sync_src_register_to_group(mcpwm_gpio_sync_src_t *gp
     }
     portEXIT_CRITICAL(&group->spinlock);
 
-    if (sync_id < 0) {
-        mcpwm_release_group_handle(group);
-        group = NULL;
-    } else {
-        gpio_sync_src->base.group = group;
-        gpio_sync_src->sync_id = sync_id;
-    }
-    ESP_RETURN_ON_FALSE(sync_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free gpio sync_src in group (%d)", group_id);
+    ESP_GOTO_ON_FALSE(sync_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free gpio sync_src in group (%d)", group_id);
 
+    gpio_sync_src->base.group = group;
+    gpio_sync_src->sync_id = sync_id;
     return ESP_OK;
+
+err:
+    if (group) {
+        mcpwm_release_group_handle(group);
+    }
+    return ret;
 }
 
 static void mcpwm_gpio_sync_src_unregister_from_group(mcpwm_gpio_sync_src_t *gpio_sync_src)
