@@ -82,25 +82,30 @@ extern "C" {
             [I2S_DIR_RX - 1] = {  \
                 [I2S_ETM_TASK_START] = I2S0_TASK_START_RX, \
                 [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_RX, \
+                [I2S_ETM_TASK_SYNC_FIFO] = -1, \
             },  \
             [I2S_DIR_TX - 1] = {  \
                 [I2S_ETM_TASK_START] = I2S0_TASK_START_TX, \
                 [I2S_ETM_TASK_STOP] = I2S0_TASK_STOP_TX, \
+                [I2S_ETM_TASK_SYNC_FIFO] = I2S0_TASK_SYNC_CHECK, \
             },  \
         },  \
         [1] = {  \
             [I2S_DIR_RX - 1] = {  \
                 [I2S_ETM_TASK_START] = I2S1_TASK_START_RX, \
                 [I2S_ETM_TASK_STOP] = I2S1_TASK_STOP_RX, \
+                [I2S_ETM_TASK_SYNC_FIFO] = -1, \
             },  \
             [I2S_DIR_TX - 1] = {  \
                 [I2S_ETM_TASK_START] = I2S1_TASK_START_TX, \
                 [I2S_ETM_TASK_STOP] = I2S1_TASK_STOP_TX, \
+                [I2S_ETM_TASK_SYNC_FIFO] = I2S1_TASK_SYNC_CHECK, \
             },  \
         },  \
     }[i2s_port][(chan_dir) - 1][task]
 
 #define I2S_LL_ETM_MAX_THRESH_NUM       (0x3FFFUL)
+#define I2S_LL_TX_SYNC_INT_EVENT        (BIT(4))
 
 /**
  * @brief Enable the bus clock for I2S module
@@ -668,6 +673,7 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
  *
  * @param hw Peripheral I2S hardware instance address.
  */
+__attribute__((always_inline))
 static inline void i2s_ll_tx_update(i2s_dev_t *hw)
 {
     hw->tx_conf.tx_update = 1;
@@ -1803,58 +1809,145 @@ static inline uint32_t i2s_ll_tx_get_ideal_cnt(i2s_dev_t *hw)
 }
 
 /**
- * @brief Set TX sync software threshold
+ * @brief Get TX FIFO synchronization difference count value
  *
- * @param hw Peripheral I2S hardware instance address.
- * @param thres Software threshold value
+ * @param hw    Peripheral I2S hardware instance address.
+ * @return
+ *      fifo count value
  */
-static inline void i2s_ll_tx_set_sync_sw_thres(i2s_dev_t *hw, uint32_t thres)
+__attribute__((always_inline))
+static inline uint32_t i2s_ll_tx_get_fifo_sync_diff_count(i2s_dev_t *hw)
 {
-    hw->sync_sw_thres.tx_cnt_diff_sw_thres = thres;
+    return hw->cnt_diff.tx_cnt_diff;
 }
 
 /**
- * @brief Set TX sync hardware threshold
+ * @brief  Reset TX FIFO synchronization difference counter
  *
- * @param hw Peripheral I2S hardware instance address.
- * @param thres Hardware threshold value
+ * @param hw    Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_tx_set_sync_hw_thres(i2s_dev_t *hw, uint32_t thres)
+__attribute__((always_inline))
+static inline void i2s_ll_tx_reset_fifo_sync_diff_counter(i2s_dev_t *hw)
 {
-    hw->sync_hw_thres.tx_cnt_diff_hw_thres = thres;
+    hw->cnt_diff.tx_cnt_diff_rst = 1;
+    hw->cnt_diff.tx_cnt_diff_rst = 0;
 }
 
 /**
- * @brief Enable TX hardware sync
+ * @brief Set TX FIFO synchronization difference threshold for manual handling
+ * @note  If diff_count is greater than manual_threshold, a TX sync interrupt is triggered for software handling.
  *
- * @param hw Peripheral I2S hardware instance address.
- * @param enable Set true to enable hardware sync
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param thresh Difference counter threshold. When the difference count exceeds this value,
+ *               the TX sync interrupt is triggered.
  */
-static inline void i2s_ll_tx_enable_hw_sync(i2s_dev_t *hw, bool enable)
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_fifo_sync_diff_counter_manual_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->sync_sw_thres.tx_cnt_diff_sw_thres = thresh;
+}
+
+/**
+ * @brief Set TX FIFO synchronization difference threshold for automatic hardware supplementation
+ * @note  If diff_count is greater than or equal to auto_threshold and less than manual_threshold,
+ *        hardware will synchronize the data automatically.
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param thresh Difference counter threshold. When the difference count reaches this value,
+ *               hardware auto-synchronization is triggered.
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_fifo_sync_diff_counter_auto_threshold(i2s_dev_t *hw, uint32_t thresh)
+{
+    hw->sync_hw_thres.tx_cnt_diff_hw_thres = thresh;
+}
+
+/**
+ * @brief Enable TX FIFO synchronization hardware mode
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param enable Set true to enable hardware mode
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_tx_enable_hw_fifo_sync(i2s_dev_t *hw, bool enable)
 {
     hw->hw_sync_conf.tx_hw_sync_en = enable;
 }
 
 /**
- * @brief Set TX hardware sync supplement mode
+ * @brief Set TX FIFO synchronization hardware data supplementation mode
+ * @note  It determines the supplementation data when the actual sent data is less than the `diff_count - threshold`
  *
- * @param hw Peripheral I2S hardware instance address.
- * @param mode Supplement mode: 0 = last data, 1 = configured data
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param mode  Data supplementation mode
  */
-static inline void i2s_ll_tx_set_hw_sync_suppl_mode(i2s_dev_t *hw, bool mode)
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_hw_fifo_sync_suppl_mode(i2s_dev_t *hw, i2s_tx_fifo_sync_suppl_mode_t mode)
 {
     hw->hw_sync_conf.tx_hw_sync_suppl_mode = mode;
 }
 
 /**
- * @brief Set TX hardware sync supplement data
+ * @brief Set TX FIFO synchronization hardware supplementation data when `tx_hw_sync_suppl_mode` is 1
  *
- * @param hw Peripheral I2S hardware instance address.
- * @param data Supplement data value
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param data  Data to be supplemented when `tx_hw_sync_suppl_mode` is 1
  */
-static inline void i2s_ll_tx_set_hw_sync_suppl_data(i2s_dev_t *hw, uint32_t data)
+__attribute__((always_inline))
+static inline void i2s_ll_tx_set_hw_fifo_sync_static_suppl_data(i2s_dev_t *hw, uint32_t data)
 {
     hw->hw_sync_data.tx_hw_sync_suppl_data = data;
+}
+
+/**
+ * @brief Get I2S interrupt status register address
+ */
+__attribute__((always_inline))
+static inline volatile void *i2s_ll_get_interrupt_status_reg(i2s_dev_t *hw)
+{
+    return (volatile void *)&hw->int_st;
+}
+
+/**
+ * @brief Get I2S interrupt status by mask
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param mask  Interrupt status mask
+ * @return Interrupt status
+ */
+__attribute__((always_inline))
+static inline uint32_t i2s_ll_get_interrupt_status(i2s_dev_t *hw, uint32_t mask)
+{
+    return hw->int_st.val & mask;
+}
+
+/**
+ * @brief Clear I2S interrupt status by mask
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param mask  Interrupt status mask
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_clear_interrupt_status(i2s_dev_t *hw, uint32_t mask)
+{
+    hw->int_clr.val = mask;
+}
+
+/**
+ * @brief Enable I2S interrupt for specific event mask
+ *
+ * @param hw     Peripheral I2S hardware instance address.
+ * @param mask   Event mask
+ * @param enable True to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void i2s_ll_enable_interrupt(i2s_dev_t *hw, uint32_t mask, bool enable)
+{
+    if (enable) {
+        hw->int_ena.val |= mask;
+    } else {
+        hw->int_ena.val &= ~mask;
+    }
 }
 
 /**

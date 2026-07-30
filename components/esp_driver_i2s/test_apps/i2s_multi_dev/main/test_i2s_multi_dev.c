@@ -412,12 +412,18 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
     } else {
         unity_wait_for_signal("Master Finished");
     }
+    if (!is_external) {
+        unity_wait_for_signal("External Clock User Finished");
+    }
     // Disable and free the resources
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     free(recv_buff);
     TEST_ESP_OK(i2s_del_channel(rx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));
+    if (is_external) {
+        unity_send_signal("External Clock User Finished");
+    }
     // Assert whether the test success
     TEST_ASSERT(is_success);
 }

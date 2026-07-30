@@ -78,6 +78,16 @@ typedef enum {
     I2S_DESTINATION_BT = 1,     /*!< Route I2S data to Bluetooth (I2S0 only; see `SOC_I2S_SUPPORTS_BT_DEST`) */
 } i2s_destination_t;
 
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+/**
+ * @brief TX FIFO synchronization hardware data supplement mode
+ */
+typedef enum {
+    I2S_TX_FIFO_SYNC_SUPPL_MODE_LAST_DATA = 0,      /*!< Supplement with the last transmitted data */
+    I2S_TX_FIFO_SYNC_SUPPL_MODE_STATIC_DATA = 1,    /*!< Supplement with static data specified in config */
+} i2s_tx_fifo_sync_suppl_mode_t;
+#endif // SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+
 #if SOC_I2S_SUPPORTS_PCM
 /**
  * @brief A/U-law decompress or compress configuration.
