@@ -76,7 +76,7 @@ Build the project and flash it to the board, then run monitor tool to view seria
 idf.py -p PORT flash monitor
 ```
 
-Then transmit the prepared bin to ESP-chips. Please note that the bin should be in one packet transaction which means there should not have any interval during the transaction in this example because it uses idle to judge whether the packet finishes or not.
+Then transmit the prepared bin to ESP-chips. This example uses `uhci_start_receive_continuous()`, so the DMA keeps running across UART idle gaps and no data is dropped between frames. The transfer is considered finished once the RX line stays idle for about one second (`UART_DMA_OTA_IDLE_TIMEOUT_MS`), so make sure the whole bin is sent without such a long pause in the middle.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

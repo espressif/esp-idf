@@ -200,6 +200,30 @@ RX 事件数据在 :cpp:type:`uhci_rx_event_data_t` 中定义：
 
     在接收完成之前，:cpp:func:`uhci_receive` 的参数 ``read_buffer`` 不可被释放。
 
+连续接收
+^^^^^^^^
+
+:cpp:func:`uhci_receive` 是一次性 (one-shot) 接口：它在接收完一帧后便会停止 DMA，需要重新调用才能接收下一帧，而在这个重新装载的间隙里可能会丢失到来的数据。若需要持续接收数据流，请改用 :cpp:func:`uhci_start_receive_continuous`。它会让 GDMA 跨越 EOF 持续运行，接收过程不会中断，因此帧与帧之间不会丢数据。
+
+传入的 ``read_buffer`` 会被拆分到各个 DMA 节点上，并作为环形缓冲区循环使用：每接收完一帧（例如 UART idle 或 length EOF），都会通过 :cpp:member:`uhci_event_callbacks_t::on_rx_trans_event` 回调交付，且 :cpp:member:`uhci_rx_event_data_t::flags::totally_received` 置为 1；而某个节点填满但整帧尚未结束时，则以该标志为 0 交付。回调直接给出指向环形缓冲区内部的指针（零拷贝），因此应用必须在 DMA 绕回并覆盖数据之前将其消费掉。请根据预期的吞吐量与消费延迟来确定缓冲区大小；驱动不提供溢出保护。
+
+调用 :cpp:func:`uhci_stop_receive` 可结束本次接收会话，并使控制器回到空闲状态，之后便可重新装载或删除控制器。
+
+.. code:: c
+
+    // 注册回调并启动连续接收。
+    ESP_ERROR_CHECK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, ctx));
+    ESP_ERROR_CHECK(uhci_start_receive_continuous(uhci_ctrl, pdata, buffer_size));
+
+    // ... 消费通过 on_rx_trans_event 交付的各帧数据 ...
+
+    // 在释放 pdata 或删除控制器之前，先停止接收会话。
+    ESP_ERROR_CHECK(uhci_stop_receive(uhci_ctrl));
+
+.. note::
+
+    :cpp:func:`uhci_start_receive_continuous` 的参数 ``read_buffer`` 必须保持有效，直到 :cpp:func:`uhci_stop_receive` 返回。
+
 卸载 UHCI 控制器
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
