@@ -1,6 +1,6 @@
 idf_component_register(SRCS "nvs_console_main.c"
                            "console_settings.c"
-                    REQUIRES cmd_nvs cmd_system esp_driver_uart fatfs
+                    REQUIRES cmd_nvs cmd_system esp_stdio fatfs
                     INCLUDE_DIRS ".")
 
 # Create a NVS image from the contents of the `nvs_data` CSV file
