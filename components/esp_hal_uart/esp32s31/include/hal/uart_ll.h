@@ -1234,7 +1234,23 @@ FORCE_INLINE_ATTR void uart_ll_set_wakeup_fifo_thrd(uart_dev_t *hw, uint32_t wak
  */
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_t mode)
 {
-
+    switch (mode) {
+    case UART_WK_MODE_ACTIVE_THRESH:
+        hw->sleep_conf2.wk_mode_sel = 0;
+        break;
+    case UART_WK_MODE_FIFO_THRESH:
+        hw->sleep_conf2.wk_mode_sel = 1;
+        break;
+    case UART_WK_MODE_START_BIT:
+        hw->sleep_conf2.wk_mode_sel = 2;
+        break;
+    case UART_WK_MODE_CHAR_SEQ:
+        hw->sleep_conf2.wk_mode_sel = 3;
+        break;
+    default:
+        abort();
+        break;
+    }
 }
 
 /**
@@ -1286,6 +1302,9 @@ FORCE_INLINE_ATTR void uart_ll_set_char_seq_wk_char(uart_dev_t *hw, uint32_t cha
         break;
     case 3:
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char3, value);
+        break;
+    case 4:
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char4, value);
         break;
     default:
         abort();
