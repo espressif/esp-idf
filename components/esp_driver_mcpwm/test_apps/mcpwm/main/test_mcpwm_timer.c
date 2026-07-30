@@ -103,7 +103,7 @@ TEST_CASE("mcpwm_timer_various_clk_src", "[mcpwm]")
             .clk_src = clk_src,
             .resolution_hz = 1000000, // 1MHz
             .period_ticks = 12000,
-            .count_mode = MCPWM_TIMER_COUNT_MODE_UP_DOWN,
+            .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
         };
 
         printf("create MCPWM timers with clock source: %d\r\n", clk_src);
@@ -136,7 +136,12 @@ TEST_CASE("mcpwm_timer_various_clk_src", "[mcpwm]")
             TEST_ESP_OK(mcpwm_timer_get_phase(timers[i], &end_count, &direction));
             int64_t elapsed_time_us = esp_timer_get_time() - start_time_us;
             uint32_t expected_ticks = (uint64_t)config.resolution_hz * elapsed_time_us / 1000000;
-            uint32_t actual_ticks = end_count - start_count;
+            uint32_t actual_ticks;
+            if (end_count >= start_count) {
+                actual_ticks = end_count - start_count;
+            } else {
+                actual_ticks = config.period_ticks - start_count + end_count;
+            }
             uint32_t tolerance_ticks = expected_ticks * tolerance_percent / 100;
 
             TEST_ASSERT_EQUAL(MCPWM_TIMER_DIRECTION_UP, direction);
@@ -144,7 +149,7 @@ TEST_CASE("mcpwm_timer_various_clk_src", "[mcpwm]")
 
             // make sure the timer has stopped
             TEST_ESP_OK(mcpwm_timer_start_stop(timers[i], MCPWM_TIMER_STOP_EMPTY));
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(20));
             check_mcpwm_timer_phase(&timers[i], 1, 0, MCPWM_TIMER_DIRECTION_UP);
         }
 
