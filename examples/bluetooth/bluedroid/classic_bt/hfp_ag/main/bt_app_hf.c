@@ -326,11 +326,15 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
                 }
                 s_time_old = esp_timer_get_time();
                 esp_hf_ag_register_data_callback(bt_app_hf_incoming_cb, bt_app_hf_outgoing_cb);
+                /* Disable connectable and discoverable mode to save the over-the-air bandwidth and ensure audio quality  */
+                esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
                 /* Begin send esco data task */
                 bt_app_send_data();
             } else if (param->audio_stat.state == ESP_HF_AUDIO_STATE_DISCONNECTED) {
                 ESP_LOGI(BT_HF_TAG, "--ESP AG Audio Connection Disconnected.");
                 bt_app_send_data_shut_down();
+                /* Resume connectable and discoverable mode */
+                esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             }
 #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             break;
