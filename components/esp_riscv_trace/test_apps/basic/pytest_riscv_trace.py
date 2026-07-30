@@ -16,7 +16,9 @@ def test_riscv_trace(dut: Dut) -> None:
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['psram'], indirect=True)
 @idf_parametrize(
-    'target', soc_filtered_targets('SOC_RISCV_TRACE_SUPPORTED == 1 and SOC_SPIRAM_SUPPORTED == 1'), indirect=['target']
+    'target',
+    soc_filtered_targets('SOC_RISCV_TRACE_SUPPORTED == 1 and SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM == 1'),
+    indirect=['target'],
 )
 def test_riscv_trace_psram(dut: Dut) -> None:
     dut.run_all_single_board_cases()

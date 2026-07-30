@@ -20,7 +20,7 @@ menu "RISC-V Trace Encoder Configurations"
             default ESP_RISCV_TRACE_BUFFER_IN_INTERNAL
             help
                 Where the driver allocates the trace buffer. The encoder writes the buffer over
-                its AHB master, which can reach both internal and external PSRAM.
+                its AHB master. PSRAM is only offered on targets whose encoder can reach it.
 
                 Internal RAM is fastest and always usable. PSRAM frees internal RAM and allows
                 much larger buffers, but is slower (higher risk of FIFO overflow at high trace
@@ -30,7 +30,7 @@ menu "RISC-V Trace Encoder Configurations"
                 bool "Internal RAM"
             config ESP_RISCV_TRACE_BUFFER_IN_EXTERNAL
                 bool "External RAM (PSRAM)"
-                depends on SPIRAM
+                depends on SPIRAM && SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM
         endchoice
 
         config ESP_RISCV_TRACE_BUFFER_MEM
