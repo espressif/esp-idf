@@ -159,7 +159,7 @@ void btdm_lp_set_lpclk_src(modem_clock_lpclk_src_t clk_src)
         return;
     }
 
-    if (clk_src >= MODEM_CLOCK_LPCLK_SRC_MAX || clk_src <= MODEM_CLOCK_LPCLK_SRC_INVALID) {
+    if (clk_src >= MODEM_CLOCK_LPCLK_SRC_MAX) {
         return;
     }
 
