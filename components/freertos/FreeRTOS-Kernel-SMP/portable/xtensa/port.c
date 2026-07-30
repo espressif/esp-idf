@@ -171,7 +171,6 @@ void vPortExitCriticalIDF(portMUX_TYPE *lock)
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
-    spinlock_release(lock);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNestingIDF[coreID];
 
@@ -181,11 +180,15 @@ void vPortExitCriticalIDF(portMUX_TYPE *lock)
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNestingIDF[coreID] = nesting;
+        spinlock_release(lock);
 
         //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             XTOS_RESTORE_JUST_INTLEVEL((int) port_uxCriticalOldInterruptStateIDF[coreID]);
         }
+    }
+    else {
+        spinlock_release(lock);
     }
 }
 
