@@ -792,7 +792,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
         return ESP_ERR_INVALID_STATE;
     }
 
-    spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, false);
+    spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, true);
     hal->rx_cur_desc->arg = arg;
 
     if (!hal->rx_used_desc_cnt) {
