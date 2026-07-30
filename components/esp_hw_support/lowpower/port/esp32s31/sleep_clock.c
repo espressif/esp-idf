@@ -49,7 +49,13 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
     #define N_REGS_LPCON() (((MODEM_LPCON_MODEM_INTR_STATUS_REG - MODEM_LPCON_TEST_CONF_REG) / 4) + 1)
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MODEMSYSCON_LINK(0), 0x20109c30, 0xf, 0xffffffff, 1, 0), .owner = ENTRY(0) | ENTRY(1) },
+        /* Workaround: on the restore path, issue a dummy write (value 0xf) to
+         * MODEM_SYSCON_DATE_REG (a benign date/version register) as the first
+         * REGDMA node to avoid an APB access timeout during the subsequent
+         * REGDMA operations. This is a hardware issue workaround; whether it
+         * can be removed on a future chip revision is still TODO/to be
+         * confirmed, so do not delete this node without verifying. */
+        [0] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_DATE_REG, 0xf, 0xffffffff, 1, 0), .owner = ENTRY(0) | ENTRY(1) },
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(1), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0), MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
         [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0x3d, 1, 0), .owner = ENTRY(1)},
