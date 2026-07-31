@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <esp_types.h>
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
 
@@ -115,10 +117,28 @@ const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mo
 /**
  * @brief Update content of selected analog wait ctrl REGDMA links.
  *
- * @param ana_wait_context Analog wait ctrl context.
+ * @param data PMU sleep data context.
  * @param analog_wait Update analog wait values at S2M, M2S, M2A retention links.
  */
-void pmu_sleep_power_analog_wait_config(void *ana_wait_context, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM]);
+void pmu_sleep_power_analog_wait_config(void *data, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM]);
+#endif
+
+/* Enabled when this chip needs any pmu_sleep_data_t priv slot; conditions differ per chip. */
+#define PMU_SLEEP_PRIV_ENABLED (CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT || SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG)
+#if PMU_SLEEP_PRIV_ENABLED
+enum {
+#if CONFIG_PM_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT
+    PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT,
+#endif
+#if SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG
+    PMU_SLEEP_PRIV_HW_RETENTION_ICG_CLK,
+#endif
+    PMU_SLEEP_PRIV_MAX,
+};
+
+typedef struct {
+    void *func[PMU_SLEEP_PRIV_MAX];
+} pmu_sleep_data_t;
 #endif
 
 /* Following software configuration instance type from pmu_struct.h used for the PMU state machine in sleep flow*/
@@ -361,7 +381,7 @@ typedef struct {
 
 typedef struct {
     pmu_hp_sys_cntl_reg_t   syscntl;
-    uint32_t                icg_func;
+    uint32_t                sleep_icg_func;
 } pmu_sleep_digital_config_t;
 
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
@@ -369,15 +389,15 @@ typedef struct {
         .dig_pad_slp_sel = ((sleep_flags) & PMU_SLEEP_PD_TOP) ? 0 : 1,  \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
-    .icg_func = (uint32_t)(clk_flags)                                   \
+    .sleep_icg_func = (uint32_t)((clk_flags)[0]),                       \
 }
 
-#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
+#define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags) {            \
     .syscntl = {                                                        \
         .dig_pad_slp_sel = 1,                                           \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
-    .icg_func = 0                                                       \
+    .sleep_icg_func = 0,                                                \
 }
 
 typedef struct {

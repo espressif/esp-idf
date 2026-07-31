@@ -107,8 +107,7 @@
 extern "C" {
 #endif
 
-typedef uint64_t pmu_sleep_clk_icg_flags_t;
-#define PMU_SLEEP_CLK_ICG_BIT(b)       (((pmu_sleep_clk_icg_flags_t)1) << (b))
+#define PMU_SLEEP_CLK_ICG_BIT(b)       (((uint64_t)1) << (b))
 #define PMU_SLEEP_CLK_ICG_FUNC_LO(f)   ((uint32_t)(f))
 #define PMU_SLEEP_CLK_ICG_FUNC_HI(f)   ((uint32_t)((f) >> 32))
 

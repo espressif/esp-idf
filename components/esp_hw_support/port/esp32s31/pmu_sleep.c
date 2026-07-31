@@ -15,6 +15,7 @@
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/sleep_clock_icg.h"
 #include "pmu_param.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/lp_aon_hal.h"
@@ -151,14 +152,15 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, soc_rtc_slow_clk
 static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
         pmu_sleep_param_config_t *param,
         pmu_sleep_power_config_t *power, /* We'll use the runtime power parameter to determine some hardware parameters */
-        const uint32_t sleep_flags,
-        const uint32_t adjustment,
-        soc_rtc_slow_clk_src_t slowclk_src,
-        const uint32_t slowclk_period,
-        const uint32_t fastclk_period
+        pmu_sleep_extra_args_t *args
     )
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
+    const uint32_t sleep_flags = args->sleep_flags;
+    const uint32_t adjustment = args->adjustment;
+    const soc_rtc_slow_clk_src_t slowclk_src = args->slowclk_src;
+    const uint32_t slowclk_period = args->slowclk_period;
+    const uint32_t fastclk_period = args->fastclk_period;
 
 #if (SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP)
     const uint32_t slowclk_period_fixed = (slowclk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) ? rtc_clk_freq_to_period(SOC_CLK_RC_SLOW_FREQ_APPROX) : slowclk_period;
@@ -194,21 +196,13 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
     return param;
 }
 
-const pmu_sleep_config_t* pmu_sleep_config_default(
-        pmu_sleep_config_t *config,
-        uint32_t sleep_flags,
-        pmu_sleep_clk_icg_flags_t clk_flags,
-        uint32_t adjustment,
-        soc_rtc_slow_clk_src_t slowclk_src,
-        uint32_t slowclk_period,
-        uint32_t fastclk_period,
-        bool dslp
-    )
+const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, pmu_sleep_extra_args_t *args, bool dslp)
 {
+    const uint32_t sleep_flags = args->sleep_flags;
     pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
 
     if (dslp) {
-        config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
+        config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, args->slowclk_period);
 
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags);
         config->digital = digital_default;
@@ -217,7 +211,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->analog = analog_default;
     } else {
         // Get light sleep digital_default
-        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, clk_flags);
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags, args->clk_flags);
         config->digital = digital_default;
 
         // Get light sleep analog default
@@ -258,7 +252,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
     config->power = power_default;
     pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, args);
 
     return config;
 }
@@ -284,17 +278,19 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
     pmu_ll_lp_set_xtal_xpd (ctx->hal->dev, LP(SLEEP), power->lp_sys[LP(SLEEP)].xtal.xpd_xtal);
 }
 
-static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
+static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig, bool dslp)
 {
-    const bool icg_func_enabled = (dig->icg_func.clock[0] != 0) || (dig->icg_func.clock[1] != 0);
-    pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), icg_func_enabled);
-    pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func.clock[0], dig->icg_func.clock[1]);
-    pmu_ll_hp_set_icg_apb(ctx->hal->dev, HP(SLEEP), dig->icg_apb.clock[0], dig->icg_apb.clock[1]);
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     pmu_ll_hp_set_hold_all_hp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.hp_pad_hold_all);
     pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.lp_pad_hold_all);
     pmu_ll_hp_set_pause_watchdog    (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pause_wdt);
     pmu_ll_hp_set_c_channel_enable  (ctx->hal->dev, HP(SLEEP), dig->syscntl.c_channel);
+    if (!dslp) {
+        const bool icg_func_enabled = (dig->icg_func.clock[0] != 0) || (dig->icg_func.clock[1] != 0);
+        pmu_ll_hp_set_icg_sysclk_enable(ctx->hal->dev, HP(SLEEP), icg_func_enabled);
+        pmu_ll_hp_set_icg_func(ctx->hal->dev, HP(SLEEP), dig->icg_func.clock[0], dig->icg_func.clock[1]);
+        pmu_sleep_retention_clock_icg_config(ctx->priv, ctx);
+    }
 }
 
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
@@ -344,7 +340,7 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 {
     assert(PMU_instance());
     pmu_sleep_power_init(PMU_instance(), &config->power, dslp);
-    pmu_sleep_digital_init(PMU_instance(), &config->digital);
+    pmu_sleep_digital_init(PMU_instance(), &config->digital, dslp);
     pmu_sleep_analog_init(PMU_instance(), &config->analog, dslp);
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
 }

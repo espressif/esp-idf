@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <esp_types.h>
+#include "soc/soc_caps.h"
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
 #include "sdkconfig.h"
@@ -19,6 +20,21 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* Enabled when this chip needs any pmu_sleep_data_t priv slot; conditions differ per chip. */
+#define PMU_SLEEP_PRIV_ENABLED (SOC_PM_SLEEP_CLK_ICG_USE_REGDMA)
+#if PMU_SLEEP_PRIV_ENABLED
+enum {
+#if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA
+    PMU_SLEEP_PRIV_SW_ICG_CLK,
+#endif
+    PMU_SLEEP_PRIV_MAX,
+};
+
+typedef struct {
+    void *func[PMU_SLEEP_PRIV_MAX];
+} pmu_sleep_data_t;
 #endif
 
 #define HP_CALI_ACTIVE_DCM_VSET_DEFAULT     27 // For DCDC, about 1.25v
@@ -117,7 +133,7 @@ const pmu_lp_system_analog_param_t* pmu_lp_system_analog_param_default(pmu_lp_mo
 
 
 #if SOC_PM_SLEEP_CLK_ICG_USE_REGDMA && !defined(CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
-void pmu_sleep_clock_icg_config(void *icg_context, const uint32_t icg_func);
+void pmu_sleep_clock_icg_config(void *data, const uint32_t icg_func);
 #endif
 
 
@@ -357,7 +373,7 @@ typedef struct {
         .lp_pad_hold_all = (sleep_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
-    .icg_func = { 0, (uint32_t)(clk_flags) }                            \
+    .icg_func = { (clk_flags)[1], (clk_flags)[0] }                            \
 }
 #else // !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
 #define PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(sleep_flags, clk_flags) { \
@@ -373,7 +389,7 @@ typedef struct {
         .dig_pad_slp_sel = 0,                                           \
         .dig_pause_wdt = ((sleep_flags) & RTC_SLEEP_USE_RTC_WDT) ? 0 : 1, \
     },                                                                  \
-    .icg_func = { 0, (uint32_t)(clk_flags) }                            \
+    .icg_func = { (clk_flags)[1], (clk_flags)[0] }                            \
 }
 #endif
 

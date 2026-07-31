@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +45,16 @@ pmu_context_t * __attribute__((weak)) SPM_IRAM_ATTR PMU_instance(void)
      * instance will be used in pmu_sleep.c */
     static SPM_DRAM_ATTR pmu_hal_context_t pmu_hal = { .dev = &PMU };
     static SPM_DRAM_ATTR pmu_sleep_machine_constant_t pmu_mc = PMU_SLEEP_MC_DEFAULT();
-    static SPM_DRAM_ATTR pmu_context_t pmu_context = { .hal = &pmu_hal, .mc = (void *)&pmu_mc };
+#if PMU_SLEEP_PRIV_ENABLED
+    static SPM_DRAM_ATTR pmu_sleep_data_t pmu_data = { 0 };
+#endif
+    static SPM_DRAM_ATTR pmu_context_t pmu_context = {
+        .hal = &pmu_hal,
+        .mc = (void *)&pmu_mc,
+#if PMU_SLEEP_PRIV_ENABLED
+        .priv = &pmu_data,
+#endif
+    };
     return &pmu_context;
 }
 

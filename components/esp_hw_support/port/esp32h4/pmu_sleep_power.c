@@ -101,19 +101,21 @@ ESP_SYSTEM_INIT_FN(sleep_power_startup_init, SECONDARY, BIT(0), 108)
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "failed to init power retention module, err=%d", err);
     } else {
-        PMU_instance()->priv = &ana_wait_ctx;
+        pmu_sleep_data_t *data = (pmu_sleep_data_t *)PMU_instance()->priv;
+        data->func[PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT] = &ana_wait_ctx;
     }
 
     return ESP_OK;
 }
 
-void pmu_sleep_power_analog_wait_config(void *ana_wait_context, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM])
+void pmu_sleep_power_analog_wait_config(void *data, const uint16_t analog_wait[ANALOG_WAIT_CTRL_NUM])
 {
-    if (!ana_wait_context) {
+    pmu_sleep_data_t *data_ctx = (pmu_sleep_data_t *)data;
+    if (!data_ctx || !data_ctx->func[PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT]) {
         return;
     }
 
-    pmu_sleep_power_ana_wait_context_t *ana_wait_ctx = (pmu_sleep_power_ana_wait_context_t *)ana_wait_context;
+    pmu_sleep_power_ana_wait_context_t *ana_wait_ctx = (pmu_sleep_power_ana_wait_context_t *)data_ctx->func[PMU_SLEEP_PRIV_SKIP_MODEM_TO_ACTIVE_ANALOG_WAIT];
     for (int i = 0; i < ANALOG_WAIT_CTRL_NUM; i++) {
         if (!ana_wait_ctx->regdma_desc[i]) {
             continue;
