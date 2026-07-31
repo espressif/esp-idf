@@ -84,6 +84,11 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             # not generate exceptions due to TEE PMA configuration
             '_remove': ['IRAM-W1'],
         },
+        # NOTE: Only ESP32-C5 has the Key Manager and the HUK peripherals
+        'apm_violation': {
+            'HUK': 'Store access fault',
+            'KM PCR': 'APM - Space exception',
+        },
     },
     'esp32c61': {
         # NOTE: ESP32-C61 does not support the following peripherals
