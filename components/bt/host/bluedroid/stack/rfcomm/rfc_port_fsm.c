@@ -156,7 +156,7 @@ void rfc_port_sm_state_closed (tPORT *p_port, UINT16 event, void *p_data)
         return;
 
     case RFC_EVENT_TIMEOUT:
-        Port_TimeOutCloseMux( p_port->rfc.p_mcb ) ;
+        PORT_DlcReleaseInd(p_port->rfc.p_mcb, p_port->dlci);
         RFCOMM_TRACE_ERROR ("Port error state %d event %d", p_port->rfc.state, event);
         return;
     }
@@ -207,13 +207,11 @@ void rfc_port_sm_sabme_wait_ua (tPORT *p_port, UINT16 event, void *p_data)
     case RFC_EVENT_DM:
         p_port->rfc.p_mcb->is_disc_initiator = TRUE;
         PORT_DlcEstablishCnf (p_port->rfc.p_mcb, p_port->dlci, p_port->rfc.p_mcb->peer_l2cap_mtu, RFCOMM_ERROR);
-        rfc_port_closed (p_port);
         return;
 
     case RFC_EVENT_DISC:
         rfc_send_ua (p_port->rfc.p_mcb, p_port->dlci);
         PORT_DlcEstablishCnf (p_port->rfc.p_mcb, p_port->dlci, p_port->rfc.p_mcb->peer_l2cap_mtu, RFCOMM_ERROR);
-        rfc_port_closed (p_port);
         return;
 
     case RFC_EVENT_SABME:
@@ -332,7 +330,6 @@ void rfc_port_sm_orig_wait_sec_check (tPORT *p_port, UINT16 event, void *p_data)
         if (*((UINT8 *)p_data) != BTM_SUCCESS) {
             p_port->rfc.p_mcb->is_disc_initiator = TRUE;
             PORT_DlcEstablishCnf (p_port->rfc.p_mcb, p_port->dlci, 0, RFCOMM_SECURITY_ERR);
-            rfc_port_closed (p_port);
             return;
         }
         rfc_send_sabme (p_port->rfc.p_mcb, p_port->dlci);
@@ -417,7 +414,6 @@ void rfc_port_sm_opened (tPORT *p_port, UINT16 event, void *p_data)
 
     case RFC_EVENT_DM:
         PORT_DlcReleaseInd (p_port->rfc.p_mcb, p_port->dlci);
-        rfc_port_closed (p_port);
         return;
 
     case RFC_EVENT_DISC:
@@ -570,14 +566,16 @@ void rfc_process_rpn (tRFC_MCB *p_mcb, BOOLEAN is_command,
 
     if ((p_port = port_find_mcb_dlci_port (p_mcb, p_frame->dlci)) == NULL) {
         /* This is the first command on the port */
-        if (is_command) {
-
-            memset(&port_pars, 0, sizeof(tPORT_STATE));
-            rfc_set_port_state(&port_pars, p_frame);
-
-            PORT_PortNegInd(p_mcb, p_frame->dlci, &port_pars, p_frame->u.rpn.param_mask);
+        p_port = port_find_dlci_port (p_frame->dlci);
+        if (p_port == NULL) {
+            if (is_command) {
+                /* no port at all: reject; mask 0 so peer must ignore values */
+                memset(&port_pars, 0, sizeof(tPORT_STATE));
+                PORT_PortNegInd(p_mcb, p_frame->dlci, &port_pars,
+                                p_frame->u.rpn.param_mask);
+            }
+            return;
         }
-        return;
     }
 
     if (is_command && is_request) {
@@ -656,7 +654,9 @@ void rfc_process_rpn (tRFC_MCB *p_mcb, BOOLEAN is_command,
     if (p_port->peer_port_pars.fc_type == (RFCOMM_FC_RTC_ON_INPUT | RFCOMM_FC_RTC_ON_OUTPUT)) {
         p_port->peer_port_pars.fc_type = RFCOMM_FC_OFF;
         PORT_PortNegCnf (p_mcb, p_port->dlci, &port_pars, RFCOMM_SUCCESS);
+        return;
     }
+    PORT_PortNegCnf(p_mcb, p_port->dlci, &port_pars, RFCOMM_ERROR);
 }
 
 
@@ -807,7 +807,7 @@ void rfc_process_test_rsp (tRFC_MCB *p_mcb, BT_HDR *p_buf)
 void rfc_process_fcon (tRFC_MCB *p_mcb, BOOLEAN is_command)
 {
     if (is_command) {
-        rfc_cb.rfc.peer_rx_disabled = FALSE;
+        p_mcb->peer_rx_disabled = FALSE;
 
         rfc_send_fcon (p_mcb, FALSE);
 
@@ -828,7 +828,7 @@ void rfc_process_fcon (tRFC_MCB *p_mcb, BOOLEAN is_command)
 void rfc_process_fcoff (tRFC_MCB *p_mcb, BOOLEAN is_command)
 {
     if (is_command) {
-        rfc_cb.rfc.peer_rx_disabled = TRUE;
+        p_mcb->peer_rx_disabled = TRUE;
 
         if (!p_mcb->l2cap_congested) {
             PORT_FlowInd (p_mcb, 0, FALSE);
@@ -854,7 +854,7 @@ void rfc_process_l2cap_congestion (tRFC_MCB *p_mcb, BOOLEAN is_congested)
         rfc_check_send_cmd(p_mcb, NULL);
     }
 
-    if (!rfc_cb.rfc.peer_rx_disabled) {
+    if (!p_mcb->peer_rx_disabled) {
         if (!is_congested) {
             PORT_FlowInd (p_mcb, 0, TRUE);
         } else {
@@ -888,13 +888,28 @@ void rfc_set_port_state(tPORT_STATE *port_pars, MX_FRAME *p_frame)
     if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_PARITY_TYPE) {
         port_pars->parity_type = p_frame->u.rpn.parity_type;
     }
-    if (p_frame->u.rpn.param_mask & (RFCOMM_RPN_PM_XONXOFF_ON_INPUT |
-                                     RFCOMM_RPN_PM_XONXOFF_ON_OUTPUT |
-                                     RFCOMM_RPN_PM_RTR_ON_INPUT |
-                                     RFCOMM_RPN_PM_RTR_ON_OUTPUT |
-                                     RFCOMM_RPN_PM_RTC_ON_INPUT |
-                                     RFCOMM_RPN_PM_RTC_ON_OUTPUT)) {
-        port_pars->fc_type     = p_frame->u.rpn.fc_type;
+    UINT8 fc_sel = 0;
+    if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_XONXOFF_ON_INPUT) {
+        fc_sel |= RFCOMM_FC_XONXOFF_ON_INPUT;
+    }
+    if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_XONXOFF_ON_OUTPUT) {
+        fc_sel |= RFCOMM_FC_XONXOFF_ON_OUTPUT;
+    }
+    if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_RTR_ON_INPUT) {
+        fc_sel |= RFCOMM_FC_RTR_ON_INPUT;
+    }
+    if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_RTR_ON_OUTPUT) {
+        fc_sel |= RFCOMM_FC_RTR_ON_OUTPUT;
+    }
+    if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_RTC_ON_INPUT) {
+        fc_sel |= RFCOMM_FC_RTC_ON_INPUT;
+    }
+    if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_RTC_ON_OUTPUT) {
+        fc_sel |= RFCOMM_FC_RTC_ON_OUTPUT;
+    }
+    if (fc_sel) {
+        port_pars->fc_type = (UINT8)((port_pars->fc_type & ~fc_sel) |
+                                    (p_frame->u.rpn.fc_type & fc_sel));
     }
     if (p_frame->u.rpn.param_mask & RFCOMM_RPN_PM_XON_CHAR) {
         port_pars->xon_char    = p_frame->u.rpn.xon_char;

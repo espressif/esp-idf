@@ -83,8 +83,8 @@ int port_open_continue (tPORT *p_port)
         RFCOMM_StartReq (p_mcb);
     } else {
         /* MX state machine ignores RFC_MX_EVENT_START_REQ in these states */
-        /* When it enters RFC_MX_STATE_CONNECTED, it will check any openning ports */
-        RFCOMM_TRACE_DEBUG ("port_open_continue: mx state(%d) mx channel is openning", p_mcb->state);
+        /* When it enters RFC_MX_STATE_CONNECTED, it will check any opening ports */
+        RFCOMM_TRACE_DEBUG ("port_open_continue: mx state(%d) mx channel is opening", p_mcb->state);
     }
     return (PORT_SUCCESS);
 }
@@ -126,7 +126,7 @@ void port_start_par_neg (tPORT *p_port)
 {
     tRFC_MCB *p_mcb = p_port->rfc.p_mcb;
 
-    if (p_mcb == NULL) {
+    if (p_mcb == NULL || p_mcb->state != RFC_MX_STATE_CONNECTED) {
         return;
     }
 
@@ -221,7 +221,6 @@ void PORT_StartCnf (tRFC_MCB *p_mcb, UINT16 result)
                     p_port->error = PORT_START_FAILED;
                 }
 
-                rfc_release_multiplexer_channel (p_mcb);
                 p_port->rfc.p_mcb = NULL;
 
                 /* Send event to the application */
@@ -236,6 +235,9 @@ void PORT_StartCnf (tRFC_MCB *p_mcb, UINT16 result)
                 port_release_port (p_port);
             }
         }
+    }
+    if (result != RFCOMM_SUCCESS && !no_ports_up) {
+        rfc_release_multiplexer_channel (p_mcb);
     }
 
     /* There can be a situation when after starting connection, user closes the */
@@ -265,8 +267,8 @@ void PORT_StartInd (tRFC_MCB *p_mcb)
 
     p_port = &rfc_cb.port.port[0];
     for (i = 0; i < MAX_RFC_PORTS; i++, p_port++) {
-        if ((p_port->rfc.p_mcb == NULL)
-                || (p_port->rfc.p_mcb == p_mcb)) {
+        if (p_port->in_use &&
+                (p_port->rfc.p_mcb == NULL || p_port->rfc.p_mcb == p_mcb)) {
             RFCOMM_TRACE_DEBUG("PORT_StartInd, RFCOMM_StartRsp RFCOMM_SUCCESS: p_mcb:%p", p_mcb);
             RFCOMM_StartRsp (p_mcb, RFCOMM_SUCCESS);
             return;
@@ -460,7 +462,7 @@ void PORT_DlcEstablishInd (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
     // RFCOMM_DlcEstablishRsp (p_mcb, dlci, p_port->mtu, RFCOMM_SUCCESS);
 
     /* This is the server side.  If application wants to know when connection */
-    /* is established, thats the place */
+    /* is established, that's the place */
     if (p_port->p_callback && (p_port->ev_mask & PORT_EV_CONNECTED)) {
         (p_port->p_callback)(PORT_EV_CONNECTED, p_port->inx);
     }
@@ -499,7 +501,7 @@ void PORT_DlcEstablishInd (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
 ** Description      This function is called from the RFCOMM layer when peer
 **                  acknowledges establish procedure (SABME/UA).  Send reply
 **                  to the user and set state to OPENED if result was
-**                  successfull.
+**                  successful.
 **
 *******************************************************************************/
 void PORT_DlcEstablishCnf (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT16 result)
@@ -612,8 +614,6 @@ void PORT_PortNegCnf (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_STATE *p_pars, UINT16 r
         p_port->error = PORT_PORT_NEG_FAILED;
 
         RFCOMM_DlcReleaseReq (p_mcb, p_port->dlci);
-
-        port_rfc_closed (p_port, PORT_PORT_NEG_FAILED);
         return;
     }
 
@@ -689,7 +689,7 @@ void PORT_ControlInd (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_CTRL *p_pars)
 ** Function         PORT_ControlCnf
 **
 ** Description      This function is called from the RFCOMM layer when
-**                  peer acknowleges change of the modem signals.
+**                  peer acknowledges change of the modem signals.
 **
 *******************************************************************************/
 void PORT_ControlCnf (tRFC_MCB *p_mcb, UINT8 dlci, tPORT_CTRL *p_pars)
@@ -847,6 +847,7 @@ void PORT_DataInd (tRFC_MCB *p_mcb, UINT8 dlci, BT_HDR *p_buf)
     UINT32 events = 0;
     UINT8  *p;
     int    i;
+    bool   ret;
 
     RFCOMM_TRACE_EVENT("PORT_DataInd with data length %d, p_mcb:%p,p_port:%p,dlci:%d",
                        p_buf->len, p_mcb, p_port, dlci);
@@ -903,10 +904,15 @@ void PORT_DataInd (tRFC_MCB *p_mcb, UINT8 dlci, BT_HDR *p_buf)
 
     osi_mutex_global_lock();
 
-    fixed_queue_enqueue(p_port->rx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
-    p_port->rx.queue_size += p_buf->len;
+    if ((ret = fixed_queue_enqueue(p_port->rx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT)) == true) {
+        p_port->rx.queue_size += p_buf->len;
+    }
 
     osi_mutex_global_unlock();
+
+    if (!ret) {
+        osi_free(p_buf);
+    }
 
     /* perform flow control procedures if necessary */
     port_flow_control_peer(p_port, FALSE, 0);
