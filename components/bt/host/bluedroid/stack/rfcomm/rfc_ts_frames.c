@@ -661,10 +661,7 @@ UINT8 rfc_parse_data (tRFC_MCB *p_mcb, MX_FRAME *p_frame, BT_HDR *p_buf)
     UINT8     *p_start = p_data;
     UINT16    len;
 
-    if (p_buf->len < RFCOMM_CTRL_FRAME_LEN) {
-        RFCOMM_TRACE_ERROR ("Bad Length1: %d", p_buf->len);
-        return (RFC_EVENT_BAD_FRAME);
-    }
+
 
     RFCOMM_PARSE_CTRL_FIELD (ead, p_frame->cr, p_frame->dlci, p_data);
     if ( !ead ) {
@@ -674,6 +671,11 @@ UINT8 rfc_parse_data (tRFC_MCB *p_mcb, MX_FRAME *p_frame, BT_HDR *p_buf)
     RFCOMM_PARSE_TYPE_FIELD (p_frame->type, p_frame->pf, p_data);
 
     eal = *(p_data) & RFCOMM_EA;
+    if (p_buf->len < (RFCOMM_CTRL_FRAME_LEN + !ead + !eal + 1)) {
+        RFCOMM_TRACE_ERROR ("Bad Length1: %d", p_buf->len);
+        return (RFC_EVENT_BAD_FRAME);
+    }
+
     len = *(p_data)++ >> RFCOMM_SHIFT_LENGTH1;
     if (eal == 0) {
         if (p_buf->len > RFCOMM_CTRL_FRAME_LEN) {
@@ -782,7 +784,8 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
     UINT8       *p_data = (UINT8 *)(p_buf + 1) + p_buf->offset;
     MX_FRAME    *p_rx_frame = &rfc_cb.rfc.rx_frame;
     UINT16       length  = p_buf->len;
-    UINT8        ea, cr, mx_len;
+    UINT8        ea, cr, hdr;
+    UINT16       mx_len;
     BOOLEAN      is_command;
 
     if (length < 2) {
@@ -863,8 +866,10 @@ void rfc_process_mx_message (tRFC_MCB *p_mcb, BT_HDR *p_buf)
         p_rx_frame->u.test.p_data   = p_data;
         p_rx_frame->u.test.data_len = length;
 
-        p_buf->offset += 2;
-        p_buf->len    -= 2;
+        hdr = ea ? 2 : 3;
+
+        p_buf->offset += hdr;
+        p_buf->len    -= hdr;
 
         if (is_command) {
             rfc_send_test (p_mcb, FALSE, p_buf);
