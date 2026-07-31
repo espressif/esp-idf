@@ -432,8 +432,10 @@ function(idf_build_library library)
     idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
     target_include_directories("${library}" INTERFACE "${include_directories}")
 
-    # Add link options.
-    idf_build_get_property(link_options LINK_OPTIONS)
+    # Add link options. Read as a generator expression so that link options a
+    # component appends to the LINK_OPTIONS build property while it is processed
+    # below are included, not only those set before this point.
+    idf_build_get_property(link_options LINK_OPTIONS GENERATOR_EXPRESSION)
     target_link_options(${library} INTERFACE "${link_options}")
 
     # Include the requested components and link their interface targets to the
