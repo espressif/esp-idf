@@ -1450,6 +1450,7 @@ int bta_co_rfc_data_incoming(void *user_data, BT_HDR *p_buf)
     uint32_t id = (uintptr_t)user_data;
     if (!is_spp_init()) {
         BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
+        osi_free(p_buf);
         return -1;
     }
     osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
@@ -1457,6 +1458,7 @@ int bta_co_rfc_data_incoming(void *user_data, BT_HDR *p_buf)
     if (!slot) {
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
         BTC_TRACE_ERROR("%s unable to find RFCOMM slot!", __func__);
+        osi_free(p_buf);
         return -1;
     }
     p_data.data_ind.handle = slot->rfc_handle;
