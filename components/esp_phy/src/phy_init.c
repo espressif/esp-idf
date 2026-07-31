@@ -58,6 +58,7 @@
 #if SOC_PM_REGDMA_MODEM_LINK_PROTECT
 #include "esp_private/esp_pau.h"
 #endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
+#include "esp_private/phy_debug.h"
 
 #ifndef PHY_INIT_MODEM_CLOCK_REQUIRED_BITS
 #warning "PHY_INIT_MODEM_CLOCK_REQUIRED_BITS not defined; using default value 0"
@@ -188,59 +189,6 @@ static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
     {"TW",  ESP_PHY_INIT_DATA_TYPE_NCC},
     {"US",  ESP_PHY_INIT_DATA_TYPE_FCC},
 };
-#endif
-
-#if CONFIG_ESP_PHY_RECORD_USED_TIME
-#define ESP_PHY_MODEM_COUNT_MAX         (__builtin_ffs(PHY_MODEM_MAX - 1))
-#define ESP_PHY_IS_VALID_MODEM(modem)   (__builtin_popcount(modem) == 1 && __builtin_ctz(modem) < ESP_PHY_MODEM_COUNT_MAX)
-
-static DRAM_ATTR struct {
-    uint64_t used_time;
-    uint64_t enabled_time;
-    uint64_t disabled_time;
-} s_phy_rf_used_info[ESP_PHY_MODEM_COUNT_MAX];
-
-static IRAM_ATTR void phy_record_time(bool enabled, esp_phy_modem_t modem) {
-    uint8_t index = __builtin_ctz(modem);
-    if (enabled) {
-        s_phy_rf_used_info[index].enabled_time = esp_timer_get_time();
-    } else {
-        s_phy_rf_used_info[index].disabled_time = esp_timer_get_time();
-        s_phy_rf_used_info[index].used_time += s_phy_rf_used_info[index].disabled_time - s_phy_rf_used_info[index].enabled_time;
-    }
-}
-
-esp_err_t phy_query_used_time(uint64_t *used_time, esp_phy_modem_t modem) {
-    if (!ESP_PHY_IS_VALID_MODEM(modem)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    uint8_t index = __builtin_ctz(modem);
-    _lock_acquire(&s_phy_access_lock);
-    *used_time = s_phy_rf_used_info[index].used_time;
-    if (s_phy_rf_used_info[index].disabled_time < s_phy_rf_used_info[index].enabled_time) {
-        // phy is being used
-        *used_time += esp_timer_get_time() - s_phy_rf_used_info[index].enabled_time;
-    }
-    _lock_release(&s_phy_access_lock);
-    return ESP_OK;
-}
-
-esp_err_t phy_clear_used_time(esp_phy_modem_t modem) {
-    if (!ESP_PHY_IS_VALID_MODEM(modem)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    uint8_t index = __builtin_ctz(modem);
-    _lock_acquire(&s_phy_access_lock);
-    if (s_phy_rf_used_info[index].enabled_time > s_phy_rf_used_info[index].disabled_time) {
-        // phy is being used
-        s_phy_rf_used_info[index].enabled_time = esp_timer_get_time();
-    } else {
-        s_phy_rf_used_info[index].enabled_time = s_phy_rf_used_info[index].disabled_time;
-    }
-    s_phy_rf_used_info[index].used_time = 0;
-    _lock_release(&s_phy_access_lock);
-    return ESP_OK;
-}
 #endif
 
 uint32_t IRAM_ATTR phy_enter_critical(void)
