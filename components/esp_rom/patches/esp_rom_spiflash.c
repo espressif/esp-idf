@@ -19,10 +19,6 @@
 #include "esp32p4/rom/opi_flash.h"
 #endif
 
-#if SOC_BRANCH_PREDICTOR_SUPPORTED
-#include "riscv/rv_utils.h"
-#endif
-
 #define SPI_IDX   1
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -774,10 +770,6 @@ void esp_rom_opiflash_cache_mode_config(esp_rom_spiflash_read_mode_t mode, const
 extern void rom_spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
 void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
-#if SOC_BRANCH_PREDICTOR_SUPPORTED
-    //branch predictor will start cache request as well
-    rv_utils_dis_branch_predictor();
-#endif
     rom_spi_flash_disable_cache(cpuid, saved_state);
 }
 
@@ -785,8 +777,5 @@ extern void rom_spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
     rom_spi_flash_restore_cache(cpuid, saved_state);
-#if SOC_BRANCH_PREDICTOR_SUPPORTED
-    rv_utils_en_branch_predictor();
-#endif
 }
 #endif

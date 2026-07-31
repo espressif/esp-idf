@@ -11,6 +11,7 @@
 #include <inttypes.h>
 
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_rom_caps.h"
 #include "esp_macros.h"
 #include "esp_memory_utils.h"
@@ -510,6 +511,9 @@ static uint32_t s_cache_state = 0;
 static void IRAM_ATTR suspend_cache(void) {
     s_cache_suspend_cnt++;
     if (s_cache_suspend_cnt == 1) {
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+        esp_cpu_branch_prediction_disable();
+#endif
         spi_flash_disable_cache(esp_cpu_get_core_id(), &s_cache_state);
     }
 }
@@ -520,6 +524,9 @@ static void IRAM_ATTR resume_cache(void) {
     assert(s_cache_suspend_cnt >= 0 && DRAM_STR("cache resume doesn't match suspend ops"));
     if (s_cache_suspend_cnt == 0) {
         spi_flash_restore_cache(esp_cpu_get_core_id(), s_cache_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+        esp_cpu_branch_prediction_enable();
+#endif
     }
 }
 

@@ -16,6 +16,7 @@
 #include "hal/spi_flash_hal.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/cache_utils.h"
+#include "esp_cpu.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
@@ -589,20 +590,36 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 /*------------------------------------------------------------------------------
  * Early-init MSPI speed switch (see mspi_timing_tuning.h)
  *----------------------------------------------------------------------------*/
+static void disable_cache(uint32_t cpuid, uint32_t *saved_state)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
+    spi_flash_disable_cache(cpuid, saved_state);
+}
+
+static void restore_cache(uint32_t cpuid, uint32_t saved_state)
+{
+    spi_flash_restore_cache(cpuid, saved_state);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
+}
+
 void mspi_timing_enter_low_speed_early(void)
 {
     uint32_t cache_state = 0;
-    spi_flash_disable_cache(0, &cache_state);
+    disable_cache(0, &cache_state);
     mspi_timing_enter_low_speed_mode(true);
-    spi_flash_restore_cache(0, cache_state);
+    restore_cache(0, cache_state);
 }
 
 void mspi_timing_enter_high_speed_early(void)
 {
     uint32_t cache_state = 0;
-    spi_flash_disable_cache(0, &cache_state);
+    disable_cache(0, &cache_state);
     mspi_timing_enter_high_speed_mode(true);
-    spi_flash_restore_cache(0, cache_state);
+    restore_cache(0, cache_state);
 }
 
 /*------------------------------------------------------------------------------
