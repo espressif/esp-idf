@@ -445,6 +445,7 @@ I2S 驱动例程请参考 :example:`peripherals/i2s` 目录。以下为每种模
 
 - :example:`peripherals/i2s/i2s_codec/i2s_es8311` 演示了如何在 {IDF_TARGET_NAME} 上使用 I2S ES8311 音频编解码器来播放音乐或回声，具有高性能和低功耗的多位 delta-sigma 音频 ADC 和 DAC，提供自定义音乐、调整麦克风增益和音量的选项。
 - :example:`peripherals/i2s/i2s_basic/i2s_std` 演示了如何在 {IDF_TARGET_NAME} 上以单工或全双工模式使用 I2S 标准模式。
+- :example:`peripherals/i2s/mic_recorder` 演示了如何通过 I2S STD 接口，使用 ES8389 音频编解码器录制模拟麦克风的音频。
 
 不同声道的通信格式可通过以下标准模式的辅助宏来生成。如上所述，在标准模式下有三种格式，辅助宏分别为：
 
@@ -804,7 +805,7 @@ STD RX 模式
     PDM RX 模式的应用
     ^^^^^^^^^^^^^^^^^^
 
-    - :example:`peripherals/i2s/i2s_recorder` 演示了如何通过 I2S 外设以 PDM 数据格式用数字 MEMS 麦克风录制音频，并将其以 ``.wav`` 文件格式保存到 {IDF_TARGET_NAME} 开发板上的 SD 卡中。
+    - :example:`peripherals/i2s/mic_recorder` 演示了如何录制音频：既可以使用 PDM 数字 MEMS 麦克风（通过 I2S PDM RX 模式），也可以使用连接 ES8389 编解码器的模拟麦克风，并将采集到的 PCM 数据通过控制台串流输出，以便在主机 PC 上重建 ``.wav`` 文件。
     - :example:`peripherals/i2s/i2s_basic/i2s_pdm` 演示了如何在 {IDF_TARGET_NAME} 上使用 PDM RX 模式，包括必要的硬件设置和配置。
 
     针对 RX 通道的 PDM 模式，声道配置的辅助宏为：
