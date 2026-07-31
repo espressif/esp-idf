@@ -928,10 +928,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_sct_trans(spi_device_t *dev, spi_sct_tra
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
     spi_setup_device(dev, NULL);
 
-#if !CONFIG_IDF_TARGET_ESP32S2
-    // s2 update this seg_gap_clock_len by dma from conf_buffer
     spi_hal_sct_set_conf_bits_len(&dev->host->hal, cur_sct_trans->sct_trans_desc_head->sct_gap_len);
-#endif
     s_sct_load_dma_link(dev, cur_sct_trans->rx_seg_head, cur_sct_trans->tx_seg_head);
     if (dev->cfg.pre_cb) {
         dev->cfg.pre_cb((spi_transaction_t *)cur_sct_trans->sct_trans_desc_head);
@@ -1799,7 +1796,6 @@ static void SPI_MASTER_ATTR s_sct_format_conf_buffer(spi_device_handle_t handle,
     if (seg_end) {
         seg_config.seg_end = true;
     }
-    seg_config.seg_gap_len = seg_trans_desc->sct_gap_len;
 
     // set line mode to hal_config
     spi_sct_set_hal_trans_config(seg_trans_desc, &hal->trans_config);
