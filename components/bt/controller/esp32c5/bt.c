@@ -1112,7 +1112,7 @@ modem_deint:
     esp_bt_controller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     esp_phy_modem_deinit();
-    // modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+    modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
 free_mem:
@@ -1137,7 +1137,7 @@ esp_err_t esp_bt_controller_deinit(void)
     os_msys_deinit();
 
     esp_phy_modem_deinit();
-    // modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+    modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
     ble_stack_deinitEnv();
