@@ -78,6 +78,18 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             'ECC PCR': 'APM - Authority exception',
         },
     },
+    'esp32c5': {
+        'tee_violation': {
+            # NOTE: For ESP32-C5, access to the region before the SRAM does
+            # not generate exceptions due to TEE PMA configuration
+            '_remove': ['IRAM-W1'],
+        },
+        # NOTE: Only ESP32-C5 has the Key Manager and the HUK peripherals
+        'apm_violation': {
+            'HUK': 'Store access fault',
+            'KM PCR': 'APM - Space exception',
+        },
+    },
     'esp32c61': {
         # NOTE: On ESP32-C61, MMU-spillover does not raise a CPU panic — the TEE
         # test fills the bad mapping with a poison pattern and calls esp_restart().
