@@ -355,8 +355,15 @@ esp_err_t esp_ds_start_sign(const void *message,
     ds_acquire_enable();
 
 #if SOC_KEY_MANAGER_DS_KEY_DEPLOY
+#if CONFIG_SECURE_ENABLE_TEE
+    /* NOTE: Key Manager is not supported with ESP-TEE yet - the TEE owns it */
+    const bool key_mgr_avail = false;
+#else
+    const bool key_mgr_avail = key_mgr_ll_is_supported();
+#endif
+
     if (key_id == HMAC_KEY_KM) {
-        if (!key_mgr_ll_is_supported()) {
+        if (!key_mgr_avail) {
             ESP_LOGE(TAG, "HMAC_KEY_KM requested but Key Manager peripheral is not supported on this chip");
             ds_disable_release();
             return ESP_ERR_NOT_SUPPORTED;
@@ -364,7 +371,7 @@ esp_err_t esp_ds_start_sign(const void *message,
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_OWN_KEY);
         ds_hal_set_key_source(DS_KEY_SOURCE_KEY_MGR);
     } else {
-        if (key_mgr_ll_is_supported()) {
+        if (key_mgr_avail) {
             key_mgr_hal_set_key_usage(ESP_KEY_MGR_DS_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
         }
         ds_hal_set_key_source(DS_KEY_SOURCE_EFUSE);

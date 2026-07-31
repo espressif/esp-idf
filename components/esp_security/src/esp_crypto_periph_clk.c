@@ -201,6 +201,14 @@ void esp_crypto_ecdsa_enable_periph_clk(bool enable)
 #if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
 static void key_mgr_configure_periph_clk(bool enable, bool reset)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !BOOTLOADER_BUILD
+    /* NOTE: Key Manager is not supported with ESP-TEE yet - the TEE owns it, keeping it
+     * clocked for the ECDSA/HMAC/DS key selectors, and fences it off from the REE */
+    (void)enable;
+    (void)reset;
+    return;
+#endif
+
     if (enable) {
         esp_crypto_common_clk_enable(true);
     }

@@ -18,6 +18,7 @@
 #endif
 
 #ifdef SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+#include "hal/config.h"
 #include "hal/key_mgr_hal.h"
 #include "hal/key_mgr_ll.h"
 #endif
@@ -61,12 +62,12 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 
         ecdsa_hal_set_efuse_key(conf->curve, conf->efuse_key_blk);
 
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY && !HAL_CONFIG(KEY_MGR_TEE_OWNED)
         // Force Key Manager to use eFuse key for ECDSA operation
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 #endif
     }
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY && !HAL_CONFIG(KEY_MGR_TEE_OWNED)
     else if (use_hw_key) {
         if (!key_mgr_ll_is_supported()) {
             HAL_ASSERT(false && "Key manager is not supported");
