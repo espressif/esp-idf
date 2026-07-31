@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,7 +81,7 @@ static uint8_t esp_dpp_deinit_auth(void)
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
 {
-    if (s_dpp_ctx.dpp_auth) {
+    if (s_dpp_ctx.dpp_auth && evt != ESP_SUPP_DPP_CFG_RECVD) {
         esp_dpp_deinit_auth();
     }
     s_dpp_ctx.dpp_event_cb(evt, data);
@@ -99,7 +99,8 @@ static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 }
 
 esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
-                                    uint8_t channel, uint32_t wait_time_ms)
+                                    uint8_t channel, uint32_t wait_time_ms,
+                                    uint32_t offchan_type)
 {
     wifi_action_tx_req_t *req = os_zalloc(sizeof(*req) + len);
     if (!req) {
@@ -113,7 +114,7 @@ esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint3
     req->rx_cb = s_action_rx_cb;
     req->channel = channel;
     req->wait_time_ms = wait_time_ms;
-    req->type = WIFI_OFFCHAN_TX_REQ;
+    req->type = offchan_type;
     memcpy(req->data, buf, req->data_len);
 
     wpa_printf(MSG_DEBUG, "DPP: Mgmt Tx - MAC:" MACSTR ", Channel-%d, WaitT-%d",
@@ -169,18 +170,31 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
         goto fail;
     }
     if (s_dpp_ctx.dpp_auth) {
-        wpa_printf(MSG_DEBUG, "DPP: Already in DPP authentication exchange - ignore new one");
-        return;
+        if (s_dpp_ctx.dpp_auth->auth_success || !s_dpp_ctx.dpp_auth->waiting_auth_conf) {
+            wpa_printf(MSG_INFO, "DPP: Cleaning up old completed DPP auth context for new exchange");
+            eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
+            dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+            s_dpp_ctx.dpp_auth = NULL;
+        } else {
+            wpa_printf(MSG_DEBUG, "DPP: Already in DPP authentication exchange - ignore new one");
+            return;
+        }
     }
     s_dpp_ctx.dpp_auth = dpp_auth_req_rx(NULL, DPP_CAPAB_ENROLLEE, 0, NULL,
                                          own_bi, rx_param->channel,
                                          (const u8 *)&rx_param->action_frm->u.public_action.v, dpp_data, len);
+    if (!s_dpp_ctx.dpp_auth) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to process Authentication Request");
+        rc = ESP_ERR_DPP_FAILURE;
+        goto fail;
+    }
     os_memcpy(s_dpp_ctx.dpp_auth->peer_mac_addr, rx_param->sa, ETH_ALEN);
 
     wpa_printf(MSG_DEBUG, "DPP: Sending authentication response.");
     esp_dpp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                               wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
-                              rx_param->channel, OFFCHAN_TX_WAIT_TIME);
+                              s_dpp_ctx.dpp_auth->curr_chan, OFFCHAN_TX_WAIT_TIME,
+                              WIFI_OFFCHAN_TX_REQ);
     eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
     eloop_register_timeout(ESP_DPP_AUTH_TIMEOUT_SECS, 0, esp_dpp_auth_conf_wait_timeout, NULL, NULL);
 
@@ -206,7 +220,8 @@ static void gas_query_req_tx(struct dpp_authentication *auth)
                MAC2STR(auth->peer_mac_addr), auth->curr_chan);
 
     esp_dpp_send_action_frame(auth->peer_mac_addr, wpabuf_head(buf), wpabuf_len(buf),
-                              auth->curr_chan, OFFCHAN_TX_WAIT_TIME);
+                              auth->curr_chan, OFFCHAN_TX_WAIT_TIME,
+                              WIFI_OFFCHAN_TX_REQ);
 }
 
 static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
@@ -219,13 +234,24 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         os_memcpy(wifi_cfg->sta.ssid, conf->ssid, conf->ssid_len);
     }
 
-    if (dpp_akm_legacy(conf->akm)) {
+    if (dpp_akm_legacy(conf->akm) || dpp_akm_ver2(conf->akm)) {
         if (conf->passphrase[0])
             os_memcpy(wifi_cfg->sta.password, conf->passphrase,
                       sizeof(wifi_cfg->sta.password));
-        if (conf->akm == DPP_AKM_PSK_SAE) {
-            wifi_cfg->sta.pmf_cfg.required = true;
-        }
+    }
+
+    if (dpp_akm_sae(conf->akm) || dpp_akm_dpp(conf->akm)) {
+        wifi_cfg->sta.pmf_cfg.capable = true;
+        wifi_cfg->sta.pmf_cfg.required = true;
+    }
+
+    if (dpp_akm_dpp(conf->akm)) {
+        wifi_cfg->sta.threshold.authmode = WIFI_AUTH_DPP;
+        esp_wifi_sta_notify_dpp_config_set_internal(true);
+    } else if (dpp_akm_sae(conf->akm)) {
+        wifi_cfg->sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
+    } else if (dpp_akm_psk(conf->akm)) {
+        wifi_cfg->sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
     }
 
     if (conf->connector) {
@@ -385,9 +411,10 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
             os_get_reltime(&rnow);
             entry->expiration = rnow.sec + seconds;
             entry->reauth_time = rnow.sec + seconds;
-            entry->network_ctx = auth;
+            entry->network_ctx = sm->network_ctx;
 
             pmksa_cache_add_entry(sm->pmksa, entry);
+            entry = NULL;
 
             wpa_printf(MSG_INFO, "peer=" MACSTR " status=%u", MAC2STR(rx_param->sa), status[0]);
             break;
@@ -401,7 +428,10 @@ static esp_err_t esp_dpp_rx_peer_disc_resp(struct action_rx_param *rx_param)
 
     wpa_printf(MSG_DEBUG,
                "DPP: Try connection after successful network introduction");
-    dpp_connect(rx_param->sa, true);
+    if (dpp_connect(rx_param->sa, true) != 0) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to connect after network introduction");
+        goto fail;
+    }
     return ESP_OK;
 fail:
     os_memset(&intro, 0, sizeof(intro));
@@ -448,7 +478,7 @@ static void gas_query_resp_rx(struct action_rx_param *rx_param)
     uint8_t *pos = rx_param->action_frm->u.public_action.v.pa_gas_resp.data;
     uint8_t *resp = &pos[10];  /* first byte of DPP attributes */
     size_t vendor_len = rx_param->vendor_data_len;
-    int i, res;
+    int res;
 
     /* Basic structural checks on the Advertisement Protocol payload */
     if (!(pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
@@ -466,8 +496,8 @@ static void gas_query_resp_rx(struct action_rx_param *rx_param)
         goto fail;
     }
 
-    for (i = 0; i < auth->num_conf_obj; i++) {
-        res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[i]);
+    if (auth->num_conf_obj > 0) {
+        res = esp_dpp_handle_config_obj(auth, &auth->conf_obj[0]);
         if (res < 0) {
             wpa_printf(MSG_INFO, "DPP: Configuration parsing failed");
             goto fail;
@@ -991,12 +1021,18 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
 {
     struct dpp_authentication *auth = s_dpp_ctx.dpp_auth;
     struct wpabuf *buf;
+
+    if (!auth) {
+        wpa_printf(MSG_ERROR, "DPP: No authentication context for network introduction");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     for (int i = 0; i < auth->num_conf_obj; i++) {
         os_memcpy(auth->peer_mac_addr, bssid, ETH_ALEN);
         buf = dpp_build_peer_disc_req(auth, &auth->conf_obj[i]);
 
         if (buf) {
-            if (esp_dpp_send_action_frame(bssid, wpabuf_head(buf), wpabuf_len(buf), auth->curr_chan, OFFCHAN_TX_WAIT_TIME) != ESP_OK) {
+            if (esp_dpp_send_action_frame(bssid, wpabuf_head(buf), wpabuf_len(buf), auth->curr_chan, OFFCHAN_TX_WAIT_TIME, WIFI_OFFCHAN_TX_CONNECTING_REQ) != ESP_OK) {
                 wpabuf_free(buf);
                 return ESP_FAIL;
             }
