@@ -126,7 +126,7 @@ extern "C" {
         .scan_backoff_upperlimitmax = UC_BT_CTRL_LE_SCAN_BACKOFF_UPPERLIMITMAX,                    \
         .ble_chan_ass_en = UC_BT_CTRL_LE_CHAN_ASS_ENABLED,                                         \
         .ble_data_lenth_zero_aux = UC_BT_CTRL_LE_ADV_DATA_LENGTH_ZERO_AUX,                         \
-        .vhci_enabled = CONFIG_BT_CTRL_HCI_INTERFACE_USE_RAM,                                      \
+        .vhci_enabled = UC_BT_CTRL_HCI_INTERFACE_USE_RAM,                                          \
         .ptr_check_enabled = UC_BT_CTRL_LE_PTR_CHECK_ENABLED,                                      \
         .ble_adv_tx_options = UC_BT_CTRL_LE_ADV_TX_OPTIONS,                                        \
         .skip_unnecessary_checks_en = 0,                                                           \

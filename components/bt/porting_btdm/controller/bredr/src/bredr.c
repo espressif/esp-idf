@@ -109,6 +109,7 @@ extern int bredr_controller_init(void *cfg);
 extern void bredr_controller_deinit(void);
 extern int bredr_controller_enable(void);
 extern void bredr_controller_disable(void);
+extern void r_bredr_controller_reset(void);
 extern int bredr_controller_env_init(void *cfg);
 extern void bredr_controller_env_deinit(void);
 extern void bredr_register_setup_callback(bredr_ctrl_callback_t cbk);
@@ -824,7 +825,7 @@ static bool bredr_check_tx_pwr(const char *name, int8_t value, int8_t min_power,
  * The menuconfig limits only describe the maximum possible range, but the achievable range can be narrower depending on the chip.
  * Returns ESP_ERR_INVALID_ARG if any configured value is out of range so that controller init can be aborted.
  */
-static esp_err_t bredr_validate_tx_pwr_cfg(const esp_bredr_controller_config_t *bredr_cfg)
+static esp_err_t bredr_validate_tx_pwr_cfg(const esp_bt_ctrl_bredr_config_t *bredr_cfg)
 {
     int8_t min_power = 0;
     int8_t max_power = 0;
@@ -904,6 +905,13 @@ int bredr_stack_enable(void)
 void bredr_stack_disable(void)
 {
 
+}
+
+int bredr_stack_reset(void)
+{
+    r_bredr_controller_reset();
+
+    return 0;
 }
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE

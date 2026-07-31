@@ -399,10 +399,15 @@ const void * const _btdm_coex_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH
     [1] = BTDM_BROKER_ENTRY_DEF_FLASH(
               sym_coexHook_WcEp3uxRHd6HYgB0pn0L,
           ),
-    [2] = BTDM_BROKER_ENTRY_DEF_FLASH(
-              sym_coexHook_wiWNhAUWlHyTZ7Z5ZC5Z,
-          ),
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+    [2] = BTDM_BROKER_ENTRY_DEF_FLASH(
+#if UC_BT_CTRL_BLE_IS_ENABLE
+              sym_coexHook_wiWNhAUWlHyTZ7Z5ZC5Z,
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              odm_afh_on_coex_wifi_channel_change,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
+          ),
 );
 
 void * _btdm_hal_linear_broker_ram[] = BTDM_BROKER_NODE_DEF_RAM(
@@ -420,10 +425,14 @@ void * _btdm_hal_linear_broker_ram[] = BTDM_BROKER_NODE_DEF_RAM(
 #if UC_BT_CTRL_BLE_IS_ENABLE
               sym_base_NVN4AbeIskmtcV2PX3N1,
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              olc_intc_on_hal_exit_isr,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
 );
 
 const void * const _btdm_hci_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
+    [1] = BTDM_BROKER_ENTRY_DEF_FLASH(
 #if UC_BT_CTRL_BLE_IS_ENABLE
 #if UC_BLE_CTRL_CONN_ENABLED
               sym_conn_eZ0plXo8e56VyJXdcbNn,
@@ -443,7 +452,6 @@ const void * const _btdm_hci_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
               hci_tl_bredr_on_rx_cmd_set_c2h_flow_ctrl,
 #endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
-#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
 );
 
 const void * const _btdm_sched_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
@@ -457,23 +465,38 @@ const void * const _btdm_sched_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLAS
     [3] = BTDM_BROKER_ENTRY_DEF_FLASH(
               sym_scan_0gIKmjMRFT37raN6hnDo,
           ),
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
     [6] = BTDM_BROKER_ENTRY_DEF_FLASH(
+#if UC_BT_CTRL_BLE_IS_ENABLE
               sym_sched_MzeSZzbQ4ZKhWW6Wu5jV,
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              btdm_common_sched_bredr_on_sched_hw_list_done,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
     [7] = BTDM_BROKER_ENTRY_DEF_FLASH(
+#if UC_BT_CTRL_BLE_IS_ENABLE
               sym_sched_wfZseauvjWnjfiu10yWN,
-          ),
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              olc_sleep_on_sched_get_earlist_ticks,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
+          ),
 );
 
 void * _btdm_sched_linear_broker_ram[] = BTDM_BROKER_NODE_DEF_RAM(
-#if UC_BT_CTRL_BLE_IS_ENABLE
     [1] = BTDM_BROKER_ENTRY_DEF_RAM(
+#if UC_BT_CTRL_BLE_IS_ENABLE
 #if UC_BT_CTRL_LE_ISO_ENABLED
               sym_iso_qYKZbEBVIsH27HGf5VCS,
 #endif /* UC_BT_CTRL_LE_ISO_ENABLED */
               sym_sched_PNMeumLUZPcz8o4UrTLi,
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              olc_sleep_on_sched_actual_time_get,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
+#if UC_BT_CTRL_BLE_IS_ENABLE
     [2] = BTDM_BROKER_ENTRY_DEF_RAM(
               sym_scan_b8ogEC3hTjGmqL5oRuyw,
           ),
@@ -483,10 +506,15 @@ void * _btdm_sched_linear_broker_ram[] = BTDM_BROKER_NODE_DEF_RAM(
     [4] = BTDM_BROKER_ENTRY_DEF_RAM(
               sym_scan_tdX6OLWyRKYxelkB8vZ1,
           ),
-    [6] = BTDM_BROKER_ENTRY_DEF_RAM(
-              sym_sched_hOsJ4rGq1XjiY7GjHycG,
-          ),
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+    [6] = BTDM_BROKER_ENTRY_DEF_RAM(
+#if UC_BT_CTRL_BLE_IS_ENABLE
+              sym_sched_hOsJ4rGq1XjiY7GjHycG,
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              btdm_common_sched_bredr_on_sched_check_remaining,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
+          ),
 );
 
 const void * const _btdm_sleep_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
@@ -506,8 +534,8 @@ void * _btdm_sleep_linear_broker_ram[] = BTDM_BROKER_NODE_DEF_RAM(
 );
 
 const void * const _btdm_task_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH(
-#if UC_BT_CTRL_BLE_IS_ENABLE
     [1] = BTDM_BROKER_ENTRY_DEF_FLASH(
+#if UC_BT_CTRL_BLE_IS_ENABLE
               sym_arr_CG7zWaZkh7QOTatTjs2v,
               sym_base_uevmRkB8BjrlJh1c3VnZ,
 #if UC_BT_CTRL_LE_BIS_BCAST_ENABLED
@@ -539,8 +567,13 @@ const void * const _btdm_task_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH
               sym_pawrSync_k4txvaSWHJBXXqtE62MG,
 #endif /* UC_BLE_CTRL_PAWR_SYNC_SUPPORTED */
               sym_scan_1G8QO0lWyTS0nKOqvZOE,
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              orca_ctrl_on_task_enable,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
     [2] = BTDM_BROKER_ENTRY_DEF_FLASH(
+#if UC_BT_CTRL_BLE_IS_ENABLE
               sym_arr_SH7I2IviDsjnpqawpi0F,
               sym_base_uuBMFaiuN71hyzVcBBth,
 #if UC_BT_CTRL_LE_BIS_BCAST_ENABLED
@@ -568,7 +601,12 @@ const void * const _btdm_task_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH
               sym_pawrSync_2gh2xSEYHokuhQ7UohkM,
 #endif /* UC_BLE_CTRL_PAWR_SYNC_SUPPORTED */
               sym_scan_zmw2OczvfXFB4aIFaWkc,
+#endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              orca_ctrl_on_task_disable,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
+#if UC_BT_CTRL_BLE_IS_ENABLE
     [3] = BTDM_BROKER_ENTRY_DEF_FLASH(
               sym_base_IdP4ncGWlpNArj2oW20N,
               sym_coexHook_7UsddOHoZepnYRjYPawG,
@@ -614,6 +652,9 @@ const void * const _btdm_task_linear_broker_flash[] = BTDM_BROKER_NODE_DEF_FLASH
               sym_scan_l1avG2cwTzJAlle4KLdU,
               sym_sync_NOAs4m6LAUpamsUYHfqm,
 #endif /* UC_BT_CTRL_BLE_IS_ENABLE */
+#if UC_BT_CTRL_BR_EDR_IS_ENABLE
+              orca_ctrl_on_task_reset,
+#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
           ),
 );
 
