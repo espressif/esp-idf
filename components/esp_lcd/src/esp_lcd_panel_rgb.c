@@ -727,6 +727,10 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         y_start = MIN(y_start, v_res);
         y_end = MIN(y_end, v_res);
     }
+    if (x_start >= x_end || y_start >= y_end) {
+        // no valid region to draw, skip
+        return ESP_OK;
+    }
 
     int bytes_per_pixel = rgb_panel->fb_bits_per_pixel / 8;
     int pixels_per_line = rgb_panel->timings.h_res;
