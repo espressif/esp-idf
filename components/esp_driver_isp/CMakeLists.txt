@@ -20,7 +20,8 @@ if(CONFIG_SOC_ISP_SUPPORTED)
                      "src/isp_awb.c"
                      "src/isp_ae.c"
                      "src/isp_gamma.c"
-                     "src/isp_hist.c")
+                     "src/isp_hist.c"
+                     "src/isp_dpc.c")
 endif()
 
 if(CONFIG_SOC_ISP_BF_SUPPORTED)

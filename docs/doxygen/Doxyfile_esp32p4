@@ -19,6 +19,9 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dma.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_crop.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_demosaic.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dpc.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dpc_dynamic.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dpc_static.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_gamma.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_hist.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_lsc.h \
