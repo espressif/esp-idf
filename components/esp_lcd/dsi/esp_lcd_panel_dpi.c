@@ -262,7 +262,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     // divide the source clock to get the final DPI clock
     float dpi_clk_src_freq_mhz = (float)dpi_clk_src_freq_hz / 1000.0f / 1000.0f;
     uint32_t dpi_div = mipi_dsi_hal_host_dpi_calculate_divider(hal, dpi_clk_src_freq_mhz, panel_config->dpi_clock_freq_mhz);
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)dpi_clk_src), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)dpi_clk_src, NULL), err, TAG, "clock source enable failed");
     dpi_panel->clk_src = (soc_module_clk_t)dpi_clk_src;
     // set the clock source, set the divider, and enable the dpi clock
     PERIPH_RCC_ATOMIC() {

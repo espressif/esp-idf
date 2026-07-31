@@ -164,7 +164,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 #endif
     } else {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(unit->hal.clk_src)), err, TAG, "clock source enable failed");
+        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(unit->hal.clk_src), NULL), err, TAG, "clock source enable failed");
 #endif
 #if SOC_LIGHT_SLEEP_SUPPORTED || SOC_DEEP_SLEEP_SUPPORTED
         esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, true);
@@ -231,7 +231,7 @@ esp_err_t adc_oneshot_read(adc_oneshot_unit_handle_t handle, adc_channel_t chan,
     portENTER_CRITICAL(&rtc_spinlock);
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal.clk_src)));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal.clk_src), NULL));
 #endif
     ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);
@@ -270,7 +270,7 @@ esp_err_t adc_oneshot_read_isr(adc_oneshot_unit_handle_t handle, adc_channel_t c
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal.clk_src)));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal.clk_src), NULL));
 #endif
     ANALOG_CLOCK_ENABLE();
     adc_oneshot_hal_setup(&(handle->hal), chan);

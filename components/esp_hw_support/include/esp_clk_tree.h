@@ -47,13 +47,20 @@ uint32_t *freq_value);
 /**
  * @brief Set frequency of module clock source
  *
+ * @note For APLL, this function can preconfigure the frequency before the clock is acquired.
+ *       Once APLL has a valid configuration in fixed mode, only requests resolving to the same frequency are accepted.
+ *       requests resolving to the same frequency are accepted. Changing the
+ *       frequency while APLL is in use requires exclusive adjustable access
+ *       requested by the peripheral driver.
+ *
  * @param[in] clk_src Clock source available to modules, in soc_module_clk_t
  * @param[in] expt_freq_value Expected frequency of the clock source, in Hz
  * @param[out] ret_freq_value Real frequency of the clock source, in Hz
  *
  * @return
- *      - ESP_OK               Success
- *      - ESP_ERR_INVALID_ARG  Parameter error
+ *      - ESP_OK                Success
+ *      - ESP_ERR_INVALID_ARG   Parameter error
+ *      - ESP_ERR_INVALID_STATE Requested frequency conflicts with active clock consumers
  *      - ESP_ERR_NOT_SUPPORTED Unsupported clock source
  */
 esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_freq_value, uint32_t *ret_freq_value);

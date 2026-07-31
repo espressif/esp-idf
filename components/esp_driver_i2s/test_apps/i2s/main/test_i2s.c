@@ -41,10 +41,7 @@
 #endif
 #include "hal/i2s_hal.h"
 #include "esp_private/i2s_platform.h"
-#if SOC_PCNT_SUPPORTED
-#include "driver/pulse_cnt.h"
-#include "hal/pcnt_periph.h"
-#endif
+#include "driver/uart.h"
 
 #include "../../test_inc/test_i2s.h"
 
@@ -1216,44 +1213,30 @@ TEST_CASE("I2S_master_read_slave_write_test", "[i2s]")
 #endif
 
 /*------------------------------ Clock Test --------------------------------*/
-#if SOC_PCNT_SUPPORTED
-#define TEST_I2S_PERIOD_MS      100
-static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_config_t* clk_cfg)
+#define TEST_I2S_UART_PORT      UART_NUM_1
+
+void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_config_t *clk_cfg,
+                                 uint32_t error_divisor)
 {
     TEST_ASSERT_NOT_NULL(rx_chan);
     TEST_ASSERT_NOT_NULL(clk_cfg);
+    TEST_ASSERT_NOT_EQUAL_UINT32(0, error_divisor);
 
-    /* Prepare configuration for the PCNT unit */
-    pcnt_unit_handle_t pcnt_unit = NULL;
-    pcnt_channel_handle_t pcnt_chan = NULL;
-
-    pcnt_unit_config_t unit_config = {
-        .high_limit = (int16_t)0x7fff,
-        .low_limit = (int16_t)0x8000,
+    uart_bitrate_detect_config_t uart_cfg = {
+        .rx_io_num = MASTER_WS_IO,
+        .source_clk = UART_SCLK_DEFAULT,
     };
-    pcnt_chan_config_t chan_config = {
-        .edge_gpio_num = MASTER_WS_IO,
-        .level_gpio_num = -1,
-    };
-    TEST_ESP_OK(pcnt_new_unit(&unit_config, &pcnt_unit));
-    TEST_ESP_OK(pcnt_unit_set_glitch_filter(pcnt_unit, NULL));
-    TEST_ESP_OK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
-    TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
-    TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
-    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
 
-    // Reconfig GPIO signal
+    // Route the I2S WS signal to the GPIO monitored by UART
     gpio_func_sel(MASTER_WS_IO, PIN_FUNC_GPIO);
     gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(MASTER_WS_IO, i2s_periph_signal[0].m_rx_ws_sig, 0, 0);
-    esp_rom_gpio_connect_in_signal(MASTER_WS_IO, soc_pcnt_signals[0].units[0].channels[0].pulse_sig_id_matrix, 0);
 
     const uint32_t test_freq[] = {
         8000,  10000, 11025, 12000, 16000, 22050,
         24000, 32000, 44100, 48000, 64000, 88200,
         96000, 128000, 144000, 196000
     };
-    int real_pulse = 0;
     int case_cnt = sizeof(test_freq) / sizeof(uint32_t);
 #if I2S_LL_DEFAULT_CLK_FREQ == 96000000
     // 196000 Hz sample rate doesn't support on PLL_96M target
@@ -1270,26 +1253,28 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
     case_cnt = 10;
 #endif
     for (int i = 0; i < case_cnt; i++) {
-        int expt_pulse = (int)((float)test_freq[i] * (TEST_I2S_PERIOD_MS / 1000.0));
         clk_cfg->sample_rate_hz = test_freq[i];
         TEST_ESP_OK(i2s_channel_reconfig_std_clock(rx_chan, clk_cfg));
         TEST_ESP_OK(i2s_channel_enable(rx_chan));
-        vTaskDelay(1); // Waiting for hardware totally started
-        // pcnt will count the pulse number on WS signal in 100ms
-        TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
-        TEST_ESP_OK(pcnt_unit_start(pcnt_unit));
-        esp_rom_delay_us(100 * 1000);
-        TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
-        TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &real_pulse));
-        printf("[%"PRIu32" Hz] %d pulses, expected %d, err %d\n", test_freq[i], real_pulse, expt_pulse, real_pulse - expt_pulse);
+#if SOC_UART_SUPPORT_RTC_CLK
+        // Use a slower clock source to avoid period counter overflow at low sample rates
+        uart_cfg.source_clk = test_freq[i] < 20000 ? UART_SCLK_RTC : UART_SCLK_DEFAULT;
+#endif
+        TEST_ESP_OK(uart_detect_bitrate_start(TEST_I2S_UART_PORT, &uart_cfg));
+        esp_rom_delay_us(1 * 1000); // Waiting for hardware totally started
+
+        uart_bitrate_res_t uart_res = {};
+        TEST_ESP_OK(uart_detect_bitrate_stop(TEST_I2S_UART_PORT, true, &uart_res));
         TEST_ESP_OK(i2s_channel_disable(rx_chan));
-        // Check if the error between real pulse number and expected pulse number is within 1%
-        TEST_ASSERT_INT_WITHIN(expt_pulse * 0.02, expt_pulse, real_pulse);
+        TEST_ASSERT_NOT_EQUAL_UINT32(0, uart_res.pos_period);
+
+        uint32_t real_sample_rate = (uart_res.clk_freq_hz + uart_res.pos_period / 2) / uart_res.pos_period;
+        printf("[%"PRIu32" Hz] measured sample rate: %"PRIu32" Hz, error: %"PRId32" Hz\n",
+               test_freq[i], real_sample_rate, (int32_t)real_sample_rate - (int32_t)test_freq[i]);
+
+        uint32_t expected_error_hz = test_freq[i] / error_divisor;
+        TEST_ASSERT_UINT32_WITHIN(expected_error_hz, test_freq[i], real_sample_rate);
     }
-    TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
-    TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
-    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit));
-    TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
 }
 
 TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
@@ -1309,35 +1294,15 @@ TEST_CASE("I2S_default_PLL_clock_test", "[i2s]")
 #ifdef I2S_LL_DEFAULT_CLK_SRC
     std_cfg.clk_cfg.clk_src = I2S_LL_DEFAULT_CLK_SRC;
 #endif
-    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
+    // expected error < 2%
+    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg, 50);
 #if I2S_LL_SUPPORT(XTAL)
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_XTAL;
-    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
+    // expected error < 2%
+    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg, 50);
 #endif
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
-
-#if SOC_I2S_SUPPORTS_APLL
-TEST_CASE("I2S_APLL_clock_test", "[i2s]")
-{
-    i2s_chan_handle_t rx_handle;
-
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
-    };
-    std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
-
-    TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
-    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
-
-    i2s_test_common_sample_rate(rx_handle, &std_cfg.clk_cfg);
-    TEST_ESP_OK(i2s_del_channel(rx_handle));
-}
-#endif // SOC_I2S_SUPPORTS_APLL
-#endif // SOC_PCNT_SUPPORTED
 
 static IRAM_ATTR bool i2s_rx_queue_overflow_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
 {
@@ -1345,7 +1310,7 @@ static IRAM_ATTR bool i2s_rx_queue_overflow_callback(i2s_chan_handle_t handle, i
     (*cnt)++;
     return false;
 }
-
+#include "esp_clk_tree.h"
 TEST_CASE("I2S_package_lost_test", "[i2s]")
 {
     /* Steps of calculate appropriate parameters of I2S buffer:
@@ -1376,6 +1341,10 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
     };
 #if CONFIG_IDF_TARGET_ESP32S31  // esp32s31 doesn't support PLL as clock source, use APLL instead
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+    std_cfg.clk_cfg.flags.clk_src_adjustable = true;
+    uint32_t ret_freq_value = 0;
+    esp_clk_tree_src_set_freq_hz(I2S_CLK_SRC_APLL, 125000000, &ret_freq_value);
+    printf("APLL frequency: %"PRIu32" Hz\n", ret_freq_value);
 #endif
 
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, NULL, &rx_handle));
@@ -1531,7 +1500,6 @@ TEST_CASE("I2S_PDM2PCM_existence_test", "[i2s]")
 TEST_CASE("I2S_rate_tunning", "[i2s]")
 {
     i2s_chan_handle_t tx_handle;
-    i2s_chan_handle_t rx_handle;
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     i2s_std_config_t std_cfg = {
@@ -1539,21 +1507,20 @@ TEST_CASE("I2S_rate_tunning", "[i2s]")
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
     };
-    std_cfg.gpio_cfg.din = std_cfg.gpio_cfg.dout;  // GPIO loopback
 #if SOC_CLK_APLL_SUPPORTED
     std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+    std_cfg.clk_cfg.flags.clk_src_adjustable = true;
 #endif
 
-    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, NULL));
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
-    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
-    TEST_ESP_OK(i2s_channel_enable(rx_handle));
     TEST_ESP_OK(i2s_channel_enable(tx_handle));
 
     i2s_tuning_info_t tune_init_res = {};
     TEST_ESP_OK(i2s_channel_tune_rate(tx_handle, NULL, &tune_init_res));
     i2s_tuning_info_t tune_info = {};
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
 
     // Add/subtract case
     int32_t tune_val = 400;
@@ -1597,10 +1564,7 @@ TEST_CASE("I2S_rate_tunning", "[i2s]")
            tune_init_res.curr_mclk_hz, tune_val, tune_info.curr_mclk_hz, tune_info.delta_mclk_hz);
     TEST_ASSERT_EQUAL_UINT32(tune_init_res.curr_mclk_hz, tune_info.curr_mclk_hz);
 
-    TEST_ESP_OK(i2s_channel_disable(tx_handle));
-    TEST_ESP_OK(i2s_channel_disable(rx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));
-    TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 
 #if SOC_I2S_SUPPORTS_TX_FIFO_SYNC

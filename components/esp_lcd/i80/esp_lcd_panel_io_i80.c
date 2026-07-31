@@ -189,7 +189,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&bus->hal, bus_id);
 #if CONFIG_IDF_TARGET_ESP32S31
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT), err, TAG, "core clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT, NULL), err, TAG, "core clock source enable failed");
     core_clk_enabled = true;
 #endif
     PERIPH_RCC_ATOMIC() {
@@ -651,7 +651,7 @@ static void lcd_i80_create_retention_module(esp_lcd_i80_bus_t *bus)
 
 static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src)
 {
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL), TAG, "clock source enable failed");
     bus->clk_src = (soc_module_clk_t)clk_src;
     // get clock source frequency
     uint32_t src_clk_hz = 0;

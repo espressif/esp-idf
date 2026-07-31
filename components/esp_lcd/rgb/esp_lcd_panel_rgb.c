@@ -416,7 +416,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     lcd_hal_context_t *hal = &rgb_panel->hal;
     // enable clock
 #if CONFIG_IDF_TARGET_ESP32S31
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT), err, TAG, "core clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)LCD_CORE_CLK_SRC_DEFAULT, NULL), err, TAG, "core clock source enable failed");
     rgb_panel->flags.core_clk_enabled = 1;
 #endif
     PERIPH_RCC_ATOMIC() {
@@ -1124,7 +1124,7 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
 {
     // get clock source frequency
     uint32_t src_clk_hz = 0;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), TAG, "clock source enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL), TAG, "clock source enable failed");
     rgb_panel->clk_src = clk_src;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_clk_hz),
                         TAG, "get clock source frequency failed");

@@ -49,11 +49,11 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
         phy_clk_src = MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT;
 #endif
     }
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)phy_clk_src), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)phy_clk_src, NULL), err, TAG, "clock source enable failed");
     dsi_bus->phy_pllref_clk_src = (soc_module_clk_t)phy_clk_src;
 
     // always use the default clock source for the DSI PHY configuration
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT, NULL), err, TAG, "clock source enable failed");
     dsi_bus->phy_cfg_clk_src = (soc_module_clk_t)MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT;
 
     // enable the clock source for DSI PHY

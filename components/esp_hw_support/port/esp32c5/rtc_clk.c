@@ -332,7 +332,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
             rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_480M_FREQ_MHZ);
         }
 #ifndef BOOTLOADER_BUILD
-        esp_clk_tree_acquire_src((new_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M);
+        esp_clk_tree_acquire_src((new_src == SOC_CPU_CLK_SRC_PLL_F240M) ? SOC_MOD_CLK_PLL_F240M : SOC_MOD_CLK_PLL_F160M, NULL);
 #endif
     }
 }

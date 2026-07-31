@@ -15,7 +15,7 @@ Clock Tree
 
 The clock subsystem of {IDF_TARGET_NAME} is used to source and distribute system/module clocks from a range of root clocks. The clock tree driver maintains the basic functionality of the system clock and the intricate relationship among module clocks.
 
-This document starts with the introduction to root and module clocks. Then it covers the clock tree APIs that can be called to monitor the status of the module clocks at runtime.
+This document starts with an introduction to root and module clocks, followed by the clock tree APIs available to users. These APIs can be used to query the operating frequencies of module clocks and configure module clocks that support frequency adjustment.
 
 Introduction
 ------------
@@ -90,6 +90,25 @@ API Usage
 ---------
 
 The clock tree driver provides an all-in-one API to get the frequency of the module clocks, :cpp:func:`esp_clk_tree_src_get_freq_hz`. This function allows you to obtain the clock frequency at any time by providing the clock name :cpp:enum:`soc_module_clk_t` and specifying the desired precision level for the returned frequency value :cpp:enum:`esp_clk_tree_src_freq_precision_t`.
+
+For module clocks that support frequency configuration, call :cpp:func:`esp_clk_tree_src_set_freq_hz` to request a frequency. Because of hardware divider or quantization constraints, the actual frequency may differ slightly from the expected frequency. Use the function's output parameter to obtain the actual configured frequency.
+
+.. only:: SOC_CLK_APLL_SUPPORTED
+
+    APLL Resource Management
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+    APLL is a system clock source shared by multiple peripherals. When acquiring APLL, a peripheral driver declares whether it needs to adjust the frequency. The clock tree switches among the following modes according to the current usage:
+
+    - **Idle mode**: No peripheral is currently using APLL. :cpp:func:`esp_clk_tree_src_set_freq_hz` can preconfigure the frequency in this mode. The clock tree stores the calculated frequency and configuration parameters, then applies them to the hardware when the first peripheral acquires APLL. The first acquirer determines whether APLL enters fixed or adjustable mode.
+    - **Fixed mode**: The default shared mode, which allows multiple peripherals that do not need to adjust the APLL frequency to use it concurrently. If APLL does not yet have a valid configuration, the first successfully configured frequency becomes the shared frequency. After the configuration takes effect, only idempotent requests that resolve to the current actual frequency are accepted; requests for other frequencies return :c:macro:`ESP_ERR_INVALID_STATE`. Adjustable-mode acquisition is rejected while APLL is in fixed mode.
+    - **Adjustable mode**: An exclusive mode that allows only one peripheral requiring APLL frequency adjustment. The owner can modify the APLL frequency through :cpp:func:`esp_clk_tree_src_set_freq_hz`. Until the owner releases APLL, all other fixed- or adjustable-mode acquisition requests fail.
+
+    When the last user releases APLL, the clock tree powers it down, clears the current frequency configuration, and returns it to idle mode. A subsequent acquirer can select fixed or adjustable mode again.
+
+    .. note::
+
+        Preconfigure APLL early during application initialization, before initializing the relevant peripheral drivers, so that multiple peripherals can use a common source frequency. After peripheral drivers have been initialized, do not manually adjust APLL through :cpp:func:`esp_clk_tree_src_set_freq_hz`, because doing so may make the peripherals' actual operating clocks inconsistent with their driver configurations.
 
 API Reference
 -------------

@@ -1283,7 +1283,7 @@ void esp_pm_impl_init(void)
         ;
     }
 
-    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)clk_source));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)clk_source, NULL));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
     PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);

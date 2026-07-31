@@ -96,7 +96,7 @@ void adc_cal_sw_weight(adc_unit_t adc_n, adc_oneshot_clk_src_t clk_src)
         adc_apb_periph_claim();
     }
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL));
 #endif
     ANALOG_CLOCK_ENABLE();
     sar_periph_ctrl_adc_oneshot_power_acquire();

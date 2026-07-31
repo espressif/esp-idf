@@ -227,7 +227,7 @@ static esp_err_t esp_apptrace_uart_init(void *hw_data, const esp_apptrace_config
         uint32_t sclk_hz;
         esp_clk_tree_src_get_freq_hz(UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_hz);
         /* Enable the default clock source */
-        esp_clk_tree_acquire_src(UART_SCLK_DEFAULT);
+        esp_clk_tree_acquire_src(UART_SCLK_DEFAULT, NULL);
 
         /* Initialize UART HAL (sets default 8N1 mode) */
         uart_hal_init(&uart_data->hal_ctx, uart_config->uart_num);

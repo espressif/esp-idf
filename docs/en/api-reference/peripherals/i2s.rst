@@ -60,9 +60,19 @@ Clock Source
     :SOC_I2S_SUPPORTS_PLL_F120M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`: 120 MHz PLL clock.
     :SOC_I2S_SUPPORTS_PLL_F96M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
     :SOC_I2S_SUPPORTS_PLL_F240M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`: 240 MHz PLL clock.
-    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`: Audio PLL clock. Its frequency is configurable according to the sample rate, which makes it more precise in high sample rate applications. However, if APLL has been occupied by EMAC or other channels, the APLL frequency cannot be changed, and the driver will try to work under this APLL frequency. If this frequency cannot meet the requirements of I2S, the clock configuration will fail.
+    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`: Audio PLL clock. Its frequency is configurable according to the sample rate, which makes it more precise in high sample rate applications. I2S can use APLL in fixed shareable mode or exclusive adjustable mode.
     :SOC_I2S_SUPPORTS_RC_FAST: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_RC_FAST`: RC_FAST clock source.
     :SOC_I2S_SUPPORTS_EXTERNAL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_EXTERNAL`: External clock source.
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    APLL Access Mode
+    ^^^^^^^^^^^^^^^^
+
+    After selecting :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`, use ``flags.clk_src_adjustable`` in the STD, TDM, PDM TX, and PDM RX clock configuration structures to select the APLL access mode:
+
+    - ``false`` (default): Use APLL in fixed mode, allowing it to be shared by multiple peripherals. When APLL is used for the first time and has not yet been configured, I2S selects an appropriate APLL frequency according to the sample rate. If APLL is already configured, I2S reuses the existing frequency and adjusts its own divider. The configuration fails if the existing frequency cannot produce a valid I2S clock.
+    - ``true``: Use APLL exclusively in adjustable mode. I2S can adjust the APLL frequency during clock reconfiguration or :cpp:func:`i2s_channel_tune_rate` to obtain finer clock division, while other peripherals cannot acquire APLL at the same time. Because duplex channels acquire APLL separately, they cannot both use adjustable mode.
 
 Clock Terminology
 ^^^^^^^^^^^^^^^^^

@@ -27,7 +27,7 @@ static void esp_crypto_pll_f96m_enable(bool enable)
 {
 #if !NON_OS_BUILD
     if (enable) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F96M);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F96M, NULL);
     } else {
         esp_clk_tree_release_src(SOC_MOD_CLK_PLL_F96M);
     }

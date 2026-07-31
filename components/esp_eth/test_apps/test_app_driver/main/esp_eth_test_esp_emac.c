@@ -654,7 +654,7 @@ TEST_CASE("internal emac MPLL shared with PSRAM", "[esp_emac_clk_out][skip_setup
 
     // PSRAM default speed: MPLL at 400 MHz — EMAC divider 8 gives exactly 50 MHz
     ESP_LOGI(TAG, "Verify MPLL at 400 MHz (simulating PSRAM default)");
-    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_MPLL));
+    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_MPLL, NULL));
     TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, 400 * 1000000, &real_freq));
     ESP_LOGI(TAG, "MPLL set to %" PRIu32 " Hz", real_freq);
 
@@ -665,7 +665,7 @@ TEST_CASE("internal emac MPLL shared with PSRAM", "[esp_emac_clk_out][skip_setup
 
     // PSRAM 250M speed: MPLL at 500 MHz — EMAC divider 10 gives exactly 50 MHz
     ESP_LOGI(TAG, "Verify MPLL at 500 MHz (simulating PSRAM @ 250M speed)");
-    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_MPLL));
+    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_MPLL, NULL));
     TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, 500 * 1000000, &real_freq));
     ESP_LOGI(TAG, "MPLL set to %" PRIu32 " Hz", real_freq);
 
@@ -678,7 +678,7 @@ TEST_CASE("internal emac MPLL shared with PSRAM", "[esp_emac_clk_out][skip_setup
     // see AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ for reference
     // Best candidate: 320/6 = 53.33 MHz (error ~3.33 MHz >> 2500 Hz tolerance)
     ESP_LOGI(TAG, "Verify MPLL at 320 MHz (simulating PSRAM @ 80M speed) — expected to fail");
-    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_MPLL));
+    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_MPLL, NULL));
     TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_MPLL, 320 * 1000000, &real_freq));
     ESP_LOGI(TAG, "MPLL set to %" PRIu32 " Hz", real_freq);
 
@@ -708,7 +708,7 @@ TEST_CASE("internal emac APLL shared with I2S", "[esp_emac_clk_out][skip_setup_t
 
     // Another peripheral has APLL at 50 MHz — exact RMII clock match, EMAC should succeed
     ESP_LOGI(TAG, "Verify APLL at 50 MHz (exact RMII clock match)");
-    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL));
+    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL, NULL));
     TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, 50 * 1000000, &real_freq));
     ESP_LOGI(TAG, "APLL set to %" PRIu32 " Hz", real_freq);
 
@@ -719,7 +719,7 @@ TEST_CASE("internal emac APLL shared with I2S", "[esp_emac_clk_out][skip_setup_t
 
     // I2S typical frequency: APLL at ~12.288 MHz (48 kHz * 256) — far from 50 MHz, EMAC should fail
     ESP_LOGI(TAG, "Verify APLL at ~12.288 MHz (simulating I2S @ 48 kHz) — expected to fail");
-    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL));
+    TEST_ESP_OK(esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL, NULL));
     TEST_ESP_OK(esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, 12288000, &real_freq));
     ESP_LOGI(TAG, "APLL set to %" PRIu32 " Hz", real_freq);
 

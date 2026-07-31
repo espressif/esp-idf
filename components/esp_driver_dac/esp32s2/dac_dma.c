@@ -25,7 +25,8 @@
 #include "soc/lldesc.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "dac_priv_dma.h"
+#include "../dac_priv_dma.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_clk_tree.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -164,7 +165,7 @@ esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq
     s_ddp->periph_dev = (void *)SPI_LL_GET_HW(DAC_DMA_PERIPH_SPI_HOST);
 
     /* Configure clock source and frequency */
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), err, TAG, "enable DAC digital clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL), err, TAG, "enable DAC digital clock source failed");
     s_ddp->clk_src = clk_src;
     /* When transmit alternately, twice frequency is needed to guarantee the convert frequency in one channel */
     uint32_t trans_freq_hz = freq_hz * (is_alternate ? 2 : 1);

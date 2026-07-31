@@ -11,7 +11,7 @@
 
 bool periph_rtc_dig_clk8m_enable(void)
 {
-    return esp_clk_tree_acquire_src(SOC_MOD_CLK_RC_FAST) == ESP_OK;
+    return esp_clk_tree_acquire_src(SOC_MOD_CLK_RC_FAST, NULL) == ESP_OK;
 }
 
 uint32_t periph_rtc_dig_clk8m_get_freq(void)
@@ -31,7 +31,7 @@ void periph_rtc_dig_clk8m_disable(void)
 #if SOC_CLK_APLL_SUPPORTED
 void periph_rtc_apll_acquire(void)
 {
-    (void)esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL);
+    (void)esp_clk_tree_acquire_src(SOC_MOD_CLK_APLL, NULL);
 }
 
 void periph_rtc_apll_release(void)
