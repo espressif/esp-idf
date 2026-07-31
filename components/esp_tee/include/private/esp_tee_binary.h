@@ -130,9 +130,14 @@ void esp_tee_configure_apm_protection(void);
  * @brief Reset the crypto peripherals to a clean state.
  *
  * Mirrors esp_system_reset_modules_on_exit() in the non-TEE path.
- * Intended to be called from the TEE panic handler before a software reset.
+ * Called from esp_tee_system_reset() before the reset is triggered.
  */
 void esp_tee_soc_reset_crypto_peripherals(void);
+
+/**
+ * @brief Reset the SoC, RTC domain included, and do not return.
+ */
+void esp_tee_system_reset(void) __attribute__((noreturn));
 
 /**
  * @brief Switch to the REE app after TEE initialization is complete
