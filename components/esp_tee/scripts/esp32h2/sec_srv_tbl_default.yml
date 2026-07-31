@@ -247,6 +247,10 @@ secure_services:
         type: IDF
         function: esp_crypto_ecdsa_enable_periph_clk
         args: 1
+      - id: 119
+        type: IDF
+        function: esp_aes_crypt_ecb_blocks
+        args: 5
 
   # ID: 134-169 (36) - Reserved for future use
   - family: attestation

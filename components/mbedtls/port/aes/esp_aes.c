@@ -228,6 +228,15 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
                       const unsigned char input[16],
                       unsigned char output[16] )
 {
+#if SOC_AES_SUPPORT_DMA
+    /* A single block is the length 16 case of the multi-block entry point,
+       which picks the same hardware path this function used to pick on its
+       own: the accelerator when the small data optimisation is off, the block
+       registers when it is on. */
+    return esp_aes_crypt_ecb_blocks(ctx, mode, AES_BLOCK_BYTES, input, output);
+#else /* !SOC_AES_SUPPORT_DMA */
+    /* Without AES DMA there is nothing to batch, so this stays exactly as it
+       has always been on such a target. */
     // Use helper for validation
     int ret = esp_aes_validate_input(ctx, input, output, NULL, false);
     if (ret != 0) {
@@ -238,19 +247,111 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
     ctx->key_in_hardware = 0;
     ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, mode);
 
-#if SOC_AES_SUPPORT_DMA && !CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM
-    aes_hal_mode_init(ESP_AES_BLOCK_MODE_ECB);
-    ret = esp_aes_process_dma(ctx, input, output, AES_BLOCK_BYTES, NULL);
-#else
     if (mode == ESP_AES_ENCRYPT) {
         ret = esp_aes_block_encrypt(ctx, input, output);
     } else {
         ret = esp_aes_block_decrypt(ctx, input, output);
     }
-#endif
 
     esp_aes_release_hardware();
     return ret;
+#endif /* SOC_AES_SUPPORT_DMA */
+}
+
+/*
+ * AES-ECB buffer (multi-block) encryption/decryption
+ *
+ * On a target with AES DMA, submits the whole buffer to the accelerator in a
+ * single hardware operation instead of one 16-byte block per operation. ECB
+ * blocks are independent, so this is equivalent to looping esp_aes_crypt_ecb()
+ * over each block, but the cost of acquiring the peripheral and writing the key
+ * is paid once for the buffer rather than once per block.
+ *
+ * Without AES DMA, esp_aes_acquire_hardware() enters a critical section rather
+ * than taking a mutex, so holding it for the whole buffer would keep interrupts
+ * disabled for as long as the caller's length. Such a target loops over
+ * esp_aes_crypt_ecb() instead, leaving its behaviour unchanged.
+ */
+int esp_aes_crypt_ecb_blocks(esp_aes_context *ctx,
+                             int mode,
+                             size_t length,
+                             const unsigned char *input,
+                             unsigned char *output )
+{
+    // Use helpers for validation
+    int ret = esp_aes_validate_input(ctx, input, output, NULL, false);
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* For ECB input length should be multiple of AES BLOCK BYTES */
+    if ( (length % AES_BLOCK_BYTES) || (length == 0) ) {
+        return ERR_ESP_AES_INVALID_INPUT_LENGTH;
+    }
+
+#if SOC_AES_SUPPORT_DMA
+    esp_aes_acquire_hardware();
+    ctx->key_in_hardware = 0;
+
+#if CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM
+    if (length > AES_DMA_MODE_THRESHOLD) {
+#endif /* CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM */
+        ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, mode);
+        aes_hal_mode_init(ESP_AES_BLOCK_MODE_ECB);
+
+        ret = esp_aes_process_dma(ctx, input, output, length, NULL);
+        if (ret != 0) {
+            goto cleanup;
+        }
+
+#if CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM
+    } else {
+        /* Short buffers stay on the block path. The peripheral lock is a mutex
+           on this target, not a critical section, so one acquire for the whole
+           buffer does not affect interrupt latency. */
+        ctx->key_in_hardware = aes_hal_setkey(ctx->key, ctx->key_bytes, mode);
+
+        uint32_t *output_words = (uint32_t *)output;
+        const uint32_t *input_words = (const uint32_t *)input;
+        size_t remaining = length;
+
+        while (remaining > 0) {
+            if (mode == ESP_AES_ENCRYPT) {
+                ret = esp_aes_block_encrypt(ctx, input_words, output_words);
+            } else {
+                ret = esp_aes_block_decrypt(ctx, input_words, output_words);
+            }
+            if (ret != 0) {
+                /* The DMA path zeroizes the whole output buffer when it fails,
+                   do the same here so no partial ciphertext is left behind. */
+                mbedtls_platform_zeroize(output, length);
+                goto cleanup;
+            }
+            input_words += AES_BLOCK_BYTES / sizeof(uint32_t);
+            output_words += AES_BLOCK_BYTES / sizeof(uint32_t);
+            remaining -= AES_BLOCK_BYTES;
+        }
+
+        ret = 0;
+    }
+#endif /* CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM */
+
+cleanup:
+    esp_aes_release_hardware();
+    return ret;
+#else /* !SOC_AES_SUPPORT_DMA */
+    for (size_t offset = 0; offset < length; offset += AES_BLOCK_BYTES) {
+        ret = esp_aes_crypt_ecb(ctx, mode, input + offset, output + offset);
+        if (ret != 0) {
+            /* The DMA path zeroizes the whole output buffer when it fails, do
+               the same here so no partial ciphertext is left behind. */
+            mbedtls_platform_zeroize(output, length);
+            return ret;
+        }
+    }
+
+    return 0;
+#endif /* SOC_AES_SUPPORT_DMA */
 }
 
 /*

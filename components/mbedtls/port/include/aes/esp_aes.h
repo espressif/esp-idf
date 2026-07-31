@@ -136,6 +136,38 @@ int esp_aes_setkey( esp_aes_context *ctx, const unsigned char *key, unsigned int
 int esp_aes_crypt_ecb( esp_aes_context *ctx, int mode, const unsigned char input[16], unsigned char output[16] );
 
 /**
+ * \brief          AES-ECB encryption/decryption of a full buffer in a single
+ *                 call. Submits all blocks to the hardware in one operation
+ *                 instead of one 16-byte block at a time, so the cost of
+ *                 acquiring the peripheral and writing the key is paid once
+ *                 for the whole buffer rather than once per block. Used by
+ *                 bulk ECB consumers such as AES-XTS.
+ *
+ * \note           ECB blocks are independent, so the output is identical to
+ *                 calling esp_aes_crypt_ecb() on each 16-byte block in turn.
+ *
+ * \note           On a target without AES DMA, acquiring the peripheral
+ *                 disables interrupts, so this call loops over
+ *                 esp_aes_crypt_ecb() instead of batching the buffer. The
+ *                 result is the same and interrupt latency does not grow
+ *                 with the length.
+ *
+ * \param ctx      AES context
+ * \param mode     ESP_AES_ENCRYPT or ESP_AES_DECRYPT
+ * \param length   length of the input data in bytes; must be a non-zero
+ *                 multiple of the block size (16 bytes)
+ * \param input    buffer holding the input data
+ * \param output   buffer holding the output data
+ *
+ * \return         0 if successful, or ERR_ESP_AES_INVALID_INPUT_LENGTH
+ */
+int esp_aes_crypt_ecb_blocks( esp_aes_context *ctx,
+                              int mode,
+                              size_t length,
+                              const unsigned char *input,
+                              unsigned char *output );
+
+/**
  * \brief          AES-CBC buffer encryption/decryption
  *                 Length should be a multiple of the block
  *                 size (16 bytes)

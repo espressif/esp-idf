@@ -164,6 +164,29 @@ int _ss_esp_aes_crypt_ecb(esp_aes_context *ctx,
     return esp_aes_crypt_ecb(&ctx_local, mode, input, output);
 }
 
+int _ss_esp_aes_crypt_ecb_blocks(esp_aes_context *ctx,
+                                 int mode,
+                                 size_t length,
+                                 const unsigned char *input,
+                                 unsigned char *output)
+{
+    if ((length == 0) || (length % AES_BLOCK_BYTES)) {
+        return ERR_ESP_AES_INVALID_INPUT_LENGTH;
+    }
+
+    bool valid_addr = (esp_tee_buf_in_ree(ctx, sizeof(esp_aes_context)) &&
+                       esp_tee_buf_in_ree(input, length) &&
+                       esp_tee_buf_in_ree(output, length));
+
+    if (!valid_addr) {
+        return -1;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    esp_aes_context ctx_local = *ctx;
+    return esp_aes_crypt_ecb_blocks(&ctx_local, mode, length, input, output);
+}
+
 int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
                           size_t length,
                           size_t *iv_off,
