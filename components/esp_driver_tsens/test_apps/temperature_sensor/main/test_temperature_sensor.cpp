@@ -101,6 +101,29 @@ IRAM_ATTR static bool temp_sensor_cbs_test(temperature_sensor_handle_t tsens, co
     return false;
 }
 
+TEST_CASE("Temperature sensor interrupt priority test", "[temperature_sensor]")
+{
+    temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
+    temperature_sensor_handle_t temp_handle = NULL;
+    temperature_sensor_event_callbacks_t cbs = {
+        .on_threshold = temp_sensor_cbs_test,
+    };
+    uint8_t temperature_alarm = 0;
+
+    TEST_ASSERT_EQUAL(0, temp_sensor.intr_priority);
+    temp_sensor.intr_priority = -1;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, temperature_sensor_install(&temp_sensor, &temp_handle));
+    temp_sensor.intr_priority = 4;
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, temperature_sensor_install(&temp_sensor, &temp_handle));
+
+    for (int priority = 1; priority <= 3; priority++) {
+        temp_sensor.intr_priority = priority;
+        TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
+        TEST_ESP_OK(temperature_sensor_register_callbacks(temp_handle, &cbs, &temperature_alarm));
+        TEST_ESP_OK(temperature_sensor_uninstall(temp_handle));
+    }
+}
+
 #if CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE
 static void IRAM_ATTR test_delay_post_cache_disable(void *args)
 {
@@ -127,7 +150,7 @@ TEST_CASE("Temperature sensor callback test", "[temperature_sensor]")
     uint8_t temperature_alarm = 0;
     uint8_t cnt = 10;
     TEST_ESP_OK(temperature_sensor_set_absolute_threshold(temp_handle, &threshold_cfg));
-    temperature_sensor_register_callbacks(temp_handle, &cbs, &temperature_alarm);
+    TEST_ESP_OK(temperature_sensor_register_callbacks(temp_handle, &cbs, &temperature_alarm));
 
     TEST_ESP_OK(temperature_sensor_enable(temp_handle));
 #if CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE
@@ -162,6 +185,7 @@ static void test_temperature_sensor_sleep_retention(bool allow_pd)
         .range_min = 10,
         .range_max = 50,
         .clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT,
+        .intr_priority = 0,
         .flags = {
             .allow_pd = allow_pd,
         },
