@@ -8,6 +8,7 @@
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "hal/efuse_hal.h"
+#include "hal/config.h"
 
 #if CONFIG_HAL_ECDSA_GEN_SIG_CM
 #include "esp_fault_internal.h"
@@ -33,12 +34,12 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 
         efuse_hal_set_ecdsa_key(conf->curve, conf->efuse_key_blk);
 
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-        // Force Key Manager to use eFuse key for XTS-AES operation
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY && !HAL_CONFIG(KEY_MGR_TEE_OWNED)
+        // Force Key Manager to use eFuse key for ECDSA operation
         key_mgr_hal_set_key_usage(ESP_KEY_MGR_ECDSA_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
 #endif
     }
-#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+#if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY && !HAL_CONFIG(KEY_MGR_TEE_OWNED)
     else {
         if (!key_mgr_ll_is_supported()) {
             HAL_ASSERT(false && "Key manager is not supported");

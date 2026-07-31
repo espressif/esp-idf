@@ -29,7 +29,8 @@
 
 __attribute__((unused)) static const char *TAG = "esp_security";
 
-#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+/* NOTE: Key Manager is not supported with ESP-TEE yet - the TEE fences it off from the REE */
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT && !CONFIG_SECURE_ENABLE_TEE
 static void esp_key_mgr_init(void)
 {
     // The following code initializes the key manager.
@@ -67,7 +68,7 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
 
     esp_crypto_clk_init();
 
-#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT
+#if SOC_KEY_MANAGER_SUPPORT_KEY_DEPLOYMENT && !CONFIG_SECURE_ENABLE_TEE
     esp_key_mgr_init();
 #endif
 

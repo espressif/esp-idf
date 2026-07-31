@@ -85,6 +85,11 @@ _TARGET_OVERRIDES: Dict[str, Dict[str, Any]] = {
             # not generate exceptions due to TEE PMA configuration
             '_remove': ['IRAM-W1'],
         },
+        # NOTE: Only ESP32-C5 has the Key Manager and the HUK peripherals
+        'apm_violation': {
+            'HUK': 'Store access fault',
+            'KM PCR': 'APM - Space exception',
+        },
     },
 }
 
