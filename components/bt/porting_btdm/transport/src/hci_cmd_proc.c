@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
- #include "esp_hci_internal.h"
+#include "esp_hci_internal.h"
 
 #if UC_BT_CTRL_BLE_IS_ENABLE
 #include "ble_priv.h"
@@ -286,12 +286,13 @@ extern int flushableAclData_hci_writeAutoFlushTmo(const uint8_t *cmdbuf, uint8_t
 /* Informational (OGF 0x04) - btdm_hci_external / ble */
 extern int r_btdm_hci_rd_local_version_info_handler(const uint8_t *cmdbuf, uint8_t len,
                                                     uint8_t *rspbuf, uint8_t *rsplen);
-extern int r_btdm_hci_rd_local_supported_cmds_handler(const uint8_t *cmdbuf, uint8_t len,
-                                                      uint8_t *rspbuf, uint8_t *rsplen);
+extern int r_btdm_hci_rd_local_supported_cmds_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
+                                                      uint8_t *rsplen);
 extern int r_btdm_hci_rd_local_supp_features_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
-                                                uint8_t *rsplen);
-extern int r_btdm_hci_rd_bdaddr_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
-                                        uint8_t *rsplen);
+                                                     uint8_t *rsplen);
+extern int r_btdm_hci_rd_local_ext_features_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf,
+                                                    uint8_t *rsplen);
+extern int r_btdm_hci_rd_bdaddr_handler(const uint8_t *cmdbuf, uint8_t len, uint8_t *rspbuf, uint8_t *rsplen);
 extern int r_btdm_hci_rd_local_supp_codecs_handler(uint8_t *rspbuf, uint8_t *rsplen);
 extern int r_btdm_hci_rd_local_supp_codecs_v2_handler(uint8_t *rspbuf, uint8_t *rsplen);
 extern int r_btdm_hci_rd_local_supp_codec_cap_handler(const uint8_t *cmdbuf, uint8_t len,
@@ -795,9 +796,6 @@ hci_cmd_proc_controller_baseband_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint8
 #if UC_BT_CTRL_BLE_IS_ENABLE
             ble_stack_reset();
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
-#if UC_BT_CTRL_BR_EDR_IS_ENABLE
-            bredr_stack_reset();
-#endif /* UC_BT_CTRL_BR_EDR_IS_ENABLE */
         }
         break;
     case HCI_CMD_OCF_BB_SET_C2H_FLOW_CTRL:
@@ -881,6 +879,15 @@ hci_cmd_proc_informational_params_cmds(uint16_t ocf, const uint8_t *cmdbuf, uint
     case HCI_CMD_OCF_INFO_READ_LOCAL_FEATURES:
         rc = r_btdm_hci_rd_local_supp_features_handler(cmdbuf, len, rspbuf, rsplen);
         break;
+    case HCI_CMD_OCF_INFO_READ_LOCAL_EXT_FEATURES:
+        rc = r_btdm_hci_rd_local_ext_features_handler(cmdbuf, len, rspbuf, rsplen);
+        break;
+    // case HCI_CMD_OCF_INFO_READ_BUFFER_SIZE:
+    //     rc = r_ble_ll_hci_le_read_bufsize(cmdbuf, len, rspbuf, rsplen);
+    //     break;
+    // case HCI_CMD_OCF_INFO_READ_COUNTRY_CODE:
+    //     rc = HCI_CMD_ERR_UNKNOWN_HCI_CMD;
+    //     break;
     case HCI_CMD_OCF_INFO_READ_BD_ADDR:
         rc = r_btdm_hci_rd_bdaddr_handler(cmdbuf, len, rspbuf, rsplen);
         break;

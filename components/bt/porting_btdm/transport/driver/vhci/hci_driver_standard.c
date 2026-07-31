@@ -108,7 +108,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
             *buf = old_value;
             if (rc >= 0) {
                 bredr_hci_trans_acl_tx_done(pkt);
-                bredr_hci_trans_acl_free(pkt);
+                bredr_hci_trans_acl_tx_free(pkt);
             }
         }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -134,7 +134,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
             *buf = old_value;
             if (rc >= 0) {
                 bredr_hci_trans_evt_tx_done((hci_driver_packet_t *)data);
-                bredr_hci_trans_evt_free((hci_driver_packet_t *)data);
+                bredr_hci_trans_evt_tx_free((hci_driver_packet_t *)data);
             }
         }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -164,7 +164,7 @@ hci_driver_vhci_controller_tx(hci_driver_data_type_t data_type, uint8_t *data, u
         *buf = old_value;
         if (rc >= 0) {
             bredr_hci_trans_sync_tx_done(pkt);
-            bredr_hci_trans_sync_free(pkt);
+            bredr_hci_trans_sync_tx_free(pkt);
         }
     }
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
@@ -210,7 +210,7 @@ hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
         if (is_bredr) {
-            pkt = btdm_hci_trans_buf_alloc(data_type, conn_handle);
+            pkt = bredr_hci_trans_acl_rx_buf_alloc(conn_handle);
             assert(pkt);
             memcpy(pkt->data, &data[1], pkt_len);
             data = (uint8_t *)pkt;
@@ -222,7 +222,7 @@ hci_driver_vhci_host_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
     case HCI_DRIVER_TYPE_SYNC:
         conn_handle = btdm_get_le16(&data[1]) & HCI_INTERNAL_CONN_MASK;
-        pkt = btdm_hci_trans_buf_alloc(data_type, conn_handle);
+        pkt = bredr_hci_trans_sync_rx_buf_alloc(conn_handle);
         assert(pkt);
         memcpy(pkt->data, &data[1], pkt_len);
         data = (uint8_t *)pkt;
