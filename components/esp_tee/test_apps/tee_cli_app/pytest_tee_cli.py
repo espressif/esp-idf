@@ -237,7 +237,8 @@ def test_tee_cli_secure_ota_wifi(dut: Dut) -> None:
                     raise ValueError('Updated user app is not running')
             else:
                 dut.write(f'tee_ota https://{host_ip}:{str(server_port)}/{tee_bin}')
-                dut.expect('esp_tee_ota_end succeeded', timeout=150)
+                # NOTE: esp_tee_ota_end() restarts the device; the offset check in
+                # the next iteration confirms the update
                 dut.expect('Prepare to restart system!', timeout=150)
 
     finally:

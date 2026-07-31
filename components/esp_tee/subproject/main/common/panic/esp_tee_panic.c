@@ -52,19 +52,7 @@ static void tee_panic_end(void)
     REG_WRITE(CLIC_INT_THRESH_REG, 0x00);
 #endif
 
-    // Make sure all the panic handler output is sent from UART FIFO
-    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
-    }
-
-    // Reset crypto peripherals before the panic-induced reset so the next boot
-    // sees them in a clean state. The SoC-specific implementation mirrors
-    // esp_system_reset_modules_on_exit() in the non-TEE path using register-level
-    // accesses.
-    esp_tee_soc_reset_crypto_peripherals();
-
-    // Generate system reset
-    esp_rom_software_reset_system();
+    esp_tee_system_reset();
 }
 
 void __assert_func(const char *file, int line, const char *func, const char *expr)

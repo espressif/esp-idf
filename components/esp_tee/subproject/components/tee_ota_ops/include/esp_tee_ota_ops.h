@@ -47,8 +47,10 @@ esp_err_t esp_tee_ota_write(uint32_t rel_offset, const void *data, size_t size);
 /**
  * @brief Finish the TEE OTA update and validate newly written TEE image
  *
- * @return
- *         - `ESP_OK` on success
+ * @note On success, this call does not return: the TEE restarts the device
+ *       (RTC WDT system reset)
+ *
+ * @return Only on failure:
  *         - `ESP_ERR_INVALID_STATE` in case the TEE OTA state machine is in an invalid state
  *         - `ESP_ERR_IMAGE_INVALID` in case the new TEE OTA image verification fails
  *         - `ESP_FAIL` for other errors
