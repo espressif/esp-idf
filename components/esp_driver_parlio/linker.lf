@@ -15,6 +15,8 @@ entries:
         parlio_rx: parlio_rx_mount_transaction_buffer (noflash)
         parlio_rx: parlio_rx_set_delimiter_config (noflash)
         parlio_rx: parlio_rx_unit_receive_from_isr (noflash)
+        parlio_rx: parlio_rx_unit_trigger_fake_eof (noflash)
+        parlio_common: parlio_sw_retention (noflash)
 
 [mapping:parlio_driver_gdma_link]
 archive: libesp_driver_dma.a
