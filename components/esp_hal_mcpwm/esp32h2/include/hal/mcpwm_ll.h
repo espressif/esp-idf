@@ -140,6 +140,9 @@ static inline void mcpwm_ll_group_set_clock_source(int group_id, soc_module_clk_
     case SOC_MOD_CLK_XTAL:
         PCR.pwm_clk_conf.pwm_clkm_sel = 0;
         break;
+    case SOC_MOD_CLK_RC_FAST:
+        PCR.pwm_clk_conf.pwm_clkm_sel = 1;
+        break;
     case SOC_MOD_CLK_PLL_F96M:
         PCR.pwm_clk_conf.pwm_clkm_sel = 2;
         break;
