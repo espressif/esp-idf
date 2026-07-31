@@ -145,6 +145,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     atomic_init(&proc->lsc_fsm, ISP_FSM_INIT);
     atomic_init(&proc->sharpen_fsm, ISP_FSM_INIT);
     atomic_init(&proc->wbg_fsm, ISP_FSM_INIT);
+    atomic_init(&proc->dpc_fsm, ISP_FSM_INIT);
 
     //Input & Output color format
     isp_color_t in_color_format = proc_config->input_data_color_type;
