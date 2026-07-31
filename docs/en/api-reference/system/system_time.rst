@@ -49,7 +49,7 @@ Selecting RTC Timer Clock Source
 Use the default **internal RC oscillator** when:
 
 - Minimizing sleep current consumption is critical for battery-powered or energy-constrained devices.
-- High time accuracy during sleep modes is not required. Time drifting in the range of several seconds per day is acceptable.
+- High time accuracy during sleep modes is not required. Time drifting in the range of several seconds per hour is acceptable.
 - Minimizing external components and hardware complexity is a priority.
 - The operating temperature is relatively stable (reducing frequency variation).
 - Bluetooth LE with power saving is not used, or only used for legacy advertising/scanning without connections.
