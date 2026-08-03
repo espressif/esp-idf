@@ -1172,17 +1172,43 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         BT_DBG("gatts read, handle %d", p_data->req_data.p_data->read_req.handle);
 
         if (attr != NULL && attr->read != NULL && index < ARRAY_SIZE(bt_mesh_gatts_conn)) {
-            if ((len = attr->read(&bt_mesh_gatts_conn[index], attr, buf, 100,
-                                  p_data->req_data.p_data->read_req.offset)) > 0) {
+            len = attr->read(&bt_mesh_gatts_conn[index], attr, buf, 100,
+                             p_data->req_data.p_data->read_req.offset);
+            if (len >= 0) {
                 rsp.attr_value.handle = p_data->req_data.p_data->read_req.handle;
+                if (len > sizeof(buf)) {
+                    /* A read callback must not return more than the buf_len it was
+                     * given; clamp to the source buffer size (also below the
+                     * rsp.attr_value.value capacity) to avoid an out-of-bounds copy. */
+                    BT_WARN("Mesh gatts read len %d exceeds buffer", (int)len);
+                    len = sizeof(buf);
+                }
                 rsp.attr_value.len = len;
                 memcpy(&rsp.attr_value.value[0], buf, len);
                 BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                                   p_data->req_data.status, &rsp);
                 BT_DBG("Send gatts read rsp, handle %d", attr->handle);
             } else {
-                BT_WARN("Mesh gatts read failed");
+                /* Attribute read callback returned an ATT error code (negative).
+                 * Reply with an ATT Error Response so the client does not time out. */
+                BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                                  (tBTA_GATT_STATUS)(-len), NULL);
+                BT_WARN("Mesh gatts read failed, err %d", (int)len);
             }
+        } else {
+            /* No matching attribute, or read not supported: respond with an ATT
+             * Error Response so the client does not time out. */
+            tBTA_GATT_STATUS err;
+            if (attr == NULL) {
+                err = BLE_MESH_ATT_ERR_INVALID_HANDLE;
+            } else if (attr->read == NULL) {
+                err = BLE_MESH_ATT_ERR_READ_NOT_PERMITTED;
+            } else {
+                err = BLE_MESH_ATT_ERR_UNLIKELY;   /* index out of range */
+            }
+            BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, err, NULL);
+            BT_WARN("Mesh gatts read rejected, handle %d, err 0x%02x",
+                    p_data->req_data.p_data->read_req.handle, (unsigned)err);
         }
         break;
     }
@@ -1196,16 +1222,40 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                bt_hex(p_data->req_data.p_data->write_req.value, p_data->req_data.p_data->write_req.len));
 
         if (attr != NULL && attr->write != NULL && index < ARRAY_SIZE(bt_mesh_gatts_conn)) {
-            if ((len = attr->write(&bt_mesh_gatts_conn[index], attr,
-                                   p_data->req_data.p_data->write_req.value,
-                                   p_data->req_data.p_data->write_req.len,
-                                   p_data->req_data.p_data->write_req.offset, 0)) > 0) {
-                if (p_data->req_data.p_data->write_req.need_rsp) {
+            len = attr->write(&bt_mesh_gatts_conn[index], attr,
+                              p_data->req_data.p_data->write_req.value,
+                              p_data->req_data.p_data->write_req.len,
+                              p_data->req_data.p_data->write_req.offset, 0);
+            if (p_data->req_data.p_data->write_req.need_rsp) {
+                if (len == p_data->req_data.p_data->write_req.len) {
                     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                                       p_data->req_data.status, NULL);
                     BT_DBG("Send gatts write rsp, handle %d", attr->handle);
+                } else {
+                    /* Write callback returned an ATT error code (negative), a partial
+                     * write, or 0. Match upstream Zephyr, which requires write == len
+                     * and otherwise replies with an ATT Error Response. */
+                    tBTA_GATT_STATUS err = (len < 0) ? (tBTA_GATT_STATUS)(-len)
+                                                     : BLE_MESH_ATT_ERR_UNLIKELY;
+                    BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                                      err, NULL);
+                    BT_WARN("Mesh gatts write failed, len %d", (int)len);
                 }
             }
+        } else if (p_data->req_data.p_data->write_req.need_rsp) {
+            /* No matching attribute, or write not supported: respond with an ATT
+             * Error Response for Write Requests (Write Commands get no response). */
+            tBTA_GATT_STATUS err;
+            if (attr == NULL) {
+                err = BLE_MESH_ATT_ERR_INVALID_HANDLE;
+            } else if (attr->write == NULL) {
+                err = BLE_MESH_ATT_ERR_WRITE_NOT_PERMITTED;
+            } else {
+                err = BLE_MESH_ATT_ERR_UNLIKELY;   /* index out of range */
+            }
+            BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, err, NULL);
+            BT_WARN("Mesh gatts write rejected, handle %d, err 0x%02x",
+                    p_data->req_data.p_data->write_req.handle, (unsigned)err);
         }
         break;
     }
