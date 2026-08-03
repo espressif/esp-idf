@@ -201,3 +201,55 @@ To use this feature, enable configuration option :menuitem:`CONFIG_ESP_WIFI_PRIV
 
 
 To get the MAC address, please use API :cpp:func:`esp_wifi_get_mac`.
+
+
+NAN (Wi-Fi Aware\ :sup:`TM`) Security
+-------------------------------------
+
+Introduction
+++++++++++++
+
+Wi-Fi Aware\ :sup:`TM` (NAN, Neighbor Awareness Networking) lets devices discover services and set up a NAN Data Path (NDP) without an AP. By default an NDP carries data in the clear, like an open Wi-Fi network. NAN Security protects the NDP by deriving a pairwise key (ND-PMK) between the Publisher and Subscriber during the NDP handshake and encrypting the subsequent unicast data frames.
+
+{IDF_TARGET_NAME} supports two NAN Security mechanisms, both producing an encrypted NDP but provisioning the key material differently:
+
+- **Passphrase/PMK-based (NCS-SK-128)** — both peers share a passphrase (or a raw 32-byte PMK) out of band. The stack derives the ND-PMK from it. This is the equivalent of a WPA2/WPA3-Personal pre-shared key, but for NAN.
+- **Pairing-based (NCS-PK-PASN-128)** — peers do not share a secret up front. They run the NAN Pairing protocol (based on PASN) to negotiate an NPK/NIK, optionally authenticated by a bootstrapping method (PIN code, ...). Cached NPK/NIK can be reused for subsequent NDPs.
+
+.. note::
+
+  NAN Security is independent of the STA/SoftAP security modes described above. It only applies to NAN datapaths and does not change the security configuration of any STA or SoftAP interface. Note that NAN operates in standalone mode, so it cannot coexist with an active STA or SoftAP connection anyway; see :doc:`/api-guides/wifi-driver/wifi-modes`.
+
+Passphrase/PMK-based Security (NCS-SK-128)
+++++++++++++++++++++++++++++++++++++++++++++
+
+This is the simplest NAN Security mode and is available with stand-alone ESP-IDF (no external component required). Both peers provision the same secret — either a human-readable passphrase or a raw 32-byte PMK — on the matching Publish/Subscribe service. The stack derives the ND-PMK and ND-PMKID per credential and advertises the SCID list on air; the subscriber matches the publisher's SCID list against its locally-provisioned credentials.
+
+Security is configured per service through :cpp:type:`wifi_nan_publish_cfg_t` / :cpp:type:`wifi_nan_subscribe_cfg_t`:
+
+- Set ``security_reqd = 1`` to mark the service as secured.
+- Point ``security_cfg`` to a :cpp:type:`wifi_nan_discovery_security_params_t` populated with one or more :cpp:type:`wifi_nan_credential_t` entries (passphrase or PMK, each bound to a cipher suite ID via ``csid``).
+- Optionally enable ``group_data_prot`` (ND-GTK group-data protection) and ``group_mgmt_prot`` (BIP group-management frame protection).
+
+Up to :c:macro:`ESP_WIFI_NAN_MAX_CREDS_PER_SVC` credentials may be attached to a single service, so a service can be shared with several peers using different passphrases/PMKs. Both peers must configure at least one matching credential on the corresponding service, otherwise NDP negotiation fails.
+
+.. note::
+
+  Only ``WIFI_NAN_CSID_NCS_SK_128`` is currently supported. NAN Security requires :ref:`CONFIG_ESP_WIFI_NAN_SECURITY` and :ref:`CONFIG_ESP_WIFI_MBEDTLS_CRYPTO`.
+
+Pairing-based Security (NCS-PK-PASN-128)
++++++++++++++++++++++++++++++++++++++++++
+
+NAN Pairing lets two devices establish a long-term trust relationship (NPK/NIK) without a pre-shared secret, using a bootstrapping method such as a PIN code. The negotiated NPK/NIK can be cached (and persisted to NVS) so that subsequent NDPs are secured without repeating the pairing handshake.
+
+Pairing is configured per service through the ``pairing`` field of :cpp:type:`wifi_nan_publish_cfg_t` / :cpp:type:`wifi_nan_subscribe_cfg_t`, which points to a :cpp:type:`wifi_nan_pairing_cfg_t` (pairing setup/verification enablement, NPK/NIK caching, bootstrapping methods bitmap, comeback delay).
+
+.. note::
+
+  NAN Pairing (``WIFI_NAN_CSID_NCS_PK_PASN_128``) requires :ref:`CONFIG_ESP_WIFI_NAN_PAIRING` and the **Wi-Fi Aware** external component (``espressif/wifi_aware``); it is **not** usable with stand-alone ESP-IDF. See :doc:`/api-guides/wifi-driver/wifi-modes` for how to add the component to your project.
+
+Application Example
++++++++++++++++++++
+
+- :example:`wifi/wifi_aware/nan_console` exposes NAN Security through the ``publish`` and ``subscribe`` console commands. Supplying ``-p``/``--passphrase`` or ``-k``/``--pmk`` makes that service secured; an open service needs no security arguments. See the example README for the full command reference.
+
