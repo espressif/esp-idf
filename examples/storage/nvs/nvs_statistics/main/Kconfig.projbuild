@@ -1,0 +1,13 @@
+menu "Example Configuration"
+
+    config EXAMPLE_RUN_OVERHEAD_MEASUREMENT
+        bool "Run NVS blob storage-overhead measurement"
+        default n
+        help
+            When enabled, the example sweeps several partition size / blob size
+            combinations. For each combination it pre-populates every NVS page
+            with strings up to a set of population levels, writes a single blob
+            and reports its ideal vs. real entry consumption (and the resulting
+            overhead) in a table.
+
+endmenu
