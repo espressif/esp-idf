@@ -30,6 +30,8 @@ typedef struct {
     int range_min;   /**< the minimum value of the temperature you want to test */
     int range_max;   /**< the maximum value of the temperature you want to test */
     temperature_sensor_clk_src_t clk_src;  /**< the clock source of the temperature sensor. */
+    int intr_priority;  /**< Temperature sensor interrupt priority,
+                             if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
     struct {
         uint32_t allow_pd;  /**< If set, the driver will backup/restore the temperature sensor registers before/after entering/exist sleep mode.
                                  By this approach, the system can power off temperature sensor's power domain.
@@ -46,6 +48,7 @@ typedef struct {
         .range_min = min,                              \
         .range_max = max,                              \
         .clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT, \
+        .intr_priority = 0,                            \
         .flags = {                                     \
             .allow_pd = 0,                             \
         },                                             \

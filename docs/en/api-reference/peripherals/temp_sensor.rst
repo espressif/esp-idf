@@ -39,6 +39,7 @@ In order to install a built-in temperature sensor instance, the first thing is t
 
 - :cpp:member:`range_min`: The minimum value of the testing range you have evaluated.
 - :cpp:member:`range_max`: The maximum value of the testing range you have evaluated.
+- :cpp:member:`temperature_sensor_config_t::intr_priority` sets the interrupt priority. If it is set to ``0``, the driver will allocate an interrupt with a default low or medium priority (1, 2, or 3). Otherwise, use the priority number 1, 2, or 3, not the bitmask.
 - :cpp:member:`allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the temperature sensor register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 After the ranges are set, the structure could be passed to :cpp:func:`temperature_sensor_install`, which will instantiate the temperature sensor instance and return a handle.

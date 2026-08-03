@@ -28,12 +28,13 @@ typedef enum {
 } temp_sensor_fsm_t;
 
 #if CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE
-#define TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
+#define TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED)
 #define TEMPERATURE_SENSOR_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
+#define TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_SHARED)
 #define TEMPERATURE_SENSOR_MEM_ALLOC_CAPS      (MALLOC_CAP_DEFAULT)
 #endif
+#define TEMPERATURE_SENSOR_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
 // Use retention link only when the target supports sleep retention and PM is enabled
 #define TEMPERATURE_SENSOR_USE_RETENTION_LINK  (SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN)
@@ -57,6 +58,7 @@ struct temperature_sensor_obj_t {
     temp_sensor_fsm_t  fsm;
     temperature_sensor_clk_src_t clk_src;
 #if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+    int intr_priority;
     intr_handle_t temp_sensor_isr_handle;
     temperature_thres_cb_t threshold_cbs;
     void *cb_user_arg;

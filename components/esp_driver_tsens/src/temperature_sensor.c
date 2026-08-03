@@ -133,6 +133,11 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((tsens_config && ret_tsens), ESP_ERR_INVALID_ARG, TAG, "Invalid argument");
     ESP_RETURN_ON_FALSE((s_tsens_attribute_copy == NULL), ESP_ERR_INVALID_STATE, TAG, "Already installed");
+    if (tsens_config->intr_priority) {
+        ESP_RETURN_ON_FALSE(tsens_config->intr_priority > 0 &&
+                            ((1 << tsens_config->intr_priority) & TEMPERATURE_SENSOR_ALLOW_INTR_PRIORITY_MASK),
+                            ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", tsens_config->intr_priority);
+    }
     temperature_sensor_handle_t tsens = NULL;
     tsens = (temperature_sensor_obj_t *) heap_caps_calloc(1, sizeof(temperature_sensor_obj_t), MALLOC_CAP_DEFAULT);
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_NO_MEM, TAG, "no mem for temp sensor");
@@ -141,6 +146,9 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     } else {
         tsens->clk_src = tsens_config->clk_src;
     }
+#if SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+    tsens->intr_priority = tsens_config->intr_priority;
+#endif
 
 #if !SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(tsens_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
@@ -362,7 +370,8 @@ esp_err_t temperature_sensor_register_callbacks(temperature_sensor_handle_t tsen
     }
 #endif
 
-    int isr_flags = TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS;
+    int isr_flags = TEMPERATURE_SENSOR_INTR_ALLOC_FLAGS |
+                    (tsens->intr_priority ? (1 << tsens->intr_priority) : TEMPERATURE_SENSOR_ALLOW_INTR_PRIORITY_MASK);
 #if SOC_ADC_TEMPERATURE_SHARE_INTR
     isr_flags |= ESP_INTR_FLAG_SHARED;
 #endif
