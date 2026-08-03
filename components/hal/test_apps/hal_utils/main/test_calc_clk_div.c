@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,14 @@ TEST_CASE("test_fractal_division", "[clk_div]")
     real_freq = hal_utils_calc_clk_div_frac_accurate(&clk_info, &clk_div);
     TEST_ASSERT_EQUAL_UINT32(9, clk_div.integer);
     TEST_ASSERT_UINT32_WITHIN(clk_info.exp_freq_hz * 0.0001, clk_info.exp_freq_hz, real_freq);
+
+    // Fractional division whose intermediate products exceed UINT32_MAX
+    clk_info.exp_freq_hz = 42 * 1000 * 1000 + 336 * 1000;
+    real_freq = hal_utils_calc_clk_div_frac_accurate(&clk_info, &clk_div);
+    TEST_ASSERT_EQUAL_UINT32(3, clk_div.integer);
+    TEST_ASSERT_EQUAL_UINT32(286, clk_div.numerator);
+    TEST_ASSERT_EQUAL_UINT32(367, clk_div.denominator);
+    TEST_ASSERT_EQUAL_UINT32(42335977, real_freq);
 
     // Fractal division with no error
     clk_info.exp_freq_hz = 50 * 1000 * 1000;
