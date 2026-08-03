@@ -413,7 +413,7 @@ void btm_ble_read_remote_features_complete(UINT8 *p);
 void btm_ble_write_adv_enable_complete(UINT8 *p);
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
-void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced);
+void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced, BOOLEAN enhanced_v2);
 void btm_read_ble_local_supported_states_complete(UINT8 *p, UINT16 evt_len);
 tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
 void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st);
