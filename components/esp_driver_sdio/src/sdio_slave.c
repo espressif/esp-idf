@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -355,15 +355,7 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
     r = init_context(config);
     SDIO_SLAVE_CHECK(r == ESP_OK, "context initialization failed", r);
 
-    r = esp_intr_alloc_intrstatus(
-            ETS_SLC0_INTR_SOURCE,
-            flags,
-            (uint32_t)sdio_slave_hal_get_intr_status_reg(context.hal),
-            sdio_slave_ll_intr_status_mask,
-            sdio_intr,
-            NULL,
-            &intr_handle
-        );
+    r = esp_intr_alloc(ETS_SLC0_INTR_SOURCE, flags, sdio_intr, NULL, &intr_handle);
     SDIO_SLAVE_CHECK(r == ESP_OK, "interrupt allocation failed", r);
     context.intr_handle = intr_handle;
 
