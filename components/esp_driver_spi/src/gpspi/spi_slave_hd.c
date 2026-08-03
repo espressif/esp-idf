@@ -698,7 +698,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_append_legacy_isr(void *arg)
 static void s_spi_slave_hd_destroy_priv_trans(spi_host_device_t host, spi_slave_hd_trans_priv_t *priv_trans, spi_slave_chan_t chan)
 {
     spi_slave_hd_data_t *orig_trans = priv_trans->trans;
-    if (priv_trans->aligned_buffer != orig_trans->data) {
+    if (priv_trans->aligned_buffer && priv_trans->aligned_buffer != orig_trans->data) {
         if (chan == SPI_SLAVE_CHAN_RX) {
             memcpy(orig_trans->data, priv_trans->aligned_buffer, orig_trans->trans_len);
         }
@@ -792,7 +792,7 @@ esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, 
         return ESP_ERR_INVALID_STATE;
     }
 
-    spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, false);
+    spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, true);
     hal->rx_cur_desc->arg = arg;
 
     if (!hal->rx_used_desc_cnt) {
