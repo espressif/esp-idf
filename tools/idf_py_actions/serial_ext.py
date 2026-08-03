@@ -17,8 +17,10 @@ from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import RunTool
 from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import get_default_esp
 from idf_py_actions.tools import get_default_serial_port
 from idf_py_actions.tools import get_sdkconfig_value
+from idf_py_actions.tools import get_selected_target
 from idf_py_actions.tools import run_target
 
 PYTHON = sys.executable
@@ -98,6 +100,49 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
 
         return result
 
+    def _run_monitor(
+        monitor_args: list,
+        args: PropertyDict,
+        print_filter: str,
+        encrypted: bool,
+        no_reset: bool,
+        timestamps: bool,
+        timestamp_format: str,
+        force_color: bool,
+        disable_auto_color: bool,
+    ) -> None:
+        if print_filter:
+            monitor_args += ['--print_filter', print_filter]
+        if encrypted:
+            monitor_args += ['--encrypted']
+        if no_reset:
+            monitor_args += ['--no-reset']
+        if timestamps:
+            monitor_args += ['--timestamps']
+        if timestamp_format:
+            monitor_args += ['--timestamp-format', timestamp_format]
+        if force_color or os.name == 'nt':
+            monitor_args += ['--force-color']
+        if disable_auto_color:
+            monitor_args += ['--disable-auto-color']
+        hints = not args.no_hints and os.path.isdir(args.build_dir)
+
+        # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
+        old_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            RunTool(
+                'idf_monitor',
+                monitor_args,
+                args.project_dir,
+                build_dir=args.build_dir,
+                hints=hints,
+                interactive=True,
+                convert_output=True,
+            )()
+        finally:
+            signal.signal(signal.SIGINT, old_handler)
+
     def monitor(
         action: str,
         ctx: Context,
@@ -114,6 +159,41 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         """
         Run esp_idf_monitor to watch build output
         """
+        project_built = os.path.exists(os.path.join(args.build_dir, 'project_description.json'))
+        target_selected = project_built or get_selected_target(args)
+
+        detected_target = None
+
+        if not project_built:
+            if no_reset and args.port is None:
+                raise FatalError(
+                    '--no-reset is only supported when used with a port. '
+                    'Please specify the port with the --port argument to use this option.'
+                )
+            if not target_selected and args.port is None:
+                esp = get_default_esp()
+                args.port = esp.serial_port
+                detected_target = str(esp.CHIP_NAME.lower().replace('-', ''))
+            else:
+                detected_target = get_selected_target(args)
+            idf_monitor = os.path.join(os.environ['IDF_PATH'], 'tools/idf_monitor.py')
+            monitor_args = [PYTHON, idf_monitor]
+            monitor_args += ['-p', args.port or get_default_serial_port(detected_target)]
+            if detected_target:
+                monitor_args += ['--target', detected_target]
+            _run_monitor(
+                monitor_args,
+                args,
+                print_filter,
+                encrypted,
+                no_reset,
+                timestamps,
+                timestamp_format,
+                force_color,
+                disable_auto_color,
+            )
+            return
+
         project_desc = _get_project_desc(ctx, args)
         elf_file = os.path.join(args.build_dir, project_desc['app_elf'])
 
@@ -123,11 +203,13 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         if project_desc['target'] != 'linux':
             if no_reset and args.port is None:
                 raise FatalError(
-                    'Error: --no-reset is only supported when used with a port.'
-                    'Please specify the port with the --port argument in order to use this option.'
+                    '--no-reset is only supported when used with a port. '
+                    'Please specify the port with the --port argument to use this option.'
                 )
 
-            args.port = args.port or get_default_serial_port()
+            # The target is passed explicitly, because ensure_build_directory(),
+            # which sets the build context, is not called for an already built project.
+            args.port = args.port or get_default_serial_port(project_desc['target'])
             monitor_args += ['-p', args.port]
 
             baud = monitor_baud or os.getenv('IDF_MONITOR_BAUD') or os.getenv('MONITORBAUD')
@@ -158,52 +240,27 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         if target_arch_riscv:
             monitor_args += ['--decode-panic', 'backtrace']
 
-        if print_filter is not None:
-            monitor_args += ['--print_filter', print_filter]
-
         elf_list = [str(elf) for elf in Path(args.build_dir).rglob('*.elf')]
-        if elf_file and elf_file in elf_list:
-            # prepend the main app elf file to the list; make sure it is the first one
-            elf_list.insert(0, elf_list.pop(elf_list.index(elf_file)))
-        monitor_args.extend(elf_list)
-
-        if encrypted:
-            monitor_args += ['--encrypted']
-
-        if no_reset:
-            monitor_args += ['--no-reset']
-
-        if timestamps:
-            monitor_args += ['--timestamps']
-
-        if timestamp_format:
-            monitor_args += ['--timestamp-format', timestamp_format]
-
-        if force_color or os.name == 'nt':
-            monitor_args += ['--force-color']
-
-        if disable_auto_color:
-            monitor_args += ['--disable-auto-color']
+        if elf_list:
+            if elf_file and elf_file in elf_list:
+                # prepend the main app elf file to the list; make sure it is the first one
+                elf_list.insert(0, elf_list.pop(elf_list.index(elf_file)))
+            monitor_args.extend(elf_list)
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join(f"'{a}'" for a in idf_py)]
-        hints = not args.no_hints
 
-        # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
-        old_handler = signal.getsignal(signal.SIGINT)
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        try:
-            RunTool(
-                'idf_monitor',
-                monitor_args,
-                args.project_dir,
-                build_dir=args.build_dir,
-                hints=hints,
-                interactive=True,
-                convert_output=True,
-            )()
-        finally:
-            signal.signal(signal.SIGINT, old_handler)
+        _run_monitor(
+            monitor_args,
+            args,
+            print_filter,
+            encrypted,
+            no_reset,
+            timestamps,
+            timestamp_format,
+            force_color,
+            disable_auto_color,
+        )
 
     def flash(
         action: str,
@@ -263,8 +320,8 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         Calls ensure_build_directory() which will run cmake to generate a build
         directory (with the specified generator) as needed.
         """
-        args.port = args.port or get_default_serial_port()
         ensure_build_directory(args, ctx.info_name)
+        args.port = args.port or get_default_serial_port()
         run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port}, interactive=True)
 
     def merge_bin(
