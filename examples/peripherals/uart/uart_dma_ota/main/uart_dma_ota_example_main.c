@@ -26,9 +26,11 @@ static const char *TAG = "uhci-example";
 #define UART_DMA_OTA_BUFFER_SIZE (10 * 1024)
 #define UART_DMA_OTA_RINGBUF_SIZE (10 * 1024)
 
+// One second without any new data is treated as end-of-transfer.
+#define UART_DMA_OTA_IDLE_TIMEOUT_MS 1000
+
 typedef struct {
     RingbufHandle_t ringbuf;
-    volatile bool rx_eof;
     volatile bool rx_overflow;
 } ota_rx_context_t;
 
@@ -37,20 +39,13 @@ static bool s_uhci_rx_event_cbs(uhci_controller_handle_t uhci_ctrl, const uhci_r
     ota_rx_context_t *ctx = (ota_rx_context_t *)user_ctx;
     BaseType_t xTaskWoken = pdFALSE;
 
+    // Copy each chunk out of the DMA storage buffer before it gets overwritten. In continuous mode
+    // the driver keeps the DMA running across frames, so this fires for every partial node and every
+    // frame EOF without any gap in between.
     if (xRingbufferSendFromISR(ctx->ringbuf, edata->data, edata->recv_size, &xTaskWoken) != pdTRUE) {
         ctx->rx_overflow = true;
     }
-    if (edata->flags.totally_received) {
-        ctx->rx_eof = true;
-    }
     return xTaskWoken == pdTRUE;
-}
-
-static bool rx_ringbuf_is_empty(RingbufHandle_t ringbuf)
-{
-    UBaseType_t items_waiting = 0;
-    vRingbufferGetInfo(ringbuf, NULL, NULL, NULL, NULL, &items_waiting);
-    return items_waiting == 0;
 }
 
 static void perform_ota_update(uhci_controller_handle_t uhci_ctrl, ota_rx_context_t *ctx)
@@ -65,29 +60,35 @@ static void perform_ota_update(uhci_controller_handle_t uhci_ctrl, ota_rx_contex
     ESP_ERROR_CHECK(esp_ota_begin(ota_partition, OTA_SIZE_UNKNOWN, &ota_handle));
     ESP_LOGI(TAG, "OTA process started");
 
+    // Storage buffer for continuous reception. The driver splits it across the DMA nodes and uses it
+    // as a ring, so the OTA image can be much larger than the buffer itself.
     uint8_t *pdata = heap_caps_calloc(1, UART_DMA_OTA_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
     assert(pdata);
-    ESP_ERROR_CHECK(uhci_receive(uhci_ctrl, pdata, UART_DMA_OTA_BUFFER_SIZE));
+    ESP_ERROR_CHECK(uhci_start_receive_continuous(uhci_ctrl, pdata, UART_DMA_OTA_BUFFER_SIZE));
 
     size_t total_received_size = 0;
     while (1) {
         size_t item_size = 0;
-        uint8_t *data = xRingbufferReceive(ctx->ringbuf, &item_size, pdMS_TO_TICKS(1000));
+        uint8_t *data = xRingbufferReceive(ctx->ringbuf, &item_size, pdMS_TO_TICKS(UART_DMA_OTA_IDLE_TIMEOUT_MS));
         if (data) {
             ESP_ERROR_CHECK(esp_ota_write(ota_handle, data, item_size));
             vRingbufferReturnItem(ctx->ringbuf, data);
             total_received_size += item_size;
+        } else if (total_received_size > 0) {
+            // The ring buffer stayed empty for the whole timeout after data had started flowing:
+            // the sender is done. A NULL return only happens when the ring buffer is drained, so no
+            // received bytes are left behind here.
+            break;
         }
 
         if (ctx->rx_overflow) {
             ESP_LOGE(TAG, "RX ring buffer overflow, please reduce the baud rate or increase the ring buffer size");
             abort();
         }
-
-        if (ctx->rx_eof && rx_ringbuf_is_empty(ctx->ringbuf)) {
-            break;
-        }
     }
+
+    // Stop the continuous reception before releasing the storage buffer.
+    ESP_ERROR_CHECK(uhci_stop_receive(uhci_ctrl));
     free(pdata);
 
     ESP_LOGI(TAG, "Total received size: %zu", total_received_size);
@@ -115,7 +116,7 @@ void app_main(void)
         .max_receive_internal_mem = UART_DMA_OTA_BUFFER_SIZE,
         .max_transmit_size = UART_DMA_OTA_BUFFER_SIZE,
         .dma_burst_size = 32,
-        .rx_eof_flags.idle_eof = 1, // receive finishes when rx line turns idle.
+        .rx_eof_flags.idle_eof = 1, // deliver a frame (EOF) whenever the rx line turns idle.
     };
 
     uhci_controller_handle_t uhci_ctrl;
@@ -125,7 +126,6 @@ void app_main(void)
 
     ota_rx_context_t ctx = {
         .ringbuf = xRingbufferCreate(UART_DMA_OTA_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF),
-        .rx_eof = false,
         .rx_overflow = false,
     };
     assert(ctx.ringbuf);
