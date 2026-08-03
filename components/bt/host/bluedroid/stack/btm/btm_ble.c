@@ -45,10 +45,59 @@
 //#include "osi/include/log.h"
 #if BLE_INCLUDED == TRUE
 extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
+
+#define BTM_BLE_CONN_COMP_EVT_LEN_LEGACY    18
+#define BTM_BLE_CONN_COMP_EVT_LEN_ENHANCED  30
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+#define BTM_BLE_CONN_COMP_EVT_LEN_ENH_V2    33
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+
+static void btm_ble_parse_pawr_conn_handles(UINT8 **pp, BOOLEAN enhanced, BOOLEAN enhanced_v2,
+                                            UINT8 *adv_handle, UINT16 *sync_handle)
+{
+    *adv_handle = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+    *sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
+    /* Legacy and enhanced connection complete events both include CCA. */
+    (*pp)++; /* Central_Clock_Accuracy */
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    if (enhanced && enhanced_v2) {
+        STREAM_TO_UINT8(*adv_handle, *pp);
+        STREAM_TO_UINT16(*sync_handle, *pp);
+    }
+#else
+    UNUSED(enhanced);
+    UNUSED(enhanced_v2);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+}
+
+static BOOLEAN btm_ble_conn_comp_evt_len_valid(UINT16 evt_len, BOOLEAN enhanced, BOOLEAN enhanced_v2)
+{
+    UINT16 min_len = BTM_BLE_CONN_COMP_EVT_LEN_LEGACY;
+
+    if (enhanced) {
+        min_len = BTM_BLE_CONN_COMP_EVT_LEN_ENHANCED;
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+        if (enhanced_v2) {
+            min_len = BTM_BLE_CONN_COMP_EVT_LEN_ENH_V2;
+        }
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    }
+
+    if (evt_len < min_len) {
+        BTM_TRACE_ERROR("%s: invalid evt_len %u (need >= %u), enhanced=%d enhanced_v2=%d",
+                        __func__, evt_len, min_len, enhanced, enhanced_v2);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 #if SMP_INCLUDED == TRUE
 #include "smp_int.h"
-// The temp variable to pass parameter between functions when in the connected event callback.
-static BOOLEAN temp_enhanced = FALSE;
+/* Parsed before async RPA resolve; used by btm_ble_resolve_random_addr_on_conn_cmpl(). */
+static BOOLEAN s_conn_enhanced = FALSE;
+static UINT8  s_conn_pawr_adv_handle  = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+static UINT16 s_conn_pawr_sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
+
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
                                         UINT16 tlen, UINT8 *p_signature);
 extern void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable);
@@ -64,6 +113,7 @@ static void btm_ble_pseudo_bringup_conn(UINT16 handle, UINT8 role,
                                         UINT16 conn_interval, UINT16 conn_latency,
                                         UINT16 conn_timeout, BOOLEAN match,
                                         const UINT8 *air_peer, UINT8 air_peer_type,
+                                        UINT8 pawr_adv_handle, UINT16 pawr_sync_handle,
                                         const char *tag, BD_ADDR conn_index_bda_out);
 static void btm_ble_pseudo_pick_peer_identity(tBTM_SEC_DEV_REC *p_rec, const BD_ADDR on_air,
                                               UINT8 on_air_type,
@@ -2100,6 +2150,7 @@ static void btm_ble_pseudo_bringup_conn(UINT16 handle, UINT8 role,
                                         UINT16 conn_interval, UINT16 conn_latency,
                                         UINT16 conn_timeout, BOOLEAN match,
                                         const UINT8 *air_peer, UINT8 air_peer_type,
+                                        UINT8 pawr_adv_handle, UINT16 pawr_sync_handle,
                                         const char *tag, BD_ADDR conn_index_bda_out)
 {
     BD_ADDR pseudo;
@@ -2120,7 +2171,7 @@ static void btm_ble_pseudo_bringup_conn(UINT16 handle, UINT8 role,
 
     btm_ble_connected(conn_index_bda_out, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);
     l2cble_conn_comp(handle, role, conn_index_bda_out, bda_type, conn_interval,
-                     conn_latency, conn_timeout);
+                     conn_latency, conn_timeout, pawr_adv_handle, pawr_sync_handle);
 
     /* Host RPA resolution replaced the on-air RPA with a stored pseudo on the
      * ACL. Restore the real on-air peer address so SC pairing f5/f6 uses what
@@ -2156,6 +2207,8 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     UINT16      handle;
     BD_ADDR     bda, local_rpa, peer_rpa;
     UINT16      conn_interval, conn_latency, conn_timeout;
+    UINT8       pawr_adv_handle;
+    UINT16      pawr_sync_handle;
     BOOLEAN     match = FALSE;
 #if (BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
     BD_ADDR     air_peer;       /* on-air peer address (RPA) before resolution rewrite */
@@ -2169,13 +2222,15 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     STREAM_TO_BDADDR   (bda, p);
     // if the enhanced is true, means the connection is enhanced connect,
     // so the packet should include the local Resolvable Private Address and Peer Resolvable Private Address
-    if(temp_enhanced) {
+    if (s_conn_enhanced) {
         STREAM_TO_BDADDR(local_rpa, p);
         STREAM_TO_BDADDR(peer_rpa, p);
     }
     STREAM_TO_UINT16   (conn_interval, p);
     STREAM_TO_UINT16   (conn_latency, p);
     STREAM_TO_UINT16   (conn_timeout, p);
+    pawr_adv_handle = s_conn_pawr_adv_handle;
+    pawr_sync_handle = s_conn_pawr_sync_handle;
 
     handle = HCID_GET_HANDLE (handle);
     BTM_TRACE_EVENT ("%s\n", __func__);
@@ -2227,13 +2282,15 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
         btm_ble_pseudo_bringup_conn(handle, role, hash_peer, hash_peer_type,
                                     air_peer, air_peer_type, conn_interval, conn_latency,
                                     conn_timeout, match, air_peer, air_peer_type,
+                                    pawr_adv_handle, pawr_sync_handle,
                                     "rpa", conn_bda);
     }
 #else
     btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);
 
-    l2cble_conn_comp (handle, role, bda, bda_type, conn_interval,
-                      conn_latency, conn_timeout);
+    l2cble_conn_comp(handle, role, bda, bda_type, conn_interval,
+                     conn_latency, conn_timeout,
+                     pawr_adv_handle, pawr_sync_handle);
 #endif
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
@@ -2241,6 +2298,9 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
     btm_ble_adjust_conn_addr_for_ext_adv(handle);
 #endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
 
+    s_conn_enhanced = FALSE;
+    s_conn_pawr_adv_handle = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+    s_conn_pawr_sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
     return;
 }
 #endif
@@ -2706,7 +2766,7 @@ BOOLEAN btm_ble_pseudo_apply_identity(UINT16 handle, const BD_ADDR identity,
 **  Description     LE connection complete.
 **
 ******************************************************************************/
-void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
+void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced, BOOLEAN enhanced_v2)
 {
 #if (BLE_PRIVACY_SPT == TRUE )
     UINT8       *p_data = p, peer_addr_type;
@@ -2723,7 +2783,15 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     BOOLEAN     pseudo_peer_valid = FALSE;
     BD_ADDR     conn_index_bda;         /* address actually used to index ACL/dev_rec (pseudo or real) */
 #endif
-    UNUSED(evt_len);
+    UINT8       pawr_adv_handle = L2C_BLE_PAWR_ADV_HANDLE_NONE;
+    UINT16      pawr_sync_handle = L2C_BLE_PAWR_SYNC_HANDLE_NONE;
+
+    if (evt_len < 11) {
+        BTM_TRACE_ERROR("%s: invalid evt_len %u (need >= 11)", __func__, evt_len);
+        btm_ble_set_conn_st(BLE_CONN_IDLE);
+        return;
+    }
+
     STREAM_TO_UINT8   (status, p);
     STREAM_TO_UINT16   (handle, p);
     STREAM_TO_UINT8    (role, p);
@@ -2732,6 +2800,10 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     BTM_TRACE_DEBUG("status=%d handle=%d role=%d bda_type=%d bda="MACSTR"",
         status, handle, role, bda_type, MAC2STR(bda));
     if (status == 0) {
+        if (!btm_ble_conn_comp_evt_len_valid(evt_len, enhanced, enhanced_v2)) {
+            btm_ble_set_conn_st(BLE_CONN_IDLE);
+            return;
+        }
         if (enhanced) {
             STREAM_TO_BDADDR   (local_rpa, p);
             STREAM_TO_BDADDR   (peer_rpa, p);
@@ -2782,16 +2854,21 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
         if (!match && bda_type != BLE_ADDR_PUBLIC && BTM_BLE_IS_RESOLVE_BDA(bda)) {
 #endif
             // save the enhanced value to used in btm_ble_resolve_random_addr_on_conn_cmpl func.
-            temp_enhanced = enhanced;
+            STREAM_TO_UINT16   (conn_interval, p);
+            STREAM_TO_UINT16   (conn_latency, p);
+            STREAM_TO_UINT16   (conn_timeout, p);
+            btm_ble_parse_pawr_conn_handles(&p, enhanced, enhanced_v2,
+                                            &s_conn_pawr_adv_handle, &s_conn_pawr_sync_handle);
+            s_conn_enhanced = enhanced;
             btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_on_conn_cmpl, p_data);
-            // set back the temp enhanced to default after used.
-            temp_enhanced = FALSE;
         } else
 #endif
         {
             STREAM_TO_UINT16   (conn_interval, p);
             STREAM_TO_UINT16   (conn_latency, p);
             STREAM_TO_UINT16   (conn_timeout, p);
+            btm_ble_parse_pawr_conn_handles(&p, enhanced, enhanced_v2,
+                                            &pawr_adv_handle, &pawr_sync_handle);
             handle = HCID_GET_HANDLE (handle);
 
 #if (BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
@@ -2825,12 +2902,14 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
                                             pseudo_peer_valid ? pseudo_peer_type : bda_type,
                                             conn_interval, conn_latency,
                                             conn_timeout, match, NULL, 0,
+                                            pawr_adv_handle, pawr_sync_handle,
                                             "sync", conn_index_bda);
             }
 #else
             btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);
-            l2cble_conn_comp (handle, role, bda, bda_type, conn_interval,
-                              conn_latency, conn_timeout);
+            l2cble_conn_comp(handle, role, bda, bda_type, conn_interval,
+                             conn_latency, conn_timeout,
+                             pawr_adv_handle, pawr_sync_handle);
 #endif
 
 #if (BLE_PRIVACY_SPT == TRUE)
@@ -2925,15 +3004,10 @@ void btm_ble_create_conn_cancel_complete (UINT8 *p)
 
     STREAM_TO_UINT8 (status, p);
 
-    switch (status) {
-    case HCI_SUCCESS:
-        if (btm_ble_get_conn_st() == BLE_CONN_CANCEL) {
-            btm_ble_set_conn_st (BLE_CONN_IDLE);
-        }
-        break;
-    default:
-        break;
+    if (btm_ble_get_conn_st() == BLE_CONN_CANCEL) {
+        btm_ble_set_conn_st (BLE_CONN_IDLE);
     }
+    UNUSED(status);
 }
 
 /*****************************************************************************
