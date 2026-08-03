@@ -77,7 +77,13 @@ In the above list, the ``cmake`` command configures the project and generates bu
 
 It's not necessary to run ``cmake`` more than once. After the first build, you only need to run ``ninja`` each time. ``ninja`` will automatically re-invoke ``cmake`` if the project needs reconfiguration.
 
-When using ``idf.py`` with the Ninja generator, you can cap the number of parallel build jobs by setting the ``IDF_PY_BUILD_JOBS`` environment variable. For example:
+You can control the number of parallel build jobs passed to the underlying build tool (Ninja or Make) with the ``-j``/``--jobs`` option of ``idf.py``. For example:
+
+.. code-block:: bash
+
+    idf.py -j 6 build
+
+The same value can be set with the ``IDF_PY_BUILD_JOBS`` environment variable, which is used as the default when ``-j``/``--jobs`` is not given:
 
 .. code-block:: bash
 

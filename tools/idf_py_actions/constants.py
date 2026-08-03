@@ -29,7 +29,9 @@ GENERATORS: dict[str, str | dict | list] = collections.OrderedDict(
 if os.name != 'nt':
     MAKE_CMD = 'gmake' if platform.system() == 'FreeBSD' else 'make'
     GENERATORS['Unix Makefiles'] = {
-        'command': [MAKE_CMD, '-j', str(multiprocessing.cpu_count() + 2)],
+        # Make, unlike Ninja, does not parallelize by default; run_target() applies this as -j.
+        'default_jobs': multiprocessing.cpu_count() + 2,
+        'command': [MAKE_CMD],
         'version': [MAKE_CMD, '--version'],
         'dry_run': [MAKE_CMD, '-n'],
         'verbose_flag': 'VERBOSE=1',

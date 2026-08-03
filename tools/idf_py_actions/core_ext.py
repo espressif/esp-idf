@@ -537,6 +537,13 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
                 'type': click.Choice(GENERATORS.keys()),
             },
             {
+                'names': ['-j', '--jobs'],
+                'help': 'Number of parallel build jobs passed to the build tool (Ninja or Make).',
+                'envvar': 'IDF_PY_BUILD_JOBS',
+                'type': click.IntRange(min=1),
+                'default': None,
+            },
+            {
                 'names': ['--dry-run'],
                 'help': "Only process arguments, but don't execute actions.",
                 'is_flag': True,
