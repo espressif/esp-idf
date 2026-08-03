@@ -71,6 +71,9 @@ static esp_err_t btbb_sleep_retention_enable(void)
         .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
     };
         init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+        init_param.depends.bitmap[SLEEP_RETENTION_MODULE_PHY_FE >> 5] |= BIT(SLEEP_RETENTION_MODULE_PHY_FE % 32);
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
 #if SOC_PM_MODEM_LOCK_CLK_WORKAROUND && CONFIG_BT_CTRL_SLEEP_ENABLE
         init_param.depends.bitmap[SLEEP_RETENTION_MODULE_POWER >> 5] |= BIT(SLEEP_RETENTION_MODULE_POWER % 32);
 #endif
@@ -98,9 +101,20 @@ void esp_btbb_enable(void)
     if (s_btbb_access_ref == 0) {
         bt_bb_v2_init_cmplx(BTBB_ENABLE_VERSION_PRINT);
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
-        esp_err_t err = btbb_sleep_retention_enable();
+        esp_err_t err = ESP_OK;
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+        err = esp_phy_fe_sleep_data_init();
+        if (err != ESP_OK) {
+            _lock_release(&s_btbb_access_lock);
+            return;
+        }
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
+        err = btbb_sleep_retention_enable();
         if (err != ESP_OK) {
             btbb_sleep_retention_disable();
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+            esp_phy_fe_sleep_data_deinit();
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
             _lock_release(&s_btbb_access_lock);
             return;
         }
@@ -116,6 +130,9 @@ void esp_btbb_disable(void)
     if (s_btbb_access_ref && (--s_btbb_access_ref == 0)) {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
         btbb_sleep_retention_disable();
+#if CONFIG_ESP_PHY_HW_SWITCH_RF
+        esp_phy_fe_sleep_data_deinit();
+#endif // CONFIG_ESP_PHY_HW_SWITCH_RF
 #endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     }
     _lock_release(&s_btbb_access_lock);

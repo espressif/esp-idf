@@ -276,12 +276,15 @@ const esp_phy_init_data_t phy_init_data= { {
 } };
 
 const char __attribute__((section(".rodata"))) phy_init_magic_post[] = PHY_INIT_MAGIC;
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
+#include "esp_private/sleep_retention.h"
+uint8_t s_phy_fe_retention_ref = 0;
+static _lock_t s_phy_fe_retention_lock;
+static const char* TAG = "phy_sleep";
+
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
 
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
-
-#include "esp_private/sleep_retention.h"
-
-static const char* TAG = "phy_sleep";
 
 static esp_err_t sleep_retention_wifi_bb_init(void *arg)
 {
@@ -353,18 +356,19 @@ void esp_phy_sleep_data_deinit(void)
         ESP_LOGW(TAG, "WiFi BB sleep retention deinit failed");
     }
 }
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
 
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
 static esp_err_t sleep_retention_phy_fe_init(void *arg)
 {
-    #define N_REGS_FE_COEX()       (21)
-    #define N_REGS_FE_DATA()       (35)
-    #define N_REGS_FE_CTRL()       (56)
-    #define N_REGS_FE_DATA_WIFI()  (22)
+    #define N_REGS_FE_COEX()           (21)
+    #define N_REGS_FE_DATA()           (35)
+    #define N_REGS_FE_CTRL()           (56)
+    #define N_REGS_FE_DATA_WIFI()      (22)
     #define REG_FECOEX_BASE             0x600a0000
     #define REG_FEDATA_BASE             0x600a0400
     #define REG_FECTRL_BASE             0x600a0800
     #define REG_FEDATAWIFI_BASE         0x600a0c00
-
     const static sleep_retention_entries_config_t phy_fe_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(0), REG_FECOEX_BASE, REG_FECOEX_BASE, N_REGS_FE_COEX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_FE_LINK(1), REG_FEDATA_BASE, REG_FEDATA_BASE, N_REGS_FE_DATA(),     0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
@@ -377,25 +381,40 @@ static esp_err_t sleep_retention_phy_fe_init(void *arg)
     return ESP_OK;
 }
 
-void esp_phy_fe_sleep_data_init(void)
+esp_err_t esp_phy_fe_sleep_data_init(void)
 {
-    sleep_retention_module_init_param_t init_param = {
-        .cbs     = { .create = { .handle = sleep_retention_phy_fe_init, .arg = NULL } },
-        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
-    };
-    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_PHY_FE, &init_param);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "PHY FE sleep retention init failed");
-        return;
+    _lock_acquire(&s_phy_fe_retention_lock);
+    if (s_phy_fe_retention_ref++ == 0) {
+        sleep_retention_module_init_param_t init_param = {
+            .cbs     = { .create = { .handle = sleep_retention_phy_fe_init, .arg = NULL } },
+            .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE | SLEEP_RETENTION_MODULE_ATTR_ATTACH
+        };
+        esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_PHY_FE, &init_param);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "PHY FE sleep retention init failed");
+            s_phy_fe_retention_ref --;
+            _lock_release(&s_phy_fe_retention_lock);
+            return err;
+        }
     }
+    _lock_release(&s_phy_fe_retention_lock);
+    return ESP_OK;
 }
 
 void esp_phy_fe_sleep_data_deinit(void)
 {
-    esp_err_t err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_PHY_FE);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "PHY FE sleep retention deinit failed");
+    _lock_acquire(&s_phy_fe_retention_lock);
+    if (s_phy_fe_retention_ref == 0) {
+        _lock_release(&s_phy_fe_retention_lock);
         return;
     }
+
+    if (--s_phy_fe_retention_ref == 0) {
+        esp_err_t err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_PHY_FE);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "PHY FE sleep retention deinit failed");
+        }
+    }
+    _lock_release(&s_phy_fe_retention_lock);
 }
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && (CONFIG_MAC_BB_PD || CONFIG_ESP_PHY_HW_SWITCH_RF)
