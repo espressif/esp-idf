@@ -263,6 +263,8 @@ struct bt_mesh_adv_inst *bt_mesh_get_adv_insts_set(void);
 
 bool bt_mesh_is_adv_inst_used(uint8_t inst_id);
 
+enum bt_mesh_adv_inst_type bt_mesh_get_adv_inst_idx_by_inst_id(uint8_t inst_id);
+
 int bt_mesh_adv_inst_init(enum bt_mesh_adv_inst_type inst_type, uint8_t inst_id);
 
 int bt_mesh_adv_inst_deinit(enum bt_mesh_adv_inst_type inst_type);

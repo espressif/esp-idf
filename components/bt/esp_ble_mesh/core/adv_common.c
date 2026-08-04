@@ -146,6 +146,16 @@ static struct bt_mesh_adv_inst adv_insts[] = {
 #endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
 };
 
+enum bt_mesh_adv_inst_type bt_mesh_get_adv_inst_idx_by_inst_id(uint8_t inst_id)
+{
+    for (int i = 0; i < ARRAY_SIZE(adv_insts); i++) {
+        if (adv_insts[i].id == inst_id) {
+            return i;
+        }
+    }
+    return BLE_MESH_ADV_INST_TYPES_NUM;
+}
+
 static struct bt_mesh_adv_inst *find_adv_inst_with_inst_id(uint8_t id)
 {
     BT_DBG("FindAdvInstWithID, InstID %u", id);
