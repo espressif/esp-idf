@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
+import shutil
 import sys
+import tempfile
 import unittest
 
 try:
@@ -22,6 +24,7 @@ verified_der_bundle = 'baltimore_crt_bundle'
 verified_pem_bundle = 'entrust_crt_bundle'
 invalid_test_file   = 'invalid_crt.pem'
 non_ascii_file      = 'non_ascii_crt.pem'
+unsupported_file    = 'unsupported_ext_crt.crt'
 ca_crts_all_file    = 'cacrt_all.pem'
 
 
@@ -72,6 +75,37 @@ class GenCrtBundleTests(Py23TestCase):
         bundle_prev_len = len(bundle.certificates)
         bundle.add_from_pem('')
         self.assertEqual(len(bundle.certificates), bundle_prev_len)
+
+    # A file given directly is expected to be a certificate, so an unknown extension is an error
+    def test_unsupported_extension_input(self):
+        bundle = gen_crt_bundle.CertificateBundle()
+
+        with self.assertRaisesRegex(gen_crt_bundle.InputError, 'Unsupported file extension'):
+            bundle.add_from_file(test_crts_path + unsupported_file)
+
+        self.assertEqual(len(bundle.certificates), 0)
+
+    # While scanning a directory, files with an unknown extension are skipped instead
+    def test_unsupported_extension_in_dir(self):
+        bundle = gen_crt_bundle.CertificateBundle()
+
+        self.assertFalse(bundle.add_from_file(test_crts_path + unsupported_file, strict=False))
+        self.assertEqual(len(bundle.certificates), 0)
+
+        # A directory holding both valid and unsupported files adds only the valid ones
+        with tempfile.TemporaryDirectory() as crts_dir:
+            shutil.copy(test_crts_path + unsupported_file, crts_dir)
+            shutil.copy(test_crts_path + pem_test_file, crts_dir)
+
+            bundle.add_from_path(crts_dir)
+            self.assertEqual(len(bundle.certificates), 1)
+
+        # A directory without any supported file is an error
+        with tempfile.TemporaryDirectory() as crts_dir:
+            shutil.copy(test_crts_path + unsupported_file, crts_dir)
+
+            with self.assertRaisesRegex(gen_crt_bundle.InputError, 'No valid x509 certificates found'):
+                bundle.add_from_path(crts_dir)
 
     def test_non_ascii_crt_input(self):
         bundle = gen_crt_bundle.CertificateBundle()

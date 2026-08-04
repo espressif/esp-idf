@@ -30,6 +30,10 @@ Most configuration is done through menuconfig. CMake generates the bundle accord
  * :menuitem:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`: decide which certificates to include from the complete root certificate list.
  * :menuitem:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`: specify the path of any additional certificates to embed in the bundle.
 
+.. note::
+
+    Only PEM encoded certificates with a ``.pem`` extension and DER encoded certificates with a ``.der`` extension are parsed. The extension must match the encoding of the file, for example a PEM encoded certificate saved as ``.crt`` is not accepted. If :ref:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH` points directly at a file with any other extension, the build fails; if such a file is found inside a certificate directory, it is skipped and a warning is printed.
+
 To enable the bundle when using ESP-TLS simply pass the function pointer to the bundle attach function:
 
 .. code-block:: c

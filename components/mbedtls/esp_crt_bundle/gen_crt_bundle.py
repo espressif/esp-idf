@@ -46,6 +46,10 @@ except ImportError:
 
 ca_bundle_bin_file = 'x509_crt_bundle'
 
+# Only files with these extensions are parsed, the extension has to match the encoding of the file
+PEM_FILE_EXTENSION = '.pem'
+DER_FILE_EXTENSION = '.der'
+
 quiet = False
 
 
@@ -70,26 +74,43 @@ class CertificateBundle:
     def add_from_path(self, crts_path):
         found = False
         for file_path in os.listdir(crts_path):
-            found |= self.add_from_file(os.path.join(crts_path, file_path))
+            found |= self.add_from_file(os.path.join(crts_path, file_path), strict=False)
 
         if found is False:
             raise InputError('No valid x509 certificates found in %s' % crts_path)
 
-    def add_from_file(self, file_path):
+    def add_from_file(self, file_path, strict=True):
+        """Parse a certificate file
+
+        Only files with a .pem or .der extension are parsed. If strict is True (the file was
+        given directly on the command line), any other extension is an error, otherwise
+        (while scanning a directory) the file is skipped with a warning.
+        """
         try:
-            if file_path.endswith('.pem'):
+            if file_path.endswith(PEM_FILE_EXTENSION):
                 status('Parsing certificates from %s' % file_path)
                 with open(file_path, 'r', encoding='utf-8') as f:
                     crt_str = f.read()
                     self.add_from_pem(crt_str)
                     return True
 
-            elif file_path.endswith('.der'):
+            elif file_path.endswith(DER_FILE_EXTENSION):
                 status('Parsing certificates from %s' % file_path)
                 with open(file_path, 'rb') as f:
                     crt_str = f.read()
                     self.add_from_der(crt_str)
                     return True
+
+            elif os.path.isfile(file_path):
+                msg = (
+                    'Unsupported file extension in %s, certificates are only parsed from files with a '
+                    '%s (PEM encoded) or %s (DER encoded) extension. '
+                    'Please rename the file to match its encoding.'
+                    % (file_path, PEM_FILE_EXTENSION, DER_FILE_EXTENSION)
+                )
+                if strict:
+                    raise InputError(msg)
+                critical('Warning: skipping file. %s' % msg)
 
         except ValueError:
             critical('Invalid certificate in %s' % file_path)
