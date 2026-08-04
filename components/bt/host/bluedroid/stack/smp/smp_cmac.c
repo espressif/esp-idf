@@ -458,8 +458,8 @@ BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
     }
 #else
     {
-        UINT16  len, diff;
-        UINT16  n = (length + BT_OCTET16_LEN - 1) / BT_OCTET16_LEN;
+        UINT32  len, diff;
+        UINT32  n = (length + BT_OCTET16_LEN - 1) / BT_OCTET16_LEN;
 
         if (n == 0) {
             n = 1;

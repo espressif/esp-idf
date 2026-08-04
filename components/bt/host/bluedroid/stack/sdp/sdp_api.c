@@ -873,6 +873,9 @@ BOOLEAN SDP_FindProfileVersionInRec (tSDP_DISC_REC *p_rec, UINT16 profile_uuid, 
                         /* Now fill in the major and minor numbers */
                         /* if the attribute matches the description for version (type UINT, size 2 bytes) */
                         p_sattr = p_sattr->p_next_attr;
+                        if (p_sattr == NULL) {
+                            return (FALSE);
+                        }
 
                         if ((SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) == UINT_DESC_TYPE) &&
                                 (SDP_DISC_ATTR_LEN(p_sattr->attr_len_type) == 2)) {

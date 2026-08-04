@@ -1481,7 +1481,9 @@ void smp_key_distribution(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     SMP_TRACE_DEBUG("%s BREDR key is higher security than existing LE keys, "
                                     "don't derive LK from LTK", __func__);
                 } else {
-                    smp_derive_link_key_from_long_term_key(p_cb, NULL);
+                    if (!smp_derive_link_key_from_long_term_key(p_cb, NULL)){
+                        return;
+                    }
                 }
                 p_cb->derive_lk = FALSE;
             }
@@ -2281,10 +2283,10 @@ void smp_set_derive_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 **
 ** Description      This function is called to derive BR/EDR LK from LTK.
 **
-** Returns          void
+** Returns          BOOLEAN
 **
 *******************************************************************************/
-void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
+BOOLEAN smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
@@ -2292,8 +2294,9 @@ void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
     if (!smp_calculate_link_key_from_long_term_key(p_cb)) {
         SMP_TRACE_ERROR("%s failed\n", __FUNCTION__);
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
-        return;
+        return FALSE;
     }
+    return TRUE;
 }
 #endif  ///BLE_INCLUDED == TRUE
 

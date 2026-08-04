@@ -1564,7 +1564,7 @@ int PORT_WriteDataCO (UINT16 handle, int *p_len, int len, UINT8 *p_data)
         }
 
         p_buf->offset         = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
-        p_buf->layer_specific = handle;
+        p_buf->layer_specific = length;
 
         p_buf->len = length;
         p_buf->event          = BT_EVT_TO_BTU_SP_DATA;
@@ -1648,17 +1648,14 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
         return (PORT_UNKNOWN_ERROR);
     }
 
-    /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
-    length = RFCOMM_DATA_BUF_SIZE -
-             (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
     /* If there are buffers scheduled for transmission check if requested */
     /* data fits into the end of the queue */
     osi_mutex_global_lock();
-
-    if (((p_buf = (BT_HDR *)fixed_queue_try_peek_last(p_port->tx.queue)) != NULL)
+    p_buf = (BT_HDR *)fixed_queue_try_peek_last(p_port->tx.queue);
+    if ((p_buf != NULL)
             && ((p_buf->len + max_len) <= p_port->peer_mtu)
-            && ((p_buf->len + max_len) <= length)) {
+            && ((p_buf->len + max_len) <= p_buf->layer_specific)) {
         memcpy ((UINT8 *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data, max_len);
         p_port->tx.queue_size += max_len;
 
@@ -1686,8 +1683,9 @@ int PORT_WriteData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
         }
 
         p_buf->offset         = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
-        p_buf->layer_specific = handle;
-
+        p_buf->layer_specific = RFCOMM_DATA_BUF_SIZE - (UINT16)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD + L2CAP_FCS_LEN);
+        /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len */
+        length = p_buf->layer_specific;
         if (p_port->peer_mtu < length) {
             length = p_port->peer_mtu;
         }
@@ -1762,7 +1760,8 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
         return (PORT_NOT_OPENED);
     }
 
-    if (len > ((p_port->mtu == 0) ? RFCOMM_DEFAULT_MTU : p_port->mtu)) {
+    if ((len > ((p_port->mtu == 0) ? RFCOMM_DEFAULT_MTU : p_port->mtu))
+        || (len > RFCOMM_CMD_BUF_SIZE - sizeof(BT_HDR) - (L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET + 2))) {
         return (PORT_UNKNOWN_ERROR);
     }
 
