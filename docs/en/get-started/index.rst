@@ -98,6 +98,9 @@ Introduction
 
     Powered by 40 nm technology, {IDF_TARGET_NAME} offers excellent power efficiency, security, and reliability, making it suitable for a wide range of application scenarios and power consumption requirements.
 
+    .. important::
+
+        {IDF_TARGET_NAME} does not include built-in Wi-Fi or Bluetooth. To use Wi-Fi or Bluetooth, connect an external wireless SoC such as ESP32-C5 or ESP32-C6. For details, see :doc:`../api-guides/wifi-expansion`.
 
 .. only:: not esp32p4
 
