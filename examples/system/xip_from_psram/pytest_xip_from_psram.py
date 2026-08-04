@@ -69,6 +69,26 @@ def test_xip_from_psram_example_p4_200m(dut: Dut) -> None:
     response_time = res.group(1).decode('utf8')
     assert float(response_time) <= 10
 
+@pytest.mark.flash_120m
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32p4_250m',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_xip_from_psram_example_p4_250m(dut: Dut) -> None:
+    dut.expect_exact('found partition')
+
+    res = dut.expect(r'callback\(in PSRAM\) response time: (\d{1,3}) us')
+    response_time = res.group(1).decode('utf8')
+    assert float(response_time) <= 10
+
+    res = dut.expect(r'callback\(in IRAM\) response time: (\d{1,3}) us')
+    response_time = res.group(1).decode('utf8')
+    assert float(response_time) <= 10
+
 
 @pytest.mark.generic
 @pytest.mark.parametrize(

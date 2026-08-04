@@ -86,6 +86,16 @@ def test_psram_esp32s3_octal(dut: Dut) -> None:
 def test_psram_esp32p4(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
+@pytest.mark.flash_120m
+@pytest.mark.parametrize(
+    'config',
+    ['esp32p4_250m_release', 'esp32p4_250m_xip'],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_psram_esp32p4_250m(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
 
 @pytest.mark.generic
 @pytest.mark.parametrize(
