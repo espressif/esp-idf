@@ -2277,8 +2277,7 @@ void bta_dm_sdp_result (tBTA_DM_MSG *p_data)
         }
 
         /* not able to connect go to next device */
-        osi_free(bta_dm_search_cb.p_sdp_db);
-        bta_dm_search_cb.p_sdp_db = NULL;
+        bta_dm_free_sdp_db(NULL);
 
         BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
 
@@ -2426,6 +2425,7 @@ void bta_dm_free_sdp_db (tBTA_DM_MSG *p_data)
 {
     UNUSED(p_data);
     if (bta_dm_search_cb.p_sdp_db) {
+        SDP_CancelServiceSearch(bta_dm_search_cb.p_sdp_db);
         osi_free(bta_dm_search_cb.p_sdp_db);
         bta_dm_search_cb.p_sdp_db = NULL;
     }
@@ -2525,6 +2525,7 @@ void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data)
 {
     UNUSED(p_data);
     if (bta_dm_search_cb.p_sdp_db) {
+        SDP_CancelServiceSearch(bta_dm_search_cb.p_sdp_db);
         osi_free(bta_dm_search_cb.p_sdp_db);
         bta_dm_search_cb.p_sdp_db = NULL;
     }
@@ -2642,8 +2643,7 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
                 if (!SDP_ServiceSearchAttributeRequest (bd_addr, bta_dm_search_cb.p_sdp_db, &bta_dm_sdp_callback)) {
                     /* if discovery not successful with this device
                     proceed to next one */
-                    osi_free(bta_dm_search_cb.p_sdp_db);
-                    bta_dm_search_cb.p_sdp_db = NULL;
+                    bta_dm_free_sdp_db(NULL);
                     bta_dm_search_cb.service_index = BTA_MAX_SERVICE_ID;
 
                 } else {
