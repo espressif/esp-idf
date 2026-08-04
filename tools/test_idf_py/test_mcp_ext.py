@@ -53,7 +53,7 @@ def _make_invalid_project(path: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 
-class _MockFastMCP:
+class _MockMCPServer:
     """Captures tool/resource registrations so tests can invoke them."""
 
     def __init__(self, name: str) -> None:
@@ -80,14 +80,14 @@ class _MockFastMCP:
 
 
 @pytest.fixture()
-def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.ModuleType, _MockFastMCP]:
+def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.ModuleType, _MockMCPServer]:
     """
     Import (or reimport) mcp_ext with all external dependencies mocked.
-    Returns the module object plus a _MockFastMCP instance that was used so
+    Returns the module object plus a _MockMCPServer instance that was used so
     that tests can inspect registered tools/resources.
     """
-    # Build a fresh _MockFastMCP for this test
-    mock_mcp_instance = _MockFastMCP('ESP-IDF')
+    # Build a fresh _MockMCPServer for this test
+    mock_mcp_instance = _MockMCPServer('ESP-IDF')
 
     # Stub rich_click
     rich_click = types.ModuleType('rich_click')
@@ -110,11 +110,10 @@ def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.Modu
     idf_py_actions_pkg.errors = errors_mod  # type: ignore[attr-defined]
     idf_py_actions_pkg.tools = tools_mod  # type: ignore[attr-defined]
 
-    # Stub mcp.server.fastmcp — FastMCP constructor returns our mock
+    # Stub mcp.server — MCPServer constructor returns our mock (mcp >= 2.0 path)
     mcp_pkg = types.ModuleType('mcp')
     mcp_server_pkg = types.ModuleType('mcp.server')
-    fastmcp_mod = types.ModuleType('mcp.server.fastmcp')
-    fastmcp_mod.FastMCP = lambda name: mock_mcp_instance  # type: ignore[attr-defined]
+    mcp_server_pkg.MCPServer = lambda name: mock_mcp_instance  # type: ignore[attr-defined]
 
     stubs = {
         'rich_click': rich_click,
@@ -123,7 +122,6 @@ def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.Modu
         'idf_py_actions.tools': tools_mod,
         'mcp': mcp_pkg,
         'mcp.server': mcp_server_pkg,
-        'mcp.server.fastmcp': fastmcp_mod,
     }
     for name, stub_mod in stubs.items():
         monkeypatch.setitem(sys.modules, name, stub_mod)
@@ -146,8 +144,8 @@ def mcp_ext(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[types.Modu
 
 
 def _start_server(
-    mcp_ext_module: tuple[types.ModuleType, _MockFastMCP],
-    mock_mcp_instance: _MockFastMCP,
+    mcp_ext_module: tuple[types.ModuleType, _MockMCPServer],
+    mock_mcp_instance: _MockMCPServer,
     project_path: str,
 ) -> tuple[dict[str, Callable[..., Any]], dict[str, Callable[..., Any]]]:
     """
@@ -169,28 +167,32 @@ def _start_server(
 
 
 class TestIsValidProjectDir:
-    def test_valid_project(self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]) -> None:
+    def test_valid_project(self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer]) -> None:
         mod, _ = mcp_ext
         proj = _make_valid_project(tmp_path / 'my_proj')
         assert mod._is_valid_project_dir(str(proj)) is True
 
-    def test_missing_directory(self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]) -> None:
+    def test_missing_directory(self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer]) -> None:
         mod, _ = mcp_ext
         assert mod._is_valid_project_dir(str(tmp_path / 'nonexistent')) is False
 
-    def test_directory_without_cmakelists(self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]) -> None:
+    def test_directory_without_cmakelists(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer]
+    ) -> None:
         mod, _ = mcp_ext
         d = tmp_path / 'no_cmake'
         d.mkdir()
         assert mod._is_valid_project_dir(str(d)) is False
 
-    def test_cmakelists_without_idf_line(self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]) -> None:
+    def test_cmakelists_without_idf_line(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer]
+    ) -> None:
         mod, _ = mcp_ext
         proj = _make_invalid_project(tmp_path / 'plain')
         assert mod._is_valid_project_dir(str(proj)) is False
 
     def test_cmakelists_with_spaces_in_include(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer]
     ) -> None:
         mod, _ = mcp_ext
         path = tmp_path / 'spaced'
@@ -204,7 +206,7 @@ class TestIsValidProjectDir:
         assert mod._is_valid_project_dir(str(path)) is True
 
     def test_commented_out_include_is_rejected(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP]
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer]
     ) -> None:
         mod, _ = mcp_ext
         path = tmp_path / 'commented'
@@ -217,7 +219,7 @@ class TestIsValidProjectDir:
         )
         assert mod._is_valid_project_dir(str(path)) is False
 
-    def test_empty_string(self, mcp_ext: tuple[types.ModuleType, _MockFastMCP]) -> None:
+    def test_empty_string(self, mcp_ext: tuple[types.ModuleType, _MockMCPServer]) -> None:
         mod, _ = mcp_ext
         assert mod._is_valid_project_dir('') is False
 
@@ -229,7 +231,7 @@ class TestIsValidProjectDir:
 
 class TestResolveDefaultProjectDir:
     def test_env_var_takes_priority_over_default(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, _ = mcp_ext
         env_proj = _make_valid_project(tmp_path / 'env_proj')
@@ -239,7 +241,7 @@ class TestResolveDefaultProjectDir:
         assert result == str(env_proj)
 
     def test_default_used_when_env_not_set(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, _ = mcp_ext
         default = _make_valid_project(tmp_path / 'default')
@@ -248,7 +250,7 @@ class TestResolveDefaultProjectDir:
         assert result == str(default)
 
     def test_returns_none_when_nothing_valid(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, _ = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -264,7 +266,7 @@ class TestResolveDefaultProjectDir:
 
 class TestBuildProject:
     def test_returns_error_when_no_valid_dir(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -274,7 +276,7 @@ class TestBuildProject:
         assert 'No valid ESP-IDF project directory found' in result
 
     def test_explicit_invalid_dir_returns_error_not_fallback(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         bad = _make_invalid_project(tmp_path / 'bad')
@@ -289,7 +291,7 @@ class TestBuildProject:
         assert 'not a valid' in result
 
     def test_explicit_dir_builds_in_correct_location(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
@@ -312,7 +314,7 @@ class TestBuildProject:
         assert call_args[1].get('cwd') is None
 
     def test_build_failure_returns_error(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
@@ -330,7 +332,7 @@ class TestBuildProject:
 
 class TestSetTarget:
     def test_returns_error_when_no_valid_dir(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -340,7 +342,7 @@ class TestSetTarget:
         assert 'No valid ESP-IDF project directory found' in result
 
     def test_explicit_dir_sets_target(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
@@ -362,7 +364,7 @@ class TestSetTarget:
 
 class TestFlashProject:
     def test_returns_error_when_no_valid_dir(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -372,7 +374,7 @@ class TestFlashProject:
         assert 'No valid ESP-IDF project directory found' in result
 
     def test_port_and_dir_forwarded(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
@@ -395,7 +397,7 @@ class TestFlashProject:
 
 class TestCreateProject:
     def test_creates_project_with_explicit_path(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         monkeypatch.setenv('IDF_PATH', str(tmp_path))
@@ -415,7 +417,7 @@ class TestCreateProject:
         assert cmd[cmd.index('-C') + 1] == str(tmp_path)
 
     def test_uses_project_path_when_no_path_given(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         monkeypatch.setenv('IDF_PATH', str(tmp_path))
@@ -429,7 +431,7 @@ class TestCreateProject:
         assert cmd[cmd.index('-C') + 1] == str(tmp_path)
 
     def test_returns_error_when_parent_dir_missing(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         tools, _ = _start_server(mcp_ext, mock_mcp, str(tmp_path))
@@ -438,7 +440,7 @@ class TestCreateProject:
         assert 'does not exist' in result
 
     def test_returns_error_on_idf_failure(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         monkeypatch.setenv('IDF_PATH', str(tmp_path))
@@ -454,7 +456,7 @@ class TestCreateProject:
 
 class TestCleanProject:
     def test_returns_error_when_no_valid_dir(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -464,7 +466,7 @@ class TestCleanProject:
         assert 'No valid ESP-IDF project directory found' in result
 
     def test_explicit_dir_cleans(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
@@ -490,7 +492,7 @@ class TestCleanProject:
 
 class TestServerStartsOutsideProject:
     def test_no_fatal_error_when_project_path_invalid(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """start_mcp_server must not raise when project_path is not a valid project."""
         mod, mock_mcp = mcp_ext
@@ -504,11 +506,11 @@ class TestServerStartsOutsideProject:
         # Should not raise
         callback('mcp-server', ctx=None, args=fake_args)
 
-        # FastMCP was still initialised
+        # MCPServer was still initialised
         assert mock_mcp.name == 'ESP-IDF'
 
     def test_tools_registered_even_when_project_path_invalid(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'not_a_project')
@@ -528,7 +530,7 @@ class TestServerStartsOutsideProject:
 
 class TestGetProjectStatus:
     def test_returns_error_json_when_no_valid_dir(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -540,7 +542,7 @@ class TestGetProjectStatus:
         assert 'idf_version' in result
 
     def test_returns_status_when_valid_project(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
@@ -553,7 +555,7 @@ class TestGetProjectStatus:
         assert 'error' not in result
 
     def test_uses_env_var_when_project_path_invalid(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -568,7 +570,7 @@ class TestGetProjectStatus:
 
 class TestGetProjectConfig:
     def test_returns_error_json_when_no_valid_dir(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         invalid = _make_invalid_project(tmp_path / 'bad')
@@ -579,7 +581,7 @@ class TestGetProjectConfig:
         assert 'error' in result
 
     def test_returns_no_build_dir_when_build_missing(
-        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockFastMCP], monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         mod, mock_mcp = mcp_ext
         proj = _make_valid_project(tmp_path / 'proj')
