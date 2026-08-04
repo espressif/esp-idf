@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,12 +25,34 @@ extern "C" {
  * @param host  pointer to structure defining host controller
  * @param out_card  pointer to structure which will receive information
  *                  about the card when the function completes
+ * @note Call sdmmc_card_deinit before reinitializing the same card structure.
  * @return
  *      - ESP_OK on success
  *      - One of the error codes from SDMMC host controller
  */
 esp_err_t sdmmc_card_init(const sdmmc_host_t* host,
         sdmmc_card_t* out_card);
+
+/**
+ * Release resources allocated by sdmmc_card_init
+ *
+ * Currently the only persistent heap allocation made by sdmmc_card_init is
+ * host.dma_aligned_buffer, and only when SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF
+ * is set. Host DMA, descriptors, and per-transfer bounce buffers are owned
+ * by the host driver or the I/O path, not by this function.
+ *
+ * This function does not deinitialize the host or free the card structure.
+ * It is safe to call more than once on the same card.
+ * Do not also free dma_aligned_buffer if the flag was set; if the application
+ * provided that buffer without the flag, it remains caller-owned.
+ *
+ * @param card  pointer to card information structure initialized using
+ *              sdmmc_card_init
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if card is NULL
+ */
+esp_err_t sdmmc_card_deinit(sdmmc_card_t* card);
 
 /**
  * @brief Print information about the card to a stream

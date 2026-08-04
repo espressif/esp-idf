@@ -53,8 +53,10 @@ SD/SDIO/MMC 驱动支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个�
     :SOC_GPSPI_SUPPORTED: - 初始化 SDSPI 主机，请调用主机驱动函数，例如 :cpp:func:`sdspi_host_init` 和 :cpp:func:`sdspi_host_init_slot`。
     - 初始化卡，请调用 :cpp:func:`sdmmc_card_init`，并将参数 ``host`` （主机驱动信息）和参数 ``card`` （指向 :cpp:class:`sdmmc_card_t` 结构体的指针）传递给此函数。函数运行结束后，将会向 :cpp:class:`sdmmc_card_t` 结构体填充该卡的信息。
     - 读取或写入卡的扇区，请分别调用 :cpp:func:`sdmmc_read_sectors` 和 :cpp:func:`sdmmc_write_sectors`，并将参数 ``card`` （指向卡信息结构的指针）传递给函数。
+    - 如果不再使用该卡，请调用 :cpp:func:`sdmmc_card_deinit`，释放 :cpp:func:`sdmmc_card_init` 分配的资源。
+    - 然后调用主机驱动函数以禁用主机外设并释放主机驱动分配的资源（SDMMC 使用 ``sdmmc_host_deinit``，SDSPI 使用 ``sdspi_host_deinit``）。如果应用程序分配了 :cpp:class:`sdmmc_card_t` 结构体，请在反初始化卡和主机后释放该结构体。
 
-    - 如果不再使用该卡，请调用主机驱动函数，例如 ``sdmmc_host_deinit`` 或 ``sdspi_host_deinit``，以禁用SDMMC 主机外设或 SDSPI 主机外设，并释放驱动程序分配的资源。
+仅当设置了 :c:macro:`SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` 时，:cpp:func:`sdmmc_card_deinit` 才会释放 :cpp:member:`sdmmc_host_t::dma_aligned_buffer`。如果应用程序提供了预分配的 buffer 但未设置此标志，则应用程序保留 buffer 所有权，并必须在调用 :cpp:func:`sdmmc_card_deinit` 后将其释放。
 
 未对齐 buffer 性能
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

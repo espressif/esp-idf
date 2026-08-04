@@ -36,6 +36,7 @@ void sdmmc_test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
     usleep(1000);
     TEST_ESP_OK(sdmmc_card_init(config, card));
 
+    TEST_ESP_OK(sdmmc_card_deinit(card));
     free(card);
 }
 
@@ -72,5 +73,6 @@ void sdmmc_test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
     TEST_ESP_OK(sdmmc_read_sectors(card, &data, 0, 1));
 
     free(data);
+    TEST_ESP_OK(sdmmc_card_deinit(card));
     free(card);
 }
