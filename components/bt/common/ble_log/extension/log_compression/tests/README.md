@@ -19,6 +19,7 @@ tests/
 ├── test_macro_generation.py        # Bluedroid and Mesh module macro generators
 ├── test_pipeline_e2e.py            # End-to-end .c -> .h with golden file comparison
 ├── test_incremental.py             # Incremental compression scenarios
+├── test_header_mirroring.py        # Local .h/.inc mirror, manifest safety, pipeline isolation
 ├── update_golden.py                # Script to regenerate golden expected files
 └── fixtures/
     ├── c_sources/                  # Test input C files
@@ -144,6 +145,14 @@ Tests caching, re-runs, and config change behavior.
 | `TestRerunModifiedFile` | Modified file reprocessed, existing IDs stable |
 | `TestAddNewFile` | New file IDs continue from `max_id + 1` |
 | `TestConfigChange` | Config change triggers `SOURCE_LOG_UPDATE_FULL` |
+
+### test_header_mirroring.py — Local Header Mirroring
+
+Validates that enabled compression-module `.h` and `.inc` files are copied
+unchanged into `.compressed_srcs` with paths relative to `CODE_BASE_PATH`.
+Coverage includes overlapping module roots, modified and deleted headers,
+manifest validation, path-escape rejection, production pipeline wiring, and
+removal of the NimBLE global include-directory workaround.
 
 ## Golden File Workflow
 
