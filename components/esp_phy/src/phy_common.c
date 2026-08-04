@@ -366,7 +366,7 @@ esp_err_t esp_phy_get_ant(esp_phy_ant_config_t *config)
     return ESP_OK;
 }
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
 typedef enum {
     PHY_I2C_MST_CMD_TYPE_RF_OFF = 0,
     PHY_I2C_MST_CMD_TYPE_RF_ON,
@@ -376,8 +376,13 @@ typedef enum {
 
 static uint32_t phy_ana_i2c_master_burst_config(phy_i2c_master_command_attribute_t *attr, int size, phy_i2c_master_command_type_t type)
 {
+#if !CONFIG_IDF_TARGET_ESP32H4
     #define I2C1_BURST_VAL(en, start, end) (((en) << 31) | ((end) << 22) | ((start) << 16))
     #define I2C0_BURST_VAL(en, start, end) (((en) << 15) | ((end) <<  6) | ((start) <<  0))
+#else
+    #define I2C0_BURST_VAL(valid, start, end) (((valid) << 15) | ((end) << 7) | (start))
+    #define I2C1_BURST_VAL(valid, start, end) (((valid) << 31) | ((end) << 23) | ((start) << 16))
+#endif // !CONFIG_IDF_TARGET_ESP32H4
 
     uint32_t brust = 0;
     for (int i = 0; i < size; i++) {
