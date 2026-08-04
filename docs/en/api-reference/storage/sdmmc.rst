@@ -53,8 +53,10 @@ Using API with SD Memory Cards
     :SOC_GPSPI_SUPPORTED: - To initialize the SDSPI host, call the host driver functions, e.g., :cpp:func:`sdspi_host_init`, :cpp:func:`sdspi_host_init_slot`.
     - To initialize the card, call :cpp:func:`sdmmc_card_init` and pass to it the parameters ``host`` - the host driver information, and ``card`` - a pointer to the structure :cpp:class:`sdmmc_card_t` which will be filled with information about the card when the function completes.
     - To read and write sectors of the card, use :cpp:func:`sdmmc_read_sectors` and :cpp:func:`sdmmc_write_sectors` respectively and pass to it the parameter ``card`` - a pointer to the card information structure.
+    - When the card is no longer used, call :cpp:func:`sdmmc_card_deinit` to release resources allocated by :cpp:func:`sdmmc_card_init`.
+    - Then call the host driver function to disable the host peripheral and free the resources allocated by the host driver (``sdmmc_host_deinit`` for SDMMC or ``sdspi_host_deinit`` for SDSPI). If the application allocated the :cpp:class:`sdmmc_card_t` structure, free it after deinitializing the card and host.
 
-    - If the card is not used anymore, call the host driver function to disable the host peripheral and free the resources allocated by the driver (``sdmmc_host_deinit`` for SDMMC or ``sdspi_host_deinit`` for SDSPI).
+:cpp:func:`sdmmc_card_deinit` frees :cpp:member:`sdmmc_host_t::dma_aligned_buffer` only when :c:macro:`SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` is set. If the application provides a pre-allocated buffer without setting this flag, the application retains ownership of the buffer and must free it after calling :cpp:func:`sdmmc_card_deinit`.
 
 Unaligned Buffer Performance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

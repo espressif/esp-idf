@@ -278,6 +278,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     esp_err_t err;
     sdmmc_card_t* card = NULL;
     bool host_inited = false;
+    bool card_inited = false;
 
     // not using ff_memalloc here, as allocation in internal RAM is preferred
     card = (sdmmc_card_t*) malloc(sizeof(sdmmc_card_t));
@@ -289,6 +290,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 
     err = esp_vfs_fat_sdmmc_sdcard_init(host_config, slot_config, card, &host_inited);
     CHECK_EXECUTE_RESULT(err, "esp_vfs_fat_sdmmc_sdcard_init failed");
+    card_inited = true;
 
     err = esp_vfs_fat_mount_initialized(card, base_path, mount_config);
     CHECK_EXECUTE_RESULT(err, "esp_vfs_fat_mount_initialized failed");
@@ -298,6 +300,9 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
 cleanup:
     if (host_inited) {
         call_host_deinit(host_config);
+    }
+    if (card_inited) {
+        sdmmc_card_deinit(card);
     }
     free(card);
     return err;
@@ -381,6 +386,7 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
     const sdmmc_host_t* host_config = host_config_input;
     esp_err_t err;
     bool host_inited = false;
+    bool card_inited = false;
     sdmmc_card_t* card = NULL;
 
     // not using ff_memalloc here, as allocation in internal RAM is preferred
@@ -393,6 +399,7 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
 
     err = esp_vfs_fat_sdspi_sdcard_init(host_config_input, slot_config, card, &host_inited);
     CHECK_EXECUTE_RESULT(err, "esp_vfs_fat_sdspi_sdcard_init failed");
+    card_inited = true;
 
     err = esp_vfs_fat_mount_initialized(card, base_path, mount_config);
     CHECK_EXECUTE_RESULT(err, "esp_vfs_fat_mount_initialized failed");
@@ -403,6 +410,9 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
 cleanup:
     if (host_inited) {
         call_host_deinit(host_config);
+    }
+    if (card_inited) {
+        sdmmc_card_deinit(card);
     }
     free(card);
     return err;
@@ -472,6 +482,7 @@ static esp_err_t unmount_card_core(const char *base_path, sdmmc_card_t *card)
     ff_diskio_unregister(pdrv);
 
     if (pdrv_num == 1) {
+        sdmmc_card_deinit(card);
         call_host_deinit(&card->host);
         free(card);
     }

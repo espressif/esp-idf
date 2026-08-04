@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -163,6 +163,8 @@ void register_sdmmc_common(void)
 
 static int sdmmc_card_init_handler(int argc, char **argv)
 {
+    static bool card_initialized;
+
     /* In case the card was already initialized: reset the host to the default settings.
      * This could be moved to sdmmc_card_init.
      */
@@ -173,8 +175,13 @@ static int sdmmc_card_init_handler(int argc, char **argv)
     s_host.set_bus_ddr_mode(s_host.slot, false);
     ESP_RETURN_ON_ERROR(err, TAG, "set_bus_ddr_mode: error 0x%x (%s)", err, esp_err_to_name(err));
 
+    if (card_initialized) {
+        ESP_RETURN_ON_ERROR(sdmmc_card_deinit(&s_card), TAG, "sdmmc_card_deinit failed");
+        card_initialized = false;
+    }
     err = sdmmc_card_init(&s_host, &s_card);
     ESP_RETURN_ON_ERROR(err, TAG, "sdmmc_card_init: error 0x%x (%s)", err, esp_err_to_name(err));
+    card_initialized = true;
     return 0;
 }
 
