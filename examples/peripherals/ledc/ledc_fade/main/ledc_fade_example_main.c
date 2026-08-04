@@ -27,39 +27,35 @@
  *
  * 3. You can also set a target duty directly without fading.
  *
- * 4. On ESP32, GPIO18/19/4/5 are used as the LEDC outputs:
- *              GPIO18/19 are from the high speed channel group
- *              GPIO4/5 are from the low speed channel group
- *
- *    On other targets, GPIO8/9/4/5 are used as the LEDC outputs,
- *    and they are all from the low speed channel group.
+ * 4. LEDC channel GPIO numbers can be selected in menuconfig
+ *    (Example Configuration). See README for default pin mapping.
+ *    On ESP32, CH0/1 use the high speed channel group and CH2/3 use
+ *    the low speed channel group. On other targets, all channels use
+ *    the low speed channel group.
  *
  * 5. All the LEDC outputs change the duty repeatedly.
  *
  */
+#define LEDC_CH0_GPIO          CONFIG_LEDC_CH0_GPIO
+#define LEDC_CH1_GPIO          CONFIG_LEDC_CH1_GPIO
+#define LEDC_CH2_GPIO          CONFIG_LEDC_CH2_GPIO
+#define LEDC_CH3_GPIO          CONFIG_LEDC_CH3_GPIO
+
 #if CONFIG_IDF_TARGET_ESP32
 #define LEDC_HS_TIMER          LEDC_TIMER_0
 #define LEDC_HS_MODE           LEDC_HIGH_SPEED_MODE
-#define LEDC_HS_CH0_GPIO       (18)
 #define LEDC_HS_CH0_CHANNEL    LEDC_CHANNEL_0
-#define LEDC_HS_CH1_GPIO       (19)
 #define LEDC_HS_CH1_CHANNEL    LEDC_CHANNEL_1
 #define LEDC_LS_TIMER          LEDC_TIMER_1
 #define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
-#define LEDC_LS_CH2_GPIO       (4)
 #define LEDC_LS_CH2_CHANNEL    LEDC_CHANNEL_2
-#define LEDC_LS_CH3_GPIO       (5)
 #define LEDC_LS_CH3_CHANNEL    LEDC_CHANNEL_3
 #else
 #define LEDC_LS_TIMER          LEDC_TIMER_1
 #define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
-#define LEDC_LS_CH0_GPIO       (8)
 #define LEDC_LS_CH0_CHANNEL    LEDC_CHANNEL_0
-#define LEDC_LS_CH1_GPIO       (9)
 #define LEDC_LS_CH1_CHANNEL    LEDC_CHANNEL_1
-#define LEDC_LS_CH2_GPIO       (2)
 #define LEDC_LS_CH2_CHANNEL    LEDC_CHANNEL_2
-#define LEDC_LS_CH3_GPIO       (3)
 #define LEDC_LS_CH3_CHANNEL    LEDC_CHANNEL_3
 #endif
 
@@ -125,7 +121,7 @@ void app_main(void)
         {
             .channel    = LEDC_HS_CH0_CHANNEL,
             .duty       = 0,
-            .gpio_num   = LEDC_HS_CH0_GPIO,
+            .gpio_num   = LEDC_CH0_GPIO,
             .speed_mode = LEDC_HS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER,
@@ -134,7 +130,7 @@ void app_main(void)
         {
             .channel    = LEDC_HS_CH1_CHANNEL,
             .duty       = 0,
-            .gpio_num   = LEDC_HS_CH1_GPIO,
+            .gpio_num   = LEDC_CH1_GPIO,
             .speed_mode = LEDC_HS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER,
@@ -144,7 +140,7 @@ void app_main(void)
         {
             .channel    = LEDC_LS_CH0_CHANNEL,
             .duty       = 0,
-            .gpio_num   = LEDC_LS_CH0_GPIO,
+            .gpio_num   = LEDC_CH0_GPIO,
             .speed_mode = LEDC_LS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_LS_TIMER,
@@ -153,7 +149,7 @@ void app_main(void)
         {
             .channel    = LEDC_LS_CH1_CHANNEL,
             .duty       = 0,
-            .gpio_num   = LEDC_LS_CH1_GPIO,
+            .gpio_num   = LEDC_CH1_GPIO,
             .speed_mode = LEDC_LS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_LS_TIMER,
@@ -163,7 +159,7 @@ void app_main(void)
         {
             .channel    = LEDC_LS_CH2_CHANNEL,
             .duty       = 0,
-            .gpio_num   = LEDC_LS_CH2_GPIO,
+            .gpio_num   = LEDC_CH2_GPIO,
             .speed_mode = LEDC_LS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_LS_TIMER,
@@ -172,7 +168,7 @@ void app_main(void)
         {
             .channel    = LEDC_LS_CH3_CHANNEL,
             .duty       = 0,
-            .gpio_num   = LEDC_LS_CH3_GPIO,
+            .gpio_num   = LEDC_CH3_GPIO,
             .speed_mode = LEDC_LS_MODE,
             .hpoint     = 0,
             .timer_sel  = LEDC_LS_TIMER,

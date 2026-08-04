@@ -380,10 +380,6 @@ examples/peripherals/lcd/tjpgd:
 examples/peripherals/ledc:
   disable:
     - if: SOC_LEDC_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32h4"]
-      temporary: true
-      reason: cannot pass # TODO: IDF-15610
   depends_components:
     - esp_driver_ledc
     - esp_hal_ledc
