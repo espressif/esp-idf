@@ -1255,7 +1255,11 @@ void Page::debugDump() const
             printf("X\n");
         } else if (state == EntryState::WRITTEN) {
             Item item;
-            readEntry(i, item);
+            // Check readEntry: Item() leaves fields uninitialized; printing key/%s on failure is UB.
+            if (readEntry(i, item) != ESP_OK) {
+                printf("Failed to read entry\n");
+                return;
+            }
             if (skip == 0) {
                 printf("W ns=%2" PRIu8 " type=%2" PRIu8 " span=%3" PRIu8 " key=\"%s\" chunkIdx=%" PRIu8 " len=%" PRIi32 "\n",
                        item.nsIndex, static_cast<uint8_t>(item.datatype), item.span, item.key, item.chunkIndex, (item.span != 1) ? (static_cast<int32_t>(item.varLength.dataSize)) : (-1));
