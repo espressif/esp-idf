@@ -1,0 +1,4 @@
+-
+    re: "errno: TLS reference in ([^ ]+\\.a)\\([^)]*\\) mismatches non-TLS definition"
+    hint: "The library '{}' accessed errno as a TLS symbol, which is incompatible with CONFIG_LIBC_NEWLIB=y (errno via __errno()). Contact the library maintainer to rebuild it with the latest ESP-IDF, or pass -D__PICOLIBC_ERRNO_FUNCTION=__errno if the library is built outside ESP-IDF. Alternatively keep CONFIG_LIBC_PICOLIBC=y, which still provides the TLS errno symbol for older prebuilts."
+    match_to_output: True
