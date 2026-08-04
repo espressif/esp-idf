@@ -77,4 +77,5 @@ void app_main(void)
     ESP_ERROR_CHECK(ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, LEDC_DUTY));
     // Update duty to apply the new value
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_MODE, LEDC_CHANNEL));
+    printf("Generated a %d Hz signal on GPIO %d\n", LEDC_FREQUENCY, LEDC_OUTPUT_IO);
 }
