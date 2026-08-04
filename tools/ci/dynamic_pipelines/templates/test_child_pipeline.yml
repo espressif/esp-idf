@@ -1,3 +1,8 @@
+include:
+  - project: "ci/actions/common"
+    ref: "v2"
+    file: "templates/idf/app-size-report.yml"
+
 all_build_finished:
   stage: assign_test
   tags: [fast_run, shiny]
