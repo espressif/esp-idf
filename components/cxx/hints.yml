@@ -1,0 +1,3 @@
+-
+    re: "Mixed libstdc\\+\\+ atomic lock policies detected"
+    hint: "Some object files or prebuilt libraries were compiled with a different _GLIBCXX_HAVE_ATOMIC_LOCK_POLICY setting than the rest of the project. std::shared_ptr reference counting may exhibit undefined behavior. Rebuild all C++ code and libraries with a consistent CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY setting."

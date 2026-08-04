@@ -9,3 +9,10 @@ components/cxx/test_apps:
     - cxx
     - pthread
     - freertos
+
+components/cxx/test_apps/atomic_lock_policy:
+  enable:
+    - if: IDF_TARGET == "esp32c5"
+  disable:
+    - if: IDF_TARGET != "esp32c5"
+      reason: only built on ESP32-C5

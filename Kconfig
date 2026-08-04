@@ -889,6 +889,28 @@ mainmenu "Espressif IoT Development Framework Configuration"
                     Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
         endchoice
 
+        config COMPILER_CXX_ATOMIC_LOCK_POLICY
+            bool "Force libstdc++ lock-free atomic policy"
+            default n
+            depends on IDF_TARGET_ARCH_RISCV && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3
+            help
+                Define _GLIBCXX_HAVE_ATOMIC_LOCK_POLICY=1 when compiling C++ code.
+
+                libstdc++ selects between a lock-free and a mutex-based policy for
+                std::shared_ptr reference counting based on this macro. Enabling this
+                option forces the lock-free policy, which avoids pulling in the
+                mutex-based implementation and can reduce code size.
+
+                Note: the lock-free policy avoids embedding a mutex in each control
+                block, saving about 88 bytes per shared_ptr, and improves performance
+                by using atomic operations instead of mutex locking.
+
+                Note: this option changes the ABI of libstdc++ atomic/shared_ptr
+                helpers. It can be incompatible when linking against prebuilt
+                libraries that were compiled without it, leading to link errors or
+                undefined runtime behavior. Only enable it if all C++ objects and
+                libraries in the build use the same setting.
+
         config COMPILER_KASAN
             bool "Enable Kernel Address Sanitizer (KASAN)"
             depends on IDF_EXPERIMENTAL_FEATURES && IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
