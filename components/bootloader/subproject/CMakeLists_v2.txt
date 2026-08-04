@@ -96,6 +96,10 @@ idf_build_set_property(SET_COMPILER_OPTIMIZATION NO)
 # file name, which LTO does not preserve, so it must never be compiled or linked
 # with LTO regardless of the application's CONFIG_COMPILER_LTO_* options.
 idf_build_set_property(SET_COMPILER_LTO NO)
+# The bootloader runs before kasan_init_shadow() and carries no sanitizer
+# runtime, so it must never be instrumented regardless of the application's
+# CONFIG_COMPILER_KASAN option.
+idf_build_set_property(SET_COMPILER_KASAN NO)
 
 # Perform internal IDF project initialisation
 idf_project_init()

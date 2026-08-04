@@ -7,6 +7,8 @@ include(utilities)
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(component_validation)
+# Shared with the Build system v1: single definition of the KASAN exclusion set.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/kasan.cmake)
 
 #[[api
 .. cmakev2:function:: idf_build_set_property
@@ -317,6 +319,57 @@ function(__idf_build_link_whole_archive target scope library)
     target_link_libraries(${target} ${scope} ${library})
 endfunction()
 
+#[[
+    __kasan_exclude_components(<library>)
+
+    Compile the low-level components linked to ``library`` without Kernel
+    Address Sanitizer instrumentation.
+
+    The exclusion set is defined once in ``tools/cmake/kasan.cmake`` and shared
+    with the Build system v1. Called from ``idf_build_library`` once
+    LIBRARY_COMPONENTS_LINKED is populated, so every component target already
+    exists and ``-fno-sanitize`` is appended after the global ``-fsanitize``
+    added while the component was processed, which is what makes it win.
+
+    A subproject that opted out of instrumentation altogether by setting the
+    SET_COMPILER_KASAN build property to NO never had ``-fsanitize`` applied, so
+    there is nothing to undo and this is a no-op there.
+#]]
+function(__kasan_exclude_components library)
+    idf_build_get_property(set_compiler_kasan SET_COMPILER_KASAN)
+    if(NOT DEFINED set_compiler_kasan OR set_compiler_kasan STREQUAL "")
+        set(set_compiler_kasan YES)
+    endif()
+    if(NOT CONFIG_COMPILER_KASAN OR NOT set_compiler_kasan)
+        return()
+    endif()
+
+    idf_library_get_property(components_linked "${library}" LIBRARY_COMPONENTS_LINKED)
+    kasan_filter_excluded_components(excluded ${components_linked})
+
+    foreach(component_name IN LISTS excluded)
+        idf_component_get_property(component_real_target "${component_name}" COMPONENT_REAL_TARGET)
+        idf_component_get_property(component_real_target_type "${component_name}" COMPONENT_REAL_TARGET_TYPE)
+
+        # Components that created no target, and INTERFACE libraries, have no
+        # sources to de-instrument. Adding an INTERFACE compile option would
+        # also propagate -fno-sanitize to every consumer, including the
+        # application under test.
+        if(NOT component_real_target OR "${component_real_target}" STREQUAL "NOTFOUND")
+            continue()
+        endif()
+        if(NOT "${component_real_target_type}" STREQUAL "STATIC_LIBRARY")
+            continue()
+        endif()
+
+        # idf_build_library may run more than once per configure. Appending the
+        # option again is harmless: CMake de-duplicates compile options, and
+        # every copy lands after the global -fsanitize added while the component
+        # was processed, so the surviving one still wins.
+        target_compile_options("${component_real_target}" PRIVATE "-fno-sanitize=kernel-address")
+    endforeach()
+endfunction()
+
 #[[api
 .. cmakev2:function:: idf_build_library
 
@@ -379,8 +432,10 @@ function(idf_build_library library)
     idf_build_get_property(include_directories INCLUDE_DIRECTORIES GENERATOR_EXPRESSION)
     target_include_directories("${library}" INTERFACE "${include_directories}")
 
-    # Add link options.
-    idf_build_get_property(link_options LINK_OPTIONS)
+    # Add link options. Read as a generator expression so that link options a
+    # component appends to the LINK_OPTIONS build property while it is processed
+    # below are included, not only those set before this point.
+    idf_build_get_property(link_options LINK_OPTIONS GENERATOR_EXPRESSION)
     target_link_options(${library} INTERFACE "${link_options}")
 
     # Include the requested components and link their interface targets to the
@@ -432,6 +487,13 @@ function(idf_build_library library)
         idf_library_set_property("${library}" LIBRARY_COMPONENTS_LINKED "${component_name}" APPEND)
         idf_library_set_property("${library}" LIBRARY_COMPONENT_INTERFACES_LINKED "${component_interface}" APPEND)
     endforeach()
+
+    # Kernel Address Sanitizer (CONFIG_COMPILER_KASAN): de-instrument the
+    # low-level components. Applied here, once the set of components linked to
+    # the library is known and every component target already exists, so that
+    # -fno-sanitize lands after the global -fsanitize added while the component
+    # was processed and therefore wins.
+    __kasan_exclude_components("${library}")
 
     # Collect linker fragment files from all components linked to the library
     # interface and store them in the __LDGEN_FRAGMENT_FILES files. This

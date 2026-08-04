@@ -861,6 +861,18 @@ endfunction()
 
     List of linker script files added to the link command (with ``-T``) for the
     component.
+
+.. cmakev2:component_property:: NO_KASAN
+
+    When set to a true value, the component is compiled without Kernel Address
+    Sanitizer instrumentation (``-fno-sanitize=kernel-address``) while
+    ``CONFIG_COMPILER_KASAN`` is enabled. Set it on a component that runs before
+    the sanitizer shadow is initialised, executes with the flash cache disabled,
+    or is otherwise too low-level to instrument.
+
+    The low-level ESP-IDF components are excluded already; the built-in set is
+    defined in ``tools/cmake/kasan.cmake`` and shared with the CMake-based build
+    system v1, which honours this property as well.
 #]]
 
 #[[api

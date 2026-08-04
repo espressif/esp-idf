@@ -356,6 +356,31 @@ function(__init_project_configuration)
         list(APPEND compile_options "-fstack-protector-all")
     endif()
 
+    # Kernel Address Sanitizer (CONFIG_COMPILER_KASAN): instrument every memory
+    # load and store with a shadow-memory check. The flag goes into the C and C++
+    # options rather than the language-agnostic list because the assembler does
+    # not accept -fsanitize. Low-level components are de-instrumented again in
+    # idf_build_library(), see __kasan_exclude_components().
+    #
+    # A subproject that must never be instrumented (for example the bootloader,
+    # which runs before the sanitizer shadow is initialised) sets the
+    # SET_COMPILER_KASAN build property to NO before idf_project_init(), the
+    # same way it uses SET_COMPILER_LTO and SET_COMPILER_OPTIMIZATION; an unset
+    # property means instrumentation is allowed.
+    idf_build_get_property(set_compiler_kasan SET_COMPILER_KASAN)
+    if(NOT DEFINED set_compiler_kasan OR set_compiler_kasan STREQUAL "")
+        set(set_compiler_kasan YES)
+    endif()
+    if(CONFIG_COMPILER_KASAN AND set_compiler_kasan)
+        list(APPEND c_compile_options "-fsanitize=kernel-address")
+        list(APPEND cxx_compile_options "-fsanitize=kernel-address")
+        if(NOT CONFIG_KASAN_STACK)
+            list(APPEND c_compile_options "--param" "asan-stack=0")
+            list(APPEND cxx_compile_options "--param" "asan-stack=0")
+        endif()
+        list(APPEND link_options "-fsanitize=kernel-address")
+    endif()
+
     if(CONFIG_COMPILER_DUMP_RTL_FILES)
         list(APPEND compile_options "-fdump-rtl-expand")
     endif()
