@@ -654,6 +654,27 @@ menu "Security features"
 
     endchoice
 
+    config SECURE_BOOT_IMAGE_DIGEST_LEN
+        int
+        default 48 if SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+        default 32
+        help
+            Length in bytes of the application image digest used by Secure Boot V2.
+            Kept in sync with ESP_SECURE_BOOT_DIGEST_LEN in esp_secure_boot.h, and
+            usable from linker scripts and from components that cannot depend on
+            bootloader_support.
+
+    config SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE
+        int
+        default SECURE_BOOT_IMAGE_DIGEST_LEN if SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
+        default 0
+        help
+            Number of bytes that must be left untouched at the end of RTC/LP RAM for
+            the ROM secure boot fast wake up feature, which stores the digest of the
+            verified application image there and re-checks it on deep sleep wake up.
+            Zero when the feature is not applicable, so that consumers can subtract
+            this value unconditionally.
+
     config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
         bool "Bootloader verifies app signatures"
         default n
