@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "sdkconfig.h"
-#include "hal/ieee802154_ll.h"
 #include "esp_check.h"
 #include "esp_ieee802154_pib.h"
 #include "esp_ieee802154_util.h"

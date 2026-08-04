@@ -7,7 +7,6 @@
 #include "esp_private/esp_modem_clock.h"
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
-#include "hal/ieee802154_ll.h"
 #include "esp_check.h"
 #include "esp_coex_i154.h"
 #include "esp_ieee802154_util.h"
