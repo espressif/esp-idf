@@ -730,6 +730,11 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     UINT8           curr_state = p_cb->state;
     tSMP_SM_TBL     state_table;
     UINT8           action, entry, i;
+
+    if (p_cb->role > 1) {
+        SMP_TRACE_ERROR( "Invalid role\n") ;
+        return;
+    }
     tSMP_ENTRY_TBL  entry_table =  smp_entry_table[p_cb->role];
 
     SMP_TRACE_EVENT("main smp_sm_event\n");
