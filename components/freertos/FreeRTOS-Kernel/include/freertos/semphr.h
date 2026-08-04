@@ -1062,6 +1062,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * If xMutex is not a mutex type semaphore, or the mutex is available (not held
  * by a task), return NULL.
  *
+ * Note: On SMP systems, the return value may be invalidated by other core(s).
  */
 #if __DOXYGEN__ || ( ( configUSE_MUTEXES == 1 ) && ( INCLUDE_xSemaphoreGetMutexHolder == 1 ) )
     #define xSemaphoreGetMutexHolderFromISR( xSemaphore )    xQueueGetMutexHolderFromISR( ( xSemaphore ) )
