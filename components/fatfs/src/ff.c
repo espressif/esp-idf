@@ -5309,7 +5309,7 @@ FRESULT f_rename (
 {
 	FRESULT res;
 	FATFS *fs;
-	FF_DIR djo, djn;
+	FF_DIR djo = {0}, djn = {0};	/* zero-init before memcpy between directory objects */
 	BYTE buf[FF_FS_EXFAT ? SZDIRE * 2 : SZDIRE], *dir;
 	DEF_NAMEBUFF
 
