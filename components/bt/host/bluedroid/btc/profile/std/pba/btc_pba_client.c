@@ -590,6 +590,7 @@ void btc_pba_client_args_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             memcpy(dst->pull_vcard_listing.name, src->pull_vcard_listing.name, len);
         } else {
             BTC_TRACE_ERROR("%s %d no mem\n", __FUNCTION__, msg->act);
+            dst->pull_vcard_listing.app_param.search_value = NULL;
             break;
         }
         if (src->pull_vcard_listing.include_app_param && src->pull_vcard_listing.app_param.include_search_value) {
