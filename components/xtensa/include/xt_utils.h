@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,25 +25,6 @@ extern "C" {
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-FORCE_INLINE_ATTR __attribute__((pure)) uint32_t xt_utils_get_core_id(void)
-{
-    /*
-    Note: We depend on SOC_CPU_CORES_NUM instead of XCHAL_HAVE_PRID as some single Xtensa targets (such as ESP32-S2) have
-    the PRID register even though they are single core.
-    */
-#if SOC_CPU_CORES_NUM > 1
-    // Read and extract bit 13 of special register PRID
-    uint32_t id;
-    asm volatile (
-        "rsr.prid %0\n"
-        "extui %0,%0,13,1"
-        :"=r"(id));
-    return id;
-#else
-    return 0;
-#endif // SOC_CPU_CORES_NUM > 1
-}
-
 FORCE_INLINE_ATTR __attribute__((pure)) uint32_t xt_utils_get_raw_core_id(void)
 {
 #if XCHAL_HAVE_PRID
@@ -56,6 +37,34 @@ FORCE_INLINE_ATTR __attribute__((pure)) uint32_t xt_utils_get_raw_core_id(void)
 #else
     return 0;
 #endif // XCHAL_HAVE_PRID
+}
+
+FORCE_INLINE_ATTR __attribute__((pure)) uint32_t xt_utils_get_core_id_from_raw(uint32_t raw_core_id)
+{
+    /*
+    Note: We depend on SOC_CPU_CORES_NUM instead of XCHAL_HAVE_PRID as some single Xtensa targets (such as ESP32-S2) have
+    the PRID register even though they are single core.
+    */
+#if SOC_CPU_CORES_NUM > 1
+    // Extract bit 13 of the PRID register value
+    uint32_t id;
+    asm volatile (
+        "extui %0,%1,13,1"
+        :"=r"(id):"r"(raw_core_id));
+    return id;
+#else
+    (void)raw_core_id;
+    return 0;
+#endif // SOC_CPU_CORES_NUM > 1
+}
+
+FORCE_INLINE_ATTR __attribute__((pure)) uint32_t xt_utils_get_core_id(void)
+{
+#if SOC_CPU_CORES_NUM > 1
+    return xt_utils_get_core_id_from_raw(xt_utils_get_raw_core_id());
+#else
+    return 0;
+#endif // SOC_CPU_CORES_NUM > 1
 }
 
 FORCE_INLINE_ATTR void *xt_utils_get_sp(void)
