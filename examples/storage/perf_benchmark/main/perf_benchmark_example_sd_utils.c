@@ -174,6 +174,7 @@ esp_err_t init_sd_card(sdmmc_card_t **out_card)
 
 void deinit_sd_card(sdmmc_card_t **card)
 {
+    ESP_ERROR_CHECK(sdmmc_card_deinit(*card));
 // Unmount SD card
 #ifdef CONFIG_EXAMPLE_USE_SDMMC
     sdmmc_host_deinit();

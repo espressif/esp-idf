@@ -114,9 +114,7 @@ static void s_master_init(test_sdio_param_t *host_param, essl_handle_t *out_hand
 
 static void s_master_deinit(void)
 {
-    free(s_card.host.dma_aligned_buffer);
-    s_card.host.dma_aligned_buffer = 0;
-
+    sdmmc_card_deinit(&s_card);
     sdmmc_host_deinit();
 }
 
