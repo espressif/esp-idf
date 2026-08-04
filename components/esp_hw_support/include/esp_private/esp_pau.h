@@ -157,6 +157,23 @@ void pau_regdma_register_modem_link_protect(pau_regdma_modem_link_protect_cb_t c
 void pau_regdma_unregister_modem_link_protect(void);
 #endif // SOC_PM_REGDMA_MODEM_LINK_PROTECT
 
+#if SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+/**
+ * @brief Wait for REGDMA to complete
+ */
+void pau_regdma_wait_done(void);
+
+/**
+ * @brief Set the configuration of the REGDMA etm modem link
+ */
+void pau_regdma_set_etm_modem_link_config(void);
+
+/**
+ * @brief Stop transmission on REGDMA etm modem link
+ */
+void pau_regdma_stop_etm_modem_link(void);
+#endif // SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY
+
 #ifdef __cplusplus
 }
 #endif
