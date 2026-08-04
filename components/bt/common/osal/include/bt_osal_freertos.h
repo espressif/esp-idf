@@ -128,6 +128,7 @@ uint32_t bt_osal_freertos_hw_enter_critical(void);
 
 void bt_osal_freertos_hw_exit_critical(uint32_t ctx);
 
+#if CONFIG_BT_OSAL_ENABLED
 /**
  * @brief Allocate and populate the OSAL function table
  *
@@ -140,6 +141,15 @@ void bt_osal_freertos_funcs_init(void);
  * @brief Free the OSAL function table allocated by bt_osal_freertos_funcs_init()
  */
 void bt_osal_freertos_funcs_deinit(void);
+#else
+/* The OSAL implementation is not built. The hosts bring the function table up
+ * and down unconditionally during their init/deinit, so keep those two entry
+ * points available as no-ops instead of making every caller guard them. */
+
+static inline void bt_osal_freertos_funcs_init(void) {}
+
+static inline void bt_osal_freertos_funcs_deinit(void) {}
+#endif /* CONFIG_BT_OSAL_ENABLED */
 
 /**
  * @brief Get the OSAL function table
