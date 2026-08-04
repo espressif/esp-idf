@@ -393,7 +393,7 @@ e_btdm_memblock_get(struct btdm_mempool *mp)
         /* Allocate outside critical section to avoid holding lock too long */
         if (need_alloc) {
             alloc_size = BTDM_MEMPOOL_TRUE_BLOCK_SIZE(mp);
-            allocated_block = btdm_osal_malloc(alloc_size, BTDM_OSAL_MALLOC_F_INTERNAL);
+            allocated_block = btdm_osal_malloc(alloc_size, 0);
 
             if (allocated_block) {
                 /* Save mempool pointer for block */

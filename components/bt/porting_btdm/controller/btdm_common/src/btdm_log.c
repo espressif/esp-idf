@@ -5,6 +5,7 @@
  */
 #include <stdint.h>
 #include <stdbool.h>
+#include "btdm_user_cfg.h"
 #include "btdm_osal.h"
 #include "sdkconfig.h"
 #include "assert.h"
@@ -50,8 +51,8 @@ typedef enum {
  ***************************************************************************************************
  */
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-void api_base_ll_dumpDebugStatus(void);
 void r_btdm_sched_list_details_dump(void);
+void api_base_ll_dumpDebugStatus(void);
 void r_ble_phy_hw_state_dump(uint8_t);
 void esp_ble_controller_log_dump_all(bool);
 void esp_panic_handler_feed_wdts(void);
@@ -64,7 +65,6 @@ void r_ble_log_deinit_simple(void);
 void r_ble_log_async_select_dump_buffers(uint8_t buffers);
 int r_ble_log_ctrl_level_and_mod(uint8_t log_level, uint32_t mod_switch);
 int r_ble_ctrl_mod_type(uint16_t mod, uint32_t mod_type_switch);
-
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /*
@@ -364,6 +364,15 @@ void esp_bt_controller_log_deinit(void)
 #endif /* CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2 */
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
+static void IRAM_ATTR
+btdm_log_exception_dump(void)
+{
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    api_base_ll_dumpDebugStatus();
+    r_btdm_sched_list_details_dump();
+    esp_ble_controller_log_dump_all(true);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+}
 
 /*
  ***************************************************************************************************
@@ -434,25 +443,51 @@ wr_btdm_log_internal_hex(uint32_t p0, uint32_t p1, uint32_t p2)
 }
 
 void IRAM_ATTR
-wr_btdm_log_raw_export(uint16_t p0, uint32_t p1, uint32_t p2)
+wr_btdm_log_raw_export(uint16_t p0, uint8_t * addr, uint32_t len)
 {
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    extern void r_ble_log_raw_export(uint16_t p0, uint32_t p1, uint32_t p2);
-    r_ble_log_raw_export(p0, p1, p2);
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+    esp_rom_printf("ID: 0x%04x, params: ", p0);
+    for (int i = 0; i < len; i++) {
+        esp_rom_printf("0x%02x, ", addr[i]);
+    }
+    esp_rom_printf("\n");
 }
 
 void IRAM_ATTR
-wr_btdm_assert(const char *file, int line, int p0, int p1, uint8_t type)
+wr_btdm_assert(const char *file, int line, int p0, int p1)
 {
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    api_base_ll_dumpDebugStatus();
-    r_btdm_sched_list_details_dump();
-    esp_ble_controller_log_dump_all(true);
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-
+    btdm_log_exception_dump();
     esp_rom_printf("assert %s,%d, param:0x%x,0x%x\n", file, line, p0, p1);
     assert(0);
+}
+
+void IRAM_ATTR
+wr_btdm_compressed_assert_x0(uint32_t cond, uint32_t id)
+{
+    if (!cond) {
+        btdm_log_exception_dump();
+        esp_rom_printf("bt assertion id:%d\n", id);
+        assert(0);
+    }
+}
+
+void IRAM_ATTR
+wr_btdm_compressed_assert_x1(uint32_t cond, uint32_t id, uint32_t p1)
+{
+    if (!cond) {
+        btdm_log_exception_dump();
+        esp_rom_printf("bt assertion id:%d, params: 0x%x\n", id, p1);
+        assert(0);
+    }
+}
+
+void IRAM_ATTR
+wr_btdm_compressed_assert_x2(uint32_t cond, uint32_t id, uint32_t p1, uint32_t p2)
+{
+    if (!cond) {
+        btdm_log_exception_dump();
+        esp_rom_printf("bt assertion id:%d, params: 0x%x, 0x%x\n", id, p1, p2);
+        assert(0);
+    }
 }
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE

@@ -286,7 +286,7 @@ wr_btdm_osal_event_init(struct btdm_osal_event *ev, btdm_osal_event_fn *fn, void
 #if BTDM_OSAL_DYNAMIC_ALLOC
     if (!ev->event) {
         ev->event =
-            btdm_osal_malloc(sizeof(struct btdm_osal_event_freertos), BTDM_OSAL_MALLOC_F_INTERNAL);
+            btdm_osal_malloc(sizeof(struct btdm_osal_event_freertos), 0);
     }
 #endif // BTDM_OSAL_DYNAMIC_ALLOC
 
@@ -591,7 +591,7 @@ wr_btdm_osal_callout_init(struct btdm_osal_callout *co, struct btdm_osal_eventq 
 #if BTDM_OSAL_DYNAMIC_ALLOC
     if (!co->co) {
         co->co = btdm_osal_malloc(sizeof(struct btdm_osal_callout_freertos),
-                                  BTDM_OSAL_MALLOC_F_INTERNAL);
+                                  0);
         callout = (struct btdm_osal_callout_freertos *)co->co;
         if (callout) {
             memset(callout, 0, sizeof(struct btdm_osal_callout_freertos));
@@ -1038,10 +1038,13 @@ wr_btdm_osal_malloc(uint32_t size, btdm_osal_malloc_flag_t flags)
 {
     void *ptr;
 
-    if (flags == BTDM_OSAL_MALLOC_F_INTERNAL) {
+#if UC_BT_CTRL_ALLOW_MALLOC_FROM_SPIRAM
+    if (flags & BTDM_OSAL_MALLOC_F_ALLOW_SPIRAM) {
+        ptr = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    } else
+#endif // UC_BT_CTRL_ALLOW_MALLOC_FROM_SPIRAM
+    {
         ptr = heap_caps_malloc(size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
-    } else {
-        ptr = heap_caps_malloc(size, MALLOC_CAP_8BIT);
     }
 
     return ptr;
@@ -1060,7 +1063,7 @@ wr_btdm_osal_mmgmt_block_malloc(uint32_t size)
     uint32_t *addr;
 
     // TODO: Only ble controller uses this function
-    addr = btdm_osal_malloc(size + 4, BTDM_OSAL_MALLOC_F_INTERNAL);
+    addr = btdm_osal_malloc(size + 4, 0);
     if (!addr) {
         return NULL;
     }
@@ -1150,7 +1153,7 @@ btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
         s_btdm_osal_ev_buf = btdm_osal_malloc(
             BTDM_MEMPOOL_SIZE(elem_num->evt_count, sizeof(struct btdm_osal_event_freertos)) *
                 sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
+            0);
         if (!s_btdm_osal_ev_buf) {
             return -1;
         }
@@ -1166,7 +1169,7 @@ btdm_osal_elem_mempool_init(btdm_osal_elem_num_t *elem_num)
         s_btdm_osal_co_buf = btdm_osal_malloc(
             BTDM_MEMPOOL_SIZE(elem_num->co_count, sizeof(struct btdm_osal_callout_freertos)) *
                 sizeof(btdm_membuf_t),
-            BTDM_OSAL_MALLOC_F_INTERNAL);
+            0);
         if (!s_btdm_osal_co_buf) {
             return -3;
         }

@@ -94,14 +94,22 @@ static uint8_t s_btdm_lp_modem_clk_en = 0;
 static void
 btdm_lp_rtc_slow_clk_select(uint8_t slow_clk_src)
 {
+
     /* Select slow clock source for BT momdule */
     switch (slow_clk_src) {
         case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
             ESP_LOGI(BTDM_LOG_TAG, "Using main XTAL as clock source");
-            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (CONFIG_XTAL_FREQ * 1000000 / s_bt_xtal_lpclk_freq - 1));
+            modem_clock_select_lp_clock_source(
+                PERIPH_BT_MODULE, slow_clk_src,
+                (CONFIG_XTAL_FREQ * 1000000 / s_bt_xtal_lpclk_freq - 1));
             break;
         case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
-            ESP_LOGW(BTDM_LOG_TAG, "Using 136 kHz RC as clock source, use with caution as it may not maintain ACL or Sync process due to low clock accuracy!");
+#if UC_BT_CTRL_SLEEP_ENABLE
+            ESP_LOGW(BTDM_LOG_TAG, "Using 136 kHz RC as clock source, use with caution as it may "
+                                   "not maintain ACL or Sync process due to low clock accuracy!");
+#else
+            ESP_LOGI(BTDM_LOG_TAG, "Using 136 kHz RC as clock source");
+#endif // UC_BT_CTRL_SLEEP_ENABLE
             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
             break;
         case MODEM_CLOCK_LPCLK_SRC_XTAL32K:
@@ -109,14 +117,27 @@ btdm_lp_rtc_slow_clk_select(uint8_t slow_clk_src)
             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
             break;
         case MODEM_CLOCK_LPCLK_SRC_RC32K:
-            ESP_LOGI(BTDM_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+#if UC_BT_CTRL_SLEEP_ENABLE
+            ESP_LOGI(BTDM_LOG_TAG, "Using 32 kHz RC as clock source, can only run legacy ADV or "
+                                   "SCAN due to low clock accuracy!");
+#else
+            ESP_LOGI(BTDM_LOG_TAG, "Using 32 kHz RC as clock source");
+#endif // UC_BT_CTRL_SLEEP_ENABLE
             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
             break;
         case MODEM_CLOCK_LPCLK_SRC_EXT32K:
-            ESP_LOGI(BTDM_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");
+#if UC_BT_CTRL_SLEEP_ENABLE
+            ESP_LOGI(BTDM_LOG_TAG, "Using 32 kHz oscillator as clock source, can only run legacy "
+                                   "ADV or SCAN due to low clock accuracy!");
+#else
+            ESP_LOGI(BTDM_LOG_TAG, "Using 32 kHz oscillator as clock source");
+#endif // UC_BT_CTRL_SLEEP_ENABLE
             modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (1 - 1));
             break;
         default:
+            ESP_LOGE(BTDM_LOG_TAG, "Unsupported clock source");
+            assert(0);
+            break;
     }
 }
 
@@ -337,19 +358,19 @@ btdm_lp_enable_clock(esp_bt_ctrl_btdm_config_t *cfg)
 {
     if (!s_btdm_lp_modem_clk_en) {
         modem_clock_module_enable(PERIPH_BT_MODULE);
+        modem_clock_module_enable(PERIPH_BT_APB_MODULE);
+        modem_clock_module_mac_reset(PERIPH_BT_MODULE);
+        btdm_lp_timer_clk_init(cfg);
         s_btdm_lp_modem_clk_en = 1;
     }
-    modem_clock_module_enable(PERIPH_BT_APB_MODULE);
-    modem_clock_module_mac_reset(PERIPH_BT_MODULE);
-    btdm_lp_timer_clk_init(cfg);
 }
 
 void
 btdm_lp_disable_clock(void)
 {
-    btdm_lp_timer_clk_deinit();
-    modem_clock_module_disable(PERIPH_BT_APB_MODULE);
     if (s_btdm_lp_modem_clk_en) {
+        btdm_lp_timer_clk_deinit();
+        modem_clock_module_disable(PERIPH_BT_APB_MODULE);
         modem_clock_module_disable(PERIPH_BT_MODULE);
         s_btdm_lp_modem_clk_en = 0;
     }

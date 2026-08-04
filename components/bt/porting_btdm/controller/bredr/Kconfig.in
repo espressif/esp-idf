@@ -79,27 +79,53 @@ if BT_CTRL_BR_EDR_MAX_SYNC_CONN != 0
     endmenu
 
     menu "Synchronous Tx/Rx buffer numbers"
-        config BT_CTRL_BR_EDR_SYNC_TX_BUF_NB
-            int "BR/EDR Sync(SCO/eSCO) TX buffer number"
+        config BT_CTRL_BR_EDR_STATIC_SYNC_TX_BUF_NB
+            int "BR/EDR Sync(SCO/eSCO) Static TX buffer number"
             default 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
             default 6 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
             default 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
-            range 2 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
-            range 4 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
-            range 6 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
+            range 0 12
             help
-                BR/EDR Synchronize TX buffer number of bluetooth controller.
+                BR/EDR Static Synchronize TX buffer number of bluetooth controller.
+                These buffers are allocated at controller initialization, and are shared
+                between all of the synchronous links.
 
-        config BT_CTRL_BR_EDR_SYNC_RX_BUF_NB
-            int "BR/EDR Sync(SCO/eSCO) RX buffer number"
+        config BT_CTRL_BR_EDR_DYNAMIC_SYNC_TX_BUF_NB
+            int "BR/EDR Sync(SCO/eSCO) Dynamic TX buffer number"
+            default 0
+            range 0 12
+            help
+                BR/EDR Dynamic Synchronize TX buffer number of bluetooth controller.
+                These buffers are allocated during the establishment of the first synchronous link,
+                and freed when all of dynamic buffers are recycled after the disconnection of the
+                last synchronous link. Shared between all of the synchronous links.
+
+        config BT_CTRL_BR_EDR_STATIC_SYNC_RX_BUF_NB
+            int "BR/EDR Sync(SCO/eSCO) Static RX buffer number"
             default 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
             default 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
             default 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
-            range 3 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
-            range 6 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
-            range 9 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
+            range 0 4 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 1
+            range 0 8 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 2
+            range 0 12 if BT_CTRL_BR_EDR_MAX_SYNC_CONN = 3
             help
-                BR/EDR Synchronize RX buffer number of bluetooth controller.
+                BR/EDR Static Synchronize RX buffer number of bluetooth controller.
+
+        config BT_CTRL_BR_EDR_SYNC_RX_BUF_NB_PER_LINK
+            int "BR/EDR Sync(SCO/eSCO) RX buffer number per link, in average(static + dynamic)"
+            default 0
+            range 0 6
+            help
+                This option is used to control whether it is necessary to expand Sync Rx buffer pool dynamically.
+                If BT_CTRL_BR_EDR_STATIC_SYNC_RX_BUF_NB is lower than (BT_CTRL_BR_EDR_SYNC_RX_BUF_NB_PER_LINK * N),
+                Sync rx buffer pool will be expanded/contracted when the number of active synchronous links changes.
+                For example, if BT_CTRL_BR_EDR_MAX_SYNC_CONN is 3, BT_CTRL_BR_EDR_STATIC_SYNC_RX_BUF_NB is 6, and
+                BT_CTRL_BR_EDR_STATIC_SYNC_RX_BUF_NB is 4:
+                - Upon controller initialization, 6 static buffers will be allocated
+                - Upon the creation of the first sync link is created, no additional rx buffers are required
+                - Upon the creation of the second sync link, need to allocate another 2 rx buffers: 4 * 2 - 6
+                - Upon the creation of the third sync link, need to allocate another 4 rx buffers: 4 * 3 - 6 - 2
+                This value can be configured to 0 if you don't want use dynamic sync rx buffers.
     endmenu
 
     choice BT_CTRL_BR_EDR_SCO_DATA_PATH

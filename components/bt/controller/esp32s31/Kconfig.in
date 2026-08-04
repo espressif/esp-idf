@@ -3,3 +3,7 @@ source "$IDF_PATH/components/bt/porting_btdm/Kconfig.in"
 config BT_CTRL_MULTI_LINK_ENABLED
     bool
     default y
+
+config BT_CTRL_LE_SUPPORT_MEM_RES
+    bool
+    default y

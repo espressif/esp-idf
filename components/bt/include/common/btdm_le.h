@@ -7,6 +7,7 @@
 
 #include "btdm_user_cfg.h"
 #include "ble_user_cfg.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +18,7 @@ extern "C" {
  * Local Defined Macros
  ***************************************************************************************************
  */
-#define BLE_CONFIG_VERSION 0x20260123
+#define BLE_CONFIG_VERSION 0x20260810
 #define BLE_CONFIG_MAGIC 0x5A5AA5A5
 
 #if defined(CONFIG_BT_LE_ISO_SUPPORT)
@@ -75,6 +76,14 @@ extern "C" {
 #define DEFAULT_BT_LE_ISO_CONFIG NULL
 #endif // defined(CONFIG_BT_LE_ISO_SUPPORT)
 
+#if UC_BT_CTRL_LE_SUPPORT_MEM_RES
+#define DEFAULT_BT_LE_MEM_RES_CONFIG                                                               \
+        .enhanced_mem_resv = 0,                                                                    \
+        .rxbuf_reserved = 0,
+#else
+#define DEFAULT_BT_LE_MEM_RES_CONFIG
+#endif // UC_BT_CTRL_LE_SUPPORT_MEM_RES
+
 #if UC_BT_CTRL_BLE_IS_ENABLE
 #define _BT_CTRL_LE_INIT_CONFIG_DEFAULT()                                                          \
     {                                                                                              \
@@ -86,7 +95,7 @@ extern "C" {
         .ble_ll_sync_cnt = DEFAULT_BT_LE_MAX_PERIODIC_SYNCS,                                       \
         .ble_ll_rsp_dup_list_count = CONFIG_BT_LE_LL_DUP_SCAN_LIST_COUNT,                          \
         .ble_ll_adv_dup_list_count = CONFIG_BT_LE_LL_DUP_SCAN_LIST_COUNT,                          \
-        .ble_ll_tx_pwr_dbm = 0,                                                                    \
+        .ble_ll_tx_pwr_dbm = UC_BT_CTRL_LE_DFT_TX_POWER_LEVEL_DBM_EFF,                             \
         .rtc_freq = 32000,                                                                         \
         .ble_ll_sca = CONFIG_BT_LE_LL_SCA,                                                         \
         .ble_ll_scan_phy_number = BLE_LL_SCAN_PHY_NUMBER_N,                                        \
@@ -132,13 +141,13 @@ extern "C" {
         .skip_unnecessary_checks_en = 0,                                                           \
         .fast_conn_data_tx_en = UC_BT_CTRL_LE_FAST_CONN_DATA_TX_EN,                                \
         .ch39_txpwr = UC_BT_CTRL_LE_CH39_TX_PWR_DBM,                                               \
-        .adv_rsv_cnt = 1,                                                                          \
-        .conn_rsv_cnt = 1,                                                                         \
-        .priority_level_cfg = 0,                                                                   \
-        .slv_fst_rx_lat_en = 0,                                                                    \
-        .dl_itvl_phy_sync_en = 0,                                                                  \
-        .scan_allow_adi_filter = 1,                                                                \
-        .enhanced_mem_resv = 1,                                                                    \
+        .adv_rsv_cnt = UC_BT_CTRL_LE_ADV_SM_RESERVE_CNT,                                           \
+        .conn_rsv_cnt = UC_BT_CTRL_LE_CONN_SM_RESERVE_CNT,                                         \
+        .priority_level_cfg = UC_BT_CTRL_LE_SCHED_PRIO_LVL_CFG,                                    \
+        .slv_fst_rx_lat_en = UC_BT_CTRL_LE_SLV_FAST_RX_CONN_DATA_EN,                               \
+        .dl_itvl_phy_sync_en = UC_BT_CTRL_LE_DL_ITVL_PHY_SYNC_EN,                                  \
+        .scan_allow_adi_filter = UC_BT_CTRL_LE_SCAN_ENH_ADI_FILTER,                                \
+        DEFAULT_BT_LE_MEM_RES_CONFIG                                                               \
         .iso_config = DEFAULT_BT_LE_ISO_CONFIG,                                                    \
         .config_magic = BLE_CONFIG_MAGIC,                                                          \
     }
@@ -274,11 +283,13 @@ typedef struct {
     uint8_t dl_itvl_phy_sync_en;   /*!< The option for automatically initiate the data length update
                                       when phy update or connect interval update. */
     uint8_t scan_allow_adi_filter; /*!< The option for ext scan to allow PDU with specific adi. */
-    uint8_t enhanced_mem_resv;     /*!< The option masks the BLE events with all reserved memory. */
-    // at initialization. */
+#if UC_BT_CTRL_LE_SUPPORT_MEM_RES
+    uint8_t enhanced_mem_resv; /*!< The option masks the BLE events with all reserved memory.*/
+    uint8_t rxbuf_reserved;    /*!< The option reserve all Rxbuffer memory at initialization. */
+#endif // UC_BT_CTRL_LE_SUPPORT_MEM_RES
 #if SOC_BLE_ISO_SUPPORTED
     esp_bt_ctrl_le_iso_config_t *iso_config; /*!< The option for ISO configuration */
-#endif                                       // SOC_BLE_ISO_SUPPORTED
+#endif // SOC_BLE_ISO_SUPPORTED
     uint32_t config_magic;                   /*!< Configuration magic value */
 } esp_bt_ctrl_le_config_t;
 

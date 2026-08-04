@@ -36,6 +36,36 @@ menu "Connection vendor/Optimization Options"
                 If this option is enabled, Controller will terminate the connection
                 when Instant Passed (0x28) error occurs in PHY update procedure.
     endmenu # "BLE disconnects when Instant Passed (0x28) occurs"
+
+    config BT_LE_CONN_RESERVED_MEMORY_COUNT
+        int "The value of reserved CONN memory count at initialization"
+        range 0 70
+        default 2
+        help
+            This value sets the number the Controller will allocate for connection instances
+            at the initialization process. If more connection instances are enabled, those
+            memory will be dynamically allocated.
+            Using reduced amount of reserved memory will save heap size at the cost of extra
+            time consumption at connection establishment process and possible connection
+            establishment failure due to memory shortage.
+            The actual reserved memory count will be the minimum value between the maximum
+            connection instances and the BT_LE_CONN_RESERVED_MEMORY_COUNT.
+
+    config BT_LE_CTRL_SLV_FAST_RX_CONN_DATA_EN
+        bool "Enable Peripheral fast PDU reception during latency"
+        default n
+        help
+            When this option is enabled, the Controller continues receiving PDUs
+            In the next connection event instead of entering latency
+            After a data packet is received.
+
+    config BT_LE_CTRL_DL_ITVL_PHY_SYNC_EN
+        bool "Enables the automatic initiation of a data length update (Experimental)."
+        default n
+        help
+            When this option is enabled, the Controller automatically initiates a data length update
+            Using the appropriate data length parameters
+            When a PHY update or a connection interval update occurs.
 endmenu # "Connection vendor/Optimization Options"
 
 menu "Scanning vendor/Optimization Options"
@@ -105,8 +135,83 @@ menu "Advertising vendor/Optimization Options"
         help
             If this option is enabled, The Controller will continue to
             Send an empty PDU after sending valid connection data within an interval.
+
+    config BT_LE_EXT_ADV_RESERVED_MEMORY_COUNT
+        int "The value of reserved EXT ADV memory count at initialization"
+        range 0 4
+        default 2
+        help
+            This value sets the number the Controller will allocate for extended advertisement
+            instances at initialization process. If more extended advertisement instances are
+            enabled, those memory will be dynamically allocated.
+            Using reduced amount of reserved memory will save heap size at the cost of extra
+            time consumption at advertising start process and possible advertising start failure
+            due to memory shortage.
+            The actual reserved memory count will be the minimum value between the maximum
+            extended advertisement instances and the BT_LE_EXT_ADV_RESERVED_MEMORY_COUNT.
 endmenu # "Advertising vendor/Optimization Options"
 
+menu "Scheduling Priority Level Config"
+    choice BT_LE_ADV_SCHED_PRIO_LEVEL
+        prompt "The Adv scheduling priority level"
+        default BT_LE_ADV_SCHED_PRIO_LOW_LEVEL
+        help
+            The Adv scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_ADV_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_ADV_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_ADV_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_ADV_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_ADV_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_ADV_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_ADV_SCHED_PRIO_HIGH_LEVEL
+        default 0
+
+    choice BT_LE_PERIODIC_ADV_SCHED_PRIO_LEVEL
+        prompt "The Periodic Adv scheduling priority level"
+        default BT_LE_PERIODIC_ADV_SCHED_PRIO_MID_LEVEL
+        help
+            The Periodic Adv scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_PERIODIC_ADV_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_PERIODIC_ADV_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_PERIODIC_ADV_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_PERIODIC_ADV_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_PERIODIC_ADV_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_PERIODIC_ADV_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_PERIODIC_ADV_SCHED_PRIO_HIGH_LEVEL
+        default 1
+
+    choice BT_LE_SYNC_SCHED_PRIO_LEVEL
+        prompt "The Sync scheduling priority level"
+        default BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
+        help
+            The SYNC scheduling priority level is used for arbitration when internal scheduling conflicts.
+        config BT_LE_SYNC_SCHED_PRIO_LOW_LEVEL
+            bool "low priority level"
+        config BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
+            bool "medium priority level"
+        config BT_LE_SYNC_SCHED_PRIO_HIGH_LEVEL
+            bool "high priority level"
+    endchoice
+
+    config BT_LE_DFT_SYNC_SCHED_PRIO_LEVEL
+        int
+        default 0 if BT_LE_SYNC_SCHED_PRIO_LOW_LEVEL
+        default 1 if BT_LE_SYNC_SCHED_PRIO_MID_LEVEL
+        default 2 if BT_LE_SYNC_SCHED_PRIO_HIGH_LEVEL
+        default 1
+endmenu
 
 menuconfig BT_LE_50_FEATURE_SUPPORT
     bool "Enable BLE 5 feature"
