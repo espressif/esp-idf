@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,11 +31,10 @@ enum btdm_osal_error {
     BTDM_OSAL_ERROR = 12,      /* Generic Error */
 };
 
-enum btdm_osal_malloc_flag {
-    BTDM_OSAL_MALLOC_F_INTERNAL = 0,
-    BTDM_OSAL_MALLOC_F_NORMAL,
-};
-typedef enum btdm_osal_malloc_flag btdm_osal_malloc_flag_t;
+#define BTDM_OSAL_MALLOC_F_ALLOW_SPIRAM (1 << 0)
+#define BTDM_OSAL_MALLOC_F_BLE          (1 << 8)
+#define BTDM_OSAL_MALLOC_F_BREDR        (1 << 9)
+typedef uint32_t btdm_osal_malloc_flag_t;
 
 typedef struct {
     uint16_t evt_count;

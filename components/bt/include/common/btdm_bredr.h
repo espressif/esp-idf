@@ -17,8 +17,8 @@ extern "C" {
  * Local Defined Macros
  ***************************************************************************************************
  */
-#define ESP_BREDR_CTRL_CONFIG_MAGIC_VAL 0x5A5AA5A5
-#define ESP_BREDR_CTRL_CONFIG_VERSION 0x20250327
+#define ESP_BREDR_CTRL_CONFIG_MAGIC_VAL    (0x5A5AA5A5)
+#define ESP_BREDR_CTRL_CONFIG_VERSION      (0x20260722)
 
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
 #define _BT_CTRL_BREDR_INIT_CONFIG_DEFAULT()                                                       \
@@ -49,8 +49,8 @@ extern "C" {
         .static_aclu_tx_buf_nb = UC_BR_EDR_ACLU_TX_BUF_NB - UC_BR_EDR_DYNAMIC_ACLU_TX_BUF_NB,      \
         .dynamic_aclu_tx_buf_nb = UC_BR_EDR_DYNAMIC_ACLU_TX_BUF_NB,                                \
         .aclu_rx_buf_nb = UC_BR_EDR_ACLU_RX_BUF_NB,                                                \
-        .sync_tx_buf_nb = UC_BR_EDR_SYNC_TX_BUF_NB,                                                \
-        .sync_rx_buf_nb = UC_BR_EDR_SYNC_RX_BUF_NB,                                                \
+        .sync_tx_buf_nb = 0,                                                                       \
+        .sync_rx_buf_nb = 0,                                                                       \
         .esco_ev4_supp = UC_BR_EDR_ESCO_EV4_SUPP,                                                  \
         .esco_ev5_supp = UC_BR_EDR_ESCO_EV5_SUPP,                                                  \
         .esco_ev3_2_supp = UC_BR_EDR_ESCO_EV3_2_SUPP,                                              \
@@ -59,6 +59,10 @@ extern "C" {
         .bt_legacy_auth_vs_evt = UC_BR_EDR_LEGACY_AUTH_VENDOR_EVT,                                 \
         .inq_filter_en = 0,                                                                        \
         .dtm_en = 0,                                                                               \
+        .static_sync_tx_buf_nb = UC_BR_EDR_STATIC_SYNC_TX_BUF_NB,                                  \
+        .dynamic_sync_tx_buf_nb = UC_BR_EDR_DYNAMIC_SYNC_TX_BUF_NB,                                \
+        .static_sync_rx_buf_nb = UC_BR_EDR_STATIC_SYNC_RX_BUF_NB,                                  \
+        .sync_rx_buf_nb_per_link = UC_BR_EDR_SYNC_RX_BUF_NB_PER_LINK,                              \
         .bredr_magic = ESP_BREDR_CTRL_CONFIG_MAGIC_VAL,                                            \
     }
 #else
@@ -148,6 +152,10 @@ typedef struct {
     uint8_t dtm_en : 1;                   /*!< BR/EDR direct test mode */
     uint32_t mempool_size;                /*!< Required mempool size used in BR/EDR controller */
     struct orca_mempool_ops *mempool_ops; /*!< mempool operations used in BR/EDR controller */
+    uint8_t static_sync_tx_buf_nb;        /*!< static sync tx buffers(allocated at init) */
+    uint8_t dynamic_sync_tx_buf_nb;       /*!< dynamic sync tx buffers(allocated during sync connection establishment) */
+    uint8_t static_sync_rx_buf_nb;        /*!< total number of static sync rx buffers */
+    uint8_t sync_rx_buf_nb_per_link;      /*!< sync rx buffers per link (static + dynamic combined) */
     uint32_t bredr_magic;                 /*!< Magic number */
 } esp_bt_ctrl_bredr_config_t;
 
