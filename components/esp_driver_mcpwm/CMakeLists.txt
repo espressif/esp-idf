@@ -1,4 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
 
 set(srcs)
 set(public_include "include")
@@ -12,25 +15,20 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
                      "src/mcpwm_sync.c"
                      "src/mcpwm_timer.c")
     if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_MCPWM_SUPPORT_SLEEP_RETENTION)
-        list(APPEND srcs "${target}/mcpwm_retention.c")
+        list(APPEND srcs "src/${target}/mcpwm_retention.c")
     endif()
     if(CONFIG_SOC_MCPWM_SUPPORT_ETM)
         list(APPEND srcs "src/mcpwm_etm.c")
     endif()
 endif()
 
-if(${target} STREQUAL "linux")
-    set(requires "")
-    set(priv_requires "")
-else()
-    set(requires esp_hal_mcpwm)
-    set(priv_requires esp_pm esp_driver_gpio)
-endif()
+set(requires esp_hal_mcpwm)
+set(priv_requires esp_pm esp_driver_gpio)
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
                        PRIV_INCLUDE_DIRS "src"
-                       REQUIRES "${requires}"
-                       PRIV_REQUIRES "${priv_requires}"
+                       REQUIRES ${requires}
+                       PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS "linker.lf"
                        )

@@ -460,7 +460,7 @@ esp_err_t mcpwm_capture_timer_set_phase_on_sync(mcpwm_cap_timer_handle_t cap_tim
         }
         case MCPWM_SYNC_TYPE_SOFT: {
             mcpwm_soft_sync_src_t *soft_sync = __containerof(sync_source, mcpwm_soft_sync_src_t, base);
-            soft_sync->soft_sync_from = MCPWM_SOFT_SYNC_FROM_CAP;
+            soft_sync->soft_sync_bound_to = MCPWM_SOFT_SYNC_BOUND_TO_CAP;
             soft_sync->cap_timer = cap_timer;
             soft_sync->base.group = group;
             break;
