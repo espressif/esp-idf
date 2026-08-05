@@ -585,7 +585,7 @@ examples/peripherals/rmt/stepper_motor:
     - esp_driver_rmt
     - soc
 
-examples/peripherals/sdio/host:
+examples/peripherals/sdio/basic/host:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
@@ -604,7 +604,7 @@ examples/peripherals/sdio/host:
     - esp_driver_sdio
     - soc
 
-examples/peripherals/sdio/slave:
+examples/peripherals/sdio/basic/slave:
   disable:
     - if: SOC_SDIO_SLAVE_SUPPORTED != 1
   disable_test:
@@ -613,6 +613,30 @@ examples/peripherals/sdio/slave:
       reason: lack of runners
   depends_components:
     - esp_hal_sd
+    - esp_driver_sdio
+    - soc
+
+examples/peripherals/sdio/hw_test/host:
+  disable:
+    - if: SOC_SDMMC_HOST_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_hal_sd
+    - sdmmc
+    - esp_driver_sdmmc
+    - soc
+
+examples/peripherals/sdio/hw_test/slave:
+  disable:
+    - if: SOC_SDIO_SLAVE_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c5", "esp32c6", "esp32c61"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
     - esp_driver_sdio
     - soc
 

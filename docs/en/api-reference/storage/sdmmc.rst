@@ -124,7 +124,7 @@ Alternatively, a pre-allocated DMA-capable buffer can be provided via the :cpp:m
 
     .. only:: SOC_SDMMC_HOST_SUPPORTED and SOC_SDIO_SLAVE_SUPPORTED
 
-        There is a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See example :example:`peripherals/sdio/host`.
+        There is a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See example :example:`peripherals/sdio/basic/host`.
 
     Combo (Memory + IO) Cards
     ^^^^^^^^^^^^^^^^^^^^^^^^^

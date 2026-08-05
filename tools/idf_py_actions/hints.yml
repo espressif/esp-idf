@@ -256,7 +256,7 @@
 
 -
     re: "sdmmc_io: sdmmc_io_read_byte: sdmmc_io_rw_direct"
-    hint: "Please verify that card supports IO capabilities. Refer 'IDF_PATH/examples/peripherals/sdio/host/README.md' for more details"
+    hint: "Please verify that card supports IO capabilities. Refer 'IDF_PATH/examples/peripherals/sdio/basic/host/README.md' for more details"
 
 -
     re: "example: Failed to initialize the card \\({}\\). Make sure SD card lines have pull-up resistors in place."

@@ -153,7 +153,7 @@ The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the sta
 
 Furthermore, there is an {IDF_TARGET_NAME}-specific upper-level communication protocol built upon the foundation of CMD52/CMD53 to Function 1. Within this particular communication protocol, the master and slave engage in data exchange and communication through the utilization of CMD52/CMD53 commands. For more detailed information, please consult the `ESP SDIO Slave Protocol <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html#esp-sdio-slave-protocol>`_ section.
 
-There is also a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ designed for {IDF_TARGET_NAME} master to communicate with {IDF_TARGET_NAME} SDIO slave. See example :example:`peripherals/sdio` when programming your host.
+There is also a component `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ designed for {IDF_TARGET_NAME} master to communicate with {IDF_TARGET_NAME} SDIO slave. See example :example:`peripherals/sdio/basic` when programming your host.
 
 
 .. _interrupts:
@@ -274,7 +274,7 @@ There are several ways to use the ``arg`` in the queue parameter:
            sdio_slave_send_get_finished((void**)&handle, portMAX_DELAY);
            sdio_slave_recv_load_buf(handle);
 
-       For more about this, see :example:`peripherals/sdio`.
+       For more about this, see :example:`peripherals/sdio/basic`.
 
 Reset SDIO
 ^^^^^^^^^^^^
@@ -287,10 +287,45 @@ If there is a usage scenario where the ESP chip remains powered on but the HOST 
 
   Reset the SDIO hardware. The interrupt enable status and shared register values ​​will be lost. You may need to call ``sdio_slave_set_host_intena`` and ``sdio_slave_write_reg`` to set them.
 
+Signal Quality Checks
+^^^^^^^^^^^^^^^^^^^^^
+
+For SDIO slave links, command-only initialization can succeed even when one or more data lines are disconnected or have poor signal quality. In the ESP-IDF host stack, SDIO card discovery and configuration use ``CMD0``, ``CMD5``, and ``CMD52`` transactions on the command line. For example, the :example:`peripherals/sdio/hw_test` host can complete ``sdmmc_card_init()`` and its ``enable_slave_function()`` step before any payload transfer starts on ``DAT0-DAT3``.
+
+The first payload transfer on ``DAT0`` appears when the host starts the first ``CMD53`` data transaction in 1-bit mode, so this example does contain a real 1-bit-only payload path when the user selects 1-line mode before initialization. ``DAT1-DAT3`` do not carry payload traffic until 4-bit mode has already been enabled and the first 4-bit ``CMD53`` transfer begins. Enabling 4-bit mode itself still uses command-line ``CMD52`` transactions, so 1-bit mode and 4-bit mode should be tested separately by choosing the bus width before initialization; the 4-bit flow does not first send payload in 1-bit mode.
+
+When checking wiring, use the following checkpoints:
+
+- If the link fails before command-only initialization completes, inspect ``CMD`` and ``CLK`` first.
+- If command-only initialization succeeds but 1-bit mode fails, inspect ``DAT0`` first.
+- If 1-bit mode works but 4-bit reads fail, inspect ``DAT1-DAT3``, pull-ups, and the return path between host and slave.
+
+If the problem is caused by simultaneous switching noise (SSN), the symptoms usually look like this:
+
+- 1-line mode works, while 4-line mode fails consistently or intermittently.
+- Communication fails when the boards are connected with jumper wires or other high-impedance ground paths, but improves after slightly changing the grounding or adding more ground connections, and disappears on a well-grounded setup.
+- Adjusting the data-line drive strength or adding small series resistors on the data lines reduces or removes the failure.
+- The host reports timeout or CRC errors.
+- Lowering the clock frequency has limited effect, and the issue can still appear even at 400 kHz.
+- The failure is easiest to reproduce when four data lines switch together, for example with the repeated ``FF 00`` payload used by :example:`peripherals/sdio/hw_test`.
+
+To confirm this type of problem, use a logic analyzer or oscilloscope and probe as close to the slave pins as possible. The :example:`peripherals/sdio/hw_test` example is one convenient way to generate a repeatable pattern, but the same checks can also be done with any setup that can issue repeated 4-bit SDIO reads with payload that makes all four data lines switch at the same time.
+
+- With a logic analyzer, capture ``CMD``, ``CLK``, and ``DAT0-DAT3``. A common symptom is data compression: some bits disappear because the slave interprets a clock glitch as an extra clock edge, so later data appears earlier than expected. With the ``hw_test`` example, the normal 4-bit read pattern is one low start bit on all four data lines, then a repeating sequence of two clocks high and two clocks low for eight cycles, followed by CRC. Missing data in this pattern indicates that the slave observed a false clock edge.
+- With an oscilloscope, observe the clock near the slave pins, especially after the data phase begins. If this issue is present, the later part of the clock waveform often becomes visibly worse. The effect can become smaller after improving grounding, adjusting drive strength, or adding small series resistors.
+- Correlate both captures. When data compression is visible on the logic analyzer, there should be a severe clock glitch shortly before the missing data point.
+
+The typical fix is to improve the grounding between host and slave.
+
+To reproduce this type of issue, let the host issue repeated 4-bit SDIO reads with payload that makes all four data lines switch together. The receive mode of :example:`peripherals/sdio/hw_test` is one such repeatable traffic source: its fixed ``FF 00`` frame makes all four data lines switch during every transfer.
+
+One representative case happens during slave-to-host reads in 4-bit mode. When the host outputs a rising clock edge and the slave drives all four data lines from ``1`` to ``0`` at the same time, the slave ground can bounce upward. This can distort the observed clock at the slave, create a false extra edge, shorten the expected low-level width of the start bit or data bits, and finally cause a CRC error in the host driver. During practical debugging, changing the GPIO drive strength on the host or slave side may also change how severe the interference appears; :example:`peripherals/sdio/hw_test` lets the host adjust drive strength from the menu and the slave from macros.
+
 Application Example
 -------------------
 
-- :example:`peripherals/sdio/host` and :example:`peripherals/sdio/slave` demonstrate how to use a host to communicate with an ESP SDIO slave device.
+- :example:`peripherals/sdio/basic/host` and :example:`peripherals/sdio/basic/slave` demonstrate how to use a host to communicate with an ESP SDIO slave device.
+- :example:`peripherals/sdio/hw_test/host` and :example:`peripherals/sdio/hw_test/slave` show how to turn the SDIO host/slave pair into a signal-integrity test setup.
 
 API Reference
 -------------
