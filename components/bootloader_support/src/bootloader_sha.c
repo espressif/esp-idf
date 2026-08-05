@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,14 +28,11 @@ bootloader_sha256_handle_t bootloader_sha256_start()
 
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
 {
-    assert(handle != NULL);
     ets_sha_update(&ctx, data, data_len, false);
 }
 
 void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
 {
-    assert(handle != NULL);
-
     if (digest == NULL) {
         bzero(&ctx, sizeof(ctx));
         return;
@@ -54,14 +51,11 @@ bootloader_sha_handle_t bootloader_sha512_start(bool is384)
 
 void bootloader_sha512_data(bootloader_sha_handle_t handle, const void *data, size_t data_len)
 {
-    assert(handle != NULL);
     ets_sha_update(&ctx, data, data_len, false);
 }
 
 void bootloader_sha512_finish(bootloader_sha_handle_t handle, uint8_t *digest)
 {
-    assert(handle != NULL);
-
     if (digest == NULL) {
         bzero(&ctx, sizeof(ctx));
         return;
@@ -91,7 +85,6 @@ bootloader_sha256_handle_t bootloader_sha256_start(void)
 
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
 {
-    assert(handle != NULL);
     assert(data_len % 4 == 0);
 
     const uint32_t *w = (const uint32_t *)data;
