@@ -80,6 +80,8 @@ static void direct_hci_complete_cb(BT_HDR *response, void *context)
 
     ARG_UNUSED(context);
 
+    LOG_INF("[B]DirectHciCompleteCb[%04x]", direct_hci_rsp.opcode);
+
     event_param_len = response->data[response->offset + 1];
 
     STREAM_TO_UINT16(opcode, stream);
@@ -115,6 +117,13 @@ static void direct_hci_complete_cb(BT_HDR *response, void *context)
     k_sem_give(&direct_hci_sem);
 }
 
+/* Dropped-wakeup recovery in send_sync below. SLICE is well above the ~5 ms
+ * round trip so a healthy command never kicks; the first kick already recovers,
+ * and the leftover budget is one final wait, keeping the total K_SEM_SHORT. */
+#define DIRECT_HCI_KICK_SLICE   (50 / portTICK_PERIOD_MS)
+#define DIRECT_HCI_KICK_MAX     3
+#define DIRECT_HCI_WAIT_REST    (K_SEM_SHORT - DIRECT_HCI_KICK_MAX * DIRECT_HCI_KICK_SLICE)
+
 tBTM_STATUS bt_le_bluedroid_hci_send_sync(uint16_t opcode,
                                           const uint8_t *cmd_params,
                                           uint8_t cmd_params_len,
@@ -123,6 +132,7 @@ tBTM_STATUS bt_le_bluedroid_hci_send_sync(uint16_t opcode,
 {
     BT_HDR *p;
     UINT8 *pp;
+    uint8_t kicks;
     hci_cmd_metadata_t *metadata;
 
     p = HCI_GET_CMD_BUF(cmd_params_len);
@@ -158,7 +168,50 @@ tBTM_STATUS bt_le_bluedroid_hci_send_sync(uint16_t opcode,
     hci_layer_get_interface()->transmit_command(p, direct_hci_complete_cb,
                                                 NULL, NULL);
 
-    if (k_sem_take(&direct_hci_sem, K_SEM_SHORT) != 0) {
+    for (kicks = 0; kicks < DIRECT_HCI_KICK_MAX; kicks++) {
+        if (k_sem_take_poll(&direct_hci_sem, DIRECT_HCI_KICK_SLICE) == 0) {
+            break;
+        }
+
+        LOG_WRN("[B]DirectHciKick[0x%04x][%u]", opcode, kicks + 1);
+
+        /* Re-post the downstream event: our own wakeup may have been dropped.
+         *
+         * transmit_command() does not write the command from this task. It
+         * appends to hci_host_env.command_queue and wakes the hciT worker via
+         * hci_downstream_data_post(), whose return value it discards.
+         * osi_thread_post_event() refuses to post while OSI_EVENT_FLAG_POSTING
+         * is set, and that flag is held by whichever task is mid-post from the
+         * moment it sets the flag until it is rescheduled: osi_thread_post()
+         * ends in osi_sem_give(work_sem), which immediately yields to the
+         * higher-priority hciT, so POSTING stays set across the whole handler
+         * run. A second producer landing in that window is rejected:
+         *
+         *   BTU      set QUEUED|POSTING; osi_thread_post() -> sem give --.
+         *   hciT     clear QUEUED; handler: send the ACL, command_queue  <-'
+         *            still empty -> break; block again
+         *   iso_task (same prio as BTU, round-robin) transmit_command():
+         *            enqueue cmd ok, post -> QUEUED clear but POSTING set
+         *            -> rejected, no wakeup, return value discarded
+         *   BTU      resumes, clears POSTING (too late)
+         *
+         * The command then sits in command_queue with nothing scheduled to
+         * drain it. It never reached commands_pending_response either, so
+         * Bluedroid's own COMMAND_PENDING_TIMEOUT never arms and only this
+         * task's sem timeout notices. That is expensive here: the caller is the
+         * ISO task, sole consumer of the ISO RX queue, so a full K_SEM_SHORT
+         * stall drops every SDU received during it.
+         *
+         * One slice later the POSTING holder has long been rescheduled, so this
+         * post lands and hciT drains the queued command. Bluedroid-only: NimBLE
+         * writes the command inline from the caller's task (ble_hs_hci_cmd_tx),
+         * so it has no wakeup to lose. Drop this loop once the POSTING gate in
+         * osi_event_can_post_locked() is fixed (regression in 0564b09e86f). */
+        hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
+    }
+
+    if (kicks == DIRECT_HCI_KICK_MAX &&
+            k_sem_take(&direct_hci_sem, DIRECT_HCI_WAIT_REST) != 0) {
         LOG_ERR("[B]DirectHciTimeout[0x%04x]", opcode);
         return BTM_ERR_PROCESSING;
     }

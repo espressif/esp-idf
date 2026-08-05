@@ -44,6 +44,17 @@ LOG_MODULE_REGISTER(ISO_SHIM, CONFIG_BT_ISO_LOG_LEVEL);
 #define ISO_PKT_COMP_SDU        (0b10)
 #define ISO_PKT_LAST_FRAG       (0b11)
 
+/* Both callbacks that feed the iso task from the controller task (iso_tx_comp_cb,
+ * bt_le_iso_rx) can fail to hand off an item, and neither may log there:
+ * esp_log_write is a blocking UART write (~3 ms/line at 115200), so reporting at
+ * the failure rate would spend most of a second inside it and deepen the very
+ * congestion it reports. They only count; the matching iso-task handler reports
+ * once every ISO_DROP_REPORT_STEP items, by which point the queue has room again
+ * so the report never competes with the burst that caused it. Causes are counted
+ * apart because they need different fixes: a full queue means the iso task is
+ * behind, a failed alloc means the heap is exhausted. */
+#define ISO_DROP_REPORT_STEP    100
+
 static BT_ISO_EXT_RAM_BSS_ATTR sys_slist_t iso_cbs;
 
 #if CONFIG_BT_ISO_UNICAST
@@ -636,6 +647,11 @@ struct iso_tx_comp_event {
     struct bt_iso_tx_cb_info info;
 };
 
+/* See ISO_DROP_REPORT_STEP. */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_tx_comp_drop_cnt;   /* task queue full */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_tx_comp_nomem_cnt;  /* evt alloc failed */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_tx_comp_reported;
+
 void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
 {
     struct iso_tx_comp_event *evt = (struct iso_tx_comp_event *)data;
@@ -644,10 +660,18 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
     struct bt_conn *iso;
     bt_conn_tx_cb_t cb;
     sys_snode_t *node;
+    uint32_t dropped;
     void *ud;
     int err;
 
     BT_LE_ASSERT(data && data_len == sizeof(*evt));
+
+    dropped = iso_tx_comp_drop_cnt + iso_tx_comp_nomem_cnt;
+    if (dropped - iso_tx_comp_reported >= ISO_DROP_REPORT_STEP) {
+        iso_tx_comp_reported = dropped;
+        LOG_WRN("IsoTxCompDrop[q=%u][nomem=%u]",
+                iso_tx_comp_drop_cnt, iso_tx_comp_nomem_cnt);
+    }
 
     bt_le_host_lock();
 
@@ -724,7 +748,7 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
 
     evt = bt_le_int_calloc(1, sizeof(*evt));
     if (evt == NULL) {
-        LOG_ERR("IsoTxCompNoMem[%u]", sizeof(*evt));
+        iso_tx_comp_nomem_cnt++;
         return;
     }
 
@@ -733,7 +757,7 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_ISO_TX_COMP, evt, sizeof(*evt));
     if (err) {
-        LOG_ERR("IsoTxCompPostFail[%d]", err);
+        iso_tx_comp_drop_cnt++;
         free(evt);
     }
 }
@@ -746,11 +770,23 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
 #endif /* CONFIG_BT_ISO_TX */
 
 #if CONFIG_BT_ISO_RX
+/* See ISO_DROP_REPORT_STEP. */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_rx_drop_cnt;   /* task queue full */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_rx_nomem_cnt;  /* rx_data alloc failed */
+static BT_ISO_CTRL_BSS_ATTR uint32_t iso_rx_reported;
+
 void bt_le_iso_handle_rx_data(uint8_t *data, size_t data_len)
 {
     struct net_buf buf = {0};
+    uint32_t dropped;
 
     BT_LE_ASSERT(data && data_len);
+
+    dropped = iso_rx_drop_cnt + iso_rx_nomem_cnt;
+    if (dropped - iso_rx_reported >= ISO_DROP_REPORT_STEP) {
+        iso_rx_reported = dropped;
+        LOG_WRN("IsoRxDrop[q=%u][nomem=%u]", iso_rx_drop_cnt, iso_rx_nomem_cnt);
+    }
 
     bt_le_host_lock();
     net_buf_simple_init_with_data(&buf.b, (void *)data, data_len);
@@ -778,7 +814,7 @@ int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg)
 
     rx_data = bt_le_int_calloc(1, len);
     if (rx_data == NULL) {
-        LOG_ERR("IsoRxNoMem[%u]", len);
+        iso_rx_nomem_cnt++;
         return -ENOMEM;
     }
 
@@ -786,7 +822,7 @@ int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_ISO_RX_DATA, rx_data, len);
     if (err) {
-        LOG_ERR("IsoRxPostFail[%d]", err);
+        iso_rx_drop_cnt++;
         free(rx_data);
         return -EIO;
     }
