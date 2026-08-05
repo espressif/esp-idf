@@ -632,7 +632,9 @@ static int inc_ots_svc_init(void)
 
 int bt_le_nimble_gmcs_init(bool ots_included)
 {
+#if CONFIG_BT_OTS
     bool inc_ots_added = false;
+#endif /* CONFIG_BT_OTS */
     int rc;
 
     LOG_DBG("[N]GmcsInit[%u]", ots_included);
