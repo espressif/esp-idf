@@ -174,7 +174,7 @@ tools/test_apps/system/panic/panic_base:
 
 tools/test_apps/system/psram_stack:
   disable:
-    - if: SOC_PSRAM_SUPPORTED != 1
+    - if: SOC_SPIRAM_SUPPORTED != 1
       reason: PSRAM stack feature requires a target with PSRAM support
 
 tools/test_apps/system/ram_loadable_app:
@@ -254,5 +254,5 @@ tools/test_apps/system/unicore_bootloader:
   disable:
     - if: SOC_CPU_CORES_NUM == 1
       reason: the test is only relevant for multicore chips
-    - if: CONFIG_NAME == "unicore_psram" and SOC_PSRAM_SUPPORTED != 1
-    - if: CONFIG_NAME == "multicore_psram" and SOC_PSRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "unicore_psram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "multicore_psram" and SOC_SPIRAM_SUPPORTED != 1
