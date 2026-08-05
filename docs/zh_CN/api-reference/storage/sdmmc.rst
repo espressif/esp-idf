@@ -124,7 +124,7 @@ SD/SDIO/MMC 驱动支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个�
 
     .. only:: SOC_SDMMC_HOST_SUPPORTED and SOC_SDIO_SLAVE_SUPPORTED
 
-        如果需要与 ESP32 的 SDIO 从设备通信，请使用 `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ 组件（ESP 串行从设备链接）。请参阅示例 :example:`peripherals/sdio/host`。
+        如果需要与 ESP32 的 SDIO 从设备通信，请使用 `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ 组件（ESP 串行从设备链接）。请参阅示例 :example:`peripherals/sdio/basic/host`。
 
     复合卡（存储 + IO）
     ^^^^^^^^^^^^^^^^^^^^^^^^^

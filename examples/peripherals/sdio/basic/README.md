@@ -59,7 +59,7 @@ disconnected, the config options are still valid, and the host example will stil
 slave meet the "all pins should be pulled up" requirement.
 
 For the SDIO Slave, CMD and DAT0-3 lines require to be pulled up (suggested resistor value: 10 KOhm) even in 1-bit mode
-or SPI mode, which is required by the SD specification. See *Board Compability* below for details.
+or SPI mode, which is required by the SD specification. See *Board Compatibility* below for details.
 
 In 1-bit mode, the host can make use of DAT2 and DAT3, however the slave should
 leave them alone but pulled up.
@@ -128,12 +128,12 @@ modules and devkits.
 
 ## About `esp_serial_slave_link` component used in the host example
 
-The host example is based on [esp_serial_slave_link component](https://components.espressif.com/components/espressif/esp_serial_slave_link), which is used to communicate to a ESP slave device.
+The host example is based on the [esp_serial_slave_link component](https://components.espressif.com/components/espressif/esp_serial_slave_link), which is used to communicate with an ESP slave device.
 
-The component can be installed by esp component manager. Since this example already installed it, no need to re-installed it again, but if you want to install this component in your own project, you can input the following command:
+The component can be installed by the ESP component manager. Since this example already installs it, there is no need to install it again. If you want to use this component in your own project, run the following command:
 
 ```
 idf.py add-dependency espressif/esp_serial_slave_link
 ```
 
-If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_componets` folder.
+If the dependency is added, you can check `idf_component.yml` for more details. When building this example or other projects with managed components, the component manager will search for the required components online and download them into the `managed_components` folder.

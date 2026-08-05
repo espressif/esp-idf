@@ -764,8 +764,6 @@ examples/network/simple_sniffer/main/cmd_sniffer.h
 examples/network/simple_sniffer/main/simple_sniffer_example_main.c
 examples/peripherals/ledc/ledc_basic/main/ledc_basic_example_main.c
 examples/peripherals/ledc/ledc_fade/main/ledc_fade_example_main.c
-examples/peripherals/sdio/host/main/app_main.c
-examples/peripherals/sdio/slave/main/app_main.c
 examples/peripherals/spi_master/hd_eeprom/components/eeprom/spi_eeprom.c
 examples/peripherals/spi_master/hd_eeprom/components/eeprom/spi_eeprom.h
 examples/peripherals/spi_master/hd_eeprom/main/spi_eeprom_main.c

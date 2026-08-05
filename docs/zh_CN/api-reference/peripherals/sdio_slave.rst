@@ -153,7 +153,7 @@ SDIO 从机驱动程序的相关术语如下：
 
 此外，在通过 CMD52/CMD53 访问到 Function 1 这一机制的基础上，还存在一个仅适用于 {IDF_TARGET_NAME} 的上层通信协议。该特定通信协议中，主机和从机通过 CMD52/CMD53 命令进行数据交换和通信。更多详情，请参阅 `ESP SDIO 从机协议 <https://espressif.github.io/idf-extra-components/latest/esp_serial_slave_link/sdio_slave_protocol.html#esp-sdio-slave-protocol>`_ 。
 
-组件 `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ 也支持 {IDF_TARGET_NAME} 主机与 {IDF_TARGET_NAME} SDIO 从机通信。在开发主机应用程序时，请参阅 :example:`peripherals/sdio` 中的示例。
+组件 `ESSL <https://components.espressif.com/components/espressif/esp_serial_slave_link>`_ 也支持 {IDF_TARGET_NAME} 主机与 {IDF_TARGET_NAME} SDIO 从机通信。在开发主机应用程序时，请参阅 :example:`peripherals/sdio/basic` 中的示例。
 
 
 .. _interrupts:
@@ -274,7 +274,7 @@ SDIO 从机驱动程序的相关术语如下：
            sdio_slave_send_get_finished((void**)&handle, portMAX_DELAY);
            sdio_slave_recv_load_buf(handle);
 
-       更多详情，请参阅 :example:`peripherals/sdio`。
+       更多详情，请参阅 :example:`peripherals/sdio/basic`。
 
 重置 SDIO
 ^^^^^^^^^^^^
@@ -287,10 +287,45 @@ SDIO 从机驱动程序的相关术语如下：
 
   重置 SDIO 硬件，中断使能状态和共享寄存器的值会丢失，可能需要调用 ``sdio_slave_set_host_intena``、 ``sdio_slave_write_reg`` 设置。
 
+信号质量检查
+^^^^^^^^^^^^
+
+对于 SDIO 从机链路，即使一条或多条数据线接错、未连接或者信号质量较差，仅依赖命令线的初始化过程仍然可能成功。在 ESP-IDF 的主机协议栈中，SDIO 卡识别和配置阶段主要使用 ``CMD0``、``CMD5`` 和 ``CMD52``，这些事务都走命令线。例如，:example:`peripherals/sdio/hw_test` 中的 host 端可以先完成 ``sdmmc_card_init()`` 和它自己的 ``enable_slave_function()`` 步骤，此时还没有在 ``DAT0-DAT3`` 上开始 payload 传输。
+
+``DAT0`` 上第一次真正的 payload 传输，出现在 host 以 1 线模式发起第一笔 ``CMD53`` 数据事务时，因此这个 example 确实存在只用 ``DAT0`` 传 payload 的情况，但前提是用户在初始化前明确选择 1 线模式。``DAT1-DAT3`` 只有在已经切换到 4 线模式之后，第一笔 4 线 ``CMD53`` 事务开始时，才会真正承载 payload 数据。切换到 4 线模式本身仍然通过命令线上的 ``CMD52`` 完成，因此应分别测试 1 线模式和 4 线模式，在初始化前选择总线宽度，而不是先跑 1 线再在同一流程中切到 4 线；4 线流程本身不会先用 1 线传 payload。
+
+排查接线时，可以先看以下几个检查点：
+
+- 如果在仅依赖命令线的初始化完成之前就失败，优先检查 ``CMD`` 和 ``CLK``。
+- 如果仅依赖命令线的初始化成功，但 1 线模式失败，优先检查 ``DAT0``。
+- 如果 1 线模式正常而 4 线读失败，优先检查 ``DAT1-DAT3``、上拉以及 host 与 slave 之间的回流路径。
+
+如果问题由 simultaneous switching noise (SSN) 引起，现象通常如下：
+
+- 1 线模式正常，而 4 线模式稳定失败或者概率性失败。
+- 使用杜邦线等接地阻抗较高的连接方式时通信失败，微调接地或增加地线后问题缓解或消失；接地良好的系统中问题消失。
+- 调整数据线驱动强度，或者在数据线上串联小电阻后，问题缓解或消失。
+- host 侧报错常见为 timeout 或 CRC error。
+- 降低时钟频率影响有限，即使降低到 400 kHz 仍可能出现问题。
+- 当四条数据线同时切换时问题最容易复现，例如 :example:`peripherals/sdio/hw_test` 中重复的 ``FF 00`` payload。
+
+要确认是否存在这类问题，建议使用逻辑分析仪或示波器，并尽量在靠近 slave 管脚的位置取样。:example:`peripherals/sdio/hw_test` 是一种方便的可复现流量来源，但并不必须依赖该示例；任何能够重复执行 4 线 SDIO 读操作、并且数据会在四条线上同时切换的系统，都可以用来完成相同检查。
+
+- 使用逻辑分析仪时，抓取 ``CMD``、``CLK`` 和 ``DAT0-DAT3``。一个典型现象是数据长度被压缩：由于 slave 把时钟毛刺误认为额外时钟沿，某些位会丢失，后续数据提前出现。若使用 ``hw_test`` 示例，正常的 4 线读数据应当表现为四条数据线同时出现 1 位低电平起始位，之后是 2 个时钟高电平、2 个时钟低电平的循环，共 8 轮，最后跟 CRC。如果这段模式里出现数据缺失，就说明 slave 观察到了错误时钟边沿。
+- 使用示波器时，在靠近 slave 管脚的位置观察时钟，尤其是数据开始出现之后的后半段。如果问题存在，时钟波形在后段通常会明显变差。改善接地、调整驱动强度或者串联小电阻后，这种现象往往会减轻。
+- 把两种抓图结果交叉比对：如果逻辑分析仪看到数据被压缩，那么在数据缺失点之前，示波器上通常可以看到明显的时钟毛刺。
+
+解决这类问题的典型方法，是改善 host 与 slave 之间的接地。
+
+若要复现这类问题，应让 host 反复执行 4 线读，并使用会在四条数据线上同时切换的 payload。:example:`peripherals/sdio/hw_test` 的 receive 模式就是这样一种可重复流量来源，其固定的 ``FF 00`` 帧会在每个传输周期让四条数据线同时切换。
+
+一个典型案例发生在 4 线模式的 slave-to-host 读操作中。当 host 输出时钟上升沿，同时 slave 让四条数据线从 ``1`` 同时切换到 ``0`` 时，slave 侧地电平可能被抬高。这会让 slave 看到的时钟波形发生下陷并产生伪额外边沿，导致起始位或者数据位的预期低电平宽度变短，最终让 host 驱动报告 CRC 错误。实际排查时，调整 host 或 slave 侧的 GPIO 驱动强度也可能改变干扰表现的严重程度；:example:`peripherals/sdio/hw_test` 允许 host 通过菜单、slave 通过宏来尝试不同驱动强度。
+
 应用示例
 --------
 
-- :example:`peripherals/sdio/host` 和 :example:`peripherals/sdio/slave` 演示了如何使用主机与 ESP SDIO 从机进行通信。
+- :example:`peripherals/sdio/basic/host` 和 :example:`peripherals/sdio/basic/slave` 演示了如何使用主机与 ESP SDIO 从机进行通信。
+- :example:`peripherals/sdio/hw_test/host` 和 :example:`peripherals/sdio/hw_test/slave` 展示了如何将 SDIO 主从示例改造成信号完整性测试组合。
 
 API 参考
 -------------
