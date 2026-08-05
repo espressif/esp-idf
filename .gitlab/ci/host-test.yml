@@ -357,7 +357,7 @@ test_pytest_qemu:
       --build-system cmake
       --target $IDF_TARGET
       -m qemu
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-files \"${MR_MODIFIED_FILES}\"
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target $IDF_TARGET
@@ -382,7 +382,7 @@ test_pytest_linux:
       -p components -p examples -p tools/test_apps
       --target linux
       --only-test-related
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-files \"${MR_MODIFIED_FILES}\"
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux
@@ -408,7 +408,7 @@ test_pytest_macos:
       --target linux
       --only-test-related
       -m macos
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-files \"${MR_MODIFIED_FILES}\"
     - run_cmd idf-ci gitlab download-known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
     - run_cmd pytest
       --target linux

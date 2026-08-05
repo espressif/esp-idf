@@ -82,10 +82,8 @@ build_template_app:
     - run_cmd idf-build-apps build
       -p tools/test_apps/system/clang_build_test
       -t $IDF_TARGET
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components \"${MR_MODIFIED_COMPONENTS}\"
+      --modified-files \"${MR_MODIFIED_FILES}\"
       $TEST_BUILD_OPTS_EXTRA
 
 build_clang_test_apps_xtensa:
