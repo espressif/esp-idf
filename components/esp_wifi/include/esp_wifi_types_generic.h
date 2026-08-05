@@ -1281,6 +1281,11 @@ typedef enum {
     WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
 } wifi_band_t;
 
+#define BIT_NUMBER_TO_CHANNEL(bit_number, band) ((band == WIFI_BAND_2G) ? (bit_number) : \
+    ((bit_number >= 1 && bit_number <= 8) ? ((bit_number - 1) * 4 + 36) : \
+    ((bit_number >= 9 && bit_number <= 20) ? ((bit_number - 9) * 4 + 100) : \
+    ((bit_number >= 21 && bit_number <= 28) ? ((bit_number - 21) * 4 + 149) : 0))))
+
 /** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
