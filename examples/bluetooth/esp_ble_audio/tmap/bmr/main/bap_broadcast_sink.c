@@ -21,6 +21,10 @@ static bool tmap_bms_found;
 
 static esp_ble_audio_bap_broadcast_sink_t *broadcast_sink;
 static uint32_t bcast_id;
+/* True after a BIS stream stops until broadcast_sink_stopped_cb runs —
+ * pa_lost must not delete in that window (EPs idle, bis_sync not yet cleared).
+ */
+static bool stop_pending;
 
 static esp_ble_audio_bap_stream_t streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static esp_ble_audio_bap_stream_t *streams_p[ARRAY_SIZE(streams)];
@@ -72,6 +76,11 @@ static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason
 {
     ESP_LOGI(TAG, "[SNK #%d] Stream stopped, reason 0x%02x",
              stream_index(stream), reason);
+    /* Sink delete is deferred to broadcast_sink_stopped_cb (after BASS
+     * bis_sync clear). Deleting while EPs are idle but bis_sync is still
+     * set races rem_src and leaves WRNs.
+     */
+    stop_pending = true;
 }
 
 static void stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
@@ -129,9 +138,35 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     }
 }
 
+static void broadcast_sink_stopped_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
+                                      uint8_t reason)
+{
+    esp_err_t err;
+
+    ESP_LOGI(TAG, "Broadcast sink stopped, reason 0x%02x", reason);
+
+    stop_pending = false;
+
+    /* Called from big_stopped after update_recv_state_big_cleared(), so
+     * BASS bis_sync is already 0 and rem_src inside delete can succeed.
+     */
+    if (broadcast_sink == NULL) {
+        return;
+    }
+
+    err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to delete broadcast sink, err %d", err);
+        return;
+    }
+
+    broadcast_sink = NULL;
+}
+
 static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
     .base_recv = base_recv_cb,
     .syncable  = syncable_cb,
+    .stopped   = broadcast_sink_stopped_cb,
 };
 
 static esp_ble_audio_bap_scan_delegator_cb_t scan_delegator_cbs;
@@ -254,6 +289,8 @@ void bap_broadcast_pa_sync(esp_ble_audio_gap_app_event_t *event)
 
 void bap_broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event)
 {
+    esp_err_t err;
+
     if (sync_handle == event->pa_sync_lost.sync_handle) {
         ESP_LOGI(TAG, "PA sync %u lost with reason %u",
                  sync_handle, event->pa_sync_lost.reason);
@@ -261,9 +298,17 @@ void bap_broadcast_pa_lost(esp_ble_audio_gap_app_event_t *event)
         sync_handle = PA_SYNC_HANDLE_INIT;
         pa_syncing = false; /* allow the rescan below to sync a fresh broadcaster */
 
-        if (broadcast_sink != NULL) {
-            esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);
-            broadcast_sink = NULL;
+        /* Prefer delete from broadcast_sink_stopped_cb after bis_sync clear.
+         * Skip while BIG teardown is in flight; if the sink never reached
+         * BIG sync, delete here.
+         */
+        if (broadcast_sink != NULL && !stop_pending) {
+            err = esp_ble_audio_bap_broadcast_sink_delete(broadcast_sink);
+            if (err) {
+                ESP_LOGW(TAG, "Sink delete deferred to stopped_cb, err %d", err);
+            } else {
+                broadcast_sink = NULL;
+            }
         }
 
         bap_broadcast_sink_scan();

@@ -94,6 +94,7 @@ struct bt_micp_included {
  *
  * @return 0 if success, errno on failure.
  */
+int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param);
 int bt_micp_mic_dev_register_safe(struct bt_micp_mic_dev_register_param *param);
 
 /**

@@ -65,7 +65,7 @@ esp_err_t esp_ble_audio_gattc_disc_start(uint16_t conn_handle)
     return ESP_OK;
 }
 
-void esp_ble_audio_gap_app_post_event(uint8_t type, void *param)
+void esp_ble_audio_gap_app_post_event(uint16_t type, void *param)
 {
     bt_le_gap_app_post_event(type, param);
 }

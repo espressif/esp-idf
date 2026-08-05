@@ -144,28 +144,35 @@ esp_err_t esp_ble_audio_has_client_preset_prev(esp_ble_audio_has_t *has, bool sy
 #if CONFIG_BT_HAS
 esp_err_t esp_ble_audio_has_register(const esp_ble_audio_has_features_param_t *features)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
     if (features == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_has_register_safe(features);
+    bt_le_host_lock();
+
+    err = bt_has_register(features);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_has_init();
     if (err) {
-        /* TODO: rollback register_safe once lib exposes an unregister API;
+        /* TODO: rollback register once lib exposes an unregister API;
          * retry will hit -EALREADY. Only reachable on GATT alloc failure.
          */
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_has_preset_register(const esp_ble_audio_has_preset_register_param_t *param)

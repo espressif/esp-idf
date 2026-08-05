@@ -60,6 +60,7 @@ static struct bt_le_iso_cb iso_cb = {
 #if CONFIG_BT_ISO_UNICAST
     .cis_dis    = hci_le_cis_disconnected,
     .cis_est    = hci_le_cis_established,
+    .cis_est_v2 = hci_le_cis_established_v2,
 #if CONFIG_BT_ISO_PERIPHERAL
     .cis_req    = hci_le_cis_req,
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
@@ -135,12 +136,11 @@ static void hci_le_cis_disconnected(struct net_buf *buf)
     LOG_DBG("CisDisconnectedEvt[%u]", evt->handle);
 
     iso = bt_conn_lookup_handle(evt->handle, BT_CONN_TYPE_ISO);
-    assert(iso);
+    BT_LE_ASSERT(iso);
 
     iso->err = evt->reason;
 
     bt_iso_disconnected(iso);
-    bt_conn_unref(iso);
 }
 
 static int iso_cis_disconn_evt_listener_safe(uint8_t *data)
@@ -181,6 +181,27 @@ static int iso_cis_est_evt_listener_safe(uint8_t *data)
         if (listener->cis_est) {
             buf.data = data + 1;    /* The first octet is subev_code */
             listener->cis_est(&buf);
+        }
+    }
+
+    bt_le_host_unlock();
+
+    return 0;
+}
+
+static int iso_cis_est_evt_v2_listener_safe(uint8_t *data)
+{
+    struct bt_le_iso_cb *listener = NULL;
+    struct net_buf buf = {0};
+
+    LOG_DBG("CisEstEvtV2Listener");
+
+    bt_le_host_lock();
+
+    SYS_SLIST_FOR_EACH_CONTAINER(&iso_cbs, listener, node) {
+        if (listener->cis_est_v2) {
+            buf.data = data + 1;    /* The first octet is subev_code */
+            listener->cis_est_v2(&buf);
         }
     }
 
@@ -346,7 +367,7 @@ static void handle_iso_event(uint8_t *data, size_t data_len)
 
 #if CONFIG_BT_ISO_UNICAST
     if (le_meta == false) {
-        assert(event == BT_HCI_EVT_DISCONN_COMPLETE);
+        BT_LE_ASSERT(event == BT_HCI_EVT_DISCONN_COMPLETE);
         iso_cis_disconn_evt_listener_safe(data + 2);
         return;
     }
@@ -358,6 +379,9 @@ static void handle_iso_event(uint8_t *data, size_t data_len)
 #if CONFIG_BT_ISO_UNICAST
     case BT_HCI_EVT_LE_CIS_ESTABLISHED:
         iso_cis_est_evt_listener_safe(data + 2);
+        break;
+    case BT_HCI_EVT_LE_CIS_ESTABLISHED_V2:
+        iso_cis_est_evt_v2_listener_safe(data + 2);
         break;
 #if CONFIG_BT_ISO_PERIPHERAL
     case BT_HCI_EVT_LE_CIS_REQ:
@@ -385,14 +409,14 @@ static void handle_iso_event(uint8_t *data, size_t data_len)
         break;
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
     default:
-        assert(0);
+        LOG_ERR("HandleIsoEvtUnknown[%u]", event);
         break;
     }
 }
 
 void bt_le_iso_handle_hci_event(uint8_t *data, size_t data_len)
 {
-    assert(data && data_len);
+    BT_LE_ASSERT(data && data_len);
     handle_iso_event(data, data_len);
     free(data);
 }
@@ -441,6 +465,15 @@ static void iso_tx_sdu_clear(uint16_t handle, bool is_big)
 
     SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&iso_tx_sdu_list, sdu_node, sdu_tmp, node) {
         iso = sdu_node->chan->iso;
+
+        /* Peripheral CIS clears chan->iso during disconnect (before this runs);
+         * the SDU is orphaned — drop it instead of dereferencing NULL. */
+        if (iso == NULL) {
+            sys_slist_remove(&iso_tx_sdu_list, prev, &sdu_node->node);
+            free((void *)sdu_node->sdu);
+            free(sdu_node);
+            continue;
+        }
 
         if ((is_big == false && iso->handle == handle) ||
                 (is_big && iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER &&
@@ -614,7 +647,7 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
     void *ud;
     int err;
 
-    assert(data && data_len == sizeof(*evt));
+    BT_LE_ASSERT(data && data_len == sizeof(*evt));
 
     bt_le_host_lock();
 
@@ -647,7 +680,7 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
              * If using controller from other vendors, the pkt buffer may
              * needs to be freed here.
              */
-             LOG_WRN("IsoTxCompFail[%d]", err);
+            LOG_WRN("IsoTxCompFail[%d]", err);
         }
 
         free(sdu_node);
@@ -659,7 +692,7 @@ void bt_le_iso_handle_tx_comp(uint8_t *data, size_t data_len)
     }
 
     chan = iso->iso.chan;
-    assert(chan);
+    BT_LE_ASSERT(chan);
 
     cb = NULL;
     ud = NULL;
@@ -687,7 +720,7 @@ static void iso_tx_comp_cb(uint16_t conn_handle, void *info, size_t size)
      * the event to the ISO task for processing.
      */
 
-    assert(size == sizeof(struct bt_iso_tx_cb_info));
+    BT_LE_ASSERT(size == sizeof(struct bt_iso_tx_cb_info));
 
     evt = bt_le_int_calloc(1, sizeof(*evt));
     if (evt == NULL) {
@@ -717,7 +750,7 @@ void bt_le_iso_handle_rx_data(uint8_t *data, size_t data_len)
 {
     struct net_buf buf = {0};
 
-    assert(data && data_len);
+    BT_LE_ASSERT(data && data_len);
 
     bt_le_host_lock();
     net_buf_simple_init_with_data(&buf.b, (void *)data, data_len);

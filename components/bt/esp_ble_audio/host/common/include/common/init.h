@@ -45,6 +45,8 @@ struct bt_le_audio_start_info {
 
 int bt_le_audio_init(void);
 
+void bt_le_audio_deinit(void);
+
 int bt_le_ascs_init(void);
 
 int bt_le_bass_init(void);

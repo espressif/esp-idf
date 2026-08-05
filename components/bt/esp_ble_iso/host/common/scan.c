@@ -198,7 +198,7 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
 {
     struct bt_le_per_adv_sync *per_adv_sync = NULL;
 
-    assert(adv_addr);
+    BT_LE_ASSERT(adv_addr);
 
     LOG_INF("PaSyncLookupAddr[%s][%u]", bt_addr_le_str(adv_addr), sid);
 
@@ -218,7 +218,8 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
     return per_adv_sync;
 }
 
-static struct bt_le_per_adv_sync *per_adv_sync_find(uint16_t handle)
+_IDF_ONLY
+struct bt_le_per_adv_sync *bt_le_per_adv_sync_find(uint16_t handle)
 {
     struct bt_le_per_adv_sync *per_adv_sync = NULL;
 
@@ -239,7 +240,7 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_find_safe(uint16_t sync_handle)
     struct bt_le_per_adv_sync *per_adv_sync = NULL;
     LOG_DBG("PaSyncFind[%u]", sync_handle);
     bt_le_host_lock();
-    per_adv_sync = per_adv_sync_find(sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     bt_le_host_unlock();
     return per_adv_sync;
 }
@@ -284,7 +285,7 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
         return -EINVAL;
     }
 
-    per_adv_sync = per_adv_sync_find(sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync) {
         LOG_WRN("PaSyncExist[%u]", sync_handle);
         return -EEXIST;
@@ -327,7 +328,7 @@ int bt_le_per_adv_sync_delete(uint16_t sync_handle)
 
     LOG_DBG("PaSyncDelete[%u]", sync_handle);
 
-    per_adv_sync = per_adv_sync_find(sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
         LOG_ERR("PaSyncNotFound[%u]", sync_handle);
         return -ENODEV;
@@ -347,7 +348,7 @@ int bt_le_per_adv_sync_establish_listener(uint16_t sync_handle)
 
     LOG_DBG("PaSyncEstabListener[%u]", sync_handle);
 
-    per_adv_sync = per_adv_sync_find(sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
         LOG_ERR("PaSyncNotFound[%u]", sync_handle);
         return -ENODEV;
@@ -374,10 +375,6 @@ int bt_le_per_adv_sync_establish_listener(uint16_t sync_handle)
         }
     }
 
-    if (info.conn) {
-        bt_conn_unref(info.conn);
-    }
-
     return 0;
 }
 
@@ -390,7 +387,7 @@ int bt_le_per_adv_sync_lost_listener(uint16_t sync_handle)
 
     LOG_DBG("PaSyncLostListener[%u]", sync_handle);
 
-    per_adv_sync = per_adv_sync_find(sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
         LOG_ERR("PaSyncNotFound[%u]", sync_handle);
         return -ENODEV;
@@ -426,7 +423,7 @@ int bt_le_per_adv_sync_report_recv_listener(uint16_t sync_handle,
         return -EINVAL;
     }
 
-    per_adv_sync = per_adv_sync_find(sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
         LOG_ERR("PaSyncNotFound[%u]", sync_handle);
         return -ENODEV;
@@ -458,7 +455,7 @@ void hci_le_biginfo_adv_report(struct net_buf *buf)
 
     /* LOG_DBG("BigInfoRecvListener[%u]", evt->sync_handle); */
 
-    per_adv_sync = per_adv_sync_find(evt->sync_handle);
+    per_adv_sync = bt_le_per_adv_sync_find(evt->sync_handle);
     if (per_adv_sync == NULL) {
         LOG_ERR("PaSyncNotFound[%u]", evt->sync_handle);
         return;

@@ -299,7 +299,7 @@ esp_err_t esp_ble_audio_codec_cfg_set_val(esp_ble_audio_codec_cfg_t *codec_cfg,
 
     if (codec_cfg == NULL || codec_cfg->data == NULL ||
             data == NULL ||
-            data_len == 0 || data_len > UINT8_MAX) {
+            data_len == 0 || data_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -357,7 +357,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_val(esp_ble_audio_codec_cfg_t *codec_
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             data == NULL ||
-            data_len == 0 || data_len > UINT8_MAX) {
+            data_len == 0 || data_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -490,7 +490,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_program_info(esp_ble_audio_codec_cfg_
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             program_info == NULL ||
-            program_info_len == 0 || program_info_len > UINT8_MAX) {
+            program_info_len == 0 || program_info_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -565,7 +565,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_ccid_list(esp_ble_audio_codec_cfg_t *
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             ccid_list == NULL ||
-            ccid_list_len == 0 || ccid_list_len > UINT8_MAX) {
+            ccid_list_len == 0 || ccid_list_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -643,7 +643,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_program_info_uri(esp_ble_audio_codec_
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             program_info_uri == NULL ||
-            program_info_uri_len == 0 || program_info_uri_len > UINT8_MAX) {
+            program_info_uri_len == 0 || program_info_uri_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -795,7 +795,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_broadcast_name(esp_ble_audio_codec_cf
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             broadcast_name == NULL ||
-            broadcast_name_len == 0 || broadcast_name_len > UINT8_MAX) {
+            broadcast_name_len == 0 || broadcast_name_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -836,7 +836,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_extended(esp_ble_audio_codec_cfg_t *c
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             extended_meta == NULL ||
-            extended_meta_len == 0 || extended_meta_len > UINT8_MAX) {
+            extended_meta_len == 0 || extended_meta_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -877,7 +877,7 @@ esp_err_t esp_ble_audio_codec_cfg_meta_set_vendor(esp_ble_audio_codec_cfg_t *cod
 
     if (codec_cfg == NULL || codec_cfg->meta == NULL ||
             vendor_meta == NULL ||
-            vendor_meta_len == 0 || vendor_meta_len > UINT8_MAX) {
+            vendor_meta_len == 0 || vendor_meta_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -918,7 +918,7 @@ esp_err_t esp_ble_audio_codec_cap_set_val(esp_ble_audio_codec_cap_t *codec_cap,
 
     if (codec_cap == NULL || codec_cap->data == NULL ||
             data == NULL ||
-            data_len == 0 || data_len > UINT8_MAX) {
+            data_len == 0 || data_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1181,7 +1181,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_val(esp_ble_audio_codec_cap_t *codec_
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             data == NULL ||
-            data_len == 0 || data_len > UINT8_MAX) {
+            data_len == 0 || data_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1313,7 +1313,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_program_info(esp_ble_audio_codec_cap_
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             program_info == NULL ||
-            program_info_len == 0 || program_info_len > UINT8_MAX) {
+            program_info_len == 0 || program_info_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1388,7 +1388,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_ccid_list(esp_ble_audio_codec_cap_t *
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             ccid_list == NULL ||
-            ccid_list_len == 0 || ccid_list_len > UINT8_MAX) {
+            ccid_list_len == 0 || ccid_list_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1466,7 +1466,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_program_info_uri(esp_ble_audio_codec_
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             program_info_uri == NULL ||
-            program_info_uri_len == 0 || program_info_uri_len > UINT8_MAX) {
+            program_info_uri_len == 0 || program_info_uri_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1618,7 +1618,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_broadcast_name(esp_ble_audio_codec_ca
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             broadcast_name == NULL ||
-            broadcast_name_len == 0 || broadcast_name_len > UINT8_MAX) {
+            broadcast_name_len == 0 || broadcast_name_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1659,7 +1659,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_extended(esp_ble_audio_codec_cap_t *c
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             extended_meta == NULL ||
-            extended_meta_len == 0 || extended_meta_len > UINT8_MAX) {
+            extended_meta_len == 0 || extended_meta_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1700,7 +1700,7 @@ esp_err_t esp_ble_audio_codec_cap_meta_set_vendor(esp_ble_audio_codec_cap_t *cod
 
     if (codec_cap == NULL || codec_cap->meta == NULL ||
             vendor_meta == NULL ||
-            vendor_meta_len == 0 || vendor_meta_len > UINT8_MAX) {
+            vendor_meta_len == 0 || vendor_meta_len > UINT8_MAX - 1) {
         return ESP_ERR_INVALID_ARG;
     }
 

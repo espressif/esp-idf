@@ -128,6 +128,7 @@ Source (SRC)        Assistant (ASS)            Acceptor (ACC)
 | `FLAG_BROADCAST_CODE_RECEIVED`    | `broadcast_code_cb` (BASS Set Broadcast Code); self-scan local code | `broadcast_sink_reset`                                                                            |
 | `FLAG_BROADCAST_SYNC_REQUESTED`   | `bis_sync_req_cb` (bitmap ≠ 0); self-scan PA match                  | `bis_sync_req_cb` (bitmap = 0); `broadcast_sink_reset`                                            |
 | `FLAG_BROADCAST_RESYNC_PENDING`             | `bis_sync_req_cb` before `_stop` (bitmap change while streaming)    | `stream_stopped_cb` after driving the re-sync; `_stop` failure; `broadcast_sink_reset`            |
+| `FLAG_BROADCAST_STOP_PENDING`    | `broadcast_stream_stopped_cb` (last BIS stops)                      | `stopped_cb`; `broadcast_sink_reset`                                                              |
 | `FLAG_BROADCAST_SYNCING`          | `check_sync_broadcast` after `_sync` returns OK                     | `stream_started_cb`; `stream_stopped_cb`                                                          |
 | `FLAG_BROADCAST_SYNCED`           | `stream_started_cb`                                                 | `stream_stopped_cb`                                                                               |
 
@@ -161,9 +162,9 @@ BASE_RECEIVED && BROADCAST_SYNCABLE
               +-----+-----+                           |
                     |                                 | BIG drops while PA gone
                     |                                 v
-                    +---------> stream_stopped_cb + !PA_SYNCED
+                    +--> stream_stopped_cb (set STOP_PENDING, !PA_SYNCED)
                                      |
-                                     | _delete + broadcast_sink_reset
+                                     | stopped_cb: _delete + broadcast_sink_reset
                                      v
                                    [end]
 ```
@@ -171,8 +172,8 @@ BASE_RECEIVED && BROADCAST_SYNCABLE
 Key invariants:
 
 - **PA loss does NOT tear down a running BIS.** Per BASS § 3.2.1.6 / § 3.2.1.9, `PA_Sync_State` and `BIS_Sync_State` are independent. While BIS is streaming/syncing, `broadcast_pa_lost` only notifies the assistant (`PA_Sync_State = 0x00`) and clears PA-only local state (`sync_handle`, `FLAG_PA_SYNCED`); the BIG keeps running and audio continues to flow.
-- **PA loss with BIS idle tears down the sink.** The sink is bound to the now-dead sync handle and its cached BASE / BIGInfo are stale. `broadcast_pa_lost` calls `_delete` and clears `FLAG_BASE_RECEIVED` / `FLAG_BROADCAST_SYNCABLE` / `FLAG_BROADCAST_CODE_REQUIRED`. The assistant's subscription (`requested_bis_sync`, `FLAG_BROADCAST_SYNC_REQUESTED`, `FLAG_BROADCAST_CODE_RECEIVED`) is preserved so the next PA sync re-creates a fresh sink and resumes streaming.
-- **Sink deletion happens in `stream_stopped_cb` when both PA and BIS are gone.** Triggers: assistant unsubscribes via `Modify Source bis_sync = 0`, or the broadcaster stops the BIG while PA is already gone.
+- **PA loss with BIS idle tears down the sink.** The sink is bound to the now-dead sync handle and its cached BASE / BIGInfo are stale. `broadcast_pa_lost` calls `_delete` (unless `FLAG_BROADCAST_STOP_PENDING` is set, in which case `stopped_cb` deletes after `bis_sync` clear) and clears `FLAG_BASE_RECEIVED` / `FLAG_BROADCAST_SYNCABLE` / `FLAG_BROADCAST_CODE_REQUIRED`. The assistant's subscription (`requested_bis_sync`, `FLAG_BROADCAST_SYNC_REQUESTED`, `FLAG_BROADCAST_CODE_RECEIVED`) is preserved so the next PA sync re-creates a fresh sink and resumes streaming.
+- **Sink deletion happens in `stopped_cb` (the `stopped` sink callback) once BASS has cleared `bis_sync`, when PA is gone.** `broadcast_stream_stopped_cb` of the last BIS only sets `FLAG_BROADCAST_STOP_PENDING` (and re-`_sync`s on a pending bitmap change) — it does not delete, because deleting there races `rem_src` while `bis_sync` is still non-zero. Triggers: assistant unsubscribes via `Modify Source bis_sync = 0`, or the broadcaster stops the BIG while PA is already gone.
 - `bis_sync_req_cb` going `X → 0` (Assistant pause) only issues `_stop`, never `_delete`. Going `X → Y` (BIS bitmap switch) likewise only `_stop`s; the next `check_sync_broadcast` (called from `stream_stopped_cb` when PA still synced) re-`_sync`s the same object.
 - `pa_sync_term_req_cb` issues the HCI Periodic Advertising Terminate Sync but does **not** clear `broadcast_sink.sync_handle`. Cleanup runs from `BLE_GAP_EVENT_PERIODIC_SYNC_LOST` → `broadcast_pa_lost`. Resetting the handle early would make that gate miss.
 
@@ -181,17 +182,17 @@ Key invariants:
 | Event                                                        | Action                                                                                                       |
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | **PA lost while BIS active** (broadcaster moved mid-stream)  | Set `PA_Sync_State = 0x00`; clear PA-only state (`sync_handle`, `FLAG_PA_SYNCED`). Sink + BIS untouched; BIG keeps running. |
-| **PA lost while BIS idle** (Assistant `PA_Sync = 0`, or PA dropped after Assistant paused BIS) | Set `PA_Sync_State = 0x00` (skipped if BASS already updated it in-place); clear PA-only state; `_delete` the sink and clear `FLAG_BASE_RECEIVED` / `FLAG_BROADCAST_SYNCABLE` / `FLAG_BROADCAST_CODE_REQUIRED`. The next PA sync starts from a clean sink and lets the lib redeliver BASE / BIGInfo. |
+| **PA lost while BIS idle** (Assistant `PA_Sync = 0`, or PA dropped after Assistant paused BIS) | Set `PA_Sync_State = 0x00` (skipped if BASS already updated it in-place); clear PA-only state; unless `FLAG_BROADCAST_STOP_PENDING` is set (BIG teardown in flight — `stopped_cb` deletes after `bis_sync` clear), `_delete` the sink and clear `FLAG_BASE_RECEIVED` / `FLAG_BROADCAST_SYNCABLE` / `FLAG_BROADCAST_CODE_REQUIRED`. The next PA sync starts from a clean sink and lets the lib redeliver BASE / BIGInfo. |
 | **Modify Source `bis_sync = 0`** (PA still synced)           | `bis_sync_req_cb` clears `FLAG_BROADCAST_SYNC_REQUESTED` then `_stop`s the BIG. Sink retained.               |
 | **Modify Source bitmap change** (PA still synced, streaming) | Update `requested_bis_sync` + `FLAG_BROADCAST_SYNC_REQUESTED` + set `FLAG_BROADCAST_RESYNC_PENDING`, then `_stop`. `stream_stopped_cb` clears the flag and re-`_sync`s with the new bitmap. |
 | **BIG drops while PA still synced** (e.g. broadcaster pause) | `stream_stopped_cb` clears SYNCED/SYNCING and exposes the loss via `BIS_Sync_State`. `FLAG_BROADCAST_RESYNC_PENDING` is not set, so no auto-retry — per BASS § 3.2.1.9 the assistant drives recovery via Modify Source. |
-| **BIG drops after PA lost** (broadcaster turned off)         | `stream_stopped_cb` of the last active stream sees `!PA_SYNCED` → `_delete` + `broadcast_sink_reset`. Multi-BIS: earlier callbacks just decrement `active_streams` so `_delete` is not called while the sink is still in use. |
+| **BIG drops after PA lost** (broadcaster turned off)         | `broadcast_stream_stopped_cb` of the last active stream sees `!PA_SYNCED` and sets `FLAG_BROADCAST_STOP_PENDING`; `stopped_cb` then runs `_delete` + `broadcast_sink_reset` once BASS has cleared `bis_sync`. Multi-BIS: earlier callbacks just decrement `active_streams` so the flag is not set while the sink is still in use. |
 | **Assistant Remove Source**                                  | Spec allows only when BIS not synced; lib handles, app sees no special event.                                |
 
 Two recurring patterns that drive the above behavior:
 
 - **Update local state before calling `_stop`/`_delete`.** The lib may fire `stream_stopped_cb` synchronously from within `_stop`, so the callback must see the post-stop state. Applies in `bis_sync_req_cb` (updates `requested_bis_sync` + flag before `_stop`) and `broadcast_pa_lost` (no longer calls `_stop`).
-- **Sink lifetime is BIS-driven, not PA-driven.** Sink is created on first PA sync and deleted only when the BIG itself stops and PA is also gone. This matches BASS spec's independent PA/BIS state model.
+- **Sink lifetime is BIS-driven, not PA-driven.** Sink is created on first PA sync and deleted (from `stopped_cb`, after BASS clears `bis_sync`) only when the BIG itself stops and PA is also gone. This matches BASS spec's independent PA/BIS state model.
 
 ### Multi-BIS (stereo) configuration
 
@@ -290,6 +291,7 @@ On PA sync loss:
 
 ```
 I (xxx) CAP_ACC: [SNK #0] Stream stopped, reason 0x...
+I (xxx) CAP_ACC: Broadcast sink stopped, reason 0x...
 I (xxx) CAP_ACC: PA sync lost: sync_handle ... reason 0x...
 I (xxx) CAP_ACC: Scanning for broadcast source...
 ```

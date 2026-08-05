@@ -76,13 +76,10 @@ int bt_le_bluedroid_vcs_init(void *vcp_inc)
             return -EINVAL;
         }
 
-        inc_vocs_svc_count = vcp_included->vocs_cnt;
-        inc_aics_svc_count = vcp_included->aics_cnt;
-
         bt_le_bluedroid_set_svc_in_progress(VOCS_IN_PROGRESS);
 
         /* VCS may include zero or more instances of VOCS */
-        for (size_t i = 0; i < inc_vocs_svc_count; i++) {
+        for (size_t i = 0; i < vcp_included->vocs_cnt; i++) {
             inc_vocs_insts[i].svc_p = lib_vocs_svc_get(vcp_included->vocs[i]);
             if (!inc_vocs_insts[i].svc_p) {
                 LOG_ERR("[B]VocsSvcGetFail[%u]", i);
@@ -101,7 +98,7 @@ int bt_le_bluedroid_vcs_init(void *vcp_inc)
         bt_le_bluedroid_set_svc_in_progress(AICS_IN_PROGRESS);
 
         /* VCS may include zero or more instances of AICS */
-        for (size_t i = 0; i < inc_aics_svc_count; i++) {
+        for (size_t i = 0; i < vcp_included->aics_cnt; i++) {
             inc_aics_insts[i].svc_p = lib_aics_svc_get(vcp_included->aics[i]);
             if (!inc_aics_insts[i].svc_p) {
                 LOG_ERR("[B]AicsSvcGetFail[%u]", i);
@@ -116,6 +113,12 @@ int bt_le_bluedroid_vcs_init(void *vcp_inc)
                 return err;
             }
         }
+
+        /* Commit counts only after every instance initialized — mid-loop
+         * failure leaves them at 0 (reset on entry) so vcs_start() never
+         * iterates partially-initialized entries. */
+        inc_vocs_svc_count = vcp_included->vocs_cnt;
+        inc_aics_svc_count = vcp_included->aics_cnt;
     }
 
     bt_le_bluedroid_set_svc_in_progress(VCS_IN_PROGRESS);

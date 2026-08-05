@@ -35,15 +35,9 @@ esp_err_t esp_ble_iso_data_parse(const uint8_t ltv[], size_t size,
         type = ltv[i + 1];
         data_len = len - sizeof(uint8_t);
 
-        /* Skip empty value entries in strict parsing mode. */
-        if (data_len == 0) {
-            i += (size_t)len + 1;
-            continue;
-        }
-
-        /* A callback returning false aborts parsing; report it as an error so
-         * callers detect it (bt_audio_data_parse() returns -ECANCELED here). */
-        if (func(type, &ltv[i + 2], data_len, user_data) == false) {
+        /* Zero-length values are valid (e.g. BROADCAST_IMMEDIATE flag-only LTV).
+         * Match Zephyr bt_audio_data_parse: invoke callback with data=NULL. */
+        if (func(type, data_len > 0 ? &ltv[i + 2] : NULL, data_len, user_data) == false) {
             return ESP_FAIL;
         }
 
@@ -292,20 +286,26 @@ esp_err_t esp_ble_iso_big_sync(uint16_t sync_handle,
                                esp_ble_iso_big_sync_param_t *param,
                                esp_ble_iso_big_t **out_big)
 {
+    esp_err_t ret = ESP_OK;
     void *per_adv_sync;
     int err;
 
-    per_adv_sync = bt_le_per_adv_sync_find_safe(sync_handle);
+    bt_le_host_lock();
+
+    per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
-        return ESP_ERR_NOT_FOUND;
+        ret = ESP_ERR_NOT_FOUND;
+        goto unlock;
     }
 
-    err = bt_iso_big_sync_safe(per_adv_sync, param, out_big);
+    err = bt_iso_big_sync(per_adv_sync, param, out_big);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
     }
 
-    return ESP_OK;
+unlock:
+    bt_le_host_unlock();
+    return ret;
 }
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 
@@ -399,7 +399,7 @@ esp_err_t esp_ble_iso_chan_send_ts(esp_ble_iso_chan_t *chan,
 }
 #endif /* CONFIG_BT_ISO_TX */
 
-void esp_ble_iso_gap_app_post_event(uint8_t type, void *param)
+void esp_ble_iso_gap_app_post_event(uint16_t type, void *param)
 {
     bt_le_gap_app_post_event(type, param);
 }

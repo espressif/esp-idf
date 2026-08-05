@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2021 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -263,6 +264,12 @@ static void dir_list_update_size(struct bt_ots_dir_list *dir_list, void *obj_man
     dir_list->dir_list_obj->metadata.size.cur = len;
 }
 
+void bt_ots_dir_list_content_changed(struct bt_ots_dir_list *dir_list, void *obj_manager)
+{
+    bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
+    dir_list_update_size(dir_list, obj_manager);
+}
+
 void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
                               struct bt_gatt_ots_object *cur_obj)
 {
@@ -273,8 +280,7 @@ void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manage
         return;
     }
 
-    bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
-    dir_list_update_size(dir_list, obj_manager);
+    bt_ots_dir_list_content_changed(dir_list, obj_manager);
 }
 
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)

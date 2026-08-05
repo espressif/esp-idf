@@ -1505,6 +1505,7 @@ struct bt_bap_unicast_server_cb {
  *
  * @return 0 in case of success, negative error code otherwise.
  */
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param);
 int bt_bap_unicast_server_register_safe(const struct bt_bap_unicast_server_register_param *param);
 
 /**
@@ -1521,6 +1522,7 @@ int bt_bap_unicast_server_register_safe(const struct bt_bap_unicast_server_regis
  *
  * @return 0 in case of success, negative error code otherwise.
  */
+int bt_bap_unicast_server_unregister(void);
 int bt_bap_unicast_server_unregister_safe(void);
 
 /**
@@ -2695,6 +2697,7 @@ int bt_bap_broadcast_sink_delete_safe(struct bt_bap_broadcast_sink *sink);
  *
  * @return 0 in case of success or negative value in case of error.
  */
+int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
 int bt_bap_scan_delegator_register_safe(struct bt_bap_scan_delegator_cb *cb);
 
 /**
@@ -2705,6 +2708,7 @@ int bt_bap_scan_delegator_register_safe(struct bt_bap_scan_delegator_cb *cb);
  *
  * @return 0 in case of success or negative value in case of error.
  */
+int bt_bap_scan_delegator_unregister(void);
 int bt_bap_scan_delegator_unregister_safe(void);
 
 /**

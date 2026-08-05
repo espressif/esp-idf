@@ -10,6 +10,7 @@
 #if CONFIG_BT_MICP_MIC_DEV
 esp_err_t esp_ble_audio_micp_mic_dev_register(esp_ble_audio_micp_mic_dev_register_param_t *param)
 {
+    esp_err_t ret = ESP_OK;
     int err;
 
     if (param == NULL ||
@@ -17,22 +18,28 @@ esp_err_t esp_ble_audio_micp_mic_dev_register(esp_ble_audio_micp_mic_dev_registe
         return ESP_ERR_INVALID_ARG;
     }
 
-    err = bt_micp_mic_dev_register_safe(param);
+    bt_le_host_lock();
+
+    err = bt_micp_mic_dev_register(param);
     if (err) {
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     err = bt_le_micp_mic_dev_init();
     if (err) {
-        /* TODO: rollback register_safe once lib exposes an unregister API;
+        /* TODO: rollback register once lib exposes an unregister API;
          * retry will hit -EALREADY. Only reachable on GATT alloc failure.
          */
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_micp_mic_dev_included_get(esp_ble_audio_micp_included_t *included)

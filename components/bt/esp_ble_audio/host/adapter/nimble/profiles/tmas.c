@@ -112,7 +112,7 @@ static int tmas_svc_check(void)
         for (size_t i = 0; i < tmas_svc->attr_count; i++) {
             uuid = (const struct bt_uuid_16 *)(tmas_svc->attrs + i)->uuid;
 
-            if (uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
+            if (uuid && uuid->uuid.type == BT_LE_NIMBLE_GATT_UUID_TO_Z(check->u.type) &&
                     uuid->val == check->value) {
                 chr_found = true;
                 break;

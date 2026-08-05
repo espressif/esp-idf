@@ -337,27 +337,34 @@ static bool valid_register_param(const esp_ble_audio_tbs_register_param_t *param
 esp_err_t esp_ble_audio_tbs_register_bearer(const esp_ble_audio_tbs_register_param_t *param,
                                             uint8_t *bearer_index)
 {
-    int ret;
+    esp_err_t ret = ESP_OK;
+    int err;
 
     if (param == NULL || valid_register_param(param) == false || bearer_index == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    ret = bt_tbs_register_bearer_safe(param);
-    if (ret < 0) {
-        return ESP_FAIL;
+    bt_le_host_lock();
+
+    err = bt_tbs_register_bearer(param);
+    if (err < 0) {
+        ret = ESP_FAIL;
+        goto end;
     }
 
-    *bearer_index = ret;
+    *bearer_index = err;
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
     if (param->gtbs ? bt_le_gtbs_init() : bt_le_tbs_init()) {
-        bt_tbs_unregister_bearer_safe(*bearer_index);
-        return ESP_FAIL;
+        bt_tbs_unregister_bearer(*bearer_index);
+        ret = ESP_FAIL;
+        goto end;
     }
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
 
-    return ESP_OK;
+end:
+    bt_le_host_unlock();
+    return ret;
 }
 
 esp_err_t esp_ble_audio_tbs_unregister_bearer(uint8_t bearer_index)
