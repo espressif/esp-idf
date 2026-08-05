@@ -52,7 +52,7 @@ extern "C" {
    Can be compiled as part of app or bootloader code.
 */
 
-#define ESP_SECURE_BOOT_DIGEST_LEN 32
+#define ESP_SECURE_BOOT_DIGEST_LEN CONFIG_SECURE_BOOT_IMAGE_DIGEST_LEN
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #define ESP_SECURE_BOOT_KEY_DIGEST_LEN 16
