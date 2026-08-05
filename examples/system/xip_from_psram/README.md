@@ -27,23 +27,22 @@ To show this feature, in this example we go through the following steps:
 
 `General Steps`:
 1. Create a partition for Flash Erase Operation
-2. Create an esp_timer in one-shot mode
+2. Create an ISR-dispatched periodic esp_timer with a 1 ms interval. Overdue
+   events are skipped so callbacks delayed by the erase are not counted afterward.
 
 `PSRAM Steps`:
-3. Do a Flash erase operation, and start the timer
-4. ESP-Timer callback is dispatched and it calls a function in PSRAM during the flash erase operation
-5. The Flash erase operation finishes
-6. Show the result about the callback(in PSRAM) response and execute time
+3. Program the partition with non-erased data, then start the periodic timer
+4. Erase the partition while timer callbacks call a function in PSRAM
+5. Stop the timer and wait for any in-flight callback to finish
+6. Verify that at least 80% of the expected callbacks ran during the erase
 
 `IRAM Steps`:
-7. Do a Flash erase operation, and start the timer
-8. ESP-Timer callback is dispatched and it calls a function in IRAM during the flash erase operation
-9. The flash erase operation finishes
-10. Show the result about the callback(in IRAM) response and execute time
+7. Repeat the same process with timer callbacks calling a function in IRAM
+8. Verify the callback count during the erase
 
 ### Timeline
 
-Initialization and config -> Flash erase start -> ESP-Timer callback(in PSRAM) appear -> Flash erase finish -> Flash erase start -> ESP-Timer callback(in IRAM) appear -> Flash erase finish
+Initialization and config -> Start periodic timer -> Flash erase with callbacks in PSRAM -> Stop timer -> Start periodic timer -> Flash erase with callbacks in IRAM -> Stop timer
 
                        ISR         CPU
                         |           |
@@ -76,8 +75,10 @@ Initialization and config -> Flash erase start -> ESP-Timer callback(in PSRAM) a
 
 ## Example Result
 
-The ISR which call a function in IRAM happening during Flash erase operations. CPU fetches instructions and data from internal RAM.
-The ISR which call a function in PSRAM happening during Flash erase operations and its response time is longer than calling a function in IRAM. That's because fetching instructions from PSRAM takes more time than fetching from IRAM.
+The example verifies that ISR-dispatched periodic timer callbacks can continue to
+run during flash erase operations when they call functions in either PSRAM or
+IRAM. It reports the erase duration, timer interval, actual callback count, and
+expected callback count for each case.
 
 ## Configure the project
 
@@ -102,9 +103,8 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 I (742) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
 I (742) example: found partition 'storage1' at offset 0x110000 with size 0x10000
 
-I (1152) example: callback(in PSRAM) response time: 7 us
-I (1362) example: callback(in IRAM) response time: 5 us
-
+I (...) example: erase with callback in PSRAM: duration_ms=..., interval_ms=1.000, irq_count=..., expected=...
+I (...) example: erase with callback in IRAM: duration_ms=..., interval_ms=1.000, irq_count=..., expected=...
 ```
 
 ## Troubleshooting
