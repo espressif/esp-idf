@@ -230,29 +230,33 @@ static void gattc_db_chrc_insert(sys_slist_t *chrc_list, const struct ble_gatt_c
 }
 
 static void gattc_db_dsc_cccd_store(sys_slist_t *chrc_list,
-                                    uint16_t chr_val_handle,
                                     const struct ble_gatt_dsc *dsc)
 {
     struct gattc_db_chrc *achrc;
+    struct gattc_db_chrc *owner = NULL;
 
-    /* LOG_DBG("[N]GattcDbDscCccdStore[%u]", chr_val_handle); */
-
+    /* chrc_list is handle-ordered; the CCCD belongs to the last chrc whose
+     * value handle is below the descriptor. NimBLE's service-range
+     * disc_all_dscs reports one chr_val_handle for all descriptors, so locate
+     * the owner by descriptor handle instead. */
     SYS_SLIST_FOR_EACH_CONTAINER(chrc_list, achrc, node) {
-        /* Match by the char value handle NimBLE reports this descriptor belongs
-         * to, not dsc->handle-1: a descriptor between value and CCCD would break
-         * the offset assumption and leave CCCD unstored. */
-        if (achrc->chrc.val_handle == chr_val_handle) {
-            if (achrc->cccd.handle) {
-                LOG_WRN("[N]GattcDbCccAlreadyUpd[%u][%u]", chr_val_handle, achrc->cccd.handle);
-                return;
-            }
-
-            /* LOG_DBG("[N]GattcDbCccUpd[%u][%u]", achrc->chrc.val_handle, dsc->handle); */
-
-            memcpy(&achrc->cccd, dsc, sizeof(achrc->cccd));
-            return;
+        if (achrc->chrc.val_handle < dsc->handle) {
+            owner = achrc;
+        } else {
+            break;
         }
     }
+
+    if (owner == NULL) {
+        return;
+    }
+
+    if (owner->cccd.handle) {
+        LOG_WRN("[N]GattcDbCccAlreadyUpd[%u][%u]", owner->chrc.val_handle, owner->cccd.handle);
+        return;
+    }
+
+    memcpy(&owner->cccd, dsc, sizeof(owner->cccd));
 }
 
 static struct gattc_db_svc *gattc_db_disc_find(struct gattc_db *adb)
@@ -858,7 +862,7 @@ static int gattc_db_disc_all_inc_dscs_cb_safe(uint16_t conn_handle,
                 dsc->uuid.u16.value == BT_UUID_GATT_CCC_VAL) {
             LOG_DBG("[N]GattcDbDiscAllIncDscs[%u][%u]", chr_val_handle, dsc->handle);
 
-            gattc_db_dsc_cccd_store(&ainc_svc->chrc_list, chr_val_handle, dsc);
+            gattc_db_dsc_cccd_store(&ainc_svc->chrc_list, dsc);
         }
         break;
 
@@ -921,7 +925,7 @@ static int gattc_db_disc_all_dscs_cb_safe(uint16_t conn_handle,
                 dsc->uuid.u16.value == BT_UUID_GATT_CCC_VAL) {
             LOG_DBG("[N]GattcDbDiscAllDscs[%u]", dsc->handle);
 
-            gattc_db_dsc_cccd_store(&asvc->chrc_list, chr_val_handle, dsc);
+            gattc_db_dsc_cccd_store(&asvc->chrc_list, dsc);
         }
         break;
 
@@ -1390,6 +1394,10 @@ static int handle_gattc_disc_all_dscs(struct bt_conn *conn,
 
         SYS_SLIST_FOR_EACH_CONTAINER(&asvc->chrc_list, achrc, node) {
             if (achrc->chrc.val_handle == sub_params->value_handle) {
+                LOG_DBG("[N]GattcDbCccLookup[%u][%u][%u][%u]",
+                        asvc->svc.start_handle, asvc->svc.end_handle,
+                        achrc->chrc.val_handle, achrc->cccd.handle);
+
                 if (achrc->cccd.handle) {
                     attr.handle = achrc->cccd.handle;
                     found = &attr;
