@@ -7,7 +7,6 @@
 #pragma once
 
 #include <esp_http_client.h>
-#include <bootloader_common.h>
 #include "esp_app_desc.h"
 #include "esp_bootloader_desc.h"
 #include <sdkconfig.h>
