@@ -73,6 +73,7 @@ static inline bool spimem_flash_ll_cmd_is_done(const spi_mem_dev_t *dev)
  *
  * @param dev Beginning address of the peripheral registers.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_erase_chip(spi_mem_dev_t *dev)
 {
     dev->cmd.flash_ce = 1;
@@ -83,6 +84,7 @@ static inline void spimem_flash_ll_erase_chip(spi_mem_dev_t *dev)
  *
  * @param dev Beginning address of the peripheral registers.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_erase_sector(spi_mem_dev_t *dev)
 {
     dev->ctrl.val = 0;
@@ -94,6 +96,7 @@ static inline void spimem_flash_ll_erase_sector(spi_mem_dev_t *dev)
  *
  * @param dev Beginning address of the peripheral registers.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_erase_block(spi_mem_dev_t *dev)
 {
     dev->cmd.flash_be = 1;
@@ -395,6 +398,7 @@ static inline void spimem_flash_ll_set_buffer_data(spi_mem_dev_t *dev, const voi
  * @param buffer Buffer holding the data to program
  * @param length Length to program.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_program_page(spi_mem_dev_t *dev, const void *buffer, uint32_t length)
 {
     dev->user.usr_dummy = 0;
@@ -601,6 +605,7 @@ static inline void spimem_flash_ll_wb_mode_enable(spi_mem_dev_t *dev, bool wb_mo
  * @param dev Beginning address of the peripheral registers.
  * @param addr Address to send
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_address(spi_mem_dev_t *dev, uint32_t addr)
 {
     dev->addr = addr;
