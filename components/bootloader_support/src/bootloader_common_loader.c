@@ -5,6 +5,7 @@
  */
 
 #include "string.h"
+#include <stdint.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -13,9 +14,6 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_gpio.h"
 #include "esp_flash_partitions.h"
-#if CONFIG_SECURE_BOOT
-#include "esp_secure_boot.h"
-#endif
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
 #include "soc/gpio_periph.h"
@@ -31,6 +29,14 @@
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 #define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
+
+#if ESP_ROM_HAS_LP_ROM && CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE > 0
+#error "Retain mem is placed at the start of RTC RAM on this target, while the ROM keeps the secure boot fast wake up digest at the end of it. The layout needs to be re-evaluated."
+#endif
+
+#if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP && CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE == 0
+#error "esp_rom_caps.h advertises ROM secure boot fast wake up support that Kconfig.soc_caps.in does not, so the digest area is left unreserved."
+#endif
 
 static const char* TAG = "boot_comm";
 
@@ -242,11 +248,8 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 {
 #ifdef BOOTLOADER_BUILD
     #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
-#if CONFIG_SECURE_BOOT && ESP_ROM_SUPPORT_SECURE_BOOT_FAST_WAKEUP
-    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR - ESP_SECURE_BOOT_DIGEST_LEN;
-#else
-    static rtc_retain_mem_t *const s_bootloader_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
-#endif
+    static rtc_retain_mem_t *const s_bootloader_retain_mem =
+        (rtc_retain_mem_t *)((uintptr_t)RTC_RETAIN_MEM_ADDR - CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE);
     return s_bootloader_retain_mem;
 #else
     static __attribute__((section(".bootloader_data_rtc_mem"))) rtc_retain_mem_t s_bootloader_retain_mem;
