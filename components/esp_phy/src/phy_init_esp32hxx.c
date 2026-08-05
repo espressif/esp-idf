@@ -170,7 +170,10 @@ void esp_phy_disable(esp_phy_modem_t modem)
         {
             phy_close_rf();
             phy_xpd_tsens();
+// TODO: IDF-16048
+#if !CONFIG_IDF_TARGET_ESP32H21 && !CONFIG_IDF_TARGET_ESP32H4
             phy_wait_freq_hw_hop_done();
+#endif
         }
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_disable(PERIPH_PHY_MODULE);
