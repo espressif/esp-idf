@@ -75,21 +75,18 @@ int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_
 int esp_ecc_point_verify(const ecc_point_t *point)
 {
     int result;
+    const unsigned len = point->len;
 
-    /* point->len drives a fixed-stride MMIO write loop in the HAL; an unvalidated oversized
-     * value (attacker-controlled via the TEE secure service) walks past the ECC register block
-     * and can reach other peripheral registers (CWE-787). Reject non-curve lengths up front and
-     * return 0 (point not verified) -- the fail-safe value for this routine. */
-    if (point->len != P192_LEN && point->len != P256_LEN
+    if (len != P192_LEN && len != P256_LEN
 #if SOC_ECC_SUPPORT_CURVE_P384
-            && point->len != P384_LEN
+            && len != P384_LEN
 #endif
        ) {
         return 0;
     }
 
     esp_ecc_acquire_hardware();
-    ecc_hal_write_verify_param(point->x, point->y, point->len);
+    ecc_hal_write_verify_param(point->x, point->y, len);
     ecc_hal_set_mode(ECC_MODE_VERIFY);
     ecc_hal_start_calc();
 
