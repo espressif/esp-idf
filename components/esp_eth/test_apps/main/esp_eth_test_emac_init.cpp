@@ -44,23 +44,10 @@ static void cpp_eth_init_internal_emac(void)
 #endif // CONFIG_ETH_USE_ESP32_EMAC
 
 #if CONFIG_ETH_USE_SPI_ETHERNET
-#include "ethernet_init.h"
-
 static void cpp_eth_spi_custom_driver_config(void) __attribute__((unused));
 static void cpp_eth_spi_custom_driver_config(void)
 {
     volatile eth_spi_custom_driver_config_t cfg = ETH_DEFAULT_SPI;
     (void)cfg;
-}
-
-static void cpp_eth_init_spi(void) __attribute__((unused));
-static void cpp_eth_init_spi(void)
-{
-    esp_eth_handle_t *handles = nullptr;
-    uint8_t cnt = 0;
-    (void)ethernet_init_all(&handles, &cnt);
-    if (handles != nullptr && cnt > 0) {
-        (void)ethernet_deinit_all(handles);
-    }
 }
 #endif // CONFIG_ETH_USE_SPI_ETHERNET
