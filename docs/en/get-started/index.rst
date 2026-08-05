@@ -43,6 +43,19 @@ Introduction
     * USB OTG interface
     * USB Serial/JTAG Controller
 
+.. only:: esp32s31
+
+    * Wi-Fi 6 (2.4 GHz band)
+    * Bluetooth® 5.4 (LE)
+    * Bluetooth® Classic
+    * 802.15.4 Thread/Zigbee
+    * High performance dual-core 32-bit RISC-V processor
+    * Multiple peripherals
+    * Built-in security hardware
+    * USB 2.0 High-Speed OTG interface
+    * USB Serial/JTAG Controller
+    * Ethernet MAC interface
+
 .. only:: esp32c3
 
     * Wi-Fi (2.4 GHz band)
@@ -168,6 +181,14 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
         ESP32-S3-LCD-EV-Board <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-lcd-ev-board/index.html>
         ESP-VoCat <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp-vocat/index.html>
         ESP-DualKey <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp-dualkey/index.html>
+
+.. only:: esp32s31
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-S31-Function-CoreBoard-1 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s31/esp32-s31-function-coreboard-1/index.html>
+        ESP32-S31-Korvo-1 <https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s31/esp32-s31-korvo-1/index.html>
 
 .. only:: esp32c2
 

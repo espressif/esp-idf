@@ -18,6 +18,7 @@ H/W 硬件参考
     :esp32h2: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-h2_datasheet_cn.pdf>
     :esp32c5: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c5_datasheet_cn.pdf>
     :esp32p4: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-p4_datasheet_cn.pdf>
+    :esp32s31: 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s31_datasheet_cn.pdf>
     :esp32:   硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32/index.html>
     :esp32s2: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32s2/index.html>
     :esp32s3: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32s3/index.html>
@@ -28,6 +29,7 @@ H/W 硬件参考
     :esp32h2: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32h2/index.html>
     :esp32p4: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32p4/index.html>
     :esp32c5: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32c5/index.html>
+    :esp32s31: 硬件设计指南 <https://docs.espressif.com/projects/esp-hardware-design-guidelines/zh_CN/latest/esp32s31/index.html>
     :esp32: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32/index.html>
     :esp32s2: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32s2/index.html>
     :esp32s3: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32s3/index.html>
@@ -36,6 +38,7 @@ H/W 硬件参考
     :esp32c6: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32c6/index.html>
     :esp32c61: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32c61/index.html>
     :esp32h2: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32h2/index.html>
+    :esp32s31: 芯片勘误表 <https://docs.espressif.com/projects/esp-chip-errata/zh_CN/latest/esp32s31/index.html>
     芯片变型 <https://espressif.com/zh-hans/products/socs?id={IDF_TARGET_NAME}>
     :not esp32p4: 模组 <https://www.espressif.com/zh-hans/products/modules?id={IDF_TARGET_NAME}>
     开发板 <https://www.espressif.com/zh-hans/products/devkits?id={IDF_TARGET_NAME}>

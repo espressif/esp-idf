@@ -19,8 +19,8 @@ ESP 芯片通常使用 UART 实现串口，并可以通过外部 USB-UART 桥接
 硬件要求
 =====================
 
-{IDF_TARGET_USB_DP_GPIO:default="未更新！",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13", esp32h4="14"}
-{IDF_TARGET_USB_DM_GPIO:default="未更新！",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12", esp32h4="13"}
+{IDF_TARGET_USB_DP_GPIO:default="未更新！",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13", esp32h4="14", esp32s31="34"}
+{IDF_TARGET_USB_DM_GPIO:default="未更新！",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12", esp32h4="13", esp32s31="33"}
 
 将 {IDF_TARGET_NAME} 连接到 USB 端口，连接方式如下：
 
@@ -69,11 +69,9 @@ USB 串行/JTAG 控制器可以自动将 {IDF_TARGET_NAME} 置于下载模式。
 限制
 ===========
 
-{IDF_TARGET_BOOT_PIN:default = "未更新！", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9"}
+{IDF_TARGET_BOOT_PIN:default = "未更新！", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9", esp32s31 = "GPIO61"}
 
 USB 串行/JTAG 控制台功能存在一些限制，这些限制的影响程度各不相同，具体取决于开发中的应用程序类型，以及开发的工作流程。
-
-{IDF_TARGET_BOOT_PIN:default = "未更新！", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9"}
 
 重新配置 USB 管脚
 -----------------------
