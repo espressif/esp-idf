@@ -1064,6 +1064,9 @@ typedef struct {
     wifi_second_chan_t new_snd;    /**< new second channel of the device */
 } wifi_event_home_channel_change_t;
 
+#define BIT_NUMBER_TO_CHANNEL(bit_number) \
+    (((bit_number) >= 1 && (bit_number) <= 14) ? (bit_number) : 0)
+
 /** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
