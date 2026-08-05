@@ -10,6 +10,8 @@ exclude_dirs = [
     'tools/ci/test_autocomplete',
     'tools/test_build_system',
     'tools/bt/ble_log_console',
+    'components/ulp/test_apps/lp_core/host_tests/lp_core_custom_linker',
+    'components/ulp/test_apps/lp_core/host_tests/lp_core_custom_linker_v2',
 ]
 
 [local_runtime_envs]

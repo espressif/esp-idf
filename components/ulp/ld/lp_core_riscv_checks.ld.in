@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Checks part (base + layout + checks). Link-time ASSERTs that catch
+ * misplacement, overflow, and missing symbols in the layout part.
+ */
+ASSERT(DEFINED(reset_vector),
+       "LP core linker: reset_vector is not defined")
+
+ASSERT(__mtvec_base == ULP_MEM_START_ADDRESS,
+       "LP core linker: vector table is not at the reserved LP base")
+
+ASSERT(reset_vector == LP_CORE_USER_MEMORY_REGION_START,
+       "LP core linker: reset vector is not at the required offset")
+
+/* The layout must mark the end of writable data so the framework can size and
+   bounds-check the stack. */
+ASSERT(DEFINED(_lp_data_end),
+       "LP core linker: end of writable data is not marked; compose LP_CORE_DATA_END() (or assign _lp_data_end) in the layout")
+
+/* Default stack size: all free space between the data end and the stack top.
+   A layout that assigns __stack_size wins (PROVIDE yields and does not evaluate
+   the expression). */
+PROVIDE(__stack_size = __stack_top - _lp_data_end);
+
+ASSERT(__stack_top <= _lp_shared_start,
+       "LP core linker: application overruns into the reserved shared-memory region")
+
+ASSERT(__stack_top <= ULP_MEM_START_ADDRESS + ALIGNED_COPROC_MEM,
+       "LP core linker: image exceeds the reserved LP coprocessor memory")
+
+/* The stack grows down from __stack_top for __stack_size bytes; its lowest
+   address must not descend into the data region. */
+ASSERT(__stack_top - __stack_size >= _lp_data_end,
+       "LP core linker: stack region overlaps the data region (__stack_size too large or __stack_top too low)")
+
+#if CONFIG_ULP_LP_CORE_MEMPROT
+ASSERT(DEFINED(_lp_text_end),
+       "LP core linker: _lp_text_end must be defined when CONFIG_ULP_LP_CORE_MEMPROT is enabled (it marks the RX/RW boundary used by the PMP setup)")
+#endif

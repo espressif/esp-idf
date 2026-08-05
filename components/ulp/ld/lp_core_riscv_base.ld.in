@@ -1,0 +1,120 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Base part of the LP-core linker script (base + layout + checks). It defines:
+ *   - the usable LP-RAM window bounds LP_CORE_USER_MEMORY_REGION_START and
+ *     LP_CORE_USER_MEMORY_REGION_END;
+ *   - ENTRY, the interrupt vector table, the HP/LP shared-memory section and a
+ *     default __stack_top;
+ *   - the section-boundary macros a custom layout composes: LP_CORE_TEXT_START,
+ *     LP_CORE_TEXT_END, LP_CORE_DATA_START and LP_CORE_DATA_END, plus the
+ *     LP_CORE_DEFAULT_TEXT / LP_CORE_DEFAULT_DATA convenience macros used by the
+ *     default layout.
+ */
+#include "sdkconfig.h"
+#include "soc/soc.h"
+#include "ld.common"
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+#include "ld.hp_mem_defs"
+#endif
+
+#if CONFIG_ESP_ROM_HAS_LP_ROM
+/* With LP-ROM memory layout is different due to LP ROM stack/data */
+/* For P4 ECO5 we also reserve some RTC MEM at the first for MSPI workaround */
+#define ULP_MEM_START_ADDRESS SOC_RTC_DRAM_LOW + RESERVE_RTC_MEM + MSPI_WORKAROUND_SIZE
+#else
+#define ULP_MEM_START_ADDRESS (SOC_RTC_DRAM_LOW)
+#endif
+
+#define ALIGN_DOWN(SIZE, AL)    (SIZE & ~(AL - 1))
+/* Ensure the end where the shared memory starts is aligned to 8 bytes
+   if updating this also update the same in ulp_lp_core_memory_shared.c
+ */
+#define ALIGNED_COPROC_MEM      ALIGN_DOWN(CONFIG_ULP_COPROC_RESERVE_MEM, 0x8)
+#define ULP_VECTOR_TABLE_LENGTH 0x80
+
+/* Free LP-RAM window a layout may use, between the vector table and shared memory. */
+#define LP_CORE_USER_MEMORY_REGION_START (ULP_MEM_START_ADDRESS + ULP_VECTOR_TABLE_LENGTH)
+#define LP_CORE_USER_MEMORY_REGION_END   (ULP_MEM_START_ADDRESS + ALIGNED_COPROC_MEM - CONFIG_ULP_SHARED_MEM)
+
+/*
+ * Section-boundary macros a custom layout composes at each region boundary.
+ * ESP-IDF injects any config-dependent handling here, so the layout composes
+ * them the same way regardless of the active configuration.
+ */
+
+/* Reset vector and early handlers at the boot offset, placed first in `region`
+   (which must start at LP_CORE_USER_MEMORY_REGION_START). */
+#define LP_CORE_TEXT_START(region) \
+    . = ORIGIN(region) ; \
+    .rtc_text ALIGN(4) : { \
+        *(.text.vectors) /* Reset vector must link to offset 0x80 */ \
+        *(.text.handlers) \
+        *(.text.handlers.*) \
+    } > region
+
+/* End of the executable region in LP RAM: the RX/RW boundary the PMP setup uses
+   under memory protection. (Memory protection and running from HP RAM are
+   mutually exclusive, so the boundary always follows the LP-RAM .text here.) */
+#if CONFIG_ULP_LP_CORE_MEMPROT
+#define LP_CORE_TEXT_END() . = ALIGN(128) ; _lp_text_end = . ;
+#else
+#define LP_CORE_TEXT_END()
+#endif
+
+/* Start of the writable data region. */
+#define LP_CORE_DATA_START() . = ALIGN(128) ; _lp_data_start = . ;
+
+/* End of the writable data region, before the stack. Marks the lowest address
+   the stack may descend to: the framework derives the default __stack_size from
+   it and bounds-checks the stack against it. A layout must compose this (or
+   assign _lp_data_end directly). */
+#define LP_CORE_DATA_END() . = ALIGN(4) ; _lp_data_end = . ;
+
+/* Convenience: standard executable and data section placement into `region`. */
+#define LP_CORE_DEFAULT_TEXT(region) \
+    .text ALIGN(4) : { *(.text) *(.text*) } > region \
+    .rodata ALIGN(4) : { *(.rodata) *(.rodata*) } > region
+#define LP_CORE_DEFAULT_DATA(region) \
+    .data ALIGN(4) : { _data_start = . ; *(.data) *(.data*) *(.sdata) *(.sdata*) _data_end = . ; } > region \
+    .bss ALIGN(4) : { _bss_start = . ; *(.bss) *(.bss*) *(.sbss) *(.sbss*) PROVIDE(end = .) ; _bss_end = . ; } > region
+
+/* Default stack top, at the top of the usable window. A layout whose data does
+   not reach the window end may override it to the top of its own data region.
+   The companion __stack_size defaults to __stack_top - _lp_data_end (computed in
+   the checks part, once the layout has placed its data); a layout may override
+   either. Both are weak defaults, so a custom layout can take ownership. */
+PROVIDE(__stack_top = LP_CORE_USER_MEMORY_REGION_END);
+
+ENTRY(reset_vector)
+
+MEMORY
+{
+    /* First 128 bytes for exception/interrupt vectors */
+    vector_table(RX)   : ORIGIN = ULP_MEM_START_ADDRESS, LENGTH = ULP_VECTOR_TABLE_LENGTH
+    shared_mem_ram(RW) : ORIGIN = LP_CORE_USER_MEMORY_REGION_END, LENGTH = CONFIG_ULP_SHARED_MEM
+#if CONFIG_ULP_COPROC_RUN_FROM_HP_MEM
+    hp_ram(RWX)        : ORIGIN = ULP_HP_MEM_START, LENGTH = ULP_HP_MEM_SIZE
+#endif
+}
+
+SECTIONS
+{
+    .vector.text :
+    {
+        /* Exception/interrupt vectors */
+        __mtvec_base = .;
+        KEEP (*(.init.vector .init.vector.*))
+    } > vector_table
+
+    /* Shared memory, agreed with ulp_lp_core_memory_shared.c. */
+    . = ORIGIN(shared_mem_ram);
+    _lp_shared_start = ORIGIN(shared_mem_ram);
+    .shared_mem (ALIGN(4)) : { KEEP(*(.shared_mem)) } > shared_mem_ram
+
+    /* Position the location counter at the window start so the layout part's
+       sections flow into their region. A layout that omits LP_CORE_TEXT_START
+       is then caught by the checks part instead of an obscure overflow. */
+    . = LP_CORE_USER_MEMORY_REGION_START;
+}

@@ -1279,16 +1279,25 @@ function(__preprocess_linker_script script_in script_out flags component_include
 
     set(linker_script_generator "${idf_path}/tools/cmake/linker_script_preprocessor.cmake")
 
+    # -MD -MF -MT makes the C preprocessor record every file it reads (the
+    # template plus everything it #includes, transitively) into a depfile, so
+    # the output is regenerated when any of them changes. MAIN_DEPENDENCY and
+    # DEPENDS only cover the top-level script and sdkconfig; the depfile closes
+    # the gap for includes the build system cannot enumerate up front.
+    set(depfile "${script_out}.d")
+    set(depfile_flags "-MD -MF \"${depfile}\" -MT \"${script_out}\"")
+
     add_custom_command(
         OUTPUT ${script_out}
         COMMAND ${CMAKE_COMMAND}
             "-DCC=${CMAKE_C_COMPILER}"
             "-DSOURCE=${script_in}"
             "-DTARGET=${script_out}"
-            "-DCFLAGS=-I\"${config_dir}\" ${base_flags} ${component_includes}"
+            "-DCFLAGS=-I\"${config_dir}\" ${depfile_flags} ${base_flags} ${component_includes}"
             -P "${linker_script_generator}"
         MAIN_DEPENDENCY "${script_in}"
         DEPENDS "${sdkconfig_header}"
+        DEPFILE "${depfile}"
         COMMENT "Preprocessing linker script ${script_in} -> ${script_out}"
         VERBATIM)
 endfunction()

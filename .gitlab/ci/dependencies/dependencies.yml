@@ -59,6 +59,12 @@
   patterns:
     - host_test_ldgen
 
+"test:host_test_ulp_linker":
+  labels:
+    - host_test
+  patterns:
+    - host_test_ulp_linker
+
 "test:host_test_cli_installer":
   labels:
     - host_test

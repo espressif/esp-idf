@@ -32,9 +32,14 @@ function(__ulp_create_arg_file arguments output_file)
 endfunction()
 
 function(__ulp_add_preprocessed_linker_script ulp_app_name ld_template ld_script ld_script_target)
-    # Use the C preprocessor so sdkconfig and SoC constants can shape the
-    # linker template before the ULP executable is linked.
-    set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ld_script} ${ARGN} ${ld_template})
+    # Use the C preprocessor so sdkconfig and SoC constants can shape the linker
+    # template before the ULP executable is linked. -MD -MF -MT records every file
+    # the preprocessor reads (sdkconfig.h, SoC headers, the base/layout/checks
+    # parts and a custom LINKER_LAYOUT with its own includes) into a depfile, so
+    # the script regenerates when any of them changes.
+    set(ld_depfile ${CMAKE_CURRENT_BINARY_DIR}/${ld_script}.d)
+    set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -MD -MF ${ld_depfile} -MT ${ld_script}
+                          -o ${ld_script} ${ARGN} ${ld_template})
     set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ld_script}_args.txt)
     __ulp_create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
 
@@ -42,13 +47,21 @@ function(__ulp_add_preprocessed_linker_script ulp_app_name ld_template ld_script
                     COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                     MAIN_DEPENDENCY ${ld_template}
-                    DEPENDS ${SDKCONFIG_HEADER}
+                    # The response file is a dependency too: a change visible only
+                    # in the preprocessor flags (e.g. a different LINKER layout
+                    # path) must regenerate the script even though no file recorded
+                    # in the depfile changed. __ulp_create_arg_file rewrites it
+                    # only when its content actually changes, so this does not
+                    # retrigger on every reconfigure.
+                    DEPENDS ${compiler_arguments_file}
+                    DEPFILE ${ld_depfile}
                     COMMENT "Generating ${ld_script} linker script..."
                     VERBATIM)
 
     add_custom_target(${ld_script_target} DEPENDS ${ld_script})
     add_dependencies(${ulp_app_name} ${ld_script_target})
     target_link_options(${ulp_app_name} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}/${ld_script})
+    set_property(TARGET ${ulp_app_name} APPEND PROPERTY LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${ld_script})
 endfunction()
 
 function(ulp_apply_default_options ulp_app_name)
@@ -85,7 +98,10 @@ function(ulp_apply_default_sources ulp_app_name)
 
     target_include_directories(${ulp_app_name} PRIVATE ${COMPONENT_INCLUDES} ${sdkconfig_dir})
 
-    # Pre-process the linker script
+    # Pre-process the linker script. The LP-core script is assembled from
+    # base + layout + checks. A user-supplied LINKER_LAYOUT (LP_CORE_LINKER_SCRIPT)
+    # replaces the layout, swapped in by the wrapper. This is supported for the
+    # LP-core type only.
     if(BUILD_RISCV)
         set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld.in)
     elseif(BUILD_LP_CORE)
@@ -94,6 +110,18 @@ function(ulp_apply_default_sources ulp_app_name)
         set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld.in)
     else()
         message(FATAL_ERROR "Unable to determine ULP type. ")
+    endif()
+
+    if(LP_CORE_LINKER_SCRIPT)
+        # The LINKER_LAYOUT-is-LP-core-only check is enforced once in
+        # ulp_embed_binary/ulp_add_project, so LP_CORE_LINKER_SCRIPT only ever
+        # reaches an LP-core child.
+        message(STATUS "Using custom LP-core linker layout: ${LP_CORE_LINKER_SCRIPT}")
+        # The inner escaped quotes are required: the wrapper does
+        # `#include LP_CORE_LINKER_INCLUDE`, so the macro must expand to a quoted
+        # header-name token ("/abs/path.ld"). __ulp_create_arg_file() additionally
+        # escapes spaces in the path, keeping it a single preprocessor token.
+        list(APPEND ULP_PREPRO_ARGS "-DLP_CORE_LINKER_INCLUDE=\\\"${LP_CORE_LINKER_SCRIPT}\\\"")
     endif()
 
     # Strip the .in suffix so the generated script keeps its .ld name.
