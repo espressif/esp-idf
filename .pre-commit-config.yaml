@@ -43,12 +43,15 @@ repos:
         args: ['-f=lf']
         exclude: *whitespace_excludes
       - id: double-quote-string-fixer
+      # '--branch' is passed explicitly because the hook otherwise falls back to
+      # protecting 'master' and 'main', which would fail these checks for reasons
+      # unrelated to their names. An empty value never matches a branch name.
       - id: no-commit-to-branch
         name: Do not use more than one slash in the branch name
-        args: ['--pattern', '^[^/]*/[^/]*/']
+        args: ['--branch', '', '--pattern', '^[^/]*/[^/]*/']
       - id: no-commit-to-branch
         name: Do not use uppercase letters in the branch name
-        args: ['--pattern', '^[^A-Z]*[A-Z]']
+        args: ['--branch', '', '--pattern', '^[^A-Z]*[A-Z]']
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
