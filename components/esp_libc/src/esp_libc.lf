@@ -17,5 +17,3 @@ entries:
     stdatomic (noflash)
   if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
     stdatomic_s32c1i (noflash)
-  if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
-    stdatomic_s32c1i (noflash)
