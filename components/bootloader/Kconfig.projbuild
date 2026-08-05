@@ -506,6 +506,13 @@ menu "Security features"
         bool
         default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_RSA_SUPPORTED
 
+    config SECURE_BOOT_V2_MIN_SIGNATURES
+        int "bootloader second stage and ota verifies minimum signatures"
+        range 1 3
+        default 1
+        help
+            Number of signatures required for app-images from second stage and ota
+
     config SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
         bool
         default y if SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK && SECURE_BOOT && SECURE_FLASH_ENC_ENABLED
