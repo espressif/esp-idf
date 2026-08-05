@@ -71,7 +71,7 @@
 #define SOC_RTC_WDT_SUPPORTED           1
 #define SOC_SPI_FLASH_SUPPORTED         1
 #define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
-// #define SOC_RNG_SUPPORTED               1    //TODO: [ESP32H21] IDF-11503
+#define SOC_RNG_SUPPORTED               1
 #define SOC_MODEM_CLOCK_SUPPORTED       1
 #define SOC_REGI2C_SUPPORTED           1
 #define SOC_PHY_SUPPORTED               1
