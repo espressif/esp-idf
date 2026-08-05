@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,9 +34,9 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     esp_err_t ret = ESP_OK;
 
     /* Argument sanity check */
-    if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh > SOC_LP_UART_FIFO_LEN) ||
-            (cfg->uart_proto_cfg.flow_ctrl > UART_HW_FLOWCTRL_MAX) ||
-            (cfg->uart_proto_cfg.data_bits > UART_DATA_BITS_MAX)) {
+    if ((cfg->uart_proto_cfg.rx_flow_ctrl_thresh >= SOC_LP_UART_FIFO_LEN) ||
+            (cfg->uart_proto_cfg.flow_ctrl >= UART_HW_FLOWCTRL_MAX) ||
+            (cfg->uart_proto_cfg.data_bits >= UART_DATA_BITS_MAX)) {
         // Invalid config
         return ESP_ERR_INVALID_ARG;
     }
@@ -154,10 +154,13 @@ static esp_err_t lp_core_uart_set_pin(const lp_core_uart_cfg_t *cfg)
     ret = lp_uart_config_io(cfg->uart_pin_cfg.tx_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_TX_PIN_IDX);
     /* Configure Rx Pin */
     ret = lp_uart_config_io(cfg->uart_pin_cfg.rx_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_RX_PIN_IDX);
-    /* Configure RTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_RTS_PIN_IDX);
-    /* Configure CTS Pin */
-    ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_CTS_PIN_IDX);
+    /* Configure RTS/CTS only when hardware flow control is enabled */
+    if (cfg->uart_proto_cfg.flow_ctrl & UART_HW_FLOWCTRL_RTS) {
+        ret = lp_uart_config_io(cfg->uart_pin_cfg.rts_io_num, RTC_GPIO_MODE_OUTPUT_ONLY, SOC_UART_RTS_PIN_IDX);
+    }
+    if (cfg->uart_proto_cfg.flow_ctrl & UART_HW_FLOWCTRL_CTS) {
+        ret = lp_uart_config_io(cfg->uart_pin_cfg.cts_io_num, RTC_GPIO_MODE_INPUT_ONLY, SOC_UART_CTS_PIN_IDX);
+    }
 
     return ret;
 }
