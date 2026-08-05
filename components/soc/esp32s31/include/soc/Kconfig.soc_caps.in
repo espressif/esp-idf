@@ -1363,6 +1363,10 @@ config SOC_MODEM_CLOCK_WIFI_BB_80X1_AS_APB
     bool
     default y
 
+config SOC_RNG_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y

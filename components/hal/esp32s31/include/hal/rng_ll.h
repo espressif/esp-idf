@@ -77,8 +77,8 @@ static inline void rng_ll_enable_noise_crc(bool enable)
 static inline void rng_ll_enable(void)
 {
     rng_ll_enable_bus_clock(true);
-    rng_ll_reset();
     rng_ll_enable_clock(true);
+    rng_ll_reset();
     rng_ll_enable_sample(true);
     rng_ll_enable_noise_crc(true);
 }
@@ -90,8 +90,8 @@ static inline void rng_ll_enable(void)
  */
 static inline void rng_ll_disable(void)
 {
-    rng_ll_enable_sample(false);
     rng_ll_enable_noise_crc(false);
+    rng_ll_enable_sample(false);
     rng_ll_enable_clock(false);
     rng_ll_enable_bus_clock(false);
 }
