@@ -33,6 +33,13 @@ def patch(path: str) -> None:
     with open(path) as f:
         d = yaml.safe_load(f)
 
+    if 'fake_pass' in d:
+        # idf-ci emitted a skip pipeline (no apps matched the modified files): there
+        # are no build jobs to activate and no included generate_pytest_child_pipeline
+        # to redefine. Leave it untouched so Build system v2 skips like the default path.
+        print('Skip pipeline (fake_pass) detected, leaving it untouched')
+        return
+
     injected = []
     for k, v in d.items():
         if isinstance(v, dict) and 'extends' in v:
