@@ -19,8 +19,8 @@ Generally, ESP chips implement a serial port using UART and can be connected to 
 Hardware Requirements
 =====================
 
-{IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13", esp32h4="14", esp32h21="18"}
-{IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12", esp32h4="13", esp32h21="17"}
+{IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20", esp32c6="13", esp32h2="27", esp32p4="25/27", esp32c5="14", esp32c61="13", esp32h4="14", esp32h21="18", esp32s31="34"}
+{IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19", esp32c6="12", esp32h2="26", esp32p4="24/26", esp32c5="13", esp32c61="12", esp32h4="13", esp32h21="17", esp32s31="33"}
 
 Connect {IDF_TARGET_NAME} to the USB port as follows:
 
@@ -69,11 +69,9 @@ The USB Serial/JTAG Controller is able to put the {IDF_TARGET_NAME} into downloa
 Limitations
 ===========
 
-{IDF_TARGET_BOOT_PIN:default = "Not Updated!", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9"}
+{IDF_TARGET_BOOT_PIN:default = "Not Updated!", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9", esp32s31 = "GPIO61"}
 
 There are several limitations to the USB Serial/JTAG console feature. The significance of these limitations depends on the type of application being developed, and the development workflow.
-
-{IDF_TARGET_BOOT_PIN:default = "Not Updated!", esp32c3 = "GPIO9", esp32s3 = "GPIO0", esp32c6 = "GPIO9"}
 
 USB Pin Reconfiguration
 -----------------------
