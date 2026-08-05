@@ -89,7 +89,7 @@ MEMORY
  *  - Bootloader retain memory (for reboot counter, OTA info, etc.)
  *
  *  +-----------------------------+ 0x50004000 (LP RAM end)
- *  | Secure Boot Image Digest    | ( For ROM using, must keep it at the end ESP_SECURE_BOOT_DIGEST_LEN bytes of LP RAM)
+ *  | Secure Boot Image Digest    | ( For ROM using, must keep it at the end CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE bytes of LP RAM)
  *  | for fast wake secure boot.  |
  *  |(only if CONFIG_SECURE_BOOT) |
  *  |- - - - - - - - - - - - - - -|

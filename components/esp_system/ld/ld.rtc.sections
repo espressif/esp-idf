@@ -137,10 +137,19 @@
      */
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
     KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+    _bootloader_data_rtc_mem_end = ABSOLUTE(.);
+    /* ROM keeps the verified image digest in the last bytes of RTC RAM */
+    . = . + CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE;
 #endif // CONFIG_IDF_TARGET_ESP32P4
 
     _rtc_reserved_end = ABSOLUTE(.);
   } > rtc_reserved_seg
+
+#if CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE > 0
+  ASSERT((_bootloader_data_rtc_mem_end == ORIGIN(rtc_reserved_seg) + LENGTH(rtc_reserved_seg)
+                                         - CONFIG_SECURE_BOOT_ROM_FAST_WAKE_RESERVE_SIZE),
+          "The ROM secure boot fast wake up digest must occupy the last bytes of RTC RAM, and the bootloader retain mem must end where it begins. bootloader_common_get_rtc_retain_mem() computes that address.")
+#endif
 
   _rtc_ulp_memory_start = _rtc_reserved_start + LENGTH(rtc_reserved_seg);
   _rtc_reserved_length = _rtc_reserved_end - _rtc_reserved_start;
