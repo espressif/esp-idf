@@ -54,7 +54,7 @@ if(NOT __idf_env_set)
     include(err_codes)
 
     # ESP-IDF extra dependencies defined in tools/idf_extra_components.yml
-    if(WIN32)
+    if(CMAKE_HOST_WIN32)
         set_default(IDF_TOOLS_PATH "$ENV{USERPROFILE}/.espressif")
     else()
         set_default(IDF_TOOLS_PATH "$ENV{HOME}/.espressif")
