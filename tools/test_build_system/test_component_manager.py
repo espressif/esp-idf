@@ -222,7 +222,7 @@ class TestIdfRootDependency:
             fw.write(
                 textwrap.dedent("""
             dependencies:
-              espressif/mdns: "*"
+              example/cmp: "==3.3.9"
             """)
             )
 
@@ -231,16 +231,23 @@ class TestIdfRootDependency:
         replace_in_file(
             (test_app_copy / 'main' / 'build_test_app.c'),
             '// placeholder_before_main',
-            '#include "mdns.h"',
+            '#include "cmp.h"',
+        )
+        # Call into the component as well, so that the test fails if the component
+        # is only on the include path but not linked.
+        replace_in_file(
+            (test_app_copy / 'main' / 'build_test_app.c'),
+            '// placeholder_inside_main',
+            'cmp_hello();',
         )
 
         # Intentional dependency on the cmake-level name of the managed component because
-        # idf_extra_components.yml installs espressif/mdns and we verify REQUIRES pulls
-        # espressif__mdns into the build — not something application code should do.
+        # idf_extra_components.yml installs example/cmp and we verify REQUIRES pulls
+        # example__cmp into the build — not something application code should do.
         replace_in_file(
             (test_app_copy / 'main' / 'CMakeLists.txt'),
             '# placeholder_inside_idf_component_register',
-            'REQUIRES espressif__mdns',
+            'REQUIRES example__cmp',
         )
 
         idf_py('build')
@@ -250,8 +257,8 @@ class TestIdfRootDependency:
             fw.write(
                 textwrap.dedent("""
             dependencies:
-              espressif/mdns: "*"
-              example/cmp: "*"
+              espressif/mdns: "==1.10.0"
+              example/cmp: "==3.3.9"
             """)
             )
 
@@ -282,7 +289,7 @@ class TestIdfRootDependency:
             fw.write(
                 textwrap.dedent("""
             dependencies:
-              espressif/mdns: "*"
+              espressif/mdns: "==1.10.0"
             """)
             )
 
@@ -296,8 +303,8 @@ class TestIdfRootDependency:
             fw.write(
                 textwrap.dedent("""
             dependencies:
-              espressif/led_strip: "*"
-              example/cmp: "*"
+              espressif/led_strip: "==3.0.3"
+              example/cmp: "==3.3.9"
             """)
             )
 
