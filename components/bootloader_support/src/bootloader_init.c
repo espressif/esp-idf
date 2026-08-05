@@ -64,7 +64,7 @@ esp_err_t bootloader_check_bootloader_validity(void)
     unsigned int efuse_revision = efuse_hal_blk_version();
     unsigned int efuse_major_rev = efuse_revision / 100;
     unsigned int efuse_minor_rev = efuse_revision % 100;
-    ESP_EARLY_LOGI(TAG, "efuse block revision: v%d.%d", efuse_major_rev, efuse_minor_rev);
+    ESP_EARLY_LOGD(TAG, "efuse block revision: v%d.%d", efuse_major_rev, efuse_minor_rev);
 #endif  // !CONFIG_IDF_TARGET_ESP32
     /* compare with the one set in bootloader image header */
     if (bootloader_common_check_chip_validity(&bootloader_image_hdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
@@ -113,7 +113,7 @@ void bootloader_config_wdt(void)
 
 void bootloader_enable_random(void)
 {
-    ESP_EARLY_LOGI(TAG, "Enabling RNG early entropy source...");
+    ESP_EARLY_LOGD(TAG, "Enabling RNG early entropy source...");
     bootloader_random_enable();
 }
 
@@ -132,7 +132,7 @@ void bootloader_print_banner(void)
     ESP_EARLY_LOGW(TAG, "Unicore bootloader");
 #endif
 #else
-    ESP_EARLY_LOGI(TAG, "Multicore bootloader");
+    ESP_EARLY_LOGD(TAG, "Multicore bootloader");
 #endif
 }
 
