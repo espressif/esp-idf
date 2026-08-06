@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -258,16 +258,22 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
         {
             ESP_LOGI(BT_HF_TAG, "--audio state %s",
                     c_audio_state_str[param->audio_stat.state]);
-    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
+                /* Disable connectable and discoverable mode to save the over-the-air bandwidth and ensure audio quality  */
+                esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
                 esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
                                                     bt_app_hf_client_outgoing_cb);
                 bt_app_hf_client_audio_open();
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
+                /* Resume connectable and discoverable mode */
+                esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
                 bt_app_hf_client_audio_close();
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             }
-    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
             break;
         }
 
