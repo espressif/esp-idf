@@ -81,6 +81,22 @@ def test_lp_uart_multi_device(case_tester: CaseTester) -> None:
 
 
 @pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_lp_spi_multi_device(case_tester: CaseTester) -> None:
+    spi_cases = [case for case in case_tester.test_menu if 'lp_core_spi' in case.groups]
+    for case in spi_cases:
+        case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'target',
     soc_filtered_targets('SOC_ULP_LP_UART_SUPPORTED == 1'),

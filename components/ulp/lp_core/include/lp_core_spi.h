@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,6 +103,22 @@ esp_err_t lp_core_lp_spi_bus_add_device(lp_spi_host_t host_id, const lp_spi_devi
  *                      ESP_FAIL if the SPI controller could not be initialized in slave mode
  */
 esp_err_t lp_core_lp_spi_slave_initialize(lp_spi_host_t host_id, const lp_spi_slave_config_t *slave_config);
+
+/**
+ * @brief Deinitialize the LP SPI bus.
+ *
+ * Performs a module-level hardware reset of the LP SPI peripheral (all
+ * registers return to power-on defaults) and deinitializes the LP GPIO
+ * pins that were configured for SPI signals.
+ *
+ * @param host_id   LP SPI host ID (currently unused, only one host exists)
+ * @param bus_config Pointer to the bus configuration that was used during
+ *                   initialization, so that the same GPIO pins can be
+ *                   deinitialized. May be NULL to skip GPIO deinit.
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t lp_core_lp_spi_bus_deinit(lp_spi_host_t host_id, const lp_spi_bus_config_t *bus_config);
 
 #ifdef __cplusplus
 }
