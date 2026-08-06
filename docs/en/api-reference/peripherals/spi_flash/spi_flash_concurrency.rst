@@ -19,7 +19,7 @@ There are three kinds of activities that can happen on SPI0/1 bus:
     .. list::
 
         - Calling non_encrypted SPI flash read API (:cpp:func:`esp_flash_read`, etc.)
-        :esp32: - Or other drivers on SPI1 bus for user defined SPI operations (enable experimental feature :ref:`CONFIG_SPI_FLASH_SHARE_SPI1_BUS`)
+        :esp32: - Or other drivers on SPI1 bus for user defined SPI operations (enable experimental feature :menuitem:`CONFIG_SPI_FLASH_SHARE_SPI1_BUS`)
 
 - Cache read (via SPI0). Following API and operations can trigger cache read:
 

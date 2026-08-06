@@ -18,7 +18,7 @@ DRAM（数据 RAM）
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-   通过应用 ``EXT_RAM_BSS_ATTR`` 宏，零初始化数据也可以放入外部 RAM。使用这个宏需要启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`。详情请见 :ref:`external_ram_config_bss`。
+   通过应用 ``EXT_RAM_BSS_ATTR`` 宏，零初始化数据也可以放入外部 RAM。使用这个宏需要启用 :menuitem:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`。详情请见 :ref:`external_ram_config_bss`。
 
 .. only:: esp32
 
@@ -44,7 +44,7 @@ DRAM（数据 RAM）
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-   通过使用 ``EXT_RAM_NOINIT_ATTR`` 宏，noinit 数据也可以放入外部 RAM 中。为此，需要启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`，可参考 :ref:`external_ram_config_noinit`。如果没有启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`， ``EXT_RAM_NOINIT_ATTR`` 会和 ``__NOINIT_ATTR`` 一样，将数据放入内部 RAM 的 ``.noinit`` 部分。
+   通过使用 ``EXT_RAM_NOINIT_ATTR`` 宏，noinit 数据也可以放入外部 RAM 中。为此，需要启用 :menuitem:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`，可参考 :ref:`external_ram_config_noinit`。如果没有启用 :menuitem:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`， ``EXT_RAM_NOINIT_ATTR`` 会和 ``__NOINIT_ATTR`` 一样，将数据放入内部 RAM 的 ``.noinit`` 部分。
 
 示例::
 
@@ -178,13 +178,13 @@ DROM（数据存储在 flash 中）
 
     .. only:: esp32
 
-        在单核模式下 (:ref:`CONFIG_FREERTOS_UNICORE`)，除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
+        在单核模式下 (:menuitem:`CONFIG_FREERTOS_UNICORE`)，除非禁用 :menuitem:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
 
-        :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项在双核模式下不可用，因为 {IDF_TARGET_NAME} 的 RTC FAST memory 只能由 PRO CPU 访问。
+        :menuitem:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项在双核模式下不可用，因为 {IDF_TARGET_NAME} 的 RTC FAST memory 只能由 PRO CPU 访问。
 
     .. only:: not esp32
 
-        除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
+        除非禁用 :menuitem:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
 
 
 .. only:: SOC_MEM_SPM_SUPPORTED

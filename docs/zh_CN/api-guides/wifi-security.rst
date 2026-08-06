@@ -69,7 +69,7 @@ API 及用法
 此外，企业级 WPA3 还支持 **192 位最低强度安全模式 (Suite B)**，提供更高的加密强度。
 
 - 企业级 WPA3 的 192 位模式仅适用于支持 :c:macro:`SOC_WIFI_GCMP_SUPPORT` 的芯片。
-- 若需启用该模式，请配置 :ref:`CONFIG_ESP_WIFI_SUITE_B_192`。
+- 若需启用该模式，请配置 :menuitem:`CONFIG_ESP_WIFI_SUITE_B_192`。
 
 支持的 EAP 方法
 +++++++++++++++++++++
@@ -97,7 +97,7 @@ API 及用法
 
 - **EAP-FAST**
 
-  基于受保护访问凭证 (PAC) 的认证方法，需要身份标识和密码。使用 EAP-FAST 时需要 **禁用** :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT`。
+  基于受保护访问凭证 (PAC) 的认证方法，需要身份标识和密码。使用 EAP-FAST 时需要 **禁用** :menuitem:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT`。
 
 示例
 ++++++++
@@ -128,7 +128,7 @@ API 及用法
 
  - **禁用过渡**：WPA3 为客户端定义了过渡模式。该模式下，即使网络中的某些 AP 不支持最强的安全模式，客户端也能正常接入网络。客户端通常会默认将网络配置文件配置为过渡模式。然而，这类客户端可能会遭受主动降级攻击，即攻击者会引导客户端使用强度较低的安全模式，以利用该模式的漏洞。为减轻这种攻击的影响，WPA3 引入了禁用过渡功能。当连接到某个网络时，若该网络已全面支持更高级的安全模式，则支持客户端从过渡模式切换到“纯粹”模式。请在 :cpp:type:`wifi_sta_config_t` 中启用 :cpp:type:`transition_disable`，为 {IDF_TARGET_NAME} 的 station 模式启用此功能。
 
- - **SAE 公钥 (PK)**：由于小型公共网络中的密码与多个用户共享，攻击者可能更容易破解密码，发动伪装双子攻击。为阻止这类攻击，个人级 WPA3 引入了 SAE-PK 扩展认证机制。SAE-PK 认证交换与常规 SAE 交换非常相似，唯一区别在于 AP 会向客户端发送数字签名。客户端基于密码指纹验证 AP 断言的公钥，并使用公钥验证签名。因此，即使攻击者知道密码，也不知道生成有效签名所需的私钥，避免客户端遭受伪装双子攻击。请启用 :ref:`CONFIG_ESP_WIFI_ENABLE_SAE_PK`，并在 :cpp:type:`wifi_sta_config_t` 中使用 :cpp:type:`sae_pk_mode` 进行相应配置，为 {IDF_TARGET_NAME} 的 station 模式添加 SAE PK 支持。
+ - **SAE 公钥 (PK)**：由于小型公共网络中的密码与多个用户共享，攻击者可能更容易破解密码，发动伪装双子攻击。为阻止这类攻击，个人级 WPA3 引入了 SAE-PK 扩展认证机制。SAE-PK 认证交换与常规 SAE 交换非常相似，唯一区别在于 AP 会向客户端发送数字签名。客户端基于密码指纹验证 AP 断言的公钥，并使用公钥验证签名。因此，即使攻击者知道密码，也不知道生成有效签名所需的私钥，避免客户端遭受伪装双子攻击。请启用 :menuitem:`CONFIG_ESP_WIFI_ENABLE_SAE_PK`，并在 :cpp:type:`wifi_sta_config_t` 中使用 :cpp:type:`sae_pk_mode` 进行相应配置，为 {IDF_TARGET_NAME} 的 station 模式添加 SAE PK 支持。
 
  - **SAE PWE Methods**: {IDF_TARGET_NAME} 的 station 和 SoftAP 模式都支持 SAE 密码元素的推导方法 `Hunting And Pecking` 和 `Hash to Element (H2E)`。H2E 所需迭代次数较少，因此计算效率更高，还可以减轻侧通道攻击的风险。这些方法可以分别在 station 模式和 SoftAP 中通过参数 :cpp:type:`sae_pwe_h2e` 配置，其中 :cpp:type:`wifi_sta_config_t` 用于 station 模式，:cpp:type:`wifi_ap_config_t` 用于 SoftAP 模式。请使用配置选项 :cpp:enumerator:`WPA3_SAE_PWE_BOTH` 启用 `Hunting And Pecking` 和 `H2E` 方法。
 
@@ -137,7 +137,7 @@ API 及用法
 在 {IDF_TARGET_NAME} 上设置 WPA3
 ++++++++++++++++++++++++++++++++++++++
 
-配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 用于在 station 上启用或禁用 WPA3，该选项默认启用，如果禁用，则 {IDF_TARGET_NAME} 无法建立 WPA3 连接。Wi-Fi 组件中还提供了配置选项 :ref:`CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT`，用于在 SoftAP 上启用或禁用 WPA3。此外，由于 WPA3 协议强制使用 PMF，因此，station 和 SoftAP 的 PMF 模式均默认为可选 PMF。可以使用 Wi-Fi 配置选项将 PMF 模式配置为强制 PMF。WPA3 SoftAP 仅支持使用强制 PMF 模式，如无特别指定，则将在 NVS 中隐式配置并存储该模式。
+配置选项 :menuitem:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 用于在 station 上启用或禁用 WPA3，该选项默认启用，如果禁用，则 {IDF_TARGET_NAME} 无法建立 WPA3 连接。Wi-Fi 组件中还提供了配置选项 :menuitem:`CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT`，用于在 SoftAP 上启用或禁用 WPA3。此外，由于 WPA3 协议强制使用 PMF，因此，station 和 SoftAP 的 PMF 模式均默认为可选 PMF。可以使用 Wi-Fi 配置选项将 PMF 模式配置为强制 PMF。WPA3 SoftAP 仅支持使用强制 PMF 模式，如无特别指定，则将在 NVS 中隐式配置并存储该模式。
 
 要了解如何设置 PMF 模式，请参阅 `受保护的管理帧 (PMF)`_。
 
@@ -145,7 +145,7 @@ API 及用法
 
 在为 WPA3-Personal 的 SoftAP 模式配置完所需设置后，应用程序开发人员必须在 :cpp:type:`wifi_ap_config_t` 中的 `authmode` 设置 ``WIFI_AUTH_WPA3_PSK``，启动以 WPA3 安全模式运行的 AP。也可将 SoftAP 配置为使用 ``WIFI_AUTH_WPA2_WPA3_PSK`` 的混合模式。
 
-注意，启用 :ref:`CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT` 时，二进制文件大小将增加约 6.5 千字节。
+注意，启用 :menuitem:`CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT` 时，二进制文件大小将增加约 6.5 千字节。
 
 增强型开放式™ Wi-Fi 安全协议
 ------------------------------
@@ -165,38 +165,38 @@ API 及用法
 
 station 模式：
 
-配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` 和 :cpp:type:`wifi_sta_config_t` 中的配置参数 :cpp:type:`owe_enabled` 可以为 station 模式启用 OWE 支持。除上述配置外，请将 :cpp:type:`wifi_scan_threshold_t` 中的 `authmode` 设置为 ``WIFI_AUTH_OPEN`` 以使用 OWE 过渡模式。
+配置选项 :menuitem:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` 和 :cpp:type:`wifi_sta_config_t` 中的配置参数 :cpp:type:`owe_enabled` 可以为 station 模式启用 OWE 支持。除上述配置外，请将 :cpp:type:`wifi_scan_threshold_t` 中的 `authmode` 设置为 ``WIFI_AUTH_OPEN`` 以使用 OWE 过渡模式。
 
 
 SoftAP 模式：
 
-需通过 menuconfig 启用配置选项 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP`，并将 :cpp:type:`wifi_ap_config_t` 中的配置参数 `authmode` 设置为 ``WIFI_AUTH_OWE``。SoftAP 不支持 OWE 过渡模式，请仅配置 ``WIFI_AUTH_OWE``。
+需通过 menuconfig 启用配置选项 :menuitem:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP`，并将 :cpp:type:`wifi_ap_config_t` 中的配置参数 `authmode` 设置为 ``WIFI_AUTH_OWE``。SoftAP 不支持 OWE 过渡模式，请仅配置 ``WIFI_AUTH_OWE``。
 
 Wi-Fi 隐私增强
 --------------------------
 
 MAC 地址用于设备连接 Wi-Fi 网络。由于 MAC 地址具有唯一且静态的特点，并且在传输时未加密，因此可能会被捕获和追踪。{IDF_TARGET_NAME} 支持 Wi-Fi 隐私增强功能，包括 MAC 地址随机化、序列号随机化、GAS 对话令牌多样化和厂商自定义序列号管理。这些功能通过增强隐私保护，避免设备在扫描或连接网络时被持续追踪。
 
-要使用此功能，请在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`。
+要使用此功能，请在 menuconfig 中启用配置选项 :menuitem:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`。
 
-{IDF_TARGET_NAME} 还会在未连接网络时，定期自动重置随机 MAC 地址。重置周期通过 menuconfig 中的 :ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 选项配置（有效范围：1 至 24 小时，默认值为 12 小时）。
+{IDF_TARGET_NAME} 还会在未连接网络时，定期自动重置随机 MAC 地址。重置周期通过 menuconfig 中的 :menuitem:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 选项配置（有效范围：1 至 24 小时，默认值为 12 小时）。
 
 .. note::
 
-   仅当 station 未连接到任何 AP 时，:ref:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 才会生成并设置新的随机 MAC 地址。如果 station 已连接到 AP，则不会中断连接，并会继续使用相同的随机 MAC 地址。如果定期自动重置定时器在 station 处于连接状态时超时，定时器将在下一次断开连接时被重新装载或触发。
+   仅当 station 未连接到任何 AP 时，:menuitem:`CONFIG_ESP_WIFI_RMAC_AUTO_RESET_INTERVAL` 才会生成并设置新的随机 MAC 地址。如果 station 已连接到 AP，则不会中断连接，并会继续使用相同的随机 MAC 地址。如果定期自动重置定时器在 station 处于连接状态时超时，定时器将在下一次断开连接时被重新装载或触发。
 
    在启用 Wi-Fi Mesh 或 ESP-NOW 时，不支持且无法使用 Wi-Fi 隐私增强功能。
 
 
 {IDF_TARGET_NAME} 在满足以下条件时支持扫描过程中的隐私增强：
 
-  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
+  - 在 menuconfig 中启用配置选项 :menuitem:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
   - 扫描类型为 :cpp:enumerator:`WIFI_SCAN_TYPE_ACTIVE`
   - station 未连接到任何 AP
 
 {IDF_TARGET_NAME} 在满足以下条件时支持连接过程中的隐私增强：
 
-  - 在 menuconfig 中启用配置选项 :ref:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
+  - 在 menuconfig 中启用配置选项 :menuitem:`CONFIG_ESP_WIFI_PRIVACY_ENHANCEMENTS_ENABLED`
   - 使用 :cpp:func:`esp_wifi_set_config` 设置新的 Wi-Fi 配置
 
 

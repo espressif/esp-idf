@@ -183,9 +183,9 @@ Enabling the Custom Backend
 
 Enable the feature via ``menuconfig`` under ``Component Config`` > ``mbedTLS``:
 
-- :ref:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND`: Enable the custom storage backend
-- :ref:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN`: Start of the custom key ID range (default ``0x30000000``)
-- :ref:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MAX`: End of the custom key ID range (default ``0x3FFFFFFF``)
+- :menuitem:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND`: Enable the custom storage backend
+- :menuitem:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN`: Start of the custom key ID range (default ``0x30000000``)
+- :menuitem:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MAX`: End of the custom key ID range (default ``0x3FFFFFFF``)
 
 PSA key IDs within the configured range are routed to the registered backend. All other key IDs (and internal PSA data such as the random seed) continue using the default NVS backend.
 
@@ -290,57 +290,57 @@ The example :example:`protocols/smtp_client` sends email (including attachments)
 Important Config Options
 ------------------------
 
-The Mbed TLS configuration system supports preset configurations. Following is a brief list of important config options accessible at ``Component Config`` > ``mbedTLS``. The full list of config options can be found :ref:`here <CONFIG_MBEDTLS_MEM_ALLOC_MODE>`.
+The Mbed TLS configuration system supports preset configurations. Following is a brief list of important config options accessible at ``Component Config`` > ``mbedTLS``. The full list of config options can be found :menuitem:`here <CONFIG_MBEDTLS_MEM_ALLOC_MODE>`.
 
 **Core Configuration:**
 
 .. list::
 
-    :SOC_SHA_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_SHA`: Support for hardware SHA acceleration
-    :SOC_AES_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_AES`: Support for hardware AES acceleration
-    :SOC_MPI_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_MPI`: Support for hardware MPI (bignum) acceleration
-    :SOC_ECC_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_ECC`: Support for hardware ECC acceleration
-    - :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`: Memory allocation strategy (Internal/External/Custom)
-    - :ref:`CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN`: Asymmetric in/out fragment length for memory optimization
-    - :ref:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`: Enable dynamic TX/RX buffer allocation
-    - :ref:`CONFIG_MBEDTLS_DEBUG`: Enable mbedTLS debugging (useful for debugging)
+    :SOC_SHA_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_SHA`: Support for hardware SHA acceleration
+    :SOC_AES_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_AES`: Support for hardware AES acceleration
+    :SOC_MPI_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_MPI`: Support for hardware MPI (bignum) acceleration
+    :SOC_ECC_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_ECC`: Support for hardware ECC acceleration
+    - :menuitem:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`: Memory allocation strategy (Internal/External/Custom)
+    - :menuitem:`CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN`: Asymmetric in/out fragment length for memory optimization
+    - :menuitem:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`: Enable dynamic TX/RX buffer allocation
+    - :menuitem:`CONFIG_MBEDTLS_DEBUG`: Enable mbedTLS debugging (useful for debugging)
 
 **TLS Protocol Configuration:**
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_TLS_ENABLED`: Enable TLS protocol support
-    - :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`: Support for TLS 1.2 (recommended)
-    - :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`: Support for TLS 1.3 (latest standard)
-    - :ref:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`: Support for DTLS (UDP-based TLS)
-    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`: Support for TLS Session Resumption (client session tickets)
-    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`: Support for TLS Session Resumption Server session tickets
-    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`: Support for Application Layer Protocol Negotiation
-    - :ref:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`: Support for Server Name Indication (SNI)
+    - :menuitem:`CONFIG_MBEDTLS_TLS_ENABLED`: Enable TLS protocol support
+    - :menuitem:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`: Support for TLS 1.2 (recommended)
+    - :menuitem:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`: Support for TLS 1.3 (latest standard)
+    - :menuitem:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`: Support for DTLS (UDP-based TLS)
+    - :menuitem:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`: Support for TLS Session Resumption (client session tickets)
+    - :menuitem:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`: Support for TLS Session Resumption Server session tickets
+    - :menuitem:`CONFIG_MBEDTLS_SSL_ALPN`: Support for Application Layer Protocol Negotiation
+    - :menuitem:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`: Support for Server Name Indication (SNI)
 
 **Certificate Support:**
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: Support for trusted root certificate bundle (more about this: :doc:`/api-reference/protocols/esp_crt_bundle`)
-    - :ref:`CONFIG_MBEDTLS_X509_USE_C`: Enable X.509 certificate support
-    - :ref:`CONFIG_MBEDTLS_PEM_PARSE_C`: Read & Parse PEM formatted certificates
-    - :ref:`CONFIG_MBEDTLS_PEM_WRITE_C`: Write PEM formatted certificates
-    - :ref:`CONFIG_MBEDTLS_X509_CRT_PARSE_C`: Parse X.509 certificates
-    - :ref:`CONFIG_MBEDTLS_X509_CRL_PARSE_C`: Parse X.509 certificate revocation lists
+    - :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: Support for trusted root certificate bundle (more about this: :doc:`/api-reference/protocols/esp_crt_bundle`)
+    - :menuitem:`CONFIG_MBEDTLS_X509_USE_C`: Enable X.509 certificate support
+    - :menuitem:`CONFIG_MBEDTLS_PEM_PARSE_C`: Read & Parse PEM formatted certificates
+    - :menuitem:`CONFIG_MBEDTLS_PEM_WRITE_C`: Write PEM formatted certificates
+    - :menuitem:`CONFIG_MBEDTLS_X509_CRT_PARSE_C`: Parse X.509 certificates
+    - :menuitem:`CONFIG_MBEDTLS_X509_CRL_PARSE_C`: Parse X.509 certificate revocation lists
 
 **Cryptographic Algorithms:**
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_AES_C`: AES block cipher support
-    - :ref:`CONFIG_MBEDTLS_RSA_C`: RSA public key cryptosystem
-    - :ref:`CONFIG_MBEDTLS_ECP_C`: Elliptic Curve Cryptography support
-    - :ref:`CONFIG_MBEDTLS_ECDSA_C`: Elliptic Curve Digital Signature Algorithm
-    - :ref:`CONFIG_MBEDTLS_ECDH_C`: Elliptic Curve Diffie-Hellman key exchange
-    - :ref:`CONFIG_MBEDTLS_SHA256_C`: SHA-256 hash function
-    - :ref:`CONFIG_MBEDTLS_SHA512_C`: SHA-512 hash function
-    - :ref:`CONFIG_MBEDTLS_GCM_C`: Galois/Counter Mode for authenticated encryption
+    - :menuitem:`CONFIG_MBEDTLS_AES_C`: AES block cipher support
+    - :menuitem:`CONFIG_MBEDTLS_RSA_C`: RSA public key cryptosystem
+    - :menuitem:`CONFIG_MBEDTLS_ECP_C`: Elliptic Curve Cryptography support
+    - :menuitem:`CONFIG_MBEDTLS_ECDSA_C`: Elliptic Curve Digital Signature Algorithm
+    - :menuitem:`CONFIG_MBEDTLS_ECDH_C`: Elliptic Curve Diffie-Hellman key exchange
+    - :menuitem:`CONFIG_MBEDTLS_SHA256_C`: SHA-256 hash function
+    - :menuitem:`CONFIG_MBEDTLS_SHA512_C`: SHA-512 hash function
+    - :menuitem:`CONFIG_MBEDTLS_GCM_C`: Galois/Counter Mode for authenticated encryption
 
 .. note::
 
@@ -391,15 +391,15 @@ The following table shows typical memory usage with different configs when the :
       - NA
       - 42196 B
     * - Enable SSL Dynamic Buffer Length
-      - :ref:`CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH`
+      - :menuitem:`CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH`
       -  42120 B
     * - Disable Keep Peer Certificate
-      - :ref:`CONFIG_MBEDTLS_SSL_KEEP_PEER_CERTIFICATE`
+      - :menuitem:`CONFIG_MBEDTLS_SSL_KEEP_PEER_CERTIFICATE`
       - 38533 B
     * - Enable Dynamic TX/RX Buffer
-      - :ref:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`
-        :ref:`CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA`
-        :ref:`CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT`
+      - :menuitem:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`
+        :menuitem:`CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA`
+        :menuitem:`CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT`
       - 22013 B
 
 .. note::
@@ -408,7 +408,7 @@ The following table shows typical memory usage with different configs when the :
 
 .. note::
 
-    :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled by default. If cross-signed certificate chains are not required, disabling it reduces peak heap usage during the TLS handshake by approximately 1 KB, at the cost of a larger certificate bundle in flash. See :doc:`/api-reference/protocols/esp_crt_bundle` for details.
+    :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled by default. If cross-signed certificate chains are not required, disabling it reduces peak heap usage during the TLS handshake by approximately 1 KB, at the cost of a larger certificate bundle in flash. See :doc:`/api-reference/protocols/esp_crt_bundle` for details.
 
 
 Reducing Binary Size

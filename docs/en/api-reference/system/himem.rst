@@ -13,7 +13,7 @@ It is still possible for ESP32 to use SPI RAM chips >= 4 MiB in size. However, t
 Usage
 -----
 
-In order to use the Himem API, you have to enable it in the menuconfig using :ref:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`, as well as set the amount of banks reserved for this in :ref:`CONFIG_SPIRAM_BANKSWITCH_RESERVE`. This decreases the amount of external memory allocated by functions like ``malloc()``, but it allows you to use the Himem API to map any of the remaining memory into the reserved banks.
+In order to use the Himem API, you have to enable it in the menuconfig using :menuitem:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`, as well as set the amount of banks reserved for this in :menuitem:`CONFIG_SPIRAM_BANKSWITCH_RESERVE`. This decreases the amount of external memory allocated by functions like ``malloc()``, but it allows you to use the Himem API to map any of the remaining memory into the reserved banks.
 
 The Himem API is more-or-less an abstraction of the bank switching scheme: it allows you to claim one or more banks of address space (called 'regions' in the API) as well as one or more of banks of memory to map into the ranges.
 

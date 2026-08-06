@@ -172,7 +172,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 .. note::
 
-    如果 :cpp:func:`select` 用于套接字文件描述符，可以禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
+    如果 :cpp:func:`select` 用于套接字文件描述符，可以禁用 :menuitem:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
 
     不要在 :cpp:func:`select` 调用过程中更改套接字驱动，否则会出现一些未定义行为。
 
@@ -232,8 +232,8 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 IDF 定义了多个可供应用程序使用的 VFS 设备。这些设备包括：
 
 * ``/dev/uart/<UART NUMBER>`` - 此文件映射到使用 VFS 驱动程序打开的 UART 中。UART 编号是 UART 外设的编号。
-* ``/dev/null`` - 此文件丢弃所有写入的数据，并在读取时返回 EOF。启用 :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` 会自动创建此文件。
-* ``/dev/console`` - 此文件连接到在 menuconfig 中由 :ref:`CONFIG_ESP_CONSOLE_UART` 和 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 指定的主输出和次输出。更多信息请参考 :doc:`../../api-guides/stdio`。
+* ``/dev/null`` - 此文件丢弃所有写入的数据，并在读取时返回 EOF。启用 :menuitem:`CONFIG_VFS_INITIALIZE_DEV_NULL` 会自动创建此文件。
+* ``/dev/console`` - 此文件连接到在 menuconfig 中由 :menuitem:`CONFIG_ESP_CONSOLE_UART` 和 :menuitem:`CONFIG_ESP_CONSOLE_SECONDARY` 指定的主输出和次输出。更多信息请参考 :doc:`../../api-guides/stdio`。
 
 
 应用示例

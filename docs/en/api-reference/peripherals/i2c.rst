@@ -625,7 +625,7 @@ Power Management
 
 .. only:: SOC_I2C_SUPPORT_APB
 
-    When the power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2C FIFO before going into Light-sleep mode, thus potentially changing the I2C signals and leading to transmitting or receiving invalid data.
+    When the power management is enabled (i.e. :menuitem:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2C FIFO before going into Light-sleep mode, thus potentially changing the I2C signals and leading to transmitting or receiving invalid data.
 
     However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever user creates an I2C bus that has selected :cpp:enumerator:`I2C_CLK_SRC_APB` as the clock source, the driver will guarantee that the power management lock is acquired when I2C operations begin and the lock will be released automatically when I2C operations finish.
 
@@ -644,7 +644,7 @@ IRAM Safe
 
 By default, the I2C interrupt will be deferred when the cache is disabled for reasons like writing or erasing flash. Thus the event callback functions will not get executed in time, which is not expected in a real-time application.
 
-There's a Kconfig option :ref:`CONFIG_I2C_ISR_IRAM_SAFE` that will:
+There's a Kconfig option :menuitem:`CONFIG_I2C_ISR_IRAM_SAFE` that will:
 
 1. Enable the interrupt being serviced even when cache is disabled.
 2. Place all functions that used by the ISR into IRAM.
@@ -678,8 +678,8 @@ Other functions are not guaranteed to be thread-safe. Thus, you should avoid cal
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`i2c-iram-safe` for more information.
-- :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
+- :menuitem:`CONFIG_I2C_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`i2c-iram-safe` for more information.
+- :menuitem:`CONFIG_I2C_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
 
 Application Examples
 --------------------

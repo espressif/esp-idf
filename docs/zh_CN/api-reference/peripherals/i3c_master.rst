@@ -538,7 +538,7 @@ Cache 安全
 关于低功耗
 ------------
 
-当启用电源管理 :ref:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或禁用时钟源，从而导致 I3C 传输出错。
+当启用电源管理 :menuitem:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或禁用时钟源，从而导致 I3C 传输出错。
 
 为了防止这种情况发生， I3C 驱动内部创建了一个电源管理锁。当调用传输函数后，该锁将被激活，确保系统不会进入睡眠模式，从而保持定时器的正确工作，直至传输完成后，驱动自动释放该锁。使系统能够进入睡眠模式。
 
@@ -547,9 +547,9 @@ Kconfig 选项
 
 以下 Kconfig 选项可用于配置 I3C 驱动程序：
 
-- :ref:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE`：确保 I3C 中断在缓存被禁用时也能正常工作（例如 SPI Flash 写入时）
-- :ref:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM`：将 I3C 主机 ISR 处理程序放入 IRAM 以提高性能并减少缓存未命中
-- :ref:`CONFIG_I3C_MASTER_ENABLE_DEBUG_LOG`：启用 I3C 调试日志
+- :menuitem:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE`：确保 I3C 中断在缓存被禁用时也能正常工作（例如 SPI Flash 写入时）
+- :menuitem:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM`：将 I3C 主机 ISR 处理程序放入 IRAM 以提高性能并减少缓存未命中
+- :menuitem:`CONFIG_I3C_MASTER_ENABLE_DEBUG_LOG`：启用 I3C 调试日志
 
 关于资源消耗
 ------------
@@ -559,8 +559,8 @@ Kconfig 选项
 - 编译器优化等级设置为 ``-Os``，以确保代码尺寸最小化。
 - 默认日志等级设置为 ``ESP_LOG_INFO``，以平衡调试信息和性能。
 - 关闭以下驱动优化选项：
-    - :ref:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM` - 中断处理程序不放入 IRAM。
-    - :ref:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
+    - :menuitem:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM` - 中断处理程序不放入 IRAM。
+    - :menuitem:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
 
 **注意，以下数据不是精确值，仅供参考，在不同型号的芯片上，数据会有所出入。**
 

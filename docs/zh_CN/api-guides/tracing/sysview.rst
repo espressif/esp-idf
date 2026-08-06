@@ -21,15 +21,15 @@ SystemView 功能由托管组件 ``espressif/esp_sysview`` 提供。完成以下
        dependencies:
          espressif/esp_sysview: ^1
 
-2. 在 menuconfig 中选择外部库：``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` > ``External library from component registry``。
+2. 启用 :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL`。
 
-之后，可通过 ``Component config`` > ``SEGGER SystemView Configuration`` 配置 SystemView。该菜单可用于选择时间戳源 (:ref:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`)、单独启用或禁用 SystemView 事件收集 (``CONFIG_SEGGER_SYSVIEW_EVT_XXX``)，以及在使用 UART 目标时选择要跟踪的 CPU。
+之后，将显示 SystemView 配置选项。这些选项可用于选择时间戳源 (:menuitem:`CONFIG_ESP_TRACE_TIMESTAMP_SOURCE`)、单独启用或禁用 SystemView 事件收集 (``CONFIG_SEGGER_SYSVIEW_EVT_XXX``)，以及在使用 UART 目标时选择要跟踪的 CPU。
 
 .. note::
 
     完整的最新配置选项和主机端设置，请参阅组件 README：`esp_sysview <https://components.espressif.com/components/espressif/esp_sysview>`_。
 
-想要通过 UART 接口进行实时跟踪，请首先在 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` 中选择 UART 作为目标传输方式。然后在 ``Component config`` > ``ESP Trace Configuration`` > ``SEGGER SystemView`` 中选择 Pro 或 App CPU。
+想要通过 UART 接口进行实时跟踪，请首先通过 :menuitem:`CONFIG_APPTRACE_DESTINATION` 选择 UART 作为目标传输方式，然后在 SystemView 配置中选择 Pro 或 App CPU。
 
 OpenOCD SystemView 跟踪命令选项
 -------------------------------
@@ -102,7 +102,7 @@ Start 子命令语法：
 
     SystemView 3.60 及更高版本支持多核心进行跟踪。对于多核跟踪，使用 ``esp sysview_mcore`` 命令可以生成与 SystemView 多核格式兼容的单个文件。此命令将创建一个单独的跟踪文件，可以直接加载到 SystemView 3.60+ 中进行多核可视化。
 
-    **注意：** SystemView 3.60 之前的版本不支持多核跟踪。对于旧版本，当使用 JTAG 接口跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可将每个文件载入不同的工具实例。使用 UART 进行跟踪时，在 menuconfig 中选择外部库后，用户可以选择 ``Component config`` > ``SEGGER SystemView Configuration`` 来指定需要跟踪的 CPU（Pro 或 App）。
+    **注意：** SystemView 3.60 之前的版本不支持多核跟踪。对于旧版本，当使用 JTAG 接口跟踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可将每个文件载入不同的工具实例。使用 UART 进行跟踪时，请在 SystemView 配置中指定需要跟踪的 CPU（Pro 或 App）。
 
     对于旧版本的 SystemView，在不同的实例中分别分析每个核的数据可能较为不便。另一个选择是使用名为 *Impulse* 的 Eclipse 插件，该插件可同时加载多个跟踪文件，实现在同一视图中检查来自两个核心的事件。与 SystemView 免费版相比，此插件还不受 100 万事件数量的限制。
 

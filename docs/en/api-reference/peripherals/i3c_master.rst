@@ -538,7 +538,7 @@ Enabling this option ensures interrupt operation when the cache is disabled, but
 About Low Power Consumption
 ----------------------------
 
-When power management :ref:`CONFIG_PM_ENABLE` is enabled, the system may adjust or disable clock sources before entering sleep mode, which can cause I3C transfer errors.
+When power management :menuitem:`CONFIG_PM_ENABLE` is enabled, the system may adjust or disable clock sources before entering sleep mode, which can cause I3C transfer errors.
 
 To prevent this from happening, the I3C driver internally creates a power management lock. After calling a transfer function, this lock will be activated to ensure the system does not enter sleep mode, thus maintaining the correct operation of the timer. After the transfer is complete, the driver automatically releases the lock, allowing the system to enter sleep mode.
 
@@ -547,9 +547,9 @@ Kconfig Options
 
 The following Kconfig options can be used to configure the I3C driver:
 
-- :ref:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE`: Ensure I3C interrupts work properly when cache is disabled (e.g., during SPI Flash write)
-- :ref:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM`: Place I3C master ISR handler in IRAM to improve performance and reduce cache misses
-- :ref:`CONFIG_I3C_MASTER_ENABLE_DEBUG_LOG`: Enable I3C debug logging
+- :menuitem:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE`: Ensure I3C interrupts work properly when cache is disabled (e.g., during SPI Flash write)
+- :menuitem:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM`: Place I3C master ISR handler in IRAM to improve performance and reduce cache misses
+- :menuitem:`CONFIG_I3C_MASTER_ENABLE_DEBUG_LOG`: Enable I3C debug logging
 
 About Resource Consumption
 ---------------------------
@@ -559,8 +559,8 @@ You can use the :doc:`/api-guides/tools/idf-size` tool to view the code and data
 - Compiler optimization level is set to ``-Os`` to ensure minimal code size.
 - Default log level is set to ``ESP_LOG_INFO`` to balance debug information and performance.
 - The following driver optimization options are disabled:
-    - :ref:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM` - ISR handler is not placed in IRAM.
-    - :ref:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE` - Cache safety option is not enabled.
+    - :menuitem:`CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM` - ISR handler is not placed in IRAM.
+    - :menuitem:`CONFIG_I3C_MASTER_ISR_CACHE_SAFE` - Cache safety option is not enabled.
 
 **Note: The following data is not precise and is for reference only. Data may vary on different chip models.**
 

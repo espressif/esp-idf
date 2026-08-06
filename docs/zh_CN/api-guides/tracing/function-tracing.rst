@@ -10,10 +10,10 @@
 启用函数跟踪
 ------------
 
-在 ``Component config`` > ``ESP Trace Configuration`` > ``Function Tracing`` 下启用。以下选项控制函数跟踪：
+启用 :menuitem:`CONFIG_ESP_TRACE_FUNCTION_TRACE`。以下选项控制函数跟踪：
 
-- :ref:`CONFIG_ESP_TRACE_FUNCTION_TRACE` - 构建函数跟踪钩子和运行时。
-- :ref:`CONFIG_ESP_TRACE_FUNCTION_TRACE_AUTO_START` - 启用时（默认），记录跟随编码器的状态，并在主机启动会话后立即开始。禁用时，在应用程序调用 :cpp:func:`esp_trace_function_trace_start` 之前不会发出任何事件；仅有活动的主机会话是不够的。
+- :menuitem:`CONFIG_ESP_TRACE_FUNCTION_TRACE` - 构建函数跟踪钩子和运行时。
+- :menuitem:`CONFIG_ESP_TRACE_FUNCTION_TRACE_AUTO_START` - 启用时（默认），记录跟随编码器的状态，并在主机启动会话后立即开始。禁用时，在应用程序调用 :cpp:func:`esp_trace_function_trace_start` 之前不会发出任何事件；仅有活动的主机会话是不够的。
 
 启用该选项会将钩子和运行时编译进构建，但不会为任何代码添加 ``-finstrument-functions``，因此单独启用不会产生任何事件。要跟踪某个组件或文件，请在其自身的 ``CMakeLists.txt`` 中为需要跟踪的源文件添加该标志：
 

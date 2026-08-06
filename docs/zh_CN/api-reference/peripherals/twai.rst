@@ -371,7 +371,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 关于低功耗
 ----------
 
-当启用电源管理 :ref:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或关闭时钟源，从而导致 TWAI 出错。为了防止这种情况发生，驱动内部使用电源锁管理。当调用 :cpp:func:`twai_node_enable` 函数后，该锁将被激活，确保系统不会进入睡眠模式，从而保持 TWAI 功能正常。如果需要降低功耗，可以调用 :cpp:func:`twai_node_disable` 函数来释放电源管理锁，使系统能够进入睡眠模式，睡眠期间 TWAI 控制器也将停止工作。
+当启用电源管理 :menuitem:`CONFIG_PM_ENABLE` 时，系统在进入睡眠模式前可能会调整或关闭时钟源，从而导致 TWAI 出错。为了防止这种情况发生，驱动内部使用电源锁管理。当调用 :cpp:func:`twai_node_enable` 函数后，该锁将被激活，确保系统不会进入睡眠模式，从而保持 TWAI 功能正常。如果需要降低功耗，可以调用 :cpp:func:`twai_node_disable` 函数来释放电源管理锁，使系统能够进入睡眠模式，睡眠期间 TWAI 控制器也将停止工作。
 
 .. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
 
@@ -380,12 +380,12 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 
     {IDF_TARGET_NAME} 支持在 **Light Sleep** 期间将 TWAI 控制器断电以进一步降低功耗，并在唤醒后自动恢复。即程序不需要在 **Light Sleep** 唤醒后重新配置 TWAI。
 
-    启用选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，并在初始化 TWAI 节点时，将 :cpp:member:`twai_onchip_node_config_t::flags::sleep_allow_pd` 设置为 ``true`` 即可启用该功能，否则 TWAI 控制器在 **Light Sleep** 期间将保持供电。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+    启用选项 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，并在初始化 TWAI 节点时，将 :cpp:member:`twai_onchip_node_config_t::flags::sleep_allow_pd` 设置为 ``true`` 即可启用该功能，否则 TWAI 控制器在 **Light Sleep** 期间将保持供电。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 关于 Cache 安全
 ---------------
 
-在进行 Flash 写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致存放在 Flash 上的中断处理程序在此期间无法响应。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :ref:`CONFIG_TWAI_ISR_CACHE_SAFE` 选项。
+在进行 Flash 写操作时，为了避免 Cache 从 Flash 加载指令和数据时出现错误，系统会暂时禁用 Cache 功能。这会导致存放在 Flash 上的中断处理程序在此期间无法响应。如果希望在 Cache 被禁用期间，中断处理程序仍能正常运行，可以启用 :menuitem:`CONFIG_TWAI_ISR_CACHE_SAFE` 选项。
 
 .. note::
 
@@ -399,9 +399,9 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 关于性能
 --------
 
-为了提升中断处理的实时响应能力， 驱动提供了 :ref:`CONFIG_TWAI_ISR_IN_IRAM` 选项。启用该选项后，中断处理程序和接收操作将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令带来的延迟。
+为了提升中断处理的实时响应能力， 驱动提供了 :menuitem:`CONFIG_TWAI_ISR_IN_IRAM` 选项。启用该选项后，中断处理程序和接收操作将被放置在内部 RAM 中运行，从而减少了从 Flash 加载指令带来的延迟。
 
-对于需要高性能发送操作的应用，驱动还提供了 :ref:`CONFIG_TWAI_IO_FUNC_IN_IRAM` 选项，用于将发送函数放置在 IRAM 中。这对于在用户任务中频繁调用 :cpp:func:`twai_node_transmit` 的时间关键应用特别有效。
+对于需要高性能发送操作的应用，驱动还提供了 :menuitem:`CONFIG_TWAI_IO_FUNC_IN_IRAM` 选项，用于将发送函数放置在 IRAM 中。这对于在用户任务中频繁调用 :cpp:func:`twai_node_transmit` 的时间关键应用特别有效。
 
 .. note::
 
@@ -416,8 +416,8 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 - 默认日志等级设置为 ``ESP_LOG_INFO``，以平衡调试信息和性能。
 - 关闭以下驱动优化选项：
 
-    - :ref:`CONFIG_TWAI_ISR_IN_IRAM` - 中断处理程序不放入 IRAM。
-    - :ref:`CONFIG_TWAI_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
+    - :menuitem:`CONFIG_TWAI_ISR_IN_IRAM` - 中断处理程序不放入 IRAM。
+    - :menuitem:`CONFIG_TWAI_ISR_CACHE_SAFE` - 不启用 Cache 安全选项。
 
 **注意，以下数据仅供参考，不是精确值，在不同芯片上会有所出入。**
 
@@ -431,7 +431,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 | soc             | 64         | 0     | 0    | 0     | 0     | 64    | 64      | 0     |
 +-----------------+------------+-------+------+-------+-------+-------+---------+-------+
 
-打开 :ref:`CONFIG_TWAI_ISR_IN_IRAM` 优化选项的消耗情况：
+打开 :menuitem:`CONFIG_TWAI_ISR_IN_IRAM` 优化选项的消耗情况：
 
 +-----------------+------------+-------+------+-------+-------+-------+---------+-------+
 | Component Layer | Total Size | DIRAM | .bss | .data | .text | Flash | .rodata | .text |
@@ -448,7 +448,7 @@ TWAI控制器能够检测由于总线干扰产生的/损坏的不符合帧格式
 其他 Kconfig 选项
 -----------------
 
-- :ref:`CONFIG_TWAI_ENABLE_DEBUG_LOG` 选项允许强制启用 TWAI 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。
+- :menuitem:`CONFIG_TWAI_ENABLE_DEBUG_LOG` 选项允许强制启用 TWAI 驱动的所有调试日志，无论全局日志级别设置如何。启用此选项可以帮助开发人员在调试过程中获取更详细的日志信息，从而更容易定位和解决问题。
 
 应用示例
 ========

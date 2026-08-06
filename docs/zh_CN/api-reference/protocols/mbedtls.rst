@@ -183,9 +183,9 @@ ESP-IDF 的 PSA 内部可信存储 (Internal Trusted Storage, ITS) 实现默认�
 
 通过 ``menuconfig`` 在 ``Component Config`` > ``mbedTLS`` 中启用该功能：
 
-- :ref:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND`：启用自定义存储后端
-- :ref:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN`：自定义密钥 ID 范围的起始值（默认 ``0x30000000``）
-- :ref:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MAX`：自定义密钥 ID 范围的结束值（默认 ``0x3FFFFFFF``）
+- :menuitem:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_STORAGE_BACKEND`：启用自定义存储后端
+- :menuitem:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MIN`：自定义密钥 ID 范围的起始值（默认 ``0x30000000``）
+- :menuitem:`CONFIG_MBEDTLS_PSA_ITS_CUSTOM_BACKEND_UID_MAX`：自定义密钥 ID 范围的结束值（默认 ``0x3FFFFFFF``）
 
 配置范围内的 PSA 密钥 ID 会被路由到已注册的后端。其他所有密钥 ID（以及随机种子等 PSA 内部数据）继续使用默认的 NVS 后端。
 
@@ -290,57 +290,57 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
 重要配置
 --------
 
-Mbed TLS 配置系统支持预设配置。``Component Config`` > ``mbedTLS`` 中的部分重要配置选项如下所示。点击 :ref:`此处 <CONFIG_MBEDTLS_MEM_ALLOC_MODE>` 获取完整配置选项列表。
+Mbed TLS 配置系统支持预设配置。``Component Config`` > ``mbedTLS`` 中的部分重要配置选项如下所示。点击 :menuitem:`此处 <CONFIG_MBEDTLS_MEM_ALLOC_MODE>` 获取完整配置选项列表。
 
 **核心配置：**
 
 .. list::
 
-    :SOC_SHA_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_SHA`：支持硬件 SHA 加速
-    :SOC_AES_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_AES`：支持硬件 AES 加速
-    :SOC_MPI_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_MPI`：支持硬件 MPI（大数）加速
-    :SOC_ECC_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_ECC`：支持硬件 ECC 加速
-    - :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`：内存分配策略（内部/外部/自定义）
-    - :ref:`CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN`：用于内存优化的非对称输入/输出片段长度
-    - :ref:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`：启用动态 TX/RX buffer 分配
-    - :ref:`CONFIG_MBEDTLS_DEBUG`：启用 mbedTLS 调试（有助于调试）
+    :SOC_SHA_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_SHA`：支持硬件 SHA 加速
+    :SOC_AES_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_AES`：支持硬件 AES 加速
+    :SOC_MPI_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_MPI`：支持硬件 MPI（大数）加速
+    :SOC_ECC_SUPPORTED: - :menuitem:`CONFIG_MBEDTLS_HARDWARE_ECC`：支持硬件 ECC 加速
+    - :menuitem:`CONFIG_MBEDTLS_MEM_ALLOC_MODE`：内存分配策略（内部/外部/自定义）
+    - :menuitem:`CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN`：用于内存优化的非对称输入/输出片段长度
+    - :menuitem:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`：启用动态 TX/RX buffer 分配
+    - :menuitem:`CONFIG_MBEDTLS_DEBUG`：启用 mbedTLS 调试（有助于调试）
 
 **TLS 协议配置：**
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_TLS_ENABLED`：启用 TLS 协议支持
-    - :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`：支持 TLS 1.2（推荐）
-    - :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`：支持 TLS 1.3（最新标准）
-    - :ref:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`：支持基于 UDP 的 DTLS
-    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`：支持 TLS 会话恢复（客户端会话票据）
-    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`：支持 TLS 会话恢复（服务器会话票据）
-    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`：支持应用层协议协商
-    - :ref:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`：支持服务器名称指示 (SNI)
+    - :menuitem:`CONFIG_MBEDTLS_TLS_ENABLED`：启用 TLS 协议支持
+    - :menuitem:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`：支持 TLS 1.2（推荐）
+    - :menuitem:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`：支持 TLS 1.3（最新标准）
+    - :menuitem:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`：支持基于 UDP 的 DTLS
+    - :menuitem:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`：支持 TLS 会话恢复（客户端会话票据）
+    - :menuitem:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`：支持 TLS 会话恢复（服务器会话票据）
+    - :menuitem:`CONFIG_MBEDTLS_SSL_ALPN`：支持应用层协议协商
+    - :menuitem:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`：支持服务器名称指示 (SNI)
 
 **证书支持：**
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`：支持受信任的根证书包（详情请参阅 :doc:`/api-reference/protocols/esp_crt_bundle`）
-    - :ref:`CONFIG_MBEDTLS_X509_USE_C`：启用 X.509 证书支持
-    - :ref:`CONFIG_MBEDTLS_PEM_PARSE_C`：读取并解析 PEM 格式的证书
-    - :ref:`CONFIG_MBEDTLS_PEM_WRITE_C`：编写 PEM 格式的证书
-    - :ref:`CONFIG_MBEDTLS_X509_CRT_PARSE_C`：解析 X.509 证书
-    - :ref:`CONFIG_MBEDTLS_X509_CRL_PARSE_C`：解析 X.509 证书吊销列表
+    - :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`：支持受信任的根证书包（详情请参阅 :doc:`/api-reference/protocols/esp_crt_bundle`）
+    - :menuitem:`CONFIG_MBEDTLS_X509_USE_C`：启用 X.509 证书支持
+    - :menuitem:`CONFIG_MBEDTLS_PEM_PARSE_C`：读取并解析 PEM 格式的证书
+    - :menuitem:`CONFIG_MBEDTLS_PEM_WRITE_C`：编写 PEM 格式的证书
+    - :menuitem:`CONFIG_MBEDTLS_X509_CRT_PARSE_C`：解析 X.509 证书
+    - :menuitem:`CONFIG_MBEDTLS_X509_CRL_PARSE_C`：解析 X.509 证书吊销列表
 
 **加密算法：**
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_AES_C`：支持 AES 块密码
-    - :ref:`CONFIG_MBEDTLS_RSA_C`：RSA 公钥密码系统
-    - :ref:`CONFIG_MBEDTLS_ECP_C`：支持椭圆曲线密码学
-    - :ref:`CONFIG_MBEDTLS_ECDSA_C`：椭圆曲线数字签名算法
-    - :ref:`CONFIG_MBEDTLS_ECDH_C`：椭圆曲线 Diffie-Hellman 密钥交换
-    - :ref:`CONFIG_MBEDTLS_SHA256_C`：SHA-256 哈希函数
-    - :ref:`CONFIG_MBEDTLS_SHA512_C`：SHA-512 哈希函数
-    - :ref:`CONFIG_MBEDTLS_GCM_C`：Galois/Counter 模式用于认证加密
+    - :menuitem:`CONFIG_MBEDTLS_AES_C`：支持 AES 块密码
+    - :menuitem:`CONFIG_MBEDTLS_RSA_C`：RSA 公钥密码系统
+    - :menuitem:`CONFIG_MBEDTLS_ECP_C`：支持椭圆曲线密码学
+    - :menuitem:`CONFIG_MBEDTLS_ECDSA_C`：椭圆曲线数字签名算法
+    - :menuitem:`CONFIG_MBEDTLS_ECDH_C`：椭圆曲线 Diffie-Hellman 密钥交换
+    - :menuitem:`CONFIG_MBEDTLS_SHA256_C`：SHA-256 哈希函数
+    - :menuitem:`CONFIG_MBEDTLS_SHA512_C`：SHA-512 哈希函数
+    - :menuitem:`CONFIG_MBEDTLS_GCM_C`：Galois/Counter 模式用于认证加密
 
 .. note::
 
@@ -391,15 +391,15 @@ Mbed TLS 配置系统支持预设配置。``Component Config`` > ``mbedTLS`` 中
       - NA
       - 42196 B
     * - 启用 SSL 动态 buffer 长度
-      - :ref:`CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH`
+      - :menuitem:`CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH`
       -  42120 B
     * - 禁用保留对端证书
-      - :ref:`CONFIG_MBEDTLS_SSL_KEEP_PEER_CERTIFICATE`
+      - :menuitem:`CONFIG_MBEDTLS_SSL_KEEP_PEER_CERTIFICATE`
       - 38533 B
     * - 启用动态 TX/RX buffer
-      - :ref:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`
-        :ref:`CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA`
-        ::ref:`CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT`
+      - :menuitem:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`
+        :menuitem:`CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA`
+        ::menuitem:`CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT`
       - 22013 B
 
 .. note::
@@ -408,7 +408,7 @@ Mbed TLS 配置系统支持预设配置。``Component Config`` > ``mbedTLS`` 中
 
 .. note::
 
-    :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 默认启用。如果无需支持交叉签名证书链，禁用该选项可将 TLS 握手期间的堆内存峰值降低约 1 KB，但代价是 flash 中的证书包体积会增大。详情请参阅 :doc:`/api-reference/protocols/esp_crt_bundle`。
+    :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` 默认启用。如果无需支持交叉签名证书链，禁用该选项可将 TLS 握手期间的堆内存峰值降低约 1 KB，但代价是 flash 中的证书包体积会增大。详情请参阅 :doc:`/api-reference/protocols/esp_crt_bundle`。
 
 
 减小固件大小

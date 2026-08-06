@@ -150,7 +150,7 @@ ESP HTTP 服务器
 
 **选项 1（推荐）** — 将连接阶段的逻辑移动到一个专用的握手后回调中：
 
-1. 在 menuconfig 中启用 :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT`。
+1. 在 menuconfig 中启用 :menuitem:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT`。
 2. 在 ``httpd_uri_t`` 结构体中注册 ``ws_post_handshake_cb`` 回调，使帧处理程序保持简洁，无需再进行 `HTTP_GET` 状态检查。
 
 .. code-block:: c
@@ -176,7 +176,7 @@ ESP HTTP 服务器
 
 **选项 2（改动最少）** — 将 ``.ws_post_handshake_cb`` 设置为与 ``.handler`` 相同的函数：
 
-1. 在 menuconfig 中启用 :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT`。
+1. 在 menuconfig 中启用 :menuitem:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT`。
 2. 在 URI 注册中设置 ``.ws_post_handshake_cb = ws_handler``。现有的 ``if (req->method == HTTP_GET)`` 检查在处理程序内部仍然有效，无需额外修改代码。
 
 .. code-block:: c

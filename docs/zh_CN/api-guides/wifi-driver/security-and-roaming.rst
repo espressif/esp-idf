@@ -54,7 +54,7 @@ WPS 注册
 
 {IDF_TARGET_NAME} station 模式支持 WPA2-PSK 网络 FT。注意，{IDF_TARGET_NAME} station 模式仅支持空中 FT 协议。
 
-在 :cpp:type:`wifi_sta_config_t` 中提供了配置选项 :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` 和配置参数 :cpp:type:`ft_enabled`，可启用 station 的 802.11r 支持。详细信息请参阅 ESP-IDF 示例 :idf_file:`examples/wifi/roaming/README.md`。
+在 :cpp:type:`wifi_sta_config_t` 中提供了配置选项 :menuitem:`CONFIG_ESP_WIFI_11R_SUPPORT` 和配置参数 :cpp:type:`ft_enabled`，可启用 station 的 802.11r 支持。详细信息请参阅 ESP-IDF 示例 :idf_file:`examples/wifi/roaming/README.md`。
 
 .. only:: SOC_WIFI_FTM_SUPPORT
 

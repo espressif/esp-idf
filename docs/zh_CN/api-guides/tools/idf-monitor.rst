@@ -61,7 +61,7 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
      -
    * - Ctrl + C
      - 中断正在运行的应用程序
-     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` 选项。
+     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :menuitem:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` 选项。
 
 除了 ``Ctrl-]`` 和 ``Ctrl-T``，其他快捷键信号会通过串口发送到目标设备。
 
@@ -73,7 +73,7 @@ IDF 监视器会根据日志级别自动为输出内容进行着色。该功能�
 
 该功能默认启用。如需禁用，请使用命令行选项 ``--disable-auto-color``。
 
-着色是基于日志级别进行的，日志级别后可选择是否显示时间戳和标签。如需在 {IDF_TARGET_NAME} 端启用着色，参见 :ref:`CONFIG_LOG_COLORS`。
+着色是基于日志级别进行的，日志级别后可选择是否显示时间戳和标签。如需在 {IDF_TARGET_NAME} 端启用着色，参见 :menuitem:`CONFIG_LOG_COLORS`。
 
 有关日志的更多信息，参见 :doc:`日志记录 <../../api-reference/system/log>`。
 
@@ -275,9 +275,9 @@ IDF 监视器的默认复位序列可在大多数环境中使用。使用默认�
 
 GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过串口连接到主机从而接收调试命令。GDBStub 支持读取内存和变量、检查调用堆栈帧等命令。虽然没有 JTAG 调试通用，但由于 GDBStub 完全通过串行端口完成通信，故不需要使用特殊硬件（如 JTAG/USB 桥接器）。
 
-通过设置 :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`，可以将目标配置为在后台运行 GDBStub。GDBStub 将保持在后台运行，直到通过串行端口发送 ``Ctrl+C`` 导致应用程序中断（即停止程序执行），从而让 GDBStub 处理调试命令。
+通过设置 :menuitem:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`，可以将目标配置为在后台运行 GDBStub。GDBStub 将保持在后台运行，直到通过串行端口发送 ``Ctrl+C`` 导致应用程序中断（即停止程序执行），从而让 GDBStub 处理调试命令。
 
-此外，还可以通过设置 :ref:`CONFIG_ESP_SYSTEM_PANIC` 为 ``GDBStub on panic`` 来配置 panic 处理程序，使其在发生 crash 事件时运行 GDBStub。当 crash 发生时，GDBStub 将通过串口输出特殊的字符串模式，表示 GDBStub 正在运行。
+此外，还可以通过设置 :menuitem:`CONFIG_ESP_SYSTEM_PANIC` 为 ``GDBStub on panic`` 来配置 panic 处理程序，使其在发生 crash 事件时运行 GDBStub。当 crash 发生时，GDBStub 将通过串口输出特殊的字符串模式，表示 GDBStub 正在运行。
 
 无论是通过发送 ``Ctrl+C`` 还是收到特殊字符串模式，IDF 监视器都会自动启动 GDB，从而让用户发送调试命令。GDB 退出后，通过 RTS 串口线复位目标。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
 
@@ -409,7 +409,7 @@ IDF 监视器已知问题
 
 - 消息中包含换行符时，自动着色无法检测日志级别。在这种情况下，IDF Monitor 只会为消息的第一行着色。
 
-  为了避免这个问题，可以在 menuconfig 中启用 :ref:`CONFIG_LOG_COLORS`。注意，这可能会对二进制文件的大小和性能产生一定影响。
+  为了避免这个问题，可以在 menuconfig 中启用 :menuitem:`CONFIG_LOG_COLORS`。注意，这可能会对二进制文件的大小和性能产生一定影响。
 
 - 在 Windows 上，如果在 IDF 监视器关闭之前直接关闭了终端，某些驱动程序可能无法释放串口。要解决此问题，可以尝试重新拔插 USB 线，在某些情况下，需要重启计算机。目前，已知该问题会影响 CH9102 USB-to-UART 桥接芯片，而 CP210x 和 CH340 等驱动通常不会受到影响。
 

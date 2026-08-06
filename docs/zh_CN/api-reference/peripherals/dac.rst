@@ -83,7 +83,7 @@ DAC 通道可以通过 DMA 连续转换数字信号，这种模式下有三种�
 
 .. only:: esp32
 
-    在 ESP32 上，DAC 的数字控制器可以在内部连接到 I2S0，并借用其 DMA 进行连续转换。虽然 DAC 转换仅需 8 位数据，但它必须是左移的 8 位（即 16 位中的高 8 位），以满足 I2S 通信格式。默认状态下驱动程序将自动扩充数据至 16 位，如需手动扩充，请在 menuconfig 中禁用 :ref:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN`。
+    在 ESP32 上，DAC 的数字控制器可以在内部连接到 I2S0，并借用其 DMA 进行连续转换。虽然 DAC 转换仅需 8 位数据，但它必须是左移的 8 位（即 16 位中的高 8 位），以满足 I2S 通信格式。默认状态下驱动程序将自动扩充数据至 16 位，如需手动扩充，请在 menuconfig 中禁用 :menuitem:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN`。
 
     DAC 的数字控制器的时钟也来自 I2S0，有以下两种时钟源可选：
 
@@ -110,7 +110,7 @@ DAC 外设中包含一个余弦波发生器，可以在通道上产生余弦波�
 电源管理
 ^^^^^^^^
 
-启用电源管理时（即开启 :ref:`CONFIG_PM_ENABLE`），系统会在进入 Light-sleep 模式前调整或停止 DAC 时钟源，这可能会影响 DAC 信号，从而导致数据无法正确转换。
+启用电源管理时（即开启 :menuitem:`CONFIG_PM_ENABLE`），系统会在进入 Light-sleep 模式前调整或停止 DAC 时钟源，这可能会影响 DAC 信号，从而导致数据无法正确转换。
 
 在连续模式下使用 DAC 驱动时，可以通过获取电源管理锁来防止系统在 DMA 或余弦波模式下改变或停止时钟源。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL 时（仅在 DMA 模式下），锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。在进行 DAC 转换时（即 DMA 或余弦波发生器运行时），驱动程序会保证在调用 :cpp:func:`dac_continuous_enable` 后获取电源管理锁。同样地，在调用 :cpp:func:`dac_continuous_disable` 时，驱动程序会释放锁。
 
@@ -119,7 +119,7 @@ IRAM 安全
 
 默认情况下，由于写入或擦除 flash 等原因导致 cache 被禁用时，DAC 的 DMA 中断将产生延迟，无法及时执行 DMA EOF 中断。
 
-在实时应用中，可通过启用 Kconfig 选项 :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 来避免此种情况发生，启用后：
+在实时应用中，可通过启用 Kconfig 选项 :menuitem:`CONFIG_DAC_ISR_IRAM_SAFE` 来避免此种情况发生，启用后：
 
 1. 即使在 cache 被禁用的情况下，也可以启用中断服务。
 
@@ -137,12 +137,12 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^^
 
-- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 :ref:`dac-iram-safe`。
-- :ref:`CONFIG_DAC_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
+- :menuitem:`CONFIG_DAC_ISR_IRAM_SAFE` 控制默认 ISR 处理程序在 cache 被禁用时能否继续运行。更多信息可参考 :ref:`dac-iram-safe`。
+- :menuitem:`CONFIG_DAC_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 .. only:: esp32
 
-    - :ref:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` 会在驱动中自动将 8 位数据扩展为 16 位数据，以满足 I2S DMA 格式。
+    - :menuitem:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` 会在驱动中自动将 8 位数据扩展为 16 位数据，以满足 I2S DMA 格式。
 
 应用示例
 --------

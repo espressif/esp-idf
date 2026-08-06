@@ -40,7 +40,7 @@ RTC/LP 看门狗定时器用于追踪从上电到用户主函数执行的启动�
 
 请参阅 :ref:`bootloader-watchdog` 小节，了解如何在引导加载程序中使用看门狗。
 
-用户可以调整应用程序行为，使 RTC 看门狗在应用程序启动后保持启用状态。应用程序需要显式重置（即喂狗）或禁用看门狗，以避免芯片重置。具体而言，用户可设置 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 选项，根据需要修改应用程序并重新编译。此过程中应使用以下 API：
+用户可以调整应用程序行为，使 RTC 看门狗在应用程序启动后保持启用状态。应用程序需要显式重置（即喂狗）或禁用看门狗，以避免芯片重置。具体而言，用户可设置 :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 选项，根据需要修改应用程序并重新编译。此过程中应使用以下 API：
 
 .. list::
 
@@ -64,20 +64,20 @@ IWDT 的目的是，确保中断服务例程 (ISR) 运行不会受到长时间�
 
 IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的 MWDT_WDT 看门狗定时器作为其底层硬件定时器，并在每个 CPU 上使用 FreeRTOS 时钟滴答中断，即 tick 中断。如果某个 CPU 上的 tick 中断没有在 IWDT 超时前运行，就表明该 CPU 上的 ISR 运行受阻（参见上文原因列表）。
 
-当 IWDT 超时后，默认操作是调用紧急处理程序 (Panic Handler)，并显示 出错原因（ ``Interrupt wdt timeout on CPU0`` 或 ``Interrupt wdt timeout on CPU1``，视情况而定）。根据紧急处理程序的配置行为（参见 :ref:`CONFIG_ESP_SYSTEM_PANIC`），用户可通过回溯、OpenOCD、gdbstub 等来调试 IWDT 超时问题，也可以重置芯片（这在生产环境中可能是首选）。
+当 IWDT 超时后，默认操作是调用紧急处理程序 (Panic Handler)，并显示 出错原因（ ``Interrupt wdt timeout on CPU0`` 或 ``Interrupt wdt timeout on CPU1``，视情况而定）。根据紧急处理程序的配置行为（参见 :menuitem:`CONFIG_ESP_SYSTEM_PANIC`），用户可通过回溯、OpenOCD、gdbstub 等来调试 IWDT 超时问题，也可以重置芯片（这在生产环境中可能是首选）。
 
 如果出于某种原因，IWDT 超时后紧急处理程序无法运行，IWDT 还可以通过其二阶段超时来硬重置芯片（即系统重置）。
 
 配置
 ^^^^^^^^^^^^^
 
-- IWDT 默认通过 :ref:`CONFIG_ESP_INT_WDT` 选项启用。
-- 通过 :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 选项设置 IWDT 超时。
+- IWDT 默认通过 :menuitem:`CONFIG_ESP_INT_WDT` 选项启用。
+- 通过 :menuitem:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 选项设置 IWDT 超时。
 
     .. list::
 
         :SOC_SPIRAM_SUPPORTED: - 注意，如果启用了 PSRAM 支持，那么默认的超时时间会更长，因为在某些情况下，临界区或中断例程访问大量 PSRAM 需要更长时间。
-        - IWDT 的配置超时时间应至少为 FreeRTOS tick 周期的两倍时长。例如，如果 FreeRTOS tick 周期间隔为 10 毫秒，则 IWDT 的超时时间应至少为 20 毫秒（参见 :ref:`CONFIG_FREERTOS_HZ`）。
+        - IWDT 的配置超时时间应至少为 FreeRTOS tick 周期的两倍时长。例如，如果 FreeRTOS tick 周期间隔为 10 毫秒，则 IWDT 的超时时间应至少为 20 毫秒（参见 :menuitem:`CONFIG_FREERTOS_HZ`）。
 
 调优
 ^^^^^^
@@ -87,7 +87,7 @@ IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的 MWDT_WDT 看门狗定时器作�
 - 临界区应尽可能短。任何非关键的代码或计算都应放在临界区外。
 - 中断处理程序也应尽可能减少计算量。考虑让 ISR 使用队列向任务推送数据，从而将计算推迟到任务中进行。
 
-临界区或中断处理程序都不应阻塞其他事件。如果不能或不希望通过更改代码减少处理时间，可以通过设置 :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 延长超时时间。
+临界区或中断处理程序都不应阻塞其他事件。如果不能或不希望通过更改代码减少处理时间，可以通过设置 :menuitem:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 延长超时时间。
 
 .. _task-watchdog-timer:
 
@@ -128,13 +128,13 @@ IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的 MWDT_WDT 看门狗定时器作�
 配置
 ^^^^^^^^^^^^^
 
-TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配置项进行设置，并应至少设置为任何单个任务预计需要独占 CPU 的时长，例如某应用程序将进行长时间的密集计算且不让位给其他任务时的预计时长。也可以调用 :cpp:func:`esp_task_wdt_init`，在运行时更改此时间。
+TWDT 的默认超时时间可以通过 :menuitem:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配置项进行设置，并应至少设置为任何单个任务预计需要独占 CPU 的时长，例如某应用程序将进行长时间的密集计算且不让位给其他任务时的预计时长。也可以调用 :cpp:func:`esp_task_wdt_init`，在运行时更改此时间。
 
 .. note::
 
     擦除较大的 flash 区域可能会非常耗时，并可能导致任务连续运行，触发 TWDT 超时。以下两种方法可以避免这种情况：
 
-    - 在 menuconfig 中增加 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S`，延长看门狗超时时间。
+    - 在 menuconfig 中增加 :menuitem:`CONFIG_ESP_TASK_WDT_TIMEOUT_S`，延长看门狗超时时间。
     - 在擦除 flash 区域前，再次调用 :cpp:func:`esp_task_wdt_init` 增加看门狗超时时间。
 
     如需了解更多信息，请参考 :doc:`../peripherals/spi_flash/index`。
@@ -145,15 +145,15 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
 
 .. list::
 
-    - :ref:`CONFIG_ESP_TASK_WDT_EN` - 启用 TWDT 功能。如果禁用此选项， TWDT 即使运行时已初始化也无法使用。
-    - :ref:`CONFIG_ESP_TASK_WDT_INIT` - TWDT 在启动期间自动初始化。禁用此选项时，仍可以调用 :cpp:func:`esp_task_wdt_init` 在运行时初始化 TWDT。
-    - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - 在启动期间将 {IDF_TARGET_IDLE_TASK}注册到 TWDT。如果禁用此选项。如果禁用此选项，仍然可以通过再次调用 :cpp:func:`esp_task_wdt_init`，或者使用 :cpp:func:`esp_task_wdt_add` 并传入通过 :cpp:func:`xTaskGetIdleTaskHandleForCore` 获取的空闲任务句柄来订阅空闲任务。
-    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 空闲任务在启动时订阅了 TWDT。
+    - :menuitem:`CONFIG_ESP_TASK_WDT_EN` - 启用 TWDT 功能。如果禁用此选项， TWDT 即使运行时已初始化也无法使用。
+    - :menuitem:`CONFIG_ESP_TASK_WDT_INIT` - TWDT 在启动期间自动初始化。禁用此选项时，仍可以调用 :cpp:func:`esp_task_wdt_init` 在运行时初始化 TWDT。
+    - :menuitem:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - 在启动期间将 {IDF_TARGET_IDLE_TASK}注册到 TWDT。如果禁用此选项。如果禁用此选项，仍然可以通过再次调用 :cpp:func:`esp_task_wdt_init`，或者使用 :cpp:func:`esp_task_wdt_add` 并传入通过 :cpp:func:`xTaskGetIdleTaskHandleForCore` 获取的空闲任务句柄来订阅空闲任务。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :menuitem:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 空闲任务在启动时订阅了 TWDT。
 
 
 .. note::
 
-    如果 TWDT 超时，会默认在继续运行应用程序前打印警告和回溯。如希望超时触发系统严重错误和系统重置，可以通过 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 进行配置。
+    如果 TWDT 超时，会默认在继续运行应用程序前打印警告和回溯。如希望超时触发系统严重错误和系统重置，可以通过 :menuitem:`CONFIG_ESP_TASK_WDT_PANIC` 进行配置。
 
 
 .. only:: SOC_XT_WDT_SUPPORTED
@@ -172,9 +172,9 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
     配置
     """""""""""""
 
-    - 选择外部 32 KHz 晶体或振荡器时 (:ref:`CONFIG_RTC_CLK_SRC`)，通过 :ref:`CONFIG_ESP_XT_WDT` 配置选项启用 XTWDT。
-    - 设置 :ref:`CONFIG_ESP_XT_WDT_TIMEOUT` 选项来配置超时时间。
-    - 通过 :ref:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` 配置选项启用自动切换备用时钟功能。
+    - 选择外部 32 KHz 晶体或振荡器时 (:menuitem:`CONFIG_RTC_CLK_SRC`)，通过 :menuitem:`CONFIG_ESP_XT_WDT` 配置选项启用 XTWDT。
+    - 设置 :menuitem:`CONFIG_ESP_XT_WDT_TIMEOUT` 选项来配置超时时间。
+    - 通过 :menuitem:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` 配置选项启用自动切换备用时钟功能。
 
 超时阶段
 --------
@@ -201,7 +201,7 @@ WDT 触发时的常见错误日志及可能的解决方法
 
 - ``Guru Meditation Error: Core  0 panic'ed (Interrupt wdt timeout on CPU0).``，并伴随回溯信息：表示 IWDT 检测到 CPU 0 上的中断被阻塞，且阻塞时间超过了所配置的超时时间。可以通过缩短 ISR 或临界区的持续时间、或者增加 IWDT 的超时时间来解决该问题。
 - ``Task watchdog got triggered. The following tasks/users did not reset the watchdog in time: - IDLE0 (CPU 0), Tasks currently running: CPU 0: main, CPU 1: IDLE1``：表示 TWDT 检测到一个或多个任务在所配置的超时时间内没有让出 CPU，导致空闲任务无法及时对 TWDT 进行喂狗。可以通过确保任务能够适当让出 CPU、缩短长时间运行任务的执行时间，或者增加 TWDT 的超时时间来解决该问题。用户还可以使用 :cpp:func:`esp_task_wdt_add`、:cpp:func:`esp_task_wdt_add_user` 以及 :cpp:func:`esp_task_wdt_reset_user` 等 API 来定位哪个任务以及该任务中的哪段代码执行时间最长，从而导致 TWDT 超时。
-- 启用了 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 并导致 WDT 超时：请确保在用户代码中及时对 RTC WDT 进行喂狗。
+- 启用了 :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 并导致 WDT 超时：请确保在用户代码中及时对 RTC WDT 进行喂狗。
 - 在启动过程中发生 WDT 复位：请确保已正确烧录有效的二级引导加载程序，并检查是否存在与外部 flash 通信相关的问题。
 - 在系统运行过程中发生 WDT 复位：请尝试确定复位发生的具体时机，例如是否发生在系统严重错误 (panic)、重启，或进入/退出 Light-sleep 的过程中。如果是在这些系统操作期间发生，则可能由 ESP-IDF 内部的问题引起。
 

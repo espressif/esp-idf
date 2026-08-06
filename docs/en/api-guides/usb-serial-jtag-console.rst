@@ -45,9 +45,9 @@ Some development boards may offer a USB connector for the USB Serial/JTAG Contro
 Software Configuration
 ======================
 
-The USB Serial/JTAG Controller can be used as the serial port by selecting ``CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG`` in the :ref:`CONFIG_ESP_CONSOLE_UART` option. Once selected, building and flashing the project can occur as usual.
+The USB Serial/JTAG Controller can be used as the serial port by selecting ``CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG`` in the :menuitem:`CONFIG_ESP_CONSOLE_UART` option. Once selected, building and flashing the project can occur as usual.
 
-Alternatively, you can access the output through the ``usb_serial_jtag`` port but make sure ``CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`` is selected in the :ref:`CONFIG_ESP_CONSOLE_SECONDARY`.
+Alternatively, you can access the output through the ``usb_serial_jtag`` port but make sure ``CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`` is selected in the :menuitem:`CONFIG_ESP_CONSOLE_SECONDARY`.
 
 .. warning::
 
@@ -121,7 +121,7 @@ Automatic and Manual Sleep Entry
 
 If users enter sleep manually (via :cpp:func:`esp_light_sleep_start` or :cpp:func:`esp_deep_sleep_start`), users should be cognizant of the fact that USB Serial/JTAG controller does not work during sleep. ESP-IDF **does not add any safety check to reject entry to sleep** even if the USB Serial/JTAG controller is connected. In the case where sleep is entered while the USB Serial/JTAG controller is connected, the connection can be re-established by unplugging and re-plugging the USB cable.
 
-If users enter sleep automatically (via :cpp:func:`esp_pm_configure`), enabling the :ref:`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` option allows the {IDF_TARGET_NAME} to automatically detect whether the USB Serial/JTAG controller is currently connected to a host, and prevent automatic entry to sleep as long as the connection persists. However, note that this option increases power consumption.
+If users enter sleep automatically (via :cpp:func:`esp_pm_configure`), enabling the :menuitem:`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` option allows the {IDF_TARGET_NAME} to automatically detect whether the USB Serial/JTAG controller is currently connected to a host, and prevent automatic entry to sleep as long as the connection persists. However, note that this option increases power consumption.
 
 
 Application Examples

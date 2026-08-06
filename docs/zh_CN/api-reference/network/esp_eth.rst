@@ -170,7 +170,7 @@
     .. only:: esp32p4
 
         .. warning::
-            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，EMAC 将通过整数分频器从 MPLL 获取 50 MHz RMII 参考时钟。当同时启用 PSRAM 时，两个外设共享 MPLL，PSRAM 会将 MPLL 锁定在由其速度配置决定的频率上。如果 PSRAM 速度配置为 80 MHz (:ref:`CONFIG_SPIRAM_SPEED`)，MPLL 将运行在 320 MHz，而 320 MHz 无法通过任何整数分频得到满足 ±50 ppm 容差要求的 50 MHz（最接近的候选值为 320 / 6 ≈ 53.33 MHz）。在此配置下，EMAC 初始化将失败。
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，EMAC 将通过整数分频器从 MPLL 获取 50 MHz RMII 参考时钟。当同时启用 PSRAM 时，两个外设共享 MPLL，PSRAM 会将 MPLL 锁定在由其速度配置决定的频率上。如果 PSRAM 速度配置为 80 MHz (:menuitem:`CONFIG_SPIRAM_SPEED`)，MPLL 将运行在 320 MHz，而 320 MHz 无法通过任何整数分频得到满足 ±50 ppm 容差要求的 50 MHz（最接近的候选值为 320 / 6 ≈ 53.33 MHz）。在此配置下，EMAC 初始化将失败。
 
             如果必须使用 80 MHz 的 PSRAM 速度，请通过外部时钟源（PHY 或振荡器）提供 ``REF_CLK``，并配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
 
@@ -265,9 +265,9 @@ MAC 的相关配置可以在 :cpp:class:`eth_mac_config_t` 中找到，具体包
 
     .. list::
 
-        * **网络流量由短且频繁的帧主导时**：如果你的网络流量主要由短且频繁发送（或接收）的帧组成，可能会遇到吞吐量低于预期（尽管额定为 100 Mbps），以及接收过程中丢帧等问题。在发送时，套接字发送 API 可能会返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别）。这些问题的主要原因是，默认的内存配置针对较大帧进行了优化。默认情况下 :ref:`CONFIG_ETH_DMA_BUFFER_SIZE` 设置为 512 字节，以确保 *数据缓冲区* 与 *描述符* 大小的开销比。要解决此问题，可以增加缓冲区数量， :ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 或 :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。此外，还可以减小 :ref:`CONFIG_ETH_DMA_BUFFER_SIZE`，使其与网络中典型帧的大小相匹配，从而合理控制以太网驱动的内存占用。
+        * **网络流量由短且频繁的帧主导时**：如果你的网络流量主要由短且频繁发送（或接收）的帧组成，可能会遇到吞吐量低于预期（尽管额定为 100 Mbps），以及接收过程中丢帧等问题。在发送时，套接字发送 API 可能会返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别）。这些问题的主要原因是，默认的内存配置针对较大帧进行了优化。默认情况下 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` 设置为 512 字节，以确保 *数据缓冲区* 与 *描述符* 大小的开销比。要解决此问题，可以增加缓冲区数量， :menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 或 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。此外，还可以减小 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE`，使其与网络中典型帧的大小相匹配，从而合理控制以太网驱动的内存占用。
 
-        * **高吞吐量导致缓冲区耗尽时**：如果套接字发送 API 间歇性返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别），且吞吐量接近额定的 100 Mbps，这通常表明接近硬件限制。在这种情况下，硬件无法跟上传输请求。解决方案是，增加 :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`，以缓存更多的帧，并缓解传输请求的短时峰值。然而，如果请求的流量持续超过额定吞吐量，此方法将失效，需通过应用层通过软件限制带宽。
+        * **高吞吐量导致缓冲区耗尽时**：如果套接字发送 API 间歇性返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别），且吞吐量接近额定的 100 Mbps，这通常表明接近硬件限制。在这种情况下，硬件无法跟上传输请求。解决方案是，增加 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`，以缓存更多的帧，并缓解传输请求的短时峰值。然而，如果请求的流量持续超过额定吞吐量，此方法将失效，需通过应用层通过软件限制带宽。
 
 PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包括：
 

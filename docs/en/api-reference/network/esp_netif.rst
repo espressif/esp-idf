@@ -137,8 +137,8 @@ Registering event handlers is crucial due to the asynchronous nature of networki
 
 .. note::
 
-    Lost IP events are triggered by a timer that can be enabled or disabled by :ref:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE`,
-    with the delay configured by :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`. The timer is started upon losing the IP address, and the event is raised after the configured interval (120 s by default).
+    Lost IP events are triggered by a timer that can be enabled or disabled by :menuitem:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE`,
+    with the delay configured by :menuitem:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`. The timer is started upon losing the IP address, and the event is raised after the configured interval (120 s by default).
     For backward compatibility, setting the interval to 0 also disables the timer.
 
 .. _esp-netif structure:

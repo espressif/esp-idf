@@ -111,7 +111,7 @@ In simple cases, each record occupies a single row in the table. Each record con
         .. only:: esp32
 
             - ``MAX_BLK_LEN`` takes into account the coding scheme of eFuse.
-            - Depending on the coding scheme selected via :ref:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR`, ``MAX_BLK_LEN`` could be 256 ("None"), 192 ("3/4"), or 128 ("REPEAT").
+            - Depending on the coding scheme selected via :menuitem:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR`, ``MAX_BLK_LEN`` could be 256 ("None"), 192 ("3/4"), or 128 ("REPEAT").
 
 - ``comment``
 
@@ -256,7 +256,7 @@ Various coding schemes are supported by eFuses which can protect eFuses against 
     * from ``esptool`` utility logs (during flashing).
     * calling the function :cpp:func:`esp_efuse_get_coding_scheme` in the application for the EFUSE_BLK3 block.
 
-    The eFuse fields specified in the CSV files must always comply with the eFuse coding scheme used by the chip. The :ref:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR` option selects which coding scheme is used by the CSV files. When generating source files, if the records in the CSV files do not adhere to the coding scheme, an error message will be displayed. In that case, you must adjust the ``bit_start`` and ``bit_count`` of the records to comply with the limitations of the selected coding scheme.
+    The eFuse fields specified in the CSV files must always comply with the eFuse coding scheme used by the chip. The :menuitem:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR` option selects which coding scheme is used by the CSV files. When generating source files, if the records in the CSV files do not adhere to the coding scheme, an error message will be displayed. In that case, you must adjust the ``bit_start`` and ``bit_count`` of the records to comply with the limitations of the selected coding scheme.
 
     .. note::
 
@@ -540,11 +540,11 @@ Debug eFuse & Unit Tests
 Virtual eFuses
 ^^^^^^^^^^^^^^
 
-The Kconfig option :ref:`CONFIG_EFUSE_VIRTUAL` virtualizes eFuse values inside the eFuse Manager, so writes are emulated and no eFuse values are permanently changed. This can be useful for debugging and unit testing.
+The Kconfig option :menuitem:`CONFIG_EFUSE_VIRTUAL` virtualizes eFuse values inside the eFuse Manager, so writes are emulated and no eFuse values are permanently changed. This can be useful for debugging and unit testing.
 
 During startup, the eFuses are copied to RAM. All eFuse operations (read and write) are performed with RAM instead of the real eFuse registers.
 
-In addition to the :ref:`CONFIG_EFUSE_VIRTUAL` option, there is the :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option that adds a feature to keep eFuses in flash memory. To use this mode, the partition_table should have include an ``efuse`` partition in ``partition.csv``:
+In addition to the :menuitem:`CONFIG_EFUSE_VIRTUAL` option, there is the :menuitem:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option that adds a feature to keep eFuses in flash memory. To use this mode, the partition_table should have include an ``efuse`` partition in ``partition.csv``:
 
 .. code-block:: none
 
@@ -555,9 +555,9 @@ During startup, the eFuses are copied from flash, or in case where flash is empt
 Flash Encryption Testing
 """"""""""""""""""""""""
 
-Flash encryption is a hardware feature that requires the physical burning of eFuses ``key`` and ``FLASH_CRYPT_CNT``. If flash encryption is not actually enabled, then enabling the :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option just provides testing possibilities and does not encrypt anything in the flash, even though the logs indicates that encryption happens.
+Flash encryption is a hardware feature that requires the physical burning of eFuses ``key`` and ``FLASH_CRYPT_CNT``. If flash encryption is not actually enabled, then enabling the :menuitem:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option just provides testing possibilities and does not encrypt anything in the flash, even though the logs indicates that encryption happens.
 
-The :cpp:func:`bootloader_flash_write` is adapted for this purpose. But if flash encryption is already enabled on the chip when the application is run, or if the bootloader is created with the :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option, then the flash encryption/decryption operations will work properly. This means that data are encrypted as it is written into an encrypted flash partition and decrypted when they are read from an encrypted partition.
+The :cpp:func:`bootloader_flash_write` is adapted for this purpose. But if flash encryption is already enabled on the chip when the application is run, or if the bootloader is created with the :menuitem:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option, then the flash encryption/decryption operations will work properly. This means that data are encrypted as it is written into an encrypted flash partition and decrypted when they are read from an encrypted partition.
 
 ``espefuse``
 ^^^^^^^^^^^^
@@ -610,7 +610,7 @@ Supported Workflows
 
 * On the device:
 
-    * :cpp:func:`esp_efuse_token_dump()` — always supports ``EFSR`` tokens; ``EFSW`` and ``EFSRW`` require :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API` because they expose staged values that are not yet burned and not yet read-protected.
+    * :cpp:func:`esp_efuse_token_dump()` — always supports ``EFSR`` tokens; ``EFSW`` and ``EFSRW`` require :menuitem:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API` because they expose staged values that are not yet burned and not yet read-protected.
     * :cpp:func:`esp_efuse_token_burn()` — accepts an ``EFSW`` token and applies staged writes on the device.
 
 * On the host:
@@ -676,8 +676,8 @@ Use :cpp:func:`esp_efuse_token_dump()` to create a token in a buffer or print it
 Token type values:
 
 * ``ESP_EFUSE_TOKEN_FROM_READ`` — token of programmed eFuses (starts with ``EFSR``).
-* ``ESP_EFUSE_TOKEN_FROM_STAGED`` — token of staged writes (starts with ``EFSW``). It can expose keys in plaintext because it shows values that are not yet burned and not yet read-protected. Requires :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`. Only this type can be burned back.
-* ``ESP_EFUSE_TOKEN_FROM_READ_STAGED`` — combined token (starts with ``EFSRW``). It includes the same staged portion and the same plaintext key-exposure risk. Requires :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`.
+* ``ESP_EFUSE_TOKEN_FROM_STAGED`` — token of staged writes (starts with ``EFSW``). It can expose keys in plaintext because it shows values that are not yet burned and not yet read-protected. Requires :menuitem:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`. Only this type can be burned back.
+* ``ESP_EFUSE_TOKEN_FROM_READ_STAGED`` — combined token (starts with ``EFSRW``). It includes the same staged portion and the same plaintext key-exposure risk. Requires :menuitem:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`.
 
 If ``buf == NULL``, the token is printed to the console (INFO level) without colors, tag, or timestamp.
 

@@ -83,7 +83,7 @@ The following diagram illustrates the life cycle of the DAC continuous driver an
 
 .. only:: esp32
 
-    On ESP32, the DAC digital controller can be connected internally to the I2S0 and use its DMA for continuous conversion. Although the DAC only needs 8-bit data for conversion, it has to be the left-shifted 8 bits (i.e., the high 8 bits in a 16-bit slot) to satisfy the I2S communication format. By default, the driver helps to expand the data to 16-bit wide automatically. To expand manually, please disable :ref:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` in the menuconfig.
+    On ESP32, the DAC digital controller can be connected internally to the I2S0 and use its DMA for continuous conversion. Although the DAC only needs 8-bit data for conversion, it has to be the left-shifted 8 bits (i.e., the high 8 bits in a 16-bit slot) to satisfy the I2S communication format. By default, the driver helps to expand the data to 16-bit wide automatically. To expand manually, please disable :menuitem:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` in the menuconfig.
 
     The clock of the DAC digital controller comes from I2S0 as well, so there are two clock sources for selection:
 
@@ -110,7 +110,7 @@ Currently, the clock source of the cosine wave generator only comes from ``RTC_F
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the clock source of DAC before entering Light-sleep mode, thus potential influence to the DAC signals may lead to false data conversion.
+When the power management is enabled (i.e., :menuitem:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the clock source of DAC before entering Light-sleep mode, thus potential influence to the DAC signals may lead to false data conversion.
 
 When using DAC driver in continuous mode, it can prevent the system from changing or stopping the clock source in DMA or cosine mode by acquiring a power management lock. When the clock source is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`. When the clock source is APLL (only in DMA mode), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Whenever the DAC is converting (i.e., DMA or cosine wave generator is working), the driver guarantees that the power management lock is acquired after calling :cpp:func:`dac_continuous_enable`. Likewise, the driver will release the lock when :cpp:func:`dac_continuous_disable` is called.
 
@@ -121,7 +121,7 @@ IRAM Safe
 
 By default, the DAC DMA interrupt will be deferred when the cache is disabled for reasons like writing/erasing Flash. Thus the DMA EOF interrupt will not get executed in time.
 
-To avoid such case in real-time applications, you can enable the Kconfig option :ref:`CONFIG_DAC_ISR_IRAM_SAFE` which:
+To avoid such case in real-time applications, you can enable the Kconfig option :menuitem:`CONFIG_DAC_ISR_IRAM_SAFE` which:
 
 1. Enables the interrupt being serviced even when cache is disabled;
 
@@ -137,12 +137,12 @@ All the public DAC APIs are guaranteed to be thread safe by the driver, which me
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_DAC_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`dac-iram-safe` for more information.
-- :ref:`CONFIG_DAC_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
+- :menuitem:`CONFIG_DAC_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`dac-iram-safe` for more information.
+- :menuitem:`CONFIG_DAC_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
 
 .. only:: esp32
 
-    - :ref:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` auto expands the 8-bit data to 16-bit data in the driver to satisfy the I2S DMA format.
+    - :menuitem:`CONFIG_DAC_DMA_AUTO_16BIT_ALIGN` auto expands the 8-bit data to 16-bit data in the driver to satisfy the I2S DMA format.
 
 Application Example
 -------------------

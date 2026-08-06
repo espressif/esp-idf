@@ -94,7 +94,7 @@ The support for ESP32-S2, ESP32-C3, ESP32-C6, ESP32-H2, and ESP32-P4 may be adde
 
     To enable High Performance mode:
 
-    1. De-select :ref:`CONFIG_ESPTOOLPY_OCT_FLASH` and :ref:`CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT`. HPM is not used for Octal flash, enabling related options may bypass HPM functions.
+    1. De-select :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH` and :menuitem:`CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT`. HPM is not used for Octal flash, enabling related options may bypass HPM functions.
 
     2. Enable ``CONFIG_SPI_FLASH_HPM_ENA`` option.
 
@@ -108,13 +108,13 @@ The support for ESP32-S2, ESP32-C3, ESP32-C6, ESP32-H2, and ESP32-P4 may be adde
 
     Check whether the bootloader supports `DC Aware` in the following way:
 
-    - If you are starting a new project, it's suggested to enable `DC Aware` by selecting :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` option in the bootloader menu. Please note that, you won't be able to modify this option via OTA, because the support is in the bootloader.
+    - If you are starting a new project, it's suggested to enable `DC Aware` by selecting :menuitem:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` option in the bootloader menu. Please note that, you won't be able to modify this option via OTA, because the support is in the bootloader.
 
     - If you are working on an existing project and want to update `HPM-DC` config option in the app via OTA, check the sdkconfig file used to build your bootloader (upgrading ESP-IDF version may make this file different from the one used by bootloader to build):
 
-        - For latest version (v4.4.7+, v5.0.7+, v5.1.4+, v5.2 and above), if :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` is selected, the bootloader supports `DC Aware`.
+        - For latest version (v4.4.7+, v5.0.7+, v5.1.4+, v5.2 and above), if :menuitem:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` is selected, the bootloader supports `DC Aware`.
 
-        - For other versions (v4.4.4-v4.4.6, v5.0-v5.0.6, and v5.1-v5.1.3), if ``CONFIG_ESPTOOLPY_FLASHFREQ_120M`` is selected, the bootloader supports `DC Aware`. In this case, enable :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` to confirm this (though it will not affect bootloader in devices in the field).
+        - For other versions (v4.4.4-v4.4.6, v5.0-v5.0.6, and v5.1-v5.1.3), if ``CONFIG_ESPTOOLPY_FLASHFREQ_120M`` is selected, the bootloader supports `DC Aware`. In this case, enable :menuitem:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` to confirm this (though it will not affect bootloader in devices in the field).
 
         - For versions below v4.4.4, the bootloader doesn't support `DC Aware`.
 
@@ -185,12 +185,12 @@ Restrictions
     For Quad flash chips, by default, the part of flash above 16 MB can be used for data storage, for example using a file system.
 
     *Experimental Feature*: To enable full support for Quad flash addresses above 16MB (for both code execution and data access), enable this experimental feature by setting below options to ``y``:
-    - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
-    - :ref:`CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`
+    - :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
+    - :menuitem:`CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`
 
     Please note that, this option is experimental, which means that it can not be used on all Quad flash chips stably. For more information, please contact `Espressif's business team <https://www.espressif.com/en/contact-us/sales-questions>`_.
 
-    For Octal flash chips, this feature is enabled by default if :ref:`CONFIG_ESPTOOLPY_OCT_FLASH` is enabled.
+    For Octal flash chips, this feature is enabled by default if :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH` is enabled.
 
 .. _oct-flash-doc:
 

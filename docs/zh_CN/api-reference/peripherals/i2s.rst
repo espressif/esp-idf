@@ -258,7 +258,7 @@ I2S 驱动中的资源可分为三个级别：
 电源管理
 ^^^^^^^^
 
-电源管理启用（即开启 :ref:`CONFIG_PM_ENABLE`）时，系统将在进入 Light-sleep 前调整或停止 I2S 时钟源，这可能会影响 I2S 信号，从而导致传输或接收的数据无效。
+电源管理启用（即开启 :menuitem:`CONFIG_PM_ENABLE`）时，系统将在进入 Light-sleep 前调整或停止 I2S 时钟源，这可能会影响 I2S 信号，从而导致传输或接收的数据无效。
 
 I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL（若支持）时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。驱动程序将在调用 :cpp:func:`i2s_channel_enable` 启用通道时获取电源管理锁，并在调用 :cpp:func:`i2s_channel_disable` 禁用通道时释放锁，确保通道运行期间 I2S 时钟源保持稳定。
 
@@ -416,7 +416,7 @@ IRAM 安全
 
 默认情况下，由于写入或擦除 flash 等原因导致 cache 被禁用时，I2S 中断将产生延迟，无法及时执行 EOF 中断。
 
-在实时应用中，可通过启用 Kconfig 选项 :ref:`CONFIG_I2S_ISR_IRAM_SAFE` 来避免此种情况发生，启用后：
+在实时应用中，可通过启用 Kconfig 选项 :menuitem:`CONFIG_I2S_ISR_IRAM_SAFE` 来避免此种情况发生，启用后：
 
 1. 即使在 cache 被禁用的情况下，中断仍可继续运行。
 
@@ -432,8 +432,8 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^
 
-- :ref:`CONFIG_I2S_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息可参考 :ref:`i2s-iram-safe`。
-- :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
+- :menuitem:`CONFIG_I2S_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息可参考 :ref:`i2s-iram-safe`。
+- :menuitem:`CONFIG_I2S_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用该选项将增加固件的二进制文件大小。
 
 应用实例
 --------

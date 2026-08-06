@@ -97,13 +97,13 @@
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-        如果 :ref:`生成的 AES-XTS 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-128（256 位密钥）：
+        如果 :menuitem:`生成的 AES-XTS 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-128（256 位密钥）：
 
         .. code-block:: bash
 
             espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
-        如果 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-256（512 位密钥）：
+        如果 :menuitem:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-256（512 位密钥）：
 
         .. code-block:: bash
 
@@ -118,13 +118,13 @@
 
     .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-        如果 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-128（256 位密钥）：
+        如果 :menuitem:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 为 AES-128（256 位密钥）：
 
         .. code-block:: bash
 
             espsecure generate-flash-encryption-key my_flash_encryption_key.bin
 
-        如果 :ref:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是从 128 位（SHA256（128 位））派生的 AES-128 密钥：
+        如果 :menuitem:`生成的 AES-XTS 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是从 128 位（SHA256（128 位））派生的 AES-128 密钥：
 
         .. code-block:: bash
 
@@ -336,12 +336,12 @@
 
     .. list::
 
-        - :ref:`启动时启用 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`。
-        :esp32: - :ref:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择量产模式，则将烧录 ``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
-        :esp32: - :ref:`选择 UART ROM 下载模式（永久禁用（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意，此选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 设为 3 (ESP32 V3) 时可用）。UART ROM 下载模式在默认设置中自动启用，但建议永久禁用此模式以减少攻击者可用的选项。
-        :not esp32: - :ref:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择量产模式，则将烧录 ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
-        :not esp32: - :ref:`选择 UART ROM 下载模式（永久切换到安全模式（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是推荐的默认选项，如果不需要，也可将其更改为永久禁用 UART ROM 下载模式。
-        - :ref:`选择适当的引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
+        - :menuitem:`启动时启用 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`。
+        :esp32: - :menuitem:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择量产模式，则将烧录 ``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
+        :esp32: - :menuitem:`选择 UART ROM 下载模式（永久禁用（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意，此选项仅在 :menuitem:`CONFIG_ESP32_REV_MIN` 设为 3 (ESP32 V3) 时可用）。UART ROM 下载模式在默认设置中自动启用，但建议永久禁用此模式以减少攻击者可用的选项。
+        :not esp32: - :menuitem:`选择量产模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择量产模式，则将烧录 ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
+        :not esp32: - :menuitem:`选择 UART ROM 下载模式（永久切换到安全模式（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是推荐的默认选项，如果不需要，也可将其更改为永久禁用 UART ROM 下载模式。
+        - :menuitem:`选择适当的引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
         - 保存配置并退出。
 
 7. 构建、加密并烧录二进制文件
@@ -579,7 +579,7 @@ flash 加密指南
 
 6. 构建二进制文件
 
-    默认情况下，一级 (ROM) 引导加载程序只会验证 :ref:`second-stage-bootloader`。只有在启用 :ref:`CONFIG_SECURE_BOOT` 选项（并将 :ref:`CONFIG_SECURE_BOOT_VERSION` 设置为 ``SECURE_BOOT_V2_ENABLED``）时，二级引导加载程序才会在构建引导加载程序时验证应用程序分区。
+    默认情况下，一级 (ROM) 引导加载程序只会验证 :ref:`second-stage-bootloader`。只有在启用 :menuitem:`CONFIG_SECURE_BOOT` 选项（并将 :menuitem:`CONFIG_SECURE_BOOT_VERSION` 设置为 ``SECURE_BOOT_V2_ENABLED``）时，二级引导加载程序才会在构建引导加载程序时验证应用程序分区。
 
     A) 打开 :ref:`project-configuration-menu`，在 ``Security features`` 中设置 ``Enable hardware Secure Boot in bootloader`` 启用 Secure Boot。
 
@@ -591,7 +591,7 @@ flash 加密指南
 
         选中 ``Secure Boot v2`` 选项， ``App Signing Scheme`` 将被默认设置为 {IDF_TARGET_SBV2_DEFAULT_SCHEME}。
 
-    B) 在 :ref:`project-configuration-menu` 中为项目禁用 :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` 选项，以确保所有生成的二进制文件都受到安全保护且未签名，避免生成签名的二进制文件，因为需要使用 ``espsecure`` 工具手动签名二进制文件。
+    B) 在 :ref:`project-configuration-menu` 中为项目禁用 :menuitem:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` 选项，以确保所有生成的二进制文件都受到安全保护且未签名，避免生成签名的二进制文件，因为需要使用 ``espsecure`` 工具手动签名二进制文件。
 
 7. 构建、签名并烧录二进制文件
 
@@ -727,11 +727,11 @@ Secure Boot v2 指南
 
     4. 配置项目
 
-        * 通过设置 :ref:`CONFIG_NVS_ENCRYPTION`，启用 `NVS 加密`。
+        * 通过设置 :menuitem:`CONFIG_NVS_ENCRYPTION`，启用 `NVS 加密`。
 
-        * 将 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置为 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC``，启用基于 HMAC 的 NVS 加密。
+        * 将 :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置为 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC``，启用基于 HMAC 的 NVS 加密。
 
-        * 通过设置 :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`，将 HMAC eFuse 密钥 ID 设为步骤 2 中烧录 eFuse 密钥的 ID。
+        * 通过设置 :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`，将 HMAC eFuse 密钥 ID 设为步骤 2 中烧录 eFuse 密钥的 ID。
 
     5. 烧录 NVS 分区
 
@@ -776,8 +776,8 @@ Secure Boot v2 指南
 
 3. 配置项目
 
-    * 通过启用 :ref:`CONFIG_NVS_ENCRYPTION` 来启用 `NVS 加密`。
-    * 通过将 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置为 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC``，配置 NVS 使用基于 flash 加密的方案。
+    * 通过启用 :menuitem:`CONFIG_NVS_ENCRYPTION` 来启用 `NVS 加密`。
+    * 通过将 :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` 设置为 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC``，配置 NVS 使用基于 flash 加密的方案。
 
 4. 烧录 NVS 分区和 NVS 加密密钥
 

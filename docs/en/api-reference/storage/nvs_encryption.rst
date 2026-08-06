@@ -12,7 +12,7 @@ Data stored in NVS partitions can be encrypted using XTS-AES in the manner simil
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    NVS encryption can be facilitated by enabling :ref:`CONFIG_NVS_ENCRYPTION` and :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` or ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` depending on the scheme to be used.
+    NVS encryption can be facilitated by enabling :menuitem:`CONFIG_NVS_ENCRYPTION` and :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` or ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` depending on the scheme to be used.
 
 .. _nvs_encr_flash_enc_scheme:
 
@@ -120,13 +120,13 @@ It is possible for an application to use different keys for different NVS partit
 
         Please take note that this scheme uses one eFuse block for storing the HMAC key required for deriving the encryption keys.
 
-    - When NVS encryption is enabled, the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function first checks whether an HMAC key is present at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
+    - When NVS encryption is enabled, the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function first checks whether an HMAC key is present at :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
 
     .. note::
 
-        The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``-1``, which have to be configured before building the user application.
+        The valid range for the config :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``-1``, which have to be configured before building the user application.
 
-    - If no key is found, a key is generated internally and stored at the eFuse block specified at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
+    - If no key is found, a key is generated internally and stored at the eFuse block specified at :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
     - If a key is found with the purpose :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP`, the same is used for the derivation of the XTS encryption keys.
     - If the specified eFuse block is found to be occupied with a key with a purpose other than :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP`, an error is thrown.
 
@@ -146,13 +146,13 @@ The same NVS API functions ``nvs_get_*`` or ``nvs_set_*`` can be used for readin
 
 **Encrypt the default NVS partition**
 
-- To enable encryption for the default NVS partition, no additional step is necessary. When :ref:`CONFIG_NVS_ENCRYPTION` is enabled, the :cpp:func:`nvs_flash_init` API function internally performs some additional steps to enable encryption for the default NVS partition depending on the scheme being used (set by :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME`).
+- To enable encryption for the default NVS partition, no additional step is necessary. When :menuitem:`CONFIG_NVS_ENCRYPTION` is enabled, the :cpp:func:`nvs_flash_init` API function internally performs some additional steps to enable encryption for the default NVS partition depending on the scheme being used (set by :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME`).
 
 - For the flash encryption-based scheme, the first :ref:`nvs_encr_key_partition` found is used to generate the encryption keys.
 
 .. only:: SOC_HMAC_SUPPORTED
 
-    For the HMAC-based scheme, keys are generated using the HMAC key burnt in eFuse at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` (refer to the API documentation for more details).
+    For the HMAC-based scheme, keys are generated using the HMAC key burnt in eFuse at :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` (refer to the API documentation for more details).
 
 Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used to enable encryption for the default NVS partition.
 
@@ -211,7 +211,7 @@ Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used t
 .. only:: SOC_HMAC_SUPPORTED
 
     .. note::
-        While using the HMAC-based scheme, the above workflow can be used without enabling any of the config options for NVS encryption - :ref:`CONFIG_NVS_ENCRYPTION`, :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` and :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to encrypt the default as well as custom NVS partitions with :cpp:func:`nvs_flash_secure_init` API.
+        While using the HMAC-based scheme, the above workflow can be used without enabling any of the config options for NVS encryption - :menuitem:`CONFIG_NVS_ENCRYPTION`, :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` and :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to encrypt the default as well as custom NVS partitions with :cpp:func:`nvs_flash_secure_init` API.
 
 
 NVS Security Provider
@@ -225,7 +225,7 @@ The component :component:`nvs_sec_provider` stores all the implementation-specif
 
 .. note::
 
-    To use a custom implementation for NVS encryption key derivation or protection (instead of the ones provided by the :component:`nvs_sec_provider` component), select the :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` configuration option.
+    To use a custom implementation for NVS encryption key derivation or protection (instead of the ones provided by the :component:`nvs_sec_provider` component), select the :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_NONE`` configuration option.
 
 API Reference
 -------------

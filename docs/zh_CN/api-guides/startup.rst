@@ -74,7 +74,7 @@
 
 当一级 (ROM) 引导加载程序校验并加载完二级引导加载程序后，它会从二进制镜像的头部找到二级引导加载程序的入口点，并跳转过去运行。
 
-二级引导加载程序默认从 flash 的 {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} 偏移地址处（:ref:`可配置的值 <CONFIG_PARTITION_TABLE_OFFSET>`）读取分区表。请参考 :doc:`分区表 <partition-tables>` 获取详细信息。引导加载程序会寻找工厂分区和 OTA 应用程序分区。如果在分区表中找到了 OTA 应用程序分区，引导加载程序将查询 ``otadata`` 分区以确定应引导哪个分区。更多信息请参考 :doc:`/api-reference/system/ota`。
+二级引导加载程序默认从 flash 的 {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} 偏移地址处（:menuitem:`可配置的值 <CONFIG_PARTITION_TABLE_OFFSET>`）读取分区表。请参考 :doc:`分区表 <partition-tables>` 获取详细信息。引导加载程序会寻找工厂分区和 OTA 应用程序分区。如果在分区表中找到了 OTA 应用程序分区，引导加载程序将查询 ``otadata`` 分区以确定应引导哪个分区。更多信息请参考 :doc:`/api-reference/system/ota`。
 
 关于 ESP-IDF 引导加载程序可用的配置选项，请参考 :doc:`bootloader`。
 
@@ -114,7 +114,7 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
 .. list::
 
    - 为应用程序重新配置 CPU 异常（允许应用程序中断处理程序运行，并使用为应用程序配置的选项来处理 :doc:`fatal-errors`，而不是使用 ROM 提供的简易版错误处理程序处理。
-   - 如果没有设置选项 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`，则不使能 RTC 看门狗定时器。
+   - 如果没有设置选项 :menuitem:`CONFIG_BOOTLOADER_WDT_ENABLE`，则不使能 RTC 看门狗定时器。
    - 初始化内部存储器（数据和 bss）。
    - 完成 MMU 高速缓存配置。
    :SOC_SPIRAM_SUPPORTED: - 如果配置了 PSRAM，则使能 PSRAM。
@@ -144,9 +144,9 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
    - 初始化堆分配器（在这之前，所有分配必须是静态的或在堆栈上）。
    - 初始化 esp_libc 组件的系统调用和时间函数。
    - 配置断电检测器。
-   - 根据 :ref:`串行控制台配置 <CONFIG_ESP_CONSOLE_UART>` 设置 libc stdin、stdout、和 stderr。
-   :esp32: - 执行与安全有关的检查，包括为该配置烧录 efuse（包括 :ref:`禁用 ESP32 V3 的 ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>`、:ref:`CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE`）。
-   :not esp32: - 执行与安全有关的检查，包括为该配置烧录 efuse（包括 :ref:`永久限制 ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>`)。
+   - 根据 :menuitem:`串行控制台配置 <CONFIG_ESP_CONSOLE_UART>` 设置 libc stdin、stdout、和 stderr。
+   :esp32: - 执行与安全有关的检查，包括为该配置烧录 efuse（包括 :menuitem:`禁用 ESP32 V3 的 ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>`、:menuitem:`CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE`）。
+   :not esp32: - 执行与安全有关的检查，包括为该配置烧录 efuse（包括 :menuitem:`永久限制 ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>`)。
    - 初始化 SPI flash API 支持。
    - 调用全局 C++ 构造函数和任何标有 ``__attribute__((constructor))`` 的 C 函数。
 
@@ -161,11 +161,11 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
 
 做完一些初始化任务后（需要启动调度器），主任务在固件中运行应用程序提供的函数 ``app_main``。
 
-运行 ``app_main`` 的主任务有一个固定的 RTOS 优先级（比最小值高）和一个 :ref:`可配置的堆栈大小<CONFIG_ESP_MAIN_TASK_STACK_SIZE>`。
+运行 ``app_main`` 的主任务有一个固定的 RTOS 优先级（比最小值高）和一个 :menuitem:`可配置的堆栈大小 <CONFIG_ESP_MAIN_TASK_STACK_SIZE>`。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-   主任务的内核亲和性也是可以配置的，请参考 :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`。
+   主任务的内核亲和性也是可以配置的，请参考 :menuitem:`CONFIG_ESP_MAIN_TASK_AFFINITY`。
 
 与普通的 FreeRTOS 任务（或嵌入式 C 的 ``main`` 函数）不同，``app_main`` 任务可以返回。如果 ``app_main`` 函数返回，那么主任务将会被删除。系统将继续运行其他的 RTOS 任务。因此可以将 ``app_main`` 实现为一个创建其他应用任务然后返回的函数，或主应用任务本身。
 

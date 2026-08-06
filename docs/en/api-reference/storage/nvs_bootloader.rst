@@ -31,7 +31,7 @@ Applications are expected to follow the steps below in order to enable decryptio
 
     .. note::
 
-        While using the HMAC-based scheme, the above workflow can be used without enabling any of the config options for NVS encryption - :ref:`CONFIG_NVS_ENCRYPTION`, :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` and :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to encrypt the default as well as custom NVS partitions with :cpp:func:`nvs_flash_secure_init` API.
+        While using the HMAC-based scheme, the above workflow can be used without enabling any of the config options for NVS encryption - :menuitem:`CONFIG_NVS_ENCRYPTION`, :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` and :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to encrypt the default as well as custom NVS partitions with :cpp:func:`nvs_flash_secure_init` API.
 
 
 Application Example

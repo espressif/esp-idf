@@ -27,7 +27,7 @@ The NimBLE host can run inside the application thread or can have its own indepe
 Programming Sequence
 ====================
 
-To begin with, make sure that the NimBLE stack is enabled from menuconfig :ref:`choose NimBLE for the Bluetooth host <CONFIG_BT_HOST>`.
+To begin with, make sure that the NimBLE stack is enabled from menuconfig :menuitem:`choose NimBLE for the Bluetooth host <CONFIG_BT_HOST>`.
 
 Typical programming sequence with NimBLE stack consists of the following steps:
     * Initialize NVS flash using :cpp:func:`nvs_flash_init` API. This is because ESP controller uses NVS during initialization.

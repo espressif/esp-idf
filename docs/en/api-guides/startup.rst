@@ -74,7 +74,7 @@ In ESP-IDF, the binary image which resides at offset {IDF_TARGET_CONFIG_BOOTLOAD
 
 When the first stage (ROM) bootloader is finished checking and loading the second stage bootloader, it jumps to the second stage bootloader entry point found in the binary image header.
 
-Second stage bootloader reads the partition table found by default at offset {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} (:ref:`configurable value <CONFIG_PARTITION_TABLE_OFFSET>`). See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA app partitions. If OTA app partitions are found in the partition table, the bootloader consults the ``otadata`` partition to determine which one should be booted. See :doc:`/api-reference/system/ota` for more information.
+Second stage bootloader reads the partition table found by default at offset {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} (:menuitem:`configurable value <CONFIG_PARTITION_TABLE_OFFSET>`). See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA app partitions. If OTA app partitions are found in the partition table, the bootloader consults the ``otadata`` partition to determine which one should be booted. See :doc:`/api-reference/system/ota` for more information.
 
 For a full description of the configuration options available for the ESP-IDF bootloader, see :doc:`bootloader`.
 
@@ -114,7 +114,7 @@ This port-layer initialization function initializes the basic C Runtime Environm
 .. list::
 
    - Reconfigure CPU exceptions for the app (allowing app interrupt handlers to run, and causing :doc:`fatal-errors` to be handled using the options configured for the app rather than the simpler error handler provided by ROM).
-   - If the option :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` is not set then the RTC watchdog timer is disabled.
+   - If the option :menuitem:`CONFIG_BOOTLOADER_WDT_ENABLE` is not set then the RTC watchdog timer is disabled.
    - Initialize internal memory (data & bss).
    - Finish configuring the MMU cache.
    :SOC_SPIRAM_SUPPORTED: - Enable PSRAM if configured.
@@ -144,9 +144,9 @@ The primary system initialization stage includes:
    - Initialize the heap allocator (before this point all allocations must be static or on the stack).
    - Initialize esp_libc component syscalls and time functions.
    - Configure the brownout detector.
-   - Setup libc stdin, stdout, and stderr according to the :ref:`serial console configuration <CONFIG_ESP_CONSOLE_UART>`.
-   :esp32: - Perform any security-related checks, including burning efuses that should be burned for this configuration (including :ref:`disabling ROM download mode on ESP32 V3 <CONFIG_SECURE_UART_ROM_DL_MODE>`, :ref:`CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE`).
-   :not esp32: - Perform any security-related checks, including burning efuses that should be burned for this configuration (including :ref:`permanently limiting ROM download modes <CONFIG_SECURE_UART_ROM_DL_MODE>`).
+   - Setup libc stdin, stdout, and stderr according to the :menuitem:`serial console configuration <CONFIG_ESP_CONSOLE_UART>`.
+   :esp32: - Perform any security-related checks, including burning efuses that should be burned for this configuration (including :menuitem:`disabling ROM download mode on ESP32 V3 <CONFIG_SECURE_UART_ROM_DL_MODE>`, :menuitem:`CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE`).
+   :not esp32: - Perform any security-related checks, including burning efuses that should be burned for this configuration (including :menuitem:`permanently limiting ROM download modes <CONFIG_SECURE_UART_ROM_DL_MODE>`).
    - Initialize SPI flash API support.
    - Call global C++ constructors and any C functions marked with ``__attribute__((constructor))``.
 
@@ -161,11 +161,11 @@ After all other components are initialized, the main task is created and the Fre
 
 After doing some more initialization tasks (that require the scheduler to have started), the main task runs the application-provided function ``app_main`` in the firmware.
 
-The main task that runs ``app_main`` has a fixed RTOS priority (one higher than the minimum) and a :ref:`configurable stack size <CONFIG_ESP_MAIN_TASK_STACK_SIZE>`.
+The main task that runs ``app_main`` has a fixed RTOS priority (one higher than the minimum) and a :menuitem:`configurable stack size <CONFIG_ESP_MAIN_TASK_STACK_SIZE>`.
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-   The main task core affinity is also configurable: :ref:`CONFIG_ESP_MAIN_TASK_AFFINITY`.
+   The main task core affinity is also configurable: :menuitem:`CONFIG_ESP_MAIN_TASK_AFFINITY`.
 
 Unlike normal FreeRTOS tasks (or embedded C ``main`` functions), the ``app_main`` task is allowed to return. If this happens, The task is cleaned up and the system will continue running with other RTOS tasks scheduled normally. Therefore, it is possible to implement ``app_main`` as either a function that creates other application tasks and then returns, or as a main application task itself.
 

@@ -81,23 +81,23 @@ Configuration Options
 
 The following configuration options are available for the FatFs component:
 
-* ``CONFIG_FATFS_LONG_FILENAMES`` - Selects how the FatFs library handles long filename (LFN) support. The available options are :ref:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` to disable LFN support and limit names to the `8.3 format <https://en.wikipedia.org/wiki/8.3_filename>`_ (SFN only), :ref:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` to enable LFN support with the LFN working buffer stored on the heap (default), and :ref:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` to enable LFN support with the LFN working buffer stored on the stack. For details, see `FatFs filenames <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
-* :ref:`CONFIG_FATFS_VOLUME_COUNT` - Sets the number of logical FatFs volumes. Increasing this value can increase baseline memory usage.
-* :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - If enabled, the FatFs library prefers external RAM when allocating internal buffers. If external RAM allocation fails, it falls back to internal RAM. This can have a noticeable performance cost on hot I/O paths. Disable this option to prioritize performance; enable it to reduce internal RAM usage.
-* :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - If enabled, the FatFs library tries to allocate heap work buffers in DMA-capable, cache-aligned memory first so SDMMC transfers avoid extra copies. This option is useful on targets that use PSRAM with SDMMC DMA (for example ESP32-P4). If this option and :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` are both enabled, the FatFs library tries DMA-capable RAM first, then external RAM, then internal RAM.
-* :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` - If enabled, the FatFs library allocates instance buffers separately and sizes them according to each mounted volume's logical sector size. This option is useful when multiple FatFs instances use different logical sector sizes, as it can reduce memory usage. If disabled, all instances use buffers sized for the largest configured logical sector size.
-* :ref:`CONFIG_FATFS_PER_FILE_CACHE` - If enabled, each open file uses a separate cache buffer. This improves I/O performance but increases RAM usage when multiple files are open. If disabled, a single shared cache is used, which reduces RAM usage but can increase storage read/write operations.
-* :ref:`CONFIG_FATFS_USE_FASTSEEK` - If enabled, POSIX :cpp:func:`lseek` runs faster. Fast seek does not work for files opened in write mode. To use fast seek, open the file in read-only mode, or close and reopen it in read-only mode.
-* :ref:`CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE` - Sets the CLMT (Cluster Link Map Table) buffer size used by fast seek when :ref:`CONFIG_FATFS_USE_FASTSEEK` is enabled. Larger buffers can improve seek behavior on larger files, but use more RAM.
-* :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` - Sets the default stdio file buffer block size used through VFS. This option is mainly relevant for stdio-based I/O (for example ``fread``/``fgets``) and is not the primary tuning knob for direct POSIX ``read``/``write`` paths. Larger values can improve buffered read throughput, but increase heap usage.
-* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs library calls :cpp:func:`f_sync` automatically after each call to :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate`, and :cpp:func:`ftruncate`. This option improves file consistency and size-reporting accuracy, but decreases performance because it triggers frequent disk operations.
-* :ref:`CONFIG_FATFS_LINK_LOCK` - If enabled, this option guarantees API thread safety for the :cpp:func:`link` function. Disabling this option can help applications that perform frequent small file operations (for example, file logging). When disabled, the copy performed by :cpp:func:`link` is non-atomic. In that case, using :cpp:func:`link` on a large file on the same volume from another task is not guaranteed to be thread-safe.
-* Other relevant options include :ref:`CONFIG_FATFS_FS_LOCK`, :ref:`CONFIG_FATFS_TIMEOUT_MS`, and ``CONFIG_FATFS_CHOOSE_CODEPAGE`` (especially ``CONFIG_FATFS_CODEPAGE_DYNAMIC`` for code-size impact). Additional options include ``CONFIG_FATFS_SECTOR_SIZE``, ``CONFIG_FATFS_MAX_LFN``, ``CONFIG_FATFS_API_ENCODING``, and ``CONFIG_FATFS_USE_STRFUNC_CHOICE``.
+* ``CONFIG_FATFS_LONG_FILENAMES`` - Selects how the FatFs library handles long filename (LFN) support. The available options are :menuitem:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` to disable LFN support and limit names to the `8.3 format <https://en.wikipedia.org/wiki/8.3_filename>`_ (SFN only), :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` to enable LFN support with the LFN working buffer stored on the heap (default), and :menuitem:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` to enable LFN support with the LFN working buffer stored on the stack. For details, see `FatFs filenames <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
+* :menuitem:`CONFIG_FATFS_VOLUME_COUNT` - Sets the number of logical FatFs volumes. Increasing this value can increase baseline memory usage.
+* :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - If enabled, the FatFs library prefers external RAM when allocating internal buffers. If external RAM allocation fails, it falls back to internal RAM. This can have a noticeable performance cost on hot I/O paths. Disable this option to prioritize performance; enable it to reduce internal RAM usage.
+* :menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - If enabled, the FatFs library tries to allocate heap work buffers in DMA-capable, cache-aligned memory first so SDMMC transfers avoid extra copies. This option is useful on targets that use PSRAM with SDMMC DMA (for example ESP32-P4). If this option and :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` are both enabled, the FatFs library tries DMA-capable RAM first, then external RAM, then internal RAM.
+* :menuitem:`CONFIG_FATFS_USE_DYN_BUFFERS` - If enabled, the FatFs library allocates instance buffers separately and sizes them according to each mounted volume's logical sector size. This option is useful when multiple FatFs instances use different logical sector sizes, as it can reduce memory usage. If disabled, all instances use buffers sized for the largest configured logical sector size.
+* :menuitem:`CONFIG_FATFS_PER_FILE_CACHE` - If enabled, each open file uses a separate cache buffer. This improves I/O performance but increases RAM usage when multiple files are open. If disabled, a single shared cache is used, which reduces RAM usage but can increase storage read/write operations.
+* :menuitem:`CONFIG_FATFS_USE_FASTSEEK` - If enabled, POSIX :cpp:func:`lseek` runs faster. Fast seek does not work for files opened in write mode. To use fast seek, open the file in read-only mode, or close and reopen it in read-only mode.
+* :menuitem:`CONFIG_FATFS_FAST_SEEK_BUFFER_SIZE` - Sets the CLMT (Cluster Link Map Table) buffer size used by fast seek when :menuitem:`CONFIG_FATFS_USE_FASTSEEK` is enabled. Larger buffers can improve seek behavior on larger files, but use more RAM.
+* :menuitem:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` - Sets the default stdio file buffer block size used through VFS. This option is mainly relevant for stdio-based I/O (for example ``fread``/``fgets``) and is not the primary tuning knob for direct POSIX ``read``/``write`` paths. Larger values can improve buffered read throughput, but increase heap usage.
+* :menuitem:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs library calls :cpp:func:`f_sync` automatically after each call to :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate`, and :cpp:func:`ftruncate`. This option improves file consistency and size-reporting accuracy, but decreases performance because it triggers frequent disk operations.
+* :menuitem:`CONFIG_FATFS_LINK_LOCK` - If enabled, this option guarantees API thread safety for the :cpp:func:`link` function. Disabling this option can help applications that perform frequent small file operations (for example, file logging). When disabled, the copy performed by :cpp:func:`link` is non-atomic. In that case, using :cpp:func:`link` on a large file on the same volume from another task is not guaranteed to be thread-safe.
+* Other relevant options include :menuitem:`CONFIG_FATFS_FS_LOCK`, :menuitem:`CONFIG_FATFS_TIMEOUT_MS`, and ``CONFIG_FATFS_CHOOSE_CODEPAGE`` (especially ``CONFIG_FATFS_CODEPAGE_DYNAMIC`` for code-size impact). Additional options include ``CONFIG_FATFS_SECTOR_SIZE``, ``CONFIG_FATFS_MAX_LFN``, ``CONFIG_FATFS_API_ENCODING``, and ``CONFIG_FATFS_USE_STRFUNC_CHOICE``.
 
 These options control how the FatFs library calculates and reports free space:
 
-* :ref:`CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT` - If set to 1, the FatFs library ignores the free cluster count. The default value is 0.
-* :ref:`CONFIG_FATFS_DONT_TRUST_LAST_ALLOC` - If set to 1, the FatFs library ignores the last allocation number. The default value is 0.
+* :menuitem:`CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT` - If set to 1, the FatFs library ignores the free cluster count. The default value is 0.
+* :menuitem:`CONFIG_FATFS_DONT_TRUST_LAST_ALLOC` - If set to 1, the FatFs library ignores the last allocation number. The default value is 0.
 
 .. note::
 
@@ -324,9 +324,9 @@ FatFs behavior can be tuned for different priorities by choosing the right confi
 
 The main variables that affect behavior are:
 
-* Buffer placement and sizing (:ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`, :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`, :ref:`CONFIG_FATFS_USE_DYN_BUFFERS`, :ref:`CONFIG_FATFS_PER_FILE_CACHE`, and application I/O buffer sizes).
+* Buffer placement and sizing (:menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS`, :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`, :menuitem:`CONFIG_FATFS_USE_DYN_BUFFERS`, :menuitem:`CONFIG_FATFS_PER_FILE_CACHE`, and application I/O buffer sizes).
 * Wear leveling logical sector size and mode (``CONFIG_WL_SECTOR_SIZE_*`` and ``CONFIG_WL_SECTOR_MODE_*``).
-* Sync strategy (:ref:`CONFIG_FATFS_IMMEDIATE_FSYNC`).
+* Sync strategy (:menuitem:`CONFIG_FATFS_IMMEDIATE_FSYNC`).
 * Workload pattern (transaction sizes, sequential vs random access, read vs write ratio).
 
 Optimize I/O Performance
@@ -334,15 +334,15 @@ Optimize I/O Performance
 
 For throughput-oriented workloads:
 
-* Keep :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` disabled unless your consistency requirements need it.
-* If peak speed is the top priority, disable :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` so buffers stay in internal RAM.
+* Keep :menuitem:`CONFIG_FATFS_IMMEDIATE_FSYNC` disabled unless your consistency requirements need it.
+* If peak speed is the top priority, disable :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` so buffers stay in internal RAM.
 * Prefer larger read/write transaction sizes over many small operations.
 * Align transaction sizes to the active sector size when possible (for example 512 B or 4096 B), and pad writes if needed to reduce partial-sector overhead.
 * For SPI flash with wear leveling, prefer ``CONFIG_WL_SECTOR_SIZE_4096`` when RAM budget allows, as it is generally more efficient.
 * If using 512-byte WL sectors, use ``CONFIG_WL_SECTOR_MODE_PERF`` when your application can accept the higher power-loss risk during flash-sector erase.
 * Prefer POSIX ``read``/``write`` over ``fread``/``fwrite`` on hot paths when possible. For broader speed guidance, see :doc:`Maximizing Execution Speed <../../api-guides/performance/speed>`.
-* On SDMMC DMA targets (for example ESP32-P4 with PSRAM), enable :ref:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` to reduce extra buffer copies.
-* Enable :ref:`CONFIG_FATFS_USE_FASTSEEK` for read-heavy workloads with long backward seeks.
+* On SDMMC DMA targets (for example ESP32-P4 with PSRAM), enable :menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` to reduce extra buffer copies.
+* Enable :menuitem:`CONFIG_FATFS_USE_FASTSEEK` for read-heavy workloads with long backward seeks.
 
 .. note::
 
@@ -351,14 +351,14 @@ For throughput-oriented workloads:
 Optimize Memory Usage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Disable :ref:`CONFIG_FATFS_PER_FILE_CACHE` to use a single shared cache when reducing RAM usage is the priority.
+* Disable :menuitem:`CONFIG_FATFS_PER_FILE_CACHE` to use a single shared cache when reducing RAM usage is the priority.
 * Tune ``esp_vfs_fat_mount_config_t.max_files`` (see :ref:`Mount and Use FatFs <fatfs-mount-and-use>`) as low as practical; each simultaneously open file increases RAM usage.
-* If :ref:`CONFIG_FATFS_PER_FILE_CACHE` is enabled, prefer ``CONFIG_WL_SECTOR_SIZE_512`` to reduce per-file cache size.
-* If :ref:`CONFIG_FATFS_PER_FILE_CACHE` is disabled, ``CONFIG_WL_SECTOR_SIZE_4096`` may be a better tradeoff.
-* Enable :ref:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` on targets with external RAM support to reduce internal RAM pressure, but expect lower I/O performance.
+* If :menuitem:`CONFIG_FATFS_PER_FILE_CACHE` is enabled, prefer ``CONFIG_WL_SECTOR_SIZE_512`` to reduce per-file cache size.
+* If :menuitem:`CONFIG_FATFS_PER_FILE_CACHE` is disabled, ``CONFIG_WL_SECTOR_SIZE_4096`` may be a better tradeoff.
+* Enable :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` on targets with external RAM support to reduce internal RAM pressure, but expect lower I/O performance.
 * Consider ``CONFIG_FATFS_LONG_FILENAMES = CONFIG_FATFS_LFN_NONE`` when SFN (8.3) filenames are acceptable.
 * If long filenames are required, reduce ``CONFIG_FATFS_MAX_LFN`` to the smallest value that meets your needs.
-* Enable :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` so each mounted volume uses buffers sized to its actual sector size.
+* Enable :menuitem:`CONFIG_FATFS_USE_DYN_BUFFERS` so each mounted volume uses buffers sized to its actual sector size.
 
 Optimize Storage Efficiency
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

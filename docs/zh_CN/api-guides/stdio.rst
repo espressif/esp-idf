@@ -33,11 +33,11 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
 .. list::
 
-    - :ref:`CONFIG_ESP_CONSOLE_UART_DEFAULT<CONFIG_ESP_CONSOLE_UART_DEFAULT>` — 启用 UART 用于标准 I/O，保持默认选项项（管脚号、波特率）。
-    - :ref:`CONFIG_ESP_CONSOLE_UART_CUSTOM<CONFIG_ESP_CONSOLE_UART_CUSTOM>` — 启用 UART 用于标准 I/O，通过 Kconfig 配置 TX/RX 管脚号和波特率。
-    :SOC_USB_OTG_CONSOLE_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_CDC<CONFIG_ESP_CONSOLE_USB_CDC>` — 启用 USB CDC（使用 USB_OTG 外设）用于标准 I/O。硬件连接要求请参见 :doc:`usb-otg-console`。
-    :SOC_USB_SERIAL_JTAG_SUPPORTED: - :ref:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG>` — 启用 USB Serial/JTAG 用于标准 I/O。硬件连接要求请参见 :doc:`usb-serial-jtag-console`。
-    - :ref:`CONFIG_ESP_CONSOLE_NONE<CONFIG_ESP_CONSOLE_NONE>` — 禁用标准 I/O。选择此选项时， ``stdin``、 ``stdout`` 和 ``stderr`` 将映射到 ``/dev/null``，不会产生输出或输入。
+    - :menuitem:`CONFIG_ESP_CONSOLE_UART_DEFAULT` — 启用 UART 用于标准 I/O，保持默认选项项（管脚号、波特率）。
+    - :menuitem:`CONFIG_ESP_CONSOLE_UART_CUSTOM` — 启用 UART 用于标准 I/O，通过 Kconfig 配置 TX/RX 管脚号和波特率。
+    :SOC_USB_OTG_CONSOLE_SUPPORTED: - :menuitem:`CONFIG_ESP_CONSOLE_USB_CDC` — 启用 USB CDC（使用 USB_OTG 外设）用于标准 I/O。硬件连接要求请参见 :doc:`usb-otg-console`。
+    :SOC_USB_SERIAL_JTAG_SUPPORTED: - :menuitem:`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG` — 启用 USB Serial/JTAG 用于标准 I/O。硬件连接要求请参见 :doc:`usb-serial-jtag-console`。
+    - :menuitem:`CONFIG_ESP_CONSOLE_NONE` — 禁用标准 I/O。选择此选项时， ``stdin``、 ``stdout`` 和 ``stderr`` 将映射到 ``/dev/null``，不会产生输出或输入。
 
 启用上述任一选项，会将相应的 VFS 驱动编译进应用程序，用于打开 ``stdin``、 ``stdout`` 和 ``stderr`` 流。写入 ``stdout`` 和 ``stderr`` 的数据将通过选定接口发送，而来自选定接口的输入将可通过 ``stdin`` 读取。
 
@@ -55,12 +55,12 @@ ESP-IDF 提供了 C 标准输入输出功能，如 ``stdin``、``stdout`` 和 ``
 
     可用的次级控制台选项包括：
 
-        - :ref:`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG<CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG>`
+        - :menuitem:`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`
 
 标准流与 FreeRTOS 任务
 -----------------------
 
-ESP-IDF 根据 :ref:`CONFIG_LIBC` 中所选择的 LibC 实现，提供了两种不同的标准 I/O 流实现方式。 ``stdin``、 ``stdout`` 和 ``stderr`` 流在这两种实现下的行为存在差异，尤其体现在 FreeRTOS 任务之间的共享方式上。
+ESP-IDF 根据 :menuitem:`CONFIG_LIBC` 中所选择的 LibC 实现，提供了两种不同的标准 I/O 流实现方式。 ``stdin``、 ``stdout`` 和 ``stderr`` 流在这两种实现下的行为存在差异，尤其体现在 FreeRTOS 任务之间的共享方式上。
 
 两种实现的共同点是，每个流 (``stdin``、 ``stdout``、 ``stderr``) 都具有一个互斥锁 (mutex) 用于保护，防止多个任务并发访问同一个流。例如，当两个任务同时向 ``stdout`` 写数据时，该互斥锁可以确保各个任务的输出不会相互混杂。
 
@@ -117,13 +117,13 @@ UART
 应用程序可以使用以下 Kconfig 选项全局配置此行为：
 
     - 配置输出
-        - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF<CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF>`
-        - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CR<CONFIG_LIBC_STDOUT_LINE_ENDING_CR>`
-        - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_LF<CONFIG_LIBC_STDOUT_LINE_ENDING_LF>`
+        - :menuitem:`CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF`
+        - :menuitem:`CONFIG_LIBC_STDOUT_LINE_ENDING_CR`
+        - :menuitem:`CONFIG_LIBC_STDOUT_LINE_ENDING_LF`
     - 配置输入
-        - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CRLF<CONFIG_LIBC_STDIN_LINE_ENDING_CRLF>`
-        - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CR<CONFIG_LIBC_STDIN_LINE_ENDING_CR>`
-        - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_LF<CONFIG_LIBC_STDIN_LINE_ENDING_LF>`
+        - :menuitem:`CONFIG_LIBC_STDIN_LINE_ENDING_CRLF`
+        - :menuitem:`CONFIG_LIBC_STDIN_LINE_ENDING_CR`
+        - :menuitem:`CONFIG_LIBC_STDIN_LINE_ENDING_LF`
 
 
 也可以为特定 VFS 驱动配置行结束符转换：

@@ -391,8 +391,8 @@ ESP-IDF tick 钩子 和 idle 钩子
 
 FreeRTOS 允许应用程序在编译时提供一个 tick 钩子和一个 idle 钩子：
 
-- FreeRTOS tick 钩子可以通过 :ref:`CONFIG_FREERTOS_USE_TICK_HOOK` 选项启用。应用程序必须提供 ``void vApplicationTickHook( void )`` 回调。
-- FreeRTOS idle 钩子可以通过 :ref:`CONFIG_FREERTOS_USE_IDLE_HOOK` 选项启用。应用程序必须提供 ``void vApplicationIdleHook( void )`` 回调。
+- FreeRTOS tick 钩子可以通过 :menuitem:`CONFIG_FREERTOS_USE_TICK_HOOK` 选项启用。应用程序必须提供 ``void vApplicationTickHook( void )`` 回调。
+- FreeRTOS idle 钩子可以通过 :menuitem:`CONFIG_FREERTOS_USE_IDLE_HOOK` 选项启用。应用程序必须提供 ``void vApplicationIdleHook( void )`` 回调。
 
 然而，FreeRTOS tick 钩子和 idle 钩子有以下不足：
 

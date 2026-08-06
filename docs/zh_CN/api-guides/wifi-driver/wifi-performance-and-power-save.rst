@@ -439,83 +439,83 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
 
 **接收数据方向：**
 
- - :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
+ - :menuitem:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM`
     该参数表示硬件层的 DMA 缓冲区数量。提高该参数将增加发送方的一次性接收吞吐量，从而提高 Wi-Fi 协议栈处理突发流量的能力。
 
- - :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
+ - :menuitem:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM`
     该参数表示 Wi-Fi 层中接收数据缓冲区的数量。提高该参数可以增强数据包的接收性能。该参数需要与 LWIP 层的接收数据缓冲区大小相匹配。
 
- - :ref:`CONFIG_ESP_WIFI_RX_BA_WIN`
-    该参数表示接收端 AMPDU BA 窗口的大小，应配置为 :ref:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` 和 :ref:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM` 的二倍数值中较小的数值。
+ - :menuitem:`CONFIG_ESP_WIFI_RX_BA_WIN`
+    该参数表示接收端 AMPDU BA 窗口的大小，应配置为 :menuitem:`CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM` 和 :menuitem:`CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM` 的二倍数值中较小的数值。
 
- - :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`
+ - :menuitem:`CONFIG_LWIP_TCP_WND_DEFAULT`
     该参数表示 LWIP 层用于每个 TCP 流的接收数据缓冲区大小，应配置为 WIFI_DYNAMIC_RX_BUFFER_NUM (KB) 的值，从而实现高稳定性能。同时，在有多个流的情况下，应相应降低该参数值。
 
 **发送数据方向：**
 
- - :ref:`CONFIG_ESP_WIFI_TX_BUFFER`
+ - :menuitem:`CONFIG_ESP_WIFI_TX_BUFFER`
     该参数表示发送数据缓冲区的类型，建议配置为动态缓冲区，该配置可以充分利用内存。
 
- - :ref:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
+ - :menuitem:`CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM`
     该参数表示 Wi-Fi 层发送数据缓冲区数量。提高该参数可以增强数据包发送的性能。该参数值需要与 LWIP 层的发送数据缓冲区大小相匹配。
 
- - :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
+ - :menuitem:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`
     该参数表示 LWIP 层用于每个 TCP 流的发送数据缓冲区大小，应配置为 WIFI_DYNAMIC_TX_BUFFER_NUM (KB) 的值，从而实现高稳定性能。在有多个流的情况下，应相应降低该参数值。
 
 **通过在 IRAM 中放置代码优化吞吐量：**
 
 .. only:: esp32 or esp32s2
 
-    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`
         如果使能该选项，一些 Wi-Fi 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 15 kB。
 
-    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         如果使能该选项，一些 Wi-Fi 接收数据功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 16 kB。
 
- - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
+ - :menuitem:`CONFIG_LWIP_IRAM_OPTIMIZATION`
     如果使能该选项，一些 LWIP 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 13 kB。
 
 .. only:: esp32c6
 
-    - :ref:`CONFIG_ESP_WIFI_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT`
         如果使能该选项，一些 Wi-Fi 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 13 kB。
 
-    - :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
+    - :menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT`
         如果使能该选项，一些 Wi-Fi 接收数据功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 7 kB。
 
-    - :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION`
+    - :menuitem:`CONFIG_LWIP_IRAM_OPTIMIZATION`
         如果使能该选项，一些 LWIP 功能将被移至 IRAM，从而提高吞吐量，IRAM 使用量将增加 14 kB。
 
 .. only:: esp32s2
 
     **缓存：**
 
-     - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+     - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
         配置指令缓存的大小。
 
-     - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_SIZE`
+     - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_SIZE`
         配置指令缓存总线的宽度。
 
 .. only:: esp32s3
 
     **缓存：**
 
-     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
         配置指令缓存的大小。
 
-     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE`
         配置指令缓存总线的宽度。
 
-     - :ref:`CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS`
+     - :menuitem:`CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS`
         配置指令缓存相连方式.
 
-     - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
         配置数据缓存的大小.
 
-     - :ref:`CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE`
+     - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE`
         配置数据缓存行大小.
 
-     - :ref:`CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS`
+     - :menuitem:`CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS`
         配置数据缓存相连方式.
 
 .. note::
@@ -1109,7 +1109,7 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
     使用 PSRAM
     ++++++++++++++++++++++++++++
 
-    PSRAM 一般在应用程序占用大量内存时使用。在该模式下，:ref:`CONFIG_ESP_WIFI_TX_BUFFER` 被强制为静态。:ref:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` 表示硬件层 DMA 缓冲区数量，提高这一参数可以增强性能。
+    PSRAM 一般在应用程序占用大量内存时使用。在该模式下，:menuitem:`CONFIG_ESP_WIFI_TX_BUFFER` 被强制为静态。:menuitem:`CONFIG_ESP_WIFI_STATIC_TX_BUFFER_NUM` 表示硬件层 DMA 缓冲区数量，提高这一参数可以增强性能。
     以下是使用 PSRAM 时的推荐等级。
 
     .. only:: esp32
@@ -1572,11 +1572,11 @@ AP 睡眠
 
 非连接状态指的是 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间内，没有建立 Wi-Fi 连接的阶段。
 
-目前, {IDF_TARGET_NAME} Wi-Fi 支持以 station 模式运行时，在非连接状态下休眠。可以通过选项 :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` 配置该功能。
+目前, {IDF_TARGET_NAME} Wi-Fi 支持以 station 模式运行时，在非连接状态下休眠。可以通过选项 :menuitem:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` 配置该功能。
 
-如果打开配置选项 :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE`，则在该阶段内，RF, PHY and BB 将在空闲时被关闭，电流将会等同于 Modem-sleep 模式下的休眠电流。
+如果打开配置选项 :menuitem:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE`，则在该阶段内，RF, PHY and BB 将在空闲时被关闭，电流将会等同于 Modem-sleep 模式下的休眠电流。
 
-配置选项 :ref:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` 默认情况下将会被打开，共存模式下被 Menuconfig 强制打开。
+配置选项 :menuitem:`CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE` 默认情况下将会被打开，共存模式下被 Menuconfig 强制打开。
 
 .. _connectionless-module-power-save-cn:
 

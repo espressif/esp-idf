@@ -111,7 +111,7 @@ eFuse 字段通过 CSV 文件中特定格式的表格进行定义。通过这种
         .. only:: esp32
 
             - ``MAX_BLK_LEN`` 考虑了 eFuse 的编码方案。
-            - 根据 :ref:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR` 选择的编码方案，``MAX_BLK_LEN`` 可能是 256("None")、192 ("3/4") 或 128 ("REPEAT") 位。
+            - 根据 :menuitem:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR` 选择的编码方案，``MAX_BLK_LEN`` 可能是 256("None")、192 ("3/4") 或 128 ("REPEAT") 位。
 
 - ``comment``
 
@@ -256,7 +256,7 @@ eFuse 支持各种编码方式，能够检测或纠正错误，保护 eFuse 数�
     * 在烧录期间从 ``esptool`` 应用程序日志中查看。
     * 在应用程序中调用 :cpp:func:`esp_efuse_get_coding_scheme` 函数查看 EFUSE_BLK3 块的编码方式。
 
-    CSV 文件中指定的 eFuse 字段必须始终符合芯片使用的 eFuse 编码方案。可以通过 :ref:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR` 选择 CSV 文件使用的编码方案。生成源文件时，如果 CSV 文件中的内容不符合编码方案，则会显示错误信息。在这种情况下，必须调整错误行的 ``bit_start`` 和 ``bit_count``，以满足所选编码方案的限制。
+    CSV 文件中指定的 eFuse 字段必须始终符合芯片使用的 eFuse 编码方案。可以通过 :menuitem:`CONFIG_EFUSE_CODE_SCHEME_SELECTOR` 选择 CSV 文件使用的编码方案。生成源文件时，如果 CSV 文件中的内容不符合编码方案，则会显示错误信息。在这种情况下，必须调整错误行的 ``bit_start`` 和 ``bit_count``，以满足所选编码方案的限制。
 
     .. note::
 
@@ -540,11 +540,11 @@ eFuse 位序采取小字节序（参见下方示例），这说明 eFuse 位按�
 虚拟 eFuse
 ^^^^^^^^^^^^^^
 
-Kconfig 选项 :ref:`CONFIG_EFUSE_VIRTUAL` 在 eFuse 管理器中虚拟了 eFuse 值，因此写入操作是仿真操作，不会永久更改 eFuse 值。这对于应用程序调试和单元测试很有用处。
+Kconfig 选项 :menuitem:`CONFIG_EFUSE_VIRTUAL` 在 eFuse 管理器中虚拟了 eFuse 值，因此写入操作是仿真操作，不会永久更改 eFuse 值。这对于应用程序调试和单元测试很有用处。
 
 在启动时，eFuses 被复制到 RAM 中。此时，所有的 eFuse 操作（读和写）都是通过 RAM 执行，而不是通过实际的 eFuse 寄存器执行的。
 
-除了 :ref:`CONFIG_EFUSE_VIRTUAL` 选项外，还有 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项，该选项可将 eFuse 保留在 flash 内存中。要使用此模式，partition_table 在  ``partition.csv`` 中包含名为 ``efuse`` 的分区：
+除了 :menuitem:`CONFIG_EFUSE_VIRTUAL` 选项外，还有 :menuitem:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项，该选项可将 eFuse 保留在 flash 内存中。要使用此模式，partition_table 在  ``partition.csv`` 中包含名为 ``efuse`` 的分区：
 
 .. code-block:: none
 
@@ -555,9 +555,9 @@ Kconfig 选项 :ref:`CONFIG_EFUSE_VIRTUAL` 在 eFuse 管理器中虚拟了 eFuse
 flash 加密测试
 """"""""""""""
 
-flash 加密是一项硬件功能，需要物理烧录 eFuse ``key`` 和 ``FLASH_CRYPT_CNT``。如果 flash 加密实际未启用，那么启用 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项只是提供了测试的可能性，而不会加密 flash 中的任何内容，即使日志中显示了加密操作。
+flash 加密是一项硬件功能，需要物理烧录 eFuse ``key`` 和 ``FLASH_CRYPT_CNT``。如果 flash 加密实际未启用，那么启用 :menuitem:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项只是提供了测试的可能性，而不会加密 flash 中的任何内容，即使日志中显示了加密操作。
 
-为此，可使用 :cpp:func:`bootloader_flash_write` 函数。但是，如果运行应用程序时芯片已启用 flash 加密，或者以 :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项创建了引导加载程序，则 flash 加密/解密操作会正常进行。这意味着数据写入加密 flash 分区时被加密，从加密分区读取时被解密。
+为此，可使用 :cpp:func:`bootloader_flash_write` 函数。但是，如果运行应用程序时芯片已启用 flash 加密，或者以 :menuitem:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` 选项创建了引导加载程序，则 flash 加密/解密操作会正常进行。这意味着数据写入加密 flash 分区时被加密，从加密分区读取时被解密。
 
 ``espefuse``
 ^^^^^^^^^^^^
@@ -610,7 +610,7 @@ Token 包括一个 CRC32 校验和，用于检测截断和意外修改。
 
 * 在设备上：
 
-    * :cpp:func:`esp_efuse_token_dump()` — 始终支持生成 ``EFSR`` token；``EFSW`` 和 ``EFSRW`` 需要启用 :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`，因为它们会暴露尚未烧写、也尚未受读保护的暂存值。
+    * :cpp:func:`esp_efuse_token_dump()` — 始终支持生成 ``EFSR`` token；``EFSW`` 和 ``EFSRW`` 需要启用 :menuitem:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`，因为它们会暴露尚未烧写、也尚未受读保护的暂存值。
     * :cpp:func:`esp_efuse_token_burn()` — 接受 ``EFSW`` token 并在设备上应用暂存写入。
 
 * 在主机上：
@@ -676,8 +676,8 @@ Base64URL 使用与 Base64 相同的字母表，但将 ``+`` 替换为 ``-``，�
 Token 类型值：
 
 * ``ESP_EFUSE_TOKEN_FROM_READ`` — 已烧写的 eFuse 的 token（以 ``EFSR`` 开头）。
-* ``ESP_EFUSE_TOKEN_FROM_STAGED`` — 暂存写入的 token（以 ``EFSW`` 开头）。它会显示尚未烧写、也尚未受读保护的值，因此可能以明文暴露密钥。需要启用 :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`。仅此类型可被烧写回。
-* ``ESP_EFUSE_TOKEN_FROM_READ_STAGED`` — 组合 token（以 ``EFSRW`` 开头）。它包含同样的暂存部分，因此也具有相同的明文密钥暴露风险。需要启用 :ref:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`。
+* ``ESP_EFUSE_TOKEN_FROM_STAGED`` — 暂存写入的 token（以 ``EFSW`` 开头）。它会显示尚未烧写、也尚未受读保护的值，因此可能以明文暴露密钥。需要启用 :menuitem:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`。仅此类型可被烧写回。
+* ``ESP_EFUSE_TOKEN_FROM_READ_STAGED`` — 组合 token（以 ``EFSRW`` 开头）。它包含同样的暂存部分，因此也具有相同的明文密钥暴露风险。需要启用 :menuitem:`CONFIG_EFUSE_ENABLE_STAGED_TOKEN_API`。
 
 如果 ``buf == NULL``，token 将打印到控制台（INFO 级别），不包含颜色、标签或时间戳。
 

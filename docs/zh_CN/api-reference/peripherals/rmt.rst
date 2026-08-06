@@ -571,7 +571,7 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 电源管理
 ^^^^^^^^^^^^^^^^
 
-当电源管理 :ref:`CONFIG_PM_ENABLE` 被启用的时候，系统在进入睡眠前可能会调整或禁用时钟源。结果是，RMT 内部的时间基准无法按预期工作。
+当电源管理 :menuitem:`CONFIG_PM_ENABLE` 被启用的时候，系统在进入睡眠前可能会调整或禁用时钟源。结果是，RMT 内部的时间基准无法按预期工作。
 
 驱动程序可以通过创建一个电源管理锁来防止上述问题。锁的类型会根据不同的时钟源来设置。驱动程序将在 :cpp:func:`rmt_enable` 中拿锁，并在 :cpp:func:`rmt_disable` 中释放锁。这意味着，无论电源管理策略如何，在这两个函数之间的任何 RMT 事务都可以保证正常工作。在此期间，时钟源不会被禁用或调整频率。
 
@@ -586,7 +586,7 @@ Cache 安全
 
 默认情况下，禁用 cache 时，写入/擦除主 flash 等原因将导致 RMT 中断延迟，事件回调函数也将延迟执行。在实时应用程序中，应避免此类情况。此外，当 RMT 事务依赖 **交替** 中断连续编码或复制 RMT 符号时，上述中断延迟将导致不可预测的结果。
 
-因此，可以启用 Kconfig 选项 :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 和 :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE`，该选项：
+因此，可以启用 Kconfig 选项 :menuitem:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 和 :menuitem:`CONFIG_RMT_RX_ISR_CACHE_SAFE`，该选项：
 
 1. 支持在禁用 cache 时启用所需中断
 2. 支持将 ISR 使用的所有函数存放在 IRAM 中 [2]_
@@ -594,9 +594,9 @@ Cache 安全
 
 启用该选项可以保证 cache 禁用时的中断运行，但会相应增加 IRAM 占用。
 
-请注意，当 :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 使能后，你必须将编码器函数（主要是 :cpp:member:`rmt_encoder_t::encode` 和 :cpp:member:`rmt_encoder_t::reset`）放进 IRAM 中。建议你使用 :c:macro:`RMT_ENCODER_FUNC_ATTR` 来装饰你的编码器函数。
+请注意，当 :menuitem:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 使能后，你必须将编码器函数（主要是 :cpp:member:`rmt_encoder_t::encode` 和 :cpp:member:`rmt_encoder_t::reset`）放进 IRAM 中。建议你使用 :c:macro:`RMT_ENCODER_FUNC_ATTR` 来装饰你的编码器函数。
 
-另外一个 Kconfig 选项 :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 可以将 :cpp:func:`rmt_receive` 函数放进内部的 IRAM 中，从而当 flash cache 被关闭的时候，这个函数也能够被使用。
+另外一个 Kconfig 选项 :menuitem:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 可以将 :cpp:func:`rmt_receive` 函数放进内部的 IRAM 中，从而当 flash cache 被关闭的时候，这个函数也能够被使用。
 
 .. _rmt-thread-safety:
 
@@ -615,9 +615,9 @@ RMT 驱动程序会确保工厂函数 :cpp:func:`rmt_new_tx_channel`、:cpp:func
 Kconfig 选项
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 和 :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-cache-safe`。
-- :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` 用于启用调试日志输出，启用此选项将增加固件的二进制文件大小。
-- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统存储的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-cache-safe`。
+- :menuitem:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 和 :menuitem:`CONFIG_RMT_RX_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-cache-safe`。
+- :menuitem:`CONFIG_RMT_ENABLE_DEBUG_LOG` 用于启用调试日志输出，启用此选项将增加固件的二进制文件大小。
+- :menuitem:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统存储的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-cache-safe`。
 
 应用示例
 --------------------

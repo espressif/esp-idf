@@ -20,7 +20,7 @@ ESP-IDF 支持以下 lwIP TCP/IP 协议栈功能：
 
     .. warning::
 
-        在使用除 `BSD 套接字 API`_ 外的任意 lwIP API 时，请确保所用 API 为线程安全。请启用 :ref:`CONFIG_LWIP_CHECK_THREAD_SAFETY` 配置选项并运行应用程序，检查所用 API 是否线程安全。此时，lwIP 断言 TCP/IP 核心功能可以正确访问。如果未能从正确的 `lwIP FreeRTOS 任务`_ 访问，或没有正确锁定，则执行中止。建议使用 :doc:`/api-reference/network/esp_netif` 组件与 lwIP 交互。
+        在使用除 `BSD 套接字 API`_ 外的任意 lwIP API 时，请确保所用 API 为线程安全。请启用 :menuitem:`CONFIG_LWIP_CHECK_THREAD_SAFETY` 配置选项并运行应用程序，检查所用 API 是否线程安全。此时，lwIP 断言 TCP/IP 核心功能可以正确访问。如果未能从正确的 `lwIP FreeRTOS 任务`_ 访问，或没有正确锁定，则执行中止。建议使用 :doc:`/api-reference/network/esp_netif` 组件与 lwIP 交互。
 
 ESP-IDF 间接支持以下常见的 lwIP 应用程序 API：
 
@@ -37,7 +37,7 @@ ESP-IDF 间接支持以下常见的 lwIP 应用程序 API：
 - ICMP Ping，由 lwIP ping API 的变体支持，请参阅 :doc:`/api-reference/protocols/icmp_echo`。
 - ICMPv6 Ping，由 lwIP 的 ICMPv6 Echo API 支持，用于测试 IPv6 网络连接情况。有关详细信息，请参阅 :example:`protocols/sockets/icmpv6_ping`。该示例演示了如何使用网络接口发现 IPv6 地址，创建原始 ICMPv6 套接字，向目标 IPv6 地址发送 ICMPv6 Echo 请求，并等待目标返回 Echo 回复。
 - NetBIOS 查找，由标准的 lwIP API 支持，:example:`protocols/http_server/restful_server` 示例中提供了使用 NetBIOS 在局域网中查找主机的选项。
-- mDNS 与 lwIP 的默认 mDNS 使用不同实现方式，请参阅 :doc:`/api-reference/protocols/mdns`。但启用 :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` 设置项后，lwIP 可以使用 ``gethostbyname()`` 等标准 API 和 ``hostname.local`` 约定查找 mDNS 主机。
+- mDNS 与 lwIP 的默认 mDNS 使用不同实现方式，请参阅 :doc:`/api-reference/protocols/mdns`。但启用 :menuitem:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` 设置项后，lwIP 可以使用 ``gethostbyname()`` 等标准 API 和 ``hostname.local`` 约定查找 mDNS 主机。
 - lwIP 中的 PPP 实现可用于在 ESP-IDF 中创建 PPPoS（串行 PPP）接口。请参阅 :doc:`/api-reference/network/esp_netif` 组件文档，使用 :component_file:`esp_netif/include/esp_netif_defaults.h` 中定义的 ``ESP_NETIF_DEFAULT_PPP()`` 宏创建并配置 PPP 网络接口。:component_file:`esp_netif/include/esp_netif_ppp.h` 中提供了其他的运行时设置。PPPoS 接口通常用于与 NBIoT/GSM/LTE 调制解调器交互。`esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ 仓库还支持更多应用层友好的 API，该仓库内部使用了上述 PPP lwIP 模块。
 
 DHCP 地址冲突检测
@@ -45,7 +45,7 @@ DHCP 地址冲突检测
 
 通常情况下，DHCP 服务器在提供选定的 IPv4 地址前，会验证该地址在网络上的唯一性。然而，有些服务器（包括 ESP-IDF 中的 DHCP 服务器）为了简化操作并加快地址分配速度，默认情况下不会进行这种验证。
 
-为避免潜在的 IP 地址冲突与连接问题，ESP-IDF 的 DHCP 客户端提供了多种选项，可在绑定 IPv4 地址前对服务器分配的地址进行验证（参见 :ref:`CONFIG_LWIP_DHCP_CHECKS_OFFERED_ADDRESS`）：
+为避免潜在的 IP 地址冲突与连接问题，ESP-IDF 的 DHCP 客户端提供了多种选项，可在绑定 IPv4 地址前对服务器分配的地址进行验证（参见 :menuitem:`CONFIG_LWIP_DHCP_CHECKS_OFFERED_ADDRESS`）：
 
 - **简单 ARP 检测，默认选项** (``CONFIG_LWIP_DHCP_DOES_ARP_CHECK``)：发送两个 ARP 探测，只有当分配的 IP 的回复来自与接口 MAC 不同的 MAC 地址时才拒绝该分配。这种方式速度快约 1-2 秒，可避免 AP 在 ARP 回复中回显客户端 MAC 的网络中出现误判冲突。**如果遇到 DHCP DECLINE 循环，即分配 IP 的 ARP 回复显示接口自身的 MAC 时，请使用此选项。**
 - **地址冲突检测 (ACD)** (``CONFIG_LWIP_DHCP_DOES_ACD_CHECK``)：使用上游 lwIP ACD （符合 RFC 5227 标准）来探测或宣告地址。某些接入点会使用客户端自身的 MAC 地址来响应 ARP 探测；上游行为会将探测期间收到的任何匹配发送方 IP 视为冲突，这可能导致在此类网络上反复出现 DHCP DECLINE。**只有在需要完全符合 RFC 5227 标准，并了解某些接入点的潜在问题时，才使用此选项。**
@@ -242,11 +242,11 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 
 与级别参数 ``SOL_SOCKET`` 一起使用。
 
-- ``SO_REUSEADDR``：如果 :ref:`CONFIG_LWIP_SO_REUSE` 已启用，则该选项可用，可以设置 :ref:`CONFIG_LWIP_SO_REUSE_RXTOALL` 自定义其行为
+- ``SO_REUSEADDR``：如果 :menuitem:`CONFIG_LWIP_SO_REUSE` 已启用，则该选项可用，可以设置 :menuitem:`CONFIG_LWIP_SO_REUSE_RXTOALL` 自定义其行为
 - ``SO_KEEPALIVE``
 - ``SO_BROADCAST``
 - ``SO_ACCEPTCONN``
-- ``SO_RCVBUF``：如果 :ref:`CONFIG_LWIP_SO_RCVBUF` 已启用，则该选项可用
+- ``SO_RCVBUF``：如果 :menuitem:`CONFIG_LWIP_SO_RCVBUF` 已启用，则该选项可用
 - ``SO_SNDTIMEO`` / ``SO_RCVTIMEO``
 - ``SO_ERROR``：此选项仅支持与 ``select()`` 一起使用，请参阅 `套接字错误处理`_
 - ``SO_TYPE``
@@ -259,7 +259,7 @@ IP 选项
 
 - ``IP_TOS``
 - ``IP_TTL``
-- ``IP_PKTINFO``：如果 :ref:`CONFIG_LWIP_NETBUF_RECVINFO` 已启用，则该选项可用
+- ``IP_PKTINFO``：如果 :menuitem:`CONFIG_LWIP_NETBUF_RECVINFO` 已启用，则该选项可用
 
 对于组播 UDP 套接字：
 
@@ -341,9 +341,9 @@ lwIP 创建了专用的 TCP/IP FreeRTOS 任务，处理来自其他任务的套�
 
 以下配置项可用于修改任务，并调整向 TCP/IP 任务发送数据和从 TCP/IP 任务接收数据的队列（邮箱）：
 
-- :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`
-- :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
-- :ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`
+- :menuitem:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`
+- :menuitem:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
+- :menuitem:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`
 
 IPv6 支持
 ------------
@@ -366,7 +366,7 @@ IPv6 地址配置通过以下协议或服务定义：
 
 要通过路由器通告协议启用地址自动配置，请启用此配置选项：
 
-- :ref:`CONFIG_LWIP_IPV6_AUTOCONFIG`
+- :menuitem:`CONFIG_LWIP_IPV6_AUTOCONFIG`
 
 该配置选项启用了所有网络接口的 IPv6 自动配置。而在上游 lwIP 中，需要设置 ``netif->ip6_autoconfig_enabled=1``，针对每个 ``netif`` 明确启用自动配置。
 
@@ -377,9 +377,9 @@ DHCPv6
 
 lwIP 中的 DHCPv6 非常简单，仅支持无状态配置，可通过以下配置选项启用：
 
-- :ref:`CONFIG_LWIP_IPV6_DHCP6`
+- :menuitem:`CONFIG_LWIP_IPV6_DHCP6`
 
-由于 DHCPv6 仅在无状态配置下工作，因此还需要通过 :ref:`CONFIG_LWIP_IPV6_AUTOCONFIG` 启用 :ref:`lwip-ivp6-autoconfig`。
+由于 DHCPv6 仅在无状态配置下工作，因此还需要通过 :menuitem:`CONFIG_LWIP_IPV6_AUTOCONFIG` 启用 :ref:`lwip-ivp6-autoconfig`。
 
 此外，还需要使用以下语句，在应用程序代码中明确启用 DHCPv6：
 
@@ -394,7 +394,7 @@ IPv6 自动配置中的 DNS 服务器
 
 - 递归域名系统 (DNS)，属于邻居发现协议 (NDP) 的一部分，可使用 :ref:`lwip-ivp6-autoconfig`。
 
-  DNS 服务器的数量必须设置为 :ref:`CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS`，该选项默认禁用，即置位为 0。
+  DNS 服务器的数量必须设置为 :menuitem:`CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS`，该选项默认禁用，即置位为 0。
 
 - DHCPv6 无状态配置，使用 :ref:`lwip-ivp6-dhcp6` 配置 DNS 服务器。注意，此配置假设 IPv6 路由通告标志 (RFC-5175) 进行了如下设置
 
@@ -423,7 +423,7 @@ lwIP 中的 IGMP 和 MLD6 功能都会初始化一个定时器，以便在特定
 
 即便没有活动的超时事件，lwIP 也会默认始终启用这些定时器，增加自动 Light-sleep 模式下的 CPU 使用率和功耗。``ESP-lwIP`` 则默认将各定时器设置为 ``按需`` 使用，即只在有待处理事件时启用。
 
-如果要返回默认 lwIP 设置，即始终启用定时器，请禁用 :ref:`CONFIG_LWIP_TIMERS_ONDEMAND`。
+如果要返回默认 lwIP 设置，即始终启用定时器，请禁用 :menuitem:`CONFIG_LWIP_TIMERS_ONDEMAND`。
 
 lwIP 定时器 API
 +++++++++++++++
@@ -468,7 +468,7 @@ IDF 移植层提供了默认的钩子文件，lwIP 构建过程中会包含此�
 
 **DHCP 额外选项钩子**
 
-ESP-IDF 允许应用程序通过定义钩子来处理额外的 DHCP 选项，可以帮助实现基于 DHCP 的自定义行为（例如获取特定的供应商选项）。若想启用此功能，可以将 :ref:`CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION` 配置为 **Default** （提供弱实现，可替换为自定义实现）或 **Custom** （需要自行实现该钩子，并定义其对 lwIP 的链接依赖）。
+ESP-IDF 允许应用程序通过定义钩子来处理额外的 DHCP 选项，可以帮助实现基于 DHCP 的自定义行为（例如获取特定的供应商选项）。若想启用此功能，可以将 :menuitem:`CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION` 配置为 **Default** （提供弱实现，可替换为自定义实现）或 **Custom** （需要自行实现该钩子，并定义其对 lwIP 的链接依赖）。
 
 **示例用法**
 
@@ -493,13 +493,13 @@ ESP-IDF 允许应用程序通过定义钩子来处理额外的 DHCP 选项，可
 
 ESP-IDF 提供了其他可覆盖的 lwIP 钩子，例如：
 
-- TCP ISN 钩子 (:ref:`CONFIG_LWIP_HOOK_TCP_ISN`)：允许自定义 TCP 初始序列号 (ISN) 的随机化逻辑。ESP-IDF 提供的实现是默认选项，设置为 *Custom* 可使用自定义实现，设置为 *None* 可使用 lwIP 实现。
-- IPv6 路由钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_ROUTE`)：支持自定义 IPv6 数据包的路由选择。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
-- IPv6 获取网关钩子 (:ref:`CONFIG_LWIP_HOOK_ND6_GET_GW`)：支持自定义网关选择逻辑。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
-- IPv6 源地址选择钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR`)：允许自定义源地址的选择逻辑。默认无钩子，可使用 Default 或 Custom 进行覆盖
-- Netconn 外部解析钩子 (:ref:`CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE`)：允许覆盖网络连接的 DNS 解析逻辑默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
-- DNS 外部解析钩子 (:ref:`CONFIG_LWIP_HOOK_DNS_EXTERNAL_RESOLVE`)：提供用于自定义 DNS 解析逻辑的回调钩子。默认无钩子，但外部组件可以选择优先使用自定义选项；可使用 *Default* 或 *Custom* 进行覆盖。
-- IPv6 数据包输入钩子 (:ref:`CONFIG_LWIP_HOOK_IP6_INPUT`)：能够过滤或修改传入的 IPv6 数据包。ESP-IDF 提供的弱实现是默认选项；可使用 *Custom* 或强定义来覆盖 *Default* 选项，或选择 *None* 以禁用 IPv6 数据包输入过滤。
+- TCP ISN 钩子 (:menuitem:`CONFIG_LWIP_HOOK_TCP_ISN`)：允许自定义 TCP 初始序列号 (ISN) 的随机化逻辑。ESP-IDF 提供的实现是默认选项，设置为 *Custom* 可使用自定义实现，设置为 *None* 可使用 lwIP 实现。
+- IPv6 路由钩子 (:menuitem:`CONFIG_LWIP_HOOK_IP6_ROUTE`)：支持自定义 IPv6 数据包的路由选择。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 获取网关钩子 (:menuitem:`CONFIG_LWIP_HOOK_ND6_GET_GW`)：支持自定义网关选择逻辑。默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 源地址选择钩子 (:menuitem:`CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR`)：允许自定义源地址的选择逻辑。默认无钩子，可使用 Default 或 Custom 进行覆盖
+- Netconn 外部解析钩子 (:menuitem:`CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE`)：允许覆盖网络连接的 DNS 解析逻辑默认无钩子，可使用 *Default* 或 *Custom* 进行覆盖。
+- DNS 外部解析钩子 (:menuitem:`CONFIG_LWIP_HOOK_DNS_EXTERNAL_RESOLVE`)：提供用于自定义 DNS 解析逻辑的回调钩子。默认无钩子，但外部组件可以选择优先使用自定义选项；可使用 *Default* 或 *Custom* 进行覆盖。
+- IPv6 数据包输入钩子 (:menuitem:`CONFIG_LWIP_HOOK_IP6_INPUT`)：能够过滤或修改传入的 IPv6 数据包。ESP-IDF 提供的弱实现是默认选项；可使用 *Custom* 或强定义来覆盖 *Default* 选项，或选择 *None* 以禁用 IPv6 数据包输入过滤。
 
 这些钩子均可在 menuconfig 中进行配置，可选择默认实现、自定义实现或不启用。
 
@@ -533,8 +533,8 @@ ESP-IDF 提供了其他可覆盖的 lwIP 钩子，例如：
 网络接口回调
 -----------------
 
-- 状态回调 (:ref:`CONFIG_LWIP_NETIF_STATUS_CALLBACK`)：启用 `netif_set_status_callback()`，在接口上下线以及 IPv4/IPv6 地址发生变化时通知。
-- 链路回调 (:ref:`CONFIG_LWIP_NETIF_LINK_CALLBACK`)：启用 `netif_set_link_callback()`，在物理链路上下线时通知。该回调由驱动或虚拟接口调用 `netif_set_link_up()` / `netif_set_link_down()` 触发。可与 `LWIP_NETIF_EXT_STATUS_CALLBACK` 配合使用，以获取更丰富的事件通知。
+- 状态回调 (:menuitem:`CONFIG_LWIP_NETIF_STATUS_CALLBACK`)：启用 `netif_set_status_callback()`，在接口上下线以及 IPv4/IPv6 地址发生变化时通知。
+- 链路回调 (:menuitem:`CONFIG_LWIP_NETIF_LINK_CALLBACK`)：启用 `netif_set_link_callback()`，在物理链路上下线时通知。该回调由驱动或虚拟接口调用 `netif_set_link_up()` / `netif_set_link_down()` 触发。可与 `LWIP_NETIF_EXT_STATUS_CALLBACK` 配合使用，以获取更丰富的事件通知。
 
 .. _lwip-limitations:
 
@@ -549,17 +549,17 @@ ESP-IDF 提供了其他可覆盖的 lwIP 钩子，例如：
 
 在调用 ``getaddrinfo()`` 函数时，不会返回规范名称。因此，第一个返回的 ``addrinfo`` 结构中的 ``ai_canonname`` 字段仅包含 ``nodename`` 参数或相同内容的字符串。
 
-ESP-IDF 中 lwIP 的 ``getaddrinfo()`` 系统调用在使用 ``AF_UNSPEC`` 时存在限制：双栈模式下默认只返回 IPv4 地址，因此在仅支持 IPv6 的网络中可能会出现问题。为了解决这个问题，可以通过以下方法进行处理：分别调用两次 ``getaddrinfo()``，第一次使用 ``AF_INET`` 查询 IPv4 地址，第二次使用 ``AF_INET6`` 查询 IPv6 地址。为了进一步优化，lwIP 移植层中新增了自定义函数 ``esp_getaddrinfo()``，该函数在使用 ``AF_UNSPEC`` 时能够同时处理 IPv4 和 IPv6 地址。同时启用 IPv4 和 IPv6 后，可通过 :ref:`CONFIG_LWIP_USE_ESP_GETADDRINFO` 选项选择使用自定义的 ``esp_getaddrinfo()`` 或默认的 ``getaddrinfo()`` 实现。``esp_getaddrinfo()`` 默认处于禁用状态。
+ESP-IDF 中 lwIP 的 ``getaddrinfo()`` 系统调用在使用 ``AF_UNSPEC`` 时存在限制：双栈模式下默认只返回 IPv4 地址，因此在仅支持 IPv6 的网络中可能会出现问题。为了解决这个问题，可以通过以下方法进行处理：分别调用两次 ``getaddrinfo()``，第一次使用 ``AF_INET`` 查询 IPv4 地址，第二次使用 ``AF_INET6`` 查询 IPv6 地址。为了进一步优化，lwIP 移植层中新增了自定义函数 ``esp_getaddrinfo()``，该函数在使用 ``AF_UNSPEC`` 时能够同时处理 IPv4 和 IPv6 地址。同时启用 IPv4 和 IPv6 后，可通过 :menuitem:`CONFIG_LWIP_USE_ESP_GETADDRINFO` 选项选择使用自定义的 ``esp_getaddrinfo()`` 或默认的 ``getaddrinfo()`` 实现。``esp_getaddrinfo()`` 默认处于禁用状态。
 
 在 UDP 套接字上重复调用 ``send()`` 或 ``sendto()`` 最终可能会导致错误。此时 ``errno`` 报错为 ``ENOMEM``，错误原因是底层网络接口驱动程序中的 buffer 大小有限。当所有驱动程序的传输 buffer 已满时，UDP 传输事务失败。如果应用程序需要发送大量 UDP 数据报，且不希望发送方丢弃数据报，建议检查错误代码，采用短延迟的重传机制。
 
 .. only:: esp32
 
-    在 :ref:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` 或 :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` 项目配置中适当增加传输 buffer 数量，或许可以缓解此情况。
+    在 :menuitem:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` 或 :menuitem:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` 项目配置中适当增加传输 buffer 数量，或许可以缓解此情况。
 
 .. only:: not esp32 and SOC_WIFI_SUPPORTED
 
-    在 :ref:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` 项目配置中适当增加传输 buffer 数量，或许可以缓解此情况。
+    在 :menuitem:`Wi-Fi <CONFIG_ESP_WIFI_TX_BUFFER>` 项目配置中适当增加传输 buffer 数量，或许可以缓解此情况。
 
 .. _lwip-performance:
 
@@ -577,11 +577,11 @@ ESP-IDF 中 lwIP 的 ``getaddrinfo()`` 系统调用在使用 ``AF_UNSPEC`` 时�
 
   建议逐步应用更改，并在每次更改后，通过特定应用程序的工作负载检查性能。
 
-- 如果系统中有许多任务抢占 CPU 时间，可以考虑调整 lwIP 任务的 CPU 亲和性 (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`)，并以固定优先级 (18, ``ESP_TASK_TCPIP_PRIO``) 运行。为优化 CPU 使用，可以考虑将竞争任务分配给不同核心，或将其优先级调整至较低值。有关内置任务优先级的更多详情，请参阅 :ref:`built-in-task-priorities`。
+- 如果系统中有许多任务抢占 CPU 时间，可以考虑调整 lwIP 任务的 CPU 亲和性 (:menuitem:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`)，并以固定优先级 (18, ``ESP_TASK_TCPIP_PRIO``) 运行。为优化 CPU 使用，可以考虑将竞争任务分配给不同核心，或将其优先级调整至较低值。有关内置任务优先级的更多详情，请参阅 :ref:`built-in-task-priorities`。
 
-- 如果使用仅带有套接字参数的 ``select()`` 函数，禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 可以更快地调用 ``select()``。
+- 如果使用仅带有套接字参数的 ``select()`` 函数，禁用 :menuitem:`CONFIG_VFS_SUPPORT_SELECT` 可以更快地调用 ``select()``。
 
-- 如果有足够的空闲 IRAM，可以选择 :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION` 和 :ref:`CONFIG_LWIP_EXTRA_IRAM_OPTIMIZATION`，提高 TX/RX 吞吐量。
+- 如果有足够的空闲 IRAM，可以选择 :menuitem:`CONFIG_LWIP_IRAM_OPTIMIZATION` 和 :menuitem:`CONFIG_LWIP_EXTRA_IRAM_OPTIMIZATION`，提高 TX/RX 吞吐量。
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -601,12 +601,12 @@ ESP-IDF 中 lwIP 的 ``getaddrinfo()`` 系统调用在使用 ``AF_UNSPEC`` 时�
 
 由于 RAM 按需从堆中分配，多数 lwIP 的 RAM 使用也按需分配。因此，更改 lwIP 设置减少 RAM 使用时，或许不会改变空闲时的 RAM 使用量，但可以改变高峰期的 RAM 使用量。
 
-- 减少 :ref:`CONFIG_LWIP_MAX_SOCKETS` 可以减少系统中的最大套接字数量。更改此设置，会让处于 ``WAIT_CLOSE`` 状态的 TCP 套接字在需要打开新套接字时更快地关闭和复用，进一步降低峰值 RAM 使用量。
-- 减少 :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`、:ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 和 :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 可以减少 RAM 使用量，但会影响吞吐量，具体取决于使用情况。
-- 减少 :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 可以通过限制同时接受的连接数来减少 RAM 使用量。
-- 减少 :ref:`CONFIG_LWIP_TCP_MSL` 和 :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` 可以减少系统中的最大分段寿命，同时会使处于 ``TIME_WAIT`` 和 ``FIN_WAIT_2`` 状态的 TCP 套接字能更快地关闭和复用。
-- 禁用 :ref:`CONFIG_LWIP_IPV6` 可以在系统启动时节省大约 39 KB 的固件大小和 2 KB 的 RAM，并在运行 TCP/IP 栈时节省 7 KB 的 RAM。如果无需支持 IPV6，可以禁用 IPv6，减少 flash 和 RAM 占用。
-- 禁用 :ref:`CONFIG_LWIP_IPV4` 可以在系统启动时节省大约 26 KB 的固件大小和 600 B 的 RAM，并在运行 TCP/IP 栈时节省 6 KB 的 RAM。如果本地网络仅支持 IPv6 配置，可以禁用 IPv4，减少 flash 和 RAM 占用。
+- 减少 :menuitem:`CONFIG_LWIP_MAX_SOCKETS` 可以减少系统中的最大套接字数量。更改此设置，会让处于 ``WAIT_CLOSE`` 状态的 TCP 套接字在需要打开新套接字时更快地关闭和复用，进一步降低峰值 RAM 使用量。
+- 减少 :menuitem:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`、:menuitem:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 和 :menuitem:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 可以减少 RAM 使用量，但会影响吞吐量，具体取决于使用情况。
+- 减少 :menuitem:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 可以通过限制同时接受的连接数来减少 RAM 使用量。
+- 减少 :menuitem:`CONFIG_LWIP_TCP_MSL` 和 :menuitem:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` 可以减少系统中的最大分段寿命，同时会使处于 ``TIME_WAIT`` 和 ``FIN_WAIT_2`` 状态的 TCP 套接字能更快地关闭和复用。
+- 禁用 :menuitem:`CONFIG_LWIP_IPV6` 可以在系统启动时节省大约 39 KB 的固件大小和 2 KB 的 RAM，并在运行 TCP/IP 栈时节省 7 KB 的 RAM。如果无需支持 IPV6，可以禁用 IPv6，减少 flash 和 RAM 占用。
+- 禁用 :menuitem:`CONFIG_LWIP_IPV4` 可以在系统启动时节省大约 26 KB 的固件大小和 600 B 的 RAM，并在运行 TCP/IP 栈时节省 6 KB 的 RAM。如果本地网络仅支持 IPv6 配置，可以禁用 IPv4，减少 flash 和 RAM 占用。
 
 .. only:: SOC_WIFI_SUPPORTED
 

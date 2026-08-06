@@ -23,7 +23,7 @@ ESP-IDF FreeRTOS 提供以下 API，用于管理线程局部变量：
 - :cpp:func:`pvTaskGetThreadLocalStoragePointer`
 - :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`
 
-此时，可以分配的最大变量数量受 :ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` 限制。变量保存在任务控制块 (TCB) 中，并由其索引访问。注意，索引 0 保留，供 ESP-IDF 内部使用。
+此时，可以分配的最大变量数量受 :menuitem:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` 限制。变量保存在任务控制块 (TCB) 中，并由其索引访问。注意，索引 0 保留，供 ESP-IDF 内部使用。
 
 通过使用上述 API，你可以分配任意大小的线程局部变量，并将其分配给任意数量的任务。不同任务可以拥有不同的 TLS 变量集。
 

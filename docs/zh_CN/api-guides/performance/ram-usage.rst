@@ -40,8 +40,8 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 .. list::
 
    - 由于常量数据可以存储在 flash 中，不占用 RAM，建议尽量将结构体、缓冲区或其他变量声明为 ``const``。为此，可能需要修改固件参数，使其接收 ``const *`` 参数而非可变指针参数。以上更改还可以减少某些函数的栈内存使用。
-   :SOC_BT_SUPPORTED: - 若使用 Bluedroid，请设置 :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` 选项，Bluedroid 将在初始化时分配内存，并在去初始化时释放内存。这并不一定会降低内存使用峰值，但可以将使用静态内存改为运行时使用动态内存。
-   - 若使用 OpenThread，请设置 :ref:`CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT` 选项，OpenThread 将从外部 PSRAM 中分配消息池缓冲区，从而减少对内部静态内存的使用。
+   :SOC_BT_SUPPORTED: - 若使用 Bluedroid，请设置 :menuitem:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` 选项，Bluedroid 将在初始化时分配内存，并在去初始化时释放内存。这并不一定会降低内存使用峰值，但可以将使用静态内存改为运行时使用动态内存。
+   - 若使用 OpenThread，请设置 :menuitem:`CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT` 选项，OpenThread 将从外部 PSRAM 中分配消息池缓冲区，从而减少对内部静态内存的使用。
 
 .. _optimize-stack-sizes:
 
@@ -60,17 +60,17 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
    硬件栈保护
    ~~~~~~~~~~~~
 
-   硬件栈保护是一种检测栈溢出的可靠方法，通过硬件的辅助调试模块来监视 CPU 的栈指针寄存器。如果栈指针寄存器超出了当前栈的边界，则立即触发紧急情况提示（更多详细信息，请参阅 :ref:`Hardware-Stack-Guard`）。可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项启用硬件栈保护。
+   硬件栈保护是一种检测栈溢出的可靠方法，通过硬件的辅助调试模块来监视 CPU 的栈指针寄存器。如果栈指针寄存器超出了当前栈的边界，则立即触发紧急情况提示（更多详细信息，请参阅 :ref:`Hardware-Stack-Guard`）。可以通过 :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项启用硬件栈保护。
 
 栈末尾监视点
 ~~~~~~~~~~~~~~
 
-栈末尾监视点将 CPU 监视点放置在当前栈的末尾。如果该字被覆盖（例如栈溢出），则会立即触发紧急情况提示。在未使用调试器的监视点时，可以设置 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项，启用栈末尾监视点功能。
+栈末尾监视点将 CPU 监视点放置在当前栈的末尾。如果该字被覆盖（例如栈溢出），则会立即触发紧急情况提示。在未使用调试器的监视点时，可以设置 :menuitem:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项，启用栈末尾监视点功能。
 
 栈 canary 字节
 ~~~~~~~~~~~~~~~~~
 
-栈 canary 字节功能在每个任务的栈末尾添加一组魔术字节，并在每次上下文切换时检查这些字节是否已更改。如果这些魔术字节被覆盖，则会触发紧急情况提示。可以通过 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` 选项启用栈 canary 字节功能。
+栈 canary 字节功能在每个任务的栈末尾添加一组魔术字节，并在每次上下文切换时检查这些字节是否已更改。如果这些魔术字节被覆盖，则会触发紧急情况提示。可以通过 :menuitem:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` 选项启用栈 canary 字节功能。
 
 .. note::
 
@@ -78,7 +78,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-      推荐启用默认选项 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD`，避免这个缺点。
+      推荐启用默认选项 :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD`，避免这个缺点。
 
 任务运行时确定栈内存大小的方法
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +104,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-   如果应用程序使用外部 RAM，启用 :ref:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` 可以将 :cpp:func:`xTaskCreate` 或 :cpp:func:`xTaskCreatePinnedToCore` 创建的任务栈移至 PSRAM，从而减少内部 RAM 使用量。此选项对在 flash cache 禁用期间运行的任务有限制，详情请参阅 :ref:`task-stack-in-external-ram`。
+   如果应用程序使用外部 RAM，启用 :menuitem:`CONFIG_FREERTOS_PLACE_TASK_STACKS_IN_EXT_RAM` 可以将 :cpp:func:`xTaskCreate` 或 :cpp:func:`xTaskCreatePinnedToCore` 创建的任务栈移至 PSRAM，从而减少内部 RAM 使用量。此选项对在 flash cache 禁用期间运行的任务有限制，详情请参阅 :ref:`task-stack-in-external-ram`。
 
 减少任务数量
 ^^^^^^^^^^^^
@@ -127,15 +127,15 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
 .. list::
 
-   - :ref:`app-main-task` 的栈内存大小为 :ref:`CONFIG_ESP_MAIN_TASK_STACK_SIZE`。
-   - 系统任务 :doc:`/api-reference/system/esp_timer` 用于执行回调函数，其栈内存大小为 :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`。
-   - 部分 FreeRTOS 定时器任务用于处理 FreeRTOS 定时器回调，其栈内存大小为 :ref:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`。
-   - 系统任务 :doc:`/api-reference/system/esp_event` 用于执行默认系统事件循环回调，其栈内存大小为 :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`。
-   - TCP/IP 任务 :doc:`/api-guides/lwip`  的栈内存大小为 :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`。
-   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/index` 的栈内存大小为 :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`，:ref:`CONFIG_BT_BTU_TASK_STACK_SIZE`。
-   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 的栈内存大小为 :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`。
+   - :ref:`app-main-task` 的栈内存大小为 :menuitem:`CONFIG_ESP_MAIN_TASK_STACK_SIZE`。
+   - 系统任务 :doc:`/api-reference/system/esp_timer` 用于执行回调函数，其栈内存大小为 :menuitem:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`。
+   - 部分 FreeRTOS 定时器任务用于处理 FreeRTOS 定时器回调，其栈内存大小为 :menuitem:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`。
+   - 系统任务 :doc:`/api-reference/system/esp_event` 用于执行默认系统事件循环回调，其栈内存大小为 :menuitem:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`。
+   - TCP/IP 任务 :doc:`/api-guides/lwip`  的栈内存大小为 :menuitem:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`。
+   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/index` 的栈内存大小为 :menuitem:`CONFIG_BT_BTC_TASK_STACK_SIZE`，:menuitem:`CONFIG_BT_BTU_TASK_STACK_SIZE`。
+   :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 的栈内存大小为 :menuitem:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`。
    - 以太网驱动程序会创建任务，用于使 MAC 接收以太网帧，在默认配置 ``ETH_MAC_DEFAULT_CONFIG`` 下，任务栈内存大小为 4 KB。在初始化以太网 MAC 时，传递自定义 :cpp:class:`eth_mac_config_t` 结构体可以更改此设置。
-   - FreeRTOS 空闲任务栈内存大小由 :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE` 配置。
+   - FreeRTOS 空闲任务栈内存大小由 :menuitem:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE` 配置。
    - 有关使用 ``mDNS`` 时内存优化的详细信息，请参阅 `优化内存使用 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#minimizing-ram-usage>`__。
 
 .. note::
@@ -155,12 +155,12 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
    - lwIP 文档中的有关章节介绍了如何配置 :ref:`lwip-ram-usage`。
    :SOC_WIFI_SUPPORTED: - :ref:`wifi-buffer-usage` 中介绍了一些选项，这些选项可以减少对静态缓冲区的使用，或减少运行时动态缓冲区的最大数量，从而最小化内存使用，但可能会影响性能。注意，Wi-Fi 初始化时，仍会从堆中分配静态 Wi-Fi 缓冲区，并在 Wi-Fi 去初始化时释放这些缓冲区。
-   :esp32: - 以太网驱动程序在初始化时会为内部以太网 MAC 分配 DMA 缓冲区，配置选项包括 :ref:`CONFIG_ETH_DMA_BUFFER_SIZE`、:ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 和 :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。
+   :esp32: - 以太网驱动程序在初始化时会为内部以太网 MAC 分配 DMA 缓冲区，配置选项包括 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE`、:menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 和 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。
    - 部分 Mbed TLS 配置选项也可用于堆内存优化，详情请参阅 :ref:`reducing_ram_usage_mbedtls` 的 Mbed TLS 部分。
-   :esp32: - 仅在单核模式下，启用 :ref:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`，可以将 IRAM 作为可按字节访问的内存添加到常规堆内存中使用。注意，此选项会影响性能，并存在由可执行数据引发安全问题的风险。若启用此选项，可以通过设置 :ref:`CONFIG_MBEDTLS_MEM_ALLOC_MODE` 和 :ref:`CONFIG_BT_NIMBLE_MEM_ALLOC_MODE` 选项，优先从内存中分配某些缓冲区。
-   :esp32: - 若使用 Bluetooth LE，请优化 :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN`。
-   :esp32: - 若使用经典蓝牙，请优化 :ref:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN`。
-   :CONFIG_IDF_TARGET_ARCH_RISCV and not esp32c2 and not esp32c3: - 启用 :ref:`CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY` 可强制 libstdc++ 对 ``std::shared_ptr`` 引用计数使用无锁实现，而非基于互斥锁的实现，从而避免在每个控制块中嵌入互斥锁，每个 ``shared_ptr`` 约可节省 88 字节堆内存。所有 C++ 目标文件及链接的库必须使用相同设置；有关 ABI 详情，请参阅该配置项的帮助说明。
+   :esp32: - 仅在单核模式下，启用 :menuitem:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`，可以将 IRAM 作为可按字节访问的内存添加到常规堆内存中使用。注意，此选项会影响性能，并存在由可执行数据引发安全问题的风险。若启用此选项，可以通过设置 :menuitem:`CONFIG_MBEDTLS_MEM_ALLOC_MODE` 和 :menuitem:`CONFIG_BT_NIMBLE_MEM_ALLOC_MODE` 选项，优先从内存中分配某些缓冲区。
+   :esp32: - 若使用 Bluetooth LE，请优化 :menuitem:`CONFIG_BTDM_CTRL_BLE_MAX_CONN`。
+   :esp32: - 若使用经典蓝牙，请优化 :menuitem:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN`。
+   :CONFIG_IDF_TARGET_ARCH_RISCV and not esp32c2 and not esp32c3: - 启用 :menuitem:`CONFIG_COMPILER_CXX_ATOMIC_LOCK_POLICY` 可强制 libstdc++ 对 ``std::shared_ptr`` 引用计数使用无锁实现，而非基于互斥锁的实现，从而避免在每个控制块中嵌入互斥锁，每个 ``shared_ptr`` 约可节省 88 字节堆内存。所有 C++ 目标文件及链接的库必须使用相同设置；有关 ABI 详情，请参阅该配置项的帮助说明。
 
 .. note::
 
@@ -183,30 +183,30 @@ IRAM 优化
 
 .. list::
 
-    - 如果已启用 :ref:`CONFIG_FREERTOS_IN_IRAM`，请将其禁用，以便将 FreeRTOS 函数放置在 flash 中而不是 IRAM 中。默认情况下，FreeRTOS 函数已经被放置在 flash 中以节省 IRAM。
-    - 如果已启用 :ref:`CONFIG_RINGBUF_IN_IRAM`，请将其禁用，以便将环形缓冲区函数放置在 flash 中而不是 IRAM 中。默认情况下，环形缓冲区函数已经被放置在 flash 中以节省 IRAM。
-    - 启用 :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :ref:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
-    :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :ref:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。
-    :CONFIG_ESP_ROM_HAS_SPI_FLASH: - 启用 :ref:`CONFIG_SPI_FLASH_ROM_IMPL` 选项可以释放一些 IRAM，但此时 esp_flash 错误修复程序及新的 flash 芯片支持将失效，详情请参阅 :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom`。
-    :esp32: - 如果应用程序基于 ESP32 rev. 3 (ECO3)，且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3``，可以禁用 PSRAM 的错误处理程序，节省 10 KB 乃至更多的 IRAM。
-    - 禁用 :ref:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` 可以防止从 :ref:`iram-safe-interrupt-handlers` 中发布 ``esp_event`` 事件，节省 IRAM 空间。
-    :SOC_GPSPI_SUPPORTED: - 禁用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 可以防止在写入 flash 时发生 spi_master 中断，节省 IRAM 空间，但可能影响 spi_master 的性能。
-    :SOC_GPSPI_SUPPORTED: - 禁用 :ref:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` 可以防止在写入 flash 时发生 spi_slave 中断，节省 IRAM 空间。
-    - 设置 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 为禁用 HAL 组件的断言，可以节省 IRAM 空间，对于经常调用 ``HAL_ASSERT`` 且位于 IRAM 中的 HAL 代码尤为如此。
+    - 如果已启用 :menuitem:`CONFIG_FREERTOS_IN_IRAM`，请将其禁用，以便将 FreeRTOS 函数放置在 flash 中而不是 IRAM 中。默认情况下，FreeRTOS 函数已经被放置在 flash 中以节省 IRAM。
+    - 如果已启用 :menuitem:`CONFIG_RINGBUF_IN_IRAM`，请将其禁用，以便将环形缓冲区函数放置在 flash 中而不是 IRAM 中。默认情况下，环形缓冲区函数已经被放置在 flash 中以节省 IRAM。
+    - 启用 :menuitem:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :menuitem:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
+    :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :menuitem:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :menuitem:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。
+    :CONFIG_ESP_ROM_HAS_SPI_FLASH: - 启用 :menuitem:`CONFIG_SPI_FLASH_ROM_IMPL` 选项可以释放一些 IRAM，但此时 esp_flash 错误修复程序及新的 flash 芯片支持将失效，详情请参阅 :doc:`/api-reference/peripherals/spi_flash/spi_flash_idf_vs_rom`。
+    :esp32: - 如果应用程序基于 ESP32 rev. 3 (ECO3)，且使用 PSRAM，设置 :menuitem:`CONFIG_ESP32_REV_MIN` 为 ``3``，可以禁用 PSRAM 的错误处理程序，节省 10 KB 乃至更多的 IRAM。
+    - 禁用 :menuitem:`CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR` 可以防止从 :ref:`iram-safe-interrupt-handlers` 中发布 ``esp_event`` 事件，节省 IRAM 空间。
+    :SOC_GPSPI_SUPPORTED: - 禁用 :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 可以防止在写入 flash 时发生 spi_master 中断，节省 IRAM 空间，但可能影响 spi_master 的性能。
+    :SOC_GPSPI_SUPPORTED: - 禁用 :menuitem:`CONFIG_SPI_SLAVE_ISR_IN_IRAM` 可以防止在写入 flash 时发生 spi_slave 中断，节省 IRAM 空间。
+    - 设置 :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 为禁用 HAL 组件的断言，可以节省 IRAM 空间，对于经常调用 ``HAL_ASSERT`` 且位于 IRAM 中的 HAL 代码尤为如此。
     - 要禁用不需要的 flash 驱动程序，节省 IRAM 空间，请参阅 sdkconfig 菜单中的 ``Auto-detect Flash chips`` 选项。
-    :SOC_GPSPI_SUPPORTED: - 启用 :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
-    :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
-    - 禁用 :ref:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM`。若在缓存禁用的情况下，运行中的中断服务程序（即 IRAM ISR）没有使用 libc 锁 API，那么禁用该配置可以节省 IRAM 空间。
-    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - 禁用 :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 可以节省大约 1000 字节的 IRAM，但会降低性能。
-    :SOC_SPIRAM_SUPPORTED: - 启用 :ref:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM`，强制 ``esp_event`` 将事件循环相关的内存分配放在外部 RAM 而不是内部 RAM 中。
-    :not CONFIG_ESP_ROM_HAS_VPRINTF_FUNC: - 在使用 **Log V2** 时，可禁用 :ref:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE`，以从IRAM 中移除 ``esp_rom_vprintf``，从而节省约 1.2 KB 空间。这样一来，``ESP_LOGx`` 在 ISR 中或在缓存被禁用时将无法安全回退到 ROM 打印功能；在受限环境下请显式使用 ``ESP_DRAM_LOGx`` 进行日志记录。详情请参阅 :doc:`/api-reference/system/log`。
+    :SOC_GPSPI_SUPPORTED: - 启用 :menuitem:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
+    :esp32c2: - 启用 :menuitem:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
+    - 禁用 :menuitem:`CONFIG_LIBC_LOCKS_PLACE_IN_IRAM`。若在缓存禁用的情况下，运行中的中断服务程序（即 IRAM ISR）没有使用 libc 锁 API，那么禁用该配置可以节省 IRAM 空间。
+    :CONFIG_ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY: - 禁用 :menuitem:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 可以节省大约 1000 字节的 IRAM，但会降低性能。
+    :SOC_SPIRAM_SUPPORTED: - 启用 :menuitem:`CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM`，强制 ``esp_event`` 将事件循环相关的内存分配放在外部 RAM 而不是内部 RAM 中。
+    :not CONFIG_ESP_ROM_HAS_VPRINTF_FUNC: - 在使用 **Log V2** 时，可禁用 :menuitem:`CONFIG_LOG_API_CONSTRAINED_ENV_SAFE`，以从IRAM 中移除 ``esp_rom_vprintf``，从而节省约 1.2 KB 空间。这样一来，``ESP_LOGx`` 在 ISR 中或在缓存被禁用时将无法安全回退到 ROM 打印功能；在受限环境下请显式使用 ``ESP_DRAM_LOGx`` 进行日志记录。详情请参阅 :doc:`/api-reference/system/log`。
 
 .. only:: esp32
 
    将 SRAM1 用于 IRAM
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   SRAM1 内存区域通常用于 DRAM 存储，但可以设置 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` 选项，将其中一部分用作 IRAM 存储。引入该选项前，这个内存区域通常预留给 DRAM 数据使用（如 ``.bss``），随后由二级引导加载程序加入到堆中。引入该选项后，二级引导加载程序的 DRAM 大小会减少到更接近实际需要的值。
+   SRAM1 内存区域通常用于 DRAM 存储，但可以设置 :menuitem:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` 选项，将其中一部分用作 IRAM 存储。引入该选项前，这个内存区域通常预留给 DRAM 数据使用（如 ``.bss``），随后由二级引导加载程序加入到堆中。引入该选项后，二级引导加载程序的 DRAM 大小会减少到更接近实际需要的值。
 
    要使用以上选项，ESP-IDF 应能够将新的 SRAM1 区域识别为有效镜像段的加载地址。部分应用程序的代码置于新扩展的 IRAM 区域，如果二级引导加载程序在引入该选项前编译，将无法加载这类应用程序。这类情况通常在进行 OTA 更新时发生，此时仅会更新应用程序。
 
@@ -218,7 +218,7 @@ IRAM 优化
 
    .. warning::
 
-      若与在引入以上配置选项前编译的二级引导加载程序一同使用，使用 :ref:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` 选项编译的应用程序很可能无法启动。若使用旧版本的引导加载程序，并进行 OTA 更新，请在提交任何更新前仔细测试。
+      若与在引入以上配置选项前编译的二级引导加载程序一同使用，使用 :menuitem:`CONFIG_ESP_SYSTEM_ESP32_SRAM1_REGION_AS_IRAM` 选项编译的应用程序很可能无法启动。若使用旧版本的引导加载程序，并进行 OTA 更新，请在提交任何更新前仔细测试。
 
    任何最终未用于静态 IRAM 的内存都将添加到堆内存中。
 
@@ -237,9 +237,9 @@ IRAM 优化
 
     在中断上下文中使用用户 ISR 回调及其相关变量时，也必须将其放置在内部 RAM 中。
 
-    将额外代码放置到 IRAM 中，将增加 IRAM 使用量，ESP-IDF 提供了 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项，可以缓解 IRAM 的使用。通过启用此功能，使用 SPI flash API 和基于 SPI flash API 的 API 时，不会导致缓存禁用，因此 flash 中的代码和数据仍可正常执行或访问，但会有些延迟。有关此功能的详细信息，请参阅 :ref:`auto-suspend`。
+    将额外代码放置到 IRAM 中，将增加 IRAM 使用量，ESP-IDF 提供了 :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项，可以缓解 IRAM 的使用。通过启用此功能，使用 SPI flash API 和基于 SPI flash API 的 API 时，不会导致缓存禁用，因此 flash 中的代码和数据仍可正常执行或访问，但会有些延迟。有关此功能的详细信息，请参阅 :ref:`auto-suspend`。
 
-    启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 后，可以减少 flash 驱动的 IRAM 使用。更多详细信息请参阅 :ref:`internal_memory_saving_for_flash_driver`。
+    启用 :menuitem:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 后，可以减少 flash 驱动的 IRAM 使用。更多详细信息请参阅 :ref:`internal_memory_saving_for_flash_driver`。
 
     有关 flash 暂停特性的使用及其相应的响应时间延迟，请参阅 :example:`system/flash_suspend`。
 
@@ -249,22 +249,22 @@ IRAM 优化
     在 flash 中放置 C 语言库函数
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    编译 ECO3 及之前的 ESP32 版本时（参阅 :ref:`CONFIG_ESP32_REV_MIN`），会启用 PSRAM 缓存错误的解决方法选项（参阅 :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`），此选项会重新编译通常位于 ROM 中的 C 语言库函数，并将其放置在 IRAM 中。对于大部分应用程序而言，可以放心将多数 C 语言库函数移到 flash 中，以节省 IRAM 空间。相应选项包括：
+    编译 ECO3 及之前的 ESP32 版本时（参阅 :menuitem:`CONFIG_ESP32_REV_MIN`），会启用 PSRAM 缓存错误的解决方法选项（参阅 :menuitem:`CONFIG_SPIRAM_CACHE_WORKAROUND`），此选项会重新编译通常位于 ROM 中的 C 语言库函数，并将其放置在 IRAM 中。对于大部分应用程序而言，可以放心将多数 C 语言库函数移到 flash 中，以节省 IRAM 空间。相应选项包括：
 
     .. list::
 
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBJMP_IN_IRAM`：影响函数 ``longjmp`` 和 ``setjump``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBMATH_IN_IRAM`：影响函数 ``abs``、``div``、``labs``、``ldiv``、``quorem``、``fpclassify`` 和 ``nan``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM`：影响函数 ``utoa``、``itoa``、``atoi``、``atol``、``strtol`` 和 ``strtoul``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBIO_IN_IRAM`：影响函数 ``wcrtomb``、``fvwrite``、``wbuf``、``wsetup``、``fputwc``、``wctomb_r``、``ungetc``、``makebuf``、``fflush``、``refill`` 和 ``sccl``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBTIME_IN_IRAM`：影响函数 ``asctime``、``asctime_r``、``ctime``、``ctime_r``、``lcltime``、``lcltime_r``、``gmtime``、``gmtime_r``、``strftime``、``mktime``、``tzset_r``、``tzset``、``time``、``gettzinfo``、``systimes``、``month_lengths``、``timelocal``、``tzvars``、``tzlock``、``tzcalc_limits`` 和 ``strptime``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBCHAR_IN_IRAM`：影响函数 ``ctype_``、``toupper``、``tolower``、``toascii``、``strupr``、``bzero``、``isalnum``、``isalpha``、``isascii``、``isblank``、``iscntrl``、``isdigit``、``isgraph``、``islower``、``isprint``、``ispunct``、``isspace`` 和 ``isupper``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBMEM_IN_IRAM`：影响函数 ``memccpy``、``memchr``、``memmove`` 和 ``memrchr``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBSTR_IN_IRAM`：影响函数 ``strcasecmp``、``strcasestr``、``strchr``、``strcoll``、``strcpy``、``strcspn``、``strdup``、``strdup_r``、``strlcat``、``strlcpy``、``strlen``、``strlwr``、``strncasecmp``、``strncat``、``strncmp``、``strncpy``、``strndup``、``strndup_r``、``strrchr``、``strsep``、``strspn``、``strstr``、``strtok_r 和 ``strupr``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBRAND_IN_IRAM`：影响函数 ``srand``、``rand`` 和 ``rand_r``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBENV_IN_IRAM`：影响函数 ``environ``、``envlock`` 和 ``getenv_r``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBFILE_IN_IRAM`：影响函数 ``lock``、``isatty``、``fclose``、``open``、``close``、``creat``、``read``、``rshift``、``sbrk``、``stdio``、``syssbrk``、``sysclose``、``sysopen``、``creat``、``sysread``、``syswrite``、``impure``、``fwalk`` 和 ``findfp``。
-        - :ref:`CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM`：影响函数 ``raise`` 和 ``system``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBJMP_IN_IRAM`：影响函数 ``longjmp`` 和 ``setjump``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBMATH_IN_IRAM`：影响函数 ``abs``、``div``、``labs``、``ldiv``、``quorem``、``fpclassify`` 和 ``nan``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM`：影响函数 ``utoa``、``itoa``、``atoi``、``atol``、``strtol`` 和 ``strtoul``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBIO_IN_IRAM`：影响函数 ``wcrtomb``、``fvwrite``、``wbuf``、``wsetup``、``fputwc``、``wctomb_r``、``ungetc``、``makebuf``、``fflush``、``refill`` 和 ``sccl``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBTIME_IN_IRAM`：影响函数 ``asctime``、``asctime_r``、``ctime``、``ctime_r``、``lcltime``、``lcltime_r``、``gmtime``、``gmtime_r``、``strftime``、``mktime``、``tzset_r``、``tzset``、``time``、``gettzinfo``、``systimes``、``month_lengths``、``timelocal``、``tzvars``、``tzlock``、``tzcalc_limits`` 和 ``strptime``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBCHAR_IN_IRAM`：影响函数 ``ctype_``、``toupper``、``tolower``、``toascii``、``strupr``、``bzero``、``isalnum``、``isalpha``、``isascii``、``isblank``、``iscntrl``、``isdigit``、``isgraph``、``islower``、``isprint``、``ispunct``、``isspace`` 和 ``isupper``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBMEM_IN_IRAM`：影响函数 ``memccpy``、``memchr``、``memmove`` 和 ``memrchr``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBSTR_IN_IRAM`：影响函数 ``strcasecmp``、``strcasestr``、``strchr``、``strcoll``、``strcpy``、``strcspn``、``strdup``、``strdup_r``、``strlcat``、``strlcpy``、``strlen``、``strlwr``、``strncasecmp``、``strncat``、``strncmp``、``strncpy``、``strndup``、``strndup_r``、``strrchr``、``strsep``、``strspn``、``strstr``、``strtok_r 和 ``strupr``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBRAND_IN_IRAM`：影响函数 ``srand``、``rand`` 和 ``rand_r``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBENV_IN_IRAM`：影响函数 ``environ``、``envlock`` 和 ``getenv_r``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBFILE_IN_IRAM`：影响函数 ``lock``、``isatty``、``fclose``、``open``、``close``、``creat``、``read``、``rshift``、``sbrk``、``stdio``、``syssbrk``、``sysclose``、``sysopen``、``creat``、``sysread``、``syswrite``、``impure``、``fwalk`` 和 ``findfp``。
+        - :menuitem:`CONFIG_SPIRAM_CACHE_LIBMISC_IN_IRAM`：影响函数 ``raise`` 和 ``system``。
 
     具体节省的 IRAM 使用量取决于应用程序实际使用的 C 语言库代码。此外，以下选项可以将更多 C 语言库代码移到 flash 中，但请知悉这可能会影响性能。同时，注意不要在禁用缓存时，从中断使用 :c:macro:`ESP_INTR_FLAG_IRAM` 标记符号分配的 C 语言库函数，详情请参阅 :ref:`iram-safe-interrupt-handlers`。鉴于以上原因，函数 ``itoa``、``memcmp``、``memcpy``、``memset``、``strcat``、``strcmp`` 和 ``strlen`` 始终置于 IRAM 中。
 
@@ -286,8 +286,8 @@ IRAM 优化
 
    .. list::
 
-      :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
-      :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
-      :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
-      :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
-      :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`
+      :esp32s2: - :menuitem:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+      :esp32s2: - :menuitem:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
+      :esp32s3: - :menuitem:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+      :esp32s3: - :menuitem:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+      :esp32p4: - :menuitem:`CONFIG_CACHE_L2_CACHE_SIZE`

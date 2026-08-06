@@ -983,7 +983,7 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 电源管理
 ^^^^^^^^^^^^^^^^
 
-启用电源管理（即开启 :ref:`CONFIG_PM_ENABLE`）时，系统会在进入 Light-sleep 前调整 PLL 和 APB 频率。该操作有可能会改变 MCPWM 定时器的计数步长，导致计时偏差。
+启用电源管理（即开启 :menuitem:`CONFIG_PM_ENABLE`）时，系统会在进入 Light-sleep 前调整 PLL 和 APB 频率。该操作有可能会改变 MCPWM 定时器的计数步长，导致计时偏差。
 
 不过，驱动程序可以获取 :cpp:enumerator:`ESP_PM_NO_LIGHT_SLEEP` 类型的电源管理锁，防止系统进入 Light-sleep。每当驱动创建以 PLL 作为时钟源的 MCPWM 定时器实例时，都会在通过 :cpp:func:`mcpwm_timer_enable` 启用定时器时获取电源管理锁。反之，调用 :cpp:func:`mcpwm_timer_disable` 时，驱动程序释放锁。
 
@@ -1014,7 +1014,7 @@ IRAM 安全
 
 默认情况下，禁用 cache 时，写入/擦除 flash 等原因将导致 MCPWM 中断延迟，事件回调函数也将延迟执行。在实时应用程序中，应避免此类情况。
 
-因此，可以启用 Kconfig 选项 :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE`，该选项：
+因此，可以启用 Kconfig 选项 :menuitem:`CONFIG_MCPWM_ISR_CACHE_SAFE`，该选项：
 
 * 支持在禁用 cache 时启用所需中断
 * 支持将 ISR 使用的所有函数存放在 IRAM 中 [2]_
@@ -1022,7 +1022,7 @@ IRAM 安全
 
 启用该选项可以保证 cache 禁用时的中断运行，但会相应增加 IRAM 占用。
 
-另一个 Kconfig 选项 :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` 也支持将常用的 IO 控制函数存放在 IRAM 中，以保证在禁用 cache 时可以正常使用函数。IO 控制函数如下所示：
+另一个 Kconfig 选项 :menuitem:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` 也支持将常用的 IO 控制函数存放在 IRAM 中，以保证在禁用 cache 时可以正常使用函数。IO 控制函数如下所示：
 
 - :cpp:func:`mcpwm_comparator_set_compare_value`
 - :cpp:func:`mcpwm_timer_set_period`
@@ -1048,9 +1048,9 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息请参见 :ref:`mcpwm-iram-safe`。
-- :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` 控制 MCPWM 控制函数的存放位置（IRAM 或 flash）。更多信息请参见 :ref:`mcpwm-iram-safe`。
-- :ref:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用此选项将增加固件的二进制文件大小。
+- :menuitem:`CONFIG_MCPWM_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息请参见 :ref:`mcpwm-iram-safe`。
+- :menuitem:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` 控制 MCPWM 控制函数的存放位置（IRAM 或 flash）。更多信息请参见 :ref:`mcpwm-iram-safe`。
+- :menuitem:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用此选项将增加固件的二进制文件大小。
 
 应用示例
 --------------------

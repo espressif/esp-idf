@@ -78,26 +78,26 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 .. list::
 
-    - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION` 设置为 ``Optimize for size (-Os)``。在某些情况下，相较于默认设置， ``Optimize for size (-Os)`` 也可以减小二进制文件的大小。请注意，若代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本不存在的错误。
-    - 设置 :ref:`CONFIG_COMPILER_LTO_LINKTIME` 以启用链接时优化 (LTO)，并为部分组件启用编译时 LTO（既可以设置 :ref:`CONFIG_COMPILER_LTO_COMPILETIME`，也可以为特定组件添加 ``-flto=auto`` 编译选项）。与优化大小 (``-Os``) 一同使用时，该选项可以减小二进制文件的大小。``idf.py size``、``idf.py size-components`` 和 ``idf.py size-files`` 均可为启用 LTO 的构建报告准确的大小。请注意，启用 LTO 有以下几点不足：
+    - 将 :menuitem:`CONFIG_COMPILER_OPTIMIZATION` 设置为 ``Optimize for size (-Os)``。在某些情况下，相较于默认设置， ``Optimize for size (-Os)`` 也可以减小二进制文件的大小。请注意，若代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本不存在的错误。
+    - 设置 :menuitem:`CONFIG_COMPILER_LTO_LINKTIME` 以启用链接时优化 (LTO)，并为部分组件启用编译时 LTO（既可以设置 :menuitem:`CONFIG_COMPILER_LTO_COMPILETIME`，也可以为特定组件添加 ``-flto=auto`` 编译选项）。与优化大小 (``-Os``) 一同使用时，该选项可以减小二进制文件的大小。``idf.py size``、``idf.py size-components`` 和 ``idf.py size-files`` 均可为启用 LTO 的构建报告准确的大小。请注意，启用 LTO 有以下几点不足：
 
         - 启用 LTO 会增加构建时间。
         - 启用 LTO 可能会增加任务的栈使用量。跨翻译单元的内联会用更少但更大的栈帧替代多个较小的栈帧，因此某条调用路径上的峰值栈深度可能增加。该影响通常较小，但对于调用链较深、且跨越多个经 LTO 优化组件的应用程序，影响可能较为明显。启用 LTO 后，请检查任务的栈高水位（例如使用 :cpp:func:`uxTaskGetStackHighWaterMark`），并在必要时增大受影响任务的栈大小。
         - 不得为使用自定义 :doc:`链接器片段 <../linker-script-generation>` 的组件启用 LTO。这是因为 LTO 会将多个目标文件中的代码合并为一个，导致链接器片段无法控制单个函数和变量的放置位置。
         - 启用 LTO 可能会使代码更难调试。
-    - 通过降低应用程序的 :ref:`CONFIG_LOG_DEFAULT_LEVEL` ，可以减少编译时的日志输出。如果改变 :ref:`CONFIG_LOG_MAXIMUM_LEVEL` 的默认选项，则可以控制二进制文件的大小。减少编译时的日志输出可以减少二进制文件中的字符串数量，并减小调用日志函数的代码大小。
-    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash，同时还可以加快日志记录的速度。
-    - 将 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 设置为 ``Silent``，可以避免为所有可能失败的断言编译专门的断言字符串和源文件名。尽管如此，仍可以通过查看断言失败时的内存地址以在代码中找到失败断言。
-    - 除 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 外，还可以通过设置 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 单独禁用或静默 HAL 组件的断言。即使将 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 设置为 full-assertion 级别，ESP-IDF 在引导加载程序中也会把 HAL 断言级别降为 silent，以减小引导加载程序的大小。
-    - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 会移除针对 ESP-IDF 内部错误检查宏的特定错误消息。错误消息移除后，通过阅读日志输出来调试某些错误条件可能变得更加困难。
-    :esp32: - 如果二进制文件只需要在某些特定的 ESP32 版本上运行，将 :ref:`CONFIG_ESP32_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。如果设置 ESP32 最低版本为 3，并且启用 PSRAM，将大幅减小二进制文件的大小。
-    :esp32c3: - 如果二进制文件只需要在某些特定的 ESP32-C3 版本上运行，将 :ref:`CONFIG_ESP32C3_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。由于某些功能已经移至 ROM 代码中，如果设置 ESP32-C3 最低版本为 3 并且使用 Wi-Fi 功能，将明显减小二进制文件的大小。
-    - 不要启用 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` 或 :ref:`CONFIG_COMPILER_CXX_RTTI`，也不要将 :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` 设置为 Overall。这些选项已默认禁用，启用这些选项会大幅增加二进制文件的大小。
-    - 禁用 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 将会移除查找表，该表用于将错误日志中的错误值转换成用户友好名称（参阅 :doc:`/api-guides/error-handling`）。这样做可以减小二进制文件的大小，但错误值将只以整数形式输出。
-    - 将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``Silent reboot`` 可以减小一小部分二进制文件的大小，但此操作 **仅** 建议在没有任何开发者使用 UART 输出来调试设备时进行。
-    :CONFIG_IDF_TARGET_ARCH_RISCV: - 设置 :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` 以库调用替代内联的入口/出口代码，可以减小二进制文件的大小。
-    - 如果应用程序的二进制文件只使用 protocomm 组件的某个安全版本，取消对其他版本的支持可以减小部分代码大小。请通过 :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`、:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` 或者 :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` 方式，取消对应版本的支持。
-    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - 启用 :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP`，通过使用压缩的函数序言/尾声来减少二进制文件大小。在启用此选项前，请务必仔细阅读 :ref:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` 的说明。
+    - 通过降低应用程序的 :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` ，可以减少编译时的日志输出。如果改变 :menuitem:`CONFIG_LOG_MAXIMUM_LEVEL` 的默认选项，则可以控制二进制文件的大小。减少编译时的日志输出可以减少二进制文件中的字符串数量，并减小调用日志函数的代码大小。
+    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :menuitem:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :menuitem:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash，同时还可以加快日志记录的速度。
+    - 将 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 设置为 ``Silent``，可以避免为所有可能失败的断言编译专门的断言字符串和源文件名。尽管如此，仍可以通过查看断言失败时的内存地址以在代码中找到失败断言。
+    - 除 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 外，还可以通过设置 :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 单独禁用或静默 HAL 组件的断言。即使将 :menuitem:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 设置为 full-assertion 级别，ESP-IDF 在引导加载程序中也会把 HAL 断言级别降为 silent，以减小引导加载程序的大小。
+    - 设置 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` 会移除针对 ESP-IDF 内部错误检查宏的特定错误消息。错误消息移除后，通过阅读日志输出来调试某些错误条件可能变得更加困难。
+    :esp32: - 如果二进制文件只需要在某些特定的 ESP32 版本上运行，将 :menuitem:`CONFIG_ESP32_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。如果设置 ESP32 最低版本为 3，并且启用 PSRAM，将大幅减小二进制文件的大小。
+    :esp32c3: - 如果二进制文件只需要在某些特定的 ESP32-C3 版本上运行，将 :menuitem:`CONFIG_ESP32C3_REV_MIN` 增加到相应版本的匹配值可以减小二进制文件的大小。由于某些功能已经移至 ROM 代码中，如果设置 ESP32-C3 最低版本为 3 并且使用 Wi-Fi 功能，将明显减小二进制文件的大小。
+    - 不要启用 :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS` 或 :menuitem:`CONFIG_COMPILER_CXX_RTTI`，也不要将 :menuitem:`CONFIG_COMPILER_STACK_CHECK_MODE` 设置为 Overall。这些选项已默认禁用，启用这些选项会大幅增加二进制文件的大小。
+    - 禁用 :menuitem:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 将会移除查找表，该表用于将错误日志中的错误值转换成用户友好名称（参阅 :doc:`/api-guides/error-handling`）。这样做可以减小二进制文件的大小，但错误值将只以整数形式输出。
+    - 将 :menuitem:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``Silent reboot`` 可以减小一小部分二进制文件的大小，但此操作 **仅** 建议在没有任何开发者使用 UART 输出来调试设备时进行。
+    :CONFIG_IDF_TARGET_ARCH_RISCV: - 设置 :menuitem:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` 以库调用替代内联的入口/出口代码，可以减小二进制文件的大小。
+    - 如果应用程序的二进制文件只使用 protocomm 组件的某个安全版本，取消对其他版本的支持可以减小部分代码大小。请通过 :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`、:menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` 或者 :menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2` 方式，取消对应版本的支持。
+    :CONFIG_SOC_CPU_ZCMP_WORKAROUND: - 启用 :menuitem:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP`，通过使用压缩的函数序言/尾声来减少二进制文件大小。在启用此选项前，请务必仔细阅读 :menuitem:`CONFIG_COMPILER_ENABLE_RISCV_ZCMP` 的说明。
 
 .. note::
 
@@ -115,17 +115,17 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     Wi-Fi
     @@@@@
 
-    - 如果不需要启用 WPA3 支持，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 可以减小 Wi-Fi 二进制文件的大小。请注意，WPA3 支持是目前认证新 Wi-Fi 设备的必要标准。
-    - 如果不需要启用 soft-AP 支持，禁用 :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
-    - 如不需要启用企业支持，禁用 :ref:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
-    - 如果不需要启用 WPA3-SAE 的哈希到元素（hash-to-element）认证方法，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_SAE_H2E` 可以减少 Wi-Fi 二进制文件的大小。请注意，与默认的 “hunting-and-pecking” 认证方法相比，哈希到元素方法更快、更安全，并且对侧信道攻击更具有免疫能力。
+    - 如果不需要启用 WPA3 支持，禁用 :menuitem:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 可以减小 Wi-Fi 二进制文件的大小。请注意，WPA3 支持是目前认证新 Wi-Fi 设备的必要标准。
+    - 如果不需要启用 soft-AP 支持，禁用 :menuitem:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
+    - 如不需要启用企业支持，禁用 :menuitem:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
+    - 如果不需要启用 WPA3-SAE 的哈希到元素（hash-to-element）认证方法，禁用 :menuitem:`CONFIG_ESP_WIFI_ENABLE_SAE_H2E` 可以减少 Wi-Fi 二进制文件的大小。请注意，与默认的 “hunting-and-pecking” 认证方法相比，哈希到元素方法更快、更安全，并且对侧信道攻击更具有免疫能力。
 
 .. only:: esp32
 
     ADC
     @@@
 
-    - 如果使用 ADC 驱动程序，禁用 :ref:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`、:ref:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE` 和 :ref:`CONFIG_ADC_CALI_LUT_ENABLE` 可以减小一小部分二进制文件的大小，但准确性会降低。
+    - 如果使用 ADC 驱动程序，禁用 :menuitem:`CONFIG_ADC_CALI_EFUSE_TP_ENABLE`、:menuitem:`CONFIG_ADC_CALI_EFUSE_VREF_ENABLE` 和 :menuitem:`CONFIG_ADC_CALI_LUT_ENABLE` 可以减小一小部分二进制文件的大小，但准确性会降低。
 
 .. only:: SOC_BT_SUPPORTED
 
@@ -136,15 +136,15 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
     .. list::
 
-        :esp32: - 如果只需要连接一个 Bluetooth LE，则将 :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` 设置为 1。
-        - 如果只需要连接一个 Bluetooth LE，则将 :ref:`CONFIG_BT_NIMBLE_MAX_CONNECTIONS` 设置为 1。
-        - 如果不需要 :ref:`CONFIG_BT_NIMBLE_ROLE_CENTRAL` 和 :ref:`CONFIG_BT_NIMBLE_ROLE_OBSERVER`，可以选择禁用其一。
-        - 降低 :ref:`CONFIG_BT_NIMBLE_LOG_LEVEL` 可以减小二进制文件的大小。请注意，如果在上述 :ref:`reducing-overall-size` 中已经降低了整体日志级别，那么也会降低 NimBLE 的日志级别。
+        :esp32: - 如果只需要连接一个 Bluetooth LE，则将 :menuitem:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` 设置为 1。
+        - 如果只需要连接一个 Bluetooth LE，则将 :menuitem:`CONFIG_BT_NIMBLE_MAX_CONNECTIONS` 设置为 1。
+        - 如果不需要 :menuitem:`CONFIG_BT_NIMBLE_ROLE_CENTRAL` 和 :menuitem:`CONFIG_BT_NIMBLE_ROLE_OBSERVER`，可以选择禁用其一。
+        - 降低 :menuitem:`CONFIG_BT_NIMBLE_LOG_LEVEL` 可以减小二进制文件的大小。请注意，如果在上述 :ref:`reducing-overall-size` 中已经降低了整体日志级别，那么也会降低 NimBLE 的日志级别。
 
 lwIP IPv6
 @@@@@@@@@
 
-- 将 :ref:`CONFIG_LWIP_IPV6` 设置为 ``false`` 可以减小 lwIP TCP/IP 堆栈的大小，但将仅支持 IPv4。
+- 将 :menuitem:`CONFIG_LWIP_IPV6` 设置为 ``false`` 可以减小 lwIP TCP/IP 堆栈的大小，但将仅支持 IPv4。
 
   .. note::
 
@@ -153,7 +153,7 @@ lwIP IPv6
 lwIP IPv4
 @@@@@@@@@
 
-- 如果不需要 IPv4 连接功能，将 :ref:`CONFIG_LWIP_IPV4` 设置为 ``false`` 可以减小 lwIP 的大小，使其成为仅支持 IPv6 的 TCP/IP 堆栈。
+- 如果不需要 IPv4 连接功能，将 :menuitem:`CONFIG_LWIP_IPV4` 设置为 ``false`` 可以减小 lwIP 的大小，使其成为仅支持 IPv6 的 TCP/IP 堆栈。
 
     .. note::
 
@@ -164,7 +164,7 @@ lwIP IPv4
 使用 Picolibc 替代 Newlib
 @@@@@@@@@@@@@@@@@@@@@@@@@
 
-默认情况下，ESP-IDF 使用 Picolibc C 库。也支持 Newlib，可通过 :ref:`CONFIG_LIBC_NEWLIB<CONFIG_LIBC_NEWLIB>` 选项选择使用。
+默认情况下，ESP-IDF 使用 Picolibc C 库。也支持 Newlib，可通过 :menuitem:`CONFIG_LIBC_NEWLIB` 选项选择使用。
 
 Picolibc C 库提供了更精简的 ``printf`` 系列函数，并且根据应用程序，可以将二进制文件大小减少最多 30 KB。
 
@@ -177,13 +177,13 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    启用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到 Nano 格式化模式。从而减小了代码体积，同时大部分内容被编译到 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
+    启用配置选项 :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到 Nano 格式化模式。从而减小了代码体积，同时大部分内容被编译到 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
 
     具体的二进制文件大小差异取决于固件使用的功能，但通常为 25 KB 到 50 KB。
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-    禁用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到完整格式化模式。从而减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此无需将其添加至二进制文件中。
+    禁用配置选项 :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到完整格式化模式。从而减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此无需将其添加至二进制文件中。
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 
@@ -194,7 +194,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
     .. note::
 
-        {IDF_TARGET_NAME} 会默认启用 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT`。
+        {IDF_TARGET_NAME} 会默认启用 :menuitem:`CONFIG_LIBC_NEWLIB_NANO_FORMAT`。
 
 
 .. _Newlib 文档: https://sourceware.org/newlib/docs.html
@@ -202,7 +202,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 libstdc++
 @@@@@@@@@
 
-- 启用 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` 或 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` 观察对应用程序二进制大小的影响。
+- 启用 :menuitem:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR` 或 :menuitem:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD` 观察对应用程序二进制大小的影响。
 
 .. _minimizing_binary_mbedtls:
 
@@ -215,24 +215,24 @@ MbedTLS 功能
 
 .. list::
 
-    - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
-    - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
-    - :ref:`CONFIG_MBEDTLS_SHA512_C`
-    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
-    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
-    - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
-    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
-    - :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-    - :ref:`CONFIG_MBEDTLS_CCM_C`
-    - :ref:`CONFIG_MBEDTLS_GCM_C`
-    - :ref:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
-    - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
-    - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
-    - 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :ref:`CONFIG_MBEDTLS_TLS_MODE`。
-    - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
-    - 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
-    :esp32h2: - 对于 {IDF_TARGET_NAME} v1.2 及以上版本，可以考虑禁用 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` 和 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM`，因为无需再使用 ECDSA 签名的软件防护措施。
-    :SOC_AES_SUPPORT_DMA: - 如果应用程序不涉及或不需要针对小数据长度操作进行性能优化，例如在处理小数据段时进行的 NVS 加密/解密操作、TLS 通信等，可以考虑禁用 :ref:`CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM`。
+    - :menuitem:`CONFIG_MBEDTLS_HAVE_TIME`
+    - :menuitem:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
+    - :menuitem:`CONFIG_MBEDTLS_SHA512_C`
+    - :menuitem:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
+    - :menuitem:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+    - :menuitem:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
+    - :menuitem:`CONFIG_MBEDTLS_SSL_ALPN`
+    - :menuitem:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
+    - :menuitem:`CONFIG_MBEDTLS_CCM_C`
+    - :menuitem:`CONFIG_MBEDTLS_GCM_C`
+    - :menuitem:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
+    - :menuitem:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+    - :menuitem:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
+    - 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :menuitem:`CONFIG_MBEDTLS_TLS_MODE`。
+    - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :menuitem:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
+    - 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :menuitem:`CONFIG_MBEDTLS_ERROR_STRINGS`。
+    :esp32h2: - 对于 {IDF_TARGET_NAME} v1.2 及以上版本，可以考虑禁用 :menuitem:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` 和 :menuitem:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM`，因为无需再使用 ECDSA 签名的软件防护措施。
+    :SOC_AES_SUPPORT_DMA: - 如果应用程序不涉及或不需要针对小数据长度操作进行性能优化，例如在处理小数据段时进行的 NVS 加密/解密操作、TLS 通信等，可以考虑禁用 :menuitem:`CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM`。
 
 每个选项的帮助文本中都有更多信息可供参考。
 
@@ -247,10 +247,10 @@ MbedTLS 功能
 
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
-    启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+    启用配置选项 :menuitem:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
     该选项仅在所选目标芯片和最低芯片版本支持 ROM mbedTLS 加密算法库时可用。
 
-    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时，mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
+    禁用配置选项 :menuitem:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时，mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
 
 .. note::
 
@@ -261,10 +261,10 @@ MbedTLS 功能
 
 在 ESP-IDF 中，:doc:`/api-reference/storage/vfs` 功能允许使用标准的 I/O 函数（如 ``open``、 ``read``、 ``write`` 等）和 C 库函数（如 ``fopen``、 ``fread``、 ``fwrite`` 等）来访问多个文件系统驱动程序和类似文件的外设驱动程序。当应用程序中不需要文件系统或类似文件的外设驱动功能时，可以部分或完全禁用该功能。VFS 组件提供以下配置选项：
 
-* :ref:`CONFIG_VFS_SUPPORT_TERMIOS` — 如果应用程序不使用 ``termios`` 函数族，可以禁用此选项。目前，这些函数仅在 UART VFS 驱动程序中实现，大多数应用程序可以禁用此选项。禁用后可以减小约 1.8 KB 代码大小。
-* :ref:`CONFIG_VFS_SUPPORT_SELECT` — 如果应用程序不使用 ``select`` 函数处理文件描述符，可以禁用此选项。目前，只有 UART 和 eventfd VFS 驱动程序支持 ``select`` 函数。请注意，当禁用该选项时，仍然可以使用 ``select`` 处理套接字文件描述符。禁用此选项将减小约 2.7 KB 代码大小。
-* :ref:`CONFIG_VFS_SUPPORT_DIR` — 如果应用程序不使用与目录相关的函数，例如 ``readdir`` （参阅此选项的描述以获取完整列表），可以禁用此选项。如果应用程序只需打开、读取和写入特定文件，而不需要枚举或创建目录，可以禁用此选项，从而减少超过 0.5 KB 代码大小，具体减小多少取决于使用的文件系统驱动程序。
-* :ref:`CONFIG_VFS_SUPPORT_IO` — 如果应用程序不使用文件系统或类似文件的外设驱动程序，可以禁用此选项，这将禁用所有 VFS 功能，包括上述三个选项。当禁用此选项时，无法使用 :doc:`/api-reference/system/console`。请注意，当禁用此选项时，应用程序仍然可以使用标准 I/O 函数处理套接字文件描述符。相较于默认配置，禁用此选项可以减小约 9.4 KB 代码大小。
+* :menuitem:`CONFIG_VFS_SUPPORT_TERMIOS` — 如果应用程序不使用 ``termios`` 函数族，可以禁用此选项。目前，这些函数仅在 UART VFS 驱动程序中实现，大多数应用程序可以禁用此选项。禁用后可以减小约 1.8 KB 代码大小。
+* :menuitem:`CONFIG_VFS_SUPPORT_SELECT` — 如果应用程序不使用 ``select`` 函数处理文件描述符，可以禁用此选项。目前，只有 UART 和 eventfd VFS 驱动程序支持 ``select`` 函数。请注意，当禁用该选项时，仍然可以使用 ``select`` 处理套接字文件描述符。禁用此选项将减小约 2.7 KB 代码大小。
+* :menuitem:`CONFIG_VFS_SUPPORT_DIR` — 如果应用程序不使用与目录相关的函数，例如 ``readdir`` （参阅此选项的描述以获取完整列表），可以禁用此选项。如果应用程序只需打开、读取和写入特定文件，而不需要枚举或创建目录，可以禁用此选项，从而减少超过 0.5 KB 代码大小，具体减小多少取决于使用的文件系统驱动程序。
+* :menuitem:`CONFIG_VFS_SUPPORT_IO` — 如果应用程序不使用文件系统或类似文件的外设驱动程序，可以禁用此选项，这将禁用所有 VFS 功能，包括上述三个选项。当禁用此选项时，无法使用 :doc:`/api-reference/system/console`。请注意，当禁用此选项时，应用程序仍然可以使用标准 I/O 函数处理套接字文件描述符。相较于默认配置，禁用此选项可以减小约 9.4 KB 代码大小。
 
 .. only:: CONFIG_ESP_ROM_HAS_HAL_SYSTIMER or CONFIG_ESP_ROM_HAS_HAL_WDT
 
@@ -273,16 +273,16 @@ MbedTLS 功能
 
     .. list::
 
-        :CONFIG_ESP_ROM_HAS_HAL_SYSTIMER: * 启用 :ref:`CONFIG_HAL_SYSTIMER_USE_ROM_IMPL` 可以通过链接 ROM 实现的 systimer HAL 驱动程序来减少 IRAM 使用和二进制文件大小。
-        :CONFIG_ESP_ROM_HAS_HAL_WDT: * 启用 :ref:`CONFIG_HAL_WDT_USE_ROM_IMPL` 可以通过链接 ROM 实现的看门狗 HAL 驱动程序来减少 IRAM 使用和二进制文件大小。
+        :CONFIG_ESP_ROM_HAS_HAL_SYSTIMER: * 启用 :menuitem:`CONFIG_HAL_SYSTIMER_USE_ROM_IMPL` 可以通过链接 ROM 实现的 systimer HAL 驱动程序来减少 IRAM 使用和二进制文件大小。
+        :CONFIG_ESP_ROM_HAS_HAL_WDT: * 启用 :menuitem:`CONFIG_HAL_WDT_USE_ROM_IMPL` 可以通过链接 ROM 实现的看门狗 HAL 驱动程序来减少 IRAM 使用和二进制文件大小。
 
     堆
     @@@@@@
 
     .. list::
 
-        * 启用 :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以将整个堆功能放置在 flash 中，从而减少 IRAM 使用和二进制文件大小。
-        :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * 启用 :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以通过链接 ROM 实现的 TLSF 库来减少 IRAM 使用和二进制文件大小。
+        * 启用 :menuitem:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以将整个堆功能放置在 flash 中，从而减少 IRAM 使用和二进制文件大小。
+        :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * 启用 :menuitem:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以通过链接 ROM 实现的 TLSF 库来减少 IRAM 使用和二进制文件大小。
 
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
@@ -292,8 +292,8 @@ MbedTLS 功能
 
     对于支持 USB-Serial-JTAG 的目标芯片，默认情况下会同时启用 USB-Serial-JTAG 和 UART 控制台输出。如果只需要使用单个控制台，可以通过以下操作减少二进制文件大小和 RAM 使用量：
 
-    1. 禁用次要控制台：将 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 设置为 ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``。
-    2. 将 :ref:`CONFIG_ESP_CONSOLE_UART` 设置为以下选项之一：
+    1. 禁用次要控制台：将 :menuitem:`CONFIG_ESP_CONSOLE_SECONDARY` 设置为 ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``。
+    2. 将 :menuitem:`CONFIG_ESP_CONSOLE_UART` 设置为以下选项之一：
 
         * ``UART``：可减少约 2.5 KB 的二进制文件大小。
         * ``USB-Serial-JTAG``：可减少约 10 KB 的二进制文件大小和约 1.5 KB 的 DRAM 使用量。

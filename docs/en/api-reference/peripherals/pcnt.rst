@@ -346,7 +346,7 @@ The internal hardware counter will be cleared to zero automatically when it reac
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system adjusts the APB frequency before entering light sleep, which can cause the PCNT glitch filter to misinterpret valid signals as noise.
+When power management is enabled (i.e., :menuitem:`CONFIG_PM_ENABLE` is on), the system adjusts the APB frequency before entering light sleep, which can cause the PCNT glitch filter to misinterpret valid signals as noise.
 
 To prevent this, the driver can acquire a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`, ensuring the APB frequency remains constant. This lock is acquired when the PCNT unit is enabled via :cpp:func:`pcnt_unit_enable` and released when the unit is disabled via :cpp:func:`pcnt_unit_disable`.
 
@@ -357,7 +357,7 @@ IRAM Safe
 
 By default, the PCNT interrupt will be deferred when the Cache is disabled for reasons like writing/erasing Flash. Thus the alarm interrupt will not get executed in time, which is not expected in a real-time application.
 
-There is a Kconfig option :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` that:
+There is a Kconfig option :menuitem:`CONFIG_PCNT_ISR_IRAM_SAFE` that:
 
 1. Enables the interrupt being serviced even when cache is disabled
 2. Places all functions that used by the ISR into IRAM [2]_
@@ -365,7 +365,7 @@ There is a Kconfig option :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` that:
 
 This allows the interrupt to run while the cache is disabled but comes at the cost of increased IRAM consumption.
 
-There is another Kconfig option :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are as follows:
+There is another Kconfig option :menuitem:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So that these functions can also be executable when the cache is disabled. These IO control functions are as follows:
 
 - :cpp:func:`pcnt_unit_start`
 - :cpp:func:`pcnt_unit_stop`
@@ -393,9 +393,9 @@ Other functions that take the :cpp:type:`pcnt_unit_handle_t` and :cpp:type:`pcnt
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` controls where to place the PCNT control functions (IRAM or Flash), see :ref:`pcnt-iram-safe` for more information.
-- :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see :ref:`pcnt-iram-safe` for more information.
-- :ref:`CONFIG_PCNT_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enabling this option increases the firmware binary size.
+- :menuitem:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` controls where to place the PCNT control functions (IRAM or Flash), see :ref:`pcnt-iram-safe` for more information.
+- :menuitem:`CONFIG_PCNT_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see :ref:`pcnt-iram-safe` for more information.
+- :menuitem:`CONFIG_PCNT_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enabling this option increases the firmware binary size.
 
 Application Examples
 --------------------

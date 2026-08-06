@@ -210,7 +210,7 @@
 事件循环性能分析
 --------------------
 
-要启动数据收集，统计所有已创建事件循环的数据，请激活配置选项 :ref:`CONFIG_ESP_EVENT_LOOP_PROFILING`，函数 :cpp:func:`esp_event_dump` 可将收集的统计数据输出到文件流中。有关转储信息的更多详情，请参阅 :cpp:func:`esp_event_dump` API 参考。
+要启动数据收集，统计所有已创建事件循环的数据，请激活配置选项 :menuitem:`CONFIG_ESP_EVENT_LOOP_PROFILING`，函数 :cpp:func:`esp_event_dump` 可将收集的统计数据输出到文件流中。有关转储信息的更多详情，请参阅 :cpp:func:`esp_event_dump` API 参考。
 
 应用示例
 -------------------

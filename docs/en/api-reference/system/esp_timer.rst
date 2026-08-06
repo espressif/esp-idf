@@ -232,7 +232,7 @@ Out of the available :ref:`callback dispatch methods <Callback Methods>`, if you
 
 1. Set Kconfig options
 
-    - Enable :ref:`CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD`.
+    - Enable :menuitem:`CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD`.
 
 2. Create a timer
 
@@ -273,7 +273,7 @@ To debug timers, use the following procedure:
 
 1. Set Kconfig options for more detailed output:
 
-    - Enable :ref:`CONFIG_ESP_TIMER_PROFILING`.
+    - Enable :menuitem:`CONFIG_ESP_TIMER_PROFILING`.
 
     .. note::
 
@@ -281,7 +281,7 @@ To debug timers, use the following procedure:
 
 2. Wherever required in your code, call the function :cpp:func:`esp_timer_dump` to print the information and use it to debug your timers.
 
-3. Once debugging is complete, consider disabling :ref:`CONFIG_ESP_TIMER_PROFILING`.
+3. Once debugging is complete, consider disabling :menuitem:`CONFIG_ESP_TIMER_PROFILING`.
 
 
 Troubleshooting
@@ -295,7 +295,7 @@ While dispatching the same callback function repeatedly, if the response time va
 .. list::
 
     - Use the :ref:`Interrupt Dispatch method <Using ESP_TIMER_ISR Callback Method>`.
-    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Use the Kconfig option :ref:`CONFIG_ESP_TIMER_TASK_AFFINITY` to run the ESP Timer task on any of the available cores.
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Use the Kconfig option :menuitem:`CONFIG_ESP_TIMER_TASK_AFFINITY` to run the ESP Timer task on any of the available cores.
 
 
 Significant Delays while Dispatching Callbacks
@@ -315,7 +315,7 @@ If the callback functions are executed repeatedly upon wakeup from sleep, see :r
 Stack Overflow While Dispatching Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you see a stack overflow error when executing a callback function, consider reducing the stack usage within your callback function. Alternatively, try increasing the size of the ESP Timer task stack by adjusting :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`.
+If you see a stack overflow error when executing a callback function, consider reducing the stack usage within your callback function. Alternatively, try increasing the size of the ESP Timer task stack by adjusting :menuitem:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`.
 
 
 Application Examples

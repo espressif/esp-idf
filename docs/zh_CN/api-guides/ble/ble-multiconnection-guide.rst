@@ -31,13 +31,13 @@
 
 .. only:: esp32
 
-   - :ref:`BTDM_CTRL_BLE_MAX_CONN <CONFIG_BTDM_CTRL_BLE_MAX_CONN>`
+   - :menuitem:`BTDM_CTRL_BLE_MAX_CONN <CONFIG_BTDM_CTRL_BLE_MAX_CONN>`
 
    配置项 **BTDM_CTRL_BLE_MAX_CONN** 用于指定控制器 (Controller) 可同时支持的最大低功耗蓝牙连接数。该值必须与上表中主机端配置的最大连接数保持一致。
 
 .. only:: esp32c3 or esp32s3
 
-   - :ref:`BT_CTRL_BLE_MAX_ACT <CONFIG_BT_CTRL_BLE_MAX_ACT>`
+   - :menuitem:`BT_CTRL_BLE_MAX_ACT <CONFIG_BT_CTRL_BLE_MAX_ACT>`
 
    配置项 **BT_CTRL_BLE_MAX_ACT** 用于定义控制器 (Controller) 可同时处理的最大 Bluetooth LE 活动数。每个 Bluetooth LE 活动都会占用一个资源，包括：
 
@@ -70,10 +70,10 @@
 
    4. 如果您的应用需要的同时连接数量超过上述数值，请联系 `乐鑫客户支持团队 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`__ 以获取进一步的协助。
 
-.. |bluedroid_enable_config| replace:: :ref:`BT_MULTI_CONNECTION_ENBALE <CONFIG_BT_MULTI_CONNECTION_ENBALE>`
-.. |bluedroid_connection_num| replace:: :ref:`BT_ACL_CONNECTIONS <CONFIG_BT_ACL_CONNECTIONS>`
+.. |bluedroid_enable_config| replace:: :menuitem:`BT_MULTI_CONNECTION_ENBALE <CONFIG_BT_MULTI_CONNECTION_ENBALE>`
+.. |bluedroid_connection_num| replace:: :menuitem:`BT_ACL_CONNECTIONS <CONFIG_BT_ACL_CONNECTIONS>`
 .. |bluedroid_example| replace:: :example:`multi_conn <bluetooth/bluedroid/ble/ble_multi_conn>`
-.. |nimble_connection_num| replace:: :ref:`BT_NIMBLE_MAX_CONNECTIONS <CONFIG_BT_NIMBLE_MAX_CONNECTIONS>`
+.. |nimble_connection_num| replace:: :menuitem:`BT_NIMBLE_MAX_CONNECTIONS <CONFIG_BT_NIMBLE_MAX_CONNECTIONS>`
 .. |nimble_example| replace:: :example:`multi_conn<bluetooth/nimble/ble_multi_conn>`
 
 .. only:: esp32 or esp32c3 or esp32s3

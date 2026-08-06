@@ -13,7 +13,7 @@ GCC 版本更新说明
 
 升级到 GCC 15.1.0 后，引入了新的编译警告，同时也增强了已有警告的检测能力。警告详情可参考 `GCC Warning Options <https://gcc.gnu.org/onlinedocs/gcc-15.1.0/gcc/Warning-Options.html>`_。建议认真检查代码并尽可能修复警告。根据具体警告的类型及用户代码的复杂程度不同，某些警告可能属于误报，消除这些误报也需进行较为复杂的代码修改。此时，可通过多种方式屏蔽警告。下文列出了常见的警告及其对应的解决方案。
 
-如需全局屏蔽所有新增警告，请启用配置项 :ref:`CONFIG_COMPILER_DISABLE_GCC15_WARNINGS`。
+如需全局屏蔽所有新增警告，请启用配置项 :menuitem:`CONFIG_COMPILER_DISABLE_GCC15_WARNINGS`。
 
 ``-Wno-unterminated-string-initialization``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -129,7 +129,7 @@ GCC 版本更新说明
 Picolibc
 --------
 
-启用 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` 配置后需注意以下变更：
+启用 :menuitem:`CONFIG_LIBC_PICOLIBC` 配置后需注意以下变更：
 
 ``移除 sys/signal.h 头文件``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -148,7 +148,7 @@ Picolibc 已移除 ``<sys/signal.h>`` 头文件。为确保跨 libc 实现的兼
 
     乐鑫的 RISC-V 芯片在执行非对齐内存访问时，相比对齐访问仅有较小的性能损耗。
 
-    之前，当传入的指针不是按字对齐时，LibC 中涉及内存操作的函数（如拷贝或比较函数）会采用逐字节操作实现。现在，这些函数会尽可能采用字（4 字节）加载/存储操作，从而实现性能大幅提升。这些优化的实现通过 :ref:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 默认启用，但会减少应用大约 800–1000 字节的内存预算 (IRAM)。
+    之前，当传入的指针不是按字对齐时，LibC 中涉及内存操作的函数（如拷贝或比较函数）会采用逐字节操作实现。现在，这些函数会尽可能采用字（4 字节）加载/存储操作，从而实现性能大幅提升。这些优化的实现通过 :menuitem:`CONFIG_LIBC_OPTIMIZED_MISALIGNED_ACCESS` 默认启用，但会减少应用大约 800–1000 字节的内存预算 (IRAM)。
 
     下表展示了在 ESP32-C3 芯片上使用 4096 字节的 buffer 进行基准测试的结果：
 

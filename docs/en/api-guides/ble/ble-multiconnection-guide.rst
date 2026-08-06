@@ -31,13 +31,13 @@ Controller SDKconfig
 
 .. only:: esp32
 
-   - :ref:`BTDM_CTRL_BLE_MAX_CONN <CONFIG_BTDM_CTRL_BLE_MAX_CONN>`
+   - :menuitem:`BTDM_CTRL_BLE_MAX_CONN <CONFIG_BTDM_CTRL_BLE_MAX_CONN>`
 
    The configuration option **BTDM_CTRL_BLE_MAX_CONN** specifies the maximum number of Bluetooth LE connections that the controller can support concurrently. This value must match the maximum number of connections configured on the Host side, as defined in the table above.
 
 .. only:: esp32c3 or esp32s3
 
-   - :ref:`BT_CTRL_BLE_MAX_ACT <CONFIG_BT_CTRL_BLE_MAX_ACT>`
+   - :menuitem:`BT_CTRL_BLE_MAX_ACT <CONFIG_BT_CTRL_BLE_MAX_ACT>`
 
    The configuration option **BT_CTRL_BLE_MAX_ACT** defines the maximum number of Bluetooth LE activities that the controller can handle simultaneously. Each Bluetooth LE activity consumes one resource, including:
 
@@ -70,10 +70,10 @@ Note
 
    4. If your application requires more simultaneous connections than the values listed above, please contact our `customer support team <https://www.espressif.com/en/contact-us/sales-questions>`__ for further assistance.
 
-.. |bluedroid_enable_config| replace:: :ref:`BT_MULTI_CONNECTION_ENBALE <CONFIG_BT_MULTI_CONNECTION_ENBALE>`
-.. |bluedroid_connection_num| replace:: :ref:`BT_ACL_CONNECTIONS <CONFIG_BT_ACL_CONNECTIONS>`
+.. |bluedroid_enable_config| replace:: :menuitem:`BT_MULTI_CONNECTION_ENBALE <CONFIG_BT_MULTI_CONNECTION_ENBALE>`
+.. |bluedroid_connection_num| replace:: :menuitem:`BT_ACL_CONNECTIONS <CONFIG_BT_ACL_CONNECTIONS>`
 .. |bluedroid_example| replace:: :example:`multi_conn <bluetooth/bluedroid/ble/ble_multi_conn>`
-.. |nimble_connection_num| replace:: :ref:`BT_NIMBLE_MAX_CONNECTIONS <CONFIG_BT_NIMBLE_MAX_CONNECTIONS>`
+.. |nimble_connection_num| replace:: :menuitem:`BT_NIMBLE_MAX_CONNECTIONS <CONFIG_BT_NIMBLE_MAX_CONNECTIONS>`
 .. |nimble_example| replace:: :example:`multi_conn<bluetooth/nimble/ble_multi_conn>`
 
 .. only:: esp32 or esp32c3 or esp32s3

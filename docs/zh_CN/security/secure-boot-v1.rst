@@ -137,7 +137,7 @@
 
 对于生产设备，推荐使用 ``Secure Boot: One-Time Flash`` 配置。该模式下，每个设备都对应拥有始终存储在设备内部的唯一密钥。
 
-除上述配置外，也可选择 :ref:`CONFIG_SECURE_BOOTLOADER_MODE` 模式。在该备选模式下，可以提供一个二进制密钥文件作为安全引导加载程序密钥。此时，可以生成新的引导加载程序镜像，并为这些镜像生成安全启动摘要。
+除上述配置外，也可选择 :menuitem:`CONFIG_SECURE_BOOTLOADER_MODE` 模式。在该备选模式下，可以提供一个二进制密钥文件作为安全引导加载程序密钥。此时，可以生成新的引导加载程序镜像，并为这些镜像生成安全启动摘要。
 
 在 ESP-IDF 构建过程中，该 256 位密钥文件派生自用户生成的 ECDSA 应用程序签名密钥，请参阅下文的 :ref:`secure-boot-generate-key` 步骤。该私钥的 SHA-256 摘要用作 eFuse 中的安全引导加载程序密钥，如果编码方案为 ``None``，则使用完整的 256 位密钥；如果编码方案为 ``3/4 Encoding``，则将密钥截断为 192 字节。这样一来，只需要生成或保护单个密钥文件。
 
@@ -147,9 +147,9 @@
 
 请按以下步骤启用可重复烧录的引导加载程序：
 
-1. 在 :ref:`project-configuration-menu` 中，选择 ``Bootloader Config`` > :ref:`CONFIG_SECURE_BOOT` > ``CONFIG_SECURE_BOOT_V1_ENABLED`` > :ref:`CONFIG_SECURE_BOOTLOADER_MODE` > ``Reflashable``。
+1. 启用 :menuitem:`CONFIG_SECURE_BOOT`，选择 :menuitem:`CONFIG_SECURE_BOOT_V1_ENABLED`，并将 :menuitem:`CONFIG_SECURE_BOOTLOADER_MODE` 设置为 ``Reflashable``。
 
-2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool`` 连接到芯片时显示在 ``Features`` 行中，或在 ``idf.py efuse-summary`` 输出中显示。
+2. 如有需要，按照设备使用的编码方案设置 :menuitem:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool`` 连接到芯片时显示在 ``Features`` 行中，或在 ``idf.py efuse-summary`` 输出中显示。
 
 3. 请按 :ref:`secure-boot-generate-key` 中的步骤生成签名密钥。生成的密钥文件路径必须在 ``Secure Boot Configuration`` 菜单中指定。
 
@@ -339,7 +339,7 @@ keyfile 是设备的 32 字节原始安全启动密钥。
 启用已签名的应用程序验证
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. 打开 :ref:`project-configuration-menu` > ``Security features`` > 启用 :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`。
+1. 启用 :menuitem:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`。
 
 2. 启用 ``Bootloader verifies app signatures``，在启动时验证应用程序。
 

@@ -240,7 +240,7 @@
 
 .. note::
 
-    如果启用了 :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`，请确保回调函数和所访问的数据都位于内部 RAM。
+    如果启用了 :menuitem:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`，请确保回调函数和所访问的数据都位于内部 RAM。
 
 场景二：使用外部参考信号比较两个模拟量
 ========================================
@@ -535,16 +535,16 @@
 电源管理
 --------
 
-当启用 :ref:`CONFIG_PM_ENABLE` 后，睡眠和时钟切换可能会影响比较器行为。驱动会在需要时自动持有电源管理锁，因此使能比较器后，系统可能会被阻止进入 light sleep。
+当启用 :menuitem:`CONFIG_PM_ENABLE` 后，睡眠和时钟切换可能会影响比较器行为。驱动会在需要时自动持有电源管理锁，因此使能比较器后，系统可能会被阻止进入 light sleep。
 
 如果你的应用比较关注功耗，建议只在确实需要时才使能比较器。
 
 IRAM 安全
 ---------
 
-如果你希望在 cache 被禁用时，比较器中断仍能正常工作，请启用 :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`。
+如果你希望在 cache 被禁用时，比较器中断仍能正常工作，请启用 :menuitem:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`。
 
-如果还希望相关控制函数在这种情况下也可调用，请启用 :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`。
+如果还希望相关控制函数在这种情况下也可调用，请启用 :menuitem:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`。
 
 以下控制 API 可以放入 IRAM：
 
@@ -569,11 +569,11 @@ Kconfig 选项
 
 最常用的 Kconfig 选项有：
 
-- :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`
+- :menuitem:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE`
     让默认 ISR 路径在 cache 关闭时仍可工作。如果你的比较器中断需要覆盖 cache-off 场景，应启用此项。
-- :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`
+- :menuitem:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM`
     将可在 ISR 中调用的运行期控制 API 放入 IRAM，保证这些 API 在 cache 关闭时仍可调用。
-- :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG`
+- :menuitem:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG`
     打开驱动调试日志，便于联调与问题定位。启用后会增加固件体积和日志输出量。
 
 示例

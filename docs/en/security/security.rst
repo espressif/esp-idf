@@ -126,7 +126,7 @@ Flash Encryption Best Practices
 
     {IDF_TARGET_NAME} supports the **Memory Protection** scheme, either through architecture or special peripheral like PMS, which provides an ability to enforce and monitor permission attributes to memory and, in some cases, peripherals. ESP-IDF application startup code configures the permissions attributes like Read/Write access on data memories and Read/Execute access on instruction memories using the relevant peripheral. If there is any attempt made that breaks these permission attributes, e.g., a write operation to instruction memory region, then a violation interrupt is raised, and it results in system panic.
 
-    This feature depends on the config option :ref:`CONFIG_ESP_SYSTEM_MEMPROT` and it is kept enabled by default. Please note that the API for this feature is **private** and used exclusively by ESP-IDF code only.
+    This feature depends on the config option :menuitem:`CONFIG_ESP_SYSTEM_MEMPROT` and it is kept enabled by default. Please note that the API for this feature is **private** and used exclusively by ESP-IDF code only.
 
     .. note::
 
@@ -144,7 +144,7 @@ Flash Encryption Best Practices
 
         {IDF_TARGET_NAME} has support for protection mechanisms against the Differential Power Analysis related security attacks. DPA protection dynamically adjusts the clock frequency of the crypto peripherals, thereby blurring the power consumption trajectory during its operation. Based on the configured DPA security level, the clock variation range changes. Please refer to the **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] for more details on this topic.
 
-        :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` can help to select the DPA level. Higher level means better security, but it can also have an associated performance impact. By default, the lowest DPA level is kept enabled but it can be modified based on the security requirement.
+        :menuitem:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` can help to select the DPA level. Higher level means better security, but it can also have an associated performance impact. By default, the lowest DPA level is kept enabled but it can be modified based on the security requirement.
 
         .. note::
 
@@ -158,7 +158,7 @@ Flash Encryption Best Practices
         {IDF_TARGET_NAME} incorporates a pseudo-round function in the AES peripheral, thus enabling the peripheral to randomly insert pseudo-rounds before and after the original operation rounds and also generate a pseudo key to perform these dummy operations.
         These operations do not alter the original result, but they increase the complexity to perform side channel analysis attacks by randomizing the power profile.
 
-        :ref:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` can be used to select the strength of the pseudo-round function. Increasing the strength improves the security provided, but would slow down the encryption/decryption operations.
+        :menuitem:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` can be used to select the strength of the pseudo-round function. Increasing the strength improves the security provided, but would slow down the encryption/decryption operations.
 
 
         .. list-table:: Performance impact on AES operations per strength level
@@ -210,7 +210,7 @@ UART Download Mode
     * Secure UART Download mode can also be enabled by calling :cpp:func:`esp_efuse_enable_rom_secure_download_mode`.
     * This mode does not allow any arbitrary code to execute if downloaded through the UART download mode.
     * It also limits the available commands in Download mode to update SPI config, e.g., changing baud rate, basic flash write, and the command to return a summary of currently enabled security features (``get-security-info``).
-    * To disable Download Mode entirely, select the :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` to the recommended option ``Permanently disable ROM Download Mode`` or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
+    * To disable Download Mode entirely, select the :menuitem:`CONFIG_SECURE_UART_ROM_DL_MODE` to the recommended option ``Permanently disable ROM Download Mode`` or call :cpp:func:`esp_efuse_disable_rom_download_mode` at runtime.
 
     .. important::
 
@@ -269,7 +269,7 @@ UART Download Mode
     Some guidelines to consider on this topic:
 
     - Please consider enabling :ref:`OTA rollback <ota_rollback>` and then keep the successful connection to the OTA update server as the checkpoint to cancel the rollback process. This ensures that the newly updated firmware can successfully reach till the OTA update server, otherwise rollback process will go back to the previous firmware on the device.
-    - If you plan to enable the :ref:`CONFIG_MBEDTLS_HAVE_TIME_DATE` option, then please consider to have the time sync mechanism (SNTP) and sufficient number of trusted certificates in place.
+    - If you plan to enable the :menuitem:`CONFIG_MBEDTLS_HAVE_TIME_DATE` option, then please consider to have the time sync mechanism (SNTP) and sufficient number of trusted certificates in place.
 
 Product Security
 ----------------

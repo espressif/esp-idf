@@ -21,7 +21,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 电源管理配置
 -------------
 
-编译时可使用 :ref:`CONFIG_PM_ENABLE` 选项启用电源管理功能。
+编译时可使用 :menuitem:`CONFIG_PM_ENABLE` 选项启用电源管理功能。
 
 启用电源管理功能将会增加中断延迟。额外延迟与多个因素有关，例如：CPU 频率、单/双核模式、是否需要进行频率切换等。CPU 频率为 240 MHz 且未启用频率调节时，最小额外延迟为 0.2 us；如果启用频率调节，且在中断入口将频率由 40 MHz 调节至 80 MHz，则最大额外延迟为 40 us。
 
@@ -29,7 +29,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 .. list::
 
-    - ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`。
+    - ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :menuitem:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`。
 
     :esp32 or esp32s2: - ``min_freq_mhz``：最小 CPU 频率 (MHz)，即未持有电源管理锁时所使用的频率。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。
 
@@ -38,11 +38,11 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
     - ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。
 
 
-  如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
+  如果在 menuconfig 中启用了 :menuitem:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :menuitem:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
 
 .. note::
 
-  自动 Light-sleep 模式基于 FreeRTOS Tickless Idle 功能，因此如果在 menuconfig 中没有启用 :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE` 选项，在请求自动 Light-sleep 时，:cpp:func:`esp_pm_configure` 将会返回 `ESP_ERR_NOT_SUPPORTED` 错误。
+  自动 Light-sleep 模式基于 FreeRTOS Tickless Idle 功能，因此如果在 menuconfig 中没有启用 :menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE` 选项，在请求自动 Light-sleep 时，:cpp:func:`esp_pm_configure` 将会返回 `ESP_ERR_NOT_SUPPORTED` 错误。
 
 .. note::
 
@@ -88,7 +88,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 {IDF_TARGET_NAME} 电源管理算法
 --------------------------------
 
-下表列出了启用动态调频时如何切换 CPU 频率和 APB 频率。可以使用 :cpp:func:`esp_pm_configure` 或 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` 指定 CPU 最大频率。
+下表列出了启用动态调频时如何切换 CPU 频率和 APB 频率。可以使用 :cpp:func:`esp_pm_configure` 或 :menuitem:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` 指定 CPU 最大频率。
 
 .. include:: inc/power_management_{IDF_TARGET_PATH_NAME}.rst
 
@@ -110,10 +110,10 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
 
 但实际开销可能因缓存未命中、CPU 频率变化、Flash 延迟变化或硬件状态恢复时间而有所不同。当实际开销超过预测值时，实际睡眠时间可能超过预期，导致 :cpp:func:`vTaskStepTick()` 接收到的 tick 补偿值过大，触发断言失败。
 
-:ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION` 选项提供了一个安全机制，用于在唤醒开销超过预测时防止断言失败。启用后，系统会限制 tick 补偿值以防止溢出。在 menuconfig 中可通过 ``Component config`` > ``Power Management`` > ``Enable light sleep tick overflow protection`` 启用此选项。
+:menuitem:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_PROTECTION` 选项提供了一个安全机制，用于在唤醒开销超过预测时防止断言失败。启用后，系统会限制 tick 补偿值以防止溢出。
 
 启用该选项时，系统对睡过超时情况的处理如下：
-- 如果睡过超时在容忍范围内（可通过 :ref:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE` 配置，默认：2 个 tick），系统会静默地将 ``slept_ticks`` 限制为 ``xExpectedIdleTime``，防止断言失败
+- 如果睡过超时在容忍范围内（可通过 :menuitem:`CONFIG_PM_LIGHTSLEEP_TICK_OVERFLOW_TOLERANCE` 配置，默认：2 个 tick），系统会静默地将 ``slept_ticks`` 限制为 ``xExpectedIdleTime``，防止断言失败
 - 如果睡过超时超过容忍范围（可能存在 bug），系统不会限制 tick，会抛出错误日志，并触发断言失败
 - 在极少数边缘场景下可能会丢失 tick，导致 FreeRTOS tick 计数（``xTickCount``）落后于真实时间（``esp_timer``），使用 :cpp:func:`vTaskDelay()` 的任务可能比预期延迟稍长，FreeRTOS 软件定时器精度可能降低。
 
@@ -137,7 +137,7 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
 3. 通过分析锁使用模式来优化功耗
 4. 调试与应用程序中锁管理相关的问题
 
-要启用性能分析功能（单个锁的计时信息），请在 menuconfig 中启用 :ref:`CONFIG_PM_PROFILING` 选项。
+要启用性能分析功能（单个锁的计时信息），请在 menuconfig 中启用 :menuitem:`CONFIG_PM_PROFILING` 选项。
 
 应用示例
 -------------------
@@ -170,7 +170,7 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
     - **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
     :SOC_WIFI_SUPPORTED: - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
     :SOC_TWAI_SUPPORTED: - **TWAI**：从调用 :cpp:func:`twai_driver_install` 至 :cpp:func:`twai_driver_uninstall` 期间 (只有在 TWAI 时钟源选择为 :cpp:enumerator:`TWAI_CLK_SRC_APB` 的时候生效)。
-    :SOC_BT_SUPPORTED and esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁，除非将 :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` 选项设置为 “外部 32 kHz 晶振”。
+    :SOC_BT_SUPPORTED and esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁，除非将 :menuitem:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` 选项设置为 “外部 32 kHz 晶振”。
     :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
     :SOC_PCNT_SUPPORTED: - **PCNT**：从调用 :cpp:func:`pcnt_unit_enable` 至 :cpp:func:`pcnt_unit_disable` 期间。
     :SOC_SDM_SUPPORTED: - **Sigma-delta**：从调用 :cpp:func:`sdm_channel_enable` 至 :cpp:func:`sdm_channel_disable` 期间。
@@ -183,7 +183,7 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
 
         {IDF_TARGET_NAME} 支持在 Light-sleep 时掉电外设的电源域.
 
-        如果在 menuconfig 中启用了 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，在初始化外设时，驱动会将外设工作的寄存器上下文注册到休眠备份链表中，在进入休眠前，``REG_DMA`` 外设会读取休眠备份链表中的配置，根据链表中的配置将外设的寄存器上下文备份至内存，``REG_DMA`` 也会在唤醒时将上下文从内存恢复到外设寄存中。
+        如果在 menuconfig 中启用了 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，在初始化外设时，驱动会将外设工作的寄存器上下文注册到休眠备份链表中，在进入休眠前，``REG_DMA`` 外设会读取休眠备份链表中的配置，根据链表中的配置将外设的寄存器上下文备份至内存，``REG_DMA`` 也会在唤醒时将上下文从内存恢复到外设寄存中。
 
         目前 IDF 支持以下外设的 Light-sleep 上下文备份，它们的上下文会自动恢复，或者提供了相关的选项允许用户进入外设下电模式：
 

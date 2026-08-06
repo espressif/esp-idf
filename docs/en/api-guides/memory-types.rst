@@ -18,7 +18,7 @@ Non-constant static data (.data) and zero-initialized data (.bss) is placed by t
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-   By applying the ``EXT_RAM_BSS_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
+   By applying the ``EXT_RAM_BSS_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :menuitem:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
 
 .. only:: esp32
 
@@ -44,7 +44,7 @@ The macro ``__NOINIT_ATTR`` can be used as attribute to place data into ``.noini
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    By applying the ``EXT_RAM_NOINIT_ATTR`` macro, non-initialized value could also be placed in external RAM. To do this, the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_noinit`. If the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` is not enabled, ``EXT_RAM_NOINIT_ATTR`` will behave just as ``__NOINIT_ATTR``, it will make data to be placed into ``.noinit`` segment in internal RAM.
+    By applying the ``EXT_RAM_NOINIT_ATTR`` macro, non-initialized value could also be placed in external RAM. To do this, the :menuitem:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_noinit`. If the :menuitem:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` is not enabled, ``EXT_RAM_NOINIT_ATTR`` will behave just as ``__NOINIT_ATTR``, it will make data to be placed into ``.noinit`` segment in internal RAM.
 
 Example::
 
@@ -178,13 +178,13 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
 
     .. only:: esp32
 
-        In single core mode (:ref:`CONFIG_FREERTOS_UNICORE`), remaining RTC FAST memory is added to the heap, unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA-capable.
+        In single core mode (:menuitem:`CONFIG_FREERTOS_UNICORE`), remaining RTC FAST memory is added to the heap, unless the option :menuitem:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA-capable.
 
         This option is not available in dual core mode, because on {IDF_TARGET_NAME}, RTC FAST memory can only be accessed by the PRO CPU.
 
     .. only:: not esp32
 
-        Remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
+        Remaining RTC FAST memory is added to the heap unless the option :menuitem:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
 
 
 .. only:: SOC_MEM_SPM_SUPPORTED

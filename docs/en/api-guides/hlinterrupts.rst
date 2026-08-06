@@ -40,8 +40,8 @@ Interrupt Priorities
         - xt_debugexception
         - Debug exception. Called on e.g., a BREAK instruction. [2]_
 
-  .. [1] ESP-IDF debug logic can be configured to run on ``xt_highint4`` or ``xt_highint5`` in :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`. Bluetooth's interrupt can be configured to run on priority level 4 by enabling :ref:`CONFIG_BTDM_CTRL_HLI`. If :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, ESP-IDF debug logic must be running on priority level 5 interrupt.
-  .. [2] If :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, ``xt_debugexception`` is used to fix the `live lock issue <https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_ in ESP32 ECO3.
+  .. [1] ESP-IDF debug logic can be configured to run on ``xt_highint4`` or ``xt_highint5`` in :menuitem:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`. Bluetooth's interrupt can be configured to run on priority level 4 by enabling :menuitem:`CONFIG_BTDM_CTRL_HLI`. If :menuitem:`CONFIG_BTDM_CTRL_HLI` is enabled, ESP-IDF debug logic must be running on priority level 5 interrupt.
+  .. [2] If :menuitem:`CONFIG_BTDM_CTRL_HLI` is enabled, ``xt_debugexception`` is used to fix the `live lock issue <https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_ in ESP32 ECO3.
 
 .. only:: not esp32
 
@@ -95,7 +95,7 @@ Notes
 
 .. only:: esp32
 
-  When :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, C code is also called from a high-priority interrupt, this is possible thanks to some additional protection added to it.
+  When :menuitem:`CONFIG_BTDM_CTRL_HLI` is enabled, C code is also called from a high-priority interrupt, this is possible thanks to some additional protection added to it.
 
 - Make sure your assembly code gets linked in. Indeed, as the free-to-use symbols are declared as weak, the linker may discard the file containing the symbol. This happens if the only symbol defined, or used from the user file is the ``xt_*`` free-to-use symbol. To avoid this, in the assembly file containing the ``xt_*`` symbol, define another symbol, like:
 

@@ -204,7 +204,7 @@ UART
 
         - ESP-IDF 将不再为旧版驱动提供及时的更新、错误修复或安全补丁。
         - 强烈建议用户尽快迁移到新版 I2C 驱动：``driver/i2c_master.h`` 和 ``driver/i2c_slave.h``。
-        - 如需暂时抑制编译警告，可在 menuconfig 中启用 ``Component config``  > ``Legacy Driver Configurations`` > ``Legacy I2C Driver Configurations`` > ``Suppress legacy driver deprecated warning``。
+        - 如需暂时抑制编译警告，可启用 :menuitem:`CONFIG_I2C_SUPPRESS_DEPRECATE_WARN`。
 
     新版 I2C 驱动主要改进了从机和主机的使用方式，详细内容请参考 :ref:`I2C 迁移指南 <migration_guide_i2c_driver_5_2>` 和 :doc:`I2C 驱动编程指南 <../../../api-reference/peripherals/i2c>`。
 
@@ -351,17 +351,17 @@ LCD
 SPI
 ---
 
-- :ref:`CONFIG_SPI_MASTER_IN_IRAM` 选项在 menuconfig 中默认不可见，并且依赖于 :ref:`CONFIG_FREERTOS_IN_IRAM`。这样修改是为了防止位于 IRAM 中的 SPI 函数调用位于 flash 中的 FreeRTOS 函数时可能发生的崩溃。
+- :menuitem:`CONFIG_SPI_MASTER_IN_IRAM` 选项在 menuconfig 中默认不可见，并且依赖于 :menuitem:`CONFIG_FREERTOS_IN_IRAM`。这样修改是为了防止位于 IRAM 中的 SPI 函数调用位于 flash 中的 FreeRTOS 函数时可能发生的崩溃。
 - 按照下列步骤，启用 SPI 主机 IRAM 优化：
 
     1. 在 menuconfig 中进入 ``Component config`` → ``FreeRTOS`` → ``Port``。
-    2. 启用 ``Place FreeRTOS functions in IRAM`` (:ref:`CONFIG_FREERTOS_IN_IRAM`)。
+    2. 启用 ``Place FreeRTOS functions in IRAM`` (:menuitem:`CONFIG_FREERTOS_IN_IRAM`)。
     3. 在 menuconfig 中进入 ``Component config`` → ``ESP-Driver:SPI Configurations``。
-    4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:ref:`CONFIG_SPI_MASTER_IN_IRAM`)。
+    4. 启用 ``Place transmitting functions of SPI master into IRAM`` (:menuitem:`CONFIG_SPI_MASTER_IN_IRAM`)。
 
     .. note::
 
-        启用 :ref:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
+        启用 :menuitem:`CONFIG_FREERTOS_IN_IRAM` 会显著增加 IRAM 使用量。在优化 SPI 性能时，需进行权衡。
 
 - ESP32 和 ESP32S2 上已弃用的 HSPI 和 VSPI 相关 IOMUX 引脚宏已被移除。
 
@@ -373,7 +373,7 @@ PSRAM
 SPI flash 驱动
 --------------
 
-- 已弃用的 ``enum`` 类型 ``esp_flash_speed_t`` 已被移除。主 flash 速度由 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 选项控制。
+- 已弃用的 ``enum`` 类型 ``esp_flash_speed_t`` 已被移除。主 flash 速度由 :menuitem:`CONFIG_ESPTOOLPY_FLASHFREQ` 选项控制。
 - 已弃用的头文件 ``esp_spi_flash.h`` 已被移除。请改用 ``spi_flash_mmap.h``。
 - 已弃用的 API ``spi_flash_dump_counters`` 已被移除。请改用 :cpp:func:`esp_flash_dump_counters`。
 - 已弃用的 API ``spi_flash_get_counters`` 已被移除。请改用 :cpp:func:`esp_flash_get_counters`。
@@ -437,4 +437,4 @@ USB
 
     TWAI 在 5.5 版本已经提供的新的驱动接口，支持更灵活的配置和更丰富的功能。旧版驱动不推荐再继续使用，请参考 5.5 迁移指南 :doc:`TWAI迁移指南 <../../release-5.x/5.5/peripherals>` 和新版驱动编程指南 :doc:`TWAI驱动编程指南 <../../../api-reference/peripherals/twai>` 进行移植。
 
-    若需要继续使用旧版驱动，可以打开配置项 :ref:`CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN` 以关闭编译警告。
+    若需要继续使用旧版驱动，可以打开配置项 :menuitem:`CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN` 以关闭编译警告。

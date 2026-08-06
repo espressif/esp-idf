@@ -64,8 +64,8 @@
 
  * ``magic_byte``：esp_bootloader_desc 结构体的魔术字节
  * ``reserved``：保留供 IDF 未来使用
- * ``secure_version``：引导加载程序防回滚功能使用的安全版本，请参阅:ref:`CONFIG_BOOTLOADER_ANTI_ROLLBACK_ENABLE`。
- * ``version``：引导加载程序版本，参见 :ref:`CONFIG_BOOTLOADER_PROJECT_VER`
+ * ``secure_version``：引导加载程序防回滚功能使用的安全版本，请参阅:menuitem:`CONFIG_BOOTLOADER_ANTI_ROLLBACK_ENABLE`。
+ * ``version``：引导加载程序版本，参见 :menuitem:`CONFIG_BOOTLOADER_PROJECT_VER`
  * ``idf_ver``：IDF 版本。[#f1]_
  * ``date`` 和 ``time``：编译日期和时间
  * ``reserved2``：保留供 IDF 未来使用

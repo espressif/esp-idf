@@ -241,7 +241,7 @@ As the basic usage has been covered, it's time to explore more advanced features
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source before going to sleep. As a result, the FIFO inside the UHCI can't work as expected.
+When power management is enabled, i.e., :menuitem:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source before going to sleep. As a result, the FIFO inside the UHCI can't work as expected.
 
 The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`uhci_receive` or :cpp:func:`uhci_transmit`, and release it in the transaction-done interrupt. That means, any UHCI transactions between these two functions are guaranteed to work correctly and stably.
 
@@ -250,7 +250,7 @@ Cache Safe
 
 By default, the interrupt on which UHCI relies is deferred when the Cache is disabled for reasons such as writing or erasing the main flash. Thus, the transaction-done interrupt fails to be handled in time, which is unacceptable in a real-time application. What is worse, when the UHCI transaction relies on **ping-pong** interrupt to successively encode or copy the UHCI buffer, a delayed interrupt can lead to an unpredictable result.
 
-There is a Kconfig option :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` that has the following features:
+There is a Kconfig option :menuitem:`CONFIG_UHCI_ISR_CACHE_SAFE` that has the following features:
 
 1. Enable the interrupt being serviced even when the cache is disabled
 2. Place all functions used by the ISR into IRAM [1]_
@@ -265,7 +265,7 @@ Use the :doc:`/api-guides/tools/idf-size` tool to check the code and data consum
 
 **Note that the following data are not exact values and are for reference only; they may differ on different chip models.**
 
-Resource consumption when :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` is enabled:
+Resource consumption when :menuitem:`CONFIG_UHCI_ISR_CACHE_SAFE` is enabled:
 
 .. list-table:: Resource Consumption
     :widths: 10 10 10 10 10 10 10 10 10
@@ -290,7 +290,7 @@ Resource consumption when :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` is enabled:
       - 175
       - 175
 
-Resource consumption when :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` is disabled:
+Resource consumption when :menuitem:`CONFIG_UHCI_ISR_CACHE_SAFE` is disabled:
 
 .. list-table:: Resource Consumption
     :widths: 10 10 10 10 10 10 10 10 10 10
@@ -320,7 +320,7 @@ Resource consumption when :ref:`CONFIG_UHCI_ISR_CACHE_SAFE` is disabled:
 Performance
 ^^^^^^^^^^^
 
-To improve the real-time response capability of interrupt handling, the UHCI driver provides the :ref:`CONFIG_UHCI_ISR_HANDLER_IN_IRAM` option. Enabling this option will place the interrupt handler in internal RAM, reducing the latency caused by cache misses when loading instructions from Flash.
+To improve the real-time response capability of interrupt handling, the UHCI driver provides the :menuitem:`CONFIG_UHCI_ISR_HANDLER_IN_IRAM` option. Enabling this option will place the interrupt handler in internal RAM, reducing the latency caused by cache misses when loading instructions from Flash.
 
 .. note::
 
@@ -334,7 +334,7 @@ The factory function :cpp:func:`uhci_new_controller`, :cpp:func:`uhci_register_e
 Other Kconfig Options
 ^^^^^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_UHCI_ENABLE_DEBUG_LOG` is allowed for the forced enabling of all debug logs for the UHCI driver, regardless of the global log level setting. Enabling this option can help developers obtain more detailed log information during the debugging process, making it easier to locate and resolve issues, but it will increase the size of the firmware binary.
+- :menuitem:`CONFIG_UHCI_ENABLE_DEBUG_LOG` is allowed for the forced enabling of all debug logs for the UHCI driver, regardless of the global log level setting. Enabling this option can help developers obtain more detailed log information during the debugging process, making it easier to locate and resolve issues, but it will increase the size of the firmware binary.
 
 Application Examples
 --------------------

@@ -19,7 +19,7 @@
 
 1. 移除导致孤立段的代码或数据（若未使用或不必要）。
 2. 使用 :ref:`链接器片段文件 <ldgen-linker-fragment-files>` 显式放置孤立段。
-3. 通过设置 :ref:`CONFIG_COMPILER_ORPHAN_SECTIONS` 为 ``warning`` 或 ``place`` 来抑制错误。
+3. 通过设置 :menuitem:`CONFIG_COMPILER_ORPHAN_SECTIONS` 为 ``warning`` 或 ``place`` 来抑制错误。
 
 .. warning::
 
@@ -83,4 +83,4 @@ ESP-IDF v6 使用了 esp-idf-kconfig v3，对配置文件 ``Kconfig`` 的语法�
 编译器选项
 ----------
 
-默认的编译器警告将被视为报错。配置选项 :ref:`CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS` 已被更改为 N。
+默认的编译器警告将被视为报错。配置选项 :menuitem:`CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS` 已被更改为 N。

@@ -343,7 +343,7 @@ If there is no log output, check
 - if the selected serial port is the correct one by using the method stated in `Check Port on Windows`_ and `Check Port on Linux and macOS`_
 - if the serial port is not being used by another program
 - if settings of the serial port in serial terminal programs are applicable to corresponding applications
-- if your application is expected to output some log. In details, if ``Component config`` > ``Log`` > ``Log Level`` > ``Default log verbosity (Info)`` is set to ``No output``, no log will be printed out. You can change this setting in ``menuconfig``.
+- if your application is expected to output some log. If :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` is set to ``No output``, no log will be printed.
 - if the log output has not been disabled (use :example:`hello world application <get-started/hello_world>` to test)
 
 Example Output

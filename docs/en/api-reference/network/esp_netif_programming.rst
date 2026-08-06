@@ -97,13 +97,13 @@ Initialize the module with the default configuration after connecting to the net
 
 .. note::
 
-    If you want to configure multiple SNTP servers, update the lwIP configuration option :ref:`CONFIG_LWIP_SNTP_MAX_SERVERS`.
+    If you want to configure multiple SNTP servers, update the lwIP configuration option :menuitem:`CONFIG_LWIP_SNTP_MAX_SERVERS`.
 
 
 Use DHCP-Obtained SNTP Server(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First, you need to enable the lwIP configuration option :ref:`CONFIG_LWIP_DHCP_GET_NTP_SRV`. Then, initialize the SNTP module with the DHCP option, without specifying an NTP server.
+First, you need to enable the lwIP configuration option :menuitem:`CONFIG_LWIP_DHCP_GET_NTP_SRV`. Then, initialize the SNTP module with the DHCP option, without specifying an NTP server.
 
 .. code-block:: c
 
@@ -158,11 +158,11 @@ This filtering is essential because the ESP-NETIF L2 TAP works alongside the IP 
 
 Initialization
 ^^^^^^^^^^^^^^
-To be able to use the ESP-NETIF L2 TAP interface, it needs to be enabled in Kconfig by :ref:`CONFIG_ESP_NETIF_L2_TAP` first and then registered by :cpp:func:`esp_vfs_l2tap_intf_register()` prior usage of any VFS function.
+To be able to use the ESP-NETIF L2 TAP interface, it needs to be enabled in Kconfig by :menuitem:`CONFIG_ESP_NETIF_L2_TAP` first and then registered by :cpp:func:`esp_vfs_l2tap_intf_register()` prior usage of any VFS function.
 
 ``open()``
 ^^^^^^^^^^
-Once the ESP-NETIF L2 TAP is registered, it can be opened at path name "/dev/net/tap". The same path name can be opened multiple times up to :ref:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with a different configuration may access the Data Link Layer frames.
+Once the ESP-NETIF L2 TAP is registered, it can be opened at path name "/dev/net/tap". The same path name can be opened multiple times up to :menuitem:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with a different configuration may access the Data Link Layer frames.
 
 The ESP-NETIF L2 TAP can be opened with the ``O_NONBLOCK`` file status flag to make sure the ``read()`` does not block. Note that the ``write()`` may block in the current implementation when accessing a Network interface since it is a shared resource among multiple ESP-NETIF L2 TAP file descriptors and IP stack, and there is currently no queuing mechanism deployed. The file status flag can be retrieved and modified using ``fcntl()``.
 
@@ -210,7 +210,7 @@ The following commands manipulate the status flags associated with the file desc
 
 ``read()``
 ^^^^^^^^^^
-Opened and configured ESP-NETIF L2 TAP file descriptor can be accessed by ``read()`` to get inbound frames. The read operation can be either blocking or non-blocking based on the actual state of the ``O_NONBLOCK`` file status flag. When the file status flag is set to blocking, the read operation waits until a frame is received and the context is switched to other tasks. When the file status flag is set to non-blocking, the read operation returns immediately. In such case, either a frame is returned if it was already queued or the function indicates the queue is empty. The number of queued frames associated with one file descriptor is limited by :ref:`CONFIG_ESP_NETIF_L2_TAP_RX_QUEUE_SIZE` Kconfig option. Once the number of queued frames reached a configured threshold, the newly arrived frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue management).
+Opened and configured ESP-NETIF L2 TAP file descriptor can be accessed by ``read()`` to get inbound frames. The read operation can be either blocking or non-blocking based on the actual state of the ``O_NONBLOCK`` file status flag. When the file status flag is set to blocking, the read operation waits until a frame is received and the context is switched to other tasks. When the file status flag is set to non-blocking, the read operation returns immediately. In such case, either a frame is returned if it was already queued or the function indicates the queue is empty. The number of queued frames associated with one file descriptor is limited by :menuitem:`CONFIG_ESP_NETIF_L2_TAP_RX_QUEUE_SIZE` Kconfig option. Once the number of queued frames reached a configured threshold, the newly arrived frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue management).
 
 | On success, ``read()`` returns the number of bytes read. Zero is returned when the size of the destination buffer is 0. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | * EBADF - not a valid file descriptor.
@@ -254,7 +254,7 @@ Opened ESP-NETIF L2 TAP file descriptor can be closed by the ``close()`` to free
 
 ``select()``
 ^^^^^^^^^^^^
-Select is used in a standard way, just :ref:`CONFIG_VFS_SUPPORT_SELECT` needs to be enabled to make the ``select()`` function available.
+Select is used in a standard way, just :menuitem:`CONFIG_VFS_SUPPORT_SELECT` needs to be enabled to make the ``select()`` function available.
 
 .. _esp_netif_l2tap_ext_buff:
 
@@ -340,7 +340,7 @@ Enabling the Event
 
 **Compile Time:**
 
-The feature can be completely disabled during compilation time using the flag :ref:`CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC` in the kconfig.
+The feature can be completely disabled during compilation time using the flag :menuitem:`CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC` in the kconfig.
 
 **Run Time:**
 

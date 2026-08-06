@@ -11,7 +11,7 @@ Time
 Log
 ---
 
-**Log V2** is introduced in this ESP-IDF version as an enhanced and optional logging implementation. It is fully compatible with **Log V1**, allowing projects to continue using **Log V1** without changes. Developers can enable **Log V2** via the Kconfig option :ref:`CONFIG_LOG_VERSION`. In future ESP-IDF versions, **Log V2** may become the default.
+**Log V2** is introduced in this ESP-IDF version as an enhanced and optional logging implementation. It is fully compatible with **Log V1**, allowing projects to continue using **Log V1** without changes. Developers can enable **Log V2** via the Kconfig option :menuitem:`CONFIG_LOG_VERSION`. In future ESP-IDF versions, **Log V2** may become the default.
 
 **Key Points**
 

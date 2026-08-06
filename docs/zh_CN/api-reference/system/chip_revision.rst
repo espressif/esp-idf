@@ -99,7 +99,7 @@ ESP-IDF 兼容性检查
 
 如果构建的应用程序需要支持特定芯片的多个版本，可通过 Kconfig 指定支持的最小和最大芯片版本号。
 
-最小芯片版本号可以通过 Kconfig 选项 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 来选择。设置最小芯片版本后，软件只能在较新的芯片版本上运行，以便支持某些功能或修复某些错误。
+最小芯片版本号可以通过 Kconfig 选项 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 来选择。设置最小芯片版本后，软件只能在较新的芯片版本上运行，以便支持某些功能或修复某些错误。
 
 最大芯片版本号无法指定，只能由当前使用的 ESP-IDF 版本自动决定。ESP-IDF 会拒绝启动任何超过最大芯片版本号的芯片版本。由于特定版本的 ESP-IDF 无法预知未来的芯片版本更新，因此最大芯片版本号通常设置为 ``maximum supported MAJOR version + 99``。可以设置 “忽略最大版本” eFuse 来绕过最大版本限制，但这不能确保软件正常工作。
 
@@ -119,7 +119,7 @@ EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中�
 要解决此问题，
 
 - 确保使用的芯片达到了要求的最低版本及以上。
-- 减小 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 的值并重建镜像，使镜像的版本与当前芯片版本兼容。
+- 减小 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 的值并重建镜像，使镜像的版本与当前芯片版本兼容。
 
 1. 如果应用程序所需的芯片版本不处于最小和最大芯片版本的区间范围内，会发生重启并显示以下消息：
 
@@ -134,8 +134,8 @@ EFuse 块版本号与芯片版本号类似，但是它主要影响在 eFuse 中�
 
 芯片版本号检查主要根据二级引导加载程序和应用程序二进制镜像中包含的 :cpp:type:`esp_image_header_t` 标头，其中记录了可以运行该软件的芯片版本号。这一标头有 3 个与版本相关的字段：
 
-- ``min_chip_rev`` - 镜像所需芯片的最小主版本号（但对于 ESP32-C3，该字段指次版本号）。其值由 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 确定。
-- ``min_chip_rev_full`` - 镜像所需芯片的最小版本号，格式为 ``major * 100 + minor``。其值由 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 确定。
+- ``min_chip_rev`` - 镜像所需芯片的最小主版本号（但对于 ESP32-C3，该字段指次版本号）。其值由 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 确定。
+- ``min_chip_rev_full`` - 镜像所需芯片的最小版本号，格式为 ``major * 100 + minor``。其值由 :menuitem:`CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MIN` 确定。
 - ``max_chip_rev_full`` - 镜像所需芯片的最大版本号，格式为 ``major * 100 + minor``。其值由 ``CONFIG_{IDF_TARGET_CFG_PREFIX}_REV_MAX_FULL`` 确定。用户无法对其进行修改，仅当 ESP-IDF 支持新版本时由乐鑫官方进行更改。
 
 而 eFuse 块版本的要求则存储在 :cpp:type:`esp_app_desc_t` 结构体中。该结构体对象位于应用程序的二进制进项文件中。由于 eFuse 块版本信息主要影响 ADC 校准，而二级引导加载程序的镜像不涉及 ADC，因此我们只需要检查应用程序镜像的 eFuse 块版本信息。有 2 个与 eFuse 块版本相关的字段：

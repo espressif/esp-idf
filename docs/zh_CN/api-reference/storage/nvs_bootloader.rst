@@ -31,7 +31,7 @@
 
     .. note::
 
-        在使用基于 HMAC 的方案进行上述流程时，可以直接调用 :cpp:func:`nvs_flash_secure_init` API 对默认和自定义 NVS 分区进行加密，而无需启用 NVS 加密相关配置选项（如 :ref:`CONFIG_NVS_ENCRYPTION`， :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC``， :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`）。
+        在使用基于 HMAC 的方案进行上述流程时，可以直接调用 :cpp:func:`nvs_flash_secure_init` API 对默认和自定义 NVS 分区进行加密，而无需启用 NVS 加密相关配置选项（如 :menuitem:`CONFIG_NVS_ENCRYPTION`， :menuitem:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC``， :menuitem:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`）。
 
 
 应用示例

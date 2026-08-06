@@ -35,7 +35,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 - 定义 :cpp:func:`esp_heap_trace_alloc_hook` 获取堆内存分配操作成功的提示。
 - 定义 :cpp:func:`esp_heap_trace_free_hook` 获取堆内存释放操作成功的提示。
 
-要启用此功能，请设置 :ref:`CONFIG_HEAP_USE_HOOKS` 选项。:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 具有弱声明（即 ``__attribute__((weak))``），因此无需为这两个钩子提供声明。鉴于从 ISR 中分配和释放堆内存在技术上是可行的（**但强烈不建议**），:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 可能会从 ISR 中调用。
+要启用此功能，请设置 :menuitem:`CONFIG_HEAP_USE_HOOKS` 选项。:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 具有弱声明（即 ``__attribute__((weak))``），因此无需为这两个钩子提供声明。鉴于从 ISR 中分配和释放堆内存在技术上是可行的（**但强烈不建议**），:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 可能会从 ISR 中调用。
 
 不建议在钩子函数中执行（或调用 API 函数执行）阻塞操作或堆内存分配与释放。一般而言，最好保持代码简洁，避免在钩子函数中进行复杂计算。
 
@@ -67,7 +67,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 用户可以使用 :cpp:func:`heap_caps_register_failed_alloc_callback` 注册回调函数，每次内存分配操作失败时都会调用该函数。
 
-此外，若启用 :ref:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS` 选项，可以在任何分配操作失败时，自动中止系统。
+此外，若启用 :menuitem:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS` 选项，可以在任何分配操作失败时，自动中止系统。
 
 要注册内存分配失败的回调函数，请参阅如下示例：
 
@@ -111,7 +111,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 断言
 ^^^^^^^^^^
 
-如 :component_file:`heap/multi_heap.c` 等堆的实现方式包含许多断言，堆内存损坏则断言失败。为高效检测堆内存损坏，请确保在项目配置中通过 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 选项启用断言。
+如 :component_file:`heap/multi_heap.c` 等堆的实现方式包含许多断言，堆内存损坏则断言失败。为高效检测堆内存损坏，请确保在项目配置中通过 :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 选项启用断言。
 
 如果堆完整性断言失败，将打印一行类似 ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c`` 的内容，打印的内存地址即内容损坏的堆结构地址。
 
@@ -135,7 +135,7 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 暂时提高堆内存损坏检测级别，可以进一步获取有关堆内存损坏错误的详细信息。
 
-在项目配置菜单中，可以在 ``Component config`` 下找到 ``Heap memory debugging`` 菜单，其中的 :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` 选项可以设置为以下三种级别：
+在项目配置菜单中，可以在 ``Component config`` 下找到 ``Heap memory debugging`` 菜单，其中的 :menuitem:`CONFIG_HEAP_CORRUPTION_DETECTION` 选项可以设置为以下三种级别：
 
 
 基本模式（无 canary 标记）
@@ -202,12 +202,12 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 KASAN 是一种由编译器辅助的堆内存和 DRAM 内存安全检查工具。启用后，GCC 会为内存加载和存储操作插入运行时检查，对照影子内存区域进行校验。一旦发生违规访问（缓冲区溢出、下溢、释放后使用等），会在访问发生处立即报告。
 
-可在 ``Component config`` > ``Compiler options`` > ``Enable Kernel Address Sanitizer (KASAN)`` 中启用该功能（参见 :ref:`CONFIG_COMPILER_KASAN`）。该选项目前标记为实验性功能，需先开启 ``Make experimental features visible``\ （参见 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`）。
+启用 :menuitem:`CONFIG_COMPILER_KASAN` 即可使用该功能。该选项目前标记为实验性功能，需先启用 :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES`。
 
 KASAN 在开发和调试阶段最为有用：
 
-- 通过可配置的分配红区检测堆内存越界访问（参见 :ref:`CONFIG_KASAN_HEAP_REDZONE_SIZE`）
-- 启用已释放内存块隔离队列后，可捕获释放后使用问题（参见 :ref:`CONFIG_KASAN_QUARANTINE_SIZE`）
+- 通过可配置的分配红区检测堆内存越界访问（参见 :menuitem:`CONFIG_KASAN_HEAP_REDZONE_SIZE`）
+- 启用已释放内存块隔离队列后，可捕获释放后使用问题（参见 :menuitem:`CONFIG_KASAN_QUARANTINE_SIZE`）
 - 会为大多数应用程序和组件代码插桩；底层 HAL/ROM/bootloader 代码会被自动排除
 
 需要权衡的方面：
@@ -216,7 +216,7 @@ KASAN 在开发和调试阶段最为有用：
 - 影子内存会占用约 42–64 KiB 的内部 DRAM（取决于目标芯片）
 - 运行时开销较大，请勿在量产固件中启用
 
-KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内存毒化功能，应将 :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` 保持为 ``Basic (no poisoning)``\ （默认值）。
+KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内存毒化功能，应将 :menuitem:`CONFIG_HEAP_CORRUPTION_DETECTION` 保持为 ``Basic (no poisoning)``\ （默认值）。
 
 如需进行人为故障注入和回归测试，请参阅 ``tools/test_apps/system/kasan_test`` 下的 ``kasan_test`` 应用程序。
 
@@ -226,11 +226,11 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
 堆任务跟踪
 ----------
 
-可以通过 menuconfig 启用堆任务跟踪功能：``Component config`` > ``Heap memory debugging`` > ``Enable heap task tracking`` （参见 :ref:`CONFIG_HEAP_TASK_TRACKING`）。
+可以通过 :menuitem:`CONFIG_HEAP_TASK_TRACKING` 启用堆任务跟踪功能。
 
 该功能允许用户跟踪自启动以来每个任务的堆内存使用情况，并提供一系列统计信息，这些信息可以通过 getter 函数获取，或直接输出到用户指定的流中。此功能有助于识别内存使用模式和潜在的内存泄漏。
 
-用户还可以通过 menuconfig 启用额外配置：``Component config`` > ``Heap memory debugging`` > ``Keep information about the memory usage of deleted tasks`` （参见 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`），以便在任务被删除后仍然保留其统计信息。
+用户还可以启用 :menuitem:`CONFIG_HEAP_TRACK_DELETED_TASKS`，以便在任务被删除后仍然保留其统计信息。
 
 .. note::
 
@@ -300,7 +300,7 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
   │          task_name │ ALIVE   │                    0 │              7152 │               1 │
   └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
 
-:cpp:func:`heap_caps_print_all_task_stat_overview` 可输出所有任务（若启用 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的堆使用概览。
+:cpp:func:`heap_caps_print_all_task_stat_overview` 可输出所有任务（若启用 :menuitem:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的堆使用概览。
 
 .. code-block:: text
 
@@ -362,7 +362,7 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
 
 用户可使用 :cpp:func:`heap_caps_get_single_task_stat` 获取指定任务的信息。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_single_task_stat` 的输出内容一致。
 
-用户可使用 :cpp:func:`heap_caps_get_all_task_stat` 获取所有任务（若启用 :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的统计信息概览。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_all_task_stat` 的输出内容一致。
+用户可使用 :cpp:func:`heap_caps_get_all_task_stat` 获取所有任务（若启用 :menuitem:`CONFIG_HEAP_TRACK_DELETED_TASKS`，则包括已删除任务）的统计信息概览。通过该 API 获取的信息与 :cpp:func:`heap_caps_print_all_task_stat` 的输出内容一致。
 
 每个 getter 函数都需要一个指向数据结构的指针，该结构用于堆任务跟踪收集指定任务（或所有任务）的统计信息。该数据结构包含指向数组的指针，用户可以选择静态或动态分配这些数组。
 
@@ -401,7 +401,7 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
 
 确定存在泄漏的代码后，请执行以下步骤：
 
-- 启用 :ref:`CONFIG_HEAP_TRACING_DEST` 选项。
+- 启用 :menuitem:`CONFIG_HEAP_TRACING_DEST` 选项。
 - 在程序早期调用函数 :cpp:func:`heap_trace_init_standalone` 注册一个可用于记录内存跟踪的缓冲区。
 - 在有内存泄漏之嫌的代码块前，调用函数 :cpp:func:`heap_trace_start` 记录系统中的所有内存分配和释放操作。
 - 在可疑代码执行完毕后调用 :cpp:func:`heap_trace_stop` 函数可停止跟踪内存的分配和释放。
@@ -564,11 +564,11 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    每个跟踪条目记录的调用栈深度可以在项目配置菜单下进行配置，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
+    每个跟踪条目记录的调用栈深度可以通过 :menuitem:`CONFIG_HEAP_TRACING_STACK_DEPTH` 进行配置。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    默认情况下，每个跟踪条目的调用栈深度为 0：不记录调用者 PC（仍会跟踪分配地址、大小等相关字段）。启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 后才能遍历调用栈，然后可在项目配置菜单下配置深度，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
+    默认情况下，每个跟踪条目的调用栈深度为 0：不记录调用者 PC（仍会跟踪分配地址、大小等相关字段）。启用 :menuitem:`CONFIG_ESP_SYSTEM_USE_FRAME_POINTER` 后才能遍历调用栈，然后可通过 :menuitem:`CONFIG_HEAP_TRACING_STACK_DEPTH` 配置深度。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
 
 最后，将打印“泄漏”的总字节数（即在跟踪期间分配但未释放的总字节数），以及它所代表的总分配次数。
 
@@ -577,28 +577,29 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
 
 默认情况下，堆追踪使用一个静态分配的双向链表来存储追踪记录。这种方式的缺点是，当链表中的记录条目数量增加时，查找特定记录的耗时也会随之增加，从而导致运行性能下降。因此，在需要存储大量记录时，双向链表的使用效率很低（甚至可能导致功能无法使用，因为从列表中检索条目所需的时间会阻碍应用程序的正常运行）。
 
-为了解决这个问题，可以前往 ``Component config`` > ``Heap Memory Debugging`` 配置菜单 > 启用 :ref:`CONFIG_HEAP_TRACE_HASH_MAP` 选项，使用哈希表机制来存储记录。这样就可以在不严重影响性能的情况下追踪大量记录。
+为了解决这个问题，可以启用 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP` 选项，使用哈希表机制来存储记录。这样就可以在不严重影响性能的情况下追踪大量记录。
 
 每个哈希表条目是一个单向链表，用于存储具有相同哈希 ID 的记录。
 
-每条记录的哈希 ID 是基于它们追踪的内存指针计算的。使用的哈希函数基于修改后的 Fowler-Noll-Vo 哈希函数，确保了所有记录在范围 [0, 哈希表大小) 内均匀分布。其中哈希表大小可以前往项目配置菜单 ``Component config`` > ``Heap Memory Debugging`` > 设置 :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 来定义。
+每条记录的哈希 ID 是基于它们追踪的内存指针计算的。使用的哈希函数基于修改后的 Fowler-Noll-Vo 哈希函数，确保了所有记录在范围 [0, 哈希表大小) 内均匀分布。其中哈希表大小可以通过 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 来定义。
 
 .. note::
 
   .. list::
 
-    - 选项 :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 定义了哈希表中的条目数量。记录的总数量仍由用户在调用 :cpp:func:`heap_trace_init_standalone` 时定义。如果最大记录数为 ``N``，而哈希表的条目数为 ``H``，那么每个条目最多可包含 ``N / H`` 条记录。
+    - 选项 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 定义了哈希表中的条目数量。记录的总数量仍由用户在调用 :cpp:func:`heap_trace_init_standalone` 时定义。如果最大记录数为 ``N``，而哈希表的条目数为 ``H``，那么每个条目最多可包含 ``N / H`` 条记录。
     - 哈希表是对双向链表的补充，而无法替代双向链表。因为使用哈希表可能会导致显著的内存开销。
-    :SOC_SPIRAM_SUPPORTED: - 存储哈希表所用的内存是动态分配的（默认分配在内部内存中），但用户可以通过前往 ``Component config`` > ``Heap Memory Debugging`` > 设置:ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` 选项，将哈希表强制存储在外部内存中（此选项仅在启用了 :ref:`CONFIG_SPIRAM` 的条件下可用）。
+    :SOC_SPIRAM_SUPPORTED: - 存储哈希表所用的内存是动态分配的（默认分配在内部内存中），但用户可以通过 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` 选项，将哈希表强制存储在外部内存中（此选项仅在启用了 :menuitem:`CONFIG_SPIRAM` 的条件下可用）。
 
 主机模式
 ^^^^^^^^^^^^^^^
 
 确定存在泄漏的代码后，请执行以下步骤：
 
-- 在项目配置菜单中，前往 ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` 并选择 ``Host-Based``。
-- 在项目配置菜单中，前往 ``Component config`` > ``ESP Trace Configuration`` > ``Application Level Tracing`` > ``Data Destination`` :ref:`CONFIG_APPTRACE_DESTINATION` 并选择 ``JTAG``。
-- 在项目配置菜单中，前往 ``Component config`` > ``ESP Trace Configuration`` > ``Trace library`` 并选择 ``SEGGER SystemView``。
+- 将 :menuitem:`CONFIG_HEAP_TRACING_DEST` 设置为 ``Host-Based``。
+- 将 :menuitem:`CONFIG_APPTRACE_DESTINATION` 设置为 ``JTAG``。
+- 将 ``espressif/esp_sysview`` 托管组件依赖添加到 ``idf_component.yml``。
+- 启用 :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL`。
 - 在程序早期，调用函数 :cpp:func:`heap_trace_init_tohost`，初始化 JTAG 堆内存跟踪模块。
 - 在有内存泄漏之嫌的代码块前，调用函数 :cpp:func:`heap_trace_start` 开始记录系统中的内存分配和释放操作。
 
@@ -776,11 +777,11 @@ KASAN 使用自己的堆内存钩子和红区方案。请勿同时启用堆内�
 
 运行堆内存跟踪时，堆内存分配或释放操作的速度明显变慢。增加为各内存分配的栈帧深度（见上文）也会造成这种性能影响。
 
-为减轻堆内存跟踪运行时的性能损失，请启用 :ref:`CONFIG_HEAP_TRACE_HASH_MAP`。此时，将使用哈希映射机制处理堆内存跟踪记录，减少堆内存分配或释放操作的执行时长。设置 :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 的值可以调整哈希映射的大小。
+为减轻堆内存跟踪运行时的性能损失，请启用 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP`。此时，将使用哈希映射机制处理堆内存跟踪记录，减少堆内存分配或释放操作的执行时长。设置 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` 的值可以调整哈希映射的大小。
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-  默认情况下，哈希映射会放置在内部 RAM 中，启用 :ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` 时也可将其放置在外部 RAM 中。要启用此配置，请确保已启用 :ref:`CONFIG_SPIRAM` 和 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`。
+  默认情况下，哈希映射会放置在内部 RAM 中，启用 :menuitem:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM` 时也可将其放置在外部 RAM 中。要启用此配置，请确保已启用 :menuitem:`CONFIG_SPIRAM` 和 :menuitem:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`。
 
 内存泄漏误报
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^

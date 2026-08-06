@@ -41,9 +41,9 @@ Protocomm 为以下各种传输提供框架：
 
 关于启用/禁用相应的安全版本，请参阅 protocomm 组件的项目配置菜单。相应配置选项如下：
 
-    * 支持 ``protocomm_security0``，该版本无安全功能：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`，该选项默认启用。
-    * 支持 ``protocomm_security1``，使用 Curve25519 密钥交换和 AES-CTR 加密/解密：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1`，该选项默认启用。
-    * 支持 ``protocomm_security2``，使用基于 SRP6a 的密钥交换和 AES-GCM 加密/解密：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`。
+    * 支持 ``protocomm_security0``，该版本无安全功能：:menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`，该选项默认启用。
+    * 支持 ``protocomm_security1``，使用 Curve25519 密钥交换和 AES-CTR 加密/解密：:menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1`，该选项默认启用。
+    * 支持 ``protocomm_security2``，使用基于 SRP6a 的密钥交换和 AES-GCM 加密/解密：:menuitem:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`。
 
 .. note::
 

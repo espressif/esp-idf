@@ -150,7 +150,7 @@ Migration Options
 
 **Option 1 (Recommended)** — Move connection-time logic into a dedicated post-handshake callback:
 
-1. Enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in menuconfig.
+1. Enable :menuitem:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in menuconfig.
 2. Register a ``ws_post_handshake_cb`` on the ``httpd_uri_t`` struct. The frame handler remains clean with no ``HTTP_GET`` check.
 
 .. code-block:: c
@@ -176,7 +176,7 @@ Migration Options
 
 **Option 2 (Minimal change)** — Set ``.ws_post_handshake_cb`` to the same function as ``.handler``:
 
-1. Enable :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in menuconfig.
+1. Enable :menuitem:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` in menuconfig.
 2. Set ``.ws_post_handshake_cb = ws_handler`` in the URI registration. The existing ``if (req->method == HTTP_GET)`` check inside the handler continues to work without any further code changes.
 
 .. code-block:: c

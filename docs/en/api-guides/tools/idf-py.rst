@@ -134,7 +134,7 @@ When no ``*_flashed.bin`` files are present, ``idf.py flash`` configures esptool
 
 After each successful flash, the build system saves copies of all flashed files (bootloader, partition table, app, and any other assets) with an ``_flashed`` suffix in the build directory (e.g., ``bootloader_flashed.bin``, ``partition-table_flashed.bin``). These are used automatically on the next ``idf.py flash`` for fast reflashing.
 
-Fast reflashing works with or without the :ref:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` option. Enabling that option can further improve reflash effectiveness by laying out the application binary so that changes are localized. This results in less flash sectors needing to be rewritten. This option may increase the size of the application binary and is not recommended for production builds.
+Fast reflashing works with or without the :menuitem:`CONFIG_APP_BUILD_MINIMIZE_BINARY_CHANGES` option. Enabling that option can further improve reflash effectiveness by laying out the application binary so that changes are localized. This results in less flash sectors needing to be rewritten. This option may increase the size of the application binary and is not recommended for production builds.
 
 Full Flash
 ^^^^^^^^^^

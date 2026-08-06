@@ -19,7 +19,7 @@ SPI0/1 总线上可能发生三种活动：
     .. list::
 
         - 调用非加密 SPI flash 读取 API（:cpp:func:`esp_flash_read` 等）
-        :esp32: - 或 SPI1 总线上的其他驱动程序用于用户定义的 SPI 操作（启用实验性功能 :ref:`CONFIG_SPI_FLASH_SHARE_SPI1_BUS`）
+        :esp32: - 或 SPI1 总线上的其他驱动程序用于用户定义的 SPI 操作（启用实验性功能 :menuitem:`CONFIG_SPI_FLASH_SHARE_SPI1_BUS`）
 
 - 缓存读取（通过 SPI0）。以下 API 和操作可以触发缓存读取：
 

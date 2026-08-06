@@ -122,7 +122,7 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
 
         The ECDSA_DS peripheral of {IDF_TARGET_NAME} supports both ECDSA-P192 and ECDSA-P256 operations, but only ECDSA-P256 operations are enabled by default. You can enable ECDSA-P192 operations through the following configuration options:
 
-    - :ref:`CONFIG_ESP_ECDSA_ENABLE_P192_CURVE` enables support for ECDSA-P192 curve operations, allowing the device to perform ECDSA operations with both 192-bit and 256-bit curves. However, if ECDSA-P192 operations have already been permanently disabled during eFuse write protection, enabling this option can not re-enable ECDSA-P192 curve operations.
+    - :menuitem:`CONFIG_ESP_ECDSA_ENABLE_P192_CURVE` enables support for ECDSA-P192 curve operations, allowing the device to perform ECDSA operations with both 192-bit and 256-bit curves. However, if ECDSA-P192 operations have already been permanently disabled during eFuse write protection, enabling this option can not re-enable ECDSA-P192 curve operations.
 
     - :cpp:func:`esp_efuse_enable_ecdsa_p192_curve_mode()` enables ECDSA-P192 curve operations programmatically by writing the appropriate value to the eFuse, allowing both P-192 and P-256 curve operations. Note that this API will fail if the eFuse is already write-protected.
 

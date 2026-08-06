@@ -142,7 +142,7 @@
 
     默认情况下，禁用 cache 时，写入/擦除 flash 等原因将导致温度传感器中断延迟，事件回调函数也将延迟执行。在实时应用程序中，应避免此类情况。
 
-    因此，可以启用 Kconfig 选项 :ref:`CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE`，该选项：
+    因此，可以启用 Kconfig 选项 :menuitem:`CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE`，该选项：
 
     1. 支持在禁用 cache 时启用所需中断
     2. 支持将 ISR 使用的所有函数存放在 IRAM 中

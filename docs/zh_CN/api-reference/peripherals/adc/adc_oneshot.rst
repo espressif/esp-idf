@@ -163,7 +163,7 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
     :SOC_ADC_DMA_SUPPORTED: - 一个 ADC 单元每次只能在一种操作模式下运行，可以是连续模式或单次模式。:cpp:func:`adc_oneshot_start` 提供了保护措施。
     :SOC_ADC_DIFF_SUPPORTED: - 在单端模式下，如果使用 N 端通道作为输入接口，其原始数据极性是反向的。输入电压范围为 -2 V ~ 2 V 时，N 端 raw 值为 4393~0。请使用 ADC 校准 API。
     :esp32 or esp32s2 or esp32s3: - Wi-Fi 也使用 ADC2，:cpp:func:`adc_oneshot_read` 提供了 Wi-Fi 驱动与 ADC 单次转换模式驱动间的保护。
-    :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 单次转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3`，强制使用 ADC2。
+    :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 单次转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :menuitem:`CONFIG_ADC_ONESHOT_FORCE_USE_ADC2_ON_C3`，强制使用 ADC2。
     :esp32: - ESP32-DevKitC：GPIO0 已用于自动烧录功能，不能用于 ADC 单次转换模式。
     :esp32: - ESP-WROVER-KIT：GPIO0、GPIO2、GPIO4 和 GPIO15 已有其他用途，不能用于 ADC 单次转换模式。
 
@@ -172,7 +172,7 @@ ADC 单次转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 电源管理
 ^^^^^^^^
 
-启用电源管理，即启用 :ref:`CONFIG_PM_ENABLE` 时，系统在空闲状态下可能会调整系统时钟频率。然而，ADC 单次转换模式驱动以轮询例程运行，:cpp:func:`adc_oneshot_read` 会不断检查 CPU 是否完成读取，直到函数返回。在此期间，ADC 单次转换模式驱动程序所在的任务不会受阻塞。因此，在读取时时钟频率保持稳定。
+启用电源管理，即启用 :menuitem:`CONFIG_PM_ENABLE` 时，系统在空闲状态下可能会调整系统时钟频率。然而，ADC 单次转换模式驱动以轮询例程运行，:cpp:func:`adc_oneshot_read` 会不断检查 CPU 是否完成读取，直到函数返回。在此期间，ADC 单次转换模式驱动程序所在的任务不会受阻塞。因此，在读取时时钟频率保持稳定。
 
 
 .. _adc-oneshot-iram-safe:
@@ -201,7 +201,7 @@ flash 写入/擦除、OTA 等原因都可能导致 cache 禁用，此时，默�
 Kconfig 选项
 ^^^^^^^^^^^^
 
-- :ref:`CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM` 决定了放置 ADC 快速读取函数的位置，即 IRAM 或 flash 中，详情请参阅 :ref:`adc-oneshot-iram-safe`。
+- :menuitem:`CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM` 决定了放置 ADC 快速读取函数的位置，即 IRAM 或 flash 中，详情请参阅 :ref:`adc-oneshot-iram-safe`。
 
 
 应用示例

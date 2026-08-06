@@ -65,11 +65,11 @@ ESP-IDF 提供了一套跟踪系统，用于程序行为分析和调试。以较
 
 1. 在项目的 ``idf_component.yml`` 中添加 ``espressif/esp_sysview`` 依赖。
 
-2. 启用 :ref:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` 以选择外部跟踪库。
+2. 启用 :menuitem:`CONFIG_ESP_TRACE_LIB_EXTERNAL <CONFIG_ESP_TRACE_LIB_EXTERNAL>` 以选择外部跟踪库。
 
-3. 启用 :ref:`CONFIG_ESP_TRACE_TRANSPORT_APPTRACE <CONFIG_ESP_TRACE_TRANSPORT_APPTRACE>` 以选择 apptrace 传输。
+3. 启用 :menuitem:`CONFIG_ESP_TRACE_TRANSPORT_APPTRACE <CONFIG_ESP_TRACE_TRANSPORT_APPTRACE>` 以选择 apptrace 传输。
 
-4. 启用 :ref:`CONFIG_APPTRACE_DEST_JTAG <CONFIG_APPTRACE_DEST_JTAG>` 以将数据目标设为 JTAG。
+4. 启用 :menuitem:`CONFIG_APPTRACE_DEST_JTAG <CONFIG_APPTRACE_DEST_JTAG>` 以将数据目标设为 JTAG。
 
 5. 构建并烧录应用程序：
 

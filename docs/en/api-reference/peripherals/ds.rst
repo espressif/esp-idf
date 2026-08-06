@@ -51,7 +51,7 @@ The APIs :cpp:func:`esp_ds_sign` and :cpp:func:`esp_ds_start_sign` calculate a p
 
 **PSA Crypto driver**
 
-The RSA_DS peripheral is also exposed via the **PSA Crypto RSA_DS driver**, so you can use standard PSA APIs for signing (PKCS#1 v1.5 or PSS) and RSA decryption (PKCS#1 v1.5 or OAEP). Enable ``CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL`` in ``Component config`` > ``mbedTLS``. For using the RSA_DS peripheral with ESP-TLS (e.g. TLS client authentication), see :ref:`digital-signature-with-esp-tls` in the ESP-TLS documentation.
+The RSA_DS peripheral is also exposed via the **PSA Crypto RSA_DS driver**, so you can use standard PSA APIs for signing (PKCS#1 v1.5 or PSS) and RSA decryption (PKCS#1 v1.5 or OAEP). Enable :menuitem:`CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL`. For using the RSA_DS peripheral with ESP-TLS (e.g. TLS client authentication), see :ref:`digital-signature-with-esp-tls` in the ESP-TLS documentation.
 
 .. _configure-the-ds-peripheral:
 

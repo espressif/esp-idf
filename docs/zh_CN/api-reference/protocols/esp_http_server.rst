@@ -93,7 +93,7 @@ HTTP 服务器具有长连接的功能，允许重复使用同一个连接（会
 WebSocket 服务器
 ----------------
 
-HTTP 服务器组件提供 websocket 支持。可以在 menuconfig 中使用 :ref:`CONFIG_HTTPD_WS_SUPPORT` 选项启用 websocket 功能。
+HTTP 服务器组件提供 websocket 支持。可以在 menuconfig 中使用 :menuitem:`CONFIG_HTTPD_WS_SUPPORT` 选项启用 websocket 功能。
 
 :example:`protocols/http_server/ws_echo_server` 演示了如何使用 HTTP 服务器创建一个 WebSocket 回显服务器，该服务器在本地网络上启动，与 WebSocket 客户端进行交互，回显接收到的 WebSocket 帧。
 
@@ -105,7 +105,7 @@ HTTP 服务器组件为 WebSocket 端点提供了握手前回调 (pre-handshake 
 
 握手前回调函数可用于身份认证、权限校验及其他检查。如果回调返回 :c:macro:`ESP_OK`，WebSocket 握手将继续进行；如果返回其他值，则握手中止，连接也会关闭。
 
-要使用 WebSocket 握手前回调，需在项目配置中启用 :ref:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` 选项。
+要使用 WebSocket 握手前回调，需在项目配置中启用 :menuitem:`CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT` 选项。
 
 WebSocket 握手后回调
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -114,7 +114,7 @@ WebSocket 握手后回调
 
 此时连接已升级为 WebSocket，服务器已返回 WebSocket 握手响应。该握手后回调可用于记录日志、发送初始消息或执行其他初始化任务。
 
-要使用 WebSocket 握手后回调功能，需在项目配置中启用 :ref:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` 选项。
+要使用 WebSocket 握手后回调功能，需在项目配置中启用 :menuitem:`CONFIG_HTTPD_WS_POST_HANDSHAKE_CB_SUPPORT` 选项。
 
 .. code-block:: c
 

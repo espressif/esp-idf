@@ -13,7 +13,7 @@ Peripherals
     - The new driver is in ``esp_driver_touch_sens`` component and the include path is ``driver/touch_sens.h``.
     - The legacy driver is still available in the previous include path ``driver/touch_sensor.h``.
 
-    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/touch_sensor.h``. However, by default, including ``driver/touch_sensor.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option :ref:`CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN`.
+    Although it is recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/touch_sensor.h``. However, by default, including ``driver/touch_sensor.h`` triggers the build warning below. The warning can be suppressed by the Kconfig option :menuitem:`CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN`.
 
     The major changes are listed as follows:
 
@@ -57,5 +57,5 @@ Peripherals
 
     Although we recommend using the new TWAI driver APIs, the legacy driver is still available. To use the legacy driver, include the header file ``driver/twai.h``. When using the legacy driver, please note the following:
 
-    - The new and legacy drivers are not compatible and must not be used together. Mixing them will trigger warnings during startup, and may even cause crashes and system reboots. To suppress this compatibility check, you may enable the configuration option :ref:`CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK`.
+    - The new and legacy drivers are not compatible and must not be used together. Mixing them will trigger warnings during startup, and may even cause crashes and system reboots. To suppress this compatibility check, you may enable the configuration option :menuitem:`CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK`.
     - The legacy driver will no longer receive new features, such as TWAI FD (Flexible Data-rate) support.

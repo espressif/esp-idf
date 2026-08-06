@@ -80,7 +80,7 @@ Wi-Fi AMSDU
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    {IDF_TARGET_NAME} 支持接收和发送 AMSDU。开启 AMSDU 发送比较消耗内存，默认不开启 AMSDU 发送。可通过选项 :ref:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` 使能 AMSDU 发送功能， 但是使能 AMSDU 发送依赖于 :ref:`CONFIG_SPIRAM` 。
+    {IDF_TARGET_NAME} 支持接收和发送 AMSDU。开启 AMSDU 发送比较消耗内存，默认不开启 AMSDU 发送。可通过选项 :menuitem:`CONFIG_ESP_WIFI_AMSDU_TX_ENABLED` 使能 AMSDU 发送功能， 但是使能 AMSDU 发送依赖于 :menuitem:`CONFIG_SPIRAM` 。
 
 Wi-Fi 分片
 -------------------------

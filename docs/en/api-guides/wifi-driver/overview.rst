@@ -335,7 +335,7 @@ IP_EVENT_STA_LOST_IP
 
 This event arises when the IPV4 address becomes invalid.
 
-IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer (configurable via :ref:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE` and :ref:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`). If the IPV4 address is got before the timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
+IP_EVENT_STA_LOST_IP does not arise immediately after the Wi-Fi disconnects. Instead, it starts an IPV4 address lost timer (configurable via :menuitem:`CONFIG_ESP_NETIF_LOST_IP_TIMER_ENABLE` and :menuitem:`CONFIG_ESP_NETIF_IP_LOST_TIMER_INTERVAL`). If the IPV4 address is got before the timer expires, IP_EVENT_STA_LOST_IP does not happen. Otherwise, the event arises when the IPV4 address lost timer expires.
 
 Generally, the application can ignore this event, because it is just a debug event to inform that the IPV4 address is lost.
 
@@ -552,7 +552,7 @@ API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the c
   * - ssid_hidden
     - If ssid_hidden is 1, AP does not broadcast the SSID; otherwise, it does broadcast the SSID.
   * - max_connection
-    - The max number of stations allowed to connect in. {IDF_TARGET_NAME} supports up to {IDF_TARGET_MAX_CONN_STA_NUM} (``ESP_WIFI_MAX_CONN_NUM``) Wi-Fi connections. Please note that soft-AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is {IDF_TARGET_SUPPORT_ENCRYPT_NUM}, if :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= {IDF_TARGET_SUB_MAX_NUM_FROM_KEYS}, the max_connection can be set up to {IDF_TARGET_MAX_CONN_STA_NUM}, otherwise the max_connection can be set up to ({IDF_TARGET_SUPPORT_ENCRYPT_NUM} - :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
+    - The max number of stations allowed to connect in. {IDF_TARGET_NAME} supports up to {IDF_TARGET_MAX_CONN_STA_NUM} (``ESP_WIFI_MAX_CONN_NUM``) Wi-Fi connections. Please note that soft-AP and ESP-NOW share the same encryption hardware keys, so the max_connection parameter will be affected by the :menuitem:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`. The total number of encryption hardware keys is {IDF_TARGET_SUPPORT_ENCRYPT_NUM}, if :menuitem:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` <= {IDF_TARGET_SUB_MAX_NUM_FROM_KEYS}, the max_connection can be set up to {IDF_TARGET_MAX_CONN_STA_NUM}, otherwise the max_connection can be set up to ({IDF_TARGET_SUPPORT_ENCRYPT_NUM} - :menuitem:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM`).
   * - beacon_interval
     - Beacon interval; the value is 100 ~ 60000 ms, with default value being 100 ms. If the value is out of range, AP defaults it to 100 ms.
 

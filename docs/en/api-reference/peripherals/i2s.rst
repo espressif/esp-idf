@@ -258,7 +258,7 @@ The public APIs are all channel-level APIs. The channel handle :cpp:type:`i2s_ch
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2S before entering Light-sleep, thus potentially changing the I2S signals and leading to transmitting or receiving invalid data.
+When the power management is enabled (i.e., :menuitem:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2S before entering Light-sleep, thus potentially changing the I2S signals and leading to transmitting or receiving invalid data.
 
 The I2S driver can prevent the system from changing or stopping the source clock by acquiring a power management lock. When the source clock is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX` and when the source clock is APLL (if supported), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. The driver guarantees that the power management lock is acquired when the channel is enabled by :cpp:func:`i2s_channel_enable`. Likewise, the driver releases the lock when the channel is disabled by :cpp:func:`i2s_channel_disable`, which keeps the I2S source clock stable while the channel is running.
 
@@ -416,7 +416,7 @@ IRAM Safe
 
 By default, the I2S interrupt will be deferred when the cache is disabled for reasons like writing/erasing flash. Thus the EOF interrupt will not get executed in time.
 
-To avoid such case in real-time applications, you can enable the Kconfig option :ref:`CONFIG_I2S_ISR_IRAM_SAFE` that:
+To avoid such case in real-time applications, you can enable the Kconfig option :menuitem:`CONFIG_I2S_ISR_IRAM_SAFE` that:
 
 1. Keeps the interrupt being serviced even when the cache is disabled.
 
@@ -432,8 +432,8 @@ All the public I2S APIs are guaranteed to be thread safe by the driver, which me
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_I2S_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled. See :ref:`i2s-iram-safe` for more information.
-- :ref:`CONFIG_I2S_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
+- :menuitem:`CONFIG_I2S_ISR_IRAM_SAFE` controls whether the default ISR handler can work when the cache is disabled. See :ref:`i2s-iram-safe` for more information.
+- :menuitem:`CONFIG_I2S_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enable this option increases the firmware binary size.
 
 Application Example
 -------------------

@@ -15,7 +15,7 @@ The ULP LP core coprocessor has the following features:
 
 .. only:: SOC_LP_CORE_HAS_PMP
 
-    On supported targets, the LP core includes RISC-V Physical Memory Protection (PMP). Enable :ref:`CONFIG_ULP_LP_CORE_MEMPROT` to apply a deny-by-default layout at LP-core startup: LP RAM is split into an executable region (code and read-only data) and a read-write region (writable data, stack, and shared memory), LP peripheral address space is read-write, and an optional region covers HP UART MMIO when using :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. It cannot be used together with :ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM`. Addresses that do not fall into an allowed region cause a load, store, or instruction access fault.
+    On supported targets, the LP core includes RISC-V Physical Memory Protection (PMP). Enable :menuitem:`CONFIG_ULP_LP_CORE_MEMPROT` to apply a deny-by-default layout at LP-core startup: LP RAM is split into an executable region (code and read-only data) and a read-write region (writable data, stack, and shared memory), LP peripheral address space is read-write, and an optional region covers HP UART MMIO when using :menuitem:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. It cannot be used together with :menuitem:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM`. Addresses that do not fall into an allowed region cause a load, store, or instruction access fault.
 
 Compiling Code for the ULP LP Core
 ----------------------------------
@@ -109,7 +109,7 @@ Building Your Project
 
 To compile and build your project:
 
-1. Enable :ref:`CONFIG_ULP_COPROC_ENABLED` in menuconfig, and inside ``ULP Coprocessor types`` menu, select :ref:`CONFIG_ULP_COPROC_TYPE_LP_CORE`. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+1. Enable :menuitem:`CONFIG_ULP_COPROC_ENABLED` and select :menuitem:`CONFIG_ULP_COPROC_TYPE_LP_CORE`. The :menuitem:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 2. Build the application as usual (e.g., ``idf.py app``).
 
@@ -209,13 +209,13 @@ Once the program is loaded into LP memory, the application can be configured and
 Running the LP Core from HP Memory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:ref:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` allows placing most of the LP core application in reserved HP SRAM instead of LP RAM. This can be useful when the application is too large to fit in LP RAM, while still keeping the LP reset and handler code in LP memory.
+:menuitem:`CONFIG_ULP_COPROC_RUN_FROM_HP_MEM` allows placing most of the LP core application in reserved HP SRAM instead of LP RAM. This can be useful when the application is too large to fit in LP RAM, while still keeping the LP reset and handler code in LP memory.
 
-When this option is enabled, :ref:`CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES` reserves a window at the top of HP SRAM for the LP core binary. During :cpp:func:`ulp_lp_core_load_binary`, LP-memory segments are still loaded into the reserved LP region, while data and code segments mapped to the HP-memory window are copied into the reserved HP SRAM region.
+When this option is enabled, :menuitem:`CONFIG_ULP_COPROC_RESERVE_HP_MEM_BYTES` reserves a window at the top of HP SRAM for the LP core binary. During :cpp:func:`ulp_lp_core_load_binary`, LP-memory segments are still loaded into the reserved LP region, while data and code segments mapped to the HP-memory window are copied into the reserved HP SRAM region.
 
 This mode has an important limitation: the LP core cannot keep running while the chip is in Deep-sleep, because HP SRAM is powered down in that sleep mode. Use this mode for cases where the LP core only needs to run while the HP system remains powered, and keep the default LP-memory-only mode for Deep-sleep use cases.
 
-:ref:`CONFIG_ULP_LP_CORE_MEMPROT` cannot be enabled together with this HP-memory mode.
+:menuitem:`CONFIG_ULP_LP_CORE_MEMPROT` cannot be enabled together with this HP-memory mode.
 
 ULP LP Core Program Flow
 ------------------------
@@ -312,13 +312,13 @@ When programming the LP core, it can sometimes be challenging to figure out why 
 
     * Use the LP UART to print: the LP core has access to the LP UART peripheral, which can be used for printing information independently of the main CPU sleep state. See :example:`system/ulp/lp_core/lp_uart/lp_uart_print` for an example of how to use this driver.
 
-* Routing :cpp:func:`lp_core_printf` to the HP-Core console UART with :ref:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. This allows you to easily print LP core information to the already connected HP-Core console UART. The drawback of this approach is that it requires the main CPU to be awake and since there is no synchronization between the LP and HP cores, the output may be interleaved.
+* Routing :cpp:func:`lp_core_printf` to the HP-Core console UART with :menuitem:`CONFIG_ULP_HP_UART_CONSOLE_PRINT`. This allows you to easily print LP core information to the already connected HP-Core console UART. The drawback of this approach is that it requires the main CPU to be awake and since there is no synchronization between the LP and HP cores, the output may be interleaved.
 
 * Share program state through shared variables: as described in :ref:`ulp-lp-core-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
 
 .. only:: SOC_ULP_LP_UART_SUPPORTED
 
-    * Panic handler: the LP core has a panic handler that can dump the state of the LP core registers by the LP UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP core application. To recover a backtrace from the panic dump, it is possible to use ``idf.py monitor``.
+    * Panic handler: the LP core has a panic handler that can dump the state of the LP core registers by the LP UART when an exception is detected. To enable the panic handler, set the :menuitem:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP core application. To recover a backtrace from the panic dump, it is possible to use ``idf.py monitor``.
 
 .. warning::
 

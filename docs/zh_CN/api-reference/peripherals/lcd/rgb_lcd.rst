@@ -256,7 +256,7 @@ bounce buffer 与 PSRAM frame buffer
 
 .. note::
 
-    强烈建议在此模式下启用 Kconfig 选项：:ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`，开启“PSRAM XIP（就地执行）”功能，使 CPU 能从 PSRAM 里而不是主 flash 中提取指令和只读数据。此外，即使想通过 SPI 1 写入主 flash，外部存储器 cache 也不会被禁用，应用程序便能正常显示 OTA 进度条。
+    强烈建议在此模式下启用 Kconfig 选项：:menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM`，开启“PSRAM XIP（就地执行）”功能，使 CPU 能从 PSRAM 里而不是主 flash 中提取指令和只读数据。此外，即使想通过 SPI 1 写入主 flash，外部存储器 cache 也不会被禁用，应用程序便能正常显示 OTA 进度条。
 
 .. note::
 
@@ -310,7 +310,7 @@ bounce buffer 与 PSRAM frame buffer
     .. note::
 
         虽说在设计良好的嵌入式应用程序中, DMA 传递数据的速度不应该赶不上 LCD 读取数据的速度。但理论上，此种情况还是有可能出现的。在 {IDF_TARGET_NAME} 的硬件中，这种情况会导致 LCD 在 DMA 等待数据时单纯输出 dummy 字节。若以流式传输运行 DMA，则 DMA 会将读取到的数据传输到某个 LCD 地址，同时 LCD 也会将数据输出到某个 LCD 地址，但上述两个地址可能会不同步，导致图像 **永久** 偏移。
-        为防止类似情况发生，可以启用 :ref:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` 选项，以便驱动程序在 VBlank 中断时自动重启 DMA；或者也可以调用 :cpp:func:`esp_lcd_rgb_panel_restart`，手动重启 DMA。请注意，调用 :cpp:func:`esp_lcd_rgb_panel_restart` 不会立即重启 DMA，DMA 只会在下一个 VSYNC 事件中重启。
+        为防止类似情况发生，可以启用 :menuitem:`CONFIG_LCD_RGB_RESTART_IN_VSYNC` 选项，以便驱动程序在 VBlank 中断时自动重启 DMA；或者也可以调用 :cpp:func:`esp_lcd_rgb_panel_restart`，手动重启 DMA。请注意，调用 :cpp:func:`esp_lcd_rgb_panel_restart` 不会立即重启 DMA，DMA 只会在下一个 VSYNC 事件中重启。
 
 API 参考
 --------

@@ -29,7 +29,7 @@ There are also other possible reasons, such as unstable order of inputs and non-
 Enabling Reproducible Builds in ESP-IDF
 ---------------------------------------
 
-Reproducible builds can be enabled in ESP-IDF using :ref:`CONFIG_APP_REPRODUCIBLE_BUILD` option.
+Reproducible builds can be enabled in ESP-IDF using :menuitem:`CONFIG_APP_REPRODUCIBLE_BUILD` option.
 
 This option is disabled by default. It can be enabled in ``menuconfig``.
 
@@ -49,7 +49,7 @@ ESP-IDF achieves reproducible builds using the following measures:
     - Paths to components are replaced with ``/COMPONENT_NAME_DIR`` (where ``NAME`` is the name of the component)
     - Path to the toolchain is replaced with ``/TOOLCHAIN``
 
-- Build date and time are not included into the :ref:`application  metadata structure <app-image-format-application-description>` and :ref:`bootloader metadata structure <image-format-bootloader-description>` if :ref:`CONFIG_APP_REPRODUCIBLE_BUILD` is enabled.
+- Build date and time are not included into the :ref:`application  metadata structure <app-image-format-application-description>` and :ref:`bootloader metadata structure <image-format-bootloader-description>` if :menuitem:`CONFIG_APP_REPRODUCIBLE_BUILD` is enabled.
 - ESP-IDF build system ensures that source file lists, component lists and other sequences are sorted before passing them to CMake. Various other parts of the build system, such as the linker script generator also perform sorting to ensure that same output is produced regardless of the environment.
 
 .. _reproducible-builds-and-debugging:

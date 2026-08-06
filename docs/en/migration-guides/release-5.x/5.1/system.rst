@@ -11,7 +11,7 @@ FreeRTOS
     Dynamic Memory Allocation
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-     In the past, FreeRTOS commonly utilized the function ``malloc()`` to allocate dynamic memory. As a result, if an application allowed ``malloc()`` to allocate memory from external RAM (by configuring the :ref:`CONFIG_SPIRAM_USE` option as ``CONFIG_SPIRAM_USE_MALLOC``), FreeRTOS had the potential to allocate dynamic memory from external RAM, and the specific location was determined by the heap allocator.
+     In the past, FreeRTOS commonly utilized the function ``malloc()`` to allocate dynamic memory. As a result, if an application allowed ``malloc()`` to allocate memory from external RAM (by configuring the :menuitem:`CONFIG_SPIRAM_USE` option as ``CONFIG_SPIRAM_USE_MALLOC``), FreeRTOS had the potential to allocate dynamic memory from external RAM, and the specific location was determined by the heap allocator.
 
     .. note::
 
@@ -23,7 +23,7 @@ FreeRTOS
 
     .. warning::
 
-        If you previously relied on :ref:`CONFIG_SPIRAM_USE` to place FreeRTOS objects into external memory, this change will lead to increased usage of internal memory due the FreeRTOS objects now being allocated there.
+        If you previously relied on :menuitem:`CONFIG_SPIRAM_USE` to place FreeRTOS objects into external memory, this change will lead to increased usage of internal memory due the FreeRTOS objects now being allocated there.
 
     To place a FreeRTOS task/object into external memory, it is now necessary to do so explicitly. The following methods can be employed:
 

@@ -162,7 +162,7 @@ QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与�
 
 所提供的 flash 映像必须满足以下要求，以确保正确模拟：
 
-- flash 文件大小与项目配置中 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` 的指定值相同。
+- flash 文件大小与项目配置中 :menuitem:`CONFIG_ESPTOOLPY_FLASHSIZE` 的指定值相同。
 - flash 文件包括所有必需的二进制文件，如引导加载程序、分区表和应用程序固件，这些文件位于各自的内存偏移量处。
 
 
@@ -183,4 +183,4 @@ QEMU 支持 eFuse 的仿真，可用来测试安全启动和 flash 加密等与�
 模拟安全启动
 ~~~~~~~~~~~~~
 
-QEMU 支持模拟安全启动 v2 机制。请保持 :ref:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` 处于启用状态，将签名的引导加载程序镜像嵌入到 QEMU 的镜像文件中。
+QEMU 支持模拟安全启动 v2 机制。请保持 :menuitem:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` 处于启用状态，将签名的引导加载程序镜像嵌入到 QEMU 的镜像文件中。

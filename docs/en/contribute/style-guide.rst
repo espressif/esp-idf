@@ -259,7 +259,7 @@ The standard C ``assert()`` function, defined in ``assert.h`` should be used to 
 
     When asserting that a value of type ``esp_err_t`` is equal to ``ESP_OK``, use the :ref:`esp-error-check-macro` instead of an ``assert()``.
 
-It is possible to configure ESP-IDF projects with assertions disabled (see :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`). Therefore, functions called in an ``assert()`` statement should not have side-effects.
+It is possible to configure ESP-IDF projects with assertions disabled (see :menuitem:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`). Therefore, functions called in an ``assert()`` statement should not have side-effects.
 
 It is also necessary to use particular techniques to avoid "variable set but not used" warnings when assertions are disabled, due to code patterns such as:
 

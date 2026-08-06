@@ -222,7 +222,7 @@ Wi-Fi 供应商 IE 配置
 
     要使用 Wi-Fi CSI，需要执行以下步骤。
 
-        - 在菜单配置中选择 Wi-Fi CSI。方法是 ``Menuconfig`` > ``Components config`` > ``Wi-Fi`` > ``Wi-Fi CSI (Channel State Information)``。
+        - 启用 :menuitem:`CONFIG_ESP_WIFI_CSI_ENABLED`。
         - 调用 API :cpp:func:`esp_wifi_set_csi_rx_cb()` 设置 CSI 接收回调函数。
         - 调用 API :cpp:func:`esp_wifi_set_csi_config()` 配置 CSI。
         - 调用 API :cpp:func:`esp_wifi_set_csi()` 使能 CSI。

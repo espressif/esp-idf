@@ -57,7 +57,7 @@ C++ 语言标准
 异常处理
 ------------------
 
-ESP-IDF 默认禁用对 C++ 异常处理的支持，可以用 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` 选项启用该支持。
+ESP-IDF 默认禁用对 C++ 异常处理的支持，可以用 :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS` 选项启用该支持。
 
 如果抛出了异常处理，却没有相应的 ``catch`` 块，程序将由 ``abort`` 函数终止，并打印回溯信息。有关回溯信息的更多信息，请参见 :doc:`fatal-errors`。
 
@@ -72,7 +72,7 @@ C++ 异常处理及所需资源
 
 此外，可能需要为异常处理应急内存池保留一部分 RAM。如果无法从堆内存中分配异常处理对象，则会使用该池中的内存。
 
-使用 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` 变量可以设置异常处理应急内存池的内存量。
+使用 :menuitem:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` 变量可以设置异常处理应急内存池的内存量。
 
 当且仅当 C++ 异常抛出时，会使用额外的栈内存（约 200 字节），从而从栈内存顶部调用函数，启动异常处理。
 
@@ -89,7 +89,7 @@ C++ 异常处理及所需资源
 运行时类型信息 (RTTI)
 -------------------------------
 
-ESP-IDF 默认禁用对 RTTI 的支持，可以用 :ref:`CONFIG_COMPILER_CXX_RTTI` 选项启用该支持。
+ESP-IDF 默认禁用对 RTTI 的支持，可以用 :menuitem:`CONFIG_COMPILER_CXX_RTTI` 选项启用该支持。
 
 启用此选项，将以启用了 RTTI 支持的方式编译所有的 C++ 文件，并支持使用 ``dynamic_cast`` 转换和 ``typeid`` 运算符。启用此选项通常会增加几十 KB 的二进制文件大小。
 

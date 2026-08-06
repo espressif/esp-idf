@@ -16,7 +16,7 @@
     .. list::
 
         - :doc:`中断看门狗 <../api-reference/system/wdts>` 超时
-        - :doc:`任务看门狗 <../api-reference/system/wdts>` 超时（只有开启 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 后才会触发严重错误）
+        - :doc:`任务看门狗 <../api-reference/system/wdts>` 超时（只有开启 :menuitem:`CONFIG_ESP_TASK_WDT_PANIC` 后才会触发严重错误）
         - 高速缓存访问错误
         :SOC_MEMPROT_SUPPORTED: - 内存保护故障
         - 掉电检测事件
@@ -50,7 +50,7 @@
 
 不管哪种情况，出错原因都会以括号形式打印出来。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
-紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
+紧急处理程序接下来的行为将取决于 :menuitem:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
 
 - 打印 CPU 寄存器，然后重启 (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) - 默认选项
 
@@ -70,19 +70,19 @@
 
 .. note::
 
-    仅当构建中包含组件 ``esp_gdbstub`` 时，配置选项 :ref:`CONFIG_ESP_SYSTEM_PANIC` 中的 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项可用。
+    仅当构建中包含组件 ``esp_gdbstub`` 时，配置选项 :menuitem:`CONFIG_ESP_SYSTEM_PANIC` 中的 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项可用。
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
-- 如果使能了 :ref:`CONFIG_ESP_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+- 如果使能了 :menuitem:`CONFIG_ESP_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
 - 如果使能了 :doc:`内核转储 <core_dump>` 功能，系统状态（任务堆栈和寄存器）会被转储到 flash 或者 UART 以供后续分析。
 
-- 如果 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` 被禁用（默认情况下禁用），紧急处理程序的代码会放置在 flash 而不是 IRAM 中。这意味着，如果 ESP-IDF 在 flash 高速缓存禁用时崩溃，在运行 GDB Stub 和内核转储之前紧急处理程序会自动重新使能 flash 高速缓存。如果 flash 高速缓存也崩溃了，这样做会增加一些小风险。
+- 如果 :menuitem:`CONFIG_ESP_PANIC_HANDLER_IRAM` 被禁用（默认情况下禁用），紧急处理程序的代码会放置在 flash 而不是 IRAM 中。这意味着，如果 ESP-IDF 在 flash 高速缓存禁用时崩溃，在运行 GDB Stub 和内核转储之前紧急处理程序会自动重新使能 flash 高速缓存。如果 flash 高速缓存也崩溃了，这样做会增加一些小风险。
 
     如果使能了该选项，紧急处理程序的代码（包括所需的 UART 函数）会放置在 IRAM 中，导致 SRAM 中的可用内存空间变小。当禁用 flash 高速缓存（如写入 SPI flash）时或触发异常导致 flash 高速缓存崩溃时，可用此选项调试一些复杂的崩溃问题。
 
-- 如果启用 :ref:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` （默认为禁用）并将其配置为大于 0 的数字，紧急处理程序将基于该数字延迟重启的时间，单位为秒。如果用于监测串行输出的工具不支持停止和检查串行输出，可启用该选项。在这种情况下，借助延迟重启，用户可以在延迟期间检查和调试紧急处理程序的输出（例如回溯）。延迟结束后，设备将重新启动，并记录重置原因。
+- 如果启用 :menuitem:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` （默认为禁用）并将其配置为大于 0 的数字，紧急处理程序将基于该数字延迟重启的时间，单位为秒。如果用于监测串行输出的工具不支持停止和检查串行输出，可启用该选项。在这种情况下，借助延迟重启，用户可以在延迟期间检查和调试紧急处理程序的输出（例如回溯）。延迟结束后，设备将重新启动，并记录重置原因。
 
 下图展示了紧急处理程序的行为：
 
@@ -299,14 +299,14 @@ RTC 看门狗超时
 
 {IDF_TARGET_RTCWDT_RTC_RESET:default="未更新", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
-RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，一级 (ROM) 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
+RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :menuitem:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，一级 (ROM) 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
 
 .. code-block:: none
 
     rst:0x10 ({IDF_TARGET_RTCWDT_RTC_RESET})
 
 
-RTC 看门狗涵盖了从一级 (ROM) 引导加载程序到应用程序启动的执行时间，最初在一级 (ROM) 引导加载程序中设置，而后在引导加载程序中使用 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
+RTC 看门狗涵盖了从一级 (ROM) 引导加载程序到应用程序启动的执行时间，最初在一级 (ROM) 引导加载程序中设置，而后在引导加载程序中使用 :menuitem:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
 
 :ref:`紧急处理程序 <Panic-Handler>` 通过 RTC 看门狗保护机制，确保系统在遇到严重错误时不会陷入死循环。紧急处理程序会重新配置 RTC 看门狗的超时时间为 10 秒。如果 10 秒内紧急处理程序没有完成，RTC 看门狗将会强制复位系统。
 
@@ -423,7 +423,7 @@ Interrupt wdt timeout on CPU0/CPU1
     * 程序加载后向指令 RAM 写入代码
     * 从数据 RAM（用于堆、静态 .data 和 .bss 区域）执行代码
 
-    该类操作对于大多数程序来说并不必要，禁止此类操作往往使软件漏洞更难被利用。依赖动态加载或自修改代码的应用程序可以使用 :ref:`CONFIG_ESP_SYSTEM_MEMPROT` 选项来禁用此项保护。
+    该类操作对于大多数程序来说并不必要，禁止此类操作往往使软件漏洞更难被利用。依赖动态加载或自修改代码的应用程序可以使用 :menuitem:`CONFIG_ESP_SYSTEM_MEMPROT` 选项来禁用此项保护。
 
     发生故障时，紧急处理程序会报告故障的地址和引起故障的内存访问的类型。
 
@@ -435,7 +435,7 @@ Interrupt wdt timeout on CPU0/CPU1
     掉电
     ^^^^
 
-    {IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP_BROWNOUT_DET` 和 :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+    {IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :menuitem:`CONFIG_ESP_BROWNOUT_DET` 和 :menuitem:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
 
     当掉电检测器被触发时，会打印如下信息：
 
@@ -485,7 +485,7 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
 
         Guru Meditation Error: Core 0 panic'ed (Stack protection fault).
 
-    可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项，禁用硬件堆栈保护。
+    可以通过 :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项，禁用硬件堆栈保护。
 
 .. _FreeRTOS-End-Of-Stack-Watchpoint:
 
@@ -514,18 +514,18 @@ ESP-IDF 支持基于监视点的 FreeRTOS 堆栈溢出检测机制。每次 Free
 
         Guru Meditation Error: Core  0 panic'ed (Breakpoint). Exception was unhandled.
 
-可以通过 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项启用该功能。
+可以通过 :menuitem:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项启用该功能。
 
 
 FreeRTOS 堆栈检查
 """""""""""""""""
 
-请参见 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`。
+请参见 :menuitem:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`。
 
 堆栈粉碎
 ^^^^^^^^
 
-堆栈粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP-IDF 中的 :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` 选项来开启。如果检测到堆栈粉碎，则会打印类似如下的信息：
+堆栈粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP-IDF 中的 :menuitem:`CONFIG_COMPILER_STACK_CHECK_MODE` 选项来开启。如果检测到堆栈粉碎，则会打印类似如下的信息：
 
 .. code-block:: none
 
@@ -560,7 +560,7 @@ FreeRTOS 堆栈检查
 
     若出现双重异常，即当 CPU 已经在异常处理程序中时，又出现了其他异常，则 CPU 会锁死，并触发系统复位。当 cache 出现问题，导致 CPU 无法访问外部存储时，CPU 就会进入锁死状态。此时，紧急处理程序也会因为无法获取指令或读取数据而崩溃。
 
-    通过配置选项 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`，可以将紧急处理程序的代码放在 IRAM 中，这样即使 cache 被禁用也可以访问 IRAM，从而获取更多关于锁死原因的信息。
+    通过配置选项 :menuitem:`CONFIG_ESP_PANIC_HANDLER_IRAM`，可以将紧急处理程序的代码放在 IRAM 中，这样即使 cache 被禁用也可以访问 IRAM，从而获取更多关于锁死原因的信息。
 
 
 未定义行为清理器 (UBSAN) 检查

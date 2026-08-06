@@ -332,13 +332,13 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
             .. only::  SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
-                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
 
                 或者， 可以使用直接调用 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` 用于 GPIO 唤醒，因为此时 digital IO 的电源域已经被关闭。
 
             .. only::  not SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
-                在 Light-sleep 模式下，如果设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
+                在 Light-sleep 模式下，如果设置 Kconfig 选项 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，为了继续使用 :cpp:func:`gpio_wakeup_enable` 用于 GPIO 唤醒， 需要先调用 :cpp:func:`rtc_gpio_init` 和 :cpp:func:`rtc_gpio_set_direction`，用于设置 RTC IO 为输入模式。
 
     .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
@@ -352,7 +352,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         该唤醒源由 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` 函数实现，用户可以配置一个或多个 GPIO 管脚以及唤醒电平（高电平或低电平）。只有由 {IDF_TARGET_RTC_POWER_DOMAIN} 电源域供电的 GPIO 管脚才能用作 Deep-sleep GPIO 唤醒源。具体支持的管脚请参考 `datasheet <{IDF_TARGET_DATASHEET_CN_URL}>`__ > IO 管脚。
 
         .. note::
-            该 API 同样适用于外设电源域掉电时的 Light-sleep 模式（参见 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`）。在这种情况下，应使用此 API 而不是 :cpp:func:`esp_sleep_enable_gpio_wakeup`，因为 GPIO 模块在睡眠期间会被断电。
+            该 API 同样适用于外设电源域掉电时的 Light-sleep 模式（参见 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`）。在这种情况下，应使用此 API 而不是 :cpp:func:`esp_sleep_enable_gpio_wakeup`，因为 GPIO 模块在睡眠期间会被断电。
 
         完整示例请参考 :example:`system/deep_sleep`。
 
@@ -380,12 +380,12 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
         .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
             .. note::
-                当启用 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 时，此 API **不可用**，因为 GPIO 模块在睡眠期间会被断电。请使用 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` 替代。
+                当启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 时，此 API **不可用**，因为 GPIO 模块在睡眠期间会被断电。请使用 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` 替代。
 
         .. only:: not SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
             .. note::
-                当启用 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 时，若仍要使用 :cpp:func:`gpio_wakeup_enable`，请先调用 :cpp:func:`rtc_gpio_init` 与 :cpp:func:`rtc_gpio_set_direction`，将管脚配置为 RTC GPIO 输入。
+                当启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 时，若仍要使用 :cpp:func:`gpio_wakeup_enable`，请先调用 :cpp:func:`rtc_gpio_init` 与 :cpp:func:`rtc_gpio_set_direction`，将管脚配置为 RTC GPIO 输入。
 
     .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
@@ -394,17 +394,17 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
             可将由 VDD3P3_RTC 电源域供电的 IO 用于芯片的 Deep-sleep 唤醒，或在外设电源域掉电时的 Light-sleep 唤醒。调用 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` 函数可以配置相应的唤醒管脚和唤醒触发电平。此函数适用于：
 
             - Deep-sleep 模式（始终可用）
-            - 启用 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 时的 Light-sleep 模式
+            - 启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 时的 Light-sleep 模式
 
             .. only:: SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
 
-                在 {IDF_TARGET_NAME} 上，该 API 还支持边沿触发的唤醒模式：``ESP_GPIO_WAKEUP_GPIO_POSEDGE``（上升沿）、``ESP_GPIO_WAKEUP_GPIO_NEGEDGE``（下降沿）和 ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``（任意沿）。对于 ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``，当启用 :ref:`CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS` 时，由于空闲电平不确定，驱动会关闭内部上拉/下拉，建议使用外部上/下拉电阻或保证进入睡眠前线路电平稳定。
+                在 {IDF_TARGET_NAME} 上，该 API 还支持边沿触发的唤醒模式：``ESP_GPIO_WAKEUP_GPIO_POSEDGE``（上升沿）、``ESP_GPIO_WAKEUP_GPIO_NEGEDGE``（下降沿）和 ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``（任意沿）。对于 ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``，当启用 :menuitem:`CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS` 时，由于空闲电平不确定，驱动会关闭内部上拉/下拉，建议使用外部上/下拉电阻或保证进入睡眠前线路电平稳定。
 
             .. note::
                 只有由 VDD3P3_RTC 电源域供电的 GPIO（RTC IO）可以与此 API 一起使用。具体支持的管脚请参考 `datasheet <{IDF_TARGET_DATASHEET_CN_URL}>`__ > IO 管脚。
 
     .. note::
-        使用 IO 唤醒源（无论是电平模式还是边沿模式）将芯片从睡眠中唤醒时，唤醒信号必须保持（电平模式）或脉冲宽度（边沿模式）至少 3 个 RTC 慢时钟周期，唤醒逻辑才能可靠采样。一个慢时钟周期的时长取决于 :ref:`CONFIG_RTC_CLK_SRC` 的配置（例如 RC_SLOW @ ~136 kHz ≈ 7.4 µs/周期，XTAL32K @ 32.768 kHz ≈ 30.5 µs/周期）。该约束同样适用于 :cpp:func:`esp_sleep_enable_gpio_wakeup` 和 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`。
+        使用 IO 唤醒源（无论是电平模式还是边沿模式）将芯片从睡眠中唤醒时，唤醒信号必须保持（电平模式）或脉冲宽度（边沿模式）至少 3 个 RTC 慢时钟周期，唤醒逻辑才能可靠采样。一个慢时钟周期的时长取决于 :menuitem:`CONFIG_RTC_CLK_SRC` 的配置（例如 RC_SLOW @ ~136 kHz ≈ 7.4 µs/周期，XTAL32K @ 32.768 kHz ≈ 30.5 µs/周期）。该约束同样适用于 :cpp:func:`esp_sleep_enable_gpio_wakeup` 和 :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`。
 
 .. only:: esp32h2
 
@@ -457,7 +457,7 @@ UART 唤醒支持以下模式：
 
        .. note::
 
-           在 Light-sleep 模式下，设置 Kconfig 选项 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 将使 UART 唤醒失效。
+           在 Light-sleep 模式下，设置 Kconfig 选项 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` 将使 UART 唤醒失效。
 
 .. only:: SOC_ULP_LP_UART_SUPPORTED
 
@@ -513,12 +513,12 @@ RTC 外设和内存断电
 SPI Flash 进入 deep power-down 模式
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-为降低 Light-sleep 期间 SPI Flash 的功耗，ESP-IDF **优先推荐**采用 **Deep Power-Down（DPD）**：通过启用配置项 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`，令 SPI Flash 在供电保持开启的前提下进入器件内部的深度休眠指令状态。多数 SPI Flash 在 DPD 下电流可降至极低水平（常低于 1 µA），同时可避免反复上下电带来的唤醒延迟。
+为降低 Light-sleep 期间 SPI Flash 的功耗，ESP-IDF **优先推荐**采用 **Deep Power-Down（DPD）**：通过启用配置项 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`，令 SPI Flash 在供电保持开启的前提下进入器件内部的深度休眠指令状态。多数 SPI Flash 在 DPD 下电流可降至极低水平（常低于 1 µA），同时可避免反复上下电带来的唤醒延迟。
 
 在几乎所有应用场景中，相较彻底切断 SPI Flash 供电，DPD 在安全性与功耗之间通常是更好的折中。
 
 .. note::
-    **两种方式互斥：** Light-sleep 下的 SPI Flash **断电**（:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 或通过 ``esp_sleep_pd_config`` 将 ``ESP_PD_DOMAIN_VDDSDIO`` 置为关闭）与 **DPD** **不可同时使用**， 在 menuconfig 中仅能在禁用 :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 后再启用 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`。
+    **两种方式互斥：** Light-sleep 下的 SPI Flash **断电**（:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 或通过 ``esp_sleep_pd_config`` 将 ``ESP_PD_DOMAIN_VDDSDIO`` 置为关闭）与 **DPD** **不可同时使用**， 在 menuconfig 中仅能在禁用 :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 后再启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`。
 
 .. warning::
 
@@ -537,17 +537,17 @@ SPI Flash 断电
 
     如果在 SPI Flash 的供电电路上添加了滤波电容，那么应当尽一切可能避免 SPI Flash 断电。
 
-因为这些不可控的因素，ESP-IDF 很难保证 SPI Flash 断电的绝对安全。因此 ESP-IDF 不推荐用户断电 SPI Flash。对于一些功耗敏感型应用，可以通过设置 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` 来减少 Light-sleep 期间 SPI Flash 的功耗。这种方式在几乎所有场景下都要比断电 SPI Flash 更好，兼顾了安全性和功耗。
+因为这些不可控的因素，ESP-IDF 很难保证 SPI Flash 断电的绝对安全。因此 ESP-IDF 不推荐用户断电 SPI Flash。对于一些功耗敏感型应用，可以通过设置 Kconfig 配置项 :menuitem:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` 来减少 Light-sleep 期间 SPI Flash 的功耗。这种方式在几乎所有场景下都要比断电 SPI Flash 更好，兼顾了安全性和功耗。
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    值得一提的是，PSRAM 也有一个类似的 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`。
+    值得一提的是，PSRAM 也有一个类似的 Kconfig 配置项 :menuitem:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`。
 
 考虑到有些用户能够充分评估断电 SPI Flash 的风险，并希望通过断电 SPI Flash 来获得更低的功耗，因此 ESP-IDF 提供了两种断电 SPI Flash 的机制：
 
     .. list::
 
-        - 设置 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 将使 ESP-IDF 以一个严格的条件来断电 SPI Flash。严格的条件具体指的是，RTC timer 是唯一的唤醒源 **且** 睡眠时间比 SPI Flash 彻底断电所需时间更长。
+        - 设置 Kconfig 配置项 :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 将使 ESP-IDF 以一个严格的条件来断电 SPI Flash。严格的条件具体指的是，RTC timer 是唯一的唤醒源 **且** 睡眠时间比 SPI Flash 彻底断电所需时间更长。
         - 调用函数 ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)`` 将使 ESP-IDF 以一个宽松的条件来断电 SPI Flash。宽松的条件具体指的是 RTC timer 唤醒源未被使能 **或** 睡眠时间比 SPI Flash 彻底断电所需时间更长。
 
 .. note::
@@ -580,7 +580,7 @@ SPI Flash 不掉电
 SPI Flash 进入 deep power-down（DPD）模式
 """"""""""""""""""""""""""""""""""""""""""
 
-若待机功耗仍偏高，应优先采用 **Deep Power-Down（DPD）**，通过 :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 降低休眠电流；功耗数据、时序及启用方式参见前文 :ref:`spi_flash_power_down_dpd`。
+若待机功耗仍偏高，应优先采用 **Deep Power-Down（DPD）**，通过 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 降低休眠电流；功耗数据、时序及启用方式参见前文 :ref:`spi_flash_power_down_dpd`。
 
 DPD 模式适用于以下场景：
 
@@ -648,7 +648,7 @@ DPD 模式适用于以下场景：
 UART 输出处理
 ^^^^^^^^^^^^^^^^^^^^
 
-进入睡眠前，睡眠流程会对**控制台 UART**（用于调试输出的 UART，由 :ref:`CONFIG_ESP_CONSOLE_UART_NUM` 选定）进行准备，以避免 APB 时钟变化或掉电导致输出乱码或未定义行为。所采用的策略可配置，会影响数据完整性、进入睡眠的时间以及功耗。
+进入睡眠前，睡眠流程会对**控制台 UART**（用于调试输出的 UART，由 :menuitem:`CONFIG_ESP_CONSOLE_UART_NUM` 选定）进行准备，以避免 APB 时钟变化或掉电导致输出乱码或未定义行为。所采用的策略可配置，会影响数据完整性、进入睡眠的时间以及功耗。
 
 **默认行为（自动模式）**
 
@@ -671,7 +671,7 @@ UART 输出处理
 
 .. note::
 
-   睡眠流程在临界区中执行，当使用会冲刷控制台 UART 的模式（如 :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` ，或 HP 外设域掉电时的 Light-sleep/Deep-sleep 默认行为）时，请将 :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 配置为**大于** ``SOC_UART_FIFO_LEN`` ×（当前波特率下发送一个字符所需时间）。否则若 TX FIFO 中积压数据过多，冲刷时间可能超过中断看门狗超时，会在进入睡眠过程中触发看门狗复位。
+   睡眠流程在临界区中执行，当使用会冲刷控制台 UART 的模式（如 :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` ，或 HP 外设域掉电时的 Light-sleep/Deep-sleep 默认行为）时，请将 :menuitem:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` 配置为**大于** ``SOC_UART_FIFO_LEN`` ×（当前波特率下发送一个字符所需时间）。否则若 TX FIFO 中积压数据过多，冲刷时间可能超过中断看门狗超时，会在进入睡眠过程中触发看门狗复位。
 
 示例：在每次睡眠前确保所有调试输出已发出：:
 

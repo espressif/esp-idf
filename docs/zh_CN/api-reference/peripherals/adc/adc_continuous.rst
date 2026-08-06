@@ -252,7 +252,7 @@ ADC 控制
 
 在调用 :cpp:func:`adc_continuous_register_event_callbacks` 时，还可以通过参数 ``user_data`` 注册自己的上下文，该用户数据将直接传递给回调函数。
 
-此回调函数可能由于 :c:macro:`ESP_ERR_INVALID_ARG` 等原因返回错误。启用 :ref:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` 时，如果回调函数失败并报错，可能是因为回调函数不在内部 RAM 中，请查看错误日志了解详情。此外，如果回调函数出现 :c:macro:`ESP_ERR_INVALID_STATE` 错误，表明 ADC 连续转换模式驱动已经启动，此时不应添加回调。
+此回调函数可能由于 :c:macro:`ESP_ERR_INVALID_ARG` 等原因返回错误。启用 :menuitem:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` 时，如果回调函数失败并报错，可能是因为回调函数不在内部 RAM 中，请查看错误日志了解详情。此外，如果回调函数出现 :c:macro:`ESP_ERR_INVALID_STATE` 错误，表明 ADC 连续转换模式驱动已经启动，此时不应添加回调。
 
 
 转换完成事件
@@ -266,7 +266,7 @@ ADC 控制
 
 .. note::
 
-    启用 Kconfig 选项 :ref:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` 时，注册的回调函数以及回调函数中调用的函数应放置在 IRAM 中，涉及的变量也应放置在内部 RAM 中。
+    启用 Kconfig 选项 :menuitem:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` 时，注册的回调函数以及回调函数中调用的函数应放置在 IRAM 中，涉及的变量也应放置在内部 RAM 中。
 
 缓冲池溢出事件
 ~~~~~~~~~~~~~~~~~~~
@@ -395,15 +395,15 @@ ADC 连续转换模式读取的原始数据需要进一步解析才能获得可�
     :esp32: - ESP32 DevKitC：由于存在外部自动烧录电路，GPIO 0 不能用于 ADC 连续转换模式。
     :esp32: - ESP-WROVER-KIT：由于部分 GPIO 管脚可能已经用于其他目的，GPIO 0、2、4 和 15 不能用于 ADC 连续转换模式。
     :esp32s2: - ADC 连续转换模式驱动使用 SPI3 外设作为硬件 DMA FIFO。因此，如果 SPI3 已在使用中，:cpp:func:`adc_continuous_new_handle` 将返回 :c:macro:`ESP_ERR_NOT_FOUND`。
-    :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
-    :esp32s3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-S3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
+    :esp32c3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-C3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :menuitem:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
+    :esp32s3: - 由于硬件限制，现已不再支持使用 ADC2 DMA 功能获取 ADC 转换结果。使用 ADC2 连续转换的结果可能不稳定，具体可参考 `ESP32-S3 系列芯片勘误表 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_cn.pdf>`__。出于兼容性考虑，可以启用 :menuitem:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3`，强制使用 ADC2。
 
 .. _adc-continuous-power-management:
 
 电源管理
 ^^^^^^^^^^^^^^^^
 
-启用电源管理，即启用 :ref:`CONFIG_PM_ENABLE` 时，系统在空闲状态下，可能会调整 APB 时钟频率，这可能会改变 ADC 连续转换的行为。
+启用电源管理，即启用 :menuitem:`CONFIG_PM_ENABLE` 时，系统在空闲状态下，可能会调整 APB 时钟频率，这可能会改变 ADC 连续转换的行为。
 
 然而，通过获取类型为 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 的电源管理锁，ADC 连续转换模式驱动可以阻止这种改变。调用 :cpp:func:`adc_continuous_start` 启动连续转换后即可获取该锁。同样，调用 :cpp:func:`adc_continuous_stop` 停止转换后将释放该锁。因此，必须确保 :cpp:func:`adc_continuous_start` 和 :cpp:func:`adc_continuous_stop` 成对出现，否则电源管理将失效。
 
@@ -413,7 +413,7 @@ ADC 连续转换模式读取的原始数据需要进一步解析才能获得可�
 IRAM 安全
 ^^^^^^^^^
 
-ADC 连续转换模式驱动的所有 API 均非 IRAM 安全。禁用 cache 时，不应运行这类 API。启用 Kconfig 选项 :ref:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` 可确保驱动的内部 ISR 处理程序为 IRAM 安全，此时即使禁用 cache，驱动仍然会将转换结果保存到其内部缓冲池中。
+ADC 连续转换模式驱动的所有 API 均非 IRAM 安全。禁用 cache 时，不应运行这类 API。启用 Kconfig 选项 :menuitem:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` 可确保驱动的内部 ISR 处理程序为 IRAM 安全，此时即使禁用 cache，驱动仍然会将转换结果保存到其内部缓冲池中。
 
 
 .. _adc-continuous-thread-safety:

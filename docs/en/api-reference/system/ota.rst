@@ -42,7 +42,7 @@ The main purpose of the application rollback is to keep the device working after
 
 * The application works fine, :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` marks the running application with the state ``ESP_OTA_IMG_VALID``. There are no restrictions on booting this application.
 * The application has critical errors and further work is not possible, a rollback to the previous application is required, :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` marks the running application with the state ``ESP_OTA_IMG_INVALID`` and reset. This application will not be selected by the bootloader for boot and will boot the previously working application.
-* If the :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set, and a reset occurs without calling either function then the application is rolled back.
+* If the :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set, and a reset occurs without calling either function then the application is rolled back.
 
 The following code serves detect the initial boot for an application after the OTA update. Upon the first boot, the application checks its state and performs diagnostics. If the diagnostics are successful, the application should call :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` to confirm the operability of the application. If the diagnostics fail, the application should call :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` to roll back to the previous working application.
 
@@ -84,23 +84,23 @@ States control the process of selecting a boot app:
  ESP_OTA_IMG_UNDEFINED        None restriction. Will be selected.
  ESP_OTA_IMG_INVALID          Will not be selected.
  ESP_OTA_IMG_ABORTED          Will not be selected.
- ESP_OTA_IMG_NEW              If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
+ ESP_OTA_IMG_NEW              If :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
                               be selected only once. In bootloader the state immediately changes to
                               ``ESP_OTA_IMG_PENDING_VERIFY``.
- ESP_OTA_IMG_PENDING_VERIFY   If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
+ ESP_OTA_IMG_PENDING_VERIFY   If :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
                               not be selected, and the state will change to ``ESP_OTA_IMG_ABORTED``.
 ============================= ======================================================================
 
-If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled (by default), then the use of the following functions :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` and :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` are optional, and ``ESP_OTA_IMG_NEW`` and ``ESP_OTA_IMG_PENDING_VERIFY`` states are not used.
+If :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled (by default), then the use of the following functions :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` and :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` are optional, and ``ESP_OTA_IMG_NEW`` and ``ESP_OTA_IMG_PENDING_VERIFY`` states are not used.
 
-An option in Kconfig :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of a new application. In this case, the application must confirm its operability by calling :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function, otherwise the application will be rolled back upon reboot. It allows you to control the operability of the application during the boot phase. Thus, a new application has only one attempt to boot successfully.
+An option in Kconfig :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of a new application. In this case, the application must confirm its operability by calling :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function, otherwise the application will be rolled back upon reboot. It allows you to control the operability of the application during the boot phase. Thus, a new application has only one attempt to boot successfully.
 
 .. _ota_rollback:
 
 Rollback Process
 ^^^^^^^^^^^^^^^^
 
-The description of the rollback process when :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled:
+The description of the rollback process when :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled:
 
 * The new application is successfully downloaded and :cpp:func:`esp_ota_set_boot_partition` function makes this partition bootable and sets the state ``ESP_OTA_IMG_NEW``. This state means that the application is new and should be monitored for its first boot.
 * Reboot :cpp:func:`esp_restart`.
@@ -138,11 +138,11 @@ Where the States Are Set
 A brief description of where the states are set:
 
 * ``ESP_OTA_IMG_VALID`` state is set by :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` function.
-* ``ESP_OTA_IMG_UNDEFINED`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled.
-* ``ESP_OTA_IMG_NEW`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled.
+* ``ESP_OTA_IMG_UNDEFINED`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is not enabled.
+* ``ESP_OTA_IMG_NEW`` state is set by :cpp:func:`esp_ota_set_boot_partition` function if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled.
 * ``ESP_OTA_IMG_INVALID`` state is set by function :cpp:func:`esp_ota_mark_app_invalid_rollback` or :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`.
-* ``ESP_OTA_IMG_ABORTED`` state is set if there was no confirmation of the application operability and occurs reboots (if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled).
-* ``ESP_OTA_IMG_PENDING_VERIFY`` state is set in a bootloader if :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled and selected app has ``ESP_OTA_IMG_NEW`` state.
+* ``ESP_OTA_IMG_ABORTED`` state is set if there was no confirmation of the application operability and occurs reboots (if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled).
+* ``ESP_OTA_IMG_PENDING_VERIFY`` state is set in a bootloader if :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is enabled and selected app has ``ESP_OTA_IMG_NEW`` state.
 
 .. _anti-rollback:
 
@@ -153,9 +153,9 @@ Anti-rollback
 
 Anti-rollback prevents rollback to application with security version lower than one programmed in eFuse of chip.
 
-This function works if set :ref:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` option. In the bootloader, when selecting a bootable application, an additional security version check is added which is on the chip and in the application image. The version in the bootable firmware must be greater than or equal to the version in the chip.
+This function works if set :menuitem:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` option. In the bootloader, when selecting a bootable application, an additional security version check is added which is on the chip and in the application image. The version in the bootable firmware must be greater than or equal to the version in the chip.
 
-:ref:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` and :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` options are used together. In this case, rollback is possible only on the security version which is equal or higher than the version in the chip.
+:menuitem:`CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK` and :menuitem:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` options are used together. In this case, rollback is possible only on the security version which is equal or higher than the version in the chip.
 
 
 A Typical Anti-rollback Scheme Is
@@ -206,13 +206,13 @@ Restrictions:
 
 .. list::
 
-    - The number of bits in the ``secure_version`` field is limited to {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} bits. This means that only {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} times you can do an anti-rollback. You can reduce the length of this efuse field using :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
+    - The number of bits in the ``secure_version`` field is limited to {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} bits. This means that only {IDF_TARGET_SECURE_VERSION_EFUSE_BITS} times you can do an anti-rollback. You can reduce the length of this efuse field using :menuitem:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` option.
     :esp32: - Anti-rollback works only if the encoding scheme for efuse is set to ``NONE``.
     - Factory and Test partitions are not supported in anti rollback scheme and hence partition table should not have partition with SubType set to ``factory`` or ``test``.
 
 ``security_version``:
 
-- In application image it is stored in ``esp_app_desc`` structure. The number is set :ref:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
+- In application image it is stored in ``esp_app_desc`` structure. The number is set :menuitem:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
 
 .. only:: esp32
 
@@ -224,7 +224,7 @@ Restrictions:
 Secure OTA Updates Without Secure Boot
 --------------------------------------
 
-The verification of signed OTA updates can be performed even without enabling hardware secure boot. This can be achieved by setting :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` and :ref:`CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT`.
+The verification of signed OTA updates can be performed even without enabling hardware secure boot. This can be achieved by setting :menuitem:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` and :menuitem:`CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT`.
 
 .. only:: esp32
 
@@ -235,7 +235,7 @@ The verification of signed OTA updates can be performed even without enabling ha
 Signed Data Partition Updates
 ------------------------------
 
-Data partition images can be verified using the same Secure Boot v2 signature mechanism as application images. Enable :ref:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` during OTA updates.
+Data partition images can be verified using the same Secure Boot v2 signature mechanism as application images. Enable :menuitem:`CONFIG_SECURE_SIGNED_DATA_PARTITION` to verify data partitions with subtype ``ESP_PARTITION_SUBTYPE_DATA_UNDEFINED`` during OTA updates.
 
 Sign data partition images using:
 

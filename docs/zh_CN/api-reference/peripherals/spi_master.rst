@@ -580,7 +580,7 @@ GPIO 矩阵与 IO_MUX 管脚
 - 使用 DMA 的轮询传输事务：{IDF_TARGET_MAX_TRANS_TIME_POLL_DMA} µs。
 - 使用 CPU 的轮询传输事务：{IDF_TARGET_MAX_TRANS_TIME_POLL_CPU} µs。
 
-请注意，以上数据测试时，:ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项处于启用状态，SPI 传输事务相关的代码放置在 IRAM 中。若关闭此选项（例如为了节省 IRAM），可能影响传输事务持续时间。
+请注意，以上数据测试时，:menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项处于启用状态，SPI 传输事务相关的代码放置在 IRAM 中。若关闭此选项（例如为了节省 IRAM），可能影响传输事务持续时间。
 
 SPI 时钟频率
 ^^^^^^^^^^^^^^^^^^^
@@ -636,11 +636,11 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_interface_con
 缓存缺失
 ^^^^^^^^^^
 
-默认配置只将 ISR 置于 IRAM 中。其他 SPI 相关功能，包括驱动本身和回调都可能发生缓存缺失，需等待代码从 flash 中读取。为避免缓存缺失，可参考 :ref:`CONFIG_SPI_MASTER_IN_IRAM`，将整个 SPI 驱动置入 IRAM，并将整个回调及其 callee 函数一起置入 IRAM。
+默认配置只将 ISR 置于 IRAM 中。其他 SPI 相关功能，包括驱动本身和回调都可能发生缓存缺失，需等待代码从 flash 中读取。为避免缓存缺失，可参考 :menuitem:`CONFIG_SPI_MASTER_IN_IRAM`，将整个 SPI 驱动置入 IRAM，并将整个回调及其 callee 函数一起置入 IRAM。
 
 .. note::
 
-    SPI 驱动是基于 FreeRTOS 的 API 实现的，在使用 :ref:`CONFIG_SPI_MASTER_IN_IRAM` 时，应启用 :ref:`CONFIG_FREERTOS_IN_IRAM`。
+    SPI 驱动是基于 FreeRTOS 的 API 实现的，在使用 :menuitem:`CONFIG_SPI_MASTER_IN_IRAM` 时，应启用 :menuitem:`CONFIG_FREERTOS_IN_IRAM`。
 
 单个中断传输事务传输 n 字节的总成本为 **20+8n/Fspi[MHz]** [µs]，故传输速度为 **n/(20+8n/Fspi)**。8 MHz 时钟速度的传输速度见下表。
 
@@ -681,7 +681,7 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_interface_con
 
 传输事务长度较短时将提高传输事务间隔成本，因此应尽可能将几个短传输事务压缩成一个传输事务，以提升传输速度。
 
-注意，ISR 在 flash 操作期间默认处于禁用状态。要在 flash 操作期间继续发送传输事务，请启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM`，并在 :cpp:member:`spi_bus_config_t::intr_flags` 中设置 :c:macro:`ESP_INTR_FLAG_IRAM`。此时，flash 操作前列队的传输事务将由 ISR 并行处理。此外，每个设备的回调和它们的 ``callee`` 函数都应该在 IRAM 中，避免回调因缓存丢失而崩溃。详情请参阅 :ref:`iram-safe-interrupt-handlers`。
+注意，ISR 在 flash 操作期间默认处于禁用状态。要在 flash 操作期间继续发送传输事务，请启用 :menuitem:`CONFIG_SPI_MASTER_ISR_IN_IRAM`，并在 :cpp:member:`spi_bus_config_t::intr_flags` 中设置 :c:macro:`ESP_INTR_FLAG_IRAM`。此时，flash 操作前列队的传输事务将由 ISR 并行处理。此外，每个设备的回调和它们的 ``callee`` 函数都应该在 IRAM 中，避免回调因缓存丢失而崩溃。详情请参阅 :ref:`iram-safe-interrupt-handlers`。
 
 .. only:: esp32h2
 

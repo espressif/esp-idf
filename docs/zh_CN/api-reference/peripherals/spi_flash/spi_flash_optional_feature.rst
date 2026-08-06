@@ -94,7 +94,7 @@ QSPI flash 芯片的高性能模式
 
     启用高性能模式的方法：
 
-    1. 取消选择 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH` 和 :ref:`CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT`。高性能模式不用于八线 flash，启用相关选项可能会导致无法使用高性能模式。
+    1. 取消选择 :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH` 和 :menuitem:`CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT`。高性能模式不用于八线 flash，启用相关选项可能会导致无法使用高性能模式。
 
     2. 启用 ``CONFIG_SPI_FLASH_HPM_ENA`` 选项。
 
@@ -108,13 +108,13 @@ QSPI flash 芯片的高性能模式
 
     通过以下方式检查引导加载程序是否支持 `DC Aware`：
 
-    - 如果启动了新项目，建议通过在引导加载程序菜单中选择 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` 选项来启用 `DC Aware`。请注意，此选项无法通过 OTA 修改，因为支持代码在引导加载程序中。
+    - 如果启动了新项目，建议通过在引导加载程序菜单中选择 :menuitem:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` 选项来启用 `DC Aware`。请注意，此选项无法通过 OTA 修改，因为支持代码在引导加载程序中。
 
     - 如果想在现有项目中通过 OTA 来更新 `HPM-DC` 配置选项，请检查用于构建引导加载程序的 sdkconfig 文件（升级 ESP-IDF 版本可能会使此文件与用于构建引导加载程序的文件不同）：
 
-        - 对于最新版本的 ESP-IDF（v4.4.7+、v5.0.7+、v5.1.4+、v5.2 及以上），如果选择了 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE`，则引导加载程序支持 `DC Aware`。
+        - 对于最新版本的 ESP-IDF（v4.4.7+、v5.0.7+、v5.1.4+、v5.2 及以上），如果选择了 :menuitem:`CONFIG_BOOTLOADER_FLASH_DC_AWARE`，则引导加载程序支持 `DC Aware`。
 
-        - 对于某些范围内的 ESP-IDF 版本（v4.4.4-v4.4.6、v5.0-v5.0.6 和 v5.1-v5.1.3），如果选择了 ``CONFIG_ESPTOOLPY_FLASHFREQ_120M``，则引导加载程序支持 `DC Aware`。此时，可启用 :ref:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` 进行确认（不会影响实际应用中的引导加载程序）。
+        - 对于某些范围内的 ESP-IDF 版本（v4.4.4-v4.4.6、v5.0-v5.0.6 和 v5.1-v5.1.3），如果选择了 ``CONFIG_ESPTOOLPY_FLASHFREQ_120M``，则引导加载程序支持 `DC Aware`。此时，可启用 :menuitem:`CONFIG_BOOTLOADER_FLASH_DC_AWARE` 进行确认（不会影响实际应用中的引导加载程序）。
 
         - 对于低于 v4.4.4 的 ESP-IDF 版本，引导加载程序不支持 `DC Aware`。
 
@@ -185,12 +185,12 @@ QSPI flash 芯片的 32 位地址支持
     默认情况下，上述超过 16 MB 内存的 flash 区域可用于数据存储，例如使用文件系统。
 
     *实验性功能*：如需在超过 16 MB 的四线 flash 区域实现完整支持（包括代码执行和数据访问），请启用以下实验性配置选项：
-    - :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
-    - :ref:`CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`
+    - :menuitem:`CONFIG_IDF_EXPERIMENTAL_FEATURES`
+    - :menuitem:`CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH`
 
     请注意，此选项为实验性功能，无法在所有四线 flash 芯片上稳定使用。详情请咨询 `乐鑫商务部 <https://www.espressif.com/zh-hans/contact-us/sales-questions>`_。
 
-    对于八线 flash 芯片，如果启用了 :ref:`CONFIG_ESPTOOLPY_OCT_FLASH`，则该功能默认启用。
+    对于八线 flash 芯片，如果启用了 :menuitem:`CONFIG_ESPTOOLPY_OCT_FLASH`，则该功能默认启用。
 
 .. _oct-flash-doc:
 

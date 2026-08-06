@@ -26,9 +26,9 @@ Configuration
 
 Most configuration is done through menuconfig. CMake generates the bundle according to the configuration and embed it.
 
- * :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: automatically build and attach the bundle.
- * :ref:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`: decide which certificates to include from the complete root certificate list.
- * :ref:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`: specify the path of any additional certificates to embed in the bundle.
+ * :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: automatically build and attach the bundle.
+ * :menuitem:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`: decide which certificates to include from the complete root certificate list.
+ * :menuitem:`CONFIG_MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH`: specify the path of any additional certificates to embed in the bundle.
 
 To enable the bundle when using ESP-TLS simply pass the function pointer to the bundle attach function:
 
@@ -75,7 +75,7 @@ The bundle is embedded into the app and can be updated along with the app by an 
 Periodic Sync
 -------------
 
-The bundle is kept updated by periodic sync with the Mozilla's NSS root certificate store. The deprecated certs from the upstream bundle are added to deprecated list (for compatibility reasons) in ESP-IDF minor or patch release. If required, the deprecated certs can be added to the default bundle by enabling :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST`. The deprecated certs shall be removed (reset) on the next major ESP-IDF release.
+The bundle is kept updated by periodic sync with the Mozilla's NSS root certificate store. The deprecated certs from the upstream bundle are added to deprecated list (for compatibility reasons) in ESP-IDF minor or patch release. If required, the deprecated certs can be added to the default bundle by enabling :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST`. The deprecated certs shall be removed (reset) on the next major ESP-IDF release.
 
 Cross-Signed Certificate Support
 ---------------------------------
@@ -83,7 +83,7 @@ Cross-Signed Certificate Support
 Overview
 ^^^^^^^^
 
-When the configuration option :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled, the ESP x509 Certificate Bundle API adds support for verifying certificate chains that include cross-signed root certificates.
+When the configuration option :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled, the ESP x509 Certificate Bundle API adds support for verifying certificate chains that include cross-signed root certificates.
 
 This feature allows the verification process to dynamically select candidate Certificate Authorities (CAs) from the bundle, even when the certificate chain contains cross-signed roots, improving interoperability with a wider range of server certificates.
 
@@ -102,11 +102,11 @@ Key Points:
 Usage
 ^^^^^
 
-No additional application changes are required beyond enabling :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` in your project configuration. The bundle will automatically provide candidate CAs during the TLS handshake.
+No additional application changes are required beyond enabling :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` in your project configuration. The bundle will automatically provide candidate CAs during the TLS handshake.
 
 .. note::
 
-    If :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled, it internally uses ``MBEDTLS_X509_TRUSTED_CERT_CALLBACK``. In this case, users should **not** provide their own trusted certificate callback, as the certificate bundle will manage this automatically.
+    If :menuitem:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_CROSS_SIGNED_VERIFY` is enabled, it internally uses ``MBEDTLS_X509_TRUSTED_CERT_CALLBACK``. In this case, users should **not** provide their own trusted certificate callback, as the certificate bundle will manage this automatically.
 
 Application Examples
 --------------------

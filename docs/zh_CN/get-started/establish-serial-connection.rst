@@ -343,7 +343,7 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 - 使用 `在 Windows 上查看端口`_ 与 `在 Linux 和 macOS 上查看端口`_ 中描述的方法，检查所选串口是否正确
 - 其他程序是否正在使用该串口
 - 串口终端程序中的串口设置是否适用于该应用程序
-- 应用程序是否会输出日志。具体来说，如果在 ``Component config`` > ``Log`` > ``Log Level`` > ``Default log verbosity (Info)`` 中设置为 ``No output``，则不会打印出任何日志。你可以在 ``menuconfig`` 中更改该设置。
+- 应用程序是否会输出日志。如果 :menuitem:`CONFIG_LOG_DEFAULT_LEVEL` 设置为 ``No output``，则不会打印出任何日志。
 - 是否禁用了日志输出（使用 :example:`hello world 示例 <get-started/hello_world>` 进行测试）
 
 输出示例

@@ -25,7 +25,7 @@ RTOS 集成
 
 .. note::
 
-    如果调用 C 标准库或 C++ sleep 函数，例如在 ``unistd.h`` 中定义的 ``usleep``，那么只有当睡眠时间超过 :ref:`一个 FreeRTOS 滴答周期 <CONFIG_FREERTOS_HZ>` 时，任务才会阻塞并让出内核。如果时间较短，线程将处于忙等待状态，不会让步给另一个 RTOS 任务。
+    如果调用 C 标准库或 C++ sleep 函数，例如在 ``unistd.h`` 中定义的 ``usleep``，那么只有当睡眠时间超过 :menuitem:`一个 FreeRTOS 滴答周期 <CONFIG_FREERTOS_HZ>` 时，任务才会阻塞并让出内核。如果时间较短，线程将处于忙等待状态，不会让步给另一个 RTOS 任务。
 
 .. note::
 
@@ -110,7 +110,7 @@ POSIX 互斥锁被实现为 FreeRTOS 互斥信号量（普通类型用于“快�
 
 支持静态初始化常量 ``PTHREAD_COND_INITIALIZER``。
 
-* ``pthread_cond_timedwait()`` 超时的分辨率为 RTOS 滴答周期（参见 :ref:`CONFIG_FREERTOS_HZ`）。在请求超时后，超时最多会延迟一个滴答周期。
+* ``pthread_cond_timedwait()`` 超时的分辨率为 RTOS 滴答周期（参见 :menuitem:`CONFIG_FREERTOS_HZ`）。在请求超时后，超时最多会延迟一个滴答周期。
 
 .. note::
 
@@ -173,7 +173,7 @@ ESP-IDF 中实现了 POSIX 读写锁规范的以下 API 函数：
 
 .. note::
 
-    在 pthread 或 FreeRTOS API 创建的任务中都可以调用此函数。当从 FreeRTOS API 创建的任务中调用这些函数时，必须先启用 :ref:`CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS` 配置选项，以确保在删除任务之前清理线程数据。
+    在 pthread 或 FreeRTOS API 创建的任务中都可以调用此函数。当从 FreeRTOS API 创建的任务中调用这些函数时，必须先启用 :menuitem:`CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS` 配置选项，以确保在删除任务之前清理线程数据。
 
 .. note::
 
@@ -248,11 +248,11 @@ ESP-IDF 扩展
 
 .. list::
 
-    - 如果调用 ``pthread_create()`` 时未指定默认堆栈大小，可设置新线程的默认堆栈大小（覆盖 :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`）。
+    - 如果调用 ``pthread_create()`` 时未指定默认堆栈大小，可设置新线程的默认堆栈大小（覆盖 :menuitem:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`）。
     - 堆栈内存属性决定用于分配 pthread 堆栈的内存类型。该字段使用 ESP-IDF 堆属性标志，这一标志在 :component_file:`heap/include/esp_heap_caps.h` 文件中定义。为了确保分配的内存能够通过 8 位地址访问 (MALLOC_CAP_8BIT)，用户必须设置相应的标志，此外也可添加其他自定义标志。用户应当确保选择了正确的堆栈内存属性。了解内存位置的更多信息，请参考 :ref:`memory_capabilities` 文档。
-    - 新线程的 RTOS 优先级（覆盖 :ref:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`）。
-    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 新线程的内核亲和性/内核固定（覆盖 :ref:`CONFIG_PTHREAD_TASK_CORE_DEFAULT`）。
-    - 新线程的 FreeRTOS 任务名称（覆盖 :ref:`CONFIG_PTHREAD_TASK_NAME_DEFAULT`）
+    - 新线程的 RTOS 优先级（覆盖 :menuitem:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`）。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 新线程的内核亲和性/内核固定（覆盖 :menuitem:`CONFIG_PTHREAD_TASK_CORE_DEFAULT`）。
+    - 新线程的 FreeRTOS 任务名称（覆盖 :menuitem:`CONFIG_PTHREAD_TASK_NAME_DEFAULT`）
 
 此配置的作用范围是调用线程或 FreeRTOS 任务，这意味着 :cpp:func:`esp_pthread_set_cfg` 可以在不同的线程或任务中独立调用。如果在当前配置中设置了 ``inherit_cfg`` 标志，那么当一个线程递归调用 ``pthread_create()`` 时，任何新创建的线程都会继承该线程的配置，否则新线程将采用默认配置。
 

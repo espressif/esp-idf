@@ -434,7 +434,7 @@ The following are some project/build variables that are available as build prope
 - ``IDF_TARGET``: Name of the target for which the project is being built.
 - ``PROJECT_VER``: Project version.
 
-  * If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used.
+  * If :menuitem:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :menuitem:`CONFIG_APP_PROJECT_VER` will be used.
   * Else, if ``PROJECT_VER`` variable is set in project CMakeLists.txt file, its value will be used.
   * Else, if the ``PROJECT_DIR/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
   * Else, if ``VERSION`` argument is passed to the ``project()`` call in the CMakeLists.txt file as ``project(... VERSION x.y.z.w )`` then it will be used as ``PROJECT_VER``. The ``VERSION`` argument must be compliant with the `cmake standard <https://cmake.org/cmake/help/v3.22/command/project.html>`_.
@@ -1340,7 +1340,7 @@ The example in :example:`build_system/cmake/idf_as_lib` demonstrates the creatio
 
 .. only:: esp32
 
-   .. note:: The IDF build system can only set compiler flags for source files that it builds. When an external CMakeLists.txt file is used and PSRAM is enabled, remember to add ``-mfix-esp32-psram-cache-issue`` to the C compiler arguments. See :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` for details of this flag.
+   .. note:: The IDF build system can only set compiler flags for source files that it builds. When an external CMakeLists.txt file is used and PSRAM is enabled, remember to add ``-mfix-esp32-psram-cache-issue`` to the C compiler arguments. See :menuitem:`CONFIG_SPIRAM_CACHE_WORKAROUND` for details of this flag.
 
 
 .. _cmake_buildsystem_api:

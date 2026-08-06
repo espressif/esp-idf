@@ -8,7 +8,7 @@ Introduction
 
 When a single peer phone connects to an ESP32 peripheral through two different **local identities** (for example, a Public address and a fixed Static Random address from two extended advertising sets), the default Bluedroid Host treats both links as the same peer. Bonds, LTK, and NVS sections can overwrite each other.
 
-Enable :ref:`BT_BLE_PERIPH_PSEUDO_ADDR_BOND <CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND>` to derive a Host-internal **pseudo address** ``f(local_identity, peer)`` per link. The application sees two different ``remote_bda`` values for the same phone, while SMP and the controller still use the real peer identity on air.
+Enable :menuitem:`BT_BLE_PERIPH_PSEUDO_ADDR_BOND <CONFIG_BT_BLE_PERIPH_PSEUDO_ADDR_BOND>` to derive a Host-internal **pseudo address** ``f(local_identity, peer)`` per link. The application sees two different ``remote_bda`` values for the same phone, while SMP and the controller still use the real peer identity on air.
 
 Example
 -------

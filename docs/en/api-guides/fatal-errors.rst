@@ -16,7 +16,7 @@ In certain situations, the execution of the program can not be continued in a we
     .. list::
 
         - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
-        - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
+        - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :menuitem:`CONFIG_ESP_TASK_WDT_PANIC` is set)
         - Cache access error
         :SOC_MEMPROT_SUPPORTED: - Memory protection fault
         - Brownout detection event
@@ -50,7 +50,7 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
 In all cases, the error cause will be printed in parentheses. See :ref:`Guru-Meditation-Errors` for a list of possible error causes.
 
-Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
+Subsequent behavior of the panic handler can be set using :menuitem:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
 
 - Print registers and reboot (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) — default option.
 
@@ -70,19 +70,19 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
 .. note::
 
-    The ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` choice in the configuration option :ref:`CONFIG_ESP_SYSTEM_PANIC` is only available when the component ``esp_gdbstub`` is included in the build.
+    The ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` choice in the configuration option :menuitem:`CONFIG_ESP_SYSTEM_PANIC` is only available when the component ``esp_gdbstub`` is included in the build.
 
 The behavior of the panic handler is affected by three other configuration options.
 
-- If :ref:`CONFIG_ESP_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
+- If :menuitem:`CONFIG_ESP_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
 - If the :doc:`Core Dump <core_dump>` feature is enabled, then the system state (task stacks and registers) will be dumped to either Flash or UART, for later analysis.
 
-- If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory, not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
+- If :menuitem:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory, not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
 
     If this option is enabled, the panic handler code (including required UART functions) is placed in IRAM, and hence will decrease the usable memory space in SRAM. But this may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception is triggered.
 
-- If :ref:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` is enabled (disabled by default) and set to a number higher than 0, the panic handler will delay the reboot for that amount of time in seconds. This can help if the tool used to monitor serial output does not provide a possibility to stop and examine the serial output. In that case, delaying the reboot will allow users to examine and debug the panic handler output (backtrace, etc.) for the duration of the delay. After the delay, the device will reboot. The reset reason is preserved.
+- If :menuitem:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` is enabled (disabled by default) and set to a number higher than 0, the panic handler will delay the reboot for that amount of time in seconds. This can help if the tool used to monitor serial output does not provide a possibility to stop and examine the serial output. In that case, delaying the reboot will allow users to examine and debug the panic handler output (backtrace, etc.) for the duration of the delay. After the delay, the device will reboot. The reset reason is preserved.
 
 The following diagram illustrates the panic handler behavior:
 
@@ -299,14 +299,14 @@ RTC Watchdog Timeout
 
 {IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
-The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the first stage (ROM) bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
+The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :menuitem:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the first stage (ROM) bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
 
 .. code-block:: none
 
     rst:0x10 ({IDF_TARGET_RTCWDT_RTC_RESET})
 
 
-The RTC watchdog covers the execution time from the first stage (ROM) bootloader to application startup. It is initially set in the first stage (ROM) bootloader, then configured in the bootloader with the :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000 ms by default). During the application initialization stage, it is reconfigured because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which prevents the RTC watchdog from being disabled before ``app_main``. Instead, the RTC watchdog remains active and must be fed periodically in your application's code.
+The RTC watchdog covers the execution time from the first stage (ROM) bootloader to application startup. It is initially set in the first stage (ROM) bootloader, then configured in the bootloader with the :menuitem:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000 ms by default). During the application initialization stage, it is reconfigured because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which prevents the RTC watchdog from being disabled before ``app_main``. Instead, the RTC watchdog remains active and must be fed periodically in your application's code.
 
 The RTC watchdog is also used by the system :ref:`panic handler <Panic-Handler>` to protect the system from hanging during a panic. The RTC watchdog is reconfigured in the panic handler to have a timeout of 10 seconds. If the panic handler takes longer than 10 seconds to execute, the system will be reset by the RTC watchdog.
 
@@ -423,7 +423,7 @@ In some situations, ESP-IDF will temporarily disable access to external SPI flas
     * writing to instruction RAM after the program is loaded
     * executing code from data RAM (areas used for heap and static .data and .bss)
 
-    Such operations are not necessary for most programs. Prohibiting such operations typically makes software vulnerabilities harder to exploit. Applications which rely on dynamic loading or self-modifying code may disable this protection using :ref:`CONFIG_ESP_SYSTEM_MEMPROT` Kconfig option.
+    Such operations are not necessary for most programs. Prohibiting such operations typically makes software vulnerabilities harder to exploit. Applications which rely on dynamic loading or self-modifying code may disable this protection using :menuitem:`CONFIG_ESP_SYSTEM_MEMPROT` Kconfig option.
 
     When the fault occurs, the panic handler reports the address of the fault and the type of memory access that caused it.
 
@@ -435,7 +435,7 @@ Other Fatal Errors
     Brownout
     ^^^^^^^^
 
-    {IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_ESP_BROWNOUT_DET` and :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` options.
+    {IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :menuitem:`CONFIG_ESP_BROWNOUT_DET` and :menuitem:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` options.
 
     When the brownout detector triggers, the following message is printed:
 
@@ -485,7 +485,7 @@ Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` docume
 
         Guru Meditation Error: Core 0 panic'ed (Stack protection fault).
 
-    Hardware stack guard can be disabled using :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` options.
+    Hardware stack guard can be disabled using :menuitem:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` options.
 
 .. _FreeRTOS-End-Of-Stack-Watchpoint:
 
@@ -514,18 +514,18 @@ If watchpoint triggers, the message will be similar to:
 
         Guru Meditation Error: Core  0 panic'ed (Breakpoint). Exception was unhandled.
 
-This feature can be enabled by using the :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option.
+This feature can be enabled by using the :menuitem:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` option.
 
 
 FreeRTOS Stack Checks
 """""""""""""""""""""
 
-See :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`
+See :menuitem:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`
 
 Stack Smashing
 ^^^^^^^^^^^^^^
 
-Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed:
+Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :menuitem:`CONFIG_COMPILER_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed:
 
 .. code-block:: none
 
@@ -560,7 +560,7 @@ The backtrace should point to the function where stack smashing has occurred. Ch
 
     A CPU lockup reset happens when there is a double exception, i.e. when an exception occurs while the CPU is already in an exception handler. The most common cause for this is when the cache is in a state where accessing external memory becomes impossible. In such cases, the panic handler will crash as well due to being unable to fetch instructions or read data.
 
-    To gather more information about the cause of the lockup, you can try placing the panic handler code in IRAM, which remains accessible even when the cache is disabled. This can be done with :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`.
+    To gather more information about the cause of the lockup, you can try placing the panic handler code in IRAM, which remains accessible even when the cache is disabled. This can be done with :menuitem:`CONFIG_ESP_PANIC_HANDLER_IRAM`.
 
 
 Undefined Behavior Sanitizer (UBSAN) Checks

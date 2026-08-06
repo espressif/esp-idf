@@ -51,7 +51,7 @@ API 函数 :cpp:func:`esp_ds_sign` 和 :cpp:func:`esp_ds_start_sign` 在 RSA_DS 
 
 **PSA 密码学驱动程序**
 
-RSA_DS 外设也通过 **PSA Crypto RSA_DS 驱动程序** 对外提供访问接口，因此可以使用标准 PSA API 执行签名（PKCS#1 v1.5 或 PSS）和 RSA 解密（PKCS#1 v1.5 或 OAEP）。在 ``Component config`` > ``mbedTLS`` 中启用 ``CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL``。要在 ESP-TLS 中配合使用 RSA_DS 外设（例如 TLS 客户端认证），请参阅 ESP-TLS 文档中的 :ref:`digital-signature-with-esp-tls`。
+RSA_DS 外设也通过 **PSA Crypto RSA_DS 驱动程序** 对外提供访问接口，因此可以使用标准 PSA API 执行签名（PKCS#1 v1.5 或 PSS）和 RSA 解密（PKCS#1 v1.5 或 OAEP）。启用 :menuitem:`CONFIG_MBEDTLS_HARDWARE_RSA_DS_PERIPHERAL`。要在 ESP-TLS 中配合使用 RSA_DS 外设（例如 TLS 客户端认证），请参阅 ESP-TLS 文档中的 :ref:`digital-signature-with-esp-tls`。
 
 .. _configure-the-ds-peripheral:
 

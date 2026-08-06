@@ -43,7 +43,7 @@ For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value c
 
 Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret the error code as a `standard POSIX error code <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_, if no matching ``ESP_ERR_`` value is found. This is done using ``strerror_r`` function. POSIX error codes (such as ``ENOENT``, ``ENOMEM``) are defined in ``errno.h`` and are typically obtained from ``errno`` variable. In ESP-IDF this variable is thread-local: multiple FreeRTOS tasks have their own copies of ``errno``. Functions which set ``errno`` only modify its value for the task they run in.
 
-This feature is enabled by default, but can be disabled to reduce application binary size. See :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
+This feature is enabled by default, but can be disabled to reduce application binary size. See :menuitem:`CONFIG_ESP_ERR_TO_NAME_LOOKUP`. When this feature is disabled, :cpp:func:`esp_err_to_name` and :cpp:func:`esp_err_to_name_r` are still defined and can be called. In this case, :cpp:func:`esp_err_to_name` will return ``UNKNOWN ERROR``, and :cpp:func:`esp_err_to_name_r` will return ``Unknown error 0xXXXX(YYYYY)``, where ``0xXXXX`` and ``YYYYY`` are the hexadecimal and decimal representations of the error code, respectively.
 
 .. _esp-error-check-macro:
 
@@ -85,7 +85,7 @@ Error message will typically look like this:
 
     If :doc:`ESP-IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
 
-- The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occurred is printed as well.
+- The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :menuitem:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occurred is printed as well.
 
 - Subsequent lines show the location in the program where :c:macro:`ESP_ERROR_CHECK` macro was called, and the expression which was passed to the macro as an argument.
 
@@ -122,7 +122,7 @@ The macros are defined as follows:
 
 - **ESP_RETURN_ON_ERROR_CLEANUP**: Return from the function after executing cleanup code if an error is detected. This macro is useful when resources need to be released before returning an error code. It evaluates an expression that returns :cpp:type:`esp_err_t`, and if the result is not :c:macro:`ESP_OK`, it executes the cleanup code provided in the variable arguments (such as freeing resources or logging) before returning the error code from the current function.
 
-The default behavior of these macros can be adjusted: if the :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` option is enabled in Kconfig, error messages will not be included in the application binary and will not be printed.
+The default behavior of these macros can be adjusted: if the :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` option is enabled in Kconfig, error messages will not be included in the application binary and will not be printed.
 
 .. _check_macros_examples:
 

@@ -19,7 +19,7 @@ The possible combinations of hardware timers used to keep system time are listed
 - High-resolution timer
 - None
 
-It is recommended that users stick to the default option as it provides the highest accuracy. However, users can also select a different setting via the :ref:`CONFIG_LIBC_TIME_SYSCALL` configuration option.
+It is recommended that users stick to the default option as it provides the highest accuracy. However, users can also select a different setting via the :menuitem:`CONFIG_LIBC_TIME_SYSCALL` configuration option.
 
 
 .. _rtc-clock-source-choice:
@@ -39,7 +39,7 @@ The RTC timer has the following clock sources:
 
     :esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3: - ``Internal 8.5–17.5 MHz oscillator (depending on chip), divided by 256``: Provides better frequency stability than the ``Internal 90–150 kHz RC oscillator`` at the expense of a higher (by 5 μA) Deep-sleep current consumption. It also does not require external components.
 
-The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_RTC_CLK_SRC` in project configuration.
+The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :menuitem:`CONFIG_RTC_CLK_SRC` in project configuration.
 
 More details about the wiring requirements for the external crystal or external oscillator, please refer to the `Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/{IDF_TARGET_PATH_NAME}>`_.
 
@@ -154,7 +154,7 @@ If you want to choose the :cpp:enumerator:`SNTP_SYNC_MODE_SMOOTH` mode, please s
 
 For setting a callback function that is called when time gets synchronized, use the :cpp:member:`esp_sntp_config::sync_cb` field in the configuration struct.
 
-An application with this initialization code periodically synchronizes the time. The time synchronization period is determined by :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (the default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
+An application with this initialization code periodically synchronizes the time. The time synchronization period is determined by :menuitem:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (the default value is one hour). To modify the variable, set :menuitem:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
 
 A code example that demonstrates the implementation of time synchronization based on the lwIP SNTP library is provided in the :example:`protocols/sntp` directory.
 

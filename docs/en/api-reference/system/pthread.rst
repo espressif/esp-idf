@@ -25,7 +25,7 @@ Unlike many operating systems using POSIX Threads, ESP-IDF is a real-time operat
 
 .. note::
 
-    When calling a standard libc or C++ sleep function, such as ``usleep`` defined in ``unistd.h``, the task will only block and yield the core if the sleep time is longer than :ref:`one FreeRTOS tick period <CONFIG_FREERTOS_HZ>`. If the time is shorter, the thread will busy-wait instead of yielding to another RTOS task.
+    When calling a standard libc or C++ sleep function, such as ``usleep`` defined in ``unistd.h``, the task will only block and yield the core if the sleep time is longer than :menuitem:`one FreeRTOS tick period <CONFIG_FREERTOS_HZ>`. If the time is shorter, the thread will busy-wait instead of yielding to another RTOS task.
 
 .. note::
 
@@ -110,7 +110,7 @@ Condition Variables
 
 Static initializer constant ``PTHREAD_COND_INITIALIZER`` is supported.
 
-* The resolution of ``pthread_cond_timedwait()`` timeouts is the RTOS tick period (see :ref:`CONFIG_FREERTOS_HZ`). Timeouts may be delayed up to one tick period after the requested timeout.
+* The resolution of ``pthread_cond_timedwait()`` timeouts is the RTOS tick period (see :menuitem:`CONFIG_FREERTOS_HZ`). Timeouts may be delayed up to one tick period after the requested timeout.
 
 .. note::
 
@@ -173,7 +173,7 @@ Thread-Specific Data
 
 .. note::
 
-    These functions can be called from tasks created using either pthread or FreeRTOS APIs. When calling these functions from tasks created using FreeRTOS APIs, :ref:`CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS` config option must be enabled to ensure the thread-specific data is cleaned up before the task is deleted.
+    These functions can be called from tasks created using either pthread or FreeRTOS APIs. When calling these functions from tasks created using FreeRTOS APIs, :menuitem:`CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS` config option must be enabled to ensure the thread-specific data is cleaned up before the task is deleted.
 
 .. note::
 
@@ -248,11 +248,11 @@ The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header
 
 .. list::
 
-    - Default stack size of new threads, if not specified when calling ``pthread_create()`` (overrides :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`).
+    - Default stack size of new threads, if not specified when calling ``pthread_create()`` (overrides :menuitem:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`).
     - Stack memory capabilities determine which kind of memory is used for allocating pthread stacks. The field takes ESP-IDF heap capability flags, as defined in :component_file:`heap/include/esp_heap_caps.h`. The memory must be 8-bit accessible (MALLOC_CAP_8BIT), besides other custom flags the user can choose from. The user is responsible for ensuring the correctness of the stack memory capabilities. For more information about memory locations, refer to the documentation of :ref:`memory_capabilities`.
-    - RTOS priority of new threads (overrides :ref:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`).
-    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Core affinity / core pinning of new threads (overrides :ref:`CONFIG_PTHREAD_TASK_CORE_DEFAULT`).
-    - FreeRTOS task name for new threads (overrides :ref:`CONFIG_PTHREAD_TASK_NAME_DEFAULT`)
+    - RTOS priority of new threads (overrides :menuitem:`CONFIG_PTHREAD_TASK_PRIO_DEFAULT`).
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Core affinity / core pinning of new threads (overrides :menuitem:`CONFIG_PTHREAD_TASK_CORE_DEFAULT`).
+    - FreeRTOS task name for new threads (overrides :menuitem:`CONFIG_PTHREAD_TASK_NAME_DEFAULT`)
 
 This configuration is scoped to the calling thread (or FreeRTOS task), meaning that :cpp:func:`esp_pthread_set_cfg` can be called independently in different threads or tasks. If the ``inherit_cfg`` flag is set in the current configuration then any new thread created will inherit the creator's configuration (if that thread calls ``pthread_create()`` recursively), otherwise the new thread will have the default configuration.
 

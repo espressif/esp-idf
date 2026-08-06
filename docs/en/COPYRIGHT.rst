@@ -19,7 +19,7 @@ Firmware Components
 
 These third party libraries can be included into the application (firmware) produced by ESP-IDF.
 
-* :component:`Newlib <esp_libc>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>`. If :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` is enabled, see also :component_file:`COPYING.picolibc <esp_libc/COPYING.picolibc>`.
+* :component:`Newlib <esp_libc>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>`. If :menuitem:`CONFIG_LIBC_PICOLIBC` is enabled, see also :component_file:`COPYING.picolibc <esp_libc/COPYING.picolibc>`.
 
 :component:`Picolibc <esp_libc>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.picolibc <esp_libc/COPYING.NEWLIB>`.
 

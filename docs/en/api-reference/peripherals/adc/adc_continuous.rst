@@ -252,7 +252,7 @@ As the above callbacks are called in an ISR context, you should always ensure th
 
 You can also register your own context when calling :cpp:func:`adc_continuous_register_event_callbacks` by the parameter ``user_data``. This user data will be passed to the callback functions directly.
 
-This function may fail due to reasons like :c:macro:`ESP_ERR_INVALID_ARG`. Especially, when :ref:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` is enabled, this error may indicate that the callback functions are not in the internal RAM. Check the error log for more details. Besides, when it fails due to :c:macro:`ESP_ERR_INVALID_STATE`, it indicates that the ADC continuous mode driver is started, and you should not add a callback at this moment.
+This function may fail due to reasons like :c:macro:`ESP_ERR_INVALID_ARG`. Especially, when :menuitem:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` is enabled, this error may indicate that the callback functions are not in the internal RAM. Check the error log for more details. Besides, when it fails due to :c:macro:`ESP_ERR_INVALID_STATE`, it indicates that the ADC continuous mode driver is started, and you should not add a callback at this moment.
 
 
 Conversion Done Event
@@ -266,7 +266,7 @@ When the driver completes a conversion, it triggers the :cpp:member:`adc_continu
 
 .. note::
 
-    When the Kconfig option :ref:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` is enabled, the registered callbacks and the functions called by the callbacks should be placed in IRAM. The involved variables should be placed in internal RAM as well.
+    When the Kconfig option :menuitem:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE` is enabled, the registered callbacks and the functions called by the callbacks should be placed in IRAM. The involved variables should be placed in internal RAM as well.
 
 Pool Overflow Event
 ~~~~~~~~~~~~~~~~~~~
@@ -395,15 +395,15 @@ Hardware Limitations
     :esp32: - ESP32 DevKitC: GPIO 0 cannot be used due to external auto program circuits.
     :esp32: - ESP-WROVER-KIT: GPIO 0, 2, 4, and 15 cannot be used due to external connections for different purposes.
     :esp32s2: - ADC continuous mode driver uses SPI3 peripheral as hardware DMA FIFO. Therefore, if SPI3 is in use already, the :cpp:func:`adc_continuous_new_handle` will return :c:macro:`ESP_ERR_NOT_FOUND`.
-    :esp32c3: - ADC2 DMA functionality is no longer supported to retrieve ADC conversion results due to hardware limitations, as unstable results have been observed. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
-    :esp32s3: - ADC2 DMA functionality is no longer supported to retrieve ADC conversion results due to hardware limitations, as unstable results have been observed. This issue can be found in `ESP32S3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_en.pdf>`_. For compatibility, you can enable :ref:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
+    :esp32c3: - ADC2 DMA functionality is no longer supported to retrieve ADC conversion results due to hardware limitations, as unstable results have been observed. This issue can be found in `ESP32C3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-c3_errata_en.pdf>`_. For compatibility, you can enable :menuitem:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
+    :esp32s3: - ADC2 DMA functionality is no longer supported to retrieve ADC conversion results due to hardware limitations, as unstable results have been observed. This issue can be found in `ESP32S3 Errata <https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_en.pdf>`_. For compatibility, you can enable :menuitem:`CONFIG_ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3` to force use ADC2.
 
 .. _adc-continuous-power-management:
 
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the APB clock frequency may be adjusted when the system is in an idle state, thus potentially changing the behavior of ADC continuous conversion.
+When power management is enabled, i.e., :menuitem:`CONFIG_PM_ENABLE` is on, the APB clock frequency may be adjusted when the system is in an idle state, thus potentially changing the behavior of ADC continuous conversion.
 
 However, the continuous mode driver can prevent this change by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. The lock is acquired after the continuous conversion is started by :cpp:func:`adc_continuous_start`. Similarly, the lock will be released after :cpp:func:`adc_continuous_stop`. Therefore, :cpp:func:`adc_continuous_start` and :cpp:func:`adc_continuous_stop` should appear in pairs, otherwise, the power management will be out of action.
 
@@ -413,7 +413,7 @@ However, the continuous mode driver can prevent this change by acquiring a power
 IRAM Safe
 ^^^^^^^^^
 
-All the ADC continuous mode driver APIs are not IRAM-safe. They are not supposed to be run when the Cache is disabled. By enabling the Kconfig option :ref:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE`, the driver's internal ISR handler is IRAM-safe, which means even when the Cache is disabled, the driver will still save the conversion results into its internal pool.
+All the ADC continuous mode driver APIs are not IRAM-safe. They are not supposed to be run when the Cache is disabled. By enabling the Kconfig option :menuitem:`CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE`, the driver's internal ISR handler is IRAM-safe, which means even when the Cache is disabled, the driver will still save the conversion results into its internal pool.
 
 
 .. _adc-continuous-thread-safety:

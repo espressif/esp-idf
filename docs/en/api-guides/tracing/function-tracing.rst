@@ -10,10 +10,10 @@ Function tracing records every function entry and exit automatically, without ma
 Enabling Function Tracing
 -------------------------
 
-Enable it under ``Component config`` > ``ESP Trace Configuration`` > ``Function Tracing``. The following options control function tracing:
+Enable :menuitem:`CONFIG_ESP_TRACE_FUNCTION_TRACE`. The following options control function tracing:
 
-- :ref:`CONFIG_ESP_TRACE_FUNCTION_TRACE` - build the function-trace hooks and runtime.
-- :ref:`CONFIG_ESP_TRACE_FUNCTION_TRACE_AUTO_START` - when enabled (default), recording follows the encoder's state and begins as soon as the host starts the session. When disabled, no events are emitted until the application calls :cpp:func:`esp_trace_function_trace_start`; an active host session alone is not enough.
+- :menuitem:`CONFIG_ESP_TRACE_FUNCTION_TRACE` - build the function-trace hooks and runtime.
+- :menuitem:`CONFIG_ESP_TRACE_FUNCTION_TRACE_AUTO_START` - when enabled (default), recording follows the encoder's state and begins as soon as the host starts the session. When disabled, no events are emitted until the application calls :cpp:func:`esp_trace_function_trace_start`; an active host session alone is not enough.
 
 Enabling the option compiles the hooks and runtime into the build. It does not add ``-finstrument-functions`` to any code, so on its own it produces no events. To trace a component or file, add the flag from its own ``CMakeLists.txt`` for the sources you want traced:
 

@@ -19,7 +19,7 @@
 
 以下这些第三方库包含在 ESP-IDF 生成的应用程序（固件）中。
 
-* 如 :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>` 中所述， :component:`Newlib <esp_libc>` 经 BSD 许可证许可，版权归各方所有。如启用了 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`，请参阅 :component_file:`COPYING.picolibc <esp_libc/COPYING.picolibc>`。
+* 如 :component_file:`COPYING.NEWLIB <esp_libc/COPYING.NEWLIB>` 中所述， :component:`Newlib <esp_libc>` 经 BSD 许可证许可，版权归各方所有。如启用了 :menuitem:`CONFIG_LIBC_PICOLIBC`，请参阅 :component_file:`COPYING.picolibc <esp_libc/COPYING.picolibc>`。
 
 * 如 :component_file:`COPYING.picolibc <esp_libc/COPYING.NEWLIB>` 中所述， :component:`Picolibc <esp_libc>` 经 BSD 许可证许可，版权归各方所有。
 

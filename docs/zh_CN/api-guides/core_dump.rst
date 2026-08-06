@@ -23,7 +23,7 @@
 目标
 ^^^^^^^^^^^
 
-选项 :ref:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` 可以启用或禁用核心转储，并在启用时选择核心转储的目标。发生崩溃时，生成的核心转储文件可以保存到 flash 中，也可以通过 UART 输出到连接的主机上。
+选项 :menuitem:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` 可以启用或禁用核心转储，并在启用时选择核心转储的目标。发生崩溃时，生成的核心转储文件可以保存到 flash 中，也可以通过 UART 输出到连接的主机上。
 
 
 格式和大小
@@ -31,7 +31,7 @@
 
 核心转储文件以 ELF 格式生成，该格式具有可扩展性，能够在系统崩溃时完整保存错误任务和故障软件的详细信息。ELF 格式具备良好的扩展灵活性，便于未来版本升级时存储更多诊断信息。
 
-选项 :ref:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` 可用于配置核心转储保存的任务快照数量。崩溃任务的寄存器和栈总是会被保存，不受此配置选项影响。其他任务的快照将根据优先级顺序（从就绪状态下优先级最高的任务开始）依次保存。
+选项 :menuitem:`CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` 可用于配置核心转储保存的任务快照数量。崩溃任务的寄存器和栈总是会被保存，不受此配置选项影响。其他任务的快照将根据优先级顺序（从就绪状态下优先级最高的任务开始）依次保存。
 
 数据完整性检查
 ^^^^^^^^^^^^^^^^^^^^
@@ -41,7 +41,7 @@
 保留栈大小
 ^^^^^^^^^^^^^^^^^^^
 
-核心转储例程需要解析并保存所有其他任务的栈，因此会从单独的栈中运行。选项 :ref:`CONFIG_ESP_COREDUMP_STACK_SIZE` 控制核心转储栈大小，以字节数表示。
+核心转储例程需要解析并保存所有其他任务的栈，因此会从单独的栈中运行。选项 :menuitem:`CONFIG_ESP_COREDUMP_STACK_SIZE` 控制核心转储栈大小，以字节数表示。
 
 将此选项设置为 0 字节将使核心转储例程从 ISR 栈中运行，从而节省内存。将选项设置为大于零的值将创建一个独立的栈。
 
@@ -55,7 +55,7 @@
     核心转储内存区域
     ^^^^^^^^^^^^^^^^
 
-    核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
+    核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :menuitem:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
 
     推荐将上面提到的几个数据段都保存到核心转储中，以方便调试。但这会导致核心转储文件变大，具体所需的额外存储空间取决于应用程序使用的 DRAM 大小。
 
@@ -113,13 +113,13 @@
 将核心转储保存到 UART
 -----------------------
 
-当核心转储文件输出到 UART 时，输出文件会以 Base64 编码方式呈现。通过 :ref:`CONFIG_ESP_COREDUMP_DECODE` 选项，可以选择 ESP-IDF 监视器对输出文件自动解码，或保持编码状态等待手动解码。
+当核心转储文件输出到 UART 时，输出文件会以 Base64 编码方式呈现。通过 :menuitem:`CONFIG_ESP_COREDUMP_DECODE` 选项，可以选择 ESP-IDF 监视器对输出文件自动解码，或保持编码状态等待手动解码。
 
 
 自动解码
 ^^^^^^^^^^^^^^^^^^
 
-如果设置 :ref:`CONFIG_ESP_COREDUMP_DECODE`，使其自动解码 UART 核心转储文件，ESP-IDF 监视器会自动解码数据，将所有函数地址转换为源代码行，并在监视器中显示相应信息。ESP-IDF 监视器会输出类似以下内容：
+如果设置 :menuitem:`CONFIG_ESP_COREDUMP_DECODE`，使其自动解码 UART 核心转储文件，ESP-IDF 监视器会自动解码数据，将所有函数地址转换为源代码行，并在监视器中显示相应信息。ESP-IDF 监视器会输出类似以下内容：
 
 .. code-block:: none
 
@@ -169,12 +169,12 @@
     ===================== ESP32 CORE DUMP END =====================
     ===============================================================
 
-此外，选项 :ref:`CONFIG_ESP_COREDUMP_UART_DELAY` 支持在将核心转储文件输出到 UART 前添加延迟。
+此外，选项 :menuitem:`CONFIG_ESP_COREDUMP_UART_DELAY` 支持在将核心转储文件输出到 UART 前添加延迟。
 
 手动解码
 ^^^^^^^^^^^^^^^
 
-如果设置 :ref:`CONFIG_ESP_COREDUMP_DECODE` 为不解码，则在以下 UART 输出的页眉和页脚之间，将输出核心转储的原始 Base64 编码正文：
+如果设置 :menuitem:`CONFIG_ESP_COREDUMP_DECODE` 为不解码，则在以下 UART 输出的页眉和页脚之间，将输出核心转储的原始 Base64 编码正文：
 
 .. code-block:: none
 
@@ -241,7 +241,7 @@ ESP-IDF 提供了一些特殊命令，用于检索和分析核心转储：
 示例
 ^^^^^^^
 
-1. 在 :ref:`project-configuration-menu` 中启用 :ref:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`，随后保存并退出。
+1. 在 :ref:`project-configuration-menu` 中启用 :menuitem:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`，随后保存并退出。
 
 2. 在项目中，创建如下全局变量，放置在 DRAM 区域：
 

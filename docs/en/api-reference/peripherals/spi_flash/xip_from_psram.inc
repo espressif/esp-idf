@@ -3,7 +3,7 @@
 Executing Code from PSRAM
 -------------------------
 
-Select :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` config to enable this mode. In this mode, code is executed from PSRAM, and the cache will not be disabled during write APIs in most cases.
+Select :menuitem:`CONFIG_SPIRAM_XIP_FROM_PSRAM` config to enable this mode. In this mode, code is executed from PSRAM, and the cache will not be disabled during write APIs in most cases.
 
 In this mode, the flash ``.text`` sections (used for instructions) and the flash ``.rodata`` sections (used for read-only data) will be loaded into PSRAM at startup. The corresponding virtual addresses will be mapped to PSRAM. You do not need to ensure that code and data executed while the flash is being erased or programmed reside in IRAM.
 

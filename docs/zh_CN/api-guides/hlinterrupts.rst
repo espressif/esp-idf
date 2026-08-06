@@ -40,8 +40,8 @@ Xtensa 架构支持 32 个中断处理程序，这些中断分为从 1 到 7 的
         - xt_debugexception
         - 调试异常情况，例如在执行 BREAK 指令时调用。 [2]_
 
-  .. [1] 在 :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` 中配置 ESP-IDF 的调试逻辑，可以使其在 ``xt_highint4`` 或 ``xt_highint5`` 上运行。启用 :ref:`CONFIG_BTDM_CTRL_HLI`，可以将蓝牙中断配置为优先级 4。如果启用了 :ref:`CONFIG_BTDM_CTRL_HLI`，则 ESP-IDF 的调试逻辑必须运行在优先级 5 的中断上。
-  .. [2] 如果启用了 :ref:`CONFIG_BTDM_CTRL_HLI`，则可以用 ``xt_debugexception`` 修复 ESP32 ECO3 中的 `活锁问题 <https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_。
+  .. [1] 在 :menuitem:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` 中配置 ESP-IDF 的调试逻辑，可以使其在 ``xt_highint4`` 或 ``xt_highint5`` 上运行。启用 :menuitem:`CONFIG_BTDM_CTRL_HLI`，可以将蓝牙中断配置为优先级 4。如果启用了 :menuitem:`CONFIG_BTDM_CTRL_HLI`，则 ESP-IDF 的调试逻辑必须运行在优先级 5 的中断上。
+  .. [2] 如果启用了 :menuitem:`CONFIG_BTDM_CTRL_HLI`，则可以用 ``xt_debugexception`` 修复 ESP32 ECO3 中的 `活锁问题 <https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_。
 
 .. only:: not esp32
 
@@ -95,7 +95,7 @@ Xtensa 架构支持 32 个中断处理程序，这些中断分为从 1 到 7 的
 
 .. only:: esp32
 
-  由于存在额外保护措施，启用 :ref:`CONFIG_BTDM_CTRL_HLI` 时，可以放心从高级中断中调用 C 代码。
+  由于存在额外保护措施，启用 :menuitem:`CONFIG_BTDM_CTRL_HLI` 时，可以放心从高级中断中调用 C 代码。
 
 - 请确保所用汇编代码成功链接。由于可自由使用的符号声明为弱符号，链接器可能会丢弃包含此类符号的文件。如果用户文件中定义或使用的唯一符号是可自由使用的符号 ``xt_*``，则会发生上述情况。为了避免这种情况，应在包含 ``xt_*`` 符号的汇编文件中定义另一个符号，例如：
 

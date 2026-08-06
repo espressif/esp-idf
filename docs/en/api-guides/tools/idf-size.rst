@@ -143,7 +143,7 @@ The table is sorted in descending order of the total contribution of the static 
 
 .. note::
 
-    The size of the ``.rodata`` section in the ``Flash Data`` memory type may appear very large for a single archive. This occurs due to linker relaxations. The linker may attempt to combine object file sections with ``MERGE`` and ``STRINGS`` flags from all archives into one to perform tail string optimization. Consequently, one archive may end up with a very large ``.rodata`` section, containing string literals from other archives. This is evident in the ``.rodata`` section of the ``libesp_app_format.a`` archive. The specific compiler behavior here can be turned off by enabling :ref:`CONFIG_COMPILER_NO_MERGE_CONSTANTS` option (only for GCC toolchain), please read help for more details.
+    The size of the ``.rodata`` section in the ``Flash Data`` memory type may appear very large for a single archive. This occurs due to linker relaxations. The linker may attempt to combine object file sections with ``MERGE`` and ``STRINGS`` flags from all archives into one to perform tail string optimization. Consequently, one archive may end up with a very large ``.rodata`` section, containing string literals from other archives. This is evident in the ``.rodata`` section of the ``libesp_app_format.a`` archive. The specific compiler behavior here can be turned off by enabling :menuitem:`CONFIG_COMPILER_NO_MERGE_CONSTANTS` option (only for GCC toolchain), please read help for more details.
 
 
 Source File Usage Summary ``idf.py size-files``
@@ -196,7 +196,7 @@ Comparing Two Binaries
 
 When making changes that impact binary size, you can use the IDF Size tool to analyze the precise differences in size. The ``--diff`` option can be used with all previously mentioned sub-commands, allowing you to specify a path to a project build for comparison with the current project.
 
-For example to compare two ``hello_world`` project builds, follow these steps. First, create two copies of the ``hello_world`` project directory. Name the first project directory ``hello_world_Og``. This project will use the default :ref:`CONFIG_COMPILER_OPTIMIZATION` compiler optimization setting ``Debug (-Og)`` and will serve as the ``REFERENCE`` project. Name the second project directory ``hello_world_Os``. This project will use the ``Optimize for size (-Os)`` setting, which can be enabled using ``idf.py menuconfig``. This will be the ``CURRENT`` project. Build both projects. Then, from within the ``hello_world_Os`` project directory, run the following command:
+For example to compare two ``hello_world`` project builds, follow these steps. First, create two copies of the ``hello_world`` project directory. Name the first project directory ``hello_world_Og``. This project will use the default :menuitem:`CONFIG_COMPILER_OPTIMIZATION` compiler optimization setting ``Debug (-Og)`` and will serve as the ``REFERENCE`` project. Name the second project directory ``hello_world_Os``. This project will use the ``Optimize for size (-Os)`` setting, which can be enabled using ``idf.py menuconfig``. This will be the ``CURRENT`` project. Build both projects. Then, from within the ``hello_world_Os`` project directory, run the following command:
 
 
 .. code-block:: bash

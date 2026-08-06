@@ -54,7 +54,7 @@ Fast BSS transition (802.11r FT), is a standard to permit continuous connectivit
 
 {IDF_TARGET_NAME} station supports FT for WPA2-PSK networks. Do note that {IDF_TARGET_NAME} station only support FT over the air protocol only.
 
-A config option :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :cpp:type:`ft_enabled` in :cpp:type:`wifi_sta_config_t` is provided to enable 802.11r support for station. Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` for further details.
+A config option :menuitem:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :cpp:type:`ft_enabled` in :cpp:type:`wifi_sta_config_t` is provided to enable 802.11r support for station. Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` for further details.
 
 .. only:: SOC_WIFI_FTM_SUPPORT
 

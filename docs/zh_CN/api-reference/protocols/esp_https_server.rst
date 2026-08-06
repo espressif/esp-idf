@@ -77,7 +77,7 @@ HTTPS 服务器证书选择钩子
 
 ESP HTTPS 服务器组件提供了设置服务器证书选择钩子的选项。启用此功能后，在服务器握手过程中，可以配置并使用证书选择回调函数。该回调函数会根据客户端 hello 消息中提供的 TLS 扩展（如 ALPN 和 SNI），动态选择合适的证书发送给客户端。
 
-要启用此功能，请先在 ESP HTTPS 服务器的 menuconfig 中启用 :ref:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK`。请注意，只有当 Mbedtls 被用作 ESP-TLS 的 TLS 协议栈（默认行为）时，ESP-TLS 选项才可使用。
+要启用此功能，请先在 ESP HTTPS 服务器的 menuconfig 中启用 :menuitem:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK`。请注意，只有当 Mbedtls 被用作 ESP-TLS 的 TLS 协议栈（默认行为）时，ESP-TLS 选项才可使用。
 
 启用此功能后，请使用 :cpp:type:`httpd_ssl_config_t` 结构体中的 :cpp:member:`httpd_ssl_config::cert_select_cb` 成员，设置证书选择回调函数。
 

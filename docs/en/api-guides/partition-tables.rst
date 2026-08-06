@@ -6,13 +6,13 @@ Partition Tables
 Overview
 --------
 
-A single {IDF_TARGET_NAME}'s flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
+A single {IDF_TARGET_NAME}'s flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:menuitem:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
-The partition table length is 0xC00 bytes, as we allow a maximum of 95 entries. An MD5 checksum, used for checking the integrity of the partition table at runtime, is appended after the table data. Thus, the partition table occupies an entire flash sector, which size is 0x1000 (4 KB). As a result, any partition following it must be at least located at (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) + 0x1000.
+The partition table length is 0xC00 bytes, as we allow a maximum of 95 entries. An MD5 checksum, used for checking the integrity of the partition table at runtime, is appended after the table data. Thus, the partition table occupies an entire flash sector, which size is 0x1000 (4 KB). As a result, any partition following it must be at least located at (:menuitem:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) + 0x1000.
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
-The simplest way to use the partition table is to open the project configuration menu (``idf.py menuconfig``) and choose one of the simple predefined partition tables under :ref:`CONFIG_PARTITION_TABLE_TYPE`:
+The simplest way to use the partition table is to open the project configuration menu (``idf.py menuconfig``) and choose one of the simple predefined partition tables under :menuitem:`CONFIG_PARTITION_TABLE_TYPE`:
 
 * "Single factory app, no OTA"
 * "Factory app, two OTA definitions"
@@ -71,7 +71,7 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 
 * Whitespace between fields is ignored, and so is any line starting with ``#`` (comments).
 * Each non-comment line in the CSV file is a partition definition.
-* If you change the value of :ref:`CONFIG_PARTITION_TABLE_OFFSET`, you should update any fixed ``Offset`` in your CSV file to avoid overlaps with the new partition table location. Alternatively, leaving the ``Offset`` field blank allows the ``gen_esp32part.py`` tool to automatically calculate the correct offset based on the current partition table offset and alignment requirements.
+* If you change the value of :menuitem:`CONFIG_PARTITION_TABLE_OFFSET`, you should update any fixed ``Offset`` in your CSV file to avoid overlaps with the new partition table location. Alternatively, leaving the ``Offset`` field blank allows the ``gen_esp32part.py`` tool to automatically calculate the correct offset based on the current partition table offset and alignment requirements.
 
 Here is an example of a CSV partition table that includes bootloader and partition table partitions:
 
@@ -86,7 +86,7 @@ Here is an example of a CSV partition table that includes bootloader and partiti
     factory,          app,             factory,  ,        1M,
     recoveryBloader,  bootloader,      recovery, N/A,     N/A,
 
-The ``gen_esp32part.py`` tool will replace each ``N/A`` with appropriate values based on the selected Kconfig options: {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} for the bootloader offset and :ref:`CONFIG_PARTITION_TABLE_OFFSET` for the partition table offset.
+The ``gen_esp32part.py`` tool will replace each ``N/A`` with appropriate values based on the selected Kconfig options: {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} for the bootloader offset and :menuitem:`CONFIG_PARTITION_TABLE_OFFSET` for the partition table offset.
 
 Name Field
 ~~~~~~~~~~
@@ -117,7 +117,7 @@ The bootloader ignores any partition types other than ``app`` (0x00) and ``data`
 SubType
 ~~~~~~~
 
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5, esp32c61="NOT UPDATED YET"}
+{IDF_TARGET_ESP_PHY_REF:default = ":menuitem:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5, esp32c61="NOT UPDATED YET"}
 
 The 8-bit SubType field is specific to a given partition type. ESP-IDF currently only specifies the meaning of the subtype field for ``app`` and ``data`` partition types.
 
@@ -149,11 +149,11 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
     - ``ota`` (0x01). This is a temporary bootloader partition used by the bootloader OTA update functionality to download a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can only specify an offset, or leave it blank to have the tool calculate it based on the offsets of previously used partitions.
     - ``recovery`` (0x02). This is the recovery bootloader partition used for safely performing OTA updates to the bootloader. The ``gen_esp32part.py`` tool automatically determines the address and size for this partition, so you can leave these fields blank or use ``N/A`` as a placeholder. The address must match an eFuse field, which is defined through a Kconfig option. If the normal bootloader loading path fails, the first stage (ROM) bootloader will attempt to load the recovery partition at the address specified by the eFuse field.
 
-    The size of the bootloader type is calculated by the ``gen_esp32part.py`` tool  based on the specified ``--offset`` (the partition table offset) and ``--primary-partition-offset`` arguments. Specifically, the bootloader size is defined as (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}). This calculated size applies to all subtypes of the bootloader.
+    The size of the bootloader type is calculated by the ``gen_esp32part.py`` tool  based on the specified ``--offset`` (the partition table offset) and ``--primary-partition-offset`` arguments. Specifically, the bootloader size is defined as (:menuitem:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}). This calculated size applies to all subtypes of the bootloader.
 
 * When type is ``partition_table``, the SubType field can be specified as:
 
-    - ``primary`` (0x00). This is the primary partition table, located at the :ref:`CONFIG_PARTITION_TABLE_OFFSET` address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
+    - ``primary`` (0x00). This is the primary partition table, located at the :menuitem:`CONFIG_PARTITION_TABLE_OFFSET` address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
     - ``ota`` (0x01). It is a temporary partition table partition used by the partition table OTA update functionality for downloading a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can specify an offset, or leave it blank, in which case the tool will calculate it based on the offsets of previously allocated partitions.
 
     The size for the ``partition_table`` type is fixed at ``0x1000`` and applies uniformly across all subtypes of ``partition_table``.
@@ -226,7 +226,7 @@ Offset & Size
 
 .. note::
 
-    If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset, then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
+    If you want the partitions in the partition table to work relative to any placement (:menuitem:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset, then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
 Flags
 ~~~~~
@@ -301,11 +301,11 @@ The binary format of the partition table contains an MD5 checksum computed based
 
 .. only:: esp32
 
-    The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option of ``gen_esp32part.py`` or by the :ref:`CONFIG_PARTITION_TABLE_MD5` option. This is useful for example when one :ref:`uses a bootloader from ESP-IDF before v3.1 <CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS>` which cannot process MD5 checksums and the boot fails with the error message ``invalid magic number 0xebeb``.
+    The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option of ``gen_esp32part.py`` or by the :menuitem:`CONFIG_PARTITION_TABLE_MD5` option. This is useful for example when one :menuitem:`uses a bootloader from ESP-IDF before v3.1 <CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS>` which cannot process MD5 checksums and the boot fails with the error message ``invalid magic number 0xebeb``.
 
 .. only:: not esp32
 
-    The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option of ``gen_esp32part.py`` or by the :ref:`CONFIG_PARTITION_TABLE_MD5` option.
+    The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option of ``gen_esp32part.py`` or by the :menuitem:`CONFIG_PARTITION_TABLE_MD5` option.
 
 
 Flashing the Partition Table

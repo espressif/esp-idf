@@ -43,13 +43,13 @@ ESP HTTPS OTA 升级
 
 要使用分段镜像下载功能，需要：
 
-* **启用组件级配置**：在 menuconfig 中启用 :ref:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
+* **启用组件级配置**：在 menuconfig 中启用 :menuitem:`CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD` in menuconfig (``Component config`` → ``ESP HTTPS OTA`` → ``Enable partial HTTP download for OTA``)
 
 * **在应用程序中启用该功能**：在 :cpp:struct:`esp_https_ota_config_t` 配置结构中设置 ``partial_http_download`` 字段
 
 启用该配置后，固件镜像将通过多个指定大小的 HTTP 请求进行下载。通过将 ``max_http_request_size`` 设置为所需值，即可指定每个请求的最大内容长度。
 
-在从 AWS S3 等服务获取镜像时，这一选项非常有用。在启用该选项时，可以将 mbedTLS Rx 的 buffer 大小（即 :ref:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`）设置为较小的值。不启用此配置时，无法将其设置为较小值。
+在从 AWS S3 等服务获取镜像时，这一选项非常有用。在启用该选项时，可以将 mbedTLS Rx 的 buffer 大小（即 :menuitem:`CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN`）设置为较小的值。不启用此配置时，无法将其设置为较小值。
 
 mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_download`` 的 ``max_http_request_size`` 设置为 4 KB，便能将 mbedTLS Rx 的 buffer 减小到 4 KB。使用这一配置方式预计可以节省约 12 KB 内存。
 

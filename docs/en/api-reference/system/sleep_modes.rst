@@ -332,13 +332,13 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
             .. only::  SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
-                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+                In Light-sleep mode, if you set Kconfig option :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
 
                 Alternatively，you can use :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` directly in that condition for GPIO wakeup, because the digital IO power domain is being powered off.
 
             .. only::  not SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
-                In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
+                In Light-sleep mode, if you set Kconfig option :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
 
     .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
@@ -352,7 +352,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
         This wakeup source is implemented by :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`, which allows selecting one or more GPIOs and the wakeup level (high or low). Only GPIOs powered by the {IDF_TARGET_RTC_POWER_DOMAIN} power domain can be used as Deep-sleep GPIO wakeup sources. The exact set of supported pins can be checked in the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Section IO Pins.
 
         .. note::
-            This API also works for Light-sleep mode when the peripheral power domain is powered down (see :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`). In this case, it should be used instead of :cpp:func:`esp_sleep_enable_gpio_wakeup` because the GPIO module is powered down during sleep.
+            This API also works for Light-sleep mode when the peripheral power domain is powered down (see :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`). In this case, it should be used instead of :cpp:func:`esp_sleep_enable_gpio_wakeup` because the GPIO module is powered down during sleep.
 
         For a complete example of using GPIO to wake up from Deep-sleep, see :example:`system/deep_sleep`.
 
@@ -380,12 +380,12 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
         .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
             .. note::
-                This API is **not available** when :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, because the GPIO module is powered down during sleep in this case. Use :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` instead.
+                This API is **not available** when :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, because the GPIO module is powered down during sleep in this case. Use :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown` instead.
 
         .. only:: not SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
             .. note::
-                When :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, to keep using :cpp:func:`gpio_wakeup_enable`, call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction` so the pin is used as an RTC GPIO input.
+                When :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, to keep using :cpp:func:`gpio_wakeup_enable`, call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction` so the pin is used as an RTC GPIO input.
 
     .. only:: SOC_GPIO_SUPPORT_HP_PERIPH_PD_SLEEP_WAKEUP
 
@@ -394,17 +394,17 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
             IOs that are powered by the VDD3P3_RTC power domain can be used to wake up the chip from Deep-sleep or Light-sleep when the peripheral power domain is powered down. The wakeup pin and wakeup trigger level can be configured by calling :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`. This function works for:
 
             - Deep-sleep mode (always)
-            - Light-sleep mode when :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled
+            - Light-sleep mode when :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled
 
             .. only:: SOC_RTC_GPIO_EDGE_WAKEUP_SUPPORTED
 
-                On {IDF_TARGET_NAME} the API also accepts edge-triggered wakeup modes: ``ESP_GPIO_WAKEUP_GPIO_POSEDGE`` (rising edge), ``ESP_GPIO_WAKEUP_GPIO_NEGEDGE`` (falling edge), and ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE`` (both edges). For ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``, the internal pull-up/pull-down is disabled (when :ref:`CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS` is enabled) because the idle level is ambiguous; an external pull or an already-stable line is recommended.
+                On {IDF_TARGET_NAME} the API also accepts edge-triggered wakeup modes: ``ESP_GPIO_WAKEUP_GPIO_POSEDGE`` (rising edge), ``ESP_GPIO_WAKEUP_GPIO_NEGEDGE`` (falling edge), and ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE`` (both edges). For ``ESP_GPIO_WAKEUP_GPIO_ANYEDGE``, the internal pull-up/pull-down is disabled (when :menuitem:`CONFIG_ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS` is enabled) because the idle level is ambiguous; an external pull or an already-stable line is recommended.
 
             .. note::
                 Only GPIOs powered by the VDD3P3_RTC power domain (RTC IOs) can be used with this API. The exact set of supported pins can be checked in the `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__ > Section IO Pins.
 
     .. note::
-        Any GPIO/IO wakeup signal -- whether level or edge -- must be held (or have a pulse width) of at least 3 RTC slow-clock cycles to be reliably sampled by the wakeup logic. The duration of one slow-clock cycle depends on :ref:`CONFIG_RTC_CLK_SRC` (e.g. RC_SLOW @ ~136 kHz ~= 7.4 us/cycle, XTAL32K @ 32.768 kHz ~= 30.5 us/cycle). This applies to both :cpp:func:`esp_sleep_enable_gpio_wakeup` and :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`.
+        Any GPIO/IO wakeup signal -- whether level or edge -- must be held (or have a pulse width) of at least 3 RTC slow-clock cycles to be reliably sampled by the wakeup logic. The duration of one slow-clock cycle depends on :menuitem:`CONFIG_RTC_CLK_SRC` (e.g. RC_SLOW @ ~136 kHz ~= 7.4 us/cycle, XTAL32K @ 32.768 kHz ~= 30.5 us/cycle). This applies to both :cpp:func:`esp_sleep_enable_gpio_wakeup` and :cpp:func:`esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown`.
 
 .. only:: esp32h2
 
@@ -457,7 +457,7 @@ The UART wakeup supports the following modes:
 
        .. note::
 
-           In Light-sleep mode, setting Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate UART wakeup.
+           In Light-sleep mode, setting Kconfig option :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` will invalidate UART wakeup.
 
 .. only:: SOC_ULP_LP_UART_SUPPORTED
 
@@ -513,12 +513,12 @@ By default, :cpp:func:`esp_deep_sleep_start` and :cpp:func:`esp_light_sleep_star
 Flash Entering Deep Power-Down Mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For Light-sleep, ESP-IDF recommends lowering SPI Flash sleep current using **Deep Power-Down (DPD)** first: enable :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` so the SPI Flash enters its deep power-down command mode while the supply rail remains on. Current draw is typically very low (often below 1 µA for many SPI Flash devices), without the wake-up delay of fully cycling the SPI Flash supply.
+For Light-sleep, ESP-IDF recommends lowering SPI Flash sleep current using **Deep Power-Down (DPD)** first: enable :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` so the SPI Flash enters its deep power-down command mode while the supply rail remains on. Current draw is typically very low (often below 1 µA for many SPI Flash devices), without the wake-up delay of fully cycling the SPI Flash supply.
 
 In almost all use cases, DPD offers better overall trade-offs than cutting SPI Flash supply power—both safer for execution and still very low power.
 
 .. note::
-    **Mutually exclusive strategies:** Power-down SPI Flash during Light-sleep (:ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` or ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)``) **cannot be combined** with DPD. Kconfig exposes :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` only when :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is disabled.
+    **Mutually exclusive strategies:** Power-down SPI Flash during Light-sleep (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` or ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)``) **cannot be combined** with DPD. Kconfig exposes :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` only when :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is disabled.
 
 .. warning::
 
@@ -537,17 +537,17 @@ So, in theory, it is ok if you only wake up the system after the SPI Flash is co
 
     If a filter capacitor is added to your SPI Flash power supply circuit, please do everything possible to avoid powering down SPI Flash.
 
-Therefore, it is recommended not to power down SPI Flash when using ESP-IDF. For power-sensitive applications, it is recommended to use Kconfig option :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` to reduce the power consumption of the SPI Flash during Light-sleep, instead of powering down the SPI Flash.
+Therefore, it is recommended not to power down SPI Flash when using ESP-IDF. For power-sensitive applications, it is recommended to use Kconfig option :menuitem:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` to reduce the power consumption of the SPI Flash during Light-sleep, instead of powering down the SPI Flash.
 
 .. only:: SOC_SPIRAM_SUPPORTED
 
-    It is worth mentioning that PSRAM has a similar Kconfig option :ref:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`.
+    It is worth mentioning that PSRAM has a similar Kconfig option :menuitem:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`.
 
 However, for those who have fully understood the risk and are still willing to power down the SPI Flash to further reduce the power consumption, please check the following mechanisms:
 
     .. list::
 
-        - Setting Kconfig option :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` only powers down the SPI Flash when the RTC timer is the only wake-up source **and** the sleep time is longer than the SPI Flash power-down period.
+        - Setting Kconfig option :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` only powers down the SPI Flash when the RTC timer is the only wake-up source **and** the sleep time is longer than the SPI Flash power-down period.
         - Calling ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)`` powers down SPI Flash when the RTC timer is not enabled as a wakeup source **or** the sleep time is longer than the SPI Flash power-down period.
 
 .. note::
@@ -580,7 +580,7 @@ In the above cases, keeping the SPI Flash powered on is the most conservative an
 Flash Entering Deep Power-Down (DPD) Mode
 """""""""""""""""""""""""""""""""""""""""
 
-When standby power is still too high, prefer **Deep Power-Down** via :ref:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`; see :ref:`spi_flash_power_down_dpd` for figures, timings, and how to enable it.
+When standby power is still too high, prefer **Deep Power-Down** via :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`; see :ref:`spi_flash_power_down_dpd` for figures, timings, and how to enable it.
 
 DPD mode is suitable for the following scenarios:
 
@@ -648,7 +648,7 @@ It is also possible to enter sleep modes with no wakeup sources configured. In t
 UART Output Handling
 ^^^^^^^^^^^^^^^^^^^^
 
-Before entering sleep, the sleep flow prepares the **console UART** (the UART used for debug output, selected by :ref:`CONFIG_ESP_CONSOLE_UART_NUM`) so that APB clock changes or power-down do not cause garbled output or undefined behavior. The strategy applied is configurable and affects data integrity, sleep entry time, and power consumption.
+Before entering sleep, the sleep flow prepares the **console UART** (the UART used for debug output, selected by :menuitem:`CONFIG_ESP_CONSOLE_UART_NUM`) so that APB clock changes or power-down do not cause garbled output or undefined behavior. The strategy applied is configurable and affects data integrity, sleep entry time, and power consumption.
 
 **Default behavior (auto mode)**
 
@@ -671,7 +671,7 @@ You can override the default by calling :cpp:func:`esp_sleep_set_console_uart_ha
 
 .. note::
 
-   The sleep flow runs in a critical section. When using a mode that flushes the console UART (e.g. :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` , or the default behavior for Light-sleep/Deep-sleep when the HP peripheral domain is powered down), set :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` to be **greater than** ``SOC_UART_FIFO_LEN`` × (time to send one character at the current baud rate). Otherwise, if too much data is queued in the TX FIFO, the flush may take longer than the interrupt watchdog timeout and trigger a watchdog reset during sleep entry.
+   The sleep flow runs in a critical section. When using a mode that flushes the console UART (e.g. :cpp:enumerator:`ESP_SLEEP_ALWAYS_FLUSH_UART` , or the default behavior for Light-sleep/Deep-sleep when the HP peripheral domain is powered down), set :menuitem:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` to be **greater than** ``SOC_UART_FIFO_LEN`` × (time to send one character at the current baud rate). Otherwise, if too much data is queued in the TX FIFO, the flush may take longer than the interrupt watchdog timeout and trigger a watchdog reset during sleep entry.
 
 Example: ensure all debug output is sent before every sleep::
 
