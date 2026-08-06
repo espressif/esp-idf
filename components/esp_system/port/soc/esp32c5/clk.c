@@ -319,8 +319,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
          * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
         assist_debug_ll_enable_bus_clock(false);
 #endif
-        mpi_ll_enable_bus_clock(false);
 #if !CONFIG_SECURE_ENABLE_TEE
+        mpi_ll_enable_bus_clock(false);
         aes_ll_enable_bus_clock(false);
         sha_ll_enable_bus_clock(false);
         ecc_ll_enable_bus_clock(false);

@@ -34,7 +34,9 @@ _BASE_CONFIG = {
         'HMAC': 'APM - Space exception',
         'DS': 'APM - Space exception',
         'SHA PCR': 'APM - Space exception',
+        'RSA PCR': 'APM - Space exception',
         'ECC PCR': 'APM - Space exception',
+        'ECDSA PCR': 'APM - Space exception',
     },
 }
 
@@ -58,7 +60,10 @@ _TARGET_OVERRIDES: Dict[str, Dict[str, Any]] = {
             'HMAC': 'APM - Authority exception',
             'DS': 'APM - Authority exception',
             'SHA PCR': 'APM - Authority exception',
+            'RSA PCR': 'APM - Authority exception',
             'ECC PCR': 'APM - Authority exception',
+            # NOTE: ESP32-C6 has no ECDSA peripheral
+            '_remove': ['ECDSA PCR'],
         },
     },
     'esp32h2': {
@@ -76,7 +81,9 @@ _TARGET_OVERRIDES: Dict[str, Dict[str, Any]] = {
             'HMAC': 'APM - Authority exception',
             'DS': 'APM - Authority exception',
             'SHA PCR': 'APM - Authority exception',
+            'RSA PCR': 'APM - Authority exception',
             'ECC PCR': 'APM - Authority exception',
+            'ECDSA PCR': 'APM - Authority exception',
         },
     },
     'esp32c5': {
