@@ -96,6 +96,16 @@ def test_kasan_halt_no_false_positive(dut: Dut) -> None:
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets', 'preview_targets'], indirect=['target'])
 @pytest.mark.parametrize('config', ['halt'], indirect=True)
+def test_kasan_halt_aligned_alloc(dut: Dut) -> None:
+    """KASAN redzones must not change aligned allocator guarantees."""
+    dut.expect('KASAN test application starting', timeout=15)
+    dut.write('"aligned allocation preserves alignment"')
+    dut.expect('aligned allocation test PASSED', timeout=15)
+
+
+@pytest.mark.generic
+@idf_parametrize('target', ['supported_targets', 'preview_targets'], indirect=['target'])
+@pytest.mark.parametrize('config', ['halt'], indirect=True)
 def test_kasan_halt_asan_stubs_valid_access(dut: Dut) -> None:
     """Direct calls to every sized __asan_*_noabort stub on a valid buffer
     must link and run without raising an error."""

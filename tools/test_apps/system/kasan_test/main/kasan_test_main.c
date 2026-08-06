@@ -15,10 +15,12 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
 #include "unity.h"
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_kasan.h"
 
@@ -137,6 +139,34 @@ TEST_CASE("no false positive", "[kasan]")
     TEST_ASSERT_EQUAL_UINT32(0, kasan_get_error_count());
 #endif
     ESP_LOGI(TAG, "no-bug test PASSED");
+}
+
+/* ---------------------------------------------------------------------- */
+
+TEST_CASE("aligned allocation preserves alignment", "[kasan][heap]")
+{
+    static const size_t alignments[] = { 8, 16, 32, 64 };
+    const uint32_t alloc_size = 37;
+
+#if CONFIG_KASAN_NO_HALT
+    kasan_reset_error_count();
+#endif
+
+    for (size_t i = 0; i < sizeof(alignments) / sizeof(alignments[0]); i++) {
+        const size_t alignment = alignments[i];
+        uint8_t *buf = heap_caps_aligned_alloc(alignment, alloc_size, MALLOC_CAP_DEFAULT);
+
+        TEST_ASSERT_NOT_NULL(buf);
+        TEST_ASSERT_EQUAL_UINT32(0, (uintptr_t)buf & (alignment - 1));
+        /* Verify the full user region remains accessible after the KASAN redzone offset. */
+        memset(buf, 0xA5, alloc_size);
+        heap_caps_free(buf);
+    }
+
+#if CONFIG_KASAN_NO_HALT
+    TEST_ASSERT_EQUAL_UINT32(0, kasan_get_error_count());
+#endif
+    ESP_LOGI(TAG, "aligned allocation test PASSED");
 }
 
 /* ---------------------------------------------------------------------- */
