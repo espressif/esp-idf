@@ -124,7 +124,7 @@ static inline int wpa_key_mgmt_owe(int akm)
 
 static inline int wpa_key_mgmt_dpp(int akm)
 {
-	return akm == WPA_KEY_MGMT_DPP;
+	return !!(akm & WPA_KEY_MGMT_DPP);
 }
 
 static inline int wpa_key_mgmt_wpa(int akm)
