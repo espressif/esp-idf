@@ -183,42 +183,32 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - Randomized Advertising Channel Indexing
-      - .. only:: esp32c2
+      - .. only:: esp32c2 or not SOC_ESP_NIMBLE_CONTROLLER
 
             |unsupported|
-        .. only:: not esp32c2
+        .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
 
             |experimental|
-      - .. only:: esp32c2
-
-            |unsupported|
-        .. only:: not esp32c2
-
-            |NA|
-      - .. only:: esp32c2
-
-            |unsupported|
-        .. only:: not esp32c2
-
-            |NA|
+      - |NA|
+      - |NA|
     * -
       - Periodic Advertising Sync Transfer
-      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER
 
             |supported|
-        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER
 
             |unsupported|
-      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER
 
             |supported|
-        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER
 
             |unsupported|
-      - .. only:: SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+      - .. only:: SOC_ESP_NIMBLE_CONTROLLER
 
             |supported|
-        .. only:: not SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+        .. only:: not SOC_ESP_NIMBLE_CONTROLLER
 
             |unsupported|
     * - .. centered:: |5.2|
