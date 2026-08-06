@@ -39,10 +39,8 @@
       -p tools/test_apps/system/clang_build_test
       components/esp_security/test_apps/fault_assert_opt_check
       -t $IDF_TARGET
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
+      --modified-components \"${MR_MODIFIED_COMPONENTS}\"
+      --modified-files \"${MR_MODIFIED_FILES}\"
       $TEST_BUILD_OPTS_EXTRA
 
 build_clang_test_apps_xtensa:
@@ -104,11 +102,11 @@ generate_build_child_pipeline_buildv2:
     expire_in: 1 week
     when: always
   script:
-    - idf-ci --debug gitlab build-child-pipeline
+    - run_cmd idf-ci --debug gitlab build-child-pipeline
       -p components
       -p examples
       -p tools/test_apps
-      --modified-files "$MR_MODIFIED_FILES"
+      --modified-files \"${MR_MODIFIED_FILES}\"
       buildv2_child_pipeline.yml > idfci_buildv2_gen.log 2>&1
     - tail -20 idfci_buildv2_gen.log
     - shuf test_related_apps.txt -o test_related_apps.txt

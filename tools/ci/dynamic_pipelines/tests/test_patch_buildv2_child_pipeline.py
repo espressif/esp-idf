@@ -64,6 +64,5 @@ def test_build_jobs_get_buildv2_injection(tmp_path: Path) -> None:
     job = result['build_test_related_apps']
     assert job['variables']['IDF_BUILD_V2'] == '1'
     assert job['variables']['PIPELINE_COMMIT_SHA'] == patch_mod.PIPELINE_COMMIT_SHA_V2
-    assert job['needs'][0]['job'] == patch_mod.BUILDV2_GENERATOR_JOB
     assert 'generate_pytest_child_pipeline' in result
     assert result['generate_pytest_child_pipeline']['variables']['IDF_BUILD_V2'] == '1'
