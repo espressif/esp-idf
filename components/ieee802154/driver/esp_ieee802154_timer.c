@@ -5,7 +5,6 @@
  */
 
 #include "soc/soc.h"
-#include "hal/ieee802154_ll.h"
 #include "esp_check.h"
 #include "esp_ieee802154_timer.h"
 #include "esp_ieee802154_util.h"
