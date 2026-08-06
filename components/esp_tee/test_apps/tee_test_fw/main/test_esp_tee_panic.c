@@ -103,6 +103,24 @@ TEST_CASE("Test APM violation: SHA PCR", "[apm_violation]")
     TEST_FAIL_MESSAGE("APM violation should have been generated");
 }
 
+#if SOC_ECDSA_SUPPORTED
+TEST_CASE("Test APM violation: ECDSA PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_ECDSA_CONF_REG, val);
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
+}
+#endif
+
+#if SOC_MPI_SUPPORTED
+TEST_CASE("Test APM violation: RSA PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_RSA_CONF_REG, val);
+    TEST_FAIL_MESSAGE("APM violation should have been generated");
+}
+#endif
+
 TEST_CASE("Test APM violation: ECC PCR", "[apm_violation]")
 {
     uint32_t val = 0;

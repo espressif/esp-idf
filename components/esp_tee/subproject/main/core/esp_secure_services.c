@@ -539,7 +539,7 @@ void _ss_esp_crypto_mpi_enable_periph_clk(bool enable)
 }
 #endif
 
-/* ---------------------------------------------- ECC ------------------------------------------------- */
+/* ---------------------------------------------- ECC/ECDSA ------------------------------------------------- */
 
 #if SOC_ECC_SUPPORTED
 int _ss_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
@@ -575,6 +575,11 @@ int _ss_esp_ecc_point_verify(const ecc_point_t *point)
 void _ss_esp_crypto_ecc_enable_periph_clk(bool enable)
 {
     esp_crypto_ecc_enable_periph_clk(enable);
+}
+
+void _ss_esp_crypto_ecdsa_enable_periph_clk(bool enable)
+{
+    esp_crypto_ecdsa_enable_periph_clk(enable);
 }
 #endif
 
