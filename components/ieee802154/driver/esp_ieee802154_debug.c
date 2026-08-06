@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "hal/ieee802154_ll.h"
 #include "esp_ieee802154_util.h"
 #include "esp_log.h"
 

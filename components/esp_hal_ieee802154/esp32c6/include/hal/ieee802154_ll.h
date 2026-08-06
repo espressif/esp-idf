@@ -9,3 +9,4 @@
 #include "hal/ieee802154_common_ll.h"
 
 #define IEEE802154_RSSI_COMPENSATION_VALUE 0
+#define IEEE802154_RX_SENSITIVITY -104
