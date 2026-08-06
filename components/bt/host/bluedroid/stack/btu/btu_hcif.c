@@ -165,6 +165,9 @@ static void btu_ble_rc_param_req_evt(UINT8 *p);
 #endif
 //#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 static void btu_ble_proc_enhanced_conn_cmpl (UINT8 *p, UINT16 evt_len);
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+static void btu_ble_proc_enhanced_conn_cmpl_v2 (UINT8 *p, UINT16 evt_len);
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 //#endif
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 static void btu_ble_phy_update_complete_evt(UINT8 *p);
@@ -667,6 +670,9 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             break;
         case HCI_BLE_PA_RESPONSE_REPORT_EVT:
             btu_ble_pa_response_report_evt(p, hci_evt_len);
+            break;
+        case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT_V2:
+            btu_ble_proc_enhanced_conn_cmpl_v2(p, hci_evt_len);
             break;
 #endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
@@ -1875,6 +1881,9 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
             case HCI_BLE_EXT_CREATE_CONN:
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+            case HCI_BLE_EXT_CREATE_CONN_V2:
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
             case HCI_BLE_CREATE_LL_CONN:
                 btm_ble_create_ll_conn_complete(status);
                 break;
@@ -2548,13 +2557,19 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt (UINT8 *p)
 
 static void btu_ble_ll_conn_complete_evt ( UINT8 *p, UINT16 evt_len)
 {
-    btm_ble_conn_complete(p, evt_len, FALSE);
+    btm_ble_conn_complete(p, evt_len, FALSE, FALSE);
 }
 //#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 static void btu_ble_proc_enhanced_conn_cmpl( UINT8 *p, UINT16 evt_len)
 {
-    btm_ble_conn_complete(p, evt_len, TRUE);
+    btm_ble_conn_complete(p, evt_len, TRUE, FALSE);
 }
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+static void btu_ble_proc_enhanced_conn_cmpl_v2( UINT8 *p, UINT16 evt_len)
+{
+    btm_ble_conn_complete(p, evt_len, TRUE, TRUE);
+}
+#endif // #if (BT_BLE_FEAT_PAWR_EN == TRUE)
 //#endif
 static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len)
 {
