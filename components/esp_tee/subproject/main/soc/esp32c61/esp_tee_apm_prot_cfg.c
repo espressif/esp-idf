@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,10 +119,10 @@ static apm_hal_ctrl_region_cfg_t hp_apm_regn_cfg_ree0[] = {
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 4, HP_APM_SPI1_REG_END, DR_REG_INTMTX_BASE, APM_PERM_R | APM_PERM_W, true),
 
     /* Region 5/6/7/8: Peripherals [ETM - PMU] (RW) */
-    /* Protected: SHA, ECC, PCR (SHA, ECC), TEE, HP_APM, CPU_APM */
+    /* Protected: SHA, ECC, the whole crypto PCR block, TEE, HP_APM, CPU_APM */
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 5, DR_REG_SOC_ETM_BASE, DR_REG_SHA_BASE, APM_PERM_R | APM_PERM_W, true),
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 6, DR_REG_ECDSA_BASE, PCR_SHA_CONF_REG, APM_PERM_R | APM_PERM_W, true),
-    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 7, PCR_ECDSA_CONF_REG, DR_REG_TEE_BASE, APM_PERM_R | APM_PERM_W, true),
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 7, PCR_IOMUX_CONF_REG, DR_REG_TEE_BASE, APM_PERM_R | APM_PERM_W, true),
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 8, 0x6009B000, DR_REG_PMU_BASE, APM_PERM_R | APM_PERM_W, true),
 
     /* Region 9: EXT_MEM region (RW) */

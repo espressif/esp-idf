@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,11 +135,10 @@ static apm_hal_ctrl_region_cfg_t hp_apm_regn_cfg_ree0[] = {
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 5, DR_REG_PCNT_BASE, DR_REG_AES_BASE, APM_PERM_R | APM_PERM_W, true),
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 6, DR_REG_RSA_BASE, DR_REG_ECC_MULT_BASE, APM_PERM_R | APM_PERM_W, true),
 
-    /* Region 7/8/9/10: Peripherals [ECDSA - PMU] (RW) */
-    /* Protected: AES, SHA, ECC, DS and HMAC PCRs, Key Manager PCR */
-    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 7, DR_REG_ECDSA_BASE, PCR_AES_CONF_REG, APM_PERM_R | APM_PERM_W, true),
-    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 8, PCR_RSA_CONF_REG, PCR_ECC_CONF_REG, APM_PERM_R | APM_PERM_W, true),
-    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 9, PCR_ECDSA_CONF_REG, PCR_KM_CONF_REG, APM_PERM_R | APM_PERM_W, true),
+    /* Region 8/9/10: Peripherals [ECDSA - PMU] (RW) */
+    /* Protected: the whole crypto PCR block, Key Manager PCR */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 8, DR_REG_ECDSA_BASE, PCR_AES_CONF_REG, APM_PERM_R | APM_PERM_W, true),
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 9, PCR_IOMUX_CONF_REG, PCR_KM_CONF_REG, APM_PERM_R | APM_PERM_W, true),
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 10, PCR_TCM_MEM_MONITOR_CONF_REG, DR_REG_PMU_BASE, APM_PERM_R | APM_PERM_W, true),
 
     /* Region 11: EXT_MEM region (RW) */
