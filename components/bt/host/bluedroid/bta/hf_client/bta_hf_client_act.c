@@ -629,8 +629,7 @@ void bta_hf_client_operator_name(char *name)
     tBTA_HF_CLIENT_OPERATOR_NAME *evt;
 
     if ((evt = osi_calloc(sizeof(tBTA_HF_CLIENT_OPERATOR_NAME))) != NULL) {
-        strlcpy(evt->name, name, BTA_HF_CLIENT_OPERATOR_NAME_LEN + 1);
-        evt->name[BTA_HF_CLIENT_OPERATOR_NAME_LEN] = '\0';
+        BCM_STRLCPY_S(evt->name, name, BTA_HF_CLIENT_OPERATOR_NAME_LEN + 1);
 
         if (bta_hf_client_cb.p_cback) {
             (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_OPERATOR_NAME_EVT, evt);
@@ -657,8 +656,7 @@ void bta_hf_client_clip(char *number)
     tBTA_HF_CLIENT_NUMBER *evt;
 
     if ((evt = osi_calloc(sizeof(tBTA_HF_CLIENT_NUMBER))) != NULL) {
-        strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
-        evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
+        BCM_STRLCPY_S(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
 
         if (bta_hf_client_cb.p_cback) {
             (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CLIP_EVT, evt);
@@ -684,8 +682,7 @@ void bta_hf_client_ccwa(char *number)
     tBTA_HF_CLIENT_NUMBER *evt;
 
     if ((evt = osi_calloc(sizeof(tBTA_HF_CLIENT_NUMBER))) != NULL) {
-        strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
-        evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
+        BCM_STRLCPY_S(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
 
         if (bta_hf_client_cb.p_cback) {
             (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CCWA_EVT, evt);
@@ -742,8 +739,7 @@ void bta_hf_client_clcc(UINT32 idx, BOOLEAN incoming, UINT8 status, BOOLEAN mpty
 
         if (number) {
             evt->number_present = TRUE;
-            strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
-            evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
+            BCM_STRLCPY_S(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
         }
 
         if (bta_hf_client_cb.p_cback) {
@@ -772,8 +768,7 @@ void bta_hf_client_cnum(char *number, UINT16 service)
     if ((evt = osi_calloc(sizeof(tBTA_HF_CLIENT_CNUM))) != NULL) {
 
         evt->service = service;
-        strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
-        evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
+        BCM_STRLCPY_S(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
 
         if (bta_hf_client_cb.p_cback) {
             (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CNUM_EVT, evt);
@@ -799,8 +794,7 @@ void bta_hf_client_binp(char *number)
     tBTA_HF_CLIENT_NUMBER *evt;
 
     if ((evt = osi_calloc(sizeof(tBTA_HF_CLIENT_NUMBER))) != NULL) {
-        strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
-        evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
+        BCM_STRLCPY_S(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
 
         if (bta_hf_client_cb.p_cback) {
             (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_BINP_EVT, evt);

@@ -2433,7 +2433,7 @@ void gatt_dbg_display_uuid(tBT_UUID bt_uuid)
                 bt_uuid.uu.uuid128[3], bt_uuid.uu.uuid128[2],
                 bt_uuid.uu.uuid128[1], bt_uuid.uu.uuid128[0]);
     } else {
-        BCM_STRNCPY_S(str_buf, "Unknown UUID 0", 15);
+        BCM_STRLCPY_S(str_buf, "Unknown UUID 0", sizeof(str_buf));
     }
 
     GATT_TRACE_DEBUG ("UUID=[%s]", str_buf);
