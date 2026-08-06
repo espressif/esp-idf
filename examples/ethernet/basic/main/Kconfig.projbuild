@@ -62,11 +62,12 @@ menu "Example Ethernet Configuration"
         config EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_IN_GPIO
             depends on EXAMPLE_ETH_RMII_CLK_EXT_LOOPBACK_EN
             int "RMII CLK loopback input GPIO"
-            range ENV_GPIO_RANGE_MIN ENV_GPIO_RANGE_MAX
+            range -1 ENV_GPIO_RANGE_MAX
             default 32 if IDF_TARGET_ESP32P4
             default 0
             help
                 Set GPIO number used by RMII REF CLK input to loopback internally generated RMII CLK output.
+                You can set -1 to use internal REF CLK routing if target supports it.
                 See datasheet for available GPIOs.
 
         if SOC_EMAC_USE_MULTI_IO_MUX
