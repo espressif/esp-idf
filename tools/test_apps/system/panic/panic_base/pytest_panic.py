@@ -610,6 +610,10 @@ def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: st
 
 # Memprot-related tests are supported only on targets with PMS/PMA peripheral;
 # currently ESP32-S2, ESP32-C3, ESP32-C2, ESP32-H2, ESP32-H21, ESP32-C6, ESP32-P4, ESP32-C5 and ESP32-C61 are supported
+# ESP32-P4 rev < 3.0 runs on a dedicated rev 1.x runner (its binary is built for
+# and only boots on rev < 3.0 silicon), so its configs carry the esp32p4_rev1 marker.
+P4_REV_LESS_THAN_V3_MARKER = pytest.mark.esp32p4_rev1
+
 CONFIGS_MEMPROT_IDRAM = list(
     zip(
         [
@@ -624,7 +628,9 @@ CONFIGS_MEMPROT_IDRAM = list(
         ],
         ['esp32s2', 'esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
-)
+) + [
+    ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
+]
 
 CONFIGS_MEMPROT_IDRAM_L2_MEM_NON_CACHE = list(zip(['memprot_esp32p4'], ['esp32p4']))
 
@@ -643,7 +649,9 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = list(
         ],
         ['esp32s2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
-)
+) + [
+    ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
+]
 
 CONFIGS_MEMPROT_RTC_SLOW_MEM = list(zip(['memprot_esp32s2'], ['esp32s2']))
 
@@ -659,16 +667,24 @@ CONFIGS_MEMPROT_FLASH_IDROM = list(
         ],
         ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
-)
+) + [
+    ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
+]
 
 CONFIGS_MEMPROT_FLASH_IDROM_L2_NON_CACHE = list(zip(['memprot_esp32p4'], ['esp32p4']))
 
 CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = list(
     zip(
-        ['memprot_spiram_xip_esp32c5', 'memprot_spiram_xip_esp32c61', 'memprot_spiram_xip_esp32p4'],
+        [
+            'memprot_spiram_xip_esp32c5',
+            'memprot_spiram_xip_esp32c61',
+            'memprot_spiram_xip_esp32p4',
+        ],
         ['esp32c5', 'esp32c61', 'esp32p4'],
     )
-)
+) + [
+    ('memprot_spiram_xip_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
+]
 
 CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP_L2_NON_CACHE = list(
     zip(
@@ -688,7 +704,9 @@ CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP = list(
         ],
         ['esp32s3', 'esp32c5', 'esp32c61', 'esp32p4'],
     )
-)
+) + [
+    ('memprot_spiram_xip_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
+]
 
 CONFIGS_MEMPROT_SPIRAM_XIP_DROM_ALIGNMENT_HEAP_L2_NON_CACHE = list(
     zip(
@@ -709,7 +727,9 @@ CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = list(
         ],
         ['esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32h21'],
     )
-)
+) + [
+    ('memprot_esp32p4_rev_less_than_v3', 'esp32p4', P4_REV_LESS_THAN_V3_MARKER),
+]
 
 
 @pytest.mark.generic
