@@ -242,7 +242,7 @@ def test_sysview_tracing_uart_c2(dut: IdfDut) -> None:
 def test_sysview_tracing_usj_serial(dut: IdfDut) -> None:
     time.sleep(1)  # wait for USJ port to be ready
     usj_port = '/dev/serial_ports/ttyACM-esp32'
-    ser = serial.Serial(usj_port, baudrate=1000000, timeout=10)
     trace_log = os.path.join(dut.logdir, 'sys_log_usj.svdat')  # pylint: disable=protected-access
-    _capture_sysview_trace(ser, trace_log)
-    _validate_trace_data(trace_log, dut.target, is_uart=True)
+    with serial.Serial(usj_port, baudrate=1000000, timeout=10) as ser:
+        _capture_sysview_trace(ser, trace_log)
+        _validate_trace_data(trace_log, dut.target, is_uart=True)

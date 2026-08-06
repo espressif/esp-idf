@@ -36,6 +36,9 @@ void init_trace_lib(esp_trace_encoder_t *enc);
 void trace_lib_start(void);
 void trace_lib_stop(void);
 
+/* @brief Get the number of trace lines written to and dropped by the transport */
+void trace_lib_get_stats(uint32_t *written, uint32_t *dropped);
+
 /* Hook implementations — defined in trace_FreeRTOS.c.
  * Kept void*-typed to avoid depending on FreeRTOS types in this header. */
 void trace_lib_task_switched_in(void);

@@ -35,6 +35,8 @@ static esp_trace_encoder_t *s_enc = NULL;
 static uint32_t s_ts_freq_hz = 1000000;   /* default assume 1 MHz */
 static uint32_t s_last_ts = 0;
 static volatile bool s_enabled = false;
+static uint32_t s_written = 0;
+static uint32_t s_dropped = 0;
 
 void init_trace_lib(esp_trace_encoder_t *enc)
 {
@@ -87,10 +89,24 @@ static void encode(const char *type, const char *detail)
         if (n >= (int)sizeof(line)) {
             n = (int)sizeof(line) - 1;
         }
-        esp_trace_write(s_esp_trace_handle, line, (size_t)n, 0);
+        if (esp_trace_write(s_esp_trace_handle, line, (size_t)n, 0) == ESP_OK) {
+            s_written++;
+        } else {
+            s_dropped++;  /* transport buffer was full, line dropped */
+        }
     }
 
     s_enc->vt->give_lock(s_enc, int_state);
+}
+
+void trace_lib_get_stats(uint32_t *written, uint32_t *dropped)
+{
+    if (written) {
+        *written = s_written;
+    }
+    if (dropped) {
+        *dropped = s_dropped;
+    }
 }
 
 void trace_lib_task_switched_in(void)
