@@ -14,7 +14,7 @@
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
 
-static void esp_cpu_configure_invalid_regions(void)
+NOINLINE_ATTR IRAM_ATTR static void esp_cpu_configure_invalid_regions(void)
 {
 #ifdef BOOTLOADER_BUILD
     /* Don't lock PMA entries in the bootloader: an enabled entry constrains M-mode even without
@@ -29,57 +29,73 @@ static void esp_cpu_configure_invalid_regions(void)
     __attribute__((unused)) const unsigned PMA_RX      = PMA_LOCK | PMA_EN | PMA_R | PMA_X;
     __attribute__((unused)) const unsigned PMA_RWX     = PMA_LOCK | PMA_EN | PMA_R | PMA_W | PMA_X;
 
-    // ROM uses some PMA entries, so we need to clear them before using them in ESP-IDF.
-    // The reset-and-set PMA macros are safe to use even though ESP32-S31 does not tolerate
-    // overlapping *PMP* regions: PMA configures memory attributes (not locked protection), so
-    // the transient pmpaddr=0 inside the macro does not raise a fault here (same as ESP32-H4).
+    /* Disable every PMA entry before programming.
+     * Descending order helps to correctly reset the TOR settings (if any).
+     */
+    PMA_ENTRY_CFG_RESET(15);
+    PMA_ENTRY_CFG_RESET(14);
+    PMA_ENTRY_CFG_RESET(13);
+    PMA_ENTRY_CFG_RESET(12);
+    PMA_ENTRY_CFG_RESET(11);
+    PMA_ENTRY_CFG_RESET(10);
+    PMA_ENTRY_CFG_RESET(9);
+    PMA_ENTRY_CFG_RESET(8);
+    PMA_ENTRY_CFG_RESET(7);
+    PMA_ENTRY_CFG_RESET(6);
+    PMA_ENTRY_CFG_RESET(5);
+    PMA_ENTRY_CFG_RESET(4);
+    PMA_ENTRY_CFG_RESET(3);
+    PMA_ENTRY_CFG_RESET(2);
+    PMA_ENTRY_CFG_RESET(1);
+    PMA_ENTRY_CFG_RESET(0);
 
     // 0. Gap at bottom of address space
-    PMA_RESET_AND_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
+    PMA_ENTRY_SET_NAPOT(0, 0, SOC_CPU_SUBSYSTEM_LOW, PMA_NAPOT | PMA_NONE);
 
     // [SOC_CPU_SUBSYSTEM_LOW .. SOC_RTC_IRAM_HIGH) is all valid (CPU subsystem, on-chip
     //  peripherals and the LP TCM) and is configured using PMP below, so no PMA entry is needed.
 
     // 1. Gap between LP TCM (RTC SRAM) and HP TCM (internal SRAM)
-    PMA_RESET_AND_ENTRY_SET_TOR(1, SOC_RTC_IRAM_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(2, SOC_IRAM_LOW, PMA_TOR | PMA_NONE);
+    PMA_ENTRY_SET_TOR(1, SOC_RTC_IRAM_HIGH, PMA_NONE);
+    PMA_ENTRY_SET_TOR(2, SOC_IRAM_LOW, PMA_TOR | PMA_NONE);
 
     // 2. Gap between HP TCM (internal SRAM) and ROM-Cache
-    PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_IRAM_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(4, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
+    PMA_ENTRY_SET_TOR(3, SOC_IRAM_HIGH, PMA_NONE);
+    PMA_ENTRY_SET_TOR(4, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
 
     // 3. ROM has configured the ROM region to be cacheable, keep the configuration as RX.
     //    Configuring it here (as a valid RX region) lets the I/D-ROM PMP entries below use the
     //    DROM-split optimization and save a PMP entry.
-    PMA_RESET_AND_ENTRY_SET_TOR(5, SOC_IROM_MASK_LOW, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(6, SOC_DROM_MASK_HIGH, PMA_TOR | PMA_RX);
+    PMA_ENTRY_SET_TOR(5, SOC_IROM_MASK_LOW, PMA_NONE);
+    PMA_ENTRY_SET_TOR(6, SOC_DROM_MASK_HIGH, PMA_TOR | PMA_RX);
 
-    // 4. Gap between ROM-Cache and External flash (I/D-Cache)
-    PMA_RESET_AND_ENTRY_SET_TOR(7, SOC_DROM_MASK_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(8, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
-
-    // 5. ROM has configured the external flash MSPI region with RX permission; keep it RX and
-    //    make it cacheable. This is a valid region but is configured using PMA (instead of only
-    //    PMP) because the cacheable attribute can only be set through PMA.
-    PMA_RESET_AND_ENTRY_SET_NAPOT(9, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RX);
-
-    // 6. Gap between External flash (I/D-Cache) and External PSRAM
-    PMA_RESET_AND_ENTRY_SET_TOR(10, SOC_IROM_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(11, SOC_EXTRAM_LOW, PMA_TOR | PMA_NONE);
-
-    // 7. ROM has configured the external PSRAM MSPI region with RX permission; add the W attribute
+    // 4. ROM has configured the external PSRAM MSPI region with RX permission; add the W attribute
     //    and make it cacheable. As above, this valid region is configured using PMA so that it can
     //    be marked cacheable (RWX so that PSRAM data and XIP-from-PSRAM both work).
-    PMA_RESET_AND_ENTRY_SET_NAPOT(12, SOC_EXTRAM_LOW, (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RWX);
+    PMA_ENTRY_SET_NAPOT(7, SOC_EXTRAM_LOW, (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RWX);
+
+    // 5. Gap between ROM-Cache and External flash (I/D-Cache)
+    PMA_ENTRY_SET_TOR(8, SOC_DROM_MASK_HIGH, PMA_NONE);
+    PMA_ENTRY_SET_TOR(9, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
+
+    // 6. ROM has configured the external flash MSPI region with RX permission; keep it RX and
+    //    make it cacheable. This is a valid region but is configured using PMA (instead of only
+    //    PMP) because the cacheable attribute can only be set through PMA.
+    PMA_ENTRY_SET_NAPOT(10, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RX);
+
+    // 7. Gap between External flash (I/D-Cache) and External PSRAM
+    PMA_ENTRY_SET_TOR(11, SOC_IROM_HIGH, PMA_NONE);
+    PMA_ENTRY_SET_TOR(12, SOC_EXTRAM_LOW, PMA_TOR | PMA_NONE);
 
     // 8. Non-cacheable (cache-bypass) alias of External PSRAM at +SOC_NON_CACHEABLE_OFFSET_PSRAM,
     //    used by GDMA to reach PSRAM-resident descriptors/buffers coherently. Marked RW at a higher
     //    priority (lower index) than the catch-all below so it stays a valid region.
-    PMA_RESET_AND_ENTRY_SET_NAPOT(13, (uint32_t)SOC_EXTRAM_LOW + (uint32_t)SOC_NON_CACHEABLE_OFFSET_PSRAM, (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RW);
+    PMA_ENTRY_SET_NAPOT(13, (uint32_t)SOC_EXTRAM_LOW + (uint32_t)SOC_NON_CACHEABLE_OFFSET_PSRAM,
+                                    (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RW);
 
     // 9. End of address space (everything above External PSRAM except the non-cacheable alias above)
-    PMA_RESET_AND_ENTRY_SET_TOR(14, SOC_EXTRAM_HIGH, PMA_NONE);
-    PMA_RESET_AND_ENTRY_SET_TOR(15, UINT32_MAX, PMA_TOR | PMA_NONE);
+    PMA_ENTRY_SET_TOR(14, SOC_EXTRAM_HIGH, PMA_NONE);
+    PMA_ENTRY_SET_TOR(15, UINT32_MAX, PMA_TOR | PMA_NONE);
 }
 
 #ifndef BOOTLOADER_BUILD
@@ -93,8 +109,8 @@ static void esp_cpu_configure_valid_regions(void)
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
      * 2. Application build with CONFIG_ESP_SYSTEM_MEMPROT disabled
-     *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid address ranges are successful
-     *      so for that we set PMP to cover entire valid IRAM and DRAM region.
+     *    - The IRAM-DRAM split is not enabled so we just need to ensure that access to only valid
+     *      address ranges are successful so for that we set PMP to cover entire valid IRAM and DRAM region.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
      * 3. CPU is in OCD debug mode
