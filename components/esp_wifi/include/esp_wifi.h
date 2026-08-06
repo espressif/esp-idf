@@ -1679,6 +1679,22 @@ esp_err_t esp_wifi_get_band(wifi_band_t* band);
 esp_err_t esp_wifi_coex_pwr_configure(bool enabled);
 #endif
 
+/**
+  * @brief      Configure if WIFI_EVENT_STA_TBTT event is enabled
+  *
+  * @attention 1. This API should be called after initialization.
+  * @attention 2. The TBTT event works with all power save types and is posted at the actual wake-up interval
+  *               determined by the current power save type.
+  * @attention 3. Event posting is best-effort and non-blocking. Events are silently dropped when the event queue is full.
+  *
+  * @param      enabled True to enable WIFI_EVENT_STA_TBTT event, false to disable
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_configure_station_tbtt_event(bool enabled);
+
 #ifdef __cplusplus
 }
 #endif
