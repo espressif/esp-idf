@@ -608,8 +608,6 @@
  */
 #define SOC_PM_PMU_MIN_SLP_SLOW_CLK_CYCLE_FIXED    (1)
 
-#define SOC_PM_RETENTION_MODULE_NUM         (64)
-
 /*-------------------------- LP_CORE CAPS ------------------------------------*/
 #define SOC_LP_MAILBOX_SUPPORTED                    (1) /*!< LP Core supports LP-mailbox */
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM wakeup */

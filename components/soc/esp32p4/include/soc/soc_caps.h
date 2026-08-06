@@ -694,8 +694,6 @@
 #define SOC_SLEEP_SYSTIMER_STALL_WORKAROUND 1    //TODO IDF-11381: replace with all xtal field clk gate control
 #define SOC_SLEEP_TGWDT_STOP_WORKAROUND     1    //TODO IDF-11381: replace with all xtal field clk gate control
 
-#define SOC_PM_RETENTION_MODULE_NUM         (64)
-
 #define SOC_MAIN_POWER_CONTROL_SUPPORTED    (1)  /*!<Supports outputting an enable signal to control the power-on and power-off of the main power supply when powered by VBAT.*/
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/

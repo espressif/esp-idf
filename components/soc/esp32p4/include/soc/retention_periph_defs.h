@@ -7,7 +7,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,9 +67,9 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_PPA          = 42,
 
     /* PMU REGDMA clock icg */
-    SLEEP_RETENTION_MODULE_CLOCK_ICG    = SOC_PM_RETENTION_MODULE_NUM - 2,
+    SLEEP_RETENTION_MODULE_CLOCK_ICG    = 43,
 
-    SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
+    SLEEP_RETENTION_MODULE_MAX,
 } periph_retention_module_t;
 
 #define is_top_domain_module(m)     (((m) <= SLEEP_RETENTION_MODULE_PPA) || ((m) == SLEEP_RETENTION_MODULE_CLOCK_ICG))

@@ -1227,10 +1227,6 @@ config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
 
-config SOC_PM_RETENTION_MODULE_NUM
-    int
-    default 64
-
 config SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH
     bool
     default y

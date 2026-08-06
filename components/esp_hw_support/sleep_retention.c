@@ -173,7 +173,7 @@ struct module_sleep_retention_context {
 #define SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES       (8u)
 #define SLEEP_RETENTION_REGDMA_LINK_HIGHEST_PRIORITY    (0)
 #define SLEEP_RETENTION_REGDMA_LINK_LOWEST_PRIORITY     (SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES - 1)
-#define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(-1)) /* the final node does not belong to any module */
+#define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(SLEEP_RETENTION_MODULE_MAX)) /* the final node does not belong to any module */
     struct {
         sleep_retention_entries_t entries;
         uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM;
@@ -250,7 +250,7 @@ typedef struct {
 
     void *final_default;
 
-    struct sleep_retention_module_object instance[SLEEP_RETENTION_MODULE_MAX + 1];
+    struct sleep_retention_module_object instance[SLEEP_RETENTION_MODULE_MAX];
 
 #define EXTRA_LINK_NUM  (REGDMA_LINK_ENTRY_NUM - 1)
 } sleep_retention_t;
@@ -416,7 +416,7 @@ static void * entries_try_create_bonding(const regdma_link_config_t *config, uin
 
 void sleep_retention_dump_modules(FILE *out)
 {
-    for (int i = SLEEP_RETENTION_MODULE_MIN; i <= SLEEP_RETENTION_MODULE_MAX; i++) {
+    for (int i = SLEEP_RETENTION_MODULE_MIN; i < SLEEP_RETENTION_MODULE_MAX; i++) {
         bool inited = sleep_retention_is_module_inited(i);
         bool created = sleep_retention_is_module_created(i);
         bool is_top = is_top_domain_module(i);
@@ -628,13 +628,16 @@ static void entries_do_destroy(sleep_retention_module_t module)
             priority++;
         }
     } while (priority < SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES);
-    s_retention.created_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+    /* INVALID == MAX: must not index bitmap with module==MAX (OOB). */
+    if (module < SLEEP_RETENTION_MODULE_MAX) {
+        s_retention.created_modules.bitmap[module >> 5] &= ~BIT(module % 32);
+    }
     _lock_release_recursive(&s_retention.lock);
 }
 
 static void entries_destroy(sleep_retention_module_t module)
 {
-    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_INVALID);
     _lock_acquire_recursive(&s_retention.lock);
     if (!module_runtime_attach(instance(module))) {
         retention_entries_join();
@@ -647,7 +650,7 @@ static void entries_destroy(sleep_retention_module_t module)
 
 static void sleep_retention_entries_destroy(sleep_retention_module_t module)
 {
-    assert(SLEEP_RETENTION_MODULE_MIN <= module && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(SLEEP_RETENTION_MODULE_MIN <= module && module < SLEEP_RETENTION_MODULE_MAX);
     _lock_acquire_recursive(&s_retention.lock);
     entries_destroy(module);
     uint32_t created_modules = 0;
@@ -800,7 +803,7 @@ esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t 
     if (priority >= SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t err = check_and_create_final_default();
@@ -838,7 +841,7 @@ sleep_retention_module_bitmap_t IRAM_ATTR sleep_retention_get_retained_modules(v
 
 bool sleep_retention_is_module_inited(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return false;
     }
     _lock_acquire_recursive(&s_retention.lock);
@@ -849,7 +852,7 @@ bool sleep_retention_is_module_inited(sleep_retention_module_t module)
 
 bool sleep_retention_is_module_created(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return false;
     }
     _lock_acquire_recursive(&s_retention.lock);
@@ -860,7 +863,7 @@ bool sleep_retention_is_module_created(sleep_retention_module_t module)
 
 bool sleep_retention_is_module_attached(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return false;
     }
     _lock_acquire_recursive(&s_retention.lock);
@@ -953,7 +956,7 @@ static esp_err_t module_action_wrapper(sleep_retention_module_t module, int arg,
 
 esp_err_t sleep_retention_module_init(sleep_retention_module_t module, sleep_retention_module_init_param_t *param)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     if (param == NULL || param->cbs.create.handle == NULL) {
@@ -986,7 +989,7 @@ esp_err_t sleep_retention_module_init(sleep_retention_module_t module, sleep_ret
 
 esp_err_t sleep_retention_module_deinit(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1017,7 +1020,7 @@ esp_err_t sleep_retention_module_deinit(sleep_retention_module_t module)
 
 static esp_err_t passive_module_allocate(sleep_retention_module_t module)
 {
-    assert(module >= SLEEP_RETENTION_MODULE_MIN && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(module >= SLEEP_RETENTION_MODULE_MIN && module < SLEEP_RETENTION_MODULE_MAX);
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
@@ -1038,7 +1041,7 @@ static esp_err_t passive_module_allocate(sleep_retention_module_t module)
 
 esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1065,7 +1068,7 @@ esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module)
 
 static esp_err_t passive_module_free(sleep_retention_module_t module)
 {
-    assert(module >= SLEEP_RETENTION_MODULE_MIN && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(module >= SLEEP_RETENTION_MODULE_MIN && module < SLEEP_RETENTION_MODULE_MAX);
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
@@ -1087,7 +1090,7 @@ static esp_err_t passive_module_free(sleep_retention_module_t module)
 
 esp_err_t sleep_retention_module_free(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1132,7 +1135,7 @@ static void module_entries_move(sleep_retention_module_t module, struct module_s
 
 static esp_err_t passive_module_attach(sleep_retention_module_t module)
 {
-    assert(module >= SLEEP_RETENTION_MODULE_MIN && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(module >= SLEEP_RETENTION_MODULE_MIN && module < SLEEP_RETENTION_MODULE_MAX);
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
@@ -1150,7 +1153,7 @@ static esp_err_t passive_module_attach(sleep_retention_module_t module)
 
 esp_err_t sleep_retention_module_attach(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1177,7 +1180,7 @@ esp_err_t sleep_retention_module_attach(sleep_retention_module_t module)
 
 static esp_err_t passive_module_detach(sleep_retention_module_t module)
 {
-    assert(module >= SLEEP_RETENTION_MODULE_MIN && module <= SLEEP_RETENTION_MODULE_MAX);
+    assert(module >= SLEEP_RETENTION_MODULE_MIN && module < SLEEP_RETENTION_MODULE_MAX);
 
     esp_err_t err = ESP_OK;
     _lock_acquire_recursive(&s_retention.lock);
@@ -1197,7 +1200,7 @@ static esp_err_t passive_module_detach(sleep_retention_module_t module)
 
 esp_err_t sleep_retention_module_detach(sleep_retention_module_t module)
 {
-    if (module < SLEEP_RETENTION_MODULE_MIN || module > SLEEP_RETENTION_MODULE_MAX) {
+    if (module < SLEEP_RETENTION_MODULE_MIN || module >= SLEEP_RETENTION_MODULE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 

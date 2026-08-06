@@ -514,7 +514,6 @@
 
 #define SOC_PM_PAU_LINK_NUM                 (4)
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE (1)
-#define SOC_PM_RETENTION_MODULE_NUM         (64)
 
 #define SOC_PM_TOP_DEPENDS_ON_RTC_PERIPH    (1) // In ESP32H4, RTC_PERIPH should be pd only together with TOP, otherwise there is some current leak.
 #define SOC_PM_BBPLL_PD_IN_MODEM_STATE      (1)

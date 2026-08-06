@@ -1003,10 +1003,6 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 5
 
-config SOC_PM_RETENTION_MODULE_NUM
-    int
-    default 32
-
 config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool
     default y
