@@ -415,6 +415,7 @@ typedef struct t_l2c_linkcb {
     BOOLEAN is_pawr_synced;
     UINT8 adv_handle;
     UINT8 subevent;
+    UINT16 sync_handle;
 #endif // (BT_BLE_FEAT_PAWR_EN == TRUE)
     TIMER_LIST_ENT      timer_entry;                /* Timer list entry for timeout evt */
     UINT16              handle;                     /* The handle used with LM          */
@@ -841,12 +842,16 @@ extern void     l2c_fcr_free_timer (tL2C_CCB *p_ccb);
 ************************************
 */
 #if (BLE_INCLUDED == TRUE)
+#define L2C_BLE_PAWR_ADV_HANDLE_NONE    0xFF
+#define L2C_BLE_PAWR_SYNC_HANDLE_NONE   0xFFFF
 extern BOOLEAN l2cble_create_conn (tL2C_LCB *p_lcb);
 extern void l2cble_remove_pending_direct_conn (tL2C_LCB *p_lcb);
 extern void l2cble_cleanup_alloc_ccb_failed_conn (tL2C_LCB *p_lcb);
 extern void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len);
 extern void l2cble_conn_comp (UINT16 handle, UINT8 role, BD_ADDR bda, tBLE_ADDR_TYPE type,
-                              UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout);
+                              UINT16 conn_interval, UINT16 conn_latency, UINT16 conn_timeout,
+                              UINT8 adv_handle, UINT16 sync_handle);
+extern void l2cu_read_pawr_conn_handles(const tL2C_LCB *p_lcb, UINT8 *adv_handle, UINT16 *sync_handle);
 extern BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb);
 extern void l2cble_notify_le_connection (BD_ADDR bda);
 extern void l2c_ble_link_adjust_allocation (void);

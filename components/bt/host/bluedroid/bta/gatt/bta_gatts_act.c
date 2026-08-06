@@ -1134,8 +1134,12 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                 cb_data.conn.ble_addr_type = p_lcb->ble_addr_type;
                 #endif
                 cb_data.conn.conn_handle = p_lcb->handle;
+                l2cu_read_pawr_conn_handles(p_lcb, &cb_data.conn.adv_handle,
+                                            &cb_data.conn.sync_handle);
             }else {
                 APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
+                l2cu_read_pawr_conn_handles(NULL, &cb_data.conn.adv_handle,
+                                            &cb_data.conn.sync_handle);
             }
         }
         cb_data.conn.conn_id = conn_id;
