@@ -23,7 +23,7 @@
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ESP_ALIGN_DOWN(addr, SOC_MMU_PAGE_SIZE)
 
-static void esp_cpu_configure_invalid_regions(void)
+NOINLINE_ATTR IRAM_ATTR static void esp_cpu_configure_invalid_regions(void)
 {
     const unsigned PMA_NONE                            = PMA_L | PMA_EN;
     __attribute__((unused)) const unsigned PMA_RW      = PMA_L | PMA_EN | PMA_R | PMA_W;
