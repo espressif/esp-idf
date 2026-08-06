@@ -65,8 +65,6 @@ def test_ledc_psram(dut: IdfDut) -> None:
 
 
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='s3 multi device runner has no psram')
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='cannot pass')  # TODO: IDF-15610
-@pytest.mark.temp_skip_ci(targets=['esp32s31'], reason='cannot pass')  # TODO: IDF-15610
 @pytest.mark.generic_multi_device
 @pytest.mark.parametrize(
     'count, config',
