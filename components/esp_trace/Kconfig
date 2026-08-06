@@ -76,12 +76,13 @@ menu "ESP Trace Configuration"
         config ESP_TRACE_USJ_TX_BUFFER_SIZE
             int "TX buffer size"
             default 2048
-            range 256 32768
+            range 2048 32768
             help
                 Size of the TX ring buffer for USB Serial JTAG trace transport.
                 Larger buffer allows more trace data to be queued before blocking.
 
-                Note: Buffer size must be a power of 2.
+                Note: Buffer size must be a power of 2. Minimum is 2048 since
+                smaller buffers overflow easily on the USJ transport.
 
     endmenu
 
