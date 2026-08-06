@@ -1115,6 +1115,8 @@ typedef enum {
 
     WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
 
+    WIFI_EVENT_STA_TBTT,                 /**< Station TBTT */
+
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
