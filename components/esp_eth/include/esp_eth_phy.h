@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,6 +267,40 @@ struct esp_eth_phy_s {
     *
     */
     esp_err_t (*del)(esp_eth_phy_t *phy);
+
+    /**
+    * @brief Sets PHY master/slave mode for 1000BASE-T
+    *
+    * @note This configuration is required before forcing 1000 Mbps speed mode when auto-negotiation
+    *       is disabled. One link partner must be configured as master and the other as slave.
+    * @note This function pointer may be set to NULL when the PHY does not support 1000BASE-T.
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[in] master: set true to configure as master; set false to configure as slave
+    *
+    * @return
+    *      - ESP_OK: PHY instance master/slave mode has been configured successfully
+    *      - ESP_ERR_NOT_SUPPORTED: PHY does not support 1000BASE-T
+    *      - ESP_FAIL: PHY instance master/slave mode configuration failed because some error occurred
+    *
+    */
+    esp_err_t (*set_master_mode)(esp_eth_phy_t *phy, bool master);
+
+    /**
+    * @brief Gets PHY master/slave mode for 1000BASE-T
+    *
+    * @note This function pointer may be set to NULL when the PHY does not support 1000BASE-T.
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[out] master: set to true if PHY is configured as master; false if configured as slave
+    *
+    * @return
+    *      - ESP_OK: PHY instance master/slave mode has been read successfully
+    *      - ESP_ERR_NOT_SUPPORTED: PHY does not support 1000BASE-T
+    *      - ESP_FAIL: PHY instance master/slave mode read failed because some error occurred
+    *
+    */
+    esp_err_t (*get_master_mode)(esp_eth_phy_t *phy, bool *master);
 };
 
 /**
