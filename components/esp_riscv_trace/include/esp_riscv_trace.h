@@ -83,10 +83,15 @@ typedef enum {
     ESP_RISCV_TRACE_FILTER_MODE_RANGE   = 3, /*!< Start when P matches, continue until S matches */
 } esp_riscv_trace_filter_mode_t;
 
-/** @brief Privilege level selected by the privilege qualifier. */
+/**
+ * @brief Privilege level selected by the privilege qualifier.
+ *
+ * Values are the RISC-V architectural privilege encoding, so they stay the same on every target.
+ */
 typedef enum {
-    ESP_RISCV_TRACE_FILTER_PRIV_USER    = 0, /*!< User mode */
-    ESP_RISCV_TRACE_FILTER_PRIV_MACHINE = 1, /*!< Machine mode */
+    ESP_RISCV_TRACE_FILTER_PRIV_USER       = 0, /*!< User mode */
+    ESP_RISCV_TRACE_FILTER_PRIV_SUPERVISOR = 1, /*!< Supervisor mode; needs SOC_RISCV_TRACE_PRIV_WIDTH >= 2 */
+    ESP_RISCV_TRACE_FILTER_PRIV_MACHINE    = 3, /*!< Machine mode */
 } esp_riscv_trace_filter_priv_t;
 
 /** @brief One filter comparator. */

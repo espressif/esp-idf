@@ -113,6 +113,7 @@
 #define SOC_JPEG_CODEC_SUPPORTED        1
 #define SOC_EMAC_SUPPORTED              1
 #define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
+#define SOC_RISCV_TRACE_SUPPORTED       1
 
 /*-------------------------- EMAC CAPS ----------------------------------------*/
 #define SOC_EMAC_SUPPORT_1000M                     (1)      /*!< EMAC Supports 1000Mbps mode */
@@ -690,3 +691,9 @@
 
 /*------------------------------------- DEBUG CAPS -------------------------------------*/
 #define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)
+
+/*-------------------------- RISC-V TRACE CAPS ------------------------------*/
+#define SOC_RISCV_TRACE_HAS_CONFIG_REG              (1) /*!< Has the encoder config register */
+#define SOC_RISCV_TRACE_AHB_CONFIGURABLE            (1) /*!< AHB write master is configurable */
+#define SOC_RISCV_TRACE_FILTER_SUPPORTED            (1) /*!< Has the filter unit */
+#define SOC_RISCV_TRACE_PRIV_WIDTH                  (2U) /*!< Bits in the privilege field (privilege_width_p) */

@@ -22,6 +22,19 @@ typedef enum {
 } riscv_trace_intr_t;
 
 /**
+ * @brief Privilege level selected by the filter privilege qualifier.
+ *
+ * Values are the RISC-V architectural privilege encoding. Targets whose
+ * match_choice_privilege field is narrower implement only a subset, and their
+ * LL narrows the value when writing the register.
+ */
+typedef enum {
+    RISCV_TRACE_PRIV_USER       = 0, /*!< User mode */
+    RISCV_TRACE_PRIV_SUPERVISOR = 1, /*!< Supervisor mode */
+    RISCV_TRACE_PRIV_MACHINE    = 3, /*!< Machine mode */
+} riscv_trace_priv_t;
+
+/**
  * @brief Trace encoder work-status field.
  *
  * Some targets implement a narrower work_status field and only produce

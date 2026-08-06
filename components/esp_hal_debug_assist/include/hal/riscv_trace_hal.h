@@ -53,7 +53,7 @@ typedef struct {
     bool match_privilege;          /*!< Gate matching on the privilege level (match_privilege) */
     bool match_ecause;             /*!< Match from an exception cause (match_ecause) */
     bool match_interrupt;          /*!< Match from an interrupt trap (match_interrupt) */
-    bool privilege_machine;        /*!< match_choice_privilege: true = machine, false = user */
+    uint32_t privilege;            /*!< match_choice_privilege (riscv_trace_priv_t) */
     bool interrupt_itype2;         /*!< match_value_interrupt: true = itype 2, false = itype 1 */
     uint32_t ecause;               /*!< match_choice_ecause (6-bit exception cause code) */
     riscv_trace_hal_comparator_t primary;   /*!< Primary comparator */
