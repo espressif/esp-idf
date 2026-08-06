@@ -327,8 +327,8 @@ esp_err_t esp_psram_impl_enable(void)   //psram init
     psram_gpio_config();
     psram_set_cs_timing();
 
-    //enter MSPI slow mode to init PSRAM device registers
-    mspi_timing_enter_low_speed_mode(true);
+    //enter MSPI slow mode to init PSRAM device registers (early init: see mspi_timing_enter_low_speed_early)
+    mspi_timing_enter_low_speed_early();
 
     //We use SPI1 to init PSRAM
     psram_disable_qio_mode(SPI1_NUM);
@@ -369,7 +369,7 @@ esp_err_t esp_psram_impl_enable(void)   //psram init
     //Configure SPI0 PSRAM related SPI Phases
     config_psram_spi_phases();
     //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
-    mspi_timing_enter_high_speed_mode(true);
+    mspi_timing_enter_high_speed_early();
 
     return ESP_OK;
 }
