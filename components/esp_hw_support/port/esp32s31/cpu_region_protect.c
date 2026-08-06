@@ -10,16 +10,24 @@
 #include "esp_cpu.h"
 #include "esp_fault.h"
 #include "esp32s31/rom/rom_layout.h"
-#include "pmp_layout.h"
+#include "esp_macros.h"
 
-#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)   (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
+#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr)    ESP_ALIGN_UP(addr, SOC_MMU_PAGE_SIZE)
 
 static void esp_cpu_configure_invalid_regions(void)
 {
-    const unsigned PMA_NONE                            = PMA_L | PMA_EN;
-    __attribute__((unused)) const unsigned PMA_RW      = PMA_L | PMA_EN | PMA_R | PMA_W;
-    __attribute__((unused)) const unsigned PMA_RX      = PMA_L | PMA_EN | PMA_R | PMA_X;
-    __attribute__((unused)) const unsigned PMA_RWX     = PMA_L | PMA_EN | PMA_R | PMA_W | PMA_X;
+#ifdef BOOTLOADER_BUILD
+    /* Don't lock PMA entries in the bootloader: an enabled entry constrains M-mode even without
+     * the lock bit (unlike PMP), and a locked entry would be frozen until CPU reset, turning the
+     * PMA layout into a bootloader<->application ABI. Only the application locks. */
+    const unsigned PMA_LOCK = 0;
+#else
+    const unsigned PMA_LOCK = PMA_L;
+#endif
+    const unsigned PMA_NONE                            = PMA_LOCK | PMA_EN;
+    __attribute__((unused)) const unsigned PMA_RW      = PMA_LOCK | PMA_EN | PMA_R | PMA_W;
+    __attribute__((unused)) const unsigned PMA_RX      = PMA_LOCK | PMA_EN | PMA_R | PMA_X;
+    __attribute__((unused)) const unsigned PMA_RWX     = PMA_LOCK | PMA_EN | PMA_R | PMA_W | PMA_X;
 
     // ROM uses some PMA entries, so we need to clear them before using them in ESP-IDF.
     // The reset-and-set PMA macros are safe to use even though ESP32-S31 does not tolerate
@@ -40,7 +48,7 @@ static void esp_cpu_configure_invalid_regions(void)
     PMA_RESET_AND_ENTRY_SET_TOR(3, SOC_IRAM_HIGH, PMA_NONE);
     PMA_RESET_AND_ENTRY_SET_TOR(4, SOC_IROM_MASK_LOW, PMA_TOR | PMA_NONE);
 
-    // 3. ROM has configured the ROM region to be cacheable, lock the configuration as RX.
+    // 3. ROM has configured the ROM region to be cacheable, keep the configuration as RX.
     //    Configuring it here (as a valid RX region) lets the I/D-ROM PMP entries below use the
     //    DROM-split optimization and save a PMP entry.
     PMA_RESET_AND_ENTRY_SET_TOR(5, SOC_IROM_MASK_LOW, PMA_NONE);
@@ -50,7 +58,7 @@ static void esp_cpu_configure_invalid_regions(void)
     PMA_RESET_AND_ENTRY_SET_TOR(7, SOC_DROM_MASK_HIGH, PMA_NONE);
     PMA_RESET_AND_ENTRY_SET_TOR(8, SOC_IROM_LOW, PMA_TOR | PMA_NONE);
 
-    // 5. ROM has configured the external flash MSPI region with RX permission; lock it as RX and
+    // 5. ROM has configured the external flash MSPI region with RX permission; keep it RX and
     //    make it cacheable. This is a valid region but is configured using PMA (instead of only
     //    PMP) because the cacheable attribute can only be set through PMA.
     PMA_RESET_AND_ENTRY_SET_NAPOT(9, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_RX);
@@ -60,8 +68,8 @@ static void esp_cpu_configure_invalid_regions(void)
     PMA_RESET_AND_ENTRY_SET_TOR(11, SOC_EXTRAM_LOW, PMA_TOR | PMA_NONE);
 
     // 7. ROM has configured the external PSRAM MSPI region with RX permission; add the W attribute
-    //    and lock it, and make it cacheable. As above, this valid region is configured using PMA
-    //    so that it can be marked cacheable (RWX so that PSRAM data and XIP-from-PSRAM both work).
+    //    and make it cacheable. As above, this valid region is configured using PMA so that it can
+    //    be marked cacheable (RWX so that PSRAM data and XIP-from-PSRAM both work).
     PMA_RESET_AND_ENTRY_SET_NAPOT(12, SOC_EXTRAM_LOW, (SOC_EXTRAM_HIGH - SOC_EXTRAM_LOW), PMA_NAPOT | PMA_RWX);
 
     // 8. Non-cacheable (cache-bypass) alias of External PSRAM at +SOC_NON_CACHEABLE_OFFSET_PSRAM,
@@ -110,9 +118,10 @@ static void esp_cpu_configure_valid_regions(void)
      * ESP32-S31 does not support overlapping PMP regions, so the per-entry PMP_RESET_AND_ENTRY_SET
      * macro cannot be used for TOR entries (the transient pmpaddr=0 it writes creates a fleeting
      * wrapping overlap that faults on this CPU). Instead every entry is reset to a disabled state
-     * up front and the entries are then programmed strictly in ascending-address order, so each TOR
-     * base is already in place before the entry that uses it is enabled, and no overlapping
-     * intermediate configuration is ever visible.
+     * up front (so no region is active while programming) and the entries are then programmed in
+     * ascending index order, so each TOR base address is already in place before the entry that
+     * uses it is enabled. The final regions themselves are disjoint, so no overlapping
+     * configuration - transient or final - is ever visible.
      */
     PMP_ENTRY_CFG_RESET(0);
     PMP_ENTRY_CFG_RESET(1);
@@ -133,7 +142,7 @@ static void esp_cpu_configure_valid_regions(void)
 
     // 1. CPU Subsystem region - contains debug mode code and interrupt config registers
     const uint32_t pmpaddr_cpu_subsystem = PMPADDR_NAPOT(SOC_CPU_SUBSYSTEM_LOW, SOC_CPU_SUBSYSTEM_HIGH);
-    PMP_ENTRY_SET(PMP_ENTRY_CPU_SUBSYSTEM, pmpaddr_cpu_subsystem, PMP_NAPOT | RWX);
+    PMP_ENTRY_SET(0, pmpaddr_cpu_subsystem, PMP_NAPOT | RWX);
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
     // 2. I/D-ROM (ROM-Cache)
@@ -144,13 +153,13 @@ static void esp_cpu_configure_valid_regions(void)
         // region as RX, as we already have configured a PMA entry with RX permissions for the
         // [SOC_IROM_MASK_LOW - SOC_DROM_MASK_HIGH] region that also makes it cacheable. Thus, we
         // save on one PMP entry.
-        PMP_ENTRY_SET(PMP_ENTRY_ROM_LOW, drom_start, NONE);
-        PMP_ENTRY_SET(PMP_ENTRY_ROM_HIGH, SOC_DROM_MASK_HIGH, PMP_TOR | R);
+        PMP_ENTRY_SET(1, drom_start, NONE);
+        PMP_ENTRY_SET(2, SOC_DROM_MASK_HIGH, PMP_TOR | R);
     } else
 #endif
     {
-        PMP_ENTRY_SET(PMP_ENTRY_ROM_LOW, SOC_IROM_MASK_LOW, NONE);
-        PMP_ENTRY_SET(PMP_ENTRY_ROM_HIGH, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
+        PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
+        PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
         _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
     }
 
@@ -253,9 +262,8 @@ static void esp_cpu_configure_valid_regions(void)
     //    debug address space). The LP peripherals are contiguous with the rest and are covered by
     //    this single window as well. Peripherals use the last PMP entries (14-15) so that the entry
     //    count used by the regions above (which varies with the build configuration) never collides.
-    //    Both indices are frozen by pmp_layout.h.
-    PMP_ENTRY_SET(PMP_ENTRY_PERIPHERAL_LOW, SOC_PERIPHERAL_LOW, NONE);
-    PMP_ENTRY_SET(PMP_ENTRY_PERIPHERAL_HIGH, SOC_PERIPHERAL_HIGH, PMP_TOR | RW);
+    PMP_ENTRY_SET(14, SOC_PERIPHERAL_LOW, NONE);
+    PMP_ENTRY_SET(15, SOC_PERIPHERAL_HIGH, PMP_TOR | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
 #endif // BOOTLOADER_BUILD
@@ -281,12 +289,10 @@ void esp_cpu_configure_region_protection(void)
      *    address pair, so each region needs only a single PMP entry (no CACHED_AND_UNCACHED helper).
      */
 
-    /* The invalid (PMA) regions are configured in both the bootloader and the application. The valid
-     * (PMP) regions are configured and locked by the application only: an unlocked PMP entry does not
-     * constrain machine mode anyway, and a bootloader-locked entry could not be reconfigured until the
-     * next CPU reset - which would freeze the entry layout into a bootloader <-> application ABI. The
-     * bootloader therefore programs no PMP entry and the application owns and freezes the whole PMP
-     * layout (see pmp_layout.h). */
+    /* The invalid (PMA) regions are configured by both the bootloader and the application; the valid
+     * (PMP) regions by the application only, since an unlocked PMP entry does not constrain M-mode.
+     * Only the application locks either, so the bootloader freezes nothing and the whole PMA/PMP
+     * layout stays application-owned - an implementation detail, not an ABI. */
     esp_cpu_configure_invalid_regions();
 
 #ifndef BOOTLOADER_BUILD
