@@ -186,7 +186,7 @@ bool btc_config_get_str(const char *section, const char *key, char *value, int *
         return false;
     }
 
-    strlcpy(value, stored_value, *size_bytes);
+    BCM_STRLCPY_S(value, stored_value, *size_bytes);
     *size_bytes = strlen(value) + 1;
 
     return true;
