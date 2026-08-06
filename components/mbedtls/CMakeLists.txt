@@ -128,7 +128,8 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     add_dependencies(${COMPONENT_LIB} custom_bundle)
 
 
-    target_add_binary_data(${COMPONENT_LIB} ${crt_bundle} BINARY)
+    # ALIGN 4: the offset table at the bundle head is 32-bit values
+    target_add_binary_data(${COMPONENT_LIB} ${crt_bundle} BINARY ALIGN 4)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${crt_bundle}")
