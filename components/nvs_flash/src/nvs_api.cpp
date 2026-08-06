@@ -298,6 +298,10 @@ static esp_err_t nvs_find_ns_handle(nvs_handle_t c_handle, NVSHandleSimple** han
 
 extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* namespace_name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle)
 {
+    if (out_handle == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_err_t lock_result = Lock::init();
     if (lock_result != ESP_OK) {
         return lock_result;
