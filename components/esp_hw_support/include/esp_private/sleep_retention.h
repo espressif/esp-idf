@@ -17,7 +17,7 @@ extern "C" {
 #include "esp_regdma.h"
 #include "soc/retention_periph_defs.h"
 
-#define SLEEP_RETENTION_MODULE_BITMAP_SZ    ((SLEEP_RETENTION_MODULE_MAX >> 5) + 1)
+#define SLEEP_RETENTION_MODULE_BITMAP_SZ    (((SLEEP_RETENTION_MODULE_MAX - 1) >> 5) + 1)
 
 /**
  * @file sleep_retention.h
