@@ -157,12 +157,22 @@ static inline uint32_t esp_trace_rb_data_len(const esp_trace_rb_t *rb)
 }
 
 /**
- * @brief Write data into the ring buffer (overwrites oldest data if full)
+ * @brief Get number of bytes that can still be written to the ring buffer
+ */
+static inline uint32_t esp_trace_rb_free_len(const esp_trace_rb_t *rb)
+{
+    return rb->max_size - rb->count;
+}
+
+/**
+ * @brief Write data into the ring buffer, all of it or none
+ *
+ * Data already in the buffer is never overwritten.
  *
  * @param rb    Ring buffer
  * @param data  Source data
  * @param len   Number of bytes to write
- * @return ESP_OK always (data is always accepted; oldest data may be dropped)
+ * @return ESP_OK on success, ESP_ERR_NO_MEM if the data does not fit
  */
 esp_err_t esp_trace_rb_put(esp_trace_rb_t *rb, const uint8_t *data, uint32_t len);
 

@@ -5,6 +5,7 @@
  */
 #include "sdkconfig.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -13,6 +14,7 @@
 #include "freertos/queue.h"
 #include "esp_log.h"
 #include "esp_trace.h"
+#include "trace_FreeRTOS.h"
 
 static const char *TAG = "main";
 
@@ -70,7 +72,16 @@ void app_main(void)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     esp_trace_stop();
-    esp_trace_flush();
+    esp_err_t err = esp_trace_flush();
+
+    /* Logged from task context, so it goes to the console UART and not to the
+     * trace port. Shows whether the device sent the trace data or not. */
+    uint32_t written = 0;
+    uint32_t dropped = 0;
+    trace_lib_get_stats(&written, &dropped);
+    ESP_LOGI(TAG, "Trace flush: %s, host connected: %d, lines written: %" PRIu32 ", dropped: %" PRIu32,
+             esp_err_to_name(err), (int)esp_trace_is_host_connected(esp_trace_get_active_handle()),
+             written, dropped);
 
     ESP_LOGI(TAG, "End of trace session");
 }

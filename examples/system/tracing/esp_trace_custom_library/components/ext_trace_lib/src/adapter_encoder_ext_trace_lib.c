@@ -85,14 +85,6 @@ static esp_err_t stop(esp_trace_encoder_t *enc)
     return ESP_OK;
 }
 
-static esp_err_t flush(esp_trace_encoder_t *enc)
-{
-    if (!enc || !enc->tp || !enc->tp->vt->flush_nolock) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    return enc->tp->vt->flush_nolock(enc->tp);
-}
-
 /**
  * @brief Panic handler
  *
@@ -104,7 +96,11 @@ static esp_err_t flush(esp_trace_encoder_t *enc)
 static void panic_handler(esp_trace_encoder_t *enc, const void *info)
 {
     (void)info;
-    flush(enc);
+
+    /* No lock here, the panicking core may already hold it */
+    if (enc && enc->tp && enc->tp->vt->flush_nolock) {
+        enc->tp->vt->flush_nolock(enc->tp);
+    }
 }
 
 static unsigned int take_lock(esp_trace_encoder_t *enc, uint32_t tmo_us)
@@ -125,6 +121,34 @@ static void give_lock(esp_trace_encoder_t *enc, unsigned int int_state)
     ext_trace_lib_ctx_t *ctx = enc->ctx;
     ctx->lock.int_state = int_state;
     esp_trace_lock_give(&ctx->lock);
+}
+
+/* Total time for the flush, split over several flush_nolock() calls */
+#define EXT_TRACE_LIB_FLUSH_TMO_US  (1000000)
+
+static esp_err_t flush(esp_trace_encoder_t *enc)
+{
+    if (!enc || !enc->tp || !enc->tp->vt->flush_nolock) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    /* One call may be too short to send all the data, so repeat it and release
+     * the lock in between to keep interrupts enabled */
+    esp_trace_tmo_t tmo;
+    esp_trace_tmo_init(&tmo, EXT_TRACE_LIB_FLUSH_TMO_US);
+
+    esp_err_t err;
+    do {
+        unsigned int int_state = take_lock(enc, ESP_TRACE_TMO_INFINITE);
+        err = enc->tp->vt->flush_nolock(enc->tp);
+        give_lock(enc, int_state);
+
+        if (err != ESP_ERR_TIMEOUT) {
+            break;  /* done, or an error that repeating cannot fix */
+        }
+    } while (esp_trace_tmo_check(&tmo) == ESP_OK);
+
+    return err;
 }
 
 static const esp_trace_encoder_vtable_t s_ext_trace_lib_vt = {

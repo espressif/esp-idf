@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -75,7 +75,7 @@ static esp_err_t esp_apptrace_membufs_swap(esp_apptrace_membufs_proto_data_t *pr
 
     esp_err_t res = proto->hw->swap_start(proto->state.in_block);
     if (res != ESP_OK) {
-        ESP_APPTRACE_LOGE("Failed to swap to new block: %d", res);
+        ESP_APPTRACE_LOGV("Failed to swap to new block: %s", esp_err_to_name(res));
         return res;
     }
 
@@ -100,7 +100,7 @@ static esp_err_t esp_apptrace_membufs_swap(esp_apptrace_membufs_proto_data_t *pr
                           *(p - 8), *(p - 7), *(p - 6), *(p - 5), *(p - 4), *(p - 3), *(p - 2), *(p - 1));
         uint32_t sz = esp_apptrace_membufs_down_buffer_write_nolock(proto, (uint8_t *)(hdr + 1), hdr->block_sz);
         if (sz != hdr->block_sz) {
-            ESP_APPTRACE_LOGE("Failed to write %" PRIu32 " bytes to down buffer (%" PRIu16 " %" PRIu32 ")!",
+            ESP_APPTRACE_LOGE("Failed to write %" PRIu32 " bytes to down buffer (%" PRIu32 " %" PRIu32 ")!",
                               hdr->block_sz - sz, hdr->block_sz, sz);
         }
         hdr->block_sz = 0;
@@ -149,20 +149,18 @@ uint8_t *esp_apptrace_membufs_down_buffer_get(esp_apptrace_membufs_proto_data_t 
             }
             break;
         }
-        // may need to flush
+        // may need to flush to expose host down-channel data
         if (proto->hw->host_data_pending()) {
             ESP_APPTRACE_LOGD("force flush");
             int res = esp_apptrace_membufs_swap_waitus(proto, tmo);
-            if (res != ESP_OK) {
-                ESP_APPTRACE_LOGE("Failed to switch to another block to recv data from host!");
-                /*do not return error because data can be in down buffer already*/
+            if (res == ESP_OK) {
+                continue; /* re-check rb_down */
             }
-        } else {
-            // check tmo only if there is no data from host
-            int res = esp_apptrace_tmo_check(tmo);
-            if (res != ESP_OK) {
-                return NULL;
-            }
+            ESP_APPTRACE_LOGE("Failed to switch to another block to recv data from host!");
+        }
+        /* Check the timeout even while host data is pending so a zero timeout returns immediately instead of spinning. */
+        if (esp_apptrace_tmo_check(tmo) != ESP_OK) {
+            return NULL;
         }
     }
     return ptr;
