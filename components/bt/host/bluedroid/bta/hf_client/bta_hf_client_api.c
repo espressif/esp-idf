@@ -145,8 +145,7 @@ void BTA_HfClientRegister(tBTA_SEC sec_mask, tBTA_HF_CLIENT_FEAT features,
         p_buf->features = features;
         p_buf->sec_mask = sec_mask;
         if (p_service_name) {
-            BCM_STRNCPY_S(p_buf->name, p_service_name, BTA_SERVICE_NAME_LEN);
-            p_buf->name[BTA_SERVICE_NAME_LEN] = '\0';
+            BCM_STRLCPY_S(p_buf->name, p_service_name, BTA_SERVICE_NAME_LEN + 1);
         } else {
             p_buf->name[0] = '\0';
         }
@@ -294,7 +293,7 @@ void BTA_HfClientSendAT(UINT16 handle, tBTA_HF_CLIENT_AT_CMD_TYPE at, UINT32 val
                 str_len = BTA_HF_CLIENT_MAX_LEN;
             }
 
-            strlcpy(p_buf->str, str, str_len + 1);
+            BCM_STRLCPY_S(p_buf->str, str, str_len + 1);
         } else {
             p_buf->str[0] = '\0';
         }
