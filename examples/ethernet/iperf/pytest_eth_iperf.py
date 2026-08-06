@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 """
 Test case for iperf example.
@@ -275,3 +275,19 @@ def test_esp_eth_iperf_ksz8851snl(
     log_performance: Callable[[str, object], None],
 ) -> None:
     test_esp_eth_iperf(dut, log_performance, spi_eth=True, udp_rx_bw_lim=10)
+
+
+@pytest.mark.eth_yt8531
+@pytest.mark.parametrize(
+    'config',
+    [
+        'default_yt8531_esp32s31',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_esp_eth_iperf_yt8531(
+    dut: Dut,
+    log_performance: Callable[[str, object], None],
+) -> None:
+    test_esp_eth_iperf(dut, log_performance)
