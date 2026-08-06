@@ -1472,7 +1472,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 if( xSelfDelete == pdTRUE )
                 {
                     configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdFALSE );
-                    portYIELD_WITHIN_API();
+
+                    #if ( configNUMBER_OF_CORES == 1 )
+                        portYIELD();
+                    #else
+                        portYIELD_WITHIN_API();
+                    #endif
                 }
                 else
                 {
