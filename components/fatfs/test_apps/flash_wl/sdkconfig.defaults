@@ -13,6 +13,9 @@ CONFIG_ESP_TASK_WDT_INIT=n
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 
+# LFN is off by default on release/v5.x; required for UTF-8 API encoding
+# and for readdir/stat cache tests that use long path names.
+CONFIG_FATFS_LFN_HEAP=y
 # some tests verify file name encoding
 CONFIG_FATFS_API_ENCODING_UTF_8=y
 CONFIG_FATFS_CODEPAGE_936=y

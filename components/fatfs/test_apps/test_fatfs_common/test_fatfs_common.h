@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,3 +82,11 @@ void test_fatfs_create_contiguous_file(const char* base_path, const char* full_p
 #endif
 
 void test_fatfs_readdir_stat(const char* path);
+
+void test_fatfs_readdir_stat_dual_opendir(const char* base_prefix);
+
+void test_fatfs_readdir_stat_stale_after_truncate(const char* dir_prefix);
+
+void test_fatfs_readdir_stat_stale_after_unlink(const char* dir_prefix);
+
+void test_fatfs_readdir_stat_concurrent_dual_opendir(const char* base_prefix);
