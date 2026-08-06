@@ -152,22 +152,27 @@
 
             |unsupported|
     * - .. centered:: |5.1|
-      - Angle of Arrival (AoA)/Angle of Departure (AoD)
+      - .. only:: esp32h2
+
+            Angle of Arrival (AoA)/Angle of Departure (AoD) [2]_
+        .. only:: not esp32h2
+
+            Angle of Arrival (AoA)/Angle of Departure (AoD)
       - .. only:: SOC_BLE_CTE_SUPPORTED
 
-            |experimental|
+            |supported|
         .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
       - .. only:: SOC_BLE_CTE_SUPPORTED
 
-            |experimental|
+            |supported|
         .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
       - .. only:: SOC_BLE_CTE_SUPPORTED
 
-            |experimental|
+            |supported|
         .. only:: not SOC_BLE_CTE_SUPPORTED
 
             |unsupported|
@@ -224,8 +229,18 @@
         .. only:: not SOC_BLE_ISO_SUPPORTED
 
             |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
     * -
       - Enhanced Attribute Protocol
       - |NA|
@@ -393,9 +408,24 @@
       - |unsupported|
     * -
       - Enhancements for ISOAL
-      - |unsupported|
-      - |unsupported|
-      - |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
+      - .. only:: SOC_BLE_ISO_SUPPORTED
+
+            |experimental|
+        .. only:: not SOC_BLE_ISO_SUPPORTED
+
+            |unsupported|
     * -
       - Monitoring Advertisers
       - .. only:: SOC_ESP_NIMBLE_CONTROLLER and not esp32c2
@@ -421,10 +451,55 @@
       - |unsupported|
       - |unsupported|
       - |unsupported|
+    * - .. centered:: |6.1|
+      - Randomized Resolvable Private Address (RPA) Updates
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.2|
+      - HCI USB LE Isochronous Support
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - LE Test Mode Enhancements
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Shorter Connection Intervals
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Channel Sounding Amplitude-based Attack Resilience
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.3|
+      - Channel Sounding Inline Phase Correction Term Transfer
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Channel Sounding PHY-specific RTT Accuracy
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Running Out of Bits
+      - |unsupported|
+      - |unsupported|
+      - |unsupported|
 
 .. [1]
    如果想了解支持功能的 Bluetooth SIG 认证状态，
    请查阅 `SIG 蓝牙产品数据库 <https://qualification.bluetooth.com/Listings/Search>`__ 。
+
+.. only:: esp32h2
+
+    .. [2]
+       注意： 在 ESP32-H2 上，当低功耗蓝牙连接启用加密时，不支持面向连接的低功耗蓝牙测向（AoA/AoD）功能。
 
 对于大部分开发需要在控制器 (Controller) 完成的功能，其主机层 (Host) 的支持状态将会受限于控制器层的支持状态。
 如果你计划将乐鑫低功耗蓝牙控制器和主机跑在不同的乐鑫芯片上，则主机的功能将不再受限于这颗跑主机的芯片上的控制器的功能支持状态，
@@ -468,3 +543,6 @@
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
 .. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__
+.. |6.1| replace:: `6.1 <https://www.bluetooth.com/specifications/specs/core-specification-6-1/>`__
+.. |6.2| replace:: `6.2 <https://www.bluetooth.com/specifications/specs/core-specification-6-2/>`__
+.. |6.3| replace:: `6.3 <https://www.bluetooth.com/specifications/specs/core-specification-6-3/>`__

@@ -72,8 +72,8 @@ ESP 主机主要功能支持状态
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |experimental|
-      - |experimental|
+      - |supported|
+      - |supported|
     * -
       - GATT Caching
       - |experimental|
@@ -133,7 +133,7 @@ ESP 主机主要功能支持状态
     * -
       - LL Extended Feature Set
       - |experimental|
-      - |developing202606|
+      - |developing202612|
     * -
       - Decision-Based Advertising Filtering
       - |unsupported|
@@ -148,6 +148,38 @@ ESP 主机主要功能支持状态
       - |experimental|
     * -
       - Frame Space Update
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.1|
+      - Randomized Resolvable Private Address (RPA) Updates
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.2|
+      - HCI USB LE Isochronous Support
+      - |unsupported|
+      - |unsupported|
+    * -
+      - LE Test Mode Enhancements
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Shorter Connection Intervals
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Channel Sounding Amplitude-based Attack Resilience
+      - |unsupported|
+      - |unsupported|
+    * - .. centered:: |6.3|
+      - Channel Sounding Inline Phase Correction Term Transfer
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Channel Sounding PHY-specific RTT Accuracy
+      - |unsupported|
+      - |unsupported|
+    * -
+      - Running Out of Bits
       - |unsupported|
       - |unsupported|
 
@@ -166,9 +198,6 @@ ESP 主机主要功能支持状态
    :class: align-center
    :width: 120px
 .. |developing202603| image:: ../../../_static/ble/feature_status/developing202603.svg
-   :class: align-center
-   :width: 125px
-.. |developing202606| image:: ../../../_static/ble/feature_status/developing202606.svg
    :class: align-center
    :width: 125px
 .. |developing202612| image:: ../../../_static/ble/feature_status/developing202612.svg
@@ -192,3 +221,6 @@ ESP 主机主要功能支持状态
 .. |5.3| replace:: `5.3 <https://www.bluetooth.com/specifications/specs/core-specification-5-3/>`__
 .. |5.4| replace:: `5.4 <https://www.bluetooth.com/specifications/specs/core-specification-5-4/>`__
 .. |6.0| replace:: `6.0 <https://www.bluetooth.com/specifications/specs/core-specification-6-0/>`__
+.. |6.1| replace:: `6.1 <https://www.bluetooth.com/specifications/specs/core-specification-6-1/>`__
+.. |6.2| replace:: `6.2 <https://www.bluetooth.com/specifications/specs/core-specification-6-2/>`__
+.. |6.3| replace:: `6.3 <https://www.bluetooth.com/specifications/specs/core-specification-6-3/>`__
