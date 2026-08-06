@@ -24,7 +24,6 @@
 #include "esp_ieee802154_sec.h"
 #include "esp_ieee802154_util.h"
 #include "esp_ieee802154_timer.h"
-#include "hal/ieee802154_ll.h"
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 

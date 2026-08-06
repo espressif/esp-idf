@@ -5,7 +5,6 @@
  */
 
 #include <string.h>
-#include "hal/ieee802154_ll.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_ieee802154_ack.h"
