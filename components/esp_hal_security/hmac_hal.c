@@ -99,3 +99,9 @@ void hmac_hal_clean(void)
     hmac_ll_wait_idle();
     hmac_ll_clean();
 }
+
+uint32_t hmac_hal_config_key(hmac_hal_output_t config, uint32_t key_id)
+{
+    hmac_hal_start();
+    return hmac_hal_configure(config, key_id);
+}

@@ -31,7 +31,6 @@ _BASE_CONFIG = {
         'SWDT/BOD': 'APM - Space exception',
         'AES': 'APM - Space exception',
         'HMAC': 'APM - Space exception',
-        'DS': 'APM - Space exception',
         'SHA PCR': 'APM - Space exception',
         'RSA PCR': 'APM - Space exception',
         'ECC PCR': 'APM - Space exception',
@@ -57,7 +56,6 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             'SWDT/BOD': 'Store access fault',
             'AES': 'APM - Authority exception',
             'HMAC': 'APM - Authority exception',
-            'DS': 'APM - Authority exception',
             'SHA PCR': 'APM - Authority exception',
             'RSA PCR': 'APM - Authority exception',
             'ECC PCR': 'APM - Authority exception',
@@ -78,7 +76,6 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
             'SWDT/BOD': 'Store access fault',
             'AES': 'APM - Authority exception',
             'HMAC': 'APM - Authority exception',
-            'DS': 'APM - Authority exception',
             'SHA PCR': 'APM - Authority exception',
             'RSA PCR': 'APM - Authority exception',
             'ECC PCR': 'APM - Authority exception',
@@ -101,7 +98,7 @@ _TARGET_OVERRIDES: dict[str, dict[str, Any]] = {
         # NOTE: ESP32-C61 does not support the following peripherals
         'apm_violation': {
             # NOTE: ESP32-C61 has no AES, HMAC or MPI peripheral
-            '_remove': ['AES', 'HMAC', 'DS', 'RSA PCR'],
+            '_remove': ['AES', 'HMAC', 'RSA PCR'],
         },
     },
 }

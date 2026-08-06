@@ -265,26 +265,7 @@ secure_services:
         type: IDF
         function: esp_hmac_jtag_disable
         args: 0
-      - id: 102
-        type: IDF
-        function: esp_ds_sign
-        args: 4
-      - id: 103
-        type: IDF
-        function: esp_ds_start_sign
-        args: 4
-      - id: 104
-        type: IDF
-        function: esp_ds_is_busy
-        args: 0
-      - id: 105
-        type: IDF
-        function: esp_ds_finish_sign
-        args: 2
-      - id: 106
-        type: IDF
-        function: esp_ds_encrypt_params
-        args: 4
+      # ID: 102-106 empty
       - id: 107
         type: IDF
         function: esp_crypto_mpi_enable_periph_clk
@@ -309,11 +290,24 @@ secure_services:
         type: IDF
         function: esp_sha_512_t_init_hash
         args: 1
-      - id: 113
+      # ID: 113 empty
+      - id: 114
         type: IDF
-        function: esp_ds_encrypt_params_using_key_type
-        args: 5
+        function: hmac_hal_config_key
+        args: 2
+      - id: 115
+        type: IDF
+        function: hmac_hal_clean
+        args: 0
+      - id: 116
+        type: IDF
+        function: esp_crypto_hmac_enable_periph_clk
+        args: 1
       - id: 117
+        type: IDF
+        function: esp_crypto_ds_enable_periph_clk
+        args: 1
+      - id: 118
         type: IDF
         function: esp_crypto_ecdsa_enable_periph_clk
         args: 1

@@ -18,6 +18,7 @@
 #endif
 #if SOC_HMAC_SUPPORTED
 #include "esp_hmac.h"
+#include "hal/hmac_hal.h"
 #endif
 #if SOC_DIG_SIGN_SUPPORTED
 #include "esp_ds.h"
@@ -28,6 +29,8 @@
 #include "psa/initial_attestation.h"
 #include "esp_crypto_periph_clk.h"
 #include "nvs.h"
+
+#include "esp_efuse.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -341,6 +344,11 @@ int _ss_esp_sha_512_t_init_hash(uint16_t t)
 /* ---------------------------------------------- HMAC ------------------------------------------------- */
 
 #if SOC_HMAC_SUPPORTED
+void _ss_esp_crypto_hmac_enable_periph_clk(bool enable)
+{
+    esp_crypto_hmac_enable_periph_clk(enable);
+}
+
 esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
 {
     bool valid_addr = (esp_tee_buf_in_ree(message, message_len) &&
@@ -382,151 +390,40 @@ esp_err_t _ss_esp_hmac_jtag_disable(void)
 }
 #endif
 
+/* ---------------------------------------------- DS ------------------------------------------------- */
+
 #if SOC_DIG_SIGN_SUPPORTED
-static size_t get_ds_msg_sign_len(esp_digital_signature_length_t rsa_length)
+void _ss_esp_crypto_ds_enable_periph_clk(bool enable)
 {
-
-    if (rsa_length != ESP_DS_RSA_1024 && rsa_length != ESP_DS_RSA_2048 && rsa_length != ESP_DS_RSA_3072
-#if SOC_DS_SIGNATURE_MAX_BIT_LEN == 4096
-            && rsa_length != ESP_DS_RSA_4096
-#endif
-       ) {
-        return 0;
-    }
-
-    return (size_t)(rsa_length + 1) * 4;
+    esp_crypto_ds_enable_periph_clk(enable);
 }
 
-esp_err_t _ss_esp_ds_sign(const void *message,
-                          const esp_ds_data_t *data,
-                          hmac_key_id_t key_id,
-                          void *signature)
+uint32_t _ss_hmac_hal_config_key(hmac_hal_output_t config, uint32_t key_id)
 {
-    bool valid_addr = esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t));
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    const size_t n_max = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
-    valid_addr &= (get_ds_msg_sign_len(data->rsa_length) > 0) &&
-                  esp_tee_buf_in_ree(message, n_max) &&
-                  esp_tee_buf_in_ree(signature, n_max);
-
+    bool valid_arg = (config == HMAC_OUTPUT_DS) && (key_id < HMAC_KEY_MAX);
 #if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
-    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+    valid_arg &= (key_id != (uint32_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
 #endif
-    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
+    valid_arg &= (key_id != (uint32_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
 
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
+    /* NOTE: Key Manager is not supported with ESP-TEE, so HMAC_KEY_KM fails the eFuse purpose check */
+    if (valid_arg) {
+        esp_efuse_purpose_t purpose = esp_efuse_get_key_purpose((esp_efuse_block_t)(EFUSE_BLK_KEY0 + key_id));
+        valid_arg &= (purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
+                      purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL);
     }
-    ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_ds_sign(message, data, key_id, signature);
+    if (!valid_arg) {
+        return 1;
+    }
+    ESP_FAULT_ASSERT(valid_arg);
+
+    return hmac_hal_config_key(config, key_id);
 }
 
-esp_err_t _ss_esp_ds_start_sign(const void *message,
-                                const esp_ds_data_t *data,
-                                hmac_key_id_t key_id,
-                                esp_ds_context_t **esp_ds_ctx)
+void _ss_hmac_hal_clean(void)
 {
-    if (!esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t *))) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    esp_ds_context_t *ds_ctx = *esp_ds_ctx;
-    const size_t n_max = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
-
-    bool valid_addr = (esp_tee_buf_in_ree(ds_ctx, sizeof(esp_ds_context_t)) &&
-                       esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)));
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    valid_addr &= (get_ds_msg_sign_len(data->rsa_length) > 0) &&
-                  esp_tee_buf_in_ree(message, n_max);
-
-#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
-    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
-#endif
-    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_PBKDF2_EFUSE_HMAC_KEY_ID);
-
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_FAULT_ASSERT(valid_addr);
-
-    esp_err_t err = esp_ds_start_sign(message, data, key_id, &ds_ctx);
-    if (err == ESP_OK) {
-        *esp_ds_ctx = ds_ctx;
-    }
-
-    return err;
-}
-
-bool _ss_esp_ds_is_busy(void)
-{
-    return esp_ds_is_busy();
-}
-
-esp_err_t _ss_esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
-{
-    const size_t n_max = SOC_DS_SIGNATURE_MAX_BIT_LEN / 8;
-    bool valid_addr = (esp_tee_buf_in_ree(signature, n_max) &&
-                       esp_tee_buf_in_ree(esp_ds_ctx, sizeof(esp_ds_context_t)));
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    const esp_ds_context_t ctx_local = *esp_ds_ctx;
-
-    const esp_ds_data_t *data = (const esp_ds_data_t *)ctx_local.data;
-    valid_addr &= esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)) &&
-                  (get_ds_msg_sign_len(data->rsa_length) > 0);
-
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_FAULT_ASSERT(valid_addr);
-
-    return esp_ds_finish_sign(signature, (esp_ds_context_t *)&ctx_local);
-}
-
-esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
-                                    const void *iv,
-                                    const esp_ds_p_data_t *p_data,
-                                    const void *key)
-{
-    bool valid_addr = (esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)) &&
-                       esp_tee_buf_in_ree(iv, ESP_DS_IV_LEN) &&
-                       esp_tee_buf_in_ree(p_data, sizeof(esp_ds_p_data_t)) &&
-                       esp_tee_buf_in_ree(key, ESP_DS_DATA_KEY_SIZE));
-
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_FAULT_ASSERT(valid_addr);
-
-    return esp_ds_encrypt_params(data, iv, p_data, key);
-}
-
-esp_err_t _ss_esp_ds_encrypt_params_using_key_type(esp_ds_data_t *data,
-                                                   const void *iv,
-                                                   const esp_ds_p_data_t *p_data,
-                                                   const void *key,
-                                                   esp_ds_key_type_t key_type)
-{
-    bool valid_addr = (esp_tee_buf_in_ree(data, sizeof(esp_ds_data_t)) &&
-                       esp_tee_buf_in_ree(iv, ESP_DS_IV_LEN) &&
-                       esp_tee_buf_in_ree(p_data, sizeof(esp_ds_p_data_t)) &&
-                       esp_tee_buf_in_ree(key, ESP_DS_DATA_KEY_SIZE));
-
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    ESP_FAULT_ASSERT(valid_addr);
-
-    return esp_ds_encrypt_params_using_key_type(data, iv, p_data, key, key_type);
+    hmac_hal_clean();
 }
 #endif
 

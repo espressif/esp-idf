@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +85,11 @@ void hmac_hal_read_result_256(void *result);
  * @brief Clear (invalidate) the HMAC result provided to other hardware.
  */
 void hmac_hal_clean(void);
+
+/**
+ * @brief Start the HMAC peripheral and configure the key to use
+ */
+uint32_t hmac_hal_config_key(hmac_hal_output_t config, uint32_t key_id);
 
 #ifdef __cplusplus
 }

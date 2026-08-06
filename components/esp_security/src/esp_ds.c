@@ -8,14 +8,9 @@
 #include <string.h>
 #include <assert.h>
 
-#if !ESP_TEE_BUILD
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_timer.h"
-#else
-#include "esp_rom_sys.h"
-#include "esp_cpu.h"
-#endif
 
 #include "soc/soc_caps.h"
 #include "esp_ds.h"
@@ -248,11 +243,7 @@ static esp_err_t ds_encrypt_params_using_key_type(esp_ds_data_t *data,
 
 static inline int64_t get_time_us(void)
 {
-#if !ESP_TEE_BUILD
     return esp_timer_get_time();
-#else
-    return (int64_t)esp_cpu_get_cycle_count() / (int64_t)esp_rom_get_cpu_ticks_per_us();
-#endif
 }
 
 static void ds_acquire_enable(void)
@@ -307,10 +298,6 @@ esp_err_t esp_ds_sign(const void *message,
     }
 
     esp_ds_context_t *context = NULL;
-#if ESP_TEE_BUILD
-    esp_ds_context_t ctx;
-    context = &ctx;
-#endif
 
     esp_err_t result = esp_ds_start_sign(message, data, key_id, &context);
     if (result != ESP_OK) {
@@ -318,11 +305,7 @@ esp_err_t esp_ds_sign(const void *message,
     }
 
     while (esp_ds_is_busy()) {
-#if !ESP_TEE_BUILD
         vTaskDelay(ESP_DS_SIGN_TASK_DELAY_MS / portTICK_PERIOD_MS);
-#else
-        esp_rom_delay_us(1);
-#endif
     }
 
     return esp_ds_finish_sign(signature, context);
@@ -377,8 +360,7 @@ esp_err_t esp_ds_start_sign(const void *message,
         ds_hal_set_key_source(DS_KEY_SOURCE_EFUSE);
 #endif
         // initiate hmac
-        hmac_hal_start();
-        uint32_t conf_error = hmac_hal_configure(HMAC_OUTPUT_DS, key_id);
+        uint32_t conf_error = hmac_hal_config_key(HMAC_OUTPUT_DS, key_id);
         if (conf_error) {
             ds_disable_release();
             return ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL;
@@ -399,9 +381,7 @@ esp_err_t esp_ds_start_sign(const void *message,
         }
     }
 
-#if !ESP_TEE_BUILD
     *esp_ds_ctx = malloc(sizeof(esp_ds_context_t));
-#endif
     if (!*esp_ds_ctx) {
         ds_hal_finish();
         ds_disable_release();
@@ -468,9 +448,7 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
         }
     }
 
-#if !ESP_TEE_BUILD
     free(esp_ds_ctx);
-#endif
 
     hmac_hal_clean();
     ds_hal_finish();
@@ -486,6 +464,16 @@ static esp_err_t ds_encrypt_params_using_key_type(esp_ds_data_t *data,
                                                   const void *key,
                                                   esp_ds_key_type_t key_type)
 {
+#if CONFIG_SECURE_ENABLE_TEE
+    /* On-device DS parameter encryption is unsupported under ESP-TEE: the AES/SHA
+       accelerators are TEE-owned and DS parameters are provisioned off-device. */
+    (void)data;
+    (void)iv;
+    (void)p_data;
+    (void)key;
+    (void)key_type;
+    return ESP_ERR_NOT_SUPPORTED;
+#else
     if (key_type >= ESP_DS_KEY_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -521,6 +509,7 @@ static esp_err_t ds_encrypt_params_using_key_type(esp_ds_data_t *data,
     esp_crypto_sha_aes_lock_release();
 
     return result;
+#endif
 }
 #endif
 

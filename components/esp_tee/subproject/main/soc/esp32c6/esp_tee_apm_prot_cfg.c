@@ -142,10 +142,11 @@ static apm_hal_ctrl_region_cfg_t hp_apm_regn_cfg_ree0[] = {
     /* Protected: Interrupt Matrix */
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 5, HP_APM_SPI1_REG_END, DR_REG_INTMTX_BASE, APM_PERM_R | APM_PERM_W),
 
-    /* Region 6/7: Peripherals [H/W Lock - HMAC] (RW) */
-    /* Protected: AES, SHA, ECC, DS, HMAC */
+    /* Region 6/7/8: Peripherals [H/W Lock - HMAC] (RW) */
+    /* Protected: AES, SHA, ECC, HMAC */
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 6, DR_REG_ATOMIC_BASE, DR_REG_AES_BASE, APM_PERM_R | APM_PERM_W),
     APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 7, DR_REG_RSA_BASE, DR_REG_ECC_MULT_BASE, APM_PERM_R | APM_PERM_W),
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 8, DR_REG_DS_BASE, DR_REG_HMAC_BASE, APM_PERM_R | APM_PERM_W),
 
     /* Region 9/10: Peripherals [IO_MUX - TEE Controller & APM] (RW) */
     /* Protected: the whole crypto PCR block - plus APM, TEE Controller */
