@@ -2793,6 +2793,12 @@ int dpp_auth_conf_rx(struct dpp_authentication *auth, const u8 *hdr,
 		return -1;
 	}
 
+	if (!auth->waiting_auth_conf) {
+		wpa_printf(MSG_DEBUG,
+			   "DPP: Not waiting for Auth Confirm - drop");
+		return -1;
+	}
+
 	auth->waiting_auth_conf = 0;
 
 	wrapped_data = dpp_get_attr(attr_start, attr_len, DPP_ATTR_WRAPPED_DATA,
