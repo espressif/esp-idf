@@ -12,9 +12,10 @@
 extern "C" {
 #endif
 
-extern uint32_t bt_bb_get_rssi_comp(void);
-
 #define IEEE802154_RSSI_COMPENSATION_VALUE bt_bb_get_rssi_comp()
+#define IEEE802154_RX_SENSITIVITY -102
+
+extern uint32_t bt_bb_get_rssi_comp(void);
 
 #ifdef __cplusplus
 }
