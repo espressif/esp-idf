@@ -53,6 +53,7 @@ struct esp_dpp_context_t {
     struct dpp_global *dpp_global;
     wifi_config_t wifi_cfg;
     int id;
+    bool peer_disc_resp_received;
 };
 
 int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
