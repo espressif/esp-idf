@@ -1179,6 +1179,7 @@ typedef enum {
     WIFI_EVENT_DPP_URI_READY,            /**< DPP URI is ready through Bootstrapping */
     WIFI_EVENT_DPP_CFG_RECVD,            /**< Config received via DPP Authentication */
     WIFI_EVENT_DPP_FAILED,               /**< DPP failed */
+    WIFI_EVENT_STA_TBTT,                 /**< Station TBTT */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
