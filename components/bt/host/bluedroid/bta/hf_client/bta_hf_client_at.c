@@ -1262,10 +1262,10 @@ static void bta_hf_client_dump_at(void)
 
     while (*p1 != '\0') {
         if (*p1 == '\r') {
-            strlcpy(p2, "<cr>", 4);
+            memcpy(p2, "<cr>", 4);
             p2 += 4;
         } else if (*p1 == '\n') {
-            strlcpy(p2, "<lf>", 4);
+            memcpy(p2, "<lf>", 4);
             p2 += 4;
         } else {
             *p2 = *p1;

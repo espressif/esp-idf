@@ -496,16 +496,14 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name, tBT_DEVICE_TYPE name_type)
     if (name_type & BT_DEVICE_TYPE_BLE) {
         p = (UINT8 *)btm_cb.cfg.ble_bd_name;
         if (p != (UINT8 *)p_name) {
-            BCM_STRNCPY_S(btm_cb.cfg.ble_bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN);
-            btm_cb.cfg.ble_bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
+            BCM_STRLCPY_S(btm_cb.cfg.ble_bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN + 1);
         }
     }
 #if (CLASSIC_BT_INCLUDED == TRUE)
     if (name_type & BT_DEVICE_TYPE_BREDR) {
         p = (UINT8 *)btm_cb.cfg.bredr_bd_name;
         if (p != (UINT8 *)p_name) {
-            BCM_STRNCPY_S(btm_cb.cfg.bredr_bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN);
-            btm_cb.cfg.bredr_bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
+            BCM_STRLCPY_S(btm_cb.cfg.bredr_bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN + 1);
         }
     }
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)
