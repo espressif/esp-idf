@@ -16,6 +16,8 @@ extern "C" {
 
 int bt_le_bluedroid_ascs_init(void);
 
+int bt_le_bluedroid_ascs_deinit(void);
+
 int bt_le_bluedroid_ascs_start(void);
 
 #ifdef __cplusplus

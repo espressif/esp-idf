@@ -542,6 +542,12 @@ static void inc_aics_svc_init(struct inc_aics_inst *inst,
                       INC_AICS_CHR_FLAGS_DESCRIPTION);
 }
 
+void bt_le_nimble_vcs_state_reset(void)
+{
+    inc_vocs_svc_count = 0;
+    inc_aics_svc_count = 0;
+}
+
 int bt_le_nimble_vcs_init(void *vcp_inc)
 {
     struct bt_vcp_included *vcp_included;

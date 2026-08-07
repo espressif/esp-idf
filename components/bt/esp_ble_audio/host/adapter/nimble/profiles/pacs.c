@@ -275,3 +275,9 @@ int bt_le_nimble_pacs_init(void)
 
     return 0;
 }
+
+int bt_le_nimble_pacs_deinit(void)
+{
+    LOG_DBG("[N]PacsDeinit");
+    return 0;
+}

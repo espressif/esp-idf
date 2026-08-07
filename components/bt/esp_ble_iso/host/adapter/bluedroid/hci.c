@@ -111,6 +111,7 @@ static void direct_hci_complete_cb(BT_HDR *response, void *context)
     /* deinit may have set the shutdown flag and be about to delete the
      * sem. Skip the give to avoid asserting on a NULL handle. */
     if (direct_hci_shutting_down) {
+        LOG_INF("[B]DirectHciDropCmpl[0x%04x]", opcode);
         return;
     }
 

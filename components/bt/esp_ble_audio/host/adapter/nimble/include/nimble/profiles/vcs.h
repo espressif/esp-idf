@@ -16,6 +16,8 @@ extern "C" {
 
 int bt_le_nimble_vcs_attr_handle_set(void);
 
+void bt_le_nimble_vcs_state_reset(void);
+
 int bt_le_nimble_vcs_init(void *vcp_inc);
 
 #ifdef __cplusplus

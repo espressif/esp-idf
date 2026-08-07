@@ -808,7 +808,9 @@ static void iso_evt_rx(uint8_t event, const void *data,
 
     err = bt_le_iso_task_post(q_type, qdata, qdata_len);
     if (err) {
-        LOG_ERR("[N]IsoPostEvtFail[%d][%02x]", err, event);
+        if (q_type == ISO_QUEUE_ITEM_TYPE_ISO_HCI_EVENT) {
+            ISO_POST_FAIL_LOG(err, "[N]IsoPostEvtFail[%d][%02x]", err, event);
+        }
         free(qdata);
     }
 }

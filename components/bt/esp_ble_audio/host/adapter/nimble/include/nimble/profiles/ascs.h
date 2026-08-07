@@ -18,6 +18,8 @@ int bt_le_nimble_ascs_attr_handle_set(void);
 
 int bt_le_nimble_ascs_init(void);
 
+int bt_le_nimble_ascs_deinit(void);
+
 #ifdef __cplusplus
 }
 #endif

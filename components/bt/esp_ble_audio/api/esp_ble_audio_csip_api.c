@@ -59,6 +59,10 @@ esp_err_t esp_ble_audio_csip_set_member_unregister(esp_ble_audio_csip_set_member
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (bt_le_csis_deinit(svc_inst)) {
+        return ESP_FAIL;
+    }
+
     err = bt_csip_set_member_unregister_safe(svc_inst);
     if (err) {
         return ESP_FAIL;

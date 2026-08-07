@@ -16,9 +16,13 @@ extern "C" {
 
 int bt_le_bluedroid_gtbs_init(void);
 
+int bt_le_bluedroid_gtbs_deinit(void);
+
 int bt_le_bluedroid_gtbs_start(void);
 
 int bt_le_bluedroid_tbs_init(void);
+
+int bt_le_bluedroid_tbs_deinit(uint8_t bearer_index);
 
 int bt_le_bluedroid_tbs_start(void);
 

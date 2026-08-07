@@ -563,6 +563,9 @@ int bt_ots_init(struct bt_ots *ots,
 
     /* Check OACP supported features against Kconfig. */
     if (ots_init->features.oacp & (~((uint32_t) OACP_FEAT))) {
+        /* cb is what bt_ots_instances_rewind() reads to decide there is an init
+         * to reverse, so every bail after the assignment above has to undo it. */
+        ots->cb = NULL;
         return -ENOTSUP;
     }
 
@@ -575,6 +578,7 @@ int bt_ots_init(struct bt_ots *ots,
 
     /* Check OLCP supported features against Kconfig. */
     if (ots_init->features.olcp & (~((uint32_t) OLCP_FEAT))) {
+        ots->cb = NULL;
         return -ENOTSUP;
     }
     ots->features.olcp = ots_init->features.olcp;
@@ -583,6 +587,7 @@ int bt_ots_init(struct bt_ots *ots,
     /* Register L2CAP context. */
     err = bt_gatt_ots_l2cap_register(&ots->l2cap);
     if (err) {
+        ots->cb = NULL;
         return err;
     }
 
@@ -594,6 +599,7 @@ int bt_ots_init(struct bt_ots *ots,
             LOG_ERR("OtsL2capUnregFail[%d]", unreg_err);
         }
 
+        ots->cb = NULL;
         return err;
     }
 
@@ -766,6 +772,38 @@ struct bt_ots *bt_ots_free_instance_get(void)
     }
 
     return &BT_GATT_OTS_INSTANCE_LIST_START[instance_cnt++];
+}
+
+/* Both pools only count up, so without this a second init finds them exhausted
+ * (McsNoFreeOtsInst / OtsObjMgrInstUnavail). Safe here: the profile that took an
+ * instance has dropped its reference by now. */
+void bt_ots_instances_rewind(void)
+{
+    for (struct bt_ots *instance = BT_GATT_OTS_INSTANCE_LIST_START;
+            instance != BT_GATT_OTS_INSTANCE_LIST_END; instance++) {
+        /* cb is the marker for "bt_ots_init() ran here": it is set on entry and
+         * cleared again on every failure path, so it is exactly the set of
+         * instances with something to reverse. Reverse order of that function. */
+        if (instance->cb != NULL) {
+            k_work_deinit_delayable(&instance->olcp_ind.work);
+            k_work_deinit_delayable(&instance->oacp_ind.work);
+
+            if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
+                bt_ots_dir_list_deinit(&instance->dir_list);
+            }
+
+            (void)bt_gatt_service_unregister(instance->service);
+            (void)bt_gatt_ots_l2cap_unregister(&instance->l2cap);
+            instance->cb = NULL;
+        }
+
+        if (instance->obj_manager != NULL) {
+            bt_gatt_ots_obj_manager_release(instance->obj_manager);
+            instance->obj_manager = NULL;
+        }
+    }
+
+    instance_cnt = 0;
 }
 
 int bt_gatt_ots_instances_prepare(void)

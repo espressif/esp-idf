@@ -30,12 +30,19 @@ extern "C" {
 
 void bt_conn_get_acl_conns(struct bt_conn **conns, uint8_t *count);
 
+size_t bt_le_acl_conn_count(void);
+
+void bt_le_conn_reset(void);
+
 struct bt_conn *bt_le_acl_conn_find(uint16_t conn_handle);
 
 int bt_le_acl_conn_new(uint16_t conn_handle,
                        uint8_t role,
                        bt_addr_le_t *dst,
                        uint8_t sec_level);
+
+int bt_le_acl_conn_new_safe(uint16_t conn_handle, uint8_t role, uint8_t addr_type,
+                            const uint8_t *addr, uint8_t sec_level);
 
 int bt_le_acl_conn_delete(uint16_t conn_handle);
 

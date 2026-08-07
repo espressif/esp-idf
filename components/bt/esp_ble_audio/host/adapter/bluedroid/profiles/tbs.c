@@ -36,6 +36,21 @@ int bt_le_bluedroid_gtbs_init(void)
     return bt_le_bluedroid_svc_init(gtbs_svc);
 }
 
+int bt_le_bluedroid_gtbs_deinit(void)
+{
+    struct bt_gatt_service *gtbs_svc;
+
+    LOG_DBG("[B]GtbsDeinit");
+
+    gtbs_svc = lib_gtbs_svc_get();
+    if (!gtbs_svc) {
+        LOG_ERR("[B]GtbsSvcGetFail");
+        return -ENODEV;
+    }
+
+    return bt_le_bluedroid_svc_deinit(gtbs_svc);
+}
+
 int bt_le_bluedroid_gtbs_start(void)
 {
     struct bt_gatt_service *gtbs_svc;
@@ -81,6 +96,29 @@ int bt_le_bluedroid_tbs_init(void)
     }
 
     return 0;
+}
+
+int bt_le_bluedroid_tbs_deinit(uint8_t bearer_index)
+{
+#if CONFIG_BT_TBS_BEARER_COUNT > 0
+    struct bt_gatt_service *tbs_list;
+#endif /* CONFIG_BT_TBS_BEARER_COUNT > 0 */
+
+    LOG_DBG("[B]TbsDeinit[%u]", bearer_index);
+
+#if CONFIG_BT_TBS_BEARER_COUNT > 0
+    if (bearer_index < CONFIG_BT_TBS_BEARER_COUNT) {
+        tbs_list = lib_tbs_server_list_get();
+        if (!tbs_list) {
+            return 0;
+        }
+
+        return bt_le_bluedroid_svc_deinit(&tbs_list[bearer_index]);
+    }
+#endif /* CONFIG_BT_TBS_BEARER_COUNT > 0 */
+
+    LOG_ERR("[B]TbsInvBearerIdx[%u]", bearer_index);
+    return -EINVAL;
 }
 
 int bt_le_bluedroid_tbs_start(void)

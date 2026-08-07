@@ -262,12 +262,8 @@ void bt_le_nimble_gap_post_event(void *param)
 
     err = bt_le_iso_task_post(q_type, qev, sizeof(*qev));
     if (err) {
-        /* Floodable reports drop by design when the queue is full; only a
-         * failure on the reliable (normal-queue) path is a real error. */
         if (q_type == ISO_QUEUE_ITEM_TYPE_GAP_EVENT) {
-            LOG_ERR("[N]GapPostEvtFail[%d][%u]", err, qev->type);
-        } else {
-            LOG_DBG("[N]GapRptDrop[%u]", qev->type);
+            ISO_POST_FAIL_LOG(err, "[N]GapPostEvtFail[%d][%u]", err, qev->type);
         }
         goto free;
     }
@@ -275,24 +271,7 @@ void bt_le_nimble_gap_post_event(void *param)
     return;
 
 free:
-    switch (qev->type) {
-    case BT_LE_GAP_APP_PARAM_EXT_SCAN_RECV:
-        if (qev->ext_scan_recv.data) {
-            free(qev->ext_scan_recv.data);
-            qev->ext_scan_recv.data = NULL;
-        }
-        break;
-    case BT_LE_GAP_APP_PARAM_PA_SYNC_RECV:
-        if (qev->pa_sync_recv.data) {
-            free(qev->pa_sync_recv.data);
-            qev->pa_sync_recv.data = NULL;
-        }
-        break;
-    default:
-        break;
-    }
-
-    free(qev);
+    bt_le_gap_event_free(qev);
 }
 
 int bt_le_nimble_scan_start(const struct bt_le_scan_param *param, ble_gap_event_fn *cb)

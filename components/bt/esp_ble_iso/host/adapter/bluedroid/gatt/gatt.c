@@ -476,7 +476,7 @@ static void gattc_connect_event_handler(tBTA_GATTC_CONNECT *connect)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcConnPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcConnPostFail[%d]", err);
         free(qev);
     }
 }
@@ -496,7 +496,7 @@ static void gattc_disconnect_event_handler(tBTA_GATTC_DISCONNECT *disconnect)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcDiscPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcDiscPostFail[%d]", err);
         free(qev);
     }
 }
@@ -516,7 +516,7 @@ static void gattc_open_event_handler(tBTA_GATTC_OPEN *open)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcOpenPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcOpenPostFail[%d]", err);
         free(qev);
     }
 }
@@ -537,7 +537,7 @@ static void gattc_mtu_event_handler(tBTA_GATTC_CFG_MTU *cfg_mtu)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcMtuPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcMtuPostFail[%d]", err);
         free(qev);
     }
 }
@@ -557,7 +557,7 @@ static void gattc_disc_cmpl_event_handler(tBTA_GATTC_DIS_CMPL *disc_cmpl)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcDiscCmplPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcDiscCmplPostFail[%d]", err);
         free(qev);
     }
 }
@@ -589,11 +589,8 @@ static void gattc_read_chrc_event_handler(tBTA_GATTC_READ *read)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcReadChrcPostFail[%d]", err);
-        if (qev->gattc_read_chrc.value) {
-            free(qev->gattc_read_chrc.value);
-        }
-        free(qev);
+        ISO_POST_FAIL_LOG(err, "[B]GattcReadChrcPostFail[%d]", err);
+        bt_le_gatt_event_free(qev);
     }
 }
 
@@ -614,7 +611,7 @@ static void gattc_write_chrc_event_handler(tBTA_GATTC_WRITE *write)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcWriteChrcPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcWriteChrcPostFail[%d]", err);
         free(qev);
     }
 }
@@ -641,7 +638,7 @@ static void gatts_notify_tx_event_handler(tBTA_GATTS_REQ *req)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsNotifyTxPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattsNotifyTxPostFail[%d]", err);
         free(qev);
     }
 }
@@ -671,7 +668,7 @@ static void gattc_notify_rx_event_handler(tBTA_GATTC_NOTIFY *notify)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattcNotifyRxPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattcNotifyRxPostFail[%d]", err);
         if (qev->gattc_notify_rx.value) {
             free(qev->gattc_notify_rx.value);
         }
@@ -697,7 +694,7 @@ static void gatts_connect_event_handler(tBTA_GATTS_CONN *connect)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsConnPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattsConnPostFail[%d]", err);
         free(qev);
     }
 }
@@ -717,7 +714,7 @@ static void gatts_disconnect_event_handler(tBTA_GATTS_CONN *disconnect)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsDiscPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattsDiscPostFail[%d]", err);
         free(qev);
     }
 }
@@ -738,7 +735,7 @@ static void gatts_mtu_event_handler(tBTA_GATTS_REQ *req)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsMtuPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattsMtuPostFail[%d]", err);
         free(qev);
     }
 }
@@ -763,7 +760,7 @@ static void gatts_read_req_handler(tBTA_GATTS_REQ *req)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsReadPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattsReadPostFail[%d]", err);
         free(qev);
     }
 }
@@ -798,11 +795,8 @@ static void gatts_write_req_handler(tBTA_GATTS_REQ *req)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsWritePostFail[%d]", err);
-        if (qev->gatts_write.value) {
-            free(qev->gatts_write.value);
-        }
-        free(qev);
+        ISO_POST_FAIL_LOG(err, "[B]GattsWritePostFail[%d]", err);
+        bt_le_gatt_event_free(qev);
     }
 }
 
@@ -822,13 +816,20 @@ static void gatts_exec_write_req_handler(tBTA_GATTS_REQ *req)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GATT_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GattsExecPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]GattsExecPostFail[%d]", err);
         free(qev);
     }
 }
 
 static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 {
+    /* BTA_GATTS_AppDeregister is async, so its events land after deinit returns.
+     * Drop on the flag, not gatts_if - a re-register can hand back the same if. */
+    if (gatt_shutting_down) {
+        LOG_INF("[B]GattsDropEvt[%u]", event);
+        return;
+    }
+
     switch (event) {
     case BTA_GATTS_REG_EVT:
         LOG_DBG("[B]GattsRegEvt[%u][%u]",
@@ -837,10 +838,6 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->reg_oper.uuid.len,
                 p_data->reg_oper.uuid.uu.uuid128[0],
                 p_data->reg_oper.uuid.uu.uuid128[1]);
-
-        if (gatt_shutting_down) {
-            break;
-        }
 
         if (p_data->reg_oper.status == BTA_GATT_OK &&
                 memcmp(&p_data->reg_oper.uuid, &gatts_app_uuid, sizeof(tBT_UUID)) == 0) {
@@ -869,7 +866,7 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->conn.conn_params.timeout);
 
         if (p_data->conn.server_if != gatts_if) {
-            LOG_ERR("[B]GattsConnUnknownIf[%u]", p_data->conn.server_if);
+            LOG_ERR("[B]GattsConnUnknownIf[%u][%u]", p_data->conn.server_if, gatts_if);
             break;
         }
 
@@ -885,7 +882,7 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->conn.remote_bda[4], p_data->conn.remote_bda[5]);
 
         if (p_data->conn.server_if != gatts_if) {
-            LOG_ERR("[B]GattsDisconnUnknownIf[%u]", p_data->conn.server_if);
+            LOG_ERR("[B]GattsDisconnUnknownIf[%u][%u]", p_data->conn.server_if, gatts_if);
             break;
         }
 
@@ -913,8 +910,8 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->req_data.p_data ? p_data->req_data.p_data->mtu : 0);
 
         if (BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id) != gatts_if) {
-            LOG_ERR("[B]GattsMtuUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id));
+            LOG_ERR("[B]GattsMtuUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id), gatts_if);
             break;
         }
 
@@ -955,7 +952,7 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->create.uuid.uu.uuid128[1]);
 
         if (p_data->create.server_if != gatts_if) {
-            LOG_ERR("[B]GattsCreateUnknownIf[%u]", p_data->create.server_if);
+            LOG_ERR("[B]GattsCreateUnknownIf[%u][%u]", p_data->create.server_if, gatts_if);
             break;
         }
 
@@ -972,7 +969,7 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->add_result.attr_id, p_data->add_result.service_id);
 
         if (p_data->add_result.server_if != gatts_if) {
-            LOG_ERR("[B]GattsAddInclSvcUnknownIf[%u]", p_data->add_result.server_if);
+            LOG_ERR("[B]GattsAddInclSvcUnknownIf[%u][%u]", p_data->add_result.server_if, gatts_if);
             break;
         }
 
@@ -990,7 +987,7 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->add_result.char_uuid.len, p_data->add_result.char_uuid.uu.uuid16);
 
         if (p_data->add_result.server_if != gatts_if) {
-            LOG_ERR("[B]GattsAddCharUnknownIf[%u]", p_data->add_result.server_if);
+            LOG_ERR("[B]GattsAddCharUnknownIf[%u][%u]", p_data->add_result.server_if, gatts_if);
             break;
         }
 
@@ -1008,7 +1005,7 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->add_result.char_uuid.len, p_data->add_result.char_uuid.uu.uuid16);
 
         if (p_data->add_result.server_if != gatts_if) {
-            LOG_ERR("[B]GattsAddDescrUnknownIf[%u]", p_data->add_result.server_if);
+            LOG_ERR("[B]GattsAddDescrUnknownIf[%u][%u]", p_data->add_result.server_if, gatts_if);
             break;
         }
 
@@ -1034,8 +1031,8 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 p_data->req_data.p_data->read_req.need_rsp);
 
         if (BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id) != gatts_if) {
-            LOG_ERR("[B]GattsReadUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id));
+            LOG_ERR("[B]GattsReadUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id), gatts_if);
             break;
         }
 
@@ -1058,8 +1055,8 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         }
 
         if (BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id) != gatts_if) {
-            LOG_ERR("[B]GattsWriteUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id));
+            LOG_ERR("[B]GattsWriteUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id), gatts_if);
             break;
         }
 
@@ -1078,8 +1075,8 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         }
 
         if (BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id) != gatts_if) {
-            LOG_ERR("[B]GattsExecUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id));
+            LOG_ERR("[B]GattsExecUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->req_data.conn_id), gatts_if);
             break;
         }
 
@@ -1117,6 +1114,12 @@ static void gatts_app_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
 static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 {
+    /* See gatts_app_cb. */
+    if (gatt_shutting_down) {
+        LOG_INF("[B]GattcDropEvt[%u]", event);
+        return;
+    }
+
     switch (event) {
     case BTA_GATTC_REG_EVT:
         LOG_DBG("[B]GattcRegEvt[%u][%u]",
@@ -1125,10 +1128,6 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->reg_oper.app_uuid.len,
                 p_data->reg_oper.app_uuid.uu.uuid128[0],
                 p_data->reg_oper.app_uuid.uu.uuid128[1]);
-
-        if (gatt_shutting_down) {
-            break;
-        }
 
         if (p_data->reg_oper.status == BTA_GATT_OK &&
                 memcmp(&p_data->reg_oper.app_uuid, &gattc_app_uuid, sizeof(tBT_UUID)) == 0) {
@@ -1156,7 +1155,7 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->connect.conn_params.latency, p_data->connect.conn_params.timeout);
 
         if (p_data->connect.client_if != gattc_if) {
-            LOG_ERR("[B]GattcConnUnknownIf[%u]", p_data->connect.client_if);
+            LOG_ERR("[B]GattcConnUnknownIf[%u][%u]", p_data->connect.client_if, gattc_if);
             break;
         }
 
@@ -1172,7 +1171,7 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->disconnect.remote_bda[4], p_data->disconnect.remote_bda[5]);
 
         if (p_data->disconnect.client_if != gattc_if) {
-            LOG_ERR("[B]GattcDisconnUnknownIf[%u]", p_data->disconnect.client_if);
+            LOG_ERR("[B]GattcDisconnUnknownIf[%u][%u]", p_data->disconnect.client_if, gattc_if);
             break;
         }
 
@@ -1189,7 +1188,7 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->open.remote_bda[4], p_data->open.remote_bda[5]);
 
         if (p_data->open.client_if != gattc_if) {
-            LOG_ERR("[B]GattcOpenUnknownIf[%u]", p_data->open.client_if);
+            LOG_ERR("[B]GattcOpenUnknownIf[%u][%u]", p_data->open.client_if, gattc_if);
             break;
         }
 
@@ -1213,8 +1212,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->cfg_mtu.status, p_data->cfg_mtu.conn_id, p_data->cfg_mtu.mtu);
 
         if (BTC_GATT_GET_GATT_IF(p_data->cfg_mtu.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcMtuUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->cfg_mtu.conn_id));
+            LOG_ERR("[B]GattcMtuUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->cfg_mtu.conn_id), gattc_if);
             break;
         }
 
@@ -1235,8 +1234,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->dis_cmpl.status, p_data->dis_cmpl.conn_id);
 
         if (BTC_GATT_GET_GATT_IF(p_data->dis_cmpl.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcDiscSvcCmplUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->dis_cmpl.conn_id));
+            LOG_ERR("[B]GattcDiscSvcCmplUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->dis_cmpl.conn_id), gattc_if);
             break;
         }
 
@@ -1254,8 +1253,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->srvc_res.service_uuid.inst_id);
 
         if (BTC_GATT_GET_GATT_IF(p_data->srvc_res.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcSearchResUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->srvc_res.conn_id));
+            LOG_ERR("[B]GattcSearchResUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->srvc_res.conn_id), gattc_if);
             break;
         }
         break;
@@ -1267,8 +1266,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                  BTA_GATTC_SERVICE_INFO_FROM_REMOTE_DEVICE) ? "Remote" : "NVS");
 
         if (BTC_GATT_GET_GATT_IF(p_data->search_cmpl.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcSearchCmplUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->search_cmpl.conn_id));
+            LOG_ERR("[B]GattcSearchCmplUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->search_cmpl.conn_id), gattc_if);
             break;
         }
         break;
@@ -1278,8 +1277,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->read.status, p_data->read.conn_id, p_data->read.handle);
 
         if (BTC_GATT_GET_GATT_IF(p_data->read.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcReadCharUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->read.conn_id));
+            LOG_ERR("[B]GattcReadCharUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->read.conn_id), gattc_if);
             break;
         }
 
@@ -1307,8 +1306,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->write.handle, p_data->write.offset);
 
         if (BTC_GATT_GET_GATT_IF(p_data->write.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcWriteCharUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->write.conn_id));
+            LOG_ERR("[B]GattcWriteCharUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->write.conn_id), gattc_if);
             break;
         }
 
@@ -1340,8 +1339,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 p_data->notify.bda[4], p_data->notify.bda[5]);
 
         if (BTC_GATT_GET_GATT_IF(p_data->notify.conn_id) != gattc_if) {
-            LOG_ERR("[B]GattcNotifUnknownIf[%u]",
-                    BTC_GATT_GET_GATT_IF(p_data->notify.conn_id));
+            LOG_ERR("[B]GattcNotifUnknownIf[%u][%u]",
+                    BTC_GATT_GET_GATT_IF(p_data->notify.conn_id), gattc_if);
             break;
         }
 
@@ -1405,9 +1404,9 @@ static void post_acl_connect_app_event(struct gatt_conn *gatt_conn)
     qev->acl_connect.status = gatt_conn->status;
 
     /* Populate identity unconditionally: connect_event_handler fills these
-     * fields before OPEN_EVT arrives, so failure events still carry valid
-     * conn_handle / role / dst to the application — matches NimBLE's
-     * BLE_GAP_EVENT_CONNECT, which always exposes the full descriptor. */
+     * fields before OPEN_EVT arrives, so a failure that got that far still
+     * carries valid conn_handle / role / dst to the application. One that
+     * did not is reported by post_acl_connect_fail_app_event() instead. */
     qev->acl_connect.conn_handle = gatt_conn->conn_handle;
     qev->acl_connect.role = gatt_conn->role;
     qev->acl_connect.dst.type = gatt_conn->peer.type;
@@ -1415,7 +1414,29 @@ static void post_acl_connect_app_event(struct gatt_conn *gatt_conn)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GAP_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]AclConnPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]AclConnPostFail[%d]", err);
+        free(qev);
+    }
+}
+
+/* A connect that never reached the link layer gets no CONNECT_EVT, so nothing
+ * would tell the application its request died. Identity stays zero, matching
+ * NimBLE, which fills the descriptor only on status 0. */
+static void post_acl_connect_fail_app_event(uint8_t status)
+{
+    struct bt_le_gap_app_param *qev;
+    int err;
+
+    qev = bt_le_ext_calloc(1, sizeof(*qev));
+    BT_LE_ASSERT(qev);
+
+    qev->type = BT_LE_GAP_APP_PARAM_ACL_CONNECT;
+
+    qev->acl_connect.status = status;
+
+    err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GAP_EVENT, qev, sizeof(*qev));
+    if (err) {
+        ISO_POST_FAIL_LOG(err, "[B]AclConnFailPostFail[%d]", err);
         free(qev);
     }
 }
@@ -1435,7 +1456,7 @@ static void post_acl_disconnect_app_event(uint16_t conn_handle, uint8_t reason)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GAP_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]AclDiscPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "[B]AclDiscPostFail[%d]", err);
         free(qev);
     }
 }
@@ -1542,7 +1563,16 @@ static void handle_gattc_open_event(struct bt_le_gattc_open_event *event)
 
     gatt_conn = find_gatt_conn_by_conn_id_or_index(event->conn_id);
     if (gatt_conn == NULL) {
-        LOG_ERR("[B]GattcOpenUnknownDev");
+        /* A non-zero status here is the application's own connect request failing
+         * before any link existed; a success without a slot is a real
+         * inconsistency and stays an error. */
+        if (event->status) {
+            LOG_WRN("[B]GattcOpenFailed[%u][0x%04x]", event->status, event->conn_id);
+            post_acl_connect_fail_app_event(event->status);
+        } else {
+            LOG_ERR("[B]GattcOpenUnknownDev[0x%04x]", event->conn_id);
+        }
+
         return;
     }
 
@@ -1928,7 +1958,7 @@ static void handle_gatts_disconnect_event(struct bt_le_gatts_disconnect_event *e
 
     gatt_conn = find_gatt_conn_with_conn_id(event->conn_id);
     if (gatt_conn == NULL) {
-        LOG_WRN("[B]GattsDisconnUnknownDev");
+        LOG_DBG("[B]GattsDisconnUnknownDev");
         return;
     }
 
@@ -3500,7 +3530,8 @@ int bt_le_bluedroid_gatt_init(void)
 
 void bt_le_bluedroid_gatt_deinit(void)
 {
-    /* Block late REG_EVT gives before tearing down the sems. */
+    /* Must precede the deregisters: it is what makes the event callbacks drop
+     * everything BTA still delivers for this registration. */
     gatt_shutting_down = true;
 
     if (gattc_if != 0) {

@@ -28,6 +28,8 @@ extern "C" {
 
 int bt_le_nimble_audio_init(void);
 
+void bt_le_nimble_audio_deinit(void);
+
 int bt_le_nimble_media_proxy_pl_init(void);
 
 int bt_le_nimble_vcp_vol_rend_init(void);

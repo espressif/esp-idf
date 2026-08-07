@@ -320,6 +320,16 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
     dir_list_update_size(*dir_list, obj_manager);
 }
 
+void bt_ots_dir_list_deinit(struct bt_ots_dir_list **dir_list)
+{
+    if (*dir_list == NULL) {
+        return;
+    }
+
+    memset(*dir_list, 0, sizeof(**dir_list));
+    *dir_list = NULL;
+}
+
 ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
                                     void **data, size_t len, off_t offset)
 {

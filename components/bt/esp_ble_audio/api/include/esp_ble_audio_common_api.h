@@ -121,10 +121,30 @@ typedef struct {
 /**
  * @brief   Post an application-layer GAP event for audio internal usage.
  *
- * @note    This function is only needed while using NimBLE Host.
+ * @note    NimBLE-only: NimBLE has no global GAP callback, so the layers below
+ *          see only what the application forwards here. An event left out is
+ *          dropped silently. Bluedroid's adapter hooks the stack directly.
  *
- * @param   type    Event type.
- * @param   param   Event parameters.
+ * @note    Forward every event below that the application's flows can produce.
+ *          Forwarding an unused one is harmless; omitting one leaves the
+ *          matching state uncreated and fails later and elsewhere:
+ *          - BLE_GAP_EVENT_EXT_DISC             extended advertising report
+ *          - BLE_GAP_EVENT_CONNECT              ACL established or failed
+ *          - BLE_GAP_EVENT_DISCONNECT           ACL closed
+ *          - BLE_GAP_EVENT_ENC_CHANGE           encryption changed
+ *          - BLE_GAP_EVENT_PERIODIC_SYNC        PA sync established
+ *          - BLE_GAP_EVENT_PERIODIC_SYNC_LOST   PA sync lost
+ *          - BLE_GAP_EVENT_PERIODIC_REPORT      periodic advertising report
+ *          - BLE_GAP_EVENT_PERIODIC_TRANSFER    PA sync received over PAST
+ *          - BLE_GAP_EVENT_PERIODIC_TRANSFER_V2 as above, PAwR
+ *
+ *          GATT events go to esp_ble_audio_gatt_app_post_event() instead.
+ *
+ * @note    Shares a sink with esp_ble_iso_gap_app_post_event(): forward a given
+ *          event through exactly one of them or it is delivered twice.
+ *
+ * @param   type    Event type, i.e. ble_gap_event::type.
+ * @param   param   Event parameters, i.e. the struct ble_gap_event pointer.
  */
 void esp_ble_audio_gap_app_post_event(uint16_t type, void *param);
 
@@ -132,13 +152,20 @@ void esp_ble_audio_gap_app_post_event(uint16_t type, void *param);
 /**
  * @brief   Post an application-layer GATT event for audio internal usage.
  *
- * @note    NimBLE-only. Bluedroid dispatches GATT events directly inside the
- *          adapter (BTA callbacks), so no app-level post is needed. This
- *          declaration is hidden from Bluedroid builds to make misuse a
- *          compile-time error.
+ * @note    NimBLE-only: Bluedroid dispatches GATT events inside the adapter, so
+ *          no app-level post is needed. Hidden from Bluedroid builds to make
+ *          misuse a compile-time error.
  *
- * @param   type    Event type.
- * @param   param   Event parameters.
+ * @note    Forward all four below here rather than through
+ *          esp_ble_audio_gap_app_post_event() - GATT has no ISO counterpart.
+ *          Omitting one is silent; ASCS and PACS simply never react.
+ *          - BLE_GAP_EVENT_MTU        ATT MTU exchanged
+ *          - BLE_GAP_EVENT_SUBSCRIBE  peer wrote a CCC descriptor
+ *          - BLE_GAP_EVENT_NOTIFY_RX  notification or indication received
+ *          - BLE_GAP_EVENT_NOTIFY_TX  notification or indication sent
+ *
+ * @param   type    Event type, i.e. ble_gap_event::type.
+ * @param   param   Event parameters, i.e. the struct ble_gap_event pointer.
  */
 void esp_ble_audio_gatt_app_post_event(uint8_t type, void *param);
 #endif /* !CONFIG_BT_BLUEDROID_ENABLED */
@@ -162,6 +189,30 @@ typedef struct {
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
     uint8_t dummy;                                              /*!< Dummy field to avoid empty struct */
 } esp_ble_audio_start_info_t;
+
+/**
+ * @brief   Deinitialize BLE Audio.
+ *
+ * The only precondition is that the application has stopped its streams: a live
+ * stream always has a CIS under it, so one still up makes this return
+ * ESP_ERR_INVALID_STATE with each offending item logged at ERROR level.
+ *
+ * @note    Registered profiles need no prior unregister - this releases them
+ *          itself, while the host lock and GATT application are still alive.
+ *          The per-profile esp_ble_audio_*_unregister() calls are for dropping
+ *          one profile while audio stays up.
+ *
+ * @note    Also releases the ISO layer, so esp_ble_iso_common_deinit() must not
+ *          be called as well. @p info has the same meaning as there.
+ *
+ * @param   info    Which ISO-layer records to clear, or NULL to clear all.
+ *
+ * @return  ESP_OK on success,
+ *          ESP_ERR_INVALID_STATE if something is still active,
+ *          ESP_ERR_TIMEOUT if the ISO task could not be stopped.
+ *          Nothing is released unless ESP_OK is returned.
+ */
+esp_err_t esp_ble_audio_common_deinit(const esp_ble_iso_deinit_info_t *info);
 
 /**
  * @brief   Start BLE Audio services.

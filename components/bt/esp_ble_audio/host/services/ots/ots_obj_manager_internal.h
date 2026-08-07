@@ -43,6 +43,8 @@ bool bt_gatt_ots_obj_manager_obj_contains(void *obj_manager, struct bt_gatt_ots_
 
 void *bt_gatt_ots_obj_manager_assign(void);
 
+void bt_gatt_ots_obj_manager_release(void *obj_manager);
+
 #ifdef __cplusplus
 }
 #endif
