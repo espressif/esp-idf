@@ -183,6 +183,10 @@ config SOC_APM_SUPPORTED
     bool
     default y
 
+config SOC_RISCV_TRACE_SUPPORTED
+    bool
+    default y
+
 config SOC_PMU_SUPPORTED
     bool
     default y
@@ -1350,3 +1354,7 @@ config SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED
 config SOC_DEBUG_HAVE_OCD_STUB_BINS
     bool
     default y
+
+config SOC_RISCV_TRACE_PRIV_WIDTH
+    int
+    default 1
