@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #endif
 
 __attribute__((always_inline))
-static inline uint32_t _sub_abs(uint32_t a, uint32_t b)
+static inline uint64_t _sub_abs(uint64_t a, uint64_t b)
 {
     return a > b ? a - b : b - a;
 }
@@ -78,9 +78,10 @@ uint32_t hal_utils_calc_clk_div_frac_accurate(const hal_utils_clk_info_t *clk_in
         // Carry bit if the decimal is greater than 1.0 - 1.0 / ((max_fract - 1) * 2)
         if (freq_error < clk_info->exp_freq_hz - clk_info->exp_freq_hz / (clk_info->max_fract - 1) * 2) {
             // Search the closest fraction, time complexity O(n)
-            for (uint32_t sub = 0, a = 2, b = 0, min = UINT32_MAX; min && a < clk_info->max_fract; a++) {
-                b = (a * freq_error + clk_info->exp_freq_hz / 2) / clk_info->exp_freq_hz;
-                sub = _sub_abs(clk_info->exp_freq_hz * b, freq_error * a);
+            uint64_t min = UINT64_MAX;
+            for (uint32_t a = 2, b = 0; min && a < clk_info->max_fract; a++) {
+                b = ((uint64_t)a * freq_error + clk_info->exp_freq_hz / 2) / clk_info->exp_freq_hz;
+                uint64_t sub = _sub_abs((uint64_t)clk_info->exp_freq_hz * b, (uint64_t)freq_error * a);
                 if (sub < min) {
                     div_denom = a;
                     div_numer = b;
