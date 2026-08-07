@@ -241,7 +241,9 @@ esp_err_t esp_openthread_launch_mainloop(void)
 
 esp_err_t esp_openthread_deinit(void)
 {
+    esp_openthread_lock_acquire(portMAX_DELAY);
     esp_openthread_instances_deinit(esp_openthread_get_instance());
+    esp_openthread_lock_release();
     return esp_openthread_platform_deinit();
 }
 
