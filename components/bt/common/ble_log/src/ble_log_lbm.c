@@ -13,7 +13,7 @@
 #include "ble_log_rt.h"
 #include "esp_log.h"
 
-#if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+#if CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER
 #if CONFIG_BT_DUAL_MODE_ARCH
 #include "ble_mbuf.h"
 #define BLE_MBUF_COPY(buf, off, len, dst) ble_mbuf_copydata((struct ble_mbuf *)(buf), off, len, dst)
@@ -21,7 +21,7 @@
 #include "os/os_mbuf.h"
 #define BLE_MBUF_COPY(buf, off, len, dst) os_mbuf_copydata((struct os_mbuf *)(buf), off, len, dst)
 #endif // CONFIG_BT_DUAL_MODE_ARCH
-#endif /* CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+#endif /* CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
 
 /* VARIABLE */
 #define TAG "ble_log"
@@ -206,12 +206,12 @@ void ble_log_lbm_write_trans(ble_log_prph_trans_t **trans, ble_log_src_t src_cod
         BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN, addr, len);
     }
     if (len_append) {
-#if CONFIG_SOC_ESP_NIMBLE_CONTROLLER
+#if CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER
         if (omdata) {
             BLE_MBUF_COPY(addr_append, 0, len_append, buf + BLE_LOG_FRAME_HEAD_LEN + len);
         }
         else
-#endif /* CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
+#endif /* CONFIG_BLE_LOG_LL_ENABLED && CONFIG_SOC_ESP_NIMBLE_CONTROLLER */
         {
             BLE_LOG_MEMCPY(buf + BLE_LOG_FRAME_HEAD_LEN + len, addr_append, len_append);
         }
