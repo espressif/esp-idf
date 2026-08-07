@@ -119,7 +119,7 @@ static int esp_aes_validate_input(esp_aes_context *ctx, const unsigned char *inp
  *
  * Call only while holding esp_aes_acquire_hardware().
  *
- * The function esp_aes_block zeroises the output buffer in the case of following conditions:
+ * The function zeroises the output buffer in the case of following conditions:
  * 1. If key is not written in the hardware
  * 2. If the fault injection check failed
  */
@@ -167,6 +167,37 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
 
     return 0;
 }
+
+/* Run a single 16 byte block of AES for every block which produces ciphertext or keystream.
+ *
+ * Call only while holding esp_aes_acquire_hardware().
+ */
+static int esp_aes_block_encrypt(esp_aes_context *ctx, const void *input, void *output)
+{
+    int ret = esp_aes_block(ctx, input, output);
+    if (ret != 0) {
+        return ret;
+    }
+
+    const uint32_t *output_words = (const uint32_t *)output;
+
+    // Physical security check: Verify the AES output was read and wasn't skipped
+    if (output_words[0] == 0x00u && output_words[1] == 0x00u && output_words[2] == 0x00u && output_words[3] == 0x00u) {
+        memset(output, 0, 16);
+        mbedtls_platform_zeroize(output, 16);
+        abort();
+    }
+
+    return 0;
+}
+
+/* Run a single 16 byte block of AES for every block which produces plaintext.
+ * Call only while holding esp_aes_acquire_hardware().
+ */
+static int esp_aes_block_decrypt(esp_aes_context *ctx, const void *input, void *output)
+{
+    return esp_aes_block(ctx, input, output);
+}
 #endif /* !SOC_AES_SUPPORT_DMA || CONFIG_MBEDTLS_AES_HW_SMALL_DATA_LEN_OPTIM */
 
 /*
@@ -211,7 +242,11 @@ int esp_aes_crypt_ecb(esp_aes_context *ctx,
     aes_hal_mode_init(ESP_AES_BLOCK_MODE_ECB);
     ret = esp_aes_process_dma(ctx, input, output, AES_BLOCK_BYTES, NULL);
 #else
-    ret = esp_aes_block(ctx, input, output);
+    if (mode == ESP_AES_ENCRYPT) {
+        ret = esp_aes_block_encrypt(ctx, input, output);
+    } else {
+        ret = esp_aes_block_decrypt(ctx, input, output);
+    }
 #endif
 
     esp_aes_release_hardware();
@@ -272,7 +307,7 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
         if (mode == ESP_AES_DECRYPT) {
             while (length > 0) {
                 memcpy(temp, input_words, 16);
-                ret = esp_aes_block(ctx, input_words, output_words);
+                ret = esp_aes_block_decrypt(ctx, input_words, output_words);
                 if (ret != 0) {
                     goto cleanup;
                 }
@@ -296,7 +331,7 @@ int esp_aes_crypt_cbc(esp_aes_context *ctx,
                 output_words[2] = input_words[2] ^ iv_words[2];
                 output_words[3] = input_words[3] ^ iv_words[3];
 
-                ret = esp_aes_block(ctx, output_words, output_words);
+                ret = esp_aes_block_encrypt(ctx, output_words, output_words);
                 if (ret != 0) {
                     goto cleanup;
                 }
@@ -403,7 +438,7 @@ int esp_aes_crypt_cfb8(esp_aes_context *ctx,
 
         while (length--) {
             memcpy( ov, iv, 16 );
-            ret = esp_aes_block(ctx, iv, iv);
+            ret = esp_aes_block_encrypt(ctx, iv, iv);
             if (ret != 0) {
                 goto cleanup;
             }
@@ -533,7 +568,7 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
         if (mode == ESP_AES_DECRYPT) {
             while (length--) {
                 if (n == 0) {
-                    ret = esp_aes_block(ctx, iv, iv);
+                    ret = esp_aes_block_encrypt(ctx, iv, iv);
                     if (ret != 0) {
                         esp_aes_release_hardware();
                         return ret;
@@ -548,7 +583,7 @@ int esp_aes_crypt_cfb128(esp_aes_context *ctx,
         } else {
             while (length--) {
                 if ( n == 0 ) {
-                    ret = esp_aes_block(ctx, iv, iv);
+                    ret = esp_aes_block_encrypt(ctx, iv, iv);
                     if (ret != 0) {
                         esp_aes_release_hardware();
                         return ret;
@@ -648,7 +683,7 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
 
         while (length--) {
             if (n == 0) {
-                ret = esp_aes_block(ctx, iv, iv);
+                ret = esp_aes_block_encrypt(ctx, iv, iv);
                 if (ret != 0) {
                     esp_aes_release_hardware();
                     return ret;
@@ -749,7 +784,7 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
         int c, i;
         while (length--) {
             if (n == 0) {
-                ret = esp_aes_block(ctx, nonce_counter, stream_block);
+                ret = esp_aes_block_encrypt(ctx, nonce_counter, stream_block);
                 if (ret != 0) {
                     esp_aes_release_hardware();
                     return ret;
