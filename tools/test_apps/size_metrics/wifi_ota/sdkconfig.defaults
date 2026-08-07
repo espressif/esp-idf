@@ -1,0 +1,3 @@
+# App-specific defaults for the Wi-Fi OTA size metrics app
+CONFIG_PARTITION_TABLE_TWO_OTA=y
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
