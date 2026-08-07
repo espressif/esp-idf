@@ -87,6 +87,7 @@
 #define SOC_BOD_SUPPORTED               1
 #define SOC_VBAT_SUPPORTED              1
 #define SOC_APM_SUPPORTED               1 /*!< Support for APM peripheral */
+#define SOC_RISCV_TRACE_SUPPORTED       1
 #define SOC_PMU_SUPPORTED               1
 #define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_LP_AON_SUPPORTED            1
@@ -530,3 +531,6 @@
 
 /*------------------------------------- DEBUG CAPS -------------------------------------*/
 #define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)
+
+/*-------------------------- RISC-V TRACE CAPS ------------------------------*/
+#define SOC_RISCV_TRACE_PRIV_WIDTH                  (1U) /*!< Bits in the privilege field (privilege_width_p) */
