@@ -1641,3 +1641,34 @@ void bt_le_gatt_handle_event(uint8_t *data, size_t data_len)
     bt_le_nimble_gatt_handle_event(data, data_len);
 #endif
 }
+
+void bt_le_gatt_event_free(void *data)
+{
+    struct bt_le_gatt_event_param *qev = data;
+
+    if (qev == NULL) {
+        return;
+    }
+
+    switch (qev->type) {
+    case BT_LE_GATTC_NOTIFY_RX_EVENT:
+        if (qev->gattc_notify_rx.value) {
+            free(qev->gattc_notify_rx.value);
+        }
+        break;
+    case BT_LE_GATTC_READ_CHRC_EVENT:
+        if (qev->gattc_read_chrc.value) {
+            free(qev->gattc_read_chrc.value);
+        }
+        break;
+    case BT_LE_GATTS_WRITE_EVENT:
+        if (qev->gatts_write.value) {
+            free(qev->gatts_write.value);
+        }
+        break;
+    default:
+        break;
+    }
+
+    free(qev);
+}

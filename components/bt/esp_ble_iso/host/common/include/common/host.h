@@ -44,7 +44,9 @@ void bt_le_host_unlock(void);
 
 int bt_le_host_init(void);
 
-void bt_le_host_deinit(void);
+int bt_le_host_check_idle(void);
+
+int bt_le_host_deinit(void);
 
 #ifdef __cplusplus
 }

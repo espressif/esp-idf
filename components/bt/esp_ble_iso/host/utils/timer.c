@@ -34,7 +34,7 @@ static void iso_timer_cb(void *arg)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_TIMER_EVENT, work, work->gen);
     if (err) {
-        LOG_ERR("TimerCbPostFail[%d]", err);
+        ISO_POST_FAIL_LOG(err, "TimerCbPostFail[%d]", err);
     }
 }
 

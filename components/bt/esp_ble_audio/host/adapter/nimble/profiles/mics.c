@@ -346,6 +346,11 @@ static void inc_aics_svc_init(struct inc_aics_inst *inst,
                       INC_AICS_CHR_FLAGS_DESCRIPTION);
 }
 
+void bt_le_nimble_mics_state_reset(void)
+{
+    inc_aics_svc_count = 0;
+}
+
 int bt_le_nimble_mics_init(void *micp_inc)
 {
     struct bt_micp_included *micp_included;

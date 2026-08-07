@@ -34,6 +34,10 @@ esp_err_t esp_ble_audio_pacs_unregister(void)
         return ESP_FAIL;
     }
 
+    if (bt_le_pacs_deinit()) {
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 

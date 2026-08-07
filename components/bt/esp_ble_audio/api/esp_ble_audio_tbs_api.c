@@ -376,6 +376,16 @@ esp_err_t esp_ble_audio_tbs_unregister_bearer(uint8_t bearer_index)
         return ESP_FAIL;
     }
 
+#if BLE_AUDIO_SVC_DEFERRED_ADD
+    if (bearer_index == ESP_BLE_AUDIO_TBS_GTBS_INDEX) {
+        if (bt_le_gtbs_deinit()) {
+            return ESP_FAIL;
+        }
+    } else if (bt_le_tbs_deinit(bearer_index)) {
+        return ESP_FAIL;
+    }
+#endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
+
     return ESP_OK;
 }
 #endif /* CONFIG_BT_TBS */

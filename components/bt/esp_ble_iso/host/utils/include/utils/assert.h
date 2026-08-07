@@ -20,11 +20,11 @@ void bt_le_assert(const char *tag, size_t info,
 /* Use instead of assert(): CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE sets
  * -DNDEBUG, which turns every assert() into a no-op and lets execution fall
  * through onto the very pointer it was guarding. This one always checks. */
-#define BT_LE_ASSERT(_cond)                                        \
-    do {                                                           \
-        if (!(_cond)) {                                            \
-            bt_le_assert(#_cond, 0, __FILE__, __LINE__, __func__); \
-        }                                                          \
+#define BT_LE_ASSERT(_cond) \
+    do { \
+        if (!(_cond)) { \
+            bt_le_assert(#_cond, 0, __FILE_NAME__, __LINE__, __func__); \
+        } \
     } while (0)
 
 #ifdef __cplusplus

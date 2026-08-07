@@ -6,7 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
+#include <zephyr/logging/log.h>
+
 #include "esp_ble_iso_common_api.h"
+
+LOG_MODULE_REGISTER(ISO_API, CONFIG_BT_ISO_LOG_LEVEL);
 
 esp_err_t esp_ble_iso_data_parse(const uint8_t ltv[], size_t size,
                                  bool (*func)(uint8_t type,
@@ -128,6 +134,7 @@ esp_err_t esp_ble_iso_chan_connect(esp_ble_iso_connect_param_t *param,
 
     conn = bt_le_acl_conn_find(conn_handle);
     if (conn == NULL) {
+        LOG_WRN("AclUnknown[%u]", conn_handle);
         ret = ESP_ERR_NOT_FOUND;
         goto unlock;
     }
@@ -266,6 +273,7 @@ esp_err_t esp_ble_iso_big_create(uint8_t adv_handle,
 
     adv = bt_le_ext_adv_find(adv_handle);
     if (adv == NULL) {
+        LOG_WRN("ExtAdvUnknown[%u]", adv_handle);
         ret = ESP_ERR_NOT_FOUND;
         goto unlock;
     }
@@ -294,6 +302,7 @@ esp_err_t esp_ble_iso_big_sync(uint16_t sync_handle,
 
     per_adv_sync = bt_le_per_adv_sync_find(sync_handle);
     if (per_adv_sync == NULL) {
+        LOG_WRN("PaSyncUnknown[%u]", sync_handle);
         ret = ESP_ERR_NOT_FOUND;
         goto unlock;
     }
@@ -432,6 +441,44 @@ unregister_gap:
         bt_le_gap_app_cb_unregister();
     }
     return ESP_FAIL;
+}
+
+esp_err_t esp_ble_iso_common_deinit(const esp_ble_iso_deinit_info_t *info)
+{
+    bool reset_ext_adv = true;
+    bool reset_pa_sync = true;
+    int err;
+
+    if (info) {
+        if (!info->reset_acl_conn) {
+            LOG_WRN("ConnKeepUnsupported");
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+
+        reset_ext_adv = info->reset_ext_adv;
+        reset_pa_sync = info->reset_pa_sync;
+    }
+
+    if (bt_le_host_check_idle()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    err = bt_le_host_deinit();
+    if (err) {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    if (reset_ext_adv) {
+        bt_le_ext_adv_state_reset();
+    }
+
+    if (reset_pa_sync) {
+        bt_le_per_adv_sync_state_reset();
+    }
+
+    bt_le_gap_app_cb_unregister();
+
+    return ESP_OK;
 }
 
 #if CONFIG_BT_BLUEDROID_ENABLED

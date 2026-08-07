@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void bt_le_bluedroid_mics_state_reset(void);
+
 int bt_le_bluedroid_mics_init(void *micp_inc);
 
 int bt_le_bluedroid_mics_start(void);

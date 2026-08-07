@@ -16,6 +16,8 @@ extern "C" {
 
 int bt_le_bluedroid_pacs_init(void);
 
+int bt_le_bluedroid_pacs_deinit(void);
+
 int bt_le_bluedroid_pacs_start(void);
 
 #ifdef __cplusplus

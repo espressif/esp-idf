@@ -29,6 +29,8 @@ extern "C" {
 
 int bt_le_bluedroid_audio_init(void);
 
+void bt_le_bluedroid_audio_deinit(void);
+
 int bt_le_bluedroid_media_proxy_pl_init(void);
 
 int bt_le_bluedroid_vcp_vol_rend_init(void);

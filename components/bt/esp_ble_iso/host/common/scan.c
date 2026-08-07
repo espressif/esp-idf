@@ -171,6 +171,24 @@ int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
 }
 
 _LIB_ONLY
+int bt_le_per_adv_sync_cb_unregister(struct bt_le_per_adv_sync_cb *cb)
+{
+    LOG_DBG("PaSyncCbUnreg");
+
+    if (cb == NULL) {
+        LOG_ERR("PaSyncCbNull");
+        return -EINVAL;
+    }
+
+    if (!sys_slist_find_and_remove(&pa_sync_cbs, &cb->node)) {
+        LOG_ERR("PaSyncCbNotReg[%p]", cb);
+        return -ENOENT;
+    }
+
+    return 0;
+}
+
+_LIB_ONLY
 int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
                                 struct bt_le_per_adv_sync_info *info)
 {
@@ -322,6 +340,23 @@ int bt_le_per_adv_sync_new(uint16_t sync_handle,
 }
 
 _IDF_ONLY
+int bt_le_per_adv_sync_new_safe(uint16_t sync_handle,
+                                uint8_t sid,
+                                uint8_t phy,
+                                uint16_t interval,
+                                uint8_t addr_type,
+                                const uint8_t addr[6],
+                                uint16_t conn_handle,
+                                struct bt_le_per_adv_sync **out_sync)
+{
+    int err;
+    bt_le_host_lock();
+    err = bt_le_per_adv_sync_new(sync_handle, sid, phy, interval, addr_type,
+                                 addr, conn_handle, out_sync);
+    bt_le_host_unlock();
+    return err;
+}
+
 int bt_le_per_adv_sync_delete(uint16_t sync_handle)
 {
     struct bt_le_per_adv_sync *per_adv_sync = NULL;
@@ -551,6 +586,17 @@ static void past_features_unset(void)
 }
 
 _IDF_ONLY
+void bt_le_per_adv_sync_state_reset(void)
+{
+    for (size_t i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
+        if (atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_SYNCED)) {
+            LOG_WRN("DeinitDropPaSync[%u][%04x]", i, per_adv_sync_pool[i].handle);
+        }
+    }
+
+    memset(per_adv_sync_pool, 0, sizeof(per_adv_sync_pool));
+}
+
 int bt_le_scan_init(void)
 {
     LOG_DBG("ScanInit");

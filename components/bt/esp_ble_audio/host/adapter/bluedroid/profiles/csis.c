@@ -30,6 +30,11 @@ static BT_AUDIO_EXT_RAM_BSS_ATTR struct csis_inst {
 
 static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_svc_count;
 
+void bt_le_bluedroid_csis_state_reset(void)
+{
+    csis_svc_count = 0;
+}
+
 int bt_le_bluedroid_csis_init(void *svc, uint8_t count)
 {
     int err;
@@ -56,6 +61,18 @@ int bt_le_bluedroid_csis_init(void *svc, uint8_t count)
     csis_svc_count = count;
 
     return 0;
+}
+
+int bt_le_bluedroid_csis_deinit(void *csis_svc)
+{
+    LOG_DBG("[B]CsisDeinit");
+
+    if (csis_svc == NULL) {
+        LOG_ERR("[B]CsisSvcNull");
+        return -EINVAL;
+    }
+
+    return bt_le_bluedroid_svc_deinit(csis_svc);
 }
 
 int bt_le_bluedroid_csis_start(void)

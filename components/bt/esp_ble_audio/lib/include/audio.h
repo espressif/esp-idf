@@ -32,86 +32,128 @@ struct bt_gatt_service;
 extern struct bt_aics *lib_aics_insts_get(void);
 extern void *lib_aics_svc_get(struct bt_aics *aics);
 extern int lib_aics_init(void);
+extern int lib_aics_deinit(void);
 extern int lib_aics_client_init(void);
+extern int lib_aics_client_deinit(void);
 
 extern int lib_bap_base_init(void);
+extern int lib_bap_base_deinit(void);
 extern int lib_bap_iso_init(void);
+extern int lib_bap_iso_deinit(void);
 extern int lib_bap_stream_init(void);
+extern int lib_bap_stream_deinit(void);
 
 extern struct bt_gatt_service *lib_ascs_svc_get(void);
 extern int lib_ascs_init(void);
+extern int lib_ascs_deinit(void);
 
 extern struct bt_gatt_service *lib_bap_bass_svc_get(void);
 extern int lib_bap_broadcast_assistant_init(void);
+extern int lib_bap_broadcast_assistant_deinit(void);
 extern int lib_bap_broadcast_sink_init(void);
+extern int lib_bap_broadcast_sink_deinit(void);
 extern int lib_bap_broadcast_source_init(void);
+extern int lib_bap_broadcast_source_deinit(void);
 extern int lib_bap_scan_delegator_init(void);
+extern int lib_bap_scan_delegator_deinit(void);
 extern int lib_bap_unicast_client_init(void);
+extern int lib_bap_unicast_client_deinit(void);
 extern int lib_bap_unicast_server_init(void);
+extern int lib_bap_unicast_server_deinit(void);
 
 extern struct bt_gatt_service *lib_pacs_svc_get(void);
 extern int lib_pacs_init(void);
+extern int lib_pacs_deinit(void);
 
 extern struct bt_gatt_service *lib_cas_svc_get(void);
 
 extern int lib_cap_common_init(void);
+extern int lib_cap_common_deinit(void);
 extern int lib_cap_stream_init(void);
+extern int lib_cap_stream_deinit(void);
 extern int lib_cap_initiator_init(void);
+extern int lib_cap_initiator_deinit(void);
 extern int lib_cap_acceptor_init(void);
+extern int lib_cap_acceptor_deinit(void);
 extern int lib_cap_commander_init(void);
+extern int lib_cap_commander_deinit(void);
 
 extern int lib_ccid_init(void);
+extern int lib_ccid_deinit(void);
 
 extern int lib_ccp_call_control_client_init(void);
+extern int lib_ccp_call_control_client_deinit(void);
 extern int lib_ccp_call_control_server_init(void);
+extern int lib_ccp_call_control_server_deinit(void);
 
 extern int lib_codec_init(void);
+extern int lib_codec_deinit(void);
 
 extern int lib_csip_set_coordinator_init(void);
+extern int lib_csip_set_coordinator_deinit(void);
 extern void *lib_csip_set_member_svc_get(const void *svc_inst);
 extern int lib_csip_set_member_init(void);
+extern int lib_csip_set_member_deinit(void);
 
 extern int lib_gmap_client_init(void);
+extern int lib_gmap_client_deinit(void);
 extern struct bt_gatt_service *lib_gmas_svc_get(void);
+extern int lib_gmap_server_deinit(void);
 
 extern struct bt_gatt_service *lib_has_svc_get(void);
 extern int lib_has_init(void);
+extern int lib_has_deinit(void);
 extern int lib_has_client_init(void);
+extern int lib_has_client_deinit(void);
 
 extern int lib_mcc_init(void);
+extern int lib_mcc_deinit(void);
 extern struct bt_gatt_service *lib_gmcs_svc_get(void);
 extern struct bt_gatt_service *lib_mcs_server_list_get(void);
 extern int lib_mcs_init(void);
+extern int lib_mcs_deinit(void);
 
 extern int lib_media_proxy_init(void);
+extern int lib_media_proxy_deinit(void);
 
 extern int lib_micp_mic_ctlr_init(void);
+extern int lib_micp_mic_ctlr_deinit(void);
 extern struct bt_gatt_service *lib_mics_svc_get(void);
 extern int lib_micp_mic_dev_init(void);
+extern int lib_micp_mic_dev_deinit(void);
 
 extern int lib_mpl_init(void);
+extern int lib_mpl_deinit(void);
 
 extern int lib_pbp_init(void);
+extern int lib_pbp_deinit(void);
 
 extern int lib_tbs_client_init(void);
+extern int lib_tbs_client_deinit(void);
 extern struct bt_gatt_service *lib_gtbs_svc_get(void);
 extern struct bt_gatt_service *lib_tbs_server_list_get(void);
 extern int lib_tbs_init(void);
+extern int lib_tbs_deinit(void);
 
 extern struct bt_gatt_service *lib_tmas_svc_get(void);
 extern int lib_tmap_init(void);
+extern int lib_tmap_deinit(void);
 
 extern int lib_vcp_vol_ctlr_init(void);
+extern int lib_vcp_vol_ctlr_deinit(void);
 extern struct bt_gatt_service *lib_vcs_svc_get(void);
 extern int lib_vcp_vol_rend_init(void);
+extern int lib_vcp_vol_rend_deinit(void);
 
 struct bt_vocs;
 struct bt_vocs_server;
 
 extern int lib_vocs_client_init(void);
+extern int lib_vocs_client_deinit(void);
 extern struct bt_vocs_server *lib_vocs_insts_get(void);
 extern void *lib_vocs_svc_get(struct bt_vocs *vocs);
 extern int lib_vocs_init(void);
+extern int lib_vocs_deinit(void);
 
 struct bt_conn;
 struct bt_gatt_attr;

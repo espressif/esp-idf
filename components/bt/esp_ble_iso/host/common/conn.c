@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include <errno.h>
 
 #include <zephyr/kernel.h>
@@ -44,6 +45,31 @@ void bt_conn_get_acl_conns(struct bt_conn **conns, uint8_t *count)
 
     *conns = acl_conns;
     *count = ARRAY_SIZE(acl_conns);
+}
+
+size_t bt_le_acl_conn_count(void)
+{
+    size_t count = 0;
+
+    for (size_t i = 0; i < ARRAY_SIZE(acl_conns); i++) {
+        if (acl_conns[i].state != BT_CONN_DISCONNECTED) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+void bt_le_conn_reset(void)
+{
+    LOG_DBG("ConnReset");
+
+    memset(acl_conns, 0, sizeof(acl_conns));
+    memset(conn_ltk, 0, sizeof(conn_ltk));
+    memset(iso_conns, 0, sizeof(struct bt_conn) * CONFIG_BT_ISO_MAX_CHAN);
+
+    sys_slist_init(&conn_cbs);
+    sys_slist_init(&auth_info_cbs);
 }
 
 _IDF_ONLY
@@ -380,6 +406,27 @@ int bt_le_acl_conn_new(uint16_t conn_handle,
     }
 
     return (conn ? 0 : -ENOMEM);
+}
+
+_IDF_ONLY
+int bt_le_acl_conn_new_safe(uint16_t conn_handle, uint8_t role, uint8_t addr_type,
+                            const uint8_t *addr, uint8_t sec_level)
+{
+    bt_addr_le_t dst;
+    int err;
+
+    if (addr == NULL) {
+        return -EINVAL;
+    }
+
+    dst.type = addr_type;
+    bt_addr_copy(&dst.a, (const bt_addr_t *)addr);
+
+    bt_le_host_lock();
+    err = bt_le_acl_conn_new(conn_handle, role, &dst, sec_level);
+    bt_le_host_unlock();
+
+    return err;
 }
 
 /* Point conn->le.keys at this ACL connection's LTK slot, filled with the bonded

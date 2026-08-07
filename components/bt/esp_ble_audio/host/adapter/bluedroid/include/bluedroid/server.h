@@ -162,9 +162,13 @@ enum {
 
 void bt_le_bluedroid_audio_gatts_init(void);
 
+void bt_le_bluedroid_audio_gatts_deinit(void);
+
 int bt_le_bluedroid_set_svc_in_progress(uint8_t value);
 
 int bt_le_bluedroid_svc_init(struct bt_gatt_service *svc);
+
+int bt_le_bluedroid_svc_deinit(struct bt_gatt_service *svc);
 
 int bt_le_bluedroid_svc_start(struct bt_gatt_service *svc);
 

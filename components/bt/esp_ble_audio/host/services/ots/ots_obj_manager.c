@@ -256,3 +256,19 @@ void *bt_gatt_ots_obj_manager_assign(void)
 
     return cur_manager;
 }
+
+void bt_gatt_ots_obj_manager_release(void *obj_manager)
+{
+    struct bt_gatt_ots_obj_manager *manager = obj_manager;
+
+    if (manager == NULL) {
+        return;
+    }
+
+    for (size_t i = 0; i < CONFIG_BT_OTS_MAX_OBJ_CNT; i++) {
+        manager->pool[i].is_allocated = false;
+    }
+
+    sys_dlist_init(&manager->list);
+    manager->is_assigned = false;
+}

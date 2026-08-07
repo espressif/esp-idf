@@ -297,6 +297,8 @@ void bt_le_acl_conn_bond_deleted_gatt_listener(uint8_t id, const bt_addr_le_t *p
 
 void bt_le_gatt_handle_event(uint8_t *data, size_t data_len);
 
+void bt_le_gatt_event_free(void *data);
+
 #ifdef __cplusplus
 }
 #endif

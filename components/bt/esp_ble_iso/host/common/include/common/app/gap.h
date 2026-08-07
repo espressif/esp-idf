@@ -303,6 +303,8 @@ void bt_le_gap_app_biginfo_event(uint8_t *param);
 
 void bt_le_gap_handle_event(uint8_t *data, size_t data_len);
 
+void bt_le_gap_event_free(void *data);
+
 void bt_le_gap_app_post_event(uint16_t type, void *param);
 
 #ifdef __cplusplus

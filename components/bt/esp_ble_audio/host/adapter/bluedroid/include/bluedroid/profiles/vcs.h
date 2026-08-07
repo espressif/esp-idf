@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void bt_le_bluedroid_vcs_state_reset(void);
+
 int bt_le_bluedroid_vcs_init(void *vcp_inc);
 
 int bt_le_bluedroid_vcs_start(void);

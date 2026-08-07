@@ -75,6 +75,10 @@ int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg);
 
 int bt_le_iso_disconnect(uint16_t conn_handle, uint8_t reason);
 
+void bt_le_iso_state_reset(void);
+
+size_t bt_le_iso_report_busy(void);
+
 int bt_le_iso_init(void);
 
 void bt_le_iso_deinit(void);

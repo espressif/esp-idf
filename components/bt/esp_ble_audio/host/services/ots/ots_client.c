@@ -637,6 +637,15 @@ int bt_ots_client_unregister(uint8_t index)
     return 0;
 }
 
+void bt_ots_client_unregister_all(void)
+{
+    for (uint8_t i = 0; i < ARRAY_SIZE(otc_insts); i++) {
+        if (otc_insts[i].otc_inst != NULL) {
+            (void)bt_ots_client_unregister(i);
+        }
+    }
+}
+
 __attribute__((unused))
 int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
                                struct bt_conn *conn)

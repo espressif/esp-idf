@@ -18,6 +18,8 @@ int bt_le_nimble_bass_attr_handle_set(void);
 
 int bt_le_nimble_bass_init(void);
 
+int bt_le_nimble_bass_deinit(void);
+
 #ifdef __cplusplus
 }
 #endif

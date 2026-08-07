@@ -71,6 +71,19 @@ int bt_le_bluedroid_audio_init(void)
 
     bt_le_bluedroid_audio_gatts_init();
 
+#if CONFIG_BT_CSIP_SET_MEMBER
+    bt_le_bluedroid_csis_state_reset();
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if CONFIG_BT_VCP_VOL_REND
+    bt_le_bluedroid_vcs_state_reset();
+#endif /* CONFIG_BT_VCP_VOL_REND */
+#if CONFIG_BT_MICP_MIC_DEV
+    bt_le_bluedroid_mics_state_reset();
+#endif /* CONFIG_BT_MICP_MIC_DEV */
+#if CONFIG_BT_MCS
+    bt_le_bluedroid_mcs_state_reset();
+#endif /* CONFIG_BT_MCS */
+
 #if CONFIG_BT_PACS
     err = bt_le_bluedroid_pacs_init();
     if (err) {
@@ -121,6 +134,16 @@ int bt_le_bluedroid_audio_init(void)
 #endif /* (BLE_AUDIO_SVC_DEFERRED_ADD == 0) */
 
     return err;
+}
+
+void bt_le_bluedroid_audio_deinit(void)
+{
+    LOG_DBG("[B]AudioDeinit");
+
+    /* The services are removed by the BTA_GATTS_AppDeregister() in the ISO
+     * layer's gatt deinit - GATT_Deregister() stops every service the app
+     * owns - so only this layer's own hook is dropped here. */
+    bt_le_bluedroid_audio_gatts_deinit();
 }
 
 #if CONFIG_BT_CSIP_SET_MEMBER

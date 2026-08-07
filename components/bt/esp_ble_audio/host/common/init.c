@@ -185,7 +185,7 @@ static const uint16_t ext_structs[] = {
     sizeof(struct bt_bond_info),
 };
 
-#define LEA_VERSION     (0x20260820)
+#define LEA_VERSION     (0x20260824)
 
 struct lib_ext_cfgs {
     /* BLE */
@@ -1085,16 +1085,20 @@ struct lib_ext_funcs {
 
     /* Scan */
     int (*_scan_cb_register)(struct bt_le_scan_cb *cb);
+    void (*_scan_cb_unregister)(struct bt_le_scan_cb *cb);
     int (*_scan_start)(const struct bt_le_scan_param *param, void *cb);
     int (*_scan_stop)(void);
     int (*_pa_sync_cb_register)(struct bt_le_per_adv_sync_cb *cb);
+    int (*_pa_sync_cb_unregister)(struct bt_le_per_adv_sync_cb *cb);
     int (*_pa_sync_get_info)(struct bt_le_per_adv_sync *per_adv_sync,
                              struct bt_le_per_adv_sync_info *info);
     struct bt_le_per_adv_sync *(*_pa_sync_lookup_addr)(const bt_addr_le_t *adv_addr, uint8_t sid);
 
     /* Connection */
     int (*_conn_cb_register)(struct bt_conn_cb *cb);
+    int (*_conn_cb_unregister)(struct bt_conn_cb *cb);
     int (*_conn_auth_info_cb_register)(struct bt_conn_auth_info_cb *cb);
+    int (*_conn_auth_info_cb_unregister)(struct bt_conn_auth_info_cb *cb);
     void (*_conn_foreach)(enum bt_conn_type type,
                           void (*func)(struct bt_conn *conn, void *data),
                           void *data);
@@ -1295,14 +1299,18 @@ static const struct lib_ext_funcs ext_funcs = {
     ._bt_foreach_bond = (void *)bt_foreach_bond,
 
     ._scan_cb_register = (void *)bt_le_scan_cb_register,
+    ._scan_cb_unregister = (void *)bt_le_scan_cb_unregister,
     ._scan_start = (void *)bt_le_scan_start,
     ._scan_stop = (void *)bt_le_scan_stop,
     ._pa_sync_cb_register = (void *)bt_le_per_adv_sync_cb_register,
+    ._pa_sync_cb_unregister = (void *)bt_le_per_adv_sync_cb_unregister,
     ._pa_sync_get_info = (void *)bt_le_per_adv_sync_get_info,
     ._pa_sync_lookup_addr = (void *)bt_le_per_adv_sync_lookup_addr,
 
     ._conn_cb_register = (void *)bt_conn_cb_register,
+    ._conn_cb_unregister = (void *)bt_conn_cb_unregister,
     ._conn_auth_info_cb_register = (void *)bt_conn_auth_info_cb_register,
+    ._conn_auth_info_cb_unregister = (void *)bt_conn_auth_info_cb_unregister,
     ._conn_foreach = (void *)bt_conn_foreach,
     ._conn_get_info = (void *)bt_conn_get_info,
     ._conn_index = (void *)bt_conn_index,
@@ -2075,6 +2083,260 @@ static int lib_audio_resources_init(void)
     return err;
 }
 
+/* Reverse order of lib_audio_resources_init(): a module may reference an earlier
+ * one. Failures log and continue - stopping half way leaves more behind. Keep
+ * every lib_*_init() listed here; a missing counterpart leaks silently. */
+static void lib_audio_resources_deinit(void)
+{
+#if CONFIG_BT_GMAP
+    /* No init counterpart above: bt_gmap_register() allocates GMAS on demand,
+     * so only the deinit side is listed. */
+    if (lib_gmap_server_deinit()) {
+        LOG_ERR("LibGmapSrvDeinitFail");
+    }
+
+    if (lib_gmap_client_deinit()) {
+        LOG_ERR("LibGmapCliDeinitFail");
+    }
+#endif /* CONFIG_BT_GMAP */
+
+#if CONFIG_BT_HAS_CLIENT
+    if (lib_has_client_deinit()) {
+        LOG_ERR("LibHasCliDeinitFail");
+    }
+#endif /* CONFIG_BT_HAS_CLIENT */
+
+#if CONFIG_BT_HAS
+    if (lib_has_deinit()) {
+        LOG_ERR("LibHasDeinitFail");
+    }
+#endif /* CONFIG_BT_HAS */
+
+#if CONFIG_BT_VOCS_CLIENT
+    if (lib_vocs_client_deinit()) {
+        LOG_ERR("LibVocsClientDeinitFail");
+    }
+#endif /* CONFIG_BT_VOCS_CLIENT */
+
+#if CONFIG_BT_VOCS || CONFIG_BT_VOCS_CLIENT
+    if (lib_vocs_deinit()) {
+        LOG_ERR("LibVocsDeinitFail");
+    }
+#endif /* CONFIG_BT_VOCS || CONFIG_BT_VOCS_CLIENT */
+
+#if CONFIG_BT_VCP_VOL_REND
+    if (lib_vcp_vol_rend_deinit()) {
+        LOG_ERR("LibVcpVolRendDeinitFail");
+    }
+#endif /* CONFIG_BT_VCP_VOL_REND */
+
+#if CONFIG_BT_VCP_VOL_CTLR
+    if (lib_vcp_vol_ctlr_deinit()) {
+        LOG_ERR("LibVcpVolCtlrDeinitFail");
+    }
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
+
+#if CONFIG_BT_TMAP
+    if (lib_tmap_deinit()) {
+        LOG_ERR("LibTmapDeinitFail");
+    }
+#endif /* CONFIG_BT_TMAP */
+
+#if CONFIG_BT_TBS
+    if (lib_tbs_deinit()) {
+        LOG_ERR("LibTbsDeinitFail");
+    }
+#endif /* CONFIG_BT_TBS */
+
+#if CONFIG_BT_TBS_CLIENT
+    if (lib_tbs_client_deinit()) {
+        LOG_ERR("LibTbsCliDeinitFail");
+    }
+#endif /* CONFIG_BT_TBS_CLIENT */
+
+#if CONFIG_BT_PBP
+    if (lib_pbp_deinit()) {
+        LOG_ERR("LibPbpDeinitFail");
+    }
+#endif /* CONFIG_BT_PBP */
+
+#if CONFIG_BT_MPL
+    if (lib_mpl_deinit()) {
+        LOG_ERR("LibMplDeinitFail");
+    }
+#endif /* CONFIG_BT_MPL */
+
+#if CONFIG_BT_MICP_MIC_DEV
+    if (lib_micp_mic_dev_deinit()) {
+        LOG_ERR("LibMicpMicDevDeinitFail");
+    }
+#endif /* CONFIG_BT_MICP_MIC_DEV */
+
+#if CONFIG_BT_MICP_MIC_CTLR
+    if (lib_micp_mic_ctlr_deinit()) {
+        LOG_ERR("LibMicpMicCtlrDeinitFail");
+    }
+#endif /* CONFIG_BT_MICP_MIC_CTLR */
+
+#if CONFIG_BT_MCTL
+    if (lib_media_proxy_deinit()) {
+        LOG_ERR("LibMediaProxyDeinitFail");
+    }
+#endif /* CONFIG_BT_MCTL */
+
+#if CONFIG_BT_MCS
+    if (lib_mcs_deinit()) {
+        LOG_ERR("LibMcsDeinitFail");
+    }
+#endif /* CONFIG_BT_MCS */
+
+#if CONFIG_BT_MCC
+    if (lib_mcc_deinit()) {
+        LOG_ERR("LibMccDeinitFail");
+    }
+#endif /* CONFIG_BT_MCC */
+
+#if CONFIG_BT_CSIP_SET_COORDINATOR
+    if (lib_csip_set_coordinator_deinit()) {
+        LOG_ERR("LibCsipSetCoordinatorDeinitFail");
+    }
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
+
+#if CONFIG_BT_CSIP_SET_MEMBER
+    if (lib_csip_set_member_deinit()) {
+        LOG_ERR("LibCsipSetMemberDeinitFail");
+    }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
+
+#if CONFIG_BT_BAP_STREAM
+    if (lib_codec_deinit()) {
+        LOG_ERR("LibCodecDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_STREAM */
+
+#if CONFIG_BT_CCP_CALL_CONTROL_SERVER
+    if (lib_ccp_call_control_server_deinit()) {
+        LOG_ERR("LibCcpCallControlServerDeinitFail");
+    }
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER */
+
+#if CONFIG_BT_CCP_CALL_CONTROL_CLIENT
+    if (lib_ccp_call_control_client_deinit()) {
+        LOG_ERR("LibCcpCallControlClientDeinitFail");
+    }
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_CLIENT */
+
+    if (lib_ccid_deinit()) {
+        LOG_ERR("LibCcidDeinitFail");
+    }
+
+#if CONFIG_BT_CAP_COMMANDER
+    if (lib_cap_commander_deinit()) {
+        LOG_ERR("LibCapComDeinitFail");
+    }
+#endif /* CONFIG_BT_CAP_COMMANDER */
+
+#if CONFIG_BT_CAP_ACCEPTOR
+    if (lib_cap_acceptor_deinit()) {
+        LOG_ERR("LibCapAccDeinitFail");
+    }
+#endif /* CONFIG_BT_CAP_ACCEPTOR */
+
+#if CONFIG_BT_CAP_INITIATOR
+    if (lib_cap_initiator_deinit()) {
+        LOG_ERR("LibCapIniDeinitFail");
+    }
+#endif /* CONFIG_BT_CAP_INITIATOR */
+
+#if CONFIG_BT_CAP
+    if (lib_cap_stream_deinit()) {
+        LOG_ERR("LibCapStreamDeinitFail");
+    }
+#endif /* CONFIG_BT_CAP */
+
+#if CONFIG_BT_CAP_INITIATOR_UNICAST || CONFIG_BT_CAP_COMMANDER
+    if (lib_cap_common_deinit()) {
+        LOG_ERR("LibCapCommonDeinitFail");
+    }
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST || CONFIG_BT_CAP_COMMANDER */
+
+#if CONFIG_BT_BAP_UNICAST_SERVER
+    if (lib_bap_unicast_server_deinit()) {
+        LOG_ERR("LibBapUniSrvDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT
+    if (lib_bap_unicast_client_deinit()) {
+        LOG_ERR("LibBapUniCliDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+
+#if CONFIG_BT_BAP_BROADCAST_ASSISTANT
+    if (lib_bap_broadcast_assistant_deinit()) {
+        LOG_ERR("LibBapBaDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
+
+#if CONFIG_BT_BAP_SCAN_DELEGATOR
+    if (lib_bap_scan_delegator_deinit()) {
+        LOG_ERR("LibBapSdeDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
+
+#if CONFIG_BT_BAP_BROADCAST_SOURCE
+    if (lib_bap_broadcast_source_deinit()) {
+        LOG_ERR("LibBapBsrcDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+
+#if CONFIG_BT_BAP_BROADCAST_SINK
+    if (lib_bap_broadcast_sink_deinit()) {
+        LOG_ERR("LibBapBsnkDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_BROADCAST_SINK */
+
+#if CONFIG_BT_PACS
+    if (lib_pacs_deinit()) {
+        LOG_ERR("LibPacsDeinitFail");
+    }
+#endif /* CONFIG_BT_PACS */
+
+#if CONFIG_BT_ASCS
+    if (lib_ascs_deinit()) {
+        LOG_ERR("LibAscsDeinitFail");
+    }
+#endif /* CONFIG_BT_ASCS */
+
+#if CONFIG_BT_BAP_STREAM
+    if (lib_bap_stream_deinit()) {
+        LOG_ERR("LibBapStreamDeinitFail");
+    }
+
+    if (lib_bap_iso_deinit()) {
+        LOG_ERR("LibBapIsoDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_STREAM */
+
+#if CONFIG_BT_BAP_BASE
+    if (lib_bap_base_deinit()) {
+        LOG_ERR("LibBapBaseDeinitFail");
+    }
+#endif /* CONFIG_BT_BAP_BASE */
+
+#if CONFIG_BT_AICS_CLIENT
+    if (lib_aics_client_deinit()) {
+        LOG_ERR("LibAicsClientDeinitFail");
+    }
+#endif /* CONFIG_BT_AICS_CLIENT */
+
+#if CONFIG_BT_AICS || CONFIG_BT_AICS_CLIENT
+    if (lib_aics_deinit()) {
+        LOG_ERR("LibAicsDeinitFail");
+    }
+#endif /* CONFIG_BT_AICS || CONFIG_BT_AICS_CLIENT */
+}
+
 int bt_le_audio_init(void)
 {
     int err;
@@ -2112,13 +2374,13 @@ int bt_le_audio_init(void)
 
     err = lib_audio_resources_init();
     if (err) {
-        return err;
+        goto deinit_lib;
     }
 
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     err = bt_le_l2cap_ots_init();
     if (err) {
-        return err;
+        goto deinit_lib;
     }
 #endif
 
@@ -2128,20 +2390,33 @@ int bt_le_audio_init(void)
     err = bt_le_nimble_audio_init();
 #endif
     if (err) {
-#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
-        bt_le_l2cap_ots_deinit();
-#endif
-        return err;
+        goto deinit_ots;
     }
 
     return 0;
+
+deinit_ots:
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+    bt_le_l2cap_ots_deinit();
+#endif
+deinit_lib:
+    lib_audio_resources_deinit();
+    return err;
 }
 
 void bt_le_audio_deinit(void)
 {
+#if CONFIG_BT_BLUEDROID_ENABLED
+    bt_le_bluedroid_audio_deinit();
+#else
+    bt_le_nimble_audio_deinit();
+#endif
+
 #if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
     bt_le_l2cap_ots_deinit();
 #endif
+
+    lib_audio_resources_deinit();
 }
 
 #if BLE_AUDIO_SVC_DEFERRED_ADD
@@ -2156,6 +2431,17 @@ int bt_le_ascs_init(void)
     return bt_le_nimble_ascs_init();
 #endif
 }
+
+int bt_le_ascs_deinit(void)
+{
+    LOG_DBG("AscsDeinit");
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_ascs_deinit();
+#else
+    return bt_le_nimble_ascs_deinit();
+#endif
+}
 #endif /* CONFIG_BT_ASCS */
 
 #if CONFIG_BT_BAP_SCAN_DELEGATOR
@@ -2167,6 +2453,17 @@ int bt_le_bass_init(void)
     return bt_le_bluedroid_bass_init();
 #else
     return bt_le_nimble_bass_init();
+#endif
+}
+
+int bt_le_bass_deinit(void)
+{
+    LOG_DBG("BassDeinit");
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_bass_deinit();
+#else
+    return bt_le_nimble_bass_deinit();
 #endif
 }
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR */
@@ -2196,6 +2493,17 @@ int bt_le_gtbs_init(void)
 #endif
 }
 
+int bt_le_gtbs_deinit(void)
+{
+    LOG_DBG("GtbsDeinit");
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_gtbs_deinit();
+#else
+    return bt_le_nimble_gtbs_deinit();
+#endif
+}
+
 int bt_le_tbs_init(void)
 {
     LOG_DBG("TbsInit");
@@ -2204,6 +2512,17 @@ int bt_le_tbs_init(void)
     return bt_le_bluedroid_tbs_init();
 #else
     return bt_le_nimble_tbs_init();
+#endif
+}
+
+int bt_le_tbs_deinit(uint8_t bearer_index)
+{
+    LOG_DBG("TbsDeinit[%u]", bearer_index);
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_tbs_deinit(bearer_index);
+#else
+    return bt_le_nimble_tbs_deinit(bearer_index);
 #endif
 }
 #endif /* CONFIG_BT_TBS */
@@ -2260,6 +2579,40 @@ int bt_le_micp_mic_dev_init(void)
 }
 #endif /* CONFIG_BT_MICP_MIC_DEV */
 #endif /* BLE_AUDIO_SVC_DEFERRED_ADD */
+
+#if CONFIG_BT_PACS
+int bt_le_pacs_deinit(void)
+{
+    LOG_DBG("PacsDeinit");
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_pacs_deinit();
+#else
+    return bt_le_nimble_pacs_deinit();
+#endif
+}
+#endif /* CONFIG_BT_PACS */
+
+#if CONFIG_BT_CSIP_SET_MEMBER
+int bt_le_csis_deinit(const void *svc_inst)
+{
+    struct bt_gatt_service *csis_svc;
+
+    LOG_DBG("CsisDeinit");
+
+    csis_svc = lib_csip_set_member_svc_get(svc_inst);
+    if (!csis_svc) {
+        LOG_ERR("CsisSvcGetFail");
+        return -ENODEV;
+    }
+
+#if CONFIG_BT_BLUEDROID_ENABLED
+    return bt_le_bluedroid_csis_deinit(csis_svc);
+#else
+    return bt_le_nimble_csis_deinit(csis_svc);
+#endif
+}
+#endif /* CONFIG_BT_CSIP_SET_MEMBER */
 
 int bt_le_audio_start(void *info)
 {

@@ -630,6 +630,13 @@ static int inc_ots_svc_init(void)
 }
 #endif /* CONFIG_BT_OTS */
 
+void bt_le_nimble_mcs_state_reset(void)
+{
+#if CONFIG_BT_OTS
+    inc_ots_svc_count = 0;
+#endif /* CONFIG_BT_OTS */
+}
+
 int bt_le_nimble_gmcs_init(bool ots_included)
 {
 #if CONFIG_BT_OTS

@@ -19,6 +19,8 @@ extern "C" {
 
 int bt_le_nimble_mics_attr_handle_set(void);
 
+void bt_le_nimble_mics_state_reset(void);
+
 int bt_le_nimble_mics_init(void *micp_inc);
 
 #ifdef __cplusplus

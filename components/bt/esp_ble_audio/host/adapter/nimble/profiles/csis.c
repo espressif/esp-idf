@@ -87,6 +87,9 @@ static BT_AUDIO_EXT_RAM_BSS_ATTR struct csis_inst {
 
 static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_svc_count;
 
+static BT_AUDIO_EXT_RAM_BSS_ATTR uint8_t csis_reg_count;
+static BT_AUDIO_EXT_RAM_BSS_ATTR bool csis_registered;
+
 /* Extra one for terminating the CSIS service array */
 static BT_AUDIO_EXT_RAM_BSS_ATTR struct ble_gatt_svc_def gatt_svc_csis[CSIS_SVC_COUNT + 1];
 
@@ -162,7 +165,14 @@ int bt_le_nimble_csis_attr_handle_set(void)
         struct bt_gatt_service *zsvc = csis_insts[i].svc_p;
 
         BT_LE_ASSERT(zsvc);
-        BT_LE_ASSERT(csis_insts[i].sirk_handle >= 2);
+
+        /* Zero means no registration round ever covered this instance, so it is
+         * absent from the ATT database and there is no range to anchor. Happens
+         * when CSIS is first registered after the boot's ble_gatts_start(). */
+        if (csis_insts[i].sirk_handle < 2) {
+            LOG_ERR("[N]CsisNoAttrHdl[%u]", i);
+            return -1;
+        }
 
         /* SIRK is always the first characteristic, so its value handle anchors the range. */
         start_handle = csis_insts[i].sirk_handle - 2;    /* server attr handle & char def handle */
@@ -295,6 +305,11 @@ static void csis_svc_init(struct csis_inst *inst,
     BT_LE_ASSERT(chr_cnt < CSIS_CHR_COUNT);
 }
 
+void bt_le_nimble_csis_state_reset(void)
+{
+    csis_svc_count = 0;
+}
+
 int bt_le_nimble_csis_init(void *svc, uint8_t count)
 {
     bool csis_added = false;
@@ -307,11 +322,27 @@ int bt_le_nimble_csis_init(void *svc, uint8_t count)
         return -1;
     }
 
+    /* The attribute table is built by the boot's single ble_gatts_start(), so a
+     * different instance count now needs a table this boot cannot produce. Fail
+     * here, not later on a handle NimBLE never assigned. */
+    if (csis_registered && count != csis_reg_count) {
+        LOG_ERR("[N]CsisCountChanged[%u][%u]", csis_reg_count, count);
+        return -1;
+    }
+
     csis_svc_count = count;
 
+    /* Refreshed every cycle: the lib frees and reallocates its service objects,
+     * while the NimBLE defs below are built once and stay in the database. */
     for (size_t i = 0; i < csis_svc_count; i++) {
         csis_insts[i].svc_p = ((struct bt_gatt_service **)svc)[i];
+    }
 
+    if (csis_registered) {
+        return 0;
+    }
+
+    for (size_t i = 0; i < csis_svc_count; i++) {
         csis_svc_init(&csis_insts[i], &gatt_svc_csis[i], csis_insts[i].svc_p);
     }
 
@@ -333,6 +364,9 @@ int bt_le_nimble_csis_init(void *svc, uint8_t count)
         goto free;
     }
 
+    csis_reg_count = count;
+    csis_registered = true;
+
     return 0;
 
 free:
@@ -347,4 +381,12 @@ free:
     }
     csis_svc_count = 0;
     return rc;
+}
+
+int bt_le_nimble_csis_deinit(void *csis_svc)
+{
+    ARG_UNUSED(csis_svc);
+
+    LOG_DBG("[N]CsisDeinit");
+    return 0;
 }

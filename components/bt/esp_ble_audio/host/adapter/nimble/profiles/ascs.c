@@ -254,3 +254,9 @@ free:
     }
     return rc;
 }
+
+int bt_le_nimble_ascs_deinit(void)
+{
+    LOG_DBG("[N]AscsDeinit");
+    return 0;
+}

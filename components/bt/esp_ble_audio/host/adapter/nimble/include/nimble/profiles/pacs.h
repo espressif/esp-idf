@@ -21,6 +21,8 @@ int bt_le_nimble_pacs_attr_handle_set(void);
 
 int bt_le_nimble_pacs_init(void);
 
+int bt_le_nimble_pacs_deinit(void);
+
 #ifdef __cplusplus
 }
 #endif

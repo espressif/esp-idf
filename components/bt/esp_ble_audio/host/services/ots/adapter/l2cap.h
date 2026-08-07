@@ -106,6 +106,8 @@ int bt_le_l2cap_post_sent(uint16_t conn_handle, uint16_t psm);
 
 void bt_le_l2cap_handle_event(void *data, size_t data_len);
 
+void bt_le_l2cap_event_free(void *data);
+
 int bt_le_l2cap_ots_init(void);
 
 void bt_le_l2cap_ots_deinit(void);

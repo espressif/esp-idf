@@ -212,7 +212,7 @@ void bt_le_bluedroid_gap_post_event(uint16_t event, void *param)
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_GAP_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("[B]GapPostEvtFail[%d][%u]", err, qev->type);
+        ISO_POST_FAIL_LOG(err, "[B]GapPostEvtFail[%d][%u]", err, qev->type);
         free(qev);
     }
 }
@@ -409,12 +409,8 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
 
     err = bt_le_iso_task_post(q_type, qev, sizeof(*qev));
     if (err) {
-        /* Floodable reports drop by design when the queue is full; only a
-         * failure on the reliable (normal-queue) path is a real error. */
         if (q_type == ISO_QUEUE_ITEM_TYPE_GAP_EVENT) {
-            LOG_ERR("[B]GapPostEvtBtaFail[%d][%u]", err, qev->type);
-        } else {
-            LOG_DBG("[B]GapRptDrop[%u]", qev->type);
+            ISO_POST_FAIL_LOG(err, "[B]GapPostEvtBtaFail[%d][%u]", err, qev->type);
         }
         goto free;
     }
@@ -422,26 +418,7 @@ static void bt_le_bluedroid_gap_post_event_bta(tBTA_DM_BLE_5_GAP_EVENT event,
     return;
 
 free:
-    /* Mirror nimble/gap.c cleanup: free nested data buffers carried by
-     * specific event types before freeing the qev container itself. */
-    switch (qev->type) {
-    case BT_LE_GAP_APP_PARAM_EXT_SCAN_RECV:
-        if (qev->ext_scan_recv.data) {
-            free(qev->ext_scan_recv.data);
-            qev->ext_scan_recv.data = NULL;
-        }
-        break;
-    case BT_LE_GAP_APP_PARAM_PA_SYNC_RECV:
-        if (qev->pa_sync_recv.data) {
-            free(qev->pa_sync_recv.data);
-            qev->pa_sync_recv.data = NULL;
-        }
-        break;
-    default:
-        break;
-    }
-
-    free(qev);
+    bt_le_gap_event_free(qev);
 }
 
 int bt_le_bluedroid_scan_start(const struct bt_le_scan_param *param)

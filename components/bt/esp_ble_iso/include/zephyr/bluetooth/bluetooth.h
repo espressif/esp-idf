@@ -422,6 +422,19 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
  */
 int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb);
 
+/**
+ * @brief Unregister periodic advertising sync callbacks.
+ *
+ * Counterpart of @ref bt_le_per_adv_sync_cb_register(). The list is boot-scoped,
+ * so a module that stops listening must remove itself or keep being invoked.
+ *
+ * @param cb Callback struct previously registered.
+ *
+ * @retval 0 Success.
+ * @retval -ENOENT if @p cb was not registered.
+ */
+int bt_le_per_adv_sync_cb_unregister(struct bt_le_per_adv_sync_cb *cb);
+
 /** LE scan parameters */
 struct bt_le_scan_param {
     /** Scan type. @ref BT_LE_SCAN_TYPE_ACTIVE or @ref BT_LE_SCAN_TYPE_PASSIVE. */

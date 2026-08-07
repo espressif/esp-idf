@@ -20,10 +20,24 @@
 
 #include "common/host.h"
 #include "common/iso.h"
+#include "common/gatt.h"
 #include "common/app/gap.h"
 #include "common/app/gatt.h"
 
 LOG_MODULE_REGISTER(ISO_TASK, CONFIG_BT_ISO_LOG_LEVEL);
+
+/* Nothing to poll for - iso_ctrl_queue wakes the task for deinit. The dispatch
+ * monitor is the exception: its periodic dump is driven from this loop, so it
+ * needs a wakeup even while no event arrives. */
+#if CONFIG_BT_ISO_DISPATCH_MONITOR
+#define ISO_TASK_WAIT           (ISO_STATS_DUMP_PERIOD_US / 1000 / portTICK_PERIOD_MS)
+#else /* CONFIG_BT_ISO_DISPATCH_MONITOR */
+#define ISO_TASK_WAIT           portMAX_DELAY
+#endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
+
+/* Generous: expiry means a dispatch handler is wedged, which is a bug
+ * elsewhere. Deinit reports it upward rather than freeing under a live task. */
+#define ISO_TASK_STOP_TIMEOUT   (2000 / portTICK_PERIOD_MS)
 
 /* Three priority tiers share one task via a queue set. The task drains
  * critical before normal before floodable, so a flood of GAP reports cannot
@@ -32,9 +46,16 @@ LOG_MODULE_REGISTER(ISO_TASK, CONFIG_BT_ISO_LOG_LEVEL);
 static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_critical_queue;
 static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_normal_queue;
 static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_floodable_queue;
+/* Not a tier: deinit-only wakeup, see ISO_CTRL_QUEUE_LEN. */
+static BT_ISO_CTRL_BSS_ATTR QueueHandle_t iso_ctrl_queue;
 static BT_ISO_CTRL_BSS_ATTR QueueSetHandle_t iso_queue_set;
 
 static BT_ISO_CTRL_BSS_ATTR TaskHandle_t iso_task_handle;
+
+/* Gate + handshake for deinit. iso_task_stopping also rejects new posts, so a
+ * producer cannot strand a payload on a queue nobody will drain. */
+static BT_ISO_CTRL_BSS_ATTR volatile bool iso_task_stopping;
+static BT_ISO_CTRL_BSS_ATTR SemaphoreHandle_t iso_task_stopped;
 
 extern void bt_le_timer_handle_event(void *arg, size_t gen);
 
@@ -43,6 +64,7 @@ extern void bt_le_timer_handle_event(void *arg, size_t gen);
  * OTS, so the shim lives there. Declared instead of included to keep esp_ble_iso
  * free of audio headers; both live in the bt component, so the link resolves. */
 extern void bt_le_l2cap_handle_event(void *data, size_t data_len);
+extern void bt_le_l2cap_event_free(void *data);
 #endif
 
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
@@ -90,6 +112,52 @@ void bt_le_iso_dispatch_stats_dump(void)
 }
 #endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
 
+static void iso_item_release(const struct iso_queue_item *item)
+{
+    switch (item->type) {
+    case ISO_QUEUE_ITEM_TYPE_TIMER_EVENT:
+        /* data is the k_work, data_len its generation counter - not a block. */
+        break;
+    case ISO_QUEUE_ITEM_TYPE_GATT_EVENT:
+        bt_le_gatt_event_free(item->data);
+        break;
+    case ISO_QUEUE_ITEM_TYPE_GAP_EVENT:
+    case ISO_QUEUE_ITEM_TYPE_EXT_ADV_REPORT:
+    case ISO_QUEUE_ITEM_TYPE_PER_ADV_REPORT:
+        bt_le_gap_event_free(item->data);
+        break;
+#if CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT
+    case ISO_QUEUE_ITEM_TYPE_L2CAP_EVENT:
+        bt_le_l2cap_event_free(item->data);
+        break;
+#endif /* CONFIG_BT_OTS || CONFIG_BT_OTS_CLIENT */
+    default:
+        if (item->data) {
+            free(item->data);
+        }
+        break;
+    }
+}
+
+/* Runs on iso_task after the loop exits, so no producer can be mid-dispatch and
+ * the queues are provably empty when iso_queues_destroy() deletes them. */
+static void iso_queues_drain(void)
+{
+    struct iso_queue_item item = {0};
+
+    while (xQueueReceive(iso_critical_queue, &item, 0) == pdTRUE) {
+        iso_item_release(&item);
+    }
+
+    while (xQueueReceive(iso_normal_queue, &item, 0) == pdTRUE) {
+        iso_item_release(&item);
+    }
+
+    while (xQueueReceive(iso_floodable_queue, &item, 0) == pdTRUE) {
+        iso_item_release(&item);
+    }
+}
+
 static void iso_dispatch_item(const struct iso_queue_item *item)
 {
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
@@ -127,9 +195,7 @@ static void iso_dispatch_item(const struct iso_queue_item *item)
         bt_le_iso_handle_rx_data(item->data, item->data_len);
         break;
     default:
-        if (item->data) {
-            free(item->data);
-        }
+        iso_item_release(item);
         BT_LE_ASSERT(0);
         break;
     }
@@ -147,13 +213,11 @@ static void iso_task(void *p)
 #endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
     struct iso_queue_item item = {0};
 
-    while (1) {
-        /* Block until any tier has data. The returned member handle is ignored:
-         * we always service by strict priority below (critical > normal >
-         * floodable), processing one item per wakeup and re-checking critical
-         * first on the next loop. A pdFALSE receive is tolerated as a benign
-         * side effect of servicing queues outside xQueueSelectFromSet. */
-        (void)xQueueSelectFromSet(iso_queue_set, portMAX_DELAY);
+    while (!iso_task_stopping) {
+        /* The returned handle is ignored: service by strict priority instead
+         * (critical > normal > floodable), one item per wakeup. A pdFALSE
+         * receive is benign - that is what a deinit wakeup looks like. */
+        (void)xQueueSelectFromSet(iso_queue_set, ISO_TASK_WAIT);
 
         if (xQueueReceive(iso_critical_queue, &item, 0) == pdTRUE) {
             iso_dispatch_item(&item);
@@ -170,6 +234,14 @@ static void iso_task(void *p)
         }
 #endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
     }
+
+    /* Draining here rather than in the deinit caller keeps payload ownership on
+     * a single task: no producer is mid-post and no consumer is mid-dispatch. */
+    iso_queues_drain();
+
+    xSemaphoreGive(iso_task_stopped);
+
+    vTaskDelete(NULL);
 }
 
 int bt_le_iso_task_post(enum iso_queue_item_type type,
@@ -179,6 +251,13 @@ int bt_le_iso_task_post(enum iso_queue_item_type type,
     QueueHandle_t queue;
     TickType_t wait;
     int ret;
+
+    /* No consumer before init or after deinit began, so accepting would strand
+     * the payload (callers free on failure). Distinct from the -1 below: this
+     * one persists, a full queue is transient. */
+    if (iso_task_handle == NULL || iso_task_stopping) {
+        return -ESHUTDOWN;
+    }
 
     item.type = type;
     item.data = data;
@@ -249,6 +328,7 @@ static void iso_queues_destroy(void)
     iso_queue_destroy_one(&iso_critical_queue);
     iso_queue_destroy_one(&iso_normal_queue);
     iso_queue_destroy_one(&iso_floodable_queue);
+    iso_queue_destroy_one(&iso_ctrl_queue);
 
     if (iso_queue_set) {
         vQueueDelete(iso_queue_set);
@@ -262,19 +342,31 @@ int bt_le_iso_task_init(void)
 
     LOG_DBG("IsoTaskInit");
 
+    /* Reset here, not at definition, so a deinit/re-init cycle starts clean. */
+    iso_task_stopping = false;
+
+    iso_task_stopped = xSemaphoreCreateBinary();
+    if (iso_task_stopped == NULL) {
+        LOG_ERR("IsoTaskSemCreateFail");
+        return -EIO;
+    }
+
     iso_critical_queue  = xQueueCreate(ISO_CRITICAL_QUEUE_LEN, ISO_QUEUE_ITEM_SIZE);
     iso_normal_queue    = xQueueCreate(ISO_NORMAL_QUEUE_LEN, ISO_QUEUE_ITEM_SIZE);
     iso_floodable_queue = xQueueCreate(ISO_FLOODABLE_QUEUE_LEN, ISO_QUEUE_ITEM_SIZE);
+    iso_ctrl_queue      = xQueueCreate(ISO_CTRL_QUEUE_LEN, ISO_QUEUE_ITEM_SIZE);
     iso_queue_set       = xQueueCreateSet(ISO_QUEUE_SET_LEN);
     if (iso_critical_queue == NULL || iso_normal_queue == NULL ||
-            iso_floodable_queue == NULL || iso_queue_set == NULL) {
+            iso_floodable_queue == NULL || iso_ctrl_queue == NULL ||
+            iso_queue_set == NULL) {
         LOG_ERR("IsoQCreateFail");
         goto fail;
     }
 
     if (xQueueAddToSet(iso_critical_queue, iso_queue_set) != pdPASS ||
             xQueueAddToSet(iso_normal_queue, iso_queue_set) != pdPASS ||
-            xQueueAddToSet(iso_floodable_queue, iso_queue_set) != pdPASS) {
+            xQueueAddToSet(iso_floodable_queue, iso_queue_set) != pdPASS ||
+            xQueueAddToSet(iso_ctrl_queue, iso_queue_set) != pdPASS) {
         LOG_ERR("IsoQSetAddFail");
         goto fail;
     }
@@ -295,22 +387,60 @@ int bt_le_iso_task_init(void)
 
 fail:
     iso_queues_destroy();
+    vSemaphoreDelete(iso_task_stopped);
+    iso_task_stopped = NULL;
     return -EIO;
 }
 
-void bt_le_iso_task_deinit(void)
+int bt_le_iso_task_deinit(void)
 {
+    struct iso_queue_item item = {0};
+
     LOG_DBG("IsoTaskDeinit");
 
-    if (iso_task_handle) {
-        vTaskDelete(iso_task_handle);
-        iso_task_handle = NULL;
+    if (iso_task_handle == NULL) {
+        return 0;
     }
+
+    /* This blocks on the task's own exit, so calling it from iso_task would
+     * wait for itself forever. */
+    if (xTaskGetCurrentTaskHandle() == iso_task_handle) {
+        LOG_ERR("IsoTaskDeinitFromSelf");
+        return -EDEADLK;
+    }
+
+    /* Stops new posts as well, so the queues can only shrink from here. */
+    iso_task_stopping = true;
+
+    /* Setting the flag cannot wake a task blocked on the set. Posted after it so
+     * whichever select consumes this token re-checks the flag as true; deinit is
+     * the sole producer of a one-deep queue, so the send cannot fail. */
+    (void)xQueueSend(iso_ctrl_queue, &item, 0);
+
+    if (xSemaphoreTake(iso_task_stopped, ISO_TASK_STOP_TIMEOUT) != pdTRUE) {
+        /* A dispatch handler is wedged. Deleting the queues now would pull them
+         * out from under a live task, so leave everything in place and let the
+         * caller abort the teardown instead. */
+        LOG_ERR("IsoTaskStopTimeout");
+        iso_task_stopping = false;
+        /* Take the wakeup back: nothing reads this queue, so leaving it there
+         * would make the next attempt's send fail and never wake the task. */
+        (void)xQueueReceive(iso_ctrl_queue, &item, 0);
+        return -ETIMEDOUT;
+    }
+
+    iso_task_handle = NULL;
 
 #if CONFIG_BT_ISO_DISPATCH_MONITOR
     /* Task is gone: no concurrent writer, safe to read the stats. */
     bt_le_iso_dispatch_stats_dump();
 #endif /* CONFIG_BT_ISO_DISPATCH_MONITOR */
 
+    /* Drained by the task before it exited, so these are empty. */
     iso_queues_destroy();
+
+    vSemaphoreDelete(iso_task_stopped);
+    iso_task_stopped = NULL;
+
+    return 0;
 }

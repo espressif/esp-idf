@@ -161,6 +161,7 @@ void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manage
                               struct bt_gatt_ots_object *cur_obj);
 void bt_ots_dir_list_content_changed(struct bt_ots_dir_list *dir_list, void *obj_manager);
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager);
+void bt_ots_dir_list_deinit(struct bt_ots_dir_list **dir_list);
 ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
                                     void **data, size_t len, off_t offset);
 bool bt_ots_dir_list_is_idle(const struct bt_ots_dir_list *dir_list);

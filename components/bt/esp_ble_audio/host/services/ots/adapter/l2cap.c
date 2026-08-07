@@ -44,10 +44,12 @@ static BT_AUDIO_EXT_RAM_BSS_ATTR sys_slist_t l2cap_servers;
 extern int bt_gatt_ots_conn_cb_register(void);
 extern void bt_gatt_ots_conn_cb_unregister(void);
 extern int bt_gatt_ots_instances_prepare(void);
+extern void bt_ots_instances_rewind(void);
 #endif /* CONFIG_BT_OTS */
 #if CONFIG_BT_OTS_CLIENT
 extern int bt_gatt_ots_client_conn_cb_register(void);
 extern void bt_gatt_ots_client_conn_cb_unregister(void);
+extern void bt_ots_client_unregister_all(void);
 #endif /* CONFIG_BT_OTS_CLIENT */
 extern int bt_gatt_ots_l2cap_init(void);
 
@@ -361,17 +363,31 @@ static void l2cap_sent(uint16_t conn_handle, uint16_t psm)
     }
 }
 
+_IDF_ONLY
+void bt_le_l2cap_event_free(void *data)
+{
+    struct bt_le_l2cap_event *qev = data;
+
+    if (qev == NULL) {
+        return;
+    }
+
+    /* Only RECEIVED carries a buffer of its own; the rest are header-only. */
+    if (qev->type == BT_LE_L2CAP_EVENT_RECEIVED) {
+        free(qev->received.data);
+    }
+
+    free(qev);
+}
+
 static int l2cap_post_event(struct bt_le_l2cap_event *qev)
 {
     int err;
 
     err = bt_le_iso_task_post(ISO_QUEUE_ITEM_TYPE_L2CAP_EVENT, qev, sizeof(*qev));
     if (err) {
-        LOG_ERR("L2capPostFail[%d][%u]", err, qev->type);
-        if (qev->type == BT_LE_L2CAP_EVENT_RECEIVED) {
-            free(qev->received.data);
-        }
-        free(qev);
+        ISO_POST_FAIL_LOG(err, "L2capPostFail[%d][%u]", err, qev->type);
+        bt_le_l2cap_event_free(qev);
     }
 
     return err;
@@ -811,14 +827,20 @@ void bt_le_l2cap_ots_deinit(void)
 {
     LOG_DBG("L2capOtsDeinit");
 
-    /* TODO(deinit): unassign OTS obj managers / clear instance->obj_manager. */
-
     /* Symmetric with the registers in _init: conn_cbs is never reset elsewhere. */
 #if CONFIG_BT_OTS
     bt_gatt_ots_conn_cb_unregister();
+
+    /* Give the instances handed out by bt_ots_free_instance_get() back to the
+     * pool; the profiles that took them are released right after this. */
+    bt_ots_instances_rewind();
 #endif /* CONFIG_BT_OTS */
 #if CONFIG_BT_OTS_CLIENT
     bt_gatt_ots_client_conn_cb_unregister();
+
+    /* Before lib_audio_resources_deinit() frees the bt_ots_client instances
+     * the table points at - this runs first in bt_le_audio_deinit(). */
+    bt_ots_client_unregister_all();
 #endif /* CONFIG_BT_OTS_CLIENT */
 
 #if CONFIG_BT_BLUEDROID_ENABLED
