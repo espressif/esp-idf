@@ -1180,7 +1180,12 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
         return;
     }
     ndp_resp_needed = p_own_svc->ndp_resp_needed;
-    if (ndl_limit_reached()) {
+    /* A secured NDP Req pre-claims a slot in the M1 key-descriptor parser
+     * before this indication runs. nan_record_new_ndl() below reuses that
+     * slot, so it must not be counted against the peer limit. Observed
+     * when an open NDP is established first and a secured NDP follows; the
+     * reverse order does not hit the limit because open NDPs never pre-claim. */
+    if (!nan_find_ndl_by_pub_id_and_peer(pub_id, peer_nmi) && ndl_limit_reached()) {
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "NDP limit reached");
         return;
