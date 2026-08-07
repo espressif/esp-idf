@@ -1954,3 +1954,7 @@ config SOC_RISCV_TRACE_FILTER_SUPPORTED
 config SOC_RISCV_TRACE_PRIV_WIDTH
     int
     default 1
+
+config SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM
+    bool
+    default y

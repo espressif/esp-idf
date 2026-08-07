@@ -3,6 +3,6 @@
 components/esp_riscv_trace/test_apps:
   disable:
     - if: SOC_RISCV_TRACE_SUPPORTED != 1
-    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "psram" and SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM != 1
   depends_components:
     - esp_riscv_trace

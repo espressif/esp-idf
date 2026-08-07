@@ -747,3 +747,4 @@
 #define SOC_RISCV_TRACE_AHB_CONFIGURABLE            (1) /*!< AHB write master is configurable */
 #define SOC_RISCV_TRACE_FILTER_SUPPORTED            (1) /*!< Has the filter unit */
 #define SOC_RISCV_TRACE_PRIV_WIDTH                  (1U) /*!< Bits in the privilege field (privilege_width_p) */
+#define SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM           (1) /*!< Encoder AHB master can reach external PSRAM */

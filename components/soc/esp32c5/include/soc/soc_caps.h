@@ -100,6 +100,7 @@
 #define SOC_PHY_SUPPORTED               1
 #define SOC_BITSCRAMBLER_SUPPORTED      1
 #define SOC_SPI_EXTERNAL_NOR_FLASH_SUPPORTED    1
+#define SOC_RISCV_TRACE_SUPPORTED       1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M                        1
@@ -645,3 +646,9 @@
 #define SOC_LP_CORE_SUPPORT_I2C                     (1) /*!< LP Core supports I2C */
 #define SOC_LP_CORE_HW_AUTO_CLRWAKEUPCAUSE          (1) /*!< LP core requests sleep, PMU clears both HP and LP wakeup causes */
 #define SOC_LP_CORE_LP_UART_WAKEUP_KEEP_TRIGGERED   (1) /*!< LP UART wakeup source is kept triggered */
+
+/*-------------------------- RISC-V TRACE CAPS ------------------------------*/
+#define SOC_RISCV_TRACE_HAS_CONFIG_REG              (1) /*!< Has the encoder config register */
+#define SOC_RISCV_TRACE_AHB_CONFIGURABLE            (1) /*!< AHB write master is configurable */
+#define SOC_RISCV_TRACE_FILTER_SUPPORTED            (1) /*!< Has the filter unit */
+#define SOC_RISCV_TRACE_PRIV_WIDTH                  (1U) /*!< Bits in the privilege field (privilege_width_p) */
