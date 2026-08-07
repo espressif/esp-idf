@@ -41,7 +41,7 @@ class MutuallyExclusiveEatAllOption(MutuallyExclusiveOption, OptionEatAll):
 _RE_SECTION_NAME = re.compile(r'^\s*\d+\s+(\.\S+)', re.MULTILINE)
 
 
-def _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file):
+def _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file, input_file):
     """Compute a fingerprint from section names and mtimes of all inputs."""
     hasher = hashlib.md5()
 
@@ -50,9 +50,12 @@ def _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_fi
         names = _RE_SECTION_NAME.findall(info.content)
         hasher.update((archive + ':' + ','.join(names)).encode())
 
-    # Mtimes of fragment files, sdkconfig, kconfig
+    # Mtimes of fragment files, the linker template, sdkconfig, kconfig. The
+    # template counts as an input because everything outside its mapping
+    # placeholders ends up in the generated script verbatim, so an edit to it
+    # changes the output even when no section name does.
     input_files = [p.name if hasattr(p, 'name') else p for p in fragment_files]
-    input_files += [p for p in (config_file, kconfig_file) if p]
+    input_files += [p.name if hasattr(p, 'name') else p for p in (input_file, config_file, kconfig_file) if p]
     for path in input_files:
         try:
             hasher.update(f'{path}:{os.path.getmtime(path)}'.encode())
@@ -190,7 +193,9 @@ def _run(
         # Check if we can skip generation entirely — section names and other
         # inputs unchanged since last run.
         fingerprint = (
-            None if no_cache else _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file)
+            None
+            if no_cache
+            else _compute_fingerprint(sections_infos, fragment_files, config_file, kconfig_file, input_file)
         )
         if (
             output_path
