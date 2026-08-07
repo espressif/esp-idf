@@ -8,7 +8,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <sys/types.h>
 
 #include "esp_blockdev.h"
 #include "esp_err.h"
@@ -21,38 +20,44 @@ static const char *TAG = "esp_blockdev/generic_partition";
 typedef struct {
     esp_blockdev_t dev;
     esp_blockdev_handle_t parent;
-    size_t start_offset;
+    uint64_t start_offset;
 } esp_blockdev_generic_partition_t;
 
-ssize_t esp_blockdev_generic_partition_translate_address_to_parent(esp_blockdev_handle_t dev_handle, size_t address)
+esp_err_t esp_blockdev_generic_partition_translate_address_to_parent(esp_blockdev_handle_t dev_handle, uint64_t address, uint64_t *output)
 {
-    ESP_RETURN_ON_FALSE(dev_handle != NULL, -1, TAG, "The dev_handle cannot be NULL");
+    ESP_RETURN_ON_FALSE(dev_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "The dev_handle cannot be NULL");
+    ESP_RETURN_ON_FALSE(output != NULL, ESP_ERR_INVALID_ARG, TAG, "The output pointer cannot be NULL");
 
     esp_blockdev_generic_partition_t *dev = (esp_blockdev_generic_partition_t *)dev_handle;
     esp_blockdev_handle_t parent = dev->parent;
 
-    ESP_RETURN_ON_FALSE(address <= dev->dev.geometry.disk_size, -1, TAG, "The address falls outside of the partition");
+    ESP_RETURN_ON_FALSE(address <= dev->dev.geometry.disk_size, ESP_ERR_INVALID_ARG, TAG, "The address falls outside of the partition");
 
-    uint64_t translated = (uint64_t)dev->start_offset + (uint64_t)address;
-    ESP_RETURN_ON_FALSE(translated >= (uint64_t)address, -1, TAG, "Address translation overflowed");
-    ESP_RETURN_ON_FALSE(translated <= parent->geometry.disk_size, -1, TAG, "The address range falls outside of the parent device");
+    uint64_t translated = dev->start_offset + address;
+    ESP_RETURN_ON_FALSE(translated >= address, ESP_ERR_INVALID_ARG, TAG, "Address translation overflowed");
+    ESP_RETURN_ON_FALSE(translated <= parent->geometry.disk_size, ESP_ERR_INVALID_ARG, TAG, "The address range falls outside of the parent device");
 
-    return (ssize_t)translated;
+    *output = translated;
+
+    return ESP_OK;
 }
 
-ssize_t esp_blockdev_generic_partition_translate_address_to_child(esp_blockdev_handle_t dev_handle, size_t address)
+esp_err_t esp_blockdev_generic_partition_translate_address_to_child(esp_blockdev_handle_t dev_handle, uint64_t address, uint64_t *output)
 {
-    ESP_RETURN_ON_FALSE(dev_handle != NULL, -1, TAG, "The dev_handle cannot be NULL");
+    ESP_RETURN_ON_FALSE(dev_handle != NULL, ESP_ERR_INVALID_ARG, TAG, "The dev_handle cannot be NULL");
+    ESP_RETURN_ON_FALSE(output != NULL, ESP_ERR_INVALID_ARG, TAG, "The output pointer cannot be NULL");
 
     esp_blockdev_generic_partition_t *dev = (esp_blockdev_generic_partition_t *)dev_handle;
 
     uint64_t start_offset = dev->start_offset;
-    ESP_RETURN_ON_FALSE((uint64_t)address >= start_offset, -1, TAG, "The parent address is below the partition base");
+    ESP_RETURN_ON_FALSE(address >= start_offset, ESP_ERR_INVALID_ARG, TAG, "The parent address is below the partition base");
 
-    uint64_t translated = (uint64_t)address - start_offset;
-    ESP_RETURN_ON_FALSE(translated <= dev->dev.geometry.disk_size, -1, TAG, "The address falls outside of the partition");
+    uint64_t translated = address - start_offset;
+    ESP_RETURN_ON_FALSE(translated <= dev->dev.geometry.disk_size, ESP_ERR_INVALID_ARG, TAG, "The address falls outside of the partition");
 
-    return (ssize_t)translated;
+    *output = translated;
+
+    return ESP_OK;
 }
 
 static esp_err_t bd_gp_read(esp_blockdev_handle_t dev_handle, uint8_t *dst_buf, size_t dst_buf_size, uint64_t src_addr, size_t data_read_len)
@@ -68,10 +73,11 @@ static esp_err_t bd_gp_read(esp_blockdev_handle_t dev_handle, uint8_t *dst_buf, 
     assert(src_addr % dev_handle->geometry.read_size == 0);
     assert(data_read_len % dev_handle->geometry.read_size == 0);
 
-    ssize_t addr_parent = esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, src_addr);
-    ESP_RETURN_ON_FALSE(addr_parent >= 0, ESP_ERR_INVALID_ARG, TAG, "Failed to translate address");
+    uint64_t addr_parent;
+    ESP_RETURN_ON_ERROR(esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, src_addr, &addr_parent),
+                        TAG, "Failed to translate address");
 
-    return parent->ops->read(parent, dst_buf, dst_buf_size, (uint64_t)addr_parent, data_read_len);
+    return parent->ops->read(parent, dst_buf, dst_buf_size, addr_parent, data_read_len);
 }
 
 static esp_err_t bd_gp_write(esp_blockdev_handle_t dev_handle, const uint8_t* src_buf, uint64_t dst_addr, size_t data_write_len)
@@ -92,10 +98,11 @@ static esp_err_t bd_gp_write(esp_blockdev_handle_t dev_handle, const uint8_t* sr
     assert(dst_addr % dev_handle->geometry.write_size == 0);
     assert(data_write_len % dev_handle->geometry.write_size == 0);
 
-    ssize_t addr_parent = esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, dst_addr);
-    ESP_RETURN_ON_FALSE(addr_parent >= 0, ESP_ERR_INVALID_ARG, TAG, "Failed to translate address");
+    uint64_t addr_parent;
+    ESP_RETURN_ON_ERROR(esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, dst_addr, &addr_parent),
+                        TAG, "Failed to translate address");
 
-    return parent->ops->write(parent, src_buf, (uint64_t)addr_parent, data_write_len);
+    return parent->ops->write(parent, src_buf, addr_parent, data_write_len);
 }
 
 static esp_err_t bd_gp_erase(esp_blockdev_handle_t dev_handle, uint64_t start_addr, size_t erase_len)
@@ -113,10 +120,11 @@ static esp_err_t bd_gp_erase(esp_blockdev_handle_t dev_handle, uint64_t start_ad
         return ESP_ERR_INVALID_ARG;
     }
 
-    ssize_t addr_parent = esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, start_addr);
-    ESP_RETURN_ON_FALSE(addr_parent >= 0, ESP_ERR_INVALID_ARG, TAG, "Failed to translate address");
+    uint64_t addr_parent;
+    ESP_RETURN_ON_ERROR(esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, start_addr, &addr_parent),
+                        TAG, "Failed to translate address");
 
-    return parent->ops->erase(parent, (uint64_t)addr_parent, erase_len);
+    return parent->ops->erase(parent, addr_parent, erase_len);
 }
 
 static esp_err_t bd_gp_sync(esp_blockdev_handle_t dev_handle)
@@ -152,11 +160,13 @@ static esp_err_t bd_gp_ioctl(esp_blockdev_handle_t dev_handle, const uint8_t cmd
         assert(erase_args->start_addr % dev->dev.geometry.erase_size == 0);
         assert(erase_args->erase_len % dev->dev.geometry.erase_size == 0);
 
-        ssize_t addr_parent = esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, erase_args->start_addr);
-        ESP_RETURN_ON_FALSE(addr_parent >= 0, ESP_ERR_INVALID_ARG, TAG, "Failed to translate address");
+        uint64_t addr_parent;
+        ESP_RETURN_ON_ERROR(esp_blockdev_generic_partition_translate_address_to_parent(dev_handle, erase_args->start_addr,
+                                                                                       &addr_parent),
+                            TAG, "Failed to translate address");
 
         esp_blockdev_cmd_arg_erase_t translated_args = *erase_args;
-        translated_args.start_addr = (uint64_t)addr_parent;
+        translated_args.start_addr = addr_parent;
 
         ESP_RETURN_ON_FALSE(parent->ops->ioctl != NULL, ESP_ERR_NOT_SUPPORTED, TAG, "Parent device does not implement ioctl");
         return parent->ops->ioctl(parent, cmd, &translated_args);
@@ -184,7 +194,7 @@ static const esp_blockdev_ops_t g_generic_partition_ops = {
     .release = bd_gp_release,
 };
 
-esp_err_t esp_blockdev_generic_partition_get(esp_blockdev_handle_t parent, size_t start_offset, size_t size, esp_blockdev_handle_t *out)
+esp_err_t esp_blockdev_generic_partition_get(esp_blockdev_handle_t parent, uint64_t start_offset, uint64_t size, esp_blockdev_handle_t *out)
 {
     ESP_RETURN_ON_FALSE(parent != NULL, ESP_ERR_INVALID_ARG, TAG, "The parent device handle cannot be NULL");
     ESP_RETURN_ON_FALSE(out != NULL, ESP_ERR_INVALID_ARG, TAG, "The out pointer cannot be NULL");
