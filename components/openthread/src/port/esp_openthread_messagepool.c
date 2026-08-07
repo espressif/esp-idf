@@ -28,11 +28,13 @@ void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, s
 
     uint16_t num_buffers = aMinNumFreeBuffers;
 
+#if CONFIG_OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
     if (!esp_psram_is_initialized() && num_buffers > OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM) {
         ESP_LOGW(OT_PLAT_LOG_TAG, "PSRAM not available, reducing message pool from %u to %u buffers",
                  num_buffers, OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM);
         num_buffers = OT_MSGPOOL_NUM_BUFFERS_NO_PSRAM;
     }
+#endif
 
     otMessageBuffer *buffer_pool = (otMessageBuffer *)heap_caps_calloc_prefer(num_buffers, aBufferSize, 3, esp_openthread_get_alloc_caps(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     s_buffer_pool_pointer = (otMessageBuffer **)heap_caps_calloc_prefer(num_buffers, sizeof(otMessageBuffer **), 3, esp_openthread_get_alloc_caps(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
