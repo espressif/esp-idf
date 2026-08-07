@@ -139,6 +139,14 @@ def test_rebuild_linker(idf_py: IdfPyFunc) -> None:
     (idf_path / 'components/esp_system/ld/esp32/memory.ld.in').touch()
     rebuild_and_check(idf_py, APP_BINS, BOOTLOADER_BINS + PARTITION_BIN)
 
+    logging.info('Updating an included ld file should preprocess the scripts and re-link only the app')
+    (idf_path / 'components/esp_system/ld/ld.common').touch()
+    preprocessed_scripts = [
+        'build/esp-idf/esp_system/ld/memory.ld',
+        'build/esp-idf/esp_system/ld/sections.ld.in',
+    ]
+    rebuild_and_check(idf_py, APP_BINS + preprocessed_scripts, BOOTLOADER_BINS + PARTITION_BIN)
+
     logging.info('Updating fragment file should only re-link the app')
     (idf_path / 'components/esp_common/common.lf').touch()
     rebuild_and_check(idf_py, APP_BINS, BOOTLOADER_BINS + PARTITION_BIN)

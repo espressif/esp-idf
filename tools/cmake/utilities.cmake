@@ -231,16 +231,23 @@ function(preprocess_linker_file cmake_target script_in output_var preserve_suffi
     # Keep comments (-C): historical behavior for cmakev1 linker scripts. It was
     # previously hardcoded in linker_script_preprocessor.cmake, which now leaves
     # comment handling to the caller.
+    # Ask the preprocessor to emit all transitive #include dependencies. Without
+    # a depfile, CMake only knows about script_in and sdkconfig.h, so changes to
+    # files such as ld.common leave script_out stale.
+    set(depfile "${script_out}.d")
+    set(depfile_flags "-MD -MF \"${depfile}\" -MT \"${script_out}\"")
+
     add_custom_command(
         OUTPUT ${script_out}
         COMMAND ${CMAKE_COMMAND}
             "-DCC=${CMAKE_C_COMPILER}"
             "-DSOURCE=${script_in}"
             "-DTARGET=${script_out}"
-            "-DCFLAGS=-C -I\"${config_dir}\" ${extra_cflags}"
+            "-DCFLAGS=-C -I\"${config_dir}\" ${depfile_flags} ${extra_cflags}"
             -P "${linker_script_generator}"
         MAIN_DEPENDENCY ${script_in}
         DEPENDS ${sdkconfig_header}
+        DEPFILE "${depfile}"
         COMMENT "Preprocessing linker script ${script_in} -> ${script_out}"
         VERBATIM)
 
