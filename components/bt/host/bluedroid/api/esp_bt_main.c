@@ -19,6 +19,9 @@
 #include "bt_common.h"
 #include "bt_osal.h"
 #include "bt_prf_task.h"
+#if CONFIG_BLE_LOG_ENABLED && !CONFIG_BT_CONTROLLER_ENABLED
+#include "ble_log.h"
+#endif
 
 static esp_bluedroid_status_t s_bt_host_state = ESP_BLUEDROID_STATUS_UNINITIALIZED;
 
@@ -246,6 +249,12 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     }
 #endif
 
+#if CONFIG_BLE_LOG_ENABLED && !CONFIG_BT_CONTROLLER_ENABLED
+    if (!ble_log_init()) {
+        LOG_WARN("BLE Log init failed");
+    }
+#endif
+
     s_bt_host_state = ESP_BLUEDROID_STATUS_INITIALIZED;
 
     return ESP_OK;
@@ -273,6 +282,10 @@ esp_err_t esp_bluedroid_deinit(void)
         LOG_ERROR("Bluedroid de-initialise failed");
         return ESP_ERR_NO_MEM;
     }
+
+#if CONFIG_BLE_LOG_ENABLED && !CONFIG_BT_CONTROLLER_ENABLED
+    ble_log_deinit();
+#endif
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_MAIN_INIT;
