@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "unity.h"
 #include "unity_test_utils.h"
@@ -57,6 +59,19 @@ TEST_CASE("Timeout on stuck program", "[bs]")
     bitscrambler_free(bs);
     free(data_in);
     free(data_out);
+}
+
+TEST_CASE("Loopback create failure clears handle and releases channels", "[bs]")
+{
+    bitscrambler_handle_t failed_bs = (bitscrambler_handle_t)0x1;
+
+    esp_err_t err = bitscrambler_loopback_create(&failed_bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, SIZE_MAX / 2);
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
+    TEST_ASSERT_NULL(failed_bs);
+
+    bitscrambler_handle_t bs = NULL;
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, 4096));
+    bitscrambler_free(bs);
 }
 
 TEST_CASE("BitScrambler with EOF counted on upstream", "[bs]")
@@ -150,6 +165,51 @@ TEST_CASE("BitScrambler with LUT32", "[bs]")
             printf("\n");
             break;
         }
+    }
+    TEST_ASSERT_EQUAL(len * 4, res_len);
+
+    free(data_in);
+    free(data_out);
+}
+
+TEST_CASE("BitScrambler loads partial LUT from unaligned buffer", "[bs]")
+{
+    const size_t len = 32;
+    const uint32_t expected_lut_words[] = {
+        0xA0011111,
+        0xA0022222,
+        0xA0033333,
+        0x00000044,
+    };
+    const uint32_t lut_source_words[] = {
+        0xA0011111,
+        0xA0022222,
+        0xA0033333,
+        0xA0044444,
+    };
+    uint8_t lut_bytes[sizeof(lut_source_words) + 4] = {0};
+    uint8_t *unaligned_lut = lut_bytes + 1;
+    const size_t lut_size = 13;
+    uint8_t *data_in = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint32_t *data_out = heap_caps_aligned_calloc(8, 1, len * 4, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_in);
+    TEST_ASSERT_NOT_NULL(data_out);
+    memcpy(unaligned_lut, lut_source_words, sizeof(lut_source_words));
+    unaligned_lut[lut_size] = 0xAB;
+    unaligned_lut[lut_size + 1] = 0xCD;
+    unaligned_lut[lut_size + 2] = 0xEF;
+
+    bitscrambler_handle_t bs;
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len * 4));
+    TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_lut32));
+    TEST_ESP_OK(bitscrambler_load_lut(bs, unaligned_lut, lut_size));
+
+    size_t res_len = 0;
+    TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len * 4, &res_len));
+    bitscrambler_free(bs);
+
+    for (size_t i = 0; i < res_len / 4; i++) {
+        TEST_ASSERT_EQUAL(expected_lut_words[i % 4], data_out[i]);
     }
     TEST_ASSERT_EQUAL(len * 4, res_len);
 
