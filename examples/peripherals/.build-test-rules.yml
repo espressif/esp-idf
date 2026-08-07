@@ -129,11 +129,10 @@ examples/peripherals/gpio/matrix_keyboard:
 
 examples/peripherals/h264:
   enable:
-    - if: IDF_TARGET in ["esp32p4", "esp32s3"]
-      reason: only supports esp32p4 and esp32s3
+    - if: IDF_TARGET in ["esp32p4", "esp32s3", "esp32s31"]
+      reason: esp_h264 provides prebuilt codec libraries only for these targets
   depends_components:
-    - *common_components
-    - esp_h264
+    - esp_hw_support
 
 examples/peripherals/i2c/i2c_basic:
   disable:

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-P4 | ESP32-S3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-P4 | ESP32-S3 | ESP32-S31 |
+| ----------------- | -------- | -------- | --------- |
 
 # H.264 Encoder-Decoder Example
 
@@ -8,7 +8,7 @@
 This example demonstrates how to use H.264 hardware/software encoder and decoder with visual pattern generation:
 
 - Generate colorful test patterns for video processing
-- Encode video frames using H.264 codec (hardware on ESP32-P4, software on ESP32-S3)
+- Encode video frames using the H.264 hardware or software encoder
 - Decode the encoded frames back to original format using software decoder
 - Display visual comparison between source and decoded images
 
@@ -19,8 +19,8 @@ The example supports multiple YUV formats and provides side-by-side colorized di
 This example provides comprehensive configuration options through `idf.py menuconfig`:
 
 ### H.264 Encoder Type Selection
-- **Hardware Encoder**: Available only on ESP32-P4, provides better performance and lower power consumption
-- **Software Encoder**: Available on all targets (ESP32-S3, ESP32-P4), uses more CPU resources
+- **Hardware Encoder**: Selected by default on targets with H.264 encoding hardware; provides better performance and lower power consumption.
+- **Software Encoder**: Available on all supported targets; uses more CPU resources.
 
 ### Configurable Parameters
 All parameters can be adjusted in "H.264 Example Configuration" menu:
@@ -32,16 +32,15 @@ All parameters can be adjusted in "H.264 Example Configuration" menu:
 - **GOP Size**: 1-255 frames (default: 30)
 - **QP Value**: 10-51 (default: 26 for hardware, 28 for software)
 
-### Target-Specific Defaults
-- **ESP32-P4**: Optimized for hardware encoding with higher performance settings
-- **ESP32-S3**: Optimized for software encoding with conservative settings
+### Defaults
+The hardware encoder defaults to 30 fps, 512 Kbps, and QP 26. The software encoder uses conservative defaults of 15 fps, 256 Kbps, and QP 28.
 
 ## How to use example
 
 ### Prerequisites Required
 
 This example requires:
-- ESP32-P4 development board (for hardware encoding) or ESP32-S3 development board (for software encoding)
+- A development board for one of the supported targets
 - USB cable for programming and power supply
 - Terminal that supports ANSI color codes for proper visual output
 
@@ -53,29 +52,22 @@ Before building, configure the example parameters:
 idf.py menuconfig
 ```
 
-Navigate to: `Component config` → `H.264 Example Configuration`
+Navigate to: `Component config` → `H.264 Example Configuration`.
 
-1. **Select Encoder Type**: Choose between Hardware (ESP32-P4 only) or Software encoder
+1. **Select Encoder Type**: Choose between Hardware (when supported by the target) or Software encoder
 2. **Adjust Parameters**: Configure video resolution, frame rate, bitrate, etc.
 3. **Save and Exit**: Press 'S' to save configuration
 
 ### Build and Flash
 
-For ESP32-P4 (with hardware encoding support):
 ```bash
-idf.py set-target esp32p4
+idf.py set-target TARGET
 idf.py menuconfig  # Configure as needed
 idf.py build
 idf.py -p PORT flash monitor
 ```
 
-For ESP32-S3 (software encoding only):
-```bash
-idf.py set-target esp32s3
-idf.py menuconfig  # Software encoder will be automatically selected
-idf.py build
-idf.py -p PORT flash monitor
-```
+Replace `TARGET` with a supported target from the table. The hardware encoder is selected automatically when the target provides the H.264 encoder capability; otherwise the software encoder is selected.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -109,17 +101,17 @@ I (21475) main_task: Returned from app_main()
 ## Video Format Support
 
 - **ESP_H264_RAW_FMT_I420**: Planar YUV 4:2:0 format (decoder output, software encoder input)
-- **ESP_H264_RAW_FMT_O_UYY_E_VYY**: Interlaced YUV format (hardware encoder input on ESP32-P4)
+- **ESP_H264_RAW_FMT_O_UYY_E_VYY**: Interlaced YUV format (hardware encoder input)
 
 ## Performance Recommendations
 
-### For ESP32-P4 (Hardware Encoding):
-- Resolution: Up to 1920x1080 supported
-- Frame Rate: 30-60 fps achievable
+### Hardware Encoder
+- Resolution: 80x80 to 1920x1080 in this example
+- Frame Rate: 30-60 fps is achievable, depending on resolution
 - Bitrate: 512K-5M bps recommended
 - QP: 20-30 for optimal quality/performance balance
 
-### For ESP32-S3 (Software Encoding):
+### Software Encoder
 - Resolution: 320x240 or smaller recommended
 - Frame Rate: 10-15 fps for stable performance  
 - Bitrate: 256K-1M bps recommended
@@ -129,7 +121,7 @@ I (21475) main_task: Returned from app_main()
 
 **Configuration Issues:**
 - Use `idf.py menuconfig` to verify H.264 settings before building
-- Ensure hardware encoder is only selected for ESP32-P4 target
+- Select the hardware encoder only when it is offered by menuconfig for the current target
 
 **Memory allocation failures:**
 - Reduce resolution or frame rate in menuconfig
@@ -137,13 +129,13 @@ I (21475) main_task: Returned from app_main()
 - Check ESP-IDF memory configuration
 
 **Encoding/decoding errors:**
-- Verify the correct target is selected (ESP32-P4 for hardware)
+- Verify the selected encoder is supported by the target
 - Check that H.264 component is properly configured in menuconfig
 - Adjust bitrate settings for your resolution/frame rate combination
 
 **Performance Issues:**
 - Lower resolution, frame rate, or bitrate for software encoding
-- Use hardware encoder on ESP32-P4 for better performance
+- Use the hardware encoder when it is available for better performance
 - Increase QP value to reduce computational load
 
 **Visual output issues:**
