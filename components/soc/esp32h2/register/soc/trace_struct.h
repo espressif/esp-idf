@@ -16,10 +16,10 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** mem_staet_addr : R/W; bitpos: [31:0]; default: 0;
+        /** mem_start_addr : R/W; bitpos: [31:0]; default: 0;
          *  The start address of trace memory
          */
-        uint32_t mem_staet_addr:32;
+        uint32_t mem_start_addr:32;
     };
     uint32_t val;
 } trace_mem_start_addr_reg_t;
