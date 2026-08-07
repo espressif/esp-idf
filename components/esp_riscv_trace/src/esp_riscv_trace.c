@@ -120,6 +120,7 @@ static uint32_t trace_buffer_caps(esp_riscv_trace_buffer_mem_t mem)
            : ESP_RISCV_TRACE_BUFFER_CAPS_INTERNAL;
 }
 
+#if SOC_RISCV_TRACE_FILTER_SUPPORTED
 static bool is_valid_filter_comparator(const esp_riscv_trace_filter_comparator_t *c)
 {
     return (c->input == ESP_RISCV_TRACE_FILTER_INPUT_IADDR ||
@@ -155,6 +156,7 @@ static esp_err_t validate_filter_config(const esp_riscv_trace_filter_config_t *c
     }
     return ESP_OK;
 }
+#endif // SOC_RISCV_TRACE_FILTER_SUPPORTED
 
 static esp_err_t validate_trace_config(esp_riscv_trace_core_t core_id, const esp_riscv_trace_config_t *config,
                                        esp_riscv_trace_handle_t *ret_handle)
@@ -167,6 +169,8 @@ static esp_err_t validate_trace_config(esp_riscv_trace_core_t core_id, const esp
     ESP_RETURN_ON_FALSE(is_valid_address_mode(config->address_mode), ESP_ERR_INVALID_ARG, TAG, "invalid address mode");
     ESP_RETURN_ON_FALSE(is_valid_mem_mode(config->mem_mode), ESP_ERR_INVALID_ARG, TAG, "invalid memory mode");
     ESP_RETURN_ON_FALSE(is_valid_resync_mode(config->resync_mode), ESP_ERR_INVALID_ARG, TAG, "invalid resync mode");
+    ESP_RETURN_ON_FALSE(riscv_trace_ll_resync_mode_is_supported((uint32_t)config->resync_mode),
+                        ESP_ERR_NOT_SUPPORTED, TAG, "resync mode not supported on this target");
     ESP_RETURN_ON_FALSE(is_valid_ahb_burst(config->ahb_burst), ESP_ERR_INVALID_ARG, TAG, "invalid AHB burst");
     ESP_RETURN_ON_FALSE(is_valid_core_mask(config->core_mask), ESP_ERR_INVALID_ARG, TAG, "invalid core mask");
     ESP_RETURN_ON_FALSE(is_valid_buffer_mem(config->buffer_mem), ESP_ERR_INVALID_ARG, TAG, "invalid buffer memory");

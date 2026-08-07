@@ -142,6 +142,13 @@ static inline void riscv_trace_ll_set_dm_trigger_ena(trace_dev_t *hw, bool enabl
  * Resynchronization
  *--------------------------------------------------------------------------*/
 
+/** @brief Whether the resync counter can represent the given mode. */
+static inline bool riscv_trace_ll_resync_mode_is_supported(uint32_t mode)
+{
+    return mode == RISCV_TRACE_RESYNC_DISABLED || mode == RISCV_TRACE_RESYNC_PACKET ||
+           mode == RISCV_TRACE_RESYNC_CYCLE;
+}
+
 static inline void riscv_trace_ll_set_resync_mode(trace_dev_t *hw, uint32_t mode)
 {
     hw->resync_prolonged.resync_mode = mode;
