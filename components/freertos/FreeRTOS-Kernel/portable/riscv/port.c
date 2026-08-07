@@ -542,13 +542,17 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
      * saved level can be restored on the last call to exit the critical.
      */
     BaseType_t xOldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
-    if (!spinlock_acquire(mux, timeout)) {
+    /* Interrupts are masked, so the core id is stable. Read it once and reuse it for
+     * both the spinlock owner id and the per-core critical nesting state. Interrupts
+     * stay masked for the whole critical section (to the same level the spinlock would
+     * use), so the spinlock does not need to disable them again. */
+    BaseType_t coreID = xPortGetCoreID();
+    if (!spinlock_acquire_impl(mux, timeout, spinlock_owner_id_for_core(coreID))) {
         //Timed out attempting to get spinlock. Restore previous interrupt level and return
         portCLEAR_INTERRUPT_MASK_FROM_ISR(xOldInterruptLevel);
         return pdFAIL;
     }
     //Spinlock acquired. Increment the critical nesting count.
-    BaseType_t coreID = xPortGetCoreID();
     BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
     port_uxCriticalNesting[coreID] = newNesting;
     //If this is the first entry to a critical section. Save the old interrupt level.
@@ -569,8 +573,11 @@ void __attribute__((optimize("-O3"))) vPortExitCriticalMultiCore(portMUX_TYPE *m
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
-    spinlock_release(mux);
+    /* Interrupts remain disabled for the whole critical section, so the core id is
+     * stable and the spinlock does not need to mask them again. Read the core id
+     * once and reuse it for both the release owner id and the per-core nesting state. */
     BaseType_t coreID = xPortGetCoreID();
+    spinlock_release_impl(mux, spinlock_owner_id_for_core(coreID));
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
     /* Critical section nesting count must never be negative */

@@ -511,13 +511,17 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
      * saved level can be restored on the last call to exit the critical.
      */
     BaseType_t xOldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
-    if (!spinlock_acquire(mux, timeout)) {
+    /* Interrupts are masked, so the core id is stable. Read the core id register once
+     * (its value is already the spinlock owner id on Xtensa) and reuse it, so
+     * spinlock_acquire does not read the core id register a second time. */
+    uint32_t coreOwnerId = spinlock_owner_id();
+    BaseType_t coreID = spinlock_core_id_from_owner_id(coreOwnerId);
+    if (!spinlock_acquire_impl(mux, timeout, coreOwnerId)) {
         //Timed out attempting to get spinlock. Restore previous interrupt level and return
         portCLEAR_INTERRUPT_MASK_FROM_ISR(xOldInterruptLevel);
         return pdFAIL;
     }
     //Spinlock acquired. Increment the critical nesting count.
-    BaseType_t coreID = xPortGetCoreID();
     BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
     port_uxCriticalNesting[coreID] = newNesting;
     //If this is the first entry to a critical section. Save the old interrupt level.
@@ -538,8 +542,12 @@ void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
-    spinlock_release(mux);
-    BaseType_t coreID = xPortGetCoreID();
+    /* Interrupts remain disabled for the whole critical section, so the core id is
+     * stable and the spinlock does not need to mask them again. Read the core id
+     * register once (its value is the spinlock owner id on Xtensa) and reuse it. */
+    uint32_t coreOwnerId = spinlock_owner_id();
+    BaseType_t coreID = spinlock_core_id_from_owner_id(coreOwnerId);
+    spinlock_release_impl(mux, coreOwnerId);
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
     /* Critical section nesting count must never be negative */

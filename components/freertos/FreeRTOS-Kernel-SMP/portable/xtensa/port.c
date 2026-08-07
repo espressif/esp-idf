@@ -143,13 +143,17 @@ BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout)
      * saved level can be restored on the last call to exit the critical.
      */
     BaseType_t xOldInterruptLevel = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
-    if (!spinlock_acquire(lock, timeout)) {
+    /* Interrupts are masked (to XCHAL_EXCM_LEVEL, the same level the spinlock uses),
+     * so the core id is stable and the spinlock does not need to mask again. Read the
+     * core id register once and reuse it for the owner id and the nesting index. */
+    uint32_t coreOwnerId = spinlock_owner_id();
+    BaseType_t coreID = spinlock_core_id_from_owner_id(coreOwnerId);
+    if (!spinlock_acquire_impl(lock, timeout, coreOwnerId)) {
         //Timed out attempting to get spinlock. Restore previous interrupt level and return
         XTOS_RESTORE_JUST_INTLEVEL((int) xOldInterruptLevel);
         return pdFAIL;
     }
     //Spinlock acquired. Increment the IDF critical nesting count.
-    BaseType_t coreID = xPortGetCoreID();
     BaseType_t newNesting = port_uxCriticalNestingIDF[coreID] + 1;
     port_uxCriticalNestingIDF[coreID] = newNesting;
     //If this is the first entry to a critical section. Save the old interrupt level.
@@ -171,8 +175,12 @@ void vPortExitCriticalIDF(portMUX_TYPE *lock)
      * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
-    spinlock_release(lock);
-    BaseType_t coreID = xPortGetCoreID();
+    /* Interrupts remain disabled for the whole critical section, so the core id is
+     * stable and the spinlock does not need to mask again. Read the core id register
+     * once and reuse it for the owner id and the nesting index. */
+    uint32_t coreOwnerId = spinlock_owner_id();
+    BaseType_t coreID = spinlock_core_id_from_owner_id(coreOwnerId);
+    spinlock_release_impl(lock, coreOwnerId);
     BaseType_t nesting = port_uxCriticalNestingIDF[coreID];
 
     /* Critical section nesting count must never be negative */
