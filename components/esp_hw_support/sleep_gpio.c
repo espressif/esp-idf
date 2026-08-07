@@ -130,6 +130,21 @@ void esp_sleep_config_gpio_isolate(void)
         }
     }
 
+#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM
+    const gpio_num_t uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM;
+    const gpio_num_t uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
+#else
+    const gpio_num_t uart_tx_gpio = U0TXD_GPIO_NUM;
+    const gpio_num_t uart_rx_gpio = U0RXD_GPIO_NUM;
+#endif
+    // Pull up TX and RX lines to avoid garbled data during sleep
+    gpio_sleep_set_pull_mode(uart_tx_gpio, GPIO_PULLUP_ONLY);
+    gpio_sleep_set_pull_mode(uart_rx_gpio, GPIO_PULLUP_ONLY);
+    // TX pin can be isolated, but RX pin may be used for wakeup, so configure RX pin as input
+    gpio_sleep_set_direction(uart_rx_gpio, GPIO_MODE_INPUT);
+#endif
+
 #if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU && !SOC_MSPI_HAS_INDEPENT_IOMUX
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CLK), GPIO_PULLUP_ONLY);
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_Q),   GPIO_PULLUP_ONLY);
@@ -157,16 +172,7 @@ void esp_sleep_enable_gpio_switch(bool enable)
     ESP_EARLY_LOGI(TAG, "%s automatic switching of GPIO sleep configuration", enable ? "Enable" : "Disable");
 
     uint64_t gpio_sleep_sel_dis_mask = 0;
-#if CONFIG_ESP_CONSOLE_UART
-#if CONFIG_ESP_CONSOLE_UART_CUSTOM
-    const gpio_num_t uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : U0TXD_GPIO_NUM;
-    const gpio_num_t uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : U0RXD_GPIO_NUM;
-#else
-    const gpio_num_t uart_tx_gpio = U0TXD_GPIO_NUM;
-    const gpio_num_t uart_rx_gpio = U0RXD_GPIO_NUM;
-#endif
-    gpio_sleep_sel_dis_mask |= BIT64(uart_tx_gpio) | BIT64(uart_rx_gpio);
-#endif
+
     /* If the PSRAM is disable in ESP32xx chips equipped with PSRAM, there will be a large current leakage. */
 #if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM & !SOC_MSPI_HAS_INDEPENT_IOMUX
     const gpio_num_t psram_cs_gpio = (gpio_num_t)esp_mspi_get_io(ESP_MSPI_IO_CS1);
