@@ -294,6 +294,15 @@ endif()
 if(CONFIG_COMPILER_LTO_LINKTIME AND NOT BOOTLOADER_BUILD AND NOT ESP_TEE_BUILD)
     list(APPEND link_options "-flto=auto")
 
+    # LTO generates code at link time, so the -ffunction-sections/-fdata-sections
+    # applied to compile_options doesn't reach it: the LTRANS recompilation takes
+    # its code generation options from the link command line. Without them the
+    # LTO partition is emitted as a single .text/.data, which defeats
+    # -Wl,--gc-sections (it can only drop whole sections) and keeps unreferenced
+    # functions in the image.
+    list(APPEND link_options "-ffunction-sections"
+                             "-fdata-sections")
+
     if(CONFIG_APP_REPRODUCIBLE_BUILD)
         # LTO generates code at link time, where the path remapping applied to
         # compile_options doesn't take effect, so pass it to the linker as well.

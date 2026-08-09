@@ -443,6 +443,14 @@ function(__init_project_configuration)
     endif()
     if(CONFIG_COMPILER_LTO_LINKTIME AND set_compiler_lto)
         list(APPEND link_options "-flto=auto")
+        # LTO generates code at link time, so the -ffunction-sections/-fdata-sections
+        # applied to compile_options doesn't reach it: the LTRANS recompilation takes
+        # its code generation options from the link command line. Without them the
+        # LTO partition is emitted as a single .text/.data, which defeats
+        # -Wl,--gc-sections (it can only drop whole sections) and keeps unreferenced
+        # functions in the image.
+        list(APPEND link_options "-ffunction-sections"
+                                 "-fdata-sections")
     else()
         list(APPEND compile_options "-fno-lto")
     endif()
