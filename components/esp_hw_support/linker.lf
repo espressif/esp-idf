@@ -47,7 +47,13 @@ entries:
             pmu_init (noflash)
             pmu_param (noflash)
         if SOC_LIGHT_SLEEP_SUPPORTED = y:
-            pmu_sleep (noflash)
+            if SPIRAM_FLASH_LOAD_TO_PSRAM = y || PM_SLP_IRAM_OPT = y:
+                pmu_sleep (noflash)
+            else:
+                if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE != y:
+                    pmu_sleep:pmu_sleep_start (noflash)
+                    pmu_sleep:pmu_sleep_finish (noflash)
+                pmu_sleep:pmu_sleep_get_wakup_retention_cost (noflash)
             if PM_SLEEP_CLK_ICG_ENABLE = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP != y:
                 pmu_sleep_clock_icg:pmu_sleep_clock_icg_config (noflash)
             sleep_mspi (noflash)

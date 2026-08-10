@@ -345,7 +345,7 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
 }
 
-IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
+uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     if (!dslp) {
 #if !BOOTLOADER_BUILD && CONFIG_SPIRAM
@@ -385,7 +385,7 @@ IRAM_ATTR uint32_t pmu_sleep_get_reject_cause(void)
     return pmu_ll_hp_get_reject_cause(PMU_instance()->hal->dev);
 }
 
-IRAM_ATTR bool pmu_sleep_finish(bool dslp)
+bool pmu_sleep_finish(bool dslp)
 {
 #ifndef CONFIG_IDF_ENV_FPGA
     // Wait eFuse memory update done.
