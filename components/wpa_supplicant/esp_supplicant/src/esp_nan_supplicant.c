@@ -761,11 +761,7 @@ int nan_pasn_followup_decrypt_keys(const uint8_t *shared_key_attr,
     key_desc = (const struct wpa_eapol_key *)(body + 1);
     key_info = WPA_GET_BE16(key_desc->key_info);
 
-    if (!(key_info & WPA_KEY_INFO_KEY_TYPE)) {
-        wpa_printf(MSG_INFO,
-                   "NAN: Follow-up frame does not contain pairwise key");
-        return -1;
-    }
+    /* iPhone/hostap set Key Type=0 (NIK is not a pairwise key); don't require the bit. */
     if (!(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
         wpa_printf(MSG_INFO,
                    "NAN: Follow-up frame does not contain encrypted key data");
