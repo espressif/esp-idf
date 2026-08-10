@@ -22,6 +22,7 @@ extern "C" {
 
 typedef struct uhci_controller_t uhci_controller_t;
 
+#define UHCI_ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define UHCI_MAX(a, b) (((a)>(b))?(a):(b))
 
 #define UHCI_PM_LOCK_NAME_LEN_MAX              16

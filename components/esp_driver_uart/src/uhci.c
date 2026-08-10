@@ -16,7 +16,6 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_macros.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
@@ -135,7 +134,7 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
         // Round the invalidate size up to a full cache line. Each node buffer is itself cache-line
         // aligned and a whole multiple of the cache line, so the extra bytes stay inside this same
         // node buffer (never a neighbor) and only discard DMA scratch past the frame end.
-        sync_size = ESP_ALIGN_UP(rx_size, cache_line);
+        sync_size = UHCI_ALIGN_UP(rx_size, cache_line);
     }
 
     uhci_rx_event_data_t evt_data = {
