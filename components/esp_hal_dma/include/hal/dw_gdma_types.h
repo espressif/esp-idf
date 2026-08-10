@@ -69,30 +69,32 @@ typedef enum {
 } dw_gdma_transfer_width_t;
 
 /**
- * @brief DW_GDMA burst mode
+ * @brief DW_GDMA address increment mode
  */
 typedef enum {
-    DW_GDMA_BURST_MODE_INCREMENT,  /*!< The address is increased after each transfer */
-    DW_GDMA_BURST_MODE_FIXED,      /*!< The address remains the same after each transfer */
-} dw_gdma_burst_mode_t;
+    DW_GDMA_ADDR_INC_MODE_INCREMENT, /*!< The address is increased by the data width after each data item */
+    DW_GDMA_ADDR_INC_MODE_FIXED,     /*!< The address remains the same after each data item (e.g. FIFO/peripheral target) */
+} dw_gdma_addr_inc_mode_t;
 
 /**
- * @brief Number of data items that are contained in one burst transaction
+ * @brief DW_GDMA burst size: number of data items contained in one (core-level) burst transaction
  *
- * @note One item's bit width is set by `dw_gdma_transfer_width_t`
+ * @note This maps to the DW_GDMA `MSIZE` field. It is the coarse, usually power-of-two, size of a
+ *       single burst request. One item's bit width is set by `dw_gdma_transfer_width_t`.
+ * @note This is different from `axi_burst_len`, which is the fine-grained AXI burst length.
  */
 typedef enum {
-    DW_GDMA_BURST_ITEMS_1,    /*!< 1 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_4,    /*!< 4 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_8,    /*!< 8 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_16,   /*!< 16 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_32,   /*!< 32 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_64,   /*!< 64 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_128,  /*!< 128 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_256,  /*!< 256 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_512,  /*!< 512 data items in a burst transaction */
-    DW_GDMA_BURST_ITEMS_1024, /*!< 1024 data items in a burst transaction */
-} dw_gdma_burst_items_t;
+    DW_GDMA_BURST_SIZE_1,    /*!< 1 data item in a burst transaction */
+    DW_GDMA_BURST_SIZE_4,    /*!< 4 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_8,    /*!< 8 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_16,   /*!< 16 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_32,   /*!< 32 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_64,   /*!< 64 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_128,  /*!< 128 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_256,  /*!< 256 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_512,  /*!< 512 data items in a burst transaction */
+    DW_GDMA_BURST_SIZE_1024, /*!< 1024 data items in a burst transaction */
+} dw_gdma_burst_size_t;
 
 #ifdef __cplusplus
 }

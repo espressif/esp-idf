@@ -35,10 +35,9 @@ ESP_LOG_ATTR_TAG(TAG, "async_mcp.gdma");
 typedef struct async_memcpy_transaction_t {
     gdma_link_list_handle_t tx_link_list;  // DMA link list for TX direction
     gdma_link_list_handle_t rx_link_list;  // DMA link list for RX direction
-    dma_buffer_split_array_t rx_buf_array; // Split the destination buffer into cache aligned ones, save the splits in this array
-    uint8_t* stash_buffer;                 // Stash buffer for cache aligned buffer
     async_memcpy_isr_cb_t cb; // user callback
     void *cb_args;            // user callback args
+    async_memcpy_split_t split; // cache aligned split, consumed by the deferred cache ops and CPU copy
     STAILQ_ENTRY(async_memcpy_transaction_t) idle_queue_entry;  // Entry for the idle queue
     STAILQ_ENTRY(async_memcpy_transaction_t) ready_queue_entry; // Entry for the ready queue
 } async_memcpy_transaction_t;
@@ -82,9 +81,6 @@ static esp_err_t mcp_gdma_destroy(async_memcpy_gdma_context_t *mcp_gdma)
             }
             if (trans->rx_link_list) {
                 gdma_del_link_list(trans->rx_link_list);
-            }
-            if (trans->stash_buffer) {
-                free(trans->stash_buffer);
             }
         }
         free(mcp_gdma->transaction_pool);
@@ -259,6 +255,10 @@ static void try_start_pending_transaction(async_memcpy_gdma_context_t *mcp_gdma)
         if (trans) {
             atomic_store(&mcp_gdma->fsm, MCP_FSM_RUN);
             mcp_gdma->current_transaction = trans;
+            // Deferred during submit to avoid racing with the previous (still running) DMA transfer that
+            // may write to the same/overlapping destination. Now the transfer is actually starting, so the
+            // CPU copies and cache maintenance are serialized with the DMA engine.
+            async_memcpy_do_cache_ops_and_cpu_copy(&trans->split);
             gdma_start(mcp_gdma->rx_channel, gdma_link_get_head_addr(trans->rx_link_list));
             gdma_start(mcp_gdma->tx_channel, gdma_link_get_head_addr(trans->tx_link_list));
         } else {
@@ -353,17 +353,23 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
         gdma_del_link_list(trans->rx_link_list);
         trans->rx_link_list = NULL;
     }
-    if (trans->stash_buffer) {
-        free(trans->stash_buffer);
-        trans->stash_buffer = NULL;
-    }
+
+    // Split the destination buffer into a cache aligned body and (optional) head/tail.
+    // The DMA engine only handles the cache aligned body; the unaligned head and tail (if any) are
+    // copied by the CPU later, right before the DMA transfer starts (see try_start_pending_transaction).
+    // The head/tail and the body never share a cache line, so the CPU and DMA can work concurrently
+    // without cache coherency conflicts.
+    // The source buffer is split at the same boundaries because the GDMA TX/RX
+    // channels are paired and each descriptor carries both the source and destination.
+    async_memcpy_split_t split;
+    ESP_GOTO_ON_ERROR(async_memcpy_split_cache_aligned(dst, src, n, &split), err, TAG, "failed to split buffer");
 
     size_t buffer_alignment = 0;
     size_t num_dma_nodes = 0;
 
-    // allocate gdma TX link
-    buffer_alignment = esp_ptr_internal(src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment;
-    num_dma_nodes = esp_dma_calculate_node_count(n, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    // allocate gdma TX link, only the body is handled by the DMA
+    buffer_alignment = esp_ptr_internal(split.body_src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment;
+    num_dma_nodes = esp_dma_calculate_node_count(split.body_len, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t tx_link_cfg = {
         .item_alignment = dma_link_item_alignment,
         .num_items = num_dma_nodes,
@@ -373,12 +379,12 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
         },
     };
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&tx_link_cfg, &trans->tx_link_list), err, TAG, "failed to create TX link list");
-    // mount the source buffer to the TX link list
+    // mount the source body to the TX link list
     gdma_buffer_mount_config_t tx_buf_mount_config[1] = {
         [0] = {
-            .buffer = src,
+            .buffer = split.body_src,
             .buffer_alignment = buffer_alignment,
-            .length = n,
+            .length = split.body_len,
             .flags = {
                 .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
                 .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
@@ -387,41 +393,38 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     };
     gdma_link_mount_buffers(trans->tx_link_list, 0, tx_buf_mount_config, 1, NULL);
 
-    // read the cache line size of internal and external memory, we use this information to check if a given memory is behind the cache
-    // write back the source data if it's behind the cache
-    size_t cache_line_size = esp_cache_get_line_size_by_addr(src);
-    if (cache_line_size > 0) {
-        esp_cache_msync(src, n, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    }
-
-    // allocate gdma RX link
-    buffer_alignment = esp_ptr_internal(dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment;
-    num_dma_nodes = esp_dma_calculate_node_count(n, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    // allocate gdma RX link, only the body is handled by the DMA
+    buffer_alignment = esp_ptr_internal(split.body_dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment;
+    num_dma_nodes = esp_dma_calculate_node_count(split.body_len, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t rx_link_cfg = {
         .item_alignment = dma_link_item_alignment,
-        .num_items = num_dma_nodes + 3, // add 3 extra items for the cache aligned buffers
+        .num_items = num_dma_nodes,
         .flags = {
             .check_owner = true,
-            .items_in_ext_mem = false, // TODO: if the memcopy size is too large, we may need to allocate the link list items from external memory
+            .items_in_ext_mem = false, // TODO: if the memcopy size is too large, we can consider allocating the link list items from external memory
         },
     };
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&rx_link_cfg, &trans->rx_link_list), err, TAG, "failed to create RX link list");
-
-    // if the destination buffer address is not cache line aligned, we need to split the buffer into cache line aligned ones
-    ESP_GOTO_ON_ERROR(esp_dma_split_rx_buffer_to_cache_aligned(dst, n, &trans->rx_buf_array, &trans->stash_buffer),
-                      err, TAG, "failed to split RX buffer into aligned ones");
-    // mount the destination buffer to the RX link list
-    gdma_buffer_mount_config_t rx_buf_mount_config[3] = {0};
-    for (int i = 0; i < 3; i++) {
-        rx_buf_mount_config[i].buffer = trans->rx_buf_array.aligned_buffer[i].aligned_buffer;
-        rx_buf_mount_config[i].buffer_alignment = buffer_alignment;
-        rx_buf_mount_config[i].length = trans->rx_buf_array.aligned_buffer[i].length;
-    }
-    gdma_link_mount_buffers(trans->rx_link_list, 0, rx_buf_mount_config, 3, NULL);
+    // mount the destination body to the RX link list
+    gdma_buffer_mount_config_t rx_buf_mount_config[1] = {
+        [0] = {
+            .buffer = split.body_dst,
+            .buffer_alignment = buffer_alignment,
+            .length = split.body_len,
+            .flags = {
+                .mark_eof = true,
+                .mark_final = GDMA_FINAL_LINK_TO_NULL,
+            }
+        }
+    };
+    gdma_link_mount_buffers(trans->rx_link_list, 0, rx_buf_mount_config, 1, NULL);
 
     // save other transaction context
     trans->cb = cb_isr;
     trans->cb_args = cb_args;
+    // save the split info (includes the original buffers and cache aligned body) for the deferred
+    // cache ops and CPU copy (performed in try_start_pending_transaction when the transfer actually starts)
+    trans->split = split;
 
     esp_os_enter_critical(&mcp_gdma->spin_lock);
     // insert the trans to ready queue
@@ -448,13 +451,12 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
     bool need_yield = false;
     async_memcpy_gdma_context_t *mcp_gdma = (async_memcpy_gdma_context_t *)user_data;
     async_memcpy_transaction_t *trans = mcp_gdma->current_transaction;
-    dma_buffer_split_array_t *rx_buf_array = &trans->rx_buf_array;
 
     // switch driver state from RUN to IDLE
     async_memcpy_fsm_t expected_fsm = MCP_FSM_RUN;
     if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_WAIT)) {
-        // merge the cache aligned buffers to the original buffer
-        esp_dma_merge_aligned_rx_buffers(rx_buf_array);
+        // the head/tail were already copied by the CPU before the transfer started, and the body was written by the
+        // DMA to memory (the body cache lines were invalidated before the transfer), so nothing to merge here.
 
         // invoked callback registered by user
         async_memcpy_isr_cb_t cb = trans->cb;

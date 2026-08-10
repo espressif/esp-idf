@@ -47,13 +47,13 @@ static bool IRAM_ATTR s_isp_dma_done_cb(dw_gdma_channel_handle_t chan, const dw_
     return high_task_woken == pdTRUE;
 }
 
-static dw_gdma_burst_items_t s_isp_dma_burst_len_to_items(uint32_t burst_len)
+static dw_gdma_burst_size_t s_isp_dma_burst_len_to_size(uint32_t burst_len)
 {
     switch (burst_len) {
-    case 1:  return DW_GDMA_BURST_ITEMS_1;
-    case 4:  return DW_GDMA_BURST_ITEMS_4;
-    case 8:  return DW_GDMA_BURST_ITEMS_8;
-    default: return DW_GDMA_BURST_ITEMS_8;
+    case 1:  return DW_GDMA_BURST_SIZE_1;
+    case 4:  return DW_GDMA_BURST_SIZE_4;
+    case 8:  return DW_GDMA_BURST_SIZE_8;
+    default: return DW_GDMA_BURST_SIZE_8;
     }
 }
 
@@ -199,29 +199,29 @@ esp_err_t isp_dma_new_frame_ctx(isp_proc_handle_t proc)
         .src = {
             .addr = MIPI_CSI_BRG_MEM_BASE,
             .width = DW_GDMA_TRANS_WIDTH_64,
-            .burst_mode = DW_GDMA_BURST_MODE_FIXED,
-            .burst_items = DW_GDMA_BURST_ITEMS_512,
-            .burst_len = output_burst_len,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_FIXED,
+            .burst_size = DW_GDMA_BURST_SIZE_512,
+            .axi_burst_len = output_burst_len,
         },
         .dst = {
             .width = DW_GDMA_TRANS_WIDTH_64,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
-            .burst_items = DW_GDMA_BURST_ITEMS_512,
-            .burst_len = output_burst_len,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
+            .burst_size = DW_GDMA_BURST_SIZE_512,
+            .axi_burst_len = output_burst_len,
         },
         .size = ctx->output_frame_size_64bit,
     };
     ctx->dma_in_trans = (dw_gdma_block_transfer_config_t) {
         .src = {
             .width = DW_GDMA_TRANS_WIDTH_64,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
-            .burst_items = DW_GDMA_BURST_ITEMS_32,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
+            .burst_size = DW_GDMA_BURST_SIZE_32,
         },
         .dst = {
             .addr = MIPI_CSI_BRG_MEM_BASE,
             .width = DW_GDMA_TRANS_WIDTH_64,
-            .burst_mode = DW_GDMA_BURST_MODE_FIXED,
-            .burst_items = s_isp_dma_burst_len_to_items(proc->dma_in_burst_len),
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_FIXED,
+            .burst_size = s_isp_dma_burst_len_to_size(proc->dma_in_burst_len),
         },
         .size = ctx->input_frame_size_64bit,
     };

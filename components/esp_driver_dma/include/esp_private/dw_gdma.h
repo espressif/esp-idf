@@ -100,11 +100,46 @@ esp_err_t dw_gdma_channel_get_id(dw_gdma_channel_handle_t chan, int *channel_id)
  * @note By dynamic, we mean these channel end configurations can be changed in each transfer.
  */
 typedef struct {
-    uint32_t addr;                     /*!< Memory address */
-    dw_gdma_transfer_width_t width;    /*!< Transfer width */
-    dw_gdma_burst_mode_t burst_mode;   /*!< Burst mode */
-    dw_gdma_burst_items_t burst_items; /*!< Number of data items that are contained in one burst transaction */
-    uint8_t burst_len;                 /*!< Burst transaction length, if set to 0, the hardware will apply a possible value as burst length */
+    uint32_t addr; /*!< Memory address */
+    /**
+     * @brief Transfer width, i.e. the bit width of a single data item (a "beat").
+     *
+     * This is the atomic unit of transfer. It decides how many bytes are moved per data item,
+     * and therefore the granularity of both `burst_size` / `axi_burst_len` and the address step when
+     * `addr_inc_mode` is INCREMENT. E.g. with `DW_GDMA_TRANS_WIDTH_32`, one item is 4 bytes.
+     */
+    dw_gdma_transfer_width_t width;
+    /**
+     * @brief Address increment mode: whether the transfer address advances after each data item.
+     *
+     * @note It controls the address behaviour item by item:
+     *       - `DW_GDMA_ADDR_INC_MODE_INCREMENT`: address is increased by `width` after each item
+     *         (normal reading/writing of a contiguous buffer).
+     *       - `DW_GDMA_ADDR_INC_MODE_FIXED`    : address stays the same after each item
+     *         (used when the target is a FIFO / peripheral register, e.g. DSI/CSI/ISP).
+     */
+    dw_gdma_addr_inc_mode_t addr_inc_mode;
+    /**
+     * @brief Burst size: number of data items contained in one (core-level) burst transaction.
+     *
+     * This is the "burst size" (the DW_GDMA `MSIZE` field): how many `width`-sized items the DMA
+     * engine requests in a single burst. It sets the granularity of the transfer and is typically a
+     * power of two (1, 4, 8, ...). The total bytes of one such burst is `burst_size * width`.
+     *
+     * @note To tell it apart from `axi_burst_len`: `burst_size` is the coarse, power-of-two size of
+     *       a burst as configured by the DMA core, while `axi_burst_len` is the fine-grained AXI
+     *       burst length. For most cases keep them consistent (e.g. both 4/8/16), but you may set
+     *       `axi_burst_len` to a value that is not a power of two and let `burst_size` stay coarse.
+     */
+    dw_gdma_burst_size_t burst_size;
+    /**
+     * @brief AXI burst transaction length, in number of data items (beats).
+     *
+     * This directly programs the AXI `arlen`/`awlen` fields, i.e. how many beats the AXI master
+     * puts into a single AXI burst. The total bytes transferred in one burst is `axi_burst_len * width`.
+     * If set to 0, the hardware chooses a possible value for the burst length.
+     */
+    uint8_t axi_burst_len;
     struct {
         uint32_t en_status_write_back: 1; /*!< Enable peripheral status write back */
     } flags;
@@ -116,7 +151,13 @@ typedef struct {
 typedef struct {
     dw_gdma_channel_dynamic_config_t src; /*!< source configuration */
     dw_gdma_channel_dynamic_config_t dst; /*!< destination configuration */
-    size_t size;                          /*!< Transfer size */
+    /**
+     * @brief Transfer size, in number of data items
+     *
+     * The size in bytes is `size * width` (each data item is `width` bytes). For a
+     * Link-List transfer, this is the block transfer size of the corresponding LLI.
+     */
+    size_t size;
 } dw_gdma_block_transfer_config_t;
 
 /**
