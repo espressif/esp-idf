@@ -356,7 +356,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
 
     if (trig_retention_backup) {
-        test_gdma_trigger_retention_backup(tx_chan, rx_chan);
+        test_gdma_trigger_retention_backup(2, tx_chan, rx_chan);
     }
 
     TEST_ESP_OK(gdma_start(rx_chan, gdma_link_get_head_addr(rx_link_list)));
