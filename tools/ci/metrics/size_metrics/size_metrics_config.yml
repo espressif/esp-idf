@@ -55,6 +55,11 @@ tools/test_apps/size_metrics/minimal_baseline:
   configs:
     - default
 
+tools/test_apps/size_metrics/wifi_ota:
+  libs: all
+  configs:
+    - default
+
 components/esp_timer/test_apps/size_metrics:
   libs: all
   configs:
