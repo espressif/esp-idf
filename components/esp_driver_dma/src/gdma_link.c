@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <sys/param.h>
 #include <sys/cdefs.h>
 #include "soc/soc_caps.h"
 #include "esp_log.h"
@@ -15,10 +16,8 @@
 #include "esp_memory_utils.h"
 #include "esp_heap_caps.h"
 #include "esp_private/gdma_link.h"
-#include "hal/cache_hal.h"
-#include "hal/efuse_hal.h"
-#include "hal/cache_ll.h"
 #include "esp_cache.h"
+#include "esp_private/esp_mspi_align.h"
 #include "esp_efuse.h"
 #include "esp_macros.h"
 
@@ -76,10 +75,10 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
     bool items_in_ext_mem = config->flags.items_in_ext_mem;
     uint32_t list_items_mem_caps = MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     if (items_in_ext_mem) {
-        if (esp_efuse_is_flash_encryption_enabled()) {
+        if (esp_mspi_get_alignment(NULL) > 1) {
             items_in_ext_mem = false;
             list_items_mem_caps |= MALLOC_CAP_INTERNAL;
-            ESP_LOGW(TAG, "DMA linked list items cannot be placed in PSRAM when external memory encryption is enabled, using internal memory instead");
+            ESP_LOGW(TAG, "DMA linked list items cannot be placed in PSRAM when MSPI strict alignment is required, using internal memory instead");
         } else {
             list_items_mem_caps |= MALLOC_CAP_SPIRAM;
         }
@@ -90,12 +89,7 @@ esp_err_t gdma_new_link_list(const gdma_link_list_config_t *config, gdma_link_li
     ESP_GOTO_ON_FALSE(items, ESP_ERR_NO_MEM, err, TAG, "no mem for link list items");
 
     // do memory sync if the list items are in the cache
-    uint32_t data_cache_line_size = 0;
-    if (items_in_ext_mem) {
-        data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-    } else {
-        data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    }
+    size_t data_cache_line_size = esp_cache_get_line_size_by_addr(items);
     if (data_cache_line_size) {
         // write back and then invalidate the cache, because later we will read/write the link list items by non-cached address
         ESP_GOTO_ON_ERROR(esp_cache_msync(items, ESP_ALIGN_UP(num_items * item_size, data_cache_line_size),
@@ -190,12 +184,16 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
         }
         // alignment must be a power of 2
         ESP_RETURN_ON_FALSE_ISR((buffer_alignment & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "align err idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
-        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
+        size_t mspi_alignment = esp_mspi_get_alignment(buf);
+        size_t effective_alignment = MAX(buffer_alignment, mspi_alignment);
+        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, effective_alignment);
         if (!config->flags.bypass_buffer_align_check) {
-            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
-            if (esp_efuse_is_flash_encryption_enabled()) {
-                // buffer size must be aligned to the encryption alignment which should be provided by the upper buffer_alignment
-                ESP_RETURN_ON_FALSE_ISR((len & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf len misalign idx=%"PRIu32" len=%"PRIu32" align=%"PRIu32"", bi, len, buffer_alignment);
+            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (effective_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, effective_alignment);
+            // Length alignment:
+            // - Always required under MSPI strict mode (Flash Encryption / PSRAM ECC): size must align.
+            // - Also when check_size_align is set by a caller whose configured channel requires size alignment.
+            if (mspi_alignment > 1 || config->flags.check_size_align) {
+                ESP_RETURN_ON_FALSE_ISR((len & (effective_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf len misalign idx=%"PRIu32" len=%"PRIu32" align=%"PRIu32"", bi, len, effective_alignment);
             }
         }
         size_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
@@ -217,7 +215,6 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
         if (buffer_alignment == 0) {
             buffer_alignment = 1;
         }
-        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
         // skip zero-length buffer but scrub any stale descriptor to keep ring clean; no slot consumption
         if (len == 0 || buf == NULL) {
             lli_nc = (gdma_link_list_item_t *)(list->items_nc + begin_item_idx % list_item_capacity * item_size);
@@ -225,6 +222,9 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
             memset(lli_nc, 0, item_size);
             continue;
         }
+        size_t mspi_alignment = esp_mspi_get_alignment(buf);
+        size_t effective_alignment = MAX(buffer_alignment, mspi_alignment);
+        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, effective_alignment);
         size_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         // mount the buffer to the link list
         for (size_t i = 0; i < num_items_need; i++) {

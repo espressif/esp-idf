@@ -84,6 +84,10 @@ typedef struct {
                                                         Note, the final item here does not mean the last item in the link list. It is `start_item_index + num_items - 1` */
         uint32_t bypass_buffer_align_check: 1; /*!< Whether to bypass the buffer alignment check.
                                                     Only enable it when you know what you are doing. */
+        uint32_t check_size_align: 1; /*!< Whether to check that `length` is aligned to the alignment.
+                                           RX callers can query `gdma_is_size_alignment_required` to determine whether
+                                           the configured channel requires this check. Under MSPI Flash Encryption /
+                                           PSRAM ECC, length alignment is always enforced regardless of this flag. */
     } flags; //!< Flags for buffer mount configurations
 } gdma_buffer_mount_config_t;
 

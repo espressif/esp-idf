@@ -543,11 +543,12 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->data = (param && param_len) ? bus->format_buffer : NULL;
     trans_desc->data_length = trans_desc->data ? param_len : 4;
     trans_desc->trans_done_cb = NULL; // no callback for parameter transaction
-    size_t buffer_alignment = (trans_desc->data == NULL || esp_ptr_internal(trans_desc->data)) ? bus->int_mem_align : bus->ext_mem_align;
     static uint32_t fake_trigger = 0;
+    void *mount_buffer = trans_desc->data ? (void *)trans_desc->data : &fake_trigger;
+    size_t buffer_alignment = gdma_get_buffer_alignment_constraint(bus->dma_chan, mount_buffer);
     // mount data to DMA links
     gdma_buffer_mount_config_t mount_config = {
-        .buffer = trans_desc->data ? (void *)trans_desc->data : (&fake_trigger),
+        .buffer = mount_buffer,
         .buffer_alignment = buffer_alignment,
         .length = trans_desc->data_length,
         .flags = {
@@ -581,15 +582,6 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     ESP_RETURN_ON_FALSE(color_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
                         "color bytes too long, enlarge max_transfer_bytes");
-    if (esp_ptr_external_ram(color)) {
-        // check alignment
-        ESP_RETURN_ON_FALSE(((uint32_t)color & (bus->ext_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color address not aligned");
-        ESP_RETURN_ON_FALSE((color_size & (bus->ext_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color size not aligned");
-    } else {
-        // check alignment
-        ESP_RETURN_ON_FALSE(((uint32_t)color & (bus->int_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color address not aligned");
-        ESP_RETURN_ON_FALSE((color_size & (bus->int_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color size not aligned");
-    }
     if (esp_cache_get_line_size_by_addr(color) > 0) {
         // flush data from cache to the physical memory
         esp_cache_msync((void *)color, color_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
@@ -705,7 +697,7 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
         .access_ext_mem = true, // the LCD can carry pixel buffer from the external memory
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(bus->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
-    gdma_get_alignment_constraints(bus->dma_chan, &bus->int_mem_align, &bus->ext_mem_align);
+    gdma_get_channel_alignment_constraints(bus->dma_chan, &bus->int_mem_align, &bus->ext_mem_align, NULL);
 
     size_t buffer_alignment = MAX(bus->int_mem_align, bus->ext_mem_align);
     size_t num_dma_nodes = esp_dma_calculate_node_count(bus->max_transfer_bytes, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
@@ -902,8 +894,10 @@ IRAM_ATTR static void i80_lcd_default_isr_handler(void *args)
                 bus->cur_trans = trans_desc;
                 bus->cur_device = next_device;
                 // mount data to DMA links
+                size_t buffer_alignment = gdma_get_buffer_alignment_constraint(bus->dma_chan, trans_desc->data);
                 gdma_buffer_mount_config_t mount_config = {
                     .buffer = (void *)trans_desc->data,
+                    .buffer_alignment = buffer_alignment,
                     .length = trans_desc->data_length,
                     .flags = {
                         .mark_eof = true,

@@ -145,6 +145,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
     rx_unit->node_num = required_node_num;
 
     gdma_buffer_mount_config_t mount_config[required_node_num] = {};
+    bool size_alignment_required = gdma_is_size_alignment_required(rx_unit->dma_chan);
     /* Mount head buffer */
     if (head_node_num) {
         mount_config[0].buffer = trans->aligned_payload.buf.head.aligned_buffer;
@@ -153,6 +154,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[0].flags.bypass_buffer_align_check = false;
         mount_config[0].flags.mark_eof = false;
         mount_config[0].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
+        mount_config[0].flags.check_size_align = size_alignment_required;
     }
     /* Mount body buffer */
     size_t mount_size = 0;
@@ -172,6 +174,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[i].flags.bypass_buffer_align_check = false;
         mount_config[i].flags.mark_eof = false;
         mount_config[i].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
+        mount_config[i].flags.check_size_align = size_alignment_required;
         offset += mount_size;
         rest_size -= mount_size;
     }
@@ -181,6 +184,7 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[required_node_num - 1].buffer_alignment = trans->alignment;
         mount_config[required_node_num - 1].length = trans->aligned_payload.buf.tail.length;
         mount_config[required_node_num - 1].flags.bypass_buffer_align_check = false;
+        mount_config[required_node_num - 1].flags.check_size_align = size_alignment_required;
     }
     /* For infinite transaction, link the node as a ring */
     mount_config[required_node_num - 1].flags.mark_final = !trans->flags.infinite ? GDMA_FINAL_LINK_TO_NULL : GDMA_FINAL_LINK_TO_HEAD;
@@ -470,7 +474,7 @@ static esp_err_t parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit, size_t
         .access_ext_mem = true,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
-    ESP_RETURN_ON_ERROR(gdma_get_alignment_constraints(rx_unit->dma_chan, &rx_unit->int_mem_align, &rx_unit->ext_mem_align), TAG, "get alignment constraints failed");
+    ESP_RETURN_ON_ERROR(gdma_get_channel_alignment_constraints(rx_unit->dma_chan, &rx_unit->int_mem_align, &rx_unit->ext_mem_align, NULL), TAG, "get alignment constraints failed");
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     rx_unit->int_mem_align = rx_unit->int_mem_align > cache_line_size ? rx_unit->int_mem_align : cache_line_size;
@@ -982,6 +986,10 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
     ESP_RETURN_ON_FALSE(recv_cfg->delimiter, ESP_ERR_INVALID_ARG, TAG, "no delimiter specified");
     ESP_RETURN_ON_FALSE(payload_size <= rx_unit->max_recv_size, ESP_ERR_INVALID_ARG, TAG, "trans length too large");
     size_t alignment = rx_unit->int_mem_align;
+    // partial receive with indirect mount always use internal memory
+    if (!(recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount)) {
+        alignment = gdma_get_buffer_alignment_constraint(rx_unit->dma_chan, payload);
+    }
     if (recv_cfg->flags.partial_rx_en) {
         ESP_RETURN_ON_FALSE(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG, TAG, "The payload size should greater than %"PRIu32, 2 * alignment);
     }
@@ -1049,6 +1057,10 @@ esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
     // Can only be called from ISR
     PARLIO_RX_CHECK_ISR(xPortInIsrContext() == pdTRUE, ESP_ERR_INVALID_STATE);
     size_t alignment = rx_unit->int_mem_align;
+    // partial receive with indirect mount always use internal memory
+    if (!(recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount)) {
+        alignment = gdma_get_buffer_alignment_constraint(rx_unit->dma_chan, payload);
+    }
     if (recv_cfg->flags.partial_rx_en) {
         PARLIO_RX_CHECK_ISR(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG);
     }
@@ -1068,6 +1080,7 @@ esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
     }
 
     dma_buffer_split_array_t dma_buf_array = {0};
+    /* Create the internal DMA buffer for the infinite transaction if indirect_mount is set */
     if (recv_cfg->flags.partial_rx_en && recv_cfg->flags.indirect_mount) {
         /* The internal DMA buffer should be allocated before calling this function */
         PARLIO_RX_CHECK_ISR(rx_unit->dma_buf, ESP_ERR_INVALID_STATE);
@@ -1075,7 +1088,6 @@ esp_err_t parlio_rx_unit_receive_from_isr(parlio_rx_unit_handle_t rx_unit,
         dma_buf_array.buf.body.recovery_address = rx_unit->dma_buf;
         dma_buf_array.buf.body.length = payload_size;
     } else {
-        /* Create the internal DMA buffer for the infinite transaction if indirect_mount is set */
         esp_err_t esp_ret = esp_dma_split_rx_buffer_to_cache_aligned(payload, payload_size, &dma_buf_array, &rx_unit->stash_buf[rx_unit->stash_buf_idx]);
         PARLIO_RX_CHECK_ISR(esp_ret == ESP_OK, esp_ret);
         rx_unit->stash_buf_idx = !rx_unit->stash_buf_idx;

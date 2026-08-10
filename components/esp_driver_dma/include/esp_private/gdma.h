@@ -219,23 +219,58 @@ typedef struct {
 esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transfer_config_t *config);
 
 /**
- * @brief Get the alignment constraints for internal and external memory
+ * @brief Get the alignment constraints for a configured GDMA channel
  *
  * @note You should call this function after `gdma_config_transfer`, the later one can
- *       adjust the alignment constraints based on various conditions, e.g. burst size, memory encryption, etc.
- * @note You can use returned alignment value to validate if a DMA buffer provided by the upper layer meets the constraints.
+ *       adjust the alignment constraints based on GDMA-specific conditions, e.g. burst size.
+ * @note Prefer this when allocating DMA buffers. Once a concrete buffer address is available,
+ *       use `gdma_get_buffer_alignment_constraint` for the effective runtime constraint of that region.
+ * @note For allocation from external memory:
+ *       - Use `ext_enc_mem_alignment` as the safe default (worst-case MSPI encryption/ECC).
+ *       - Use `ext_no_enc_mem_alignment` when intentionally targeting no-encryption external memory (e.g. no-enc PSRAM).
  * @note The returned alignment doesn't take the cache line size into account, if you want to do aligned memory allocation,
  *       you should align the buffer size to the cache line size by yourself if the DMA buffer is behind a cache.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[out] int_mem_alignment Internal memory alignment
- * @param[out] ext_mem_alignment External memory alignment
+ * @param[out] ext_enc_mem_alignment External memory alignment including MSPI encryption/ECC constraints
+ * @param[out] ext_no_enc_mem_alignment External memory alignment without MSPI region-specific constraints.
+ *                                     Useful when allocating from no-encryption external memory. Set to NULL if unused.
  * @return
  *      - ESP_OK: Get alignment constraints successfully
  *      - ESP_ERR_INVALID_ARG: Get alignment constraints failed because of invalid argument
  *      - ESP_FAIL: Get alignment constraints failed because of other error
  */
-esp_err_t gdma_get_alignment_constraints(gdma_channel_handle_t dma_chan, size_t *int_mem_alignment, size_t *ext_mem_alignment);
+esp_err_t gdma_get_channel_alignment_constraints(gdma_channel_handle_t dma_chan, size_t *int_mem_alignment,
+                                                 size_t *ext_enc_mem_alignment, size_t *ext_no_enc_mem_alignment);
+
+/**
+ * @brief Check whether buffer sizes must meet the configured channel alignment
+ *
+ * @note Call this function after `gdma_config_transfer`.
+ * @note This reports GDMA hardware constraints only. Region-specific MSPI constraints
+ *       are enforced independently when buffers are mounted to a GDMA link list.
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
+ * @return True when buffer sizes must be aligned, otherwise false
+ */
+bool gdma_is_size_alignment_required(gdma_channel_handle_t dma_chan);
+
+/**
+ * @brief Get the effective alignment constraint for a specific DMA buffer
+ *
+ * @note You should call this function after `gdma_config_transfer`.
+ * @note The returned alignment combines GDMA channel constraints with MSPI constraints
+ *       of the actual buffer region. This lets external no-encryption PSRAM buffers use
+ *       their real runtime constraint instead of a generic worst-case MSPI alignment.
+ * @note The returned alignment doesn't take the cache line size into account.
+ * @note On invalid arguments, returns an impossible alignment (BIT(31)).
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
+ * @param[in] buffer DMA buffer address
+ * @return Effective buffer alignment in bytes
+ */
+size_t gdma_get_buffer_alignment_constraint(gdma_channel_handle_t dma_chan, const void *buffer);
 
 /**
  * @brief Apply channel strategy for GDMA channel

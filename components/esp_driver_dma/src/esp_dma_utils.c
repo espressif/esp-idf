@@ -43,7 +43,7 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
         split_line_size = int_mem_cache_line_size;
     }
     bool align_required = split_line_size > 0;
-    ESP_EARLY_LOGV(TAG, "split_line_size:%zu", split_line_size);
+    ESP_EARLY_LOGV(TAG, "split_line_size:%d", split_line_size);
 
     if (*ret_stash_buffer == NULL) {
         // If the stash buffer is not offered by the caller, allocate the stash buffer from internal RAM

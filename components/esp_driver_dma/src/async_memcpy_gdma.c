@@ -47,10 +47,6 @@ typedef struct async_memcpy_transaction_t {
 /// @note - Number of transaction objects are determined by the backlog parameter
 typedef struct {
     async_memcpy_context_t parent; // Parent IO interface
-    size_t rx_int_mem_alignment;   // Required DMA buffer alignment for internal RX memory
-    size_t rx_ext_mem_alignment;   // Required DMA buffer alignment for external RX memory
-    size_t tx_int_mem_alignment;   // Required DMA buffer alignment for internal TX memory
-    size_t tx_ext_mem_alignment;   // Required DMA buffer alignment for external TX memory
     int gdma_bus_id;               // GDMA bus id (AHB, AXI, etc.)
     gdma_channel_handle_t tx_channel; // GDMA TX channel handle
     gdma_channel_handle_t rx_channel; // GDMA RX channel handle
@@ -148,10 +144,6 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(mcp_gdma->tx_channel, &transfer_cfg), err, TAG, "config transfer for tx channel failed");
     ESP_GOTO_ON_ERROR(gdma_config_transfer(mcp_gdma->rx_channel, &transfer_cfg), err, TAG, "config transfer for rx channel failed");
-
-    // get the buffer alignment required by the GDMA channel
-    gdma_get_alignment_constraints(mcp_gdma->rx_channel, &mcp_gdma->rx_int_mem_alignment, &mcp_gdma->rx_ext_mem_alignment);
-    gdma_get_alignment_constraints(mcp_gdma->tx_channel, &mcp_gdma->tx_int_mem_alignment, &mcp_gdma->tx_ext_mem_alignment);
 
     // register rx eof callback
     gdma_rx_event_callbacks_t cbs = {
@@ -281,30 +273,6 @@ static async_memcpy_transaction_t *try_pop_trans_from_idle_queue(async_memcpy_gd
     return trans;
 }
 
-/// @brief Check if the address and size can meet the requirement of the DMA engine
-static bool check_buffer_alignment(async_memcpy_gdma_context_t *mcp_gdma, void *src, void *dst, size_t n)
-{
-    bool valid = true;
-
-    if (esp_ptr_external_ram(dst)) {
-        valid = valid && (((uint32_t)dst & (mcp_gdma->rx_ext_mem_alignment - 1)) == 0);
-        valid = valid && ((n & (mcp_gdma->rx_ext_mem_alignment - 1)) == 0);
-    } else {
-        valid = valid && (((uint32_t)dst & (mcp_gdma->rx_int_mem_alignment - 1)) == 0);
-        valid = valid && ((n & (mcp_gdma->rx_int_mem_alignment - 1)) == 0);
-    }
-
-    if (esp_ptr_external_ram(src)) {
-        valid = valid && (((uint32_t)src & (mcp_gdma->tx_ext_mem_alignment - 1)) == 0);
-        valid = valid && ((n & (mcp_gdma->tx_ext_mem_alignment - 1)) == 0);
-    } else {
-        valid = valid && (((uint32_t)src & (mcp_gdma->tx_int_mem_alignment - 1)) == 0);
-        valid = valid && ((n & (mcp_gdma->tx_int_mem_alignment - 1)) == 0);
-    }
-
-    return valid;
-}
-
 static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args)
 {
     esp_err_t ret = ESP_OK;
@@ -335,8 +303,6 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
         dma_link_item_alignment = GDMA_LL_AHB_DESC_ALIGNMENT;
     }
 #endif // SOC_HAS(LP_AHB_GDMA)
-    // alignment check
-    ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "address|size not aligned: %p -> %p, sz=%zu", src, dst, n);
 
     async_memcpy_transaction_t *trans = NULL;
     // pick one transaction node from idle queue
@@ -368,7 +334,7 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     size_t num_dma_nodes = 0;
 
     // allocate gdma TX link, only the body is handled by the DMA
-    buffer_alignment = esp_ptr_internal(split.body_src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment;
+    buffer_alignment = gdma_get_buffer_alignment_constraint(mcp_gdma->tx_channel, split.body_src);
     num_dma_nodes = esp_dma_calculate_node_count(split.body_len, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t tx_link_cfg = {
         .item_alignment = dma_link_item_alignment,
@@ -394,7 +360,7 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     gdma_link_mount_buffers(trans->tx_link_list, 0, tx_buf_mount_config, 1, NULL);
 
     // allocate gdma RX link, only the body is handled by the DMA
-    buffer_alignment = esp_ptr_internal(split.body_dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment;
+    buffer_alignment = gdma_get_buffer_alignment_constraint(mcp_gdma->rx_channel, split.body_dst);
     num_dma_nodes = esp_dma_calculate_node_count(split.body_len, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t rx_link_cfg = {
         .item_alignment = dma_link_item_alignment,
@@ -414,6 +380,7 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
             .flags = {
                 .mark_eof = true,
                 .mark_final = GDMA_FINAL_LINK_TO_NULL,
+                .check_size_align = gdma_is_size_alignment_required(mcp_gdma->rx_channel),
             }
         }
     };

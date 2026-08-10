@@ -26,7 +26,7 @@
 #include "hal/dma2d_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_bit_defs.h"
-#include "esp_efuse.h"
+#include "esp_private/esp_mspi_align.h"
 #include "esp_private/sleep_retention.h"
 
 /**
@@ -801,8 +801,12 @@ esp_err_t dma2d_set_desc_addr(dma2d_channel_handle_t dma2d_chan, intptr_t desc_b
     addr_in_spm = esp_ptr_in_spm((void *)desc_base_addr);
 #endif
     ESP_GOTO_ON_FALSE_ISR((desc_base_addr & 0x7) == 0 && !addr_in_spm, ESP_ERR_INVALID_ARG, err, TAG, "invalid descriptor base addr");
-    // When flash encryption is enabled, the descriptor must be in internal RAM because descriptor size is not 16-byte aligned, which breaks flash encryption alignment restriction
-    ESP_GOTO_ON_FALSE_ISR(!esp_efuse_is_flash_encryption_enabled() || esp_ptr_internal((void *)desc_base_addr), ESP_ERR_INVALID_ARG, err, TAG, "invalid description base addr");
+    // If descriptors are placed in external memory, their size must meet MSPI alignment constraints;
+    // otherwise, descriptors must be located in internal RAM.
+    size_t mspi_align = esp_mspi_get_alignment((void *)desc_base_addr);
+    bool desc_size_mspi_aligned = (sizeof(dma2d_descriptor_t) & (mspi_align - 1)) == 0;
+    ESP_GOTO_ON_FALSE_ISR(desc_size_mspi_aligned || esp_ptr_internal((void *)desc_base_addr),
+                          ESP_ERR_INVALID_ARG, err, TAG, "invalid description base addr");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
@@ -920,20 +924,19 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
     ESP_GOTO_ON_FALSE_ISR(dma2d_chan && ability, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE_ISR(ability->data_burst_length && ((ability->data_burst_length & (ability->data_burst_length - 1)) == 0), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument"); // burst size must be power of 2
     ESP_GOTO_ON_FALSE_ISR(ability->mb_size < DMA2D_MACRO_BLOCK_SIZE_INVALID, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(!ability->access_ext_mem || (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH), ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
     dma2d_group_t *group = dma2d_chan->group;
     int channel_id = dma2d_chan->channel_id;
-
-    // When flash encryption is enabled, and the channel is accessing external memory, burst length has to be as least as the encryption alignment restriction size
     uint32_t data_burst_length = ability->data_burst_length;
-#if SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
-    if (esp_efuse_is_flash_encryption_enabled() && ability->access_ext_mem) {
-        if (data_burst_length < SOC_MEMSPI_ENCRYPTION_ALIGNMENT) {
-            data_burst_length = SOC_MEMSPI_ENCRYPTION_ALIGNMENT;
-            ESP_LOGW(TAG, "channel access encrypted external memory, adjust burst size to %d", SOC_MEMSPI_ENCRYPTION_ALIGNMENT);
+    if (ability->access_ext_mem) {
+        // If channel is accessing external memory, burst length has to be at least the MSPI alignment restriction size
+        size_t mspi_alignment = dma2d_get_alloc_alignment();
+        if (data_burst_length < mspi_alignment) {
+            data_burst_length = mspi_alignment;
+            ESP_LOGW(TAG, "requested burst size does not meet MSPI alignment constraint, adjust to %d", (int)mspi_alignment);
         }
     }
-#endif
 
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
@@ -947,6 +950,46 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
 
 err:
     return ret;
+}
+
+size_t dma2d_get_buffer_alignment_constraint(const void *buffer)
+{
+    if (!buffer) {
+        return BIT(31);
+    }
+
+    return esp_mspi_get_alignment(buffer);
+}
+
+size_t dma2d_get_alloc_alignment(void)
+{
+    // Worst-case alignment for buffers that may be accessed by DMA2D (MSPI FE/ECC, etc.)
+    return esp_mspi_get_alignment(NULL);
+}
+
+bool dma2d_check_transaction_alignment_constraint(const void *buf, uint32_t pic_width, uint32_t blk_width,
+                                                  uint32_t offset_x, uint32_t bit_depth)
+{
+    if (!buf || bit_depth == 0) {
+        return false;
+    }
+
+    size_t alignment = dma2d_get_buffer_alignment_constraint(buf);
+    if (alignment <= 1) {
+        return true;
+    }
+
+    // Under Flash Encryption / PSRAM ECC, MSPI requires each AXI access to be aligned in both address and size.
+    // For 2D DMA that means:
+    // - buffer base address aligned to N bytes
+    // - bytes-per-line (pic_width * bpp/8) aligned, so every next line starts on an N-byte boundary
+    // - transfer width (blk_width * bpp/8) aligned
+    // - horizontal window offset (offset_x * bpp/8) aligned, so the first pixel of the window is aligned
+    uint32_t alignment_bits = alignment * 8;
+    return (((uintptr_t)buf & (alignment - 1)) == 0) &&
+           (((uint64_t)pic_width * bit_depth) % alignment_bits == 0) &&
+           (((uint64_t)blk_width * bit_depth) % alignment_bits == 0) &&
+           (((uint64_t)offset_x * bit_depth) % alignment_bits == 0);
 }
 
 esp_err_t dma2d_configure_color_space_conversion(dma2d_channel_handle_t dma2d_chan, const dma2d_csc_config_t *config)

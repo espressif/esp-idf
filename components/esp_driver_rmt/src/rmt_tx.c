@@ -55,7 +55,7 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
 
     size_t int_alignment = 0;
     // get the alignment requirement from DMA
-    gdma_get_alignment_constraints(tx_channel->base.dma_chan, &int_alignment, NULL);
+    gdma_get_channel_alignment_constraints(tx_channel->base.dma_chan, &int_alignment, NULL, NULL);
     // apply RMT hardware alignment requirement
     int_alignment = MAX(int_alignment, sizeof(rmt_symbol_word_t));
     // the memory returned by `heap_caps_aligned_calloc` also meets the cache alignment requirement (both address and size)

@@ -239,6 +239,7 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         .flags = {
             .mark_eof = false,
             .mark_final = GDMA_FINAL_LINK_TO_NULL,
+            .check_size_align = gdma_is_size_alignment_required(bsl->rx_channel),
         }
     };
     gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);

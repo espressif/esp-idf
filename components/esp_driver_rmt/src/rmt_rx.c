@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@ static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void
             .buffer_alignment = mem_alignment,
             .flags = {
                 .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
+                .check_size_align = gdma_is_size_alignment_required(rx_chan->base.dma_chan),
             }
         };
     }
@@ -53,8 +54,6 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
         .max_data_burst_size = 32,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_channel->base.dma_chan, &transfer_cfg), TAG, "config DMA transfer failed");
-    // get the alignment requirement from DMA
-    gdma_get_alignment_constraints(rx_channel->base.dma_chan, &rx_channel->dma_int_mem_alignment, &rx_channel->dma_ext_mem_alignment);
 
     // register event callbacks
     gdma_rx_event_callbacks_t cbs = {
@@ -63,7 +62,10 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     // register the DMA callbacks may fail if the interrupt service can not be installed successfully
     ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
 
-    size_t buffer_alignment = MAX(rx_channel->dma_int_mem_alignment, rx_channel->dma_ext_mem_alignment);
+    // get the alignment requirement from DMA
+    size_t dma_int_mem_alignment = 0, dma_ext_mem_alignment = 0;
+    gdma_get_channel_alignment_constraints(rx_channel->base.dma_chan, &dma_int_mem_alignment, &dma_ext_mem_alignment, NULL);
+    size_t buffer_alignment = MAX(dma_int_mem_alignment, dma_ext_mem_alignment);
     rx_channel->num_dma_nodes = esp_dma_calculate_node_count(config->mem_block_symbols * sizeof(rmt_symbol_word_t),
                                                              buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     rx_channel->num_dma_nodes = MAX(2, rx_channel->num_dma_nodes); // at least 2 DMA nodes for ping-pong
@@ -358,14 +360,10 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     size_t mem_alignment = sizeof(rmt_symbol_word_t);
 
 #if SOC_RMT_SUPPORT_DMA
-    uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     if (channel->dma_chan) {
-        if (esp_ptr_external_ram(buffer)) {
-            mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_ext_mem_alignment), ext_mem_cache_line_size);
-        } else {
-            mem_alignment = MAX(MAX(mem_alignment, rx_chan->dma_int_mem_alignment), int_mem_cache_line_size);
-        }
+        size_t dma_alignment = gdma_get_buffer_alignment_constraint(channel->dma_chan, buffer);
+        size_t cache_line_size = esp_cache_get_line_size_by_addr(buffer);
+        mem_alignment = MAX(MAX(mem_alignment, dma_alignment), cache_line_size);
     }
 #endif // SOC_RMT_SUPPORT_DMA
 

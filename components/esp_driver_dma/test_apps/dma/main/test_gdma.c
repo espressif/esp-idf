@@ -20,11 +20,9 @@
 #include "hal/gdma_ll.h"
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
-#include "hal/efuse_hal.h"
 #include "esp_cache.h"
 #include "esp_memory_utils.h"
 #include "gdma_test_utils.h"
-#include "esp_efuse.h"
 #include "esp_macros.h"
 
 TEST_CASE("GDMA channel allocation", "[GDMA]")
@@ -275,7 +273,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     TEST_ASSERT_NOT_NULL(done_sem);
     TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, done_sem));
 
-    if (esp_efuse_is_flash_encryption_enabled()) {
+    if (gdma_test_mspi_strict_alignment_required()) {
         dma_link_in_ext_mem = false;
     }
 
@@ -285,7 +283,7 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
 
     size_t int_mem_alignment = 0;
     size_t ext_mem_alignment = 0;
-    TEST_ESP_OK(gdma_get_alignment_constraints(tx_chan, &int_mem_alignment, &ext_mem_alignment));
+    TEST_ESP_OK(gdma_get_channel_alignment_constraints(tx_chan, &int_mem_alignment, &ext_mem_alignment, NULL));
 
     // allocate the source buffer from SRAM
     uint8_t *src_data = heap_caps_aligned_calloc(int_mem_alignment, 1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -352,6 +350,9 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
         .buffer = dst_data,
         .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .length = 256,
+        .flags = {
+            .check_size_align = gdma_is_size_alignment_required(rx_chan),
+        },
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
 
@@ -424,8 +425,8 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 #endif // SOC_HAS(AXI_GDMA)
 
 #if SOC_HAS(LP_AHB_GDMA)
-    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
-        TEST_IGNORE_MESSAGE("Skip LP-AHB-GDMA GDMA M2M Mode under flash encryption");
+    if (gdma_test_mspi_strict_alignment_required() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+        TEST_IGNORE_MESSAGE("Skip LP-AHB-GDMA GDMA M2M Mode under Flash Encryption / PSRAM ECC");
     } else {
         printf("Testing GDMA M2M Mode by LP-AHB GDMA%s\n", trig_retention_backup ? " with retention backup" : "");
         TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
@@ -500,6 +501,7 @@ static void test_gdma_m2m_desc_empty_event(gdma_channel_handle_t tx_chan, gdma_c
         .length = 64,
         .flags = {
             .mark_final = GDMA_FINAL_LINK_TO_NULL,
+            .check_size_align = gdma_is_size_alignment_required(rx_chan),
         },
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -569,8 +571,18 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     gdma_link_list_handle_t rx_link_list = NULL;
     test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, 0, false);
 
+    gdma_transfer_config_t transfer_config = {
+#if GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT || CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
+        .max_data_burst_size = 0,
+#else
+        .max_data_burst_size = 16,
+#endif
+        .access_ext_mem = false,
+    };
+    TEST_ESP_OK(gdma_config_transfer(rx_chan, &transfer_config));
+
     size_t rx_mem_alignment = 0;
-    TEST_ESP_OK(gdma_get_alignment_constraints(rx_chan, &rx_mem_alignment, NULL));
+    TEST_ESP_OK(gdma_get_channel_alignment_constraints(rx_chan, &rx_mem_alignment, NULL, NULL));
 
     // prepare the source data
     for (int i = 0; i < data_length; i++) {
@@ -602,6 +614,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
         rx_aligned_buf_mount_config[i].buffer_alignment = MAX(sram_alignment, rx_mem_alignment);
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
+        rx_aligned_buf_mount_config[i].flags.check_size_align = gdma_is_size_alignment_required(rx_chan);
     }
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
 
@@ -636,8 +649,8 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
 
 TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
 {
-    if (esp_efuse_is_flash_encryption_enabled()) {
-        TEST_PASS_MESSAGE("Flash encryption is enabled, skip this test");
+    if (gdma_test_mspi_strict_alignment_required()) {
+        TEST_PASS_MESSAGE("MSPI strict alignment required (Flash Encryption / PSRAM ECC), skip this test");
     }
 
     uint8_t *sbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -764,6 +777,7 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
         .length = COPY_SIZE,
         .flags = {
             .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
+            .check_size_align = gdma_is_size_alignment_required(rx_chan),
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -845,8 +859,8 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
 
 #if SOC_HAS(LP_AHB_GDMA)
 #if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-    if (esp_efuse_is_flash_encryption_enabled() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
-        TEST_IGNORE_MESSAGE("Skipping LP-AHB-GDMA SRAM->PSRAM->SRAM under flash encryption");
+    if (gdma_test_mspi_strict_alignment_required() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
+        TEST_IGNORE_MESSAGE("Skipping LP-AHB-GDMA SRAM->PSRAM->SRAM under Flash Encryption / PSRAM ECC");
     } else {
         printf("Testing LP-AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
         TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));

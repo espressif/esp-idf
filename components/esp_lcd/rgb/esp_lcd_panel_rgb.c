@@ -186,10 +186,6 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, c
 {
     bool fb_in_psram = rgb_panel->flags.fb_in_psram;
 
-    // read the cache line size of internal and external memory, we use this information to check if the allocated memory is behind the cache
-    uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-
     // alloc frame buffer
     uint8_t user_fb_count = 0;
     for (int i = 0; i < rgb_panel->num_fbs; i++) {
@@ -200,16 +196,6 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, c
             if (!esp_ptr_dma_capable(panel_config->user_fbs[i]) && !esp_ptr_dma_ext_capable(panel_config->user_fbs[i])) {
                 ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "frame buffer %d is not DMA accessible", i);
             }
-            // Check if user frame buffer is in PSRAM or internal memory
-            if (esp_ptr_external_ram(panel_config->user_fbs[i])) {
-                ESP_RETURN_ON_FALSE(((uintptr_t)panel_config->user_fbs[i] & (rgb_panel->ext_mem_align - 1)) == 0,
-                                    ESP_ERR_INVALID_ARG, TAG, "frame buffer %d is not aligned to "PRIu32"", i, rgb_panel->ext_mem_align);
-                rgb_panel->flags.fb_behind_cache = ext_mem_cache_line_size > 0;
-            } else {
-                ESP_RETURN_ON_FALSE(((uintptr_t)panel_config->user_fbs[i] & (rgb_panel->int_mem_align - 1)) == 0,
-                                    ESP_ERR_INVALID_ARG, TAG, "frame buffer %d is not aligned to "PRIu32"", i, rgb_panel->int_mem_align);
-                rgb_panel->flags.fb_behind_cache = int_mem_cache_line_size > 0;
-            }
             rgb_panel->fbs[i] = (uint8_t *)panel_config->user_fbs[i];
             user_fb_count++;
         } else {
@@ -219,15 +205,14 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, c
                 rgb_panel->fbs[i] = heap_caps_aligned_calloc(rgb_panel->ext_mem_align, 1, rgb_panel->fb_size,
                                                              MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
                 ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
-                rgb_panel->flags.fb_behind_cache = ext_mem_cache_line_size > 0;
             } else {
                 rgb_panel->fbs[i] = heap_caps_aligned_calloc(rgb_panel->int_mem_align, 1, rgb_panel->fb_size,
                                                              MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
                 ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
-                rgb_panel->flags.fb_behind_cache = int_mem_cache_line_size > 0;
             }
         }
 
+        rgb_panel->flags.fb_behind_cache = esp_cache_get_line_size_by_addr(rgb_panel->fbs[i]) > 0;
         // flush data from cache to the physical memory
         if (rgb_panel->flags.fb_behind_cache) {
             ESP_LOGD(TAG, "frame buffer %d at %p is behind the cache", i, rgb_panel->fbs[i]);
@@ -246,7 +231,7 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(esp_rgb_panel_t *rgb_panel, c
             rgb_panel->bounce_buffer[i] = heap_caps_aligned_calloc(rgb_panel->int_mem_align, 1, rgb_panel->bb_size,
                                                                    MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
             ESP_RETURN_ON_FALSE(rgb_panel->bounce_buffer[i], ESP_ERR_NO_MEM, TAG, "no mem for bounce buffer");
-            if (int_mem_cache_line_size > 0) {
+            if (esp_cache_get_line_size_by_addr(rgb_panel->bounce_buffer[i]) > 0) {
                 // flush data from cache to the physical memory
                 esp_cache_msync(rgb_panel->bounce_buffer[i], rgb_panel->bb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
                 rgb_panel->flags.bb_behind_cache = true;
@@ -1253,7 +1238,7 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rgb_panel->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
     // get the memory alignment required by the DMA
-    gdma_get_alignment_constraints(rgb_panel->dma_chan, &rgb_panel->int_mem_align, &rgb_panel->ext_mem_align);
+    gdma_get_channel_alignment_constraints(rgb_panel->dma_chan, &rgb_panel->int_mem_align, &rgb_panel->ext_mem_align, NULL);
 
     // register DMA event callbacks
     gdma_tx_event_callbacks_t cbs = {

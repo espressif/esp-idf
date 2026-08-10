@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,12 +38,12 @@ static const char *TAG = "dvp_gdma";
  *      - ESP_OK on success
  *      - Others if failed
  */
-static void IRAM_ATTR esp_cam_ctlr_dvp_config_dma_desc(esp_cam_ctlr_dvp_dma_desc_t *desc, uint8_t *buffer, uint32_t size)
+static void IRAM_ATTR esp_cam_ctlr_dvp_config_dma_desc(esp_cam_ctlr_dvp_dma_desc_t *desc, uint8_t *buffer, uint32_t size, uint32_t max_desc_size)
 {
     size_t n = 0;
 
     while (size) {
-        uint32_t node_size = MIN(size, ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE);
+        uint32_t node_size = MIN(size, max_desc_size);
 
         desc[n].dw0.size = node_size;
         desc[n].dw0.length = 0;
@@ -104,10 +104,15 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma->dma_chan, &transfer_config), fail1, TAG, "set trans ability failed");
 
-    gdma_get_alignment_constraints(dma->dma_chan, &dma->int_mem_align, &dma->ext_mem_align);
+    gdma_get_channel_alignment_constraints(dma->dma_chan, &dma->int_mem_align, &dma->ext_mem_align, NULL);
 
-    dma->desc_count = size / ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE;
-    if (size % ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE) {
+    size_t buffer_alignment = dma->ext_mem_align;
+    size_t desc_max_size = ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE;
+    if (buffer_alignment > 1) {
+        desc_max_size = ESP_ALIGN_DOWN(desc_max_size, buffer_alignment);
+    }
+    dma->desc_count = size / desc_max_size;
+    if (size % desc_max_size) {
         dma->desc_count++;
     }
     dma->size = size;
@@ -163,7 +168,14 @@ esp_err_t IRAM_ATTR esp_cam_ctlr_dvp_dma_start(esp_cam_ctlr_dvp_dma_t *dma, uint
     ESP_RETURN_ON_FALSE_ISR(dma, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE_ISR(dma->size >= size, ESP_ERR_INVALID_ARG, TAG, "input buffer size is out of range");
 
-    esp_cam_ctlr_dvp_config_dma_desc(dma->desc, buffer, size);
+    size_t buffer_alignment = gdma_get_buffer_alignment_constraint(dma->dma_chan, buffer);
+    ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buffer & (buffer_alignment - 1)) == 0 && (size & (buffer_alignment - 1)) == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "buffer addr or size not aligned");
+    uint32_t max_desc_size = ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE;
+    if (buffer_alignment > 1) {
+        max_desc_size = ESP_ALIGN_DOWN(max_desc_size, buffer_alignment);
+    }
+    esp_cam_ctlr_dvp_config_dma_desc(dma->desc, buffer, size, max_desc_size);
 
     if (esp_ptr_external_ram(dma->desc)) {
         esp_err_t ret = esp_cache_msync(dma->desc, dma->desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
