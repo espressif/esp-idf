@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 
 #define IPC_MAX_PRIORITY (configMAX_PRIORITIES - 1)
 
@@ -111,8 +112,9 @@ static void esp_ipc_init(void)
         task_name[3] = i + (char)'0';
         s_ipc_mutex[i] = xSemaphoreCreateMutexStatic(&s_ipc_mutex_buffer[i]);
         s_ipc_ack[i] = xSemaphoreCreateBinaryStatic(&s_ipc_ack_buffer[i]);
-        BaseType_t res = xTaskCreatePinnedToCore(ipc_task, task_name, IPC_STACK_SIZE, (void*) i,
-                                                 IPC_MAX_PRIORITY, &s_ipc_task_handle[i], i);
+        BaseType_t res = xTaskCreatePinnedToCoreWithCaps(ipc_task, task_name, IPC_STACK_SIZE, (void*) i,
+                                                         IPC_MAX_PRIORITY, &s_ipc_task_handle[i], i,
+                                                         MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         assert(res == pdTRUE);
         (void)res;
     }
