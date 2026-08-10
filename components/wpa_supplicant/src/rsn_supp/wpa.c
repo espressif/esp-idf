@@ -2856,6 +2856,7 @@ struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group)
 fail:
     wpabuf_free(pub);
     crypto_ecdh_deinit(sm->owe_ecdh);
+    sm->owe_ecdh = NULL;
     return NULL;
 }
 
@@ -2969,6 +2970,7 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
 
     wpabuf_put_buf(hkey, pub); /* C */
     wpabuf_free(pub);
+    pub = NULL;
 
     wpabuf_put_data(hkey, dh_ie + 2, dh_len - 2); /* A */
     wpabuf_put_le16(hkey, sm->owe_group); /* group */
@@ -2981,7 +2983,9 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
     hash_len = SHA256_MAC_LEN;
 
     wpabuf_free(hkey);
+    hkey = NULL;
     wpabuf_clear_free(sh_secret);
+    sh_secret = NULL;
 
     wpa_hexdump_key(MSG_DEBUG, "OWE: prk", prk, hash_len);
 
