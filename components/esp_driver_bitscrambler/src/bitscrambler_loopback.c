@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -221,10 +221,12 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     gdma_reset(bsl->tx_channel);
     bitscrambler_reset(bs);
 
+    size_t in_alignment = gdma_get_buffer_alignment_constraint(bsl->tx_channel, buffer_in);
+    size_t out_alignment = gdma_get_buffer_alignment_constraint(bsl->rx_channel, buffer_out);
     // mount in and out buffer to the DMA link list
     gdma_buffer_mount_config_t in_buf_mount_config = {
         .buffer = buffer_in,
-        .buffer_alignment = 4,
+        .buffer_alignment = in_alignment,
         .length = length_bytes_in,
         .flags = {
             .mark_eof = true,
@@ -234,12 +236,11 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     gdma_link_mount_buffers(bsl->tx_link_list, 0, &in_buf_mount_config, 1, NULL);
     gdma_buffer_mount_config_t out_buf_mount_config = {
         .buffer = buffer_out,
-        .buffer_alignment = 4,
+        .buffer_alignment = out_alignment,
         .length = length_bytes_out,
         .flags = {
             .mark_eof = false,
             .mark_final = GDMA_FINAL_LINK_TO_NULL,
-            .check_size_align = gdma_is_size_alignment_required(bsl->rx_channel),
         }
     };
     gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);

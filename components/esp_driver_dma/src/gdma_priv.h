@@ -96,7 +96,6 @@ struct gdma_channel_t {
     struct {
         uint32_t start_stop_by_etm: 1; // whether the channel is started/stopped by ETM
         uint32_t isr_cache_safe: 1; // whether the interrupt of this channel need to be cache safe
-        uint32_t size_alignment_required: 1; // whether buffer size must meet the channel alignment
     } flags;
 };
 

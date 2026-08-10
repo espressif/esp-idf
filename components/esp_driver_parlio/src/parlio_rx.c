@@ -145,16 +145,13 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
     rx_unit->node_num = required_node_num;
 
     gdma_buffer_mount_config_t mount_config[required_node_num] = {};
-    bool size_alignment_required = gdma_is_size_alignment_required(rx_unit->dma_chan);
     /* Mount head buffer */
     if (head_node_num) {
         mount_config[0].buffer = trans->aligned_payload.buf.head.aligned_buffer;
         mount_config[0].buffer_alignment = trans->alignment;
         mount_config[0].length = trans->aligned_payload.buf.head.length;
-        mount_config[0].flags.bypass_buffer_align_check = false;
         mount_config[0].flags.mark_eof = false;
         mount_config[0].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
-        mount_config[0].flags.check_size_align = size_alignment_required;
     }
     /* Mount body buffer */
     size_t mount_size = 0;
@@ -171,10 +168,8 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[i].buffer = (void *)((uint8_t *)trans->aligned_payload.buf.body.aligned_buffer + offset);
         mount_config[i].buffer_alignment = trans->alignment;
         mount_config[i].length = mount_size;
-        mount_config[i].flags.bypass_buffer_align_check = false;
         mount_config[i].flags.mark_eof = false;
         mount_config[i].flags.mark_final = GDMA_FINAL_LINK_TO_DEFAULT;
-        mount_config[i].flags.check_size_align = size_alignment_required;
         offset += mount_size;
         rest_size -= mount_size;
     }
@@ -183,8 +178,6 @@ size_t parlio_rx_mount_transaction_buffer(parlio_rx_unit_handle_t rx_unit, parli
         mount_config[required_node_num - 1].buffer = trans->aligned_payload.buf.tail.aligned_buffer;
         mount_config[required_node_num - 1].buffer_alignment = trans->alignment;
         mount_config[required_node_num - 1].length = trans->aligned_payload.buf.tail.length;
-        mount_config[required_node_num - 1].flags.bypass_buffer_align_check = false;
-        mount_config[required_node_num - 1].flags.check_size_align = size_alignment_required;
     }
     /* For infinite transaction, link the node as a ring */
     mount_config[required_node_num - 1].flags.mark_final = !trans->flags.infinite ? GDMA_FINAL_LINK_TO_NULL : GDMA_FINAL_LINK_TO_HEAD;
@@ -474,7 +467,10 @@ static esp_err_t parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit, size_t
         .access_ext_mem = true,
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rx_unit->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
-    ESP_RETURN_ON_ERROR(gdma_get_channel_alignment_constraints(rx_unit->dma_chan, &rx_unit->int_mem_align, &rx_unit->ext_mem_align, NULL), TAG, "get alignment constraints failed");
+    gdma_channel_alignment_info_t align_info;
+    ESP_RETURN_ON_ERROR(gdma_get_channel_alignment_constraints(rx_unit->dma_chan, &align_info), TAG, "get alignment constraints failed");
+    rx_unit->int_mem_align = align_info.int_mem_alignment;
+    rx_unit->ext_mem_align = align_info.ext_enc_mem_alignment;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     rx_unit->int_mem_align = rx_unit->int_mem_align > cache_line_size ? rx_unit->int_mem_align : cache_line_size;

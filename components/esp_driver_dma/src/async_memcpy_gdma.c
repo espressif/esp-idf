@@ -330,12 +330,11 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     async_memcpy_split_t split;
     ESP_GOTO_ON_ERROR(async_memcpy_split_cache_aligned(dst, src, n, &split), err, TAG, "failed to split buffer");
 
-    size_t buffer_alignment = 0;
     size_t num_dma_nodes = 0;
 
     // allocate gdma TX link, only the body is handled by the DMA
-    buffer_alignment = gdma_get_buffer_alignment_constraint(mcp_gdma->tx_channel, split.body_src);
-    num_dma_nodes = esp_dma_calculate_node_count(split.body_len, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    size_t tx_buffer_alignment = gdma_get_buffer_alignment_constraint(mcp_gdma->tx_channel, split.body_src);
+    num_dma_nodes = esp_dma_calculate_node_count(split.body_len, tx_buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t tx_link_cfg = {
         .item_alignment = dma_link_item_alignment,
         .num_items = num_dma_nodes,
@@ -349,7 +348,7 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     gdma_buffer_mount_config_t tx_buf_mount_config[1] = {
         [0] = {
             .buffer = split.body_src,
-            .buffer_alignment = buffer_alignment,
+            .buffer_alignment = tx_buffer_alignment,
             .length = split.body_len,
             .flags = {
                 .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
@@ -360,8 +359,8 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     gdma_link_mount_buffers(trans->tx_link_list, 0, tx_buf_mount_config, 1, NULL);
 
     // allocate gdma RX link, only the body is handled by the DMA
-    buffer_alignment = gdma_get_buffer_alignment_constraint(mcp_gdma->rx_channel, split.body_dst);
-    num_dma_nodes = esp_dma_calculate_node_count(split.body_len, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    size_t rx_buffer_alignment = gdma_get_buffer_alignment_constraint(mcp_gdma->rx_channel, split.body_dst);
+    num_dma_nodes = esp_dma_calculate_node_count(split.body_len, rx_buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t rx_link_cfg = {
         .item_alignment = dma_link_item_alignment,
         .num_items = num_dma_nodes,
@@ -375,12 +374,11 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     gdma_buffer_mount_config_t rx_buf_mount_config[1] = {
         [0] = {
             .buffer = split.body_dst,
-            .buffer_alignment = buffer_alignment,
+            .buffer_alignment = rx_buffer_alignment,
             .length = split.body_len,
             .flags = {
                 .mark_eof = true,
                 .mark_final = GDMA_FINAL_LINK_TO_NULL,
-                .check_size_align = gdma_is_size_alignment_required(mcp_gdma->rx_channel),
             }
         }
     };

@@ -720,11 +720,6 @@ static esp_err_t i2s_mount_dma_link(i2s_chan_handle_t handle, uint32_t bufsize)
 {
     esp_err_t ret = ESP_OK;
     uint32_t num = handle->dma.desc_num;
-    size_t buffer_alignment = 4;
-#if SOC_GDMA_SUPPORTED
-    ESP_RETURN_ON_ERROR(gdma_get_alignment_constraints(handle->dma.dma_chan, &buffer_alignment, NULL),
-                        TAG, "get DMA alignment constraints failed");
-#endif
     gdma_link_list_config_t link_config = {
         .num_items = num,
         .item_alignment = 4,
@@ -732,6 +727,10 @@ static esp_err_t i2s_mount_dma_link(i2s_chan_handle_t handle, uint32_t bufsize)
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&link_config, &handle->dma.dma_link), err, TAG, "create I2S DMA link failed");
 
     for (int i = 0; i < num; i++) {
+        size_t buffer_alignment = 4;
+#if SOC_GDMA_SUPPORTED
+        buffer_alignment = gdma_get_buffer_alignment_constraint(handle->dma.dma_chan, handle->dma.bufs[i]);
+#endif
         gdma_buffer_mount_config_t mount_config = {
             .buffer = handle->dma.bufs[i],
             .buffer_alignment = buffer_alignment,

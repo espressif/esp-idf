@@ -323,8 +323,14 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
         ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->rx_dma_chan, &trans_cfg), SPI_TAG, "config gdma rx transfer failed");
 
         // Get DMA alignment constraints
-        gdma_get_channel_alignment_constraints(dma_ctx->tx_dma_chan, &dma_ctx->dma_align_tx_int, &dma_ctx->dma_align_tx_ext, NULL);
-        gdma_get_channel_alignment_constraints(dma_ctx->rx_dma_chan, &dma_ctx->dma_align_rx_int, &dma_ctx->dma_align_rx_ext, NULL);
+        gdma_channel_alignment_info_t tx_align_info;
+        gdma_get_channel_alignment_constraints(dma_ctx->tx_dma_chan, &tx_align_info);
+        dma_ctx->dma_align_tx_int = tx_align_info.int_mem_alignment;
+        dma_ctx->dma_align_tx_ext = tx_align_info.ext_enc_mem_alignment;
+        gdma_channel_alignment_info_t rx_align_info;
+        gdma_get_channel_alignment_constraints(dma_ctx->rx_dma_chan, &rx_align_info);
+        dma_ctx->dma_align_rx_int = rx_align_info.int_mem_alignment;
+        dma_ctx->dma_align_rx_ext = rx_align_info.ext_enc_mem_alignment;
     }
     return ret;
 }
@@ -436,7 +442,9 @@ void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_
         .flags = {
             .mark_eof = true,
             .mark_final = GDMA_FINAL_LINK_TO_NULL,
-            .bypass_buffer_align_check = true,  // 'setup_priv_buffer' already do the check
+            // 'setup_priv_buffer' already do the check
+            .bypass_buffer_addr_align_check = true,
+            .bypass_buffer_size_align_check = true,
         }
     };
     esp_err_t ret = gdma_link_mount_buffers(is_rx ? dma_ctx->rx_link_handle : dma_ctx->tx_link_handle, offset, &mount_config, 1, NULL);

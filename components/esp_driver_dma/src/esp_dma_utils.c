@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
         split_line_size = int_mem_cache_line_size;
     }
     bool align_required = split_line_size > 0;
-    ESP_EARLY_LOGV(TAG, "split_line_size:%d", split_line_size);
+    ESP_EARLY_LOGV(TAG, "split_line_size:%" PRIu32, (uint32_t)split_line_size);
 
     if (*ret_stash_buffer == NULL) {
         // If the stash buffer is not offered by the caller, allocate the stash buffer from internal RAM
@@ -67,10 +67,10 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
         // calculate head_overflow_len
         size_t head_overflow_len = (uintptr_t)rx_buffer % split_line_size;
         head_overflow_len = head_overflow_len ? split_line_size - head_overflow_len : 0;
-        ESP_EARLY_LOGV(TAG, "head_addr:%p head_overflow_len:%zu", rx_buffer, head_overflow_len);
+        ESP_EARLY_LOGV(TAG, "head_addr:%p head_overflow_len:%" PRIu32, rx_buffer, (uint32_t)head_overflow_len);
         // calculate tail_overflow_len
         size_t tail_overflow_len = ((uintptr_t)rx_buffer + buffer_len) % split_line_size;
-        ESP_EARLY_LOGV(TAG, "tail_addr:%p tail_overflow_len:%zu", rx_buffer + buffer_len - tail_overflow_len, tail_overflow_len);
+        ESP_EARLY_LOGV(TAG, "tail_addr:%p tail_overflow_len:%" PRIu32, rx_buffer + buffer_len - tail_overflow_len, (uint32_t)tail_overflow_len);
 
         // special handling when input_buffer length is no more than buffer alignment
         bool is_small_buf = head_overflow_len >= buffer_len || tail_overflow_len >= buffer_len;

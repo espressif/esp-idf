@@ -212,9 +212,9 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     gdma_apply_strategy(uhci_ctrl->tx_dir.dma_chan, &strategy_config);
 
     // create DMA link list
-    size_t tx_dma_int_mem_alignment = 0, tx_dma_ext_mem_alignment = 0;
-    gdma_get_channel_alignment_constraints(uhci_ctrl->tx_dir.dma_chan, &tx_dma_int_mem_alignment, &tx_dma_ext_mem_alignment, NULL);
-    size_t buffer_alignment = MAX(tx_dma_int_mem_alignment, tx_dma_ext_mem_alignment);
+    gdma_channel_alignment_info_t tx_align_info;
+    gdma_get_channel_alignment_constraints(uhci_ctrl->tx_dir.dma_chan, &tx_align_info);
+    size_t buffer_alignment = MAX(tx_align_info.int_mem_alignment, tx_align_info.ext_enc_mem_alignment);
     // Given that the combined size of all buffers does not exceed `max_transmit_size` and
     // the number of buffers does not exceed `max_transmit_buffer_count`, a single transfer
     // requires at most `esp_dma_calculate_node_count(max_transmit_size) + max_transmit_buffer_count - 1` DMA descriptors.
@@ -237,9 +237,9 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     gdma_connect(uhci_ctrl->rx_dir.dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0));
     ESP_RETURN_ON_ERROR(gdma_config_transfer(uhci_ctrl->rx_dir.dma_chan, &transfer_cfg), TAG, "Config DMA rx channel transfer failed");
 
-    size_t rx_dma_int_mem_alignment = 0, rx_dma_ext_mem_alignment = 0;
-    gdma_get_channel_alignment_constraints(uhci_ctrl->rx_dir.dma_chan, &rx_dma_int_mem_alignment, &rx_dma_ext_mem_alignment, NULL);
-    buffer_alignment = MAX(rx_dma_int_mem_alignment, rx_dma_ext_mem_alignment);
+    gdma_channel_alignment_info_t rx_align_info;
+    gdma_get_channel_alignment_constraints(uhci_ctrl->rx_dir.dma_chan, &rx_align_info);
+    buffer_alignment = MAX(rx_align_info.int_mem_alignment, rx_align_info.ext_enc_mem_alignment);
     uhci_ctrl->rx_dir.rx_num_dma_nodes = esp_dma_calculate_node_count(config->max_receive_internal_mem, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     dma_link_config.num_items = uhci_ctrl->rx_dir.rx_num_dma_nodes;
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &uhci_ctrl->rx_dir.dma_link), TAG, "DMA rx link list alloc failed");
@@ -285,11 +285,10 @@ static void uhci_do_transmit(uhci_controller_handle_t uhci_ctrl, uhci_transactio
     uhci_ctrl->tx_dir.cur_trans = trans;
     size_t buf_count = trans->buf_info_count;
     gdma_buffer_mount_config_t *mount_configs = uhci_ctrl->tx_dir.mount_configs;
-    size_t buffer_alignment = 0;
 
     for (size_t i = 0; i < buf_count; i++) {
         bool is_last = (i == buf_count - 1);
-        buffer_alignment = gdma_get_buffer_alignment_constraint(uhci_ctrl->tx_dir.dma_chan, trans->buf_info[i].write_buffer);
+        size_t buffer_alignment = gdma_get_buffer_alignment_constraint(uhci_ctrl->tx_dir.dma_chan, trans->buf_info[i].write_buffer);
         mount_configs[i] = (gdma_buffer_mount_config_t) {
             .buffer = (void *)trans->buf_info[i].write_buffer,
             .buffer_alignment = buffer_alignment,
@@ -368,7 +367,6 @@ static esp_err_t uhci_receive_internal(uhci_controller_handle_t uhci_ctrl, uint8
             ESP_GOTO_ON_FALSE_ISR(uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] != 0 && uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE,
                                   ESP_ERR_INVALID_ARG, err, TAG, "buffer_size is too small or too large");
 
-            size_t buffer_alignment = 0;
             buffer_alignment = gdma_get_buffer_alignment_constraint(uhci_ctrl->rx_dir.dma_chan, read_buffer);
             mount_configs[i] = (gdma_buffer_mount_config_t) {
                 .buffer = read_buffer,
@@ -376,7 +374,6 @@ static esp_err_t uhci_receive_internal(uhci_controller_handle_t uhci_ctrl, uint8
                 .length = uhci_ctrl->rx_dir.buffer_size_per_desc_node[i],
                 .flags = {
                     .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
-                    .check_size_align = gdma_is_size_alignment_required(uhci_ctrl->rx_dir.dma_chan),
                 }
             };
             ESP_DRAM_LOGD(TAG, "The DMA node %d has %d byte", i, uhci_ctrl->rx_dir.buffer_size_per_desc_node[i]);

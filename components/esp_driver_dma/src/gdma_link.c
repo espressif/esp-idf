@@ -184,17 +184,13 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
         }
         // alignment must be a power of 2
         ESP_RETURN_ON_FALSE_ISR((buffer_alignment & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "align err idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
-        size_t mspi_alignment = esp_mspi_get_alignment(buf);
-        size_t effective_alignment = MAX(buffer_alignment, mspi_alignment);
-        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, effective_alignment);
-        if (!config->flags.bypass_buffer_align_check) {
-            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (effective_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, effective_alignment);
-            // Length alignment:
-            // - Always required under MSPI strict mode (Flash Encryption / PSRAM ECC): size must align.
-            // - Also when check_size_align is set by a caller whose configured channel requires size alignment.
-            if (mspi_alignment > 1 || config->flags.check_size_align) {
-                ESP_RETURN_ON_FALSE_ISR((len & (effective_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf len misalign idx=%"PRIu32" len=%"PRIu32" align=%"PRIu32"", bi, len, effective_alignment);
-            }
+        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
+        // Address and size alignment checks are independent; both use the caller-provided buffer_alignment.
+        if (!config->flags.bypass_buffer_addr_align_check) {
+            ESP_RETURN_ON_FALSE_ISR(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf misalign idx=%"PRIu32" align=%"PRIu32, bi, buffer_alignment);
+        }
+        if (!config->flags.bypass_buffer_size_align_check) {
+            ESP_RETURN_ON_FALSE_ISR((len & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buf len misalign idx=%"PRIu32" len=%"PRIu32" align=%"PRIu32"", bi, len, buffer_alignment);
         }
         size_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         ESP_RETURN_ON_FALSE_ISR(num_items_need <= remaining, ESP_ERR_INVALID_ARG, TAG,
@@ -222,9 +218,7 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
             memset(lli_nc, 0, item_size);
             continue;
         }
-        size_t mspi_alignment = esp_mspi_get_alignment(buf);
-        size_t effective_alignment = MAX(buffer_alignment, mspi_alignment);
-        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, effective_alignment);
+        size_t max_buffer_mount_length = ESP_ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
         size_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         // mount the buffer to the link list
         for (size_t i = 0; i < num_items_need; i++) {

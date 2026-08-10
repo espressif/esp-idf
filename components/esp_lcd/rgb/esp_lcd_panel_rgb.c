@@ -1238,7 +1238,10 @@ static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *rgb_panel)
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(rgb_panel->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
     // get the memory alignment required by the DMA
-    gdma_get_channel_alignment_constraints(rgb_panel->dma_chan, &rgb_panel->int_mem_align, &rgb_panel->ext_mem_align, NULL);
+    gdma_channel_alignment_info_t align_info;
+    gdma_get_channel_alignment_constraints(rgb_panel->dma_chan, &align_info);
+    rgb_panel->int_mem_align = align_info.int_mem_alignment;
+    rgb_panel->ext_mem_align = align_info.ext_enc_mem_alignment;
 
     // register DMA event callbacks
     gdma_tx_event_callbacks_t cbs = {
@@ -1352,7 +1355,9 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
             .buffer = rgb_panel->fbs[0] + restart_skip_bytes,
             .buffer_alignment = buffer_alignment,
             .length = MIN(LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rgb_panel->fb_size) - restart_skip_bytes,
-            .flags.bypass_buffer_align_check = true, // the restart buffer may doesn't match the buffer alignment but it doesn't really matter in this case
+            // the restart buffer may doesn't match the buffer alignment but it doesn't really matter in this case
+            .flags.bypass_buffer_addr_align_check = true,
+            .flags.bypass_buffer_size_align_check = true,
         };
         ESP_RETURN_ON_ERROR(gdma_link_mount_buffers(rgb_panel->dma_restart_link, 0, &restart_buffer_mount_cfg, 1, NULL),
                             TAG, "mount DMA restart buffer failed");

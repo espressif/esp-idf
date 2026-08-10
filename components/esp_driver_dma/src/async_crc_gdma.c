@@ -163,8 +163,9 @@ esp_err_t esp_async_crc_install_gdma_template(const async_crc_config_t *config, 
     ESP_GOTO_ON_ERROR(gdma_config_transfer(crc_gdma->rx_channel, &transfer_cfg), err, TAG, "config RX DMA transfer failed");
 
     // Get buffer alignment required by GDMA channel
-    size_t rx_int_mem_alignment = 0;
-    gdma_get_channel_alignment_constraints(crc_gdma->rx_channel, &rx_int_mem_alignment, NULL, NULL);
+    gdma_channel_alignment_info_t rx_align_info;
+    gdma_get_channel_alignment_constraints(crc_gdma->rx_channel, &rx_align_info);
+    size_t rx_int_mem_alignment = rx_align_info.int_mem_alignment;
     size_t rx_buffer_size = (rx_int_mem_alignment > CRC_DMA_RX_SINK_BUFFER_SIZE) ?
                             rx_int_mem_alignment : CRC_DMA_RX_SINK_BUFFER_SIZE;
     crc_gdma->rx_sink_buffer = heap_caps_aligned_calloc(rx_int_mem_alignment, 1, rx_buffer_size,
@@ -189,7 +190,6 @@ esp_err_t esp_async_crc_install_gdma_template(const async_crc_config_t *config, 
         .length = rx_buffer_size,
         .flags = {
             .mark_final = GDMA_FINAL_LINK_TO_HEAD,
-            .check_size_align = gdma_is_size_alignment_required(crc_gdma->rx_channel),
         },
     };
     ESP_GOTO_ON_ERROR(gdma_link_mount_buffers(crc_gdma->rx_link_list, 0, &rx_buf_mount_config, 1, NULL),

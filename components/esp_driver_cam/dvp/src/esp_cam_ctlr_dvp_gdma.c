@@ -104,7 +104,10 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(dma->dma_chan, &transfer_config), fail1, TAG, "set trans ability failed");
 
-    gdma_get_channel_alignment_constraints(dma->dma_chan, &dma->int_mem_align, &dma->ext_mem_align, NULL);
+    gdma_channel_alignment_info_t align_info;
+    gdma_get_channel_alignment_constraints(dma->dma_chan, &align_info);
+    dma->int_mem_align = align_info.int_mem_alignment;
+    dma->ext_mem_align = align_info.ext_enc_mem_alignment;
 
     size_t buffer_alignment = dma->ext_mem_align;
     size_t desc_max_size = ESP_CAM_CTLR_DVP_DMA_DESC_BUFFER_MAX_SIZE;

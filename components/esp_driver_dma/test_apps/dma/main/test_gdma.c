@@ -281,9 +281,10 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     gdma_link_list_handle_t rx_link_list = NULL;
     test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, 16, dma_link_in_ext_mem);
 
-    size_t int_mem_alignment = 0;
-    size_t ext_mem_alignment = 0;
-    TEST_ESP_OK(gdma_get_channel_alignment_constraints(tx_chan, &int_mem_alignment, &ext_mem_alignment, NULL));
+    gdma_channel_alignment_info_t tx_align_info;
+    TEST_ESP_OK(gdma_get_channel_alignment_constraints(tx_chan, &tx_align_info));
+    size_t int_mem_alignment = tx_align_info.int_mem_alignment;
+    size_t __attribute__((unused)) ext_mem_alignment = tx_align_info.ext_enc_mem_alignment;
 
     // allocate the source buffer from SRAM
     uint8_t *src_data = heap_caps_aligned_calloc(int_mem_alignment, 1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -350,9 +351,6 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
         .buffer = dst_data,
         .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .length = 256,
-        .flags = {
-            .check_size_align = gdma_is_size_alignment_required(rx_chan),
-        },
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
 
@@ -501,7 +499,6 @@ static void test_gdma_m2m_desc_empty_event(gdma_channel_handle_t tx_chan, gdma_c
         .length = 64,
         .flags = {
             .mark_final = GDMA_FINAL_LINK_TO_NULL,
-            .check_size_align = gdma_is_size_alignment_required(rx_chan),
         },
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -582,7 +579,9 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     TEST_ESP_OK(gdma_config_transfer(rx_chan, &transfer_config));
 
     size_t rx_mem_alignment = 0;
-    TEST_ESP_OK(gdma_get_channel_alignment_constraints(rx_chan, &rx_mem_alignment, NULL, NULL));
+    gdma_channel_alignment_info_t rx_align_info;
+    TEST_ESP_OK(gdma_get_channel_alignment_constraints(rx_chan, &rx_align_info));
+    rx_mem_alignment = rx_align_info.int_mem_alignment;
 
     // prepare the source data
     for (int i = 0; i < data_length; i++) {
@@ -614,7 +613,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
         rx_aligned_buf_mount_config[i].buffer_alignment = MAX(sram_alignment, rx_mem_alignment);
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
-        rx_aligned_buf_mount_config[i].flags.check_size_align = gdma_is_size_alignment_required(rx_chan);
+        rx_aligned_buf_mount_config[i].flags.bypass_buffer_size_align_check = true; // head and tail buffer size is not aligned to the cache line size
     }
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
 
@@ -777,7 +776,6 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
         .length = COPY_SIZE,
         .flags = {
             .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
-            .check_size_align = gdma_is_size_alignment_required(rx_chan),
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));

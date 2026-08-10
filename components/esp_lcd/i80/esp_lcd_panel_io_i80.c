@@ -697,7 +697,10 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_l
         .access_ext_mem = true, // the LCD can carry pixel buffer from the external memory
     };
     ESP_RETURN_ON_ERROR(gdma_config_transfer(bus->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
-    gdma_get_channel_alignment_constraints(bus->dma_chan, &bus->int_mem_align, &bus->ext_mem_align, NULL);
+    gdma_channel_alignment_info_t align_info;
+    gdma_get_channel_alignment_constraints(bus->dma_chan, &align_info);
+    bus->int_mem_align = align_info.int_mem_alignment;
+    bus->ext_mem_align = align_info.ext_enc_mem_alignment;
 
     size_t buffer_alignment = MAX(bus->int_mem_align, bus->ext_mem_align);
     size_t num_dma_nodes = esp_dma_calculate_node_count(bus->max_transfer_bytes, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
