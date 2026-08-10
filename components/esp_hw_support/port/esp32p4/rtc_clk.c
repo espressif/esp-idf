@@ -30,7 +30,9 @@ ESP_HW_LOG_ATTR_TAG(TAG, "rtc_clk");
 static int s_cur_cpll_freq = 0;
 
 // MPLL frequency option, 400MHz. Zero if MPLL is not enabled.
+#ifndef BOOTLOADER_BUILD
 static SPM_DRAM_ATTR uint32_t s_cur_mpll_freq = 0;
+#endif
 
 void rtc_clk_32k_enable(bool enable)
 {
@@ -641,6 +643,7 @@ bool rtc_dig_8m_enabled(void)
     return clk_ll_rc_fast_digi_is_enabled();
 }
 
+#ifndef BOOTLOADER_BUILD
 //------------------------------------MPLL-------------------------------------//
 SPM_IRAM_ATTR void rtc_clk_mpll_disable(void)
 {
@@ -680,3 +683,4 @@ SPM_IRAM_ATTR uint32_t rtc_clk_mpll_get_freq(void)
 {
     return s_cur_mpll_freq;
 }
+#endif

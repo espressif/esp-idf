@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@ extern "C" {
  */
 void rtc_clk_cpu_set_to_default_config(void);
 
+#ifndef BOOTLOADER_BUILD
 /**
  * @brief Switch CPU clock source to XTAL, the PLL has different processing methods for different chips.
  *        1. For earlier chips without PMU, there is no PMU module that can turn off the CPU's PLL, so it has to be
@@ -39,6 +40,7 @@ void rtc_clk_cpu_set_to_default_config(void);
  *           to 40MHz to speed up the retention speed.
  */
 void rtc_clk_cpu_freq_set_xtal_for_sleep(void);
+#endif
 
 /**
  * @brief Notify that the BBPLL has a new in-use consumer
