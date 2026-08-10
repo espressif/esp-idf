@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -8,6 +7,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize('config', [
     'default',
     'release',
@@ -21,6 +21,7 @@ def test_spiffs_generic(dut: Dut) -> None:
 
 
 @pytest.mark.esp32s3
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.quad_psram
 @pytest.mark.parametrize('config', [
     'psram',

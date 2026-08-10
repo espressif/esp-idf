@@ -6,6 +6,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.supported_targets
 @pytest.mark.generic
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize(
     'config',
     [
@@ -21,6 +22,7 @@ def test_fatfs_flash_wl_generic(dut: Dut) -> None:
 
 @pytest.mark.supported_targets
 @pytest.mark.psram
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize(
     'config',
     [

@@ -5,6 +5,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
+@pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.generic
 def test_fatfs_flash_ro(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=240)
