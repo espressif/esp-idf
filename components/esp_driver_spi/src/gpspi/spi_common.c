@@ -22,8 +22,9 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/esp_dma_utils.h"
+#include "esp_private/gdma_link.h"
 #include "esp_private/sleep_retention.h"
-#include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
 #if SOC_GDMA_SUPPORTED
 #include "hal/gdma_ll.h"
@@ -312,7 +313,7 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 #endif
         gdma_transfer_config_t trans_cfg = {
             .max_data_burst_size = burst_size,
-#if CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE
+#if SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH
             .access_ext_mem = true, // allow to transfer data from/to external memory directly by DMA
 #endif
         };
@@ -355,69 +356,79 @@ cleanup:
     return ret;
 }
 
-esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, int *actual_max_sz)
+static void spicommon_dma_link_free(spi_host_device_t host_id)
 {
-    int dma_desc_ct = (cfg_max_sz + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-    if (dma_desc_ct == 0) {
-        dma_desc_ct = 1;    //default to 4k when max is not given
-    }
-
     spi_dma_ctx_t *dma_ctx = spi_bus_get_dma_ctx(host_id);
     if (!dma_ctx) {
-        return ESP_ERR_INVALID_STATE;
+        return;
     }
-    dma_ctx->dmadesc_tx = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, 1, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    dma_ctx->dmadesc_rx = heap_caps_aligned_calloc(DMA_DESC_MEM_ALIGN_SIZE, 1, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    if (dma_ctx->dmadesc_tx == NULL || dma_ctx->dmadesc_rx == NULL) {
-        if (dma_ctx->dmadesc_tx) {
-            free(dma_ctx->dmadesc_tx);
-            dma_ctx->dmadesc_tx = NULL;
-        }
-        if (dma_ctx->dmadesc_rx) {
-            free(dma_ctx->dmadesc_rx);
-            dma_ctx->dmadesc_rx = NULL;
-        }
-        return ESP_ERR_NO_MEM;
+    if (dma_ctx->tx_link_handle) {
+        gdma_del_link_list(dma_ctx->tx_link_handle);
+        dma_ctx->tx_link_handle = NULL;
     }
-    // cache sync using align_up length thanks to heap alloc already consider the cache alignment requirement
-    size_t aligned_len = ESP_ALIGN_UP(sizeof(spi_dma_desc_t) * dma_desc_ct, bus_ctx[host_id]->bus_attr.cache_align_int);
-    // write back and then invalidate the cache, because later we will read/write the link list items by non-cached address
-    esp_err_t ret = esp_cache_msync(dma_ctx->dmadesc_tx, aligned_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-    ESP_RETURN_ON_FALSE_ISR((ret == ESP_OK) || (ret == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_ARG, SPI_TAG, "dma desc sync failed");
-    ret = esp_cache_msync(dma_ctx->dmadesc_rx, aligned_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-    ESP_RETURN_ON_FALSE_ISR((ret == ESP_OK) || (ret == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_ARG, SPI_TAG, "dma desc sync failed");
-
-    dma_ctx->dma_desc_num = dma_desc_ct;
-    *actual_max_sz = dma_desc_ct * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-    return ESP_OK;
+    if (dma_ctx->rx_link_handle) {
+        gdma_del_link_list(dma_ctx->rx_link_handle);
+        dma_ctx->rx_link_handle = NULL;
+    }
 }
 
-void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, int *actual_max_sz)
 {
-    dmadesc = ADDR_DMA_2_CPU(dmadesc);
-    int n = 0;
-    while (len) {
-        int dmachunklen = len;
-        if (dmachunklen > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-            dmachunklen = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-        }
-        if (is_rx) {
-            //Receive needs DMA length rounded to next 32-bit boundary
-            dmadesc[n].dw0.size = (dmachunklen + 3) & (~3);
-        } else {
-            dmadesc[n].dw0.size = dmachunklen;
-            dmadesc[n].dw0.length = dmachunklen;
-        }
-        dmadesc[n].buffer = (uint8_t *)data;
-        dmadesc[n].dw0.suc_eof = 0;
-        dmadesc[n].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        dmadesc[n].next = ADDR_CPU_2_DMA(&dmadesc[n + 1]);
-        len -= dmachunklen;
-        data += dmachunklen;
-        n++;
+    esp_err_t ret = ESP_OK;
+    spi_dma_ctx_t *dma_ctx = spi_bus_get_dma_ctx(host_id);
+    ESP_RETURN_ON_FALSE(dma_ctx, ESP_ERR_INVALID_STATE, SPI_TAG, "dma context not initialized");
+    size_t tx_buffer_alignment = dma_ctx->dma_align_tx_int ? dma_ctx->dma_align_tx_int : 1;
+    size_t rx_buffer_alignment = dma_ctx->dma_align_rx_int ? dma_ctx->dma_align_rx_int : 1;
+    if (dma_ctx->dma_align_tx_ext < BIT(31)) {
+        tx_buffer_alignment = MAX(tx_buffer_alignment, dma_ctx->dma_align_tx_ext);
     }
-    dmadesc[n - 1].dw0.suc_eof = 1; //Mark last DMA desc as end of stream.
-    dmadesc[n - 1].next = NULL;
+    if (dma_ctx->dma_align_rx_ext < BIT(31)) {
+        rx_buffer_alignment = MAX(rx_buffer_alignment, dma_ctx->dma_align_rx_ext);
+    }
+
+    size_t tx_item_num = esp_dma_calculate_node_count(cfg_max_sz, tx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    size_t rx_item_num = esp_dma_calculate_node_count(cfg_max_sz, rx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    gdma_link_list_config_t link_cfg = {
+        .num_items = MAX(MAX(tx_item_num, rx_item_num), 1), //default to 1 when 'cfg_max_sz' is not given
+        .item_alignment = DMA_DESC_MEM_ALIGN_SIZE,
+    };
+    ESP_RETURN_ON_ERROR(gdma_new_link_list(&link_cfg, &dma_ctx->tx_link_handle), SPI_TAG, "failed to allocate tx dma link");
+    ESP_GOTO_ON_ERROR(gdma_new_link_list(&link_cfg, &dma_ctx->rx_link_handle), cleanup, SPI_TAG, "failed to allocate rx dma link");
+
+    // save link info
+    dma_ctx->dma_desc_num = link_cfg.num_items;
+    dma_ctx->dmadesc_tx = (spi_dma_desc_t *)gdma_link_get_head_addr(dma_ctx->tx_link_handle);
+    dma_ctx->dmadesc_rx = (spi_dma_desc_t *)gdma_link_get_head_addr(dma_ctx->rx_link_handle);
+    *actual_max_sz = dma_ctx->dma_desc_num * ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rx_buffer_alignment);
+    return ESP_OK;
+
+cleanup:
+    spicommon_dma_link_free(host_id);
+    return ret;
+}
+
+void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx)
+{
+    size_t buffer_alignment;
+    if (esp_ptr_internal(data)) {
+        buffer_alignment = is_rx ? dma_ctx->dma_align_rx_int : dma_ctx->dma_align_tx_int;
+    } else {
+        buffer_alignment = is_rx ? dma_ctx->dma_align_rx_ext : dma_ctx->dma_align_tx_ext;
+    }
+
+    gdma_buffer_mount_config_t mount_config = {
+        .buffer = (void *)data,
+        .buffer_alignment = buffer_alignment,
+        .length = is_rx ? ESP_ALIGN_UP(len, 4) : len,   // dma rx hardware requires 4 bytes alignment
+        .flags = {
+            .mark_eof = true,
+            .mark_final = GDMA_FINAL_LINK_TO_NULL,
+            .bypass_buffer_align_check = true,  // 'setup_priv_buffer' already do the check
+        }
+    };
+    esp_err_t ret = gdma_link_mount_buffers(is_rx ? dma_ctx->rx_link_handle : dma_ctx->tx_link_handle, offset, &mount_config, 1, NULL);
+    assert(ret == ESP_OK);
+    (void)ret;
 }
 
 esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t host_id, uint32_t *buffer, uint32_t len, bool is_tx, bool psram_prefer, bool auto_malloc, uint32_t **ret_buffer)
@@ -508,13 +519,7 @@ esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id)
         gdma_del_channel(dma_ctx->tx_dma_chan);
     }
 #endif
-
-    if (dma_ctx->dmadesc_tx) {
-        free(dma_ctx->dmadesc_tx);
-    }
-    if (dma_ctx->dmadesc_rx) {
-        free(dma_ctx->dmadesc_rx);
-    }
+    spicommon_dma_link_free(host_id);
     free(dma_ctx);
     spi_dma_ctx[host_id] = NULL;
     return ESP_OK;

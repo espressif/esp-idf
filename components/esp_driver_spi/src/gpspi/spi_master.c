@@ -737,7 +737,7 @@ static void SPI_MASTER_ISR_ATTR s_spi_dma_prepare_data(spi_host_t *host, spi_hal
     const spi_dma_ctx_t *dma_ctx = host->dma_ctx;
 
     if (trans->rcv_buffer) {
-        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
+        spicommon_dma_desc_setup_link(dma_ctx, 0, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
 
         spi_dma_reset(dma_ctx->rx_dma_chan);
         spi_hal_hw_prepare_rx(hal->hw);
@@ -751,7 +751,7 @@ static void SPI_MASTER_ISR_ATTR s_spi_dma_prepare_data(spi_host_t *host, spi_hal
     }
 #endif
     if (trans->send_buffer) {
-        spicommon_dma_desc_setup_link(dma_ctx->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
+        spicommon_dma_desc_setup_link(dma_ctx, 0, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
 
         spi_dma_reset(dma_ctx->tx_dma_chan);
         spi_hal_hw_prepare_tx(hal->hw);

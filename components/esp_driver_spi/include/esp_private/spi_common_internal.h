@@ -17,6 +17,7 @@
 #include "hal/dma_types.h"
 #include "esp_private/spi_dma.h"
 #include "esp_private/gdma.h"
+#include "esp_private/gdma_link.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #if SOC_PAU_SUPPORTED
 #include "soc/regdma.h"
@@ -37,14 +38,6 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 typedef dma_descriptor_align4_t spi_dma_desc_t;
 #endif
 
-#if SOC_NON_CACHEABLE_OFFSET_SRAM
-#include "hal/cache_ll.h"
-#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
-#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))
-#else
-#define ADDR_DMA_2_CPU(addr)   (addr)
-#define ADDR_CPU_2_DMA(addr)   (addr)
-#endif
 
 // Status of a spi bus
 typedef enum {
@@ -82,6 +75,8 @@ typedef struct {
     int dma_desc_num;                   ///< DMA descriptor number of dmadesc_tx or dmadesc_rx.
     spi_dma_desc_t *dmadesc_tx;         ///< DMA descriptor array for TX
     spi_dma_desc_t *dmadesc_rx;         ///< DMA descriptor array for RX
+    gdma_link_list_handle_t tx_link_handle; ///< DMA tx link list for GDMA and SPIDMA
+    gdma_link_list_handle_t rx_link_handle; ///< DMA rx link list for GDMA and SPIDMA
 } spi_dma_ctx_t;
 
 #if SOC_PAU_SUPPORTED
@@ -145,12 +140,13 @@ esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, in
 /**
  * Setupt/Configure dma descriptor link list
  *
- * @param dmadesc start of dma descriptor memory
+ * @param dma_ctx DMA context pointer
+ * @param offset  offset of the item in the link list
  * @param data    start of data buffer to be configured in
  * @param len     length of data buffer, in byte
  * @param is_rx   if descriptor is for rx/receive direction
  */
-void spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx);
+void spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx);
 
 /**
  * @brief Setup private buffer for DMA transfer

@@ -10,9 +10,7 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
-#include "soc/lldesc.h"
 #include "soc/soc_caps.h"
-#include "soc/soc.h"   //for SOC_NON_CACHEABLE_OFFSET_SRAM
 #include "soc/spi_periph.h"
 #include "hal/spi_slave_hd_hal.h"
 #include "hal/assert.h"
@@ -21,12 +19,6 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
 {
     spi_dev_t *hw = spi_periph_signal[hal_config->host_id].hw;
     hal->dev = hw;
-    hal->dma_enabled = hal_config->dma_enabled;
-    hal->append_mode = hal_config->append_mode;
-    hal->tx_cur_desc = hal->dmadesc_tx;
-    hal->rx_cur_desc = hal->dmadesc_rx;
-    hal->tx_dma_head = hal->dmadesc_tx + hal->dma_desc_num - 1;
-    hal->rx_dma_head = hal->dmadesc_rx + hal->dma_desc_num - 1;
 
     spi_ll_slave_hd_init(hw);
     spi_ll_set_addr_bitlen(hw, hal_config->address_bits);
@@ -68,37 +60,6 @@ void spi_slave_hd_hal_init(spi_slave_hd_hal_context_t *hal, const spi_slave_hd_h
                                  SPI_LL_TRANS_LEN_COND_RDDMA);
 
     spi_ll_slave_set_seg_mode(hal->dev, true);
-}
-
-#if SOC_NON_CACHEABLE_OFFSET_SRAM
-#include "hal/cache_ll.h"
-#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
-#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))
-#else
-#define ADDR_DMA_2_CPU(addr)   (addr)
-#define ADDR_CPU_2_DMA(addr)   (addr)
-#endif
-
-static int s_desc_get_received_len_addr(spi_dma_desc_t* head, spi_dma_desc_t** out_next, void **out_buff_head)
-{
-    spi_dma_desc_t* desc_cpu = ADDR_DMA_2_CPU(head);
-    int len = 0;
-    if (out_buff_head) {
-        *out_buff_head = desc_cpu->buffer;
-    }
-    while (head) {
-        len += desc_cpu->dw0.length;
-        bool eof = desc_cpu->dw0.suc_eof;
-        desc_cpu = ADDR_DMA_2_CPU(desc_cpu->next);
-        head = head->next;
-        if (eof) {
-            break;
-        }
-    }
-    if (out_next) {
-        *out_next = head;
-    }
-    return len;
 }
 
 void spi_slave_hd_hal_hw_prepare_rx(spi_slave_hd_hal_context_t *hal)
@@ -233,42 +194,4 @@ int spi_slave_hd_hal_get_rxlen(spi_slave_hd_hal_context_t *hal)
 {
     //this is by -byte
     return spi_ll_slave_get_rx_byte_len(hal->dev);
-}
-
-int spi_slave_hd_hal_rxdma_seg_get_len(spi_slave_hd_hal_context_t *hal)
-{
-    spi_dma_desc_t *desc = hal->dmadesc_rx->desc;
-    return s_desc_get_received_len_addr(desc, NULL, NULL);
-}
-
-bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, void **real_buff_addr)
-{
-    if ((uint32_t)hal->tx_dma_head->desc == hal->current_eof_addr) {
-        return false;
-    }
-
-    //find used paired desc-trans by desc addr
-    hal->tx_dma_head++;
-    if (hal->tx_dma_head >= hal->dmadesc_tx + hal->dma_desc_num) {
-        hal->tx_dma_head = hal->dmadesc_tx;
-    }
-    *out_trans = hal->tx_dma_head->arg;
-    s_desc_get_received_len_addr(hal->tx_dma_head->desc, NULL, real_buff_addr);
-    return true;
-}
-
-bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, void **out_trans, void **real_buff_addr, size_t *out_len)
-{
-    if ((uint32_t)hal->rx_dma_head->desc == hal->current_eof_addr) {
-        return false;
-    }
-
-    //find used paired desc-trans by desc addr
-    hal->rx_dma_head++;
-    if (hal->rx_dma_head >= hal->dmadesc_rx + hal->dma_desc_num) {
-        hal->rx_dma_head = hal->dmadesc_rx;
-    }
-    *out_trans = hal->rx_dma_head->arg;
-    *out_len = s_desc_get_received_len_addr(hal->rx_dma_head->desc, NULL, real_buff_addr);
-    return true;
 }

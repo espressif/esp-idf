@@ -5,6 +5,7 @@
  */
 
 #include <stdatomic.h>
+#include <sys/param.h>
 #include "esp_compiler.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -42,6 +43,26 @@ typedef struct {
 } spi_slave_hd_trans_priv_t;
 
 typedef struct {
+    spi_dma_desc_t  *desc;           // DMA descriptor
+    void            *arg;            // Original transaction descriptor
+} slave_hd_append_desc_t;
+
+/** append dma pool layout
+ *
+ *  |**********............-------*******| 
+ *   ^         ^           ^      ^
+ *   |         |           |      |
+ *  root      done       hw_eof  free
+ */
+typedef struct {
+    slave_hd_append_desc_t  *desc_root;        ///< Root of the DMA descriptors.
+    slave_hd_append_desc_t  *free_desc;        ///< Current DMA descriptor that could be linked (set up).
+    slave_hd_append_desc_t  *done_desc;        ///< Head of the finished descriptors which are not dealed by software
+    uint32_t                eof_desc;          ///< DMA desc of current end
+    uint32_t                used_desc_cnt;     ///< Number of the descriptors that have been setup
+} slave_hd_append_context_t;
+
+typedef struct {
     spi_host_device_t host_id;
     int cs_io_num;
     spi_bus_attr_t* bus_attr;
@@ -53,6 +74,8 @@ typedef struct {
     spi_slave_hd_callback_config_t callback;
     spi_slave_hd_hal_context_t hal;
     bool append_mode;
+    slave_hd_append_context_t append_tx_ctx;
+    slave_hd_append_context_t append_rx_ctx;
 
     QueueHandle_t tx_trans_queue;
     QueueHandle_t tx_ret_queue;
@@ -113,6 +136,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     SPIHD_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
     SPIHD_CHECK(!three_wire_mode || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num), "mosi pin must be output capable in 3-wire mode", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(!append_mode || bus_config->max_transfer_sz > SPI_MAX_DMA_LEN, "max_transfer_sz must greater than 4092 to using append mode", ESP_ERR_INVALID_ARG);
 
     SPIHD_CHECK(ESP_OK == spicommon_bus_alloc(host_id, "slave_hd"), "host already in use", ESP_ERR_INVALID_STATE);
     // spi_slave_hd_slot_t contains atomic variable, memory must be allocated from internal memory
@@ -149,18 +173,24 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         goto cleanup;
     }
 
-    host->hal.dma_desc_num = host->dma_ctx->dma_desc_num;
-    host->hal.dmadesc_tx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * host->hal.dma_desc_num, MALLOC_CAP_DEFAULT);
-    host->hal.dmadesc_rx = heap_caps_malloc(sizeof(spi_slave_hd_hal_desc_append_t) * host->hal.dma_desc_num, MALLOC_CAP_DEFAULT);
-    if (!(host->hal.dmadesc_tx && host->hal.dmadesc_rx)) {
+    slave_hd_append_context_t *append_tx = &host->append_tx_ctx;
+    slave_hd_append_context_t *append_rx = &host->append_rx_ctx;
+    uint32_t dma_desc_num = host->dma_ctx->dma_desc_num;
+    append_tx->desc_root = heap_caps_malloc(sizeof(slave_hd_append_desc_t) * dma_desc_num, MALLOC_CAP_DEFAULT);
+    append_rx->desc_root = heap_caps_malloc(sizeof(slave_hd_append_desc_t) * dma_desc_num, MALLOC_CAP_DEFAULT);
+    if (!(append_tx->desc_root && append_rx->desc_root)) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
     //Pair each desc to each possible trans
-    for (int i = 0; i < host->hal.dma_desc_num; i ++) {
-        host->hal.dmadesc_tx[i].desc = &host->dma_ctx->dmadesc_tx[i];
-        host->hal.dmadesc_rx[i].desc = &host->dma_ctx->dmadesc_rx[i];
+    for (int i = 0; i < dma_desc_num; i ++) {
+        append_tx->desc_root[i].desc = &host->dma_ctx->dmadesc_tx[i];
+        append_rx->desc_root[i].desc = &host->dma_ctx->dmadesc_rx[i];
     }
+    append_tx->free_desc = append_tx->desc_root;
+    append_rx->free_desc = append_rx->desc_root;
+    append_tx->done_desc = append_tx->desc_root + dma_desc_num - 1;
+    append_rx->done_desc = append_rx->desc_root + dma_desc_num - 1;
 
     ret = spicommon_bus_initialize_io(host_id, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, NULL);
     if (ret != ESP_OK) {
@@ -350,8 +380,8 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     spicommon_bus_free_io_cfg(host_id);
     spicommon_cs_free_io(host->cs_io_num, &host->bus_attr->gpio_reserve);
-    free(host->hal.dmadesc_tx);
-    free(host->hal.dmadesc_rx);
+    free(host->append_tx_ctx.desc_root);
+    free(host->append_rx_ctx.desc_root);
     spicommon_dma_chan_free(host_id);
     spicommon_bus_free(host_id);
 
@@ -488,7 +518,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
         spicommon_dma_rx_mb(host->host_id, host->rx_curr_trans.aligned_buffer);
         spi_slave_hd_rx_dma_error_check(host, host->rx_curr_trans);
         bool ret_queue = true;
-        host->rx_curr_trans.trans->trans_len = spi_slave_hd_hal_rxdma_seg_get_len(hal);
+        host->rx_curr_trans.trans->trans_len = gdma_link_count_buffer_size_till_eof(host->dma_ctx->rx_link_handle, 0);
         if (callback->cb_recv) {
             spi_slave_hd_event_t ev = {
                 .event = SPI_EV_RECV,
@@ -511,7 +541,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     if (!host->tx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->tx_trans_queue, &host->tx_curr_trans, &awoken);
         if ((ret == pdTRUE) && host->tx_curr_trans.trans) {
-            spicommon_dma_desc_setup_link(hal->dmadesc_tx->desc, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len, false);
+            spicommon_dma_desc_setup_link(host->dma_ctx, 0, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len, false);
             spi_dma_reset(host->dma_ctx->tx_dma_chan);
             spi_slave_hd_hal_txdma(hal);
             spi_dma_start(host->dma_ctx->tx_dma_chan, host->dma_ctx->dmadesc_tx);
@@ -530,7 +560,7 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     if (!host->rx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->rx_trans_queue, &host->rx_curr_trans, &awoken);
         if ((ret == pdTRUE) && host->rx_curr_trans.trans) {
-            spicommon_dma_desc_setup_link(hal->dmadesc_rx->desc, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len, true);
+            spicommon_dma_desc_setup_link(host->dma_ctx, 0, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len, true);
             spi_dma_reset(host->dma_ctx->rx_dma_chan);
             spi_slave_hd_hal_rxdma(hal);
             spi_dma_start(host->dma_ctx->rx_dma_chan, host->dma_ctx->dmadesc_rx);
@@ -561,23 +591,34 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     }
 }
 
+static inline SPI_SLAVE_ISR_ATTR void slave_hd_append_desc_walk(slave_hd_append_desc_t *desc_head, uint32_t desc_num, slave_hd_append_desc_t **p_desc, uint32_t steps)
+{
+    steps %= desc_num;
+    *p_desc += steps;
+    if (*p_desc >= (desc_head + desc_num)) {
+        *p_desc -= desc_num;
+    }
+}
+
 static SPI_SLAVE_ISR_ATTR void spi_slave_hd_append_tx_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)arg;
     spi_slave_hd_callback_config_t *callback = &host->callback;
-    spi_slave_hd_hal_context_t *hal = &host->hal;
+    slave_hd_append_context_t *append = &host->append_tx_ctx;
+    uint32_t dma_desc_num = host->dma_ctx->dma_desc_num;
     BaseType_t awoken = pdFALSE;
     BaseType_t ret __attribute__((unused));
 
-    spi_slave_hd_trans_priv_t ret_priv_trans = {};
-    while (1) {
-        bool trans_finish = false;
-        trans_finish = spi_slave_hd_hal_get_tx_finished_trans(hal, (void **)&ret_priv_trans.trans, &ret_priv_trans.aligned_buffer);
-        if (!trans_finish) {
-            break;
-        }
+    while ((uint32_t)append->done_desc->desc != append->eof_desc) {
+        slave_hd_append_desc_walk(append->desc_root, dma_desc_num, &append->done_desc, 1);
+        int offset = append->done_desc - append->desc_root;
+        spi_slave_hd_trans_priv_t ret_priv_trans = {
+            .trans = append->done_desc->arg,
+            .aligned_buffer = gdma_link_get_buffer(host->dma_ctx->tx_link_handle, offset),
+        };
+
         portENTER_CRITICAL_ISR(&host->int_spinlock);
-        hal->tx_used_desc_cnt--;
+        append->used_desc_cnt--;
         portEXIT_CRITICAL_ISR(&host->int_spinlock);
 
         bool ret_queue = true;
@@ -609,22 +650,23 @@ static SPI_SLAVE_ISR_ATTR void spi_slave_hd_append_rx_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)arg;
     spi_slave_hd_callback_config_t *callback = &host->callback;
-    spi_slave_hd_hal_context_t *hal = &host->hal;
+    slave_hd_append_context_t *append = &host->append_rx_ctx;
+    uint32_t dma_desc_num = host->dma_ctx->dma_desc_num;
     BaseType_t awoken = pdFALSE;
     BaseType_t ret __attribute__((unused));
 
-    spi_slave_hd_trans_priv_t ret_priv_trans = {};
-    size_t trans_len;
-    while (1) {
-        bool trans_finish = false;
-        trans_finish = spi_slave_hd_hal_get_rx_finished_trans(hal, (void **)&ret_priv_trans.trans, &ret_priv_trans.aligned_buffer, &trans_len);
-        if (!trans_finish) {
-            break;
-        }
+    while ((uint32_t)append->done_desc->desc != append->eof_desc) {
+        slave_hd_append_desc_walk(append->desc_root, dma_desc_num, &append->done_desc, 1);
+        int offset = append->done_desc - append->desc_root;
+        spi_slave_hd_trans_priv_t ret_priv_trans = {
+            .trans = append->done_desc->arg,
+            .aligned_buffer = gdma_link_get_buffer(host->dma_ctx->rx_link_handle, offset),
+        };
+        ret_priv_trans.trans->trans_len = gdma_link_get_length(host->dma_ctx->rx_link_handle, offset);
+
         portENTER_CRITICAL_ISR(&host->int_spinlock);
-        hal->rx_used_desc_cnt--;
+        append->used_desc_cnt--;
         portEXIT_CRITICAL_ISR(&host->int_spinlock);
-        ret_priv_trans.trans->trans_len = trans_len;
 
         bool ret_queue = true;
         spicommon_dma_rx_mb(host->host_id, ret_priv_trans.aligned_buffer);
@@ -658,10 +700,11 @@ static SPI_SLAVE_ISR_ATTR bool s_spi_slave_hd_append_gdma_isr(gdma_channel_handl
     assert(event_data);
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)user_data;
 
-    host->hal.current_eof_addr = event_data->tx_eof_desc_addr;
     if (host->dma_ctx->tx_dma_chan == dma_chan) {
+        host->append_tx_ctx.eof_desc = event_data->tx_eof_desc_addr;
         spi_slave_hd_append_tx_isr(user_data);
     } else {
+        host->append_rx_ctx.eof_desc = event_data->rx_eof_desc_addr;
         spi_slave_hd_append_rx_isr(user_data);
     }
     return true;
@@ -677,11 +720,11 @@ static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_append_legacy_isr(void *arg)
 
     portENTER_CRITICAL_ISR(&host->int_spinlock);
     if (spi_slave_hd_hal_check_clear_event(hal, SPI_EV_RECV)) {
-        hal->current_eof_addr = spi_dma_get_eof_desc(host->dma_ctx->rx_dma_chan);
+        host->append_rx_ctx.eof_desc = spi_dma_get_eof_desc(host->dma_ctx->rx_dma_chan);
         rx_done = true;
     }
     if (spi_slave_hd_hal_check_clear_event(hal, SPI_EV_SEND)) {
-        hal->current_eof_addr = spi_dma_get_eof_desc(host->dma_ctx->tx_dma_chan);
+        host->append_tx_ctx.eof_desc = spi_dma_get_eof_desc(host->dma_ctx->tx_dma_chan);
         tx_done = true;
     }
     portEXIT_CRITICAL_ISR(&host->int_spinlock);
@@ -743,40 +786,39 @@ static esp_err_t get_ret_queue_result(spi_host_device_t host_id, spi_slave_chan_
 esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, size_t len, void *arg)
 {
     spi_slave_hd_hal_context_t *hal = &host->hal;
+    slave_hd_append_context_t *append = &host->append_tx_ctx;
+    uint32_t dma_desc_num = host->dma_ctx->dma_desc_num;
 
     //Check if there are enough available DMA descriptors for software to use
-    int num_required = (len + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-    int available_desc_num = hal->dma_desc_num - hal->tx_used_desc_cnt;
+    int buf_align = esp_ptr_internal(data) ? host->dma_ctx->dma_align_tx_int : host->dma_ctx->dma_align_tx_ext;
+    // unsupported buffer which lead invalid buf_align should already checked by 'setup_priv_trans'
+    int num_required = howmany(len, ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, buf_align));
+    int available_desc_num = dma_desc_num - append->used_desc_cnt;
     if (num_required > available_desc_num) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    spicommon_dma_desc_setup_link(hal->tx_cur_desc->desc, data, len, false);
-    hal->tx_cur_desc->arg = arg;
+    int offset = append->free_desc - append->desc_root;
+    spicommon_dma_desc_setup_link(host->dma_ctx, offset, data, len, false);
+    append->free_desc->arg = arg;
 
-    if (!hal->tx_used_desc_cnt) {
+    if (!append->used_desc_cnt) {
         //start a link
-        hal->tx_dma_tail = hal->tx_cur_desc;
         spi_dma_reset(host->dma_ctx->tx_dma_chan);
         spi_slave_hd_hal_hw_prepare_tx(hal);
-        spi_dma_start(host->dma_ctx->tx_dma_chan, hal->tx_cur_desc->desc);
+        spi_dma_start(host->dma_ctx->tx_dma_chan, append->free_desc->desc);
     } else {
         //there is already a consecutive link
-        ADDR_DMA_2_CPU(hal->tx_dma_tail->desc)->next = hal->tx_cur_desc->desc;
-        hal->tx_dma_tail = hal->tx_cur_desc;
+        gdma_link_list_handle_t link_handle = host->dma_ctx->tx_link_handle;
+        gdma_link_concat(link_handle, offset - 1, link_handle, offset);
         spi_dma_append(host->dma_ctx->tx_dma_chan);
     }
 
     //Move the current descriptor pointer according to the number of the linked descriptors
     portENTER_CRITICAL(&host->int_spinlock);
-    hal->tx_used_desc_cnt += num_required;
+    append->used_desc_cnt += num_required;
     portEXIT_CRITICAL(&host->int_spinlock);
-    for (int i = 0; i < num_required; i++) {
-        hal->tx_cur_desc++;
-        if (hal->tx_cur_desc == hal->dmadesc_tx + hal->dma_desc_num) {
-            hal->tx_cur_desc = hal->dmadesc_tx;
-        }
-    }
+    slave_hd_append_desc_walk(append->desc_root, dma_desc_num, &append->free_desc, num_required);
 
     return ESP_OK;
 }
@@ -784,40 +826,38 @@ esp_err_t s_spi_slave_hd_append_txdma(spi_slave_hd_slot_t *host, uint8_t *data, 
 esp_err_t s_spi_slave_hd_append_rxdma(spi_slave_hd_slot_t *host, uint8_t *data, size_t len, void *arg)
 {
     spi_slave_hd_hal_context_t *hal = &host->hal;
+    slave_hd_append_context_t *append = &host->append_rx_ctx;
+    uint32_t dma_desc_num = host->dma_ctx->dma_desc_num;
 
     //Check if there are enough available dma descriptors for software to use
-    int num_required = (len + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-    int available_desc_num = hal->dma_desc_num - hal->rx_used_desc_cnt;
+    int buf_align = esp_ptr_internal(data) ? host->dma_ctx->dma_align_rx_int : host->dma_ctx->dma_align_rx_ext;
+    int num_required = howmany(len, ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, buf_align));
+    int available_desc_num = dma_desc_num - append->used_desc_cnt;
     if (num_required > available_desc_num) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    spicommon_dma_desc_setup_link(hal->rx_cur_desc->desc, data, len, true);
-    hal->rx_cur_desc->arg = arg;
+    int offset = append->free_desc - append->desc_root;
+    spicommon_dma_desc_setup_link(host->dma_ctx, offset, data, len, true);
+    append->free_desc->arg = arg;
 
-    if (!hal->rx_used_desc_cnt) {
+    if (!append->used_desc_cnt) {
         //start a link
-        hal->rx_dma_tail = hal->rx_cur_desc;
         spi_dma_reset(host->dma_ctx->rx_dma_chan);
         spi_slave_hd_hal_hw_prepare_rx(hal);
-        spi_dma_start(host->dma_ctx->rx_dma_chan, hal->rx_cur_desc->desc);
+        spi_dma_start(host->dma_ctx->rx_dma_chan, append->free_desc->desc);
     } else {
         //there is already a consecutive link
-        ADDR_DMA_2_CPU(hal->rx_dma_tail->desc)->next = hal->rx_cur_desc->desc;
-        hal->rx_dma_tail = hal->rx_cur_desc;
+        gdma_link_list_handle_t link_handle = host->dma_ctx->rx_link_handle;
+        gdma_link_concat(link_handle, offset - 1, link_handle, offset);
         spi_dma_append(host->dma_ctx->rx_dma_chan);
     }
 
     //Move the current descriptor pointer according to the number of the linked descriptors
     portENTER_CRITICAL(&host->int_spinlock);
-    hal->rx_used_desc_cnt += num_required;
+    append->used_desc_cnt += num_required;
     portEXIT_CRITICAL(&host->int_spinlock);
-    for (int i = 0; i < num_required; i++) {
-        hal->rx_cur_desc++;
-        if (hal->rx_cur_desc == hal->dmadesc_rx + hal->dma_desc_num) {
-            hal->rx_cur_desc = hal->dmadesc_rx;
-        }
-    }
+    slave_hd_append_desc_walk(append->desc_root, dma_desc_num, &append->free_desc, num_required);
 
     return ESP_OK;
 }
