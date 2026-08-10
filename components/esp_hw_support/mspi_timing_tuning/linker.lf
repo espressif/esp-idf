@@ -1,3 +1,10 @@
+[mapping:esp_mspi_align]
+archive: libesp_hw_support.a
+entries:
+    if APP_BUILD_TYPE_PURE_RAM_APP = n:
+        esp_mspi_align:esp_mspi_get_alignment (noflash)
+        esp_mspi_align:esp_mspi_buffer_alignment_satisfied (noflash)
+
 [mapping:mspi_timing_tuning_driver]
 archive: libesp_hw_support.a
 entries:
