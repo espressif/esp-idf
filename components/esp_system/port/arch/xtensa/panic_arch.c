@@ -314,6 +314,8 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
             info->details = print_cache_err_details;
         }
     }
+
+    info->addr = (void *)frame->pc;
 }
 
 uint32_t panic_get_address(const void *f)
