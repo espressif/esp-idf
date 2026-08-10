@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * ESP32-C6 has a v1.0-spec trace encoder: no filter unit, no encoder config
+ * register (delta/full address, stall, halt, reset, debug trigger) and no AHB
+ * config register, so the LL only exposes the base register set. Its resync
+ * mode field is 1 bit with a different encoding than the v2.0 targets, handled
+ * in riscv_trace_ll_set_resync_mode() below.
+ */
+
 #pragma once
 
 #include <stdint.h>
@@ -110,67 +118,25 @@ static inline void riscv_trace_ll_set_restart_ena(trace_dev_t *hw, bool enable)
 }
 
 /*---------------------------------------------------------------------------
- * Encoder options (config register)
- *--------------------------------------------------------------------------*/
-
-static inline void riscv_trace_ll_set_full_address(trace_dev_t *hw, bool full)
-{
-    hw->config.full_address = full;
-}
-
-static inline void riscv_trace_ll_set_stall_ena(trace_dev_t *hw, bool enable)
-{
-    hw->config.stall_ena = enable;
-}
-
-static inline void riscv_trace_ll_set_halt_ena(trace_dev_t *hw, bool enable)
-{
-    hw->config.halt_ena = enable;
-}
-
-static inline void riscv_trace_ll_set_reset_ena(trace_dev_t *hw, bool enable)
-{
-    hw->config.reset_ena = enable;
-}
-
-static inline void riscv_trace_ll_set_dm_trigger_ena(trace_dev_t *hw, bool enable)
-{
-    hw->config.dm_trigger_ena = enable;
-}
-
-/*---------------------------------------------------------------------------
  * Resynchronization
  *--------------------------------------------------------------------------*/
 
 /** @brief Whether the resync counter can represent the given mode. */
 static inline bool riscv_trace_ll_resync_mode_is_supported(uint32_t mode)
 {
-    return mode == RISCV_TRACE_RESYNC_DISABLED || mode == RISCV_TRACE_RESYNC_PACKET ||
-           mode == RISCV_TRACE_RESYNC_CYCLE;
+    // 1-bit field: this encoder always counts and has no "disabled" mode.
+    return mode == RISCV_TRACE_RESYNC_PACKET || mode == RISCV_TRACE_RESYNC_CYCLE;
 }
 
 static inline void riscv_trace_ll_set_resync_mode(trace_dev_t *hw, uint32_t mode)
 {
-    hw->resync_prolonged.resync_mode = mode;
+    // 1-bit field: 0 = count by cycle, 1 = count by packet.
+    hw->resync_prolonged.resync_mode = (mode == RISCV_TRACE_RESYNC_PACKET);
 }
 
 static inline void riscv_trace_ll_set_resync_threshold(trace_dev_t *hw, uint32_t threshold)
 {
     hw->resync_prolonged.resync_prolonged = threshold;
-}
-
-/*---------------------------------------------------------------------------
- * AHB configuration
- *--------------------------------------------------------------------------*/
-
-static inline void riscv_trace_ll_set_ahb_burst(trace_dev_t *hw, uint32_t hburst)
-{
-    hw->ahb_config.hburst = hburst;
-}
-
-static inline void riscv_trace_ll_set_ahb_max_incr(trace_dev_t *hw, uint32_t max_incr)
-{
-    hw->ahb_config.max_incr = max_incr;
 }
 
 /*---------------------------------------------------------------------------
@@ -190,70 +156,6 @@ static inline uint32_t riscv_trace_ll_get_intr_raw(trace_dev_t *hw)
 static inline void riscv_trace_ll_clear_intr(trace_dev_t *hw, uint32_t mask)
 {
     hw->intr_clr.val = mask;
-}
-
-/*---------------------------------------------------------------------------
- * Filter unit
- *--------------------------------------------------------------------------*/
-
-static inline void riscv_trace_ll_set_filter_en(trace_dev_t *hw, bool enable)
-{
-    hw->filter_control.filter_en = enable;
-}
-
-static inline void riscv_trace_ll_set_filter_control(trace_dev_t *hw, bool match_comp,
-                                                     bool match_privilege, bool match_ecause,
-                                                     bool match_interrupt)
-{
-    hw->filter_control.match_comp = match_comp;
-    hw->filter_control.match_privilege = match_privilege;
-    hw->filter_control.match_ecause = match_ecause;
-    hw->filter_control.match_interrupt = match_interrupt;
-}
-
-static inline bool riscv_trace_ll_priv_is_supported(uint32_t priv)
-{
-    return priv == RISCV_TRACE_PRIV_USER || priv == RISCV_TRACE_PRIV_MACHINE;
-}
-
-static inline void riscv_trace_ll_set_filter_match_control(trace_dev_t *hw, uint32_t priv_choice,
-                                                           bool intr_value, uint32_t ecause_choice)
-{
-    // This target has no supervisor mode, so the selector is 1 bit: 0 = user, 1 = machine.
-    hw->filter_match_control.match_choice_privilege = (priv_choice == RISCV_TRACE_PRIV_MACHINE);
-    hw->filter_match_control.match_value_interrupt = intr_value;
-    hw->filter_match_control.match_choice_ecause = ecause_choice;
-}
-
-static inline void riscv_trace_ll_set_p_comparator(trace_dev_t *hw, uint32_t input,
-                                                   uint32_t function, bool notify)
-{
-    hw->filter_comparator_control.p_input = input;
-    hw->filter_comparator_control.p_function = function;
-    hw->filter_comparator_control.p_notify = notify;
-}
-
-static inline void riscv_trace_ll_set_s_comparator(trace_dev_t *hw, uint32_t input,
-                                                   uint32_t function, bool notify)
-{
-    hw->filter_comparator_control.s_input = input;
-    hw->filter_comparator_control.s_function = function;
-    hw->filter_comparator_control.s_notify = notify;
-}
-
-static inline void riscv_trace_ll_set_match_mode(trace_dev_t *hw, uint32_t mode)
-{
-    hw->filter_comparator_control.match_mode = mode;
-}
-
-static inline void riscv_trace_ll_set_p_match_value(trace_dev_t *hw, uint32_t value)
-{
-    hw->filter_p_comparator_match.p_match = value;
-}
-
-static inline void riscv_trace_ll_set_s_match_value(trace_dev_t *hw, uint32_t value)
-{
-    hw->filter_s_comparator_match.s_match = value;
 }
 
 #ifdef __cplusplus

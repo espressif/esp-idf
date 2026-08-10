@@ -195,6 +195,10 @@ config SOC_APM_SUPPORTED
     bool
     default y
 
+config SOC_RISCV_TRACE_SUPPORTED
+    bool
+    default y
+
 config SOC_PMU_SUPPORTED
     bool
     default y
@@ -1250,3 +1254,7 @@ config SOC_BLE_PERIODIC_ADV_WITH_RESPONSE
 config SOC_DEBUG_HAVE_OCD_STUB_BINS
     bool
     default y
+
+config SOC_RISCV_TRACE_PRIV_WIDTH
+    int
+    default 1

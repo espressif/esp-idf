@@ -35,6 +35,20 @@ typedef enum {
 } riscv_trace_priv_t;
 
 /**
+ * @brief Resynchronization mode selected by the resync counter.
+ *
+ * Values follow the v2.0 (2-bit) register encoding, which the driver's public
+ * enum also uses. Targets with a narrower field implement a subset and their LL
+ * translates the value when writing the register (see
+ * riscv_trace_ll_resync_mode_is_supported()).
+ */
+typedef enum {
+    RISCV_TRACE_RESYNC_DISABLED = 0, /*!< Periodic resync disabled */
+    RISCV_TRACE_RESYNC_PACKET   = 2, /*!< Resync counter counts by packet */
+    RISCV_TRACE_RESYNC_CYCLE    = 3, /*!< Resync counter counts by cycle */
+} riscv_trace_resync_mode_t;
+
+/**
  * @brief Trace encoder work-status field.
  *
  * Some targets implement a narrower work_status field and only produce
