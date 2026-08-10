@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "freertos/xtensa_rtos.h"
 #include "esp_private/panic_reason.h"
 #include "soc/soc.h"
@@ -58,4 +63,15 @@ _xt_panic:
     mov     a6,sp
     call4 panicHandler
 
-    ret
+    /* When panicHandler returns, resume at the crashing PC so the breakpoint is hit there.
+     * Restore the interrupted GPRs/SP from the frame (EXCSAVE_1/EPC_1 may have
+     * been clobbered by windowed C calls). Do not restore PS: it was sampled at
+     * the panic interrupt level, and restoring DEBUGLEVEL would mask IBREAK.
+     */
+    call0   _xt_context_restore
+    l32i    a0, sp, XT_STK_PC               /* retrieve interruptee's PC */
+    wsr     a0, EPC_1
+    l32i    a0, sp, XT_STK_A0               /* retrieve interruptee's A0 */
+    l32i    sp, sp, XT_STK_A1               /* remove exception frame */
+    rsync                                   /* ensure EPC written */
+    rfe                                     /* PS.EXCM is cleared */
