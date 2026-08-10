@@ -18,6 +18,9 @@
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
+#include "soc/regi2c_mpll.h"
+#include "soc/regi2c_bias.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "soc/lp_system_reg.h"
 #include "regi2c_ctrl.h"
 #include "esp_rom_sys.h"
@@ -211,5 +214,11 @@ void pmu_init(void)
     pvt_func_enable(true);
     // For PVT func taking effect, need delay.
     esp_rom_delay_us(1000);
+#endif
+#if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    REG_SET_BIT(PMU_RF_PWC_REG, PMU_MSPI_PHY_XPD);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 12);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
+    REGI2C_WRITE_MASK(I2C_MPLL, I2C_MPLL_IR_CAL_EXT_CAP, 3);
 #endif
 }
