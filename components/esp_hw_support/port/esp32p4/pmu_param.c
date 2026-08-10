@@ -53,7 +53,7 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
     .clk_power = {          \
         .i2c_iso_en    = 1, \
         .i2c_retention = 1, \
-        .xpd_pll_i2c   = 1, \
+        .xpd_pll_i2c   = 0xf, \
         .xpd_pll       = 0  \
     }, \
     .xtal = {               \

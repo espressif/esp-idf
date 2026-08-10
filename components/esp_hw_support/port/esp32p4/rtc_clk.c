@@ -665,13 +665,12 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_
         regi2c_enter_critical();
 #endif
     }
-    /* MPLL calibration start */
-    regi2c_ctrl_ll_mpll_calibration_start();
-    clk_ll_mpll_set_config(mpll_freq, xtal_freq);
-    /* wait calibration done */
-    while(!regi2c_ctrl_ll_mpll_calibration_is_done());
-    /* MPLL calibration stop */
-    regi2c_ctrl_ll_mpll_calibration_stop();
+
+#if CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+    clk_ll_mpll_set_config_v1(mpll_freq, xtal_freq);
+#else
+    clk_ll_mpll_set_config_v3(mpll_freq, xtal_freq);
+#endif
 
     if (thread_safe) {
         _regi2c_ctrl_ll_master_enable_clock(false);
