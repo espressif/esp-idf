@@ -369,9 +369,9 @@ static esp_err_t i3c_master_init_dma(i3c_master_bus_t *i3c_master_handle, const 
     ESP_GOTO_ON_ERROR(gdma_config_transfer(i3c_master_handle->dma_tx_chan, &transfer_cfg), err2, TAG, "Config DMA tx channel transfer failed");
 
     // create DMA link list
-    size_t int_mem_align = 0;
-    gdma_get_channel_alignment_constraints(i3c_master_handle->dma_tx_chan, &int_mem_align, NULL, NULL);
-    i3c_master_handle->dma_buffer_alignment = I3C_ALIGN_UP(int_mem_align, I3C_MASTER_DMA_INTERFACE_ALIGNMENT);
+    gdma_channel_alignment_info_t align_info;
+    gdma_get_channel_alignment_constraints(i3c_master_handle->dma_tx_chan, &align_info);
+    i3c_master_handle->dma_buffer_alignment = I3C_ALIGN_UP(align_info.int_mem_alignment, I3C_MASTER_DMA_INTERFACE_ALIGNMENT);
     size_t num_dma_nodes = esp_dma_calculate_node_count(dma_config->max_transfer_size, i3c_master_handle->dma_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
         .item_alignment = 4,                   // 4 bytes alignment for AHB-DMA
@@ -581,7 +581,6 @@ static esp_err_t do_dma_transaction_handler(i3c_master_bus_handle_t bus_handle, 
                 .flags = {
                     .mark_eof = true,
                     .mark_final = GDMA_FINAL_LINK_TO_NULL,
-                    .check_size_align = gdma_is_size_alignment_required(bus_handle->dma_rx_chan),
                 }
             };
 
