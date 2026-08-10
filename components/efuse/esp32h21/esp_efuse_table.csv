@@ -151,7 +151,8 @@ MAC,                                             EFUSE_BLK1,  40,   8, [MAC_FACT
 ,                                                EFUSE_BLK1,  16,   8, [MAC_FACTORY] MAC address
 ,                                                EFUSE_BLK1,   8,   8, [MAC_FACTORY] MAC address
 ,                                                EFUSE_BLK1,   0,   8, [MAC_FACTORY] MAC address
-MAC_EXT,                                         EFUSE_BLK1,  48,  16, [] Represents the extended bits of MAC address
+MAC_EXT,                                         EFUSE_BLK1,  56,   8, [] Stores the extended bits of MAC address
+,                                                EFUSE_BLK1,  48,   8, [] Stores the extended bits of MAC address
 PVT_CELL_SELECT,                                 EFUSE_BLK1, 100,   7, [] Represents the selection of Power glitch monitor PVT cell.
 BLK_VERSION_MINOR,                               EFUSE_BLK1, 114,   3, [] Minor version of BLOCK2
 BLK_VERSION_MAJOR,                               EFUSE_BLK1, 117,   2, [] Major version of BLOCK2
