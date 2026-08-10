@@ -289,8 +289,10 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
                         "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     // both the bitstream and output buffer are accessed by the 2D-DMA
-    ESP_RETURN_ON_FALSE(jpeg_check_dma2d_buffer(bit_stream) && jpeg_check_dma2d_buffer(decode_outbuf), ESP_ERR_INVALID_ARG, TAG,
-                        "jpeg decode buffer is not 16-byte aligned or not in unencrypted PSRAM, please use jpeg_alloc_decoder_mem to malloc your buffer");
+    size_t bit_stream_alignment = dma2d_get_buffer_alignment_constraint(bit_stream);
+    size_t decode_outbuf_alignment = dma2d_get_buffer_alignment_constraint(decode_outbuf);
+    ESP_RETURN_ON_FALSE(bit_stream_alignment <= 1 && decode_outbuf_alignment <= 1, ESP_ERR_INVALID_ARG, TAG,
+                        "jpeg decode buffer doesn't satisfy DMA2D alignment constraints, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 

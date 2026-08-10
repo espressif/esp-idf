@@ -6,6 +6,7 @@
 
 #include <stdatomic.h>
 #include <sys/queue.h>
+#include <sys/param.h>
 #include <inttypes.h>
 #include <assert.h>
 #include "freertos/FreeRTOS.h"
@@ -16,6 +17,7 @@
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "esp_async_color_convert_priv.h"
+#include "esp_private/dma2d.h"
 #include "soc/dma2d_channel.h"
 #include "hal/dma2d_types.h"
 #include "hal/dma2d_ll.h"
@@ -206,6 +208,17 @@ static esp_err_t validate_request(const async_color_convert_request_t *request)
                         request->dst_stride <= DMA2D_LL_DESC_2D_FIELD_MAX &&
                         request->dst_height <= DMA2D_LL_DESC_2D_FIELD_MAX,
                         ESP_ERR_INVALID_ARG, TAG, "dimension exceeds DMA2D descriptor field limit");
+
+    uint32_t src_bit_depth = color_hal_pixel_format_fourcc_get_bit_depth(request->src_color_format);
+    uint32_t dst_bit_depth = color_hal_pixel_format_fourcc_get_bit_depth(request->dst_color_format);
+    ESP_RETURN_ON_FALSE(dma2d_check_transaction_alignment_constraint(request->src_buffer, request->src_stride,
+                                                                     request->copy_width, request->src_x,
+                                                                     src_bit_depth),
+                        ESP_ERR_INVALID_ARG, TAG, "source buffer or window is not aligned to DMA2D alignment");
+    ESP_RETURN_ON_FALSE(dma2d_check_transaction_alignment_constraint(request->dst_buffer, request->dst_stride,
+                                                                     request->copy_width, request->dst_x,
+                                                                     dst_bit_depth),
+                        ESP_ERR_INVALID_ARG, TAG, "destination buffer or window is not aligned to DMA2D alignment");
 
     return ESP_OK;
 }

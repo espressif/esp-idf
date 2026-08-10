@@ -90,11 +90,13 @@ struct gdma_channel_t {
     int periph_id; // Peripheral instance ID, indicates which peripheral is connected to this GDMA channel
     int intr_priority; // interrupt priority, if set to 0, the driver will use the default priority
     size_t int_mem_alignment; // alignment for memory in internal memory
-    size_t ext_mem_alignment; // alignment for memory in external memory
+    size_t ext_enc_mem_alignment; // alignment for external memory including MSPI encryption/ECC constraints
+    size_t ext_no_enc_mem_alignment; // alignment for external memory without MSPI region-specific constraints
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
     struct {
         uint32_t start_stop_by_etm: 1; // whether the channel is started/stopped by ETM
         uint32_t isr_cache_safe: 1; // whether the interrupt of this channel need to be cache safe
+        uint32_t size_alignment_required: 1; // whether buffer size must meet the channel alignment
     } flags;
 };
 
