@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include "sdkconfig.h"
 #include "esp_clk_tree.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -17,6 +18,7 @@
 #include "hal/clk_gate_ll.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
+#include "hal/mspi_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_clk_tree_derived.h"
 #include "esp_private/periph_ctrl.h"
@@ -431,49 +433,45 @@ esp_err_t esp_clk_tree_src_set_freq_hz(soc_module_clk_t clk_src, uint32_t expt_f
 void esp_clk_tree_initialize(void)
 {
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if ((rst_reason == RESET_REASON_CPU_SW) || (rst_reason == RESET_REASON_CPU_MWDT) ||
-            (rst_reason == RESET_REASON_CPU_RWDT) || (rst_reason == RESET_REASON_CPU_JTAG) ||
-            (rst_reason == RESET_REASON_CPU_LOCKUP)) {
-        s_clk_tree_initialized = true;
-        return;
-    }
-
-    // Cold boot only
+    soc_periph_flash_clk_src_t flash_clk_src = _mspi_timing_ll_get_flash_clk_src(MSPI_TIMING_LL_MSPI_ID_0);
     soc_cpu_clk_src_t cpu_src = clk_ll_cpu_get_src();
-    if (cpu_src == SOC_CPU_CLK_SRC_PLL_F240M) {
-        s_mod_clk_gate_ref_cnt[SOC_MOD_CLK_PLL_F240M] = 1;
-        s_root_pll_power_ref_cnt[SOC_ROOT_CIRCUIT_CLK_BBPLL] = 1;
-    } else if (cpu_src == SOC_CPU_CLK_SRC_CPLL) {
-        s_root_pll_power_ref_cnt[SOC_ROOT_CIRCUIT_CLK_CPLL] = 1;
+    bool cpu_reset = (rst_reason == RESET_REASON_CPU_SW) || (rst_reason == RESET_REASON_CPU_MWDT) ||
+                     (rst_reason == RESET_REASON_CPU_RWDT) || (rst_reason == RESET_REASON_CPU_JTAG) ||
+                     (rst_reason == RESET_REASON_CPU_LOCKUP);
+    if (!cpu_reset) {
+        /* Cold boot only: gate / power-down clocks not in use. */
+        if (cpu_src != SOC_CPU_CLK_SRC_PLL_F240M) {
+            _clk_gate_ll_ref_240m_clk_en(false);
+        }
+        if (cpu_src != SOC_CPU_CLK_SRC_CPLL && flash_clk_src != FLASH_CLK_SRC_CPLL) {
+            clk_ll_cpll_disable();
+        }
+        _clk_gate_ll_ref_160m_clk_en(false);
+        _clk_gate_ll_ref_120m_clk_en(false);
+        _clk_gate_ll_ref_80m_clk_en(false);
+        _clk_gate_ll_ref_60m_clk_en(false);
+        _clk_gate_ll_ref_20m_clk_en(false);
+        _clk_gate_ll_ref_50m_clk_en(false);
+        _clk_gate_ll_ref_25m_clk_en(false);
+        clk_ll_xtalx2_disable();
+        HP_ALIVE_SYS.hp_clk_ctrl.hp_audio_pll_clk_en = 0;
+        HP_ALIVE_SYS.hp_clk_ctrl.hp_sdio_pll2_clk_en = 0;
+        HP_ALIVE_SYS.hp_clk_ctrl.hp_sdio_pll1_clk_en = 0;
+        HP_ALIVE_SYS.hp_clk_ctrl.hp_sdio_pll0_clk_en = 0;
     }
-
-    if (cpu_src != SOC_CPU_CLK_SRC_PLL_F240M) {
-        _clk_gate_ll_ref_240m_clk_en(false);
-        // Not do clk_ll_bbpll_disable since MSPI depends on BBPLL: TODO: IDF-15889
-    }
-    // Add ref count for Flash using. // TODO: IDF-15889
-    s_root_pll_power_ref_cnt[SOC_ROOT_CIRCUIT_CLK_BBPLL]++;
-
-    if (cpu_src != SOC_CPU_CLK_SRC_CPLL) {
-        clk_ll_cpll_disable();
-    }
-
-    _clk_gate_ll_ref_160m_clk_en(false);
-    _clk_gate_ll_ref_120m_clk_en(false);
-    _clk_gate_ll_ref_80m_clk_en(false);
-    _clk_gate_ll_ref_60m_clk_en(false);
-    _clk_gate_ll_ref_20m_clk_en(false);
-    _clk_gate_ll_ref_50m_clk_en(false);
-    _clk_gate_ll_ref_25m_clk_en(false);
-
-    clk_ll_xtalx2_disable();
-
-    HP_ALIVE_SYS.hp_clk_ctrl.hp_audio_pll_clk_en = 0;
-    HP_ALIVE_SYS.hp_clk_ctrl.hp_sdio_pll2_clk_en = 0;
-    HP_ALIVE_SYS.hp_clk_ctrl.hp_sdio_pll1_clk_en = 0;
-    HP_ALIVE_SYS.hp_clk_ctrl.hp_sdio_pll0_clk_en = 0;
 
     s_clk_tree_initialized = true;
+#if CONFIG_USJ_ENABLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+    /* Bootloader / USJ may keep BBPLL 480M on; declare a permanent hold. */
+    esp_clk_tree_enable_src(SOC_MOD_CLK_BBPLL, true);
+#endif
+    /* Flash + CPU: sync clk_tree refs with HW already selected at boot. */
+    esp_clk_tree_enable_src((soc_module_clk_t)flash_clk_src, true);
+    if (cpu_src == SOC_CPU_CLK_SRC_CPLL) {
+        esp_clk_tree_enable_src(SOC_MOD_CLK_CPLL, true);
+    } else if (cpu_src == SOC_CPU_CLK_SRC_PLL_F240M) {
+        esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F240M, true);
+    }
 }
 
 bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
@@ -548,31 +546,33 @@ static const esp_clk_tree_gated_clk_t s_gated_ref_clks[] = {
 FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gated_clk_t *entry, bool enable)
 {
     int16_t prev_ref_cnt;
+    bool released_too_many = false;
 
     esp_os_enter_critical(&s_clk_tree_spinlock);
     if (enable) {
         prev_ref_cnt = s_mod_clk_gate_ref_cnt[entry->clk_id]++;
+        if (prev_ref_cnt == 0) {
+            if (entry->parent_power != NULL) {
+                entry->parent_power(true);
+            }
+            ENABLE_CLK_GATE(entry->set_gate, true);
+        }
     } else {
         prev_ref_cnt = s_mod_clk_gate_ref_cnt[entry->clk_id]--;
         if (prev_ref_cnt <= 0) {
             s_mod_clk_gate_ref_cnt[entry->clk_id] = 0;
-            esp_os_exit_critical(&s_clk_tree_spinlock);
-            ESP_EARLY_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", entry->clk_id);
-            return ESP_OK;
+            released_too_many = true;
+        } else if (prev_ref_cnt == 1) {
+            ENABLE_CLK_GATE(entry->set_gate, false);
+            if (entry->parent_power != NULL) {
+                entry->parent_power(false);
+            }
         }
     }
     esp_os_exit_critical(&s_clk_tree_spinlock);
 
-    if (prev_ref_cnt == 0 && enable) {
-        if (entry->parent_power != NULL) {
-            entry->parent_power(true);
-        }
-        ENABLE_CLK_GATE(entry->set_gate, true);
-    } else if (prev_ref_cnt == 1 && !enable) {
-        ENABLE_CLK_GATE(entry->set_gate, false);
-        if (entry->parent_power != NULL) {
-            entry->parent_power(false);
-        }
+    if (released_too_many) {
+        ESP_LOGW(TAG, "soc_module_clk_t %d disabled multiple times!!", entry->clk_id);
     }
     return ESP_OK;
 }
@@ -605,6 +605,12 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
             esp_clk_tree_mpll_release();
             return ESP_OK;
         }
+    case SOC_MOD_CLK_BBPLL:
+        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, enable);
+        return ESP_OK;
+    case SOC_MOD_CLK_CPLL:
+        esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_CPLL, enable);
+        return ESP_OK;
     case SOC_MOD_CLK_RC_FAST:   gated_clk_id = ESP_CLK_TREE_GATED_CLK_RC_FAST;   break;
     case SOC_MOD_CLK_PLL_F20M:  gated_clk_id = ESP_CLK_TREE_GATED_CLK_PLL_F20M;  break;
     case SOC_MOD_CLK_PLL_F60M:  gated_clk_id = ESP_CLK_TREE_GATED_CLK_PLL_F60M;  break;
