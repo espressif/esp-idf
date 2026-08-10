@@ -4,14 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "esp_check.h"
+#include "esp_cache.h"
 #include "esp_async_memcpy.h"
 #include "esp_async_memcpy_priv.h"
 
 ESP_LOG_ATTR_TAG(TAG, "async_mcp");
+
+/// Minimum buffer size for a DMA backed memory copy. A buffer smaller than two cache lines can not
+/// guarantee a cache aligned "body" segment for the DMA engine, in which case a CPU memcpy is more
+/// efficient anyway. The top level rejects such small buffers uniformly for all DMA backends.
+#define ASYNC_MEMCPY_MIN_DMA_SIZE_CACHE_LINES 2
 
 esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t asmcp)
 {
@@ -22,6 +29,14 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t asmcp)
 esp_err_t esp_async_memcpy(async_memcpy_handle_t asmcp, void *dst, void *src, size_t n, async_memcpy_isr_cb_t cb_isr, void *cb_args)
 {
     ESP_RETURN_ON_FALSE(asmcp && dst && src && n, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // Reject buffers that are too small to benefit from a DMA transfer. A buffer smaller than two
+    // cache lines can not provide a cache aligned body segment, which all DMA backends rely on.
+    // Use a CPU memcpy for such small buffers instead.
+    size_t cache_line_size = esp_cache_get_line_size_by_addr(dst);
+    if (cache_line_size && n < ASYNC_MEMCPY_MIN_DMA_SIZE_CACHE_LINES * cache_line_size) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_SIZE, TAG, "buffer size %zu is too small for DMA, minimum is %zu", n,
+                            ASYNC_MEMCPY_MIN_DMA_SIZE_CACHE_LINES * cache_line_size);
+    }
     return asmcp->memcpy(asmcp, dst, src, n, cb_isr, cb_args);
 }
 
@@ -47,6 +62,14 @@ esp_err_t esp_memcpy_blocking(async_memcpy_handle_t asmcp, void *dst, void *src,
     ESP_RETURN_ON_FALSE(asmcp && dst && src && n, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(!xPortInIsrContext(), ESP_ERR_INVALID_STATE, TAG, "called from ISR context is not allowed");
     ESP_RETURN_ON_FALSE(timeout_ms == -1, ESP_ERR_INVALID_ARG, TAG, "only timeout_ms=-1 is supported");
+
+    // For buffers too small to benefit from a DMA transfer, fall back to a CPU memcpy. The blocking
+    // API is not bound by the ISR callback contract, so a synchronous CPU copy is safe here.
+    size_t cache_line_size = esp_cache_get_line_size_by_addr(dst);
+    if (cache_line_size && n < ASYNC_MEMCPY_MIN_DMA_SIZE_CACHE_LINES * cache_line_size) {
+        memcpy(dst, src, n);
+        return ESP_OK;
+    }
 
     memcpy_blocking_context_t ctx = {};
     ctx.semaphore = xSemaphoreCreateBinaryStatic(&ctx.semaphore_buffer);

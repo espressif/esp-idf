@@ -1,96 +1,166 @@
+============
 异步内存复制
 ============
 
 :link_to_translation:`en:[English]`
 
-概述
+异步内存复制驱动使用 DMA 搬运数据，让 CPU 可以同时处理其他工作。它适合较大的 buffer，例如 CPU 在等待 ``memcpy`` 时，本可以准备下一帧或处理上一块数据的场景。
+
+本文先完成一次阻塞复制，再介绍如何在复制期间继续执行任务。
+
+.. contents::
+    :local:
+    :depth: 2
+
+开始前
+======
+
+该驱动仅在支持异步内存复制的目标芯片上可用。在包含 ``esp_async_memcpy.h`` 前，请为项目组件添加 ``esp_driver_dma`` 依赖。
+
+DMA 必须能访问源和目标 buffer。目标 buffer 应分配在 DMA 可访问的 RAM 中。特定 DMA 后端是否支持 PSRAM，取决于目标芯片和所选后端。
+
+.. important::
+
+    在复制完成前，不要读取或修改目标 buffer；也不要修改源 buffer。
+
+快速开始
+========
+
+典型流程如下：
+
+.. mermaid::
+
+    flowchart TD
+        install["安装驱动"] --> choose{"任务如何等待？"}
+        choose --> blocking["阻塞复制<br/>esp_memcpy_blocking"]
+        choose --> async["异步复制<br/>esp_async_memcpy"]
+        async --> callback["回调通知任务"]
+        blocking --> use["使用目标 buffer"]
+        callback --> use
+        use --> more{"还要继续复制？"}
+        more -->|是| choose
+        more -->|否| uninstall["卸载驱动"]
+
+        classDef blocking fill:#E8F1FB,stroke:#3B82C4,color:#1B4F72
+        classDef async fill:#F3E8FF,stroke:#8B5CF6,color:#5B2C8A
+        classDef result fill:#E8F5E9,stroke:#43A047,color:#1B5E20
+        classDef cleanup fill:#F5F5F5,stroke:#757575,color:#424242
+        class blocking blocking
+        class async,callback async
+        class use,result result
+        class uninstall cleanup
+
+场景 1：复制一个 Buffer 并等待
+===============================
+
+如果下一步操作必须立刻使用复制结果，先使用 :cpp:func:`esp_memcpy_blocking`。它会对合适的 buffer 使用 DMA，并等待复制完成；对于较小的 buffer，它会安全地回退到 CPU 复制。
+
+.. code-block:: c
+
+    #include "esp_async_memcpy.h"
+
+    async_memcpy_handle_t memcpy_hdl = NULL;
+    async_memcpy_config_t config = {
+        .backlog = 1,
+        .weight = 0,
+        .dma_burst_size = 16,
+    };
+
+    // 显式选择 AHB GDMA 后端。
+    ESP_ERROR_CHECK(esp_async_memcpy_install_gdma_ahb(&config, &memcpy_hdl));
+
+    // src 和 dst 是 DMA 可访问的 buffer。函数返回时，dst 已经准备就绪。
+    ESP_ERROR_CHECK(esp_memcpy_blocking(memcpy_hdl, dst, src, copy_size, -1));
+
+    // 现在可以安全使用 dst。
+    process_data(dst, copy_size);
+
+    ESP_ERROR_CHECK(esp_async_memcpy_uninstall(memcpy_hdl));
+
+``timeout_ms`` 必须为 ``-1``，表示一直等待到复制完成。阻塞 API 必须在任务上下文中调用，不能在 ISR 中调用。
+
+安装驱动
 --------
 
-{IDF_TARGET_NAME} 有一个 DMA 引擎，能够以异步方式帮助 CPU 完成内部内存复制操作。
-
-异步 memcpy API 中封装了所有 DMA 配置和操作，:cpp:func:`esp_async_memcpy` 的签名与标准 C 库的 ``memcpy`` 函数基本相同。
-
-DMA 允许多个内存复制请求在首个请求完成之前排队，即允许计算和内存复制的重叠。此外，通过注册事件回调函数，还可以知道内存复制请求完成的准确时间。
-
-
-配置并安装驱动
-----------------------------
-
-安装异步 memcpy 驱动的方法取决于底层 DMA 引擎：
+安装驱动时请显式选择 DMA 后端。前面示例使用的 AHB GDMA 后端仅适用于支持 AHB GDMA 的目标芯片。请选择目标芯片支持且符合应用需求的 DMA 引擎：
 
 .. list::
 
-    :SOC_CP_DMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_cpdma` 用于安装基于 CP DMA 引擎的异步 memcpy 驱动。
-    :SOC_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_ahb` 用于安装基于 AHB GDMA 引擎的异步 memcpy 驱动。
-    :SOC_AXI_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_axi` 用于安装基于 AXI GDMA 引擎的异步 memcpy 驱动。
-    - :cpp:func:`esp_async_memcpy_install` 是一个通用 API，用于安装带有默认 DMA 引擎的异步 memcpy 驱动。如果 SoC 具有 CP DMA 引擎，则默认 DMA 引擎为 CP DMA，否则，默认 DMA 引擎为 AHB GDMA。
+    :SOC_CP_DMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_cpdma`
+    :SOC_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_ahb`
+    :SOC_AXI_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_axi`
+    :SOC_LP_AHB_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_gdma_lp_ahb`
+    :SOC_DW_GDMA_SUPPORTED: - :cpp:func:`esp_async_memcpy_install_dw_gdma`
 
-在 :cpp:type:`async_memcpy_config_t` 中设置驱动配置：
+对于一次阻塞复制，将 :cpp:member:`async_memcpy_config_t::backlog` 设为 1 即可；若可能同时等待多个复制请求，应增大该值。:cpp:member:`async_memcpy_config_t::dma_burst_size` 设置 DMA 突发大小，单位为字节；可从 16 开始，仅在性能测试后再调整。除非目标芯片支持加权仲裁且应用需要调节平均总线带宽，否则将 :cpp:member:`async_memcpy_config_t::weight` 设为 0。
 
-* :cpp:member:`backlog`：此项用于配置首个请求完成前可以排队的最大内存复制事务数量。如果将此字段设置为零，会应用默认值 4。
-* :cpp:member:`dma_burst_size`：设置单次 DMA 传输中突发数据量的大小。
-* :cpp:member:`flags`：此项可以启用一些特殊的驱动功能。
+场景 2：在 DMA 复制期间继续工作
+=================================
 
-.. code-block:: c
-
-    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
-    // 更新底层 DMA 引擎支持的最大数据流
-    config.backlog = 8;
-    async_memcpy_handle_t driver = NULL;
-    ESP_ERROR_CHECK(esp_async_memcpy_install(&config, &driver)); // 使用默认 DMA 引擎安装驱动
-
-发送内存复制请求
-------------------------
-
-使用 :cpp:func:`esp_async_memcpy` API 将内存复制请求发送到 DMA 引擎。在驱动程序成功安装后才能调用该 API。此 API 是线程安全的，因此可以从不同的任务中调用。
-
-与 libc 版本的 ``memcpy`` 不同，你可以选择给 :cpp:func:`esp_async_memcpy` 设置一个回调函数，以便在内存复制完成时收到通知。注意，回调是在 ISR 上下文中执行的，请不要在回调中调用任何阻塞函数。
-
-回调函数的原型是 :cpp:type:`async_memcpy_isr_cb_t`。回调函数只有在借助 RTOS API（如 :cpp:func:`xSemaphoreGiveFromISR`）唤醒了高优先级任务后才能返回 true。
+如果任务在 DMA 搬运期间还有其他工作，使用 :cpp:func:`esp_async_memcpy`。该函数将请求加入队列后立即返回，不会等待复制完成。随后由回调通知拥有目标 buffer 的任务。
 
 .. code-block:: c
 
-    // 回调实现，在 ISR 上下文中运行
-    static bool my_async_memcpy_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/semphr.h"
+    #include "esp_async_memcpy.h"
+
+    static bool copy_done_cb(async_memcpy_handle_t memcpy_hdl,
+                             async_memcpy_event_t *event,
+                             void *user_ctx)
     {
-        SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
-        BaseType_t high_task_wakeup = pdFALSE;
-        xSemaphoreGiveFromISR(semphr, &high_task_wakeup); // 如果解锁了一些高优先级任务，则将 high_task_wakeup 设置为 pdTRUE
-        return high_task_wakeup == pdTRUE;
+        BaseType_t high_task_woken = pdFALSE;
+        SemaphoreHandle_t done = (SemaphoreHandle_t)user_ctx;
+
+        xSemaphoreGiveFromISR(done, &high_task_woken);
+        return high_task_woken == pdTRUE;
     }
 
-    // 创建一个信号量，在异步 memcpy 完成时进行报告
-    SemaphoreHandle_t semphr = xSemaphoreCreateBinary();
+    SemaphoreHandle_t done = xSemaphoreCreateBinary();
 
-    // 从用户的上下文中调用
-    ESP_ERROR_CHECK(esp_async_memcpy(driver_handle, to, from, copy_len, my_async_memcpy_cb, my_semaphore));
-    // 其他事项
-    xSemaphoreTake(my_semaphore, portMAX_DELAY); // 等待 buffer 复制完成
+    ESP_ERROR_CHECK(esp_async_memcpy(memcpy_hdl, dst, src, copy_size,
+                                     copy_done_cb, done));
 
-对于只需等待单次复制完成的简单场景，可以使用 :cpp:func:`esp_memcpy_blocking`。该 API 基于异步请求路径实现，并在内部等待完成回调。
+    // DMA 正在复制。在此执行不会访问 src 或 dst 的其他工作。
+    prepare_next_operation();
 
-.. code-block:: c
+    xSemaphoreTake(done, portMAX_DELAY);
+    // 回调已运行，dst 已准备就绪。
+    process_data(dst, copy_size);
 
-    ESP_ERROR_CHECK(esp_memcpy_blocking(driver_handle, to, from, copy_len, -1));
+驱动是线程安全的，多个任务可以通过同一个句柄提交请求。请求会按提交顺序处理。请将 ``backlog`` 设为应用可能同时待处理的最大复制请求数。
 
-阻塞 API 不能在 ISR 上下文中调用。目前仅支持 ``timeout_ms = -1``，表示无限期等待直到内存复制完成。
+.. warning::
 
+    回调运行在 ISR 上下文。应保持简短，并且只能调用 ISR-safe 函数，例如 ``xSemaphoreGiveFromISR`` 或 ``xQueueSendFromISR``。不要在回调中调用阻塞 API、执行耗时处理或提交新的复制请求。
 
-卸载驱动
-----------------
+Buffer 大小与对齐
+==================
 
-使用 :cpp:func:`esp_async_memcpy_uninstall` 卸载异步 memcpy 驱动。无需在每次 memcpy 操作后手动卸载。如果你的应用程序不再需要此驱动，此 API 可以帮助回收内存和其他硬件资源。
+该驱动支持未对齐的源和目标地址。它使用 CPU 复制未对齐的边缘字节，并使用 DMA 复制按缓存行对齐的主体，因此普通应用无需手动对齐 buffer。
+
+对于 :cpp:func:`esp_async_memcpy`，若目标 buffer 位于缓存区，其长度至少应为两个缓存行。较小的请求会返回 :c:macro:`ESP_ERR_INVALID_SIZE`，应改用标准 ``memcpy``。:cpp:func:`esp_memcpy_blocking` 在这种情况下会自动使用 CPU 复制。
+
+.. note::
+
+    DMA 并不会自动让每次复制更快。短复制的 DMA 配置开销通常高于收益。请使用接近实际场景的 buffer 大小进行测量，再决定是否将性能关键路径迁移到 DMA。
+
+结束与释放驱动
+==============
+
+在需要时持续保持驱动已安装。调用 :cpp:func:`esp_async_memcpy_uninstall` 前，请等待所有排队的复制完成，并确保没有任务会再提交请求。成功卸载后，句柄及其资源不再有效。
+
+ETM 事件
+========
 
 .. only:: SOC_ETM_SUPPORTED and SOC_GDMA_SUPPORT_ETM
 
-    ETM 事件
-    ---------
-
-    在异步 memcpy 操作完成时会生成一个事件，此事件能够与 :doc:`ETM </api-reference/peripherals/etm>` 模块进行交互。可以调用 :cpp:func:`esp_async_memcpy_new_etm_event` 获取 ETM 事件句柄。
-
-    如需了解如何将此事件连接到 ETM 通道，请参考文档 :doc:`ETM </api-reference/peripherals/etm>`。
+    复制完成时可以产生供 :doc:`ETM </api-reference/peripherals/etm>` 模块使用的事件。调用 :cpp:func:`esp_async_memcpy_new_etm_event` 并传入 :cpp:enumerator:`ASYNC_MEMCPY_ETM_EVENT_COPY_DONE`，即可获取事件句柄。如何将事件连接到 ETM 任务，请参阅 :doc:`ETM 文档 </api-reference/peripherals/etm>`。
 
 API 参考
--------------
+========
+
+异步内存复制驱动程序函数
+------------------------
 
 .. include-build-file:: inc/esp_async_memcpy.inc

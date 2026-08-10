@@ -98,17 +98,17 @@ TEST_CASE("DW_GDMA M2M Test: Contiguous Mode", "[DW_GDMA]")
     dw_gdma_block_transfer_config_t transfer_config = {
         .src = {
             .addr = (uint32_t)src_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .dst = {
             .addr = (uint32_t)dst_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .size = 256,
     };
@@ -190,17 +190,17 @@ TEST_CASE("DW_GDMA M2M Test: Reload Mode", "[DW_GDMA]")
     dw_gdma_block_transfer_config_t transfer_config = {
         .src = {
             .addr = (uint32_t)src_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .dst = {
             .addr = (uint32_t)dst_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .size = 256,
     };
@@ -306,17 +306,17 @@ TEST_CASE("DW_GDMA M2M Test: Shadow Mode", "[DW_GDMA]")
     dw_gdma_block_transfer_config_t transfer_config = {
         .src = {
             .addr = (uint32_t)src_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .dst = {
             .addr = (uint32_t)dst_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .size = 256,
     };
@@ -441,17 +441,17 @@ TEST_CASE("DW_GDMA M2M Test: Link-List Mode", "[DW_GDMA]")
     dw_gdma_block_transfer_config_t transfer_config = {
         .src = {
             .addr = (uint32_t)src_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .dst = {
             .addr = (uint32_t)dst_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 0,
+            .burst_size = 4,
+            .axi_burst_len = 0,
         },
         .size = 128,
     };
@@ -578,17 +578,17 @@ TEST_CASE("DW_GDMA M2M Test: memory set with fixed address", "[DW_GDMA]")
     dw_gdma_block_transfer_config_t transfer_config = {
         .src = {
             .addr = (uint32_t)src_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_FIXED,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_FIXED,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 1, // Note for ESP32P4, if the buffer is in PSRAM and the burst mode is fixed, we can't set the burst length larger than 1
+            .burst_size = 4,
+            .axi_burst_len = 1, // Note for ESP32P4, if the buffer is in PSRAM and the address increment mode is fixed, we can't set the AXI burst length larger than 1
         },
         .dst = {
             .addr = (uint32_t)dst_buf,
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
             .width = DW_GDMA_TRANS_WIDTH_8,
-            .burst_items = 4,
-            .burst_len = 1,
+            .burst_size = 4,
+            .axi_burst_len = 1,
         },
         .size = 256,
     };

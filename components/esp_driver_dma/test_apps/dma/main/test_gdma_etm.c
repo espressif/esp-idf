@@ -47,7 +47,7 @@ TEST_CASE("async_memcpy_eof_event", "[GDMA][ETM]")
     printf("install async memcpy context\r\n");
     async_memcpy_handle_t mcp_ctx = NULL;
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
-    TEST_ESP_OK(esp_async_memcpy_install(&config, &mcp_ctx));
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&config, &mcp_ctx));
 
     printf("get async memcpy etm event handle\r\n");
     esp_etm_event_handle_t mcp_event = NULL;

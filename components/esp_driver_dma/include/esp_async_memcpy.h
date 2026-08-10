@@ -67,7 +67,7 @@ typedef struct {
         .flags = 0,                   \
     }
 
-#if SOC_HAS(AHB_GDMA)
+#if SOC_AHB_GDMA_SUPPORTED
 /**
  * @brief Install async memcpy driver, with AHB-GDMA as the backend
  *
@@ -80,9 +80,9 @@ typedef struct {
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
 esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
-#endif // SOC_HAS(AHB_GDMA)
+#endif // SOC_AHB_GDMA_SUPPORTED
 
-#if SOC_HAS(AXI_GDMA)
+#if SOC_AXI_GDMA_SUPPORTED
 /**
  * @brief Install async memcpy driver, with AXI-GDMA as the backend
  *
@@ -95,9 +95,9 @@ esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config,
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
 esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
-#endif // SOC_HAS(AXI_GDMA)
+#endif // SOC_AXI_GDMA_SUPPORTED
 
-#if SOC_HAS(LP_AHB_GDMA)
+#if SOC_LP_AHB_GDMA_SUPPORTED
 /**
  * @brief Install async memcpy driver, with LP AHB-GDMA as the backend
  *
@@ -110,7 +110,7 @@ esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config,
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
 esp_err_t esp_async_memcpy_install_gdma_lp_ahb(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
-#endif // SOC_HAS(LP_AHB_GDMA)
+#endif // SOC_LP_AHB_GDMA_SUPPORTED
 
 #if SOC_CP_DMA_SUPPORTED
 /**
@@ -129,6 +129,22 @@ esp_err_t esp_async_memcpy_install_gdma_lp_ahb(const async_memcpy_config_t *conf
 esp_err_t esp_async_memcpy_install_cpdma(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
 #endif // SOC_CP_DMA_SUPPORTED
 
+#if SOC_DW_GDMA_SUPPORTED
+/**
+ * @brief Install async memcpy driver, with DW_GDMA as the backend
+ *
+ * @param[in] config Configuration of async memcpy
+ * @param[out] mcp Returned driver handle
+ * @return
+ *      - ESP_OK: Install async memcpy driver successfully
+ *      - ESP_ERR_INVALID_ARG: Install async memcpy driver failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
+ *      - ESP_FAIL: Install async memcpy driver failed because of other error
+ */
+esp_err_t esp_async_memcpy_install_dw_gdma(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+#endif // SOC_DW_GDMA_SUPPORTED
+
+/** @cond */
 /**
  * @brief Install async memcpy driver with the default DMA backend
  *
@@ -143,12 +159,14 @@ esp_err_t esp_async_memcpy_install_cpdma(const async_memcpy_config_t *config, as
  *      - ESP_ERR_NO_MEM: Install async memcpy driver failed because out of memory
  *      - ESP_FAIL: Install async memcpy driver failed because of other error
  */
-esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp);
+esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp)
+    __attribute__((deprecated("Select a DMA backend explicitly with esp_async_memcpy_install_* instead")));
+/** @endcond */
 
 /**
  * @brief Uninstall async memcpy driver
  *
- * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] mcp Handle of async memcpy driver returned by an install function
  * @return
  *      - ESP_OK: Uninstall async memcpy driver successfully
  *      - ESP_ERR_INVALID_ARG: Uninstall async memcpy driver failed because of invalid argument
@@ -161,7 +179,7 @@ esp_err_t esp_async_memcpy_uninstall(async_memcpy_handle_t mcp);
  *
  * @note The callback function is invoked in interrupt context, never do blocking jobs in the callback.
  *
- * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] mcp Handle of async memcpy driver returned by an install function
  * @param[in] dst Destination address (copy to)
  * @param[in] src Source address (copy from)
  * @param[in] n Number of bytes to copy
@@ -180,7 +198,7 @@ esp_err_t esp_async_memcpy(async_memcpy_handle_t mcp, void *dst, void *src, size
  * @note This function is blocking and should not be called from interrupt context.
  * @note Only `timeout_ms=-1` is supported, which means waiting indefinitely.
  *
- * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] mcp Handle of async memcpy driver returned by an install function
  * @param[in] dst Destination address (copy to)
  * @param[in] src Source address (copy from)
  * @param[in] n Number of bytes to copy
@@ -206,7 +224,7 @@ typedef enum {
  *
  * @note The created ETM event object can be deleted later by calling `esp_etm_del_event`
  *
- * @param[in] mcp Handle of async memcpy driver that returned from `esp_async_memcpy_install`
+ * @param[in] mcp Handle of async memcpy driver returned by an install function
  * @param[in] event_type ETM event type
  * @param[out] out_event Returned ETM event handle
  * @return

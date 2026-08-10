@@ -433,16 +433,16 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
 
     dw_gdma_block_transfer_config_t dma_transfer_config = {
         .src = {
-            .burst_mode = DW_GDMA_BURST_MODE_INCREMENT,
-            .burst_items = DW_GDMA_BURST_ITEMS_512,
-            .burst_len = 16,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_INCREMENT,
+            .burst_size = DW_GDMA_BURST_SIZE_512,
+            .axi_burst_len = 16,
             .width = DW_GDMA_TRANS_WIDTH_64,
         },
         .dst = {
             .addr = MIPI_DSI_BRG_MEM_BASE,
-            .burst_mode = DW_GDMA_BURST_MODE_FIXED,
-            .burst_items = DW_GDMA_BURST_ITEMS_256,
-            .burst_len = 16,
+            .addr_inc_mode = DW_GDMA_ADDR_INC_MODE_FIXED,
+            .burst_size = DW_GDMA_BURST_SIZE_256,
+            .axi_burst_len = 16,
             .width = DW_GDMA_TRANS_WIDTH_64,
         },
         .size = dpi_panel->fb_size * 8 / 64,
