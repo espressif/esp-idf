@@ -32,6 +32,9 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_types.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dpc.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dpc_dynamic.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_dpc_static.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_af.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_ae.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_awb.h \

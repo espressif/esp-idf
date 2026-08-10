@@ -289,5 +289,8 @@ esp_err_t esp_isp_dma_process_frame(isp_proc_handle_t proc, void *output_buffer,
         ESP_LOGE(TAG, "wait output done timeout");
         return ESP_ERR_TIMEOUT;
     }
+
+    ESP_RETURN_ON_ERROR(esp_cache_msync(output_buffer, output_frame_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                        TAG, "sync output buffer failed");
     return ESP_OK;
 }
