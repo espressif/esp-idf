@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -225,9 +225,10 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
     gdma_link_list_handle_t rx_link_list = NULL;
     test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, 16, dma_link_in_ext_mem);
 
-    size_t int_mem_alignment = 0;
-    size_t ext_mem_alignment = 0;
-    TEST_ESP_OK(gdma_get_channel_alignment_constraints(tx_chan, &int_mem_alignment, &ext_mem_alignment, NULL));
+    gdma_channel_alignment_info_t tx_align_info;
+    TEST_ESP_OK(gdma_get_channel_alignment_constraints(tx_chan, &tx_align_info));
+    size_t int_mem_alignment = tx_align_info.int_mem_alignment;
+    size_t __attribute__((unused)) ext_mem_alignment = tx_align_info.ext_enc_mem_alignment;
 
     // allocate the source buffer from SRAM
     uint8_t *src_data = heap_caps_aligned_calloc(int_mem_alignment, 1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
@@ -294,9 +295,6 @@ static void test_gdma_m2m_transaction(gdma_channel_handle_t tx_chan, gdma_channe
         .buffer = dst_data,
         .buffer_alignment = sram_alignment, // RX buffer should be aligned to the cache line size, because we will do cache invalidate later
         .length = 256,
-        .flags = {
-            .check_size_align = gdma_is_size_alignment_required(rx_chan),
-        },
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
 
@@ -361,20 +359,6 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif // SOC_HAS(AXI_GDMA)
-
-#if SOC_HAS(LP_AHB_GDMA)
-    if (gdma_test_mspi_strict_alignment_required() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
-        TEST_IGNORE_MESSAGE("Skip LP-AHB-GDMA GDMA M2M Mode under Flash Encryption / PSRAM ECC");
-    } else {
-        printf("Testing GDMA M2M Mode by LP-AHB GDMA%s\n", trig_retention_backup ? " with retention backup" : "");
-        TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
-
-        test_gdma_m2m_transaction(tx_chan, rx_chan, false, trig_retention_backup);
-
-        TEST_ESP_OK(gdma_del_channel(tx_chan));
-        TEST_ESP_OK(gdma_del_channel(rx_chan));
-    }
-#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
@@ -398,99 +382,6 @@ static bool test_gdma_m2m_unaligned_rx_eof_callback(gdma_channel_handle_t dma_ch
     TEST_ESP_OK(esp_dma_merge_aligned_rx_buffers(user_ctx->align_array));
     xSemaphoreGiveFromISR(user_ctx->done_sem, &task_woken);
     return task_woken == pdTRUE;
-}
-
-static bool test_gdma_m2m_desc_empty_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
-{
-    BaseType_t task_woken = pdFALSE;
-    SemaphoreHandle_t desc_empty_sem = (SemaphoreHandle_t)user_data;
-    xSemaphoreGiveFromISR(desc_empty_sem, &task_woken);
-    return task_woken == pdTRUE;
-}
-
-static void test_gdma_m2m_desc_empty_event(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan)
-{
-    gdma_link_list_handle_t tx_link_list = NULL;
-    gdma_link_list_handle_t rx_link_list = NULL;
-    test_gdma_config_link_list(tx_chan, rx_chan, &tx_link_list, &rx_link_list, 16, false);
-
-    uint8_t *src_data = heap_caps_aligned_calloc(16, 1, 128, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    uint8_t *dst_data = heap_caps_aligned_calloc(16, 1, 64, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    TEST_ASSERT_NOT_NULL(src_data);
-    TEST_ASSERT_NOT_NULL(dst_data);
-    for (int i = 0; i < 128; i++) {
-        src_data[i] = i;
-    }
-
-    gdma_buffer_mount_config_t tx_buf_mount_config = {
-        .buffer = src_data,
-        .buffer_alignment = 16,
-        .length = 128,
-        .flags = {
-            .mark_eof = true,
-            .mark_final = GDMA_FINAL_LINK_TO_NULL,
-        },
-    };
-    TEST_ESP_OK(gdma_link_mount_buffers(tx_link_list, 0, &tx_buf_mount_config, 1, NULL));
-
-    gdma_buffer_mount_config_t rx_buf_mount_config = {
-        .buffer = dst_data,
-        .buffer_alignment = 16,
-        .length = 64,
-        .flags = {
-            .mark_final = GDMA_FINAL_LINK_TO_NULL,
-            .check_size_align = gdma_is_size_alignment_required(rx_chan),
-        },
-    };
-    TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
-
-    SemaphoreHandle_t desc_empty_sem = xSemaphoreCreateBinary();
-    TEST_ASSERT_NOT_NULL(desc_empty_sem);
-    gdma_rx_event_callbacks_t rx_cbs = {
-        .on_descr_empty = test_gdma_m2m_desc_empty_callback,
-    };
-    TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, desc_empty_sem));
-
-    TEST_ESP_OK(gdma_start(rx_chan, gdma_link_get_head_addr(rx_link_list)));
-    TEST_ESP_OK(gdma_start(tx_chan, gdma_link_get_head_addr(tx_link_list)));
-
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(desc_empty_sem, pdMS_TO_TICKS(1000)));
-
-    TEST_ESP_OK(gdma_stop(tx_chan));
-    TEST_ESP_OK(gdma_stop(rx_chan));
-    TEST_ESP_OK(gdma_del_link_list(tx_link_list));
-    TEST_ESP_OK(gdma_del_link_list(rx_link_list));
-    vSemaphoreDelete(desc_empty_sem);
-    free(src_data);
-    free(dst_data);
-}
-
-TEST_CASE("GDMA M2M RX desc empty callback", "[GDMA][M2M]")
-{
-    gdma_channel_handle_t tx_chan = NULL;
-    gdma_channel_handle_t rx_chan = NULL;
-    gdma_channel_alloc_config_t chan_alloc_config = {};
-
-#if SOC_HAS(AHB_GDMA)
-    TEST_ESP_OK(gdma_new_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
-    test_gdma_m2m_desc_empty_event(tx_chan, rx_chan);
-    TEST_ESP_OK(gdma_del_channel(tx_chan));
-    TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_HAS(AHB_GDMA)
-
-#if SOC_HAS(AXI_GDMA)
-    TEST_ESP_OK(gdma_new_axi_channel(&chan_alloc_config, &tx_chan, &rx_chan));
-    test_gdma_m2m_desc_empty_event(tx_chan, rx_chan);
-    TEST_ESP_OK(gdma_del_channel(tx_chan));
-    TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_HAS(AXI_GDMA)
-
-#if SOC_HAS(LP_AHB_GDMA)
-    TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
-    test_gdma_m2m_desc_empty_event(tx_chan, rx_chan);
-    TEST_ESP_OK(gdma_del_channel(tx_chan));
-    TEST_ESP_OK(gdma_del_channel(rx_chan));
-#endif // SOC_HAS(LP_AHB_GDMA)
 }
 
 static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_data, size_t data_length, size_t offset_len)
@@ -520,7 +411,9 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
     TEST_ESP_OK(gdma_config_transfer(rx_chan, &transfer_config));
 
     size_t rx_mem_alignment = 0;
-    TEST_ESP_OK(gdma_get_channel_alignment_constraints(rx_chan, &rx_mem_alignment, NULL, NULL));
+    gdma_channel_alignment_info_t rx_align_info;
+    TEST_ESP_OK(gdma_get_channel_alignment_constraints(rx_chan, &rx_align_info));
+    rx_mem_alignment = rx_align_info.int_mem_alignment;
 
     // prepare the source data
     for (int i = 0; i < data_length; i++) {
@@ -552,7 +445,7 @@ static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
         rx_aligned_buf_mount_config[i].buffer_alignment = MAX(sram_alignment, rx_mem_alignment);
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
-        rx_aligned_buf_mount_config[i].flags.check_size_align = gdma_is_size_alignment_required(rx_chan);
+        rx_aligned_buf_mount_config[i].flags.bypass_buffer_size_align_check = true; // head and tail buffer size is not aligned to the cache line size
     }
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
 
@@ -715,7 +608,6 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
         .length = COPY_SIZE,
         .flags = {
             .mark_final = GDMA_FINAL_LINK_TO_NULL, // using singly list, so terminate the link here
-            .check_size_align = gdma_is_size_alignment_required(rx_chan),
         }
     };
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, &rx_buf_mount_config, 1, NULL));
@@ -794,21 +686,5 @@ TEST_CASE("GDMA memory copy SRAM->PSRAM->SRAM", "[GDMA][M2M]")
     TEST_ESP_OK(gdma_del_channel(rx_chan));
 #endif
 #endif // SOC_HAS(AXI_GDMA)
-
-#if SOC_HAS(LP_AHB_GDMA)
-#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-    if (gdma_test_mspi_strict_alignment_required() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
-        TEST_IGNORE_MESSAGE("Skipping LP-AHB-GDMA SRAM->PSRAM->SRAM under Flash Encryption / PSRAM ECC");
-    } else {
-        printf("Testing LP-AHB-GDMA memory copy SRAM->PSRAM->SRAM\n");
-        TEST_ESP_OK(gdma_new_lp_ahb_channel(&chan_alloc_config, &tx_chan, &rx_chan));
-
-        test_gdma_memcpy_from_to_psram(tx_chan, rx_chan);
-
-        TEST_ESP_OK(gdma_del_channel(tx_chan));
-        TEST_ESP_OK(gdma_del_channel(rx_chan));
-    }
-#endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-#endif // SOC_HAS(LP_AHB_GDMA)
 }
 #endif // SOC_SPIRAM_SUPPORTED

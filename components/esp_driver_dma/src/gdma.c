@@ -404,7 +404,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
 
     if (config->access_ext_mem) {
 #if (SOC_PSRAM_DMA_CAPABLE || SOC_DMA_CAN_ACCESS_FLASH) && SOC_AHB_GDMA_VERSION != 1
-        // Under Flash Encryption/PSRAM ECC, external DMA must use MSPI-aligned bursts.
+        // Under Flash Encryption/PSRAM ECC, DMA must use MSPI-aligned bursts.
         size_t mspi_alignment = esp_mspi_get_alignment(NULL);
         if (mspi_alignment > 1) {
             if (max_data_burst_size < mspi_alignment) {
@@ -413,7 +413,7 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
             }
         }
 #endif
-#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) || GDMA_LL_GET(AXI_PSRAM_CAPABLE) || GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
+#if GDMA_LL_GET(AHB_PSRAM_CAPABLE) || GDMA_LL_GET(AXI_PSRAM_CAPABLE)
         ESP_RETURN_ON_FALSE(max_data_burst_size <= GDMA_LL_MAX_BURST_SIZE_PSRAM, ESP_ERR_INVALID_ARG,
                             TAG, "max_data_burst_size must not exceed %d when accessing external memory", GDMA_LL_MAX_BURST_SIZE_PSRAM);
 #endif
@@ -425,7 +425,6 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
     }
 
     bool en_data_burst = max_data_burst_size > 0;
-    dma_chan->flags.size_alignment_required = false;
     if (en_data_burst) {
 #if CONFIG_GDMA_ENABLE_WEIGHTED_ARBITRATION
         // due to hardware limitation, if weighted arbitration is enabled, the data must be aligned to burst size
@@ -440,7 +439,6 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
         int_mem_alignment = MAX(int_mem_alignment, 4);
         ext_enc_mem_alignment = MAX(ext_enc_mem_alignment, max_data_burst_size);
         ext_no_enc_mem_alignment = MAX(ext_no_enc_mem_alignment, max_data_burst_size);
-        dma_chan->flags.size_alignment_required = true;
     }
 #endif
 
@@ -472,27 +470,15 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
     return ESP_OK;
 }
 
-esp_err_t gdma_get_channel_alignment_constraints(gdma_channel_handle_t dma_chan, size_t *int_mem_alignment,
-                                                 size_t *ext_enc_mem_alignment, size_t *ext_no_enc_mem_alignment)
+esp_err_t gdma_get_channel_alignment_constraints(gdma_channel_handle_t dma_chan, gdma_channel_alignment_info_t *info)
 {
-    if (!dma_chan) {
+    if (!dma_chan || !info) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (int_mem_alignment) {
-        *int_mem_alignment = dma_chan->int_mem_alignment;
-    }
-    if (ext_enc_mem_alignment) {
-        *ext_enc_mem_alignment = dma_chan->ext_enc_mem_alignment;
-    }
-    if (ext_no_enc_mem_alignment) {
-        *ext_no_enc_mem_alignment = dma_chan->ext_no_enc_mem_alignment;
-    }
+    info->int_mem_alignment = dma_chan->int_mem_alignment;
+    info->ext_enc_mem_alignment = dma_chan->ext_enc_mem_alignment;
+    info->ext_no_enc_mem_alignment = dma_chan->ext_no_enc_mem_alignment;
     return ESP_OK;
-}
-
-bool gdma_is_size_alignment_required(gdma_channel_handle_t dma_chan)
-{
-    return dma_chan && dma_chan->flags.size_alignment_required;
 }
 
 size_t gdma_get_buffer_alignment_constraint(gdma_channel_handle_t dma_chan, const void *buffer)
@@ -501,13 +487,13 @@ size_t gdma_get_buffer_alignment_constraint(gdma_channel_handle_t dma_chan, cons
         return BIT(31);
     }
 
-    size_t base_alignment = dma_chan->int_mem_alignment;
-    if (esp_ptr_external_ram(buffer) || esp_ptr_in_drom(buffer)) {
-        base_alignment = dma_chan->ext_no_enc_mem_alignment;
+    // Internal SRAM only needs the DMA-side constraint; MSPI rules apply to PSRAM/Flash.
+    if (!(esp_ptr_external_ram(buffer) || esp_ptr_in_drom(buffer))) {
+        return dma_chan->int_mem_alignment;
     }
 
     size_t mspi_alignment = esp_mspi_get_alignment(buffer);
-    return MAX(base_alignment, mspi_alignment);
+    return MAX(dma_chan->ext_no_enc_mem_alignment, mspi_alignment);
 }
 
 esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strategy_config_t *config)

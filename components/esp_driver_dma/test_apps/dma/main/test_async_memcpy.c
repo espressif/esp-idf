@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -390,19 +390,6 @@ TEST_CASE("memory copy performance 40KB: PSRAM->PSRAM", "[async mcp]")
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif
 #endif // SOC_HAS(AXI_GDMA)
-
-#if SOC_HAS(LP_AHB_GDMA)
-#if GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-    if (gdma_test_mspi_strict_alignment_required() && !GDMA_TEST_LP_AHB_BURST_PSRAM_SUPPORTED) {
-        TEST_IGNORE_MESSAGE("Skipping LP AHB GDMA PSRAM->PSRAM under Flash Encryption / PSRAM ECC");
-    } else {
-        printf("Testing memcpy by LP AHB GDMA\r\n");
-        TEST_ESP_OK(esp_async_memcpy_install_gdma_lp_ahb(&driver_config, &driver));
-        test_memcpy_performance(driver, 40 * 1024, true, true);
-        TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
-    }
-#endif // GDMA_LL_GET(LP_AHB_PSRAM_CAPABLE)
-#endif // SOC_HAS(LP_AHB_GDMA)
 }
 #endif
 

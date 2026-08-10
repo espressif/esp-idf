@@ -53,9 +53,10 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
     // register the DMA callbacks may fail if the interrupt service can not be installed successfully
     ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(tx_channel->base.dma_chan, &cbs, tx_channel), TAG, "register DMA callbacks failed");
 
-    size_t int_alignment = 0;
+    gdma_channel_alignment_info_t align_info;
     // get the alignment requirement from DMA
-    gdma_get_channel_alignment_constraints(tx_channel->base.dma_chan, &int_alignment, NULL, NULL);
+    gdma_get_channel_alignment_constraints(tx_channel->base.dma_chan, &align_info);
+    size_t int_alignment = align_info.int_mem_alignment;
     // apply RMT hardware alignment requirement
     int_alignment = MAX(int_alignment, sizeof(rmt_symbol_word_t));
     // the memory returned by `heap_caps_aligned_calloc` also meets the cache alignment requirement (both address and size)

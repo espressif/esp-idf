@@ -33,7 +33,6 @@ static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void
             .buffer_alignment = mem_alignment,
             .flags = {
                 .mark_final = GDMA_FINAL_LINK_TO_DEFAULT,
-                .check_size_align = gdma_is_size_alignment_required(rx_chan->base.dma_chan),
             }
         };
     }
@@ -63,9 +62,9 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
 
     // get the alignment requirement from DMA
-    size_t dma_int_mem_alignment = 0, dma_ext_mem_alignment = 0;
-    gdma_get_channel_alignment_constraints(rx_channel->base.dma_chan, &dma_int_mem_alignment, &dma_ext_mem_alignment, NULL);
-    size_t buffer_alignment = MAX(dma_int_mem_alignment, dma_ext_mem_alignment);
+    gdma_channel_alignment_info_t align_info;
+    gdma_get_channel_alignment_constraints(rx_channel->base.dma_chan, &align_info);
+    size_t buffer_alignment = MAX(align_info.int_mem_alignment, align_info.ext_enc_mem_alignment);
     rx_channel->num_dma_nodes = esp_dma_calculate_node_count(config->mem_block_symbols * sizeof(rmt_symbol_word_t),
                                                              buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     rx_channel->num_dma_nodes = MAX(2, rx_channel->num_dma_nodes); // at least 2 DMA nodes for ping-pong

@@ -30,7 +30,7 @@ size_t esp_mspi_get_alignment(const void *ptr)
     is_psram_enc = is_psram && !esp_psram_ptr_is_no_enc(ptr);
 #endif /* CONFIG_SPIRAM */
 
-    if (esp_efuse_is_flash_encryption_enabled() && (generic_query || is_drom || is_psram_enc)) {
+    if ((generic_query || is_drom || is_psram_enc) && esp_efuse_is_flash_encryption_enabled()) {
         alignment = MAX(alignment, MSPI_FLASH_ENC_ALIGNMENT);
     }
 
