@@ -122,5 +122,7 @@
       - **描述**
     * - :example:`littlefs <storage/littlefs>`
       - 演示了如何使用 LittleFS 组件初始化文件系统，并使用 POSIX 函数处理文件。
+    * - :example:`spi_nand_flash/littlefs <storage/spi_nand_flash/littlefs>`
+      - 演示了如何通过块设备层 (BDL) 在外部 SPI NAND Flash 上挂载 LittleFS。
     * - :example:`semihost_vfs <storage/semihost_vfs>`
       - 演示了如何使用 VFS API，利用 POSIX 函数使 ESP 设备访问通过 JTAG 连接的主机上的文件。

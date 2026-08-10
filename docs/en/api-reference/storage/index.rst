@@ -122,5 +122,7 @@ Examples
       - **Description**
     * - :example:`littlefs <storage/littlefs>`
       - Shows the use of the LittleFS component to initialize the filesystem and work with a file using POSIX functions.
+    * - :example:`spi_nand_flash/littlefs <storage/spi_nand_flash/littlefs>`
+      - Shows how to mount LittleFS on external SPI NAND Flash via the Block Device Layer (BDL).
     * - :example:`semihost_vfs <storage/semihost_vfs>`
       - Demonstrates the use of the VFS API to let an ESP-based device access a file on a JTAG-connected host using POSIX functions.

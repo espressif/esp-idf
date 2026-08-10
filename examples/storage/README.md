@@ -30,6 +30,7 @@ The examples are grouped into sub-directories by category. Each category directo
 * `semihost_vfs` — semihosting VFS driver.
 * `spiffs` — SPIFFS on flash.
 * `spiffsgen` — build-time SPIFFS image generation with spiffsgen.py.
+* `spi_nand_flash/littlefs` LittleFS on external SPI NAND Flash via the Block Device Layer (BDL).
 * `perf_benchmark` — storage performance benchmarking.
 
 # More
