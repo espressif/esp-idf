@@ -71,7 +71,7 @@ FATFS encryption example uses two additional partitions in the partition table. 
 
 > **Note:** This feature is only available on targets with the Key Manager peripheral: **ESP32-C5** and **ESP32-P4**.
 
-On supported targets, the Flash Encryption key can be deployed into and managed by the [Key Manager](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/api-reference/peripherals/key_manager.html) peripheral instead of an eFuse block. This means the plaintext key material is never stored in eFuses, RAM, or flash - it is bound to the device's Hardware Unique Key (HUK) and accessible only to hardware peripherals.
+On supported targets, the Flash Encryption key can be deployed into and managed by the [Key Manager](../../../docs/en/api-reference/peripherals/key_manager.rst) peripheral instead of an eFuse block. This means the plaintext key material is never stored in eFuses, RAM, or flash - it is bound to the device's Hardware Unique Key (HUK) and accessible only to hardware peripherals.
 
 For the full workflow (key deployment, eFuse programming, and boot sequence), refer to the [Flash Encryption documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c5/security/flash-encryption.html).
 
