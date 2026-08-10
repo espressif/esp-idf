@@ -159,8 +159,15 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         isp_ll_yuv_set_range(proc->hal.hw, proc_config->yuv_range);
     }
 
-    if (out_color_format.color_space == COLOR_SPACE_RGB && proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DVP) {
-        isp_ll_color_enable(proc->hal.hw, true); // workaround for DIG-474
+    if ((out_color_format.color_type_id == ISP_COLOR_RGB888 || out_color_format.color_type_id == ISP_COLOR_RGB565) &&
+            (proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DVP ||
+             proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DWGDMA)) {
+        // DIG-474 workaround: Color must be enabled for RGB output, so configure its neutral defaults before enabling
+        // Disable shadow registers temporarily to apply the defaults directly, without leaving a pending Color update.
+        isp_ll_shadow_set_mode(proc->hal.hw, ISP_SHADOW_MODE_DISABLE);
+        isp_hal_color_config(&proc->hal, NULL);
+        isp_ll_color_set_clk_ctrl_mode(proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
+        isp_ll_color_enable(proc->hal.hw, true);
     }
 
     isp_ll_shadow_set_mode(proc->hal.hw, ISP_SHADOW_MODE_UPDATE_ONLY_NEXT_VSYNC);
