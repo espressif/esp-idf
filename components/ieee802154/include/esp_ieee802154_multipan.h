@@ -182,6 +182,43 @@ esp_ieee802154_pending_mode_t esp_ieee802154_multipan_get_pending_mode(esp_ieee8
  */
 esp_err_t esp_ieee802154_multipan_set_pending_mode(esp_ieee802154_multipan_index_t inf_index, esp_ieee802154_pending_mode_t pending_mode);
 
+/**
+ * @brief  Set the IEEE 802.15.4 Radio to sleep state for the specified multipan interface.
+ *
+ * @param[in]  idx  Index of the multipan interface.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_sleep(int8_t idx);
+
+/**
+ * @brief  Set the IEEE 802.15.4 Radio to receive state for the specified multipan interface.
+ *
+ * @param[in]  idx  Index of the multipan interface.
+ *
+ * @return
+ *      - ESP_OK on success.
+ *      - ESP_FAIL on failure.
+ */
+esp_err_t esp_ieee802154_multipan_receive(int8_t idx);
+
+/**
+ * @brief  Set the RxOnWhenIdle mode for the specified multipan interface.
+ *
+ * Each interface owns one bit in an internal mask. The hardware RxOnWhenIdle
+ * setting is enabled when any interface requests it, and is disabled only
+ * when all interface bits are cleared.
+ *
+ * @param[in]  idx     Index of the multipan interface.
+ * @param[in]  enable  True to enable RxOnWhenIdle for this interface.
+ *
+ * @return
+ *      - ESP_OK on success.
+ */
+esp_err_t esp_ieee802154_multipan_set_rx_when_idle(int8_t idx, bool enable);
+
 #ifdef __cplusplus
 }
 #endif

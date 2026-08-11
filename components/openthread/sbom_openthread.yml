@@ -5,7 +5,7 @@ supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
 originator: 'Organization: Google LLC'
 description: OpenThread released by Google is an open-source implementation of the Thread networking
 url: https://github.com/espressif/openthread
-hash: b678a4f63b6f9397d1a0fa8f31e5b8e0271a4d00
+hash: 43cc05a9bcf780bd758bad53d897e2d88cf8cb75
 cve-exclude-list:
   - cve: CVE-2026-8369
     reason: We use Espressif’s NAT64 implementation and hence this CVE from the upstream NAT64 implementation is not applicable.

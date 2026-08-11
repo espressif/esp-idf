@@ -93,6 +93,31 @@ static esp_err_t init_console_command_worker()
 }
 #endif // CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
 
+static void ncp_init_console(void)
+{
+#if CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
+    esp_err_t err = esp_console_redirect_to_otlog();
+    if (err != ESP_OK) {
+        ESP_LOGE(NO_LOG_TAG, "Failed to redirect console to otPlatLog: %s", esp_err_to_name(err));
+    }
+
+    init_console_command_worker();
+#endif
+}
+
+#if CONFIG_OPENTHREAD_MULTIPAN_RCP_ENABLE
+extern "C" void otAppNcpInitMulti(otInstance **aInstances, uint8_t aCount)
+{
+#if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG || CONFIG_OPENTHREAD_RCP_CUSTOM)
+    IgnoreError(otPlatUartEnable());
+    otNcpHdlcInitMulti(aInstances, aCount, NcpSend);
+#else
+#error "Multiple instances based on SPI are not supported yet"
+#endif
+
+    ncp_init_console();
+}
+#else
 extern "C" void otAppNcpInit(otInstance *aInstance)
 {
 #if (CONFIG_OPENTHREAD_RCP_UART || CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG)
@@ -102,15 +127,9 @@ extern "C" void otAppNcpInit(otInstance *aInstance)
     otNcpSpiInit(aInstance);
 #endif
 
-#if CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
-    esp_err_t err = esp_console_redirect_to_otlog();
-    if (err != ESP_OK) {
-        ESP_LOGE(NO_LOG_TAG, "Failed to redirect console to otPlatLog: %s", esp_err_to_name(err));
-    }
-
-    init_console_command_worker();
-#endif // CONFIG_OPENTHREAD_RCP_SPINEL_CONSOLE
+    ncp_init_console();
 }
+#endif
 
 namespace ot {
 namespace Ncp {
