@@ -534,6 +534,22 @@ menu "OpenThread"
                 OpenThread esp_netif, attaches the esp_netif glue, and enables
                 lwIP-specific DNS/netif handling.
 
+        config OPENTHREAD_MULTIPAN_RCP_ENABLE
+            bool "Enable Multipan RCP"
+            depends on (OPENTHREAD_RADIO && IEEE802154_MULTI_PAN_ENABLE)
+            default n
+            help
+                Enable MULTI-PAN RCP support. This also enables multiple OpenThread
+                instances. Currently only radio devices are supported.
+
+        config OPENTHREAD_MULTIPLE_INTERFACES_COUNT
+            int "The number of multiple interfaces"
+            depends on OPENTHREAD_MULTIPAN_RCP_ENABLE
+            default 2
+            range 2 3
+            help
+                Number of multiple interfaces.
+
     endmenu
 
     menu "Thread Log"
