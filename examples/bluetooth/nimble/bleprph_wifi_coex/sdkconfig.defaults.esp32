@@ -1,3 +1,6 @@
 # Place FreeRTOS functions into flash to save some IRAM on the ESP32
 # Use the SINGLE_APP_LARGE partition to ensure the partition has enough space for the ESP32 build
 CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+CONFIG_BTDM_CTRL_MODE_BLE_ONLY=y
+CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=n
+CONFIG_BTDM_CTRL_MODE_BTDM=n
