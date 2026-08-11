@@ -912,6 +912,12 @@ static IRAM_ATTR bool is_xmc_chip_strict(uint32_t rdid)
     uint32_t mfid = BYTESHIFT(rdid, 1);
     uint32_t cpid = BYTESHIFT(rdid, 0);
 
+    // xmc vendor id begin with 0x46 means that it's a D-series chip
+    // which did not need the startup flow
+    if (vendor_id == 0x46) {
+        return true;
+    }
+
     if (vendor_id != XMC_VENDOR_ID_1) {
         return false;
     }
