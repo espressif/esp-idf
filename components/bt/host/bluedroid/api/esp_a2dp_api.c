@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,9 @@
 #include "btc_av.h"
 
 #if BTC_AV_INCLUDED
+
+// indicate the first time to call the get delay value function
+static bool s_a2dp_first_call_get_delay = true;
 
 #if BTC_AV_SINK_INCLUDED
 esp_err_t esp_a2d_sink_init(void)
@@ -54,7 +57,12 @@ esp_err_t esp_a2d_sink_deinit(void)
 
     /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
-    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+    if (stat == BT_STATUS_SUCCESS) {
+        s_a2dp_first_call_get_delay = false;
+        return ESP_OK;
+    } else {
+        return ESP_FAIL;
+    }
 }
 
 esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback)
@@ -164,7 +172,14 @@ esp_err_t esp_a2d_sink_get_delay_value(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (g_a2dp_on_deinit || g_a2dp_sink_ongoing_deinit) {
+    /* To be compatible with the legacy usage methods,
+       use a flag indicating whether this is the first time the function has been called. */
+    if (s_a2dp_first_call_get_delay) {
+        s_a2dp_first_call_get_delay = false;
+        if (g_a2dp_sink_ongoing_deinit) {
+            return ESP_ERR_INVALID_STATE;
+        }
+    } else if (g_a2dp_on_deinit || g_a2dp_sink_ongoing_deinit) {
         return ESP_ERR_INVALID_STATE;
     }
 
